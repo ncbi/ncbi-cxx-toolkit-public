@@ -83,7 +83,8 @@ PC-AssayResults ::= SEQUENCE {
                           inactive        (1),               --   Substance is considered Inactive
                           active          (2),               --   Substance is considered Active
                           inconclusive    (3),               --   Substance is Inconclusive
-                          unspecified     (4)                --   Substance Outcome is Unspecified
+                          unspecified     (4),               --   Substance Outcome is Unspecified
+                          probe           (5)                --   Substance Outcome is Unspecified
                       }               DEFAULT unspecified,
     rank              INTEGER                      OPTIONAL, -- Rank of Assay Outcome (for result ordering)
                                                              --   Note: Larger numbers are more active
