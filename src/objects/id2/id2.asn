@@ -319,8 +319,8 @@ ID2-Reply-Get-Blob-Id ::= SEQUENCE {
         -- this Blob-id is the last one in the request
         end-of-reply    NULL OPTIONAL,
 
-        -- state of the blob
-        blob-state      ID2-Blob-State OPTIONAL
+        -- state of the blob, 0 or missing means regular live data
+        blob-state      INTEGER OPTIONAL
 }
 
 
