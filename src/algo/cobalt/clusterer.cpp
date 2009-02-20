@@ -496,6 +496,13 @@ void CClusterer::ReleaseTrees(vector<TPhyTreeNode*>& trees)
     m_Trees.clear();
 }
 
+#ifdef NCBI_COMPILER_WORKSHOP
+// In some configurations, cobalt.o winds up with an otherwise
+// undefined reference to a slightly mismangled name!  The compiler's
+// own README recommends this workaround for such incidents.
+#pragma weak "__1cEncbiGcobaltKCClustererMReleaseTrees6MrnDstdGvector4Cpn0AJCTreeNode4n0AMCPhyNodeData_n0AVCDefaultNodeKeyGetter4n0E_____n0DJallocator4Cp4_____v_" = "__1cEncbiGcobaltKCClustererMReleaseTrees6MrnDstdGvector4Cpn0AJCTreeNode4n0AMCPhyNodeData_n0AVCDefaultNodeKeyGetter4n0E_____n0DJallocator4C5_____v_"
+#endif
+
 
 const TPhyTreeNode* CClusterer::GetTree(int index) const
 {
