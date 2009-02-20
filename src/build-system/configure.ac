@@ -1656,15 +1656,27 @@ esac
 
 if test "$with_distcc" != "no"; then
    if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
-      echo 'int f() { return 0; }' > conftest.c
-      if $NCBI/bin/distcc.sh $CC -c conftest.c; then
-         DISTCC=$NCBI/bin/distcc.sh
-      fi
+      DISTCC=$NCBI/bin/distcc.sh
    fi
    AC_CHECK_PROG(DISTCC, distcc, distcc, [])
    if test -n "$DISTCC" ; then
-      CC_WRAPPER="$DISTCC $CC_WRAPPER"
-      CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
+      # distcc is too clever and special-cases conftest.*, so use an
+      # alternate name.
+      echo 'int f() { return 0; }' > distcctest.c
+      if $DISTCC $CC -c distcctest.c; then
+         CC_WRAPPER="$DISTCC $CC_WRAPPER"
+      else
+         AC_MSG_WARN([$DISTCC evidently incompatible with $CC])
+         AS_UNSET(DISTCC)
+      fi
+      mv distcctest.c distcctest.cpp
+      if $DISTCC $CXX -c distcctest.cpp; then
+         CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
+      else
+         AC_MSG_WARN([$DISTCC evidently incompatible with $CXX])
+         AS_UNSET(DISTCC)
+      fi
+      rm -f distcctest.*
    elif test "$with_distcc" = "yes" ; then
       AC_MSG_WARN([distcc explicitly requested, but not found in PATH.])
    fi
