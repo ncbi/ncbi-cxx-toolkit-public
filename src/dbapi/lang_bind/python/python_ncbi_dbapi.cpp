@@ -1054,6 +1054,7 @@ CConnection::CConnection(
     const pythonpp::CObject& extra_params
     )
 : m_DefParams(server_name, user_name, user_pswd)
+, m_DBValidator(new CTrivialConnValidator(db_name))
 , m_Params(m_DefParams)
 , m_DM(CDriverManager::GetInstance())
 , m_DS(NULL)
@@ -1063,6 +1064,7 @@ CConnection::CConnection(
     try {
         m_DefParams.SetDriverName(driver_name);
         m_DefParams.SetDatabaseName(db_name);
+        m_DefParams.SetConnValidator(m_DBValidator);
 
         // Set up a server type ...
         string db_type_uc = db_type;
