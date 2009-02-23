@@ -83,14 +83,13 @@ CNcbiEnvironment::~CNcbiEnvironment(void)
 
 void CNcbiEnvironment::Reset(const char* const* envp)
 {
-    CFastMutexGuard LOCK(m_CacheMutex);
-    // delete old environment values
-    m_Cache.clear();
-
-
     // load new environment values from "envp"
     if ( !envp )
         return;
+
+    CFastMutexGuard LOCK(m_CacheMutex);
+    // delete old environment values
+    m_Cache.clear();
 
     for ( ;  *envp;  envp++) {
         const char* s = *envp;
@@ -99,7 +98,8 @@ void CNcbiEnvironment::Reset(const char* const* envp)
             ERR_POST_X(3, "CNcbiEnvironment: bad string '" << s << "'");
             continue;
         }
-        m_Cache[string(s, eq)] = SEnvValue(eq + 1, NULL);
+        m_Cache[string(s, eq)]
+            = SEnvValue(eq + 1, const_cast<char*>(kEmptyCStr));
     }
 }
 
@@ -108,9 +108,15 @@ const string& CNcbiEnvironment::Get(const string& name) const
 {
     CFastMutexGuard LOCK(m_CacheMutex);
     TCache::const_iterator i = m_Cache.find(name);
-    if ( i != m_Cache.end() )
-        return i->second.value;
-    return (m_Cache[name] = SEnvValue(Load(name), NULL)).value;
+    if ( i != m_Cache.end() ) {
+        if (i->second.ptr == NULL  &&  i->second.value.empty()) {
+            return kEmptyStr;
+        } else {
+            return i->second.value;
+        }
+    }
+    const string& s = (m_Cache[name] = SEnvValue(Load(name), NULL)).value;
+    return s.empty() ? kEmptyStr : s;
 }
 
 
@@ -121,7 +127,8 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
     CFastMutexGuard LOCK(m_CacheMutex);
     for (TCache::const_iterator it = m_Cache.lower_bound(prefix);
          it != m_Cache.end()  &&  NStr::StartsWith(it->first, prefix);  ++it) {
-        if ( !it->second.value.empty() ) { // missing/empty values cached too...
+        if ( !it->second.value.empty()  ||  it->second.ptr == kEmptyCStr) {
+            // ignore entries the app cleared out
             names.push_back(it->first);
         }
     }
@@ -146,7 +153,8 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
 
     CFastMutexGuard LOCK(m_CacheMutex);
     TCache::const_iterator i = m_Cache.find(name);
-    if ( i != m_Cache.end()  &&  i->second.ptr ) {
+    if (i != m_Cache.end()  &&  i->second.ptr != NULL
+        &&  i->second.ptr != kEmptyCStr) {
         free(i->second.ptr);
     }
     m_Cache[name] = SEnvValue(value, str);
@@ -176,7 +184,7 @@ void CNcbiEnvironment::Unset(const string& name)
     CFastMutexGuard LOCK(m_CacheMutex);
     TCache::iterator i = m_Cache.find(name);
     if ( i != m_Cache.end() ) {
-        if ( i->second.ptr ) {
+        if (i->second.ptr != NULL  &&  i->second.ptr != kEmptyCStr) {
             free(i->second.ptr);
         }
         m_Cache.erase(i);
