@@ -4769,6 +4769,7 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_UNIVERSAL_BUILD 1
 _ACEOF
 
+   with_distcc=no
 elif test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in

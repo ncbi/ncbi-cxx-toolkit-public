@@ -1086,6 +1086,7 @@ if test "${with_universal-no}" != "no" ; then
    esac
    AC_DEFINE(NCBI_UNIVERSAL_BUILD, 1,
              [Define to 1 if building universal (multi-architecture) binaries.])
+   with_distcc=no
 elif test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
