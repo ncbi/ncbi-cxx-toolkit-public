@@ -52,6 +52,10 @@ public:
 	//assume the master is the query/consensus in pssm
 	int score(const CRef<CSeq_align>  align, const CRef<CBioseq> bioseq);
 	int score(BlockModelPair& bmp, const CRef<CBioseq> bioseq);
+
+    //  Get the raw scores:  index by score[column][row]
+    const vector< vector<int> >& getRawScores() const { return m_scoresFromPssm;}
+
 private:
 	inline int scoreOneColumn(int col, char aa);
 	CRef< CPssmWithParameters > m_pssm;
