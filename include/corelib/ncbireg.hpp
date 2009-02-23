@@ -50,6 +50,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <map>
+#include <set>
 
 
 /** @addtogroup Registry
@@ -91,6 +92,7 @@ public:
         fIgnoreErrors   = 0x10,  ///< Continue Read()ing after parse errors
         fInternalSpaces = 0x20,  ///< Allow internal whitespace in names
         fWithNcbirc     = 0x40,  ///< Include .ncbirc (used only by CNcbiReg.)
+        fCountCleared   = 0x80,  ///< Let explicitly cleared entries stand
         fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore
     };
@@ -546,7 +548,7 @@ private:
     TNameMap     m_NameMap;     ///< excludes anonymous sub-registries
     TPriority    m_CoreCutoff;
 
-    friend class CNcbiRegistry;
+    friend class CCompoundRWRegistry;
 };
 
 
@@ -596,69 +598,23 @@ private:
 };
 
 
-class CEnvironmentRegistry; // see <corelib/env_reg.hpp>
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CNcbiRegistry --
+/// CCompoundRWRegistry --
 ///
-/// Define the Registry.
+/// Writeable compound registry.
 ///
-/// Load, access, modify and store runtime information (usually used
-/// to work with configuration files).  Consists of a compound
-/// registry whose top layer is a two-layer registry; all writes go to
-/// the two-layer registry.
+/// Compound registry whose top layer is a two-layer registry; all
+/// writes go to the two-layer registry.
 
-class NCBI_XNCBI_EXPORT CNcbiRegistry : public IRWRegistry
+class NCBI_XNCBI_EXPORT CCompoundRWRegistry : public IRWRegistry
 {
 public:
-    enum ECompatFlags {
-        eTransient   = fTransient,
-        ePersistent  = fPersistent,
-        eOverride    = fOverride,
-        eNoOverride  = fNoOverride,
-        eTruncate    = fTruncate,
-        eNoTruncate  = fNoTruncate
-    };
-
     /// Constructor.
-    CNcbiRegistry(void);
+    CCompoundRWRegistry(void);
 
-    /// Constructor.
-    ///
-    /// @param is
-    ///   Input stream to load the Registry from.
-    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
-    /// @param flags
-    ///   How parameters are stored. The default is to store all parameters as
-    ///   persistent unless the  "eTransient" flag is set in which case the
-    ///   newly retrieved parameters are stored as transient.
-    /// @sa
-    ///   Read()
-    CNcbiRegistry(CNcbiIstream& is, TFlags flags = 0);
-
-    ~CNcbiRegistry();
-
-    /// Attempty to load a systemwide configuration file (.ncbirc on
-    /// Unix, ncbi.ini on Windows) as a low-priority registry, as long
-    /// as the following conditions all hold:
-    /// - fWithNcbirc is set in FLAGS.
-    /// - The environment variable NCBI_DONT_USE_NCBIRC is NOT set.
-    /// - The registry's existing contents do NOT contain a setting of
-    ///   [NCBI]DONT_USE_NCBIRC (case-insensitive).
-    /// @param flags
-    ///   Registry flags to be applied when reading the system
-    ///   configuration file.  Must also contain fWithNcbirc (which
-    ///   will be filtered out before calling any other methods) for
-    ///   the call to have any effect.
-    /// @return
-    ///   TRUE if the system configuration file was successfully read
-    ///   and parsed; FALSE otherwise.
-    bool IncludeNcbircIfAllowed(TFlags flags = fWithNcbirc);
-
-    // The below interfaces provide access to the embedded compound registry.
+    /// Destructor.
+    ~CCompoundRWRegistry();
 
     /// Priority for sub-registries; entries in higher-priority
     /// sub-registries take precedence over (identically named) entries
@@ -666,7 +622,7 @@ public:
     enum EPriority {
         ePriority_MinUser  = CCompoundRegistry::ePriority_Min,
         ePriority_Default  = CCompoundRegistry::ePriority_Default,
-        ePriority_MaxUser  = CCompoundRegistry::ePriority_Max - 100,
+        ePriority_MaxUser  = CCompoundRegistry::ePriority_Max - 0x10000,
         ePriority_Reserved ///< Everything greater is for internal use.
     };
     typedef int TPriority; ///< Not restricted to ePriority_*.
@@ -699,11 +655,15 @@ public:
                                         const string& entry = kEmptyStr,
                                         TFlags        flags = 0) const;
 
-    /// Predefined subregistries' names.
+    /// Load any base registries listed in [NCBI].Inherits; returns
+    /// true if able to load at least one, false otherwise.
+    bool LoadBaseRegistries(TFlags flags = 0,
+                            int /* CMetaRegistry::TFlags */ metareg_flags = 0);
+
+    /// Predefined subregistry's name.
     static const char* sm_MainRegName;
-    static const char* sm_EnvRegName;
-    static const char* sm_FileRegName;
-    static const char* sm_SysRegName;
+    /// Prefix for any base registries' names.
+    static const char* sm_BaseRegNamePrefix;
 
 protected:
     bool x_Empty(TFlags flags) const;
@@ -727,23 +687,106 @@ protected:
                       const string& name, TFlags flags);
     void x_Read(CNcbiIstream& is, TFlags flags);
 
+    /// Add an internal high-priority subregistry.
+    void x_Add(const IRegistry& reg,
+               TPriority        prio = ePriority_Default,
+               const string&    name = kEmptyStr);
+
+private:
+    typedef map<string, TFlags> TClearedEntries;
+
+    TClearedEntries         m_ClearedEntries;
+    CRef<CTwoLayerRegistry> m_MainRegistry;
+    CRef<CCompoundRegistry> m_AllRegistries;
+    set<string>             m_BaseRegNames;
+};
+
+
+class CEnvironmentRegistry; // see <corelib/env_reg.hpp>
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNcbiRegistry --
+///
+/// Define the Registry.
+///
+/// Load, access, modify and store runtime information (usually used
+/// to work with configuration files).
+
+class NCBI_XNCBI_EXPORT CNcbiRegistry : public CCompoundRWRegistry
+{
+public:
+    enum ECompatFlags {
+        eTransient   = fTransient,
+        ePersistent  = fPersistent,
+        eOverride    = fOverride,
+        eNoOverride  = fNoOverride,
+        eTruncate    = fTruncate,
+        eNoTruncate  = fNoTruncate
+    };
+
+    /// Constructor.
+    CNcbiRegistry(void);
+
+    /// Constructor.
+    ///
+    /// @param is
+    ///   Input stream to load the Registry from.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
+    /// @param flags
+    ///   How parameters are stored. The default is to store all parameters as
+    ///   persistent unless the  "eTransient" flag is set in which case the
+    ///   newly retrieved parameters are stored as transient.
+    /// @sa
+    ///   Read()
+    CNcbiRegistry(CNcbiIstream& is, TFlags flags = 0);
+
+    ~CNcbiRegistry();
+
+    /// Attempt to load a systemwide configuration file (.ncbirc on
+    /// Unix, ncbi.ini on Windows) as a low-priority registry, as long
+    /// as the following conditions all hold:
+    /// - fWithNcbirc is set in FLAGS.
+    /// - The environment variable NCBI_DONT_USE_NCBIRC is NOT set.
+    /// - The registry's existing contents do NOT contain a setting of
+    ///   [NCBI]DONT_USE_NCBIRC (case-insensitive).
+    /// @param flags
+    ///   Registry flags to be applied when reading the system
+    ///   configuration file.  Must also contain fWithNcbirc (which
+    ///   will be filtered out before calling any other methods) for
+    ///   the call to have any effect.
+    /// @return
+    ///   TRUE if the system configuration file was successfully read
+    ///   and parsed; FALSE otherwise.
+    bool IncludeNcbircIfAllowed(TFlags flags = fWithNcbirc);
+
+    /// Predefined subregistries' names.
+    static const char* sm_EnvRegName;
+    static const char* sm_FileRegName;
+    static const char* sm_OverrideRegName;
+    static const char* sm_SysRegName;
+
+protected:
+    void x_Clear(TFlags flags);
+    void x_Read(CNcbiIstream& is, TFlags flags);
+
 private:
     void x_Init(void);
 
     enum EReservedPriority {
         ePriority_File = ePriority_Reserved,
+        ePriority_Overrides,
         ePriority_Environment,
-        ePriority_Main
+        ePriority_RuntimeOverrides
     };
 
-    typedef map<string, TFlags> TClearedEntries;
-
-    TClearedEntries            m_ClearedEntries;
-    CRef<CTwoLayerRegistry>    m_MainRegistry;
     CRef<CEnvironmentRegistry> m_EnvRegistry;
     CRef<CTwoLayerRegistry>    m_FileRegistry;
+    CRef<IRWRegistry>          m_OverrideRegistry;
     CRef<IRWRegistry>          m_SysRegistry;
-    CRef<CCompoundRegistry>    m_AllRegistries;
+    unsigned int               m_RuntimeOverrideCount;
 };
 
 

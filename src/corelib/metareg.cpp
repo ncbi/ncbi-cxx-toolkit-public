@@ -80,7 +80,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
         TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
                                                      IRWRegistry::eRead);
         if ((reload_flags & fKeepContents)  ||  registry->Empty(rflags)) {
-            registry->Read(ifs, reg_flags);
+            registry->Read(ifs, reg_flags | IRegistry::fJustCore);
         } else {
             // Go through a temporary so errors (exceptions) won't
             // cause *registry to be incomplete.
@@ -91,13 +91,19 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
             str.seekg(0);
             bool was_modified = registry->Modified(rflags);
             registry->Clear(rflags);
-            registry->Read(str, reg_flags);
+            registry->Read(str, reg_flags | IRegistry::fJustCore);
             if ( !was_modified ) {
                 registry->SetModifiedFlag(false, rflags);
             }
         }
     } else {
         registry.Reset(new CNcbiRegistry(ifs, reg_flags));
+    }
+
+    CCompoundRWRegistry* crwreg
+        = dynamic_cast<CCompoundRWRegistry*>(registry.GetPointer());
+    if (crwreg) {
+        crwreg->LoadBaseRegistries(reg_flags, reload_flags);
     }
 
     timestamp = new_timestamp;
@@ -149,8 +155,13 @@ CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
                 reg->SetModifiedFlag(false, rflags);
             }
         }
-        reg->Read(str, reg_flags);
+        reg->Read(str, reg_flags | IRegistry::fJustCore);
         scratch_entry.registry.Reset(reg);
+        CCompoundRWRegistry* crwreg = dynamic_cast<CCompoundRWRegistry*>(reg);
+        if (crwreg) {
+            REG_GUARD.Release();
+            crwreg->LoadBaseRegistries(reg_flags, flags);
+        }
         return scratch_entry;
     }
     return entry;

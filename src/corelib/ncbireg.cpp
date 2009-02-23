@@ -186,7 +186,7 @@ void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
 bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 {
     x_CheckFlags("IRegistry::Write", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared);
     if ( !(flags & fTransient) ) {
         flags |= fPersistent;
     }
@@ -266,7 +266,7 @@ bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
 {
     x_CheckFlags("IRegistry::HasEntry", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -423,7 +423,7 @@ void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
                                  TFlags flags) const
 {
     x_CheckFlags("IRegistry::EnumerateEntries", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -512,7 +512,7 @@ void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::Read", flags,
                  fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
-                 | fWithNcbirc);
+                 | fWithNcbirc | fJustCore | fCountCleared);
     x_Read(is, flags);
 }
 
@@ -601,6 +601,7 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
                 }
             
                 NStr::TruncateSpacesInPlace(value);
+#if 0 // historic behavior; could inappropriately expose entries in lower layers
                 if (value.empty()) {
                     if ( !(flags & fNoOverride) ) {
                         Set(section, name, kEmptyStr, flags, comment);
@@ -608,6 +609,7 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
                     }
                     break;
                 }
+#endif
                 // read continuation lines, if any
                 string cont;
                 while (s_Backslashed(value, value.size())
@@ -647,7 +649,20 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
                                 + str + "'", line);
 
                 }
-                Set(section, name, value, flags, comment);
+                TFlags set_flags = flags;
+                if (NStr::EqualNocase(section, "NCBI")
+                    &&  NStr::EqualNocase(name, ".Inherits")
+                    &&  HasEntry(section, name, flags)) {
+                    const string& old_value = Get(section, name, flags);
+                    if (flags & fNoOverride) {
+                        value = old_value + ' ' + value;
+                        set_flags &= ~fNoOverride;
+                    } else {
+                        value += ' ';
+                        value += old_value;
+                    }
+                }
+                Set(section, name, value, set_flags, comment);
                 comment.erase();
             }
             }
@@ -676,7 +691,8 @@ bool IRWRegistry::Set(const string& section, const string& name,
                       const string& comment)
 {
     x_CheckFlags("IRWRegistry::Set", flags,
-                 fPersistent | fNoOverride | fTruncate | fInternalSpaces);
+                 fPersistent | fNoOverride | fTruncate | fInternalSpaces
+                 | fCountCleared);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRWRegistry::Set: bad section name \""
@@ -777,17 +793,33 @@ const string& CMemoryRegistry::x_Get(const string& section, const string& name,
 }
 
 bool CMemoryRegistry::x_HasEntry(const string& section, const string& name,
-                                 TFlags) const
+                                 TFlags flags) const
 {
     TSections::const_iterator sit = m_Sections.find(section);
     if (sit == m_Sections.end()) {
         return false;
     } else if (name.empty()) {
-        return true;
+        if ((flags & fCountCleared) != 0) {
+            return true;
+        } else {
+            // sections with only empty entries don't count
+            ITERATE (TEntries, eit, sit->second.entries) {
+                if ( !eit->second.value.empty() ) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
     const TEntries& entries = sit->second.entries;
     TEntries::const_iterator eit = entries.find(name);
-    return eit != entries.end();
+    if (eit == entries.end()) {
+        return false;
+    } else if ((flags & fCountCleared) != 0) {
+        return true;
+    } else {
+        return !eit->second.value.empty();
+    }
 }
 
 
@@ -815,7 +847,8 @@ void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
 {
     if (section.empty()) {
         ITERATE (TSections, it, m_Sections) {
-            if (s_IsNameSection(it->first, flags)) {
+            if (s_IsNameSection(it->first, flags)
+                &&  HasEntry(it->first, kEmptyStr, flags)) {
                 entries.push_back(it->first);
             }
         }
@@ -823,7 +856,9 @@ void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
         TSections::const_iterator sit = m_Sections.find(section);
         if (sit != m_Sections.end()) {
             ITERATE (TEntries, it, sit->second.entries) {
-                if (s_IsNameSection(it->first, flags)) {
+                if (s_IsNameSection(it->first, flags)
+                    &&  ((flags & fCountCleared) != 0
+                         ||  !it->second.value.empty() )) {
                     entries.push_back(it->first);
                 }
             }
@@ -842,6 +877,8 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
                             const string& value, TFlags flags,
                             const string& comment)
 {
+    _TRACE(this << ": [" << section << ']' << name << " = " << value);
+#if 0 // historic behavior; could inappropriately expose entries in lower layers
     if (value.empty()) {
         if (flags & fNoOverride) {
             return false;
@@ -862,7 +899,9 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
             }
             return true;
         }
-    } else {
+    } else
+#endif
+    {
         SEntry& entry = m_Sections[section].entries[name];
 #if 0
         if (entry.value == value) {
@@ -974,8 +1013,9 @@ CConstRef<IRegistry> CCompoundRegistry::FindByContents(const string& section,
                                                        const string& entry,
                                                        TFlags flags) const
 {
+    TFlags has_entry_flags = (flags | fCountCleared) & ~fJustCore;
     REVERSE_ITERATE(TPriorityMap, it, m_PriorityMap) {
-        if (it->second->HasEntry(section, entry, flags & ~fJustCore)) {
+        if (it->second->HasEntry(section, entry, has_entry_flags)) {
             return it->second;
         }
     }
@@ -1250,45 +1290,63 @@ bool CTwoLayerRegistry::x_SetComment(const string& comment,
 
 //////////////////////////////////////////////////////////////////////
 //
-// CNcbiRegistry --  elaborate general-purpose setup
+// CNcbiRegistry -- compound R/W registry with extra policy and
+// compatibility features.  (See below for CCompoundRWRegistry,
+// which has been factored out.)
 
-const char* CNcbiRegistry::sm_MainRegName = ".main";
-const char* CNcbiRegistry::sm_EnvRegName  = ".env";
-const char* CNcbiRegistry::sm_FileRegName = ".file";
-const char* CNcbiRegistry::sm_SysRegName  = ".ncbirc";
+const char* CNcbiRegistry::sm_EnvRegName      = ".env";
+const char* CNcbiRegistry::sm_FileRegName     = ".file";
+const char* CNcbiRegistry::sm_OverrideRegName = ".overrides";
+const char* CNcbiRegistry::sm_SysRegName      = ".ncbirc";
 
 inline
 void CNcbiRegistry::x_Init(void)
 {
-    m_AllRegistries.Reset(new CCompoundRegistry);
-    m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
-
-    m_MainRegistry.Reset(new CTwoLayerRegistry);
-    m_AllRegistries->Add(*m_MainRegistry, ePriority_Main, sm_MainRegName);
-
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app) {
         m_EnvRegistry.Reset(new CEnvironmentRegistry(app->SetEnvironment()));
     } else {
         m_EnvRegistry.Reset(new CEnvironmentRegistry);
     }
-    m_AllRegistries->Add(*m_EnvRegistry, ePriority_Environment, sm_EnvRegName);
+    x_Add(*m_EnvRegistry, ePriority_Environment, sm_EnvRegName);
 
     m_FileRegistry.Reset(new CTwoLayerRegistry);
-    m_AllRegistries->Add(*m_FileRegistry, ePriority_File, sm_FileRegName);
+    x_Add(*m_FileRegistry, ePriority_File, sm_FileRegName);
 
     m_SysRegistry.Reset(new CTwoLayerRegistry);
-    m_AllRegistries->Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
+    x_Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
+
+    const char* override_path = getenv("NCBI_CONFIG_OVERRIDES");
+    if (override_path  &&  *override_path) {
+        m_OverrideRegistry.Reset(new CCompoundRWRegistry);
+        CMetaRegistry::SEntry entry
+            = CMetaRegistry::Load(override_path, CMetaRegistry::eName_AsIs,
+                                  0, 0, m_OverrideRegistry.GetPointer());
+        if (entry.registry) {
+            if (entry.registry != m_OverrideRegistry) {
+                ERR_POST_X(5, Warning << "Resetting m_OverrideRegistry");
+                m_OverrideRegistry.Reset(entry.registry);
+            }
+            x_Add(*m_OverrideRegistry, ePriority_Overrides, sm_OverrideRegName);
+        } else {
+            ERR_POST_ONCE(Warning
+                          << "NCBI_CONFIG_OVERRIDES names nonexistent file "
+                          << override_path);
+            m_OverrideRegistry.Reset();
+        }
+    }
 }
 
 
 CNcbiRegistry::CNcbiRegistry(void)
+    : m_RuntimeOverrideCount(0)
 {
     x_Init();
 }
 
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
+    : m_RuntimeOverrideCount(0)
 {
     x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,
                  fTransient | fInternalSpaces | fWithNcbirc);
@@ -1342,20 +1400,72 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
 }
 
 
-CNcbiRegistry::TPriority CNcbiRegistry::GetCoreCutoff(void) const
+void CNcbiRegistry::x_Clear(TFlags flags) // XXX - should this do more?
+{
+    CCompoundRWRegistry::x_Clear(flags);
+    m_FileRegistry->Clear(flags);
+}
+
+
+void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+{
+    // Normally, all settings should go to the main portion.  However,
+    // loading an initial configuration file should instead go to the
+    // file portion so that environment settings can take priority.
+    if (FindByName(sm_MainRegName)->Empty()  &&  m_FileRegistry->Empty()) {
+        m_FileRegistry->Read(is, flags);
+        LoadBaseRegistries(flags);
+        IncludeNcbircIfAllowed(flags);
+    } else if ((flags & fNoOverride) == 0) { // ensure proper layering
+        CRef<CCompoundRWRegistry> crwreg(new CCompoundRWRegistry);
+        crwreg->Read(is, flags);
+        ++m_RuntimeOverrideCount;
+        x_Add(*crwreg, ePriority_RuntimeOverrides + m_RuntimeOverrideCount,
+              sm_OverrideRegName + NStr::IntToString(m_RuntimeOverrideCount));
+    } else {
+        // This will only affect the main registry, but still needs to
+        // go through CCompoundRWRegistry::x_Set.
+        CCompoundRWRegistry::x_Read(is, flags);
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+// CCompoundRWRegistry -- general-purpose setup
+
+const char* CCompoundRWRegistry::sm_MainRegName       = ".main";
+const char* CCompoundRWRegistry::sm_BaseRegNamePrefix = ".base:";
+
+
+CCompoundRWRegistry::CCompoundRWRegistry(void)
+    : m_MainRegistry(new CTwoLayerRegistry),
+      m_AllRegistries(new CCompoundRegistry)
+{
+    x_Add(*m_MainRegistry, CCompoundRegistry::ePriority_Max - 1,
+          sm_MainRegName);
+}
+
+
+CCompoundRWRegistry::~CCompoundRWRegistry()
+{
+}
+
+
+CCompoundRWRegistry::TPriority CCompoundRWRegistry::GetCoreCutoff(void) const
 {
     return m_AllRegistries->GetCoreCutoff();
 }
 
 
-void CNcbiRegistry::SetCoreCutoff(TPriority prio)
+void CCompoundRWRegistry::SetCoreCutoff(TPriority prio)
 {
     m_AllRegistries->SetCoreCutoff(prio);
 }
 
 
-void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
-                        const string& name)
+void CCompoundRWRegistry::Add(const IRegistry& reg, TPriority prio,
+                              const string& name)
 {
     if (name.size() > 1  &&  name[0] == '.') {
         NCBI_THROW2(CRegistryException, eErr,
@@ -1366,11 +1476,11 @@ void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
                       << "Reserved priority value automatically downgraded.");
         prio = ePriority_MaxUser;
     }
-    m_AllRegistries->Add(reg, prio, name);
+    x_Add(reg, prio, name);
 }
 
 
-void CNcbiRegistry::Remove(const IRegistry& reg)
+void CCompoundRWRegistry::Remove(const IRegistry& reg)
 {
     if (&reg == m_MainRegistry.GetPointer()) {
         NCBI_THROW2(CRegistryException, eErr,
@@ -1382,33 +1492,88 @@ void CNcbiRegistry::Remove(const IRegistry& reg)
 }
 
 
-CConstRef<IRegistry> CNcbiRegistry::FindByName(const string& name) const
+CConstRef<IRegistry> CCompoundRWRegistry::FindByName(const string& name) const
 {
     return m_AllRegistries->FindByName(name);
 }
 
 
-CConstRef<IRegistry> CNcbiRegistry::FindByContents(const string& section,
-                                                   const string& entry,
-                                                   TFlags        flags) const
+CConstRef<IRegistry> CCompoundRWRegistry::FindByContents(const string& section,
+                                                         const string& entry,
+                                                         TFlags flags) const
 {
     return m_AllRegistries->FindByContents(section, entry, flags);
 }
 
 
-bool CNcbiRegistry::x_Empty(TFlags flags) const
+bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags)
+{
+    if (flags & fJustCore) {
+        return false;
+    }
+
+    list<string> names;
+    {{
+        string s = m_MainRegistry->Get("NCBI", ".Inherits");
+        if (s.empty()) {
+            if (dynamic_cast<CNcbiRegistry*>(this) != NULL) {
+                _TRACE("LoadBaseRegistries(" << this
+                       << "): trying file registry");
+                s = FindByName(CNcbiRegistry::sm_FileRegName)
+                    ->Get("NCBI", ".Inherits");
+            }
+            if (s.empty()) {
+                return false;
+            }
+        }
+        _TRACE("LoadBaseRegistries(" << this << "): using " << s);
+        NStr::Split(s, ", ", names);
+    }}
+
+    typedef pair<string, CRef<IRWRegistry> > TNewBase;
+    typedef vector<TNewBase> TNewBases;
+    TNewBases bases;
+    SIZE_TYPE initial_num_bases = m_BaseRegNames.size();
+
+    ITERATE (list<string>, it, names) {
+        if (m_BaseRegNames.find(*it) != m_BaseRegNames.end()) {
+            continue;
+        }
+        CMetaRegistry::ENameStyle style
+            = ((it->find('.') == NPOS)
+               ? CMetaRegistry::eName_Ini : CMetaRegistry::eName_AsIs);
+        CRef<CCompoundRWRegistry> reg2(new CCompoundRWRegistry);
+        CMetaRegistry::SEntry entry2
+            = CMetaRegistry::Load(*it, style, metareg_flags, flags,
+                                  reg2.GetPointer());
+        if (entry2.registry) {
+            m_BaseRegNames.insert(*it);
+            bases.push_back(TNewBase(*it, entry2.registry));
+        }
+    }
+
+    for (SIZE_TYPE i = 0;  i < bases.size();  ++i) {
+        x_Add(*bases[i].second, ePriority_MaxUser - initial_num_bases - i,
+              sm_BaseRegNamePrefix + bases[i].first);
+    }
+
+    return !bases.empty();
+}
+
+
+bool CCompoundRWRegistry::x_Empty(TFlags flags) const
 {
     return m_AllRegistries->Empty(flags);
 }
 
 
-bool CNcbiRegistry::x_Modified(TFlags flags) const
+bool CCompoundRWRegistry::x_Modified(TFlags flags) const
 {
     return m_AllRegistries->Modified(flags);
 }
 
 
-void CNcbiRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
+void CCompoundRWRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 {
     if (modified) {
         m_MainRegistry->SetModifiedFlag(modified, flags);
@@ -1419,8 +1584,9 @@ void CNcbiRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 }
 
 
-const string& CNcbiRegistry::x_Get(const string& section, const string& name,
-                                   TFlags flags) const
+const string& CCompoundRWRegistry::x_Get(const string& section,
+                                         const string& name,
+                                         TFlags flags) const
 {
     TClearedEntries::const_iterator it
         = m_ClearedEntries.find(s_FlatKey(section, name));
@@ -1434,12 +1600,15 @@ const string& CNcbiRegistry::x_Get(const string& section, const string& name,
 }
 
 
-bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
-                               TFlags flags) const
+bool CCompoundRWRegistry::x_HasEntry(const string& section, const string& name,
+                                     TFlags flags) const
 {
     TClearedEntries::const_iterator it
         = m_ClearedEntries.find(s_FlatKey(section, name));
     if (it != m_ClearedEntries.end()) {
+        if ((flags & fCountCleared)  &&  (flags & it->second)) {
+            return true;
+        }
         flags &= ~it->second;
         if ( !(flags & ~fJustCore) ) {
             return false;
@@ -1449,16 +1618,17 @@ bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
 }
 
 
-const string& CNcbiRegistry::x_GetComment(const string& section,
-                                          const string& name,
-                                          TFlags flags) const
+const string& CCompoundRWRegistry::x_GetComment(const string& section,
+                                                const string& name,
+                                                TFlags flags) const
 {
     return m_AllRegistries->GetComment(section, name, flags);
 }
 
 
-void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
-                                TFlags flags) const
+void CCompoundRWRegistry::x_Enumerate(const string& section,
+                                      list<string>& entries,
+                                      TFlags flags) const
 {
     set<string> accum;
     REVERSE_ITERATE (CCompoundRegistry::TPriorityMap, it,
@@ -1471,7 +1641,8 @@ void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
         ITERATE (list<string>, it2, tmp) {
             // avoid reporting cleared entries
             TClearedEntries::const_iterator ceci
-                = m_ClearedEntries.find(s_FlatKey(section, *it2));
+                = (flags & fCountCleared) ? m_ClearedEntries.end() 
+                : m_ClearedEntries.find(s_FlatKey(section, *it2));
             if (ceci == m_ClearedEntries.end()
                 ||  (flags & ~fJustCore & ~ceci->second)) {
                 accum.insert(*it2);
@@ -1484,30 +1655,35 @@ void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
 }
 
 
-void CNcbiRegistry::x_ChildLockAction(FLockAction action)
+void CCompoundRWRegistry::x_ChildLockAction(FLockAction action)
 {
     ((*m_AllRegistries).*action)();
 }
 
 
-void CNcbiRegistry::x_Clear(TFlags flags) // XXX - should this do more?
+void CCompoundRWRegistry::x_Clear(TFlags flags) // XXX - should this do more?
 {
     m_MainRegistry->Clear(flags);
-    m_FileRegistry->Clear(flags);
+
+    ITERATE (set<string>, it, m_BaseRegNames) {
+        Remove(*FindByName(sm_BaseRegNamePrefix + *it));
+    }
+    m_BaseRegNames.clear();
 }
 
 
-bool CNcbiRegistry::x_Set(const string& section, const string& name,
-                          const string& value, TFlags flags,
-                          const string& comment)
+bool CCompoundRWRegistry::x_Set(const string& section, const string& name,
+                                const string& value, TFlags flags,
+                                const string& comment)
 {
     TFlags flags2 = (flags & fPersistent) ? flags : (flags | fTransient);
-    bool was_empty = Get(section, name, flags).empty();
+    flags2 &= fLayerFlags;
     _TRACE('[' << section << ']' << name << " = " << value);
-    if ((flags & fNoOverride)  &&  !was_empty) {
+    if ((flags & fNoOverride)  &&  HasEntry(section, name, flags)) {
         return false;
     }
     if (value.empty()) {
+        bool was_empty = Get(section, name, flags).empty();
         m_MainRegistry->Set(section, name, value, flags, comment);
         m_ClearedEntries[s_FlatKey(section, name)] |= flags2;
         return !was_empty;
@@ -1524,27 +1700,37 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
 }
 
 
-bool CNcbiRegistry::x_SetComment(const string& comment, const string& section,
-                                 const string& name, TFlags flags)
+bool CCompoundRWRegistry::x_SetComment(const string& comment,
+                                       const string& section,
+                                       const string& name, TFlags flags)
 {
     return m_MainRegistry->SetComment(comment, section, name, flags);
 }
 
 
-void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+void CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags)
 {
-    // Normally, all settings should go to the main portion.  However,
-    // loading an initial configuration file should instead go to the
-    // file portion so that environment settings can take priority.
-    if (m_MainRegistry->Empty()  &&  m_FileRegistry->Empty()) {
-        m_FileRegistry->Read(is, flags);
-        IncludeNcbircIfAllowed(flags);
+    TFlags lbr_flags = flags;
+    if ((flags & fNoOverride) == 0  &&  !Empty(fPersistent) ) {
+        lbr_flags |= fOverride;
     } else {
-        // This will only affect the main registry, but still needs to
-        // go through CNcbiRegistry::x_Set.
-        IRWRegistry::x_Read(is, flags);
+        lbr_flags &= ~fOverride;
     }
+    IRWRegistry::x_Read(in, flags);
+    LoadBaseRegistries(lbr_flags);
 }
+
+
+void CCompoundRWRegistry::x_Add(const IRegistry& reg, TPriority prio,
+                                const string& name)
+{
+    m_AllRegistries->Add(reg, prio, name);
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+// CRegistryException -- error reporting
 
 const char* CRegistryException::GetErrCodeString(void) const
 {
