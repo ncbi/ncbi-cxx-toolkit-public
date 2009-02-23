@@ -89,6 +89,10 @@ bool   GetSeqLength(const CRef< CSeq_entry >& seqEntry, int& len);
 
 NCBI_CDUTILS_EXPORT 
 void   NcbistdaaToNcbieaaString(const vector< char >& vec, string* str);  //  StringFromStdaa(...)
+//  Return false if there was an exception trying to convert the input string.
+//  Returns true otherwise, including for the case of an empty input string.
+NCBI_CDUTILS_EXPORT 
+bool NcbieaaToNcbistdaaString(const std::string& str, vector < char >& vec);
 NCBI_CDUTILS_EXPORT 
 bool   GetNcbieaaString(const CBioseq& bioseq, string& str);
 NCBI_CDUTILS_EXPORT

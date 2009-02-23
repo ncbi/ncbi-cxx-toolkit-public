@@ -268,6 +268,22 @@ void  NcbistdaaToNcbieaaString(const std::vector < char >& vec, std::string *str
     }
 }
 
+// for converting ncbieaa sequences to ncbistdaa sequences
+bool NcbieaaToNcbistdaaString(const std::string& str, vector < char >& vec)
+{
+    bool result = true;
+    vec.clear();
+    if (str.size() > 0) {
+        vec.reserve(str.size());
+        try {
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbieaa, 0, str.size(), vec, CSeqUtil::e_Ncbistdaa);
+        } catch (exception& e) {
+            result = false;
+        }
+    }
+    return result;
+}
+
 //  some stuff from cdt_manipcd
 //  False if the seq_entry is not a single bioseq.
 bool GetNcbieaaString(const CRef< CSeq_entry >& Seq, string & Str) 
