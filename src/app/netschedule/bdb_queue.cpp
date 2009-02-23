@@ -2581,7 +2581,7 @@ CQueue::GetJobDescr(unsigned   job_id,
             if (output)
                 *output = job.GetOutput();
             if (err_msg && last_run)
-                last_run->GetErrorMsg();
+                *err_msg = last_run->GetErrorMsg();
             if (progress_msg)
                 *progress_msg = job.GetProgressMsg();
 

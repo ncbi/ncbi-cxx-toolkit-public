@@ -1601,25 +1601,11 @@ void CNetScheduleHandler::ProcessStatus()
     if (status != CNetScheduleAPI::eJobNotFound) {
             buf += " ";
             buf += NStr::IntToString(ret_code);
+            buf += " \""   + NStr::PrintableString(output) +
+                   "\" \"" + NStr::PrintableString(error) +
+                   "\" \"" + NStr::PrintableString(input) +
+                   "\"";
     }
-    switch (status) {
-    case CNetScheduleAPI::eDone:
-        buf += string(" \"") + output + "\" \"\" \"" + input + "\"";
-        break;
-
-    case CNetScheduleAPI::eRunning:
-    case CNetScheduleAPI::eReturned:
-    case CNetScheduleAPI::ePending:
-        buf += string(" \"\" \"\" \"") + input + "\"";
-        break;
-
-    case CNetScheduleAPI::eFailed:
-        buf += string(" \"") + output + "\" \"" + error + "\" \"" + input + "\"";
-        break;
-    default:
-        break;
-    }
-
     WriteOK(buf);
 }
 
