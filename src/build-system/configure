@@ -5792,20 +5792,60 @@ fi
       # distcc is too clever and special-cases conftest.*, so use an
       # alternate name.
       echo 'int f() { return 0; }' > distcctest.c
-      if $DISTCC $CC -c distcctest.c; then
-         CC_WRAPPER="$DISTCC $CC_WRAPPER"
-      else
-         { echo "$as_me:$LINENO: WARNING: $DISTCC evidently incompatible with $CC" >&5
-echo "$as_me: WARNING: $DISTCC evidently incompatible with $CC" >&2;}
+      echo "$as_me:$LINENO: checking whether any distcc servers are available" >&5
+echo $ECHO_N "checking whether any distcc servers are available... $ECHO_C" >&6
+if test "${ncbi_cv_prog_distcc_servers+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -x /usr/bin/cc; then testcc=/usr/bin/cc; else testcc=$CC; fi
+          if DISTCC_FALLBACK=0 $DISTCC $testcc -c distcctest.c \
+              2>&5 ; then
+             ncbi_cv_prog_distcc_servers=yes
+          else
+             ncbi_cv_prog_distcc_servers=no
+          fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_distcc_servers" >&5
+echo "${ECHO_T}$ncbi_cv_prog_distcc_servers" >&6
+      if test "$ncbi_cv_prog_distcc_servers" = no; then
          $as_unset DISTCC || test "${DISTCC+set}" != set || { DISTCC=; export DISTCC; }
       fi
-      mv distcctest.c distcctest.cpp
-      if $DISTCC $CXX -c distcctest.cpp; then
-         CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
-      else
-         { echo "$as_me:$LINENO: WARNING: $DISTCC evidently incompatible with $CXX" >&5
-echo "$as_me: WARNING: $DISTCC evidently incompatible with $CXX" >&2;}
-         $as_unset DISTCC || test "${DISTCC+set}" != set || { DISTCC=; export DISTCC; }
+      if test -n "$DISTCC" ; then
+         echo "$as_me:$LINENO: checking whether $DISTCC is compatible with $CC" >&5
+echo $ECHO_N "checking whether $DISTCC is compatible with $CC... $ECHO_C" >&6
+if test "${ncbi_cv_prog_distcc_vs_cc+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if $DISTCC $CC -c distcctest.c 2>&5 ; then
+                ncbi_cv_prog_distcc_vs_cc=yes
+             else
+                ncbi_cv_prog_distcc_vs_cc=no
+             fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_distcc_vs_cc" >&5
+echo "${ECHO_T}$ncbi_cv_prog_distcc_vs_cc" >&6
+         if test "$ncbi_cv_prog_distcc_vs_cc" = no; then
+            $as_unset DISTCC || test "${DISTCC+set}" != set || { DISTCC=; export DISTCC; }
+         fi
+      fi
+      if test -n "$DISTCC" ; then
+         echo "$as_me:$LINENO: checking whether $DISTCC is compatible with $CXX" >&5
+echo $ECHO_N "checking whether $DISTCC is compatible with $CXX... $ECHO_C" >&6
+if test "${ncbi_cv_prog_distcc_vs_cxx+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  mv distcctest.c distcctest.cpp
+             if $DISTCC $CXX -c distcctest.cpp 2>&5 ; then
+                ncbi_cv_prog_distcc_vs_cxx=yes
+             else
+                ncbi_cv_prog_distcc_vs_cxx=no
+             fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_distcc_vs_cxx" >&5
+echo "${ECHO_T}$ncbi_cv_prog_distcc_vs_cxx" >&6
+         if test "$ncbi_cv_prog_distcc_vs_cxx" = no; then
+            $as_unset DISTCC || test "${DISTCC+set}" != set || { DISTCC=; export DISTCC; }
+         fi
       fi
       rm -f distcctest.*
    elif test "$with_distcc" = "yes" ; then

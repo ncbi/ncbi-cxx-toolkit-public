@@ -1663,18 +1663,42 @@ if test "$with_distcc" != "no"; then
       # distcc is too clever and special-cases conftest.*, so use an
       # alternate name.
       echo 'int f() { return 0; }' > distcctest.c
-      if $DISTCC $CC -c distcctest.c; then
-         CC_WRAPPER="$DISTCC $CC_WRAPPER"
-      else
-         AC_MSG_WARN([$DISTCC evidently incompatible with $CC])
+      AC_CACHE_CHECK([whether any distcc servers are available],
+         ncbi_cv_prog_distcc_servers,
+         [if test -x /usr/bin/cc; then testcc=/usr/bin/cc; else testcc=$CC; fi
+          if DISTCC_FALLBACK=0 $DISTCC $testcc -c distcctest.c \
+              2>&AS_MESSAGE_LOG_FD ; then
+             ncbi_cv_prog_distcc_servers=yes
+          else
+             ncbi_cv_prog_distcc_servers=no
+          fi])
+      if test "$ncbi_cv_prog_distcc_servers" = no; then
          AS_UNSET(DISTCC)
       fi
-      mv distcctest.c distcctest.cpp
-      if $DISTCC $CXX -c distcctest.cpp; then
-         CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
-      else
-         AC_MSG_WARN([$DISTCC evidently incompatible with $CXX])
-         AS_UNSET(DISTCC)
+      if test -n "$DISTCC" ; then
+         AC_CACHE_CHECK([whether $DISTCC is compatible with $CC],
+            ncbi_cv_prog_distcc_vs_cc,
+            [if $DISTCC $CC -c distcctest.c 2>&AS_MESSAGE_LOG_FD ; then
+                ncbi_cv_prog_distcc_vs_cc=yes
+             else
+                ncbi_cv_prog_distcc_vs_cc=no
+             fi])
+         if test "$ncbi_cv_prog_distcc_vs_cc" = no; then
+            AS_UNSET(DISTCC)
+         fi
+      fi
+      if test -n "$DISTCC" ; then
+         AC_CACHE_CHECK([whether $DISTCC is compatible with $CXX],
+            ncbi_cv_prog_distcc_vs_cxx,
+            [mv distcctest.c distcctest.cpp
+             if $DISTCC $CXX -c distcctest.cpp 2>&AS_MESSAGE_LOG_FD ; then
+                ncbi_cv_prog_distcc_vs_cxx=yes
+             else
+                ncbi_cv_prog_distcc_vs_cxx=no
+             fi])
+         if test "$ncbi_cv_prog_distcc_vs_cxx" = no; then
+            AS_UNSET(DISTCC)
+         fi
       fi
       rm -f distcctest.*
    elif test "$with_distcc" = "yes" ; then
