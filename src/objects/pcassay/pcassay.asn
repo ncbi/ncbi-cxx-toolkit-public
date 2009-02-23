@@ -136,7 +136,7 @@ PC-AssayDescription ::= SEQUENCE {
     xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
 
     -- Allowed Assay Result Types
-    results           SEQUENCE OF PC-ResultType,             -- Result Definitions (vector)
+    results           SEQUENCE OF PC-ResultType    OPTIONAL,             -- Result Definitions (vector)
 
     -- Additional Information
     pub               SEQUENCE OF Pub                 OPTIONAL, -- Depositor provided publications for this assay
