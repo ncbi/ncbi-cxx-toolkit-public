@@ -118,7 +118,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #endif
     if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app ) {
+        if ( app  &&  app->HasLoadedConfig() ) {
             const string& str = app->GetConfig().Get(section, variable);
             if ( !str.empty() ) {
                 try {
@@ -197,7 +197,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
 {
     if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app ) {
+        if ( app  &&  app->HasLoadedConfig() ) {
             const string& str = app->GetConfig().Get(section, variable);
             if ( !str.empty() ) {
                 try {
@@ -276,7 +276,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
 {
     if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
-        if ( app ) {
+        if ( app  &&  app->HasLoadedConfig() ) {
             const string& value = app->GetConfig().Get(section, variable);
             if ( !value.empty() ) {
 #ifdef _DEBUG
