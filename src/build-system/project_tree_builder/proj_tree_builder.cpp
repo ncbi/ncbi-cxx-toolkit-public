@@ -722,14 +722,19 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     string proj_id = k->second.front();
     {{
         CProjKey proj_key(CProjKey::eApp, proj_id);
-        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
-            PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                        "Application " << proj_id << " already defined at "
-                        << tree->m_Projects[proj_key].m_SourcesBaseDir);
-            if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
-                return CProjKey();
+        CProjectItemsTree::TProjects::const_iterator z = tree->m_Projects.find(proj_key);
+        if (z != tree->m_Projects.end()) {
+            if (z->second.m_MakeType < eMakeType_Excluded) {
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "Application " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
+                    return CProjKey();
+                } else {
+                    GetApp().RegisterSuspiciousProject(proj_key);
+                }
             } else {
-                GetApp().RegisterSuspiciousProject(proj_key);
+                tree->m_Projects.erase(proj_key);
             }
         }
     }}
@@ -1013,15 +1018,21 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     string proj_id = k->second.front();
     {{
         CProjKey proj_key(CProjKey::eLib, proj_id);
-        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
-            PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                        "Library " << proj_id << " already defined at "
-                        << tree->m_Projects[proj_key].m_SourcesBaseDir);
-            if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
-                return CProjKey();
+        CProjectItemsTree::TProjects::const_iterator z = tree->m_Projects.find(proj_key);
+        if (z != tree->m_Projects.end()) {
+            if (z->second.m_MakeType < eMakeType_Excluded) {
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "Library " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
+                    return CProjKey();
+                } else {
+                    GetApp().RegisterSuspiciousProject(proj_key);
+                }
             } else {
-                GetApp().RegisterSuspiciousProject(proj_key);
+                tree->m_Projects.erase(proj_key);
             }
+            
         }
     }}
 
@@ -1231,18 +1242,23 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     string proj_id = k->second.front();
     {{
         CProjKey proj_key(CProjKey::eDll, proj_id);
-        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
-            const CProjItem& item = tree->m_Projects[proj_key];
-            if (item.m_HostedLibs.size() != 1 || item.m_HostedLibs.front() != proj_id) {
-                string full_makefile_path = applib_mfilepath;
-                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "DLL " << proj_id << " already defined at "
-                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
-                if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
-                    return CProjKey();
-                } else {
-                    GetApp().RegisterSuspiciousProject(proj_key);
+        CProjectItemsTree::TProjects::const_iterator z = tree->m_Projects.find(proj_key);
+        if (z != tree->m_Projects.end()) {
+            if (z->second.m_MakeType < eMakeType_Excluded) {
+                const CProjItem& item = tree->m_Projects[proj_key];
+                if (item.m_HostedLibs.size() != 1 || item.m_HostedLibs.front() != proj_id) {
+                    string full_makefile_path = applib_mfilepath;
+                    PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                                "DLL " << proj_id << " already defined at "
+                                << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                    if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
+                        return CProjKey();
+                    } else {
+                        GetApp().RegisterSuspiciousProject(proj_key);
+                    }
                 }
+            } else {
+                tree->m_Projects.erase(proj_key);
             }
         }
     }}
@@ -1599,15 +1615,20 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     string proj_id = k->second.front();
     {{
         CProjKey proj_key(CProjKey::eMsvc, proj_id);
-        if (tree->m_Projects.find(proj_key) != tree->m_Projects.end()) {
-            string full_makefile_path = applib_mfilepath;
-            PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                        "MSVC project " << proj_id << " already defined at "
-                        << tree->m_Projects[proj_key].m_SourcesBaseDir);
-            if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
-                return CProjKey();
+        CProjectItemsTree::TProjects::const_iterator z = tree->m_Projects.find(proj_key);
+        if (z != tree->m_Projects.end()) {
+            if (z->second.m_MakeType < eMakeType_Excluded) {
+                string full_makefile_path = applib_mfilepath;
+                PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
+                            "MSVC project " << proj_id << " already defined at "
+                            << tree->m_Projects[proj_key].m_SourcesBaseDir);
+                if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
+                    return CProjKey();
+                } else {
+                    GetApp().RegisterSuspiciousProject(proj_key);
+                }
             } else {
-                GetApp().RegisterSuspiciousProject(proj_key);
+                tree->m_Projects.erase(proj_key);
             }
         }
     }}

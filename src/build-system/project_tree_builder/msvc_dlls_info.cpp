@@ -370,10 +370,10 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
 
         const string& dll_id = *p;
         CProjectItemsTree::TProjects::const_iterator d;
-        d = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
-        if (d == GetApp().GetWholeTree().m_Projects.end()) {
-            d = tree_src.m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
-            if (d == tree_src.m_Projects.end()) {
+        d = tree_src.m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
+        if (d == tree_src.m_Projects.end()) {
+            d = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eDll, dll_id));
+            if (d == GetApp().GetWholeTree().m_Projects.end()) {
                 LOG_POST(Error << "DLL project not found: " << dll_id);
                 continue;
             }
@@ -386,11 +386,10 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         string str_log;
         ITERATE(list<string>, n, dll.m_HostedLibs) {
             const string& lib_id = *n;
-            k = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
-                                                                 lib_id));
-            if (k == GetApp().GetWholeTree().m_Projects.end()) {
-                k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib, lib_id));
-                if (k != tree_src.m_Projects.end()) {
+            k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib,lib_id));
+            if (k == tree_src.m_Projects.end()) {
+                k = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib, lib_id));
+                if (k != GetApp().GetWholeTree().m_Projects.end()) {
                     const CProjItem& lib = k->second;
                     s_AddProjItemToDll(tree_src, lib, &dll);
                     is_empty = false;
