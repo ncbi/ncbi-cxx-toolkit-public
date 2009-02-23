@@ -2586,7 +2586,9 @@ CQueue::GetJobDescr(unsigned   job_id,
                 *progress_msg = job.GetProgressMsg();
 
             return true;
-        } // ?TODO: else if (res == CJob::eJF_DBErr)
+        } else if (res == CJob::eJF_NotFound) {
+            return false;
+        } // else retry, or ?throw exception
     }
 
     return false; // job not found
