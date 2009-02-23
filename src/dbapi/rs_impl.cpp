@@ -275,9 +275,6 @@ size_t CResultSet::Read(void* buf, size_t size)
                 << m_rs->CurrentItemNo());
 		NCBI_DBAPI_THROW( "No available column for Read()" );
     }
-    else {
-		_TRACE("CResultSet: Last column: " << m_column);
-    }
 
     x_CacheItems(m_column - 1);
     m_RowReadType = eReadRaw;
