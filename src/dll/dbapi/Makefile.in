@@ -8,11 +8,9 @@ SUB_PROJ =  \
     ncbi_xdbapi_ctlib \
     ncbi_xdbapi_dblib \
     ncbi_xdbapi_ftds \
-    ncbi_xdbapi_ftds63 \
     ncbi_xdbapi_ftds64 \
     ncbi_xdbapi_ftds64_dblib \
     ncbi_xdbapi_ftds64_odbc \
-    ncbi_xdbapi_ftds8 \
     ncbi_xdbapi_ftds_dblib \
     ncbi_xdbapi_ftds_odbc \
     ncbi_xdbapi_msdblib \

@@ -7,20 +7,20 @@ ulimit -n 1536 > /dev/null 2>&1
 
 
 # driver_list="ftds64_dblib"
-driver_list="ctlib dblib ftds odbc ftds8 ftds_odbc"
+driver_list="ctlib dblib ftds odbc ftds_odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-	server_list="MSDEV1 CLEMENTI"
-	server_mssql="MSDEV1"
+    server_list="MSDEV1 CLEMENTI"
+    server_mssql="MSDEV1"
 
-	server_mssql2005="MSDEV1"
+    server_mssql2005="MSDEV1"
 else
-	# server_list="MS_DEV2"
-	server_list="MS_TEST SYB_TEST"
-	# server_mssql="MS_DEV2"
-	server_mssql="MS_TEST"
+    # server_list="MS_DEV2"
+    server_list="MS_TEST SYB_TEST"
+    # server_mssql="MS_DEV2"
+    server_mssql="MS_TEST"
 
-	server_mssql2005="MS_TEST"
+    server_mssql2005="MS_TEST"
 fi
 
 
@@ -211,24 +211,20 @@ EOF
                 continue
             fi
 
-            if test \( $driver = "ftds8" -o $driver = "ftds_odbc" \) -a $server = $server_mssql2005 ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_conn_policy -lb on -d $driver -S $server (skipped)"
-            else
-                cmd="dbapi_conn_policy -lb on -d $driver -S $server"
-                RunSimpleTest "dbapi_conn_policy"
-            fi
+            cmd="dbapi_conn_policy -lb on -d $driver -S $server"
+            RunSimpleTest "dbapi_conn_policy"
 
             # Do not run dbapi_bcp and dbapi_testspeed on SunOS Intel
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb on -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb on -d $driver -S $server (skipped because of invalid Sybase client installation)"
-            elif test $driver = "ftds8" -o $driver = "ftds_odbc" -o $driver = "odbcw" ; then
+            elif test $driver = "ftds_odbc" -o $driver = "odbcw" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb on -d $driver -S $server (skipped)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb on -d $driver -S $server (skipped)"
             else
                 # do not run tests with a boolk copy operations 
                 # on Sybase databases with the "ftds" driver
-                if test \( $driver = "ftds" -o $driver = "ftds8" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+                if test $driver = "ftds" -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                     sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb on -d $driver -S $server (skipped)"
                 else
                     cmd="dbapi_bcp -lb on -d $driver -S $server"
@@ -251,7 +247,7 @@ EOF
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
             elif test $driver = "ftds_odbc" -o $driver = "odbcw" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
-            elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            elif test $driver = "ftds" -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"

@@ -2,14 +2,14 @@
 # $Id$
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds odbc ftds_odbc ftds8" # mysql
+driver_list="ctlib dblib ftds odbc ftds_odbc" # mysql
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-	server_list="MSDEV1 CLEMENTI"
-	server_mssql="MSDEV1"
+    server_list="MSDEV1 CLEMENTI"
+    server_mssql="MSDEV1"
 else
-	server_list="MS_TEST SYB_TEST"
-	server_mssql="MS_TEST"
+    server_list="MS_TEST SYB_TEST"
+    server_mssql="MS_TEST"
 fi
 
 # DBLIB does not work (on Linux at least) when this limit is > 1024
@@ -124,7 +124,7 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
-            if test \( $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" -o $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
                 continue
             fi
 
