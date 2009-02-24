@@ -1568,6 +1568,29 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
 }
 
 
+static bool s_RptUnitIsBaseRange (string str, int& from, int& to)
+
+{
+    if (str.length() > 25) {
+        return false;
+    }
+    SIZE_TYPE pos = NStr::Find (str, "..");
+    if (pos == string::npos) {
+        return false;
+    }
+    try {
+        from = NStr::StringToInt (str.substr(0, pos));
+        to = NStr::StringToInt (str.substr (pos + 2));
+    } catch (...) {
+        return false;
+    }
+    if (from < 0 || to < 0) {
+        return false;
+    }
+    return true;
+}
+
+
 void CValidError_feat::ValidateImpGbquals
 (const CImp_feat& imp,
  const CSeq_feat& feat)
@@ -1626,6 +1649,7 @@ void CValidError_feat::ValidateImpGbquals
                 break;
                 
             case CGbqualType::e_Rpt_unit:
+            case CGbqualType::e_Rpt_unit_seq:
                 {{
                     bool found = false, multiple_rpt_unit = true;
                     ITERATE(string, it, val) {
@@ -1645,36 +1669,57 @@ void CValidError_feat::ValidateImpGbquals
                     }
                     */
                     if ( NStr::CompareNocase(key, "repeat_region") == 0  &&
-                        !multiple_rpt_unit  &&
-                        val.length() == GetLength(feat.GetLocation(), m_Scope) ) {
-                        bool just_nuc_letters = true;
-                        static const string nuc_letters = "ACGTNacgtn";
-                        
-                        ITERATE(string, it, val) {
-                            if ( nuc_letters.find(*it) == NPOS ) {
-                                just_nuc_letters = false;
-                                break;
-                            }
-                        }
-                        
-                        if ( just_nuc_letters ) {
-                            CSeqVector vec = GetSequenceFromFeature(feat, *m_Scope);
-                            if ( !vec.empty() ) {
-                                string vec_data;
-                                vec.GetSeqData(0, vec.size(), vec_data);
-                                if ( NStr::CompareNocase(val, vec_data) != 0 ) {
-                                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                        "repeat_region /rpt_unit and underlying"
-                                        "sequence do not match", feat);
+                         !multiple_rpt_unit ) {
+                        if (val.length() == GetLength(feat.GetLocation(), m_Scope) ) {
+                            bool just_nuc_letters = true;
+                            static const string nuc_letters = "ACGTNacgtn";
+                            
+                            ITERATE(string, it, val) {
+                                if ( nuc_letters.find(*it) == NPOS ) {
+                                    just_nuc_letters = false;
+                                    break;
                                 }
                             }
                             
-                            
+                            if ( just_nuc_letters ) {
+                                CSeqVector vec = GetSequenceFromFeature(feat, *m_Scope);
+                                if ( !vec.empty() ) {
+                                    string vec_data;
+                                    vec.GetSeqData(0, vec.size(), vec_data);
+                                    if ( NStr::CompareNocase(val, vec_data) != 0 ) {
+                                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                            "repeat_region /rpt_unit and underlying"
+                                            "sequence do not match", feat);
+                                    }
+                                }
+                                
+                                
+                            } else {
+                                PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                    "rpt_unit_seq qualifier contains invalid characters", feat);
+                            }
+                        } else {
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                "Length of rpt_unit_seq does not match feature length", feat);
+                        }                            
+                    }
+                }}
+                break;
+            case CGbqualType::e_Rpt_unit_range:
+                {{
+                    int from, to;
+                    if (!s_RptUnitIsBaseRange(val, from, to)) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                 "/rpt_unit_range is not a base range", feat);
+                    } else {
+                        CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
+                        if (from < range.GetFrom() || from > range.GetTo() || to < range.GetFrom() || to > range.GetTo()) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                     "/rpt_unit_range is not within sequence length", feat);   
                         }
                     }
                 }}
                 break;
-                
             case CGbqualType::e_Label:
                 {{
                     bool only_digits = true,
@@ -1736,38 +1781,44 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
     }
     const CCdregion& cdr = cds->GetData().GetCdregion();
 
-    CSeq_loc_CI first, last;
-    for ( CSeq_loc_CI sl_iter(loc); sl_iter; ++sl_iter ) {
-        if ( !first ) {
-            first = sl_iter;
-        }
-        last = sl_iter;
+    TSeqPos pos1 = LocationOffset(cds->GetLocation(), loc, eOffset_FromStart);
+    TSeqPos pos2 = pos1 + GetLength(loc, m_Scope);
+    unsigned int frame = 0;
+    switch (cdr.GetFrame()) {
+        case CCdregion::eFrame_not_set:
+        case CCdregion::eFrame_one:
+            frame = 0;
+            break;
+        case CCdregion::eFrame_two:
+            frame = 1;
+            break;
+        case CCdregion::eFrame_three:
+            frame = 2;
+            break;
     }
-        
-    if ( !first  ||  !last ) {
-        return;
-    }
+    // note - have to add 3 to prevent negative result from subtraction
+    TSeqPos mod1 = (pos1 + 3 - frame) %3;
+    TSeqPos mod2 = (pos2 + 3 - frame) %3;
 
-    TSeqPos pos1 = LocationOffset(loc, first.GetSeq_loc(), eOffset_FromStart);
-    TSeqPos pos2 = LocationOffset(loc, last.GetSeq_loc(), eOffset_FromEnd);
-    TSeqPos mod1 = (pos1 - cdr.GetFrame()) %3;
-    TSeqPos mod2 = (pos2 - cdr.GetFrame()) %3;
-
-    if ( loc.IsPartialStart(eExtreme_Biological) ) {
+    if ( mod1 != 0 && loc.IsPartialStart(eExtreme_Biological) 
+         && cds->GetLocation().IsPartialStart(eExtreme_Biological) 
+         && pos1 == 0) {
         mod1 = 0;
     }
-    if ( loc.IsPartialStop(eExtreme_Biological) ) {
-        mod2 = 2;
+    if ( mod2 != 0 && loc.IsPartialStop(eExtreme_Biological) 
+         && cds->GetLocation().IsPartialStop(eExtreme_Biological) 
+         && pos2 == GetLength (cds->GetLocation(), m_Scope)) {
+        mod2 = 0;
     }
 
-    if ( (mod1 != 0)  &&  (mod2 != 2) ) {
+    if ( (mod1 != 0)  &&  (mod2 != 0) ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
             "Start and stop of " + key + " are out of frame with CDS codons",
             feat);
     } else if (mod1 != 0) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame, 
             "Start of " + key + " is out of frame with CDS codons", feat);
-    } else if (mod2 != 2) {
+    } else if (mod2 != 0) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
             "Stop of " + key + " is out of frame with CDS codons", feat);
     }
