@@ -326,7 +326,7 @@ bool CNetScheduleSubmitter::Read(std::string& batch_id,
         new CReadCmdExecutor(cmd, batch_id, job_ids));
 }
 
-void SNetScheduleSubmitterImpl::DoConfirmRollbackRead(const char* cmd_start,
+void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
     const char* cmd_name,
     const std::string& batch_id,
     const std::vector<std::string>& job_ids,
@@ -375,15 +375,22 @@ void SNetScheduleSubmitterImpl::DoConfirmRollbackRead(const char* cmd_start,
 void CNetScheduleSubmitter::ReadConfirm(const std::string& batch_id,
     const std::vector<std::string>& job_ids)
 {
-    m_Impl->DoConfirmRollbackRead("CFRM ", "ReadConfirm",
+    m_Impl->ExecReadCommand("CFRM ", "ReadConfirm",
         batch_id, job_ids, kEmptyStr);
 }
 
 void CNetScheduleSubmitter::ReadRollback(const std::string& batch_id,
+    const std::vector<std::string>& job_ids)
+{
+    m_Impl->ExecReadCommand("RDRB ", "ReadRollback",
+        batch_id, job_ids, kEmptyStr);
+}
+
+void CNetScheduleSubmitter::ReadFail(const std::string& batch_id,
     const std::vector<std::string>& job_ids,
     const std::string& error_message)
 {
-    m_Impl->DoConfirmRollbackRead("FRED ", "ReadRollback",
+    m_Impl->ExecReadCommand("FRED ", "ReadFail",
         batch_id, job_ids, error_message);
 }
 

@@ -334,10 +334,24 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @param job_ids
     ///    Array of job ids, for which status needs to be reverted
     ///    back to 'done'.
+    void ReadRollback(const std::string& batch_id,
+        const std::vector<std::string>& job_ids);
+
+    /// Refuse from processing the results of the specified jobs
+    /// and increase the counter of failed job result retrievals.
+    /// If for a particular job this counter exceeds the
+    /// failed_read_retries parameter specified in the configuration
+    /// file, the job will change its state to ReadFailed.
+    ///
+    /// @param batch_id
+    ///    Batch number returned by Read().
+    /// @param job_ids
+    ///    Array of job ids, for which status needs to be reverted
+    ///    back to 'done'.
     /// @param error_message
     ///    This message can be used to describe the cause why the
-    ///    job results are returned.
-    void ReadRollback(const std::string& batch_id,
+    ///    job results could not be read.
+    void ReadFail(const std::string& batch_id,
         const std::vector<std::string>& job_ids,
         const std::string& error_message = kEmptyStr);
 
