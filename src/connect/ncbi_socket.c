@@ -444,7 +444,7 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
     if (!CORE_GetLOG())
         return;
 
-    assert(sock);
+    assert(sock  &&  (sock->type & eSocket));
     switch (event) {
     case eIO_Open:
         if (sock->type == eDatagram) {
@@ -522,7 +522,10 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
             *tail = '\0';
         }
 
-        CORE_DATAF_EXX(109, !size  &&  data ? eLOG_Error : eLOG_Trace,
+        CORE_DATAF_EXX(109, !size  &&  data  &&
+                       (sock->type == eDatagram
+                        ||  (sock->n_read | sock->n_written))
+                       ? eLOG_Error : eLOG_Trace,
                        data, size,
                        ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
                         sock->type == eDatagram
