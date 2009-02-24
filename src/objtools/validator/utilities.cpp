@@ -595,6 +595,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_family );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_type );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_unit );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_unit_range );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_unit_seq );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Transposon );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Usedin );
