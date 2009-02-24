@@ -63,12 +63,18 @@ public:
     int Run(void);
 
 private:
+    enum EReadFinalizationStatus {
+        eReadConfirm,
+        eReadRollback,
+        eReadFail
+    };
 
     void x_GetConnectionArgs(string& service, string& queue, int& retry,
                              bool queue_required);
     CNetScheduleAPI x_CreateNewClient(bool queue_required);
 
-    bool CheckPermission();
+    void FinalizeRead(const CArgValue& arg_value,
+        EReadFinalizationStatus status);
 };
 
 
@@ -99,6 +105,48 @@ CNetScheduleAPI CNetScheduleControl::x_CreateNewClient(bool queue_required)
     return CNetScheduleAPI(service, "netschedule_admin", queue);
 }
 
+void CNetScheduleControl::FinalizeRead(const CArgValue& arg_value,
+    CNetScheduleControl::EReadFinalizationStatus status)
+{
+    std::string file_or_batch_id, file_or_job_ids;
+
+    NStr::SplitInTwo(arg_value.AsString(),
+        CCmdLineArgList::GetDelimiterString(),
+            file_or_batch_id, file_or_job_ids);
+
+    CCmdLineArgList batch_id_source(
+        CCmdLineArgList::CreateFrom(file_or_batch_id));
+
+    std::string batch_id;
+
+    if (!batch_id_source.GetNextArg(batch_id)) {
+        NCBI_THROW(CArgException, eNoValue, "Could not read batch_id");
+    }
+
+    CCmdLineArgList job_id_source(file_or_batch_id != file_or_job_ids ?
+        CCmdLineArgList::CreateFrom(file_or_job_ids) : batch_id_source);
+
+    std::vector<std::string> job_ids;
+    std::string job_id;
+
+    while (job_id_source.GetNextArg(job_id))
+        job_ids.push_back(job_id);
+
+    CNetScheduleSubmitter submitter = x_CreateNewClient(true).GetSubmitter();
+
+    switch (status) {
+    case eReadConfirm:
+        submitter.ReadConfirm(batch_id, job_ids);
+        break;
+
+    case eReadRollback:
+        submitter.ReadRollback(batch_id, job_ids);
+        break;
+
+    default:
+        submitter.ReadFail(batch_id, job_ids);
+    }
+}
 
 void CNetScheduleControl::Init(void)
 {
@@ -223,6 +271,10 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->AddOptionalKey("read_rollback", "batch_id_and_job_list",
         "Undo '-read' operation for the specified jobs",
+        CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("read_fail", "batch_id_and_job_list",
+        "Mark the specified jobs as failed to be read",
         CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
@@ -477,43 +529,12 @@ int CNetScheduleControl::Run(void)
         ITERATE(std::vector<std::string>, job_id, job_ids) {
             job_list_output.WriteLine(*job_id);
         }
-    } else if (args["read_confirm"] || args["read_rollback"]) {
-        bool confirm = args["read_confirm"];
-
-        std::string arg = confirm ?
-            args["read_confirm"].AsString() : args["read_rollback"].AsString();
-
-        std::string file_or_batch_id, file_or_job_ids;
-
-        NStr::SplitInTwo(arg, CCmdLineArgList::GetDelimiterString(),
-            file_or_batch_id, file_or_job_ids);
-
-        CCmdLineArgList batch_id_source(
-            CCmdLineArgList::CreateFrom(file_or_batch_id));
-
-        std::string batch_id;
-
-        if (!batch_id_source.GetNextArg(batch_id)) {
-            NCBI_THROW(CArgException, eNoValue, "Could not read batch_id");
-        }
-
-        CCmdLineArgList job_id_source(
-            file_or_batch_id != file_or_job_ids ?
-                CCmdLineArgList::CreateFrom(file_or_job_ids) :
-                    batch_id_source);
-
-        std::vector<std::string> job_ids;
-        std::string job_id;
-
-        while (job_id_source.GetNextArg(job_id))
-            job_ids.push_back(job_id);
-
-        ctl = x_CreateNewClient(true);
-
-        if (confirm)
-            ctl.GetSubmitter().ReadConfirm(batch_id, job_ids);
-        else
-            ctl.GetSubmitter().ReadRollback(batch_id, job_ids);
+    } else if (args["read_confirm"]) {
+        FinalizeRead(args["read_confirm"], eReadConfirm);
+    } else if (args["read_rollback"]) {
+        FinalizeRead(args["read_rollback"], eReadRollback);
+    } else if (args["read_fail"]) {
+        FinalizeRead(args["read_fail"], eReadFail);
     } else {
         NCBI_THROW(CArgException, eNoArg,
                    "Unknown command or command is not specified.");
@@ -522,35 +543,7 @@ int CNetScheduleControl::Run(void)
     return 0;
 }
 
-bool CNetScheduleControl::CheckPermission()
-{
-    /*
-#if defined(NCBI_OS_UNIX) && defined(HAVE_LIBCONNEXT)
-    static gid_t gids[NGROUPS_MAX + 1];
-    static int n_groups = 0;
-    static uid_t uid = 0;
-
-    if (!n_groups) {
-        uid = geteuid();
-        gids[0] = getegid();
-        if ((n_groups = getgroups(sizeof(gids)/sizeof(gids[0])-1, gids+1)) < 0)
-            n_groups = 1;
-        else
-            n_groups++;
-    }
-    for(int i = 0; i < n_groups; ++i) {
-        group* grp = getgrgid(gids[i]);
-        if ( NStr::Compare(grp->gr_name, "service") == 0 )
-            return true;
-    }
-    return false;
-
-#endif
-    */
-    return true;
-}
-
 int main(int argc, const char* argv[])
 {
-    return CNetScheduleControl().AppMain(argc, argv); //, 0, eDS_Default, 0);
+    return CNetScheduleControl().AppMain(argc, argv);
 }
