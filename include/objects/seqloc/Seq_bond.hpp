@@ -62,6 +62,7 @@ public:
     TSeqPos GetStart(ESeqLocExtremes ext) const;
     TSeqPos GetStop (ESeqLocExtremes ext) const;
 
+    bool IsSetStrand(EIsSetStrand flag = eIsSetStrand_Any) const;
     ENa_strand GetStrand(void) const;
 
 private:

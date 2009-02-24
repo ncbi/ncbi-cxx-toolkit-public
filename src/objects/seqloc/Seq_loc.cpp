@@ -505,6 +505,30 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 }
 
 
+bool CSeq_loc::IsSetStrand(EIsSetStrand flag) const
+{
+    switch ( Which() ) {
+    case e_Int:
+        return GetInt().IsSetStrand();
+    case e_Pnt:
+        return GetPnt().IsSetStrand();
+    case e_Packed_int:
+        return GetPacked_int().IsSetStrand(flag);
+    case e_Packed_pnt:
+        return GetPacked_pnt().IsSetStrand();
+    case e_Mix:
+        return GetMix().IsSetStrand(flag);
+    case e_Bond:
+        return GetBond().IsSetStrand(flag);
+
+    case e_Equiv:
+    case e_Feat:
+    default:
+        return false;
+    }
+}
+
+
 ENa_strand CSeq_loc::GetStrand(void) const
 {
     switch ( Which() ) {

@@ -93,6 +93,7 @@ public:
     void AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
                      ENa_strand strand = eNa_strand_unknown);
         
+    bool IsSetStrand(EIsSetStrand flag = eIsSetStrand_Any) const;
     ENa_strand GetStrand(void) const;
     bool IsReverseStrand(void) const;
     TSeqPos GetStart(ESeqLocExtremes ext) const;

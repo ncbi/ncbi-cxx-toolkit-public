@@ -75,6 +75,19 @@ TSeqPos CSeq_bond::GetStop (ESeqLocExtremes /*ext*/) const
 }
 
 
+bool CSeq_bond::IsSetStrand(EIsSetStrand flag) const
+{
+    switch (flag) {
+    case eIsSetStrand_Any:
+        return GetA().IsSetStrand()  ||
+            (IsSetB()  &&  GetB().IsSetStrand());
+    case eIsSetStrand_All:
+        return GetA().IsSetStrand()  &&
+            IsSetB()  &&  GetB().IsSetStrand();
+    }
+}
+
+
 ENa_strand CSeq_bond::GetStrand(void) const
 {
     ENa_strand a_strand = GetA().IsSetStrand() ?

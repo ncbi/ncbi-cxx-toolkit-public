@@ -145,6 +145,22 @@ void CSeq_loc_mix::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 }
 
 
+bool CSeq_loc_mix::IsSetStrand(EIsSetStrand flag) const
+{
+    ITERATE(Tdata, it, Get()) {
+        switch (flag) {
+        case eIsSetStrand_Any:
+            if ( (*it)->GetStrand() ) return true;
+            break;
+        case eIsSetStrand_All:
+            if ( !(*it)->GetStrand() ) return false;
+            break;
+        }
+    }
+    return flag == eIsSetStrand_Any ? false : true;
+}
+
+
 ENa_strand CSeq_loc_mix::GetStrand(void) const
 {
     ENa_strand strand = eNa_strand_unknown;

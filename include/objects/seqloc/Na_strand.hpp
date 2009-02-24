@@ -47,6 +47,12 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+/// Flag used by IsSetStrand() to switch between any/all modes.
+enum EIsSetStrand {
+    eIsSetStrand_Any, ///< Check if any part has strand
+    eIsSetStrand_All  ///< Check if all parts have strand
+};
+
 /// Used to determine the meaning of a location's Start/Stop positions.
 /// On the minus strand the numerical values are different than the 
 /// biological ones.

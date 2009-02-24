@@ -171,6 +171,22 @@ void CPacked_seqint::SetTruncatedStop(bool val, ESeqLocExtremes ext)
 }
 
 
+bool CPacked_seqint::IsSetStrand(EIsSetStrand flag) const
+{
+    ITERATE(Tdata, i, Get()) {
+        switch (flag) {
+        case eIsSetStrand_Any:
+            if ( (*i)->IsSetStrand() ) return true;
+            break;
+        case eIsSetStrand_All:
+            if ( !(*i)->IsSetStrand() ) return false;
+            break;
+        }
+    }
+    return flag == eIsSetStrand_Any ? false : true;
+}
+
+
 ENa_strand CPacked_seqint::GetStrand(void) const
 {
     ENa_strand strand = eNa_strand_unknown;

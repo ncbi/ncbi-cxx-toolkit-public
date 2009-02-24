@@ -96,6 +96,7 @@ public:
     void AddIntervals(const CPacked_seqint& ivals);
     void AddIntervals(const Tdata& ivals);
 
+    bool IsSetStrand(EIsSetStrand flag = eIsSetStrand_Any) const;
     ENa_strand GetStrand(void) const;
     bool IsReverseStrand(void) const;
     TSeqPos GetStart(ESeqLocExtremes ext) const;

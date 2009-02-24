@@ -106,7 +106,19 @@ public:
     TRange GetTotalRange(void) const;
     void InvalidateTotalRangeCache(void);
  
-    /// Get the location's strand
+    /// Check if strand is set for any/all part(s) of the seq-loc
+    /// depending on the flag.
+    bool IsSetStrand(EIsSetStrand flag = eIsSetStrand_Any) const;
+    /// Get the location's strand. If no strand is set, returns
+    /// eNa_strand_unknown. If different strands are set in different
+    /// parts, returns eNa_strand_other. Explicitly set unknown strand
+    /// is ignored when combined whith plus or minus strand.
+    /// Examples:
+    ///   not-set = unknown
+    ///   not-set + plus = plus
+    ///   unknown + plus = plus
+    ///   unknown + both = other
+    ///   plus + minus = other
     ENa_strand GetStrand(void) const;
     /// Return true if all ranges have reverse strand
     bool IsReverseStrand(void) const;
