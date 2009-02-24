@@ -61,6 +61,7 @@ public:
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server);
+    virtual void    CleanExcluded(const string&    service);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
@@ -89,6 +90,7 @@ public:
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server);
+    virtual void    CleanExcluded(const string&    service);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
@@ -124,6 +126,7 @@ public:
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server);
+    virtual void    CleanExcluded(const string&    service);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
@@ -170,6 +173,7 @@ public:
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server);
+    virtual void    CleanExcluded(const string&    service);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);

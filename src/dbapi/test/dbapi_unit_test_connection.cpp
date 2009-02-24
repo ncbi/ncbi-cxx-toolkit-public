@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbi_system.hpp>
+
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 
@@ -1086,6 +1088,117 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+class CMirrorValidator : public CTrivialConnValidator
+{
+public:
+    CMirrorValidator(const string& db_name, int attr = eDefaultValidateAttr)
+        : CTrivialConnValidator(db_name, attr)
+    {
+    }
+
+    virtual string GetName(void) const
+    {
+        return "CMirrorValidator";
+    }
+};
+
+BOOST_AUTO_TEST_CASE(Test_Mirrors)
+{
+    CMirrorValidator validator1("DBAPI_ConnectionTest1");
+    CMirrorValidator validator2("DBAPI_ConnectionTestt2");
+
+    string username = "anyone";
+    string password = "allowed";
+    string server = "MSDEVVV";
+
+    // Create new connection ...
+    AutoPtr<IConnection> conn;
+
+    int i = 0;
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator1, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator1, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator2, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    SleepSec(11);
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator2, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator1, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    SleepSec(31);
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator1, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    SleepSec(11);
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator2, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
+    }
+
+    LOG_POST(++i << " connection");
+    try {
+        // Create new connection ...
+        conn = GetDS().CreateConnection( CONN_OWNERSHIP );
+        conn->ConnectValidated(validator2, username, password, server);
+    }
+    catch(const CException& ex) {
+        BOOST_ERROR(ex.what());
     }
 }
 

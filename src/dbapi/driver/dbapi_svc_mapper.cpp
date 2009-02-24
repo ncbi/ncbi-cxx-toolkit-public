@@ -146,6 +146,14 @@ CDBDefaultServiceMapper::Exclude(const string&  service,
 }
 
 void
+CDBDefaultServiceMapper::CleanExcluded(const string& service)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    m_SrvSet.erase(service);
+}
+
+void
 CDBDefaultServiceMapper::SetPreference(const string&,
                                        const TSvrRef&,
                                        double)
@@ -195,6 +203,16 @@ CDBServiceMapperCoR::Exclude(const string&  service,
 
     NON_CONST_ITERATE(TDelegates, dg_it, m_Delegates) {
         (*dg_it)->Exclude(service, server);
+    }
+}
+
+void
+CDBServiceMapperCoR::CleanExcluded(const string&  service)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    NON_CONST_ITERATE(TDelegates, dg_it, m_Delegates) {
+        (*dg_it)->CleanExcluded(service);
     }
 }
 
@@ -498,6 +516,12 @@ CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
 }
 
 void
+CDBUDRandomMapper::CleanExcluded(const string& service)
+{
+    CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, "Not implemented");
+}
+
+void
 CDBUDRandomMapper::SetPreference(const string&  service,
                                  const TSvrRef& preferred_server,
                                  double         preference)
@@ -657,6 +681,12 @@ CDBUDPriorityMapper::Exclude(const string& service,
             ++it;
         }
     }
+}
+
+void
+CDBUDPriorityMapper::CleanExcluded(const string& service)
+{
+    CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, "Not implemented");
 }
 
 void

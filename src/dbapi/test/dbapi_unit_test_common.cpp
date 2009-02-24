@@ -159,7 +159,7 @@ bool CommonInit(void)
     // Using old log format ...
     // Show time (no msec.) ...
     SetDiagPostFlag(eDPF_DateTime);
-    CONNECT_Init();
+    CONNECT_Init(&CNcbiApplication::Instance()->GetConfig());
 
     DBLB_INSTALL_DEFAULT();
 
@@ -258,6 +258,9 @@ NCBITEST_AUTO_INIT()
     _ASSERT(s_Conn.get());
 
     s_Conn->Connect(GetArgs().GetConnParams());
+    //CTrivialConnValidator validator(GetArgs().GetDatabaseName());
+    //s_Conn->ConnectValidated(validator, GetArgs().GetUserName(), GetArgs().GetUserPassword(), GetArgs().GetServerName());
+    //cout << s_Conn->GetCDB_Connection()->ServerName() << endl;
 
     auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 

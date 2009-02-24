@@ -56,11 +56,13 @@ public:
     CDBServer(void);
     CDBServer(const string& name,
               Uint4         host = 0,
-              Uint2         port = 0);
+              Uint2         port = 0,
+              unsigned int  expire_time = 0);
 
-    const string& GetName(void) const { return m_Name; }
-    Uint4         GetHost(void) const { return m_Host; }
-    Uint2         GetPort(void) const { return m_Port; }
+    const string& GetName      (void) const { return m_Name; }
+    Uint4         GetHost      (void) const { return m_Host; }
+    Uint2         GetPort      (void) const { return m_Port; }
+    time_t        GetExpireTime(void) const { return time_t(m_ExpireTime); }
 
     bool IsValid(void) const
     {
@@ -68,9 +70,10 @@ public:
     }
 
 private:
-    const string m_Name;
-    const Uint4  m_Host;
-    const Uint2  m_Port;
+    const string       m_Name;
+    const Uint4        m_Host;
+    const Uint2        m_Port;
+    const unsigned int m_ExpireTime;
 };
 typedef CRef<CDBServer> TSvrRef;
 
@@ -104,6 +107,9 @@ public:
     /// Exclude a server from the mapping for a service
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server)  = 0;
+
+    /// Clean the list of excluded servers for the given service
+    virtual void    CleanExcluded(const string&    service) = 0;
 
 
     /// Set up mapping preferences for a service
@@ -159,17 +165,20 @@ bool operator< (const CDBServer& l, const CDBServer& r)
 inline
 CDBServer::CDBServer(void) :
     m_Host(0),
-    m_Port(0)
+    m_Port(0),
+    m_ExpireTime(0)
 {
 }
 
 inline
 CDBServer::CDBServer(const string& name,
                      Uint4         host,
-                     Uint2         port) :
+                     Uint2         port,
+                     unsigned int  expire_time) :
 m_Name(name),
 m_Host(host),
-m_Port(port)
+m_Port(port),
+m_ExpireTime(expire_time)
 {
 }
 

@@ -36,6 +36,8 @@
 #include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
 
+#include <list>
+
 
 #define NCBI_USE_ERRCODE_X   Dbapi_ConnFactory
 
@@ -375,6 +377,8 @@ CDBConnectionFactory::DispatchServerName(
 
     // Try to connect up to a given number of alternative servers ...
     unsigned int alternatives = GetMaxNumOfServerAlternatives();
+    list<TSvrRef> tried_servers;
+    bool full_retry_made = false;
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
 
@@ -428,13 +432,39 @@ CDBConnectionFactory::DispatchServerName(
         }
 
         if (!t_con) {
-            // Server might be temporarily unavailable ...
-            // Check conn_status ...
-            if (conn_status == IConnValidator::eTempInvalidConn) {
-                rt_data.IncNumOfValidationFailures(service_name, dsp_srv);
-            } else {
-                // conn_status == IConnValidator::eInvalidConn
-                 rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+            bool need_exclude = true;
+            if (dsp_srv->GetName() == service_name
+                &&  dsp_srv->GetHost() == 0  &&  dsp_srv->GetPort() == 0
+                &&  (conn_status != IConnValidator::eTempInvalidConn
+                        || GetMaxNumOfValidationAttempts()
+                           && rt_data.GetNumOfValidationFailures(service_name)
+                                          >= GetMaxNumOfValidationAttempts())
+                && !full_retry_made)
+            {
+                _TRACE("List of servers for service " << service_name
+                       << " is exhausted. Giving excluded a try.");
+
+                rt_data.GetDBServiceMapper().CleanExcluded(service_name);
+                ITERATE(list<TSvrRef>, it, tried_servers) {
+                    rt_data.GetDBServiceMapper().Exclude(service_name, *it);
+                }
+
+                full_retry_made = true;
+                need_exclude = false;
+            }
+            else {
+                tried_servers.push_back(dsp_srv);
+            }
+
+            if (need_exclude) {
+                // Server might be temporarily unavailable ...
+                // Check conn_status ...
+                if (conn_status == IConnValidator::eTempInvalidConn) {
+                    rt_data.IncNumOfValidationFailures(service_name, dsp_srv);
+                } else {
+                    // conn_status == IConnValidator::eInvalidConn
+                    rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+                }
             }
         } else {
             rt_data.SetDispatchedServer(service_name, dsp_srv);
@@ -450,6 +480,9 @@ CDBConnectionFactory::MakeValidConnection(
     const CDBConnParams& params,
     IConnValidator::EConnStatus& conn_status) const
 {
+    _TRACE("Trying to connect to server '" << params.GetServerName()
+          << "', host " << params.GetHost() << ", port " << params.GetPort());
+
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
     if (conn.get()) 
