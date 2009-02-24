@@ -337,7 +337,7 @@ void CNetScheduleAdmin::StatusSnapshot(
 {
     string cmd = "STSN";
     cmd.append(" aff=\"");
-    cmd.append(affinity_token);
+    cmd.append(NStr::PrintableString(affinity_token));
     cmd.append("\"");
 
     CStatusProcessor processor(m_Impl->m_API, status_map);

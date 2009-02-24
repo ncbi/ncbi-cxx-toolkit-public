@@ -129,7 +129,7 @@ public:
     void PutResult(SWorkerNodeInfo& node_info,
                    unsigned         job_id,
                    int              ret_code,
-                   const string*    output);
+                   const string&    output);
 
     void GetJob(SWorkerNodeInfo&    node_info,
                 CRequestContextFactory* rec_ctx_f,

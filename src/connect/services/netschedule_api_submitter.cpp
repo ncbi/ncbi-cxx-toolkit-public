@@ -73,7 +73,7 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
             cmd.append(" affp");
         } else{
             cmd.append(" aff=\"");
-            cmd.append(job.affinity);
+            cmd.append(NStr::PrintableString(job.affinity));
             cmd.append("\"");
             aff_prev = job.affinity;
         }

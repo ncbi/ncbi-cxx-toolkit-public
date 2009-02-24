@@ -2015,10 +2015,10 @@ void CQueue::ClearWorkerNode(const string& node_id)
 void CQueue::PutResult(SWorkerNodeInfo& node_info,
                        unsigned         job_id,
                        int              ret_code,
-                       const string*    output)
+                       const string&    output)
 {
     PutResultGetJob(node_info,
-                    job_id, ret_code, output,
+                    job_id, ret_code, &output,
                     0, 0, 0);
 }
 

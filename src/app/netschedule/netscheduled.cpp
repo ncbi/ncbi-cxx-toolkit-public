@@ -1236,8 +1236,8 @@ void CNetScheduleHandler::ProcessFastStatusW()
 void CNetScheduleHandler::ProcessSubmit()
 {
     CJob job;
-    job.SetInput(m_JobReq.input);
-    job.SetAffinityToken(m_JobReq.affinity_token);
+    job.SetInput(NStr::ParseEscapes(m_JobReq.input));
+    job.SetAffinityToken(NStr::ParseEscapes(m_JobReq.affinity_token));
     job.SetTags(m_JobReq.tags);
     job.SetMask(m_JobReq.job_mask);
     job.SetSubmAddr(m_PeerAddr);
@@ -1381,7 +1381,7 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
     }
 
     m_JobReq.SetParamFields(params);
-    job.SetInput(m_JobReq.input);
+    job.SetInput(NStr::ParseEscapes(m_JobReq.input));
     if (m_JobReq.param1 == "match") {
         // We reuse jobs from m_BatchJobs, so we always should reset this
         // field. We should call SetAffinityToken before SetAffinityId, because
@@ -1389,7 +1389,7 @@ void CNetScheduleHandler::ProcessMsgBatchJob(BUF buffer)
         job.SetAffinityToken("");
         job.SetAffinityId(kMax_I4);
     } else {
-        job.SetAffinityToken(m_JobReq.affinity_token);
+        job.SetAffinityToken(NStr::ParseEscapes(m_JobReq.affinity_token));
     }
     job.SetTags(m_JobReq.tags);
 
@@ -1569,7 +1569,8 @@ void CNetScheduleHandler::ProcessStatusSnapshot()
 {
     CJobStatusTracker::TStatusSummaryMap st_map;
 
-    bool aff_exists = m_Queue->CountStatus(&st_map, m_JobReq.affinity_token);
+    bool aff_exists = m_Queue->CountStatus(&st_map,
+        NStr::ParseEscapes(m_JobReq.affinity_token));
     if (!aff_exists) {
         WriteErr(string("eProtocolSyntaxError:Unknown affinity token \"")
                  + m_JobReq.affinity_token + "\"");
@@ -1643,8 +1644,8 @@ void CNetScheduleHandler::ProcessGetJob()
     m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     list<string> aff_list;
-    NStr::Split(m_JobReq.affinity_token, "\t,",
-                aff_list, NStr::eNoMergeDelims);
+    NStr::Split(NStr::ParseEscapes(m_JobReq.affinity_token),
+                "\t,", aff_list, NStr::eNoMergeDelims);
     CJob job;
     m_Queue->GetJob(m_WorkerNodeInfo,
         &m_RequestContextFactory, &aff_list, &job);
@@ -1684,8 +1685,8 @@ void
 CNetScheduleHandler::ProcessJobExchange()
 {
     list<string> aff_list;
-    NStr::Split(m_JobReq.affinity_token, "\t,",
-                aff_list, NStr::eNoMergeDelims);
+    NStr::Split(NStr::ParseEscapes(m_JobReq.affinity_token),
+                "\t,", aff_list, NStr::eNoMergeDelims);
 
     unsigned done_job_id;
     if (!m_JobReq.job_key.empty()) {
@@ -1703,7 +1704,7 @@ CNetScheduleHandler::ProcessJobExchange()
     m_Queue->PutResultGetJob(m_WorkerNodeInfo,
                              done_job_id,
                              m_JobReq.job_return_code,
-                             &m_JobReq.output,
+                             &NStr::ParseEscapes(m_JobReq.output),
                              // GetJob params
                              &m_RequestContextFactory,
                              &aff_list,
@@ -1741,8 +1742,8 @@ void CNetScheduleHandler::ProcessWaitGet()
     m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     list<string> aff_list;
-    NStr::Split(m_JobReq.affinity_token, "\t,",
-                aff_list, NStr::eNoMergeDelims);
+    NStr::Split(NStr::ParseEscapes(m_JobReq.affinity_token),
+                "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob job;
     m_Queue->GetJob(m_WorkerNodeInfo,
@@ -1806,8 +1807,9 @@ void CNetScheduleHandler::ProcessQuitSession(void)
 void CNetScheduleHandler::ProcessPutFailure()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->FailJob(m_WorkerNodeInfo,
-                     job_id, m_JobReq.err_msg, m_JobReq.output,
+    m_Queue->FailJob(m_WorkerNodeInfo, job_id,
+                     NStr::ParseEscapes(m_JobReq.err_msg), 
+                     NStr::ParseEscapes(m_JobReq.output),
                      m_JobReq.job_return_code);
     WriteOK();
 }
@@ -1817,7 +1819,8 @@ void CNetScheduleHandler::ProcessPut()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->PutResult(m_WorkerNodeInfo,
-                       job_id, m_JobReq.job_return_code, &m_JobReq.output);
+                       job_id, m_JobReq.job_return_code, 
+                       NStr::ParseEscapes(m_JobReq.output));
     WriteOK();
 }
 
@@ -2683,13 +2686,13 @@ void CNetScheduleHandler::x_MakeGetAnswer(const CJob& job)
     answer = CNetScheduleKey(job.GetId(),
         m_Server->GetHost(), m_Server->GetPort());
     answer.append(" \"");
-    answer.append(job.GetInput());
+    answer.append(NStr::PrintableString(job.GetInput()));
     answer.append("\"");
 
     // We can re-use old jout and jerr job parameters for affinity and
     // session id/client ip respectively.
     answer.append(" \"");
-    answer.append(job.GetAffinityToken());
+    answer.append(NStr::PrintableString(job.GetAffinityToken()));
     answer.append("\" \"");
     answer.append(job.GetClientIP() + " " + job.GetClientSID());
     answer.append("\""); // to keep compat. with jout & jerr
