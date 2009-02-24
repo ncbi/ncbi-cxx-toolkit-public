@@ -396,21 +396,18 @@ void CNetScheduleSubmitter::ReadFail(const std::string& batch_id,
 
 struct SWaitJobPred {
     SWaitJobPred(unsigned int job_id) : m_JobId(job_id) {}
+
     bool operator()(const string& buf)
     {
         static const char* sign = "JNTF";
-        static size_t min_len = 5;
-        if ((buf.size() < min_len) || ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])) ) {
-            return false;
-        }
 
-        const char* job = buf.data() + 5;
-        unsigned notif_job_id = (unsigned)::atoi(job);
-        if (notif_job_id == m_JobId) {
-            return true;
-        }
-        return false;
+        if ((buf.size() < 5) ||
+            ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])))
+            return false;
+
+        return m_JobId == (unsigned) ::atoi(buf.data() + 5);
     }
+
     unsigned int m_JobId;
 };
 

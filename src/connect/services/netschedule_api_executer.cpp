@@ -198,23 +198,22 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
 }
 
 struct SWaitQueuePred {
-    SWaitQueuePred(const string queue_name) : m_QueueName(queue_name)
+    SWaitQueuePred(const string& queue_name) : m_QueueName(queue_name)
     {
-        m_MinLen = m_QueueName.size() + 9;
+        m_MinLen = queue_name.length() + 9;
     }
+
     bool operator()(const string& buf)
     {
         static const char* sign = "NCBI_JSQ_";
-        if ((buf.size() < m_MinLen) || ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])) ) {
-            return false;
-        }
 
-        const char* queue = buf.data() + 9;
-        if ( m_QueueName == string(queue)) {
-            return true;
-        }
-        return false;
+        if ((buf.size() < m_MinLen) ||
+            ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])))
+            return false;
+
+        return m_QueueName == buf.data() + 9;
     }
+
     string m_QueueName;
     size_t m_MinLen;
 };
