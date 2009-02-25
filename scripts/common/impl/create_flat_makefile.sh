@@ -10,18 +10,15 @@
 # defaults
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
-ptbname="project_tree_builder"
 
+ptbname="project_tree_builder"
 # default path to project_tree_builder
 defptbpath="$NCBI/c++.metastable/Release/bin/"
-# required version of PTB
-# NOTE: relptbver, when defined, overrides this setting !
-ptbreqver=173
-
 # release path to project_tree_builder
 relptbpath="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
-# NOTE: redefine relptbver in stable components release, eg "1.7.3" !
-relptbver=""
+
+# required version of PTB
+ptbreqver="1.7.3"
 
 # dependencies
 ptbdep="corelib util util/regexp util/xregexp build-system/project_tree_builder"
@@ -112,7 +109,6 @@ DetectPlatform()
 #-----------------------------------------------------------------------------
 # analyze script arguments
 
-
 test $# -lt 1 && Usage "Mandatory argument is missing"
 COMMON_Exec cd $initial_dir
 COMMON_Exec cd $1
@@ -150,42 +146,20 @@ fi
 
 
 #-----------------------------------------------------------------------------
-# more checks
-extptb="$defptbpath$ptbname"
-ptb="$PREBUILT_PTB_EXE"
-if test -x "$ptb"; then
-  echo "Using prebuilt project tree builder at $ptb"
-else
-  ptb="$extptb"
-  if test $buildptb = "no"; then
-    if test -n "$relptbver"; then
-      DetectPlatform
-      ptb="$relptbpath$PLATFORM/$relptbver/$ptbname"
-      if test -x "$ptb"; then
-        echo "Using prebuilt project tree builder at $ptb"
-      else
-        echo "Prebuilt $ptbname is not found at"
-        echo $ptb
-        echo "Will build PTB locally"
-        buildptb="yes"
-      fi
+# find PTB
+if test $buildptb = "no"; then
+  ptb="$PREBUILT_PTB_EXE"
+  if test -x "$ptb"; then
+    echo "Using $ptbname at $ptb"
+  else
+    DetectPlatform
+    ptb="$relptbpath$PLATFORM/$ptbreqver/$ptbname"
+    if test -x "$ptb"; then
+      echo "Using $ptbname at $ptb"
     else
-      if test -x "$ptb"; then
-        echo "Testing $ptb"
-        $ptb -version 2>&1
-        ptbver=`$ptb -version 2>&1 | grep $ptbname | sed -e 's/[a-zA-Z._: ]//g'`
-        if test $ptbver -lt $ptbreqver; then
-          echo "Prebuilt $ptbname at"
-          echo $extptb
-          echo "is too old. Will build PTB locally"
-          buildptb="yes"
-        fi
-      else
-        echo "Prebuilt $ptbname is not found at"
-        echo $extptb
-        echo "Will build PTB locally"
-        buildptb="yes"
-      fi
+      echo "$ptbname is not found at $ptb"
+      echo "Will build $ptbname locally"
+      buildptb="yes"
     fi
   fi
 fi
@@ -196,7 +170,6 @@ test -f "../status/DLL.enabled" && dll="-dll"
 ptbini="$srcdir/src/build-system/$ptbname.ini"
 test -f "$ptbini" || Usage "$ptbini not found"
 
-
 #-----------------------------------------------------------------------------
 # build project_tree_builder
 
@@ -206,7 +179,8 @@ if test "$buildptb" = "yes"; then
     if test ! -d "$dep"; then
       echo "WARNING: $builddir/$dep not found"
       buildptb="no"
-      break;
+      break;    echo "%PREBUILT_PTB_EXE%" not found
+
     fi
     if test ! -f "$dep/Makefile"; then
       echo "WARNING: $builddir/$dep/Makefile not found"
@@ -230,7 +204,7 @@ if test "$buildptb" = "yes"; then
   test -x "$ptb" || Usage "$builddir/$ptb not found"
 fi
 
-test -x "$ptb" || Usage "$ptb not found"
+test -x "$ptb" || Usage "$ptbname not found at $ptb"
 
 #-----------------------------------------------------------------------------
 # run project_tree_builder
