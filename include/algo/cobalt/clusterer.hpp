@@ -54,6 +54,13 @@ public:
 
     typedef CNcbiMatrix<double> TDistMatrix;
 
+    /// Method for computing distance between clusters
+    ///
+    enum EDistMethod {
+        eCompleteLinkage = 0,  ///< Maximum distance between elements
+        eAverageLinkage        ///< Avegrae distance between elements
+    };
+
     /// Single cluster
     class NCBI_COBALT_EXPORT CSingleCluster : public CObject
     {
@@ -171,10 +178,13 @@ public:
     /// maxium pairwise distance between cluster elements. Cluster dendrogram
     /// can be computed for each such cluster indepenently.
     /// @param max_dim Maximum distance between two elements in a cluster [in]
+    /// @param dist_method Method for computing distance between clusters [in]
     /// @param do_trees If true, cluster dendrogram will be computed for each
     /// cluster [in]
     ///
-    void ComputeClusters(double max_diam, bool do_trees = true);
+    void ComputeClusters(double max_diam,
+                         EDistMethod dist_method = eCompleteLinkage,
+                         bool do_trees = true);
 
     /// Get list of elements of a specified cluster
     /// @param index Cluster index

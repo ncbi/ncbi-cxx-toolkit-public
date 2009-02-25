@@ -136,9 +136,9 @@ static double s_FindMaxDistFromElem(int elem,
 }
 
 // Finds maximum distance between any pair of elements from given clusters
-static double s_FindClusterDist(const CClusterer::TSingleCluster& cluster1,
-                                const CClusterer::TSingleCluster& cluster2,
-                                const CClusterer::TDistMatrix& dmat) {
+static double s_FindDistAsMax(const CClusterer::TSingleCluster& cluster1,
+                              const CClusterer::TSingleCluster& cluster2,
+                              const CClusterer::TDistMatrix& dmat) {
 
     _ASSERT(cluster1.size() > 0 && cluster2.size() > 0);
 
@@ -175,9 +175,9 @@ static double s_FindSumDistFromElem(int elem,
 }
 
 /// Find mean distance between cluster elements
-static double s_FindMeanDist(const CClusterer::TSingleCluster& cluster1,
-                             const CClusterer::TSingleCluster& cluster2,
-                             const CClusterer::TDistMatrix& dmat)
+static double s_FindDistAsMean(const CClusterer::TSingleCluster& cluster1,
+                               const CClusterer::TSingleCluster& cluster2,
+                               const CClusterer::TDistMatrix& dmat)
 {
     _ASSERT(cluster1.size() > 0 && cluster2.size() > 0);
 
@@ -208,8 +208,15 @@ static double s_FindMean(const vector<double>& vals)
 }
 
 // Complete Linkage clustering with dendrograms
-void CClusterer::ComputeClusters(double max_diam, bool do_trees)
+void CClusterer::ComputeClusters(double max_diam,
+                                 CClusterer::EDistMethod dist_method,
+                                 bool do_trees)
 {
+    if (dist_method != eCompleteLinkage && dist_method != eAverageLinkage) {
+        NCBI_THROW(CClustererException, eInvalidOptions, "Unrecognised cluster"
+                   " distance method");
+    }
+
     m_Clusters.clear();
 
     size_t num_elements = m_DistMatrix->GetRows();
@@ -360,8 +367,8 @@ void CClusterer::ComputeClusters(double max_diam, bool do_trees)
             new_root->AddNode(nodes[right]);
 
             // set sub node distances
-            double dist = s_FindMeanDist(clusters[left], clusters[right],
-                                         *m_DistMatrix);
+            double dist = s_FindDistAsMean(clusters[left], clusters[right],
+                                           *m_DistMatrix);
 
             // find average distances too root in left and right subtrees 
             double mean_dist_to_root_left = s_FindMean(dists_to_root[left]);
@@ -425,8 +432,10 @@ void CClusterer::ComputeClusters(double max_diam, bool do_trees)
                 continue;
             }
 
-            double dist = s_FindClusterDist(clusters[i], included_cluster, 
-                                            *m_DistMatrix);
+            double dist = dist_method == eCompleteLinkage ?
+                s_FindDistAsMax(clusters[i], included_cluster, *m_DistMatrix)
+                : s_FindDistAsMean(clusters[i], included_cluster, *m_DistMatrix);
+
             if (dist > dmat(i, min_i)) {
                 dmat(i, min_i) = dist;
             }
@@ -436,8 +445,10 @@ void CClusterer::ComputeClusters(double max_diam, bool do_trees)
                 continue;
             }
 
-            double dist = s_FindClusterDist(clusters[j], included_cluster,
-                                            *m_DistMatrix);
+            double dist = dist_method == eCompleteLinkage ?
+                s_FindDistAsMax(clusters[j], included_cluster, *m_DistMatrix)
+                : s_FindDistAsMean(clusters[j], included_cluster, *m_DistMatrix);
+
             if (dist > dmat(min_i, j)) {
                 dmat(min_i, j) = dist;
             }
