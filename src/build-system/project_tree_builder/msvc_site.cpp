@@ -204,6 +204,8 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
             macro = CSymResolver::StripDefine(raw_macro);
             if (macro == "incdir") {
                 definition = GetApp().m_IncDir;
+            } else if (macro == "rootdir") {
+               definition = GetApp().GetProjectTreeInfo().m_Root;
             } else {
                 definition = x_GetConfigureEntry(macro);
             }
@@ -238,25 +240,13 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
     string include_str    = ToOSPath(
         ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config)));
-    list<string> incs;
-    NStr::Split(include_str, LIST_SEPARATOR, incs);
-    ITERATE( list<string>, i, incs) {
-        if (i->empty() || CDirEntry::IsAbsolutePath(*i)) {
-            libinfo->m_IncludeDir.push_back(*i);
-        } else {
-            libinfo->m_IncludeDir.push_back(CDirEntry::ConcatPath(
-               GetApp().GetProjectTreeInfo().m_Root, *i));
-        }
-    }
+    NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
+
     string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
     NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
 
     libinfo->m_LibPath    = ToOSPath(
         ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config)));
-    if (!libinfo->m_LibPath.empty() && !CDirEntry::IsAbsolutePath(libinfo->m_LibPath)) {
-        libinfo->m_LibPath = CDirEntry::ConcatPath(
-            GetApp().GetProjectTreeInfo().m_Root, libinfo->m_LibPath);
-    }
 
     string libs_str = GetOpt(m_Registry, section, "LIB", config);
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
