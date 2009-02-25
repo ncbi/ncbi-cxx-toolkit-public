@@ -34,8 +34,7 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
-REM ===  Redefine DEFPTB_VERSION in stable components release, eg 1.7.3
-set DEFPTB_VERSION=.
+set DEFPTB_VERSION=1.7.3
 set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
@@ -56,8 +55,9 @@ if "%PREBUILT_PTB_EXE%"=="" (
 )
 set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
 if not "%PREBUILT_PTB_EXE%"=="bootstrap" (
-  "%PREBUILT_PTB_EXE%" -version
+  "%PREBUILT_PTB_EXE%" -version >NUL
   if errorlevel 1 (
+    echo "%PREBUILT_PTB_EXE%" not found
     set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
   ) else (
     set PTB_EXE=%PREBUILT_PTB_EXE%
