@@ -381,8 +381,8 @@ int CMultiApplication::Run(void)
         } else if (args["comp_alph"].AsString() == "se-b15") {
             alph = CMultiAligner::TKMethods::eSE_B15;
         }
-        opts->SetKmerAlphabet(alph);
     }
+    opts->SetKmerAlphabet(alph);
 
     CMultiAlignerOptions::EInClustAlnMethod in_clust_aln;
     if (args["inclust"].AsString() == "toprot") {
