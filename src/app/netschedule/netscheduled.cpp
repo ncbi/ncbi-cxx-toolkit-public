@@ -1701,10 +1701,11 @@ CNetScheduleHandler::ProcessJobExchange()
     m_Queue->RegisterWorkerNodeVisit(m_WorkerNodeInfo);
 
     CJob job;
+    string output = NStr::ParseEscapes(m_JobReq.output);
     m_Queue->PutResultGetJob(m_WorkerNodeInfo,
                              done_job_id,
                              m_JobReq.job_return_code,
-                             &NStr::ParseEscapes(m_JobReq.output),
+                             &output,
                              // GetJob params
                              &m_RequestContextFactory,
                              &aff_list,
