@@ -448,7 +448,7 @@ private:
     // multiple threads, but goes on in a single handler,
     // we use manual request context switching, thus replacing
     // default per-thread mechanism.
-    CNSRequestContextFactory    m_RequestContextFactory;
+    CRef<CNSRequestContextFactory> m_RequestContextFactory;
 
     /// Parser for incoming commands
     TProtoParser                m_ReqParser;
@@ -786,7 +786,7 @@ bool CNetScheduleBackgroundHost::ShouldRun()
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
     : m_PeerAddr(0), m_Server(server),
       m_Incaps(~0L), m_Unreported(~0L), m_VersionControl(false),
-      m_RequestContextFactory(server),
+      m_RequestContextFactory(new CNSRequestContextFactory(server)),
       m_ReqParser(sm_CommandMap)
 {
 }
@@ -1648,7 +1648,7 @@ void CNetScheduleHandler::ProcessGetJob()
                 "\t,", aff_list, NStr::eNoMergeDelims);
     CJob job;
     m_Queue->GetJob(m_WorkerNodeInfo,
-        &m_RequestContextFactory, &aff_list, &job);
+        m_RequestContextFactory.GetPointer(), &aff_list, &job);
 
     unsigned job_id = job.GetId();
     if (job_id) {
@@ -1707,7 +1707,7 @@ CNetScheduleHandler::ProcessJobExchange()
                              m_JobReq.job_return_code,
                              &output,
                              // GetJob params
-                             &m_RequestContextFactory,
+                             m_RequestContextFactory.GetPointer(),
                              &aff_list,
                              &job);
 
@@ -1748,7 +1748,7 @@ void CNetScheduleHandler::ProcessWaitGet()
 
     CJob job;
     m_Queue->GetJob(m_WorkerNodeInfo,
-                    &m_RequestContextFactory,
+                    m_RequestContextFactory.GetPointer(),
                     &aff_list,
                     &job);
 

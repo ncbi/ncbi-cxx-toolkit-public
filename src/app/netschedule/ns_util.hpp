@@ -43,10 +43,9 @@ void NS_FormatIPAddress(unsigned int ipaddr, string& str_addr);
 string NS_FormatIPAddress(unsigned int ipaddr);
 
 class CRequestContext;
-class CRequestContextFactory
+class CRequestContextFactory : public CObject
 {
 public:
-    virtual ~CRequestContextFactory() {}
     virtual CRequestContext* Get() = 0;
     virtual void Return(CRequestContext*) = 0;
 };

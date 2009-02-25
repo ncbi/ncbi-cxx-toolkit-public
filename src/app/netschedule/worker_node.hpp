@@ -73,7 +73,7 @@ struct SJobInfo {
 
     time_t           exp_time;
     CRequestContext* req_ctx;
-    CRequestContextFactory* factory;
+    CRef<CRequestContextFactory> factory;
 };
 
 
