@@ -377,7 +377,7 @@ static const char* s_JobFieldNames[] = {
     "affinity",
     "mask",
     "client_ip",
-    "client_sid"
+    "client_sid",
     "runs",
     "input",
     "output",
