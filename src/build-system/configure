@@ -5825,7 +5825,9 @@ else
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_distcc_vs_cc" >&5
 echo "${ECHO_T}$ncbi_cv_prog_distcc_vs_cc" >&6
-         if test "$ncbi_cv_prog_distcc_vs_cc" = no; then
+         if test "$ncbi_cv_prog_distcc_vs_cc" = yes; then
+            CC_WRAPPER="$DISTCC $CC_WRAPPER"
+         else
             $as_unset DISTCC || test "${DISTCC+set}" != set || { DISTCC=; export DISTCC; }
          fi
       fi
@@ -5844,7 +5846,9 @@ else
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_distcc_vs_cxx" >&5
 echo "${ECHO_T}$ncbi_cv_prog_distcc_vs_cxx" >&6
-         if test "$ncbi_cv_prog_distcc_vs_cxx" = no; then
+         if test "$ncbi_cv_prog_distcc_vs_cxx" = yes; then
+            CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
+         else
             $as_unset DISTCC || test "${DISTCC+set}" != set || { DISTCC=; export DISTCC; }
          fi
       fi

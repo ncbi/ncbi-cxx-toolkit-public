@@ -1684,7 +1684,9 @@ if test "$with_distcc" != "no"; then
              else
                 ncbi_cv_prog_distcc_vs_cc=no
              fi])
-         if test "$ncbi_cv_prog_distcc_vs_cc" = no; then
+         if test "$ncbi_cv_prog_distcc_vs_cc" = yes; then
+            CC_WRAPPER="$DISTCC $CC_WRAPPER"
+         else
             AS_UNSET(DISTCC)
          fi
       fi
@@ -1697,7 +1699,9 @@ if test "$with_distcc" != "no"; then
              else
                 ncbi_cv_prog_distcc_vs_cxx=no
              fi])
-         if test "$ncbi_cv_prog_distcc_vs_cxx" = no; then
+         if test "$ncbi_cv_prog_distcc_vs_cxx" = yes; then
+            CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
+         else
             AS_UNSET(DISTCC)
          fi
       fi
