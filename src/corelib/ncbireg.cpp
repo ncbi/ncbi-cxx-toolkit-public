@@ -408,7 +408,7 @@ const string& IRegistry::GetComment(const string& section, const string& name,
 void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 {
     x_CheckFlags("IRegistry::EnumerateSections", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -799,17 +799,7 @@ bool CMemoryRegistry::x_HasEntry(const string& section, const string& name,
     if (sit == m_Sections.end()) {
         return false;
     } else if (name.empty()) {
-        if ((flags & fCountCleared) != 0) {
-            return true;
-        } else {
-            // sections with only empty entries don't count
-            ITERATE (TEntries, eit, sit->second.entries) {
-                if ( !eit->second.value.empty() ) {
-                    return true;
-                }
-            }
-            return false;
-        }
+        return ((flags & fCountCleared) != 0) || !sit->second.cleared;
     }
     const TEntries& entries = sit->second.entries;
     TEntries::const_iterator eit = entries.find(name);
@@ -902,7 +892,12 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
     } else
 #endif
     {
-        SEntry& entry = m_Sections[section].entries[name];
+        TSections::iterator sit = m_Sections.find(section);
+        if (sit == m_Sections.end()) {
+            sit = m_Sections.insert(make_pair(section, SSection())).first;
+            sit->second.cleared = false;
+        }
+        SEntry& entry = sit->second.entries[name];
 #if 0
         if (entry.value == value) {
             if (entry.comment != comment) {
@@ -911,6 +906,19 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
             return false; // not actually modified
         }
 #endif
+        if ( !value.empty() ) {
+            sit->second.cleared = false;
+        } else if ( !entry.value.empty() ) {
+            _ASSERT( !sit->second.cleared );
+            bool cleared = true;
+            ITERATE (TEntries, eit, sit->second.entries) {
+                if (&eit->second != &entry  &&  !eit->second.value.empty() ) {
+                    cleared = false;
+                    break;
+                }
+            }
+            sit->second.cleared = cleared;
+        }
         if (MaybeSet(entry.value, value, flags)) {
             MaybeSet(entry.comment, comment, flags);
             return true;
@@ -936,6 +944,7 @@ bool CMemoryRegistry::x_SetComment(const string& comment,
             return false;
         } else {
             sit = m_Sections.insert(make_pair(section, SSection())).first;
+            sit->second.cleared = false;
         }
     }
     TEntries& entries = sit->second.entries;

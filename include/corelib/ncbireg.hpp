@@ -456,6 +456,7 @@ public: // WorkShop needs these exposed
     struct SSection {
         string   comment;
         TEntries entries;
+        bool     cleared;
     };
     typedef map<string, SSection, PNocase> TSections;
 
