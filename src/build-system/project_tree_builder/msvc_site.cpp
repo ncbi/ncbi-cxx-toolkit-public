@@ -241,7 +241,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
     list<string> incs;
     NStr::Split(include_str, LIST_SEPARATOR, incs);
     ITERATE( list<string>, i, incs) {
-        if (CDirEntry::IsAbsolutePath(*i)) {
+        if (i->empty() || CDirEntry::IsAbsolutePath(*i)) {
             libinfo->m_IncludeDir.push_back(*i);
         } else {
             libinfo->m_IncludeDir.push_back(CDirEntry::ConcatPath(
@@ -253,7 +253,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
     libinfo->m_LibPath    = ToOSPath(
         ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config)));
-    if (!CDirEntry::IsAbsolutePath(libinfo->m_LibPath)) {
+    if (!libinfo->m_LibPath.empty() && !CDirEntry::IsAbsolutePath(libinfo->m_LibPath)) {
         libinfo->m_LibPath = CDirEntry::ConcatPath(
             GetApp().GetProjectTreeInfo().m_Root, libinfo->m_LibPath);
     }
