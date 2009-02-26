@@ -24,4 +24,6 @@ objects/id[12]$
 objects/medline$
 objects/pub$
 objects/seq.*
+internal$ update-only
+internal/cppcore$ update-only
 internal/cppcore/os_gateway
