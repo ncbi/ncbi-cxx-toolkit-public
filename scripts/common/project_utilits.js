@@ -751,7 +751,7 @@ function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     // Get it from SVN (CVS not implemented!)
     RemoveFolder(oShell, oFso, "temp");
     var cvs_path = GetRepository(oShell, cvs_rel_path);
-    execute(oShell, "svn xxx checkout " + cvs_path + " temp");
+    execute(oShell, "svn checkout " + cvs_path + " temp");
 	execute(oShell, "xcopy temp \"" + target_abs_dir + "\" /S /E /Y /C");
     RemoveFolder(oShell, oFso, "temp");
 }
