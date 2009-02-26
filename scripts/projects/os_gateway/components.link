@@ -1,0 +1,5 @@
+[components]
+infrastructure  4.0.0
+core            4.0.0
+dbase           4.0.0
+objects         4.0.0

@@ -16,6 +16,10 @@ COPY: $srcdir/src/internal/cppcore/os_gateway/os_gateway.ini $installdir/bin
 # The -t key prevents inclusion of the tree builder into the release
 SVN_TAG_RELEASE_ADD_FLAGS: -t
 
+# Use stable components (specified at version 4.0.0 as of February
+# 2009) rather than the trunk.
+USE_COMPONENTS: os_gateway
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
