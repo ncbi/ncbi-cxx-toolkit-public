@@ -193,19 +193,19 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
         // CConfig::eErr_NoThrow, "");
 #define GetUIntNoErr(name, dflt) \
     (unsigned) bdb_conf.GetInt("netschedule", name, CConfig::eErr_NoThrow, dflt)
+#define GetSizeNoErr(name, dflt) \
+    (unsigned) bdb_conf.GetDataSize("netschedule", name, CConfig::eErr_NoThrow, dflt)
 #define GetBoolNoErr(name, dflt) \
     bdb_conf.GetBool("netschedule", name, CConfig::eErr_NoThrow, dflt)
 
     max_queues        = GetUIntNoErr("max_queues", 50);
 
-    cache_ram_size    = (unsigned)
-        bdb_conf.GetDataSize("netschedule", "mem_size",
-                                CConfig::eErr_NoThrow, 0);
+    cache_ram_size    = GetSizeNoErr("mem_size", 0);
     mutex_max         = GetUIntNoErr("mutex_max", 0);
     max_locks         = GetUIntNoErr("max_locks", 0);
     max_lockers       = GetUIntNoErr("max_lockers", 0);
     max_lockobjects   = GetUIntNoErr("max_lockobjects", 0);
-    log_mem_size      = GetUIntNoErr("log_mem_size", 0);
+    log_mem_size      = GetSizeNoErr("log_mem_size", 0);
     // max_trans is derivative, so we do not read it here
 
     checkpoint_kb     = GetUIntNoErr("checkpoint_kb", 5000);
