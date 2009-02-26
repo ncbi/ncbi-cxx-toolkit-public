@@ -9,7 +9,7 @@ var g_make_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-// valid:   "71", "80", "80x64"
+// valid:   "71", "80", "80x64", "90", "90x64"
 var g_def_msvcver = "80";
 var g_msvcver     = "80";
 
@@ -297,7 +297,9 @@ function CopyPtb(oShell, oTree, oTask)
             target_path = oTree.BinPathStatic;
         }
         target_path += "\\" + conf;
-        var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
+        target_path += "\\project_tree_builder.exe";
+//        var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
+        var source_file = GetDefaultPtbRelease();
         if (!oFso.FileExists(source_file)) {
             WScript.Echo("WARNING: File not found: " + source_file);
             source_file = oTask.ToolkitPath;
@@ -432,7 +434,8 @@ function GetDefaultMsvcVer()
 function SetMsvcVer(oArgs, flag)
 {
     g_msvcver = GetFlaggedValue(oArgs, flag, g_msvcver);
-    if (g_msvcver != "71" && g_msvcver != "80" && g_msvcver != "80x64") {
+    if (g_msvcver != "71" && g_msvcver != "80" && g_msvcver != "80x64"
+                          && g_msvcver != "90" && g_msvcver != "90x64") {
         g_msvcver = GetDefaultMsvcVer();
     }
 }
@@ -441,6 +444,9 @@ function GetMsvcFolder()
 {
     if (g_msvcver == "80" || g_msvcver == "80x64") {
         return "msvc800_prj";
+    }
+    if (g_msvcver == "90" || g_msvcver == "90x64") {
+        return "msvc900_prj";
     }
     return "msvc710_prj";
 }
@@ -505,17 +511,31 @@ function GetPositionalValue(oArgs, position)
 }
 
 // Configuration of pre-built C++ toolkit
+function GetDefaultSuffix()
+{
+    var s = "8";
+    if (g_msvcver == "80") {
+        s = "8";
+    } else if (g_msvcver == "80x64") {
+        s = "8.64";
+    } else if (g_msvcver == "90") {
+        s = "9";
+    } else if (g_msvcver == "90x64") {
+        s = "9.64";
+    } else {
+        s = "71";
+    }
+    return s;
+}
 function GetDefaultCXX_ToolkitFolder()
 {
     var root = "\\\\snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc"
-    if (g_msvcver == "80") {
-        root += "8";
-    } else if (g_msvcver == "80x64") {
-        root += "8.64";
-    } else {
-        root += "71";
-    }
-    return root;
+    return root + GetDefaultSuffix();
+}
+function GetDefaultPtbRelease()
+{
+    var root = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\ptb\\msvc"
+    return root + GetDefaultSuffix() + "\\project_tree_builder.RELEASE";
 }
 function GetDefaultCXX_ToolkitSubFolder()
 {
