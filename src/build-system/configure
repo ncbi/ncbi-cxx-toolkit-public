@@ -8977,6 +8977,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
                   WithFeatures="$WithFeatures${WithFeaturesSep}Darwin"; WithFeaturesSep=" "
+        if false; then           WithFeatures="$WithFeatures${WithFeaturesSep}XCODE"; WithFeaturesSep=" "; fi
         ;;
      irix)
 
@@ -30181,7 +30182,7 @@ CHECK_TOOLS=$with_check_tools
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris MacOS PubSeqOS check; do
+for x in MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS PubSeqOS check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

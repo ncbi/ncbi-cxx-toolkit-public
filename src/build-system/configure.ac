@@ -2322,6 +2322,7 @@ elif test "$x_have_unistd" = "yes" ; then
      darwin)
         AC_DEFINE(NCBI_OS_DARWIN,  1, [Define to 1 on Mac OS X.])
         NCBI_FEATURE(Darwin)
+        if false; then NCBI_FEATURE(XCODE); fi
         ;;
      irix)
         AC_DEFINE(NCBI_OS_IRIX,    1, [Define to 1 on IRIX.])
