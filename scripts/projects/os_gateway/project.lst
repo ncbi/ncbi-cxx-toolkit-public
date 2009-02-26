@@ -9,6 +9,10 @@ serial$
 serial/datatool$
 dbapi/driver$
 dbapi/driver/ctlib$
+dbapi/driver/ftds$ update-only
+dbapi/driver/ftds64$
+dbapi/driver/ftds64/freetds
+dbapi/driver/ftds64/ctlib$
 dbapi/driver/impl$ update-only
 dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$
