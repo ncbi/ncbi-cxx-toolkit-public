@@ -17,5 +17,11 @@ dbapi/driver/ftds64/ctlib$
 dbapi/driver/impl$ update-only
 dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$
-objects
+objects$
+objects/biblio$
+objects/general$
+objects/id[12]$
+objects/medline$
+objects/pub$
+objects/seq.*
 internal/cppcore/os_gateway
