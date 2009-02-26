@@ -378,7 +378,8 @@ CMultiAligner::x_ComputeTree(void)
 
         CClusterer clusterer(dmat);
         // max in-cluster distance ensures one cluster hence one tree
-        clusterer.ComputeClusters(DBL_MAX, CClusterer::eAverageLinkage, true);
+        clusterer.ComputeClusters(DBL_MAX, CClusterer::eCompleteLinkage, true,
+                                  1.0);
         _ASSERT(clusterer.GetClusters().size() == 1);
         m_Tree.SetTree(clusterer.ReleaseTree());
     }

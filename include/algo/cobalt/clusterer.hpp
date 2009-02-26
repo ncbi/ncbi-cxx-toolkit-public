@@ -181,10 +181,13 @@ public:
     /// @param dist_method Method for computing distance between clusters [in]
     /// @param do_trees If true, cluster dendrogram will be computed for each
     /// cluster [in]
+    /// @param infinity Distance above which two single elements cannot be
+    /// joined in a cluster. They are added to exising clusters. [in]
     ///
     void ComputeClusters(double max_diam,
                          EDistMethod dist_method = eCompleteLinkage,
-                         bool do_trees = true);
+                         bool do_trees = true,
+                         double infinity = -1.0);
 
     /// Get list of elements of a specified cluster
     /// @param index Cluster index

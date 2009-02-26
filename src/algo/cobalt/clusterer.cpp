@@ -207,10 +207,35 @@ static double s_FindMean(const vector<double>& vals)
     return result;
 }
 
+/// Find distance between two clusters 
+/// (cluster and included_cluster + extended_cluster) using given dist method.
+/// current_dist is the current distance between cluster and extended_cluster.
+static double s_FindDist(const CClusterer::CSingleCluster& cluster,
+                         const CClusterer::CSingleCluster& included_cluster,
+                         const CClusterer::CSingleCluster& extended_cluster,
+                         const CClusterer::TDistMatrix& dmat,
+                         double current_dist,
+                         CClusterer::EDistMethod dist_method)
+{
+    double result = -1.0;
+    if (dist_method == CClusterer::eCompleteLinkage) {
+        double dist = s_FindDistAsMax(cluster, included_cluster, dmat);
+        
+        result = dist > current_dist ? dist : current_dist;
+    
+    }
+    else {
+        
+        result = s_FindDistAsMean(cluster, extended_cluster, dmat);
+    }
+    return result;
+}
+
 // Complete Linkage clustering with dendrograms
 void CClusterer::ComputeClusters(double max_diam,
                                  CClusterer::EDistMethod dist_method,
-                                 bool do_trees)
+                                 bool do_trees,
+                                 double infinity)
 {
     if (dist_method != eCompleteLinkage && dist_method != eAverageLinkage) {
         NCBI_THROW(CClustererException, eInvalidOptions, "Unrecognised cluster"
@@ -348,6 +373,48 @@ void CClusterer::ComputeClusters(double max_diam,
             break;
         }
 
+        // If distance between two one-element clusters exceeds
+        // infinity, they should not start a cluster.
+        // Try attaching one of the elements to a cluster with at least two
+        // elements.
+        if (infinity >= 0.0 && dmat(min_i, min_j) >= infinity
+            && clusters[min_i].size() == 1 && clusters[min_j].size() == 1) {
+
+            // find first used entry
+            size_t new_min_j = 0;
+            while ((!used_entry[new_min_j] || new_min_j == min_j
+                    || new_min_j == min_i 
+                    || clusters[new_min_j].size() == 1)
+                   && new_min_j < num_elements) {
+
+                new_min_j++;
+            }
+            if (new_min_j < num_elements) {
+
+                // find new smallest distance
+                for (size_t j=new_min_j+1;j < num_elements;j++) {
+                    if (!used_entry[j] || clusters[j].size() == 1
+                        || j == min_j || j == min_i) {
+                        continue;
+                    }
+                    
+                    if (dmat(min_i, j) < dmat(min_i, new_min_j)) {
+                        new_min_j = j;
+                    }
+
+                }
+                // if the new pair cannot be found keep the old min_j
+                if (new_min_j < num_elements) {
+                    min_j = new_min_j;
+                    if (min_i > min_j) {
+                        swap(min_i, min_j);
+                    }
+                }
+            }
+            // TO DO: Generate a warning if new min_j is not found
+        }
+
+
         _ASSERT(clusters[min_i].size() > 0 && clusters[min_j].size() > 0);
         _ASSERT(min_i < num_elements && min_j < num_elements);
 
@@ -426,32 +493,28 @@ void CClusterer::ComputeClusters(double max_diam,
         }
         
         // Updating distance matrix
-        // Distance between clusters is the largest pairwise distance
         for (size_t i=0;i < min_i && min_i > 0;i++) {
             if (!used_entry[i]) {
                 continue;
             }
 
-            double dist = dist_method == eCompleteLinkage ?
-                s_FindDistAsMax(clusters[i], included_cluster, *m_DistMatrix)
-                : s_FindDistAsMean(clusters[i], included_cluster, *m_DistMatrix);
+            dmat(i, min_i) = s_FindDist(clusters[i], included_cluster,
+                                        extended_cluster, *m_DistMatrix,
+                                        dmat(i, min_i), dist_method);
 
-            if (dist > dmat(i, min_i)) {
-                dmat(i, min_i) = dist;
-            }
+            dmat(min_i, i) = dmat(i, min_i);
+
         }
-            for (size_t j=min_i+1;j < num_elements;j++) {
+        for (size_t j=min_i+1;j < num_elements;j++) {
             if (!used_entry[j]) {
                 continue;
             }
 
-            double dist = dist_method == eCompleteLinkage ?
-                s_FindDistAsMax(clusters[j], included_cluster, *m_DistMatrix)
-                : s_FindDistAsMean(clusters[j], included_cluster, *m_DistMatrix);
+            dmat(min_i, j) = s_FindDist(clusters[j], included_cluster,
+                                        extended_cluster, *m_DistMatrix,
+                                        dmat(min_i, j), dist_method);
 
-            if (dist > dmat(min_i, j)) {
-                dmat(min_i, j) = dist;
-            }
+            dmat(j, min_i) = dmat(min_i, j);
 
         }
         clusters[min_j].clear();
