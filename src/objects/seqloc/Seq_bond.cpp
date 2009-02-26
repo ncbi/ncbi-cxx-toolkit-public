@@ -85,6 +85,7 @@ bool CSeq_bond::IsSetStrand(EIsSetStrand flag) const
         return GetA().IsSetStrand()  &&
             IsSetB()  &&  GetB().IsSetStrand();
     }
+    return false;
 }
 
 
