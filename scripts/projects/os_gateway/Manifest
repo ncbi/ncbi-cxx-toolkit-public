@@ -1,0 +1,32 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Sergey Satskiy
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: os_gateway probe_os_gateway simple_os_gateway test_osgregrouper
+COPY: $srcdir/src/internal/cppcore/os_gateway/kill_os_gateway.sh $installdir/bin
+COPY: $srcdir/src/internal/cppcore/os_gateway/os_gateway.ini $installdir/bin
+
+# The -t key prevents inclusion of the tree builder into the release
+SVN_TAG_RELEASE_ADD_FLAGS: -t
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux32    : Syb125 : GCC.sh 3.4.2     --without-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
+Linux64    : Syb125 : GCC.sh 4.0.1     --without-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
+
+# The following lines are generated
+NAME:    os_gateway
+VERSION: 1.1.1
+

@@ -1,0 +1,16 @@
+corelib$
+util$
+util/bitset$
+util/math$
+util/sequtil$
+connect$
+connect/ext$
+serial$
+serial/datatool$
+dbapi/driver$
+dbapi/driver/ctlib$
+dbapi/driver/impl$ update-only
+dbapi/driver/util$ update-only
+dbapi/driver/odbc/unix_odbc$
+objects
+internal/cppcore/os_gateway
