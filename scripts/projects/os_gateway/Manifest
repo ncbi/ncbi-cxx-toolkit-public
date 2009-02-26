@@ -27,8 +27,10 @@ USE_COMPONENTS: os_gateway
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32    : Syb125 : GCC.sh 3.4.2     --without-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
-Linux64    : Syb125 : GCC.sh 4.0.1     --without-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
+Linux32    : debug : GCC.sh 3.4.2     --with-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
+Linux32    : plain : GCC.sh 3.4.2     --without-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
+Linux64    : debug : GCC.sh 4.0.1     --with-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
+Linux64    : plain : GCC.sh 4.0.1     --without-debug --with-mt --with-sybase-local --without-dll --without-runpath --without-version --with-flat-makefile
 
 # The following lines are generated
 NAME:    os_gateway
