@@ -623,6 +623,7 @@ public:
     };
 
     double GetCurrentRequestTime(double time);
+    void ReleaseNotLoadedBlobs();
 
 private:
     friend class CLoadInfoLock;

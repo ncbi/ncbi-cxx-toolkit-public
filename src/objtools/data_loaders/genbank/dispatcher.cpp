@@ -621,13 +621,14 @@ namespace {
         CCommandLoadBlob(CReaderRequestResult& result,
                          const TKey& key)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Lock(result, key)
+              m_Key(key)
             {
             }
 
         bool IsDone(void)
             {
-                return m_Lock.IsLoaded();
+                CLoadLockBlob blob(GetResult(), m_Key);
+                return blob.IsLoaded();
             }
         bool Execute(CReader& reader)
             {
@@ -649,7 +650,6 @@ namespace {
         
     private:
         TKey m_Key;
-        TLock m_Lock;
     };
 
     class CCommandLoadChunk : public CReadDispatcherCommand

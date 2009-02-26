@@ -493,16 +493,18 @@ bool CId2ReaderBase::LoadBlob(CReaderRequestResult& result,
                               const TBlobId& blob_id)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
-    CLoadLockBlob blob(result, blob_id);
-    if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
-        return true;
+    {
+        CLoadLockBlob blob(result, blob_id);
+        if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
+            return true;
+        }
     }
 
     if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
         dynamic_cast<const CProcessor_ExtAnnot&>
             (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
             .Process(result, blob_id, chunk_id);
-        _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+        //_ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
         return true;
     }
 
@@ -832,6 +834,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     vector<char> done(request_count);
     vector<SId2LoadedSet> loaded_sets(request_count);
 
+    result.ReleaseNotLoadedBlobs();
     CConn conn(this);
     try {
         // send request

@@ -560,6 +560,24 @@ CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
 }
 
 
+void CReaderRequestResult::ReleaseNotLoadedBlobs()
+{
+    for ( TBlobLoadLocks::iterator it = m_BlobLoadLocks.begin(); it != m_BlobLoadLocks.end(); ) {
+        bool loaded;
+        {
+            CLoadLockBlob blob(*this, it->first);
+            loaded = CProcessor::IsLoaded(it->first, CProcessor::kMain_ChunkId, blob);
+        }
+        if ( loaded ) {
+            ++it;
+        }
+        else {
+            m_BlobLoadLocks.erase(it++);
+        }
+    }
+}
+
+
 void CReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& /*idh*/,
                                              TLoadedBlob_ids& /*blob_ids*/) const
 {
