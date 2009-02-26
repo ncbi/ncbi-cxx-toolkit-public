@@ -62,9 +62,12 @@ void CTestSubRegApp::Init()
         ("defaults", "IniFile", "source of non-overriding extra configuration",
          CArgDescriptions::eInputFile, "defaults.ini");
 
+    // For historical reasons, the registry system explicitly writes
+    // out platform-specific newlines; forcing "binary" output avoids
+    // doubled CRs on Windows (and consequent test failures).
     arg_desc->AddDefaultKey
         ("out", "IniDump", "destination for merged registries",
-         CArgDescriptions::eOutputFile, "-");
+         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fBinary);
 
     SetupArgDescriptions(arg_desc.release());
 }
