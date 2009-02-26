@@ -1767,11 +1767,11 @@ static EIO_Status s_Recv(SOCK    sock,
                               x_error                == SOCK_ECONNABORTED  ||
                               x_error                == SOCK_ENETRESET))) {
             /* statistics & logging */
-            if (x_read < 0  ||
+            if ((x_read < 0  &&  (sock->n_read | sock->n_written))  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
                 s_DoLog(sock, eIO_Read, (x_read < 0 ? (void*) &x_error :
-                                         x_read > 0 ? buf              :0),
+                                         x_read > 0 ? buf              : 0),
                         (size_t)(x_read < 0 ? 0 : x_read), 0);
             }
 
@@ -2166,7 +2166,7 @@ static EIO_Status s_Send(SOCK        sock,
                                  x_error               == SOCK_ENETRESET   ||
                                  x_error               == SOCK_ECONNABORTED))){
             /* statistics & logging */
-            if (x_written < 0  ||
+            if ((x_written < 0  &&  (sock->n_read | sock->n_written)) ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
                 s_DoLog(sock, eIO_Write, (x_written < 0
