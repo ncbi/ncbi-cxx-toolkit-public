@@ -8,6 +8,7 @@ connect/ext$
 serial$
 serial/datatool$
 serial/impl$ update-only
+dbapi$
 dbapi/driver$
 dbapi/driver/ctlib$
 dbapi/driver/ftds$ update-only
