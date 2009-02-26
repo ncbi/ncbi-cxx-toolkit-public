@@ -25,6 +25,7 @@ objects/id[12]$
 objects/medline$
 objects/pub$
 objects/seq.*
+-objects/seq.*/.*test
 internal$
 internal/cppcore$
 internal/cppcore/os_gateway
