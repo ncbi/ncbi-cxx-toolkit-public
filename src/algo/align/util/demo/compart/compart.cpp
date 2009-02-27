@@ -102,13 +102,16 @@ void CCompartApp::Init()
                              "the lengths from GenBank. Cannot be used with -qdb.",
                              CArgDescriptions::eInputFile);
 
-    CArgAllow* constrain01 = new CArgAllow_Doubles(0.0, 1.0);
+    CArgAllow* constrain01 (new CArgAllow_Doubles(0.0, 1.0));
     argdescr->SetConstraint("penalty", constrain01);
     argdescr->SetConstraint("min_idty", constrain01);
     argdescr->SetConstraint("min_singleton_idty", constrain01);
 
-    CArgAllow_Integers* constrain_maxvol = new CArgAllow_Integers(128,1024);
+    CArgAllow_Integers* constrain_maxvol (new CArgAllow_Integers(128,1024));
     argdescr->SetConstraint("maxvol", constrain_maxvol);
+
+    CArgAllow_Integers* constrain_minqlen (new CArgAllow_Integers(34,99999));
+    argdescr->SetConstraint("min_query_len", constrain_minqlen);
 
 
     SetupArgDescriptions(argdescr.release());
