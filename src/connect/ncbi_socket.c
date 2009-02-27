@@ -1240,10 +1240,10 @@ static EIO_Status s_Select(size_t                n,
                     /* NB: the bits are XCAOWR */
                     if (!(mask = e.lNetworkEvents)) {
                         if (sock->type == eListening) {
-                            CORE_LOG_X(141, eLOG_Warning,
-                                       "%s[SOCK::Select] "
-                                        " Possible connection throttling has"
-                                        " been detected");
+                            CORE_LOGF_X(141, eLOG_Warning,
+                                        ("%s[SOCK::Select] "
+                                         " Possible connection throttling has"
+                                         " been detected", s_ID(sock, _id)));
                         }
                         break;
                     }
