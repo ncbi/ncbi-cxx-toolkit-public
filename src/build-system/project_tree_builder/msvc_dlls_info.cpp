@@ -118,6 +118,10 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                 }
 
             } else  {
+                if (GetApp().m_AddMissingLibs) {
+                    CProjKey depend_key(CProjKey::eLib, depend_id);
+                    new_depends.push_back(depend_key); 
+                }
                 PTB_WARNING_EX(dll_id, ePTB_MissingDependency,
                             "Missing dependency: " << depend_id);
             }
@@ -442,6 +446,11 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                         new_depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
                     }
                     found = true;
+                    if (pass == 1 && GetApp().m_AddMissingLibs &&
+                        i->second.m_MakeType >= eMakeType_Excluded) {
+                        copy(i->second.m_Depends.begin(), i->second.m_Depends.end(),
+                            back_inserter(new_depends));
+                    }
                 } else /* if (!GetApp().m_ScanWholeTree)*/ {
                     ITERATE(CProjectItemsTree::TProjects, d, tree.m_Projects) {
                         const list<string>& lst = d->second.m_HostedLibs;
