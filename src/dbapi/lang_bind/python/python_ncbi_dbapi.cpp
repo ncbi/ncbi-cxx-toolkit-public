@@ -1054,7 +1054,6 @@ CConnection::CConnection(
     const pythonpp::CObject& extra_params
     )
 : m_DefParams(server_name, user_name, user_pswd)
-, m_DBValidator(new CTrivialConnValidator(db_name))
 , m_Params(m_DefParams)
 , m_DM(CDriverManager::GetInstance())
 , m_DS(NULL)
@@ -1064,13 +1063,12 @@ CConnection::CConnection(
     try {
         m_DefParams.SetDriverName(driver_name);
         m_DefParams.SetDatabaseName(db_name);
-        m_DefParams.SetConnValidator(m_DBValidator);
 
         // Set up a server type ...
         string db_type_uc = db_type;
         NStr::ToUpper(db_type_uc);
 
-        if ( db_type_uc == "SYBASE" ) {
+        if ( db_type_uc == "SYBASE"  ||  db_type_uc == "SYB" ) {
             m_DefParams.SetServerType(CDBConnParams::eSybaseSQLServer);
         } else if ( db_type_uc == "MYSQL" ) {
             m_DefParams.SetServerType(CDBConnParams::eMySQL);

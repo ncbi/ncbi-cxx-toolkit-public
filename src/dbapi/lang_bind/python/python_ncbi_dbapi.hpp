@@ -674,7 +674,6 @@ private:
     typedef set<CTransaction*> TTransList;
 
     CDBDefaultConnParams    m_DefParams;
-    CRef<IConnValidator>    m_DBValidator;
     CCPPToolkitConnParams   m_Params;
 
     CDriverManager&         m_DM;

@@ -127,4 +127,22 @@ cursor.fetchall()
 checkEqual(cursor.get_proc_return_status(), 0)
 
 
+conn = connect("ftds", "SYB", "PUBSEQ_OS", "master", "anyone", "allowed")
+cursor = conn.cursor()
+cursor.execute('id_get_accn_ver_by_gi 2')
+cursor.fetchall()
+
+
+conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest1', 'anyone', 'allowed') 
+cursor = conn.cursor() 
+cursor.execute("SELECT @@servername") 
+cursor.fetchall()
+
+
+conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest2', 'anyone', 'allowed') 
+cursor = conn.cursor() 
+cursor.execute("SELECT @@servername") 
+cursor.fetchall()
+
+
 print 'All tests completed successfully'

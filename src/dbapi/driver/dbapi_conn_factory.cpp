@@ -500,13 +500,16 @@ CDBConnectionFactory::MakeValidConnection(
             validator.Push(CRef<IConnValidator>(&use_db_validator));
         }
 
+        conn_status = IConnValidator::eInvalidConn;
         try {
             conn_status = validator.Validate(*conn);
             if (conn_status != IConnValidator::eValidConn) {
                 return NULL;
             }
         } catch (const CDB_Exception& ex) {
-            conn_status = params.GetConnValidator()->ValidateException(ex);
+            if (params.GetConnValidator().NotNull()) {
+                conn_status = params.GetConnValidator()->ValidateException(ex);
+            }
             if (conn_status != IConnValidator::eValidConn) {
                 return NULL;
             }
