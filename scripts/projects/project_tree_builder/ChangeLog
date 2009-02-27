@@ -15,3 +15,9 @@ February 12, 2009
 version 1.7.3
 Added possibility to specify USR_DEP macro in the toolkit makefiles
 to enforce static library build order.
+
+February 27, 2009
+version 1.7.4
+Corrected assembling DLLs in case of multiple projects with the same name
+Added 'rootdir' macro in ptb.ini
+Corrected DLL dependency analysis when working with import_project Windows script
