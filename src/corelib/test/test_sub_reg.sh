@@ -6,13 +6,11 @@ NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.ini
 NCBI_CONFIG_e__test=env
 NCBI_CONFIG__test__e=env
 NCBI_CONFIG__test__e_ie=env
-NCBI_CONFIG__test__ex=
-NCBI_CONFIG__test__ex_ie=
 NCBI_CONFIG__test__ob_e=env
 NCBI_CONFIG__test__obx_e=env
 export NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES NCBI_CONFIG_e__test
-export NCBI_CONFIG__test__e NCBI_CONFIG__test__e_ie NCBI_CONFIG__test__ex
-export NCBI_CONFIG__test__ex_ie NCBI_CONFIG__test__ob_e NCBI_CONFIG__test__obx_e
+export NCBI_CONFIG__test__e NCBI_CONFIG__test__e_ie NCBI_CONFIG__test__ob_e
+export NCBI_CONFIG__test__obx_e
 
 $CHECK_EXEC test_sub_reg -defaults "$NCBI_CONFIG_PATH/defaults.ini" \
                          -overrides "$NCBI_CONFIG_PATH/overrides.ini" \
