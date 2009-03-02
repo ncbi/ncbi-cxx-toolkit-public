@@ -155,7 +155,8 @@ protected:
     double ScaleLinear() const;              
     unsigned int GetGraphType();
 
-    CSeq_id_Handle m_MappedID;                       
+    CSeq_id_Handle m_MappedID;
+    std::string m_strName;                       
     std::string m_strChrom;
     unsigned int m_uGraphType;
     unsigned int m_uSeqStart;
@@ -208,13 +209,15 @@ public:
         unsigned int );
 
     const char* Chrom() const { return m_strChrom.c_str(); };
-    const char* Id() const { return m_strId.c_str(); };
+    const char* Build() const { return m_strBuild.c_str(); };
+    const char* Name() const { return m_strName.c_str(); };
     unsigned int SeqStart() const { return m_uSeqStart; };
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };
     
 protected:
-    std::string m_strId;
+    std::string m_strName;
+    std::string m_strBuild;
     std::string m_strChrom;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqSpan;

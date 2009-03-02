@@ -76,6 +76,8 @@ CWiggleRecord::CWiggleRecord()
 void CWiggleRecord::Reset()
 //  ----------------------------------------------------------------------------
 {
+    m_strName = "User Track";
+    m_strBuild = "";
     m_strChrom = "";
     m_uSeqStart = 0;
     m_uSeqStep = 0;
@@ -101,13 +103,16 @@ bool CWiggleRecord::ParseTrackDefinition(
             return false;
         }
         NStr::ReplaceInPlace( strValue, "\"", "" );
-        if ( strKey == "name" ) {
+        if ( strKey == "db" ) {
             if ( uMode == IDMODE_CHROM ) {
-                m_strId = "";
+                m_strBuild = "";
             }
             else {
-                m_strId = strValue;
+                m_strBuild = strValue;
             }
+        }
+        if ( strKey == "name" ) {
+            m_strName = strValue;
         }
     }
     return true;
@@ -126,7 +131,6 @@ bool CWiggleRecord::ParseDataBed(
     m_uSeqStart = NStr::StringToUInt( data[1] );
     m_uSeqSpan = NStr::StringToUInt( data[2] ) - m_uSeqStart;
     m_dValue = NStr::StringToDouble( data[3] );
-//    m_type = TYPE_DATA_BED;
     return true;
 }
 
@@ -227,6 +231,7 @@ CWiggleTrack::CWiggleTrack(
     const CWiggleRecord& record,
     CIdMapper* pMapper ):
 //  ===========================================================================
+    m_strName( record.Name() ),
     m_strChrom( record.Chrom() ),
     m_uGraphType( GRAPH_UNKNOWN )
 {
@@ -236,8 +241,14 @@ CWiggleTrack::CWiggleTrack(
     m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
     m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
 
-    m_MappedID = pMapper->MapID( UcscID::Label( record.Id(), record.Chrom() ), 
-        m_uSeqLength );
+    if ( record.Build() != string("genbank") ) {
+        m_MappedID = pMapper->MapID( UcscID::Label( record.Build(), 
+            record.Chrom() ), m_uSeqLength );
+    }
+    else {
+        m_MappedID = CSeq_id_Handle::GetGiHandle( 
+            NStr::StringToNumeric( record.Chrom() ) );
+    }
     
     if ( m_uSeqLength == 0 ) {
         m_uSeqStart = record.SeqStart();
@@ -380,7 +391,8 @@ bool CWiggleTrack::MakeGraph(
 //  ===========================================================================
 {
     CRef<CSeq_graph> graph( new CSeq_graph );
-
+    graph->SetTitle( m_strName );
+    
     CSeq_interval& loc = graph->SetLoc().SetInt();
     loc.SetId().Assign( *m_MappedID.GetSeqId() );
     loc.SetFrom( SeqStart() );
