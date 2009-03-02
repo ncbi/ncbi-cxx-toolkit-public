@@ -6,7 +6,7 @@ APP = prosplign_demo
 SRC = prosplign_demo
 
 LIB = prosplign xobjutil \
-      ncbi_xloader_lds lds bdb tables \
+      tables \
       $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
@@ -16,4 +16,4 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
 
-REQUIRES = objects bdb
+REQUIRES = objects
