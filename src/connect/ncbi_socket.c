@@ -1239,10 +1239,19 @@ static EIO_Status s_Select(size_t                n,
                     }
                     /* NB: the bits are XCAOWR */
                     if (!(mask = e.lNetworkEvents)) {
-                        if (sock->type == eListening) {
-                            CORE_LOGF_X(141, eLOG_Warning,
+                        if (sock->type == eListening
+                            &&  (sock->log == eOn  || 
+                                 (sock->log == eDefault  &&  s_Log == eOn))) {
+                            LSOCK lsock = (LSOCK) sock;
+                            ELOG_Level level;
+                            if (lsock->n_log < 10) {
+                                lsock->n_log++;
+                                level = eLOG_Warning;
+                            } else
+                                level = eLOG_Trace;
+                            CORE_LOGF_X(141, level,
                                         ("%s[SOCK::Select] "
-                                         " Possible connection throttling has"
+                                         " Run-away connection has"
                                          " been detected", s_ID(sock, _id)));
                         }
                         break;
@@ -3473,7 +3482,6 @@ static EIO_Status s_CreateListening(const char*    path,
     (*lsock)->sock     = x_lsock;
     (*lsock)->id       = x_id;
     (*lsock)->port     = port;
-    (*lsock)->backlog  = backlog;
     (*lsock)->type     = eListening;
     (*lsock)->log      = flags;
     (*lsock)->side     = eSOCK_Server;

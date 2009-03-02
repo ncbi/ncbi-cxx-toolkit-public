@@ -63,41 +63,41 @@
 typedef SOCKET TSOCK_Handle;
 typedef HANDLE TRIGGER_Handle;
 
-#  define SOCK_EINTR            WSAEINTR
-#  define SOCK_EWOULDBLOCK      WSAEWOULDBLOCK/*EAGAIN*/
-#  define SOCK_EADDRINUSE       WSAEADDRINUSE
-#  define SOCK_ECONNRESET       WSAECONNRESET
-#  define SOCK_EPIPE            WSAESHUTDOWN
-#  define SOCK_EAGAIN           WSAEINPROGRESS/*special-case missing in WSA*/
-#  define SOCK_EINPROGRESS      WSAEINPROGRESS
-#  define SOCK_EALREADY         WSAEALREADY
-#  define SOCK_ENOTCONN         WSAENOTCONN
-#  define SOCK_ECONNABORTED     WSAECONNABORTED
-#  define SOCK_ECONNREFUSED     WSAECONNREFUSED
-#  define SOCK_ENETRESET        WSAENETRESET
-#  define SOCK_ETIMEDOUT        WSAETIMEDOUT
-#  define SOCK_SHUTDOWN_RD      SD_RECEIVE
-#  define SOCK_SHUTDOWN_WR      SD_SEND
-#  define SOCK_SHUTDOWN_RDWR    SD_BOTH
+#  define SOCK_EINTR          WSAEINTR
+#  define SOCK_EWOULDBLOCK    WSAEWOULDBLOCK/*EAGAIN*/
+#  define SOCK_EADDRINUSE     WSAEADDRINUSE
+#  define SOCK_ECONNRESET     WSAECONNRESET
+#  define SOCK_EPIPE          WSAESHUTDOWN
+#  define SOCK_EAGAIN         WSAEINPROGRESS/*special-case missing in WSA*/
+#  define SOCK_EINPROGRESS    WSAEINPROGRESS
+#  define SOCK_EALREADY       WSAEALREADY
+#  define SOCK_ENOTCONN       WSAENOTCONN
+#  define SOCK_ECONNABORTED   WSAECONNABORTED
+#  define SOCK_ECONNREFUSED   WSAECONNREFUSED
+#  define SOCK_ENETRESET      WSAENETRESET
+#  define SOCK_ETIMEDOUT      WSAETIMEDOUT
+#  define SOCK_SHUTDOWN_RD    SD_RECEIVE
+#  define SOCK_SHUTDOWN_WR    SD_SEND
+#  define SOCK_SHUTDOWN_RDWR  SD_BOTH
 
 #else
 
 typedef int TSOCK_Handle;
 typedef int TRIGGER_Handle;
 
-#  define SOCK_EINTR            EINTR
-#  define SOCK_EWOULDBLOCK      EWOULDBLOCK
-#  define SOCK_EADDRINUSE       EADDRINUSE
-#  define SOCK_ECONNRESET       ECONNRESET
-#  define SOCK_EPIPE            EPIPE
-#  define SOCK_EAGAIN           EAGAIN
-#  define SOCK_EINPROGRESS      EINPROGRESS
-#  define SOCK_EALREADY         EALREADY
-#  define SOCK_ENOTCONN         ENOTCONN
-#  define SOCK_ECONNABORTED     ECONNABORTED
-#  define SOCK_ECONNREFUSED     ECONNREFUSED
-#  define SOCK_ENETRESET        ENETRESET
-#  define SOCK_ETIMEDOUT        ETIMEDOUT
+#  define SOCK_EINTR          EINTR
+#  define SOCK_EWOULDBLOCK    EWOULDBLOCK
+#  define SOCK_EADDRINUSE     EADDRINUSE
+#  define SOCK_ECONNRESET     ECONNRESET
+#  define SOCK_EPIPE          EPIPE
+#  define SOCK_EAGAIN         EAGAIN
+#  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_EALREADY       EALREADY
+#  define SOCK_ENOTCONN       ENOTCONN
+#  define SOCK_ECONNABORTED   ECONNABORTED
+#  define SOCK_ECONNREFUSED   ECONNREFUSED
+#  define SOCK_ENETRESET      ENETRESET
+#  define SOCK_ETIMEDOUT      ETIMEDOUT
 
 #  ifndef SHUT_RD
 #    define SHUT_RD           0
@@ -115,15 +115,15 @@ typedef int TRIGGER_Handle;
 #endif
 
 #if   defined(ENFILE)
-#  define SOCK_ETOOMANY         ENFILE
+#  define SOCK_ETOOMANY       ENFILE
 #elif defined(EMFILE)
-#  define SOCK_ETOOMANY         EMFILE
+#  define SOCK_ETOOMANY       EMFILE
 #elif defined(WSAEMFILE)
-#  define SOCK_ETOOMANY         WSAEMFILE
+#  define SOCK_ETOOMANY       WSAEMFILE
 #elif defined(EINVAL)
-#  define SOCK_ETOOMANY         EINVAL
+#  define SOCK_ETOOMANY       EINVAL
 #else
-#  define SOCK_ETOOMANY         0
+#  define SOCK_ETOOMANY       0
 #endif
 
 
@@ -184,7 +184,7 @@ typedef struct LSOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     unsigned int     n_accept;  /* total number of accepted clients          */
-    unsigned short   backlog;   /* (unused)                                  */
+    unsigned short   n_log;     /* MSWIN: run-away connect warning counter   */
     unsigned short   port;      /* port on which listening (host byte order) */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
@@ -296,6 +296,7 @@ typedef struct SOCK_tag {
     char             path[1];   /* must go last                              */
 #endif /*NCBI_OS_UNIX*/
 } SOCK_struct;
+
 
 /*
  * The following implementation details are worth noting:
