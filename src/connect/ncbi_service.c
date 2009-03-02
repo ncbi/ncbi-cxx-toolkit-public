@@ -207,8 +207,9 @@ static SERV_ITER s_Open(const char*          service,
         for (i = 0; i < n_skip; i++) {
             const char* name = (iter->ismask  ||  skip[i]->type == fSERV_Dns
                                 ? SERV_NameOfInfo(skip[i]) : "");
-            SSERV_Info* temp = SERV_CopyInfoEx(skip[i], !iter->reverse_dns
-                                               ||  *name ? name : s);
+            SSERV_Info* temp = SERV_CopyInfoEx(skip[i],
+                                               !iter->reverse_dns  ||  *name ?
+                                               name : s);
             if (temp) {
                 temp->time = NCBI_TIME_INFINITE;
                 if (!s_AddSkipInfo(iter, name, temp)) {
