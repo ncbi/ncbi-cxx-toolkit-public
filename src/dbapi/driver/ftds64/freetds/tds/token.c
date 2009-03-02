@@ -2986,16 +2986,16 @@ tds5_process_dyn_result2(TDSSOCKET * tds)
             break;
         }
 
-        /* Adjust column size according to client's encoding */
-        curcol->on_server.column_size = curcol->column_size;
-        adjust_character_column_size(tds, curcol);
-
         /* numeric and decimal have extra info */
         if (is_numeric_type(curcol->column_type)) {
             curcol->column_prec = tds_get_byte(tds);    /* precision */
             curcol->column_scale = tds_get_byte(tds);   /* scale */
             /* FIXME check prec/scale, don't let server crash us */
         }
+
+        /* Adjust column size according to client's encoding */
+        curcol->on_server.column_size = curcol->column_size;
+        adjust_character_column_size(tds, curcol);
 
         /* discard Locale */
         tds_get_n(tds, NULL, tds_get_byte(tds));
