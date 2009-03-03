@@ -110,7 +110,7 @@ CValidError_feat::~CValidError_feat(void)
 }
 
 
-void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
+void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_sep)
 {
     if ( !feat.CanGetLocation() ) {
         PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
@@ -131,7 +131,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     
     ValidateExcept(feat);
     
-    ValidateSeqFeatData(feat.GetData(), feat);
+    ValidateSeqFeatData(feat.GetData(), feat, is_insd_in_sep);
   
     ValidateBothStrands (feat);
     
@@ -239,7 +239,8 @@ static bool s_IsLocGEDL(const CSeq_loc& loc, CScope& scope)
 
 void CValidError_feat::ValidateSeqFeatData
 (const CSeqFeatData& data,
- const CSeq_feat& feat)
+ const CSeq_feat& feat,
+ bool is_insd_in_sep)
 {
     switch ( data.Which () ) {
     case CSeqFeatData::e_Gene:
@@ -264,7 +265,7 @@ void CValidError_feat::ValidateSeqFeatData
         break;
     case CSeqFeatData::e_Imp:
         // Validate CPubdesc
-        ValidateImp(data.GetImp (), feat);
+        ValidateImp(data.GetImp (), feat, is_insd_in_sep);
         break;
     case CSeqFeatData::e_Biosrc:
         // Validate CBioSource
@@ -1431,7 +1432,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 }
 
 
-void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
+void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep)
 {
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
     const string& key = imp.GetKey();
@@ -1534,7 +1535,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     }
 
     if ( feat.CanGetQual() ) {
-        ValidateImpGbquals(imp, feat);
+        ValidateImpGbquals(imp, feat, is_insd_in_sep);
     }
     
     // Make sure a feature has its mandatory qualifiers
@@ -1590,10 +1591,116 @@ static bool s_RptUnitIsBaseRange (string str, int& from, int& to)
     return true;
 }
 
+typedef enum {
+  eAccessionFormat_valid = 0,
+  eAccessionFormat_no_start_letters,
+  eAccessionFormat_wrong_number_of_digits,
+  eAccessionFormat_null,
+  eAccessionFormat_too_long,
+  eAccessionFormat_missing_version,
+  eAccessionFormat_bad_version } EAccessionFormatError;
+
+static EAccessionFormatError s_ValidateAccessionString (string accession, bool require_version)
+{
+    if (NStr::IsBlank (accession)) {
+        return eAccessionFormat_null;
+    } else if (accession.length() >= 16) {
+        return eAccessionFormat_too_long;
+    } else if (accession.length() < 3 
+               || ! isalpha (accession.c_str()[0]) 
+               || ! isupper (accession.c_str()[0])
+               || ! isalpha (accession.c_str()[1])
+               || ! isupper (accession.c_str()[1])) {
+        return eAccessionFormat_no_start_letters;
+    }
+    
+    string str = accession;
+    if (NStr::StartsWith (str, "NZ_")) {
+        str = str.substr(3);
+    }
+    
+    const char *cp = str.c_str();
+    int numAlpha = 0;
+
+    while (isalpha (*cp)) {
+        numAlpha++;
+        cp++;
+    }
+
+    int numUndersc = 0;
+
+    while (*cp == '_') {
+        numUndersc++;
+        cp++;
+    }
+
+    int numDigits = 0;
+    while (isdigit (*cp)) {
+        numDigits++;
+        cp++;
+    }
+
+    if ((*cp != '\0' && *cp != ' ' && *cp != '.') || numUndersc > 1) {
+        return eAccessionFormat_wrong_number_of_digits;
+    }
+
+    EAccessionFormatError rval = eAccessionFormat_valid;
+
+    if (require_version) {
+        if (*cp != '.') {
+            rval = eAccessionFormat_missing_version;
+        }
+        cp++;
+        int numVersion = 0;
+        while (isdigit (*cp)) {
+            numVersion++;
+            cp++;
+        }
+        if (numVersion < 1) {
+            rval = eAccessionFormat_missing_version;
+        } else if (*cp != '\0' && *cp != ' ') {
+            rval = eAccessionFormat_bad_version;
+        }
+    }
+
+
+    if (numUndersc == 0) {
+        if ((numAlpha == 1 && numDigits == 5) 
+            || (numAlpha == 2 && numDigits == 6)
+            || (numAlpha == 3 && numDigits == 5)
+            || (numAlpha == 4 && numDigits == 8)
+            || (numAlpha == 5 && numDigits == 7)) {
+            return rval;
+        } 
+    } else if (numUndersc == 1) {
+        if (numAlpha != 2 || (numDigits != 6 && numDigits != 8 && numDigits != 9)) {
+            return eAccessionFormat_wrong_number_of_digits;
+        }
+        char first_letter = accession.c_str()[0];
+        char second_letter = accession.c_str()[1];
+        if (first_letter == 'N' || first_letter == 'X' || first_letter == 'Z') { 
+            if (second_letter == 'M' || second_letter == 'C'
+                || second_letter == 'T' || second_letter == 'P'
+                || second_letter == 'G' || second_letter == 'R'
+                || second_letter == 'S' || second_letter == 'W'
+                || second_letter == 'W' || second_letter == 'Z') {
+                return rval;
+            }
+        }
+        if ((first_letter == 'A' || first_letter == 'Y')
+            && second_letter == 'P') {
+            return rval;
+        }
+    }
+
+    return eAccessionFormat_wrong_number_of_digits;
+}
+
 
 void CValidError_feat::ValidateImpGbquals
 (const CImp_feat& imp,
- const CSeq_feat& feat)
+ const CSeq_feat& feat,
+ bool is_insd_in_sep)
 {
     CSeqFeatData::ESubtype ftype = feat.GetData().GetSubtype();
     const string& key = imp.GetKey();
@@ -1670,7 +1777,7 @@ void CValidError_feat::ValidateImpGbquals
                     */
                     if ( NStr::CompareNocase(key, "repeat_region") == 0  &&
                          !multiple_rpt_unit ) {
-                        if (val.length() == GetLength(feat.GetLocation(), m_Scope) ) {
+                        if (val.length() <= GetLength(feat.GetLocation(), m_Scope) ) {
                             bool just_nuc_letters = true;
                             static const string nuc_letters = "ACGTNacgtn";
                             
@@ -1686,9 +1793,9 @@ void CValidError_feat::ValidateImpGbquals
                                 if ( !vec.empty() ) {
                                     string vec_data;
                                     vec.GetSeqData(0, vec.size(), vec_data);
-                                    if ( NStr::CompareNocase(val, vec_data) != 0 ) {
+                                    if (NStr::FindNoCase (vec_data, val) == string::npos) {
                                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                            "repeat_region /rpt_unit and underlying"
+                                            "repeat_region /rpt_unit and underlying "
                                             "sequence do not match", feat);
                                     }
                                 }
@@ -1700,7 +1807,7 @@ void CValidError_feat::ValidateImpGbquals
                             }
                         } else {
                             PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                "Length of rpt_unit_seq does not match feature length", feat);
+                                "Length of rpt_unit_seq is greater than feature length", feat);
                         }                            
                     }
                 }}
@@ -1746,6 +1853,32 @@ void CValidError_feat::ValidateImpGbquals
                         if ( NStr::CompareNocase(val, s_LegalConsSpliceStrings[i]) == 0 ) {
                             error = false;
                             break;
+                        }
+                    }
+                }}
+                break;
+
+            case CGbqualType::e_Mobile_element:
+                {{
+                }}
+                break;
+
+            case CGbqualType::e_Compare:
+                {{
+                    if (!NStr::StartsWith (val, "(")) {
+                        EAccessionFormatError valid_accession = s_ValidateAccessionString (val, true);  
+                        if (valid_accession == eAccessionFormat_missing_version) {
+                            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                     val + " accession missing version for qualifier " + qual_str, feat);
+                        } else if (valid_accession == eAccessionFormat_bad_version) {
+                            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                     val + " accession has bad version for qualifier " + qual_str, feat);
+                        } else if (valid_accession != eAccessionFormat_valid) {
+                            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                     val + " is not a legal accession for qualifier " + qual_str, feat);
+                        } else if (is_insd_in_sep && NStr::Find (val, "_") == string::npos) {
+                            PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                     "RefSeq accession " + val + " cannot be used for qualifier " + qual_str, feat);
                         }
                     }
                 }}

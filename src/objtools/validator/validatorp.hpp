@@ -543,14 +543,14 @@ public:
     CValidError_feat(CValidError_imp& imp);
     virtual ~CValidError_feat(void);
 
-    void ValidateSeqFeat(const CSeq_feat& feat);
+    void ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_sep);
 
     size_t GetNumGenes    (void) const { return m_NumGenes; }
     size_t GetNumGeneXrefs(void) const { return m_NumGeneXrefs; }
 
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
-    void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
+    void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat, bool is_insd_in_sep);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
@@ -582,8 +582,8 @@ private:
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
 
-    void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
-    void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat);
+    void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
+    void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
 

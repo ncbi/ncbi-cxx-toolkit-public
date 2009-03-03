@@ -650,6 +650,21 @@ bool CValidError_imp::Validate
 
     // Features:
 
+    // before validating, need to know if we have insd seq in seq-entry
+    bool is_insd_in_sep = false;
+    for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); bi && !is_insd_in_sep; ++bi) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
+            if ((*it)->IsGenbank()
+                || (*it)->IsEmbl()
+                || (*it)->IsDdbj()
+                || (*it)->IsTpg()
+                || (*it)->IsTpe()
+                || (*it)->IsTpd()) {
+                is_insd_in_sep = true;
+            }
+        }
+    }
+
     if ( m_PrgCallback ) {
         m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Feat;
         m_PrgInfo.m_Current = m_NumFeat;
@@ -662,7 +677,7 @@ bool CValidError_imp::Validate
     for (CFeat_CI fi(GetTSEH()); fi; ++fi) {
         const CSeq_feat& sf = fi->GetOriginalFeature();
         try {
-            feat_validator.ValidateSeqFeat(sf);
+            feat_validator.ValidateSeqFeat(sf, is_insd_in_sep);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -898,7 +913,7 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
             // for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
             for (CFeat_CI fi (sah); fi; ++fi) {
                 const CSeq_feat& sf = fi->GetOriginalFeature();
-                feat_validator.ValidateSeqFeat(sf);
+                feat_validator.ValidateSeqFeat(sf, false);
             }
         }
         break;
