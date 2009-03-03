@@ -1840,7 +1840,9 @@ void CValidError_feat::ValidateImpGbquals
                             only_digits = false;
                         }
                     }
-                    error = only_digits  ||  has_spaces;
+                    if (only_digits  ||  has_spaces) {
+                        PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue, "Illegal value for qualifier " + qual_str, feat);
+                    }
                 }}
                 break;
                 
