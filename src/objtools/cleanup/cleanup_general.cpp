@@ -37,6 +37,7 @@
 #include <objects/general/Name_std.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
+#include <objects/general/Date_std.hpp>
 #include <util/static_map.hpp>
 
 #include <vector>
@@ -581,6 +582,35 @@ void CCleanup_imp::BasicCleanup(CUser_object& uo)
     }
 }
 
+
+void CCleanup_imp::BasicCleanup(CDate_std& date)
+{
+    if (date.IsSetSecond() && date.GetSecond() > 59) {
+        date.ResetSecond();
+        ChangeMade(CCleanupChange::eCleanupDate);
+    }
+
+    if (date.IsSetMinute() && date.GetMinute() > 59) {
+        date.ResetMinute();
+        date.ResetSecond();
+        ChangeMade(CCleanupChange::eCleanupDate);
+    }
+    
+    if (date.IsSetHour() && date.GetHour() > 23) {
+        date.ResetHour();
+        date.ResetMinute();
+        date.ResetSecond();
+        ChangeMade(CCleanupChange::eCleanupDate);
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup(CDate& date)
+{
+    if (date.IsStd()) {
+        BasicCleanup(date.SetStd());
+    }
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::

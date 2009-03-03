@@ -122,6 +122,7 @@ public:
         eChangeSeqId,
         eRemoveEmptyPub,
         eAddQualifier,
+        eCleanupDate,
         // set when any other change is made.
         eChangeOther,
         

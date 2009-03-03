@@ -217,6 +217,9 @@ void CCleanup_imp::BasicCleanup(CCit_gen& cg, bool fix_initials)
      ValNodeCopyStr (publist, 2, buf2);
 
      */
+    if (cg.IsSetDate()) {
+        BasicCleanup (cg.SetDate());
+    }
 }
 
 
@@ -264,6 +267,18 @@ void CCleanup_imp::BasicCleanup(CCit_sub& cs, bool fix_initials)
             }
         }
     }
+
+    if (cs.IsSetDate()) {
+        BasicCleanup (cs.SetDate());
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup(CCit_jour &j)
+{
+    if (j.IsSetImp()) {
+        BasicCleanup (j.SetImp());
+    }
 }
 
 
@@ -278,6 +293,8 @@ void CCleanup_imp::BasicCleanup(CCit_art& ca, bool fix_initials)
             BasicCleanup(from.SetBook(), fix_initials);
         } else if (from.IsProc()) {
             BasicCleanup(from.SetProc(), fix_initials);
+        } else if (from.IsJournal()) {
+            BasicCleanup(from.SetJournal());
         }
     }
 }
@@ -287,6 +304,9 @@ void CCleanup_imp::BasicCleanup(CCit_book& cb, bool fix_initials)
 {
     if (cb.IsSetAuthors()) {
         BasicCleanup(cb.SetAuthors(), fix_initials);
+    }
+    if (cb.IsSetImp()) {
+        BasicCleanup(cb.SetImp());
     }
 }
 
@@ -311,6 +331,12 @@ void CCleanup_imp::BasicCleanup(CCit_pat& cp, bool fix_initials)
     if (cp.IsSetAssignees()) {
         BasicCleanup(cp.SetAssignees(), fix_initials);
     }
+    if (cp.IsSetApp_date()) {
+        BasicCleanup (cp.SetApp_date());
+    }
+    if (cp.IsSetDate_issue()) {
+        BasicCleanup (cp.SetDate_issue());
+    }
 }
 
 
@@ -326,6 +352,14 @@ void CCleanup_imp::BasicCleanup(CCit_proc& cp, bool fix_initials)
 {
     if (cp.IsSetBook()) {
         BasicCleanup(cp.SetBook(), fix_initials);
+    }
+}
+
+
+void CCleanup_imp::BasicCleanup (CImprint& imp)
+{
+    if (imp.IsSetDate()) {
+        BasicCleanup (imp.SetDate());
     }
 }
 

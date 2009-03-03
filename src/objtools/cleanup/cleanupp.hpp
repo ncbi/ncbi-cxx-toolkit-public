@@ -40,6 +40,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/general/Date_std.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
@@ -78,6 +79,7 @@ class CCit_book;
 class CCit_pat;
 class CCit_let;
 class CCit_proc;
+class CCit_jour;
 class CMedline_entry;
 class CPubMedId;
 class CAuth_list;
@@ -92,6 +94,9 @@ class COrgMod;
 class CSubSource;
 class CMolInfo;
 class CCdregion;
+class CDate;
+class CDate_std;
+class CImprint;
 
 /// right now a slightly different cleanup is performed for EMBL/DDBJ and
 /// SwissProt records. All other types are handled as GenBank records.
@@ -174,6 +179,7 @@ private:
     void BasicCleanup(CPub& pub, bool fix_initials);
     void BasicCleanup(CCit_gen& cg, bool fix_initials);
     void BasicCleanup(CCit_sub& cs, bool fix_initials);
+    void BasicCleanup(CCit_jour &j);
     void BasicCleanup(CCit_art& ca, bool fix_initials);
     void BasicCleanup(CCit_book& cb, bool fix_initials);
     void BasicCleanup(CCit_pat&  cp, bool fix_initials);
@@ -181,6 +187,11 @@ private:
     void BasicCleanup(CPubMedId& pm, bool fix_initials);
     void BasicCleanup(CCit_let&  cl, bool fix_initials);
     void BasicCleanup(CCit_proc& cp, bool fix_initials);
+    /// Dates
+    void BasicCleanup(CDate& date);
+    void BasicCleanup(CDate_std& date);
+    void BasicCleanup(CImprint& imp);
+    /// Authors
     void BasicCleanup(CAuth_list& al, bool fix_initials);
     void BasicCleanup(CAuthor& au, bool fix_initials);
     void BasicCleanup(CAffil& af);
@@ -211,6 +222,7 @@ private:
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
     void x_CombineSplitQual(string& val, string& new_val);
     bool x_ConvertToNcRNA (CSeq_feat& feat);
+    void ChangeFeatureKey (const CSeq_feat_Handle& sfh, string new_key);
 
     // Gb_qual cleanup.
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);

@@ -344,6 +344,8 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Change BioSource Other",
     "Change SeqId", 
     "Remove Empty Publication",
+    "Add Qualifier",
+    "Cleanup Date",
     // set when any other change is made.
     "Change Other", 
     "Invalid Change Code"
