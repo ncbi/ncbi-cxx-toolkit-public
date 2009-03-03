@@ -3,7 +3,7 @@
 LIB_PROJ = ncbi_xdbapi_ftds64_odbc
 SUB_PROJ = samples
 
-REQUIRES = FreeTDS
+REQUIRES = FreeTDS -XCODE
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
