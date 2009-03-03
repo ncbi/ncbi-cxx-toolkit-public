@@ -671,6 +671,17 @@ bool CCleanup_imp::x_ConvertToNcRNA (CSeq_feat& feat)
 }
 
 
+void CCleanup_imp::ChangeFeatureKey (const CSeq_feat_Handle& sfh, string new_key)
+{
+    CSeq_feat_EditHandle efh(sfh);
+    CRef<CSeq_feat> new_feat(new CSeq_feat);            
+    new_feat->Assign(*sfh.GetSeq_feat());
+    new_feat->SetData().SetImp().SetKey(new_key);
+    efh.Replace(*new_feat);
+    ChangeMade(CCleanupChange::eChangeFeatureKey);
+}
+
+    
 void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
 {
     CSeq_feat& feat = const_cast<CSeq_feat&> (*sfh.GetSeq_feat());
@@ -695,35 +706,36 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                         ChangeMade(CCleanupChange::eChangeFeatureKey);
                     }
                 } else if (NStr::Equal (key, "allele") || NStr::Equal(key, "mutation")) {
-                    imp.SetKey ("variation");
-                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                    ChangeFeatureKey (sfh, "variation");
                 } else if (NStr::Equal (key, "Import") || NStr::Equal (key, "virion")) {
-                    imp.SetKey ("misc_feature");
-                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                    ChangeFeatureKey (sfh, "misc_feature");
                 } else if (NStr::Equal (key, "repeat_unit")) {
-                    imp.SetKey ("repeat_region");
-                    ChangeMade(CCleanupChange::eChangeFeatureKey);
+                    ChangeFeatureKey (sfh, "repeat_region");
                 } else if (NStr::Equal (key, "satellite")) {
-                    imp.SetKey ("repeat_region");
+                    CSeq_feat_EditHandle efh(sfh);
+                    CRef<CSeq_feat> new_feat(new CSeq_feat);            
+                    new_feat->Assign(*sfh.GetSeq_feat());
+                    new_feat->SetData().SetImp().SetKey("repeat_region");
                     ChangeMade(CCleanupChange::eChangeFeatureKey);
                     CRef<CGb_qual> new_qual(new CGb_qual);
                     new_qual->SetQual("satellite");
-                    if (feat.IsSetComment()) {
-                        string comment = feat.GetComment();
+                    if (new_feat->IsSetComment()) {
+                        string comment = new_feat->GetComment();
                         string val = s_ExtractSatelliteFromComment (comment);
                         if (!NStr::IsBlank (val)) {
                             new_qual->SetVal(val);
-                            if (!NStr::Equal (comment, feat.GetComment())) {
+                            if (!NStr::Equal (comment, new_feat->GetComment())) {
                                 if (NStr::IsBlank (comment)) {
-                                    feat.ResetComment();
+                                    new_feat->ResetComment();
                                 } else {
-                                    feat.SetComment(comment);
+                                    new_feat->SetComment(comment);
                                 }
                             }
                         }
                     }
-                    feat.SetQual().push_back(new_qual);
+                    new_feat->SetQual().push_back(new_qual);
                     ChangeMade(CCleanupChange::eAddQualifier);
+                    efh.Replace(*new_feat);
                 } else if (!imp.IsSetLoc()) {
                    // look for RNA names
                     TRnaTypeMap::const_iterator rna_type_it = sc_RnaTypeMap.find(key);
