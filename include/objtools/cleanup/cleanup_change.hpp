@@ -123,6 +123,7 @@ public:
         eRemoveEmptyPub,
         eAddQualifier,
         eCleanupDate,
+        eChangeBioseqInst,
         // set when any other change is made.
         eChangeOther,
         

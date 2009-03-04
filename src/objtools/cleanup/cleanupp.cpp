@@ -220,6 +220,50 @@ void CCleanup_imp::BasicCleanup(CBioseq& bs)
     if (bs.IsSetDescr()) {
         BasicCleanup(bs.SetDescr());
     }
+
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, bs) {
+        if ((*it)->IsMolinfo() && (*it)->GetMolinfo().IsSetBiomol()) {
+            if (!bs.IsSetInst() || !bs.GetInst().IsSetMol() || bs.GetInst().GetMol() == CSeq_inst::eMol_not_set) {
+                switch ((*it)->GetMolinfo().GetBiomol()) {
+                    case CMolInfo::eBiomol_genomic:
+                        bs.SetInst().SetMol(CSeq_inst::eMol_na);
+                        ChangeMade (CCleanupChange::eChangeBioseqInst);
+                        break;
+                    case CMolInfo::eBiomol_pre_RNA:
+                    case CMolInfo::eBiomol_mRNA:
+                    case CMolInfo::eBiomol_rRNA:
+                    case CMolInfo::eBiomol_tRNA:
+                    case CMolInfo::eBiomol_snRNA:
+                    case CMolInfo::eBiomol_scRNA:
+                    case CMolInfo::eBiomol_cRNA:
+                    case CMolInfo::eBiomol_snoRNA:
+                    case CMolInfo::eBiomol_transcribed_RNA:
+                    case CMolInfo::eBiomol_ncRNA:
+                    case CMolInfo::eBiomol_tmRNA:
+                        bs.SetInst().SetMol(CSeq_inst::eMol_rna);
+                        ChangeMade (CCleanupChange::eChangeBioseqInst);
+                        break;
+                    case CMolInfo::eBiomol_peptide:
+                        bs.SetInst().SetMol(CSeq_inst::eMol_aa);
+                        ChangeMade (CCleanupChange::eChangeBioseqInst);
+                        break;
+                    case CMolInfo::eBiomol_other:
+                        bs.SetInst().SetMol(CSeq_inst::eMol_other);
+                        ChangeMade (CCleanupChange::eChangeBioseqInst);
+                        break;
+                    case CMolInfo::eBiomol_genomic_mRNA:
+                        bs.SetInst().SetMol(CSeq_inst::eMol_na);
+                        ChangeMade (CCleanupChange::eChangeBioseqInst);
+                        break;
+                }
+            } else if (!bs.IsSetInst() || !bs.GetInst().IsSetMol() || bs.GetInst().GetMol() != CSeq_inst::eMol_rna
+                       && ((*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA
+                       || (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_cRNA)) {
+                bs.SetInst().SetMol(CSeq_inst::eMol_rna);
+                ChangeMade (CCleanupChange::eChangeBioseqInst);
+            }
+        }
+    }           
 }
 
 
