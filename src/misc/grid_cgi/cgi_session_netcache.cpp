@@ -30,7 +30,6 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbireg.hpp>
-//#include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 
 #include <cgi/ncbicgi.hpp>
@@ -45,8 +44,8 @@ BEGIN_NCBI_SCOPE
 CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf) 
     : m_Dirty(false), m_Loaded(false)
 {
-    // hack!!! It needs to be removed when we know how to deal with unresolved
-    // symbols in plugins.
+    // XXX It needs to be removed when we know how to deal with unresolved
+    // symbols in plug-ins.
     BlobStorage_RegisterDriver_NetCache(); 
     CBlobStorageFactory factory(conf);
     m_Storage.reset(factory.CreateInstance());
@@ -56,7 +55,13 @@ CCgiSession_NetCache::~CCgiSession_NetCache()
 {
     try {
         Reset();
-    } catch (...) {}
+    }
+    catch (std::exception& e) {
+        ERR_POST("Could not flush session data: " << e.what());
+    }
+    catch (...) {
+        ERR_POST("Could not flush session data");
+    }
 }
 
 string CCgiSession_NetCache::CreateNewSession()

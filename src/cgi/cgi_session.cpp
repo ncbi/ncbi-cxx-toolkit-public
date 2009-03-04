@@ -60,7 +60,13 @@ CCgiSession::~CCgiSession()
     if (Exists()) {
         try {
             m_Impl->Reset();
-        } catch(...) {}
+        }
+        catch (std::exception& e) {
+            ERR_POST("Session implementation clean-up error: " << e.what());
+        }
+        catch (...) {
+            ERR_POST("Session implementation clean-up error has occurred");
+        }
     }
 }
 
