@@ -165,6 +165,7 @@ public:
     bool IsPassThrough() const;
 
     /// if possible, do not output frame-preserving gaps, output frameshifts only
+    /// NOT USED ANYMORE
     CProSplignOutputOptions& SetEatGaps(bool);
     bool GetEatGaps() const;
 

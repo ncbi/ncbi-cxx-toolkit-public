@@ -178,7 +178,7 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey
         ("eat_gaps",
          "eat_gaps",
-         "postprocessing: if possible, do not output frame-preserving gaps, output frameshifts only",
+         "not used anymore",
          CArgDescriptions::eBoolean,
          CProSplignOutputOptions::default_eat_gaps?"true":"false");
     arg_desc->AddDefaultKey
