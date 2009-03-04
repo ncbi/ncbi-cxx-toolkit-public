@@ -904,8 +904,10 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
 
     for(int i=0;i<prot_end_pos; i+=width) {
         int apos = i+width-1;
-        if (apos >= (int)dna.length())
+        if (apos >= (int)dna.length()) {
             apos = (int)dna.length() - 1;
+            width = apos-i+1;
+        }
 
 #ifdef NCBI_COMPILER_WORKSHOP
         int gaps = 0;
