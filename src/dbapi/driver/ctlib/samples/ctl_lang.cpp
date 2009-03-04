@@ -33,7 +33,11 @@
 
 #include "../../dbapi_driver_sample_base.hpp"
 #include <dbapi/driver/exception.hpp>
-#include <interfaces.hpp>
+#ifdef FTDS_IN_USE
+# include <dbapi/driver/ftds64/interfaces.hpp>
+#else
+# include <dbapi/driver/ctlib/interfaces.hpp>
+#endif
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
