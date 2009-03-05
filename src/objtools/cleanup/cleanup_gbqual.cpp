@@ -805,6 +805,10 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
     string& qual = gb_qual.SetQual();
     string& val  = gb_qual.SetVal();
 
+    if (NStr::EqualNocase (qual, "cons_splice")) {
+        return true; // all cons_splice qualifiers should be removed
+    }
+
     // 'replace' qualifier
     if (NStr::EqualNocase(qual, "replace")) {
         if (data.IsImp()  &&  data.GetImp().IsSetKey()) {
