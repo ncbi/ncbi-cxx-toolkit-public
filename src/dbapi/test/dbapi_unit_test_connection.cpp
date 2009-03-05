@@ -593,8 +593,8 @@ BOOST_AUTO_TEST_CASE(Test_ConnFactory)
     enum {num_of_tests = 128};
 
     try {
-        TSvrRef server01(new CDBServer("msdev1.ncbi.nlm.nih.gov"));
-        TSvrRef server02(new CDBServer("msdev1.ncbi.nlm.nih.gov"));
+        TSvrRef server01(new CDBServer("msdev1.be-md.ncbi.nlm.nih.gov"));
+        TSvrRef server02(new CDBServer("msdev1.be-md.ncbi.nlm.nih.gov"));
         TSvrRef server03(new CDBServer("mssql67.ncbi.nlm.nih.gov"));
 
         // Check CDBUDPriorityMapper ...
