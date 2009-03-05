@@ -1697,6 +1697,22 @@ static EAccessionFormatError s_ValidateAccessionString (string accession, bool r
 }
 
 
+static bool s_StringConsistsOf (string str, string consist)
+{
+    const char *src = str.c_str();
+    const char *find = consist.c_str();
+    bool rval = true;
+
+    while (*src != 0 && rval) {
+        if (strchr (find, *src) == NULL) {
+            rval = false;
+        }
+        src++;
+    }
+    return rval;
+}
+
+
 void CValidError_feat::ValidateImpGbquals
 (const CImp_feat& imp,
  const CSeq_feat& feat,
@@ -1845,7 +1861,57 @@ void CValidError_feat::ValidateImpGbquals
                     }
                 }}
                 break;
-                
+            case CGbqualType::e_Replace:
+                {{
+                    CBioseq_Handle bh = m_Scope->GetBioseqHandle(feat.GetLocation());
+                    if (bh) {
+                        if (bh.IsNa()) {
+                            if (NStr::Equal(key, "variation")) {
+                                if (!s_StringConsistsOf (val, "acgt")) {
+                                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                             val + "  is not a legal value for qualifier " + qual_str
+                                             + " - should only be composed of acgt unambiguous nucleotide bases",
+                                             feat);
+                                }
+                            } else if (!s_StringConsistsOf (val, "acgtmrwsykvhdbn")) {
+                                  PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                           val + "  is not a legal value for qualifier " + qual_str
+                                           + " - should only be composed of acgtmrwsykvhdbn nucleotide bases",
+                                           feat);
+                            }
+                        } else if (bh.IsAa()) {
+                            if (!s_StringConsistsOf (val, "acdefghiklmnpqrstuvwy*")) {
+                                PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                         val + "  is not a legal value for qualifier " + qual_str
+                                         + " - should only be composed of acdefghiklmnpqrstuvwy* amino acids",
+                                         feat);
+                            }
+                        }
+
+                        // if no point in location with fuzz, info if text matches sequence
+                        bool has_fuzz = false;
+                        for( objects::CSeq_loc_CI it(feat.GetLocation()); it && !has_fuzz; ++it) {
+                            if (it.IsPoint() && it.GetSeq_loc().GetPnt().IsSetFuzz()) {
+                                has_fuzz = true;
+                            }
+                        }
+                        if (!has_fuzz && val.length() == GetLength (feat.GetLocation(), m_Scope)) {
+                            string bases = "";
+                            bool match = false;
+                            try {
+                              CCdregion_translate::ReadSequenceByLocation (bases, bh, feat.GetLocation(), CCdregion_translate::eTruncate);
+                              if (NStr::EqualNocase(val, bases)) {
+                                  PostErr (eDiag_Info, eErr_SEQ_FEAT_SuspiciousQualifierValue,
+                                           "/replace already matches underlying sequence (" + val + ")",
+                                           feat);
+                              }
+                            } catch ( ... ) {
+                            }
+                        }
+                    }
+                }}
+                break;
+
             case CGbqualType::e_Cons_splice:
                 {{
                     error = true;
