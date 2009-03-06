@@ -240,7 +240,6 @@ private:
     auto_ptr<IWriter> m_Writer;
     auto_ptr<IReader> m_Reader;
     bool              m_PutOK;
-    bool              m_PutID;
     bool              m_SizeKnown;
     size_t            m_BlobSize;
 };

@@ -103,13 +103,11 @@ CNetCache_MessageHandler::SCommandDef s_CommandMap[] = {
     { "PUT2",     &CNetCache_MessageHandler::ProcessPut2,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
-          { "wait",    eNSPT_Int,  eNSPA_Optional, "0" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "PUT3",     &CNetCache_MessageHandler::ProcessPut3,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
-          { "wait",    eNSPT_Int,  eNSPA_Optional, "0" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",     &CNetCache_MessageHandler::ProcessHasBlob,
@@ -249,7 +247,6 @@ CNetCache_MessageHandler::CNetCache_MessageHandler(CNetCacheServer* server)
       m_StartPrinted(false),
       m_Parser(s_CommandMap),
       m_PutOK(false),
-      m_PutID(false),
       m_SizeKnown(false),
       m_BlobSize(0)
 {
@@ -1055,18 +1052,13 @@ CNetCache_MessageHandler::ProcessMsgTransmission(BUF buffer)
                     x_WriteMsg("OK:", "");
                     m_PutOK = false;
                 }
-                if (m_PutID) {
-                    CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-                    x_WriteMsg("ID:", m_ReqId);
-                    m_PutID = false;
-                }
             }
             catch (CException& ex) {
                 // We should successfully restore after exception
                 ERR_POST(ex);
-                if (m_PutOK  ||  m_SizeKnown  ||  m_PutID) {
+                if (m_PutOK  ||  m_SizeKnown) {
                     x_WriteMsg("ERR:", "Error writing blob: " + NStr::Replace(ex.what(), "\n", "; "));
-                    m_PutOK = m_PutID = false;
+                    m_PutOK = false;
                 }
             }
 
@@ -1178,11 +1170,6 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
             }
             else if (key == "version") {
                 m_Version = NStr::StringToUInt(val);
-            }
-            break;
-        case 'w':
-            if (key == "wait") {
-                m_Policy = NStr::StringToUInt(val);
             }
             break;
         default:
@@ -1536,28 +1523,14 @@ CNetCache_MessageHandler::ProcessPut2(void)
         m_Stat.blob_id = m_ReqId;
         _TRACE("Got id " << m_BlobId);
 
-        // BLOB already locked, it is safe to return BLOB id
-        if (!m_Policy /* !m_WaitForWriting *//*  &&  !do_id_lock*/) {
-            CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-            x_WriteMsg("ID:", m_ReqId);
-        }
-        else {
-            m_PutID = true;
-        }
+        CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
+        x_WriteMsg("ID:", m_ReqId);
 
         m_LockHolder = m_Server->AcquireWriteIdLock(m_BlobId);
     }
 
     if (m_LockHolder->IsLockAcquired()) {
         x_CreateBlobWriter();
-
-        /*if (!m_Policy / * !m_WaitForWriting * /  &&  do_id_lock) {
-            CTimeGuard time_guard(m_Stat.comm_elapsed, &m_Stat);
-            x_WriteMsg("ID:", m_ReqId);
-        }
-        else if (m_Policy / * m_WaitForWriting * /) {
-            m_PutID = true;
-        }*/
 
         _TRACE("Begin read transmission");
         BeginReadTransmission();
