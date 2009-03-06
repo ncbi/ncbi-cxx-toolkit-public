@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 const string kNetCache_KeyPrefix = "NCID";
-CRandom s_NCKeyRandom(CRandom::TValue(time(NULL)));
+CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
 
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
@@ -156,7 +156,7 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     *key += tmp;
 
     if (ver == 1) {
-        NStr::IntToString(tmp, (long) time(0));
+        NStr::IntToString(tmp, (long) ::time(0));
     }
     else if (ver == 2) {
         NStr::UIntToString(tmp, s_NCKeyRandom.GetRand());
