@@ -108,6 +108,7 @@ CNetCache_MessageHandler::SCommandDef s_CommandMap[] = {
     { "PUT3",     &CNetCache_MessageHandler::ProcessPut3,
         { { "timeout", eNSPT_Int,  eNSPA_Optional },
           { "id",      eNSPT_NCID, eNSPA_Optional },
+          { "id_ver",  eNSPT_Int,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "HASB",     &CNetCache_MessageHandler::ProcessHasBlob,
@@ -1086,6 +1087,7 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
     m_ValueParam.clear();
     m_Key.clear();
     m_SubKey.clear();
+    m_Version = 1;  // Default version of NCID
 
     bool cache_set = false;
     string cache_name;
@@ -1117,6 +1119,9 @@ CNetCache_MessageHandler::x_AssignParams(const map<string, string>& params)
             }
             else if (key == "id") {
                 m_ReqId = val;
+            }
+            else if (key == "id_ver") {
+                m_Version = NStr::StringToUInt(val);
             }
             break;
         case 'k':
@@ -1513,8 +1518,11 @@ CNetCache_MessageHandler::ProcessPut2(void)
             CTimeGuard time_guard(m_Stat.db_elapsed, &m_Stat);
             m_BlobId = m_Server->GetCache()->GetNextBlobId(/*do_id_lock*/);
             time_guard.Stop();
-            CNetCacheKey::GenerateBlobKey(&m_ReqId, m_BlobId,
-                                        m_Server->GetHost(), m_Server->GetPort());
+            CNetCacheKey::GenerateBlobKey(&m_ReqId,
+                                          m_BlobId,
+                                          m_Server->GetHost(),
+                                          m_Server->GetPort(),
+                                          m_Version);
             //do_id_lock = false;
         }
         else {

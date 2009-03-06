@@ -80,7 +80,8 @@ public:
     void GenerateBlobKey(string*        key,
                          unsigned int   id,
                          const string&  host,
-                         unsigned short port);
+                         unsigned short port,
+                         unsigned int   ver = 1);
 
     /// Parse blob key, extract id
     static

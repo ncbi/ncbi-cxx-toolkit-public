@@ -35,6 +35,7 @@
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/netcache_api_expt.hpp>
 
+#include <util/random_gen.hpp>
 #include <corelib/ncbistr.hpp>
 
 
@@ -42,6 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 const string kNetCache_KeyPrefix = "NCID";
+CRandom s_NCKeyRandom(CRandom::TValue(time(NULL)));
 
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
@@ -132,11 +134,15 @@ void
 CNetCacheKey::GenerateBlobKey(string*        key,
                               unsigned int   id,
                               const string&  host,
-                              unsigned short port)
+                              unsigned short port,
+                              unsigned int   ver /* = 1 */)
 {
     string tmp;
     *key = kNetCache_KeyPrefix;
-    *key += "_01";    // NetCacheId version
+
+    NStr::IntToString(tmp, ver);
+    *key += "_";
+    *key += tmp;
 
     NStr::IntToString(tmp, id);
     *key += "_";
@@ -149,7 +155,17 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     *key += "_";
     *key += tmp;
 
-    NStr::IntToString(tmp, (long) time(0));
+    if (ver == 1) {
+        NStr::IntToString(tmp, (long) time(0));
+    }
+    else if (ver == 2) {
+        NStr::UIntToString(tmp, s_NCKeyRandom.GetRand());
+    }
+    else {
+        NCBI_THROW(CNetCacheException, eKeyFormatError,
+                   "Unsupported version of NetCache key -"
+                   + NStr::IntToString(ver));
+    }
     *key += "_";
     *key += tmp;
 }
