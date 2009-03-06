@@ -165,11 +165,16 @@ CThreadPool_Controller_PID::GetSafeSleepTime(void) const
         integr_err = m_IntegrErr;
     }}
 
-    double sleep_time = 0;
-    if (last_err == 0) {
+    unsigned int threads_cnt = GetPool()->GetThreadsCount();
+    if (last_err == 0
+        ||  last_err > 0  &&  threads_cnt == GetMaxThreads()
+        ||  last_err < 0  &&  threads_cnt == GetMinThreads())
+    {
         return CThreadPool_Controller::GetSafeSleepTime();
     }
-    else if (last_err > 0) {
+
+    double sleep_time = 0;
+    if (last_err > 0) {
         sleep_time = (m_Threshold - last_err - integr_err)
                      * m_IntegrCoeff / last_err;
     }
