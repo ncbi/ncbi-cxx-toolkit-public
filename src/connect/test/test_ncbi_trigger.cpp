@@ -215,11 +215,16 @@ void CTest::Client()
 
 void CTest::Server(void)
 {
-    ERR_POST(Info << "Server started on port " << m_Port << "...\n");
-
     // Create listening socket
     CListeningSocket lsock;
-    _ASSERT(lsock.Listen(m_Port) == eIO_Success);
+
+    EIO_Status status = lsock.Listen(m_Port);
+    if (status == eIO_Closed)
+        ERR_POST("Cannot start server on port " << m_Port << " (port busy)\n");
+    else
+        ERR_POST(Info << "Server started on port " << m_Port << "...\n");
+
+    _ASSERT(status == eIO_Success);
 
     // Spawn test thread to activate the trigger
     // (allow thread to run even in single thread environment).
