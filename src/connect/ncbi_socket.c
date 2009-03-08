@@ -3895,7 +3895,7 @@ extern EIO_Status SOCK_Create(const char*     host,
 {
     if (!host  ||  !port)
         return eIO_InvalidArg;
-    return s_Create(host, port, timeout, sock, 0, 0, eDefault);
+    return s_Create(host, port, timeout, sock, 0, 0, fSOCK_LogDefault);
 }
 
 
@@ -3934,7 +3934,7 @@ extern EIO_Status SOCK_CreateOnTop(const void* handle,
                                    size_t      handle_size,
                                    SOCK*       sock)
 {
-    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0, fSOCK_LogDefault);
+    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
 
