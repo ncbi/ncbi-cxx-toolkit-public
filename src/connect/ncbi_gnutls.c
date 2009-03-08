@@ -30,12 +30,12 @@
  *
  */
 
+#include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_gnutls.h>
 #include <stdlib.h>
-#include <string.h>
 
 
 #ifdef HAVE_LIBGNUTLS
