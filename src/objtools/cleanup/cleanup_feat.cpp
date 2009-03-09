@@ -1788,17 +1788,20 @@ bool CCleanup_imp::x_ImpFeatToCdRegion (CSeq_feat& feat)
         if (gb_qual.CanGetQual() && (gb_qual.CanGetVal() || NStr::Equal(gb_qual.GetQual(), "translation"))) {
             string qual_name = gb_qual.GetQual();
             if (NStr::Equal(qual_name, "transl_table")) {
-                unsigned int gc = NStr::StringToUInt(gb_qual.GetVal());
-                CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
-                ce->Select(CGenetic_code::C_E::e_Id);
-                ce->SetId(gc);
-                feat.SetData().SetCdregion().SetCode().Set().push_back(ce);
-                it = feat.SetQual().erase(it);
+                try {
+                    unsigned int gc = NStr::StringToUInt(gb_qual.GetVal());
+                    CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
+                    ce->Select(CGenetic_code::C_E::e_Id);
+                    ce->SetId(gc);
+                    feat.SetData().SetCdregion().SetCode().Set().push_back(ce);
+                    ERASE_GBQUAL_ON_SEQFEAT (it, feat);
+                } catch (...) {
+                }
             } else if (NStr::Equal(qual_name, "translation")) {
-                it = feat.SetQual().erase(it);
+                ERASE_GBQUAL_ON_SEQFEAT (it, feat);
             } else if (NStr::Equal(qual_name, "transl_except")) {
                 x_ParseCodeBreak(feat, feat.SetData().SetCdregion(), gb_qual.GetVal());
-                it = feat.SetQual().erase(it);
+                ERASE_GBQUAL_ON_SEQFEAT (it, feat);
             } else if (NStr::Equal(qual_name, "codon_start")) {
                 frame = NStr::StringToInt(gb_qual.GetVal());
                 switch (frame) {
@@ -1815,15 +1818,11 @@ bool CCleanup_imp::x_ImpFeatToCdRegion (CSeq_feat& feat)
                         feat.SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
                         break;
                 }
-                it = feat.SetQual().erase(it);
+                ERASE_GBQUAL_ON_SEQFEAT (it, feat);
             } else if (NStr::Equal(qual_name, "exception")) {
                 feat.SetExcept(true);
-                it = feat.SetQual().erase(it);
-            } else {
-                ++ it;
+                ERASE_GBQUAL_ON_SEQFEAT (it, feat);
             }            
-        } else {
-            ++it;
         }
     }
     if (frame == -1) {
