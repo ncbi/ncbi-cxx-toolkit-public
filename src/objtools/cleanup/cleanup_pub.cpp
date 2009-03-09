@@ -1035,25 +1035,23 @@ void CCleanup_imp::x_ChangeCitationQualToCitationPub(CBioseq_Handle bs)
             if (has_cit) {
                 CRef<CSeq_feat> feat(new CSeq_feat);
                 feat->Assign(feat_ci->GetOriginalFeature());
-                CSeq_feat::TQual::iterator it = feat->SetQual().begin();
-                CSeq_feat::TQual::iterator it_end = feat->SetQual().end();
-                while (it != it_end) {
+                EDIT_EACH_GBQUAL_ON_SEQFEAT (it, *feat) {
                     CGb_qual& gb_qual = **it;
                     if (gb_qual.CanGetQual()
                         && NStr::Equal(gb_qual.GetQual(), "citation")) {
-                        if (gb_qual.CanGetVal()) {
-                            // find the publication that goes with this citation
-                            int citnum = NStr::StringToInt (gb_qual.GetVal());
-                            if ((size_t)citnum < pub_list.size()) {
-                                // add to the citation list for the feature
-                                feat->SetCit().SetPub().push_back(x_MinimizePub(*pub_list[citnum]));
+                        try {
+                            if (gb_qual.IsSetVal()) {
+                                // find the publication that goes with this citation
+                                int citnum = NStr::StringToInt (gb_qual.GetVal());
+                                if ((size_t)citnum < pub_list.size()) {
+                                    // add to the citation list for the feature
+                                    feat->SetCit().SetPub().push_back(x_MinimizePub(*pub_list[citnum]));
+                                    //remove the qual
+                                    ERASE_GBQUAL_ON_SEQFEAT (it, *feat);
+                                }
                             }
+                        } catch (...) {
                         }
-                        //remove the qual
-                        it = feat->SetQual().erase(it);
-                        it_end = feat->SetQual().end();
-                    } else {
-                        ++it;
                     }
                 }
                 CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
