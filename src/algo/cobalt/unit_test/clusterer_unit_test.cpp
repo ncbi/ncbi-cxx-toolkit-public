@@ -37,6 +37,8 @@
 #include <corelib/ncbi_system.hpp>
 #include <algo/cobalt/clusterer.hpp>
 
+#include <math.h>
+
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
 // non-Boost.Test executables is defined only in one *.cpp file - other files
@@ -138,4 +140,226 @@ BOOST_AUTO_TEST_CASE(TestClusterer)
     clusterer.PurgeDistMatrix();
     BOOST_CHECK_THROW(clusterer.GetDistMatrix(), CClustererException);
 }
+
+
+///Read distance matrix from file
+///@param filename Filename [in]
+///@param dmat Distance matrix [out]
+static void s_ReadDistMatrix(const string& filename,
+                             CClusterer::TDistMatrix& dmat)
+{
+    CNcbiIfstream istr(filename.c_str());
+    BOOST_REQUIRE(istr);
+    vector<double> dists;
+    while (!istr.eof()) {
+        double val = DBL_MAX;
+        istr >> val;
+
+        if (val != DBL_MAX) {
+            dists.push_back(val);
+        }
+    }
+
+    // distances must form a square matrix
+    BOOST_REQUIRE_CLOSE(sqrt((double)dists.size()),
+                        round(sqrt((double)dists.size())), 1e-6);
+    
+    int num_elements = (int)sqrt((double)dists.size());
+    dmat.Resize(num_elements, num_elements, 0.0);
+    for (int i=0;i < num_elements;i++) {
+        for (int j=0;j < num_elements;j++) {
+            dmat(i, j) = dists[i*num_elements + j];
+        }
+    }
+}
+
+
+// Traverse the tree and check if elements such that elems[elem] == false
+// appear in the tree and others do not
+static void s_TestTree(vector<bool>& elems, const TPhyTreeNode* node)
+{
+    if (node->IsLeaf()) {
+
+        int id = node->GetValue().GetId();
+        BOOST_REQUIRE(id < (int)elems.size());
+
+        // each element appears in the tree exactly once
+        BOOST_REQUIRE(!elems[id]);
+        elems[id] = true;
+    }
+    else {
+
+        TPhyTreeNode::TNodeList_CI it = node->SubNodeBegin();
+        for (; it != node->SubNodeEnd();it++) {
+            s_TestTree(elems, *it);
+        }
+    }
+}
+
+
+// Check if all cluster elements appear in the tree
+static void s_TestClusterTree(const CClusterer::TSingleCluster& cluster,
+                              const TPhyTreeNode* tree)
+{
+    BOOST_REQUIRE(tree);
+    BOOST_REQUIRE(cluster.size() > 0);
+
+    // find max element
+    int max_elem = cluster[0];
+    for (int i=1;i < (int)cluster.size();i++) {
+        if (cluster[i] > max_elem) {
+            max_elem = cluster[i];
+        }
+    }
+
+    // s_TestTree fails if e such that elems[e] == true is found or e such
+    // that elems[e] == false is not found
+    vector<bool> elems(max_elem + 1, true);
+    ITERATE (CClusterer::TSingleCluster, elem, cluster) {
+        elems[*elem] = false;
+    }
+
+    s_TestTree(elems, tree);
+
+    // make sure all elements were found
+    ITERATE (vector<bool>, it, elems) {
+        BOOST_CHECK(*it);
+    }
+}
+
+
+/// Check clusters
+/// @param dmat Distance matrix [in]
+/// @param clusters Clusters to examine [in]
+/// @param trees Cluster trees to examine [in] 
+/// @param ref_filename Name of filename containing reference clusters data [in]
+static void s_TestClusters(const CClusterer::TDistMatrix& dmat,
+                           const CClusterer::TClusters& clusters,
+                           const vector<TPhyTreeNode*>& trees,
+                           const string& ref_filename = "")
+{
+    // distance matrix must be square
+    BOOST_REQUIRE(dmat.GetRows() == dmat.GetCols());
+
+    vector<bool> check_elems(dmat.GetRows(), false);
+    
+    // check whether each element belongs to exactly one cluster
+    int num_elements = 0;
+    ITERATE (CClusterer::TClusters, cluster, clusters) {
+        ITERATE (CClusterer::TSingleCluster, elem, *cluster) {
+
+            BOOST_REQUIRE(*elem < (int)dmat.GetRows());
+
+            // each element appear only once in all clusters
+            BOOST_REQUIRE(!check_elems[*elem]);
+            check_elems[*elem] = true;
+
+            num_elements++;
+        }
+    }
+
+    // make sure all elements were found in clusters
+    ITERATE (vector<bool>, it, check_elems) {
+        BOOST_CHECK(*it);
+    }
+
+
+    // Check cluster trees if there are ones
+    if (!trees.empty()) {
+
+        // each cluster must have its tree
+        BOOST_REQUIRE_EQUAL(clusters.size(), trees.size());
+
+        // check each tree
+        for (size_t i=0;i < clusters.size();i++) {
+            s_TestClusterTree(clusters[i], trees[i]);
+        }
+        
+    }
+
+    // Compare clusters and their elements to reference
+    if (!ref_filename.empty()) {
+
+        // read reference clusters from file
+        // format: number of clusters, cluster sizes, elements of cluster 0,
+        // elements of cluster1, ...
+        CNcbiIfstream ref_istr(ref_filename.c_str());
+        BOOST_REQUIRE(ref_istr);
+        vector<int> ref_clust_elems;
+        int ref_num_clusters = 0;
+        int ref_num_elems = 0;
+
+        // ingnore comment lines
+        // comments are allowed in the beginning of the reference file
+        char* buff = new char[256];
+        while (ref_istr.peek() == (int)'#') {
+            ref_istr.getline(buff, 256);
+        }
+        delete [] buff;
+
+        // read number of clusters
+        ref_istr >> ref_num_clusters;
+        // ... and compare with computed clusters
+        BOOST_REQUIRE_EQUAL((int)clusters.size(), ref_num_clusters);
+
+        // read cluster sizes and compare with computed cluster sizes
+        int ind = 0;
+        for (int i=0;i < ref_num_clusters;i++) {
+
+            BOOST_REQUIRE(!ref_istr.eof());
+
+            int ref_size = 0;
+            ref_istr >> ref_size;
+            BOOST_REQUIRE_EQUAL((int)clusters[ind++].size(), ref_size);
+
+            ref_num_elems += ref_size;
+        }
+
+        // read cluster elements
+        bool zero_found = false;
+        for (int i=0;i < ref_num_elems;i++) {
+
+            BOOST_REQUIRE(!ref_istr.eof());
+
+            int ref_elem;
+            ref_istr >> ref_elem;
+
+            ref_clust_elems.push_back(ref_elem);
+            
+
+            // there can be only one zero
+            BOOST_REQUIRE(!zero_found && ref_elem >= 0
+                          || zero_found && ref_elem > 0);
+
+            if (ref_elem == 0) {
+                zero_found = true;
+            }
+        }
+
+        // compare computed cluster elements with refernece
+        ind = 0;
+        ITERATE(CClusterer::TClusters, cluster, clusters) {
+            ITERATE(CClusterer::TSingleCluster, elem, *cluster) {
+
+                BOOST_REQUIRE_EQUAL(*elem, ref_clust_elems[ind++]);
+            }
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestClusters)
+{
+    // Check clusters and trees and compare clusters with reference files
+
+    CClusterer::TDistMatrix dmat;
+
+    s_ReadDistMatrix("data/dist_matrix.txt", dmat);
+    CClusterer clusterer(dmat);
+
+    clusterer.ComputeClusters(0.8);
+    s_TestClusters(dmat, clusterer.GetClusters(), clusterer.GetTrees(),
+                   "data/ref_clusters.txt");
+}
+
 

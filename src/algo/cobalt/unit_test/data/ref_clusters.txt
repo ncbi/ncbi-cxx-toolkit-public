@@ -1,0 +1,10 @@
+#Reference clusters
+#format: number_of_clusters size_of_cluster0 size_of_cluster1 ...
+# elements_of_cluster0 elements_of_cluster1 ...
+5
+2 1 2 1 4
+0 5 
+1 
+2 3 
+4
+6 7 8 9 
