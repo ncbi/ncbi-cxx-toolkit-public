@@ -160,11 +160,11 @@ static void s_ReadDistMatrix(const string& filename,
         }
     }
 
-    // distances must form a square matrix
-    BOOST_REQUIRE_CLOSE(sqrt((double)dists.size()),
-                        round(sqrt((double)dists.size())), 1e-6);
-    
     int num_elements = (int)sqrt((double)dists.size());
+
+    // distances must form a square matrix
+    BOOST_REQUIRE_EQUAL(num_elements * num_elements, (int)dists.size());
+    
     dmat.Resize(num_elements, num_elements, 0.0);
     for (int i=0;i < num_elements;i++) {
         for (int j=0;j < num_elements;j++) {
