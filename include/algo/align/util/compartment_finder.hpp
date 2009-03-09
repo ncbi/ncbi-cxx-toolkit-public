@@ -209,17 +209,35 @@ public:
     typedef typename TCompartmentFinder::THitRefs THitRefs;
     typedef typename TCompartmentFinder::TCoord   TCoord;
 
-    // [start,finish) are assumed to share same query and subj
+    // construct and setup parameters
+    CCompartmentAccessor(TCoord  comp_penalty_bps,
+                         TCoord  min_matches,
+                         TCoord  min_singleton_matches = numeric_limits<TCoord>::max(),
+                         bool    cross_filter = false);
+
+    // construct, setup parameters and execute;
+    // [start,finish) are assumed to share the same query and subj
     CCompartmentAccessor(typename THitRefs::iterator start, 
                          typename THitRefs::iterator finish,
-                         TCoord comp_penalty_bps,
-                         TCoord min_matches,
-                         TCoord min_singleton_matches =numeric_limits<TCoord>::max(),
-                         bool cross_filter = false);
+                         TCoord  comp_penalty_bps,
+                         TCoord  min_matches,
+                         TCoord  min_singleton_matches = numeric_limits<TCoord>::max(),
+                         bool    cross_filter = false);
+
+    // execute: find compartments
+    void Run(typename THitRefs::iterator start, 
+             typename THitRefs::iterator finish);
     
+    // max intron
+    TCoord GetMaxIntron(void) const { return m_MaxIntron; }
+    void   SetMaxIntron(TCoord mi) { m_MaxIntron = mi; }
+
+    // iterate over the results
     bool GetFirst(THitRefs& compartment);
     bool GetNext(THitRefs& compartment);
     
+    // retrieve the number of compartments as the pair: (total, valid).
+    // Valid are the compartments with identities above the minimum.
     pair<size_t,size_t> GetCounts(void) const {
 
         // std::count() not supported on some platforms
@@ -233,6 +251,7 @@ public:
         return rv;
     }
     
+    // retrieve compartment by index
     void Get(size_t i, THitRefs& compartment) const {
         compartment = m_pending[i];
     }
@@ -250,13 +269,24 @@ public:
     }
         
 private:
+
+    void x_Init(TCoord comp_penalty, TCoord  min_matches,
+                TCoord min_singleton_matches, bool cross_filter);
     
+    // compartmentization parameters
+    TCoord m_Penalty;
+    TCoord m_MinMatches;
+    TCoord m_MinSingletonMatches;
+    TCoord m_MaxIntron;
+    bool   m_CrossFiltering;
+
+    // ancillary members
     vector<THitRefs>         m_pending;
     vector<TCoord>           m_ranges;
     vector<bool>             m_strands;
     vector<bool>             m_status;
     size_t                   m_iter;
-        
+    
     void x_Copy2Pending(TCompartmentFinder& finder);
 };
 
@@ -1021,17 +1051,48 @@ CCompartmentFinder<THit>::GetNext()
 
 
 template<class THit>
+CCompartmentAccessor<THit>::CCompartmentAccessor(TCoord  comp_penalty,
+                                                 TCoord  min_matches,
+                                                 TCoord  min_singleton_matches,
+                                                 bool    cross_filter)
+{
+    x_Init(comp_penalty, min_matches, min_singleton_matches, cross_filter);
+}
+
+
+template<class THit>
 CCompartmentAccessor<THit>::CCompartmentAccessor(
      typename THitRefs::iterator istart,
      typename THitRefs::iterator ifinish,
      TCoord comp_penalty,
      TCoord min_matches,
      TCoord min_singleton_matches,
-     bool cross_filter)
+     bool   cross_filter)
+{
+    x_Init(comp_penalty, min_matches, min_singleton_matches, cross_filter);
+    Run(istart, ifinish);
+}
+
+
+template<class THit>
+void CCompartmentAccessor<THit>::x_Init(TCoord  comp_penalty,
+                                        TCoord  min_matches,
+                                        TCoord  min_singleton_matches,
+                                        bool    cross_filter)
+{
+    m_Penalty             = comp_penalty;
+    m_MinMatches          = min_matches;
+    m_MinSingletonMatches = min_singleton_matches;
+    m_CrossFiltering      = cross_filter;
+    m_MaxIntron           = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
+}
+
+
+template<class THit>
+void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
+                                     typename THitRefs::iterator ifinish)
 {
     const TCoord kMax_TCoord (numeric_limits<TCoord>::max());
-
-    const TCoord max_intron (CCompartmentFinder<THit>::s_GetDefaultMaxIntron());
 
     // separate strands for CompartmentFinder
     typename THitRefs::iterator ib = istart, ie = ifinish, ii = ib, 
@@ -1070,11 +1131,11 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         }
         
         CCompartmentFinder<THit> finder (ib, iplus_beg);
-        finder.SetPenalty(comp_penalty);
-        finder.SetMinMatches(min_matches);
-        finder.SetMinSingletonMatches(min_singleton_matches);
-        finder.SetMaxIntron(max_intron);
-        finder.Run(cross_filter);
+        finder.SetPenalty(m_Penalty);
+        finder.SetMinMatches(m_MinMatches);
+        finder.SetMinSingletonMatches(m_MinSingletonMatches);
+        finder.SetMaxIntron(m_MaxIntron);
+        finder.Run(m_CrossFiltering);
         
         // un-flip
         for(ii = ib; ii != iplus_beg; ++ii) {
@@ -1093,11 +1154,11 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
     // plus
     {{
         CCompartmentFinder<THit> finder (iplus_beg, ie);
-        finder.SetPenalty(comp_penalty);
-        finder.SetMinMatches(min_matches);
-        finder.SetMinSingletonMatches(min_singleton_matches);
-        finder.SetMaxIntron(max_intron);
-        finder.Run(cross_filter);
+        finder.SetPenalty(m_Penalty);
+        finder.SetMinMatches(m_MinMatches);
+        finder.SetMinSingletonMatches(m_MinSingletonMatches);
+        finder.SetMaxIntron(m_MaxIntron);
+        finder.Run(m_CrossFiltering);
         x_Copy2Pending(finder);
     }}
 }
