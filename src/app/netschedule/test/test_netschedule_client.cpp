@@ -47,17 +47,18 @@ static CRandom s_Random;
 
 /// Service functions
 
-static const int s_NumTokens      = 7777;
+static int s_NumTokens;
 static const int s_AvgTokenLength = 10;
 static const int s_DTokenLength   = 2;
 static char **s_Tokens;
 static char s_TokenLetters[] = "0123456789"
                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "abcdefghijklmnopqrstuvwxyz"
-                               "~!@#$%^&*()_+:;<,>.?/";
+                               "~!@#$%^&*()_+:;<,>.?/\\";
 
-static void s_SeedTokens()
+static void s_SeedTokens(int num_aff_tokens)
 {
+    s_NumTokens = num_aff_tokens;
     s_Tokens = new char* [s_NumTokens];
     for (int n = 0; n < s_NumTokens; ++n) {
         int len = s_Random.GetRand(s_AvgTokenLength - s_DTokenLength,
@@ -72,9 +73,20 @@ static void s_SeedTokens()
 }
 
 
+static string s_GenInput(int input_length)
+{
+    string input;
+    input.reserve(input_length);
+    s_Random.SetSeed(time(0));
+    for (int n = 0; n < input_length; ++n) {
+        input.append(1, s_Random.GetRand(0, 255));
+    }
+    return input;
+}
+
+
 static const char *s_GetRandomToken()
 {
-    if (!s_Tokens) s_SeedTokens();
     int n = s_Random.GetRand(0, s_NumTokens - 1);
     return s_Tokens[n];
 }
@@ -109,26 +121,26 @@ void CTestNetScheduleClient::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NetSchedule client");
+
+    arg_desc->AddKey("service", "ServiceName",
+        "NetSchedule service name (format: host:port or servcie_name)", 
+        CArgDescriptions::eString);
+
+    arg_desc->AddKey("queue", "QueueName",
+        "NetSchedule queue name",
+        CArgDescriptions::eString);
     
-    arg_desc->AddPositional("service", 
-                            "NetSchedule lb_service or host:name",
-                            CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey("input",
-                             "input",
-                             "Input string",
-                             CArgDescriptions::eString);
-
-    arg_desc->AddPositional("queue", 
-                            "NetSchedule queue name",
-                            CArgDescriptions::eString);
-
-
-    arg_desc->AddOptionalKey("jcount", 
-                             "jcount",
-                             "Number of jobs to submit",
+    arg_desc->AddOptionalKey("ilen", "InputLength", "Average input length",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("input", "InputString", "Input string",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("jobs", "jobs", "Number of jobs to submit",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("naff", "AffinityTokens",
+        "Number of different affinities", CArgDescriptions::eInteger);
 
     
     // Setup arg.descriptions for this application
@@ -143,9 +155,18 @@ int CTestNetScheduleClient::Run(void)
     const string&  queue_name = args["queue"].AsString();  
 
     unsigned jcount = 10000;
-    if (args["jcount"]) {
-        jcount = args["jcount"].AsInteger();
-    }
+    if (args["jobs"])
+        jcount = args["jobs"].AsInteger();
+
+    unsigned naff = 17;
+    if (args["naff"])
+        naff = args["naff"].AsInteger();
+    s_SeedTokens(naff);
+
+    unsigned input_length = 0;
+    if (args["ilen"])
+        input_length = args["ilen"].AsInteger();
+
     CNetScheduleAPI::EJobStatus status;
     CNetScheduleAPI cl(service, "client_test", queue_name);
 
@@ -160,6 +181,8 @@ int CTestNetScheduleClient::Run(void)
     string input;
     if (args["input"]) {
         input = args["input"].AsString();
+    } else if (args["ilen"]) {
+        input = s_GenInput(input_length);
     } else {
         input = "Hello " + queue_name;
     }

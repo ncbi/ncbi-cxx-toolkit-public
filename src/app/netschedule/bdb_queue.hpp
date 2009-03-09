@@ -268,7 +268,9 @@ public:
     string GetParamValue(unsigned n) const;
 
     void PrintStat(CNcbiOstream& out);
-    void PrintWorkerNodeStat(CNcbiOstream& out) const;
+    void PrintWorkerNodeStat(CNcbiOstream& out,
+                             time_t curr,
+                             EWNodeFormat fmt = eWNF_Old) const;
     void PrintSubmHosts(CNcbiOstream& out) const;
     void PrintWNodeHosts(CNcbiOstream& out) const;
     void PrintQueue(CNcbiOstream& out,

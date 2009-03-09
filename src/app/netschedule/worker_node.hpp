@@ -76,6 +76,12 @@ struct SJobInfo {
     CRef<CRequestContextFactory> factory;
 };
 
+// Worker node methods
+enum EWNodeFormat {
+    eWNF_Old = 0,
+    eWNF_WithNodeId
+};
+
 
 // CWorkerNode keeps information about worker node which is on the other
 // end of network connection. There are two styles of worker node: old style
@@ -94,7 +100,7 @@ public:
     bool ShouldNotify(time_t curr) const;
     time_t ValidityTime() const;
     void UpdateValidityTime();
-    string AsString(time_t curr) const;
+    string AsString(time_t curr, EWNodeFormat fmt = eWNF_Old) const;
     string GetId() const {
         return m_Id;
     }

@@ -401,6 +401,7 @@ private:
     // Moved from CNetScheduleServer
     void x_MakeLogMessage(string& lmsg);
     void x_MakeGetAnswer(const CJob& job);
+    void x_StatisticsNew(const string& what, time_t curr);
 
     // Data
     string m_Request;
@@ -1940,10 +1941,55 @@ void CNetScheduleHandler::ProcessReloadConfig()
 }
 
 
+void CNetScheduleHandler::x_StatisticsNew(const string& what,
+                                          time_t curr)
+{
+    CSocket& socket = GetSocket();
+    if (what == "WNODE") {
+        CNcbiOstrstream ostr;
+        m_Queue->PrintWorkerNodeStat(ostr, curr, eWNF_WithNodeId);
+        ostr << ends;
+
+        char* stat_str = ostr.str();
+        try {
+            WriteMsg("OK:", stat_str, true);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+    }
+    if (what == "JOBS") {
+        unsigned total = 0;
+        for (int i = CNetScheduleAPI::ePending;
+            i < CNetScheduleAPI::eLastStatus; ++i) {
+                TJobStatus st = TJobStatus(i);
+                unsigned count = m_Queue->CountStatus(st);
+                total += count;
+
+                string st_str = CNetScheduleAPI::StatusToString(st);
+                st_str += ": ";
+                st_str += NStr::UIntToString(count);
+
+                WriteMsg("OK:", st_str, true);
+        } // for
+        WriteMsg("OK:", "Total: " + NStr::UIntToString(total), true);
+    }
+}
+
+
 void CNetScheduleHandler::ProcessStatistics()
 {
     CSocket& socket = GetSocket();
     socket.DisableOSSendDelay(false);
+    const string& what = m_JobReq.param1;
+    time_t curr = time(0);
+
+    if (!what.empty() && what != "ALL") {
+        x_StatisticsNew(what, curr);
+        WriteOK("END");
+        return;
+    }
 
     WriteOK(NETSCHEDULED_FULL_VERSION);
     string started = "Started: " + m_Server->GetStartTime().AsString();
@@ -2097,7 +2143,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
     {{
         CNcbiOstrstream ostr;
-        m_Queue->PrintWorkerNodeStat(ostr);
+        m_Queue->PrintWorkerNodeStat(ostr, curr);
         ostr << ends;
 
         char* stat_str = ostr.str();

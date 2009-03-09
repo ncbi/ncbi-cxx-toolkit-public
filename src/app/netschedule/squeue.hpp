@@ -408,11 +408,12 @@ public:
     void AddJobsToAffinity(CBDB_Transaction& trans,
                            const vector<CJob>& batch);
 
-    // Worker node methods
     void InitWorkerNode(const SWorkerNodeInfo& node_info);
     void ClearWorkerNode(const string& node_id);
     void NotifyListeners(bool unconditional, unsigned aff_id);
-    void PrintWorkerNodeStat(CNcbiOstream& out) const;
+    void PrintWorkerNodeStat(CNcbiOstream& out,
+                             time_t curr,
+                             EWNodeFormat fmt = eWNF_Old) const;
     void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
                                       unsigned short         port,
                                       unsigned               timeout);

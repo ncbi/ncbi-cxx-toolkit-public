@@ -1434,10 +1434,10 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 }
 
 
-void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out) const
+void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out,
+                                       time_t curr,
+                                       EWNodeFormat fmt) const
 {
-    time_t curr = time(0);
-
     list<string> nodes_info;
     m_WorkerNodeList.GetNodesInfo(curr, nodes_info);
     ITERATE(list<string>, it, nodes_info) {

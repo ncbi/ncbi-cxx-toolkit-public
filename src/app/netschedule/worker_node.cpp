@@ -92,7 +92,7 @@ void CWorkerNode::UpdateValidityTime()
 }
 
 
-std::string CWorkerNode::AsString(time_t curr) const
+std::string CWorkerNode::AsString(time_t curr, EWNodeFormat fmt) const
 {
     CTime lv_time(m_LastVisit);
 
@@ -102,17 +102,19 @@ std::string CWorkerNode::AsString(time_t curr) const
     s += " UDP:";
     s += NStr::UIntToString(m_Port);
     s += " ";
-    if (!m_Id.empty()) {
-        s += m_Id;
-        s += " ";
-    }
     s += lv_time.ToLocalTime().AsString();
-    s += " (";
-    s += NStr::Int8ToString(ValidityTime() - curr);
-    s += ") jobs:";
-    ITERATE(TWNJobInfoMap, it, m_Jobs) {
-        s += " ";
-        s += NStr::UIntToString(it->first);
+    if (fmt == eWNF_WithNodeId) {
+        s += " (";
+        s += NStr::Int8ToString(ValidityTime() - curr);
+        s += ") ";
+        if (!m_Id.empty()) {
+            s += "node_id=" + m_Id + " ";
+        }
+        s += "jobs:";
+        ITERATE(TWNJobInfoMap, it, m_Jobs) {
+            s += " ";
+            s += NStr::UIntToString(it->first);
+        }
     }
     return s;
 }

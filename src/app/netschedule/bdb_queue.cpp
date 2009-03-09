@@ -1630,11 +1630,13 @@ bool CQueue::x_FillRecord(vector<string>& record,
 }
 
 
-void CQueue::PrintWorkerNodeStat(CNcbiOstream& out) const
+void CQueue::PrintWorkerNodeStat(CNcbiOstream& out,
+                                 time_t curr,
+                                 EWNodeFormat fmt) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
-    q->PrintWorkerNodeStat(out);
+    q->PrintWorkerNodeStat(out, curr, fmt);
 }
 
 
