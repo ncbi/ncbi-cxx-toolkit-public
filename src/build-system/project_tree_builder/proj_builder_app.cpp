@@ -1144,10 +1144,8 @@ void CProjBulderApp::ReportGeneratedFiles(void)
     CNcbiOfstream ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc );
     if (ofs.is_open()) {
         ITERATE( list<string>, f, m_GeneratedFiles) {
-            ofs <<
-                NStr::ReplaceInPlace(
-                    CDirEntry::CreateRelativePath(m_Root, *f), sep, "/")
-                << endl;
+            string path (CDirEntry::CreateRelativePath(m_Root, *f));
+            ofs << NStr::ReplaceInPlace( path, sep, "/") << endl;
         }
     }
 }
