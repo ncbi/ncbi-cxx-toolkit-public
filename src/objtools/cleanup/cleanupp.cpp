@@ -221,6 +221,21 @@ void CCleanup_imp::BasicCleanup(CBioseq& bs)
         BasicCleanup(bs.SetDescr());
     }
 
+    if (bs.IsSetId()) {
+        EDIT_EACH_SEQID_ON_BIOSEQ (it, bs) {
+            CBioseq::TId::iterator it2 = it;
+            it2++;
+            while (it2 != bs.SetId().end()) {
+                if ((*it)->Compare(**it2) == CSeq_id::e_YES) {
+                    it2 = bs.SetId().erase(it2);
+                    ChangeMade (CCleanupChange::eRemoveSeqId);
+                } else {
+                    ++it2;
+                }
+            }
+        }
+    }
+
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, bs) {
         if ((*it)->IsMolinfo() && (*it)->GetMolinfo().IsSetBiomol()) {
             if (!bs.IsSetInst() || !bs.GetInst().IsSetMol() || bs.GetInst().GetMol() == CSeq_inst::eMol_not_set) {

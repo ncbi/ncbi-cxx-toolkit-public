@@ -347,6 +347,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Add Qualifier",
     "Cleanup Date",
     "Change BioseqInst",
+    "Remove SeqID",
     // set when any other change is made.
     "Change Other", 
     "Invalid Change Code"
