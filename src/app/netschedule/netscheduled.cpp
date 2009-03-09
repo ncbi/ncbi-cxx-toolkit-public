@@ -1025,7 +1025,11 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     }
     catch (const CNSProtoParserException& ex) {
         // Rewrite error in usual terms
-        WriteErr(string("eProtocolSyntaxError:") + ex.GetMsg());
+        // To prevent stall due to possible very long message (which
+        // quotes original, arbitrarily long user input) we truncate it here
+        // to the value long enough for diagnostics.
+        string msg = ex.GetMsg().substr(0, 64);
+        WriteErr("eProtocolSyntaxError:" + msg);
         return;
     }
 
