@@ -57,6 +57,7 @@ package OMSSA;
 #########################################################################################
 
 use  strict;
+use File::Glob qw(bsd_glob);
 use Getopt::Std;
 use vars qw ($opt_i $opt_o $opt_s $opt_n);
 getopts('i:o:s:n:');
@@ -88,7 +89,7 @@ print "Max. No. of files to be concatnated into a file => $maxNo_Files\noutput f
   my $outFile = "$outputPath"."$batch_index".".txt"; # output file full name
   open(FileOut,">$outFile") || die "cannot create output file"."$outFile";
                 
-  while(defined($inFile = glob("$inputPath\*")))
+foreach my $inFile (bsd_glob("$inputPath/*"))
   {
         if ($inFile =~ /\.dta$/i && -s $inFile)
 	{
