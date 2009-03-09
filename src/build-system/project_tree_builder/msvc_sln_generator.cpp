@@ -157,6 +157,7 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
+    GetApp().RegisterGeneratedFile( file_path );
     // Start sln file
     ofs << MSVC_SOLUTION_HEADER_LINE
         << GetApp().GetRegSettings().GetSolutionFileFormatVersion() << endl;

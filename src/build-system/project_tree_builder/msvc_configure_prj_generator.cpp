@@ -194,6 +194,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
+    GetApp().RegisterGeneratedFile( file_path );
     ofs << "set PTB_FLAGS=";
     if ( m_DllBuild )
         ofs << " -dll";

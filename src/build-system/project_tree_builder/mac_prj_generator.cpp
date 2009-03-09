@@ -286,6 +286,7 @@ void CMacProjectGenerator::Save(const string& solution_name, CPlist& xproj)
     ox->SetDTDFileName("PropertyList-1.0");
     ox->SetEncoding(eEncoding_UTF8);
     *out << xproj;
+    GetApp().RegisterGeneratedFile( solution_file );
 }
 
 string CMacProjectGenerator::CreateProjectFileGroups(

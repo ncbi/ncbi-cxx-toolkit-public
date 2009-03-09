@@ -105,6 +105,7 @@ private:
     bool m_ScanningWholeTree;
     int m_ExitCode;
     set<CProjKey> m_SuspiciousProj;
+    list<string>  m_GeneratedFiles;
 
 public:
 
@@ -169,6 +170,7 @@ public:
     bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}
     void SetFail(int exit_code=1) {m_ExitCode=exit_code;}
     void RegisterSuspiciousProject(const CProjKey& proj);
+    void RegisterGeneratedFile( const string& file);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
@@ -183,6 +185,7 @@ private:
                 list<string>& enabled, list<string>& disabled);
     void    CreateCheckList(const list<SConfigInfo>* configs,
                             CProjectItemsTree& projects_tree);
+    void    ReportGeneratedFiles(void);
     bool    ConfirmConfiguration(void);
 };
 

@@ -89,7 +89,7 @@ static void s_CreateThirdPartyLibsInstallMakefile
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, makefile_path);
 
-    
+    GetApp().RegisterGeneratedFile( makefile_path );
     ITERATE(list<string>, n, libs_to_install) {
         const string& lib = *n;
         SLibInfo lib_info;

@@ -90,6 +90,7 @@ void SaveIfNewer(const string&               file_path,
     // If no such file then simple write it
     if ( !CDirEntry(file_path).Exists() ) {
         SaveToXmlFile(file_path, project);
+        GetApp().RegisterGeneratedFile( file_path );
         PTB_WARNING_EX(file_path, ePTB_FileModified,
                        "Project created");
         return;
@@ -116,6 +117,7 @@ bool PromoteIfDifferent(const string& present_path,
     if ( !ifs_present ) {
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
+        GetApp().RegisterGeneratedFile( present_path );
         return true;
     }
 
@@ -139,6 +141,7 @@ bool PromoteIfDifferent(const string& present_path,
         ifs_new.close();
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
+        GetApp().RegisterGeneratedFile( present_path );
         return true;
     }
 
@@ -157,6 +160,7 @@ bool PromoteIfDifferent(const string& present_path,
     if (memcmp(buf_present.get(), buf_new.get(), file_length_present) != 0) {
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
+        GetApp().RegisterGeneratedFile( present_path );
         return true;
     } else {
         CDirEntry(candidate_path).Remove();
