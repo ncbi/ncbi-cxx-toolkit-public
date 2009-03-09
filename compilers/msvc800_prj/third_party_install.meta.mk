@@ -50,6 +50,11 @@ FLTK_SRC = $(FLTK_BINPATH)\$(INTDIR)
 FLTK_SRC = $(FLTK_BINPATH)\$(ALTDIR)
 !ENDIF
 
+GNUTLS_SRC = $(GNUTLS_BINPATH)\$(INTDIR)
+!IF !EXIST($(GNUTLS_SRC))
+GNUTLS_SRC = $(GNUTLS_BINPATH)\$(ALTDIR)
+!ENDIF
+
 LZO_SRC = $(LZO_BINPATH)\$(INTDIR)
 !IF !EXIST($(LZO_SRC))
 LZO_SRC = $(LZO_BINPATH)\$(ALTDIR)
@@ -147,6 +152,15 @@ $(FLTK_SRC).fltk_clean :
 	@echo ---- & echo Deleting FLTK DLLs & $(CLEAN_CMD)
 install_fltk : $(FLTK_SRC).fltk_install
 clean_fltk : $(FLTK_SRC).fltk_clean
+
+
+
+$(GNUTLS_SRC).gnutls_install :
+	@echo ---- & echo Copying GNUTLS DLLs & $(INSTALL_CMD)
+$(GNUTLS_SRC).gnutls_clean :
+	@echo ---- & echo Deleting GNUTLS DLLs & $(CLEAN_CMD)
+install_gnutls : $(GNUTLS_SRC).gnutls_install
+clean_gnutls : $(GNUTLS_SRC).gnutls_clean
 
 
 
@@ -265,3 +279,4 @@ $(MSVCRT_SRC).msvc_install :
 	@echo ---- & echo Copying MSVC DLLs & $(INSTALL_CMD)
 $(MSVCRT_SRC).msvc_clean :
 	@echo ---- & echo Deleting MSVC DLLs & $(CLEAN_CMD)
+	
