@@ -1144,10 +1144,14 @@ void CProjBulderApp::ReportGeneratedFiles(void)
     string file_path( m_Solution + "_generated_files.txt");
     string sep;
     sep += CDirEntry::GetPathSeparator();
+    bool abs_root = CDirEntry::IsAbsolutePath(m_Root);
     CNcbiOfstream ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc );
     if (ofs.is_open()) {
         ITERATE( list<string>, f, m_GeneratedFiles) {
-            string path (CDirEntry::CreateRelativePath(m_Root, *f));
+            string path(*f);
+            if (abs_root && CDirEntry::IsAbsolutePath(path)) {
+                path = CDirEntry::CreateRelativePath(m_Root, *f);
+            }
             ofs << NStr::ReplaceInPlace( path, sep, "/") << endl;
         }
     }
