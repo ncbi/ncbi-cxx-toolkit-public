@@ -383,6 +383,9 @@ CProjBulderApp::CProjBulderApp(void)
 void CProjBulderApp::Init(void)
 {
     string logfile = GetLogFile();
+    if (CDirEntry(logfile).Exists()) {
+        RegisterGeneratedFile(CDirEntry::NormalizePath(logfile));
+    }
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         if (logfile != "STDERR") {
             SetDiagHandler(new CWindowsCmdErrorHandler);
