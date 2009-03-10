@@ -93,7 +93,9 @@ public:
     // Allocate a block from array. Negative means no more free blocks
     int  Allocate();
     // Return block at position 'pos' to the array
-    void Free(int pos);
+    // Can not be used due to possible deadlock, see comment in
+    // CQueueDataBase::DeleteQueue
+    // void Free(int pos);
     SQueueDbBlock* Get(int pos);
 private:
     unsigned       m_Count;

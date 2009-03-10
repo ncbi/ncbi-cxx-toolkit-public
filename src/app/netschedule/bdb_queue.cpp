@@ -640,7 +640,12 @@ void CQueueDataBase::DeleteQueue(const string& qname)
         msg += qname;
         NCBI_THROW(CNetScheduleException, eUnknownQueue, msg);
     }
-    m_QueueDbBlockArray.Free(queue->GetPos());
+
+    // To call CQueueDbBlockArray::Free here was a deadlock error - we can't
+    // reset transaction until it is executing. So we moved setting 'allocated'
+    // flag to SLockedQueue::Detach where everything is in single threaded mode,
+    // and access to boolean seems to be atomic anyway.
+
     // Remove it from DB
     m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
     trans.Commit();

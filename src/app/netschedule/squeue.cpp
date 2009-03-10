@@ -184,12 +184,15 @@ int CQueueDbBlockArray::Allocate()
 }
 
 
+// Obsoleted, see comment in .hpp file and in CQueueDataBase::DeleteQueue
+/*
 void CQueueDbBlockArray::Free(int pos)
 {
     if (pos < 0 || unsigned(pos) >= m_Count) return;
     m_Array[pos].ResetTransaction();
     m_Array[pos].allocated = false;
 }
+*/
 
 
 SQueueDbBlock* CQueueDbBlockArray::Get(int pos)
@@ -346,11 +349,16 @@ void SLockedQueue::Attach(SQueueDbBlock* block)
 void SLockedQueue::Detach()
 {
     m_AffinityDict.Detach();
+    if (!m_QueueDbBlock) return;
     if (delete_database) {
         m_QueueDbBlock->ResetTransaction();
         m_QueueDbBlock->Truncate();
     }
     delete_database = false;
+    // We can do this here unprotected by mutex, because only other place
+    // accessing 'allocated' flag simultaneously is in
+    // CQueueDbBlockArray::Allocate and it check if it's false first.
+    m_QueueDbBlock->allocated = false;
     m_QueueDbBlock = 0;
 }
 
