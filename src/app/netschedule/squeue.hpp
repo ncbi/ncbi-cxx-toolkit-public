@@ -432,7 +432,7 @@ public:
     void RemoveJobFromWorkerNode(const string&      node_id,
                                  const CJob&        job,
                                  ENSCompletion      reason);
-    void x_FailJobsAtNodeClose(TJobList& jobs);
+    void x_FailJobsAtNodeClose(TJobList& jobs, const string& reason);
     //
 
     typedef CWorkerNodeAffinity::TNetAddress TNetAddress;

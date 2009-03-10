@@ -1393,7 +1393,7 @@ void SLockedQueue::InitWorkerNode(const SWorkerNodeInfo& node_info)
 {
     TJobList jobs;
     m_WorkerNodeList.RegisterNode(node_info, jobs);
-    x_FailJobsAtNodeClose(jobs);
+    x_FailJobsAtNodeClose(jobs, "replaced by new node");
 }
 
 
@@ -1402,7 +1402,7 @@ void SLockedQueue::ClearWorkerNode(const string& node_id)
     TJobList jobs;
     m_WorkerNodeList.ClearNode(node_id, jobs);
    	ClearAffinity(node_id);
-    x_FailJobsAtNodeClose(jobs);
+    x_FailJobsAtNodeClose(jobs, "cleared");
 }
 
 
@@ -1461,7 +1461,7 @@ void SLockedQueue::RegisterNotificationListener(const SWorkerNodeInfo& node_info
     TJobList jobs;
     m_WorkerNodeList.RegisterNotificationListener(node_info, port,
                                                   timeout, jobs);
-    x_FailJobsAtNodeClose(jobs);
+    x_FailJobsAtNodeClose(jobs, "new node REGC");
 }
 
 
@@ -1472,9 +1472,9 @@ bool SLockedQueue::UnRegisterNotificationListener(const string& node_id)
     	m_WorkerNodeList.UnRegisterNotificationListener(node_id, jobs);
     if (final) {
     	// Clean affinity association only for old style worker nodes
-    	// New style nodes should explicitely call ClearWorkerNode
+    	// New style nodes should explicitly call ClearWorkerNode
     	ClearAffinity(node_id);
-    	x_FailJobsAtNodeClose(jobs);
+    	x_FailJobsAtNodeClose(jobs, "URGC");
     }
     return final;
 }
@@ -1484,7 +1484,7 @@ void SLockedQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
 {
     TJobList jobs;
     if (m_WorkerNodeList.RegisterNodeVisit(node_info, jobs))
-        x_FailJobsAtNodeClose(jobs);
+        x_FailJobsAtNodeClose(jobs, "new node visited");
 }
 
 
@@ -1519,10 +1519,10 @@ void SLockedQueue::RemoveJobFromWorkerNode(const string&          node_id,
 
 
 
-void SLockedQueue::x_FailJobsAtNodeClose(TJobList& jobs)
+void SLockedQueue::x_FailJobsAtNodeClose(TJobList& jobs, const string& reason)
 {
     ITERATE(TJobList, it, jobs) {
-    	FailJob(*it, "Node closed", "", 0);
+    	FailJob(*it, "Node closed, " + reason, "", 0);
     }
 }
 
