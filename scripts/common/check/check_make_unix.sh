@@ -517,7 +517,7 @@ EOF_launch
                         }' \$x_log >> \$x_test_out
 
                         # Get application execution time
-                        exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '%%'\`
+                        exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '%%' | tr -d '\000-\037' | tr  -d '\176-\377'\`
                         echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
                         if test \$? -eq 0;  then
                             exec_time=\`echo \$exec_time |   \\
