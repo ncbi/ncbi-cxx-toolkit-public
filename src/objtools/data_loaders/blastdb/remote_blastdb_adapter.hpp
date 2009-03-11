@@ -109,8 +109,8 @@ public:
                     (idx+1 == m_SeqDataVector.size()));
         } else {
             if (((end-begin) % kRmtSequenceSliceSize) == 0) {
-                idx = log((long)((end-begin)/kRmtSequenceSliceSize)) /
-                    log((long)kSliceGrowthFactor);
+                idx = log((double)((end-begin)/kRmtSequenceSliceSize)) /
+                    log((double)kSliceGrowthFactor);
             } else {
                 idx = m_SeqDataVector.size() - 1;
             }
