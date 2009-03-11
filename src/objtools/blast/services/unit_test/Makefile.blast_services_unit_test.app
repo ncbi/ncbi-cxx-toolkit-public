@@ -6,7 +6,8 @@ CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-LIB = test_boost blast_services xnetblastcli xnetblast seqdb blastdb scoremat xobjsimple $(OBJMGR_LIBS) xncbi
+LIB = test_boost blast_services xnetblastcli xnetblast seqdb blastdb scoremat \
+      xconnect $(SOBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
