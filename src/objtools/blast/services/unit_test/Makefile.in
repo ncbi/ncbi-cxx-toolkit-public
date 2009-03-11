@@ -1,0 +1,7 @@
+
+APP_PROJ = blast_services_unit_test
+
+REQUIRES = Boost.Test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
