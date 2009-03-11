@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile(blast_services)
+#################################
+
+LIB_PROJ = blast_services
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
