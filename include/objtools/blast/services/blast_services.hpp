@@ -1,0 +1,353 @@
+#ifndef ALGO_BLAST_API___REMOTE_SERVICES__HPP
+#define ALGO_BLAST_API___REMOTE_SERVICES__HPP
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Christiam Camacho, Kevin Bealer
+ *
+ */
+
+/// @file remote_services.hpp
+/// Declares the CBlastServices class.
+
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/blast/blast__.hpp>
+#include <objects/blast/names.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
+BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    /// forward declaration of ASN.1 object containing PSSM (scoremat.asn)
+    class CBioseq_set;
+    class CSeq_loc;
+    class CSeq_id;
+    class CSeq_align_set;
+END_SCOPE(objects)
+
+using namespace ncbi::objects;
+
+
+/// RemoteServicesException
+///
+
+class NCBI_XOBJREAD_EXPORT CBlastServicesException : public CException {
+public:
+    /// Errors are classified into one of two types.
+    enum EErrCode {
+        /// Argument validation failed.
+        eArgErr,
+
+        /// Files were missing or contents were incorrect.
+        eFileErr,
+
+        /// Request failed
+        eRequestErr,
+
+        /// Memory allocation failed.
+        eMemErr
+    };
+
+    /// Get a message describing the situation leading to the throw.
+    virtual const char* GetErrCodeString() const
+    {
+        switch ( GetErrCode() ) {
+        case eArgErr:  return "eArgErr";
+        case eFileErr: return "eFileErr";
+        case eRequestErr: return "eRequestErr";
+        default:       return CException::GetErrCodeString();
+        }
+    }
+
+    /// Include standard NCBI exception behavior.
+    NCBI_EXCEPTION_DEFAULT(CBlastServicesException, CException);
+};
+
+
+
+/// API for Remote Blast Services
+///
+/// Class to obtain information and data from the Remote BLAST service that is
+/// not associated with a specific BLAST search
+
+class CBlastServices : public CObject
+{
+public:
+    /// Default constructor
+    CBlastServices() {}
+
+    /// Returns true if the BLAST database specified exists in the NCBI servers
+    /// @param dbname BLAST database name [in]
+    /// @param is_protein is this a protein database? [in]
+    bool IsValidBlastDb(const string& dbname, bool is_protein);
+    
+    /// Retrieve detailed information for a given BLAST database
+    ///
+    /// @param blastdb object describing the database for which to get
+    /// detailed information
+    /// @return Detailed information for the requested BLAST database or an
+    /// empty object is the requested database wasn't found
+    CRef<objects::CBlast4_database_info>
+    GetDatabaseInfo(CRef<objects::CBlast4_database> blastdb);
+
+    /// Retrieve organism specific repeats databases
+    vector< CRef<objects::CBlast4_database_info> >
+    GetOrganismSpecificRepeatsDatabases();
+
+    /// Defines a std::vector of CRef<CSeq_id>
+    typedef vector< CRef<objects::CSeq_id> > TSeqIdVector;
+    /// Defines a std::vector of CRef<CBioseq>
+    typedef vector< CRef<objects::CBioseq> > TBioseqVector;
+
+   /// Get a set of Bioseqs without their sequence data given an input set of
+    /// Seq-ids.
+    ///
+    /// @param seqids   A vector of Seq-ids for which Bioseqs are requested.
+    /// @param database A list of databases from which to get the sequences.
+    /// @param seqtype  The residue type, 'p' from protein, 'n' for nucleotide.
+    /// @param bioseqs  The vector used to return the requested Bioseqs.
+    /// @param errors   A null-separated list of errors.
+    /// @param warnings A null-separated list of warnings.
+    /// @param verbose  Produce verbose output. [in]
+    /// @todo FIXME: Add retry logic in case of transient errors
+    static void
+    GetSequencesInfo(TSeqIdVector& seqids,      // in
+                     const string& database,    // in
+                     char seqtype,              // 'p' or 'n'
+                     TBioseqVector& bioseqs,    // out
+                     string& errors,            // out
+                     string& warnings,          // out
+                     bool verbose = false);     // in
+
+    /// Get a set of Bioseqs given an input set of Seq-ids. 
+    ///
+    /// This retrieves the Bioseqs corresponding to the given Seq-ids
+    /// from the blast4 server.  Normally this will be much faster
+    /// than consulting ID1 seperately for each sequence.  Sometimes
+    /// there are multiple sequences for a given Seq-id.  In such
+    /// cases, there are always 'non-ambiguous' ids available.  This
+    /// interface does not currently address this issue, and will
+    /// simply return the Bioseqs corresponding to one of the
+    /// sequences.  Errors will be returned if the operation cannot be
+    /// completed (or started).  In the case of a sequence that cannot
+    /// be found, the error will indicate the index of (and Seq-id of)
+    /// the missing sequence; processing will continue, and the
+    /// sequences that can be found will be returned along with the
+    /// error.
+    ///
+    /// @param seqids   A vector of Seq-ids for which Bioseqs are requested.
+    /// @param database A list of databases from which to get the sequences.
+    /// @param seqtype  The residue type, 'p' from protein, 'n' for nucleotide.
+    /// @param bioseqs  The vector used to return the requested Bioseqs.
+    /// @param errors   A null-separated list of errors.
+    /// @param warnings A null-separated list of warnings.
+    /// @param verbose  Produce verbose output. [in]
+    /// @todo FIXME: Add retry logic in case of transient errors
+    static void
+    GetSequences(TSeqIdVector& seqids,      // in
+                 const string& database,    // in
+                 char seqtype,              // 'p' or 'n'
+                 TBioseqVector& bioseqs,    // out
+                 string& errors,            // out
+                 string& warnings,          // out
+                 bool verbose = false);     // in
+    /// Defines a std::vector of CRef<CSeq_interval>
+    typedef vector< CRef<objects::CSeq_interval> > TSeqIntervalVector;
+    /// Defines a std::vector of CRef<CSeq_data>
+    typedef vector< CRef<objects::CSeq_data> > TSeqDataVector;
+
+    /// This retrieves (partial) sequence data from the remote BLAST server.
+    ///
+    /// @param seqid
+    ///     A vector of Seq-ids for which sequence data are requested. [in]
+    /// @param database
+    ///     A list of databases from which to get the sequences. [in]
+    /// @param seqtype
+    ///     The residue type, 'p' from protein, 'n' for nucleotide. [in]
+    /// @param ids
+    ///     The sequence IDs for those sequences which the seq data was
+    //      obtained successfully [out]
+    /// @param seq_data
+    ///     Sequence data in CSeq_data format. [out]
+    /// @param errors
+    ///     An error message (if any). [out]
+    /// @param warnings
+    ///     A warning (if any). [out]
+    /// @param verbose
+    ///     Produce verbose output. [in]
+    /// @todo FIXME: Add retry logic in case of transient errors
+    static void
+    GetSequenceParts(const TSeqIntervalVector   & seqids,    // in
+                     const string               & database,  // in
+                     char                         seqtype,   // 'p' or 'n'
+                     TSeqIdVector               & ids,       // out
+                     TSeqDataVector             & seq_data,  // out
+                     string                     & errors,    // out
+                     string                     & warnings,  // out
+                     bool                         verbose = false);// in
+
+    /// Main function to issue a Blast4-get-sequences-request and collect its
+    /// results from the remote BLAST server.
+    /// 
+    /// @param seqids 
+    ///     The seqids of the sequences to fetch. [in]
+    /// @param database
+    ///     The database or databases containing the desired sequences. [in]
+    /// @param seqtype
+    ///     Either 'p' or 'n' for protein or nucleotide. [in]
+    /// @param bioseqs  
+    ///     The vector used to return the requested Bioseqs. [out]
+    /// @param errors
+    ///     Returned string containing any errors encountered. [out]
+    /// @param warnings 
+    ///     A null-separated list of warning. [out]
+    /// @param skip_seq_data                      
+    ///     If true, the sequence data will NOT be fetched [in]
+    /// @param verbose  Produce verbose output. [in]
+    static void x_GetSequences(TSeqIdVector & seqids,
+                               const string & database,
+                               char           seqtype,
+                               bool           skip_seq_data,
+                               TBioseqVector& bioseqs,
+                               string       & errors,
+                               string       & warnings,
+                               bool           verbose);
+
+    /// Get bioseqs from a sequence fetching reply.
+    ///
+    /// This method reads the reply from a sequence fetching request
+    /// and extracts the bioseqs, errors and warnings from it.
+    ///
+    /// @param reply
+    ///     The reply from a sequence fetching request.
+    /// @param bioseqs
+    ///     The returned list of bioseqs from the request.
+    /// @param errors
+    ///     Returned string containing any errors encountered.
+    /// @param warnings
+    ///     Returned string containing any warnigns encountered.
+    static void
+    x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
+                       TBioseqVector                    & bioseqs,   // out
+                       string                           & errors,    // out
+                       string                           & warnings); // out
+
+    /// Build Sequence Fetching Request
+    ///
+    /// This method builds a blast4 request designed to fetch a list
+    /// of bioseqs from the blast4 server.
+    ///
+    /// @param seqids
+    ///     The seqids of the sequences to fetch.
+    /// @param database
+    ///     The database or databases containing the desired sequences.
+    /// @param seqtype
+    ///     Either 'p' or 'n' for protein or nucleotide.
+    /// @param errors
+    ///     Returned string containing any errors encountered.
+    /// @param skip_seq_data
+    ///     If true, the sequence data will NOT be fetched
+    /// @return
+    ///     The blast4 sequence fetching request object.
+    static CRef<objects::CBlast4_request>
+    x_BuildGetSeqRequest(TSeqIdVector& seqids,      // in
+                         const string& database,    // in
+                         char seqtype,              // 'p' or 'n'
+                         bool skip_seq_data,        // in
+                         string & errors);          // out
+    
+    /// Build Sequence Parts Fetching Request
+    /// 
+    /// This method builds a blast4 request designed to fetch sequence
+    /// data
+    /// 
+    /// @param seqids
+    ///     The seqids and ranges of the sequences to fetch.
+    /// @param database 
+    ///     The database or databases containing the desired sequences.
+    /// @param seqtype  
+    ///     Either 'p' or 'n' for protein or nucleotide.
+    /// @param errors   
+    ///     Returned string containing any errors encountered.
+    /// @return
+    ///     The blast4 sequence fetching request object.
+    static CRef<objects::CBlast4_request>
+    x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqid,     // in
+                              const string             & database,  // in
+                              char                       seqtype,   // 'p' or 'n'
+                              string                   & errors);   // out
+
+    /// Extract information from the get-seq-parts reply object.
+    /// @param reply The reply object from blast4. 
+    /// @param ids All Seq-ids for the requested sequences.
+    /// @param seq_data Seq_data for the sequences in question.
+    /// @param errors Any error messages found in the reply.
+    /// @param warnings Any warnings found in the reply.
+    static void 
+    x_GetPartsFromReply(CRef<objects::CBlast4_reply>       reply,     // in
+                        TSeqIdVector                     & ids,       // out
+                        TSeqDataVector                   & seq_data,  // out
+                        string                           & errors,    // out
+                        string                           & warnings); // out
+
+private:
+
+    /// Retrieve the BLAST databases available for searching
+    void x_GetAvailableDatabases();
+
+    /// Look for a database matching this method's argument and returned
+    /// detailed information about it.
+    /// @param blastdb database description
+    /// @return detailed information about the database requested or an empty
+    /// CRef<> if the database was not found
+    CRef<objects::CBlast4_database_info>
+    x_FindDbInfoFromAvailableDatabases(CRef<objects::CBlast4_database> blastdb);
+    
+    /// Prohibit copy construction.
+    CBlastServices(const CBlastServices &);
+    
+    /// Prohibit assignment.
+    CBlastServices & operator=(const CBlastServices &);
+    
+    
+    // Data
+    
+    /// BLAST databases available to search
+    objects::CBlast4_get_databases_reply::Tdata m_AvailableDatabases;
+};
+
+END_NCBI_SCOPE
+
+/* @} */
+
+#endif  /* ALGO_BLAST_API___REMOTE_SERVICES__HPP */
