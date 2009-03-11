@@ -633,12 +633,12 @@ protected:
      *  where to cleave.  last two letters are in readdb format, assuming 
      * it uses the UniqueAA alphabet
      */
-    char *CleaveAt;
+    const char *CleaveAt;
 
     /**
      *  what is the cleavage offset
      */
-    char *CleaveOffset;
+    const char *CleaveOffset;
 
     /**
      *  How many cleavage characters

@@ -427,7 +427,7 @@ int CSpectrumSet::LoadMGF(CNcbiIstream& DTA, int Max)
 {
     int iIndex(0); // the spectrum index
     int Count(0);  // total number of spectra
-    int retval;
+    int retval(-1);
     bool GotOne(false);  // has a spectrum been read?
     try {
         
