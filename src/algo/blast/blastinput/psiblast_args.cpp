@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/api/phiblast_prot_options.hpp>
+#include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -49,10 +50,12 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 {
     bool const kQueryIsProtein = true;
     bool const kFilterByDefault = false;
+    static const string kProgram("psiblast");
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("psiblast", 
+    arg.Reset(new CProgramDescriptionArgs(kProgram,
                                           "Position-Specific Initiated BLAST"));
     m_Args.push_back(arg);
+    m_ClientId = kProgram + " " + CBlastVersion().Print();
 
     static const string kDefaultTask = "psiblast";
     SetTask(kDefaultTask);

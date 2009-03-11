@@ -160,16 +160,13 @@ CSeqDBColumn::~CSeqDBColumn()
 }
 
 bool CSeqDBColumn::ColumnExists(const string   & basename,
-                                const string   & index_extn,
-                                const string   & data_extn,
+                                const string   & extn,
                                 CSeqDBAtlas    & atlas,
                                 CSeqDBLockHold & locked)
 {
-    string fn1(basename + "." + index_extn);
-    string fn2(basename + "." + data_extn);
+    string fn(basename + "." + extn);
     
-    return (atlas.DoesFileExist(fn1, locked) &&
-            atlas.DoesFileExist(fn1, locked));
+    return ( atlas.DoesFileExist(fn, locked));
 }
 
 const string & CSeqDBColumn::GetTitle() const

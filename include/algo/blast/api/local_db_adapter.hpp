@@ -78,6 +78,14 @@ public:
     CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
                     CConstRef<CBlastOptionsHandle> opts_handle);
 
+    /// Constructor taking custom BlastSeqSrc and IBlastSeqInfoSrc objects
+    /// @param seqSrc 
+    ///     Custom BlastSeqSrc implementation provided by the user
+    /// @param seqInfoSrc
+    ///     Custom IBlastSeqInfoSrc implementation provided by the user
+    CLocalDbAdapter(BlastSeqSrc* seqSrc,
+                    CRef<IBlastSeqInfoSrc> seqInfoSrc);
+
     /// Destructor
     virtual ~CLocalDbAdapter();
 

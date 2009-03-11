@@ -522,6 +522,19 @@ public:
                               CSeq_align_set& new_aln,
                               unsigned int num = blast::kDfltArgNumAlignments);
 
+    ///Fill new alignset containing the specified number of alignments 
+    ///plus the rest of alignments for the last subget seq
+    ///unique slave seqids.  Note no new seqaligns were created. It just 
+    ///references the original seqalign
+    ///
+    ///@param source_aln: the original alnset
+    ///@param new_aln: the new alnset
+    ///@param num: the specified number
+    ///
+    static void PruneSeqalignAll(const CSeq_align_set& source_aln, 
+                                     CSeq_align_set& new_aln,
+                                     unsigned int number);
+
     /// Count alignment length, number of gap openings and total number of gaps
     /// in a single alignment.
     /// @param salv Object representing one alignment (HSP) [in]

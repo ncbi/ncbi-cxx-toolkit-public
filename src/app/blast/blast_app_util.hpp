@@ -63,6 +63,7 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
                       CRef<blast::CBlastDatabaseArgs> db_args,
                       CRef<blast::CBlastOptionsHandle> opts_hndl,
                       bool verbose_output,
+                      const string& client_id = kEmptyStr,
                       CRef<objects::CPssmWithParameters> pssm = 
                         CRef<objects::CPssmWithParameters>());
 

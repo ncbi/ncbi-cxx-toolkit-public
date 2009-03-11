@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/blast_rps_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -50,9 +51,11 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     const bool kQueryIsProtein = true;
     const bool kIsRpsBlast = true;
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("rpsblast", 
+    static const string kProgram("rpsblast");
+    arg.Reset(new CProgramDescriptionArgs(kProgram,
                                           "Reverse Position Specific BLAST"));
     m_Args.push_back(arg);
+    m_ClientId = kProgram + " " + CBlastVersion().Print();
 
     static const string kDefaultTask = "rpsblast";
     SetTask(kDefaultTask);

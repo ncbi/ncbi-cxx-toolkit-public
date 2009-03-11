@@ -90,32 +90,19 @@ CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s)
     int slen = s.Size();
     
     if (slen > 4) {
-        if (s[slen-4] == '.'     &&
+        string extn(s.GetEnd()-4, s.GetEnd());
+        string extn2(extn, 2, 4);
+        // Of course, nal and pal are not the only valid
+        // extensions, but this code is only used with these two,
+        // as far as I know, at this moment in time.
+            
+        if (extn[0] == '.'     &&
+            (extn[1] == 'n' || extn[1] == 'p') &&
+            (extn2 == "al"  || extn2 == "in")) {
+            /*
             isalpha( s[slen-3] ) &&
             isalpha( s[slen-2] ) &&
-            isalpha( s[slen-1] )) {
-            
-#ifdef _DEBUG
-            
-            // Of course, nal and pal are not the only valid
-            // extensions, but this code is only used with these two,
-            // as far as I know, at this moment in time.
-            
-            string extn(s.GetEnd()-4, s.GetEnd());
-            
-            if ((extn != ".nal") &&
-                (extn != ".nin") &&
-                (extn != ".pal") &&
-                (extn != ".pin")) {
-                
-                cout << "Extension trim error: " << extn << endl;
-                
-                _ASSERT((extn == ".nal") ||
-                        (extn == ".nin") ||
-                        (extn == ".pal") ||
-                        (extn == ".pin"));
-            }
-#endif
+            isalpha( s[slen-1] )) {*/
             
             s.Resize(slen - 4);
         }

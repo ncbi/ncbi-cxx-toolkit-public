@@ -1942,6 +1942,22 @@ struct SReadInt1 {
     {
         return blob.ReadInt1();
     }
+  
+    static void Read(CBlastDbBlob & blob, int n, 
+                     CSeqDBImpl::TSequenceRanges & ranges)
+    {
+        typedef pair<TSeqPos, TSeqPos> TOffsetPair;
+        const Int1 * ptr = (const Int1 *) blob.ReadRaw(n*2);
+        for (int i = 0; i < n; ++i) {
+                TOffsetPair p;
+                p.first = ptr[i*2];
+                p.second = ptr[i*2+1];
+                
+                _ASSERT(((int)p.first) >= 0);
+                _ASSERT(p.second >= p.first);
+                ranges.push_back(p);
+        }
+    }
 };
 
 struct SReadInt2 {
@@ -1950,6 +1966,22 @@ struct SReadInt2 {
     static int Read(CBlastDbBlob & blob)
     {
         return blob.ReadInt2();
+    }
+  
+    static void Read(CBlastDbBlob & blob, int n, 
+                     CSeqDBImpl::TSequenceRanges & ranges)
+    {
+        typedef pair<TSeqPos, TSeqPos> TOffsetPair;
+        const Int2 * ptr = (const Int2 *) blob.ReadRaw(n*4);
+        for (int i = 0; i < n; ++i) {
+                TOffsetPair p;
+                p.first = ptr[i*2];
+                p.second = ptr[i*2+1];
+                
+                _ASSERT(((int)p.first) >= 0);
+                _ASSERT(p.second >= p.first);
+                ranges.push_back(p);
+        }
     }
 };
 
@@ -1960,6 +1992,22 @@ struct SReadInt4 {
     {
         return blob.ReadInt4();
     }
+  
+    static void Read(CBlastDbBlob & blob, int n, 
+                     CSeqDBImpl::TSequenceRanges & ranges)
+    {
+        typedef pair<TSeqPos, TSeqPos> TOffsetPair;
+        const Int4 * ptr = (const Int4 *) blob.ReadRaw(n*8);
+        for (int i = 0; i < n; ++i) {
+                TOffsetPair p;
+                p.first = ptr[i*2];
+                p.second = ptr[i*2+1];
+                
+                _ASSERT(((int)p.first) >= 0);
+                _ASSERT(p.second >= p.first);
+                ranges.push_back(p);
+        }
+    }
 };
 
 template<class TRead>
@@ -1967,8 +2015,6 @@ void s_ReadRanges(const vector<int>           & vol_algos,
                   CSeqDBImpl::TSequenceRanges & ranges,
                   CBlastDbBlob                & blob)
 {
-    typedef pair<TSeqPos, TSeqPos> TOffsetPair;
-    
     int num_ranges = TRead::Read(blob);
     
     for(int rng = 0; rng < num_ranges; rng++) {
@@ -1987,15 +2033,7 @@ void s_ReadRanges(const vector<int>           & vol_algos,
         //_ASSERT(num_pairs > 0);
         
         if (need) {
-            for(int j = 0; j < num_pairs; j++) {
-                TOffsetPair p;
-                p.first = TRead::Read(blob);
-                p.second = TRead::Read(blob);
-                
-                _ASSERT(((int)p.first) >= 0);
-                _ASSERT(p.second >= p.first);
-                ranges.push_back(p);
-            }
+            TRead::Read(blob, num_pairs, ranges);        
         } else {
             int skip_amt = num_pairs * 2 * TRead::numeric_size;
             blob.SeekRead(blob.GetReadOffset() + skip_amt);
@@ -2071,28 +2109,7 @@ void CSeqDBImpl::GetMaskData(int                 oid,
         const vector<int> & vol_algos =
             m_AlgorithmIds.GetVolAlgos(vol_idx, algo_ids);
         
-        int intsize = blob.ReadInt1();
-        
-        if (intsize != 1) {
-            blob.SkipPadBytes(intsize, CBlastDbBlob::eSimple);
-        }
-        
-        switch(intsize) {
-        case 1:
-            s_ReadRanges<SReadInt1>(vol_algos, ranges, blob);
-            break;
-            
-        case 2:
-            s_ReadRanges<SReadInt2>(vol_algos, ranges, blob);
-            break;
-            
-        case 4:
-            s_ReadRanges<SReadInt4>(vol_algos, ranges, blob);
-            break;
-            
-        default:
-            _ASSERT(0);
-        }
+        s_ReadRanges<SReadInt4>(vol_algos, ranges, blob);
     }
     
     int seq_length = 0;

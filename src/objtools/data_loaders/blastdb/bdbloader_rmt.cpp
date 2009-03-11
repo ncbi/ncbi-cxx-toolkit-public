@@ -40,7 +40,6 @@ static char const rcsid[] = "$Id$";
 #include <corelib/plugin_manager_store.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include "cached_sequence.hpp"
 #include "remote_blastdb_adapter.hpp"
 
 //=======================================================================
@@ -107,6 +106,7 @@ CRemoteBlastDbDataLoader::CRemoteBlastDbDataLoader(const string& loader_name,
 {
     m_DBName = param.m_DbName;
     m_DBType = param.m_DbType;
+    m_UseFixedSizeSlices = param.m_UseFixedSizeSlices;
     SetName(loader_name);
     _ASSERT(param.m_BlastDbHandle.Empty());
     m_BlastDb.Reset();
@@ -114,7 +114,8 @@ CRemoteBlastDbDataLoader::CRemoteBlastDbDataLoader(const string& loader_name,
         NCBI_THROW(CSeqDBException, eArgErr, "Empty BLAST database name");
     }
     const CSeqDB::ESeqType dbtype = DbTypeToSeqType(m_DBType);
-    m_BlastDb.Reset(new CRemoteBlastDbAdapter(m_DBName, dbtype));
+    m_BlastDb.Reset(new CRemoteBlastDbAdapter(m_DBName, dbtype,
+                                              m_UseFixedSizeSlices));
     _ASSERT(m_BlastDb.NotEmpty());
 }
 

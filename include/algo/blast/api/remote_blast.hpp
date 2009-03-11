@@ -396,6 +396,7 @@ public:
     /// @param errors   A null-separated list of errors.
     /// @param warnings A null-separated list of warnings.
     /// @param verbose  Produce verbose output. [in]
+    /// @param client_id The client ID sent to the blast4 server (optional) [in]
     /// @todo FIXME: Add retry logic in case of transient errors
     static void
     GetSequences(TSeqIdVector& seqids,      // in
@@ -404,7 +405,8 @@ public:
                  TBioseqVector& bioseqs,    // out
                  string& errors,            // out
                  string& warnings,          // out
-                 bool verbose = false);     // in
+                 bool verbose = false,      // in
+                 const string& client_id = kEmptyStr);  // in
     
     /// Get a set of Bioseqs without their sequence data given an input set of
     /// Seq-ids.
@@ -416,6 +418,7 @@ public:
     /// @param errors   A null-separated list of errors.
     /// @param warnings A null-separated list of warnings.
     /// @param verbose  Produce verbose output. [in]
+    /// @param client_id The client ID sent to the blast4 server (optional) [in]
     /// @todo FIXME: Add retry logic in case of transient errors
     static void
     GetSequencesInfo(TSeqIdVector& seqids,      // in
@@ -424,7 +427,8 @@ public:
                      TBioseqVector& bioseqs,    // out
                      string& errors,            // out
                      string& warnings,          // out
-                     bool verbose = false);     // in
+                     bool verbose = false,      // in
+                     const string& client_id = kEmptyStr);  // in
 
     /// Defines a std::vector of CRef<CSeq_interval>
     typedef vector< CRef<objects::CSeq_interval> > TSeqIntervalVector;
@@ -450,6 +454,8 @@ public:
     ///     A warning (if any). [out]
     /// @param verbose 
     ///     Produce verbose output. [in]
+    /// @param client_id
+    ///     The client ID sent to the blast4 server (optional) [in]
     /// @todo FIXME: Add retry logic in case of transient errors
     static void
     GetSequenceParts(const TSeqIntervalVector   & seqids,    // in
@@ -459,7 +465,8 @@ public:
                      TSeqDataVector             & seq_data,  // out
                      string                     & errors,    // out
                      string                     & warnings,  // out
-                     bool                         verbose = false);// in
+                     bool                         verbose = false,
+                     const string& client_id = kEmptyStr);  // in
     
     /// Get the database used by the search.
     ///
@@ -515,6 +522,11 @@ public:
     string GetTask() const {
         return m_Task;
     }
+
+    /// Retrieves the client ID used by this object to send requests
+    string GetClientId() const { return m_ClientId; }
+    /// Sets the client ID used by this object to send requests
+    void SetClientId(const string& client_id) { m_ClientId = client_id; }
     
 private:
 
@@ -664,6 +676,8 @@ private:
     /// @param skip_seq_data
     ///     If true, the sequence data will NOT be fetched [in]
     /// @param verbose  Produce verbose output. [in]
+    /// @param client_id
+    ///     The client ID sent to the blast4 server (optional) [in]
     static void x_GetSequences(TSeqIdVector & seqids,
                                const string & database,
                                char           seqtype,
@@ -671,7 +685,8 @@ private:
                                TBioseqVector& bioseqs,
                                string       & errors,
                                string       & warnings,
-                               bool           verbose);
+                               bool           verbose,
+                               const string & client_id);
 
     /// Build Sequence Fetching Request
     ///
@@ -688,6 +703,8 @@ private:
     ///     Returned string containing any errors encountered.
     /// @param skip_seq_data
     ///     If true, the sequence data will NOT be fetched
+    /// @param client_id
+    ///     The client ID sent to the blast4 server (optional) [in]
     /// @return
     ///     The blast4 sequence fetching request object.
     static CRef<objects::CBlast4_request>
@@ -695,7 +712,8 @@ private:
                          const string& database,    // in
                          char seqtype,              // 'p' or 'n'
                          bool skip_seq_data,        // in
-                         string & errors);          // out
+                         string & errors,           // out
+                         const string& client_id);  // in
     
     /// Build Sequence Parts Fetching Request
     ///
@@ -716,7 +734,8 @@ private:
     x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqid,     // in
                               const string             & database,  // in
                               char                       seqtype,   // 'p' or 'n'
-                              string                   & errors);   // out
+                              string                   & errors,    // out
+                              const string& client_id);     // in
     
     /// Get bioseqs from a sequence fetching reply.
     ///
@@ -894,6 +913,9 @@ private:
     /// Task used when the search was submitted (recovered via
     /// CBlastOptionsBuilder)
     string m_Task;
+
+    /// Client ID submitting requests throw this interface
+    string m_ClientId;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the

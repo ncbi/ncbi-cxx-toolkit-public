@@ -127,7 +127,7 @@ void CCachedSequence::SplitSeqData(TCTSE_Chunk_InfoVector& chunks)
 
             pos += slice_size;
             if ( !m_UseFixedSizeSlices ) {
-                slice_size *= 2;
+                slice_size *= kSliceGrowthFactor;
             }
         }
     }

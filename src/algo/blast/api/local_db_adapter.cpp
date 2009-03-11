@@ -96,6 +96,12 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
     }
 }
 
+CLocalDbAdapter::CLocalDbAdapter(BlastSeqSrc* seqSrc,
+                                 CRef<IBlastSeqInfoSrc> seqInfoSrc)
+    : m_SeqSrc(seqSrc), m_SeqInfoSrc(seqInfoSrc), m_DbName(kEmptyStr)
+{
+}
+
 CLocalDbAdapter::~CLocalDbAdapter()
 {
     if (m_SeqSrc) {
@@ -239,6 +245,8 @@ CLocalDbAdapter::IsProtein() const
     } else if (m_OptsHandle) {
         const EBlastProgramType p = m_OptsHandle->GetOptions().GetProgramType();
         retval = Blast_SubjectIsProtein(p) ? true : false;
+    } else if (m_SeqSrc) {
+        retval = (bool)BlastSeqSrcGetIsProt(m_SeqSrc);
     } else {
         // Data type provided in a constructor, but not handled here
         abort();

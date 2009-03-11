@@ -229,7 +229,7 @@ public:
     /// Construct WriteDB style database column.
     /// @param dbname Base of filename.
     /// @param extn1  Extension used for index file.
-    /// @param extn1  Extension used for data file.
+    /// @param extn2  Extension used for data file in big endian.
     /// @param index  Volume index.
     /// @param title  Title of this column.
     /// @param meta   User-defined meta data for this file.
@@ -239,6 +239,15 @@ public:
                     int                 index,
                     const string      & title,
                     const TColumnMeta & meta,
+                    Uint8             max_file_size);
+    
+    /// Add support for multiple byte order.
+    /// @param dbname Base of filename.
+    /// @param extn   Extension used for index file.
+    /// @param index  Volume index.
+    void AddByteOrder(const string    & dbname,
+                    const string      & extn,
+                    int                 index,
                     Uint8             max_file_size);
     
     /// Destructor.
@@ -279,6 +288,7 @@ public:
     ///
     /// @param blob The blob to add to the column.
     void AddBlob(const CBlastDbBlob & blob);
+    void AddBlob(const CBlastDbBlob & blob, const CBlastDbBlob & blob2);
     
     /// Add meta data to the column.
     ///
@@ -297,8 +307,12 @@ private:
     /// Index file, contains meta data and samples of the key/oid pairs.
     CRef<CWriteDB_ColumnIndex> m_IFile;
     
-    /// Data file, contains one record for each key/oid pair.
+    /// Data file, contains one record for each key/oid pair, in big and small endian.
     CRef<CWriteDB_ColumnData> m_DFile;
+
+    /// Support for multiple byte order
+    bool m_UseBothByteOrder;
+    CRef<CWriteDB_ColumnData> m_DFile2;
 };
 #endif
 

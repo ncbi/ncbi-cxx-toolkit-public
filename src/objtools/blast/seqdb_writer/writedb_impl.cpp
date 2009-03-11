@@ -770,7 +770,7 @@ void CWriteDB_Impl::x_Publish()
     x_CookData();
 
     bool done = false;
-    
+
     if (! m_Volume.Empty()) {
         done = m_Volume->WriteSequence(m_Sequence,
                                        m_Ambig,
@@ -778,7 +778,8 @@ void CWriteDB_Impl::x_Publish()
                                        m_Ids,
                                        m_Pig,
                                        m_Hash,
-                                       m_Blobs);
+                                       m_Blobs,
+                                       m_MaskDataColumn);
     }
     
     if (! done) {
@@ -802,9 +803,9 @@ void CWriteDB_Impl::x_Publish()
             
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-            _ASSERT(m_Blobs.size() == m_ColumnTitles.size());
-            _ASSERT(m_Blobs.size() == m_ColumnMetas.size());
-            _ASSERT(m_Blobs.size() == m_HaveBlob.size());
+            _ASSERT(m_Blobs.size() == m_ColumnTitles.size() * 2);
+            _ASSERT(m_Blobs.size() == m_ColumnMetas.size() * 2);
+            _ASSERT(m_Blobs.size() == m_HaveBlob.size() * 2);
             
             for(size_t i = 0; i < m_ColumnTitles.size(); i++) {
                 m_Volume->CreateColumn(m_ColumnTitles[i],
@@ -823,7 +824,8 @@ void CWriteDB_Impl::x_Publish()
                                        m_Ids,
                                        m_Pig,
                                        m_Hash,
-                                       m_Blobs);
+                                       m_Blobs,
+                                       m_MaskDataColumn);
         
         if (! done) {
             NCBI_THROW(CWriteDBException,
@@ -949,7 +951,6 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
     int range_list_count = 0;
     int offset_pairs_count = 0;
     
-    int max_sz = 0;
     
     ITERATE(CMaskedRangesVector, r1, ranges) {
         if (r1->empty()) {
@@ -966,8 +967,6 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
             NCBI_THROW(CWriteDBException, eArgErr, msg);
         }
         
-        max_sz = s_AbsMax(max_sz, r1->algorithm_id);
-        max_sz = s_AbsMax(max_sz, r1->offsets.size());
         
         ITERATE(TPairVector, r2, r1->offsets) {
             if ((r2->first  > r2->second) ||
@@ -977,13 +976,9 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
                            eArgErr,
                            "Error: Masked data offsets out of bounds.");
             }
-            
-            max_sz = s_AbsMax(max_sz, r2->first);
-            max_sz = s_AbsMax(max_sz, r2->second);
         }
     }
     
-    max_sz = s_AbsMax(max_sz, range_list_count);
     
     // We may be passed an empty list of ranges, or we might be passed
     // several ranges whose lists of offsets are themself empty.  No
@@ -994,98 +989,34 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
         return;
     }
     
-    // Pick a size.
-    
-    int numeric_size = 1;
-    
-    if (max_sz > 127) {
-        numeric_size = 2;
-        
-        if (max_sz > 32767) {
-            numeric_size = 4;
-            
-            // 32 bit shift is non-portable for shift amounts over 31.
-            _ASSERT((Int8(max_sz) >> 32) == 0);
-        }
-    }
-    
     // Write the actual data.
     const int col_id = x_GetMaskDataColumnId();
     CBlastDbBlob & blob = SetBlobData(col_id);
     blob.Clear();
-    blob.WriteInt1(numeric_size);
+    blob.WriteInt4(range_list_count);
     
-    if (numeric_size != 1) {
-        blob.WritePadBytes(numeric_size, CBlastDbBlob::eSimple);
-    }
-    
-    // Note: this should probably be changed to use the template
-    // approach as in SeqDB's reading of the same data, in order to
-    // avoid the following duplication.
-    
-    switch(numeric_size) {
-    case 1:
-        {
-            //s_WriteRanges<SWriteInt1>(blob, range_list_count, ranges);
-            blob.WriteInt1(range_list_count);
+    CBlastDbBlob & blob2 = SetBlobData(col_id);
+    blob2.Clear();
+    blob2.WriteInt4(range_list_count);
             
-            ITERATE(CMaskedRangesVector, r1, ranges) {
-                if (r1->offsets.size()) {
-                    blob.WriteInt1(r1->algorithm_id);
-                    blob.WriteInt1(r1->offsets.size());
-                
-                    ITERATE(TPairVector, r2, r1->offsets) {
-                        blob.WriteInt1(r2->first);
-                        blob.WriteInt1(r2->second);
-                    }
-                }
+    ITERATE(CMaskedRangesVector, r1, ranges) {
+        if (r1->offsets.size()) {
+            blob.WriteInt4(r1->algorithm_id);
+            blob.WriteInt4(r1->offsets.size());
+            blob2.WriteInt4(r1->algorithm_id);
+            blob2.WriteInt4(r1->offsets.size());
+             
+            ITERATE(TPairVector, r2, r1->offsets) {
+                blob.WriteInt4(r2->first);
+                blob.WriteInt4(r2->second);
+                blob2.WriteInt4_LE(r2->first);
+                blob2.WriteInt4_LE(r2->second);
             }
         }
-        break;
-        
-    case 2:
-        {
-            //s_WriteRanges<SWriteInt2>(blob, range_list_count, ranges);
-            blob.WriteInt2(range_list_count);
-            
-            ITERATE(CMaskedRangesVector, r1, ranges) {
-                if (r1->offsets.size()) {
-                    blob.WriteInt2(r1->algorithm_id);
-                    blob.WriteInt2(r1->offsets.size());
-                
-                    ITERATE(TPairVector, r2, r1->offsets) {
-                        blob.WriteInt2(r2->first);
-                        blob.WriteInt2(r2->second);
-                    }
-                }
-            }
-        }
-        break;
-        
-    case 4:
-        {
-            //s_WriteRanges<SWriteInt4>(blob, range_list_count, ranges);
-            blob.WriteInt4(range_list_count);
-            
-            ITERATE(CMaskedRangesVector, r1, ranges) {
-                if (r1->offsets.size()) {
-                    blob.WriteInt4(r1->algorithm_id);
-                    blob.WriteInt4(r1->offsets.size());
-                
-                    ITERATE(TPairVector, r2, r1->offsets) {
-                        blob.WriteInt4(r2->first);
-                        blob.WriteInt4(r2->second);
-                    }
-                }
-            }
-        }
-        break;
-        
-    default:
-        _ASSERT(0);
     }
     
     blob.WritePadBytes(4, CBlastDbBlob::eSimple);
+    blob2.WritePadBytes(4, CBlastDbBlob::eSimple);
 }
 
 int CWriteDB_Impl::
@@ -1112,25 +1043,27 @@ int CWriteDB_Impl::FindColumn(const string & title) const
     return -1;
 }
 
-int CWriteDB_Impl::CreateColumn(const string & title)
+int CWriteDB_Impl::CreateColumn(const string & title, bool mbo)
 {
     _ASSERT(FindColumn(title) == -1);
     
-    size_t col_id = m_Blobs.size();
+    size_t col_id = m_Blobs.size() / 2;
     
     _ASSERT(m_HaveBlob.size()     == col_id);
     _ASSERT(m_ColumnTitles.size() == col_id);
     _ASSERT(m_ColumnMetas.size()  == col_id);
     
     CRef<CBlastDbBlob> new_blob(new CBlastDbBlob);
+    CRef<CBlastDbBlob> new_blob2(new CBlastDbBlob);
     
     m_Blobs       .push_back(new_blob);
-    m_HaveBlob    .push_back(false);
+    m_Blobs       .push_back(new_blob2);
+    m_HaveBlob    .push_back(0);
     m_ColumnTitles.push_back(title);
     m_ColumnMetas .push_back(TColumnMeta());
     
     if (m_Volume.NotEmpty()) {
-        size_t id2 = m_Volume->CreateColumn(title, m_ColumnMetas.back());
+        size_t id2 = m_Volume->CreateColumn(title, m_ColumnMetas.back(), mbo);
         _ASSERT(id2 == col_id);
         (void)id2;  // get rid of compiler warning
     }
@@ -1158,22 +1091,22 @@ CBlastDbBlob & CWriteDB_Impl::SetBlobData(int col_id)
 {
     typedef CBlastDbBlob TBlob;
     
-    if ((col_id < 0) || (col_id >= (int) m_Blobs.size())) {
+    if ((col_id < 0) || (col_id * 2 >= (int) m_Blobs.size())) {
         NCBI_THROW(CWriteDBException, eArgErr,
                    "Error: provided column ID is not valid");
     }
     
-    if (m_HaveBlob[col_id]) {
+    if (m_HaveBlob[col_id] > 1) {
         NCBI_THROW(CWriteDBException, eArgErr,
                    "Error: Already have blob for this sequence and column");
     }
     
-    m_HaveBlob[col_id] = 1;
+    ++m_HaveBlob[col_id];
     
     // Blobs are reused to reduce buffer reallocation; a missing blob
     // means the corresponding column does not exist.
     
-    return *m_Blobs[col_id];
+    return *m_Blobs[col_id * 2 + m_HaveBlob[col_id] - 1];
 }
 #endif
 
@@ -1480,7 +1413,7 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 int CWriteDB_Impl::x_GetMaskDataColumnId()
 {
     if (m_MaskDataColumn == -1) {
-        m_MaskDataColumn = CreateColumn("BlastDb/MaskData");
+        m_MaskDataColumn = CreateColumn("BlastDb/MaskData", true);
     }
     return m_MaskDataColumn;
 }

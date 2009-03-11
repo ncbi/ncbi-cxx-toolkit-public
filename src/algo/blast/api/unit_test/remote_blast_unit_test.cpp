@@ -143,12 +143,15 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
         sli.Reset(new CSeqLocInfo(si, CSeqLocInfo::eFramePlus1));
         query_masks.back().push_back(sli);
     }
+    const string kClientId("remote_blast_unit_test.cpp");
+    rmt_blast.SetClientId(kClientId);
 
     rmt_blast.SetQueries(query_seqlocs,
                          query_masks);
     BOOST_REQUIRE_EQUAL(true, rmt_blast.Submit());
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Pending, rmt_blast.CheckStatus());
     BOOST_REQUIRE_EQUAL(false, rmt_blast.GetRID().empty());
+    BOOST_REQUIRE_EQUAL(kClientId, rmt_blast.GetClientId());
 
     BOOST_REQUIRE(rmt_blast.GetErrors().empty());
     BOOST_REQUIRE(!rmt_blast.GetWarningVector().empty());

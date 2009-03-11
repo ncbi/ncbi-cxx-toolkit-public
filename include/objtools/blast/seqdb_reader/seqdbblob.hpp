@@ -182,41 +182,49 @@ public:
     /// Write a 1 byte integer to the blob.
     /// @param x The integer to write.
     void WriteInt1(int x);
+    void WriteInt1_LE(int x);
     
     /// Write a 1 byte integer to the blob.
     /// @param x The integer to write.
     /// @param offset The offset to write the integer at.
     void WriteInt1(int x, int offset);
+    void WriteInt1_LE(int x, int offset);
     
     
     /// Write a 1 byte integer to the blob.
     /// @param x The integer to write.
     void WriteInt2(int x);
+    void WriteInt2_LE(int x);
     
     /// Write a 1 byte integer to the blob.
     /// @param x The integer to write.
     /// @param offset The offset to write the integer at.
     void WriteInt2(int x, int offset);
+    void WriteInt2_LE(int x, int offset);
     
     
     /// Write a 4 byte integer to the blob.
     /// @param x The integer to write.
     void WriteInt4(Int4 x);
+    void WriteInt4_LE(Int4 x);
     
     /// Write a 4 byte integer into the blob at a given offset.
     /// @param x The integer to write.
     /// @param offset The offset to write the integer at.
     void WriteInt4(Int4 x, int offset);
+    void WriteInt4_LE(Int4 x, int offset);
     
     
     /// Write an 8 byte integer to the blob.
     /// @param x The integer to write.
     void WriteInt8(Int8 x);
+    void WriteInt8_LE(Int8 x);
     
     /// Write an 8 byte integer into the blob at a given offset.
     /// @param x The integer to write.
     /// @param offset The offset to write the integer at.
     void WriteInt8(Int8 x, int offset);
+    void WriteInt8_LE(Int8 x, int offset);
 #endif
     
     /// Seek write pointer to a specific location.
@@ -292,6 +300,11 @@ public:
     /// @param fmt String termination criteria.
     void SkipPadBytes(int align, EPadding fmt);
     
+
+    /// Read raw data (moving the read pointer).
+    /// @param size Number of bytes to move the pointer.
+    const char * ReadRaw(int size);
+
     /// Write raw data to the blob (moving the write pointer).
     /// @param begin Pointer to the start of the data.
     /// @param size Number of bytes to copy.
@@ -302,7 +315,7 @@ public:
     /// @param size Number of bytes to copy.
     /// @param offset Location to write data at.
     void WriteRaw(const char * begin, int size, int offset);
-    
+
     /// Get the current write pointer offset.
     /// @return The offset at which the next write would occur.
     int GetWriteOffset() const;
@@ -412,7 +425,7 @@ private:
         return x;
     }
     
-    /// Write a fixed length integer.
+    /// Write a fixed length integer in big endian.
     /// @param x The value to write.
     /// @param offsetp The offset at which to write.
     template<typename TValue, int TBytes>
@@ -440,6 +453,36 @@ private:
         
         x_WriteRaw((char*)(buf + 8 - TBytes), TBytes, offsetp);
     }
+
+    /// Write a fixed length integer in small endian.
+    /// @param x The value to write.
+    /// @param offsetp The offset at which to write.
+    template<typename TValue, int TBytes>
+    void x_WriteIntFixed_LE(TValue x, int * offsetp)
+    {
+        // Check that the value fits in the specified range.
+        _ASSERT(((Int8(x) >> (TBytes*8-1)) >> 1) ==
+                ((Int8(x) >> (TBytes*8-1)) >> 2));
+        
+        unsigned char buf[8];
+        
+        switch(TBytes) {
+        case 8: buf[7] = Uint8(x) >> 56;
+        case 7: buf[6] = Uint8(x) >> 48;
+        case 6: buf[5] = Uint8(x) >> 40;
+        case 5: buf[4] = Uint8(x) >> 32;
+        case 4: buf[3] = Uint4(x) >> 24;
+        case 3: buf[2] = Uint4(x) >> 16;
+        case 2: buf[1] = Uint4(x) >> 8;
+        case 1: buf[0] = Uint4(x);
+            break;
+        default:
+            _ASSERT(0);
+        }
+
+        x_WriteRaw((char*)(buf), TBytes, offsetp);
+    }
+   
 #endif
     
     

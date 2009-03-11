@@ -287,7 +287,7 @@ public:
     ///
     /// @param title   Name identifying this column.
     /// @return Column identifier (a positive integer).
-    int CreateColumn(const string & title);
+    int CreateColumn(const string & title, bool mbo=false);
     
     /// Find an existing column.
     ///

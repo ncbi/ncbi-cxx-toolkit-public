@@ -906,8 +906,8 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
 
     BOOST_AUTO_TEST_CASE(testGetOOFNumIdentities)
     {
-        char* query = "ADADADADADBADADADADADADADAADADAD";
-        char* subject = 
+        const char* query = "ADADADADADBADADADADADADADAADADAD";
+        const char* subject = 
             "ABCDBCABCDBCEABCDBCABCDBCABCDBCABCDBCABCDBABCDBCABCDABCDBCABCDBCFFABCDBCABCDBCABCDBCABCDBCGBCDBC";
         const int kNumSegs = 13;
         const EGapAlignOpType kEditScriptOp[kNumSegs] = 

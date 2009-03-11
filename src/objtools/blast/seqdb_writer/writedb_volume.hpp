@@ -107,7 +107,8 @@ public:
                        const TIdList   & ids,
                        int               pig,
                        int               hash,
-                       const TBlobList & blobs);
+                       const TBlobList & blobs,
+                       int               maskcol_id=-1);
     
     /// Rename all volumes files to single-volume names.
     /// 
@@ -165,7 +166,8 @@ public:
     /// @param meta Metadata to store in the new column.
     /// @return The numeric column ID.
     int CreateColumn(const string      & title,
-                     const TColumnMeta & meta);
+                     const TColumnMeta & meta,
+                     bool                mbo = true);
     
     /// Add meta data to a column.
     ///

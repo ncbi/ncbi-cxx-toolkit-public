@@ -61,6 +61,7 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
                       CRef<blast::CBlastDatabaseArgs> db_args,
                       CRef<blast::CBlastOptionsHandle> opts_hndl,
                       bool verbose_output,
+                      const string& client_id /* = kEmptyStr */,
                       CRef<objects::CPssmWithParameters> pssm 
                         /* = CRef<objects::CPssmWithParameters>() */)
 {
@@ -92,6 +93,9 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
     }
     if (verbose_output) {
         retval->SetVerbose();
+    }
+    if (client_id != kEmptyStr) {
+        retval->SetClientId(client_id);
     }
     return retval;
 }
@@ -243,7 +247,7 @@ s_ExportSearchStrategy(CNcbiOstream* out,
     try { 
         CRef<CRemoteBlast> rmt_blast =
             InitializeRemoteBlast(queries, db_args, options_handle, false,
-                                  pssm);
+                                  kEmptyStr, pssm);
         CRef<CBlast4_request> req = rmt_blast->GetSearchStrategy(); 
         // N.B.: If writing XML, be sure to call SetEnforcedStdXml on the
         // stream!

@@ -313,7 +313,8 @@ public:
     /// This method closes the newly constructed database, flushing
     /// any unflushed volumes, creating an alias file to tie the
     /// volumes together, and so on.
-    bool EndBuild();
+    /// @param erase Will erase all files created if true.
+    bool EndBuild(bool erase = false);
     
     /// Specify whether to use remote fetching for locally absent IDs.
     ///

@@ -177,6 +177,9 @@ CRemoteBlast::GetSearchStrategy()
         NCBI_THROW(CRemoteBlastException, eIncompleteConfig, errors);
     }
     CRef<CBlast4_request> retval(new CBlast4_request);
+    if ( !m_ClientId.empty() ) {
+        retval->SetIdent(m_ClientId);
+    }
     retval->SetBody(*body);
     return retval;
 }
@@ -190,6 +193,9 @@ CRemoteBlast::x_SendRequest(CRef<objects::CBlast4_request_body> body)
     // Create the request; optionally echo it
     
     CRef<CBlast4_request> request(new CBlast4_request);
+    if ( !m_ClientId.empty() ) {
+        request->SetIdent(m_ClientId);
+    }
     request->SetBody(*body);
     
     if (eDebug == m_Verbose) {
@@ -789,6 +795,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "CRemoteBlast: No remote API options.");
     }
+    m_ClientId = kEmptyStr;
 }
 
 void CRemoteBlast::x_Init(const string & RID)
@@ -1458,7 +1465,8 @@ x_BuildGetSeqRequest(TSeqIdVector& seqids,   // in
                      const string& database, // in
                      char          seqtype,  // 'p' or 'n'
                      bool    skip_seq_data,  // in
-                     string&       errors)  // out
+                     string&       errors,  // out
+                     const string& client_id) // in
 {
     // This will be returned in an Empty() state if an error occurs.
     CRef<CBlast4_request> request;
@@ -1478,6 +1486,9 @@ x_BuildGetSeqRequest(TSeqIdVector& seqids,   // in
     // Build ASN.1 request objects and link them together.
     
     request.Reset(new CBlast4_request);
+    if ( !client_id.empty() ) {
+        request->SetIdent(client_id);
+    }
     
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     CRef<CBlast4_database>     db  (new CBlast4_database);
@@ -1507,7 +1518,8 @@ CRef<objects::CBlast4_request> CRemoteBlast::
 x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqids,    // in
                           const string             & database,  // in
                           char                       seqtype,   // 'p' or 'n'
-                          string                   & errors)    // out
+                          string                   & errors,    // out
+                          const string&          client_id)     // in
 {
     errors.erase();
     
@@ -1532,6 +1544,9 @@ x_BuildGetSeqPartsRequest(const TSeqIntervalVector & seqids,    // in
     // Build ASN.1 request objects and link them together.
     
     request.Reset(new CBlast4_request);
+    if ( !client_id.empty() ) {
+        request->SetIdent(client_id);
+    }
     
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     CRef<CBlast4_database>     db  (new CBlast4_database);
@@ -1654,10 +1669,11 @@ CRemoteBlast::GetSequences(TSeqIdVector & seqids,   // in
                            TBioseqVector& bioseqs,  // out
                            string       & errors,   // out
                            string       & warnings, // out
-                           bool           verbose)  // in
+                           bool           verbose,  // in
+                           const string& client_id)
 {
     x_GetSequences(seqids, database, seqtype, false, bioseqs, errors, warnings,
-                   verbose);
+                   verbose, client_id);
 }
 
 void 
@@ -1667,10 +1683,11 @@ CRemoteBlast::GetSequencesInfo(TSeqIdVector & seqids,   // in
                                TBioseqVector& bioseqs,  // out
                                string       & errors,   // out
                                string       & warnings, // out
-                               bool           verbose)  // in
+                               bool           verbose,  // in
+                               const string& client_id)
 {
     x_GetSequences(seqids, database, seqtype, true, bioseqs, errors, warnings,
-                   verbose);
+                   verbose, client_id);
 }
 
 void
@@ -1681,12 +1698,14 @@ CRemoteBlast::x_GetSequences(TSeqIdVector & seqids,
                              TBioseqVector& bioseqs,
                              string       & errors,
                              string       & warnings,
-                             bool           verbose)
+                             bool           verbose,
+                             const string & client_id)
 {
     // Build the request
     
     CRef<CBlast4_request> request =
-        x_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, errors);
+        x_BuildGetSeqRequest(seqids, database, seqtype, skip_seq_data, errors,
+                             client_id);
     
     if (request.Empty()) {
         return;
@@ -1720,12 +1739,14 @@ GetSequenceParts(const TSeqIntervalVector  & seqids,    // in
                  TSeqDataVector            & seq_data,  // out
                  string                    & errors,    // out
                  string                    & warnings,  // out
-                 bool                        verbose)   // in
+                 bool                        verbose,   // in
+                 const string& client_id /* = kEmptyStr */) // in
 {
     // Build the request
     
     CRef<CBlast4_request> request =
-            x_BuildGetSeqPartsRequest(seqids, database, seqtype, errors);
+            x_BuildGetSeqPartsRequest(seqids, database, seqtype, errors,
+                                      client_id);
     
     if (request.Empty()) {
         return;
@@ -1777,6 +1798,9 @@ CRemoteBlast::x_GetRequestInfo()
     
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     CRef<CBlast4_request> request(new CBlast4_request);
+    if ( !m_ClientId.empty() ) {
+        request->SetIdent(m_ClientId);
+    }
     
     body->SetGet_request_info().SetRequest_id(m_RID);
     request->SetBody(*body);

@@ -40,6 +40,7 @@ static char const rcsid[]
 #include <algo/blast/blastinput/blastx_args.hpp>
 #include <algo/blast/api/blastx_options.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -48,10 +49,12 @@ USING_SCOPE(objects);
 CBlastxAppArgs::CBlastxAppArgs()
 {
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("blastx", 
+    static const string kProgram("blastx");
+    arg.Reset(new CProgramDescriptionArgs(kProgram,
                                   "Translated Query-Protein Subject BLAST"));
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
+    m_ClientId = kProgram + " " + CBlastVersion().Print();
 
     static const string kDefaultTask = "blastx";
     SetTask(kDefaultTask);

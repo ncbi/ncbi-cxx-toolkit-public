@@ -136,13 +136,14 @@ CWriteDB_Volume::~CWriteDB_Volume()
     }
 }
 
-bool CWriteDB_Volume::WriteSequence(const string    & seq,
-                                    const string    & ambig,
-                                    const string    & binhdr,
-                                    const TIdList   & idlist,
-                                    int               pig,
-                                    int               hash,
-                                    const TBlobList & blobs)
+bool CWriteDB_Volume::WriteSequence(const string      & seq,
+                                    const string      & ambig,
+                                    const string      & binhdr,
+                                    const TIdList     & idlist,
+                                    int                 pig,
+                                    int                 hash,
+                                    const TBlobList   & blobs,
+                                    int                 maskcol_id)
 {
     // Zero is a legal hash value, but we should not be computing the
     // hash value if there is no corresponding ISAM file.
@@ -190,9 +191,9 @@ bool CWriteDB_Volume::WriteSequence(const string    & seq,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     for(int blob_i = 0; blob_i < (int) blobs.size(); blob_i++) {
-        _ASSERT(blob_i < (int) m_Columns.size());
+        _ASSERT(blob_i / 2 < (int) m_Columns.size());
         
-        if (! m_Columns[blob_i]->CanFit(blobs[blob_i]->Size())) {
+        if (! m_Columns[blob_i / 2]->CanFit(blobs[blob_i]->Size())) {
             overfull = true;
             break;
         }
@@ -240,8 +241,12 @@ bool CWriteDB_Volume::WriteSequence(const string    & seq,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     for(int col_i = 0; col_i < (int)m_Columns.size(); col_i++) {
-        _ASSERT(col_i < (int) blobs.size());
-        m_Columns[col_i]->AddBlob(*blobs[col_i]);
+        _ASSERT(col_i * 2 < (int) blobs.size());
+        if (col_i == maskcol_id) {
+             m_Columns[col_i]->AddBlob(*blobs[col_i * 2], *blobs[col_i * 2 + 1]);
+        } else {
+             m_Columns[col_i]->AddBlob(*blobs[col_i * 2]);
+        }
     }
 #endif
     
@@ -364,7 +369,8 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB_Volume::CreateColumn(const string      & title,
-                                  const TColumnMeta & meta)
+                                  const TColumnMeta & meta,
+                                  bool                mbo)
 {
     int col_id = m_Columns.size();
     
@@ -379,9 +385,11 @@ int CWriteDB_Volume::CreateColumn(const string      & title,
     extn[1] = "abcdefghijklmnopqrstuvwxyz0123456789"[col_id];
     
     string extn2 = extn;
+    string extn3 = extn;
     
     extn[2] = 'a';
     extn2[2] = 'b';
+    extn3[2] = 'c';
     
     CRef<CWriteDB_Column> new_col
         (new CWriteDB_Column(m_DbName,
@@ -391,6 +399,12 @@ int CWriteDB_Volume::CreateColumn(const string      & title,
                              title,
                              meta,
                              m_MaxFileSize));
+
+    /* For support of multiple byte orders */
+    if (mbo) new_col->AddByteOrder(m_DbName,
+                             extn3,
+                             m_Index,
+                             m_MaxFileSize);
     
     // If the OID is not zero, then add all the blank records for the
     // prior OIDs to the new column.
@@ -398,7 +412,8 @@ int CWriteDB_Volume::CreateColumn(const string      & title,
     CBlastDbBlob blank;
     
     for(int j = 0; j < m_OID; j++) {
-        new_col->AddBlob(blank);
+        if (mbo) new_col->AddBlob(blank, blank);
+        else     new_col->AddBlob(blank);
     }
     
     m_Columns.push_back(new_col);

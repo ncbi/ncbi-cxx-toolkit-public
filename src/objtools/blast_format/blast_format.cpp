@@ -88,7 +88,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_QueriesFormatted(0),
           m_Megablast(is_megablast),
           m_IndexedMegablast(is_indexed), 
-          m_CustomOutputFormatSpec(custom_output_format)
+          m_CustomOutputFormatSpec(custom_output_format),
+          m_IsNonBlastDB(false)
 {
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
@@ -104,6 +105,11 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (use_sum_statistics && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
+}
+
+void CBlastFormat::EnableNonBlastDB()
+{
+    m_IsNonBlastDB = true;
 }
 
 static const string kHTML_Prefix =
@@ -456,6 +462,9 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
                                    unsigned int itr_num)
 {
     CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+    if (m_IsUngappedSearch) {
+        aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
+    }
     // other output types will need a bioseq handle
     CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
                                                       CScope::eGetBioseq_All);
@@ -579,7 +588,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, kIsTabularOutput,
                                             results.GetRID());
-    if (m_IsBl2Seq) {
+    if (m_IsBl2Seq && !m_IsNonBlastDB) {
         m_Outfile << "\n";
         // FIXME: this might be configurable in the future
         const bool kBelieveSubject = false; 
@@ -607,7 +616,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     //-------------------------------------------------
     // print 1-line summaries
-    if ( !m_IsBl2Seq ) {
+    if ( !m_IsBl2Seq || m_IsNonBlastDB ) {
         x_DisplayDeflines(aln_set, itr_num, prev_seqids);
     }
 
@@ -622,7 +631,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq);
+                           m_IsBl2Seq && !m_IsNonBlastDB);
 
     CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
@@ -756,7 +765,7 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq);
+                           m_IsBl2Seq && !m_IsNonBlastDB);
 
     if (phi_query_info)
     {

@@ -41,6 +41,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/// When fixed size slices are not used, each subsequent slice grows its size
+/// by this factor
+#define kSliceGrowthFactor 2
+
 /// The sequence data will sliced into pieces of this size by default
 enum {
     /// If sequence is shorter than this size, it will not be split and it will

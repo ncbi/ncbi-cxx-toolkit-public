@@ -36,6 +36,7 @@
   */
 
 #include <objtools/data_loaders/blastdb/blastdb_adapter.hpp>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,15 +47,16 @@ BEGIN_SCOPE(objects)
 class CCachedSeqDataForRemote : public CObject {
 public:
 	/// Default constructor, needed to insert objects in std::map
-    CCachedSeqDataForRemote() : m_Length(0) {}
+    CCachedSeqDataForRemote() : m_Length(0), m_UseFixedSizeSlices(0) {}
 
 	/// Sets the length of the sequence data for a given Bioseq
-    void SetLength(TSeqPos length) {
+    void SetLength(TSeqPos length, bool use_fixed_size_slices) {
+        _ASSERT(m_UseFixedSizeSlices == 0);
+        m_UseFixedSizeSlices = use_fixed_size_slices;
         _ASSERT(m_SeqDataVector.size() == 0);
         m_Length = length;
-        const TSeqPos num_slices = (m_Length + kRmtSequenceSliceSize - 1) /
-            kRmtSequenceSliceSize;
-        m_SeqDataVector.resize(num_slices);
+        m_SeqDataVector.resize(x_CalculateNumberOfSlices());
+        _ASSERT(m_SeqDataVector.size() != 0);
     }
 
 	/// Retrieve the sequence length
@@ -98,15 +100,25 @@ public:
     CRef<CSeq_data>& GetSeqDataChunk(int begin, int end) {
         _ASSERT(m_Length);
         _ASSERT(m_SeqDataVector.size());
-
-        const TSeqPos i = begin / kRmtSequenceSliceSize;
-
         _ASSERT((begin % kRmtSequenceSliceSize) == 0);
-        _ASSERT(end == (begin + (int)kRmtSequenceSliceSize) || 
-                (i+1 == m_SeqDataVector.size()));
-        _ASSERT(m_SeqDataVector.size() > i);
-        
-        CRef<CSeq_data> & retval = m_SeqDataVector[i];
+
+        TSeqPos idx = 0;
+        if (m_UseFixedSizeSlices) {
+            idx = begin / kRmtSequenceSliceSize;
+            _ASSERT((end == (begin + (int)kRmtSequenceSliceSize)) || 
+                    (idx+1 == m_SeqDataVector.size()));
+        } else {
+            if (((end-begin) % kRmtSequenceSliceSize) == 0) {
+                idx = log((long)((end-begin)/kRmtSequenceSliceSize)) /
+                    log((long)kSliceGrowthFactor);
+            } else {
+                idx = m_SeqDataVector.size() - 1;
+            }
+            _ASSERT((end == (begin + (int)(0x1<<idx)*kRmtSequenceSliceSize)) || 
+                    ((idx+1) == m_SeqDataVector.size()));
+        }
+        _ASSERT(m_SeqDataVector.size() > idx);
+        CRef<CSeq_data> & retval = m_SeqDataVector[idx];
         return retval;
     }
 
@@ -119,6 +131,34 @@ private:
     IBlastDbAdapter::TSeqIdList m_IdList;
 	/// the bioseq object for this object
     CRef<CBioseq> m_Bioseq;
+    /// Determines whether sequences should be fetched in fixed size slices or
+    /// in incrementally larger sizes.
+    bool m_UseFixedSizeSlices;
+
+    /// Calculates the number of slices in the same manner as the
+    /// CCachedSequence class in its SplitSeqData method. 
+    /// FIXME: these methods should be kept in sync, refactoring is necessary
+    TSeqPos x_CalculateNumberOfSlices()
+    {
+        _ASSERT(m_Length);
+        TSeqPos retval = 0;
+        if (m_UseFixedSizeSlices) {
+            retval = (m_Length + kRmtSequenceSliceSize - 1) /
+                kRmtSequenceSliceSize;
+        } else {
+            TSeqPos slice_size = kRmtSequenceSliceSize;
+            for (TSeqPos pos = 0; pos < m_Length; retval++) {
+                TSeqPos end = m_Length;
+                if ((end - pos) > slice_size) {
+                    end = pos + slice_size;
+                }
+                pos += slice_size;
+                slice_size *= kSliceGrowthFactor;
+            }
+        }
+        return retval;
+    }
+
 };
 
 /** This class allows retrieval of sequence data from BLAST databases at NCBI.
@@ -127,7 +167,8 @@ class CRemoteBlastDbAdapter : public IBlastDbAdapter
 {
 public:
     /// Constructor
-    CRemoteBlastDbAdapter(const string& db_name, CSeqDB::ESeqType db_type);
+    CRemoteBlastDbAdapter(const string& db_name, CSeqDB::ESeqType db_type,
+                          bool use_fixed_size_slices);
 
 	/** @inheritDoc */
     virtual CSeqDB::ESeqType GetSequenceType() { return m_DbType; }
@@ -151,6 +192,9 @@ private:
     map<int, CCachedSeqDataForRemote> m_Cache;
 	/// Our local "OID generator"
     int m_NextLocalId;
+    /// Determines whether sequences should be fetched in fixed size slices or
+    /// in incrementally larger sizes.
+    bool m_UseFixedSizeSlices;
 
     /// This method actually retrieves the sequence data.
 	/// @param oid OID for the sequence of interest [in]

@@ -270,7 +270,8 @@ int CPsiBlastApp::Run(void)
 
             CRef<CRemoteBlast> rmt_psiblast = 
                 InitializeRemoteBlast(query_factory, db_args, opts_hndl,
-                      m_CmdLineArgs->ProduceDebugRemoteOutput(), pssm);
+                          m_CmdLineArgs->ProduceDebugRemoteOutput(),
+                          m_CmdLineArgs->GetClientId(), pssm);
             // FIXME: determine if errors ocurred, if so, return appropriate
             // exit code
 

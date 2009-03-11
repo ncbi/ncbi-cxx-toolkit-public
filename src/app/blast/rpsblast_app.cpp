@@ -153,7 +153,8 @@ int CRPSBlastApp::Run(void)
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CRef<CRemoteBlast> rmt_blast = 
                     InitializeRemoteBlast(queries, db_args, opts_hndl,
-                          m_CmdLineArgs->ProduceDebugRemoteOutput());
+                          m_CmdLineArgs->ProduceDebugRemoteOutput(),
+                          m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
             } else {
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);

@@ -44,14 +44,20 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(blast);
 BEGIN_SCOPE(objects)
 
+static const string kClientId("Remote BLAST database data loader (" + 
+                              CBlastVersion().Print() + ")");
+
 CRemoteBlastDbAdapter::CRemoteBlastDbAdapter(const string& db_name,
-                                             CSeqDB::ESeqType db_type)
-: m_DbName(db_name), m_DbType(db_type), m_NextLocalId(1) 
+                                             CSeqDB::ESeqType db_type,
+                                             bool use_fixed_size_slices)
+: m_DbName(db_name), m_DbType(db_type), m_NextLocalId(1),
+    m_UseFixedSizeSlices(use_fixed_size_slices)
 {
     CRemoteServices rmt_svc;
     const bool kIsProtein = (db_type == CSeqDB::eProtein) ? true : false;
@@ -122,6 +128,9 @@ void CRemoteBlastDbAdapter::x_FetchData(int oid, int begin, int end)
 {
     CCachedSeqDataForRemote& cached_seqdata = m_Cache[oid];
     _ASSERT( !cached_seqdata.HasSequenceData(begin, end) );
+    _ASSERT( cached_seqdata.GetLength() != 0 );
+    _ASSERT( !cached_seqdata.GetIdList().empty() );
+    _ASSERT( cached_seqdata.IsValid() );
     const char seqtype = (GetSequenceType() == CSeqDB::eProtein) ? 'p' : 'n';
     
     CRef<CSeq_interval> seq_int
@@ -133,7 +142,7 @@ void CRemoteBlastDbAdapter::x_FetchData(int oid, int begin, int end)
     const bool kVerbose = (getenv("VERBOSE") ? true : false);
 
     CRemoteBlast::GetSequenceParts(seqids, m_DbName, seqtype, ids, seq_data,
-                                   errors, warnings, kVerbose);
+                                   errors, warnings, kVerbose, kClientId);
     if (seq_data.empty() || !errors.empty() || !warnings.empty() || 
         ids.empty() ) {
         RemoteBlastDbLoader_ErrorHandler(errors, warnings);
@@ -175,7 +184,7 @@ CRemoteBlastDbAdapter::SeqidToOid(const CSeq_id & id, int & oid)
     seqids.push_back(CRef<CSeq_id>(const_cast<CSeq_id*>(&id)));
     
     CRemoteBlast::GetSequencesInfo(seqids, m_DbName, seqtype, bioseqs, errors,
-                                   warnings, kVerbose);
+                                   warnings, kVerbose, kClientId);
     if ( !errors.empty() || !warnings.empty() || bioseqs.empty() ) {
         return RemoteBlastDbLoader_ErrorHandler(errors, warnings);
     }
@@ -183,7 +192,8 @@ CRemoteBlastDbAdapter::SeqidToOid(const CSeq_id & id, int & oid)
     
     // cache the retrieved information
     CCachedSeqDataForRemote& cached_seqdata = m_Cache[oid];
-    cached_seqdata.SetLength(bioseqs.front()->GetLength());
+    cached_seqdata.SetLength(bioseqs.front()->GetLength(),
+                             m_UseFixedSizeSlices);
     cached_seqdata.SetIdList(bioseqs.front()->SetId());
     cached_seqdata.SetBioseq(bioseqs.front());
     return cached_seqdata.IsValid();

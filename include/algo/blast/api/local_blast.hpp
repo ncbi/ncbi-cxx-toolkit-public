@@ -37,6 +37,7 @@
 
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/traceback_stage.hpp>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -77,6 +78,16 @@ public:
     CLocalBlast(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptionsHandle> opts_handle,
                 BlastSeqSrc* seqsrc);
+
+    /// Constructor with database description
+    /// @param query_factory query sequence(s) [in]
+    /// @param opts_handle BLAST options handle [in]
+    /// @param seqsrc BlastSeqSrc object to search [in]
+    /// @param seqInfoSrc user-specified IBlastSeqInfoSrc [in]
+    CLocalBlast(CRef<IQueryFactory> query_factory,
+                CRef<CBlastOptionsHandle> opts_handle,
+                BlastSeqSrc* seqsrc,
+                CRef<IBlastSeqInfoSrc> seqInfoSrc);
     
     /// Executes the search
     CRef<CSearchResultSet> Run();
@@ -100,6 +111,10 @@ private:
     
     /// Local DB adaptor (if one was) passed to constructor.
     CRef<CLocalDbAdapter> m_LocalDbAdapter;
+
+    /// User-specified IBlastSeqInfoSrc implementation
+    /// (may be used for non-standard databases, etc.)
+    CRef<IBlastSeqInfoSrc> m_SeqInfoSrc;
 };
 
 END_SCOPE(BLAST)

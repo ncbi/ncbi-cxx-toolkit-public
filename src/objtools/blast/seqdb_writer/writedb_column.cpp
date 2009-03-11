@@ -54,6 +54,7 @@ CWriteDB_Column::CWriteDB_Column(const string      & dbname,
                                  const string      & title,
                                  const TColumnMeta & meta,
                                  Uint8               max_file_size)
+                : m_UseBothByteOrder(false)
 {
     m_DFile.Reset(new CWriteDB_ColumnData(dbname,
                                           extn2,
@@ -69,6 +70,18 @@ CWriteDB_Column::CWriteDB_Column(const string      & dbname,
                                            max_file_size));
 }
 
+void CWriteDB_Column::AddByteOrder(const string      & dbname,
+                              const string      & extn,
+                              int                 index,
+                              Uint8               max_file_size)
+{
+    m_UseBothByteOrder = true;
+    m_DFile2.Reset(new CWriteDB_ColumnData(dbname,
+                                          extn,
+                                          index,
+                                          max_file_size));
+}
+    
 CWriteDB_Column::~CWriteDB_Column()
 {
 }
@@ -78,6 +91,7 @@ void CWriteDB_Column::ListFiles(vector<string> & files, bool skip_empty) const
     if (! (skip_empty && m_DFile->Empty())) {
         files.push_back(m_IFile->GetFilename());
         files.push_back(m_DFile->GetFilename());
+        if (m_UseBothByteOrder) files.push_back(m_DFile2->GetFilename());
     }
 }
 
@@ -91,10 +105,17 @@ void CWriteDB_Column::AddBlob(const CBlastDbBlob & blob)
     m_IFile->WriteBlobIndex(data_size);
 }
 
+void CWriteDB_Column::AddBlob(const CBlastDbBlob & blob, const CBlastDbBlob & blob2)
+{
+    AddBlob(blob); 
+    if (m_UseBothByteOrder) m_DFile2->WriteBlob(blob2);
+}
+
 void CWriteDB_Column::Close()
 {
     m_IFile->Close();
     m_DFile->Close();
+    if (m_UseBothByteOrder) m_DFile2->Close();
 }
 
 bool CWriteDB_Column::CanFit(int size) const
@@ -106,6 +127,7 @@ void CWriteDB_Column::RenameSingle()
 {
     m_IFile->RenameSingle();
     m_DFile->RenameSingle();
+    if (m_UseBothByteOrder) m_DFile2->RenameSingle();
 }
 
 void CWriteDB_Column::AddMetaData(const string & key, const string & value)

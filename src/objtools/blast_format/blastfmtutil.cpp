@@ -858,6 +858,35 @@ void CBlastFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
     }
 }
 
+
+void CBlastFormatUtil::PruneSeqalignAll(const CSeq_align_set& source_aln, 
+                                     CSeq_align_set& new_aln,
+                                     unsigned int number)
+{
+    CConstRef<CSeq_id> previous_id, subid; 
+    bool is_first_aln = true;
+    unsigned int num_align = 0;
+    bool finishCurrent = false;
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){         
+        if ((*iter)->GetSegs().IsDisc()) {
+            ++num_align;
+        } else {
+            subid = &((*iter)->GetSeq_id(1));
+            if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))){
+                finishCurrent = (num_align + 1 == number) ? true : false;
+                ++num_align;
+            }
+            is_first_aln = false;
+            previous_id = subid;
+        }
+        if(num_align > number && !finishCurrent) {
+            break;
+        }
+        new_aln.Set().push_back(*iter);
+    }
+}
+
+
 void 
 CBlastFormatUtil::GetAlignLengths(CAlnVec& salv, int& align_length, 
                                   int& num_gaps, int& num_gap_opens)
@@ -2064,8 +2093,9 @@ CRef<CSeq_align_set> CBlastFormatUtil::LimitSeqalignByHsps(CSeq_align_set& sourc
             }
             // Increment HSP count if the alignments limit is not reached            
             ++hspCount;                        
+            new_aln->Set().push_back(*iter);
         }
-        new_aln->Set().push_back(*iter);
+        
     }
     return new_aln;
 }

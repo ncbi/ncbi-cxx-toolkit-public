@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -48,10 +49,12 @@ USING_SCOPE(objects);
 CBlastpAppArgs::CBlastpAppArgs()
 {
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("blastp", "Protein-Protein BLAST"));
+    static const string kProgram("blastp");
+    arg.Reset(new CProgramDescriptionArgs(kProgram, "Protein-Protein BLAST"));
     const bool kQueryIsProtein = true;
     bool const kFilterByDefault = false;
     m_Args.push_back(arg);
+    m_ClientId = kProgram + " " + CBlastVersion().Print();
 
     static const string kDefaultTask = "blastp";
     SetTask(kDefaultTask);

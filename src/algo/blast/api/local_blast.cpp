@@ -83,6 +83,19 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
   m_TbackSearch     (0)
 {}
 
+CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
+                         CRef<CBlastOptionsHandle> opts_handle,
+                         BlastSeqSrc* seqsrc,
+                         CRef<IBlastSeqInfoSrc> seqInfoSrc)
+: m_QueryFactory    (qf),
+  m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
+  m_InternalData    (0),
+  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, seqsrc,
+                                            CRef<CPssmWithParameters>())),
+  m_TbackSearch     (0),
+  m_SeqInfoSrc      (seqInfoSrc)
+{}
+    
 CRef<CSearchResultSet>
 CLocalBlast::Run()
 {
@@ -102,7 +115,12 @@ CLocalBlast::Run()
     
     CRef<IBlastSeqInfoSrc> seqinfo_src;
     
-    if (m_LocalDbAdapter.NotEmpty()) {
+    if (m_SeqInfoSrc.NotEmpty())
+    {
+        // Use the SeqInfoSrc provided by the user during construction
+        seqinfo_src = m_SeqInfoSrc;
+    }
+    else if (m_LocalDbAdapter.NotEmpty()) {
         // This path is preferred because it preserves the GI list
         // limitation if there is one.  DBs with both internal OID
         // filtering and user GI list filtering will not do complete

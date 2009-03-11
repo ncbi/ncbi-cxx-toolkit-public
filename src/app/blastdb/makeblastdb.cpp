@@ -156,7 +156,12 @@ void s_ReadObject(CNcbiIstream & file,
                   CRef<TObj>    & obj,
                   const string  & msg)
 {
-    s_ReadObject(file, CFormatGuess().Format(file), obj, msg);
+    CFormatGuess fg;
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
+    fg.GetFormatHints().DisableAllNonpreferred();
+    s_ReadObject(file, fg.Format(file), obj, msg);
 }
 
 /// Command line flag to represent the input
@@ -460,7 +465,14 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
 
 void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input)
 {
-    TFormat fmt = CFormatGuess().Format(input);
+    CFormatGuess fg;
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
+    fg.GetFormatHints().DisableAllNonpreferred();
+
+    TFormat fmt = fg.Format(input);
     
     switch(fmt) {
     case CFormatGuess::eFasta:

@@ -952,6 +952,12 @@ public:
     /// Get the query batch size
     virtual int GetQueryBatchSize() const = 0;
 
+    /// Retrieve the client ID for remote requests
+    string GetClientId() const {
+        _ASSERT( !m_ClientId.empty() );
+        return m_ClientId;
+    }
+
 protected:
     /// Set of command line argument objects
     TBlastCmdLineArgs m_Args;
@@ -976,6 +982,9 @@ protected:
     CRef<CBlastOptionsHandle> m_OptsHandle;
     /// Task specified in the command line
     string m_Task;
+    /// Client ID used for remote BLAST submissions, must be populated by
+    /// subclasses
+    string m_ClientId;
 
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely

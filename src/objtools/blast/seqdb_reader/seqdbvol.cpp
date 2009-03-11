@@ -3131,23 +3131,31 @@ void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
     }
     
     string alpha("abcdefghijklmnopqrstuvwxyz");
-    string ei("??a"), ed("??b");
+    string ei("??a"), ed("??b"), ed2("??c");
     
-    ei[0] = ed[0] = (m_IsAA ? 'p' : 'n');
+    ei[0] = ed[0] = ed2[0] = (m_IsAA ? 'p' : 'n');
     
     map<string,int> unique_titles;
     
     for(size_t i = 0; i < alpha.size(); i++) {
-        ei[1] = ed[1] = alpha[i];
+        ei[1] = ed[1] = ed2[1] = alpha[i];
         
-        if (CSeqDBColumn::ColumnExists(m_VolName,
-                                       ei,
-                                       ed,
-                                       m_Atlas,
-                                       locked)) {
+        if (CSeqDBColumn::ColumnExists(m_VolName, ei, m_Atlas, locked)) {
+
+            bool big   = CSeqDBColumn::ColumnExists(m_VolName, ed, m_Atlas, locked);
+            bool small = CSeqDBColumn::ColumnExists(m_VolName, ed2, m_Atlas, locked);
+
+            if ( ! (big || small)) continue;
             
             CRef<CSeqDBColumn> col;
-            col.Reset(new CSeqDBColumn(m_VolName, ei, ed, & locked));
+
+            const Int2 bytetest = 0x0011;
+            const char * ptr = (const char *) &bytetest;
+            if (ptr[0] == 0x11 && small) {
+                col.Reset(new CSeqDBColumn(m_VolName, ei, ed2, & locked));
+            } else {
+                col.Reset(new CSeqDBColumn(m_VolName, ei, ed, & locked));
+            }
             
             string errmsg, errarg;
             
@@ -3177,10 +3185,7 @@ void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
             }
             
             m_Columns.push_back(col);
-        } else {
-            // Should this be done?
-            // break;
-        }
+        } 
     }
     
     m_HaveColumns = true;

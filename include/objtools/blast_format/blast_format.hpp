@@ -167,6 +167,15 @@ public:
     /// than when using other output formats.
     void ResetScopeHistory();
     
+    /// Enable formatting of searches with non-Blast databases.
+    ///
+    /// The class initially distinguished only between Bl2seq and
+    /// Blast DB searches. This method was introduced to allow a third
+    /// kind of searches to be properly formatted. Call this method
+    /// to enable displaying subject sequences from a non-Blast database
+    /// source (e.g. SRA searches fall under this category).
+    void EnableNonBlastDB();
+
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;
@@ -210,6 +219,9 @@ private:
     blast::CSearchResultSet m_AccumulatedResults;
     /// The custom output format specification
     string m_CustomOutputFormatSpec;
+
+    /// Flag indicating a non-Blast DB source of subject sequences.
+    bool m_IsNonBlastDB;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

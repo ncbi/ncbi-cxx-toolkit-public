@@ -650,7 +650,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
                                        bool parse_ids)
     : m_FastaReader(NULL)
 {
-    m_LineReader.Reset(new CStreamLineReader(fasta_file));
+    m_LineReader.Reset(new CBufferedLineReader(fasta_file));
     
     typedef CFastaReader::EFlags TFlags;
     
@@ -696,6 +696,8 @@ CConstRef<CBioseq> CFastaBioseqSource::GetNext()
             }
             ERR_POST(Error << "Error while reading input at position " << pos);
             ERR_POST(Error << "Aborting processing prematurely.");
+            // additional handling needed
+            throw(e);
         }
         
         if (entry.NotEmpty()) {
@@ -727,13 +729,14 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src)
     while(bs.NotEmpty()) {
         string bioseq_id("Unknown");
 
-        if (bs->GetLength() == 0) {
-            if (bs->CanGetId()) {
-                const list< CRef<CSeq_id> > & ids = bs->GetId();
-                if (! ids.empty() && ids.front().NotEmpty()) {
-                    bioseq_id.assign(ids.front()->AsFastaString());
-                }
+        if (bs->CanGetId()) {
+            const list< CRef<CSeq_id> > & ids = bs->GetId();
+            if (! ids.empty() && ids.front().NotEmpty()) {
+                bioseq_id.assign(ids.front()->AsFastaString());
             }
+        }
+
+        if (bs->GetLength() == 0) {
             m_LogFile << "Ignoring sequence '" << bioseq_id
                       << "' as it has no sequence data" << endl;
             bs = src.GetNext();
@@ -1158,13 +1161,20 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
                                m_IsProtein,
                                m_ParseIDs);
         
-        success = AddSequences(fbs);
+        try {
+            success = AddSequences(fbs);
+        }
+        catch (const CObjReaderParseException& e) {
+            EndBuild(true);
+            // stop the upper layer from going further...
+            throw(e);
+        }
     }
     
     return success;
 }
 
-bool CBuildDatabase::EndBuild()
+bool CBuildDatabase::EndBuild(bool erase)
 {
     bool success = false;
     
@@ -1193,6 +1203,9 @@ bool CBuildDatabase::EndBuild()
         m_LogFile << endl;
         ITERATE(vector<string>, iterf, files) {
             m_LogFile << "file: " << *iterf << endl;
+            if (erase) {
+                CFile(*iterf).Remove();
+            }
         }
     }
     

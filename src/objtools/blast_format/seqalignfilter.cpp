@@ -39,9 +39,6 @@ static char const rcsid[] = "$Id$";
 
 #include <objtools/blast_format/seqalignfilter.hpp>
 
-#include <algo/blast/api/seqinfosrc_seqdb.hpp>
-#include <algo/blast/api/blast_seqinfosrc_aux.hpp>
-
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -51,7 +48,6 @@ static char const rcsid[] = "$Id$";
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(blast);
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -167,11 +163,33 @@ void CSeqAlignFilter::FilterByGiList(const CSeq_align_set& full_aln,
     }
 }
 
+static void s_GetFilteredRedundantGis(CRef<CSeqDB> db,
+                                      int oid,
+                                      vector<int>& gis)
+{
+    // Note: copied from algo/blast/api to avoid dependencies
+
+    gis.resize(0);
+    if (!db->GetGiList()) {
+        return;
+    }
+    
+    list< CRef<CSeq_id> > seqid_list = db->GetSeqIDs(oid);
+    gis.reserve(seqid_list.size());
+    
+    ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
+        if ((**id).IsGi()) {
+            gis.push_back((**id).GetGi());
+        }
+    }
+
+	sort(gis.begin(), gis.end());
+}
+
 void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
                                     CRef<CSeqDB> db,
                                     CSeq_align_set& filtered_aln)
 {
-    CRef<IBlastSeqInfoSrc> seqinfo(new CSeqDbSeqInfoSrc(db));
     filtered_aln.Set().clear();
 
     ITERATE(CSeq_align_set::Tdata, iter_aln, full_aln.Get()) { 
@@ -192,7 +210,7 @@ void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
             vector<int> vec_gis_from_DB;
 
             if (oid_aligned_seq > 0)
-                GetFilteredRedundantGis(*seqinfo, oid_aligned_seq, vec_gis_from_DB);
+                s_GetFilteredRedundantGis(db, oid_aligned_seq, vec_gis_from_DB);
 
             // if that list is non-empty, add seq-align's with those gi's to the filtered alignment set
             if (!vec_gis_from_DB.empty()) {

@@ -41,6 +41,7 @@ static char const rcsid[]
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
+#include <algo/blast/api/version.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -49,10 +50,12 @@ USING_SCOPE(objects);
 CBlastnAppArgs::CBlastnAppArgs()
 {
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("blastn", 
+    static const string kProgram("blastn");
+    arg.Reset(new CProgramDescriptionArgs(kProgram,
                                           "Nucleotide-Nucleotide BLAST"));
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
+    m_ClientId = kProgram + " " + CBlastVersion().Print();
 
     static const string kDefaultTask = "megablast";
     SetTask(kDefaultTask);

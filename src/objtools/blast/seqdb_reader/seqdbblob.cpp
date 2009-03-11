@@ -345,6 +345,46 @@ void CBlastDbBlob::WriteInt8(Int8 x, int offset)
     x_WriteIntFixed<Int8, 8>(x, & offset);
 }
 
+void CBlastDbBlob::WriteInt1_LE(int x)
+{
+    x_WriteIntFixed_LE<int,1>(x, NULL);
+}
+
+void CBlastDbBlob::WriteInt1_LE(int x, int offset)
+{
+    x_WriteIntFixed_LE<int,1>(x, & offset);
+}
+
+void CBlastDbBlob::WriteInt2_LE(int x)
+{
+    x_WriteIntFixed_LE<int,2>(x, NULL);
+}
+
+void CBlastDbBlob::WriteInt2_LE(int x, int offset)
+{
+    x_WriteIntFixed_LE<int,2>(x, & offset);
+}
+
+void CBlastDbBlob::WriteInt4_LE(Int4 x)
+{
+    x_WriteIntFixed_LE<int,4>(x, NULL);
+}
+
+void CBlastDbBlob::WriteInt4_LE(Int4 x, int offset)
+{
+    x_WriteIntFixed_LE<int,4>(x, & offset);
+}
+
+void CBlastDbBlob::WriteInt8_LE(Int8 x)
+{
+    x_WriteIntFixed_LE<Int8, 8>(x, NULL);
+}
+
+void CBlastDbBlob::WriteInt8_LE(Int8 x, int offset)
+{
+    x_WriteIntFixed_LE<Int8, 8>(x, & offset);
+}
+
 int CBlastDbBlob::WriteString(CTempString str, EStringFormat fmt)
 {
     return x_WriteString(str, fmt, NULL);
@@ -377,6 +417,11 @@ int CBlastDbBlob::x_WriteString(CTempString str, EStringFormat fmt, int * offset
     return end_off - start_off;
 }
 #endif
+
+const char * CBlastDbBlob::ReadRaw(int size)
+{
+    return x_ReadRaw(size, &m_ReadOffset);
+}
 
 void CBlastDbBlob::WriteRaw(const char * begin, int size)
 {

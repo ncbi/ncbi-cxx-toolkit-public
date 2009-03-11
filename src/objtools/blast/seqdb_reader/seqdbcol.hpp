@@ -147,8 +147,7 @@ public:
     /// @param lockedp
     ///   The lock holder object for this thread. [in]
     static bool ColumnExists(const string   & basename,
-                             const string   & index_extn,
-                             const string   & data_extn,
+                             const string   & extn,
                              CSeqDBAtlas    & atlas,
                              CSeqDBLockHold & locked);
     
