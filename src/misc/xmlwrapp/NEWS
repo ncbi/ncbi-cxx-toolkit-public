@@ -1,0 +1,275 @@
+Version 0.6.0
+
+	Fixed libxmlwrapp to not depend on libxslt if XSLT support
+	is enabled (Vadim Zeitlin, #1927398).
+
+	Ported Unix build system to Autotools.
+
+	Split pkg-config file xmlwrapp.pc into xmlwrapp.pc and
+	xsltwrapp.pc. Applications that use libxsltwrapp need to be
+	updated to use the latter (too).
+
+	Input document to xslt::stylesheet::apply() is now passed as
+	const reference instead of non-const one.
+
+	It is no longer necessary to instantiate xml/xslt::init object before
+	using the library; this is now done automatically (thread safety is
+	preserved) and new code shouldn't do it. Moreover, creating multiple
+	xml/xslt::init object instances is now possible and doesn't result in
+	multiple initialization/shutdown of the library.
+
+	Configuration methods of xml/xslt::init classes are now static.
+
+	The previously separate manual was merged with Doxygen documentation so
+	that all documentation is available in single place. As a consequence,
+	PDF version of the manual is no longer provided, use HTML documentation
+	included with xmlwrapp source distribution.
+
+	Added xml::node::get_namespace() function.
+
+	Added new constructor to the xml::node class for creating text nodes,
+	using xml::node::text helper struct.
+
+	Improved iterators performance (only if Boost.Pool is available).
+
+	Added xml::node::elements() methods for efficient iteration over child
+	elements. In most cases, this is a better alternative to find().
+
+Version 0.5.1
+
+	Various compilation fixes.
+
+Version 0.5.0
+
+	Fixed a null pointer dereference problem in
+	xml::attributes, Bug ID 20. Thanks goes to John K. Hohm
+	for finding this and providing a working patch.
+
+	Added three new constructors to the xml::node class for creating
+	CDATA sections, XML comments, and XML processing instructions. This
+	is done using three new helper structs, xml::node::cdata,
+	xml::node::comment, and xml::node::pi.
+
+	Added new member functions to the xml::node class.
+	They are: size and empty.
+
+	Added new member functions to the xml::document class.
+	They are: size, push_back, insert, replace, and erase.
+
+	Added the ability to compress XML files saved with the
+	xml::document::save_to_file member function (Bug ID 19).
+
+	Major clean ups in the test harness. Test code should be a lot easier
+	to write now.
+
+Version 0.4.4
+
+	Small changes so that xmlwrapp can work with libxml2
+	version 2.6.0. Thanks goes to Craig Wiesen and Jonathan
+	Wakely for finding this. (Bug ID 18).
+
+	Fixed a typo in the manual. Thanks goes to Bill
+	Luoma. (Bug ID 16).
+
+Version 0.4.3
+
+	Fixed a build problem on Linux (bug 10). This happens when
+	libxslt was installed in /usr. configure.pl could not find
+	libxslt because xslt-config does not list /usr/include.
+
+	Updated the TODO list.
+
+Version 0.4.2
+
+	Version 0.4.2 is a maintenance release. A few small bugs were
+	fixed and a work around for a bug in Perl 5.8 was added.
+
+	Updated Perl scripts to work around a bug in the Perl 5.8
+	regex parser. Thanks goes to Andy Chou.
+
+	Added an encoding patch from Dmitriy Nikitinskiy.
+
+Version 0.4.1
+
+	Version 0.4.1 fixes a few small bugs and also includes some new
+	features. It is binary compatible with version 0.4.0.
+
+	Typos in the doxygen documentation were fixed thanks to Jonathan
+	Wakely, Stephen Blake and Chris de Hoop.
+
+	Fixed a bug in configure.pl that caused a bad xmlwrapp-config to
+	be generated when XSLT was enabled.
+
+	Added support for pkg-config and the xmlwrapp.pc file.
+
+	Added support for libexslt.
+
+	Added the xml::init::remove_whitespace member function to skip
+	ignorable whitespace from parsed XML documents. Default value is
+	false, so whitespace is included in the node tree by default.
+
+	Added the xml::node::self and xml::node::parent member
+	functions. They return @code{xml::node::iterator} or
+	xml::node::const_iterator objects.
+
+	Added a new version of the xml::node::insert member function that
+	does not require a location iterator, but instead inserts at the
+	end of the child list like the xml::node::push_back member
+	function does.
+
+	Added a range version of the xml::node::erase member function and
+	a version that takes the name of a node to erase. All nodes with
+	matching names will be removed from the child list.
+
+	Added two versions of the xml::node::sort member function.  The
+	first, will sort child nodes with the given name using one of
+	their attributes as a sort key. The other, uses a user supplied
+	function object to sort the child nodes.
+
+Version 0.4.0
+
+	Version 0.4.0 is a feature release. xmlwrapp now supports XSLT via
+	libxslt. This support is called xsltwrapp and is optional.
+
+	Added the xslt::init and xslt::stylesheet classes to support XSLT.
+
+	Added the xml::init::load_external_subsets member function to make
+	libxml load external subsets by default.
+
+Version 0.3.0
+
+	This version contains a lot of new features. Because of this,
+	certain API calls have been changed or removed. The following list
+	should help you update code that is using xmlwrapp.
+
+	Changed configure.pl to require at least version 2.4.28 of
+	libxml2.
+
+	The xml::tree_parser constructors can now throw exceptions if
+	there was an error during parsing. This is optional, and is
+	controlled by a bool flag passed to the constructors. This also
+	means that xml::tree_parser will now prevent libxml2 from sending
+	error messages to standard error. The new default behavior is to
+	throw an exception.
+
+	Some of the xml::event_parser callback member functions have
+	changed. There are also new callbacks so that you can catch CDATA
+	sections, processing instructions and XML comments.
+
+	It is now safe to throw exceptions from within an
+	xml::event_parser callback.  The exception will not be passed up
+	the stack to the caller of one of the parsing member
+	functions. Instead, it will stop the parsing and set an error
+	condition.
+
+	There is a new xml::document class that allows you to set XML
+	document variables such as the encoding and version. The document
+	class also supports saving itself to a file, string or a
+	std::ostream. It also includes functions for validating a document
+	against an internal or external DTD.
+
+	The xml::tree_parser class no longer contains a get_root_node()
+	member function.  It has been replaced with get_document() which
+	will return a reference to a xml::document object. That object can
+	then be used to call get_root_node().
+
+	Another new class, xml::attributes, for getting and setting the
+	attributes of a node. This class replaces all the member functions
+	of xml::node that dealt with attributes. This class is much better
+	than using the old xml::node member functions because it supports
+	iterators and functions like find.
+
+	The xml::init class will prevent libxml2 from sending any messages
+	to stderr.  This should not be a problem since most classes will
+	catch the message and use it in an exception or store it for later
+	use.
+
+	xml::init will now set some default libxml2 global
+	variables. Indenting of output XML text is turned on. Default
+	substitution of entities on turned on.  Validating of all
+	documents by default is turned off. There are new member functions
+	you can use to change these defaults.
+
+	Compiler flags will no longer contain quotes around directory
+	names. This was added for cygwin when people have a space in the
+	current working directory path.  It was removed because it was
+	causing problems on other platforms.
+
+	There is a new header file, xmlwrapp/xmlwrapp.h, that includes all
+	of the other xmlwrapp header files.
+
+	A real working test harness has been added with several tests.
+
+	New member functions for xml::node.
+
+		4 different versions of xml::node::find.
+
+		xml::node::insert.
+
+		xml::node::replace.
+
+		xml::node::erase.
+
+		xml::node::get_attributes.
+
+		xml::node::get_type.
+
+Version 0.2.2
+
+	Version 0.2.2 was a bug fix release.
+
+	Changed include guards so that they don't violate the C++
+	standard. Thanks to Greg Chicares.
+
+	Include <cstddef> to get std::size_t and std::ptrdiff_t. Thanks to
+	Greg Chicares.
+
+	Fix a major bug where a pimpl was not created in
+	xml::tree_parser. Thanks to Greg Chicares.
+
+	Added a call to xmlKeepBlanksDefault(0) in xml::init constructor
+	to produce better looking XML. If this causes any problems we will
+	have to remove it. This was suggested by Daniel Evison.
+
+	Fixed an issue with command quoting in the configure.pl script.
+
+Version 0.2.1
+
+	Version 0.2.1 was a bug fix release.
+
+	Fixed a bug in the xml::event_parser class that caused parsing to
+	continue even when one of the event member functions returned
+	false. Thanks to Michael Grabner for finding this one.
+
+	There were a few reports that xmlwrapp could be compiled using
+	MSVC on Win32. A project file for MSVC was added so that no one
+	would have to do this again. The STLport is needed on the Win32
+	platform.
+
+	The get_namespace and set_namespace functions were removed from
+	the xml::node class since they were defined but not yet
+	implemented.
+
+Version 0.2.0
+
+	Version 0.2.0 of xmlwrapp was the first public release. It
+	included the following changes from version 0.1.0.
+
+	First draft of the documentation.
+
+	Added example programs.
+
+	Changed operator<< for xml::node from a template function to a
+	normal function that takes a std::ostream.  This allows xmlwrapp
+	to compile with GCC < 3.0.
+
+	Replaced calls to std::free with xmlFree in the libxml2 backend
+	wrapper.
+
+Version 0.1.0
+
+	Version 0.1.0 was the first packaged version. It was packaged for
+	<http://pmade.org/software/clo++/,clo++>.
+
+	It included no documentation or examples, and was not intended for
+	use by other developers.
