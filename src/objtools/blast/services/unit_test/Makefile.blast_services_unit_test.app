@@ -15,5 +15,5 @@ PRE_LIBS = $(BOOST_LIBS)
 
 REQUIRES = Boost.Test
 
-CHECK_CMD = blast_services_test
+CHECK_CMD = blast_services_unit_test
 CHECK_AUTHORS = blastsoft
