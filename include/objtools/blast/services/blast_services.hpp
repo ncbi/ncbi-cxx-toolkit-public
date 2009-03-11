@@ -100,7 +100,7 @@ public:
 /// Class to obtain information and data from the Remote BLAST service that is
 /// not associated with a specific BLAST search
 
-class CBlastServices : public CObject
+class NCBI_XOBJREAD_EXPORT CBlastServices : public CObject
 {
 public:
     /// Default constructor
