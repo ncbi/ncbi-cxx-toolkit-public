@@ -483,7 +483,7 @@ void StructureWindow::SendCommand(const std::string& toApp,
 
     // for now, just assign command id's in numerical order
     static unsigned long nextCommandID = 1;
-    INFOMSG("sending command " << nextCommandID << " to " << toApp << ": " << command);
+    INFOMSG("sending command " << nextCommandID+1 << " to " << toApp << ": " << command);
     fileMessenger->SendCommand(toApp, ++nextCommandID, command, data);
 }
 
