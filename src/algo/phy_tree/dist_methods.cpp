@@ -347,7 +347,7 @@ void CDistMethods::ZeroNegativeBranches(TTree* node)
 	}
     }
 
-    if (node->GetValue().GetDist() < 0.0) {
+    if (node->GetValue().IsSetDist() && node->GetValue().GetDist() < 0.0) {
         node->GetValue().SetDist(0.0);
     }
 }
