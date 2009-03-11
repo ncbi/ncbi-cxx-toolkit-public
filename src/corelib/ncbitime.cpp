@@ -680,11 +680,20 @@ CTime::CTime(EInitMode mode, ETimeZone tz, ETimeZonePrecision tzp)
     }
 }
 
+
 CTime::CTime(time_t t, ETimeZonePrecision tzp)
 {
     m_Data.tz = eGmt;
     m_Data.tzprec = tzp;
     SetTimeT(t);
+}
+
+
+CTime::CTime(const struct tm& t, ETimeZonePrecision tzp)
+{
+    m_Data.tz = eLocal;
+    m_Data.tzprec = tzp;
+    SetTimeTM(t);
 }
 
 
@@ -1130,6 +1139,52 @@ time_t CTime::GetTimeT(void) const
 #endif
 }
 
+
+struct tm CTime::GetTimeTM(void) const
+{
+	CTime lt = GetLocalTime();
+	struct tm t;
+    t.tm_sec   = lt.Second();
+    t.tm_min   = lt.Minute();
+    t.tm_hour  = lt.Hour();
+    t.tm_mday  = lt.Day();
+    t.tm_mon   = lt.Month()-1;
+    t.tm_year  = lt.Year()-1900;
+    t.tm_wday  = lt.DayOfWeek();
+    t.tm_yday  = -1;
+    t.tm_isdst = -1;
+	return t;
+}
+
+
+CTime& CTime::SetTimeTM(const struct tm& t)
+{
+    CHECK_RANGE_YEAR   (t.tm_year + 1900);
+    CHECK_RANGE_MONTH  (t.tm_mon + 1);
+    CHECK_RANGE_DAY    (t.tm_mday);
+    CHECK_RANGE_HOUR   (t.tm_hour);
+    CHECK_RANGE_MIN    (t.tm_min);
+    CHECK_RANGE_SEC    (t.tm_sec);
+
+    m_Data.year        = t.tm_year + 1900;
+    m_Data.month       = t.tm_mon + 1;
+    m_Data.day         = t.tm_mday;
+    m_Data.hour        = t.tm_hour;
+    m_Data.min         = t.tm_min;
+    m_Data.sec         = t.tm_sec;
+    m_Data.nanosec     = 0;
+    m_Data.tz          = eLocal;
+    //m_Data.tzprec    -- not changed;
+    m_Data.adjTimeDiff = 0;
+
+    if ( !IsValid() ) {
+        NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+    return *this;
+}
+
+
+
 TDBTimeU CTime::GetTimeDBU(void) const
 {
     TDBTimeU dbt;
@@ -1268,6 +1323,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Data.nanosec     = (Int4)ns;
     return *this;
 }
+
 
 CTime& CTime::AddMonth(int months, EDaylight adl)
 {

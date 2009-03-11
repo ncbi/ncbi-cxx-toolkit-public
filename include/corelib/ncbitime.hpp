@@ -342,7 +342,7 @@ public:
           ETimeZone          tz   = eLocal,
           ETimeZonePrecision tzp  = eTZPrecisionDefault);
 
-    /// Explicit conversion constructor for time_t representation of time.
+    /// Conversion constructor for time_t representation of time.
     ///
     /// Construct time object from GMT time_t value.
     /// The constructed object will be in the eGMT format.
@@ -351,7 +351,20 @@ public:
     ///   Time in the GMT time_t format.
     /// @param tzp
     ///   What time zone precision to use.
+	/// @sa SetTimeT, GetTimeT
     explicit CTime(time_t t, ETimeZonePrecision tzp = eTZPrecisionDefault);
+
+    /// Conversion constructor for "struct tm" local time representation.
+    ///
+    /// Construct time object from "struct tm" time value.
+    /// The constructed object will be in the eLocal format.
+    ///
+    /// @param t
+    ///   Time in "struct tm" format.
+    /// @param tzp
+    ///   What time zone precision to use.
+	/// @sa SetTimeTM, GetTimeTM
+    CTime(const struct tm& t, ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Constructor.
     ///
@@ -443,7 +456,7 @@ public:
     ///   Time object that is set.
     CTime& SetTimeT(const time_t& t);
 
-    /// Get time (time_t format).
+    /// Get time in time_t format.
     ///
     /// The function return the number of seconds elapsed since midnight
     /// (00:00:00), January 1, 1970. Do not use this function if year is
@@ -451,6 +464,24 @@ public:
     /// @return
     ///   Time in time_t format.
     time_t GetTimeT(void) const;
+
+    /// Set time using "struct tm" time value.
+    ///
+    /// @param t
+    ///   Time to set in time object. This time always represents a local
+	///   time in current time zone. Time object will be set to have eLocal
+	///   time format, and nanoseconds will be truncated. Note, that all 
+	///   significant fields in the time structure should be set and have
+	///   correct vales, otherwise exception will be thrown.
+    /// @return
+    ///   Time object that is set.
+    CTime& SetTimeTM(const struct tm& t);
+
+    /// Get time in "struct tm" format.
+    ///
+    /// @return
+	///   Time in "struct tm" format (local time).
+    struct tm GetTimeTM(void) const;
 
     /// Set time using database format time, TDBTimeU.
     ///
