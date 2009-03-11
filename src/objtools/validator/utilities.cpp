@@ -1138,6 +1138,7 @@ const string CCountries::sm_Countries[] = {
     "Niue",
     "Norfolk Island",
     "North Korea",
+    "North Sea",
     "Northern Mariana Islands",
     "Norway",
     "Oman",
