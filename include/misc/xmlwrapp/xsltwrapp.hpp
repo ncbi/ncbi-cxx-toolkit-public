@@ -40,8 +40,8 @@
 #ifndef _xsltwrapp_xsltwrapp_h_
 #define _xsltwrapp_xsltwrapp_h_
 
-#include <util/xmlwrapp/xmlwrapp.hpp>
-#include <util/xmlwrapp/xslt_init.hpp>
-#include <util/xmlwrapp/stylesheet.hpp>
+#include <misc/xmlwrapp/xmlwrapp.hpp>
+#include <misc/xmlwrapp/xslt_init.hpp>
+#include <misc/xmlwrapp/stylesheet.hpp>
 
 #endif
