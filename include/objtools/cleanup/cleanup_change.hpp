@@ -125,6 +125,7 @@ public:
         eCleanupDate,
         eChangeBioseqInst,
         eRemoveSeqId,
+        eAddProtXref,
         // set when any other change is made.
         eChangeOther,
         

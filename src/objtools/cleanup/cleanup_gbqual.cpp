@@ -236,44 +236,62 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CCdregion& cds, const CGb_qual&
     // look for qualifiers that should be applied to protein feature
     // note - this should be moved to the "indexed" portion of basic cleanup,
     // because it needs to locate another sequence and feature
-    if ((NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
-      || NStr::Equal(qual, "activity") || NStr::Equal (qual, "prot_note"))
-        && feat.IsSetProduct()) {
+    if (NStr::Equal(qual, "product") || NStr::Equal (qual, "function") || NStr::Equal (qual, "EC_number")
+        || NStr::Equal(qual, "activity") || NStr::Equal (qual, "prot_note")) {
 
-        // get protein sequence for product
-        CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetProduct());
-        if (prot) {
-            // replacement prot feature
-            CRef<CSeq_feat> prot_feat(new CSeq_feat());
+        if (feat.IsSetProduct()) {
+            // get protein sequence for product
+            CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetProduct());
+            if (prot) {
+                // replacement prot feature
+                CRef<CSeq_feat> prot_feat(new CSeq_feat());
 
-            // find main protein feature
-            SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
+                // find main protein feature
+                SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
 
-            CFeat_CI feat_ci (prot, sel);
+                CFeat_CI feat_ci (prot, sel);
 
-            if (feat_ci) {            
-                prot_feat->Assign(feat_ci->GetOriginalFeature());
+                if (feat_ci) {            
+                    prot_feat->Assign(feat_ci->GetOriginalFeature());
 
-                bool change_made = false;
+                    bool change_made = false;
 
 
-                if (NStr::Equal(qual, "prot_note")) {
-                    if (!prot_feat->IsSetComment() || NStr::IsBlank (prot_feat->GetComment())) {
-                        prot_feat->SetComment (val);
+                    if (NStr::Equal(qual, "prot_note")) {
+                        if (!prot_feat->IsSetComment() || NStr::IsBlank (prot_feat->GetComment())) {
+                            prot_feat->SetComment (val);
+                        } else {
+                            prot_feat->SetComment (prot_feat->GetComment() + "; " + val);
+                        }
+                        ChangeMade (CCleanupChange::eChangeComment);
+                        change_made = true;
                     } else {
-                        prot_feat->SetComment (prot_feat->GetComment() + "; " + val);
+                        change_made = BasicCleanup (prot_feat->SetData().SetProt(), gb_qual);
                     }
-                    ChangeMade (CCleanupChange::eChangeComment);
-                    change_made = true;
-                } else {
-                    change_made = BasicCleanup (prot_feat->SetData().SetProt(), gb_qual);
-                }
 
-                if (change_made) {
-                    CSeq_feat_EditHandle efh(feat_ci->GetSeq_feat_Handle());
-                    efh.Replace(*prot_feat);
-                    return true;
+                    if (change_made) {
+                        CSeq_feat_EditHandle efh(feat_ci->GetSeq_feat_Handle());
+                        efh.Replace(*prot_feat);
+                        return true;
+                    }
                 }
+            }
+        } else if (!NStr::Equal(qual, "prot_note")) {
+            bool found = false;
+            bool change_made = false;
+            // find or create prot xref for feature
+            EDIT_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                    found = true;
+                    change_made = BasicCleanup ((*it)->SetData().SetProt(), gb_qual);
+                }
+            }
+            if (!found) {
+                change_made = BasicCleanup (feat.SetProtXref(), gb_qual);
+                ChangeMade (CCleanupChange::eAddProtXref);                  
+            }
+            if (change_made) {
+                return true;
             }
         }
     }
