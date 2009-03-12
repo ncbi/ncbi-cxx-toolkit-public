@@ -72,47 +72,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-/*
-static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
-{
-    if( input_stream == 0 )
-        return CRef< CSeq_entry >( 0 );
-
-    CStreamLineReader line_reader( *input_stream );
-
-    CFastaReader::TFlags flags = 
-        CFastaReader::fAssumeNuc |
-        CFastaReader::fForceType |
-        CFastaReader::fOneSeq    |
-        CFastaReader::fAllSeqIds;
-
-    CFastaReader fasta_reader( line_reader, flags );
-    CFastaReader fasta_reader_2( 
-            line_reader, flags|CFastaReader::fNoParseID );
-
-    while( !input_stream->eof() )
-    {
-        CRef< CSeq_entry > aSeqEntry( null );
-        CT_POS_TYPE pos = input_stream->tellg();
-
-        try{ 
-            aSeqEntry = fasta_reader.ReadSet( 1 );
-        }catch( ... ) {
-            input_stream->seekg( pos );
-            aSeqEntry = fasta_reader_2.ReadSet( 1 );
-        }
-
-        if(    aSeqEntry != 0
-            && aSeqEntry->IsSeq()
-            && aSeqEntry->GetSeq().IsNa() )
-            return aSeqEntry;
-    }
-
-    return CRef< CSeq_entry >( 0 );
-}
-*/
-
-//-------------------------------------------------------------------------
 const char * const CDustMaskApplication::USAGE_LINE 
     = "Low complexity region masker based on Symmetric DUST algorithm";
 
@@ -125,7 +84,7 @@ void CDustMaskApplication::Init(void)
                                USAGE_LINE );
     arg_desc->AddDefaultKey( kInput, "input_file_name",
                              "input file name",
-                             CArgDescriptions::eString, "" );
+                             CArgDescriptions::eInputFile, "-" );
     arg_desc->AddDefaultKey( kOutput, "output_file_name",
                              "output file name",
                              CArgDescriptions::eOutputFile, "-");
@@ -153,109 +112,6 @@ void CDustMaskApplication::Init(void)
 
     SetupArgDescriptions( arg_desc.release() );
 }
-
-#if 0
-//-------------------------------------------------------------------------
-void CDustMaskApplication::interval_out_handler( 
-        CNcbiOstream * output_stream, 
-        const objects::CBioseq_Handle & bsh, 
-        const duster_type::TMaskList & res )
-{
-    if( output_stream != 0 ) {
-        *output_stream << ">"
-                       << CSeq_id::GetStringDescr( 
-                               *bsh.GetCompleteBioseq(),
-                               CSeq_id::eFormat_FastA )
-                       << " " << sequence::GetTitle( bsh ) << "\n";
-
-        for( it_type it = res.begin(); it != res.end(); ++it ) {
-            *output_stream << it->first  << " - " 
-                           << it->second << "\n";
-        }
-    }
-}
-
-//-------------------------------------------------------------------------
-void CDustMaskApplication::acclist_out_handler( 
-        CNcbiOstream * output_stream, 
-        const objects::CBioseq_Handle & bsh, 
-        const duster_type::TMaskList & res )
-{
-    if( output_stream != 0 ) {
-        for( it_type it = res.begin(); it != res.end(); ++it ) {
-            *output_stream << CSeq_id::GetStringDescr(
-                    *bsh.GetCompleteBioseq(), CSeq_id::eFormat_FastA )
-                           << "\t" << it->first 
-                           << "\t" << it->second << "\n";
-        }
-    }
-}
-
-//-------------------------------------------------------------------------
-static const Uint4 LINE_WIDTH = 60;
-
-inline void CDustMaskApplication::write_normal( 
-        CNcbiOstream * output_stream, const objects::CSeqVector & data, 
-        TSeqPos & start, TSeqPos & stop )
-{
-    for( Uint4 count = start; count < stop; ++count ) {
-        *output_stream << data[count];
-
-        if( (count + 1)%LINE_WIDTH == 0 ) {
-            *output_stream << "\n";
-        }
-    }
-}
-
-inline void CDustMaskApplication::write_lowerc( 
-        CNcbiOstream * output_stream, const objects::CSeqVector & data,
-        TSeqPos & start, TSeqPos & stop )
-{
-    for( Uint4 count = start; count < stop; ++count ) {
-        *output_stream << (char)tolower( data[count] );
-
-        if( (count + 1)%LINE_WIDTH == 0 ) {
-            *output_stream << "\n";
-        }
-    }
-}
-
-//-------------------------------------------------------------------------
-void CDustMaskApplication::fasta_out_handler( 
-        CNcbiOstream * output_stream, 
-        const objects::CBioseq_Handle & bsh, 
-        const duster_type::TMaskList & res )
-{
-    if( output_stream != 0 ) {
-        *output_stream << ">"
-                       << CSeq_id::GetStringDescr( 
-                               *bsh.GetCompleteBioseq(),
-                               CSeq_id::eFormat_FastA )
-                       << " " << sequence::GetTitle( bsh ) << "\n";
-        CSeqVector data 
-            = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
-        typedef CSeqVector::const_iterator citer_type;
-        TSeqPos start = 0, stop;
-
-        for( it_type it = res.begin(); it != res.end(); ++it ) {
-            stop = it->first;
-            write_normal( output_stream, data, start, stop );
-            start = stop; stop = it->second + 1;
-            write_lowerc( output_stream, data, start, stop );
-            start = stop;
-        }
-
-        stop = data.size();
-        write_normal( output_stream, data, start, stop );
-
-        if( stop%LINE_WIDTH != 0 ) {
-            *output_stream << endl;
-        }else {
-            *output_stream << flush;
-        }
-    }
-}
-#endif
 
 CMaskWriter*
 CDustMaskApplication::x_GetWriter()
@@ -286,25 +142,11 @@ CDustMaskApplication::x_GetWriter()
 int CDustMaskApplication::Run (void)
 {
     // Set up the input and output streams.
-    auto_ptr< CNcbiIstream > input_stream_ptr;
-    auto_ptr< CNcbiOstream > output_stream_ptr;
-    CNcbiIstream * input_stream = NULL;
-    
-    if( GetArgs()[kInput].AsString().empty() )
-        input_stream = &cin;
-    else
-    {
-        input_stream_ptr.reset(
-            new CNcbiIfstream( GetArgs()[kInput].AsString().c_str() ) );
-        input_stream = input_stream_ptr.get();
-    }
-
+    CNcbiIstream& input_stream  = GetArgs()[kInput].AsInputFile();
     CNcbiOstream& output_stream = GetArgs()[kOutput].AsOutputFile();
 
     // Set up the object manager.
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    // CGBDataLoader::RegisterInObjectManager(
-    //    *om, "id2", CObjectManager::eDefault);
 
     // Set up the duster object.
     Uint4 level = GetArgs()["level"].AsInteger();
@@ -317,7 +159,7 @@ int CDustMaskApplication::Run (void)
     auto_ptr<CMaskWriter> writer(x_GetWriter());
 
     CMaskFastaReader * reader = 
-        new CMaskFastaReader( *input_stream, true, GetArgs()["parse_seqids"] );
+        new CMaskFastaReader( input_stream, true, GetArgs()["parse_seqids"] );
 
     while( (aSeqEntry = reader->GetNextSequence()).NotEmpty() )
     {
