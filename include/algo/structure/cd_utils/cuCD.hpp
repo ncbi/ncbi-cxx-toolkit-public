@@ -146,8 +146,12 @@ CRef< CBioseq > GetBioseqWithFootprintForNthRow(CCdCore* cd, int N, string& errs
 NCBI_CDUTILS_EXPORT 
 bool GetBioseqWithFootprintForNRows(CCdCore* cd, int N, vector< CRef< CBioseq > >& bioseqs, string& errstr);
 
+//  Sequences reporting no taxonomy info are ignored when finding the common tax node.
+//  Specify how to handle the case when *no* sequences in 'cd' have taxonomy info (e.g., all local sequences):  
+//  useRootWhenNoTaxInfo = true means to return the root tax node
+//  useRootWhenNoTaxInfo = false means to return an empty CRef (i.e., report nothing)
 NCBI_CDUTILS_EXPORT 
-CRef< COrg_ref > GetCommonTax(CCdCore* cd);
+CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo = true);
 NCBI_CDUTILS_EXPORT 
 bool obeysParentTypeConstraints(const CCdCore* pCD);
 NCBI_CDUTILS_EXPORT 

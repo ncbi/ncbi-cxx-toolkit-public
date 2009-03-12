@@ -638,14 +638,19 @@ bool GetBioseqWithFootprintForNRows(CCdCore* cd, int N, vector< CRef< CBioseq > 
 }
 
 
-CRef< COrg_ref > GetCommonTax(CCdCore* cd)
+CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo)
 {
 	int comTax = 0;
 	CRef< COrg_ref > orgRef;
 	CTaxon1 taxServer;
 	if (!taxServer.Init())
 		return orgRef;
+
+	bool is_species;
+	bool is_uncultured;
+	string blast_name;
 	int num = cd->GetNumRows();
+
 	for (int i = 0; i < num; i++)
 	{
 		int gi = -1;
@@ -661,6 +666,7 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 				taxid = GetTaxIdInBioseq(*bioseq);
 			}
 		}
+
 		if (taxid > 0)
 		{
 			if (comTax == 0)
@@ -679,13 +685,13 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 		if (comTax == 1) //reach root
 			break;
 	}
-	orgRef = new COrg_ref;
-	bool is_species;
-	bool is_uncultured;
-	string blast_name;
 
-	if (comTax == 0)
+    //  The condition 'comTax == 0' is true only if no row satisfied (taxid > 0) above.
+    //  Use root tax node as common tax node unless told not to.
+	if (comTax == 0 && useRootWhenNoTaxInfo)
 		comTax = 1;
+
+	orgRef = new COrg_ref;
     if (comTax > 0) {
         orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
     } else {
