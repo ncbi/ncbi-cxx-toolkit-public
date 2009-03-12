@@ -1587,7 +1587,6 @@ private:
     double m_Start;  ///< Start time value.
     double m_Total;  ///< Accumulated elapsed time.
     EStart m_State;  ///< Stopwatch state (started/stopped)
-
 };
 
 
@@ -2239,6 +2238,7 @@ inline
 CStopWatch::CStopWatch(EStart state)
 {
     m_Total = 0;
+    m_Start = 0;
     m_State = eStop;
     if ( state == eStart ) {
         Start();
@@ -2287,7 +2287,7 @@ void CStopWatch::Stop()
 inline
 double CStopWatch::Restart()
 {
-    double total = m_Total;
+    double total   = m_Total;
     double current = GetTimeMark();
     if ( m_State == eStart ) {
         // Workaround for -0 (negative zero) values,

@@ -2468,6 +2468,7 @@ int CFastLocalTime::GetLocalTimezone(void)
 CStopWatch::CStopWatch(bool start)
 {
     m_Total = 0;
+    m_Start = 0;
     m_State = eStop;
     if ( start ) {
         Start();
