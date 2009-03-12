@@ -277,7 +277,7 @@ bool NcbieaaToNcbistdaaString(const std::string& str, vector < char >& vec)
         vec.reserve(str.size());
         try {
             CSeqConvert::Convert(str, CSeqUtil::e_Ncbieaa, 0, str.size(), vec, CSeqUtil::e_Ncbistdaa);
-        } catch (exception& e) {
+        } catch (...) {
             result = false;
         }
     }
