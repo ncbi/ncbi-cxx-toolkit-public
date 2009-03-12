@@ -516,8 +516,7 @@ namespace {
         ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
             const CBlob_Info& info = it->second;
             if ( info.Matches(*it->first, mask, sel) ) {
-                CLoadLockBlob blob(result, *it->first);
-                if ( !blob.IsLoaded() ) {
+                if ( !result.IsBlobLoaded(*it->first) ) {
                     return false;
                 }
             }
@@ -617,7 +616,6 @@ namespace {
     {
     public:
         typedef CBlob_id TKey;
-        typedef CLoadLockBlob TLock;
         CCommandLoadBlob(CReaderRequestResult& result,
                          const TKey& key)
             : CReadDispatcherCommand(result),
@@ -627,8 +625,7 @@ namespace {
 
         bool IsDone(void)
             {
-                CLoadLockBlob blob(GetResult(), m_Key);
-                return blob.IsLoaded();
+                return GetResult().IsBlobLoaded(m_Key);
             }
         bool Execute(CReader& reader)
             {
@@ -808,8 +805,7 @@ namespace {
                         if ( (info.GetContentsMask() & fBlobHasCore) == 0 ) {
                             continue; // skip this blob
                         }
-                        CLoadLockBlob blob(result, *it->first);
-                        if ( !blob.IsLoaded() ) {
+                        if ( !result.IsBlobLoaded(*it->first) ) {
                             return false;
                         }
                     }

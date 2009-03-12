@@ -243,6 +243,7 @@ public:
                         const TTSE_LockSet& locks,
                         TLockFlags = 0);
     CTSE_LoadLock GetTSE_LoadLock(const TBlobId& blob_id);
+    CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TBlobId& blob_id);
     bool IsLoaded(const CTSE_Info& tse) const;
     void SetLoaded(CTSE_LoadLock& lock);
 

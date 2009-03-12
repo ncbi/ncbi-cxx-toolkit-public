@@ -76,7 +76,6 @@ protected:
     AutoPtr<CObjectIStream> x_SendPacket(CDB_Connection& db_conn,
                                          TConn conn,
                                          const CID2_Request_Packet& packet);
-    void x_ReceiveReply(CObjectIStream& result, TConn conn, CID2_Reply& reply);
 
     CObjectIStream& x_GetCurrentResult(TConn conn);
     void x_SetCurrentResult(TConn conn, AutoPtr<CObjectIStream> result);

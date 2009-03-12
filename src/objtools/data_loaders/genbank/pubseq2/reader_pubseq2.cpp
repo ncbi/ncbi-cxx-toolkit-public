@@ -387,7 +387,7 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
             CDebugPrinter s(conn, "CPubseq2Reader");
             s << "Receiving ID2-Reply...";
         }
-        x_ReceiveReply(*result, conn, reply);
+        CId2ReaderBase::x_ReceiveReply(*result, conn, reply);
         if ( GetDebugLevel() >= eTraceConn   ) {
             CDebugPrinter s(conn, "CPubseq2Reader");
             s << "Received";
@@ -489,7 +489,7 @@ void CPubseq2Reader::x_SendPacket(TConn conn,
 void CPubseq2Reader::x_ReceiveReply(TConn conn,
                                     CID2_Reply& reply)
 {
-    x_ReceiveReply(x_GetCurrentResult(conn), conn, reply);
+    CId2ReaderBase::x_ReceiveReply(x_GetCurrentResult(conn), conn, reply);
 }
 
 
@@ -566,13 +566,6 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
                "CPubseq2Reader: no more results");
 }
 
-
-void CPubseq2Reader::x_ReceiveReply(CObjectIStream& stream,
-                                    TConn /*conn*/,
-                                    CID2_Reply& reply)
-{
-    stream >> reply;
-}
 
 END_SCOPE(objects)
 

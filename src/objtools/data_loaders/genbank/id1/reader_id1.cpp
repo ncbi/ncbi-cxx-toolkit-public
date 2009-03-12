@@ -349,7 +349,7 @@ bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
     id1_request.SetGetgi(const_cast<CSeq_id&>(*seq_id.GetSeqId()));
 
     CID1server_back id1_reply;
-    x_ResolveId(id1_reply, id1_request);
+    x_ResolveId(result, id1_reply, id1_request);
 
     int gi;
     if ( id1_reply.IsGotgi() ) {
@@ -474,7 +474,7 @@ bool CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
-void CId1Reader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
+void CId1Reader::GetGiSeq_ids(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id,
                               CLoadLockSeq_ids& ids)
 {
@@ -496,7 +496,7 @@ void CId1Reader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
     }}
     
     CID1server_back id1_reply;
-    x_ResolveId(id1_reply, id1_request);
+    x_ResolveId(result, id1_reply, id1_request);
 
     if ( !id1_reply.IsIds() ) {
         return;
@@ -536,7 +536,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
     }}
     
     CID1server_back id1_reply;
-    TBlobState state = x_ResolveId(id1_reply, id1_request);
+    TBlobState state = x_ResolveId(result, id1_reply, id1_request);
 
     if ( !id1_reply.IsGotblobinfo() ) {
         CBlob_id blob_id;
@@ -627,7 +627,7 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
     x_SetParams(id1_request.SetGetblobinfo(), blob_id);
     
     CID1server_back    reply;
-    TBlobState state = x_ResolveId(reply, id1_request);
+    TBlobState state = x_ResolveId(result, reply, id1_request);
 
     TBlobVersion version = -1;
     switch ( reply.Which() ) {
@@ -648,22 +648,21 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
                    "invalid ID1server-back");
     }
 
-    CLoadLockBlob blob(result, blob_id);
     if ( version >= 0 ) {
-        SetAndSaveBlobVersion(result, blob_id, blob, version);
+        SetAndSaveBlobVersion(result, blob_id, version);
     }
     if ( state ) {
-        blob.SetBlobState(state);
-        SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, blob);
+        SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, state);
     }
 }
 
 
 CReader::TBlobVersion
-CId1Reader::x_ResolveId(CID1server_back& reply,
+CId1Reader::x_ResolveId(CReaderRequestResult& result,
+                        CID1server_back& reply,
                         const CID1server_request& request)
 {
-    CConn conn(this);
+    CConn conn(result, this);
     x_SendRequest(conn, request);
     x_ReceiveReply(conn, reply);
     if ( !reply.IsError() ) {
@@ -702,7 +701,14 @@ void CId1Reader::GetBlob(CReaderRequestResult& result,
                          const TBlobId& blob_id,
                          TChunkId chunk_id)
 {
-    CConn conn(this);
+    CConn conn(result, this);
+    if ( chunk_id == CProcessor::kMain_ChunkId ) {
+        CLoadLockBlob blob(result, blob_id);
+        if ( blob.IsLoaded() ) {
+            conn.Release();
+            return;
+        }
+    }
     {{
         CID1server_request request;
         x_SetBlobRequest(request, blob_id);

@@ -1296,6 +1296,31 @@ CTSE_LoadLock CDataSource::GetTSE_LoadLock(const TBlobId& blob_id)
 }
 
 
+CTSE_LoadLock CDataSource::GetTSE_LoadLockIfLoaded(const TBlobId& blob_id)
+{
+    _ASSERT(blob_id);
+    CTSE_LoadLock ret;
+    {{
+        CTSE_Lock lock;
+        {{
+            TMainLock::TWriteLockGuard guard(m_DSCacheLock);
+            TBlob_Map::const_iterator iter = m_Blob_Map.find(blob_id);
+            if ( iter == m_Blob_Map.end() || !iter->second ||
+                 !IsLoaded(*iter->second) ) {
+                return ret;
+            }
+            x_SetLock(lock, iter->second);
+        }}
+        _ASSERT(lock);
+        _ASSERT(IsLoaded(*lock));
+        ret.m_DataSource.Reset(this);
+        _VERIFY(lock->m_LockCounter.Add(1) > 1);
+        ret.m_Info = const_cast<CTSE_Info*>(lock.GetNonNullPointer());
+    }}
+    return ret;
+}
+
+
 bool CDataSource::IsLoaded(const CTSE_Info& tse) const
 {
     return tse.m_LoadState != CTSE_Info::eNotLoaded;

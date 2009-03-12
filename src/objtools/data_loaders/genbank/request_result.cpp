@@ -531,7 +531,8 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
       m_Cached(false),
       m_RequestedId(requested_id),
       m_RecursionLevel(0),
-      m_RecursiveTime(0)
+      m_RecursiveTime(0),
+      m_AllocatedConnection(0)
 {
 }
 
@@ -539,6 +540,7 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
 CReaderRequestResult::~CReaderRequestResult(void)
 {
     _ASSERT(m_LockMap.empty());
+    _ASSERT(!m_AllocatedConnection);
 }
 
 
@@ -550,29 +552,81 @@ void CReaderRequestResult::SetRequestedId(const CSeq_id_Handle& requested_id)
 }
 
 
-CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
+CReaderRequestResult::TBlobLoadInfo&
+CReaderRequestResult::x_GetBlobLoadInfo(const CBlob_id& blob_id)
 {
-    CTSE_LoadLock& lock = m_BlobLoadLocks[blob_id];
-    if ( !lock ) {
-        lock = GetTSE_LoadLock(blob_id);
+    TBlobLoadLocks::iterator iter = m_BlobLoadLocks.lower_bound(blob_id);
+    if ( iter == m_BlobLoadLocks.end() || iter->first != blob_id ) {
+        iter = m_BlobLoadLocks.insert(iter, TBlobLoadLocks::value_type(blob_id, TBlobLoadInfo(-1, CTSE_LoadLock())));
     }
-    return lock;
+    return iter->second;
 }
 
 
-void CReaderRequestResult::ReleaseNotLoadedBlobs()
+CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
+{
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
+    if ( !info.second ) {
+        info.second = GetTSE_LoadLock(blob_id);
+        if ( info.first != -1 ) {
+            info.second->SetBlobVersion(info.first);
+        }
+    }
+    return info.second;
+}
+
+
+bool CReaderRequestResult::IsBlobLoaded(const CBlob_id& blob_id)
+{
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
+    if ( !info.second ) {
+        info.second = GetTSE_LoadLockIfLoaded(blob_id);
+    }
+    return info.second && info.second.IsLoaded();
+}
+
+
+bool CReaderRequestResult::SetBlobVersion(const CBlob_id& blob_id,
+                                          TBlobState blob_version)
+{
+    bool changed = false;
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
+    if ( info.first != blob_version ) {
+        info.first = blob_version;
+        changed = true;
+    }
+    if ( info.second && info.second->GetBlobVersion() != blob_version ) {
+        info.second->SetBlobVersion(blob_version);
+        changed = true;
+    }
+    return changed;
+}
+
+
+bool CReaderRequestResult::SetNoBlob(const CBlob_id& blob_id,
+                                     TBlobState blob_state)
+{
+    CLoadLockBlob blob(*this, blob_id);
+    if ( blob.IsLoaded() ) {
+        return false;
+    }
+    if ( blob.GetBlobState() == blob_state ) {
+        return false;
+    }
+    blob.SetBlobState(blob_state);
+    blob.SetLoaded();
+    return true;
+}
+
+
+void CReaderRequestResult::ReleaseNotLoadedBlobs(void)
 {
     for ( TBlobLoadLocks::iterator it = m_BlobLoadLocks.begin(); it != m_BlobLoadLocks.end(); ) {
-        bool loaded;
-        {
-            CLoadLockBlob blob(*this, it->first);
-            loaded = CProcessor::IsLoaded(it->first, CProcessor::kMain_ChunkId, blob);
-        }
-        if ( loaded ) {
-            ++it;
+        if ( it->second.second && !it->second.second.IsLoaded() ) {
+            m_BlobLoadLocks.erase(it++);
         }
         else {
-            m_BlobLoadLocks.erase(it++);
+            ++it;
         }
     }
 }
@@ -784,6 +838,17 @@ CStandaloneRequestResult::GetTSE_LoadLock(const CBlob_id& blob_id)
     }
     CDataLoader::TBlobId key(new CBlob_id(blob_id));
     return m_DataSource->GetTSE_LoadLock(key);
+}
+
+
+CTSE_LoadLock
+CStandaloneRequestResult::GetTSE_LoadLockIfLoaded(const CBlob_id& blob_id)
+{
+    if ( !m_DataSource ) {
+        m_DataSource = new CDataSource;
+    }
+    CDataLoader::TBlobId key(new CBlob_id(blob_id));
+    return m_DataSource->GetTSE_LoadLockIfLoaded(key);
 }
 
 

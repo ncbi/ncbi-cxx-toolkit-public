@@ -422,7 +422,7 @@ bool CProcessor::IsLoaded(const TBlobId& /*blob_id*/,
 
 
 void CProcessor::SetLoaded(CReaderRequestResult& result,
-                           const TBlobId& /*blob_id*/,
+                           const TBlobId& blob_id,
                            TChunkId chunk_id,
                            CLoadLockBlob& blob)
 {
@@ -955,7 +955,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                     }
                     else {
                         prc->SaveNoBlob(result, blob_id, chunk_id,
-                                        blob, writer);
+                                        blob.GetBlobState(), writer);
                     }
                 }
             }
@@ -1036,7 +1036,8 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
                 dynamic_cast<const CProcessor_St_SE*>
                 (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
             if ( prc ) {
-                prc->SaveNoBlob(result, blob_id, chunk_id, blob, writer);
+                prc->SaveNoBlob(result, blob_id, chunk_id,
+                                blob.GetBlobState(), writer);
             }
         }
         SetLoaded(result, blob_id, chunk_id, blob);
@@ -1154,7 +1155,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
 void CProcessor_St_SE::SaveNoBlob(CReaderRequestResult& result,
                                   const TBlobId& blob_id,
                                   TChunkId chunk_id,
-                                  const CLoadLockBlob& blob,
+                                  TBlobState blob_state,
                                   CWriter* writer) const
 {
     _ASSERT(writer);
@@ -1163,7 +1164,7 @@ void CProcessor_St_SE::SaveNoBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    WriteBlobState(**stream, blob.GetBlobState());
+    WriteBlobState(**stream, blob_state);
     stream->Close();
 }
 

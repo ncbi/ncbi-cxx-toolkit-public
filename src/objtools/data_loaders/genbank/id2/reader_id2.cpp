@@ -61,6 +61,7 @@
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 
 #include <serial/iterator.hpp>
+#include <serial/objistrasnb.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
 
@@ -109,7 +110,7 @@ static void SetRandomFail(CNcbiIostream& stream, CId2Reader::TConn conn)
     if ( ++value <= GENBANK_ID2_RANDOM_FAILS_RECOVER ) {
         return;
     }
-    if ( random() % GENBANK_ID2_RANDOM_FAILS_FREQUENCY == 0 ) {
+    if ( rand() % GENBANK_ID2_RANDOM_FAILS_FREQUENCY == 0 ) {
         value = 0;
         stream.setstate(ios::badbit);
     }
@@ -447,7 +448,8 @@ void CId2Reader::x_ReceiveReply(TConn conn, CID2_Reply& reply)
 {
     CConn_IOStream& stream = *x_GetConnection(conn);
     SetRandomFail(stream, conn);
-    stream >> MConnFormat >> reply;
+    CObjectIStreamAsnBinary in(stream);
+    CId2ReaderBase::x_ReceiveReply(in, conn, reply);
     if ( !stream ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
                    "failed to receive reply: "+

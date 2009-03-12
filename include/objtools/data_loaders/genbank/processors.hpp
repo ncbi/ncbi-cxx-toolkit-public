@@ -180,7 +180,7 @@ public:
     void SaveNoBlob(CReaderRequestResult& result,
                     const TBlobId& blob_id,
                     TChunkId chunk_id,
-                    const CLoadLockBlob& blob,
+                    TBlobState blob_state,
                     CWriter* writer) const;
 };
 

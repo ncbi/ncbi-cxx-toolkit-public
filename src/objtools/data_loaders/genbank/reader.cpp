@@ -71,9 +71,15 @@ void CReader::OpenInitialConnection(bool force)
     if ( GetMaximumConnections() > 0 && (force || GetPreopenConnection()) ) {
         for ( int attempt = 1; ; ++attempt ) {
             try {
-                CConn conn(this);
-                x_ConnectAtSlot(conn);
-                conn.Release();
+                TConn conn = x_AllocConnection();
+                try {
+                    x_ConnectAtSlot(conn);
+                }
+                catch ( ... ) {
+                    x_AbortConnection(conn);
+                    throw;
+                }
+                x_ReleaseConnection(conn);
                 return;
             }
             catch ( CLoaderException& exc ) {
@@ -427,15 +433,11 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( info.Matches(*it->first, mask, sel) ) {
-            {
-                CLoadLockBlob blob(result, *it->first);
-                if ( blob.IsLoaded() ) {
-                    continue;
-                }
+            if ( result.IsBlobLoaded(*it->first) ) {
+                continue;
             }
             m_Dispatcher->LoadBlob(result, *it->first);
-            CLoadLockBlob blob(result, *it->first);
-            if ( blob.IsLoaded() ) {
+            if ( result.IsBlobLoaded(*it->first) ) {
                 ++loaded_count;
             }
         }
@@ -477,29 +479,22 @@ bool CReader::LoadBlobSet(CReaderRequestResult& result,
 
 void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
                                const TBlobId& blob_id,
-                               TChunkId chunk_id)
-{
-    CLoadLockBlob blob(result, blob_id);
-    SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-}
-
-
-void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
-                               const TBlobId& blob_id,
                                TChunkId chunk_id,
-                               CLoadLockBlob& blob)
+                               TBlobState blob_state)
 {
-    blob.SetBlobState(CBioseq_Handle::fState_no_data);
-    CWriter* writer = m_Dispatcher->GetWriter(result, CWriter::eBlobWriter);
-    if ( writer ) {
-        const CProcessor_St_SE* prc =
-            dynamic_cast<const CProcessor_St_SE*>
-            (&m_Dispatcher->GetProcessor(CProcessor::eType_St_Seq_entry));
-        if ( prc ) {
-            prc->SaveNoBlob(result, blob_id, chunk_id, blob, writer);
+    blob_state |= CBioseq_Handle::fState_no_data;
+    if ( result.SetNoBlob(blob_id, blob_state) ) {
+        CWriter* writer =
+            m_Dispatcher->GetWriter(result, CWriter::eBlobWriter);
+        if ( writer ) {
+            const CProcessor_St_SE* prc =
+                dynamic_cast<const CProcessor_St_SE*>
+                (&m_Dispatcher->GetProcessor(CProcessor::eType_St_Seq_entry));
+            if ( prc ) {
+                prc->SaveNoBlob(result, blob_id, chunk_id, blob_state, writer);
+            }
         }
     }
-    CProcessor::SetLoaded(result, blob_id, chunk_id, blob);
 }
 
 
@@ -568,8 +563,12 @@ void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
                                     const TBlobId& blob_id,
                                     TBlobVersion version) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    SetAndSaveBlobVersion(result, blob_id, blob, version);
+    if ( result.SetBlobVersion(blob_id, version) ) {
+        CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
+        if( writer ) {
+            writer->SaveBlobVersion(result, blob_id, version);
+        }
+    }
 }
 
 
@@ -695,22 +694,6 @@ void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
-void CReader::SetAndSaveBlobVersion(CReaderRequestResult& result,
-                                    const TBlobId& blob_id,
-                                    CLoadLockBlob& blob,
-                                    TBlobVersion version) const
-{
-    if ( blob.IsSetBlobVersion() && blob.GetBlobVersion() == version ) {
-        return;
-    }
-    blob.SetBlobVersion(version);
-    CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
-    if( writer ) {
-        writer->SaveBlobVersion(result, blob_id, version);
-    }
-}
-
-
 int CReader::ReadInt(CNcbiIstream& stream)
 {
     int value;
@@ -753,6 +736,65 @@ CReaderCacheManager::SReaderCacheInfo::SReaderCacheInfo(ICache& cache, ECacheTyp
 CReaderCacheManager::SReaderCacheInfo::~SReaderCacheInfo(void)
 {
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// CReaderAllocatedConnection
+/////////////////////////////////////////////////////////////////////////////
+
+CReaderAllocatedConnection::CReaderAllocatedConnection(CReaderRequestResult& result, CReader* reader)
+    : m_Result(0), m_Reader(0), m_Conn(0)
+{
+    if ( !reader ) {
+        return;
+    }
+    CReaderAllocatedConnection* pconn = result.m_AllocatedConnection;
+    if ( !pconn ) {
+        result.ReleaseNotLoadedBlobs();
+        m_Conn = reader->x_AllocConnection();
+        m_Reader = reader;
+        m_Result = &result;
+        result.m_AllocatedConnection = this;
+    }
+    else if ( pconn->m_Reader == reader ) {
+        // reuse allocated connection
+        m_Conn = pconn->m_Conn;
+        pconn->m_Conn = 0;
+        pconn->m_Reader = 0;
+        pconn->m_Result = 0;
+        m_Reader = reader;
+        m_Result = &result;
+        result.m_AllocatedConnection = this;
+    }
+    else {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Only one reader can allocate connection for a result");
+    }
+}
+ 
+
+CReaderAllocatedConnection::~CReaderAllocatedConnection(void)
+{
+    if ( m_Result ) {
+        _ASSERT(m_Result->m_AllocatedConnection == this);
+        _ASSERT(m_Reader);
+        m_Result->ReleaseNotLoadedBlobs();
+        m_Result->m_AllocatedConnection = 0;
+        m_Reader->x_AbortConnection(m_Conn);
+    }
+}
+
+
+void CReaderAllocatedConnection::Release(void)
+{
+    if ( m_Result ) {
+        _ASSERT(m_Result->m_AllocatedConnection == this);
+        _ASSERT(m_Reader);
+        m_Result->m_AllocatedConnection = 0;
+        m_Result = 0;
+        m_Reader->x_ReleaseConnection(m_Conn);
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

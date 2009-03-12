@@ -484,7 +484,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
         if ( gi != 0 ) {
             _TRACE("ResolveGi to Acc: " << gi);
 
-            CConn conn(this);
+            CConn conn(result, this);
             {{
                 CDB_Connection* db_conn = x_GetConnection(conn);
     
@@ -570,7 +570,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
 
     int result_count = 0;
     int named_gi = 0;
-    CConn conn(this);
+    CConn conn(result, this);
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
 
@@ -823,7 +823,7 @@ void CPubseqReader::GetSeq_idSeq_ids(CReaderRequestResult& result,
 }
 
 
-void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
+void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  CLoadLockSeq_ids& ids)
 {
@@ -841,7 +841,7 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
 
     _TRACE("ResolveGi to Seq-ids: " << gi);
 
-    CConn conn(this);
+    CConn conn(result, this);
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
     
@@ -905,7 +905,7 @@ void CPubseqReader::GetBlobVersion(CReaderRequestResult& result,
                                    const CBlob_id& blob_id)
 {
     try {
-        CConn conn(this);
+        CConn conn(result, this);
         {{
             CDB_Connection* db_conn = x_GetConnection(conn);
             AutoPtr<I_BaseCmd> cmd
@@ -938,7 +938,14 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
                             const TBlobId& blob_id,
                             TChunkId chunk_id)
 {
-    CConn conn(this);
+    CConn conn(result, this);
+    if ( chunk_id == CProcessor::kMain_ChunkId ) {
+        CLoadLockBlob blob(result, blob_id);
+        if ( blob.IsLoaded() ) {
+            conn.Release();
+            return;
+        }
+    }
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
         AutoPtr<I_BaseCmd> cmd(x_SendRequest(blob_id, db_conn, RPC_GET_ASN));

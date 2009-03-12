@@ -136,31 +136,35 @@ bool CId1ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                               const TBlobId& blob_id)
 {
-    TChunkId chunk_id = CProcessor::kMain_ChunkId;
-    CLoadLockBlob blob(result, blob_id);
-    if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
+    if ( result.IsBlobLoaded(blob_id) ) {
         return true;
     }
 
     if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
-        dynamic_cast<const CProcessor_ExtAnnot&>
-            (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
-            .Process(result, blob_id, chunk_id);
+        const int chunk_id = CProcessor::kMain_ChunkId;
+        CLoadLockBlob blob(result, blob_id);
+        if ( !CProcessor_ExtAnnot::IsLoaded(blob_id, chunk_id, blob) ) {
+            dynamic_cast<const CProcessor_ExtAnnot&>
+                (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
+                .Process(result, blob_id, chunk_id);
+        }
+        _ASSERT(CProcessor_ExtAnnot::IsLoaded(blob_id, chunk_id, blob));
         return true;
     }
 
     try {
-        GetBlob(result, blob_id, chunk_id);
+        GetBlob(result, blob_id, CProcessor::kMain_ChunkId);
     }
     catch ( CLoaderException& exc ) {
         if ( exc.GetErrCode() == exc.ePrivateData ) {
             // leave tse empty
+            CLoadLockBlob blob(result, blob_id);
             blob.SetBlobState(CBioseq_Handle::fState_confidential);
-            SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
+            SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, blob);
         }
         else if ( exc.GetErrCode() == exc.eNoData ) {
             // leave tse empty
-            SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
+            SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId);
         }
         else if ( exc.GetErrCode() == exc.eNoConnection ) {
             return false;
@@ -169,7 +173,7 @@ bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
             throw;
         }
     }
-    _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+    _ASSERT(result.IsBlobLoaded(blob_id));
     return true;
 }
 
@@ -190,7 +194,7 @@ bool CId1ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
              exc.GetErrCode() == exc.eNoData ) {
             // leave version zero
             if ( !blob.IsSetBlobVersion() ) {
-                SetAndSaveBlobVersion(result, blob_id, blob, 0);
+                SetAndSaveBlobVersion(result, blob_id, 0);
             }
         }
         else if ( exc.GetErrCode() == exc.eNoConnection ) {

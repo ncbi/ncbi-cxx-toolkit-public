@@ -155,7 +155,8 @@ public:
     bool LoadChunk(CReaderRequestResult& result,
                    const TBlobId& blob_id, TChunkId chunk_id);
 
-    bool ReadSeq_ids(const string& key, CLoadLockSeq_ids& ids);
+    bool ReadSeq_ids(CReaderRequestResult& result,
+                     const string& key, CLoadLockSeq_ids& ids);
 
     int GetRetryCount(void) const;
     bool MayBeSkippedOnErrors(void) const;

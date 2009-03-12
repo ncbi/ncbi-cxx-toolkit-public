@@ -63,6 +63,7 @@ class CLoadInfoLock;
 class CLoadLock_Base;
 class CReaderRequestResult;
 class CReaderRequestConn;
+class CReaderAllocatedConnection;
 
 /////////////////////////////////////////////////////////////////////////////
 // resolved information classes
@@ -551,17 +552,26 @@ public:
     //typedef CLoadInfoBlob TInfoBlob;
     typedef CLoadLockBlob TLockBlob;
     typedef int TLevel;
+    typedef int TBlobVersion;
+    typedef int TBlobState;
 
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id) = 0;
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id) = 0;
     virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id) = 0;
     //virtual CRef<TInfoBlob>     GetInfoBlob(const TKeyBlob& blob_id) = 0;
     CTSE_LoadLock GetBlobLoadLock(const TKeyBlob& blob_id);
+    bool IsBlobLoaded(const TKeyBlob& blob_id);
+
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id) = 0;
+    virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id) = 0;
 
     typedef vector<CBlob_id> TLoadedBlob_ids;
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                    TLoadedBlob_ids& blob_ids) const;
+
+    bool SetBlobVersion(const TKeyBlob& blob_id, TBlobVersion version);
+    bool SetNoBlob(const TKeyBlob& blob_id, TBlobState blob_state);
+    void ReleaseNotLoadedBlobs(void);
 
     // load ResultBlob
     //virtual CRef<CTSE_Info> GetTSE_Info(const TLockBlob& blob);
@@ -623,15 +633,18 @@ public:
     };
 
     double GetCurrentRequestTime(double time);
-    void ReleaseNotLoadedBlobs();
 
 private:
     friend class CLoadInfoLock;
+    friend class CReaderAllocatedConnection;
 
     void ReleaseLoadLock(const CRef<CLoadInfo>& info);
 
     typedef map<CRef<CLoadInfo>, CLoadInfoLock*> TLockMap;
-    typedef map<CBlob_id, CTSE_LoadLock> TBlobLoadLocks;
+    typedef pair<TBlobVersion, CTSE_LoadLock> TBlobLoadInfo;
+    typedef map<CBlob_id, TBlobLoadInfo> TBlobLoadLocks;
+
+    TBlobLoadInfo& x_GetBlobLoadInfo(const TKeyBlob& blob_id);
 
     TLockMap        m_LockMap;
     TTSE_LockSet    m_TSE_LockSet;
@@ -641,6 +654,7 @@ private:
     CSeq_id_Handle  m_RequestedId;
     int             m_RecursionLevel;
     double          m_RecursiveTime;
+    CReaderAllocatedConnection* m_AllocatedConnection;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
@@ -660,12 +674,15 @@ public:
     virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id);
 
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
+    virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id);
 
     virtual operator CInitMutexPool&(void);
 
 
     virtual TConn GetConn(void);
     virtual void ReleaseConn(void);
+
+    void ReleaseTSE_LoadLocks();
 
     CInitMutexPool    m_MutexPool;
 

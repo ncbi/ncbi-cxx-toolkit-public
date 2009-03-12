@@ -116,6 +116,7 @@ public:
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const CSeq_id_Handle& id);
     virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
+    virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id);
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                    TLoadedBlob_ids& blob_ids) const;
 
@@ -1011,10 +1012,10 @@ CGBDataLoader::GetBlobById(const TBlobId& id)
     const TRealBlobId& blob_id = GetRealBlobId(id);
 
     CGBReaderRequestResult result(this, CSeq_id_Handle());
-    CLoadLockBlob blob(result, blob_id);
-    if ( !blob.IsLoaded() )
+    if ( !result.IsBlobLoaded(blob_id) )
         m_Dispatcher->LoadBlob(result, blob_id);
-
+    CLoadLockBlob blob(result, blob_id);
+    _ASSERT(blob.IsLoaded());
     return blob;
 }
 
@@ -1139,8 +1140,8 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
     }
 
     CGBReaderRequestResult result(this, sih);
-    CLoadLockBlob_ids blobs(result, sih, sel);
     m_Dispatcher->LoadBlobs(result, sih, mask, sel);
+    CLoadLockBlob_ids blobs(result, sih, sel);
     _ASSERT(blobs.IsLoaded());
 
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
@@ -1358,6 +1359,13 @@ CTSE_LoadLock CGBReaderRequestResult::GetTSE_LoadLock(const TKeyBlob& blob_id)
 {
     CGBDataLoader::TBlobId id(new TKeyBlob(blob_id));
     return GetLoader().GetDataSource()->GetTSE_LoadLock(id);
+}
+
+
+CTSE_LoadLock CGBReaderRequestResult::GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id)
+{
+    CGBDataLoader::TBlobId id(new TKeyBlob(blob_id));
+    return GetLoader().GetDataSource()->GetTSE_LoadLockIfLoaded(id);
 }
 
 
