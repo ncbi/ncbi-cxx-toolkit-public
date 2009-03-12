@@ -113,7 +113,9 @@ SeqFeatData ::= CHOICE {
         turn  (3) } ,       -- beta or gamma turn
     non-std-residue VisibleString ,  -- non-standard residue here in seq
     het Heterogen ,         -- cofactor, prosthetic grp, etc, bound to seq
-    biosrc BioSource }
+    biosrc BioSource,
+    clone Clone-ref
+}
 
 SeqFeatXref ::= SEQUENCE {       -- both optional because can have one or both
     id Feat-id OPTIONAL ,        -- the feature copied
@@ -183,6 +185,54 @@ Imp-feat ::= SEQUENCE {
 Gb-qual ::= SEQUENCE {
     qual VisibleString ,
     val VisibleString }
+
+
+--*** Clone-ref ***********************************************
+--*
+--*  Specification of clone features
+--*
+
+Clone-ref ::= SEQUENCE {
+    name VisibleString,        -- Official clone symbol
+    library VisibleString OPTIONAL,     -- Library name
+
+    concordant BOOLEAN DEFAULT FALSE, -- OPTIONAL?
+    unique BOOLEAN DEFAULT FALSE, -- OPTIONAL?
+    placement-method INTEGER {
+        end-seq (0),           -- Clone placed by end sequence
+        insert-alignment (1),  -- Clone placed by insert alignment
+        sts (2),               -- Clone placed by STS
+        fish (3),
+        fingerprint (4),
+        other (255)
+    } OPTIONAL,
+    clone-seq Clone-seq-set OPTIONAL
+}
+
+Clone-seq-set ::= SET OF Clone-seq
+
+
+Clone-seq ::= SEQUENCE {
+    type INTEGER {
+        insert (0),
+        end (1),
+        other (255)
+    },
+    confidence INTEGER {
+        multiple (0),     -- Multiple hits
+        na (1),           -- Unspecified
+        nohit-rep (2),    -- No hits, repetitive
+        nohitnorep (3),   -- No hits, not repetitive
+        other-chrm (4),   -- Hit on different chromosome
+        unique (5),
+        virtual (6),      -- Virtual (hasn't been sequenced)
+        other (255)
+    } OPTIONAL,
+    location Seq-loc,     -- location on sequence
+    seq Seq-loc OPTIONAL, -- clone sequence location
+    align-id Dbtag OPTIONAL
+}
+
 
 END 
 
