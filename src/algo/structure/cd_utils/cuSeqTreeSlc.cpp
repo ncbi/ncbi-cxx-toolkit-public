@@ -159,8 +159,12 @@ void SLC_TreeAlgorithm::Join(int idmin, int jdmin, double ilen, double jlen) {
     }
 
     if (idmin < 0 || idmin > maxIndex || jdmin < 0 || jdmin > maxIndex || m_nextNode < 0 || m_nextNode > maxIndex+1) {
-        cerr << "Error:  Out of range index in Join:  " << idmin << " " 
-             << jdmin << " " << m_nextNode << "  Max allowed index:  " << maxIndex << endl;
+        //  Don't print message unless there's a serious problem.  
+        //  [ij]dmin = 'USED_ROW' here does not appear to cause issues.
+        if ((idmin != USED_ROW) && (jdmin != USED_ROW)) {
+            cerr << "Warning:  Out of range index in Join:  " << idmin << " " 
+                 << jdmin << " " << m_nextNode << "  Max allowed index:  " << maxIndex << endl;
+        }
         return;
     }
  
