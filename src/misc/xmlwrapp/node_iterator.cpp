@@ -47,8 +47,8 @@
 #include "pimpl_base.hpp"
 
 // xmlwrapp includes
-#include <util/xmlwrapp/node.hpp>
-#include <util/xmlwrapp/nodes_view.hpp>
+#include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/nodes_view.hpp>
 
 // standard includes
 #include <algorithm>

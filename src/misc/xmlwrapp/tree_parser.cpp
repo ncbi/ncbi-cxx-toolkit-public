@@ -43,8 +43,8 @@
 **/
 
 // xmlwrapp includes
-#include <util/xmlwrapp/tree_parser.hpp>
-#include <util/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/tree_parser.hpp>
+#include <misc/xmlwrapp/document.hpp>
 #include "utility.hpp"
 
 // libxml includes

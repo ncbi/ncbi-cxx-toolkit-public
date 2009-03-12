@@ -42,7 +42,7 @@
 **/
 
 // xmlwrapp includes
-#include <util/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/attributes.hpp>
 #include "ait_impl.hpp"
 #include "pimpl_base.hpp"
 

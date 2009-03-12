@@ -42,8 +42,8 @@
 **/
 
 // xmlwrapp includes
-#include <util/xmlwrapp/document.hpp>
-#include <util/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/node.hpp>
 #include "utility.hpp"
 #include "dtd_impl.hpp"
 #include "node_manip.hpp"

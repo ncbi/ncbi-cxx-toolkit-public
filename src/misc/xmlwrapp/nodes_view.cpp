@@ -39,7 +39,7 @@
 
 
 // xmlwrapp includes
-#include <util/xmlwrapp/nodes_view.hpp>
+#include <misc/xmlwrapp/nodes_view.hpp>
 
 // definition include
 #include "node_iterator.hpp"

@@ -45,7 +45,7 @@
 #define _xmlwrapp_attr_iterator_h_
 
 // xmlwrapp includes
-#include <util/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/attributes.hpp>
 
 #include "pimpl_base.hpp"
 

@@ -46,7 +46,7 @@
 #define _xmlwrapp_node_iterator_h_
 
 // xmlwrapp includes
-#include <util/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/node.hpp>
 
 // libxml includes
 #include <libxml/tree.h>

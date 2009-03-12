@@ -43,9 +43,9 @@
 **/
 
 // xmlwrapp includes
-#include <util/xmlwrapp/node.hpp>
-#include <util/xmlwrapp/nodes_view.hpp>
-#include <util/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/nodes_view.hpp>
+#include <misc/xmlwrapp/attributes.hpp>
 #include "utility.hpp"
 #include "ait_impl.hpp"
 #include "node_manip.hpp"

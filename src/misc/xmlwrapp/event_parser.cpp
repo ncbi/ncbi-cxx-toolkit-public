@@ -48,8 +48,8 @@
 #endif
 
 // xmlwrapp includes
-#include <util/xmlwrapp/event_parser.hpp>
-#include <util/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/event_parser.hpp>
+#include <misc/xmlwrapp/node.hpp>
 #include "utility.hpp"
 
 // libxml includes

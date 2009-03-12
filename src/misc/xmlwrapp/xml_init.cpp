@@ -42,7 +42,7 @@
 **/
 
 // defintion include
-#include <util/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/xml_init.hpp>
 
 // libxml includes
 #include <libxml/globals.h>

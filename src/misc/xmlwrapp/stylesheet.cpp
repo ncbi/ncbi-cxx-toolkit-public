@@ -42,9 +42,9 @@
 **/
 
 // xmlwrapp includes
-#include <util/xmlwrapp/stylesheet.hpp>
-#include <util/xmlwrapp/document.hpp>
-#include <util/xmlwrapp/tree_parser.hpp>
+#include <misc/xmlwrapp/stylesheet.hpp>
+#include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/tree_parser.hpp>
 
 #include "result.hpp"
 #include "utility.hpp"

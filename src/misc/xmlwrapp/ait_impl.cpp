@@ -45,7 +45,7 @@
 // xmlwrapp includes
 #include "ait_impl.hpp"
 #include "utility.hpp"
-#include <util/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/attributes.hpp>
 
 // standard includes
 #include <algorithm>

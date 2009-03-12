@@ -42,7 +42,7 @@
 **/
 
 // defintion include
-#include <util/xmlwrapp/xslt_init.hpp>
+#include <misc/xmlwrapp/xslt_init.hpp>
 
 // libxslt includes
 #include <libxslt/xslt.h>
