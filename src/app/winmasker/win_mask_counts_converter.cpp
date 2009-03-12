@@ -49,12 +49,14 @@ CWinMaskCountsConverter::CWinMaskCountsConverter(
     const string & counts_oformat )
     : istat( 0 ), ofname( output_fname ), oformat( counts_oformat )
 {
-    if( input_fname == "" ) {
+    // if( input_fname == "" ) {
+    if( input_fname == "-" ) {
         NCBI_THROW( 
                 Exception, eBadOption, "input file name must be non-empty" );
     }
 
-    if( output_fname == "" ) {
+    // if( output_fname == "" ) {
+    if( output_fname == "-" ) {
         NCBI_THROW( 
                 Exception, eBadOption, "output file name must be non-empty" );
     }

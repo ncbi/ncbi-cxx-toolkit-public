@@ -82,6 +82,7 @@ void CWinMaskApplication::Init(void)
                              "file with unit counts"
                              "(required if -mk_counts is false)",
                              CArgDescriptions::eString, "" );
+    /*
     arg_desc->AddDefaultKey( kInput, "input_file_name",
                              "input file name "
                              "(not optional if used with -mk_counts option)",
@@ -89,6 +90,14 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( kOutput, "output_file_name",
                              "output file name",
                              CArgDescriptions::eString, "" );
+    */
+    arg_desc->AddDefaultKey( kInput, "input_file_name",
+                             "input file name "
+                             "(not optional if used with -mk_counts or -convert options)",
+                             CArgDescriptions::eInputFile, "-" );
+    arg_desc->AddDefaultKey( kOutput, "output_file_name",
+                             "output file name",
+                             CArgDescriptions::eOutputFile, "-" );
     arg_desc->AddDefaultKey( "checkdup", "check_duplicates",
                              "check for duplicate sequences",
                              CArgDescriptions::eBoolean, "false" );

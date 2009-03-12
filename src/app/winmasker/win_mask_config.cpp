@@ -73,11 +73,13 @@ CWinMaskConfig::x_GetWriter(const CArgs& args,
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args )
     : is( !args["mk_counts"].AsBoolean() && args[kInputFormat].AsString() != "blastdb" ? 
-          ( !args[kInput].AsString().empty() 
+          // ( !args[kInput].AsString().empty() 
+          ( !(args[kInput].AsString() == "-")
             ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
       os( !args["mk_counts"].AsBoolean() ?
-          ( !args[kOutput].AsString().empty() 
+          // ( !args[kOutput].AsString().empty() 
+          ( !(args[kOutput].AsString() == "-")
             ? new CNcbiOfstream( args[kOutput].AsString().c_str() )
             : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
       lstat_name( args["ustat"].AsString() ),
