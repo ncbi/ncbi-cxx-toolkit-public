@@ -22,7 +22,8 @@ HOSTED_LIBS    = xalnmgr   \
                  seqmasks_io \
                  xobjedit  \
                  xcleanup  \
-                 valerr
+                 valerr    \
+                 blast_services
 
 DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
 
