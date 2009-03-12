@@ -32,10 +32,10 @@ OPTIONS
 
     -in input_file_name
 
-        default: <empty>
+        default: "-"
 
-        Name of the input file. If this option is not provided, standard
-        input is used.
+        Name of the input file (or "-" for standard input). If this option 
+        is not provided, standard input is used.
 
     -level dust_level
 
@@ -73,10 +73,10 @@ OPTIONS
 
     -out output_file_name
 
-        default: <empty>
+    default: "-"
 
-        Name of the output file. If this option is not provided, standard
-        output is used.
+        Name of the output file ( or "-" for standard output ). If this option 
+        is not provided, standard output is used.
 
     -window dust_window
 
