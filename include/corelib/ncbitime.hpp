@@ -351,7 +351,7 @@ public:
     ///   Time in the GMT time_t format.
     /// @param tzp
     ///   What time zone precision to use.
-	/// @sa SetTimeT, GetTimeT
+    /// @sa SetTimeT, GetTimeT
     explicit CTime(time_t t, ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Conversion constructor for "struct tm" local time representation.
@@ -363,7 +363,7 @@ public:
     ///   Time in "struct tm" format.
     /// @param tzp
     ///   What time zone precision to use.
-	/// @sa SetTimeTM, GetTimeTM
+    /// @sa SetTimeTM, GetTimeTM
     CTime(const struct tm& t, ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Constructor.
@@ -469,10 +469,10 @@ public:
     ///
     /// @param t
     ///   Time to set in time object. This time always represents a local
-	///   time in current time zone. Time object will be set to have eLocal
-	///   time format, and nanoseconds will be truncated. Note, that all 
-	///   significant fields in the time structure should be set and have
-	///   correct vales, otherwise exception will be thrown.
+    ///   time in current time zone. Time object will be set to have eLocal
+    ///   time format, and nanoseconds will be truncated. Note, that all 
+    ///   significant fields in the time structure should be set and have
+    ///   correct vales, otherwise exception will be thrown.
     /// @return
     ///   Time object that is set.
     CTime& SetTimeTM(const struct tm& t);
@@ -480,7 +480,7 @@ public:
     /// Get time in "struct tm" format.
     ///
     /// @return
-	///   Time in "struct tm" format (local time).
+    ///   Time in "struct tm" format (local time).
     struct tm GetTimeTM(void) const;
 
     /// Set time using database format time, TDBTimeU.

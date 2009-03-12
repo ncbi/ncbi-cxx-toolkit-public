@@ -1142,8 +1142,8 @@ time_t CTime::GetTimeT(void) const
 
 struct tm CTime::GetTimeTM(void) const
 {
-	CTime lt = GetLocalTime();
-	struct tm t;
+    CTime lt = GetLocalTime();
+    struct tm t;
     t.tm_sec   = lt.Second();
     t.tm_min   = lt.Minute();
     t.tm_hour  = lt.Hour();
@@ -1153,7 +1153,7 @@ struct tm CTime::GetTimeTM(void) const
     t.tm_wday  = lt.DayOfWeek();
     t.tm_yday  = -1;
     t.tm_isdst = -1;
-	return t;
+    return t;
 }
 
 

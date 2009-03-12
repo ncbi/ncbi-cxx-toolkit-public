@@ -931,18 +931,18 @@ static void s_TestGMT(void)
         struct tm l_ = tloc.GetTimeTM();
         LOG_POST(string("asctime = ") + asctime(&l_));
         CTime tmp(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
-		assert(tmp.GetTimeZone() == CTime::eGmt);
-		tmp.SetTimeTM(l_);
-		assert(tmp.GetTimeZone() == CTime::eLocal);
+        assert(tmp.GetTimeZone() == CTime::eGmt);
+        tmp.SetTimeTM(l_);
+        assert(tmp.GetTimeZone() == CTime::eLocal);
         LOG_POST(STR(tloc) + " == " + STR(tmp));
-		assert(tloc.AsString() == tmp.AsString());
+        assert(tloc.AsString() == tmp.AsString());
 
         CTime tgmt(tloc.GetTimeT());
         struct tm g_ = tgmt.GetTimeTM();
         LOG_POST(string("asctime = ") + asctime(&g_));
-		tmp.SetTimeTM(g_);
-		assert(tmp.GetTimeZone() == CTime::eLocal);
-		assert(tgmt.AsString() != tloc.AsString());
+        tmp.SetTimeTM(g_);
+        assert(tmp.GetTimeZone() == CTime::eLocal);
+        assert(tgmt.AsString() != tloc.AsString());
     }}
     //------------------------------------------------------------------------
     {{   
