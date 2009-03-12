@@ -46,10 +46,10 @@
 #define _xmlwrapp_node_h_
 
 // xmlwrapp includes
-#include <util/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/xml_init.hpp>
 
 // hidden stuff
-#include <util/xmlwrapp/impl/_cbfo.hpp>
+#include <misc/xmlwrapp/impl/_cbfo.hpp>
 
 // standard includes
 #include <cstddef>

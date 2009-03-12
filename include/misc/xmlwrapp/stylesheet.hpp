@@ -45,8 +45,8 @@
 #define _xsltwrapp_stylesheet_h_
 
 // xmlwrapp includes
-#include <util/xmlwrapp/xslt_init.hpp>
-#include <util/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/xslt_init.hpp>
+#include <misc/xmlwrapp/document.hpp>
 
 // standard includes
 #include <map>

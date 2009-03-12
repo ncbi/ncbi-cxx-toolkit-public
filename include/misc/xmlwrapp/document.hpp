@@ -45,8 +45,8 @@
 #define _xmlwrapp_document_h_
 
 // xmlwrapp includes
-#include <util/xmlwrapp/xml_init.hpp>
-#include <util/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/node.hpp>
 
 // standard includes
 #include <iosfwd>

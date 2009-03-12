@@ -40,12 +40,12 @@
 #ifndef _xmlwrapp_xmlwrapp_h_
 #define _xmlwrapp_xmlwrapp_h_
 
-#include <util/xmlwrapp/xml_init.hpp>
-#include <util/xmlwrapp/nodes_view.hpp>
-#include <util/xmlwrapp/node.hpp>
-#include <util/xmlwrapp/attributes.hpp>
-#include <util/xmlwrapp/document.hpp>
-#include <util/xmlwrapp/tree_parser.hpp>
-#include <util/xmlwrapp/event_parser.hpp>
+#include <misc/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/nodes_view.hpp>
+#include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/tree_parser.hpp>
+#include <misc/xmlwrapp/event_parser.hpp>
 
 #endif
