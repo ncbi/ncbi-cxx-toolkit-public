@@ -573,13 +573,13 @@ EOF_launch
                     elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
                         echo "SKP --  \$x_cmd"
                         echo "SKP --  \$x_cmd" >> \$res_log
-                        count_absent=\`expr $count_absent + 1\`
+                        count_absent=\`expr \$count_absent + 1\`
                         test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
 
                     elif echo "\$exec_time" | egrep 'Maximum execution .* is exceeded' >/dev/null || egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
                         echo "TO  --  \$x_cmd     (\$exec_time)"
                         echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
-                        count_timeout=\`expr $count_timeout + 1\`
+                        count_timeout=\`expr \$count_timeout + 1\`
                         test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
                     elif test \$result -eq 0; then
