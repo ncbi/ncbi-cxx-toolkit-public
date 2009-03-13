@@ -21,7 +21,7 @@ Usage() {
 case "$1" in
   8            ) search=/opt/intel/compiler8* ;;
   8.0          ) search=/opt/intel/compiler80 ;;
-  *.*.*        ) search=/opt/intel/cc*/$1     ;;
+  [1-9].*.*    ) search=/opt/intel/cc*/$1     ;;
   9* | 1[0-9]* ) search=/opt/intel/cc*/$1.*   ;;
   *            ) search=                      ;;
 esac
