@@ -372,12 +372,13 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
             return;
         }
 
-        // 2/ [make] equal to the (reasonably-sized) adjacent part
+        // 2/ [make] equal to the [reasonably-sized, if copy] adjacent part
         //    of the internal buffer with the data that have just been read?
-        if (how != ePushback_NoCopy
-            &&  buf_size <= (del_ptr
-                             ? CPushback_Streambuf::kMinBufSize
-                             : CPushback_Streambuf::kMinBufSize >> 4)) {
+        if (how == ePushback_Stepback
+            ||  (how == ePushback_Copy
+                 &&  buf_size <= (del_ptr
+                                  ? CPushback_Streambuf::kMinBufSize
+                                  : CPushback_Streambuf::kMinBufSize >> 4))) {
             CT_CHAR_TYPE* bp = sb->gptr();
             streamsize avail = (streamsize)(bp - sb->m_Buf);
             streamsize take  = avail < buf_size ? avail : buf_size;
