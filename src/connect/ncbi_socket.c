@@ -1817,7 +1817,9 @@ static EIO_Status s_Recv(SOCK    sock,
             assert(poll.event == eIO_Read);
             if (status != eIO_Success)
                 return status;
-            assert(poll.revent == eIO_Read  ||  poll.revent == eIO_Close);
+            if (poll.revent == eIO_Close)
+                return eIO_Unknown;
+            assert(poll.revent == eIO_Read);
             continue/*read again*/;
         }
 
@@ -2242,7 +2244,9 @@ static EIO_Status s_Send(SOCK        sock,
             assert(poll.event == eIO_Write);
             if (status != eIO_Success)
                 return status;
-            assert(poll.event == eIO_Write  ||  poll.revent == eIO_Close);
+            if (poll.revent == eIO_Close)
+                return eIO_Unknown;
+            assert(poll.event == eIO_Write);
             continue/*write again*/;
         }
 
