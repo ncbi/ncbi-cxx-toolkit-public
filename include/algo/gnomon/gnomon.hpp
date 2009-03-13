@@ -77,6 +77,7 @@ public:
     const CResidueVec& GetSeq() const;
     int GetGCcontent() const;
     int GetMinIntronLen() const;
+    int GetMaxIntronLen() const;
     double GetChanceOfIntronLongerThan(int l) const;
 
     // calculate gnomon score for a gene model
