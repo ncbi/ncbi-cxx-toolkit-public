@@ -78,6 +78,8 @@ public:
         for (iterator i = begin; i != end; ++i)
             insert(*i);
     }
+
+    void clear() { m_elements.clear(); }
   
     size_t size() const { return m_elements.size(); }
     bool empty() const { return m_elements.empty(); }
