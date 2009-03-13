@@ -472,6 +472,10 @@ public:
         return IdenticalAlign(a) && Type()==a.Type() && m_id==a.m_id && m_support==a.m_support;
     }
 
+    const CVectorSet<int>& EntrezGene() const { return m_entrez_gene; }
+    void InsertEntrezGene(int g) { m_entrez_gene.insert(g); };
+    void ClearEntrezGene() { m_entrez_gene.clear(); };
+
 #ifdef _DEBUG
     int oid;
 #endif
@@ -496,6 +500,7 @@ private:
     CSupportInfoSet m_support;
     string m_protein_hit;
     string m_comment;
+    CVectorSet<int> m_entrez_gene;
 };
 
 class CAlignMap {
