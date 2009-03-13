@@ -5114,13 +5114,18 @@ fi
 
 : ${LIBXML_PATH=$NCBI/libxml}
 # test -d "$LIBXML_PATH" || LIBXML_PATH=`xml2-config --prefix 2>/dev/null`
-vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
-test -d "$vpath"  &&  LIBXML_PATH=$vpath
 if test "$with_libxml" != "no"; then
    case "$with_libxml" in
       yes | "" ) ;;
       *        ) LIBXML_PATH=$with_libxml ;;
    esac
+   for pfx in "$compiler_vpfx" "$compiler_pfx" "" ; do
+      vpath=$LIBXML_PATH/$pfx${DEBUG_SFX}${mt_sfx}${bit64_sfx}
+      if test -d "$vpath" ; then
+         LIBXML_PATH=$vpath
+         break
+      fi
+   done
    if test -d "$LIBXML_PATH"; then
       NCBI_FIX_DIR(LIBXML_PATH)
       in_path=" in $LIBXML_PATH"
