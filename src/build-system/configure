@@ -27652,6 +27652,7 @@ if test "$with_libxml" != "no"; then
       LIBXML_LIBS="-lxml2"
       in_path=
    fi
+   LIBXML_LIBS="$LIBXML_LIBS $ICONV_LIBS"
    echo "$as_me:$LINENO: checking for libxml2$in_path" >&5
 echo $ECHO_N "checking for libxml2$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_libxml+set}" = set; then

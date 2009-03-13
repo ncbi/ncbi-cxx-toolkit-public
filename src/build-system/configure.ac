@@ -5148,6 +5148,7 @@ if test "$with_libxml" != "no"; then
       LIBXML_LIBS="-lxml2"
       in_path=
    fi
+   LIBXML_LIBS="$LIBXML_LIBS $ICONV_LIBS"
    AC_CACHE_CHECK([for libxml2$in_path], ncbi_cv_lib_libxml,
       CPPFLAGS="$LIBXML_INCLUDE $orig_CPPFLAGS"
       LIBS="$LIBXML_LIBS $orig_LIBS"
