@@ -533,10 +533,12 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRan
         EEdgeType type_a = exons[i].m_fsplice ? eSplice : eBoundary;
         EEdgeType type_b = exons[i].m_ssplice ? eSplice : eBoundary;
         estart = InsertIndelRangesForInterval(exons[i].GetFrom(), exons[i].GetTo(), estart, indels.begin(), indels.end(), type_a, type_b);
-        if(m_orientation == ePlus) {
-            estart += transcript_exons[i+1].GetFrom()-transcript_exons[i].GetTo()-1;
-        } else {
-            estart += transcript_exons[i].GetFrom()-transcript_exons[i+1].GetTo()-1;
+        if(i != exons.size()-1) {
+            if(m_orientation == ePlus) {
+                estart += transcript_exons[i+1].GetFrom()-transcript_exons[i].GetTo()-1;
+            } else {
+                estart += transcript_exons[i].GetFrom()-transcript_exons[i+1].GetTo()-1;
+            }
         }
     }
 }
