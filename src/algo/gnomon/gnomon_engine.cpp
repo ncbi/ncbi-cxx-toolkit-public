@@ -67,6 +67,11 @@ int CGnomonEngine::GetMinIntronLen() const
     return m_data->m_intron_params->m_intronlen.MinLen();
 }
 
+int CGnomonEngine::GetMaxIntronLen() const
+{
+    return m_data->m_intron_params->m_intronlen.MaxLen();
+}
+
 double CGnomonEngine::GetChanceOfIntronLongerThan(int l) const
 {
     double p = exp(m_data->m_intron_params->m_intronlen.ClosingScore(l));
