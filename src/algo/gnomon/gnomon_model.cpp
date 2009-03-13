@@ -76,9 +76,9 @@ CAlignMap CGeneModel::GetAlignMap() const { return CAlignMap(Exons(), FrameShift
 string CGeneModel::SupportName() const {
     ITERATE(CSupportInfoSet, i, Support()) {
         if (!i->Seqid()->IsLocal() || !i->Seqid()->GetLocal().IsId())
-            return i->Seqid()->GetSeqIdString(true);
+            return NStr::Replace(i->Seqid()->GetSeqIdString(true)," ","%20");
     }
-    return Support().begin()->Seqid()->GetSeqIdString(true);
+    return NStr::Replace(Support().begin()->Seqid()->GetSeqIdString(true)," ","%20");
 }
 
 void CGeneModel::Remap(const CRangeMapper& mapper)
@@ -124,9 +124,10 @@ void CCDSInfo::SetReadingFrame(TSignedSeqRange r, bool protein)
 
 void CCDSInfo::SetStart(TSignedSeqRange r, bool confirmed)
 {
-    if (confirmed)
+    if (confirmed) {
         m_confirmed_start = true;
-    else if (m_confirmed_start && r != m_start) {
+        m_open = false;
+    } else if (m_confirmed_start && r != m_start) {
         m_confirmed_start = false;
     }
     m_start = r;
@@ -1251,7 +1252,14 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
         mrna.attributes["support"] += ",";
         if(i->CoreAlignment()) 
             mrna.attributes["support"] += "*";
-        mrna.attributes["support"] += i->Seqid()->IsGi()? i->Seqid()->AsFastaString() : i->Seqid()->GetSeqIdString(true);
+        string ss = i->Seqid()->IsGi()? i->Seqid()->AsFastaString() : NStr::Replace(i->Seqid()->GetSeqIdString(true)," ","%20");
+        mrna.attributes["support"] += ss;
+    }
+
+    ITERATE(CVectorSet<int>, i, a.EntrezGene()) {
+        if(!mrna.attributes["EntrezGene"].empty())
+            mrna.attributes["EntrezGene"] += ",";
+        mrna.attributes["EntrezGene"] += NStr::IntToString(*i);      
     }
 
     mrna.attributes["support"].erase(0,1);
@@ -1341,7 +1349,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
         if((a.Type() & CGeneModel::eGnomon)!=0 || (a.Type() & CGeneModel::eChain)!=0) {
             target = "hmm." + NStr::IntToString(a.ID()) + ".m";
         } else {
-            target = a.SupportName();
+            target = a.SupportName();           
         }
         
         TSignedSeqRange transcript_exon = a.TranscriptExon(i);
@@ -1501,8 +1509,14 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             NStr::Tokenize(r->attributes["support"], ",", support);
             ITERATE(vector<string>, s, support) {
                 bool core = (*s)[0] == '*';
-                string id = core ? s->substr(1) : *s;
+                string id = NStr::Replace(core ? s->substr(1) : *s, "%20", " ");
                 a.Support().insert(CSupportInfo(CreateSeqid(id), core));
+            }
+
+            vector<string> entrezgene;
+            NStr::Tokenize(r->attributes["EntrezGene"], ",", entrezgene);
+            ITERATE(vector<string>, s, entrezgene) {
+                a.InsertEntrezGene(NStr::StringToInt(*s));
             }
 
             if (!r->attributes["protein_hit"].empty())
