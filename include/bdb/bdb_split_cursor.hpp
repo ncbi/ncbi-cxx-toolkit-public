@@ -32,6 +32,8 @@
  *
  */
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_env.hpp>
