@@ -6,3 +6,5 @@ LIB = xconnserv$(STATIC) xthrserv$(STATIC) xconnect$(STATIC) xutil$(STATIC) xncb
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+REQUIRES = unix
+
