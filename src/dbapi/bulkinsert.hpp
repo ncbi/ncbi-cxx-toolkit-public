@@ -48,6 +48,10 @@ public:
 
     virtual ~CBulkInsert();
 
+    void SetHints(CTempString hints);
+    void AddHint(EHints hint, unsigned int value = 0);
+    void AddOrderHint(CTempString columns);
+
     virtual void Bind(const CDBParamVariant& param,
                       CVariant *v);
 

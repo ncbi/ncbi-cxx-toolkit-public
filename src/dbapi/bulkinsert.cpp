@@ -92,6 +92,21 @@ void CBulkInsert::Bind(const CDBParamVariant& param, CVariant* v)
 }
 		
 		
+void CBulkInsert::SetHints(CTempString hints)
+{
+    GetBCPInCmd()->SetHints(hints);
+}
+
+void CBulkInsert::AddHint(EHints hint, unsigned int value /* = 0 */)
+{
+    GetBCPInCmd()->AddHint(static_cast<CDB_BCPInCmd::EBCP_Hints>(hint), value);
+}
+
+void CBulkInsert::AddOrderHint(CTempString columns)
+{
+    GetBCPInCmd()->AddOrderHint(columns);
+}
+
 void CBulkInsert::AddRow()
 {
     GetBCPInCmd()->SendRow();

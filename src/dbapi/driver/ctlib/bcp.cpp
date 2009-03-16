@@ -699,6 +699,97 @@ CTL_BCPInCmd::Close(void)
 }
 
 
+void CTL_BCPInCmd::SetHints(CTempString hints)
+{
+#ifdef FTDS_IN_USE
+    m_Hints.clear();
+    if (Check(blk_sethints(x_GetSybaseCmd(), (CS_CHAR*)hints.data(), CS_INT(hints.size()))) == CS_FAIL) {
+        DATABASE_DRIVER_ERROR("blk_sethints failed." + GetDbgInfo(), 123018);
+    }
+#else
+    _ASSERT(false);
+#endif
+}
+
+
+void CTL_BCPInCmd::x_BlkSetHints(void)
+{
+#ifdef FTDS_IN_USE
+    string hints;
+    ITERATE(THintsMap, it, m_Hints) {
+        if (!hints.empty())
+            hints += ",";
+        hints += it->second; 
+    }
+    if (Check(blk_sethints(x_GetSybaseCmd(), (CS_CHAR*)hints.data(), CS_INT(hints.size()))) == CS_FAIL) {
+        DATABASE_DRIVER_ERROR("blk_sethints failed." + GetDbgInfo(), 123019);
+    }
+#endif
+}
+
+
+void CTL_BCPInCmd::AddHint(CDB_BCPInCmd::EBCP_Hints hint, unsigned int value)
+{
+#ifdef FTDS_IN_USE
+    string str_hint;
+    bool need_value = false;
+    switch (hint) {
+    case CDB_BCPInCmd::eRowsPerBatch:
+        str_hint = "ROWS_PER_BATCH";
+        need_value = true;
+        break;
+    case CDB_BCPInCmd::eKilobytesPerBatch:
+        str_hint = "KILOBYTES_PER_BATCH";
+        need_value = true;
+        break;
+    case CDB_BCPInCmd::eTabLock:
+        str_hint = "TABLOCK";
+        break;
+    case CDB_BCPInCmd::eCheckConstraints:
+        str_hint = "CHECK_CONSTRAINTS";
+        break;
+    case CDB_BCPInCmd::eFireTriggers:
+        str_hint = "FIRE_TRIGGERS";
+        break;
+    default:
+        DATABASE_DRIVER_ERROR("Wrong hint type in AddHint." + GetDbgInfo(), 123015);
+    }
+    if (need_value) {
+        if (value == 0) {
+            DATABASE_DRIVER_ERROR("Value in AddHint should not be 0."
+                                  + GetDbgInfo(), 123016);
+        }
+        str_hint += "=";
+        str_hint += NStr::IntToString(value);
+    }
+    else if (value != 0) {
+        DATABASE_DRIVER_ERROR("Cannot set value for a given hint type ("
+                              + NStr::IntToString(hint) + ")."
+                              + GetDbgInfo(), 123016);
+    }
+    m_Hints[hint] = str_hint;
+
+    x_BlkSetHints();
+#else
+    _ASSERT(false);
+#endif
+}
+
+void CTL_BCPInCmd::AddOrderHint(CTempString columns)
+{
+#ifdef FTDS_IN_USE
+    string str_hint = "ORDER (";
+    str_hint += columns;
+    str_hint += ")";
+    m_Hints[CDB_BCPInCmd::eOrder] = str_hint;
+
+    x_BlkSetHints();
+#else
+    _ASSERT(false);
+#endif
+}
+
+
 #ifdef FTDS_IN_USE
 } // namespace ftds64_ctlib
 #endif

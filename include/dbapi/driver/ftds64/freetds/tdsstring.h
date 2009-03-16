@@ -22,6 +22,9 @@
 
 /* $Id$ */
 
+#include <tds.h>
+
+
 extern const struct DSTR_STRUCT tds_str_empty;
 
 /* TODO do some function and use inline if available */

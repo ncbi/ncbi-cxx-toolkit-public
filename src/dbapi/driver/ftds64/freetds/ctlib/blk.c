@@ -21,6 +21,8 @@
 #include <config.h>
 #endif
 
+#include "tdsstring.h"
+
 #include "bkpublic.h"
 
 #include "ctpublic.h"
@@ -75,6 +77,7 @@ blk_alloc(CS_CONNECTION * connection, CS_INT version, CS_BLKDESC ** blk_pointer)
 
     /* so we know who we belong to */
     (*blk_pointer)->con = connection;
+    tds_dstr_init(&(*blk_pointer)->hints);
 
     return CS_SUCCEED;
 }
@@ -341,6 +344,8 @@ _blk_clean_desc(CS_BLKDESC * blkdesc)
     blkdesc->text_sent = 0;
     blkdesc->current_col = 0;
     blkdesc->blob_cols = 0;
+
+    tds_dstr_free(&blkdesc->hints);
 }
 
 CS_RETCODE
@@ -553,6 +558,17 @@ blk_props(CS_BLKDESC * blkdesc, CS_INT action, CS_INT property, CS_VOID * buffer
 }
 
 CS_RETCODE
+blk_sethints(CS_BLKDESC* blkdesc, CS_CHAR* hints, CS_INT hintslen)
+{
+    if (!blkdesc)
+        return CS_FAIL;
+
+    tds_dstr_copyn(&blkdesc->hints, hints, hintslen);
+
+    return CS_SUCCEED;
+}
+
+CS_RETCODE
 blk_rowalloc(SRV_PROC * srvproc, CS_BLK_ROW ** row)
 {
 
@@ -663,8 +679,6 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
     CS_DATAFMT destfmt;
 
     CS_INT need_to_send;
-
-    int i;
 
     tdsdump_log(TDS_DBG_FUNC, "blk_textxfer(blkdesc, buflen %d, outlen)\n", buflen);
 
@@ -792,7 +806,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
         destfmt.format  = CS_FMT_UNUSED;
 
-        buflen = MIN(buflen, bindcol->column_bindlen - blkdesc->text_sent);
+        buflen = MIN(buflen, (CS_INT)bindcol->column_bindlen - blkdesc->text_sent);
 
         if (buflen) {
             tds_put_n(tds, buffer, buflen);
@@ -814,7 +828,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
             if (blkdesc->text_sent == 0) {
                 /* unknown but zero */
                 tds_put_smallint(tds, 0);
-                tds_put_byte(tds, bindcol->column_type);
+                tds_put_byte(tds, (unsigned char)bindcol->column_type);
                 tds_put_byte(tds, 0xff - blkdesc->blob_cols);
                 /*
                  * offset of txptr we stashed during variable
@@ -824,7 +838,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
                 tds_put_int(tds, bindcol->column_bindlen);
             }
 
-            buflen = MIN(buflen, bindcol->column_bindlen - blkdesc->text_sent);
+            buflen = MIN(buflen, (CS_INT)bindcol->column_bindlen - blkdesc->text_sent);
 
             if (buflen) {
                 tds_put_n(tds, buffer, buflen);
@@ -1040,6 +1054,7 @@ _rowxfer_in_init(CS_BLKDESC * blkdesc)
 
     if (IS_TDS7_PLUS(tds)) {
         int erc;
+        char *hint;
 
         firstcol = 1;
 
@@ -1067,8 +1082,21 @@ _rowxfer_in_init(CS_BLKDESC * blkdesc)
             }
         }
 
-        erc = asprintf(&query, "insert bulk %s (%s)", blkdesc->tablename, colclause.pb);
+        if (tds_dstr_isempty(&blkdesc->hints)) {
+            hint = strdup("");
+        } else {
+            if (asprintf(&hint, " with (%s)", tds_dstr_cstr(&blkdesc->hints)) < 0)
+                hint = NULL;
+        }
+        if (!hint) {
+            if (colclause.pb != clause_buffer)
+                TDS_ZERO_FREE(colclause.pb);
+            return TDS_FAIL;
+        }
 
+        erc = asprintf(&query, "insert bulk %s (%s)%s", blkdesc->tablename, colclause.pb, hint);
+
+        free(hint);
         if (colclause.pb != clause_buffer)
             TDS_ZERO_FREE(colclause.pb);	/* just for good measure; not used beyond this point */
 
@@ -1290,7 +1318,7 @@ _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcpcol, int first)
             return CS_FAIL;
     }
 
-    if (clause->cb < strlen(clause->pb) + strlen(bcpcol->column_name) + strlen(column_type) + ((first) ? 2 : 4)) {
+    if ((size_t)clause->cb < strlen(clause->pb) + strlen(bcpcol->column_name) + strlen(column_type) + ((first) ? 2 : 4)) {
         char *temp = malloc(2 * clause->cb);
 
         if (!temp)
@@ -1362,7 +1390,7 @@ _blk_send_colmetadata(CS_BLKDESC * blkdesc)
 
             tds_put_smallint(tds, bcpcol->column_usertype);
             tds_put_smallint(tds, bcpcol->column_flags);
-            tds_put_byte(tds, bcpcol->on_server.column_type);
+            tds_put_byte(tds, (unsigned char)bcpcol->on_server.column_type);
 
             switch (bcpcol->column_varint_size) {
                 case 4:
@@ -1393,7 +1421,7 @@ _blk_send_colmetadata(CS_BLKDESC * blkdesc)
                 tds_put_string(tds, blkdesc->tablename, strlen(blkdesc->tablename));
             }
             /* FIXME support multibyte string */
-            tds_put_byte(tds, bcpcol->column_namelen);
+            tds_put_byte(tds, (unsigned char)bcpcol->column_namelen);
             tds_put_string(tds, bcpcol->column_name, bcpcol->column_namelen);
 
         }
@@ -1690,7 +1718,7 @@ _blk5_send_blob_columns(CS_BLKDESC *blkdesc, CS_INT offset)
             if (!bindcol->bcp_column_data->null_column) {
                 /* unknown but zero */
                 tds_put_smallint(tds, 0);
-                tds_put_byte(tds, bindcol->column_type);
+                tds_put_byte(tds, (unsigned char)bindcol->column_type);
                 tds_put_byte(tds, 0xff - blkdesc->blob_cols);
                 /*
                  * offset of txptr we stashed during variable

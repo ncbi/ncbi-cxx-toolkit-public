@@ -684,7 +684,30 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_BCPInCmd : public I_BCPInCmd
 {
 public:
-    /// Get meta-information about parameters. 
+    /// Set hints by one call. Resets everything that was set by Add*Hint().
+    void SetHints(CTempString hints);
+
+    /// Type of hint that can be set.
+    enum EBCP_Hints {
+        eOrder,
+        eRowsPerBatch,
+        eKilobytesPerBatch,
+        eTabLock,
+        eCheckConstraints,
+        eFireTriggers
+    };
+
+    /// Add hint with value.
+    /// Can be used with any hint type except eOrder and with e..PerBatch
+    /// value should be non-zero.
+    /// Resets everything that was set by SetHints().
+    void AddHint(EBCP_Hints hint, unsigned int value = 0);
+
+    /// Add "ORDER" hint.
+    /// Resets everything that was set by SetHints().
+    void AddOrderHint(CTempString columns);
+
+    /// Get meta-information about parameters.
     virtual CDBParams& GetBindParams(void);
 
     // Binding

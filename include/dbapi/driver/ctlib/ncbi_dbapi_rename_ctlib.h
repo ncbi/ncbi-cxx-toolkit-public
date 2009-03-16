@@ -105,6 +105,7 @@
 #  define blk_gettext       blk_gettext_ver64
 #  define blk_init          blk_init_ver64
 #  define blk_props         blk_props_ver64
+#  define blk_sethints      blk_sethints_ver64
 #  define blk_rowalloc      blk_rowalloc_ver64
 #  define blk_rowdrop       blk_rowdrop_ver64
 #  define blk_rowxfer       blk_rowxfer_ver64

@@ -181,6 +181,15 @@ public:
 public:
     // BCP-related ...
 
+    /// Set hints by one call.
+    virtual void SetHints(CTempString hints);
+
+    /// Add hint with value.
+    virtual void AddHint(CDB_BCPInCmd::EBCP_Hints hint, unsigned int value);
+
+    /// Add "ORDER" hint.
+    virtual void AddOrderHint(CTempString columns);
+
     /// Complete batch -- to store all rows transferred by far in this batch
     /// into the table
     virtual bool CommitBCPTrans(void);

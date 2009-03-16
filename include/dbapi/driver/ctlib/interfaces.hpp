@@ -768,6 +768,9 @@ protected:
     void Close(void);
 
 protected:
+    virtual void SetHints(CTempString hints);
+    virtual void AddHint(CDB_BCPInCmd::EBCP_Hints hint, unsigned int value);
+    virtual void AddOrderHint(CTempString columns);
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
     virtual bool Send(void);
     virtual bool CommitBCPTrans(void);
@@ -788,6 +791,7 @@ private:
     {
         return m_Cmd;
     }
+    void x_BlkSetHints(void);
 
 private:
     struct SBcpBind {
@@ -796,9 +800,12 @@ private:
         char        buffer[sizeof(CS_NUMERIC)]; // 35 bytes ...
     };
 
+    typedef map<CDB_BCPInCmd::EBCP_Hints, string>  THintsMap;
+
     CS_BLKDESC*         m_Cmd;
     AutoArray<SBcpBind> m_BindArray;
     int                 m_RowCount;
+    THintsMap           m_Hints;
 
     AutoArray<SBcpBind>& GetBind(void)
     {

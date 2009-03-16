@@ -166,6 +166,28 @@ CBaseCmd::DumpResults(void)
     }
 }
 
+
+void
+CBaseCmd::SetHints(CTempString hints)
+{
+    _ASSERT(false);
+}
+
+
+void
+CBaseCmd::AddHint(CDB_BCPInCmd::EBCP_Hints hint, unsigned int value)
+{
+    _ASSERT(false);
+}
+
+
+void
+CBaseCmd::AddOrderHint(CTempString columns)
+{
+    _ASSERT(false);
+}
+
+
 bool
 CBaseCmd::CommitBCPTrans(void)
 {

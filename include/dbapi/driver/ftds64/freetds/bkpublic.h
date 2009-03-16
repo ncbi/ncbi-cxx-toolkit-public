@@ -50,6 +50,7 @@ CS_RETCODE blk_getrow(SRV_PROC * srvproc, CS_BLKDESC * blkdescp, CS_BLK_ROW * ro
 CS_RETCODE blk_gettext(SRV_PROC * srvproc, CS_BLKDESC * blkdescp, CS_BLK_ROW * rowp, CS_INT bufsize, CS_INT * outlenp);
 CS_RETCODE blk_init(CS_BLKDESC * blkdesc, CS_INT direction, CS_CHAR * tablename, CS_INT tnamelen);
 CS_RETCODE blk_props(CS_BLKDESC * blkdesc, CS_INT action, CS_INT property, CS_VOID * buffer, CS_INT buflen, CS_INT * outlen);
+CS_RETCODE blk_sethints(CS_BLKDESC* blkdesc, CS_CHAR* hints, CS_INT hintslen);
 CS_RETCODE blk_rowalloc(SRV_PROC * srvproc, CS_BLK_ROW ** row);
 CS_RETCODE blk_rowdrop(SRV_PROC * srvproc, CS_BLK_ROW * row);
 CS_RETCODE blk_rowxfer(CS_BLKDESC * blkdesc);

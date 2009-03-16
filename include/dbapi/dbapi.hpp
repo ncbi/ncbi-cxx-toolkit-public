@@ -593,6 +593,29 @@ public:
     /// Destructor.
     virtual ~IBulkInsert();
 
+    /// Set hints by one call. Resets everything that was set by Add*Hint().
+    virtual void SetHints(CTempString hints) = 0;
+
+    /// Type of hint that can be set.
+    enum EHints {
+        eOrder,
+        eRowsPerBatch,
+        eKilobytesPerBatch,
+        eTabLock,
+        eCheckConstraints,
+        eFireTriggers
+    };
+
+    /// Add hint with value.
+    /// Can be used with any hint type except eOrder and with e..PerBatch
+    /// value should be non-zero.
+    /// Resets everything that was set by SetHints().
+    virtual void AddHint(EHints hint, unsigned int value = 0) = 0;
+
+    /// Add "ORDER" hint.
+    /// Resets everything that was set by SetHints().
+    virtual void AddOrderHint(CTempString columns) = 0;
+
     /// Bind column.
     ///
     /// @param col

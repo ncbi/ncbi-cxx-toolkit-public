@@ -751,6 +751,27 @@ CDB_BCPInCmd::CDB_BCPInCmd(impl::CBaseCmd* c)
 }
 
 
+void CDB_BCPInCmd::SetHints(CTempString hints)
+{
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->SetHints(hints);
+}
+
+
+void CDB_BCPInCmd::AddHint(EBCP_Hints hint, unsigned int value /* = 0 */)
+{
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->AddHint(hint, value);
+}
+
+
+void CDB_BCPInCmd::AddOrderHint(CTempString columns)
+{
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->AddOrderHint(columns);
+}
+
+
 CDBParams& CDB_BCPInCmd::GetBindParams(void)
 {
     CHECK_COMMAND( m_CmdImpl );
