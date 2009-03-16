@@ -582,6 +582,7 @@ void XSDParser::ParseGroupRef(DTDElement& node)
 
 void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
 {
+    DTDElement::EType curr_type;
     int emb=0;
     bool eatEOT= false;
     TToken tok;
@@ -641,10 +642,14 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 eatEOT = true;
                 break;
             }
-            if (node.GetType() == DTDElement::eUnknown ||
-                node.GetType() == DTDElement::eUnknownGroup) {
+            curr_type = node.GetType();
+            if (curr_type == DTDElement::eUnknown ||
+                curr_type == DTDElement::eUnknownGroup) {
                 node.SetType(DTDElement::eSequence);
                 ParseContainer(node);
+                if (node.GetContent().empty()) {
+                    node.ResetType(curr_type);
+                }
             } else {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
@@ -657,10 +662,14 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             }
             break;
         case K_CHOICE:
-            if (node.GetType() == DTDElement::eUnknown ||
-                node.GetType() == DTDElement::eUnknownGroup) {
+            curr_type = node.GetType();
+            if (curr_type == DTDElement::eUnknown ||
+                curr_type == DTDElement::eUnknownGroup) {
                 node.SetType(DTDElement::eChoice);
                 ParseContainer(node);
+                if (node.GetContent().empty()) {
+                    node.ResetType(curr_type);
+                }
             } else {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
@@ -673,10 +682,14 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             }
             break;
         case K_SET:
-            if (node.GetType() == DTDElement::eUnknown ||
-                node.GetType() == DTDElement::eUnknownGroup) {
+            curr_type = node.GetType();
+            if (curr_type == DTDElement::eUnknown ||
+                curr_type == DTDElement::eUnknownGroup) {
                 node.SetType(DTDElement::eSet);
                 ParseContainer(node);
+                if (node.GetContent().empty()) {
+                    node.ResetType(curr_type);
+                }
             } else {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];

@@ -300,6 +300,13 @@ void DTDElement::SetType( EType type)
     m_Type = type;
 }
 
+void DTDElement::ResetType( EType type)
+{
+    _ASSERT(type == eUnknown || type == eUnknownGroup);
+    _ASSERT(m_Refs.size() == 0);
+    m_Type = type;
+}
+
 void DTDElement::SetTypeIfUnknown( EType type)
 {
     if (m_Type == eUnknown) {
