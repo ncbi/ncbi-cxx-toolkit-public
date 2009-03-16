@@ -117,7 +117,7 @@ xml::tree_parser::tree_parser (const char *data, size_type size, bool allow_exce
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
     xmlParserCtxtPtr ctxt;
 
-    if ( (ctxt = xmlCreateMemoryParserCtxt(data, size)) == 0) {
+    if ( (ctxt = xmlCreateMemoryParserCtxt(data, static_cast<int>(size))) == 0) {
 	throw std::bad_alloc();
     }
 

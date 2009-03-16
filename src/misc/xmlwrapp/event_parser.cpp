@@ -141,7 +141,7 @@ bool xml::event_parser::parse_stream (std::istream &stream) {
 }
 //####################################################################
 bool xml::event_parser::parse_chunk (const char *chunk, size_type length) {
-    xmlParseChunk(pimpl_->parser_context_, chunk, length, 0);
+    xmlParseChunk(pimpl_->parser_context_, chunk, static_cast<int>(length), 0);
     return pimpl_->parser_status_;
 }
 //####################################################################
