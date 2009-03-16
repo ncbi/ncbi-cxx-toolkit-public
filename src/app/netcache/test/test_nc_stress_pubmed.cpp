@@ -138,7 +138,8 @@ public :
 
 			nanosleep(&sTS, NULL);
 #else
-            throw runtime_error("That platform does not support!");
+            cerr << "That platform does not support!" << endl;
+            exit(1)
 #endif /* USE_UGLY_CODE_INSTEAD */
 		};
 
@@ -152,8 +153,8 @@ public :
 //
 			return Secs + MilliSecs;
 #else
-            throw runtime_error("That platform does not support!");
-
+            cerr << "That platform does not support!" << endl;
+            exit(1)
 //  Nice fix, then. Anyway, that fix will not work.
 //  However, I need amount of seconds from Epoch. CTime
 //  does not provides that method. Ofcourse, I can to generate
