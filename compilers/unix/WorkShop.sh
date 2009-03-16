@@ -28,36 +28,14 @@ if test ! -x "$CXX" ; then
 fi
 
 
-## 5.0, 5.1, 5.2, 5.3, or 5.4?
+## Currently supported version(s)
 CC_version=`$CXX -V 2>&1`
 case "$CC_version" in
- "CC: WorkShop Compilers 5"* )
-    NCBI_COMPILER="WorkShop5"
-    ;;
- "CC: Sun WorkShop 6 update 1 C++ 5.2"* )
-    NCBI_COMPILER="WorkShop52"
-    ;;
- "CC: Sun WorkShop 6 update 2 C++ 5.3"* )
-    NCBI_COMPILER="WorkShop53"
-    ;;
- "CC: Sun WorkShop 6"* )
-    # must appear after previous cases to avoid masking them
-    NCBI_COMPILER="WorkShop51"
-    ;;
- "CC: Forte Developer 7 C++ 5.4"* )
-    NCBI_COMPILER="WorkShop54"
-    ;;
- "CC: Sun C++ 5.5"* )
-    NCBI_COMPILER="WorkShop55"
-    ;;
- "CC: Sun C++ 5.8"* )
-    NCBI_COMPILER="WorkShop58"
-    ;;
  "CC: Sun C++ 5.9"* )
     NCBI_COMPILER="WorkShop59"
     ;;
  * )
-    echo "ERROR:  unknown version of WorkShop C++ compiler:"
+    echo "ERROR:  unsupported version of WorkShop C++ compiler:"
     echo "  $CXX -V -->  $CC_version"
     exit 2
     ;;
