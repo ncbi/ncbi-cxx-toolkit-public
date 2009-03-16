@@ -133,6 +133,16 @@ public:
     ///   internal pointer to the default handler.
     void SetListener(IGridWorkerNodeApp_Listener* listener);
 
+    /// Sets the default logging format for this application.
+    /// Can be overridden by the [log]/merge_lines configuration
+    /// parameter.  This method must be called before the Init()
+    /// method is invoked, otherwise it will have no effect.
+    ///
+    /// @param merge_log_lines If true, multiple log lines will
+    ///        be concatenated and separated by a semicolon.
+    ///        If false, the lines are not concatenated.
+    void SetMergeLogLines(bool merge_log_lines = true);
+
     /// If you override this method, do call CGridWorkerApp::Init()
     /// from inside of your overriding method.
     virtual void Init(void);
@@ -160,6 +170,8 @@ private:
 
     auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
 
+    bool m_MergeLogLines;
+
     CGridWorkerApp(const CGridWorkerApp&);
     CGridWorkerApp& operator=(const CGridWorkerApp&);
 };
@@ -167,6 +179,11 @@ private:
 inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 {
     m_AppImpl->SetListener(listener);
+}
+
+inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
+{
+    m_MergeLogLines = merge_log_lines;
 }
 
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
@@ -190,6 +207,20 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
         BlobStorage_RegisterDriver_NetCache();                              \
         CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
             CVersionInfo(#Version));                                        \
+        return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
+    }
+
+#define NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES(TWorkerNodeJob,                \
+        TWorkerNodeIdleTask, Version)                                       \
+    NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,                      \
+            TWorkerNodeIdleTask, Version);                                  \
+    int main(int argc, const char* argv[])                                  \
+    {                                                                       \
+        GetDiagContext().SetOldPostFormat(false);                           \
+        BlobStorage_RegisterDriver_NetCache();                              \
+        CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
+            CVersionInfo(#Version));                                        \
+        app.SetMergeLogLines();                                             \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
     }
 

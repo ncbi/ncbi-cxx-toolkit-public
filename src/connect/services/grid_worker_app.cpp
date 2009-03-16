@@ -65,6 +65,8 @@ void CGridWorkerApp::Construct(
     m_AppImpl.reset(new CGridWorkerApp_Impl(*this,
         job_factory, storage_factory, client_factory));
 
+    m_MergeLogLines = false;
+
 #if defined(NCBI_OS_UNIX)
     if (signal_handling == eStandardSignalHandling) {
     // attempt to get server gracefully shutdown on signal
@@ -104,7 +106,7 @@ void CGridWorkerApp::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    m_AppImpl->Init();
+    m_AppImpl->Init(m_MergeLogLines);
     m_AppImpl->GetJobFactory().Init(GetInitContext());
 }
 

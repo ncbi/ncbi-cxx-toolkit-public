@@ -337,12 +337,15 @@ CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
 {
 }
 
-void CGridWorkerApp_Impl::Init()
+void CGridWorkerApp_Impl::Init(bool default_merge_lines_value)
 {
-    SetDiagPostFlag(eDPF_PreMergeLines);
-    SetDiagPostFlag(eDPF_MergeLines);
-
     IRWRegistry& reg = m_App.GetConfig();
+
+    if (reg.GetBool("log", "merge_lines", default_merge_lines_value)) {
+        SetDiagPostFlag(eDPF_PreMergeLines);
+        SetDiagPostFlag(eDPF_MergeLines);
+    }
+
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
     if (!m_StorageFactory.get())

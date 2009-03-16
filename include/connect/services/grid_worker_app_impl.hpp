@@ -75,7 +75,7 @@ public:
 
     ~CGridWorkerApp_Impl();
 
-    void Init();
+    void Init(bool default_merge_lines_value);
     int Run();
     void RequestShutdown();
 
