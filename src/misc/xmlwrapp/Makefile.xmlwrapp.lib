@@ -7,11 +7,8 @@ SRC = ait_impl document event_parser node_iterator nodes_view tree_parser \
 
 LIB = xmlwrapp
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS)
-# LIBDIR = $(NCBI)/libxml-2.7.3/GCC-ReleaseMT64/lib
-# LIBS = -L$(LIBDIR) -Wl,-rpath,$(LIBDIR) -lxml2 -lxslt
 CPPFLAGS= $(ORIG_CPPFLAGS) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE)
-# CPPFLAGS= $(ORIG_CPPFLAGS) -I$(NCBI)/libxml-2.7.3/include/libxml2 -I$(NCBI)/libxml-2.7.3/include
 
 REQUIRES = LIBXML LIBXSLT
-LIB_OR_DLL = both
+LIB_OR_DLL = lib
 
