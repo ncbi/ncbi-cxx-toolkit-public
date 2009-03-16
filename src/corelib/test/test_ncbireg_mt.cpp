@@ -63,7 +63,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     // Check if CNcbiEnvironment is thread safe
     {{
     CNcbiEnvironment env;
-    for (unsigned i = 0; i < s_NumThreads*100; i++) {
+    for (unsigned i = 0; i < s_NumThreads*10; i++) {
         string e = "TESTENV" + NStr::IntToString(i);
         assert(!env.Get(e).empty());
     }
@@ -308,7 +308,7 @@ bool CTestRegApp::TestApp_Init(void)
     }}
 
     // Put some variables to test CNcbiEnvironment
-    for (unsigned i = 0; i < s_NumThreads*100; i++) {
+    for (unsigned i = 0; i < s_NumThreads*10; i++) {
         string e = "TESTENV" + NStr::IntToString(i) + "=value";
         putenv(strdup(e.c_str()));
     }
