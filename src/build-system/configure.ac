@@ -885,7 +885,7 @@ case "$host_os:$compiler" in
          CXXFLAGS="-xdebugformat=stabs $CXXFLAGS"
          ;;
    esac
-   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.WorkShop.sh"
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
    serial_ws50_rtti_kludge="rtti"

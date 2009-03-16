@@ -3,7 +3,7 @@
 # $Id$
 # Author:  Aaron Ucko, NCBI 
 #
-# Filter out redundant warnings issued by Sun C++ 5.9 (Studio Express) compiler.
+# Filter out redundant warnings issued by Sun C++ 5.x (Studio) compiler.
 
 # Treat multiline messages (with "Where:") as single units; cope with
 # HTML output when run under the GUI.  (Openers stick to following
