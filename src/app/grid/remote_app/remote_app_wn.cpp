@@ -290,4 +290,4 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Routine magic spells
 
-NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES(CRemoteAppJob, CRemoteAppIdleTask, 1.5.0);
+NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES(CRemoteAppJob, CRemoteAppIdleTask, 1.5.1);
