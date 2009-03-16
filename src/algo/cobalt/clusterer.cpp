@@ -231,6 +231,19 @@ static double s_FindDist(const CClusterer::CSingleCluster& cluster,
     return result;
 }
 
+// Create tree leaf (node representing element) with given id
+TPhyTreeNode* s_CreateTreeLeaf(int id)
+{
+    TPhyTreeNode* node = new TPhyTreeNode();
+    node->GetValue().SetId(id);
+
+    // This is needed so that serialized tree can be interpreted
+    // by external applications
+    node->GetValue().SetLabel(NStr::IntToString(id));
+
+    return node;
+}
+
 // Complete Linkage clustering with dendrograms
 void CClusterer::ComputeClusters(double max_diam,
                                  CClusterer::EDistMethod dist_method,
@@ -243,6 +256,7 @@ void CClusterer::ComputeClusters(double max_diam,
     }
 
     m_Clusters.clear();
+    m_Trees.clear();
 
     size_t num_elements = m_DistMatrix->GetRows();
 
@@ -251,11 +265,16 @@ void CClusterer::ComputeClusters(double max_diam,
         m_Clusters.resize(1);
         m_Clusters[0].AddElement(0);
 
+        if (do_trees) {
+            m_Trees.push_back(s_CreateTreeLeaf(0));
+        }
+
         return;
     }
 
     // If there are exactly two elements
     if (num_elements == 2) {
+
         if ((*m_DistMatrix)(0, 1) < max_diam) {
             m_Clusters.resize(1);
             m_Clusters[0].AddElement(0);
@@ -265,6 +284,30 @@ void CClusterer::ComputeClusters(double max_diam,
             m_Clusters.resize(2);
             m_Clusters[0].AddElement(0);
             m_Clusters[1].AddElement(1);
+        }
+
+        if (do_trees) {
+            TPhyTreeNode* node0 = s_CreateTreeLeaf(0);
+            TPhyTreeNode* node1 = s_CreateTreeLeaf(1);
+
+            if ((*m_DistMatrix)(0, 1) < max_diam) {
+                // one cluster case
+                double dist = (*m_DistMatrix)(0, 1) / 2.0;
+                node0->GetValue().SetDist(dist);
+                node1->GetValue().SetDist(dist);
+
+                TPhyTreeNode* root = new TPhyTreeNode();
+                root->AddNode(node0);
+                root->AddNode(node1);
+
+                m_Trees.push_back(root);
+
+            }
+            else {
+                // two clusters case
+                m_Trees.push_back(node0);
+                m_Trees.push_back(node1);
+            }
         }
 
         return;
@@ -313,12 +356,7 @@ void CClusterer::ComputeClusters(double max_diam,
     vector<TPhyTreeNode*> nodes(num_elements);
     if (do_trees) {
         for (size_t i=0;i < nodes.size();i++) {
-            nodes[i] = new TPhyTreeNode();
-            nodes[i]->GetValue().SetId(i);
-
-            // This is needed so that serialized tree can be interpreted
-            // by external applications
-            nodes[i]->GetValue().SetLabel(NStr::IntToString(i));
+            nodes[i] = s_CreateTreeLeaf(i);
         }
     }
     vector< vector<double> > dists_to_root(num_elements);

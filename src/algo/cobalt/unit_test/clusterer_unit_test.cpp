@@ -233,10 +233,10 @@ static void s_TestClusterTree(const CClusterer::TSingleCluster& cluster,
 /// @param clusters Clusters to examine [in]
 /// @param trees Cluster trees to examine [in] 
 /// @param ref_filename Name of filename containing reference clusters data [in]
-static void s_TestClusters(const CClusterer::TDistMatrix& dmat,
-                           const CClusterer::TClusters& clusters,
-                           const vector<TPhyTreeNode*>& trees,
-                           const string& ref_filename = "")
+static void s_TestClustersAndTrees(const CClusterer::TDistMatrix& dmat,
+                                   const CClusterer::TClusters& clusters,
+                                   const vector<TPhyTreeNode*>& trees,
+                                   const string& ref_filename = "")
 {
     // distance matrix must be square
     BOOST_REQUIRE(dmat.GetRows() == dmat.GetCols());
@@ -263,18 +263,13 @@ static void s_TestClusters(const CClusterer::TDistMatrix& dmat,
         BOOST_CHECK(*it);
     }
 
+    // Check cluster trees
+    // each cluster must have its tree
+    BOOST_REQUIRE_EQUAL(clusters.size(), trees.size());
 
-    // Check cluster trees if there are ones
-    if (!trees.empty()) {
-
-        // each cluster must have its tree
-        BOOST_REQUIRE_EQUAL(clusters.size(), trees.size());
-
-        // check each tree
-        for (size_t i=0;i < clusters.size();i++) {
-            s_TestClusterTree(clusters[i], trees[i]);
-        }
-        
+    // check each tree
+    for (size_t i=0;i < clusters.size();i++) {
+        s_TestClusterTree(clusters[i], trees[i]);
     }
 
     // Compare clusters and their elements to reference
@@ -348,18 +343,82 @@ static void s_TestClusters(const CClusterer::TDistMatrix& dmat,
 }
 
 
-BOOST_AUTO_TEST_CASE(TestClusters)
+BOOST_AUTO_TEST_CASE(TestOneElement)
+{
+    // Check clusters and trees
+
+    CClusterer::TDistMatrix dmat;
+    CClusterer clusterer;
+    const bool compute_trees = true;
+
+    // one element
+    dmat.Resize(1, 1);
+    dmat(0, 0) = 0.0;
+    clusterer.SetDistMatrix(dmat);
+    clusterer.ComputeClusters(0.8, CClusterer::eCompleteLinkage, compute_trees);
+    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees());
+}
+
+
+BOOST_AUTO_TEST_CASE(TestTwoElementsOneCluster)
+{
+    // Check clusters and trees
+
+    CClusterer::TDistMatrix dmat;
+    CClusterer clusterer;
+    const bool compute_trees = true;
+    const double dist = 0.5;
+    const double max_diam = 0.8;
+    BOOST_REQUIRE(dist < max_diam);
+
+    // two elements, one cluster
+    dmat.Resize(2, 2, 0.0);
+    dmat(0, 1) = dmat(1, 0) = dist;
+    clusterer.Reset();
+    clusterer.SetDistMatrix(dmat);
+    clusterer.ComputeClusters(max_diam, CClusterer::eCompleteLinkage,
+                              compute_trees);
+
+    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees());
+}
+
+
+BOOST_AUTO_TEST_CASE(TestTwoElementsTwoClusters)
+{
+    // Check clusters and trees
+
+    CClusterer::TDistMatrix dmat;
+    CClusterer clusterer;
+    const bool compute_trees = true;
+    const double dist = 0.5;
+    const double max_diam = 0.4;
+    BOOST_REQUIRE(dist > max_diam);
+
+    // two elements, one cluster
+    dmat.Resize(2, 2, 0.0);
+    dmat(0, 1) = dmat(1, 0) = dist;
+    clusterer.Reset();
+    clusterer.SetDistMatrix(dmat);
+    clusterer.ComputeClusters(max_diam, CClusterer::eCompleteLinkage,
+                              compute_trees);
+
+    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees());
+}
+
+BOOST_AUTO_TEST_CASE(TestMoreElements)
 {
     // Check clusters and trees and compare clusters with reference files
 
     CClusterer::TDistMatrix dmat;
+    CClusterer clusterer;
+    const bool compute_trees = true;
 
     s_ReadDistMatrix("data/dist_matrix.txt", dmat);
-    CClusterer clusterer(dmat);
+    clusterer.SetDistMatrix(dmat);
 
-    clusterer.ComputeClusters(0.8);
-    s_TestClusters(dmat, clusterer.GetClusters(), clusterer.GetTrees(),
-                   "data/ref_clusters.txt");
+    clusterer.ComputeClusters(0.8, CClusterer::eCompleteLinkage, compute_trees);
+    s_TestClustersAndTrees(dmat, clusterer.GetClusters(), clusterer.GetTrees(),
+                           "data/ref_clusters.txt");
 }
 
 

@@ -745,3 +745,36 @@ BOOST_AUTO_TEST_CASE(TestResultsForClustersAndUserConstraints)
     s_TestResults(aligner);
 }
 
+
+// Two sequences is a special case for query clustering and computing
+// guide tree as cluster dendrogram
+BOOST_AUTO_TEST_CASE(TestTwoSequences)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
+
+    // case with one cluster
+    opts->SetMaxInClusterDist(1.0);
+    CMultiAligner aligner(opts);
+
+    vector< CRef<CSeq_loc> > queries;
+    CRef<CScope> scope;
+    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    queries.resize(2);
+    aligner.SetQueries(queries, scope);
+    
+    CMultiAligner::TStatus status = aligner.Run();
+    BOOST_CHECK(status == CMultiAligner::eSuccess
+                || status == CMultiAligner::eWarnings);
+    s_TestResults(aligner);
+
+    // case with two clusters
+    opts->SetMaxInClusterDist(0.01);
+    aligner.SetQueries(queries, scope);
+    status = aligner.Run();
+    BOOST_CHECK(status == CMultiAligner::eSuccess
+                || status == CMultiAligner::eWarnings);
+    s_TestResults(aligner);
+    
+}
+
