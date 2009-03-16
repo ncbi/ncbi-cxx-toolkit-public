@@ -116,15 +116,15 @@ namespace {
     // help turn a node into a document
     class node2doc {
     public:
-	node2doc (xmlNodePtr xmlnode_) : xmlnode__(xmlnode_), prev_(0), next_(0) {
+	node2doc (xmlNodePtr xmlnode) : xmlnode_(xmlnode), prev_(0), next_(0) {
 	    xmldoc_ = xmlNewDoc(0);
 	    if (!xmldoc_) throw std::bad_alloc();
 
-	    xmldoc_->children	= xmlnode__;
-	    xmldoc_->last	= xmlnode__;
+	    xmldoc_->children	= xmlnode_;
+	    xmldoc_->last	= xmlnode_;
 
-	    std::swap(prev_, xmlnode__->prev);
-	    std::swap(next_, xmlnode__->next);
+	    std::swap(prev_, xmlnode_->prev);
+	    std::swap(next_, xmlnode_->next);
 	}
 
 	~node2doc (void) {
@@ -133,15 +133,15 @@ namespace {
 
 	    xmlFreeDoc(xmldoc_);
 
-	    std::swap(prev_, xmlnode__->prev);
-	    std::swap(next_, xmlnode__->next);
+	    std::swap(prev_, xmlnode_->prev);
+	    std::swap(next_, xmlnode_->next);
 	}
 
 	xmlDocPtr get_doc (void)
 	{ return xmldoc_; }
     private:
 	xmlDocPtr xmldoc_;
-	xmlNodePtr xmlnode__;
+	xmlNodePtr xmlnode_;
 	xmlNodePtr prev_;
 	xmlNodePtr next_;
     };
