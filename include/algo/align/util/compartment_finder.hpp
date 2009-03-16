@@ -67,7 +67,8 @@ public:
     }
 
     static TCoord s_GetDefaultMaxIntron(void) {
-        return 1100000; // NM_147181.3  vs   NC_000004.10
+                        // NM_147181.3 vs NC_000004.10 (~1.1M)
+        return 1200000; // NM_001128929.1 vs NC_000003.10 (~1.2M)
     }
     
     void SetPenalty(TCoord penalty) {
