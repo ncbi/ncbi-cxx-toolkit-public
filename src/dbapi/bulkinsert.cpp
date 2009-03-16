@@ -99,7 +99,7 @@ void CBulkInsert::SetHints(CTempString hints)
 
 void CBulkInsert::AddHint(EHints hint, unsigned int value /* = 0 */)
 {
-    GetBCPInCmd()->AddHint(static_cast<CDB_BCPInCmd::EBCP_Hints>(hint), value);
+    GetBCPInCmd()->AddHint((CDB_BCPInCmd::EBCP_Hints)hint, value);
 }
 
 void CBulkInsert::AddOrderHint(CTempString columns)
