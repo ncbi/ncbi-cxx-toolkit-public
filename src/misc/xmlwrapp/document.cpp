@@ -63,6 +63,10 @@
 // bring in private libxslt stuff (see bug #1927398)
 #include "result.hpp"
 
+// Workshop compiler define
+#include <ncbiconf.h>
+
+
 using namespace xml;
 using namespace xml::impl;
 
@@ -249,7 +253,14 @@ bool xml::document::validate (const char *dtdname) {
 }
 //####################################################################
 xml::document::size_type xml::document::size (void) const {
-    return std::distance(begin(), end());
+    #ifdef NCBI_COMPILER_WORKSHOP
+        xml::document::size_type   dist(0);
+        xml::node::const_iterator  first(begin()), last(end());
+        for (; first != last; ++first) { ++dist; }
+        return dist;
+    #else
+        return std::distance(begin(), end());
+    #endif
 }
 //####################################################################
 xml::node::iterator xml::document::begin (void) {

@@ -68,6 +68,9 @@
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 
+// Workshop compiler define
+#include <ncbiconf.h>
+
 using namespace xml;
 using namespace xml::impl;
 
@@ -416,7 +419,14 @@ void xml::node::push_back (const node &child) {
 }
 //####################################################################
 xml::node::size_type xml::node::size (void) const {
-    return std::distance(begin(), end());
+    #ifdef NCBI_COMPILER_WORKSHOP
+        xml::node::size_type       dist(0);
+        xml::node::const_iterator  first(begin()), last(end());
+        for (; first != last; ++first) { ++dist; }
+        return dist;
+    #else
+        return std::distance(begin(), end());
+    #endif
 }
 //####################################################################
 bool xml::node::empty (void) const {
