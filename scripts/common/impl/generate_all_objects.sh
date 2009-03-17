@@ -24,9 +24,10 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/objects/*/*.asn src/internal/mapview/objects/*/*.asn \
   src/internal/ncbi_ls/asn/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
-  src/internal/gbench/plugins/radar/lib/*.asn \
-  src/internal/blast/SplitDB/asn*/*.asn \
-  src/internal/blast/SplitDB/BlastdbInfo/asn/*.asn ; do
+  src/internal/gbench/app/radar/*.asn \
+  src/internal/blast/DistribDbSupport/*asn*/*.asn \
+  src/internal/blast/SplitDB/asn/*.asn \
+  src/internal/blast/SplitDB/asn[24]*/*.asn; do
     if test -f "$spec"; then
         case $spec in
             */seq_annot_ref.asn ) continue ;; # sample data, not a spec
@@ -57,11 +58,18 @@ done
 
 splitdb_dir=src/internal/blast/SplitDB/asn
 if [ -f $splitdb_dir/Makefile.asntool ]; then
+    top_srcdir=`pwd`
+    builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.??*/build | head -1`
+    [ -d "$builddir" ] || builddir=$NCBI/c++.metastable/Release/build
+    make_asntool="${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir"
+    if $force || [ ! -f ${splitdb_dir}gendefs/objGendefs.c ]; then
+        (cd ${splitdb_dir}gendefs && $make_asntool) || failed="$failed asngendefs-C"
+    fi
     if $force || [ ! -f $splitdb_dir/objPSSM.c ]; then
-        top_srcdir=`pwd`
-        builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.??*/build | head -1`
-        [ -d "$builddir" ] || builddir=$NCBI/c++.metastable/Release/build
-        (cd $splitdb_dir && ${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir) || failed="$failed SplitDB-C"
+        (cd $splitdb_dir && $make_asntool) || failed="$failed SplitDB-misc-C"
+    fi
+    if $force || [ ! -f ${splitdb_dir}dbld/objDbld.c ]; then
+        (cd ${splitdb_dir}dbld && $make_asntool) || failed="$failed asndbld-C"
     fi
 fi
 
