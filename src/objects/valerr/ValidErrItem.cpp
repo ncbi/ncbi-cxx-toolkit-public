@@ -519,9 +519,9 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_UserObjectProblem,
    TErrStrs( "UserObjectProblem",
 "The user object is missing required fields or has invalid data.")),
-    TErrTypStrs( eErr_SEQ_DESCR_ObsoleteSourceQual,
-    TErrStrs( "ObsoleteSourceQual",
-"There is a source qualifier that is no longer legal for use in GenBank \
+    TErrTypStrs( eErr_SEQ_DESCR_Obsolete,
+    TErrStrs( "Obsolete",
+"There is a source descriptor type that is no longer legal for use in GenBank \
 records.")),
 
 /* SEQ_GENERIC */
