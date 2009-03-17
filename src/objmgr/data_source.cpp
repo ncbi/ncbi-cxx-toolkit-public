@@ -1150,6 +1150,7 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
             TTSE_LockSet locks;
             ITERATE(CDataLoader::TTSE_LockSet, it, tse_set->second) {
                 locks.AddLock(*it);
+                (*it)->x_GetRecords(tse_set->first, true);
             }
             TSeqMatchMap::iterator match = match_map.find(tse_set->first);
             _ASSERT(match != match_map.end()  &&  !match->second);
