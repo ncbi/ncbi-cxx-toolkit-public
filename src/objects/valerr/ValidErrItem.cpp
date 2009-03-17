@@ -59,800 +59,1313 @@ const TErrTypStrs sc_ErrStrs [] = {
 
 /* SEQ_INST */
 
-    TErrTypStrs( eErr_SEQ_INST_ExtNotAllowed, 
-TErrStrs("ExtNotAllowed",
-"A Bioseq 'extension' is used for special classes of Bioseq. This class \
-of Bioseq should not have one but it does. This is probably a software \
-error.")),
-    TErrTypStrs( eErr_SEQ_INST_ExtBadOrMissing, 
-    TErrStrs("ExtBadOrMissing",
-"This class of Bioseq requires an 'extension' but it is missing or of \
-the wrong type. This is probably a software error.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqDataNotFound, 
-    TErrStrs("SeqDataNotFound",
+   TErrTypStrs ( eErr_SEQ_INST_ExtNotAllowed,
+   TErrStrs( "ExtNotAllowed",
+"A Bioseq \"extension\" is used for special classes of Bioseq. This class of \
+Bioseq should not have one but it does. This is probably a software error.")),
+   TErrTypStrs ( eErr_SEQ_INST_ExtBadOrMissing,
+   TErrStrs( "ExtBadOrMissing",
+"This class of Bioseq requires an \"extension\" but it is missing or of the \
+wrong type. This is probably a software error.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqDataNotFound,
+   TErrStrs( "SeqDataNotFound",
 "No actual sequence data was found on this Bioseq. This is probably a \
 software problem.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqDataNotAllowed, 
-    TErrStrs("SeqDataNotAllowed",
-"The wrong type of sequence data was found on this Bioseq. This is \
-probably a software problem.")),
-    TErrTypStrs( eErr_SEQ_INST_ReprInvalid,
-    TErrStrs( "ReprInvalid",
-"This Bioseq has an invalid representation class. This is probably a \
-software error.")),
-    TErrTypStrs( eErr_SEQ_INST_CircularProtein,
-    TErrStrs( "CircularProtein",
+   TErrTypStrs ( eErr_SEQ_INST_SeqDataNotAllowed,
+   TErrStrs( "SeqDataNotAllowed",
+"The wrong type of sequence data was found on this Bioseq. This is probably a \
+software problem.")),
+   TErrTypStrs ( eErr_SEQ_INST_ReprInvalid,
+   TErrStrs( "ReprInvalid",
+"This Bioseq has an invalid representation class. This is probably a software \
+error.")),
+   TErrTypStrs ( eErr_SEQ_INST_CircularProtein,
+   TErrStrs( "CircularProtein",
 "This protein Bioseq is represented as circular. Circular topology is \
 normally used only for certain DNA molecules, for example, plasmids.")),
-    TErrTypStrs( eErr_SEQ_INST_DSProtein,
-    TErrStrs( "DSProtein",
-"This protein Bioseq has strandedness indicated. Strandedness is \
-normally a property only of DNA sequences. Please unset the \
-strandedness.")),
-    TErrTypStrs( eErr_SEQ_INST_MolNotSet,
-    TErrStrs( "MolNotSet",
-"It is not clear whether this sequence is nucleic acid or protein. \
-Please set the appropriate molecule type (Bioseq.mol).")),
-    TErrTypStrs( eErr_SEQ_INST_MolOther,
-    TErrStrs( "MolOther",
-"Most sequences are either nucleic acid or protein. However, the \
-molecule type (Bioseq.mol) is set to 'other'. It should probably be set \
-to nucleic acid or a protein.")),
-    TErrTypStrs( eErr_SEQ_INST_FuzzyLen,
-    TErrStrs( "FuzzyLen",
-"This sequence is marked as having an uncertain length, but the length \
-is known exactly.")),
-    TErrTypStrs( eErr_SEQ_INST_InvalidLen,
-    TErrStrs( "InvalidLen",
+   TErrTypStrs ( eErr_SEQ_INST_DSProtein,
+   TErrStrs( "DSProtein",
+"This protein Bioseq has strandedness indicated. Strandedness is normally a \
+property only of DNA sequences. Please unset the strandedness.")),
+   TErrTypStrs ( eErr_SEQ_INST_MolNotSet,
+   TErrStrs( "MolNotSet",
+"It is not clear whether this sequence is nucleic acid or protein. Please set \
+the appropriate molecule type (Bioseq.mol).")),
+   TErrTypStrs ( eErr_SEQ_INST_MolOther,
+   TErrStrs( "MolOther",
+"Most sequences are either nucleic acid or protein. However, the molecule \
+type (Bioseq.mol) is set to \"other\". It should probably be set to nucleic \
+acid or a protein.")),
+   TErrTypStrs ( eErr_SEQ_INST_FuzzyLen,
+   TErrStrs( "FuzzyLen",
+"This sequence is marked as having an uncertain length, but the length is \
+known exactly.")),
+   TErrTypStrs ( eErr_SEQ_INST_InvalidLen,
+   TErrStrs( "InvalidLen",
 "The length indicated for this sequence is invalid. This is probably a \
 software error.")),
-    TErrTypStrs( eErr_SEQ_INST_InvalidAlphabet,
-    TErrStrs( "InvalidAlphabet",
-"This Bioseq has an invalid alphabet (e.g. protein codes on a nucleic \
-acid or vice versa). This is probably a software error.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqDataLenWrong,
-    TErrStrs( "SeqDataLenWrong",
-"The length of this Bioseq does not agree with the length of the actual \
-data. This is probably a software error.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqPortFail,
-    TErrStrs( "SeqPortFail",
-"Something is very wrong with this entry. The validator cannot open a \
-SeqPort on the Bioseq. Further testing cannot be done.")),
-    TErrTypStrs( eErr_SEQ_INST_InvalidResidue,
-    TErrStrs( "InvalidResidue",
+   TErrTypStrs ( eErr_SEQ_INST_InvalidAlphabet,
+   TErrStrs( "InvalidAlphabet",
+"This Bioseq has an invalid alphabet (e.g. protein codes on a nucleic acid or \
+vice versa). This is probably a software error.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqDataLenWrong,
+   TErrStrs( "SeqDataLenWrong",
+"The length of this Bioseq does not agree with the length of the actual data. \
+This is probably a software error.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqPortFail,
+   TErrStrs( "SeqPortFail",
+"Something is very wrong with this entry. The validator cannot open a SeqPort \
+on the Bioseq. Further testing cannot be done.")),
+   TErrTypStrs ( eErr_SEQ_INST_InvalidResidue,
+   TErrStrs( "InvalidResidue",
 "Invalid residue codes were found in this Bioseq.")),
-    TErrTypStrs( eErr_SEQ_INST_StopInProtein,
-    TErrStrs( "StopInProtein",
+   TErrTypStrs ( eErr_SEQ_INST_StopInProtein,
+   TErrStrs( "StopInProtein",
 "Stop codon symbols were found in this protein Bioseq.")),
-    TErrTypStrs( eErr_SEQ_INST_PartialInconsistent,
-    TErrStrs( "PartialInconsistent",
-"This segmented sequence is described as complete or incomplete in \
-several places, but these settings are inconsistent.")),
-    TErrTypStrs( eErr_SEQ_INST_ShortSeq,
-    TErrStrs( "ShortSeq",
+   TErrTypStrs ( eErr_SEQ_INST_PartialInconsistent,
+   TErrStrs( "PartialInconsistent",
+"This segmented sequence is described as complete or incomplete in several \
+places, but these settings are inconsistent.")),
+   TErrTypStrs ( eErr_SEQ_INST_ShortSeq,
+   TErrStrs( "ShortSeq",
 "This Bioseq is unusually short (less than 4 amino acids or less than 11 \
 nucleic acids). GenBank does not usually accept such short sequences.")),
-    TErrTypStrs( eErr_SEQ_INST_NoIdOnBioseq,
-    TErrStrs( "NoIdOnBioseq",
-"No SeqIds were found on this Bioseq. This is probably a software \
-error.")),
-    TErrTypStrs( eErr_SEQ_INST_BadDeltaSeq,
-    TErrStrs( "BadDeltaSeq",
+   TErrTypStrs ( eErr_SEQ_INST_NoIdOnBioseq,
+   TErrStrs( "NoIdOnBioseq",
+"No SeqIds were found on this Bioseq. This is probably a software error.")),
+   TErrTypStrs ( eErr_SEQ_INST_BadDeltaSeq,
+   TErrStrs( "BadDeltaSeq",
 "Delta sequences should only be HTGS-1 or HTGS-2.")),
-    TErrTypStrs( eErr_SEQ_INST_LongHtgsSequence,
-    TErrStrs( "LongHtgsSequence",
+   TErrTypStrs ( eErr_SEQ_INST_LongHtgsSequence,
+   TErrStrs( "LongHtgsSequence",
 "HTGS-1 or HTGS-2 sequences must be < 350 KB in length.")),
-    TErrTypStrs( eErr_SEQ_INST_LongLiteralSequence,
-    TErrStrs( "LongLiteralSequence",
+   TErrTypStrs ( eErr_SEQ_INST_LongLiteralSequence,
+   TErrStrs( "LongLiteralSequence",
 "Delta literals must be < 350 KB in length.")),
-    TErrTypStrs( eErr_SEQ_INST_SequenceExceeds350kbp,
-    TErrStrs( "SequenceExceeds350kbp",
-"Individual sequences must be < 350 KB in length, unless they represent \
-a single gene.")),
-    TErrTypStrs( eErr_SEQ_INST_ConflictingIdsOnBioseq,
-    TErrStrs( "ConflictingIdsOnBioseq",
-"Two SeqIds of the same class was found on this Bioseq. This is probably \
-a software error.")),
-    TErrTypStrs( eErr_SEQ_INST_MolNuclAcid,
-    TErrStrs( "MolNuclAcid",
+   TErrTypStrs ( eErr_SEQ_INST_SequenceExceeds350kbp,
+   TErrStrs( "SequenceExceeds350kbp",
+"Individual sequences must be < 350 KB in length, unless they represent a single gene.")),
+   TErrTypStrs ( eErr_SEQ_INST_ConflictingIdsOnBioseq,
+   TErrStrs( "ConflictingIdsOnBioseq",
+"Two SeqIds of the same class was found on this Bioseq. This is probably a software error.")),
+   TErrTypStrs ( eErr_SEQ_INST_MolNuclAcid,
+   TErrStrs( "MolNuclAcid",
 "The specific type of this nucleic acid (DNA or RNA) is not set.")),
-    TErrTypStrs( eErr_SEQ_INST_ConflictingBiomolTech,
-    TErrStrs( "ConflictingBiomolTech",
-"HTGS/STS/GSS records should be genomic DNA. There is a conflict between \
-the technique and expected molecule type.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqIdNameHasSpace,
-    TErrStrs( "SeqIdNameHasSpace",
-"The Seq-id.name field should be a single word without any whitespace. \
-This should be fixed by the database staff.")),
-    TErrTypStrs( eErr_SEQ_INST_IdOnMultipleBioseqs,
-    TErrStrs( "IdOnMultipleBioseqs",
-"There are multiple occurrences of the same Seq-id in this record. \
-Sequence identifiers must be unique within a record.")),
-    TErrTypStrs( eErr_SEQ_INST_DuplicateSegmentReferences,
-    TErrStrs( "DuplicateSegmentReferences",
-"The segmented sequence refers multiple times to the same Seq-id. This \
-may be due to a software error. Please consult with the database staff \
-to fix this record.")),
-    TErrTypStrs( eErr_SEQ_INST_TrailingX,
-    TErrStrs( "TrailingX",
+   TErrTypStrs ( eErr_SEQ_INST_ConflictingBiomolTech,
+   TErrStrs( "ConflictingBiomolTech",
+"HTGS/STS/GSS records should be genomic DNA. There is a conflict between the \
+technique and expected molecule type.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqIdNameHasSpace,
+   TErrStrs( "SeqIdNameHasSpace",
+"The Seq-id.name field should be a single word without any whitespace. This should be \
+fixed by the database staff.")),
+   TErrTypStrs ( eErr_SEQ_INST_IdOnMultipleBioseqs,
+   TErrStrs( "IdOnMultipleBioseqs",
+"There are multiple occurrences of the same Seq-id in this record. Sequence \
+identifiers must be unique within a record.")),
+   TErrTypStrs ( eErr_SEQ_INST_DuplicateSegmentReferences,
+   TErrStrs( "DuplicateSegmentReferences",
+"The segmented sequence refers multiple times to the same Seq-id. This may be due \
+to a software error. Please consult with the database staff to fix this record.")),
+   TErrTypStrs ( eErr_SEQ_INST_TrailingX,
+   TErrStrs( "TrailingX",
 "The protein sequence ends with one or more X (unknown) amino acids.")),
-    TErrTypStrs( eErr_SEQ_INST_BadSeqIdFormat,
-    TErrStrs( "BadSeqIdFormat",
-"A nucleotide sequence identifier should be 1 letter plus 5 digits or 2 \
-letters plus 6 digits, and a protein sequence identifer should be 3 \
-letters plus 5 digits.")),
-    TErrTypStrs( eErr_SEQ_INST_PartsOutOfOrder,
-    TErrStrs( "PartsOutOfOrder",
-"The parts inside a segmented set should correspond to the seq_ext of \
-the segmented bioseq. A difference will affect how the flatfile is \
-displayed.")),
-    TErrTypStrs( eErr_SEQ_INST_BadSecondaryAccn,
-    TErrStrs( "BadSecondaryAccn",
-"A secondary accession usually indicates a record replaced or subsumed \
-by the current record. In this case, the current accession and \
-secondary are the same.")),
-    TErrTypStrs( eErr_SEQ_INST_ZeroGiNumber,
-    TErrStrs( "ZeroGiNumber",
-"GI numbers are assigned to sequences by NCBI's sequence tracking \
-database. 0 is not a legal value for a gi number.")),
-    TErrTypStrs( eErr_SEQ_INST_RnaDnaConflict,
-    TErrStrs( "RnaDnaConflict",
-"The MolInfo biomol field is inconsistent with the Bioseq molecule type \
-field.")),
-    TErrTypStrs( eErr_SEQ_INST_HistoryGiCollision,
-    TErrStrs( "HistoryGiCollision",
-"The Bioseq history gi refers to this Bioseq, not to its predecessor or \
-successor.")),
-    TErrTypStrs( eErr_SEQ_INST_GiWithoutAccession,
-    TErrStrs( "GiWithoutAccession",
-"The Bioseq has a gi identifier but no GenBank/EMBL/DDBJ accession \
-identifier.")),
-    TErrTypStrs( eErr_SEQ_INST_MultipleAccessions,
-    TErrStrs( "MultipleAccessions",
-"The Bioseq has a gi identifier and more than one GenBank/EMBL/DDBJ \
-accession identifier.")),
-    TErrTypStrs( eErr_SEQ_INST_HistAssemblyMissing,
-    TErrStrs( "HistAssemblyMissing",
-"The Bioseq has a TPA identifier but does not have a Seq-hist.assembly alignment. \
-This should be annotated or calculated by the database, resulting in a PRIMARY \
-block visible in the flatfile.")),
-    TErrTypStrs( eErr_SEQ_INST_TerminalNs,
-    TErrStrs( "TerminalNs",
+   TErrTypStrs ( eErr_SEQ_INST_BadSeqIdFormat,
+   TErrStrs( "BadSeqIdFormat",
+"A nucleotide sequence identifier should be 1 letter plus 5 digits or 2 letters \
+plus 6 digits, and a protein sequence identifer should be 3 letters plus 5 digits.")),
+   TErrTypStrs ( eErr_SEQ_INST_PartsOutOfOrder,
+   TErrStrs( "PartsOutOfOrder",
+"The parts inside a segmented set should correspond to the seq_ext of the segmented \
+bioseq.  A difference will affect how the flatfile is displayed.")),
+   TErrTypStrs ( eErr_SEQ_INST_BadSecondaryAccn,
+   TErrStrs( "BadSecondaryAccn",
+"A secondary accession usually indicates a record replaced or subsumed by the current \
+record.  In this case, the current accession and secondary are the same.")),
+   TErrTypStrs ( eErr_SEQ_INST_ZeroGiNumber,
+   TErrStrs( "ZeroGiNumber",
+"GI numbers are assigned to sequences by NCBI's sequence tracking database.  0 is not \
+a legal value for a gi number.")),
+   TErrTypStrs ( eErr_SEQ_INST_RnaDnaConflict,
+   TErrStrs( "RnaDnaConflict",
+"The MolInfo biomol field is inconsistent with the Bioseq molecule type field.")),
+   TErrTypStrs ( eErr_SEQ_INST_HistoryGiCollision,
+   TErrStrs( "HistoryGiCollision",
+"The Bioseq history gi refers to this Bioseq, not to its predecessor or successor.")),
+   TErrTypStrs ( eErr_SEQ_INST_GiWithoutAccession,
+   TErrStrs( "GiWithoutAccession",
+"The Bioseq has a gi identifier but no GenBank/EMBL/DDBJ accession identifier.")),
+   TErrTypStrs ( eErr_SEQ_INST_MultipleAccessions,
+   TErrStrs( "MultipleAccessions",
+"The Bioseq has a gi identifier and more than one GenBank/EMBL/DDBJ accession identifier.")),
+   TErrTypStrs ( eErr_SEQ_INST_HistAssemblyMissing,
+   TErrStrs( "HistAssemblyMissing",
+"The Bioseq has a TPA identifier but does not have a Seq-hist.assembly alignment.  This \
+should be annotated or calculated by the database, resulting in a PRIMARY block visible \
+in the flatfile.")),
+   TErrTypStrs ( eErr_SEQ_INST_TerminalNs,
+   TErrStrs( "TerminalNs",
 "The Bioseq has one or more N bases at the end.")),
-    TErrTypStrs( eErr_SEQ_INST_UnexpectedIdentifierChange,
-    TErrStrs( "UnexpectedIdentifierChange",
-"The set of sequence identifiers on a Bioseq are not consistent with the \
-previous version of the record in the database.")),
-    TErrTypStrs( eErr_SEQ_INST_InternalNsInSeqLit,
-    TErrStrs( "InternalNsInSeqLit",
+   TErrTypStrs ( eErr_SEQ_INST_UnexpectedIdentifierChange,
+   TErrStrs( "UnexpectedIdentifierChange",
+"The set of sequence identifiers on a Bioseq are not consistent with the previous version \
+of the record in the database.")),
+   TErrTypStrs ( eErr_SEQ_INST_InternalNsInSeqLit,
+   TErrStrs( "InternalNsInSeqLit",
 "There are runs of many Ns inside the SeqLit component of a delta Bioseq.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqLitGapLength0,
-    TErrStrs( "SeqLitGapLength0",
-"A SeqLit component of a delta Bioseq can specify a gap, but it should \
-not be a gap of 0 length.")),
-    TErrTypStrs( eErr_SEQ_INST_TpaAssmeblyProblem,
-    TErrStrs( "TpaAssmeblyProblem",
+   TErrTypStrs ( eErr_SEQ_INST_SeqLitGapLength0,
+   TErrStrs( "SeqLitGapLength0",
+"A SeqLit component of a delta Bioseq can specify a gap, but it should not be a gap \
+of 0 length.")),
+   TErrTypStrs ( eErr_SEQ_INST_TpaAssmeblyProblem,
+   TErrStrs( "TpaAssmeblyProblem",
 "Third party annotation records should have a TpaAssembly user object and a \
 Seq-hist.assembly alignment for the PRIMARY block.")),
-    TErrTypStrs( eErr_SEQ_INST_SeqLocLength,
-    TErrStrs( "SeqLocLength",
+   TErrTypStrs ( eErr_SEQ_INST_SeqLocLength,
+   TErrStrs( "SeqLocLength",
 "A SeqLoc component of a delta Bioseq is suspiciously small.")),
-    TErrTypStrs( eErr_SEQ_INST_MissingGaps,
-    TErrStrs( "MissingGaps",
+   TErrTypStrs ( eErr_SEQ_INST_MissingGaps,
+   TErrStrs( "MissingGaps",
 "HTGS delta records should have gaps between each sequence segment.")),
-    TErrTypStrs( eErr_SEQ_INST_CompleteTitleProblem,
-    TErrStrs( "CompleteTitleProblem",
+   TErrTypStrs ( eErr_SEQ_INST_CompleteTitleProblem,
+   TErrStrs( "CompleteTitleProblem",
 "The sequence title has complete genome in it, but it is not marked as complete.")),
-    TErrTypStrs( eErr_SEQ_INST_CompleteCircleProblem,
-    TErrStrs( "CompleteCircleProblem",
+   TErrTypStrs ( eErr_SEQ_INST_CompleteCircleProblem,
+   TErrStrs( "CompleteCircleProblem",
 "This sequence has a circular topology, but it is not marked as complete.")),
-    TErrTypStrs( eErr_SEQ_INST_BadHTGSeq,
-    TErrStrs( "BadHTGSeq",
+   TErrTypStrs ( eErr_SEQ_INST_BadHTGSeq,
+   TErrStrs( "BadHTGSeq",
 "High throughput genomic sequences without gaps should have quality score graphs.")),
+   TErrTypStrs ( eErr_SEQ_INST_GapInProtein,
+   TErrStrs( "GapInProtein",
+"Gap symbols found in this protein Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_INST_BadProteinStart,
+   TErrStrs( "BadProteinStart",
+"A gap symbols was found at the start of this protein Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_INST_TerminalGap,
+   TErrStrs( "TerminalGap",
+"The Bioseq has a gap at the end.")),
+   TErrTypStrs ( eErr_SEQ_INST_OverlappingDeltaRange,
+   TErrStrs( "OverlappingDeltaRange",
+"The Bioseq has a gap at the end.")),
+   TErrTypStrs ( eErr_SEQ_INST_LeadingX,
+   TErrStrs( "LeadingX",
+"The protein sequence starts with one or more X (unknown) amino acids.")),
+   TErrTypStrs ( eErr_SEQ_INST_InternalNsInSeqRaw,
+   TErrStrs( "InternalNsInSeqRaw",
+"There are runs of greater than 100 Ns within sequence.  Please describe \
+what these Ns represent with your sequence submission.")),
+   TErrTypStrs ( eErr_SEQ_INST_InternalNsAdjacentToGap,
+   TErrStrs( "InternalNsAdjacentToGap",
+"There are Ns directly adjacent to a SeqLit gap in a delta Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_INST_CaseDifferenceInSeqID,
+   TErrStrs( "CaseDifferenceInSeqID",
+"Multiple Bioseqs have the same Seq-id except for capitalization. Sequence \
+identifiers must be unique in a case-insensitive manner within a record.")),
+   TErrTypStrs ( eErr_SEQ_INST_DeltaComponentIsGi0,
+   TErrStrs( "DeltaComponentIsGi0",
+"Delta component refers to gi 0. This indicates an error in database processing of this record.")),
+   TErrTypStrs ( eErr_SEQ_INST_FarFetchFailure,
+   TErrStrs( "FarFetchFailure",
+"Fetching of a far feature location or component bioseq was needed, but no fetch \
+function is registered in the program.")),
+   TErrTypStrs ( eErr_SEQ_INST_InternalGapsInSeqRaw,
+   TErrStrs( "InternalGapsInSeqRaw",
+"Raw sequences should not have gap characters.")),
+   TErrTypStrs ( eErr_SEQ_INST_SelfReferentialSequence,
+   TErrStrs( "SelfReferentialSequence",
+"A delta sequence must refer to other components, not to itself.")),
+   TErrTypStrs ( eErr_SEQ_INST_WholeComponent,
+   TErrStrs( "WholeComponent",
+"A delta sequence component should be described as a specific interval, not as \
+the whole of a sequence.")),
+   TErrTypStrs ( eErr_SEQ_INST_TSAHistAssemblyMissing,
+   TErrStrs( "TSAHistAssemblyMissing",
+"The Bioseq has a TSA MolInfo tech but does not have a Seq-hist.assembly alignment.")),
+   TErrTypStrs ( eErr_SEQ_INST_ProteinsHaveGeneralID,
+   TErrStrs( "ProteinsHaveGeneralID",
+"One or more protein Bioseqs have a general Seq-id.")),
+   TErrTypStrs ( eErr_SEQ_INST_HighNContent,
+   TErrStrs( "HighNContent",
+"This sequence contains too many Ns.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqLitDataLength0,
+   TErrStrs( "SeqLitDataLength0",
+"A SeqLit component of a delta Bioseq must not have 0 length.")),
 
 /* SEQ_DESCR */
 
-    TErrTypStrs( eErr_SEQ_DESCR_BioSourceMissing,
-    TErrStrs( "BioSourceMissing",
-"The biological source of this sequence has not been described \
-correctly. A Bioseq must have a BioSource descriptor that covers the \
-entire molecule. Additional BioSource features may also be added to \
-recombinant molecules, natural or otherwise, to designate the parts of \
-the molecule. Please add the source information.")),
-    TErrTypStrs( eErr_SEQ_DESCR_InvalidForType,
-    TErrStrs( "InvalidForType",
-"This descriptor cannot be used with this Bioseq. A descriptor placed at \
-the BioseqSet level applies to all of the Bioseqs in the set. Please \
-make sure the descriptor is consistent with every sequence to which it \
-applies.")),
-    TErrTypStrs( eErr_SEQ_DESCR_FileOpenCollision,
-    TErrStrs( "FileOpenCollision",
-"FileOpen is unable to find a local file. This is normal, and can be \
-ignored.")),
-    TErrTypStrs( eErr_SEQ_DESCR_Unknown,
-    TErrStrs( "Unknown",
-"An unknown or 'other' modifier was used.")),
-    TErrTypStrs( eErr_SEQ_DESCR_NoPubFound,
-    TErrStrs( "NoPubFound",
-"No publications were found in this entry which refer to this Bioseq. If \
-a publication descriptor is added to a BioseqSet, it will apply to all \
-of the Bioseqs in the set. A publication feature should be used if the \
-publication applies only to a subregion of a sequence.")),
-    TErrTypStrs( eErr_SEQ_DESCR_NoOrgFound,
-    TErrStrs( "NoOrgFound",
-"This entry does not specify the organism that was the source of the \
-sequence. Please name the organism.")),
-    TErrTypStrs( eErr_SEQ_DESCR_MultipleBioSources,
-    TErrStrs( "MultipleBioSources",
-"There are multiple BioSource or OrgRef descriptors in the same chain \
-with the same taxonomic name. Their information should be combined into \
-a single BioSource descriptor.")),
-    TErrTypStrs( eErr_SEQ_DESCR_NoMolInfoFound,
-    TErrStrs( "NoMolInfoFound",
-"This sequence does not have a Mol-info descriptor applying to it. This \
-indicates genomic vs. message, sequencing technique, and whether the \
-sequence is incomplete.")),
-    TErrTypStrs( eErr_SEQ_DESCR_BadCountryCode,
-    TErrStrs( "BadCountryCode",
-"The country code (up to the first colon) is not on the approved list of \
-countries.")),
-    TErrTypStrs( eErr_SEQ_DESCR_NoTaxonID,
-    TErrStrs( "NoTaxonID",
-"The BioSource is missing a taxonID database identifier. This will be \
-inserted by the automated taxonomy lookup called by Clean Up Record.")),
-    TErrTypStrs( eErr_SEQ_DESCR_InconsistentBioSources,
-    TErrStrs( "InconsistentBioSources",
-"This population study has BioSource descriptors with different \
-taxonomic names. All members of a population study should be from the \
-same organism.")),
-    TErrTypStrs( eErr_SEQ_DESCR_MissingLineage,
-    TErrStrs( "MissingLineage",
-"A BioSource should have a taxonomic lineage, which can be obtained from \
-the taxonomy network server.")),
-    TErrTypStrs( eErr_SEQ_DESCR_SerialInComment,
-    TErrStrs( "SerialInComment",
-"Comments that refer to the conclusions of a specific reference should \
-not be cited by a serial number inside brackets (e.g., [3]), but should \
-instead be attached as a REMARK on the reference itself.")),
-    TErrTypStrs( eErr_SEQ_DESCR_BioSourceNeedsFocus,
-    TErrStrs( "BioSourceNeedsFocus",
+   TErrTypStrs ( eErr_SEQ_DESCR_BioSourceMissing,
+   TErrStrs( "BioSourceMissing",
+"The biological source of this sequence has not been described correctly.  A \
+Bioseq must have a BioSource descriptor that covers the entire molecule. \
+Additional BioSource features may also be added to recombinant molecules, \
+natural or otherwise, to designate the parts of the molecule. Please add the \
+source information.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_InvalidForType,
+   TErrStrs( "InvalidForType",
+"This descriptor cannot be used with this Bioseq. A descriptor placed at the \
+BioseqSet level applies to all of the Bioseqs in the set. Please make sure \
+the descriptor is consistent with every sequence to which it applies.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_FileOpenCollision,
+   TErrStrs( "FileOpenCollision",
+"FileOpen is unable to find a local file.  This is normal, and can be ignored.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_Unknown,
+   TErrStrs( "Unknown",
+"An unknown or \"other\" modifier was used.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_NoPubFound,
+   TErrStrs( "NoPubFound",
+"No publications were found in this entry which refer to this Bioseq. If a \
+publication descriptor is added to a BioseqSet, it will apply to all of the \
+Bioseqs in the set. A publication feature should be used if the publication \
+applies only to a subregion of a sequence.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_NoOrgFound,
+   TErrStrs( "NoOrgFound",
+"This entry does not specify the organism that was the source of the sequence. \
+Please name the organism.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleBioSources,
+   TErrStrs( "MultipleBioSources",
+"There are multiple BioSource or OrgRef descriptors in the same chain with \
+the same taxonomic name. Their information should be combined into a single \
+BioSource descriptor.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_NoMolInfoFound,
+   TErrStrs( "NoMolInfoFound",
+"This sequence does not have a Mol-info descriptor applying to it.  This indicates \
+genomic vs. message, sequencing technique, and whether the sequence is incomplete.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadCountryCode,
+   TErrStrs( "BadCountryCode",
+"The country code (up to the first colon) is not on the approved list of countries.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_NoTaxonID,
+   TErrStrs( "NoTaxonID",
+"The BioSource is missing a taxonID database identifier.  This will be inserted by \
+the automated taxonomy lookup called by Clean Up Record.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_InconsistentBioSources,
+   TErrStrs( "InconsistentBioSources",
+"This population study has BioSource descriptors with different taxonomic names. \
+All members of a population study should be from the same organism.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MissingLineage,
+   TErrStrs( "MissingLineage",
+"A BioSource should have a taxonomic lineage, which can be obtained from the \
+taxonomy network server.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_SerialInComment,
+   TErrStrs( "SerialInComment",
+"Comments that refer to the conclusions of a specific reference should not be \
+cited by a serial number inside brackets (e.g., [3]), but should instead be \
+attached as a REMARK on the reference itself.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BioSourceNeedsFocus,
+   TErrStrs( "BioSourceNeedsFocus",
 "Focus must be set on a BioSource descriptor in records where there is a \
 BioSource feature with a different organism name.")),
-    TErrTypStrs( eErr_SEQ_DESCR_BadOrganelle,
-    TErrStrs( "BadOrganelle",
-"Note that only Kinetoplastida have kinetoplasts, and that only \
-Chlorarchniophyta and Cryptophyta have nucleomorphs.")),
-    TErrTypStrs( eErr_SEQ_DESCR_MultipleChromosomes,
-    TErrStrs( "MultipleChromosomes",
-"There are multiple chromosome qualifiers on this Bioseq. With the \
-exception of some pseudoautosomal genes, this is likely to be a \
-biological annotation error.")),
-    TErrTypStrs( eErr_SEQ_DESCR_BadSubSource,
-    TErrStrs( "BadSubSource",
+   TErrTypStrs ( eErr_SEQ_DESCR_BadOrganelle,
+   TErrStrs( "BadOrganelle",
+"Note that only Kinetoplastida have kinetoplasts, and that only Chlorarchniophyta \
+and Cryptophyta have nucleomorphs.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleChromosomes,
+   TErrStrs( "MultipleChromosomes",
+"There are multiple chromosome qualifiers on this Bioseq.  With the exception of \
+some pseudoautosomal genes, this is likely to be a biological annotation error.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadSubSource,
+   TErrStrs( "BadSubSource",
 "Unassigned SubSource subtype.")),
-    TErrTypStrs( eErr_SEQ_DESCR_BadOrgMod,
-    TErrStrs( "BadOrgMod",
+   TErrTypStrs ( eErr_SEQ_DESCR_BadOrgMod,
+   TErrStrs( "BadOrgMod",
 "Unassigned OrgMod subtype.")),
-    TErrTypStrs( eErr_SEQ_DESCR_InconsistentProteinTitle,
-    TErrStrs( "InconsistentProteinTitle",
-"An instantiated protein title descriptor should normally be the same as \
-the automatically generated title. This may be a curated exception, or \
-it may be out of synch with the current annotation.")),
-    TErrTypStrs( eErr_SEQ_DESCR_Inconsistent,
-    TErrStrs( "Inconsistent",
-"There are two descriptors of the same type which are inconsistent with \
-each other. Please make them consistent.")),
-    TErrTypStrs( eErr_SEQ_DESCR_ObsoleteSourceLocation,
-    TErrStrs( "ObsoleteSourceLocation",
-"There is a source location that is no longer legal for use in GenBank \
-records.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_InconsistentProteinTitle,
+   TErrStrs( "InconsistentProteinTitle",
+"An instantiated protein title descriptor should normally be the same as the \
+automatically generated title.  This may be a curated exception, or it may \
+be out of synch with the current annotation.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_Inconsistent,
+   TErrStrs( "Inconsistent",
+"There are two descriptors of the same type which are inconsistent with each \
+other. Please make them consistent.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_ObsoleteSourceLocation,
+   TErrStrs( "ObsoleteSourceLocation",
+"There is a source location that is no longer legal for use in GenBank records.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_ObsoleteSourceQual,
+   TErrStrs( "ObsoleteSourceQual",
+"There is a source qualifier that is no longer legal for use in GenBank records.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_StructuredSourceNote,
+   TErrStrs( "StructuredSourceNote",
+"The name of a structured source field is present as text in a note.  The data \
+should probably be put into the appropriate field instead.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
+   TErrStrs( "UnnecessaryBioSourceFocus",
+"Focus should not be set on a BioSource descriptor in records where there is no \
+BioSource feature.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
+   TErrStrs( "RefGeneTrackingWithoutStatus",
+"The RefGeneTracking user object does not have the required Status field set.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_UnwantedCompleteFlag,
+   TErrStrs( "UnwantedCompleteFlag",
+"The Mol-info.completeness flag should not be set on a genomic sequence unless \
+the title also says it is a complete sequence or complete genome.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_CollidingPublications,
+   TErrStrs( "CollidingPublications",
+"Multiple publication descriptors with the same PMID or MUID apply to a Bioseq. \
+The lower-level ones are redundant, and should be removed.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_TransgenicProblem,
+   TErrStrs( "TransgenicProblem",
+"A BioSource descriptor with /transgenic set must be accompanied by a BioSource \
+feature on the nucleotide record.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_TaxonomyLookupProblem,
+   TErrStrs( "TaxonomyLookupProblem",
+"A BioSource descriptor or feature has flags returned by taxonomy lookup that \
+are either inconsistent with the data or require a taxonomy consult.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleTitles,
+   TErrStrs( "MultipleTitles",
+"There are multiple title descriptors in the same Bioseq or BioseqSet chain.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq,
+   TErrStrs( "RefGeneTrackingOnNonRefSeq",
+"The RefGeneTracking user object should only be in RefSeq records.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BioSourceInconsistency,
+   TErrStrs( "BioSourceInconsistency",
+"There is an internal inconsistency with specific fields in the BioSource.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_FastaBracketTitle,
+   TErrStrs( "FastaBracketTitle",
+"Bracketed [...=...] information remains in the title.  This should have been parsed \
+out during sequence record generation to obtain qualifier values.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MissingText,
+   TErrStrs( "MissingText",
+"Comments, regions, and other text descriptors need a descriptive text string. \
+The string provided with this descriptor is empty. If no text is desired, then \
+the descriptor should be removed.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadCollectionDate,
+   TErrStrs( "BadCollectionDate",
+"The collection date is not in the required format.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadPCRPrimerSequence,
+   TErrStrs( "BadPCRPrimerSequence",
+"The PCR primer sequence has illegal characters or non-IUPAC nucleotides.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadPunctuation,
+   TErrStrs( "BadPunctuation",
+"The title ends with incorrect punctuation marks.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadPCRPrimerName,
+   TErrStrs( "BadPCRPrimerName",
+"The PCR primer name appears to be a sequence instead of an identifying label.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BioSourceOnProtein,
+   TErrStrs( "BioSourceOnProtein",
+"A BioSource descriptor should not be placed on a protein that is in a nuc-prot set.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BioSourceDbTagConflict,
+   TErrStrs( "BioSourceDbTagConflict",
+"Multiple db_xrefs with the same database should not appear on a single BioSource.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_DuplicatePCRPrimerSequence,
+   TErrStrs( "DuplicatePCRPrimerSequence",
+"The PCR primer sequence has duplicate subsequences.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleNames,
+   TErrStrs( "MultipleNames",
+"There are multiple name descriptors in the same Bioseq or BioseqSet chain.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleComments,
+   TErrStrs( "MultipleComments",
+"There are multiple identical comment descriptors in the same Bioseq or BioseqSet chain.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonProblem,
+   TErrStrs( "LatLonProblem",
+"There is a problem with the lat_lon qualifier in the BioSource.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonFormat,
+   TErrStrs( "LatLonFormat",
+"The format of lat_lon should be dd.dd N|S ddd.dd E|W.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonRange,
+   TErrStrs( "LatLonRange",
+"Latitude or longitude is out of range.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonValue,
+   TErrStrs( "LatLonValue",
+"Latitude or longitude values appear to be in the wrong hemisphere or swapped.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonCountry,
+   TErrStrs( "LatLonCountry",
+"The lat_lon coordinate does not map to the indicated country.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonState,
+   TErrStrs( "LatLonState",
+"The lat_lon coordinate does not map to the indicated state or province.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadSpecificHost,
+   TErrStrs( "BadSpecificHost",
+"A BioSource descriptor or feature has a specific host value that may \
+require a taxonomy consult.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus,
+   TErrStrs( "RefGeneTrackingIllegalStatus",
+"The RefGeneTracking user object has an illegal Status value.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_ReplacedCountryCode,
+   TErrStrs( "ReplacedCountryCode",
+"The country code (up to the first colon) is no longer on the approved list of countries.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadInstitutionCode,
+   TErrStrs( "BadInstitutionCode",
+"The institution (or institution: collection) code is not on the approved list.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadCollectionCode,
+   TErrStrs( "BadCollectionCode",
+"The institution code is recognized, but the collection is not on the approved list.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadVoucherID,
+   TErrStrs( "BadVoucherID",
+"The voucher is missing a specific identifier.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_UnstructuredVoucher,
+   TErrStrs( "UnstructuredVoucher",
+"The voucher needs to be structured as \"<institution-code>:[<collection-code>:]<culture_id>\".")),
+   TErrTypStrs ( eErr_SEQ_DESCR_ChromosomeLocation,
+   TErrStrs( "ChromosomeLocation",
+"BioSource location is not usually chromosome.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleSourceQualifiers,
+   TErrStrs( "MultipleSourceQualifiers",
+"BioSource has unexpected multiple qualifiers of the same type.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_UnbalancedParentheses,
+   TErrStrs( "UnbalancedParentheses",
+"Qualifier should have matching ( and ) parentheses or [ and ] brackets.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MultipleSourceVouchers,
+   TErrStrs( "MultipleSourceVouchers",
+"BioSource has unexpected multiple bio_material/culture_collection/specimen_voucher \
+from the same institution.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadCountryCapitalization,
+   TErrStrs( "BadCountryCapitalization",
+"The country code does not use the correct capitalization.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_WrongVoucherType,
+   TErrStrs( "WrongVoucherType",
+"The institution (or institution: collection) code normally uses a different \
+bio_material/culture_collection/specimen_voucher type.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_UserObjectProblem,
+   TErrStrs( "UserObjectProblem",
+"The user object is missing required fields or has invalid data.")),
     TErrTypStrs( eErr_SEQ_DESCR_ObsoleteSourceQual,
     TErrStrs( "ObsoleteSourceQual",
 "There is a source qualifier that is no longer legal for use in GenBank \
 records.")),
-    TErrTypStrs( eErr_SEQ_DESCR_StructuredSourceNote,
-    TErrStrs( "StructuredSourceNote",
-"The name of a structured source field is present as text in a note. \
-The data should probably be put into the appropriate field instead.")),
-    TErrTypStrs( eErr_SEQ_DESCR_MultipleTitles,
-    TErrStrs( "MultipleTitles",
-"There are multiple title descriptors in the same chain.")),
-    TErrTypStrs( eErr_SEQ_DESCR_Obsolete,
-    TErrStrs( "Obsolete",
-"Obsolete descriptor type.")),
-    TErrTypStrs( eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
-    TErrStrs( "UnnecessaryBioSourceFocus",
-"Focus should not be set on a BioSource descriptor in records where there is no \
-BioSource feature.")),
-    TErrTypStrs( eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
-    TErrStrs( "RefGeneTrackingWithoutStatus",
-"The RefGeneTracking user object does not have the required Status field set.")),
-    TErrTypStrs( eErr_SEQ_DESCR_UnwantedCompleteFlag,
-    TErrStrs( "UnwantedCompleteFlag",
-"The Mol-info.completeness flag should not be set on a genomic sequence unless \
-the title also says it is a complete sequence or complete genome.")),
-    TErrTypStrs( eErr_SEQ_DESCR_CollidingPublications,
-    TErrStrs( "CollidingPublications",
-"Multiple publication descriptors with the same PMID or MUID apply to a Bioseq. \
-The lower-level ones are redundant, and should be removed.")),
-    TErrTypStrs( eErr_SEQ_DESCR_TransgenicProblem,
-    TErrStrs( "TransgenicProblem",
-"A BioSource descriptor with /transgenic set must be accompanied by a BioSource \
-feature on the nucleotide record.")),
-
-    TErrTypStrs( eErr_SEQ_DESCR_ReplacedCountryCode,
-    TErrStrs( "ReplacedCountryCode",
-"The country code (up to the first colon) is no longer on the approved list of \
-countries.")),
 
 /* SEQ_GENERIC */
 
-    TErrTypStrs( eErr_GENERIC_NonAsciiAsn,
-    TErrStrs( "NonAsciiAsn",
+   TErrTypStrs ( eErr_GENERIC_NonAsciiAsn,
+   TErrStrs( "NonAsciiAsn",
 "There is a non-ASCII type character in this entry.")),
-    TErrTypStrs( eErr_GENERIC_Spell,
-    TErrStrs( "Spell",
+   TErrTypStrs ( eErr_GENERIC_Spell,
+   TErrStrs( "Spell",
 "There is a potentially misspelled word in this entry.")),
-    TErrTypStrs( eErr_GENERIC_AuthorListHasEtAl,
-    TErrStrs( "AuthorListHasEtAl",
+   TErrTypStrs ( eErr_GENERIC_AuthorListHasEtAl,
+   TErrStrs( "AuthorListHasEtAl",
 "The author list contains et al, which should be replaced with the \
 remaining author names.")),
-    TErrTypStrs( eErr_GENERIC_MissingPubInfo,
-    TErrStrs( "MissingPubInfo",
-"The publication is missing essential information, such as title or \
-authors.")),
-    TErrTypStrs( eErr_GENERIC_UnnecessaryPubEquiv,
-    TErrStrs( "UnnecessaryPubEquiv",
-"A nested Pub-equiv is not normally expected in a publication. This may \
-prevent proper display of all publication information.")),
-    TErrTypStrs( eErr_GENERIC_BadPageNumbering,
-    TErrStrs( "BadPageNumbering",
+   TErrTypStrs ( eErr_GENERIC_MissingPubInfo,
+   TErrStrs( "MissingPubInfo",
+"The publication is missing essential information, such as title or authors.")),
+   TErrTypStrs ( eErr_GENERIC_UnnecessaryPubEquiv,
+   TErrStrs( "UnnecessaryPubEquiv",
+"A nested Pub-equiv is not normally expected in a publication.  This may prevent \
+proper display of all publication information.")),
+   TErrTypStrs ( eErr_GENERIC_BadPageNumbering,
+   TErrStrs( "BadPageNumbering",
 "The publication page numbering is suspect.")),
-    TErrTypStrs( eErr_GENERIC_MedlineEntryPub,
-    TErrStrs( "MedlineEntryPub",
+   TErrTypStrs ( eErr_GENERIC_MedlineEntryPub,
+   TErrStrs( "MedlineEntryPub",
 "Publications should not be of type medline-entry.  This has abstract and MeSH \
 term information that does not appear in the GenBank flatfile.  Type cit-art \
 should be used instead.")),
+   TErrTypStrs ( eErr_GENERIC_BadDate,
+   TErrStrs( "BadDate",
+"There are bad values for month, day, or year in a date.")),
+   TErrTypStrs ( eErr_GENERIC_StructuredCitGenCit,
+   TErrStrs( "StructuredCitGenCit",
+"The publication has title or journal embedded in the unstructured citgen.cit \
+field.")),
+   TErrTypStrs ( eErr_GENERIC_CollidingSerialNumbers,
+   TErrStrs( "CollidingSerialNumbers",
+"Multiple publications have the same serial number explicitly recorded in the \
+data.")),
+   TErrTypStrs ( eErr_GENERIC_EmbeddedScript,
+   TErrStrs( "EmbeddedScript",
+"Script or other markup tags should not be used in sequence record fields.")),
+   TErrTypStrs ( eErr_GENERIC_PublicationInconsistency,
+   TErrStrs( "PublicationInconsistency",
+"Some fields in the publication should not be present with other fields.")),
 
 /* SEQ_PKG */
 
-    TErrTypStrs( eErr_SEQ_PKG_NoCdRegionPtr,
-    TErrStrs( "NoCdRegionPtr",
+   TErrTypStrs ( eErr_SEQ_PKG_NoCdRegionPtr,
+   TErrStrs( "NoCdRegionPtr",
 "A protein is found in this entry, but the coding region has not been \
 described. Please add a CdRegion feature to the nucleotide Bioseq.")),
-    TErrTypStrs( eErr_SEQ_PKG_NucProtProblem,
-    TErrStrs( "NucProtProblem",
-"Both DNA and protein sequences were expected, but one of the two seems \
-to be missing. Perhaps this is the wrong package to use.")),
-    TErrTypStrs( eErr_SEQ_PKG_SegSetProblem,
-    TErrStrs( "SegSetProblem",
-"A segmented sequence was expected, but it was not found. Perhaps this \
-is the wrong package to use.")),
-    TErrTypStrs( eErr_SEQ_PKG_EmptySet,
-    TErrStrs( "EmptySet",
+   TErrTypStrs ( eErr_SEQ_PKG_NucProtProblem,
+   TErrStrs( "NucProtProblem",
+"Both DNA and protein sequences were expected, but one of the two seems to be \
+missing. Perhaps this is the wrong package to use.")),
+   TErrTypStrs ( eErr_SEQ_PKG_SegSetProblem,
+   TErrStrs( "SegSetProblem",
+"A segmented sequence was expected, but it was not found. Perhaps this is the \
+wrong package to use.")),
+   TErrTypStrs ( eErr_SEQ_PKG_EmptySet,
+   TErrStrs( "EmptySet",
 "No Bioseqs were found in this BioseqSet. Is that what was intended?")),
-    TErrTypStrs( eErr_SEQ_PKG_NucProtNotSegSet,
-    TErrStrs( "NucProtNotSegSet",
+   TErrTypStrs ( eErr_SEQ_PKG_NucProtNotSegSet,
+   TErrStrs( "NucProtNotSegSet",
 "A nuc-prot set should not contain any other BioseqSet except segset.")),
-    TErrTypStrs( eErr_SEQ_PKG_SegSetNotParts,
-    TErrStrs( "SegSetNotParts",
+   TErrTypStrs ( eErr_SEQ_PKG_SegSetNotParts,
+   TErrStrs( "SegSetNotParts",
 "A segset should not contain any other BioseqSet except parts.")),
-    TErrTypStrs( eErr_SEQ_PKG_SegSetMixedBioseqs,
-    TErrStrs( "SegSetMixedBioseqs",
+   TErrTypStrs ( eErr_SEQ_PKG_SegSetMixedBioseqs,
+   TErrStrs( "SegSetMixedBioseqs",
 "A segset should not contain both nucleotide and protein Bioseqs.")),
-    TErrTypStrs( eErr_SEQ_PKG_PartsSetMixedBioseqs,
-    TErrStrs( "PartsSetMixedBioseqs",
+   TErrTypStrs ( eErr_SEQ_PKG_PartsSetMixedBioseqs,
+   TErrStrs( "PartsSetMixedBioseqs",
 "A parts set should not contain both nucleotide and protein Bioseqs.")),
-    TErrTypStrs( eErr_SEQ_PKG_PartsSetHasSets,
-    TErrStrs( "PartsSetHasSets",
+   TErrTypStrs ( eErr_SEQ_PKG_PartsSetHasSets,
+   TErrStrs( "PartsSetHasSets",
 "A parts set should not contain BioseqSets.")),
-    TErrTypStrs( eErr_SEQ_PKG_FeaturePackagingProblem,
-    TErrStrs( "FeaturePackagingProblem",
-"A feature should be packaged on its bioseq, or on a set containing the \
-Bioseq.")),
-    TErrTypStrs( eErr_SEQ_PKG_GenomicProductPackagingProblem,
-    TErrStrs( "GenomicProductPackagingProblem",
-"The product of an mRNA feature in a genomic product set should point to \
-a cDNA Bioseq packaged in the set, perhaps within a nuc-prot set. \
-RefSeq records may however be referenced remotely.")),
-    TErrTypStrs( eErr_SEQ_PKG_InconsistentMolInfoBiomols,
-    TErrStrs( "InconsistentMolInfoBiomols",
-"Mol-info.biomol is inconsistent within a segset or parts set.")),
-    TErrTypStrs( eErr_SEQ_PKG_GraphPackagingProblem,
-    TErrStrs( "GraphPackagingProblem",
+   TErrTypStrs ( eErr_SEQ_PKG_FeaturePackagingProblem,
+   TErrStrs( "FeaturePackagingProblem",
+"A feature should be packaged on its bioseq, or on a set containing the Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_PKG_GenomicProductPackagingProblem,
+   TErrStrs( "GenomicProductPackagingProblem",
+"The product of an mRNA feature in a genomic product set should point to a cDNA \
+Bioseq packaged in the set, perhaps within a nuc-prot set.  RefSeq records may \
+however be referenced remotely.")),
+   TErrTypStrs ( eErr_SEQ_PKG_InconsistentMolInfoBiomols,
+   TErrStrs( "InconsistentMolInfoBiomols",
+"Mol-info.biomol is inconsistent within a segset, parts set, or pop/phy/mut/eco set.")),
+   TErrTypStrs ( eErr_SEQ_PKG_ArchaicFeatureLocation,
+   TErrStrs( "ArchaicFeatureLocation",
+"A feature location should refer to the accession or gi number, not a local or general ID.")),
+   TErrTypStrs ( eErr_SEQ_PKG_ArchaicFeatureProduct,
+   TErrStrs( "ArchaicFeatureProduct",
+"A feature product should refer to the accession or gi number, not a local or general ID.")),
+   TErrTypStrs ( eErr_SEQ_PKG_GraphPackagingProblem,
+   TErrStrs( "GraphPackagingProblem",
 "A graph should be packaged on its bioseq, or on a set containing the Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_PKG_InternalGenBankSet,
+   TErrStrs( "InternalGenBankSet",
+"An outer BioseqSet should not contain an internal BioseqSet of class genbank.")),
+   TErrTypStrs ( eErr_SEQ_PKG_ConSetProblem,
+   TErrStrs( "ConSetProblem",
+"BioseqSet class should not be conset.")),
+   TErrTypStrs ( eErr_SEQ_PKG_NoBioseqFound,
+   TErrStrs( "NoBioseqFound",
+"No Bioseqs were found in the entire record.")),
+   TErrTypStrs ( eErr_SEQ_PKG_INSDRefSeqPackaging,
+   TErrStrs( "INSDRefSeqPackaging",
+"INSD and RefSeq records should not be packaged together.")),
+   TErrTypStrs ( eErr_SEQ_PKG_GPSnonGPSPackaging,
+   TErrStrs( "GPSnonGPSPackaging",
+"Genomic product set records should not be packaged with other set types.")),
+   TErrTypStrs ( eErr_SEQ_PKG_RefSeqPopSet,
+   TErrStrs( "RefSeqPopSet",
+"RefSeq records should not be packaged in a popset.")),
 
 /* SEQ_FEAT */
 
-    TErrTypStrs( eErr_SEQ_FEAT_InvalidForType,
-    TErrStrs( "InvalidForType",
+   TErrTypStrs ( eErr_SEQ_FEAT_InvalidForType,
+   TErrStrs( "InvalidForType",
 "This feature type is illegal on this type of Bioseq.")),
-    TErrTypStrs( eErr_SEQ_FEAT_PartialProblem,
-    TErrStrs( "PartialProblem",
-"There are several places in an entry where a sequence can be described \
-as either partial or complete. In this entry, these settings are \
-inconsistent. Make sure that the location and product Seq-locs, the \
-Bioseqs, and the SeqFeat partial flag all agree in describing this \
-SeqFeat as partial or complete.")),
-    TErrTypStrs( eErr_SEQ_FEAT_PartialsInconsistent,
-    TErrStrs( "PartialsInconsistent",
-"This segmented sequence is described as complete or incomplete in several \
-places, but these settings are inconsistent.")),
-    TErrTypStrs( eErr_SEQ_FEAT_InvalidType,
-    TErrStrs( "InvalidType",
+   TErrTypStrs ( eErr_SEQ_FEAT_PartialProblem,
+   TErrStrs( "PartialProblem",
+"There are several places in an entry where a sequence can be described as \
+either partial or complete. In this entry, these settings are inconsistent. \
+Make sure that the location and product Seq-locs, the Bioseqs, and the \
+SeqFeat partial flag all agree in describing this SeqFeat as partial or \
+complete.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_InvalidType,
+   TErrStrs( "InvalidType",
 "A feature with an invalid type has been detected. This is most likely a \
 software problem.")),
-    TErrTypStrs( eErr_SEQ_FEAT_Range,
-    TErrStrs( "Range",
-"The coordinates describing the location of a feature do not fall within \
-the sequence itself. A feature location or a product Seq-loc is out of \
-range of the Bioseq it points to.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MixedStrand,
-    TErrStrs( "MixedStrand",
-"Mixed strands (plus and minus) have been found in the same location. \
-While this is biologically possible, it is very unusual. Please check \
-that this is really what you mean.")),
-    TErrTypStrs( eErr_SEQ_FEAT_SeqLocOrder,
-    TErrStrs( "SeqLocOrder",
-"This location has intervals that are out of order. While whis is \
-biologically possible, it is very unusual. Please check that this is \
+   TErrTypStrs ( eErr_SEQ_FEAT_Range,
+   TErrStrs( "Range",
+"The coordinates describing the location of a feature do not fall within the \
+sequence itself. A feature location or a product Seq-loc is out of range of \
+the Bioseq it points to.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MixedStrand,
+   TErrStrs( "MixedStrand",
+"Mixed strands (plus and minus) have been found in the same location. While \
+this is biologically possible, it is very unusual. Please check that this is \
 really what you mean.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CdTransFail,
-    TErrStrs( "CdTransFail",
-"A fundamental error occurred in software while attempting to translate \
-this coding region. It is either a software problem or sever data \
-corruption.")),
-    TErrTypStrs( eErr_SEQ_FEAT_StartCodon,
-    TErrStrs( "StartCodon",
-"An illegal start codon was used. Some possible explanations are: (1) \
-the wrong genetic code may have been selected; (2) the wrong reading \
-frame may be in use; or (3) the coding region may be incomplete at the \
-5' end, in which case a partial location should be indicated.")),
-    TErrTypStrs( eErr_SEQ_FEAT_InternalStop,
-    TErrStrs( "InternalStop",
+   TErrTypStrs ( eErr_SEQ_FEAT_SeqLocOrder,
+   TErrStrs( "SeqLocOrder",
+"This location has intervals that are out of order. While whis is biologically \
+possible, it is very unusual. Please check that this is really what you mean.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CdTransFail,
+   TErrStrs( "CdTransFail",
+"A fundamental error occurred in software while attempting to translate this \
+coding region. It is either a software problem or sever data corruption.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_StartCodon,
+   TErrStrs( "StartCodon",
+"An illegal start codon was used. Some possible explanations are: (1) the \
+wrong genetic code may have been selected; (2) the wrong reading frame may \
+be in use; or (3) the coding region may be incomplete at the 5' end, in \
+which case a partial location should be indicated.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_InternalStop,
+   TErrStrs( "InternalStop",
 "Internal stop codons are found in the protein sequence. Some possible \
-explanations are: (1) the wrong genetic code may have been selected; (2) \
-the wrong reading frame may be in use; (3) the coding region may be \
-incomplete at the 5' end, in which case a partial location should be \
-indicated; or (4) the CdRegion feature location is incorrect.")),
-    TErrTypStrs( eErr_SEQ_FEAT_NoProtein,
-    TErrStrs( "NoProtein",
-"Normally a protein sequence is supplied. This sequence can then be \
-compared with the translation of the coding region. In this entry, no \
-protein Bioseq was found, and the comparison could not be made.")),
- TErrTypStrs(eErr_SEQ_FEAT_MisMatchAA,
-    TErrStrs( "MisMatchAA",
-"The protein sequence that was supplied is not identical to the \
-translation of the coding region. Mismatching amino acids are found \
-between these two sequences.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TransLen,
-    TErrStrs( "TransLen",
+explanations are: (1) the wrong genetic code may have been selected; (2) the \
+wrong reading frame may be in use; (3) the coding region may be incomplete \
+at the 5' end, in which case a partial location should be indicated; or (4) \
+the CdRegion feature location is incorrect.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_NoProtein,
+   TErrStrs( "NoProtein",
+"Normally a protein sequence is supplied. This sequence can then be compared \
+with the translation of the coding region. In this entry, no protein Bioseq \
+was found, and the comparison could not be made.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MisMatchAA,
+   TErrStrs( "MisMatchAA",
+"The protein sequence that was supplied is not identical to the translation \
+of the coding region. Mismatching amino acids are found between these two \
+sequences.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TransLen,
+   TErrStrs( "TransLen",
 "The protein sequence that was supplied is not the same length as the \
-translation of the coding region. Please determine why they are \
-different.")),
-    TErrTypStrs( eErr_SEQ_FEAT_NoStop,
-    TErrStrs( "NoStop",
-"A coding region that is complete should have a stop codon at the 3'end. \
- A stop codon was not found on this sequence, although one was \
-expected.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TranslExcept,
-    TErrStrs( "TranslExcept",
-"An unparsed transl_except qualifier was found. This indicates a parser \
+translation of the coding region. Please determine why they are different.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_NoStop,
+   TErrStrs( "NoStop",
+"A coding region that is complete should have a stop codon at the 3'end.  A \
+stop codon was not found on this sequence, although one was expected.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TranslExcept,
+   TErrStrs( "TranslExcept",
+"An unparsed \transl_except qualifier was found. This indicates a parser \
 problem.")),
-    TErrTypStrs( eErr_SEQ_FEAT_NoProtRefFound,
-    TErrStrs( "NoProtRefFound",
-"The name and description of the protein is missing from this entry. \
-Every protein Bioseq must have one full-length Prot-ref feature to \
-provide this information.")),
-    TErrTypStrs( eErr_SEQ_FEAT_NotSpliceConsensus,
-    TErrStrs( "NotSpliceConsensus",
+   TErrTypStrs ( eErr_SEQ_FEAT_NoProtRefFound,
+   TErrStrs( "NoProtRefFound",
+"The name and description of the protein is missing from this entry. Every \
+protein Bioseq must have one full-length Prot-ref feature to provide this \
+information.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_NotSpliceConsensus,
+   TErrStrs( "NotSpliceConsensus",
 "Splice junctions typically have GT as the first two bases of the intron \
-(splice donor) and AG as the last two bases of the intron (splice \
-acceptor). This intron does not conform to that pattern.")),
-    TErrTypStrs( eErr_SEQ_FEAT_OrfCdsHasProduct,
-    TErrStrs( "OrfCdsHasProduct",
-"A coding region flagged as orf has a protein product. There should be \
-no protein product bioseq on an orf.")),
-    TErrTypStrs( eErr_SEQ_FEAT_GeneRefHasNoData,
-    TErrStrs( "GeneRefHasNoData",
+(splice donor) and AG as the last two bases of the intron (splice acceptor). \
+This intron does not conform to that pattern.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_OrfCdsHasProduct,
+   TErrStrs( "OrfCdsHasProduct",
+"A coding region flagged as orf has a protein product.  There should be no \
+protein product bioseq on an orf.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GeneRefHasNoData,
+   TErrStrs( "GeneRefHasNoData",
 "A gene feature exists with no locus name or other fields filled in.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ExceptInconsistent,
-    TErrStrs( "ExceptInconsistent",
-"A coding region has an exception gbqual but the excpt flag is not \
-set.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ProtRefHasNoData,
-    TErrStrs( "ProtRefHasNoData",
+   TErrTypStrs ( eErr_SEQ_FEAT_ExceptInconsistent,
+   TErrStrs( "ExceptInconsistent",
+"A coding region has an exception gbqual but the excpt flag is not set.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ProtRefHasNoData,
+   TErrStrs( "ProtRefHasNoData",
 "A protein feature exists with no name or other fields filled in.")),
-    TErrTypStrs( eErr_SEQ_FEAT_GenCodeMismatch,
-    TErrStrs( "GenCodeMismatch",
-"The genetic code stored in the BioSource is different than that for \
-this CDS.")),
-    TErrTypStrs( eErr_SEQ_FEAT_RNAtype0,
-    TErrStrs( "RNAtype0",
+   TErrTypStrs ( eErr_SEQ_FEAT_GenCodeMismatch,
+   TErrStrs( "GenCodeMismatch",
+"The genetic code stored in the BioSource is different than that for this CDS.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_RNAtype0,
+   TErrStrs( "RNAtype0",
 "RNA type 0 (unknown RNA) should be type 255 (other).")),
-    TErrTypStrs( eErr_SEQ_FEAT_UnknownImpFeatKey,
-    TErrStrs( "UnknownImpFeatKey",
+   TErrTypStrs ( eErr_SEQ_FEAT_UnknownImpFeatKey,
+   TErrStrs( "UnknownImpFeatKey",
 "An import feature has an unrecognized key.")),
-    TErrTypStrs( eErr_SEQ_FEAT_UnknownImpFeatQual,
-    TErrStrs( "UnknownImpFeatQual",
+   TErrTypStrs ( eErr_SEQ_FEAT_UnknownImpFeatQual,
+   TErrStrs( "UnknownImpFeatQual",
 "An import feature has an unrecognized qualifier.")),
-    TErrTypStrs( eErr_SEQ_FEAT_WrongQualOnImpFeat,
-    TErrStrs( "WrongQualOnImpFeat",
+   TErrTypStrs ( eErr_SEQ_FEAT_WrongQualOnImpFeat,
+   TErrStrs( "WrongQualOnImpFeat",
 "This qualifier is not legal for this feature.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MissingQualOnImpFeat,
-    TErrStrs( "MissingQualOnImpFeat",
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingQualOnImpFeat,
+   TErrStrs( "MissingQualOnImpFeat",
 "An essential qualifier for this feature is missing.")),
-    TErrTypStrs( eErr_SEQ_FEAT_PseudoCdsHasProduct,
-    TErrStrs( "PseudoCdsHasProduct",
-"A coding region flagged as pseudo has a protein product. There should \
-be no protein product bioseq on a pseudo CDS.")),
-    TErrTypStrs( eErr_SEQ_FEAT_IllegalDbXref,
-    TErrStrs( "IllegalDbXref",
+   TErrTypStrs ( eErr_SEQ_FEAT_PseudoCdsHasProduct,
+   TErrStrs( "PseudoCdsHasProduct",
+"A coding region flagged as pseudo has a protein product.  There should be no \
+protein product bioseq on a pseudo CDS.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_IllegalDbXref,
+   TErrStrs( "IllegalDbXref",
 "The database in a cross-reference is not on the list of officially \
 recognized database abbreviations.")),
-    TErrTypStrs( eErr_SEQ_FEAT_FarLocation,
-    TErrStrs( "FarLocation",
-"The location has a reference to a bioseq that is not packaged in this \
-record.")),
-    TErrTypStrs( eErr_SEQ_FEAT_DuplicateFeat,
-    TErrStrs( "DuplicateFeat",
-"The intervals on this feature are identical to another feature of the \
-same type, but the label or comment are different.")),
-    TErrTypStrs( eErr_SEQ_FEAT_UnnecessaryGeneXref,
-    TErrStrs( "UnnecessaryGeneXref",
-"This feature has a gene xref that is identical to the overlapping gene. \
-This is redundant, and probably should be removed.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TranslExceptPhase,
-    TErrStrs( "TranslExceptPhase",
-"A /transl_except qualifier was not on a codon boundary.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TrnaCodonWrong,
-    TErrStrs( "TrnaCodonWrong",
-"The tRNA codon recognized does not code for the indicated amino acid \
-using the specified genetic code.")),
-    TErrTypStrs( eErr_SEQ_FEAT_BadTrnaAA,
-    TErrStrs( "BadTrnaAA",
-"The tRNA encoded amino acid is an illegal value.")),
-    TErrTypStrs( eErr_SEQ_FEAT_BothStrands,
-    TErrStrs( "BothStrands",
-"Feature location indicates that it is on both strands. This is not \
-biologically possible for this kind of feature. Please indicate the \
-correct strand (plus or minus) for this feature.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CDSgeneRange,
-    TErrStrs( "CDSgeneRange",
-"A CDS is overlapped by a gene feature, but is not completely contained \
-by it. This may be an annotation error.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CDSmRNArange,
-    TErrStrs( "CDSmRNArange",
+   TErrTypStrs ( eErr_SEQ_FEAT_FarLocation,
+   TErrStrs( "FarLocation",
+"The location has a reference to a bioseq that is not packaged in this record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_DuplicateFeat,
+   TErrStrs( "DuplicateFeat",
+"The intervals on this feature are identical to another feature of the same type, \
+but the label or comment are different.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnnecessaryGeneXref,
+   TErrStrs( "UnnecessaryGeneXref",
+"This feature has a gene xref that is identical to the overlapping gene.  This is \
+redundant, and probably should be removed.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TranslExceptPhase,
+   TErrStrs( "TranslExceptPhase",
+"A \transl_except qualifier was not on a codon boundary.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TrnaCodonWrong,
+   TErrStrs( "TrnaCodonWrong",
+"The tRNA codon recognized does not code for the indicated amino acid using the \
+specified genetic code.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BothStrands,
+   TErrStrs( "BothStrands",
+"Feature location indicates that it is on both strands. This is not biologically \
+possible for this kind of feature. Please indicate the correct strand (plus or \
+minus) for this feature.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSgeneRange,
+   TErrStrs( "CDSgeneRange",
+"A CDS is overlapped by a gene feature, but is not completely contained by it. \
+This may be an annotation error.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSmRNArange,
+   TErrStrs( "CDSmRNArange",
 "A CDS is overlapped by an mRNA feature, but the mRNA does not cover all \
 intervals (i.e., exons) on the CDS. This may be an annotation error.")),
-    TErrTypStrs( eErr_SEQ_FEAT_OverlappingPeptideFeat,
-    TErrStrs( "OverlappingPeptideFeat",
-"The intervals on this processed protein feature overlap another protein \
-feature. This may be caused by errors in originally annotating these \
-features on DNA coordinates, where start or stop positions do not occur \
-in between codon boundaries. These then appear as errors when the \
-features are converted to protein coordinates by mapping through the \
-CDS.")),
-    TErrTypStrs( eErr_SEQ_FEAT_SerialInComment,
-    TErrStrs( "SerialInComment",
-"Comments that refer to the conclusions of a specific reference should \
-not be cited by a serial number inside brackets (e.g., [3]), but should \
-instead be attached as a REMARK on the reference itself.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MultipleCDSproducts,
-    TErrStrs( "MultipleCDSproducts",
-"More than one CDS feature points to the same protein product. This can \
-happen with viral long terminal repeats (LTRs), but GenBank policy is to \
-have each equivalent CDS point to a separately accessioned protein \
-Bioseq.")),
-    TErrTypStrs( eErr_SEQ_FEAT_FocusOnBioSourceFeature,
-    TErrStrs( "FocusOnBioSourceFeature",
-"The /focus flag is only appropriate on BioSource descriptors, not \
-BioSource features.")),
-    TErrTypStrs( eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
-    TErrStrs( "PeptideFeatOutOfFrame",
-"The start or stop positions of this processed peptide feature do not \
-occur in between codon boundaries. This may incorrectly overlap other \
-peptides when the features are converted to protein coordinates by \
-mapping through the CDS.")),
-    TErrTypStrs( eErr_SEQ_FEAT_InvalidQualifierValue,
-    TErrStrs( "InvalidQualifierValue",
-"The value of this qualifier is constrained to a particular vocabulary \
-of style. This value does not conform to those constraints. Please see \
-the feature table documentation for more information.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MultipleMRNAproducts,
-    TErrStrs( "MultipleMRNAproducts",
-"More than one mRNA feature points to the same cDNA product. This is an \
-error in the genomic product set. Each mRNA feature should have a \
-unique product Bioseq.")),
-    TErrTypStrs( eErr_SEQ_FEAT_mRNAgeneRange,
-    TErrStrs( "mRNAgeneRange",
-"An mRNA is overlapped by a gene feature, but is not completely \
-contained by it. This may be an annotation error.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TranscriptLen,
-    TErrStrs( "TranscriptLen",
+   TErrTypStrs ( eErr_SEQ_FEAT_OverlappingPeptideFeat,
+   TErrStrs( "OverlappingPeptideFeat",
+"The intervals on this processed protein feature overlap another protein feature. \
+This may be caused by errors in originally annotating these features on DNA coordinates, \
+where start or stop positions do not occur in between codon boundaries.  These then \
+appear as errors when the features are converted to protein coordinates by mapping \
+through the CDS.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SerialInComment,
+   TErrStrs( "SerialInComment",
+"Comments that refer to the conclusions of a specific reference should not be \
+cited by a serial number inside brackets (e.g., [3]), but should instead be \
+attached as a REMARK on the reference itself.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MultipleCDSproducts,
+   TErrStrs( "MultipleCDSproducts",
+"More than one CDS feature points to the same protein product.  This can happen with \
+viral long terminal repeats (LTRs), but GenBank policy is to have each equivalent \
+CDS point to a separately accessioned protein Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FocusOnBioSourceFeature,
+   TErrStrs( "FocusOnBioSourceFeature",
+"The /focus flag is only appropriate on BioSource descriptors, not BioSource features.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+   TErrStrs( "PeptideFeatOutOfFrame",
+"The start or stop positions of this processed peptide feature do not occur in between \
+codon boundaries.  This may incorrectly overlap other peptides when the features are \
+converted to protein coordinates by mapping through the CDS.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_InvalidQualifierValue,
+   TErrStrs( "InvalidQualifierValue",
+"The value of this qualifier is constrained to a particular vocabulary of style.  This \
+value does not conform to those constraints.  Please see the feature table documentation \
+for more information.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MultipleMRNAproducts,
+   TErrStrs( "MultipleMRNAproducts",
+"More than one mRNA feature points to the same cDNA product.  This is an error in the \
+genomic product set.  Each mRNA feature should have a unique product Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_mRNAgeneRange,
+   TErrStrs( "mRNAgeneRange",
+"An mRNA is overlapped by a gene feature, but is not completely contained by it. \
+This may be an annotation error.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TranscriptLen,
+   TErrStrs( "TranscriptLen",
 "The mRNA sequence that was supplied is not the same length as the \
-transcription of the mRNA feature. Please determine why they are \
-different.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TranscriptMismatches,
-    TErrStrs( "TranscriptMismatches",
-"The mRNA sequence and the transcription of the mRNA feature are \
-different. If the number is large, it may indicate incorrect intron/exon \
-boundaries.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CDSproductPackagingProblem,
-    TErrStrs( "CDSproductPackagingProblem",
-"The nucleotide location and protein product of the CDS are not packaged \
-together in the same nuc-prot set. This may be an error in the software \
-used to create the record.")),
-    TErrTypStrs( eErr_SEQ_FEAT_DuplicateInterval,
-    TErrStrs( "DuplicateInterval",
-"The location has identical adjacent intervals, e.g., a duplicate exon \
-reference.")),
-    TErrTypStrs( eErr_SEQ_FEAT_PolyAsiteNotPoint,
-    TErrStrs( "PolyAsiteNotPoint",
+transcription of the mRNA feature. Please determine why they are different.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TranscriptMismatches,
+   TErrStrs( "TranscriptMismatches",
+"The mRNA sequence and the transcription of the mRNA feature are different. \
+If the number is large, it may indicate incorrect intron/exon boundaries.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSproductPackagingProblem,
+   TErrStrs( "CDSproductPackagingProblem",
+"The nucleotide location and protein product of the CDS are not packaged together \
+in the same nuc-prot set.  This may be an error in the software used to create \
+the record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_DuplicateInterval,
+   TErrStrs( "DuplicateInterval",
+"The location has identical adjacent intervals, e.g., a duplicate exon reference.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PolyAsiteNotPoint,
+   TErrStrs( "PolyAsiteNotPoint",
 "A polyA_site should be at a single nucleotide position.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ImpFeatBadLoc,
-    TErrStrs( "ImpFeatBadLoc",
-"An import feature loc field does not equal the feature location. This \
-should be corrected, and then the loc field should be cleared.")),
-    TErrTypStrs( eErr_SEQ_FEAT_LocOnSegmentedBioseq,
-    TErrStrs( "LocOnSegmentedBioseq",
-"Feature locations traditionally go on the individual parts of a \
-segmented bioseq, not on the segmented sequence itself. These features \
-are invisible in asn2ff reports, and are now being flagged for \
-correction.")),
-    TErrTypStrs( eErr_SEQ_FEAT_UnnecessaryCitPubEquiv,
-    TErrStrs( "UnnecessaryCitPubEquiv",
-"A set of citations on a feature should not normally have a nested \
-Pub-equiv construct. This may prevent proper matching to the correct \
-publication.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ImpCDShasTranslation,
-    TErrStrs( "ImpCDShasTranslation",
-"A CDS that has known translation errors cannot have a /translation \
-qualifier.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ImpCDSnotPseudo,
-    TErrStrs( "ImpCDSnotPseudo",
-"A CDS that has known translation errors must be marked as pseudo to \
-suppress the translation.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MissingMRNAproduct,
-    TErrStrs( "MissingMRNAproduct",
-"The mRNA feature points to a cDNA product that is not packaged in the \
-record. This is an error in the genomic product set.")),
-    TErrTypStrs( eErr_SEQ_FEAT_AbuttingIntervals,
-    TErrStrs( "AbuttingIntervals",
-"The start of one interval is next to the stop of another. A single \
-interval may be desirable in this case.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CollidingGeneNames,
-    TErrStrs( "CollidingGeneNames",
+   TErrTypStrs ( eErr_SEQ_FEAT_ImpFeatBadLoc,
+   TErrStrs( "ImpFeatBadLoc",
+"An import feature loc field does not equal the feature location.  This should be \
+corrected, and then the loc field should be cleared.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_LocOnSegmentedBioseq,
+   TErrStrs( "LocOnSegmentedBioseq",
+"Feature locations traditionally go on the individual parts of a segmented bioseq, not \
+on the segmented sequence itself.  These features are invisible in asn2ff reports, and \
+are now being flagged for correction.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnnecessaryCitPubEquiv,
+   TErrStrs( "UnnecessaryCitPubEquiv",
+"A set of citations on a feature should not normally have a nested Pub-equiv construct. \
+This may prevent proper matching to the correct publication.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ImpCDShasTranslation,
+   TErrStrs( "ImpCDShasTranslation",
+"A CDS that has known translation errors cannot have a /translation qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ImpCDSnotPseudo,
+   TErrStrs( "ImpCDSnotPseudo",
+"A CDS that has known translation errors must be marked as pseudo to suppress the \
+translation.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingMRNAproduct,
+   TErrStrs( "MissingMRNAproduct",
+"The mRNA feature points to a cDNA product that is not packaged in the record. \
+This is an error in the genomic product set.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_AbuttingIntervals,
+   TErrStrs( "AbuttingIntervals",
+"The start of one interval is next to the stop of another.  A single interval \
+may be desirable in this case.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CollidingGeneNames,
+   TErrStrs( "CollidingGeneNames",
 "Two gene features should not have the same name.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CollidingLocusTags,
-    TErrStrs( "CollidingLocusTags",
-"Two gene features should not have the same locus_tag, which is supposed \
-to be a unique identifer.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MultiIntervalGene,
-    TErrStrs( "MultiIntervalGene",
-"A gene feature on a single Bioseq should have a single interval \
-spanning everything considered to be under that gene.")),
-    TErrTypStrs( eErr_SEQ_FEAT_FeatContentDup,
-    TErrStrs( "FeatContentDup",
-"The intervals on this feature are identical to another feature of the \
-same type, and the label and comment are also identical. This is likely \
-to be an error in annotating the record. Note that GenBank format \
-suppresses duplicate features, so use of Graphic view is recommended.")),
-    TErrTypStrs( eErr_SEQ_FEAT_BadProductSeqId,
-    TErrStrs( "BadProductSeqId",
-"The feature product refers to a database ID that has a locus name \
-but no accession. This is probably an error in parsing of a submission.")),
-    TErrTypStrs( eErr_SEQ_FEAT_RnaProductMismatch,
-    TErrStrs( "RnaProductMismatch",
-"The RNA feature product type does not correspond to the RNA feature type. \
-These need to be consistent.")),
-    TErrTypStrs( eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
-    TErrStrs( "DifferntIdTypesInSeqLoc",
-"All ids in a single seq-loc which refer to the same bioseq should be of the \
-same id type")),
-    TErrTypStrs( eErr_SEQ_FEAT_MissingCDSproduct,
-    TErrStrs( "MissingCDSproduct",
+   TErrTypStrs ( eErr_SEQ_FEAT_MultiIntervalGene,
+   TErrStrs( "MultiIntervalGene",
+"A gene feature on a single Bioseq should have a single interval spanning everything \
+considered to be under that gene.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatContentDup,
+   TErrStrs( "FeatContentDup",
+"The intervals on this feature are identical to another feature of the same type, \
+and the label and comment are also identical. This is likely to be an error in \
+annotating the record.  Note that GenBank format suppresses duplicate features, \
+so use of Graphic view is recommended.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadProductSeqId,
+   TErrStrs( "BadProductSeqId",
+"The feature product refers to a database ID that has a locus name but no accession. \
+This is probably an error in parsing of a submission.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_RnaProductMismatch,
+   TErrStrs( "RnaProductMismatch",
+"The RNA feature product type does not correspond to the RNA feature type.  These \
+need to be consistent.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingCDSproduct,
+   TErrStrs( "MissingCDSproduct",
 "The CDS should have a product, but does not.  Pseudo or short CDSs (less than 6 \
 amino acids), or those marked with a rearrangement required for product exception, \
 are exempt from needing a product.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MissingLocation,
-    TErrStrs( "MissingLocation",
-"A feature must specify its location.")),
-    TErrTypStrs( eErr_SEQ_FEAT_OnlyGeneXrefs,
-    TErrStrs( "OnlyGeneXrefs",
-"There are gene xrefs but no gene features.  Records should normally have  \
-single-interval gene features covering other biological features.  Gene \
-xrefs are used only to override the inheritance by overlap.")),
-    TErrTypStrs( eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-    TErrStrs( "UTRdoesNotAbutCDS",
+   TErrTypStrs ( eErr_SEQ_FEAT_BadTrnaCodon,
+   TErrStrs( "BadTrnaCodon",
+"The tRNA codon recognized is an illegal value.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadTrnaAA,
+   TErrStrs( "BadTrnaAA",
+"The tRNA encoded amino acid is an illegal value.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_OnlyGeneXrefs,
+   TErrStrs( "OnlyGeneXrefs",
+"There are gene xrefs but no gene features.  Records should normally have single-interval \
+gene features covering other biological features.  Gene xrefs are used only to override \
+the inheritance by overlap.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+   TErrStrs( "UTRdoesNotAbutCDS",
 "The 5'UTR and 3'UTR features should exactly abut the CDS feature.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MultipleCdsOnMrna,
-    TErrStrs( "MultipleCdsOnMrna",
-"Only a single Cdregion feature should be annotated on mRNA bioseq.")),
-    TErrTypStrs( eErr_SEQ_FEAT_BadConflictFlag,
-    TErrStrs( "BadConflictFlag",
+   TErrTypStrs ( eErr_SEQ_FEAT_BadConflictFlag,
+   TErrStrs( "BadConflictFlag",
 "The coding region conflict flag is set, but the translated product is the \
 same as the instantiated product Bioseq.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ConflictFlagSet,
-    TErrStrs( "ConflictFlagSet",
+   TErrTypStrs ( eErr_SEQ_FEAT_ConflictFlagSet,
+   TErrStrs( "ConflictFlagSet",
 "The coding region conflict flag is appropriately set, but this record should \
 be brought to the attention of the source database for possible correction.")),
-    TErrTypStrs( eErr_SEQ_FEAT_LocusTagProblem,
-    TErrStrs( "LocusTagProblem",
+   TErrTypStrs ( eErr_SEQ_FEAT_LocusTagProblem,
+   TErrStrs( "LocusTagProblem",
 "A gene locus_tag should be a single token, with no spaces.")),
-    TErrTypStrs( eErr_SEQ_FEAT_AltStartCodon,
-    TErrStrs( "AltStartCodon",
+   TErrTypStrs ( eErr_SEQ_FEAT_CollidingLocusTags,
+   TErrStrs( "CollidingLocusTags",
+"Two gene features should not have the same locus_tag, which is supposed to be \
+a unique identifer.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_AltStartCodon,
+   TErrStrs( "AltStartCodon",
 "An alternative start codon was used. This is rare, and it is expected that \
 confirmatory evidence will be cited.")),
-    TErrTypStrs( eErr_SEQ_FEAT_GenesInconsistent,
-    TErrStrs( "GenesInconsistent",
+   TErrTypStrs ( eErr_SEQ_FEAT_PartialsInconsistent,
+   TErrStrs( "PartialsInconsistent",
+"There are several places in an entry where a sequence can be described as \
+either partial or complete. In this entry, these settings are inconsistent. \
+Make sure that the location and product Seq-locs, the Bioseqs, and the \
+SeqFeat partial flag all agree in describing this SeqFeat as partial or \
+complete.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GenesInconsistent,
+   TErrStrs( "GenesInconsistent",
 "The gene on the genomic sequence of a genomic product set should be the \
 same as the gene on the cDNA product of the mRNA feature.")),
-    TErrTypStrs( eErr_SEQ_FEAT_DuplicateTranslExcept,
-    TErrStrs( "DuplicateTranslExcept",
+   TErrTypStrs ( eErr_SEQ_FEAT_DuplicateTranslExcept,
+   TErrStrs( "DuplicateTranslExcept",
 "There are multiple /transl_except qualifiers at the same location on this \
 CDS but with different amino acids indicated.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
-    TErrStrs( "TranslExceptAndRnaEditing",
+   TErrTypStrs ( eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
+   TErrStrs( "TranslExceptAndRnaEditing",
 "A CDS has both /exception=RNA editing and /transl_except qualifiers.  RNA \
 editing indicates post-transcriptional changes prior to translation.  Use \
 /transl_except for individual codon exceptions such as selenocysteine or \
 other nonsense suppressors.")),
-    TErrTypStrs( eErr_SEQ_FEAT_NoNameForProtein,
-    TErrStrs( "NoNameForProtein",
+   TErrTypStrs ( eErr_SEQ_FEAT_NoNameForProtein,
+   TErrStrs( "NoNameForProtein",
 "A protein feature has a description, but no product name.")),
-    TErrTypStrs( eErr_SEQ_FEAT_TaxonDbxrefOnFeature,
-    TErrStrs( "TaxonDbxrefOnFeature",
+   TErrTypStrs ( eErr_SEQ_FEAT_TaxonDbxrefOnFeature,
+   TErrStrs( "TaxonDbxrefOnFeature",
 "A BioSource feature has a taxonID database identifier in the db_xref area \
-common to all features.  This db_xref should only exist within the separate \
+common to all features. This db_xref should only exist within the separate \
 BioSource xref list.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnindexedFeature,
+   TErrStrs( "UnindexedFeature",
+"The location of a feature does not allow it to be mapped to a single Bioseq, \
+or to the segmented parent if on one or more part Bioseqs. It will not show \
+up in flatfile and other formats, and should be corrected or removed.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSmRNAmismatch,
+   TErrStrs( "CDSmRNAmismatch",
+"There should usually be a one-to-one correspondence between mRNA and CDS \
+under a given gene.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnnecessaryException,
+   TErrStrs( "UnnecessaryException",
+"The feature is marked with an exception qualifier, but the validator does \
+not detect an error that needs to be suppressed.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_LocusTagProductMismatch,
+   TErrStrs( "LocusTagProductMismatch",
+"In certain records a policy is that the locus_tag of the gene is expected to \
+match the prefix of the general ID of the CDS or mRNA product Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MrnaTransFail,
+   TErrStrs( "MrnaTransFail",
+"A fundamental error occurred in software while attempting to transcribe this \
+messenger RNA. It is either a software problem or sever data corruption.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PseudoCdsViaGeneHasProduct,
+   TErrStrs( "PseudoCdsViaGeneHasProduct",
+"A coding region overlapped by a pseudo gene has a protein product.  There \
+should be no protein product bioseq on a pseudo CDS.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingGeneXref,
+   TErrStrs( "MissingGeneXref",
+"This feature has multiple overlapping genes of the same length, but no \
+xref to determine which one should be used for the /gene qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureCitationProblem,
+   TErrStrs( "FeatureCitationProblem",
+"This feature has a citation to a publication that needs to be repaired.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_NestedSeqLocMix,
+   TErrStrs( "NestedSeqLocMix",
+"A location should not have nested SEQLOC_MIX structures.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_WrongQualOnFeature,
+   TErrStrs( "WrongQualOnFeature",
+"This qualifier is not legal for this feature.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingQualOnFeature,
+   TErrStrs( "MissingQualOnFeature",
+"An essential qualifier for this feature is missing.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CodonQualifierUsed,
+   TErrStrs( "CodonQualifierUsed",
+"The codon qualifier should be replaced by individual transl_except code breaks, \
+after checking to make sure the proper genetic code is being used.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnknownFeatureQual,
+   TErrStrs( "UnknownFeatureQual",
+"A feature has an unrecognized qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadCharInAuthorName,
+   TErrStrs( "BadCharInAuthorName",
+"An author name has illegal characters.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PolyATail,
+   TErrStrs( "PolyATail",
+"The mRNA feature has polyA tail added to make the mRNA sequence.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ProteinNameEndsInBracket,
+   TErrStrs( "ProteinNameEndsInBracket",
+"The protein name ends with a right square bracket, and may have been \
+copied from another GenPept record, where the organism name is \
+appended to the definition line and placed inside brackets.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
+   TErrStrs( "CDSwithMultipleMRNAs",
+"The CDS feature has more than one overlapping mRNA with the proper intervals and \
+no other identification assigning it to a different coding region.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MultipleEquivBioSources,
+   TErrStrs( "MultipleEquivBioSources",
+"Multiple equivalent biosource features exist on the sequence. They should be \
+fused into a single feature with multiple intervals.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MultipleEquivPublications,
+   TErrStrs( "MultipleEquivPublications",
+"Multiple equivalent publication features exist on the sequence. They should be \
+fused into a single feature with multiple intervals.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadFullLengthFeature,
+   TErrStrs( "BadFullLengthFeature",
+"A publication or biosource feature is on the full length the sequence. It should be \
+converted to a publication or biosource descriptor.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_RedundantFields,
+   TErrStrs( "RedundantFields",
+"A comment or other field contains information that is redundant with the primary \
+field on a feature.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSwithNoMRNAOverlap,
+   TErrStrs( "CDSwithNoMRNAOverlap",
+"The CDS feature has more than one overlapping mRNA with the proper intervals and \
+no other identification assigning it to a different coding region.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureProductInconsistency,
+   TErrStrs( "FeatureProductInconsistency",
+"The CDS feature has more than one overlapping mRNA with the proper intervals and \
+no other identification assigning it to a different coding region.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ImproperBondLocation,
+   TErrStrs( "ImproperBondLocation",
+"Only bond features should have locations of type bond. Most other features should \
+use interval or point locations.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GeneXrefWithoutGene,
+   TErrStrs( "GeneXrefWithoutGene",
+"This feature has a gene xref, but there is no equivalent gene feature anywhere \
+on the record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SeqFeatXrefProblem,
+   TErrStrs( "SeqFeatXrefProblem",
+"This feature has a seqfeat xref, but it has nothing in the id or data field.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ProductFetchFailure,
+   TErrStrs( "ProductFetchFailure",
+"Unable to fetch the Bioseq product of this feature.  Remote fetching was requested, \
+so this is likely due to a failure in a network sequence retrieval service.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SuspiciousGeneXref,
+   TErrStrs( "SuspiciousGeneXref",
+"This feature has a gene xref that is not expected for this organism.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingTrnaAA,
+   TErrStrs( "MissingTrnaAA",
+"The tRNA encoded amino acid is not set.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CollidingFeatureIDs,
+   TErrStrs( "CollidingFeatureIDs",
+"Multiple features have the same featureID.  Feature ID must be unique within \
+a record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ExceptionProblem,
+   TErrStrs( "ExceptionProblem",
+"There is a problem with /exception text.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PolyAsignalNotRange,
+   TErrStrs( "PolyAsignalNotRange",
+"A polyA_signal should be at nucleotide range position, not a single point.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_OldLocusTagMismtach,
+   TErrStrs( "OldLocusTagMismtach",
+"The old_locus_tag qualifier on a feature does not match that on the overlapping gene.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_DuplicateGeneOntologyTerm,
+   TErrStrs( "DuplicateGeneOntologyTerm",
+"A feature has multiple identical Gene Ontology (GO) term specifications.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_InvalidInferenceValue,
+   TErrStrs( "InvalidInferenceValue",
+"The value of the inference qualifier is constrained by agreement of the international \
+nucleotide sequence database collaboration.  This value does not conform to those \
+constraints.  Please see the feature table documentation for more information.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_HpotheticalProteinMismatch,
+   TErrStrs( "HpotheticalProteinMismatch",
+"There is a mismatch between the accession cited by the hypothetical protein claim \
+and the actual accession of the record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureRefersToAccession,
+   TErrStrs( "FeatureRefersToAccession",
+"There is a mixture of features referring to sequence by gi numbers and by accession. \
+This inconsistency is likely due to incomplete processing by software.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SelfReferentialProduct,
+   TErrStrs( "SelfReferentialProduct",
+"A feature product points to the same sequence that the feature location does. \
+The product must point to a different sequence that is the biological product \
+of the first, due to transcription, translation, or peptide processing.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ITSdoesNotAbutRRNA,
+   TErrStrs( "ITSdoesNotAbutRRNA",
+"The internal transcribed spacer misc_RNA features should exactly abut the flanking rRNA features.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureSeqIDCaseDifference,
+   TErrStrs( "FeatureSeqIDCaseDifference",
+"Feature location and referenced Bioseq have the same Seq-id except for capitalization. \
+Sequence identifiers must be unique in a case-insensitive manner within a record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureLocationIsGi0,
+   TErrStrs( "FeatureLocationIsGi0",
+"Feature location refers to gi 0. This indicates an error in database processing of this record.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GapFeatureProblem,
+   TErrStrs( "GapFeatureProblem",
+"Gap features must only cover gaps in the sequence, not actual bases.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PseudoCdsHasProtXref,
+   TErrStrs( "PseudoCdsHasProtXref",
+"A coding region flagged as pseudo has a protein cross reference.  There should be no \
+protein product bioseq or protein cross reference on a pseudo CDS.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ErroneousException,
+   TErrStrs( "ErroneousException",
+"The feature is marked with a specific exception qualifier, but validation indicates \
+that a different exception should be used.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SegmentedGeneProblem,
+   TErrStrs( "SegmentedGeneProblem",
+"A gene feature on the parts of a segmented Bioseq should map to a single interval on the \
+segmented Bioseq's coordinate system.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_WholeLocation,
+   TErrStrs( "WholeLocation",
+"Feature location is set to whole, the entirety of the parent sequence.  Please specify \
+exact intervals for this feature location.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadEcNumberFormat,
+   TErrStrs( "BadEcNumberFormat",
+"There is a problem with the format of the EC_number qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadEcNumberValue,
+   TErrStrs( "BadEcNumberValue",
+"There is a problem with the value of the EC_number qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_EcNumberProblem,
+   TErrStrs( "EcNumberProblem",
+"There is a problem with the format of the EC_number qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_VectorContamination,
+   TErrStrs( "VectorContamination",
+"Contamination by cloning vector is annotated on this sequence. The underlying region \
+should be removed from the sequence.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MinusStrandProtein,
+   TErrStrs( "MinusStrandProtein",
+"A feature on a protein indicates the minus strand, which does not exist.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadProteinName,
+   TErrStrs( "BadProteinName",
+"A protein feature has a name that conflicts with other information on the feature.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GeneXrefWithoutLocus,
+   TErrStrs( "GeneXrefWithoutLocus",
+"A feature has a gene xref with a locus_tag and no locus, but the gene with that locus_tag has a locus.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UTRdoesNotExtendToEnd,
+   TErrStrs( "UTRdoesNotExtendToEnd",
+"The UTR does not have the expected range.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDShasTooManyXs,
+   TErrStrs( "CDShasTooManyXs",
+"The CDS translation has greater than 50 percent ambiguous X residues.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SuspiciousFrame,
+   TErrStrs( "SuspiciousFrame",
+"The CDS has a frame greater than 1 that is not expected in this context.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_TerminalXDiscrepancy,
+   TErrStrs( "TerminalXDiscrepancy",
+"The CDS translation and protein product sequence have a different number of terminal Xs.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+   TErrStrs( "UnnecessaryTranslExcept",
+"The CDS translates to the same amino acid as indicated by the transl_except code break.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SuspiciousQualifierValue,
+   TErrStrs( "SuspiciousQualifierValue",
+"The value of this qualifier is constrained to a particular vocabulary of style.  This \
+value appears not to conform to those constraints.  Please see the feature table documentation \
+for more information.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+   TErrStrs( "NotSpliceConsensusDonor",
+"Splice junctions typically have GT as the first two bases of the intron \
+(splice donor) and AG as the last two bases of the intron (splice acceptor). \
+This intron does not conform to that pattern.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+   TErrStrs( "NotSpliceConsensusAcceptor",
+"Splice junctions typically have GT as the first two bases of the intron \
+(splice donor) and AG as the last two bases of the intron (splice acceptor). \
+This intron does not conform to that pattern.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_RareSpliceConsensusDonor,
+   TErrStrs( "RareSpliceConsensusDonor",
+"Splice junctions typically have GT as the first two bases of the intron \
+(splice donor) and AG as the last two bases of the intron (splice acceptor). \
+This intron does not conform to that pattern.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal,
+   TErrStrs( "SeqFeatXrefNotReciprocal",
+"Feature xrefs between CDS and mRNA are not reciprocal.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
+   TErrStrs( "SeqFeatXrefFeatureMissing",
+"The feature referenced by a seqfeat xref cannot be found.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureInsideGap,
+   TErrStrs( "FeatureInsideGap",
+"The feature is completely contained inside a sequence gap.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureCrossesGap,
+   TErrStrs( "FeatureCrossesGap",
+"The feature extends from actual sequence into a sequence gap.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadAuthorSuffix,
+   TErrStrs( "BadAuthorSuffix",
+"An author name has an unexpected suffix.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadAnticodonAA,
+   TErrStrs( "BadAnticodonAA",
+"The tRNA encoded amino acid cannot be produced by any likely reverse complement \
+and wobble expansion of the anticodon sequence.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadAnticodonCodon,
+   TErrStrs( "BadAnticodonCodon",
+"The tRNA indicated codon recognized cannot be produced by any likely reverse complement \
+and wobble expansion of the anticodon sequence.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadAnticodonStrand,
+   TErrStrs( "BadAnticodonStrand",
+"The tRNA feature location and anticodon location are not on the same strand.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UndesiredGeneSynonym,
+   TErrStrs( "UndesiredGeneSynonym",
+"The gene synonym is uninformative.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UndesiredProteinName,
+   TErrStrs( "UndesiredProteinName",
+"The protein name is uninformative.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap,
+   TErrStrs( "FeatureBeginsOrEndsInGap",
+"The feature starts or stops within a sequence gap.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GeneOntologyTermMissingGOID,
+   TErrStrs( "GeneOntologyTermMissingGOID",
+"A Gene Ontology (GO) term is missing the GO Identifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PseudoRnaHasProduct,
+   TErrStrs( "PseudoRnaHasProduct",
+"An RNA flagged as pseudo has a transcribed product.  There should be no \
+transcribed product bioseq on a pseudo RNA.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PseudoRnaViaGeneHasProduct,
+   TErrStrs( "PseudoRnaViaGeneHasProduct",
+"An RNA overlapped by a pseudo gene has a transcribed product.  There \
+should be no transcribed product bioseq on a pseudo RNA.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadRRNAcomponentOrder,
+   TErrStrs( "BadRRNAcomponentOrder",
+"rRNA and ITS features are not in the expected order.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
+   TErrStrs( "BadRRNAcomponentOverlap",
+"rRNA and ITS or tRNA elements should not overlap.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MissingGeneLocusTag,
+   TErrStrs( "MissingGeneLocusTag",
+"If one gene in a record has a locus-tag value, all genes in the record \
+should have a locus-tag value.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MultipleProtRefs,
+   TErrStrs( "MultipleProtRefs",
+"The name and description of the protein is missing from this entry. Every \
+protein Bioseq must have one full-length Prot-ref feature to provide this \
+information.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadInternalCharacter,
+   TErrStrs( "BadInternalCharacter",
+"Biological names or labels should not end with question mark, \
+exclamation point, or tilde.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadTrailingCharacter,
+   TErrStrs( "BadTrailingCharacter",
+"Biological names or labels should not contain underscore, period, \
+comma, colon, or semicolon,")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadTrailingHyphen,
+   TErrStrs( "BadTrailingHyphen",
+"Biological names or labels should not end with a hyphen.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_MultipleGeneOverlap,
+   TErrStrs( "MultipleGeneOverlap",
+"This genes completely contains two or more other genes.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_BadCharInAuthorLastName,
+   TErrStrs( "BadCharInAuthorLastName",
+"An author name has illegal characters.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_PseudoCDSmRNArange,
+   TErrStrs( "PseudoCDSmRNArange",
+"A pseudo CDS is overlapped by an mRNA feature, but the mRNA does not cover all \
+intervals (i.e., exons) on the CDS. This may be an annotation error.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_ExtendablePartialProblem,
+   TErrStrs( "ExtendablePartialProblem",
+"A partial end of this feature does not abut a gap and does not include the first \
+or last nucleotide in the sequence, but it could be extended by one or two \
+nucleotides to do so.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_GeneXrefNeeded,
+   TErrStrs( "GeneXrefNeeded",
+"This feature has multiple overlapping genes of the same length and same name, \
+but no xref to determine which one should be used for the /gene qualifier.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_RubiscoProblem,
+   TErrStrs( "RubiscoProblem",
+"A protein name contains ribulose and bisphosphate but does not use \
+the prefered formal naming convention.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_UnqualifiedException,
+   TErrStrs( "UnqualifiedException",
+"The feature is marked with an automatically supplied exception qualifier \
+that should be replaced or supplemented with more informative information.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_SgmlPresentInText,
+   TErrStrs( "SgmlPresentInText",
+"SGML markup is embedded in text.")),
+    TErrTypStrs( eErr_SEQ_FEAT_MissingLocation,
+    TErrStrs( "MissingLocation",
+"A feature must specify its location.")),
     TErrTypStrs( eErr_SEQ_FEAT_MultipleBioseqs,
     TErrStrs( "MultipleBioseqs",
 "Feature location refers to multiple near non-part bioseqs.")),
-    TErrTypStrs( eErr_SEQ_FEAT_CDSmRNAmismatch,
-    TErrStrs( "CDSmRNAmismatch",
-"There should usually be a one-to-one correspondence between mRNA and CDS \
-under a given gene.")),
-    TErrTypStrs( eErr_SEQ_FEAT_UnnecessaryException,
-    TErrStrs( "UnnecessaryException",
-"The feature is marked with an exception qualifier, but the validator does \
-not detect an error that needs to be suppressed.")),
-    TErrTypStrs( eErr_SEQ_FEAT_LocusTagProductMismatch,
-    TErrStrs( "LocusTagProductMismatch",
-"In certain records a policy is that the locus_tag of the gene is expected to \
-match the prefix of the general ID of the CDS or mRNA product Bioseq.")),
-    TErrTypStrs( eErr_SEQ_FEAT_MrnaTransFail,
-    TErrStrs( "MrnaTransFail",
-"A fundamental error occurred in software while attempting to transcribe this \
-messenger RNA. It is either a software problem or sever data corruption.")),
-    TErrTypStrs( eErr_SEQ_FEAT_ImproperBondLocation,
-    TErrStrs( "ImproperBondLocation,",
-"Only bond features should have locations of type bond. Most other features should \
-use interval or point locations.")),
+    TErrTypStrs( eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
+    TErrStrs( "DifferntIdTypesInSeqLoc",
+"All ids in a single seq-loc which refer to the same bioseq should be of the \
+same id type")),
 
 /* SEQ_ALIGN */
 
-    TErrTypStrs( eErr_SEQ_ALIGN_SeqIdProblem,
-    TErrStrs( "SeqIdProblem",
+   TErrTypStrs ( eErr_SEQ_ALIGN_SeqIdProblem,
+   TErrStrs( "SeqIdProblem",
 "The seqence referenced by an alignment SeqID is not packaged in the record.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_StrandRev,
-    TErrStrs( "StrandRev",
+   TErrTypStrs ( eErr_SEQ_ALIGN_StrandRev,
+   TErrStrs( "StrandRev",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_DensegLenStart,
-    TErrStrs( "DensegLenStart",
+   TErrTypStrs ( eErr_SEQ_ALIGN_DensegLenStart,
+   TErrStrs( "DensegLenStart",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_StartMorethanBiolen,
-    TErrStrs( "StartMorethanBiolen",
+   TErrTypStrs ( eErr_SEQ_ALIGN_StartLessthanZero,
+   TErrStrs( "StartLessthanZero",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_EndMorethanBiolen,
-    TErrStrs( "EndMorethanBiolen",
+   TErrTypStrs ( eErr_SEQ_ALIGN_StartMorethanBiolen,
+   TErrStrs( "StartMorethanBiolen",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_LenMorethanBiolen,
-    TErrStrs( "LenMorethanBiolen",
+   TErrTypStrs ( eErr_SEQ_ALIGN_EndLessthanZero,
+   TErrStrs( "EndLessthanZero",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_SumLenStart,
-    TErrStrs( "SumLenStart",
+   TErrTypStrs ( eErr_SEQ_ALIGN_EndMorethanBiolen,
+   TErrStrs( "EndMorethanBiolen",
 "Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_LenLessthanZero,
+   TErrStrs( "LenLessthanZero",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_LenMorethanBiolen,
+   TErrStrs( "LenMorethanBiolen",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_SumLenStart,
+   TErrStrs( "SumLenStart",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_AlignDimSeqIdNotMatch,
+   TErrStrs( "AlignDimSeqIdNotMatch",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
+   TErrStrs( "SegsDimSeqIdNotMatch",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_FastaLike,
+   TErrStrs( "FastaLike",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_NullSegs,
+   TErrStrs( "NullSegs",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_SegmentGap,
+   TErrStrs( "SegmentGap",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_SegsDimOne,
+   TErrStrs( "SegsDimOne",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_AlignDimOne,
+   TErrStrs( "AlignDimOne",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_Segtype,
+   TErrStrs( "Segtype",
+"Please contact the sequence database for further help with this error.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_BlastAligns,
+   TErrStrs( "BlastAligns",
+"BLAST alignments are not desired in records submitted to the sequence database.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_PercentIdentity,
+   TErrStrs( "PercentIdentity",
+"An acceptable percent identity score is 75 percent or higher.")),
+
     TErrTypStrs( eErr_SEQ_ALIGN_SegsDimMismatch,
     TErrStrs( "SegsDimMismatch",
 "Please contact the sequence database for further help with this error.")),
@@ -871,80 +1384,72 @@ use interval or point locations.")),
     TErrTypStrs( eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
     TErrStrs( "SegsPresentStrandsMismatch",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_FastaLike,
-    TErrStrs( "FastaLike",
-"Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_SegmentGap,
-    TErrStrs( "SegmentGap",
-"Please contact the sequence database for further help with this error.")),
     TErrTypStrs( eErr_SEQ_ALIGN_SegsInvalidDim,
     TErrStrs( "SegsInvalidDim",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_Segtype,
-    TErrStrs( "Segtype",
-"Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_BlastAligns,
-    TErrStrs( "BlastAligns",
-"BLAST alignments are not desired in records submitted to the sequence database.")),
 
 /* SEQ_GRAPH */
 
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphMin,
-    TErrStrs( "GraphMin",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphMin,
+   TErrStrs( "GraphMin",
 "The graph minimum value is outside of the 0-100 range.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphMax,
-    TErrStrs( "GraphMax",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphMax,
+   TErrStrs( "GraphMax",
 "The graph maximum value is outside of the 0-100 range.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphBelow,
-    TErrStrs( "GraphBelow",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphBelow,
+   TErrStrs( "GraphBelow",
 "Some quality scores are below the stated graph minimum value.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphAbove,
-    TErrStrs( "GraphAbove",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphAbove,
+   TErrStrs( "GraphAbove",
 "Some quality scores are above the stated graph maximum value.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphByteLen,
-    TErrStrs( "GraphByteLen",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphByteLen,
+   TErrStrs( "GraphByteLen",
 "The number of bytes in the quality graph does not correspond to the \
 stated length of the graph.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphOutOfOrder,
-    TErrStrs( "GraphOutOfOrder",
-"The quality graphs are not packaged in order - may be due to an old \
-fa2htgs bug.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphBioseqLen,
-    TErrStrs( "GraphBioseqLen",
-"The length of the quality graph does not correspond to the length of \
-the Bioseq.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphSeqLitLen,
-    TErrStrs( "GraphSeqLitLen",
-"The length of the quality graph does not correspond to the length of \
-the delta Bioseq literal component.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphSeqLocLen,
-    TErrStrs( "GraphSeqLocLen",
-"The length of the quality graph does not correspond to the length of \
-the delta Bioseq location component.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphStartPhase,
-    TErrStrs( "GraphStartPhase",
-"The quality graph does not start or stop on a sequence segment \
-boundary.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphStopPhase,
-    TErrStrs( "GraphStopPhase",
-"The quality graph does not start or stop on a sequence segment \
-boundary.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphDiffNumber,
-    TErrStrs( "GraphDiffNumber",
-"The number quality graph does not equal the number of sequence \
-segments.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphACGTScore,
-    TErrStrs( "GraphACGTScore",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphOutOfOrder,
+   TErrStrs( "GraphOutOfOrder",
+"The quality graphs are not packaged in order - may be due to an old fa2htgs bug.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphBioseqLen,
+   TErrStrs( "GraphBioseqLen",
+"The length of the quality graph does not correspond to the length of the Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphSeqLitLen,
+   TErrStrs( "GraphSeqLitLen",
+"The length of the quality graph does not correspond to the length of the \
+delta Bioseq literal component.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphSeqLocLen,
+   TErrStrs( "GraphSeqLocLen",
+"The length of the quality graph does not correspond to the length of the \
+delta Bioseq location component.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphStartPhase,
+   TErrStrs( "GraphStartPhase",
+"The quality graph does not start or stop on a sequence segment boundary.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphStopPhase,
+   TErrStrs( "GraphStopPhase",
+"The quality graph does not start or stop on a sequence segment boundary.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphDiffNumber,
+   TErrStrs( "GraphDiffNumber",
+"The number quality graph does not equal the number of sequence segments.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphACGTScore,
+   TErrStrs( "GraphACGTScore",
 "Quality score values for known bases should be above 0.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphNScore,
-    TErrStrs( "GraphNScore",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphNScore,
+   TErrStrs( "GraphNScore",
 "Quality score values for unknown bases should not be above 0.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphGapScore,
-    TErrStrs( "GraphGapScore",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphGapScore,
+   TErrStrs( "GraphGapScore",
 "Gap positions should not have quality scores above 0.")),
-    TErrTypStrs( eErr_SEQ_GRAPH_GraphOverlap,
-    TErrStrs( "GraphOverlap",
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphOverlap,
+   TErrStrs( "GraphOverlap",
 "Quality graphs overlap - may be due to an old fa2htgs bug.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphBioseqId,
+   TErrStrs( "GraphBioseqId",
+"Quality graph does not map to Bioseq in record.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphACGTScoreMany,
+   TErrStrs( "GraphACGTScoreMany",
+"Quality score values for known bases should be above 0.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphNScoreMany,
+   TErrStrs( "GraphNScoreMany",
+"Quality score values for unknown bases should not be above 0.")),
 
 /* SEQ_ANNOT */
 
