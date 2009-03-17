@@ -931,8 +931,8 @@ public:
     /// @return 
     ///   Return number of currently open connections in this context.
     ///   If "srv_name" is not NULL, then return # of conn. open to that server.
-    virtual unsigned int NofConnections(const string& srv_name  = kEmptyStr,
-                                        const string& pool_name = kEmptyStr)
+    virtual unsigned int NofConnections(const string& srv_name  = "",
+                                        const string& pool_name = "")
         const = 0;
 
     /// @brief 
