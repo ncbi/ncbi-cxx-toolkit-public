@@ -1675,6 +1675,68 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
 }
 
 
+void CSeq_loc_Mapper_Base::x_Map_PackedInt_Element(const CSeq_interval& si)
+{
+    TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+    if ( si.IsSetFuzz_from() ) {
+        fuzz.first.Reset(new CInt_fuzz);
+        fuzz.first->Assign(si.GetFuzz_from());
+    }
+    if ( si.IsSetFuzz_to() ) {
+        fuzz.second.Reset(new CInt_fuzz);
+        fuzz.second->Assign(si.GetFuzz_to());
+    }
+    bool res = x_MapInterval(si.GetId(),
+        TRange(si.GetFrom(), si.GetTo()),
+        si.IsSetStrand(),
+        si.IsSetStrand() ? si.GetStrand() : eNa_strand_unknown,
+        fuzz);
+    if ( !res ) {
+        if ( m_KeepNonmapping ) {
+            x_PushRangesToDstMix();
+            TRange rg(si.GetFrom(), si.GetTo());
+            x_PushMappedRange(CSeq_id_Handle::GetHandle(si.GetId()),
+                STRAND_TO_INDEX(si.IsSetStrand(), si.GetStrand()),
+                rg, fuzz);
+        }
+        else {
+            m_Partial = true;
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper_Base::x_Map_PackedPnt_Element(const CPacked_seqpnt& pp,
+                                                   TSeqPos p)
+{
+    TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+    if ( pp.IsSetFuzz() ) {
+        fuzz.first.Reset(new CInt_fuzz);
+        fuzz.first->Assign(pp.GetFuzz());
+    }
+    bool res = x_MapInterval(
+        pp.GetId(),
+        TRange(p, p), pp.IsSetStrand(),
+        pp.IsSetStrand() ?
+        pp.GetStrand() : eNa_strand_unknown,
+        fuzz);
+    if ( !res ) {
+        if ( m_KeepNonmapping ) {
+            x_PushRangesToDstMix();
+            TRange rg(p, p);
+            x_PushMappedRange(
+                CSeq_id_Handle::GetHandle(pp.GetId()),
+                STRAND_TO_INDEX(pp.IsSetStrand(),
+                                pp.GetStrand()),
+                rg, fuzz);
+        }
+        else {
+            m_Partial = true;
+        }
+    }
+}
+
+
 void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
 {
     switch ( src_loc.Which() ) {
@@ -1808,33 +1870,14 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
     case CSeq_loc::e_Packed_int:
     {
         const CPacked_seqint::Tdata& src_ints = src_loc.GetPacked_int().Get();
-        ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
-            const CSeq_interval& si = **i;
-            TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
-            if ( si.IsSetFuzz_from() ) {
-                fuzz.first.Reset(new CInt_fuzz);
-                fuzz.first->Assign(si.GetFuzz_from());
+        if (src_loc.GetPacked_int().IsReverseStrand()) {
+            REVERSE_ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
+                x_Map_PackedInt_Element(**i);
             }
-            if ( si.IsSetFuzz_to() ) {
-                fuzz.second.Reset(new CInt_fuzz);
-                fuzz.second->Assign(si.GetFuzz_to());
-            }
-            bool res = x_MapInterval(si.GetId(),
-                TRange(si.GetFrom(), si.GetTo()),
-                si.IsSetStrand(),
-                si.IsSetStrand() ? si.GetStrand() : eNa_strand_unknown,
-                fuzz);
-            if ( !res ) {
-                if ( m_KeepNonmapping ) {
-                    x_PushRangesToDstMix();
-                    TRange rg(si.GetFrom(), si.GetTo());
-                    x_PushMappedRange(CSeq_id_Handle::GetHandle(si.GetId()),
-                        STRAND_TO_INDEX(si.IsSetStrand(), si.GetStrand()),
-                        rg, fuzz);
-                }
-                else {
-                    m_Partial = true;
-                }
+        }
+        else {
+            ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
+                x_Map_PackedInt_Element(**i);
             }
         }
         break;
@@ -1843,31 +1886,14 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
     {
         const CPacked_seqpnt& src_pack_pnts = src_loc.GetPacked_pnt();
         const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
-        ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
-            TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
-            if ( src_pack_pnts.IsSetFuzz() ) {
-                fuzz.first.Reset(new CInt_fuzz);
-                fuzz.first->Assign(src_pack_pnts.GetFuzz());
+        if ( src_loc.IsReverseStrand() ) {
+            REVERSE_ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+                x_Map_PackedPnt_Element(src_pack_pnts, *i);
             }
-            bool res = x_MapInterval(
-                src_pack_pnts.GetId(),
-                TRange(*i, *i), src_pack_pnts.IsSetStrand(),
-                src_pack_pnts.IsSetStrand() ?
-                src_pack_pnts.GetStrand() : eNa_strand_unknown,
-                fuzz);
-            if ( !res ) {
-                if ( m_KeepNonmapping ) {
-                    x_PushRangesToDstMix();
-                    TRange rg(*i, *i);
-                    x_PushMappedRange(
-                        CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
-                        STRAND_TO_INDEX(src_pack_pnts.IsSetStrand(),
-                                        src_pack_pnts.GetStrand()),
-                        rg, fuzz);
-                }
-                else {
-                    m_Partial = true;
-                }
+        }
+        else {
+            ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+                x_Map_PackedPnt_Element(src_pack_pnts, *i);
             }
         }
         break;
@@ -1878,8 +1904,15 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         CRef<CSeq_loc> prev = m_Dst_loc;
         m_Dst_loc.Reset();
         const CSeq_loc_mix::Tdata& src_mix = src_loc.GetMix().Get();
-        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-            x_MapSeq_loc(**i);
+        if (src_loc.GetMix().IsReverseStrand()) {
+            REVERSE_ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+                x_MapSeq_loc(**i);
+            }
+        }
+        else {
+            ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+                x_MapSeq_loc(**i);
+            }
         }
         x_PushRangesToDstMix();
         CRef<CSeq_loc> mix = m_Dst_loc;

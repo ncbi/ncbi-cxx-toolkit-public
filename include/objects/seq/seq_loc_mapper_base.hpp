@@ -56,6 +56,8 @@ BEGIN_SCOPE(objects)
 
 class CSeq_id;
 class CSeq_loc;
+class CSeq_interval;
+class CPacked_seqpnt;
 class CSeq_loc_CI;
 class CSeq_feat;
 class CSeq_align;
@@ -476,6 +478,9 @@ private:
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
     bool x_ReverseRangeOrder(void) const;
+
+    void x_Map_PackedInt_Element(const CSeq_interval& si);
+    void x_Map_PackedPnt_Element(const CPacked_seqpnt& pp, TSeqPos p);
 
     EMergeFlags          m_MergeFlag;
     EGapFlags            m_GapFlag;

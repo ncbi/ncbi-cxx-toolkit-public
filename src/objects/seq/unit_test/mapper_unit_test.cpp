@@ -560,6 +560,195 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Mix)
 }
 
 
+BOOST_AUTO_TEST_CASE(s_TestMapping_Mix_Reverse_Order)
+{
+    // Mapping through a set of ranges, check the order of mapped ranges
+    CSeq_loc src, dst;
+    {{
+        CRef<CSeq_loc> sub;
+        // Source:
+        // a) 10-19
+        // b) 30-49
+        // c) 60-89
+        TSeqPos len = 10;
+        for (TSeqPos p = 10; p <= 60; p += len) {
+            sub = new CSeq_loc;
+            s_InitInterval(sub->SetInt(), 4, p, p + len - 1, eNa_strand_minus);
+            len += 10;
+            src.SetMix().Set().push_front(sub);
+        }
+    }}
+    // Destination - single interval on plus strand
+    s_InitInterval(dst.SetInt(), 5, 100, 159);
+    CSeq_loc_Mapper_Base mapper(src, dst);
+
+    {{
+        // Original sea-loc is the same as mapping source
+        CSeq_loc loc;
+        loc.Assign(src);
+        CRef<CSeq_loc> mapped = mapper.Map(loc);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+        BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 3);
+        CPacked_seqint::Tdata::const_iterator it =
+            mapped->GetPacked_int().Get().begin();
+        // Check all ranges
+        BOOST_CHECK(*it);
+        CHECK_SEQ_INT(**it, 5, 100, 129, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        ++it;
+        BOOST_CHECK(*it);
+        CHECK_SEQ_INT(**it, 5, 130, 149, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        ++it;
+        BOOST_CHECK(*it);
+        CHECK_SEQ_INT(**it, 5, 150, 159, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+    }}
+
+    {{
+        // Map packed-int, check the order of intervals
+        CSeq_loc loc;
+        ITERATE(CSeq_loc_mix::Tdata, mit, src.GetMix().Get()) {
+            CRef<CSeq_interval> si(new CSeq_interval);
+            si->Assign((*mit)->GetInt());
+            loc.SetPacked_int().Set().push_back(si);
+        }
+        CRef<CSeq_loc> mapped = mapper.Map(loc);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Packed_int);
+        BOOST_CHECK_EQUAL(mapped->GetPacked_int().Get().size(), 3);
+        CPacked_seqint::Tdata::const_iterator it =
+            mapped->GetPacked_int().Get().begin();
+        // Check all ranges
+        BOOST_CHECK(*it);
+        CHECK_SEQ_INT(**it, 5, 100, 129, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        ++it;
+        BOOST_CHECK(*it);
+        CHECK_SEQ_INT(**it, 5, 130, 149, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        ++it;
+        BOOST_CHECK(*it);
+        CHECK_SEQ_INT(**it, 5, 150, 159, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+    }}
+
+    {{
+        // Worst case: non-plain mix
+        CSeq_loc loc;
+        {{
+            CRef<CSeq_loc> sub1;
+            // Source:
+            // a) 10-19
+            // b) 30-49
+            // c) 60-89
+            sub1 = new CSeq_loc;
+            s_InitInterval(sub1->SetInt(), 4, 10, 11, eNa_strand_minus);
+            loc.SetMix().Set().push_front(sub1);
+            sub1 = new CSeq_loc;
+            {{
+                CRef<CSeq_loc> sub2;
+                sub2 = new CSeq_loc;
+                s_InitInterval(sub2->SetInt(), 4, 12, 14, eNa_strand_minus);
+                sub1->SetMix().Set().push_front(sub2);
+                sub2 = new CSeq_loc;
+                s_InitInterval(sub2->SetInt(), 4, 15, 18, eNa_strand_minus);
+                sub1->SetMix().Set().push_front(sub2);
+            }}
+            loc.SetMix().Set().push_front(sub1);
+            sub1 = new CSeq_loc;
+            {{
+                CRef<CSeq_loc> sub2;
+                sub2 = new CSeq_loc;
+                {{
+                    CRef<CSeq_loc> sub3;
+                    sub3 = new CSeq_loc;
+                    s_InitInterval(sub3->SetInt(), 4, 30, 31, eNa_strand_minus);
+                    sub2->SetMix().Set().push_front(sub3);
+                    sub3 = new CSeq_loc;
+                    s_InitInterval(sub3->SetInt(), 4, 35, 37, eNa_strand_minus);
+                    sub2->SetMix().Set().push_front(sub3);
+                }}
+                sub1->SetMix().Set().push_front(sub2);
+                sub2 = new CSeq_loc;
+                {{
+                    CRef<CSeq_interval> int3;
+                    int3 = new CSeq_interval;
+                    s_InitInterval(*int3, 4, 40, 44, eNa_strand_minus);
+                    sub2->SetPacked_int().Set().push_front(int3);
+                    int3 = new CSeq_interval;
+                    s_InitInterval(*int3, 4, 45, 47, eNa_strand_minus);
+                    sub2->SetPacked_int().Set().push_front(int3);
+                }}
+                sub1->SetMix().Set().push_front(sub2);
+            }}
+            loc.SetMix().Set().push_front(sub1);
+        }}
+        CRef<CSeq_loc> mapped = mapper.Map(loc);
+        BOOST_CHECK(mapped);
+        BOOST_CHECK_EQUAL(mapped->Which(), CSeq_loc::e_Mix);
+        BOOST_CHECK_EQUAL(mapped->GetMix().Get().size(), 3);
+        CSeq_loc_mix::Tdata::const_iterator it1 =
+            mapped->GetMix().Get().begin();
+        // Check all ranges
+        BOOST_CHECK(*it1);
+        BOOST_CHECK_EQUAL((*it1)->Which(), CSeq_loc::e_Mix);
+        BOOST_CHECK_EQUAL((*it1)->GetMix().Get().size(), 3);
+        {{
+            CSeq_loc_mix::Tdata::const_iterator it2 =
+                (*it1)->GetMix().Get().begin();
+            BOOST_CHECK(*it2);
+            BOOST_CHECK_EQUAL((*it2)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*it2)->GetInt(), 5, 132, 134, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it2;
+            BOOST_CHECK(*it2);
+            BOOST_CHECK_EQUAL((*it2)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*it2)->GetInt(), 5, 135, 139, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it2;
+            BOOST_CHECK(*it2);
+            BOOST_CHECK_EQUAL((*it2)->Which(), CSeq_loc::e_Packed_int);
+            BOOST_CHECK_EQUAL((*it2)->GetPacked_int().Get().size(), 2);
+            {{
+                CPacked_seqint::Tdata::const_iterator it3 =
+                    (*it2)->GetPacked_int().Get().begin();
+                // Check all ranges
+                BOOST_CHECK(*it3);
+                CHECK_SEQ_INT(**it3, 5, 142, 144, true, eNa_strand_plus,
+                    CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+                ++it3;
+                BOOST_CHECK(*it3);
+                CHECK_SEQ_INT(**it3, 5, 148, 149, true, eNa_strand_plus,
+                    CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            }}
+        }}
+        ++it1;
+        BOOST_CHECK(*it1);
+        BOOST_CHECK_EQUAL((*it1)->Which(), CSeq_loc::e_Packed_int);
+        BOOST_CHECK_EQUAL((*it1)->GetPacked_int().Get().size(), 2);
+        {{
+            CPacked_seqint::Tdata::const_iterator it2 =
+                (*it1)->GetPacked_int().Get().begin();
+            // Check all ranges
+            BOOST_CHECK(*it2);
+            CHECK_SEQ_INT(**it2, 5, 151, 154, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            ++it2;
+            BOOST_CHECK(*it2);
+            CHECK_SEQ_INT(**it2, 5, 155, 157, true, eNa_strand_plus,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        ++it1;
+        BOOST_CHECK(*it1);
+        BOOST_CHECK_EQUAL((*it1)->Which(), CSeq_loc::e_Int);
+        CHECK_SEQ_INT((*it1)->GetInt(), 5, 158, 159, true, eNa_strand_plus,
+            CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+    }}
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping_Dendiag)
 {
     // Dense-diag mapping
@@ -1368,7 +1557,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Simple)
         BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 10);
-        for (int i = 0; i < int_mapped.GetValues().size(); i++) {
+        for (size_t i = 0; i < int_mapped.GetValues().size(); i++) {
             BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], i + 2);
         }
     }}
@@ -1416,7 +1605,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Simple)
         BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 10);
-        for (int i = 0, val = 5; i < int_mapped.GetValues().size(); i++, val++) {
+        for (size_t i = 0, val = 5; i < int_mapped.GetValues().size(); i++, val++) {
             if (i == 5) {
                 val += 10;
             }
@@ -1450,7 +1639,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Simple)
         BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 10);
-        for (int i = 0; i < int_mapped.GetValues().size(); i++) {
+        for (size_t i = 0; i < int_mapped.GetValues().size(); i++) {
             BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], i + 2);
         }
     }}
@@ -1492,7 +1681,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Unsupported)
         BOOST_CHECK_EQUAL(int_mapped.GetMin(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetAxis(), 0);
         BOOST_CHECK_EQUAL(int_mapped.GetValues().size(), 6);
-        for (int i = 0; i < int_mapped.GetValues().size(); i++) {
+        for (size_t i = 0; i < int_mapped.GetValues().size(); i++) {
             BOOST_CHECK_EQUAL(int_mapped.GetValues()[i], i + 1);
         }
     }}
