@@ -83,6 +83,9 @@ public:
     static size_t s_GetDefaultMaxGenomicExtent(void);
     size_t GetMaxGenomicExtent(void) const;
 
+    void   SetMaxIntron(size_t max_intron);
+    size_t GetMaxIntron(void) const;
+
     void   SetCompartmentPenalty(double penalty);
     static double s_GetDefaultCompartmentPenalty(void);
     double GetCompartmentPenalty(void) const;
@@ -311,6 +314,9 @@ protected:
 
     // max space to look beyond end hits
     size_t       m_max_genomic_ext;
+
+    // max intron length
+    size_t       m_MaxIntron;
 
     // The limiting range as defined by the compartment hits,
     // if the max compartment hit identity is less than a cut-off.
