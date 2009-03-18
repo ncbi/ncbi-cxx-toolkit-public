@@ -56,7 +56,8 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     : m_Out(out), m_FmtSpec(format_spec), m_BlastDb(blastdb),
       m_MaskingAlgoHelper(0), m_FastaRequestedAtEOL(false)
 {
-    m_MaskingAlgoHelper = new CMaskingFmtSpecHelper(m_FmtSpec, m_BlastDb);
+    auto_ptr<CMaskingFmtSpecHelper> masking_algo_helper
+		(new CMaskingFmtSpecHelper(m_FmtSpec, m_BlastDb));
     vector<char> repl_types;    // replacement types
 
     // Record where the offsets where the replacements must occur
@@ -151,6 +152,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     if (dynamic_cast<CFastaExtractor*>(m_DataExtractors.back())) {
         m_FastaRequestedAtEOL = true;
     }
+	m_MaskingAlgoHelper = masking_algo_helper.release();
 }
 
 CSeqFormatter::~CSeqFormatter()
