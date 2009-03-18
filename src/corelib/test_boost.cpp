@@ -838,7 +838,9 @@ CNcbiTestApplication::Run(void)
 int
 CNcbiTestApplication::DryRun(void)
 {
+    m_RunCalled = true;
     m_RunMode |= fTestList;
+    but::results_reporter::set_level(but::DETAILED_REPORT);
     return 0;
 }
 
