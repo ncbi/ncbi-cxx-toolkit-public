@@ -43,6 +43,10 @@
 #include <connect/ncbi_socket.hpp>
 #include <common/ncbi_package_ver.h>
 
+#ifdef WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 USING_NCBI_SCOPE;
 
@@ -121,11 +125,30 @@ int CNetCacheControl::Run()
         size_t blob_size = 0;
         auto_ptr<IReader> reader(nc_client.GetData(key, &blob_size));
         if (!reader.get()) {
-            ERR_POST("cannot retrieve data");
+            ERR_POST("Cannot retrieve data");
             return 1;
         }
-        CRStream strm(reader.get());
-        NcbiCout << strm.rdbuf();
+
+#ifdef WIN32
+        setmode(fileno(stdout), O_BINARY);
+#endif
+
+        char buffer[16 * 1024];
+
+        ERW_Result read_result;
+        size_t bytes_read;
+
+        while ((read_result = reader->Read(buffer,
+            sizeof(buffer), &bytes_read)) == eRW_Success) {
+
+            fwrite(buffer, 1, bytes_read, stdout);
+        }
+
+        if (read_result != eRW_Eof) {
+            ERR_POST("Error while sending data to stdout");
+            return 1;
+        }
+
         return 0;
     }
 

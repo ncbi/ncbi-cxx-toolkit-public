@@ -41,6 +41,11 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 
+#ifdef WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 USING_NCBI_SCOPE;
 
 
@@ -84,12 +89,22 @@ int CSaveToNetCacheApp::Run()
     const CArgs& args = GetArgs();
     string service = args["service"].AsString();
     CNetCacheAPI cln(service, "save_to_netcache");
-    CNcbiIstream* istream = NULL;
+    FILE* istream;
     CNcbiOstream* ostream = NULL;
-    if( args["if"] ) {
-        istream = &args["if"].AsInputFile();
+    if (args["if"]) {
+        std::string file_name = args["if"].AsString();
+        istream = fopen(file_name.c_str(), "rb");
+        if (istream == NULL) {
+            ERR_POST("Could not open " << file_name << " for input");
+
+            return 3;
+        }
     } else {
-        istream = &NcbiCin;
+#ifdef WIN32
+        setmode(fileno(stdin), O_BINARY);
+#endif
+
+        istream = stdin;
     }
     
     if( args["of"] ) {
@@ -99,15 +114,27 @@ int CSaveToNetCacheApp::Run()
     }
 
     string key;
-    {
+
     auto_ptr<IWriter> writer(cln.PutData(&key));
     if (!writer.get()) {
         ERR_POST( "Could not create a writer for \"" << service << "\" NetCache service.");
         return 1;
     }
-    CWStream strm(writer.get());
-    strm << istream->rdbuf();
+
+    char buffer[16 * 1024];
+
+    while (!feof(istream)) {
+        size_t bytes_read = fread(buffer, 1, sizeof(buffer), istream);
+
+        if (ferror(istream)) {
+            perror("Read error");
+            return 2;
+        }
+
+        if (bytes_read > 0)
+            writer->Write(buffer, bytes_read);
     }
+
     (*ostream) << key << NcbiEndl;
 
     return 0;
