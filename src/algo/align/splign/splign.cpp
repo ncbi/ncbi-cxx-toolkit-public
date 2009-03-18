@@ -96,6 +96,7 @@ CSplign::CSplign( void )
     m_MinSingletonIdty = m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
     m_MinSingletonIdtyBps = numeric_limits<size_t>::max();
     m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
+    m_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
     m_endgaps = true;
     m_strand = true;
     m_nopolya = false;
@@ -230,6 +231,19 @@ size_t CSplign::GetMaxGenomicExtent(void) const
 {
     return m_max_genomic_ext;
 }
+
+
+void CSplign::SetMaxIntron(size_t max_intron)
+{
+    m_MaxIntron = max_intron;
+}
+
+
+size_t CSplign::GetMaxIntron(void) const
+{
+    return m_MaxIntron;
+}
+
 
 double CSplign::GetMinExonIdentity( void ) const {
     return m_MinExonIdty;
@@ -463,7 +477,6 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     // check that no two consecutive hits are farther than the max intron
     // (extra short hits skipped)
-    const size_t max_intron (CCompartmentFinder<THit>::s_GetDefaultMaxIntron());
     size_t prev (0);
     NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
@@ -477,8 +490,8 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         if(prev > 0) {
             
             const bool consistent (h->GetSubjStrand()?
-                                  (h->GetSubjStart() < prev + max_intron):
-                                  (h->GetSubjStart() + max_intron > prev));
+                                  (h->GetSubjStart() < prev + m_MaxIntron):
+                                  (h->GetSubjStart() + m_MaxIntron > prev));
 
             if(!consistent) {
                 const string errmsg (g_msg_CompartmentInconsistent
@@ -829,17 +842,16 @@ void CSplign::Run(THitRefs* phitrefs)
     }
     
     // iterate through compartments
-
     const THit::TCoord min_singleton_idty_final (
                        min(size_t(m_MinSingletonIdty * mrna_size),
                            m_MinSingletonIdtyBps));
 
-    CCompartmentAccessor<THit> comps (hitrefs.begin(),
-                                      hitrefs.end(),
-                                      THit::TCoord(m_CompartmentPenalty * mrna_size),
+    CCompartmentAccessor<THit> comps (THit::TCoord(m_CompartmentPenalty * mrna_size),
                                       THit::TCoord(m_MinCompartmentIdty * mrna_size),
                                       min_singleton_idty_final,
                                       true);
+    comps.SetMaxIntron(m_MaxIntron);
+    comps.Run(hitrefs.begin(), hitrefs.end());
 
     pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
     if(dim.second > 0) {

@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include <algo/align/splign/splign_cmdargs.hpp>
+#include <algo/align/util/compartment_finder.hpp>
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 
 
@@ -91,10 +92,21 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
 
+    argdescr->AddDefaultKey
+        ("max_intron",
+         "max_intron",
+         "The upper bound on intron length, in base pairs.",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CCompartmentFinder<CSplign::THit>::
+                           s_GetDefaultMaxIntron()));
+
     CArgAllow * constrain01 (new CArgAllow_Doubles(0,1));
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
     argdescr->SetConstraint("compartment_penalty", constrain01);
+
+    CArgAllow * constrain_7_2M (new CArgAllow_Integers(7,2000000));
+    argdescr->SetConstraint("max_intron", constrain_7_2M);
 
 #ifdef ALGOALIGN_NW_SPLIGN_MAKE_PUBLIC_BINARY
     CArgAllow_Strings * constrain_querytype (new CArgAllow_Strings);
@@ -104,11 +116,13 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 
 }
 
+
 void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
 {
     splign->SetEndGapDetection(true);
     splign->SetPolyaDetection(true);
 
+    splign->SetMaxIntron(args["compartment_penalty"].AsInteger());
     splign->SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
     splign->SetMinCompartmentIdentity(args["min_compartment_idty"].AsDouble());
     if(args["min_singleton_idty"]) {
