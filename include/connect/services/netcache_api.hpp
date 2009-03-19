@@ -66,8 +66,10 @@ struct SNetCacheAPIImpl;
 /// because they are essentially smart pointers to the implementation
 /// objects allocated internally on the heap.
 ///
-/// After any Put, Get transactions connection socket
-/// is closed (a part of the NetCache protocol implementation).
+/// @note After sending blob data to a NetCache server,
+/// this class waits for a confirmation from the server,
+/// and the connection cannot be used before this
+/// confirmation is read.
 ///
 ///
 class NCBI_XCONNECT_EXPORT CNetCacheAPI
@@ -81,7 +83,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         const std::string& client_name,
         const std::string& lbsm_affinity_name = kEmptyStr);
 
-    /// Put BLOB to server
+    /// Put BLOB to server.  This method is blocking and waits
+    /// for a confirmation from NetCache after all data is
+    /// transferred.
     ///
     /// @param time_to_live
     ///    BLOB time to live value in seconds.
@@ -96,7 +100,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
                    size_t        size,
                    unsigned int  time_to_live = 0);
 
-    /// Put BLOB to server
+    /// Put BLOB to server.  This method is blocking, it
+    /// waits for a confirmation from NetCache after all
+    /// data is transferred.
     ///
     /// @param key
     ///    NetCache key, if empty new key is created
@@ -106,10 +112,12 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    0 - server side default is assumed.
     ///
     /// @return
-    ///    IReader* (caller must delete this).
+    ///    IWriter* (caller must delete it).
     IWriter* PutData(string* key, unsigned int  time_to_live = 0);
 
-    /// Update an existing BLOB
+    /// Update an existing BLOB.  Just like all other PutData
+    /// methods, this one is blocking and waits for a confirmation
+    /// from NetCache after all data is transferred.
     ///
     string PutData(const string& key,
                    const void*   buf,
