@@ -777,6 +777,7 @@ inline
 #endif /*__GNUC__*/
 static EIO_Status s_InitAPI(int secure)
 {
+    static const struct SOCKSSL_struct kNoSSL/* = { all NULL } */;
     EIO_Status status = eIO_Success;
 
     if (!s_Initialized  &&  (status = SOCK_InitializeAPI()) != eIO_Success)
@@ -791,8 +792,10 @@ static EIO_Status s_InitAPI(int secure)
         SOCKSSL ssl = s_SSLSetup ? s_SSLSetup() : 0;
         if (ssl  &&  ssl->Init) {
             CORE_LOCK_WRITE;
-            if (!s_SSL  &&  (status = ssl->Init(s_Recv,s_Send)) == eIO_Success)
-                s_SSL = ssl;
+            if (!s_SSL) {
+                s_SSL = ((status = ssl->Init(s_Recv,s_Send)) == eIO_Success
+                         ? ssl : &kNoSSL);
+            }
             CORE_UNLOCK;
         } else
             status = eIO_NotSupported;
