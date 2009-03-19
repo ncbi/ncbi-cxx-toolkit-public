@@ -256,7 +256,7 @@ inline void s_HandleRunJobError(CGridThreadContext& thr_context,
 class CRequestStateGuard
 {
 public:
-    CRequestStateGuard(CGridThreadContext& thread_context);
+    CRequestStateGuard(CWorkerNodeJobContext& job_context);
 
     void RequestStart();
     void RequestStop();
@@ -264,15 +264,17 @@ public:
     ~CRequestStateGuard();
 
 private:
-    CGridThreadContext& m_GridThreadContext;
+    CWorkerNodeJobContext& m_JobContext;
 };
 
-CRequestStateGuard::CRequestStateGuard(CGridThreadContext& thread_context) :
-    m_GridThreadContext(thread_context)
+CRequestStateGuard::CRequestStateGuard(CWorkerNodeJobContext& job_context) :
+    m_JobContext(job_context)
 {
     CRequestContext& request_context = CDiagContext::GetRequestContext();
 
-    const CNetScheduleJob& job = thread_context.GetJobContext().GetJob();
+    request_context.SetRequestID((int) job_context.GetJobNumber());
+
+    const CNetScheduleJob& job = job_context.GetJob();
 
     if (!job.client_ip.empty())
         request_context.SetClientIP(job.client_ip);
@@ -299,6 +301,11 @@ CRequestStateGuard::~CRequestStateGuard()
 {
     CRequestContext& request_context = CDiagContext::GetRequestContext();
 
+    if (!request_context.IsSetRequestStatus())
+        request_context.SetRequestStatus(
+            m_JobContext.GetCommitStatus() == CWorkerNodeJobContext::eDone &&
+                m_JobContext.GetJob().ret_code == 0 ? 200 : 500);
+
     switch (request_context.GetAppState()) {
     case eDiagAppState_Request:
         request_context.SetAppState(eDiagAppState_RequestEnd);
@@ -314,8 +321,6 @@ CRequestStateGuard::~CRequestStateGuard()
 
 static void s_RunJob(CGridThreadContext& thr_context)
 {
-    CRequestStateGuard request_state_guard(thr_context);
-
     bool more_jobs;
 
     CWorkerNodeJobContext& job_context = thr_context.GetJobContext();
@@ -323,7 +328,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
     do {
         more_jobs = false;
 
-        SetDiagRequestId((int) job_context.GetJobNumber());
+        CRequestStateGuard request_state_guard(job_context);
 
         CNetScheduleJob new_job;
         try {

@@ -280,13 +280,16 @@ public:
 
     unsigned int GetJobNumber() const  { return m_JobNumber; }
 
-private:
     enum ECommitStatus {
         eDone,
         eFailure,
         eNotCommitted
     };
 
+    bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
+    ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
+
+private:
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
     string& SetJobOutput()             { return m_Job.output; }
@@ -296,8 +299,6 @@ private:
 
     friend class CWorkerNodeRequest;
     CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
-    bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
-    ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
 
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
