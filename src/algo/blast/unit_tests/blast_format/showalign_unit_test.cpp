@@ -118,7 +118,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     BOOST_REQUIRE(output.find("Sbjct  259   GCCTGATGCGACGCTGGCGCGTCTTATCAGGCCTAC  294") != NPOS);
     BOOST_REQUIRE(output.find("Length=11852") != NPOS);
     BOOST_REQUIRE(output.find("Query  5636  GTAGG-CAGGATAAGGCGTTCACGCCGCATCCGGCA  5670") != NPOS);
-    BOOST_REQUIRE(output.find(" Score = 54.7 bits (29),  Expect = 2e-06") 
+    BOOST_REQUIRE(output.find(" Score = 54.7 bits (29),  Expect = 2e-0") 
                   != NPOS);
     }}
     tmp_data_loader.RevokeBlastDbDataLoader();
@@ -132,6 +132,6 @@ BOOST_AUTO_TEST_CASE(TestSimpleAlignment_LocalBlastDBLoader)
 
 BOOST_AUTO_TEST_CASE(TestSimpleAlignment_RmtBlastDBLoader)
 {
-    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote));
+   BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote));
 }
 
