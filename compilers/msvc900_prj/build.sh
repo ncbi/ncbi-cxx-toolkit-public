@@ -15,8 +15,10 @@ arch="$2"
 ########### Global variables
 
 build_trees='static dll'
-sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
-sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
+sol_static="ncbi_cpp.sln"
+sol_dll="ncbi_cpp_dll.sln"
+###sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
+###sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
 
 
