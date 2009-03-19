@@ -142,6 +142,8 @@ public:
             os << "THE NODE IS IN AN EXCLUSIVE MODE!!!" << endl;
 
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
+
+        os << "OK:END";
     }
 };
 
