@@ -453,7 +453,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             NStr::IntToString(sdl->gi);
         sdl->score_url += ">";
 
-        string user_url = m_Reg->Get(m_BlastType, "TOOL_URL");
+		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;
         string type_temp = m_BlastType;
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
         int taxid = 0;
@@ -549,8 +549,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
 }
 
 CShowBlastDefline::~CShowBlastDefline()
-{
-   
+{   
     ITERATE(list<SScoreInfo*>, iter, m_ScoreList){
         delete *iter;
     }
@@ -559,7 +558,7 @@ CShowBlastDefline::~CShowBlastDefline()
 
 void CShowBlastDefline::Init(void)
 {
-    string descrTableFormat = m_Ctx->GetRequestValue("NEW_VIEW").GetValue();
+	string descrTableFormat = m_Ctx ? m_Ctx->GetRequestValue("NEW_VIEW").GetValue() : kEmptyStr;
     descrTableFormat = NStr::ToLower(descrTableFormat);
     bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;        
     if (formatAsTable) {
@@ -573,7 +572,7 @@ void CShowBlastDefline::Init(void)
 
 void CShowBlastDefline::Display(CNcbiOstream & out)
 {
-    string descrTableFormat = m_Ctx->GetRequestValue("NEW_VIEW").GetValue();
+    string descrTableFormat = m_Ctx ? m_Ctx->GetRequestValue("NEW_VIEW").GetValue() : kEmptyStr;
     descrTableFormat = NStr::ToLower(descrTableFormat);
     bool formatAsTable = (descrTableFormat == "on" || descrTableFormat == "true" || descrTableFormat == "yes") ? true : false;    
     if (formatAsTable) {        
@@ -645,8 +644,10 @@ void CShowBlastDefline::x_InitDefline(void)
          iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
          iter++){
         if (is_first_aln) {
-            master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
-                GetBioseqCore()->IsNa();
+			_ASSERT(m_ScopeRef);
+			CBioseq_Handle bh = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0));
+			_ASSERT(bh);
+            master_is_na = bh.GetBioseqCore()->IsNa();
         }
         subid = &((*iter)->GetSeq_id(1));
         if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))) {
@@ -1381,7 +1382,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     CBlastFormatUtil::GetScoreString(evalue, bits, 0, 
                               evalue_buf, bit_score_buf, total_bit_score_buf);
 
-    SScoreInfo* score_info = new SScoreInfo;
+    auto_ptr<SScoreInfo> score_info(new SScoreInfo);
     score_info->sum_n = sum_n == -1 ? 1:sum_n ;
     score_info->id = &(aln.GetSeq_id(1));
 
@@ -1392,7 +1393,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     score_info->id = &(aln.GetSeq_id(1));
     score_info->blast_rank = blast_rank+1;
 
-    return score_info;
+    return score_info.release();
 }
 
 CShowBlastDefline::SScoreInfo* 
@@ -1457,7 +1458,7 @@ vector <CShowBlastDefline::SDeflineInfo*>
 CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
 {
     vector <CShowBlastDefline::SDeflineInfo*>  sdlVec;
-    for(int i = 0; i < seqIds.size(); i++) {
+    for(SIZE_T i = 0; i < seqIds.size(); i++) {
         list<int> use_this_gi;
         CShowBlastDefline::SDeflineInfo* sdl = x_GetDeflineInfo(seqIds[i], use_this_gi, i + 1 );
         sdlVec.push_back(sdl);        
@@ -1490,6 +1491,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
             sdl->gi = 0;
         }
         if(m_Option & eHtml){
+			_ASSERT(m_Reg.get());
             string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
             CBioseq::TId ids;
             CRef<CSeq_id> id_ref;

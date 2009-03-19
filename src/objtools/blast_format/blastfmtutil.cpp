@@ -776,7 +776,7 @@ void CBlastFormatUtil::GetScoreString(double evalue,
                                       string& bit_score_str,
                                       string& total_bit_score_str)
 {
-    char evalue_buf[10], bit_score_buf[10], total_bit_score_buf[10];
+    char evalue_buf[100], bit_score_buf[100], total_bit_score_buf[100];
 
     /* Facilitates comparing formatted output using diff */
     static string kBitScoreFormat("%4.1lf");
@@ -793,39 +793,44 @@ void CBlastFormatUtil::GetScoreString(double evalue,
 #endif /* CTOOLKIT_COMPATIBLE */
     
     if (evalue < 1.0e-180) {
-        sprintf(evalue_buf, "0.0");
+        snprintf(evalue_buf, sizeof(evalue_buf), "0.0");
     } else if (evalue < 1.0e-99) {
-        sprintf(evalue_buf, "%2.0le", evalue);        
+        snprintf(evalue_buf, sizeof(evalue_buf), "%2.0le", evalue);        
 #ifdef CTOOLKIT_COMPATIBLE
         if (ctoolkit_compatible) {
             strncpy(evalue_buf, evalue_buf+1, sizeof(evalue_buf-1));
         }
 #endif /* CTOOLKIT_COMPATIBLE */
     } else if (evalue < 0.0009) {
-        sprintf(evalue_buf, "%3.0le", evalue);
+        snprintf(evalue_buf, sizeof(evalue_buf), "%3.0le", evalue);
     } else if (evalue < 0.1) {
-        sprintf(evalue_buf, "%4.3lf", evalue);
+        snprintf(evalue_buf, sizeof(evalue_buf), "%4.3lf", evalue);
     } else if (evalue < 1.0) { 
-        sprintf(evalue_buf, "%3.2lf", evalue);
+        snprintf(evalue_buf, sizeof(evalue_buf), "%3.2lf", evalue);
     } else if (evalue < 10.0) {
-        sprintf(evalue_buf, "%2.1lf", evalue);
+        snprintf(evalue_buf, sizeof(evalue_buf), "%2.1lf", evalue);
     } else { 
-        sprintf(evalue_buf, "%5.0lf", evalue);
+        snprintf(evalue_buf, sizeof(evalue_buf), "%5.0lf", evalue);
     }
     
     if (bit_score > 9999){
-        sprintf(bit_score_buf, "%4.3le", bit_score);
+        snprintf(bit_score_buf, sizeof(bit_score_buf), "%4.3le", bit_score);
     } else if (bit_score > 99.9){
-        sprintf(bit_score_buf, "%4.0ld", (long)bit_score);
+        snprintf(bit_score_buf, sizeof(bit_score_buf), "%4.0ld", 
+			(long)bit_score);
     } else {
-        sprintf(bit_score_buf, kBitScoreFormat.c_str(), bit_score);
+        snprintf(bit_score_buf, sizeof(bit_score_buf), kBitScoreFormat.c_str(),
+			bit_score);
     }
     if (total_bit_score > 9999){
-        sprintf(total_bit_score_buf, "%4.3le", total_bit_score);
+        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.3le", 
+			total_bit_score);
     } else if (total_bit_score > 99.9){
-        sprintf(total_bit_score_buf, "%4.0ld", (long)total_bit_score);
+        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.0ld", 
+			(long)total_bit_score);
     } else {
-        sprintf(total_bit_score_buf, "%4.1lf", total_bit_score);
+        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.1lf",
+			total_bit_score);
     }
     evalue_str = evalue_buf;
     bit_score_str = bit_score_buf;

@@ -1226,8 +1226,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                   ((m_AlignType & eProt) != 0 ? true : false));
         }
     }
-    vector<int> prev_stop;
-    prev_stop.reserve(rowNum);
+    vector<int> prev_stop(rowNum);
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
         //output according to aln coordinates
