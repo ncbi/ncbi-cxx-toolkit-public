@@ -637,6 +637,10 @@ public:
     ///
     bool Validate(void);
 
+    /// Get warning messages
+    /// @return Warning messages
+    ///
+    const vector<string>& GetMessages(void) {return m_Messages;}
     
 private:
 
@@ -696,6 +700,8 @@ private:
     TScore m_EndGapExtend;
 
     bool m_Verbose;
+
+    vector<string> m_Messages;
 
     static const int kDefaultGapOpen = -BLAST_GAP_OPEN_PROT;
     static const int kDefaultGapExtend = -BLAST_GAP_EXTN_PROT;

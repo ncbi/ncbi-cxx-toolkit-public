@@ -142,5 +142,15 @@ BOOST_AUTO_TEST_CASE(TestOptionsValidation)
     patterns.clear();
     patterns.resize(2);
     BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);
+
+    // Too large kmer length does not pass validation
+    opts.Reset(new CMultiAlignerOptions());
+    opts->SetKmerLength(10);
+    BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);
+
+    // Too small kmer length produces a warning
+    opts->SetKmerLength(1);
+    BOOST_CHECK(!opts->Validate());
+    BOOST_CHECK(opts->GetMessages().size() > 0);
 }
 

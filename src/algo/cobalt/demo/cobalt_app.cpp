@@ -396,7 +396,12 @@ int CMultiApplication::Run(void)
     // Verbose level
     opts->SetVerbose(args["v"].AsBoolean());
 
-    opts->Validate();
+    // Validate options and print warning messages if any
+    if (!opts->Validate()) {
+        ITERATE(vector<string>, it, opts->GetMessages()) {
+            NcbiCerr << "Warning: " << *it << NcbiEndl;
+        }
+    }
 
     CMultiAligner aligner(opts);
 

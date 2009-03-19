@@ -104,6 +104,17 @@ bool CMultiAlignerOptions::Validate(void)
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                        "Method for in-cluster alignment not selected");
         }
+
+        if (m_KmerLength > 7) {
+            NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                       "K-mer length (word size) too large,"
+                       " must be smaller than 8");
+        }
+
+        if (m_KmerLength < 2) {
+            m_Messages.push_back("Recommended value for k-mer length"
+                                 "(word size) is at least 2");
+        }
     }
 
     // Check if data base name is specified if option selected
@@ -175,7 +186,7 @@ bool CMultiAlignerOptions::Validate(void)
         }
     }
 
-    return true;
+    return m_Messages.empty();
 }
 
 
