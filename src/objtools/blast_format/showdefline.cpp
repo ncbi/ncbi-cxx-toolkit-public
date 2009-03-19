@@ -1458,7 +1458,7 @@ vector <CShowBlastDefline::SDeflineInfo*>
 CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
 {
     vector <CShowBlastDefline::SDeflineInfo*>  sdlVec;
-    for(SIZE_T i = 0; i < seqIds.size(); i++) {
+    for(size_t i = 0; i < seqIds.size(); i++) {
         list<int> use_this_gi;
         CShowBlastDefline::SDeflineInfo* sdl = x_GetDeflineInfo(seqIds[i], use_this_gi, i + 1 );
         sdlVec.push_back(sdl);        
