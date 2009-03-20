@@ -230,7 +230,7 @@ bool CNetScheduleExecuter::WaitNotification(const string&  queue_name,
 
 
 inline
-void static s_ChechOutputSize(const string& output, size_t max_output_size)
+void static s_CheckOutputSize(const string& output, size_t max_output_size)
 {
     if (output.length() > max_output_size) {
         NCBI_THROW(CNetScheduleException, eDataTooLong,
@@ -241,7 +241,7 @@ void static s_ChechOutputSize(const string& output, size_t max_output_size)
 
 void CNetScheduleExecuter::PutResult(const CNetScheduleJob& job) const
 {
-    s_ChechOutputSize(job.output,
+    s_CheckOutputSize(job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
     m_Impl->m_API->x_SendJobCmdWaitResponse("PUT",
@@ -255,7 +255,7 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
     if (done_job.job_id.empty())
         return GetJob(new_job, 0);
 
-    s_ChechOutputSize(done_job.output,
+    s_CheckOutputSize(done_job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
     string resp = m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
@@ -287,7 +287,7 @@ void CNetScheduleExecuter::GetProgressMsg(CNetScheduleJob& job)
 
 void CNetScheduleExecuter::PutFailure(const CNetScheduleJob& job) const
 {
-    s_ChechOutputSize(job.output,
+    s_CheckOutputSize(job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
     if (job.error_msg.length() >= kNetScheduleMaxErrSize) {
