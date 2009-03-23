@@ -719,11 +719,13 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                     ChangeMade(CCleanupChange::eChangeFeatureKey);
                     CRef<CGb_qual> new_qual(new CGb_qual);
                     new_qual->SetQual("satellite");
+                    bool set_val = false;
                     if (new_feat->IsSetComment()) {
                         string comment = new_feat->GetComment();
                         string val = s_ExtractSatelliteFromComment (comment);
                         if (!NStr::IsBlank (val)) {
                             new_qual->SetVal(val);
+                            set_val = true;
                             if (!NStr::Equal (comment, new_feat->GetComment())) {
                                 if (NStr::IsBlank (comment)) {
                                     new_feat->ResetComment();
@@ -732,6 +734,9 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
                                 }
                             }
                         }
+                    }
+                    if (!set_val) {
+                        new_qual->SetVal ("satellite");
                     }
                     new_feat->SetQual().push_back(new_qual);
                     ChangeMade(CCleanupChange::eAddQualifier);
