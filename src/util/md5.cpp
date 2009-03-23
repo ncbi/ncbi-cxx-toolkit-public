@@ -161,6 +161,7 @@ void CMD5::Finalize(unsigned char digest[16])
 #endif
     memcpy(digest, m_Buf, 16);
     memset(m_In, 0, kBlockSize); // may be sensitive
+    m_Finalized = true;
 }
 
 
