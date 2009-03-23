@@ -21,6 +21,7 @@ internal/gnomon
 internal/gpipe
 internal/gnomon
 internal/ID/utils$
+internal/blast/DistribDbSupport
 misc
 objects
 objmgr
