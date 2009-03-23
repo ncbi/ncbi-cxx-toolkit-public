@@ -1780,6 +1780,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                 if (n != GetApp().GetWholeTree().m_Projects.end()) {
                     //insert this project into the target_tree
                     target_tree.m_Projects[prj_id] = n->second;
+                    target_tree.m_Projects[prj_id].m_External = true;
                     modified = true;
                 } else {
                     /// FIXME: is this needed?

@@ -330,35 +330,31 @@ struct PIsExcludedByRequires
     typedef CProjectItemsTree::TProjects::value_type TValueType;
     bool operator() (const TValueType& item) const
     {
-        const CProjItem& project = item.second;
         string unmet;
-        if ( CMsvcPrjProjectContext::IsRequiresOk(project, &unmet) ) {
-            return false;
+        const CProjItem& project = item.second;
+        if ( !CMsvcPrjProjectContext::IsRequiresOk(project, &unmet) ) {
+            PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
+                           "Excluded due to unmet requirement: "
+                           << unmet);
+            return true;
         }
+        return false;
 
-        string path =
-            CDirEntry::ConcatPath(project.m_SourcesBaseDir, "Makefile.");
-        path += project.m_Name;
-        switch (project.m_ProjType) {
-        case CProjKey::eLib:
-            path += ".lib";
-            break;
-        case CProjKey::eApp:
-            path += ".app";
-            break;
-        case CProjKey::eMsvc:
-            path += ".msvc";
-            break;
-        case CProjKey::eDll:
-            path += ".dll";
-            break;
-        default:
-            break;
+    }
+};
+
+struct PIsExcludedByDisuse
+{
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
+    {
+        const CProjItem& project = item.second;
+        if (project.m_External) {
+            PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
+                           "Excluded unused external");
+            return true;
         }
-        PTB_WARNING_EX(path, ePTB_ProjectExcluded,
-                       "Excluded due to unmet requirement: "
-                       << unmet);
-        return true;
+        return false;
     }
 };
 
@@ -565,6 +561,11 @@ int CProjBulderApp::Run(void)
     {{
         // Project requires are not provided
         EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
+    }}
+    projects_tree.VerifyExternalDepends();
+    {{
+        // Erase obsolete external projects
+        EraseIf(projects_tree.m_Projects, PIsExcludedByDisuse());
     }}
 
     CProjectItemsTree dll_projects_tree;

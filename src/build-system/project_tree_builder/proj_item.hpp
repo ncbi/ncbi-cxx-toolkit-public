@@ -173,6 +173,7 @@ public:
     list<string> m_Inlines;
     
     mutable bool m_IsBundle;
+    bool m_External;
 private:
     void Clear(void);
     void SetFrom(const CProjItem& item);

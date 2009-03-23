@@ -265,6 +265,31 @@ CProjectItemsTree::GetExternalDepends(list<CProjKey>* external_depends) const
     }
 }
 
+void CProjectItemsTree::VerifyExternalDepends(void)
+{
+    set<CProjKey> depends_set;
+    ITERATE(TProjects, p, m_Projects) {
+        const CProjItem& proj_item = p->second;
+        if (proj_item.m_External) {
+            continue;
+        }
+        ITERATE(list<CProjKey>, n, proj_item.m_Depends) {
+            depends_set.insert(*n);
+        }
+    }
+    bool modified = false;
+    ITERATE(set<CProjKey>, d, depends_set) {
+        TProjects::iterator p = m_Projects.find(*d);
+        if (p != m_Projects.end() && p->second.m_External) {
+            p->second.m_External = false;
+            modified = true;
+        }
+    }
+    if (modified) {
+        VerifyExternalDepends();
+    }
+}
+
 //-----------------------------------------------------------------------------
 void CCyclicDepends::FindCyclesNew(const TProjects& tree,
                         TDependsCycles*  cycles)

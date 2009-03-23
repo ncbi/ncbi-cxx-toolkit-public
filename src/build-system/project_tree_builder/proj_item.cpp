@@ -155,7 +155,8 @@ CProjItem::CProjItem(TProjType type,
     m_Defines (defines),
     m_MakeType(maketype),
     m_GUID(guid),
-    m_IsBundle(false)
+    m_IsBundle(false),
+    m_External(false)
 {
 }
 
@@ -171,6 +172,7 @@ void CProjItem::Clear(void)
     m_ProjType = CProjKey::eNoProj;
     m_MakeType = eMakeType_Undefined;
     m_IsBundle = false;
+    m_External = false;
 }
 
 
@@ -203,6 +205,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_Inlines  = item.m_Inlines;
     
     m_IsBundle = item.m_IsBundle;
+    m_External = item.m_External;
 }
 
 string CProjItem::GetPath(void) const

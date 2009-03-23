@@ -74,6 +74,8 @@ public:
 
     /// Get depends that are not inside this project tree.
     void GetExternalDepends(list<CProjKey>* externalDepends) const;
+    
+    void VerifyExternalDepends(void);
 
     // for navigation through the tree use class CProjectTreeFolders below.
 
