@@ -349,6 +349,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Change BioseqInst",
     "Remove SeqID",
     "Add ProtXref",
+    "Change Partial",
     // set when any other change is made.
     "Change Other", 
     "Invalid Change Code"

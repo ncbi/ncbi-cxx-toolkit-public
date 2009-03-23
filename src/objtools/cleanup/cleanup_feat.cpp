@@ -65,6 +65,7 @@
 #include <vector>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -1019,6 +1020,22 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         }
     }
     BasicCleanup(f.SetLocation());
+
+    // clean up partial flag
+    unsigned int partial_loc  = sequence::SeqLocPartialCheck(f.GetLocation(), m_Scope );
+    if (f.IsSetPartial() && f.GetPartial()) {
+        // do nothing, will not change partial if already set
+    } else if (partial_loc & sequence::eSeqlocPartial_Start
+               || partial_loc & sequence::eSeqlocPartial_Stop
+               || partial_loc & sequence::eSeqlocPartial_Internal
+               || partial_loc & sequence::eSeqlocPartial_Other
+               || partial_loc & sequence::eSeqlocPartial_Nostart
+               || partial_loc & sequence::eSeqlocPartial_Nostop
+               || partial_loc & sequence::eSeqlocPartial_Nointernal) {
+        f.SetPartial(true);
+        ChangeMade (CCleanupChange::eChangePartial);
+    }
+
 }
 
 

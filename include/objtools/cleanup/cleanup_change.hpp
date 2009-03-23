@@ -126,6 +126,7 @@ public:
         eChangeBioseqInst,
         eRemoveSeqId,
         eAddProtXref,
+        eChangePartial,
         // set when any other change is made.
         eChangeOther,
         
