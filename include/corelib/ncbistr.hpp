@@ -2782,9 +2782,8 @@ public:
     }
 
     /// Merge name-value pairs into a single string using the currently set
-    /// separators and the provided encoder if any. Delete the encoder if
-    /// the ownership flag allows it.
-    string Merge(void)
+    /// separators and the provided encoder if any.
+    string Merge(void) const
     {
         return Merge(m_Data, m_ArgSep, m_ValSep,
                      m_Encoder.get(), eNoOwnership);
