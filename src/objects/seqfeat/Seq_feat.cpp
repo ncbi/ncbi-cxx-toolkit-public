@@ -84,7 +84,8 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
     CSeqFeatData::E_Choice type1 = data1.Which();
     CSeqFeatData::E_Choice type2 = data2.Which();
 
-    if ( type1 != type2 ) { // order by feature type
+    if ( type1 != type2 ) {
+        // order by feature type
         int order1 = GetTypeSortingOrder(type1);
         int order2 = GetTypeSortingOrder(type2);
         int diff = order1 - order2;
@@ -93,27 +94,39 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
     }
 
     // compare internal intervals
-    if ( loc1.IsMix()  &&  loc2.IsMix() ) {
-        const CSeq_loc_mix::Tdata& l1 = loc1.GetMix().Get();
-        const CSeq_loc_mix::Tdata& l2 = loc2.GetMix().Get();
-        for ( CSeq_loc_mix::Tdata::const_iterator
-                  it1 = l1.begin(), it2 = l2.begin(); ;  it1++, it2++) {
-            if ( it1 == l1.end() ) {
+    if ( loc1.IsMix() ) {
+        if ( loc2.IsMix() ) {
+            const CSeq_loc_mix::Tdata& l1 = loc1.GetMix().Get();
+            const CSeq_loc_mix::Tdata& l2 = loc2.GetMix().Get();
+            for ( CSeq_loc_mix::Tdata::const_iterator
+                      it1 = l1.begin(), it2 = l2.begin(); ;  it1++, it2++) {
+                if ( it1 == l1.end() ) {
+                    if ( it2 == l2.end() ) {
+                        break;
+                    }
+                    else {
+                        // f1 loc is shorter
+                        return -1;
+                    }
+                }
                 if ( it2 == l2.end() ) {
-                    break;
+                    // f2 loc is shorter
+                    return 1;
                 }
-                else {
-                    // f1 loc is shorter
-                    return -1;
-                }
+                int diff = (*it1)->Compare(**it2);
+                if ( diff != 0 )
+                    return diff;
             }
-            if ( it2 == l2.end() ) {
-                // f2 loc is shorter
-                return 1;
-            }
-            int diff = (*it1)->Compare(**it2);
-            if ( diff != 0 )
-                return diff;
+        }
+        else {
+            // non-mix loc2 first
+            return 1;
+        }
+    }
+    else {
+        if ( loc2.IsMix() ) {
+            // non-mix loc1 first
+            return -1;
         }
     }
 
@@ -125,9 +138,12 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
             return diff;
     }}
 
-    // compare frames of identical CDS ranges
-    if ( type1 == CSeqFeatData::e_Cdregion &&
-         type2 == CSeqFeatData::e_Cdregion ) {
+    // subtypes are equal, types must be equal too
+    _ASSERT(type1 == type2);
+
+    // type dependent comparison
+    if ( type1 == CSeqFeatData::e_Cdregion ) {
+        // compare frames of identical CDS ranges
         CCdregion::EFrame frame1 = data1.GetCdregion().GetFrame();
         CCdregion::EFrame frame2 = data2.GetCdregion().GetFrame();
         if (frame1 > CCdregion::eFrame_one
@@ -137,10 +153,8 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
                 return diff;
         }
     }
-
-    // compare labels
-    // if imp features
-    if ( type1 == CSeqFeatData::e_Imp && type2 == CSeqFeatData::e_Imp ) {
+    else if ( type1 == CSeqFeatData::e_Imp ) {
+        // compare labels of imp features
         int diff = NStr::CompareNocase(data1.GetImp().GetKey(),
                                        data2.GetImp().GetKey());
         if ( diff != 0 )

@@ -641,11 +641,13 @@ struct CAnnotObject_Less
             TSeqPos y_from = y.GetMappingInfo().GetFrom();
             TSeqPos x_to = x.GetMappingInfo().GetToOpen();
             TSeqPos y_to = y.GetMappingInfo().GetToOpen();
-            // from > to = circular location.
-            // Any circular location is less than non-circular one.
-            // If both are circular, compare in normal way.
-            if ( (x_from > x_to) != (y_from > y_to) ) {
-                return x.GetMappingInfo().GetTotalRange().Empty();
+            // (from >= to) means circular location.
+            // Any circular location is less than (before) non-circular one.
+            // If both are circular, compare them regular way.
+            bool x_circular = x_from >= x_to;
+            bool y_circular = y_from >= y_to;
+            if ( x_circular != y_circular ) {
+                return x_circular;
             }
             // smallest left extreme first
             if ( x_from != y_from ) {
@@ -671,21 +673,25 @@ struct CAnnotObject_LessReverse
                 return false;
             }
 
-            {
-                // largest right extreme first
-                TSeqPos x_to = x.GetMappingInfo().GetToOpen();
-                TSeqPos y_to = y.GetMappingInfo().GetToOpen();
-                if ( x_to != y_to ) {
-                    return x_to > y_to;
-                }
+            TSeqPos x_from = x.GetMappingInfo().GetFrom();
+            TSeqPos y_from = y.GetMappingInfo().GetFrom();
+            TSeqPos x_to = x.GetMappingInfo().GetToOpen();
+            TSeqPos y_to = y.GetMappingInfo().GetToOpen();
+            // (from >= to) means circular location.
+            // Any circular location is less than (before) non-circular one.
+            // If both are circular, compare them regular way.
+            bool x_circular = x_from >= x_to;
+            bool y_circular = y_from >= y_to;
+            if ( x_circular != y_circular ) {
+                return x_circular;
             }
-            {
-                // longest feature first
-                TSeqPos x_from = x.GetMappingInfo().GetFrom();
-                TSeqPos y_from = y.GetMappingInfo().GetFrom();
-                if ( x_from != y_from ) {
-                    return x_from < y_from;
-                }
+            // largest right extreme first
+            if ( x_to != y_to ) {
+                return x_to > y_to;
+            }
+            // longest feature first
+            if ( x_from != y_from ) {
+                return x_from < y_from;
             }
             return type_less(x, y);
         }
