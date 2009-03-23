@@ -46,11 +46,15 @@
 #include <objtools/blast_format/showdefline.hpp>
 
 #include "blast_test_util.hpp"
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;
 using namespace TestUtil;
+
+BOOST_AUTO_TEST_SUITE(showdefline)
 
 struct CShowBlastDeflineTest : public CShowBlastDefline {
 
@@ -148,3 +152,4 @@ BOOST_AUTO_TEST_CASE(RemoteDeflineInfo)
     CShowBlastDeflineTest::GetDeflineInfo(CBlastOM::eRemote);
 }
 
+BOOST_AUTO_TEST_SUITE_END()

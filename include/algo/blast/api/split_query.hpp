@@ -37,7 +37,7 @@
 #include <algo/blast/api/query_data.hpp>
 
 // Forward declarations
-class CSplitQueriesTest;      // unit test class
+class CSplitQueryTestFixture;      // unit test class
 
 /** @addtogroup AlgoBlast
  *
@@ -63,6 +63,10 @@ class CQuerySplitter : public CObject
 public:
     /// Defines a vector of CScope objects.
     typedef vector< CRef<objects::CScope> > TScopeVector;
+
+    /// Definition of a vector of CBlastQueryVectors, each element corresponds
+    /// to a query chunk
+    typedef vector< CRef<CBlastQueryVector> > TSplitQueryVector;
 
     /// Parametrized constructor
     /// @param query_factory Object containing query sequence(s) [in]
@@ -93,10 +97,6 @@ public:
     friend ostream& operator<<(ostream& out, const CQuerySplitter& rhs);
 
 private:
-    /// Definition of a vector of CBlastQueryVectors, each element corresponds
-    /// to a query chunk
-    typedef vector< CRef<CBlastQueryVector> > TSplitQueryVector;
-
     /// The original, unsplit query factory
     CRef<IQueryFactory> m_QueryFactory;
     /// BLAST options
@@ -146,7 +146,7 @@ private:
     CQuerySplitter& operator=(const CQuerySplitter& rhs);
 
     /// Declare unit test class as a friend
-    friend class ::CSplitQueriesTest;
+    friend class ::CSplitQueryTestFixture;
 };
 
 END_SCOPE(blast)

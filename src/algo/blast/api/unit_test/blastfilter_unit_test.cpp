@@ -32,6 +32,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <corelib/ncbitime.hpp>
@@ -303,6 +305,8 @@ public:
         BOOST_CHECK_EQUAL(kNumLcaseLocs, loc_index);
     }
 };
+
+BOOST_AUTO_TEST_SUITE(blastfilter)
 
 static void x_TestGetFilteredQueryRegions(ENa_strand strand) {
     typedef vector< pair<TSeqPos, TSeqPos> > TSegments;
@@ -1943,4 +1947,4 @@ BOOST_AUTO_TEST_CASE(TestBlastSeqLocListReverse)
 
     mask = BlastSeqLocFree(mask);
 }
-
+BOOST_AUTO_TEST_SUITE_END()

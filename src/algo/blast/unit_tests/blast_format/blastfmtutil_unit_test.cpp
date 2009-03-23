@@ -49,7 +49,8 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/blastdb/defline_extra.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 
 using namespace ncbi;
@@ -74,6 +75,8 @@ struct CDestrSetNonDefault {
     CRef<CObjectManager> m_Obj;
     string               m_Name;
 };
+
+BOOST_AUTO_TEST_SUITE(blastfmtutil)
 
 BOOST_AUTO_TEST_CASE(GetBlastDefline)
 {
@@ -160,3 +163,4 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
     BOOST_REQUIRE(bit_score_str == string(" 503"));
 }
     
+BOOST_AUTO_TEST_SUITE_END()

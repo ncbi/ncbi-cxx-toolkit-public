@@ -42,6 +42,8 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <algo/blast/api/sseqloc.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 

@@ -6,11 +6,14 @@ SRC = writedb_unit_test
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
+PRE_LIBS = $(BOOST_LIBS)
 
-LIB_ = writedb seqdb xobjread xobjutil creaders blastdb \
+LIB_ = test_boost writedb seqdb xobjread xobjutil creaders blastdb \
        $(SOBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(BOOST_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Test
 
 CHECK_CMD = writedb_unit_test
 CHECK_AUTHORS = blastsoft

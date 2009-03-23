@@ -69,7 +69,7 @@ static char const rcsid[] = "$Id$";
 
 #include <objtools/blast_format/blastfmtutil.hpp>
 
-#include <algo/blast/api/remote_services.hpp>   // for CRemoteServices
+#include <objtools/blast/services/blast_services.hpp>   // for CBlastServices
 #include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for CSeqDBException
 #include <algo/blast/api/pssm_engine.hpp>   // for CScorematPssmConverter
@@ -265,7 +265,7 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
 static bool s_FillDbInfoRemotely(const string& dbname, 
                                  CBlastFormatUtil::SDbInfo& info)
 {
-    static blast::CRemoteServices rmt_blast_services;
+    static CBlastServices rmt_blast_services;
     CRef<CBlast4_database> blastdb(new CBlast4_database);
     blastdb->SetName(dbname);
     blastdb->SetType() = info.is_protein

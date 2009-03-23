@@ -58,6 +58,9 @@
 
 #include <sstream>
 
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
+
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;

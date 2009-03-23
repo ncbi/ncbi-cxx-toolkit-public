@@ -32,8 +32,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
 #include <corelib/ncbifile.hpp>
 
 
@@ -46,11 +44,13 @@
 #include <corelib/ncbifile.hpp> // for CTmpFile
 #include "../blast_hitmatrix.hpp"
 
+#include <corelib/test_boost.hpp>
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 
-
+BOOST_AUTO_TEST_SUITE(hitmatrix)
 BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFile)
 {
     string seqAlignFileName_in = "data/in_HitMatrixSeqalign.txt";
@@ -71,6 +71,7 @@ BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFile)
     CFile outFile(tmpfile.GetFileName());
     BOOST_REQUIRE_EQUAL(true, outFile.Exists() && outFile.GetLength() > 8000);    
 }
+BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

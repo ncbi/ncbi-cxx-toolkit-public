@@ -38,44 +38,13 @@
 //==========================================================================//
 // Unit-testing includes
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_PARAM_TEST_CASE
-#  include <boost/test/parameterized_test.hpp>
-#endif
-#include <boost/current_function.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
 //==========================================================================//
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
-using boost::unit_test::test_suite;
-
-// Use macros rather than inline functions to get accurate line number reports
-
-#define CHECK_NO_THROW(statement)                                       \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_CHECK_MESSAGE(true, "no exceptions were thrown by "#statement); \
-    } catch (std::exception& e) {                                       \
-        BOOST_FAIL("an exception was thrown by "#statement": " << e.what()); \
-    } catch (...) {                                                     \
-        BOOST_FAIL("a nonstandard exception was thrown by "#statement); \
-    }
-
-#define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
-#define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 
 //==========================================================================//
 
@@ -186,15 +155,15 @@ static void
     s_CheckInfoEquality(CRef<CGeneInfo> info1,
                         CRef<CGeneInfo> info2)
 {
-    CHECK_EQUAL(info1->GetGeneId(),
+    BOOST_REQUIRE_EQUAL(info1->GetGeneId(),
                 info2->GetGeneId());
-    CHECK_EQUAL(info1->GetSymbol(),
+    BOOST_REQUIRE_EQUAL(info1->GetSymbol(),
                 info2->GetSymbol());
-    CHECK_EQUAL(info1->GetDescription(),
+    BOOST_REQUIRE_EQUAL(info1->GetDescription(),
                 info2->GetDescription());
-    CHECK_EQUAL(info1->GetOrganismName(),
+    BOOST_REQUIRE_EQUAL(info1->GetOrganismName(),
                 info2->GetOrganismName());
-    CHECK(s_CheckPubMedLinkCount(info1->GetNumPubMedLinks(),
+    BOOST_REQUIRE(s_CheckPubMedLinkCount(info1->GetNumPubMedLinks(),
                                  info2->GetNumPubMedLinks()));
 }
 
@@ -220,7 +189,7 @@ static void
 static void
     s_CheckIntInList(int val, list<int>& listVals)
 {
-    CHECK(find(listVals.begin(), listVals.end(), val) != listVals.end());
+    BOOST_REQUIRE(find(listVals.begin(), listVals.end(), val) != listVals.end());
 }
 
 static void
@@ -241,6 +210,7 @@ static void
 
 //==========================================================================//
 // Test successful writing of the Gene info files
+BOOST_AUTO_TEST_SUITE(gene_info_writer)
 
 BOOST_AUTO_TEST_CASE(s_MainWritingTest)
 {
@@ -260,7 +230,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         string strOutputDirPath = "data/";
 
         CGeneFileWriter *pWriter = 0;
-        CHECK_NO_THROW(pWriter = new CGeneFileWriter(strGene2AccessionFile,
+        BOOST_REQUIRE_NO_THROW(pWriter = new CGeneFileWriter(strGene2AccessionFile,
                                                       strGeneInfoFile,
                                                       strGene2PubMedFile,
                                                       strOutputDirPath));
@@ -269,7 +239,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         fileWriter->EnableMultipleGeneIdsForRNAGis(true);
         fileWriter->EnableMultipleGeneIdsForProteinGis(true);
 
-        CHECK_NO_THROW(fileWriter->ProcessFiles(true));
+        BOOST_REQUIRE_NO_THROW(fileWriter->ProcessFiles(true));
         fileWriter.reset(0);
 
         // open the generated binary files and verify the written data
@@ -279,13 +249,13 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         CNcbiIfstream inAllGeneData;
         string strAllGeneData = strOutputDirPath +
                                 GENE_ALL_GENE_DATA_FILE_NAME;
-        CHECK(CGeneFileUtils::
+        BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strAllGeneData, inAllGeneData));
 
         CNcbiIfstream inGene2Offset;
         string strGene2Offset = strOutputDirPath +
                                 GENE_GENE2OFFSET_FILE_NAME;
-        CHECK(CGeneFileUtils::
+        BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGene2Offset, inGene2Offset));
 
         TIntToIntMap mapIdToOffset;
@@ -301,7 +271,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
             mapIdToOffset[recordGene2Offset.n1] = recordGene2Offset.n2;
 
             CRef<CGeneInfo> info;
-            CHECK_NO_THROW(
+            BOOST_REQUIRE_NO_THROW(
                     CGeneFileUtils::ReadGeneInfo(inAllGeneData,
                                                  recordGene2Offset.n2,
                                                  info));
@@ -313,7 +283,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         CNcbiIfstream inGi2Gene;
         string strGi2Gene = strOutputDirPath +
                                 GENE_GI2GENE_FILE_NAME;
-        CHECK(CGeneFileUtils::
+        BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Gene, inGi2Gene));
         
         TIntToIntMultimap mapGiToIdsFromFile;
@@ -353,7 +323,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         CNcbiIfstream inGene2Gi;
         string strGene2Gi = strOutputDirPath +
                                 GENE_GENE2GI_FILE_NAME;
-        CHECK(CGeneFileUtils::
+        BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGene2Gi, inGene2Gi));
         
         IGeneInfoInput::TGiList listGisFromFile;
@@ -393,7 +363,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         CNcbiIfstream inGi2Offset;
         string strGi2Offset = strOutputDirPath +
                                 GENE_GI2OFFSET_FILE_NAME;
-        CHECK(CGeneFileUtils::
+        BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Offset, inGi2Offset));
 
         int curGiFromFile = 0;
@@ -417,7 +387,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
                     IGeneInfoInput::TGeneIdList listIdsForGi;
                     s_FillExpectedIdListForGi(curGiFromFile, mapGiToIds,
                                               listIdsForGi);
-                    CHECK(!listIdsForGi.empty());
+                    BOOST_REQUIRE(!listIdsForGi.empty());
 
                     list<int> listOffsets;
                     for (IGeneInfoInput::TGeneIdList::iterator it =
@@ -475,4 +445,5 @@ BOOST_AUTO_TEST_CASE(s_FailedWritingTest)
                         CGeneInfoException);
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

@@ -93,6 +93,8 @@ s_HasRawSequence(const CBioseq& bioseq)
      return false;
 }
 
+BOOST_AUTO_TEST_SUITE(blast_services)
+
 NCBITEST_AUTO_INIT()
 {
     // Your application initialization code here (optional)
@@ -657,4 +659,5 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts_NotFound)
     BOOST_REQUIRE( errors.find(NStr::IntToString(kGiNotFound)) != NPOS );
     BOOST_REQUIRE(warnings.empty());
 }
+BOOST_AUTO_TEST_SUITE_END()
 

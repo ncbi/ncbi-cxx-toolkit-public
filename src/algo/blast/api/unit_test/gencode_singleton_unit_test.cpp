@@ -36,22 +36,15 @@
 #include <algo/blast/core/gencode_singleton.h>
 #include <algo/blast/api/blast_aux.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#include <boost/test/auto_unit_test.hpp>
-
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+
+BOOST_AUTO_TEST_SUITE(gencode_singleton)
 
 BOOST_AUTO_TEST_CASE(GenCodeSingleton_Find)
 {
@@ -86,4 +79,5 @@ BOOST_AUTO_TEST_CASE(GenCodeSingleton_NonExistentGeneticCode)
     Int2 rv = GenCodeSingletonAdd((Uint4)gc_id, gc.get());
     BOOST_CHECK(rv == BLASTERR_INVALIDPARAM);
 }
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

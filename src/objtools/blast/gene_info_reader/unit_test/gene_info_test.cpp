@@ -36,50 +36,13 @@
 
 #include <map>
 
-//==========================================================================//
-// Unit-testing includes
-
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_PARAM_TEST_CASE
-#  include <boost/test/parameterized_test.hpp>
-#endif
-#include <boost/current_function.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
 //==========================================================================//
-
-#ifndef WORDS_BIGENDIAN
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
-using boost::unit_test::test_suite;
-
-
-// Use macros rather than inline functions to get accurate line number reports
-
-#define CHECK_NO_THROW(statement)                                       \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_CHECK_MESSAGE(true, "no exceptions were thrown by "#statement); \
-    } catch (std::exception& e) {                                       \
-        BOOST_FAIL("an exception was thrown by "#statement": " << e.what()); \
-    } catch (...) {                                                     \
-        BOOST_FAIL("a nonstandard exception was thrown by "#statement); \
-    }
-
-#define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
-#define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 
 //==========================================================================//
 
@@ -205,15 +168,15 @@ static void
     s_CheckInfoEquality(CRef<CGeneInfo> info1,
                         CRef<CGeneInfo> info2)
 {
-    CHECK_EQUAL(info1->GetGeneId(),
+    BOOST_REQUIRE_EQUAL(info1->GetGeneId(),
                 info2->GetGeneId());
-    CHECK_EQUAL(info1->GetSymbol(),
+    BOOST_REQUIRE_EQUAL(info1->GetSymbol(),
                 info2->GetSymbol());
-    CHECK_EQUAL(info1->GetDescription(),
+    BOOST_REQUIRE_EQUAL(info1->GetDescription(),
                 info2->GetDescription());
-    CHECK_EQUAL(info1->GetOrganismName(),
+    BOOST_REQUIRE_EQUAL(info1->GetOrganismName(),
                 info2->GetOrganismName());
-    CHECK(s_CheckPubMedLinkCount(info1->GetNumPubMedLinks(),
+    BOOST_REQUIRE(s_CheckPubMedLinkCount(info1->GetNumPubMedLinks(),
                                  info2->GetNumPubMedLinks()));
 }
 
@@ -245,7 +208,7 @@ static void
     {
         s_CheckInfoEquality(*it1, *it2);
     }
-    CHECK(it1 == infoList1.end() && it2 == infoList2.end());
+    BOOST_REQUIRE(it1 == infoList1.end() && it2 == infoList2.end());
     if (it1 != infoList1.end())
         cout << endl << "Extra info 1: " << **it1 << endl;
     if (it2 != infoList2.end())
@@ -279,7 +242,7 @@ static void
 static void
     s_CheckIntInList(int val, list<int>& listVals)
 {
-    CHECK(find(listVals.begin(), listVals.end(), val) != listVals.end());
+    BOOST_REQUIRE(find(listVals.begin(), listVals.end(), val) != listVals.end());
 }
 
 static void
@@ -301,7 +264,7 @@ static void
         bRNA     = pReader->GetRNAGisForGeneId(geneId, giListRNA);
         bProtein = pReader->GetProteinGisForGeneId(geneId, giListProtein);
         bGenomic = pReader->GetGenomicGisForGeneId(geneId, giListGenomic);
-        CHECK(bRNA || bProtein || bGenomic);
+        BOOST_REQUIRE(bRNA || bProtein || bGenomic);
 
         // cout << endl << "\tRNA Gi's: ";
         // s_OutputList(giListRNA);
@@ -328,7 +291,7 @@ static void
     // returned by the reader
 
     IGeneInfoInput::TGeneIdList geneIdsFromReader;
-    CHECK(pReader->GetGeneIdsForGi(gi, geneIdsFromReader));
+    BOOST_REQUIRE(pReader->GetGeneIdsForGi(gi, geneIdsFromReader));
 
     itGiToGeneId = mapGiToIds.find(gi);
     while (itGiToGeneId != mapGiToIds.end() &&
@@ -343,6 +306,7 @@ static void
 
 //==========================================================================//
 // Test successful Gi to Gene Info mapping
+BOOST_AUTO_TEST_SUITE(gene_info)
 
 BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
 {
@@ -360,7 +324,7 @@ BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
                        mapGiToIds, mapIdToInfo);
 
         CGeneInfoFileReader *pReader1, *pReader2;
-        CHECK_NO_THROW(s_MakeGeneInfoFileReaders(pReader1, pReader2));
+        BOOST_REQUIRE_NO_THROW(s_MakeGeneInfoFileReaders(pReader1, pReader2));
         auto_ptr<CGeneInfoFileReader> fileReader1(pReader1);
         auto_ptr<CGeneInfoFileReader> fileReader2(pReader2);
 
@@ -373,8 +337,8 @@ BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
 
             IGeneInfoInput::TGeneInfoList infoList1, infoList2,
                                           infoListExpected;
-            CHECK(fileReader1->GetGeneInfoForGi(gi, infoList1));
-            CHECK(fileReader2->GetGeneInfoForGi(gi, infoList2));
+            BOOST_REQUIRE(fileReader1->GetGeneInfoForGi(gi, infoList1));
+            BOOST_REQUIRE(fileReader2->GetGeneInfoForGi(gi, infoList2));
 
             s_FillExpectedInfoListForGi(gi, mapGiToIds,
                                         mapIdToInfo, infoListExpected);
@@ -405,7 +369,7 @@ BOOST_AUTO_TEST_CASE(s_GiWithNoGeneIdTest)
         s_InitGisWithNoGeneIds(listGis);
 
         CGeneInfoFileReader *pReader1, *pReader2;
-        CHECK_NO_THROW(s_MakeGeneInfoFileReaders(pReader1, pReader2));
+        BOOST_REQUIRE_NO_THROW(s_MakeGeneInfoFileReaders(pReader1, pReader2));
         auto_ptr<CGeneInfoFileReader> fileReader1(pReader1);
         auto_ptr<CGeneInfoFileReader> fileReader2(pReader2);
 
@@ -416,11 +380,11 @@ BOOST_AUTO_TEST_CASE(s_GiWithNoGeneIdTest)
 
             IGeneInfoInput::TGeneInfoList infoList1, infoList2,
                                           infoListExpected;
-            CHECK(!fileReader1->GetGeneInfoForGi(gi, infoList1));
-            CHECK(!fileReader2->GetGeneInfoForGi(gi, infoList2));
+            BOOST_REQUIRE(!fileReader1->GetGeneInfoForGi(gi, infoList1));
+            BOOST_REQUIRE(!fileReader2->GetGeneInfoForGi(gi, infoList2));
 
-            CHECK(infoList1.empty());
-            CHECK(infoList2.empty());
+            BOOST_REQUIRE(infoList1.empty());
+            BOOST_REQUIRE(infoList2.empty());
         }
     }
     catch (CException& e)
@@ -437,7 +401,7 @@ BOOST_AUTO_TEST_CASE(s_TestGeneInfo)
     try
     {
         CGeneInfo info;
-        CHECK(!info.IsInitialized());
+        BOOST_REQUIRE(!info.IsInitialized());
 
         int geneId = 3481;
         string strSymbol = "IGF2";
@@ -452,23 +416,23 @@ BOOST_AUTO_TEST_CASE(s_TestGeneInfo)
                          strOrganism,
                          nPubMedCount);
 
-        CHECK(info.IsInitialized());
-        CHECK(info.GetGeneId() == geneId);
-        CHECK(info.GetSymbol() == strSymbol);
-        CHECK(info.GetDescription() == strDescription);
-        CHECK(info.GetOrganismName() == strOrganism);
-        CHECK(info.GetNumPubMedLinks() == nPubMedCount);
+        BOOST_REQUIRE(info.IsInitialized());
+        BOOST_REQUIRE(info.GetGeneId() == geneId);
+        BOOST_REQUIRE(info.GetSymbol() == strSymbol);
+        BOOST_REQUIRE(info.GetDescription() == strDescription);
+        BOOST_REQUIRE(info.GetOrganismName() == strOrganism);
+        BOOST_REQUIRE(info.GetNumPubMedLinks() == nPubMedCount);
 
         string strPlain, strHTML;
-        CHECK_NO_THROW(info.ToString(strPlain, false));
-        CHECK_NO_THROW(info.ToString(strHTML, true, "GENE_URL"));
+        BOOST_REQUIRE_NO_THROW(info.ToString(strPlain, false));
+        BOOST_REQUIRE_NO_THROW(info.ToString(strHTML, true, "GENE_URL"));
 
         string strExpectedPlain =
                    " GENE ID: 3481 IGF2"
                    " | insulin-like growth factor 2 (somatomedin A)"
                    "\n[Homo sapiens]"
                    " (Over 100 PubMed links)";
-        CHECK(strPlain == strExpectedPlain);
+        BOOST_REQUIRE(strPlain == strExpectedPlain);
 
         string strExpectedHTML =
                    " <a href=\"GENE_URL\">GENE ID: 3481 IGF2</a>"
@@ -476,7 +440,7 @@ BOOST_AUTO_TEST_CASE(s_TestGeneInfo)
                    "\n[Homo sapiens]"
                    " <span class=\"Gene_PubMedLinks\">"
                      "(Over 100 PubMed links)</span>";
-        CHECK(strHTML == strExpectedHTML);
+        BOOST_REQUIRE(strHTML == strExpectedHTML);
     }
     catch (CException& e)
     {
@@ -507,13 +471,13 @@ BOOST_AUTO_TEST_CASE(s_IncorrectPathTest)
                         CGeneInfoException);
 
     env.Set(GENE_INFO_PATH_ENV_VARIABLE, strDirPath);
-    CHECK_NO_THROW(pReader1 = new CGeneInfoFileReader(true));
-    CHECK_NO_THROW(pReader2 = new CGeneInfoFileReader(false));
+    BOOST_REQUIRE_NO_THROW(pReader1 = new CGeneInfoFileReader(true));
+    BOOST_REQUIRE_NO_THROW(pReader2 = new CGeneInfoFileReader(false));
     delete pReader1;
     delete pReader2;
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 //==========================================================================//
-
-#endif /* WORDS_BIGENDIAN */

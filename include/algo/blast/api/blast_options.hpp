@@ -48,10 +48,10 @@
 
 // Forward declarations of classes that need to be declared friend 
 // (mostly unit test classes)
-class CBlastTraceBackTest; 
+class CTracebackTestFixture; 
 class CBlastSetupTest;
 class CUniformSearchTest; 
-class CTracebackSearchTest;
+class CTracebackSearchTestFixture;
 
 class CBlastTabularFormatThread;
 
@@ -432,10 +432,10 @@ private:
     friend class ::CBlastTabularFormatThread; 
 
     /// @todo Strive to remove these classes
-    friend class ::CBlastTraceBackTest;    // unit test class
+    friend class ::CTracebackTestFixture;    // unit test class
     friend class ::CBlastSetupTest;        // unit test class
     friend class ::CUniformSearchTest;     // unit test class
-    friend class ::CTracebackSearchTest;   // unit test class
+    friend class ::CTracebackSearchTestFixture;   // unit test class
 };
 
 //#endif /* SKIP_DOXYGEN_PROCESSING */

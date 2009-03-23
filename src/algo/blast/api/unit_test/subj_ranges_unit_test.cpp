@@ -36,22 +36,16 @@
 #include <algo/blast/core/blast_util.h> // for FENCE_SENTRY
 #include <algo/blast/api/subj_ranges_set.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#include <boost/test/auto_unit_test.hpp>
-
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+
+BOOST_AUTO_TEST_SUITE(subj_ranges)
 
 BOOST_AUTO_TEST_CASE(TestRangeMergingSingleQuery)
 {
@@ -168,5 +162,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetRemoveSubject_NoAdditions)
     srs.ApplyRanges(db);
     BOOST_REQUIRE(true);    // everything should be fine, no-op
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

@@ -55,7 +55,6 @@ uniform_search \
 local_search \
 blast_results \
 remote_search \
-remote_services \
 query_data \
 objmgr_query_data \
 objmgrfree_query_data \

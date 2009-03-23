@@ -42,44 +42,13 @@
 #include "../mask_info_registry.hpp"
 #include <sstream>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_PARAM_TEST_CASE
-#  include <boost/test/parameterized_test.hpp>
-#endif
+#include <corelib/test_boost.hpp>
 #include <boost/current_function.hpp>
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-#include <common/test_assert.h>  /* This header must go last */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-using boost::unit_test::test_suite;
-
-// Use macros rather than inline functions to get accurate line number reports
-
-#define CHECK_NO_THROW(statement)                                       \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_CHECK_MESSAGE(true, "no exceptions were thrown by "#statement); \
-    } catch (std::exception& e) {                                       \
-        BOOST_ERROR("an exception was thrown by "#statement": " << e.what()); \
-    } catch (...) {                                                     \
-        BOOST_ERROR("a nonstandard exception was thrown by "#statement); \
-    }
-
-#define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
-#define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
-#define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
 
 // Fetch sequence and nucleotide data for the given oid as a pair of
 // strings (in ncbi2na packed format), one for sequence data and one
@@ -128,7 +97,7 @@ string s_HexDumpText(const string      & raw,
                      const vector<int> & layout,
                      int                 base)
 {
-    CHECK(layout.size());
+    BOOST_REQUIRE(layout.size());
     
     string visible;
     string tmp;
@@ -138,7 +107,7 @@ string s_HexDumpText(const string      & raw,
     
     for(int i = 0; i < (int)raw.size(); i += width) {
         width = layout[layout_i];
-        CHECK(width);
+        BOOST_REQUIRE(width);
         
         Uint8 mask = Uint8(Int8(-1));
         mask >>= (64 - 8*width);
@@ -223,7 +192,7 @@ public:
     
 };
 
-#define CHECK_CUTPOINT(X) if (cutpoint == X) throw CNonException()
+#define BOOST_REQUIRE_CUTPOINT(X) if (cutpoint == X) throw CNonException()
 
 int g_NuclJ_OidCount = 99;
 
@@ -238,18 +207,18 @@ s_DupIdsBioseq(CWriteDB      & w,
     ITERATE(TIdList, iter, ids) {
         CRef<CSeq_id> seqid = *iter;
         
-        CHECK(seqid.NotEmpty());
+        BOOST_REQUIRE(seqid.NotEmpty());
         
-        CHECK_CUTPOINT(4);
+        BOOST_REQUIRE_CUTPOINT(4);
         
         int oid = -1;
         bool found = s.SeqidToOid(*seqid, oid);
         
-        CHECK(found);
+        BOOST_REQUIRE(found);
         
         CRef<CBioseq> bs;
         
-        CHECK_CUTPOINT(5);
+        BOOST_REQUIRE_CUTPOINT(5);
         
         if (seqid->IsGi()) {
             bs = s.GetBioseq(oid, seqid->GetGi());
@@ -257,27 +226,27 @@ s_DupIdsBioseq(CWriteDB      & w,
             bs = s.GetBioseq(oid);
         }
         
-        CHECK_CUTPOINT(6);
+        BOOST_REQUIRE_CUTPOINT(6);
         
         CRef<CBlast_def_line_set> bdls = s.GetHdr(oid);
         
-        CHECK(bs.NotEmpty());
-        CHECK(bdls.NotEmpty());
+        BOOST_REQUIRE(bs.NotEmpty());
+        BOOST_REQUIRE(bdls.NotEmpty());
         
-        CHECK_CUTPOINT(7);
+        BOOST_REQUIRE_CUTPOINT(7);
         
         w.AddSequence(*bs);
         w.SetDeflines(*bdls);
         
         count1++;
-        CHECK_CUTPOINT(8);
+        BOOST_REQUIRE_CUTPOINT(8);
         
         if (count1 > 3) {
-            CHECK_CUTPOINT(9);
+            BOOST_REQUIRE_CUTPOINT(9);
         }
         
         if (count1 > g_NuclJ_OidCount) {
-            CHECK_CUTPOINT(10);
+            BOOST_REQUIRE_CUTPOINT(10);
         }
     }
 }
@@ -299,16 +268,16 @@ s_DupIdsRaw(CWriteDB      & w,
         int oid = -1;
         bool found = seqdb.SeqidToOid(*seqid, oid);
         
-        CHECK(found);
+        BOOST_REQUIRE(found);
         
         string seq, ambig;
         
         s_FetchRawData(seqdb, oid, seq, ambig);
         CRef<CBlast_def_line_set> bdls = seqdb.GetHdr(oid);
         
-        CHECK(! seq.empty());
-        CHECK(ambig.empty() || is_nucl);
-        CHECK(bdls.NotEmpty());
+        BOOST_REQUIRE(! seq.empty());
+        BOOST_REQUIRE(ambig.empty() || is_nucl);
+        BOOST_REQUIRE(bdls.NotEmpty());
         
         w.AddSequence(seq, ambig);
         w.SetDeflines(*bdls);
@@ -357,7 +326,7 @@ void s_CompareBioseqs(CBioseq & src, CBioseq & dst)
     s_Stringify(src, s1);
     s_Stringify(dst, s2);
     
-    CHECK_EQUAL(s1, s2);
+    BOOST_REQUIRE_EQUAL(s1, s2);
 }
 
 // Test the database compared to a reference database, usually the
@@ -376,8 +345,8 @@ s_TestDatabase(CSeqDBExpert & src,
         bool rv1 = dst.OidToGi(oid, gi);
         bool rv2 = src.GiToOid(gi, src_oid);
         
-        CHECK(rv1);
-        CHECK(rv2);
+        BOOST_REQUIRE(rv1);
+        BOOST_REQUIRE(rv2);
         
         CRef<CBioseq> bss = src.GetBioseq(src_oid);
         CRef<CBioseq> bsd = dst.GetBioseq(oid);
@@ -385,7 +354,7 @@ s_TestDatabase(CSeqDBExpert & src,
         s_CompareBioseqs(*bss, *bsd);
     }
     
-    CHECK_EQUAL(dst.GetTitle(), title);
+    BOOST_REQUIRE_EQUAL(dst.GetTitle(), title);
 }
 
 // Remove the specified files.
@@ -412,7 +381,7 @@ void s_CheckSorted(const string & fname)
     string s, s2;
     
     while(NcbiGetlineEOL(file, s)) {
-        CHECK(s2 <= s);
+        BOOST_REQUIRE(s2 <= s);
         s.swap(s2);
     }
 }
@@ -455,7 +424,7 @@ void s_CheckFiles(const vector<string> & files,
     }
     
     if (need_hash) {
-        CHECK(found_hash);
+        BOOST_REQUIRE(found_hash);
     }
 }
 
@@ -513,7 +482,7 @@ s_DupSequencesTest(const TIdList & ids,
 {
     CWrapperUpper wrap;
     
-    CHECK_CUTPOINT(1);
+    BOOST_REQUIRE_CUTPOINT(1);
     
     CSeqDBExpert src(src_name, (is_protein
                                 ? CSeqDB::eProtein
@@ -523,7 +492,7 @@ s_DupSequencesTest(const TIdList & ids,
     
     CRef<CWriteDB> db;
     
-    CHECK_CUTPOINT(2);
+    BOOST_REQUIRE_CUTPOINT(2);
     
     db.Reset(new CWriteDB(dst_name,
                           (is_protein
@@ -534,7 +503,7 @@ s_DupSequencesTest(const TIdList & ids,
     
     wrap.SetDb(*db);
     
-    CHECK_CUTPOINT(3);
+    BOOST_REQUIRE_CUTPOINT(3);
     
     if (raw_data) {
         s_DupIdsRaw(*db, src, ids);
@@ -542,17 +511,17 @@ s_DupSequencesTest(const TIdList & ids,
         s_DupIdsBioseq(*db, src, ids, cutpoint);
     }
     
-    CHECK_CUTPOINT(10);
+    BOOST_REQUIRE_CUTPOINT(10);
     
     db->Close();
     db->ListFiles(files);
     db.Reset();
     
-    CHECK_CUTPOINT(11);
+    BOOST_REQUIRE_CUTPOINT(11);
     
     s_TestDatabase(src, dst_name, title);
     
-    CHECK_CUTPOINT(12);
+    BOOST_REQUIRE_CUTPOINT(12);
 }
 
 // Get and return a CScope with local copies of test sequences loaded.
@@ -608,42 +577,16 @@ CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
     
     CFastaReader fr(*lr, flags);
     
-    CHECK(! lr->AtEOF());
+    BOOST_REQUIRE(! lr->AtEOF());
     CRef<CSeq_entry> entry = fr.ReadOneSeq();
     
-    CHECK(! entry.Empty());
-    CHECK(entry->IsSeq());
+    BOOST_REQUIRE(! entry.Empty());
+    BOOST_REQUIRE(entry->IsSeq());
     
     CRef<CBioseq> bs(& entry->SetSeq());
     
     return bs;
 }
-
-
-// Unit test verbosity support.
-
-static void s_UnitTestVerbosity(string s)
-{
-    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
-    
-    if (enabled) {
-        cout << "Running test: " << s << endl;
-    }
-}
-
-#define UNIT_TEST_FILTER(s) \
-{ \
-    string nm(s); \
-    string filter(getenv("FILTER_UT") ? getenv("FILTER_UT") : ""); \
-    \
-    if (nm.size() && filter.size() && nm.find(filter) == string::npos) { \
-        cout << "Skipping test: " << s << endl; \
-        return; \
-    } \
-}
-
-#define START UNIT_TEST_FILTER(BOOST_CURRENT_FUNCTION); \
-              s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
 
 
 //
@@ -652,8 +595,7 @@ static void s_UnitTestVerbosity(string s)
 
 static void s_NuclBioseqDupSwitch(int cutpoint)
 {
-    START;
-    
+        
     int gis[] = {
         78883515, 78883517, /*71143095,*/ 24431485, 19110479, 15054463,
         15054465, 15054467, 15054469, 15054471, 19570808, 18916476,
@@ -669,7 +611,7 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
     TIdList ids;
     s_BuildIds(ids, gis);
     
-    CHECK_CUTPOINT(0);
+    BOOST_REQUIRE_CUTPOINT(0);
     
     const string srcname("nt");
     const string dstname("w-nucl-bs");
@@ -683,7 +625,7 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
                        title,
                        cutpoint);
     
-    CHECK_CUTPOINT(13);
+    BOOST_REQUIRE_CUTPOINT(13);
     
     const string dstname2("w-nucl-raw");
     const string title2("raw nucleotide dup");
@@ -695,14 +637,15 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
                        title2,
                        cutpoint);
     
-    CHECK_CUTPOINT(14);
+    BOOST_REQUIRE_CUTPOINT(14);
 }
+
+BOOST_AUTO_TEST_SUITE(writedb)
 
 #if 0
 BOOST_AUTO_TEST_CASE(NuclBioseqDupZ)
 {
-    START;
-    
+        
     try {
         s_NuclBioseqDupSwitch(0);
     }
@@ -712,8 +655,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupZ)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupA)
 {
-    START;
-    
+        
     try {
         s_NuclBioseqDupSwitch(1);
     }
@@ -723,8 +665,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupA)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupB)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(2);
     }
@@ -734,8 +675,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupB)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupC)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(3);
     }
@@ -745,8 +685,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupC)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupD)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(4);
     }
@@ -756,8 +695,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupD)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupE)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(5);
     }
@@ -767,8 +705,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupE)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupF)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(6);
     }
@@ -778,8 +715,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupF)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupG)
 {
-    START;
-    
+        
     try {
         s_NuclBioseqDupSwitch(7);
     }
@@ -789,8 +725,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupG)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupH)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(8);
     }
@@ -801,8 +736,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupH)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupI)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(9);
     }
@@ -812,8 +746,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupI)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ4)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 4;
     
     try {
@@ -825,8 +758,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ4)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ8)
 {
-    START;
-
+    
     g_NuclJ_OidCount = 8;
     
     try {
@@ -838,8 +770,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ8)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ12)
 {
-    START;
-
+    
     g_NuclJ_OidCount = 12;
     
     try {
@@ -851,8 +782,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ12)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ16)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 16;
     
     try {
@@ -864,8 +794,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ16)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ20)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 20;
     
     try {
@@ -877,8 +806,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ20)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ24)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 24;
     
     try {
@@ -890,8 +818,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ24)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ28)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 28;
     
     try {
@@ -903,8 +830,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ28)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ32)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 32;
     
     try {
@@ -916,8 +842,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ32)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ33)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 33;
     
     try {
@@ -929,8 +854,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ33)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ34)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 34;
     
     try {
@@ -942,8 +866,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ34)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ35)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 35;
     
     try {
@@ -955,8 +878,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ35)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ36)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 36;
     
     try {
@@ -968,8 +890,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ36)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ40)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 40;
     
     try {
@@ -981,8 +902,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ40)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ44)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 44;
     
     try {
@@ -994,8 +914,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ44)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ45)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 45;
     
     try {
@@ -1007,8 +926,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ45)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ46)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 46;
     
     try {
@@ -1020,8 +938,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ46)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ47)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 47;
     
     try {
@@ -1033,8 +950,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ47)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ48)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 48;
     
     try {
@@ -1046,8 +962,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ48)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ49)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 49;
     
     try {
@@ -1059,8 +974,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ49)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ50)
 {
-    START;
-    
+        
     g_NuclJ_OidCount = 50;
     
     try {
@@ -1072,8 +986,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ50)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupJ)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(10);
     }
@@ -1083,8 +996,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupJ)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupK)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(11);
     }
@@ -1095,8 +1007,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupK)
 #if 0
 BOOST_AUTO_TEST_CASE(NuclBioseqDupL)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(12);
     }
@@ -1106,8 +1017,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupL)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupM)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(13);
     }
@@ -1117,8 +1027,7 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupM)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDupN)
 {
-    START;
-
+    
     try {
         s_NuclBioseqDupSwitch(14);
     }
@@ -1129,15 +1038,13 @@ BOOST_AUTO_TEST_CASE(NuclBioseqDupN)
 
 BOOST_AUTO_TEST_CASE(NuclBioseqDup)
 {
-    START;
-    
+        
     s_NuclBioseqDupSwitch(99);
 }
 
 BOOST_AUTO_TEST_CASE(ProtBioseqDup)
 {
-    START;
-    
+        
     int gis[] = {
         1477444,   1669609,   1669611,  1669615, 1669617, 7544146,
         22652804, /*1310870,*/ 3114354, 3891778, 3891779, 81294290,
@@ -1170,8 +1077,7 @@ BOOST_AUTO_TEST_CASE(ProtBioseqDup)
 
 BOOST_AUTO_TEST_CASE(EmptyBioseq)
 {
-    START;
-    
+        
     CWriteDB fails("failing-db",
                    CWriteDB::eProtein,
                    "title",
@@ -1180,13 +1086,12 @@ BOOST_AUTO_TEST_CASE(EmptyBioseq)
     CRef<CBioseq> bs(new CBioseq);
     fails.AddSequence(*bs);
     
-    CHECK_THROW(fails.Close(), CWriteDBException);
+    BOOST_REQUIRE_THROW(fails.Close(), CWriteDBException);
 }
 
 BOOST_AUTO_TEST_CASE(BioseqHandle)
 {
-    START;
-    
+        
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -1208,8 +1113,7 @@ BOOST_AUTO_TEST_CASE(BioseqHandle)
 
 BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorNonWriteDB)
 {
-    START;
-    
+        
     // This is a modified version of the following test.  The
     // assumption is that some errors occur due to environmental
     // factors.  Hopefully this test will help to determine the
@@ -1227,13 +1131,12 @@ BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorNonWriteDB)
     string bytes;
     sv.GetSeqData(0, sv.size(), bytes);
     
-    CHECK(bytes.size() == sv.size());
+    BOOST_REQUIRE(bytes.size() == sv.size());
 }
 
 BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
 {
-    START;
-    
+        
     CRef<CScope> scope = s_GetScope();
     
     // Bioseq + CSeqVector.
@@ -1251,8 +1154,7 @@ BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
 
 BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorWriteDB)
 {
-    START;
-    
+        
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -1282,8 +1184,7 @@ BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorWriteDB)
 
 BOOST_AUTO_TEST_CASE(SetPig)
 {
-    START;
-    
+        
     string nm = "pigs";
     vector<string> files;
     
@@ -1326,12 +1227,12 @@ BOOST_AUTO_TEST_CASE(SetPig)
             }
         }
         
-        CHECK(rv1);
-        CHECK(found_gi);
-        CHECK_EQUAL(pig-oid, 101);
+        BOOST_REQUIRE(rv1);
+        BOOST_REQUIRE(found_gi);
+        BOOST_REQUIRE_EQUAL(pig-oid, 101);
     }
     
-    CHECK_EQUAL(oid, 3);
+    BOOST_REQUIRE_EQUAL(oid, 3);
     
     s_WrapUpFiles(files);
 }
@@ -1340,8 +1241,7 @@ BOOST_AUTO_TEST_CASE(SetPig)
 
 BOOST_AUTO_TEST_CASE(MultiVolume)
 {
-    START;
-    
+        
     CSeqDB nr("nr", CSeqDB::eProtein);
     
     CWriteDB db("multivol",
@@ -1370,12 +1270,12 @@ BOOST_AUTO_TEST_CASE(MultiVolume)
     db.ListVolumes(v);
     db.ListFiles(f);
     
-    CHECK_EQUAL(3, (int) v.size());
-    CHECK_EQUAL(v[0], string("multivol.00"));
-    CHECK_EQUAL(v[1], string("multivol.01"));
-    CHECK_EQUAL(v[2], string("multivol.02"));
+    BOOST_REQUIRE_EQUAL(3, (int) v.size());
+    BOOST_REQUIRE_EQUAL(v[0], string("multivol.00"));
+    BOOST_REQUIRE_EQUAL(v[1], string("multivol.01"));
+    BOOST_REQUIRE_EQUAL(v[2], string("multivol.02"));
     
-    CHECK_EQUAL(22, (int) f.size());
+    BOOST_REQUIRE_EQUAL(22, (int) f.size());
     
     // Check resulting db.
     
@@ -1386,8 +1286,8 @@ BOOST_AUTO_TEST_CASE(MultiVolume)
     
     seqdb->GetTotals(CSeqDB::eUnfilteredAll, & oids, & letters, false);
     
-    CHECK_EQUAL(oids, 4);
-    CHECK_EQUAL(letter_count, letters);
+    BOOST_REQUIRE_EQUAL(oids, 4);
+    BOOST_REQUIRE_EQUAL(letter_count, letters);
     
     seqdb.Reset();
     
@@ -1396,8 +1296,7 @@ BOOST_AUTO_TEST_CASE(MultiVolume)
 
 BOOST_AUTO_TEST_CASE(UsPatId)
 {
-    START;
-    
+        
     CRef<CSeq_id> seqid(new CSeq_id("pat|us|123|456"));
     vector<string> files;
     
@@ -1425,23 +1324,22 @@ BOOST_AUTO_TEST_CASE(UsPatId)
         
         writedb->Close();
         writedb->ListFiles(files);
-        CHECK(files.size() != 0);
+        BOOST_REQUIRE(files.size() != 0);
     }
     
     CSeqDB seqdb("uspatid", CSeqDB::eProtein);
     int oid(-1);
     bool found = seqdb.SeqidToOid(*seqid, oid);
     
-    CHECK_EQUAL(found, true);
-    CHECK_EQUAL(oid,   0);
+    BOOST_REQUIRE_EQUAL(found, true);
+    BOOST_REQUIRE_EQUAL(oid,   0);
     
     s_WrapUpFiles(files);
 }
 
 BOOST_AUTO_TEST_CASE(IsamSorting)
 {
-    START;
-    
+        
     // This checks whether the following IDs are fetchable from the
     // given database.  It will fail if either the production blast
     // databases (i.e. found at $BLASTDB) are corrupted or if the
@@ -1483,8 +1381,7 @@ BOOST_AUTO_TEST_CASE(IsamSorting)
 
 BOOST_AUTO_TEST_CASE(HashToOid)
 {
-    START;
-    
+        
     CSeqDBExpert nr("nr", CSeqDB::eProtein);
     CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
     
@@ -1522,8 +1419,7 @@ BOOST_AUTO_TEST_CASE(HashToOid)
 
 BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
 {
-    START;
-    
+        
     vector<string> files;
     
     string title = "from-fasta-reader";
@@ -1557,19 +1453,19 @@ BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
     
     {
         CSeqDB rd("from-fasta-reader", CSeqDB::eProtein);
-        CHECK(rd.GetNumOIDs() == 1);
+        BOOST_REQUIRE(rd.GetNumOIDs() == 1);
         
         CRef<CBlast_def_line_set> bdls =
             rd.GetHdr(0);
         
-        CHECK(bdls->Get().size() == 2);
-        CHECK(bdls->Get().front()->GetTitle() == T1);
-        CHECK(bdls->Get().front()->GetSeqid().size() == 1);
-        CHECK(bdls->Get().front()->GetSeqid().front()->AsFastaString() == I1);
+        BOOST_REQUIRE(bdls->Get().size() == 2);
+        BOOST_REQUIRE(bdls->Get().front()->GetTitle() == T1);
+        BOOST_REQUIRE(bdls->Get().front()->GetSeqid().size() == 1);
+        BOOST_REQUIRE(bdls->Get().front()->GetSeqid().front()->AsFastaString() == I1);
         
-        CHECK(bdls->Get().back()->GetTitle() == T2);
-        CHECK(bdls->Get().back()->GetSeqid().size() == 1);
-        CHECK(bdls->Get().back()->GetSeqid().front()->AsFastaString() == I2);
+        BOOST_REQUIRE(bdls->Get().back()->GetTitle() == T2);
+        BOOST_REQUIRE(bdls->Get().back()->GetSeqid().size() == 1);
+        BOOST_REQUIRE(bdls->Get().back()->GetSeqid().front()->AsFastaString() == I2);
     }
     
     s_WrapUpFiles(files);
@@ -1577,8 +1473,7 @@ BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
 
 BOOST_AUTO_TEST_CASE(BinaryListBuilder)
 {
-    START;
-    
+        
     string fn4("test4.til"), fn8("test8.til");
     
     {
@@ -1600,12 +1495,12 @@ BOOST_AUTO_TEST_CASE(BinaryListBuilder)
     // The FF...FD symbol indicates a 4 byte TI list; the FF..FC
     // symbol is the eight byte version.
     
-    CHECK(h4 ==
+    BOOST_REQUIRE(h4 ==
           "FFFFFFFD A "
           "1 4 10 40 100 "
           "400 1000 4000 10000 40000");
     
-    CHECK(h8 ==
+    BOOST_REQUIRE(h8 ==
           "FFFFFFFC A "
           "0 1 0 10 0 100 0 1000 0 10000 "
           "0 100000 0 1000000 0 10000000 1 0 10 0");
@@ -1616,8 +1511,7 @@ BOOST_AUTO_TEST_CASE(BinaryListBuilder)
 
 BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
 {
-    START;
-    
+        
     typedef pair<string, string> TPair;
     vector< TPair > ids48;
     
@@ -1642,14 +1536,14 @@ BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
             
             // Check for overflow.
             
-            CHECK(a4 > p4);
-            CHECK(a8 > p8);
+            BOOST_REQUIRE(a4 > p4);
+            BOOST_REQUIRE(a8 > p8);
         }
         
         // Make sure we really do have 32 and 64 bit IDs.
         
-        CHECK((a4 >> 32) == 0);
-        CHECK((a8 >> 32) != 0);
+        BOOST_REQUIRE((a4 >> 32) == 0);
+        BOOST_REQUIRE((a8 >> 32) != 0);
     }
     
     string dbname4 = "test-db-short-tis";
@@ -1689,8 +1583,8 @@ BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
         d4("1234 0 2468 1 4936 2 9872 3 19744 4"),
         d8("1234 0 1234000 1 1234000000 2 1234000000000 3 1234000000000000 4");
     
-    CHECK(index4 == i4);
-    CHECK(index8 == i8);
+    BOOST_REQUIRE(index4 == i4);
+    BOOST_REQUIRE(index8 == i8);
     
     vector<int> overlay;
     overlay.push_back(8);
@@ -1705,8 +1599,8 @@ BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
     s_WrapUpDb(db4);
     s_WrapUpDb(db8);
     
-    CHECK(data4 == d4);
-    CHECK(data8 == d8);
+    BOOST_REQUIRE(data4 == d4);
+    BOOST_REQUIRE(data8 == d8);
 }
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1720,8 +1614,7 @@ void s_WrapUpColumn(CWriteDB_ColumnBuilder & cb)
 
 BOOST_AUTO_TEST_CASE(UserDefinedColumns)
 {
-    START;
-    
+        
     // Create and open the DBs and columns.
     
     typedef map<string,string> TMeta;
@@ -1801,7 +1694,7 @@ BOOST_AUTO_TEST_CASE(RegisterMaskingAlgorithms)
     algo_ids.push_back(registry.Add(eBlast_filter_program_other, "dummy"));
 
     ITERATE(vector<int>, id, algo_ids) {
-        CHECK_EQUAL(true, registry.IsRegistered(*id));
+        BOOST_REQUIRE_EQUAL(true, registry.IsRegistered(*id));
     }
 }
 
@@ -1811,7 +1704,7 @@ BOOST_AUTO_TEST_CASE(RegisterVariantsOfSameMaskingAlgorithm)
 
     int id1 = registry.Add(eBlast_filter_program_seg);
     int id2 = registry.Add(eBlast_filter_program_seg, "dummy");
-    CHECK_EQUAL(id1+1, id2);
+    BOOST_REQUIRE_EQUAL(id1+1, id2);
 }
 
 void 
@@ -1835,7 +1728,7 @@ RegisterTooManyVariantsOfSameMaskingAlgorithm
     
         int algo_id = -1;
         if (i >= kMaxNumSupportedAlgorithmVariants) {
-            CHECK_THROW(algo_id = registry.Add(masking_algo, options), 
+            BOOST_REQUIRE_THROW(algo_id = registry.Add(masking_algo, options), 
                         CWriteDBException);
         } else {
             algo_id = registry.Add(masking_algo, options);
@@ -1847,18 +1740,18 @@ RegisterTooManyVariantsOfSameMaskingAlgorithm
     }
 
     // Ensure that the IDs were assigned in increasing order
-    CHECK_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
+    BOOST_REQUIRE_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
     for (size_t i = 0; i < algo_ids.size(); i++) {
-        CHECK_EQUAL((int)(masking_algo + i), algo_ids[i]);
+        BOOST_REQUIRE_EQUAL((int)(masking_algo + i), algo_ids[i]);
     }
 
     // Ensure that only valid IDs were assigned
     for (size_t i = 0; i < kMaxNumSupportedAlgorithmVariants*2; i++) {
         int algo_id = masking_algo + i;
         if (i >= kMaxNumSupportedAlgorithmVariants) {
-            CHECK_EQUAL(false, registry.IsRegistered(algo_id));
+            BOOST_REQUIRE_EQUAL(false, registry.IsRegistered(algo_id));
         } else {
-            CHECK_EQUAL(true, registry.IsRegistered(algo_id));
+            BOOST_REQUIRE_EQUAL(true, registry.IsRegistered(algo_id));
         }
     }
 }
@@ -1900,8 +1793,7 @@ BOOST_AUTO_TEST_CASE(RegisterTooManyVariantsOfOther)
 
 BOOST_AUTO_TEST_CASE(MaskDataColumn)
 {
-    START;
-    
+        
     CSeqDB R("nr", CSeqDB::eProtein);
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
     const int kNumSeqs = 10;
@@ -1987,21 +1879,19 @@ BOOST_AUTO_TEST_CASE(MaskDataColumn)
 
 BOOST_AUTO_TEST_CASE(DuplicateAlgoId)
 {
-    START;
-    
+        
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
     
     (void)W.RegisterMaskAlgorithm(eBlast_filter_program_seg);
     int seg_repeated_id;
-    CHECK_THROW( seg_repeated_id =
+    BOOST_REQUIRE_THROW( seg_repeated_id =
                  W.RegisterMaskAlgorithm(eBlast_filter_program_seg),
                  CWriteDBException );
 }
 
 BOOST_AUTO_TEST_CASE(TooManyAlgoId)
 {
-    START;
-    
+        
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
     
     EBlast_filter_program masking_algorithm = eBlast_filter_program_seg;
@@ -2014,7 +1904,7 @@ BOOST_AUTO_TEST_CASE(TooManyAlgoId)
         string options( i == 0 ? "" : NStr::IntToString(i));
         int algo_id = -1;
         if (i >= kMaxNumSupportedAlgorithmVariants) {
-            CHECK_THROW( 
+            BOOST_REQUIRE_THROW( 
                 algo_id = W.RegisterMaskAlgorithm(masking_algorithm, options),
                 CWriteDBException);
         } else {
@@ -2026,16 +1916,15 @@ BOOST_AUTO_TEST_CASE(TooManyAlgoId)
     }
 
     // Ensure that the IDs were assigned in increasing order
-    CHECK_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
+    BOOST_REQUIRE_EQUAL(kMaxNumSupportedAlgorithmVariants, algo_ids.size());
     for (size_t i = 0; i < algo_ids.size(); i++) {
-        CHECK_EQUAL((int)(masking_algorithm + i), (int)algo_ids[i]);
+        BOOST_REQUIRE_EQUAL((int)(masking_algorithm + i), (int)algo_ids[i]);
     }
 }
 
 BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
 {
-    START;
-    
+        
     CSeqDB R("nr", CSeqDB::eProtein);
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
     
@@ -2065,7 +1954,7 @@ BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
     
     ranges.back().offsets.push_back(rng);
     
-    CHECK_THROW(W.SetMaskData(ranges), CWriteDBException);
+    BOOST_REQUIRE_THROW(W.SetMaskData(ranges), CWriteDBException);
     
     W.Close();
     s_WrapUpDb(W);
@@ -2073,8 +1962,6 @@ BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
 
 BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
 {
-    START;
-    
     CSeqDB R("nr", CSeqDB::eProtein);
     CWriteDB W("mask-data-db", CWriteDB::eProtein, "Mask data test");
     
@@ -2103,7 +1990,7 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
     rng.second = L+1;
     
     ranges.back().offsets.push_back(rng);
-    CHECK_THROW(W.SetMaskData(ranges), CWriteDBException);
+    BOOST_REQUIRE_THROW(W.SetMaskData(ranges), CWriteDBException);
     
     W.Close();
     s_WrapUpDb(W);
@@ -2145,5 +2032,6 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
         }
     }
 }
+BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

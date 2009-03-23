@@ -48,59 +48,14 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/iterator.hpp>
-
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-
-#ifndef BOOST_PARAM_TEST_CASE
-#  include <boost/test/parameterized_test.hpp>
-#endif
-
-#include <boost/current_function.hpp>
-
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
+#include <sstream>
+#undef NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-using boost::unit_test::test_suite;
-
-/////////////////////////////////////////////////////////////////////////////
-
-// Use macros rather than inline functions to get accurate line number reports
-
-#define CHECK_NO_THROW(statement)                                       \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_CHECK_MESSAGE(true, "no exceptions were thrown by "#statement); \
-    } catch (std::exception& e) {                                       \
-        BOOST_ERROR("an exception was thrown by "#statement": " << e.what()); \
-    } catch (...) {                                                     \
-        BOOST_ERROR("a nonstandard exception was thrown by "#statement); \
-    }
-
-#define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
-#define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
-#define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
-
-static void s_UnitTestVerbosity(string s)
-{
-    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
-    
-    if (enabled) {
-        cout << "Running test: " << s << endl;
-    }
-}
-
-#define START s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
 
 template<class ASNOBJ>
 void s_Stringify(const ASNOBJ & a, string & s)
@@ -148,7 +103,7 @@ static void s_GetUseThisGiEntries(CRef<CSeq_align> sa, list<int>& list_gis)
             if (str_id == "use_this_gi")
             {
                 bool bIsLegalGiEntry = score_entry->CanGetValue() && score_entry->GetValue().IsInt();
-                CHECK(bIsLegalGiEntry);
+                BOOST_REQUIRE(bIsLegalGiEntry);
 
                 list_gis.push_back(score_entry->GetValue().GetInt());
             }
@@ -160,7 +115,7 @@ static int s_GetAlignedSeqGi(CRef<CSeq_align> sa)
 {
     CConstRef<CSeq_id> id(&(sa->GetSeq_id(1)));
 
-    CHECK(id->IsGi());
+    BOOST_REQUIRE(id->IsGi());
     return id->GetGi();
 }
 
@@ -231,8 +186,8 @@ s_Check_GiListConsistency(CRef<CSeq_align> /*sa_orig*/,
     list<int> list_new;
     s_GetFullGiList(sa_new, list_new);
 
-    CHECK(s_AreListsEqual(list_new, list_new_filtered));    // new list is indeed filtered
-    CHECK(s_IsListSubset(list_new, list_orig_filtered));    // all original gi's who survived filtering
+    BOOST_REQUIRE(s_AreListsEqual(list_new, list_new_filtered));    // new list is indeed filtered
+    BOOST_REQUIRE(s_IsListSubset(list_new, list_orig_filtered));    // all original gi's who survived filtering
                                                             // are included in the new list
 }
 
@@ -242,9 +197,9 @@ static void s_Check_GiEquivalenceInDB(int gi1, int gi2, CRef<CSeqDB> db)
     db->GiToOid(gi1, oid1);
     db->GiToOid(gi2, oid2);
 
-    CHECK(oid1 > 0);
-    CHECK(oid2 > 0);
-    CHECK(oid1 == oid2);
+    BOOST_REQUIRE(oid1 > 0);
+    BOOST_REQUIRE(oid2 > 0);
+    BOOST_REQUIRE(oid1 == oid2);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -289,10 +244,10 @@ static void s_LoadSeqAlignsFromFile(CSeq_align_set& aln_all, const string& fname
 /////////////////////////////////////////////////////////////////////////////
 // Actual test cases
 
+BOOST_AUTO_TEST_SUITE(seqalignfilter)
+
 BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 {
-    START;
-    
     string fname_in = "data/in_test.txt";
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
@@ -324,15 +279,13 @@ BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
                     break;
                 }
             }
-            CHECK(found_gi);
+            BOOST_REQUIRE(found_gi);
         }
     }
 }
 
 BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
 {
-    START;
-
     string fname_in = "data/in_test.txt";
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
@@ -343,8 +296,8 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
     CSeqAlignFilter filter;
     CRef<CSeqDB> db;
 
-    CHECK_NO_THROW(db = filter.PrepareSeqDB(db_name, use_prot, fname_gis);)
-    CHECK_NO_THROW(filter.FilterSeqalignsExt(fname_in, fname_out, db);)
+    BOOST_REQUIRE_NO_THROW(db = filter.PrepareSeqDB(db_name, use_prot, fname_gis);)
+    BOOST_REQUIRE_NO_THROW(filter.FilterSeqalignsExt(fname_in, fname_out, db);)
 
     // check the results
 
@@ -373,4 +326,5 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
         }
     }
 }
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

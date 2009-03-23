@@ -37,21 +37,16 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include "remote_blastdb_adapter.hpp"
-#include <algo/blast/api/remote_blast.hpp>
-#include <algo/blast/api/remote_services.hpp>
+#include <objtools/blast/services/blast_services.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_literal.hpp>
-#include <algo/blast/api/version.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(blast);
 BEGIN_SCOPE(objects)
-
-static const string kClientId("Remote BLAST database data loader (" + 
-                              CBlastVersion().Print() + ")");
 
 CRemoteBlastDbAdapter::CRemoteBlastDbAdapter(const string& db_name,
                                              CSeqDB::ESeqType db_type,
@@ -59,7 +54,7 @@ CRemoteBlastDbAdapter::CRemoteBlastDbAdapter(const string& db_name,
 : m_DbName(db_name), m_DbType(db_type), m_NextLocalId(1),
     m_UseFixedSizeSlices(use_fixed_size_slices)
 {
-    CRemoteServices rmt_svc;
+    CBlastServices rmt_svc;
     const bool kIsProtein = (db_type == CSeqDB::eProtein) ? true : false;
     if ( !rmt_svc.IsValidBlastDb(db_name, kIsProtein) ) {
         ostrstream out;
@@ -135,14 +130,14 @@ void CRemoteBlastDbAdapter::x_FetchData(int oid, int begin, int end)
     
     CRef<CSeq_interval> seq_int
         (new CSeq_interval(*cached_seqdata.GetIdList().front(), begin, end));
-    CRemoteBlast::TSeqIntervalVector seqids(1, seq_int);
-    CRemoteBlast::TSeqIdVector ids;
-    CRemoteBlast::TSeqDataVector seq_data;
+    CBlastServices::TSeqIntervalVector seqids(1, seq_int);
+    CBlastServices::TSeqIdVector ids;
+    CBlastServices::TSeqDataVector seq_data;
     string errors, warnings;
     const bool kVerbose = (getenv("VERBOSE") ? true : false);
 
-    CRemoteBlast::GetSequenceParts(seqids, m_DbName, seqtype, ids, seq_data,
-                                   errors, warnings, kVerbose, kClientId);
+    CBlastServices::GetSequenceParts(seqids, m_DbName, seqtype, ids, seq_data,
+                                   errors, warnings, kVerbose);
     if (seq_data.empty() || !errors.empty() || !warnings.empty() || 
         ids.empty() ) {
         RemoteBlastDbLoader_ErrorHandler(errors, warnings);
@@ -177,14 +172,14 @@ CRemoteBlastDbAdapter::SeqidToOid(const CSeq_id & id, int & oid)
     oid = m_NextLocalId++;
     
     // Return types
-    CRemoteBlast::TBioseqVector bioseqs;
-    CRemoteBlast::TSeqIdVector seqids;
+    CBlastServices::TBioseqVector bioseqs;
+    CBlastServices::TSeqIdVector seqids;
     const bool kVerbose = (getenv("VERBOSE") ? true : false);
     string errors, warnings;
     seqids.push_back(CRef<CSeq_id>(const_cast<CSeq_id*>(&id)));
     
-    CRemoteBlast::GetSequencesInfo(seqids, m_DbName, seqtype, bioseqs, errors,
-                                   warnings, kVerbose, kClientId);
+    CBlastServices::GetSequencesInfo(seqids, m_DbName, seqtype, bioseqs, errors,
+                                   warnings, kVerbose);
     if ( !errors.empty() || !warnings.empty() || bioseqs.empty() ) {
         return RemoteBlastDbLoader_ErrorHandler(errors, warnings);
     }

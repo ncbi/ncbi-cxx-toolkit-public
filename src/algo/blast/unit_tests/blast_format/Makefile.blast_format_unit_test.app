@@ -9,8 +9,9 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-LIB_ = $(BLAST_FORMATTER_LIBS) ncbi_xloader_blastdb_rmt $(BLAST_LIBS) \
-	$(OBJMGR_LIBS)
+PRE_LIBS = $(BOOST_LIBS)
+LIB_ = test_boost $(BLAST_FORMATTER_LIBS) ncbi_xloader_blastdb_rmt \
+	$(BLAST_LIBS) $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(PCRE_LIBS) \
@@ -18,5 +19,7 @@ LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(PCRE_LIBS) \
 
 CHECK_CMD = blast_format_unit_test
 CHECK_COPY = data
+
+REQUIRES = Boost.Test
 
 CHECK_AUTHORS = blastsoft

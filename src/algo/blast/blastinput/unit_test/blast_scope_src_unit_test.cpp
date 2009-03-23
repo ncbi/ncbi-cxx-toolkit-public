@@ -30,6 +30,8 @@
 /** @file blast_scope_src_unit_test.cpp
  */
 #include <ncbi_pch.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 #include <boost/test/auto_unit_test.hpp>
 
 #include <algo/blast/blastinput/blast_scope_src.hpp>
@@ -41,10 +43,6 @@
 #include <objmgr/seq_vector.hpp>
 #include "auto_envvar.hpp"
 
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
 #if defined(NCBI_COMPILER_WORKSHOP) && defined(NDEBUG) && defined(NCBI_WITHOUT_MT) && defined(__i386) && NCBI_COMPILER_VERSION == 550
 #  define BUGGY_COMPILER
 #endif
@@ -54,7 +52,6 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-using boost::unit_test::test_suite;
 
 /// RAII class for the CBlastScopeSource. It revokes the BLAST database data
 /// loader upon destruction to reset the environment for other unit tests
@@ -123,6 +120,8 @@ private:
 
 const char* CAutoNcbiConfigFile::kSection = "BLAST";
 const char* CAutoNcbiConfigFile::kName = "DATA_LOADERS";
+
+BOOST_AUTO_TEST_SUITE(blast_scope_src)
 
 BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData) 
 {
@@ -324,4 +323,5 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
                         scope_source.GetBlastDbLoaderName());
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

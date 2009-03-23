@@ -1,0 +1,141 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ * File Description:
+ *   Unit test module for the preliminary stage of the BLAST search.
+ *
+ * ===========================================================================
+ */
+#include <ncbi_pch.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
+//#include <boost/test/auto_unit_test.hpp>
+//#include <boost/test/floating_point_comparison.hpp>
+
+#include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
+#include <algo/blast/api/prelim_stage.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/seqsrc_seqdb.hpp>
+#include "blast_test_util.hpp"
+#include "test_objmgr.hpp"
+
+using namespace std;
+using namespace ncbi;
+using namespace ncbi::objects;
+using namespace ncbi::blast;
+
+void x_ValidateResultsForShortProteinSearch(CBlastPrelimSearch& blaster,
+                                           BlastHSPStream* hsp_stream, 
+                                           CConstRef<CBlastOptions> options) {
+
+        CBlastHSPResults hsp_results
+            (blaster.ComputeBlastHSPResults(hsp_stream));
+
+        BOOST_REQUIRE_EQUAL((Int4)1, hsp_results->num_queries);
+        BOOST_REQUIRE(hsp_results->hitlist_array[0]);
+        BOOST_REQUIRE_EQUAL((Int4)1, 
+                             hsp_results->hitlist_array[0]->hsplist_count);
+        BOOST_REQUIRE(hsp_results->hitlist_array[0]->hsplist_array[0]);
+        BlastHSPList* hsp_list = 
+            hsp_results->hitlist_array[0]->hsplist_array[0];
+        BOOST_REQUIRE(hsp_list);
+        BOOST_REQUIRE_EQUAL((Int4)0, hsp_list[0].oid);
+        BOOST_REQUIRE_EQUAL((Int4)1, hsp_list[0].hspcnt);
+        BOOST_REQUIRE(hsp_list[0].hsp_array[0]);
+        BOOST_REQUIRE_EQUAL((Int4)103, hsp_list[0].hsp_array[0]->score);
+        BOOST_REQUIRE_EQUAL((Int4)0, hsp_list[0].hsp_array[0]->query.offset);
+        BOOST_REQUIRE_EQUAL((Int4)21, hsp_list[0].hsp_array[0]->query.end);
+        BOOST_REQUIRE_EQUAL((Int4)0, 
+                             hsp_list[0].hsp_array[0]->subject.offset);
+        BOOST_REQUIRE_EQUAL((Int4)21, 
+                             hsp_list[0].hsp_array[0]->query.end);
+
+}
+
+BOOST_AUTO_TEST_SUITE(prelimsearch)
+
+BOOST_AUTO_TEST_CASE(ShortProteinSearch) {
+    CSeq_id id(CSeq_id::e_Gi, 1786182);
+    CBlastQueryVector q;
+    q.AddQuery(CTestObjMgr::Instance().CreateBlastSearchQuery(id));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q));
+
+    // Create the options
+    CRef<CBlastOptionsHandle> options_handle
+        (CBlastOptionsFactory::Create(eBlastp));
+    CRef<CBlastOptions> options(&options_handle->SetOptions());
+    options->SetSegFiltering(false);    // allow hits to be found
+
+    // Create the database description (by default will use CSeqDB)
+    CSearchDatabase dbinfo("ecoli", CSearchDatabase::eBlastDbIsProtein);
+
+    CBlastPrelimSearch prelim_search(query_factory, options, dbinfo);
+    BOOST_REQUIRE(prelim_search.GetNumberOfThreads() == 1);
+    BOOST_REQUIRE(prelim_search.IsMultiThreaded() == false);
+
+    CRef<SInternalData> results = prelim_search.Run();
+    BOOST_REQUIRE(results.GetPointer() != 0);
+
+    BOOST_REQUIRE(results->m_HspStream != 0);
+    BOOST_REQUIRE(results->m_Diagnostics != 0);
+
+    x_ValidateResultsForShortProteinSearch
+        (prelim_search, results->m_HspStream->GetPointer(), options);
+}
+
+BOOST_AUTO_TEST_CASE(ShortProteinSearchMT) {
+    CSeq_id id(CSeq_id::e_Gi, 1786182);
+    CBlastQueryVector q;
+    q.AddQuery(CTestObjMgr::Instance().CreateBlastSearchQuery(id));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q));
+
+    // Create the options
+    CRef<CBlastOptionsHandle> options_handle
+        (CBlastOptionsFactory::Create(eBlastp));
+    CRef<CBlastOptions> options(&options_handle->SetOptions());
+    options->SetSegFiltering(false);    // allow hits to be found
+
+    // Create the database description (by default will use CSeqDB)
+    CSearchDatabase dbinfo("ecoli", CSearchDatabase::eBlastDbIsProtein);
+
+    CBlastPrelimSearch prelim_search(query_factory, options, dbinfo);
+    prelim_search.SetNumberOfThreads(2);
+    BOOST_REQUIRE(prelim_search.GetNumberOfThreads() == 2);
+    BOOST_REQUIRE(prelim_search.IsMultiThreaded() == true);
+
+    CRef<SInternalData> results = prelim_search.Run();
+    BOOST_REQUIRE(results.GetPointer() != 0);
+
+    BOOST_REQUIRE(results->m_HspStream != 0);
+    BOOST_REQUIRE(results->m_Diagnostics != 0);
+
+    x_ValidateResultsForShortProteinSearch
+        (prelim_search, results->m_HspStream->GetPointer(), options);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

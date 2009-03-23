@@ -36,8 +36,12 @@
 #include <objtools/blast_format/seq_writer.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <corelib/ncbifile.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 USING_NCBI_SCOPE;
+
+BOOST_AUTO_TEST_SUITE(seq_writer)
 
 static const int kConvFlags = 
     NStr::fConvErr_NoThrow |
@@ -186,3 +190,4 @@ BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
     BOOST_REQUIRE_EQUAL(len, kLength);
     BOOST_REQUIRE_EQUAL(kSeqData, seq_data);
 }
+BOOST_AUTO_TEST_SUITE_END();

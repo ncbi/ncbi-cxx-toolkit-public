@@ -32,28 +32,21 @@
  */
 
 #include <ncbi_pch.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 #include "../blast_setup.hpp"
 #include "../blast_objmgr_priv.hpp"
 #include <algo/blast/core/blast_setup.h>
 #include "test_objmgr.hpp"
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#include <boost/test/auto_unit_test.hpp>
-
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+
+BOOST_AUTO_TEST_SUITE(blastoptions)
 
 BOOST_AUTO_TEST_CASE(TestTasksDefinitionsAndDocumentation)
 {
@@ -1246,5 +1239,5 @@ BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
     BOOST_CHECK_EQUAL(string("F"), string(filter_string));/* NCBI_FAKE_WARNING */
     sfree(filter_string);
 }
-
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

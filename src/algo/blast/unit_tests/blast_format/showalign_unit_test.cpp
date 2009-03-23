@@ -32,9 +32,6 @@
  */
 
 #include <ncbi_pch.hpp>
-// Use this defines to run this test in isolation
-//#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <corelib/ncbistl.hpp>
@@ -48,19 +45,19 @@
 
 
 #include "blast_test_util.hpp"
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 using namespace TestUtil;
 
+BOOST_AUTO_TEST_SUITE(showalign)
 
-#ifndef _DEBUG  // Don't run this in debug mode
 BOOST_AUTO_TEST_CASE(TestPerformance)
 {
     const string seqAlignFileName_in = "data/in_showalign_aln";
-    const time_t kTimeMax = getenv("UNIT_TEST_TIMEOUT")
-        ? atoi(getenv("UNIT_TEST_TIMEOUT")) : 30;
     CRef<CSeq_annot> san(new CSeq_annot);
   
     ifstream in(seqAlignFileName_in.c_str());
@@ -71,18 +68,16 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
   
     CBlastScopeSource scope_src(false);
     CRef<CScope> scope(scope_src.NewScope());
-    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
     CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
     CNcbiOfstream dumpster("/dev/null");  // we don't care about the output
     ds.DisplaySeqalign(dumpster);
-    time_t end_time = CTime(CTime::eCurrent).GetTimeT();  ostringstream os;
-    os << "formatting took " 
-       << end_time-start_time << " seconds, i.e.: more than the "
-       << kTimeMax << " second timeout";
-    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
-
 }
+#ifdef _DEBUG
+const int kPerformanceTimeout = 120;
+#else
+const int kPerformanceTimeout = 30;
 #endif
+BOOST_AUTO_TEST_CASE_TIMEOUT(TestPerformance, kPerformanceTimeout);
 
 bool TestSimpleAlignment(CBlastOM::ELocation location)
 {
@@ -135,3 +130,4 @@ BOOST_AUTO_TEST_CASE(TestSimpleAlignment_RmtBlastDBLoader)
    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote));
 }
 
+BOOST_AUTO_TEST_SUITE_END()

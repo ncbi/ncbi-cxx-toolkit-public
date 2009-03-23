@@ -44,20 +44,7 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <corelib/ncbi_limits.hpp>
 
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN    // this should only be defined here!
-#include <boost/test/auto_unit_test.hpp>
-
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
-
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -115,6 +102,8 @@ private:
     string gbloader_name;
 };
 
+BOOST_AUTO_TEST_SUITE(bdbloader)
+
 /// This function tests the ways in which the sequence data is populated in a
 /// CBioseq loaded by the object manager via its data loaders
 void TestCSeq_inst(const CBioseq& bioseq) {
@@ -135,7 +124,6 @@ void TestCSeq_inst(const CBioseq& bioseq) {
 
 void RetrieveGi555WithTimeOut(bool is_remote)
 {
-    const time_t kTimeMax = 5;
     const CSeq_id id(CSeq_id::e_Gi, 555);
 
     const string db("nt");
@@ -145,42 +133,31 @@ void RetrieveGi555WithTimeOut(bool is_remote)
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
-    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
     TSeqPos len = sequence::GetLength(id, scope);
     const TSeqPos kLength(624);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
-    time_t end_time = CTime(CTime::eCurrent).GetTimeT();
     BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
     BOOST_REQUIRE(retval->CanGetInst());
     TestCSeq_inst(*retval);
-
-    ostringstream os;
-    os << "Fetching " << id.AsFastaString() << " took " 
-       << end_time-start_time << " seconds, i.e.: more than the "
-       << kTimeMax << " second timeout";
-    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut_Local)
 {
     RetrieveGi555WithTimeOut(false);
 }
+BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveGi555WithTimeOut_Local, 5);
 
 BOOST_AUTO_TEST_CASE(RetrieveGi555WithTimeOut_Remote)
 {
     RetrieveGi555WithTimeOut(true);
 }
+BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveGi555WithTimeOut_Remote, 5);
 
 void RetrieveLargeProteinWithTimeOut(bool is_remote)
 {
-#ifdef _DEBUG
-    const time_t kTimeMax = 60*5;   // 5 minutes
-#else
-    const time_t kTimeMax = 15;
-#endif /* _DEBUG */
     const CSeq_id id(CSeq_id::e_Gi, 1212992);
 
     const string db("nr");
@@ -190,34 +167,36 @@ void RetrieveLargeProteinWithTimeOut(bool is_remote)
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
-    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
     TSeqPos len = sequence::GetLength(id, scope);
     const TSeqPos kLength(26926);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
-    time_t end_time = CTime(CTime::eCurrent).GetTimeT();
     BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
     BOOST_REQUIRE(retval->CanGetInst());
     TestCSeq_inst(*retval);
-
-    ostringstream os;
-    os << "Fetching " << id.AsFastaString() << " took " 
-       << end_time-start_time << " seconds, i.e.: more than the "
-       << kTimeMax << " second timeout";
-    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
+
+#ifdef _DEBUG
+    const time_t kTimeOutLargeProtein = 60*5;   // 5 minutes
+#else
+    const time_t kTimeOutLargeProtein = 15;
+#endif /* _DEBUG */
 
 BOOST_AUTO_TEST_CASE(RetrieveLargeProteinWithTimeOut_Local)
 {
     RetrieveLargeProteinWithTimeOut(false);
 }
+BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeProteinWithTimeOut_Local, 
+                             kTimeOutLargeProtein);
 
 BOOST_AUTO_TEST_CASE(RetrieveLargeProteinWithTimeOut_Remote)
 {
     RetrieveLargeProteinWithTimeOut(true);
 }
+BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeProteinWithTimeOut_Remote, 
+                             kTimeOutLargeProtein);
 
 void RetrieveLargeNuclSequence(bool is_remote)
 {
@@ -322,7 +301,6 @@ BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Remote)
 /* Only execute this in release mode as debug might be too slow */
 void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
 {
-    const time_t kTimeMax = is_remote ? 330 : 30;	// timeout in seconds
     const string kAccession("NC_000001");
 
     const string db("nucl_dbs");
@@ -333,33 +311,27 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
     CRef<CSeq_id> id(new CSeq_id(kAccession));
-    time_t start_time = CTime(CTime::eCurrent).GetTimeT();
     TSeqPos len = sequence::GetLength(*id, scope);
     const TSeqPos kLength(247249719);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
-    time_t end_time = CTime(CTime::eCurrent).GetTimeT();
     BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
     TestCSeq_inst(*retval);
-
-    ostringstream os;
-    os << "Fetching " << kAccession << " took " 
-       << end_time-start_time << " seconds, i.e.: more than the "
-       << kTimeMax << " second timeout";
-    BOOST_REQUIRE_MESSAGE((end_time-start_time) < kTimeMax, os.str());
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Local)
 {
     RetrieveLargeChromosomeWithTimeOut(false);
 }
+BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeChromosomeWithTimeOut_Local, 30);
 
 BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Remote)
 {
     RetrieveLargeChromosomeWithTimeOut(true);
 }
+BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeChromosomeWithTimeOut_Remote, 330);
 #endif /* _DEBUG */
 
 #ifdef NCBI_THREADS
@@ -468,4 +440,5 @@ BOOST_AUTO_TEST_CASE(TestDataNotFound_Remote)
 {
     TestDataNotFound(true);
 }
+BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

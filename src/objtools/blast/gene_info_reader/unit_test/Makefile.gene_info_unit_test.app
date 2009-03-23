@@ -5,12 +5,14 @@ SRC = gene_info_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
-LOCAL_LDFLAGS = -L. -L..
 LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
-LIB = gene_info xncbi
+PRE_LIBS = $(BOOST_LIBS)
+LIB = test_boost gene_info xncbi
 
-LIBS = $(BOOST_LIBS) $(ORIG_LIBS)
+LIBS = $(ORIG_LIBS)
+
+REQUIRES = Boost.Test
 
 CHECK_CMD     = gene_info_unit_test
 CHECK_COPY    = data

@@ -32,6 +32,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -72,17 +74,15 @@
 
 #include <util/random_gen.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
+#include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+
+BOOST_AUTO_TEST_SUITE(bl2seq)
 
 BOOST_AUTO_TEST_CASE(ProteinBlastInvalidSeqIdSelfHit)
 {
@@ -2831,3 +2831,4 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
     }
 #endif
 #endif /* SKIP_DOXYGEN_PROCESSING */
+BOOST_AUTO_TEST_SUITE_END()

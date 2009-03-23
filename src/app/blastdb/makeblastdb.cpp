@@ -563,63 +563,59 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
 {
     vector<CTempString> names;
     SeqDB_SplitQuoted(paths, names);
-    
+
     vector<string> blastdb;
-    vector<string> fasta;
-    
-    CSeqDB::ESeqType seqtype =
-        (is_protein
-         ? CSeqDB::eProtein
-         : CSeqDB::eNucleotide);
-    
-    ITERATE(vector<CTempString>, iter, names) {
-        bool is_blastdb = false;
-        const string & s = *iter;
-        
-        if (s != "-") {
-            try {
-                CSeqDB db(s, seqtype);
-                is_blastdb = true;
-            }
-            catch(const CSeqDBException &) {
-                is_blastdb = false; // necessary?
-            }
-        }
-        
-        if (is_blastdb) {
-            blastdb.push_back(s);
-        } else {
-            fasta.push_back(s);
-        }
-    }
-    
-    if (blastdb.size()) {
-        string quoted;
-        SeqDB_CombineAndQuote(blastdb, quoted);
-        
-        CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein));
-        m_DB->AddSequences(*raw);
-    }
-    
-    ITERATE(vector<string>, file, fasta) {
-        const string & fasta_file = *file;
-        
-        if (fasta_file == "-") {
+
+    ITERATE(vector<CTempString>, file, names) {
+        // input_file could be FASTA, ASN.1 or XML.
+        const string & seq_file = *file;
+
+        if (seq_file == "-") {
             x_AddSequenceData(cin);
         } else {
-            CFile input_file(fasta_file);
+            CFile input_file(seq_file);
             if ( !input_file.Exists() ) {
-                ERR_POST(Error << "Ignoring sequence input file '" 
-                               << fasta_file << "' as it does not exist.");
+                blastdb.push_back(seq_file);
                 continue;
             }
             if (input_file.GetLength() == 0) {
-                ERR_POST(Error << "Ignoring sequence input file '" 
-                               << fasta_file << "' as it is empty.");
+                ERR_POST(Error << "Ignoring sequence input file '"
+                               << seq_file << "' as it is empty.");
                 continue;
             }
-            CNcbiIfstream f(fasta_file.c_str(), ios::binary);
+            CNcbiIfstream f(seq_file.c_str(), ios::binary);
             x_AddSequenceData(f);
+        }
+    }
+
+    if (blastdb.size() > 0)
+    {
+        CSeqDB::ESeqType seqtype =
+            (is_protein
+             ? CSeqDB::eProtein : CSeqDB::eNucleotide);
+
+        vector<string> final_blastdb;
+
+        ITERATE(vector<string>, iter, blastdb) {
+            const string & s = *iter;
+
+            try {
+                    CSeqDB db(s, seqtype);
+            }
+            catch(const CSeqDBException &) {
+                  ERR_POST(Error << "Unable to open input "
+                                 << s << " as either FASTA file or BLAST db");
+                    continue;
+            }
+            final_blastdb.push_back(s);
+        }
+
+        if (final_blastdb.size()) {
+            string quoted;
+            SeqDB_CombineAndQuote(final_blastdb, quoted);
+
+            CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein));
+            m_DB->AddSequences(*raw);
         }
     }
 }
