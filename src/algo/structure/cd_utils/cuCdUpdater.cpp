@@ -44,6 +44,7 @@
 #include <algo/blast/api/effsearchspace_calc.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
+#include <objtools/blast/services/blast_services.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
@@ -1250,9 +1251,9 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 			string errors, warnings;
 			vector< CRef< CBioseq > > bioseqBatch;
 			try {
-				LOG_POST("Calling RemoteBlast::GetSequences().\n");
-				CRemoteBlast::GetSequences(seqids, "nr", 'p', bioseqBatch, errors,warnings);
-				LOG_POST("Returned from RemoteBlast::GetSequences(). " << bioseqBatch.size() << "\n");
+				LOG_POST("Calling CBlastServices::GetSequences().\n");
+				CBlastServices::GetSequences(seqids, "nr", 'p', bioseqBatch, errors,warnings);
+				LOG_POST("Returned from CBlastServices::GetSequences(). " << bioseqBatch.size() << "\n");
 			}
 			catch (blast::CBlastException& be)
             {
@@ -1266,7 +1267,7 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 				continue;
 			} catch (...) 
             {
-                LOG_POST("Unspecified exception during CRemoteBlast::GetSequences().  Skipping to next Seq-align.\n");
+                LOG_POST("Unspecified exception during CBlastServices::GetSequences().  Skipping to next Seq-align.\n");
                 continue;
             }
 
