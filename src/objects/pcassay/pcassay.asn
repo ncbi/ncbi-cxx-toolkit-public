@@ -375,7 +375,8 @@ PC-ResultType ::= SEQUENCE {
                            nucleotide-target-gi (14),       -- GenBank General ID for a Nucleotide target 
                            target-name (15),                -- target name
                            target-descr (16),               -- brief target description 
-                           target-tax-id (17)               -- NCBI Taxonomy ID for target molecule 
+                           target-tax-id (17),              -- NCBI Taxonomy ID for target molecule 
+                           gene-target-id (18)              -- NCBI Gene ID for a gene target 
                      }   OPTIONAL                           -- treat substance associated cross-reference as regular TID
                                                             -- web servers would make a link 
                                                             -- to the corresponding record in Entrez databases
