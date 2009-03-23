@@ -21,3 +21,9 @@ version 1.7.4
 Corrected assembling DLLs in case of multiple projects with the same name
 Added 'rootdir' macro in ptb.ini
 Corrected DLL dependency analysis when working with import_project Windows script
+
+March 23, 2009
+version 1.7.5
+Produce list of generated and updated files.
+Optimize UNIX flat makefile to avoid attempts to build each project more than once.
+Check and exclude unneeded external projects.
