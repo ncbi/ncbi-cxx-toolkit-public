@@ -13,6 +13,8 @@ internal/align_model$
 internal/ID/utils$
 internal/mapview/objects
 -internal/mapview/objects/cache
+internal/pubmedxml/Libs/TServer$
+internal/myncbi$
 internal/blast/DistribDbSupport
 misc
 objects
