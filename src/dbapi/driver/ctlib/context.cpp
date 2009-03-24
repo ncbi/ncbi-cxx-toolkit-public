@@ -307,12 +307,19 @@ bool Connection::Open(const CDBConnParams& params)
                                 server_name.size(),
                                 NULL));
 
+            // It's strange but at least after one type of error inside
+            // ct_connect (when client encoding is unrecognized) and thus
+            // after throwing an exception from Check one should make
+            // mandatory call to ct_close().
+            m_IsOpen = true;
             rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                                     NULL,
                                     CS_UNUSED));
         } else {
             server_name = params.GetServerName();
 
+            // See comment above
+            m_IsOpen = true;
             rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                         const_cast<char*> (server_name.c_str()),
                         CS_NULLTERM));
@@ -320,6 +327,8 @@ bool Connection::Open(const CDBConnParams& params)
 #else
         server_name = params.GetServerName();
 
+        // See comment above
+        m_IsOpen = true;
         rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                                 const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
@@ -329,6 +338,9 @@ bool Connection::Open(const CDBConnParams& params)
 
         if (rc == CS_SUCCEED) {
             m_IsOpen = true;
+        }
+        else {
+            m_IsOpen = false;
         }
     }
 
