@@ -16,6 +16,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects Boost.Test
 
+CHECK_REQUIRES = MT
 CHECK_CMD = bdbloader_unit_test
 CHECK_COPY = data
 CHECK_AUTHORS = blastsoft
