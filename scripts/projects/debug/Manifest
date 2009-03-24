@@ -43,19 +43,19 @@ Linux64    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-s
 FreeBSD32  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSx86   : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSx86   : plain-WS32 : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86   : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-SunOSSparc : plain-WS64 : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain-WS32 : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSSparc : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-PowerMAC   : plain      : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+PowerMAC   : universal  : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 # --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
 # work similar to the configurations where it is mentioned explicitly
 IntelMAC   : GCC        : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
 
-Win32      : 900   : msvc800_prj  static  32  ReleaseDLL
-Win32      : 900d  : msvc800_prj  static  32  DebugDLL
+Win32      : 800   : msvc800_prj  static  32  ReleaseDLL
+Win32      : 800d  : msvc800_prj  static  32  DebugDLL
 Win64      : plain : msvc800_prj  static  64  ReleaseDLL
 
