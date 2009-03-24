@@ -777,7 +777,7 @@ inline
 #endif /*__GNUC__*/
 static EIO_Status s_InitAPI(int secure)
 {
-    static const struct SOCKSSL_struct kNoSSL/* = { all NULL } */;
+    static const struct SOCKSSL_struct kNoSSL = { 0 };
     EIO_Status status = eIO_Success;
 
     if (!s_Initialized  &&  (status = SOCK_InitializeAPI()) != eIO_Success)
