@@ -11,7 +11,7 @@ SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
 	blasthits_unit_test gapinfo_unit_test rps_unit_test hspstream_unit_test \
 	hspstream_test_util scoreblk_unit_test seqalign_cmp seqalign_set_convert \
 	split_query_unit_test phiblast_unit_test prelimsearch_unit_test \
-        psiblast_unit_test psibl2seq_unit_test traceback_unit_test tracebacksearch_unit_test
+    psiblast_unit_test psibl2seq_unit_test traceback_unit_test tracebacksearch_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I.. -I$(srcdir)/.. 
 
@@ -26,6 +26,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects Boost.Test
 
+CHECK_REQUIRES = MT
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini data
 CHECK_AUTHORS = blastsoft
