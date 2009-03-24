@@ -570,42 +570,9 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
     BOOST_REQUIRE(sav[0].NotEmpty());
 }
 
-/// Similar to the one found in algo/blast/blastinput
-class CAutoEnvironmentVariable
-{
-public:
-    CAutoEnvironmentVariable(const char* var_name) 
-        : m_VariableName(var_name)
-    {
-        _ASSERT(var_name);
-        string var(m_VariableName);
-        string value("1");
-        CNcbiEnvironment env(0);
-        env.Set(var, value);
-    }
-
-    CAutoEnvironmentVariable(const char* var_name, const char* var_value) 
-        : m_VariableName(var_name)
-    {
-        _ASSERT(var_name);
-        _ASSERT(var_value);
-        string var(m_VariableName);
-        CNcbiEnvironment env(0);
-        env.Set(var, string(var_value));
-    }
-
-    ~CAutoEnvironmentVariable() {
-        string var(m_VariableName);
-        CNcbiEnvironment env(0);
-        env.Set(var, kEmptyStr);
-    }
-private:
-    const char* m_VariableName;
-};
-
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     // Uncomment to redirect to test system
-    //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string rid("1214512158-10611-186074495131.BLASTQ23"); // Permanent RID
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();

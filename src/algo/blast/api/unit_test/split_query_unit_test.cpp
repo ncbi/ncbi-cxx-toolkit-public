@@ -152,21 +152,6 @@ s_ConvertToBlastQueries(const TGiLengthVector& gi_length,
     }
 }
 
-/** Auxiliary class to set an environment variable and unset it using RAII
- * idiom */
-class CTmpEnvironmentSetter {
-public:
-    CTmpEnvironmentSetter(const char* name, int value) {
-        m_Name = name;
-        setenv(m_Name, NStr::IntToString(value).c_str(), 1);
-    }
-    ~CTmpEnvironmentSetter() {
-        unsetenv(m_Name);
-    }
-private:
-    const char* m_Name;
-};
-
 class CSplitQueryTestFixture {
 public:
     /// This represents the split_query.ini configuration file
@@ -180,6 +165,7 @@ public:
             const IRegistry::TFlags flags =
                 IRegistry::fNoOverride | 
                 IRegistry::fTransient |
+                IRegistry::fNotJustCore |
                 IRegistry::fTruncate;
 
             const string fname("data/split_query.ini");
@@ -269,7 +255,9 @@ public:
         }
         CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&*opts));
 
-        CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", chunk_size);
+        CAutoEnvironmentVariable tmp_env("CHUNK_SIZE",
+                                         NStr::IntToString(chunk_size,
+                                                           NStr::fConvErr_NoThrow));
         CRef<CQuerySplitter> splitter(new CQuerySplitter(qf, &*opts));
         CRef<CSplitQueryBlk> sqb = splitter->Split();
 
@@ -1302,7 +1290,7 @@ BOOST_AUTO_TEST_CASE(Split4QueriesIn3Chunks) {
 /// Tests query splitting for blastn of both strands of a single query into
 /// multiple chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnSingleQueryMultiChunk_BothStrands) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string
         kTestName("QuerySplitter_BlastnSingleQueryMultiChunk_BothStrands");
 
@@ -1312,7 +1300,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnSingleQueryMultiChunk_BothStrands) {
 /// Tests query splitting for blastn of the plus strands of a single query
 /// into multiple chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnSingleQueryMultiChunk_PlusStrand) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string
         kTestName("QuerySplitter_BlastnSingleQueryMultiChunk_PlusStrand");
 
@@ -1322,7 +1310,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnSingleQueryMultiChunk_PlusStrand) {
 /// Tests query splitting for blastn of the minus strands of a single query
 /// into multiple chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnSingleQueryMultiChunk_MinusStrand) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string
         kTestName("QuerySplitter_BlastnSingleQueryMultiChunk_MinusStrand");
 
@@ -1332,7 +1320,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnSingleQueryMultiChunk_MinusStrand) {
 /// Tests query splitting for blastn of the plus strands of multiple queries
 /// into multiple chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_PlusStrand) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string
         kTestName("QuerySplitter_BlastnMultiQueryMultiChunk_PlusStrand");
 
@@ -1342,7 +1330,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_PlusStrand) {
 /// Tests query splitting for blastn of the minus strands of multiple
 /// queries into multiple chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_MinusStrand) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string
         kTestName("QuerySplitter_BlastnMultiQueryMultiChunk_MinusStrand");
 
@@ -1352,7 +1340,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_MinusStrand) {
 /// Tests query splitting for blastn of both strands of multiple
 /// queries into multiple chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_BothStrands) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string 
         kTestName("QuerySplitter_BlastnMultiQueryMultiChunk_BothStrands");
     QuerySplitter_BlastnMultiQueryMultiChunk(kTestName, eNa_strand_both);
@@ -1361,7 +1349,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_BothStrands) {
 /// Tests query splitting for blastn with multiple queries in multiple
 /// chunks with each query using different strands
 BOOST_AUTO_TEST_CASE(QuerySplitter_BlastnMultiQueryMultiChunk_MixedStrands) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string 
         kTestName("QuerySplitter_BlastnMultiQueryMultiChunk_MixedStrands");
     vector<ENa_strand> query_strands;
@@ -1666,7 +1654,7 @@ BOOST_AUTO_TEST_CASE(TestCContextTranslator_BlastxSingleQuery_BothStrands_0) {
 
     const size_t chunk_size = 15;
     const size_t num_chunks = 3;
-    CTmpEnvironmentSetter tmp_env("OVERLAP_CHUNK_SIZE", 6);
+    CAutoEnvironmentVariable tmp_env("OVERLAP_CHUNK_SIZE", "6");
 
     vector< vector<int> > starting_chunks(num_chunks);
     vector< vector<int> > absolute_contexts(num_chunks);
@@ -1696,7 +1684,7 @@ BOOST_AUTO_TEST_CASE(TestCContextTranslator_BlastxSingleQuery_BothStrands_1) {
 
     const size_t chunk_size = 15;
     const size_t num_chunks = 3;
-    CTmpEnvironmentSetter tmp_env("OVERLAP_CHUNK_SIZE", 6);
+    CAutoEnvironmentVariable tmp_env("OVERLAP_CHUNK_SIZE", "6");
 
     vector< vector<int> > starting_chunks(num_chunks);
     vector< vector<int> > absolute_contexts(num_chunks);
@@ -1727,7 +1715,7 @@ BOOST_AUTO_TEST_CASE(TestCContextTranslator_BlastxSingleQuery_BothStrands_2) {
     const size_t chunk_size = 15;
     const size_t kNumChunks = m_Config->GetInt(kTestName, "NumChunks",
                                                kDefaultIntValue);
-    CTmpEnvironmentSetter tmp_env("OVERLAP_CHUNK_SIZE", 6);
+    CAutoEnvironmentVariable tmp_env("OVERLAP_CHUNK_SIZE", "6");
 
     vector< vector<int> > starting_chunks(kNumChunks);
     vector< vector<int> > absolute_contexts(kNumChunks);
@@ -1837,7 +1825,7 @@ BOOST_AUTO_TEST_CASE(TestCContextTranslator_BlastxMultiQuery_MinusStrand) {
 
 /// Tests the CQuerySplitter class when no splitting should occur
 BOOST_AUTO_TEST_CASE(QuerySplitter_NoSplit) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     const string kTestName("QuerySplitter_NoSplit");
     CBlastQueryVector query;
     CSeq_id id(CSeq_id::e_Gi, 555);
@@ -1877,7 +1865,7 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_NoSplit) {
 /// Tests the CQuerySplitter class for retrieval of IQueryFactory objects
 /// for given chunks
 BOOST_AUTO_TEST_CASE(QuerySplitter_ValidateQueryFactoriesBlastn) {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 30000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "30000");
     TGiLengthVector gi_length;
     gi_length.push_back(make_pair<int, size_t>(95116755, 35000));
     gi_length.push_back(make_pair<int, size_t>(112123020, 35580));
@@ -1911,13 +1899,13 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_ValidateQueryFactoriesBlastn) {
 
 BOOST_AUTO_TEST_CASE(InvalidChunkSizeBlastx)
 {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     BOOST_REQUIRE_THROW(SplitQuery_GetChunkSize(blast::eBlastx), CBlastException);
 }
 
 BOOST_AUTO_TEST_CASE(InvalidChunkSizeTblastx) 
 {
-    CTmpEnvironmentSetter tmp_env("CHUNK_SIZE", 40000);
+    CAutoEnvironmentVariable tmp_env("CHUNK_SIZE", "40000");
     BOOST_REQUIRE_THROW(SplitQuery_GetChunkSize(blast::eTblastx), CBlastException);
 }
 
