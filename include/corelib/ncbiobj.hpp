@@ -2235,6 +2235,18 @@ public:
         return *this;
     }
 
+    /// operator== to compare with another CWeakRef
+    bool operator== (const TThisType& right)
+    {
+        return m_Proxy == right.m_Proxy;
+    }
+
+    /// operator!= to compare with another CWeakRef
+    bool operator!= (const TThisType& right)
+    {
+        return !(*this == right);
+    }
+
 private:
     CRef<proxy_type> m_Proxy;
     locker_type      m_Locker;
@@ -2337,15 +2349,6 @@ template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
           NCBI_NS_NCBI::CWeakRef<C,L>& ref2)
-{
-    ref1.Swap(ref2);
-}
-
-
-template<class C, class L>
-inline
-void swap(NCBI_NS_NCBI::CWeakIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CWeakIRef<C,L>& ref2)
 {
     ref1.Swap(ref2);
 }
