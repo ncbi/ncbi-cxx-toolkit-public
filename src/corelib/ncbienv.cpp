@@ -204,6 +204,39 @@ string CNcbiEnvironment::Load(const string& name) const
 
 
 ///////////////////////////////////////////////////////
+//  CAutoEnvironmentVariable::
+
+
+CAutoEnvironmentVariable::CAutoEnvironmentVariable(const CTempString& var_name,
+                                                   const CTempString& value,
+                                                   CNcbiEnvironment*  env)
+    : m_Env(env, eNoOwnership), m_VariableName(var_name)
+{
+    if ( !env ) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app) {
+            m_Env.reset(&app->SetEnvironment(), eNoOwnership);
+        } else {
+            m_Env.reset(new CNcbiEnvironment(NULL), eTakeOwnership);
+        }
+    }
+    m_PrevValue = m_Env->Get(m_VariableName);
+    if ( value.empty() ) {
+        m_Env->Unset(m_VariableName);
+    } else {
+        m_Env->Set(m_VariableName, value);
+    }
+}
+
+CAutoEnvironmentVariable::~CAutoEnvironmentVariable()
+{
+    m_Env->Set(m_VariableName, m_PrevValue);
+}
+
+
+
+
+///////////////////////////////////////////////////////
 //  CNcbiArguments::
 
 

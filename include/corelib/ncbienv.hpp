@@ -159,6 +159,41 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CAutoEnvironmentVariable --
+///
+/// Establish an environment setting for a limited time.
+///
+/// CAutoEnvironmentVariable establishes an environment variable setting
+/// for the lifetime of the instance (which may be associated with a unit
+/// test case), restoring the previous value (if any) when destroyed.
+class CAutoEnvironmentVariable
+{
+public:
+    /// Initializes the environment variable passed as an argument to the
+    /// corresponding value ("1" by default)
+    /// @param var_name environment variable name [in]
+    /// @param value value to set the environment variable to [in]
+    CAutoEnvironmentVariable(const CTempString& var_name,
+                             const CTempString& value = "1",
+                             CNcbiEnvironment*  env = NULL);
+
+    /// Destructor which restores the modifications made in the environment by
+    /// this class
+    ~CAutoEnvironmentVariable();
+
+private:
+    /// Affected CNcbiEnvironment instance
+    AutoPtr<CNcbiEnvironment> m_Env;
+    /// Name of the environment variable manipulated
+    string                    m_VariableName;
+    /// Previous value of the environment variable manipulated
+    string                    m_PrevValue;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CNcbiArguments --
 ///
 /// Store application command-line arguments & application name.

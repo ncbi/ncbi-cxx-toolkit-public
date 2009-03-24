@@ -56,7 +56,6 @@
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/tblastx_args.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
-#include "auto_envvar.hpp"
 
 #undef NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
