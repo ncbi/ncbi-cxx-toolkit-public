@@ -162,7 +162,7 @@ protected:
 private:
     void WriteMemberId(const CMemberId& id);
     void WriteSkippedMember(void);
-    void WriteEscapedChar(char c);
+    void WriteEscapedChar(char c, EEncoding enc_in);
     void WriteEncodedChar(const char*& src, EStringType type);
     void x_WriteString(const string& value,
                        EStringType type = eStringTypeVisible);

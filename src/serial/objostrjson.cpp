@@ -433,7 +433,7 @@ void CObjectOStreamJson::WriteSkippedMember(void)
 }
 
 
-void CObjectOStreamJson::WriteEscapedChar(char c)
+void CObjectOStreamJson::WriteEscapedChar(char c, EEncoding enc_in)
 {
     switch ( c ) {
     case '"':
@@ -443,7 +443,8 @@ void CObjectOStreamJson::WriteEscapedChar(char c)
         m_Output.PutString("\\\\");
         break;
     default:
-        if ((unsigned int)c < 0x20 || (unsigned int)c >= 0x80) {
+        if ( (unsigned int)c <  0x20 ||
+            ((unsigned int)c >= 0x80 && enc_in != eEncoding_UTF8) ) {
             m_Output.PutString("\\u00");
             Uint1 ch = c;
             unsigned hi = ch >> 4;
@@ -463,7 +464,7 @@ void CObjectOStreamJson::WriteEncodedChar(const char*& src, EStringType type)
     EEncoding enc_out(eEncoding_UTF8);
 
     if (enc_in == enc_out || enc_in == eEncoding_Unknown || (*src & 0x80) == 0) {
-        WriteEscapedChar(*src);
+        WriteEscapedChar(*src, enc_in);
     } else {
         CStringUTF8 tmp;
         tmp.Assign(*src,enc_in);
