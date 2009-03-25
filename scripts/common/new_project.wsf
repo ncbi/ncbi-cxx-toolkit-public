@@ -161,6 +161,9 @@
             usage_str += "                   app/soap/client   a SOAP client\n";
             usage_str += "                   app/soap/server   a SOAP server\n";
             usage_str += "                   app/unit_test     a Boost-based unit test application\n";
+            usage_str += "                   lib/asn           a static library from ASN.1 specification\n";
+            usage_str += "                   lib/dtd           a static library from DTD specification\n";
+            usage_str += "                   lib/xsd           a static library from XML Schema specification\n";
             usage_str += "    [builddir]  -- path to the pre-built NCBI C++ toolkit\n";
             usage_str += "                       default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
             usage_str += "                       you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
@@ -234,6 +237,9 @@
                 prompt += "\tapp/soap/client\n";
                 prompt += "\tapp/soap/server\n";
                 prompt += "\tapp/unit_test\n";
+                prompt += "\tlib/asn\n";
+                prompt += "\tlib/dtd\n";
+                prompt += "\tlib/xsd\n";
                 this.ProjectType = InputData(prompt+footer, "app/basic");
                 prompt = "Enter path to the pre-built NCBI C++ toolkit";
                 toolkit_path = InputData(prompt+footer,
@@ -265,6 +271,9 @@
             this.TemplatesDict.Add("app/soap/client", "app/sample/soap/client");
             this.TemplatesDict.Add("app/soap/server", "app/sample/soap/server");
             this.TemplatesDict.Add("app/unit_test",   "app/sample/unit_test");
+            this.TemplatesDict.Add("lib/asn",     "app/sample/asn_lib");
+            this.TemplatesDict.Add("lib/dtd",     "app/sample/asn_lib");
+            this.TemplatesDict.Add("lib/xsd",     "app/sample/asn_lib");
             if (this.TemplatesDict.Exists(this.ProjectType)) {
                 this.ProjectTemplate = this.TemplatesDict.Item(this.ProjectType);
             }
@@ -305,6 +314,27 @@
             FillTreeStructure(oShell, oTree);
         }
 
+        function ConvertDataSpec(oShell, oTree, oTask)
+        {
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            if ( oFso.FolderExists(oTree.SrcProjectBranch) ) {
+	            var dir = oFso.GetFolder(oTree.SrcProjectBranch);
+	            var dir_files = new Enumerator(dir.files);
+	            for ( ; !dir_files.atEnd(); dir_files.moveNext()) {
+	                if (oFso.GetExtensionName(dir_files.item()) == "asn") {
+	                    var cmd = oTask.Datatool + " -m " + dir_files.item() + " -sxo";
+	                    var file_out = oTree.SrcProjectBranch + "\\" + oFso.GetBaseName(dir_files.item());
+	                    if (oTask.ProjectType == "lib/dtd") {
+	                        cmd += " -fx " + file_out + ".dtd";
+	                    } else {
+	                        cmd += " -fxs " + file_out + ".xsd";
+	                    }
+                        execute(oShell,cmd);
+	                }
+	            }
+            }
+        }
+        
         // Copy project template from CVS/SVN
         function CopyProjectTemplate(oShell, oTree, oTask)
         {
@@ -312,14 +342,104 @@
 //            GetFileFromTree(oShell, oTree, oTask, src, oTree.SrcProjectBranch)
             GetSubtreeFromTree(oShell, oTree, oTask, "src/" + oTask.ProjectTemplate, oTree.SrcProjectBranch);
 
-            var cmd = "if exist " + oTree.SrcProjectBranch + "\\*.files" +
-                          " del " + oTree.SrcProjectBranch + "\\*.files";
-            execute(oShell,cmd);
+            var rm0 = new Array (
+                "*.files"
+                );
+            var rm = rm0;
+            if (oTask.ProjectType == "lib/asn" ||
+                oTask.ProjectType == "lib/dtd" ||
+                oTask.ProjectType == "lib/xsd") {
+                var rm1 = new Array (
+                    "*.lib"
+                    );
+                rm = rm0.concat(rm1);
+
+                if (typeof(oTask.Datatool) != "undefined" && (
+                    oTask.ProjectType == "lib/dtd" ||
+                    oTask.ProjectType == "lib/xsd")) {
+                    ConvertDataSpec(oShell, oTree, oTask);
+                    rm[rm.length] = "*.asn";
+                }
+            }
+            for (var i = 0; i < rm.length; ++i) {
+                var cmd = "if exist " + oTree.SrcProjectBranch + "\\" + rm[i] +
+                              " del " + oTree.SrcProjectBranch + "\\" + rm[i];
+                execute(oShell,cmd);
+            }
+        }
+
+        function AdjustDataSpecProject(oShell, oTree, oTask)
+        {
+            var oFso = new ActiveXObject("Scripting.FileSystemObject");
+            
+            var filename = oTree.SrcProjectBranch + "\\Makefile.in";
+            var modelname = filename + ".old";
+
+            // Makefile.in
+            VerboseEcho("Modifying      " + filename);
+            oFso.CopyFile(filename, modelname);
+            var old_file = oFso.OpenTextFile(modelname, 1);
+            var new_file = oFso.CreateTextFile(filename, true);
+            while( !old_file.AtEndOfStream ) {
+                var old_line = old_file.ReadLine();
+                if (old_line.indexOf("ASN_PROJ") == 0) {
+                    if (oTask.ProjectType == "lib/asn") {
+                        new_file.WriteLine("ASN_PROJ = " + oTask.ProjectName);
+                    } else if (oTask.ProjectType == "lib/dtd") {
+                        new_file.WriteLine("DTD_PROJ = " + oTask.ProjectName);
+                    } else if (oTask.ProjectType == "lib/xsd") {
+                        new_file.WriteLine("XSD_PROJ = " + oTask.ProjectName);
+                    }
+                } else {
+                    new_file.WriteLine(old_line);
+                }
+            }
+            old_file.Close();
+            new_file.Close();
+            oFso.DeleteFile(modelname, true);
+
+            // Makefile.projname.lib
+            filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".lib";
+            VerboseEcho("Creating       " + filename);
+            new_file = oFso.CreateTextFile(filename, true);
+            new_file.WriteLine("LIB = " + oTask.ProjectName);
+            new_file.WriteLine("SRC = " + oTask.ProjectName + "__ " + oTask.ProjectName + "___ ");
+            new_file.Close();
+
+            //dataspec
+            var dir = oFso.GetFolder(oTree.SrcProjectBranch);
+            var dir_files = new Enumerator(dir.files);
+            for ( ; !dir_files.atEnd(); dir_files.moveNext()) {
+                var ext = oFso.GetExtensionName(dir_files.item());
+                var file_out = oTree.SrcProjectBranch + "\\" + oTask.ProjectName;
+                if (oTask.ProjectType == "lib/asn") {
+                    if (ext == "asn") {
+                        oFso.MoveFile(dir_files.item(),file_out+".asn");
+                        break;
+                    }
+                } else if (oTask.ProjectType == "lib/dtd") {
+                    if (ext == "dtd") {
+                        oFso.MoveFile(dir_files.item(),file_out+".dtd");
+                        break;
+                    }
+                } else if (oTask.ProjectType == "lib/xsd") {
+                    if (ext == "xsd") {
+                        oFso.MoveFile(dir_files.item(),file_out+".xsd");
+                        break;
+                    }
+                }
+            }
         }
 
         // Change Makefile.in and Makefile.*.app
         function AdjustProject(oShell, oTree, oTask)
         {
+            if (oTask.ProjectType == "lib/asn" ||
+                oTask.ProjectType == "lib/dtd" ||
+                oTask.ProjectType == "lib/xsd") {
+                AdjustDataSpecProject(oShell, oTree, oTask)
+                return;
+            }
             var oFso = new ActiveXObject("Scripting.FileSystemObject");
             
             var filename = oTree.SrcProjectBranch + "\\Makefile.in";
@@ -452,7 +572,7 @@
             new_makefile.Close();
             oFso.DeleteFile(modelname, true);
 
-// MSVC customizization
+// MSVC customisation
             modelname += ".msvc";
             filename += ".msvc";
             if (oFso.FileExists(modelname)) {
@@ -562,16 +682,16 @@
         CreateTreeStructure(oTree, oTask);
         WScript.Echo("========================= FillTree ====================================");
         FillTree           (oShell, oTree);
+        WScript.Echo("========================= CopyPtb =====================================");
+        CopyPtb            (oShell, oTree, oTask);
+        WScript.Echo("========================= CopyDatatool ================================");
+        CopyDatatool       (oShell, oTree, oTask);
         VerboseEcho("========================= CopyDlls ====================================");
         CopyDlls           (oShell, oTree, oTask);
         WScript.Echo("========================= CopyProjectTemplate =========================");
         CopyProjectTemplate(oShell, oTree, oTask);
         WScript.Echo("========================= AdjustProject ===============================");
         AdjustProject      (oShell, oTree, oTask);
-        WScript.Echo("========================= CopyPtb =====================================");
-        CopyPtb            (oShell, oTree, oTask);
-        WScript.Echo("========================= CopyDatatool ================================");
-        CopyDatatool       (oShell, oTree, oTask);
         WScript.Echo("========================= RunPtb ======================================");
         RunPtb             (oShell, oTree, oTask);
         WScript.Echo("========================= LoadSolution ================================");

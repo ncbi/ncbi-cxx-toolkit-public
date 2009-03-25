@@ -334,6 +334,7 @@ function CopyDatatool(oShell, oTree, oTask)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
     var configs = GetConfigs(oTask);
+    var dtfound = false;
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
         var target_path;
@@ -357,6 +358,10 @@ function CopyDatatool(oShell, oTree, oTask)
                 WScript.Echo("WARNING: File not found: " + source_file);
                 continue;
             }
+        }
+        if (!dtfound) {
+            oTask.Datatool = source_file;
+            dtfound = true;
         }
         execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
         if (oTask.DllBuild) {
