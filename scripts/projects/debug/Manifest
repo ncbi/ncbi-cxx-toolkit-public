@@ -19,6 +19,7 @@ APP: datatool
 #COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/
 #COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/my_checksum.cpp
 
+DEFAULT_CONFIGURATIONS: Linux32:plain-ICC  Linux64:plain-ICC  SunOSx86:plain-WS64 SunOSSparc:plain-WS64
 
 # APP: test_ncbi_disp -- not now
 
