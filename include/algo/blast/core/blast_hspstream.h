@@ -175,9 +175,11 @@ int BlastHSPStreamMerge(SSplitQueryBlk* squery_blk,
                         BlastHSPStream* combined_hsp_stream);
 
 /** Standard error return value for BlastHSPStream methods */
+NCBI_XBLAST_EXPORT
 extern const int kBlastHSPStream_Error;
 
 /** Standard success return value for BlastHSPStream methods */
+NCBI_XBLAST_EXPORT
 extern const int kBlastHSPStream_Success;
 
 /** Return value when the end of the stream is reached (applicable to read
