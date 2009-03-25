@@ -166,7 +166,7 @@ private:
 /// CAutoEnvironmentVariable establishes an environment variable setting
 /// for the lifetime of the instance (which may be associated with a unit
 /// test case), restoring the previous value (if any) when destroyed.
-class CAutoEnvironmentVariable
+class NCBI_XNCBI_EXPORT CAutoEnvironmentVariable
 {
 public:
     /// Initializes the environment variable passed as an argument to the
