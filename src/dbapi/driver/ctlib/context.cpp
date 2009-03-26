@@ -311,7 +311,6 @@ bool Connection::Open(const CDBConnParams& params)
             // ct_connect (when client encoding is unrecognized) and thus
             // after throwing an exception from Check one should make
             // mandatory call to ct_close().
-            m_IsOpen = true;
             rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                                     NULL,
                                     CS_UNUSED));
@@ -319,7 +318,6 @@ bool Connection::Open(const CDBConnParams& params)
             server_name = params.GetServerName();
 
             // See comment above
-            m_IsOpen = true;
             rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                         const_cast<char*> (server_name.c_str()),
                         CS_NULLTERM));
@@ -328,7 +326,6 @@ bool Connection::Open(const CDBConnParams& params)
         server_name = params.GetServerName();
 
         // See comment above
-        m_IsOpen = true;
         rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
                                 const_cast<char*> (server_name.c_str()),
                                 CS_NULLTERM));
@@ -1245,9 +1242,11 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         // send messages with 0 0 that need to be processed
         msg->msgnumber == 3621 ||  // The statement has been terminated.
         msg->msgnumber == 3980 ||  // The request failed to run because the batch is aborted...
-        msg->msgnumber == 5701 ||
-        msg->msgnumber == 5703 ||
-        msg->msgnumber == 5704
+        msg->msgnumber == 5701 ||  // Changed database context to ...
+        msg->msgnumber == 5703 ||  // Changed language setting to ...
+        msg->msgnumber == 5704 ||  // Changed client character set setting to ...
+        msg->msgnumber == 2401 ||  // Character set conversion is not available between client character set and server character set
+        msg->msgnumber == 2411     // No conversions will be done
         ) {
         return CS_SUCCEED;
     }
