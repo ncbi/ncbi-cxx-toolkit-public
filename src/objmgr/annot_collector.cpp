@@ -64,9 +64,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 
 #include <serial/typeinfo.hpp>
 #include <serial/objostr.hpp>
@@ -560,31 +558,31 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
     }
 
     if ( x_annot_type == CSeq_annot::C_Data::e_Ftable ) {
-        // compare features by type
-        if ( !x_info != !y_info ) {
-            CSeqFeatData::E_Choice x_feat_type;
-            CSeqFeatData::ESubtype x_feat_subtype;
-            if ( x_info ) {
-                x_feat_type = x_info->GetFeatType();
-                x_feat_subtype = x_info->GetFeatSubtype();
-            }
-            else {
-                x_feat_type = CSeqFeatData::e_Imp;
-                x_feat_subtype = CSeqFeatData::eSubtype_variation;
-            }
+        // compare features
+        CSeqFeatData::E_Choice x_feat_type;
+        CSeqFeatData::ESubtype x_feat_subtype;
+        if ( x_info ) {
+            x_feat_type = x_info->GetFeatType();
+            x_feat_subtype = x_info->GetFeatSubtype();
+        }
+        else {
+            x_feat_type = CSeqFeatData::e_Imp;
+            x_feat_subtype = CSeqFeatData::eSubtype_variation;
+        }
 
-            CSeqFeatData::E_Choice y_feat_type;
-            CSeqFeatData::ESubtype y_feat_subtype;
-            if ( y_info ) {
-                y_feat_type = y_info->GetFeatType();
-                y_feat_subtype = y_info->GetFeatSubtype();
-            }
-            else {
-                y_feat_type = CSeqFeatData::e_Imp;
-                y_feat_subtype = CSeqFeatData::eSubtype_variation;
-            }
+        CSeqFeatData::E_Choice y_feat_type;
+        CSeqFeatData::ESubtype y_feat_subtype;
+        if ( y_info ) {
+            y_feat_type = y_info->GetFeatType();
+            y_feat_subtype = y_info->GetFeatSubtype();
+        }
+        else {
+            y_feat_type = CSeqFeatData::e_Imp;
+            y_feat_subtype = CSeqFeatData::eSubtype_variation;
+        }
 
-            // one is simple SNP feature, another is some complex feature
+        {{
+            // order by feature type
             if ( x_feat_type != y_feat_type ) {
                 int x_order = CSeq_feat::GetTypeSortingOrder(x_feat_type);
                 int y_order = CSeq_feat::GetTypeSortingOrder(y_feat_type);
@@ -592,34 +590,93 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
                     return x_order < y_order;
                 }
             }
+        }}
 
-            // non-variations first
-            if ( x_feat_subtype != y_feat_subtype ) {
-                return x_feat_subtype < y_feat_subtype;
-            }
-
-            // both are variations but one is simple and another is not.
-            // required order: simple first.
-            // if !x_info == true -> x - simple, y - complex -> return true
-            // if !x_info == false -> x - complex, y - simple -> return false
-            return !x_info;
-        }
-
-        if ( x_info && x_info->IsRegular() && y_info->IsRegular() ) {
-            // both are complex features
-            try {
-                const CSeq_feat* x_feat = x_info->GetFeatFast();
-                const CSeq_feat* y_feat = y_info->GetFeatFast();
-                _ASSERT(x_feat && y_feat);
-                int diff = x_feat->CompareNonLocation(*y_feat,
-                                                      GetLocation(x, *x_feat),
-                                                      GetLocation(y, *y_feat));
-                if ( diff != 0 ) {
-                    return diff < 0;
+        {{
+            // compare mix locations
+            const CSeq_loc_mix* x_mix = 0;
+            if ( x_info ) {
+                const CSeq_loc& loc = GetLocation(x, *x_info->GetFeatFast());
+                if ( loc.IsMix() ) {
+                    x_mix = &loc.GetMix();
                 }
             }
-            catch ( exception& /*ignored*/ ) {
-                // do not fail sort when compare function throws an exception
+            const CSeq_loc_mix* y_mix = 0;
+            if ( y_info ) {
+                const CSeq_loc& loc = GetLocation(y, *y_info->GetFeatFast());
+                if ( loc.IsMix() ) {
+                    y_mix = &loc.GetMix();
+                }
+            }
+
+            if ( x_mix ) {
+                if ( y_mix ) {
+                    const CSeq_loc_mix::Tdata& l1 = x_mix->Get();
+                    const CSeq_loc_mix::Tdata& l2 = y_mix->Get();
+                    for ( CSeq_loc_mix::Tdata::const_iterator
+                              it1 = l1.begin(), it2 = l2.begin(); ;
+                          it1++, it2++) {
+                        if ( it1 == l1.end() ) {
+                            if ( it2 == l2.end() ) {
+                                break;
+                            }
+                            else {
+                                // x loc is shorter
+                                return true;
+                            }
+                        }
+                        if ( it2 == l2.end() ) {
+                            // y loc is shorter
+                            return false;
+                        }
+                        int diff = (*it1)->Compare(**it2);
+                        if ( diff != 0 )
+                            return diff < 0;
+                    }
+                }
+                else {
+                    // non-mix y first
+                    return false;
+                }
+            }
+            else {
+                if ( y_mix ) {
+                    // non-mix x first
+                    return true;
+                }
+            }
+        }}
+            
+        // compare subtypes
+        if ( x_feat_subtype != y_feat_subtype ) {
+            return x_feat_subtype < y_feat_subtype;
+        }
+
+        _ASSERT(x_feat_type == y_feat_type);
+        // type dependent comparison
+        if ( x_feat_type == CSeqFeatData::e_Cdregion ) {
+            // compare frames of identical CDS ranges
+            CCdregion::EFrame frame1 =
+                x_info->GetFeatFast()->GetData().GetCdregion().GetFrame();
+            CCdregion::EFrame frame2 = 
+                y_info->GetFeatFast()->GetData().GetCdregion().GetFrame();
+            if ( frame1 != frame2 &&
+                 (frame1 > CCdregion::eFrame_one ||
+                  frame2 > CCdregion::eFrame_one) ) {
+                return frame1 < frame2;
+            }
+        }
+        else if ( x_feat_type == CSeqFeatData::e_Imp ) {
+            static const char* const variation_key = "variation";
+            const char* x_key = !x_info? variation_key
+                : x_info->GetFeatFast()->GetData().GetImp().GetKey().c_str();
+            const char* y_key = !y_info? variation_key
+                : y_info->GetFeatFast()->GetData().GetImp().GetKey().c_str();
+            // compare labels of imp features
+            if ( x_key != y_key ) {
+                int diff = NStr::CompareNocase(x_key, y_key);
+                if ( diff != 0 )
+                    return diff < 0;
             }
         }
     }
