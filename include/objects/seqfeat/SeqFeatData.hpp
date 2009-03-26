@@ -394,7 +394,6 @@ private:
 inline
 CSeqFeatData::CSeqFeatData(void)
 {
-    m_FeatDataInfo.m_Subtype = eSubtype_any;
 }
 
 
