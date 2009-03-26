@@ -320,15 +320,15 @@ SERV_ITER SERV_OpenP(const char*          service,
 static void s_SkipSkip(SERV_ITER iter)
 {
     size_t n;
-    if (!iter->n_skip)
-        return;
     if (iter->time  &&  (iter->ismask  ||  (iter->type & fSERV_Promiscuous)))
         return;
     n = 0;
     while (n < iter->n_skip) {
         SSERV_Info* temp = iter->skip[n];
-        if (temp->time != NCBI_TIME_INFINITE  &&
-            (!iter->time  ||  temp->time < iter->time)) {
+        if (temp->time != NCBI_TIME_INFINITE
+            &&  (!iter->time
+                 ||  ((temp->type != fSERV_Dns  ||  temp->host)
+                      &&  temp->time < iter->time))) {
             if (n < --iter->n_skip) {
                 memmove(iter->skip + n, iter->skip + n + 1,
                         sizeof(*iter->skip)*(iter->n_skip - n));
