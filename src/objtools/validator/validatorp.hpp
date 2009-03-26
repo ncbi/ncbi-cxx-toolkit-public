@@ -487,7 +487,6 @@ private:
     void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq);
     void ValidateMinValues(const CByte_graph& bg);
     void ValidateMaxValues(const CByte_graph& bg);
-    void ValidatemRNABioseqContext(const CBioseq_Handle& seq);
     bool GetLitLength(const CDelta_seq& delta, TSeqPos& len);
     bool IsSuportedGraphType(const CSeq_graph& graph) const;
     SIZE_TYPE GetSeqLen(const CBioseq& seq);
@@ -544,6 +543,7 @@ public:
     virtual ~CValidError_feat(void);
 
     void ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_sep);
+    void ValidateCitations (const CSeq_entry_Handle& seh);
 
     size_t GetNumGenes    (void) const { return m_NumGenes; }
     size_t GetNumGeneXrefs(void) const { return m_NumGeneXrefs; }
@@ -580,10 +580,23 @@ private:
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
     void ValidateMrnaTrans(const CSeq_feat& feat);
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
+    void ValidatemRNAGene (const CSeq_feat &feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
+    void ValidateNonImpFeat (const CSeq_feat& feat, bool is_insd_in_sep);
     void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
+    void ValidateNonImpFeatGbquals(const CSeq_feat& feat, bool is_insd_in_sep);
+
+    // these functions are for validating individual genbank qualifier values
+    void ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat);
+    void ValidateRptUnitSeqVal (const string& val, const string& key, const CSeq_feat& feat);
+    void ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat);
+    void ValidateLabelVal (const string& val, const CSeq_feat& feat);
+    void ValidateCompareVal (const string& val, const CSeq_feat& feat, bool is_insd_in_sep);
+
+
+
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
 
@@ -607,6 +620,7 @@ private:
     bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
     bool IsSameAsCDS(const CSeq_feat& feat);
     bool IsCDDFeat(const CSeq_feat& feat) const;
+
 
     // data
     size_t m_NumGenes;

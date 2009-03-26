@@ -275,6 +275,16 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
 CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set);
 CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle set);
 
+typedef enum {
+  eAccessionFormat_valid = 0,
+  eAccessionFormat_no_start_letters,
+  eAccessionFormat_wrong_number_of_digits,
+  eAccessionFormat_null,
+  eAccessionFormat_too_long,
+  eAccessionFormat_missing_version,
+  eAccessionFormat_bad_version } EAccessionFormatError;
+
+EAccessionFormatError ValidateAccessionString (string accession, bool require_version);
 
 END_SCOPE(validator)
 END_SCOPE(objects)

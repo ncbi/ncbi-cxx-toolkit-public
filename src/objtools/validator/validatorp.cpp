@@ -699,6 +699,8 @@ bool CValidError_imp::Validate
             " gene xrefs and no gene features in this record.", *m_TSE);
     }
 
+    feat_validator.ValidateCitations (seh);
+
     // Descriptors:
 
     if (!ValidateDescriptorInSeqEntry (*(GetTSEH().GetCompleteSeq_entry()))) {
@@ -1883,6 +1885,9 @@ void CValidError_imp::ValidateSeqLoc
     ENa_strand strand_cur = eNa_strand_unknown,
         strand_prv = eNa_strand_unknown;
 
+    unsigned int num_mix = 0;
+    unsigned int zero_gi = 0;
+
     CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
     for (; lit; ++lit) {
         try {
@@ -1954,6 +1959,14 @@ void CValidError_imp::ValidateSeqLoc
                 PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
                     prefix + ": Seq-loc " + lbl + " out of range", obj);
             }
+
+            if (lit->IsMix()) {
+                num_mix ++;
+            }
+
+            if (lit->GetId() != 0 && lit->GetId()->IsGi() && lit->GetId()->GetGi() == 0) {
+                zero_gi ++;
+            }
             
             if (lit->Which() != CSeq_loc::e_Null) {
                 if (strand_prv != eNa_strand_other  &&
@@ -1988,6 +2001,27 @@ void CValidError_imp::ValidateSeqLoc
         }
         
     }
+
+    if (num_mix > 1) {
+        string label;
+        loc.GetLabel(&label);
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_NestedSeqLocMix, 
+                 prefix + "SeqLoc [" + label + "] has nested SEQLOC_MIX elements",
+                 obj);
+    }
+    if (zero_gi > 0) {
+        string label = "?";
+        if (seq && seq.IsSetId()) {
+            label = seq.GetId().front().GetSeqId()->AsFastaString();
+        }
+
+        PostErr (eDiag_Critical, eErr_SEQ_FEAT_FeatureLocationIsGi0,
+                 "Feature has " + NStr::IntToString(zero_gi) 
+                 + " gi|0 location" + (zero_gi > 1 ? "s" : "")
+                 + " on Bioseq " + label,
+                 obj);
+    }
+
 
     // Warn if different parts of a seq-loc refer to the same bioseq using 
     // differnt id types (i.e. gi and accession)
