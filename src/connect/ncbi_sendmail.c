@@ -180,28 +180,28 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf, size_t len)
 
     if (!len)
         len = strlen(buf);
-    if (SOCK_Write(sock, buf, len, &n, eIO_WritePersist) == eIO_Success  &&
-        n == len) {
+    if (SOCK_Write(sock, buf, len, &n, eIO_WritePersist) == eIO_Success) {
+        assert(n == len);
         return 1/*success*/;
     }
     return 0/*failure*/;
 }
 
 
-static void s_MakeFrom(char* buf, size_t buf_size)
+static void s_MakeFrom(char* buf, size_t size)
 {
-    size_t buf_len, hostname_len;
+    size_t len;
 
-    if (!CORE_GetUsername(buf, buf_size)  ||  !*buf)
-        strncpy0(buf, "anonymous", buf_size - 1);
-    buf_len = strlen(buf);
-    hostname_len = buf_size - buf_len;
-    if (hostname_len-- > 1) {
-        buf[buf_len++] = '@';
-        if ((!SOCK_gethostbyaddr(0, &buf[buf_len], hostname_len)  ||
-             !strchr(&buf[buf_len], '.'))
-            &&  SOCK_gethostname(&buf[buf_len], hostname_len) != 0) {
-            buf[--buf_len] = '\0';
+    if (!CORE_GetUsername(buf, size)  ||  !*buf)
+        strncpy0(buf, "anonymous", size - 1);
+    len = strlen(buf);
+    size -= len;
+    if (size-- > 1) {
+        buf += len;
+        *buf++ = '@';
+        if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
+            &&  SOCK_gethostname(buf, size) != 0) {
+            *--buf = '\0';
         }
     }
 }
@@ -298,13 +298,13 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
         buf[k] = '\0'/*just in case*/;
         if (quote) {
             CORE_LOGF_X(1, eLOG_Warning,
-                        ("[SendMail]  Unbalanced delimiters in "
-                         "recipient %s for %s: \"%c\" expected",
+                        ("[SendMail]  Unbalanced delimiters in"
+                         " recipient %s for %s: \"%c\" expected",
                          buf, what, quote));
         }
-        if (!s_SockWrite(sock, "RCPT TO: <", 0)  ||
-            !s_SockWrite(sock, buf, k)           ||
-            !s_SockWrite(sock, ">" MX_CRLF, 1 + 2)) {
+        if (!s_SockWrite(sock, "RCPT TO: <", 10)  ||
+            !s_SockWrite(sock, buf, k)            ||
+            !s_SockWrite(sock, ">" MX_CRLF, sizeof(MX_CRLF))) {
             SENDMAIL_RETURN(4, write_error);
         }
         if (!s_SockReadResponse(sock, 250, 251, buf, buf_size))
@@ -324,7 +324,7 @@ static size_t s_FromSize(const SSendMailInfo* info)
     if (!*info->from  ||  !(info->mx_options & fSendMail_StripNonFQDNHost))
         return len;
     if (!(at = (const char*) memchr(info->from, '@', len))
-        || at == info->from + len - 1) {
+        ||  at == info->from + len - 1) {
         return len - 1;
     }
     if (!(dot = (const char*) memchr(at + 1, '.',
@@ -382,68 +382,68 @@ const char* CORE_SendMailEx(const char*          to,
         SOCK_gethostname(buffer, sizeof(buffer)) != 0) {
         SENDMAIL_RETURN(10, "Unable to get local host name");
     }
-    if (!s_SockWrite(sock, "HELO ", 0)  ||
+    if (!s_SockWrite(sock, "HELO ", 5)  ||
         !s_SockWrite(sock, buffer, 0)   ||
-        !s_SockWrite(sock, MX_CRLF, 2)) {
+        !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1)) {
         SENDMAIL_RETURN(11, "Write error in HELO command");
     }
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2(12, "Protocol error in HELO command", buffer);
 
-    if (!s_SockWrite(sock, "MAIL FROM: <", 0)             ||
+    if (!s_SockWrite(sock, "MAIL FROM: <", 12)            ||
         !s_SockWrite(sock, info->from, s_FromSize(info))  ||
-        !s_SockWrite(sock, ">" MX_CRLF, 1 + 2)) {
+        !s_SockWrite(sock, ">" MX_CRLF, sizeof(MX_CRLF))) {
         SENDMAIL_RETURN(13, "Write error in MAIL command");
     }
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2(14, "Protocol error in MAIL command", buffer);
 
-    if (to && *to) {
+    if (to  &&  *to) {
         const char* error = SENDMAIL_SENDRCPT("To", to, buffer);
         if (error)
             return error;
     }
 
-    if (info->cc && *info->cc) {
+    if (info->cc  &&  *info->cc) {
         const char* error = SENDMAIL_SENDRCPT("Cc", info->cc, buffer);
         if (error)
             return error;
     }
 
-    if (info->bcc && *info->bcc) {
+    if (info->bcc  &&  *info->bcc) {
         const char* error = SENDMAIL_SENDRCPT("Bcc", info->bcc, buffer);
         if (error)
             return error;
     }
 
-    if (!s_SockWrite(sock, "DATA" MX_CRLF, 0))
+    if (!s_SockWrite(sock, "DATA" MX_CRLF, 4 + sizeof(MX_CRLF)-1))
         SENDMAIL_RETURN(15, "Write error in DATA command");
     if (!SENDMAIL_READ_RESPONSE(354, 0, buffer))
         SENDMAIL_RETURN2(16, "Protocol error in DATA command", buffer);
 
     if (!(info->mx_options & fSendMail_NoMxHeader)) {
-        /* Follow RFC822 to compose message headers. Note that
-         * 'Date:'and 'From:' are both added by sendmail automagically.
+        /* Follow RFC822 to compose message headers.
+         * NB: Both 'Date:'and 'From:' get added by sendmail automagically.
          */ 
-        if (!s_SockWrite(sock, "Subject: ", 0)             ||
+        if (!s_SockWrite(sock, "Subject: ", 9)             ||
             (subject  &&  !s_SockWrite(sock, subject, 0))  ||
-            !s_SockWrite(sock, MX_CRLF, 2))
+            !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
             SENDMAIL_RETURN(17, "Write error in sending subject");
 
         if (to  &&  *to) {
-            if (!s_SockWrite(sock, "To: ", 0)              ||
+            if (!s_SockWrite(sock, "To: ", 4)              ||
                 !s_SockWrite(sock, to, 0)                  ||
-                !s_SockWrite(sock, MX_CRLF, 2))
+                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
                 SENDMAIL_RETURN(18, "Write error in sending To");
         }
 
         if (info->cc  &&  *info->cc) {
-            if (!s_SockWrite(sock, "Cc: ", 0)              ||
+            if (!s_SockWrite(sock, "Cc: ", 4)              ||
                 !s_SockWrite(sock, info->cc, 0)            ||
-                !s_SockWrite(sock, MX_CRLF, 2))
+                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
                 SENDMAIL_RETURN(19, "Write error in sending Cc");
         }
-    } else if (subject && *subject)
+    } else if (subject  &&  *subject)
         CORE_LOG_X(2, eLOG_Warning,
                    "[SendMail]  Subject ignored in as-is messages");
 
@@ -452,9 +452,9 @@ const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN(20, "Write error in sending mailer information");
     }
 
-    assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
+    assert(sizeof(buffer) > sizeof(MX_CRLF)  &&  sizeof(MX_CRLF) >= 3);
 
-    if (info->header && *info->header) {
+    if (info->header  &&  *info->header) {
         size_t n = 0, m = strlen(info->header);
         int/*bool*/ newline = 0/*false*/;
         while (n < m) {
@@ -463,8 +463,8 @@ const char* CORE_SendMailEx(const char*          to,
                 break;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (info->header[n] == '\n') {
-                    memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
-                    k += sizeof(MX_CRLF) - 1;
+                    memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF)-1);
+                    k += sizeof(MX_CRLF)-1;
                     newline = 1/*true*/;
                 } else {
                     if (info->header[n] != '\r'  ||  info->header[n+1] != '\n')
@@ -480,7 +480,7 @@ const char* CORE_SendMailEx(const char*          to,
         }
         if (n < m)
             SENDMAIL_RETURN(22, "Header write error");
-        if (!newline && !s_SockWrite(sock, MX_CRLF, 2))
+        if (!newline  &&  !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
             SENDMAIL_RETURN(23, "Write error while finalizing custom header");
     }
 
@@ -488,7 +488,7 @@ const char* CORE_SendMailEx(const char*          to,
         size_t n = 0, m = info->body_size ? info->body_size : strlen(body);
         int/*bool*/ newline = 0/*false*/;
         if (!(info->mx_options & fSendMail_NoMxHeader)  &&  m) {
-            if (!s_SockWrite(sock, MX_CRLF, 2))
+            if (!s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
                 SENDMAIL_RETURN(24, "Write error in message body delimiter");
         }
         while (n < m) {
@@ -497,8 +497,8 @@ const char* CORE_SendMailEx(const char*          to,
                 break;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
-                    memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF) - 1);
-                    k += sizeof(MX_CRLF) - 1;
+                    memcpy(&buffer[k], MX_CRLF, sizeof(MX_CRLF)-1);
+                    k += sizeof(MX_CRLF)-1;
                     newline = 1/*true*/;
                 } else {
                     if (body[n] != '\r'  ||  (n+1 < m  &&  body[n+1] != '\n')){
@@ -519,17 +519,17 @@ const char* CORE_SendMailEx(const char*          to,
         }
         if (n < m)
             SENDMAIL_RETURN(26, "Body write error");
-        if ((!newline  &&  m  &&  !s_SockWrite(sock, MX_CRLF, 2))
-            ||  !s_SockWrite(sock, "." MX_CRLF, 1 + 2)) {
+        if ((!newline  &&  m  &&  !s_SockWrite(sock,MX_CRLF,sizeof(MX_CRLF)-1))
+            ||  !s_SockWrite(sock, "." MX_CRLF, sizeof(MX_CRLF))) {
             SENDMAIL_RETURN(27, "Write error while finalizing message body");
         }
-    } else if (!s_SockWrite(sock, "." MX_CRLF, 1 + 2))
+    } else if (!s_SockWrite(sock, "." MX_CRLF, sizeof(MX_CRLF)))
         SENDMAIL_RETURN(28, "Write error while finalizing message");
 
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2(29, "Protocol error in sending message", buffer);
 
-    if (!s_SockWrite(sock, "QUIT" MX_CRLF, 0))
+    if (!s_SockWrite(sock, "QUIT" MX_CRLF, 4 + sizeof(MX_CRLF)-1))
         SENDMAIL_RETURN(30, "Write error in QUIT command");
     if (!SENDMAIL_READ_RESPONSE(221, 0, buffer))
         SENDMAIL_RETURN2(31, "Protocol error in QUIT command", buffer);
