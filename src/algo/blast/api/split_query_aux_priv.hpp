@@ -57,6 +57,7 @@ BEGIN_SCOPE(blast)
 /// @param chunk_size size of each of the query chunks [in]
 /// @param concatenated_query_length length of the concatenated query [in]
 /// @param num_queries number of queries to split [in]
+NCBI_XBLAST_EXPORT
 bool
 SplitQuery_ShouldSplit(EBlastProgramType program,
                        size_t chunk_size,
@@ -65,11 +66,13 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
 
 /// Size of the region that overlaps in between each query chunk
 /// @param program BLAST program type [in]
+NCBI_XBLAST_EXPORT
 size_t 
 SplitQuery_GetOverlapChunkSize(EBlastProgramType program);
 
 /// Returns the optimal chunk size for a given task
 /// @param program BLAST task [in]
+NCBI_XBLAST_EXPORT
 size_t
 SplitQuery_GetChunkSize(EProgram program);
 
@@ -78,6 +81,7 @@ SplitQuery_GetChunkSize(EProgram program);
 /// @param chunk_size size of each of the query chunks, may be adjusted [in|out]
 /// @param concatenated_query_length length of the concatenated query [in]
 /// @param num_queries number of queries to split [in]
+NCBI_XBLAST_EXPORT
 Uint4 
 SplitQuery_CalculateNumChunks(EBlastProgramType program,
                               size_t *chunk_size, 
@@ -85,6 +89,7 @@ SplitQuery_CalculateNumChunks(EBlastProgramType program,
                               size_t num_queries);
 
 /// Function used by search class to retrieve a query factory for a given chunk
+NCBI_XBLAST_EXPORT
 CRef<SInternalData>
 SplitQuery_CreateChunkData(CRef<IQueryFactory> qf,
                            CRef<CBlastOptions> options,
@@ -103,6 +108,7 @@ SplitQuery_SetEffectiveSearchSpace(CRef<CBlastOptions> options,
  * conversions between contexts local to query split chunks and the absolute
  * (full, unsplit) query
  */
+NCBI_XBLAST_EXPORT
 class CContextTranslator {
 public:
     /// Constructor
@@ -170,6 +176,7 @@ private:
 
 /// Auxiliary class to determine information about the query that was split
 /// into chunks.
+NCBI_XBLAST_EXPORT
 class CQueryDataPerChunk {
 public:
     /** 

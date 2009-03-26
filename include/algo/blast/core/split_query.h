@@ -225,8 +225,10 @@ SplitQueryBlk_GetChunkOverlapSize(const SSplitQueryBlk* squery_blk);
 /* Return values */
 
 /** Invalid parameter used in a function call */
+NCBI_XBLAST_EXPORT
 extern const Int2 kBadParameter;
 /** Failure due to out-of-memory condition */
+NCBI_XBLAST_EXPORT
 extern const Int2 kOutOfMemory;
 
 #ifdef __cplusplus

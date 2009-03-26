@@ -276,23 +276,28 @@ typedef struct Blast_GiList {
 } Blast_GiList;
 
 /** Allocate a gi list with default size */
+NCBI_XBLAST_EXPORT
 Blast_GiList* Blast_GiListNew(void);
 
 /** Allocate a gi list with the requested size 
  * @param list_size initial list size [in]
  */
+NCBI_XBLAST_EXPORT
 Blast_GiList* Blast_GiListNewEx(size_t list_size);
 
 /** Deallocate memory associated with the gi list
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 Blast_GiList* Blast_GiListFree(Blast_GiList* gilist);
 
 /* Return values */
 
 /** Invalid parameter used in a function call */
+NCBI_XBLAST_EXPORT
 extern const Int2 kBadParameter;
 /** Failure due to out-of-memory condition */
+NCBI_XBLAST_EXPORT
 extern const Int2 kOutOfMemory;
 
 /** Appends to an existing gi list, allocating memory if necessary

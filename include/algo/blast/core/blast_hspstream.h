@@ -53,6 +53,7 @@ typedef struct BlastHSPStreamResultBatch {
  * @param num_hsplists Maximum number of results to hold
  * @return Pointer to newly allocated structure
  */
+NCBI_XBLAST_EXPORT
 BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchInit(
                                             Int4 num_hsplists);
 
@@ -61,12 +62,14 @@ BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchInit(
  * @param batch Structure to free
  * @return Always NULL
  */
+NCBI_XBLAST_EXPORT
 BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchFree(
                                   BlastHSPStreamResultBatch *batch);
 
 /** free the list of HSPLists within a batch
  * @param batch Structure to reset
  */
+NCBI_XBLAST_EXPORT
 void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch);
 
 /** The BlastHSPStream ADT is an opaque data type that defines a thread-safe

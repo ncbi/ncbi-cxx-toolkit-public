@@ -88,6 +88,7 @@ typedef struct BlastHSPListCollectorData {
  * @param lock        Pointer to locking structure for writing by multiple
  *                    threads. Locking will not be performed if NULL. [in]
  */
+NCBI_XBLAST_EXPORT
 BlastHSPStream* 
 Blast_HSPListCollectorInitMT(EBlastProgramType program, 
                              SBlastHitsParameters* blasthit_params, 
@@ -105,6 +106,7 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program,
  * applicable if composition-based statistics is on [in]
  * @param num_queries Number of query sequences in this BLAST search [in]
  */
+NCBI_XBLAST_EXPORT
 BlastHSPStream* 
 Blast_HSPListCollectorInit(EBlastProgramType program, 
                            SBlastHitsParameters* blasthit_params, 

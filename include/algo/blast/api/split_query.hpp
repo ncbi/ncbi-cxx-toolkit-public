@@ -58,6 +58,7 @@ class CBlastQueryVector;
 
 /// Class responsible for splitting query sequences and providing data to the
 /// BLAST search class to search a split query chunk
+NCBI_XBLAST_EXPORT
 class CQuerySplitter : public CObject
 {
 public:

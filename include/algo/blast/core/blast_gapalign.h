@@ -95,6 +95,7 @@ typedef struct BlastGapAlignStruct {
  * @param sbp The scoring information block [in]
  * @param gap_align_ptr The BlastGapAlignStruct structure [out]
 */
+NCBI_XBLAST_EXPORT
 Int2
 BLAST_GapAlignStructNew(const BlastScoringParameters* score_params, 
    const BlastExtensionParameters* ext_params, 
@@ -127,6 +128,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
  * @param gapped_stats Return statistics (not filled if NULL) [out]
  * @param fence_hit True is returned here if overrun is detected. [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_GetGappedScore (EBlastProgramType program_number, 
             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
               BLAST_SequenceBlk* subject,
@@ -150,6 +152,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
  * @param subject_length Maximal allowed extension in subject [in]
  * @param fence_hit True is returned here if overrun is detected. [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, 
         const Uint1* query, const Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
@@ -174,6 +177,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
  * @param do_traceback Should traceback be saved? [in]
  * @param fence_hit True is returned here if overrun is detected. [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 
 BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
@@ -192,6 +196,7 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
  * @param hit_options Hit saving options [in]
  * @param hsp_list_ptr HSPs in the final form [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist, 
         BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
         const BlastHitSavingOptions* hit_options, 
@@ -207,6 +212,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
  * @param start_shift The offset by which the output range is shifted with
  *                    respect to the full subject sequence [out]
  */
+NCBI_XBLAST_EXPORT
 void 
 AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 
                    Int4 query_offset, Int4 query_length, Int4* start_shift);
@@ -223,6 +229,7 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
  * @param s_length Length of HSP in subject [in]
  * @return The offset at which alignment should be started [out]
 */
+NCBI_XBLAST_EXPORT
 Int4 
 BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 

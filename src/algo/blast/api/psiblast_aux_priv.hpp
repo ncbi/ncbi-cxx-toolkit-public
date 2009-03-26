@@ -76,6 +76,7 @@ class TSearchMessages;
  * @param messages Error/warning messages [in|out]
  * @param options PSI-BLAST options [in|out]
  */
+NCBI_XBLAST_EXPORT
 void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                              CConstRef<objects::CPssmWithParameters> pssm,
                              TSearchMessages& messages,
@@ -86,6 +87,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
  * @param pssm object containing the PSSM's frequency ratios [in|out]
  * @param opts PSSM engine options [in]
  */
+NCBI_XBLAST_EXPORT
 void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts);
 
@@ -93,6 +95,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
 /// @param scores list of scores [in]
 /// @param bit_score If not NULL, returns the bit score corresponding to the
 /// lowest evalue found [in|out]
+NCBI_XBLAST_EXPORT
 double GetLowestEvalue(const objects::CDense_seg::TScores& scores,
                        double* bit_score = NULL);
 
@@ -153,6 +156,7 @@ public:
  * @param gap_extend Gap extension cost associated with the matrix used to 
  * build the PSSM [in]
  */
+NCBI_XBLAST_EXPORT
 void
 PsiBlastAddAncillaryPssmData(objects::CPssmWithParameters& pssm, 
                              const objects::CBioseq& query, 

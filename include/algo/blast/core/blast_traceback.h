@@ -95,6 +95,7 @@ EBlastEncoding Blast_TracebackGetEncoding(EBlastProgramType program_number);
  * @param gap_align Structure containing gapped alignment information [in]
  * @param hsp Original HSP from the preliminary stage [in] [out]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp);
 
