@@ -242,8 +242,9 @@ CNcbiResourceInfoFile::AddResourceInfo(const string& plain_text)
     info.SetValue(res_value);
     if ( it != split.end() ) {
         info.GetExtraValues_NC().Parse(*it);
+        it++;
     }
-    it++;
+
     if (it != split.end()) {
         // Too many fields
         NCBI_THROW(CNcbiResourceInfoException, eParser,
@@ -350,8 +351,9 @@ namespace { // Hide the implementation
 const Uint4 kBlockTEA_Delta = 0x9e3779b9;
 // Use 128-bit key
 const int kBlockTEA_KeySize = 4;
-// Block size is a multiple of key size
-const int kBlockTEA_BlockSize = kBlockTEA_KeySize*sizeof(Int4);
+// Block size is a multiple of key size. The longer the better (hides
+// the source length).
+const int kBlockTEA_BlockSize = kBlockTEA_KeySize*sizeof(Int4)*4;
 
 typedef Int4 TBlockTEA_Key[kBlockTEA_KeySize];
 
@@ -390,7 +392,6 @@ void BlockTEA_Decode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
     Uint4 e;
     Int4 p;
     Int4 q = 6 + 52/n;
-    q = 6 + 52/n;
     sum = q*kBlockTEA_Delta;
     while (sum != 0) {
         e = (sum >> 2) & 3;
