@@ -69,8 +69,10 @@ if not exist "%PTB_EXE%" (
   echo ******************************************************************************
   echo Building project tree builder locally, please wait
   echo ******************************************************************************
-  @echo msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
-  msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
+  rem --- @echo msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
+  rem --- msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
+  @echo %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
+  %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
 ) else (
   echo ******************************************************************************
   echo Using PREBUILT project tree builder at %PTB_EXE%

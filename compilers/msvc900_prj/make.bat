@@ -102,7 +102,7 @@ GOTO ABORT
 :CONTCFG
 TIME /T
 ECHO INFO: Configure "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-CONFIGURE-" /UseEnv
+%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
 IF NOT _%CMD% == _make GOTO COMPLETE
 
@@ -122,7 +122,7 @@ GOTO ABORT
 :CONTBLD
 TIME /T
 ECHO INFO: Building "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-BUILD-ALL-" /UseEnv
+%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 SHIFT
 IF _%5% == _ GOTO COMPLETE
