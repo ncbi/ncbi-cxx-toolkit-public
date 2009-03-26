@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <algo/blast/core/blast_export.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -102,6 +103,7 @@ double GetLowestEvalue(const objects::CDense_seg::TScores& scores,
 /** Auxiliary class to retrieve sequence identifiers its position in the
  * alignment which are below the inclusion evalue threshold.
  */
+NCBI_XBLAST_EXPORT
 class CPsiBlastAlignmentProcessor {
 public:
     /// Container of Seq-ids for the subject sequences (hits) aligned with the
@@ -123,6 +125,7 @@ public:
 
 /// Auxialiry class containing static methods to validate PSI-BLAST search
 /// components
+NCBI_XBLAST_EXPORT
 class CPsiBlastValidate {
 public:
 
