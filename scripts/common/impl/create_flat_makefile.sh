@@ -18,7 +18,7 @@ defptbpath="$NCBI/c++.metastable/Release/bin/"
 relptbpath="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
 
 # required version of PTB
-ptbreqver="1.7.4"
+ptbreqver="1.7.5"
 
 # dependencies
 ptbdep="corelib util util/regexp util/xregexp build-system/project_tree_builder"

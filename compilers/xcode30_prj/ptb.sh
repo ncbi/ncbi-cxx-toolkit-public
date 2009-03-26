@@ -12,7 +12,7 @@
 
 #-----------------------------------------------------------------------------
 # required version of PTB
-#DEFPTB_VERSION="1.7.3"
+#DEFPTB_VERSION="1.7.5"
 DEFPTB_VERSION="notimplemented"
 DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
 ptbname="project_tree_builder"
