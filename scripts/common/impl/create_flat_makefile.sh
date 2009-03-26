@@ -40,10 +40,11 @@ USAGE: $script_name BuildDir [-s SrcDir] [-p ProjectList] [-b]
 SYNOPSIS:
  Create flat makefile for a given build tree.
 ARGUMENTS:
-  BuildDir  -- mandatory. Root dir of the build tree (eg ~/c++/GCC340-Debug)
-  -s        -- optional.  Root dir of the source tree (eg ~/c++)
-  -p        -- optional.  List of projects: subtree of the source tree, or LST file
-  -b        -- optional.  Build project_tree_builder locally
+  BuildDir   -- mandatory. Root dir of the build tree (eg ~/c++/GCC340-Debug)
+  -s         -- optional.  Root dir of the source tree (eg ~/c++)
+  -p         -- optional.  List of projects: subtree of the source tree, or LST file
+  -b         -- optional.  Build project_tree_builder locally
+  -remoteptb -- optional.  Use prebuilt project_tree_builder only; do not attempt to build it locally
 EOF
     test -z "$1"  ||  echo ERROR: $1 1>&2
     exit 1
@@ -117,6 +118,7 @@ builddir="$a1/build"
 srcdir="$a1/.."
 projectlist="src"
 buildptb="no"
+remoteptbonly="no"
 shift
 
 dest=""
@@ -130,6 +132,7 @@ for cmd_arg in "$@"; do
     -s )  dest="src" ;;
     -p )  dest="prj" ;;
     -b )  dest="";    buildptb="yes" ;;
+    -remoteptb )  dest="";    remoteptbonly="yes" ;;
     *  )  Usage "Invalid command line argument:  $cmd_arg"
   esac
 done
@@ -157,6 +160,10 @@ if test $buildptb = "no"; then
     if test -x "$ptb"; then
       echo "Using $ptbname at $ptb"
     else
+      if test $remoteptbonly = "yes"; then
+        echo "Prebuilt $ptbname not found"
+	exit 0
+      fi
       echo "$ptbname is not found at $ptb"
       echo "Will build $ptbname locally"
       buildptb="yes"
