@@ -30,12 +30,23 @@
  *
  */
 
+// This file contains both ordinary comments and Doxygen-style comments.
+// Ordinary comments, such as this one, are not used by doxygen because they
+// don't have a special comment block such as the triple-slash '///'.
+// See the Doxygen manual at http://www.stack.nl/~dimitri/doxygen/manual.html
+// for complete information on Doxygen-style comments and commands.
+
+
+// A Doxygen-style file comment is mandatory if you want to add Doxygen
+// comments for global objects (functions, typedefs, enums, macros, etc):
+
 /// @file header_template.hpp
-/// Brief statement about file ending in a period.
+/// Brief description of file: this should be a single sentence ending
+/// in a period.
 ///
-/// One or more detailed statements about file follow here. If you want, you
-/// can leave a blank comment line after the brief statement that ends in a
-/// period. Another detailed statement, etc.
+/// Detailed file description: zero or more sentences about file follow
+/// here. If you want, you can leave a blank comment line after the brief
+/// description. Another detailed statement, etc.
 /// Please note that you must replace header_template.hpp with the 
 /// actual name of your header file. 
 
@@ -44,6 +55,9 @@
 #include <dir/dir/dir/some_other_header.hpp>
 
 
+// Change 'Miscellaneous' to be the module name that your header file belongs to
+// on the main Doxygen Modules page. See the list of available groups in
+// include/common/metamodules_doxygen.h
 /** @addtogroup Miscellaneous
  *
  * @{
@@ -53,9 +67,8 @@
 BEGIN_NCBI_SCOPE
 
 
-// Ordinary comment not used by doxygen, because it does not have a special
-// comment block such as the ///
-
+// Note that global objects like the following macro will not be documented
+// by doxygen unless the file itself is documented with the @file command.
 
 /// Optional brief description of macro.
 #define NCBI_MACRO 1
@@ -67,6 +80,10 @@ BEGIN_NCBI_SCOPE
 #define NCBI_MACRO_ANOTHER 2
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMyClass
+///
 /// A brief description of the class (or class template, struct, union) --
 /// it must be ended with an empty new line.
 ///
@@ -77,15 +94,52 @@ BEGIN_NCBI_SCOPE
 class CMyClass
 {
 public:
-    /// A brief description of the constructor.
-    ///
-    /// A detailed description of the constructor.
-    CMyClass();
+    // Public types
 
-    /// A brief description of the destructor.
+    /// A brief description of an enumerator.
     ///
-    /// A detailed description of the destructor.
-    ~CMyClass();
+    /// A more detailed enum description here. Note that you can comment
+    /// as shown over here before the class/function/member description or
+    /// alternatively follow a member definition with a single line comment
+    /// preceded by ///<. Use the style that makes the most sense for the
+    /// code.
+    enum EMyEnum {
+        eVal1,  ///< EMyEnum value eVal1 description. Note the use of ///<
+        eVal2,  ///< EMyEnum value eVal2 description.
+        eVal3   ///< EMyEnum value eVal3 description.
+    };
+
+    /// An enumerator used as a bitmask.
+    enum EMyBitEnum {
+        eValName1 = (1 << 0),  ///< description for value 0x01.
+        eValName2 = (1 << 1),  ///< description for value 0x02.
+        eValName3 = (1 << 2)   ///< description for value 0x04.
+    };
+    typedef unsigned int TMyBitMask;  ///< bit-wise OR of "EMyBitEnum"
+
+    /// Brief description of a function pointer type.
+    ///
+    /// Detailed description of the function pointer type.
+    typedef char* (*FHandler)
+        (int start,  ///< argument description 1 -- what the start means
+         int stop    ///< argument description 2 -- what the stop  means
+         );
+
+    CMyClass(); // trivial constructors typically don't need doxygen comments
+
+    /// A brief description of a non-trivial constructor.
+    ///
+    /// A detailed description of the constructor. More details.
+    /// @param param1
+    ///   First parameter description.
+    /// @param param2
+    ///   Second parameter description.
+    CMyClass(int param1, int param2);
+
+    /// A brief description of another constructor.
+    CMyClass(TMyBitMask init_mask); ///< parameter description
+
+    ~CMyClass(); // destructors typically don't need doxygen comments
 
     /// A brief description of TestMe.
     ///
@@ -107,42 +161,52 @@ public:
     /// are going to be on one line each:
     /// @sa TestMe()
     virtual void TestMeToo
-    (char         par1,  ///< short description for par1
-     unsigned int par2   ///< short description for par2
+    (char          par1,  ///< short description for par1
+     const string& par2   ///< short description for par2
      ) = 0;
 
-    /// Brief description of a function pointer type.
-    ///
-    /// Detailed description of the function pointer type.
-    typedef char* (*FHandler)
-        (int start,  ///< argument description 1 -- what the start means
-         int stop    ///< argument description 2 -- what the stop  means
-         );
+    // (NOTE:  The use of public data members is
+    //         strictly discouraged!
+    //         If used they should be well documented!)
+    ///  Describe public member here, explain why it's public.
+    int    m_PublicData;
 
-private:
+protected:
     /// Brief description of a data member -- notice no details are here
     /// since brief description is adequate.
     double m_FooBar;
 
-    /// A brief description of an enumerator.
-    ///
-    /// A more detailed enum description over here. Note that you can comment
-    /// as shown over here before the class/function/member description or
-    /// alternatively follow a member definition with a single line comment
-    /// preceded by ///<. Use the style which makes the best sense for the
-    /// code.
-    enum EMyEnum {
-        eVal1,  ///< EMyEnum value eVal1 description. Note the use of ///<
-        eVal2,  ///< EMyEnum value eVal2 description.
-        eVal3   ///< EMyEnum value eVal3 description.
-    };
+    /// Brief function description here.
+    /// Detailed description here. More description.
+    /// @return Return value description here.
+    static int ProtectedFunc(char ch); ///< parameter description
 
-    /// A pointer to EMyEnum -- brief description.
-    ///
-    /// Detailed description of m_Foo.
-    EMyEnum* m_Foo;
+private:
+    /// Brief member description here.
+    int    m_PrivateData;
 
-    EMyEnum  m_Bar;  ///< m_Bar brief description - follows definition.
+    /// Brief static member description here.
+    static int    sm_PrivateStaticData;
+
+    /// Brief function description here.
+    /// Detailed description here. More description.
+    /// @return Return value description here.
+    double x_PrivateFunc(int some_int = 1); ///< describe parameter here
+
+    // Friends - Doxygen comments for friends should be in their header files.
+    friend bool  SomeFriendFunc(void);
+    friend class CSomeFriendClass;
+
+    // Prohibit default initialization and assignment
+    // -- e.g. when the member-by-member copying is dangerous.
+
+    /// This method is declared as private but is not
+    /// implemented to prevent member-wise copying.
+    CFooClass(const CFooClass&);
+
+    /// This method is declared as private but is not
+    /// implemented to prevent member-wise copying.
+    CFooClass& operator= (const CFooClass&);
 };
 
 
