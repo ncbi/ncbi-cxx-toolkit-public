@@ -130,7 +130,7 @@ static const SImportEntry kImportTable[] = {
     { "virion",              CSeqFeatData::eSubtype_virion }
 };
 
-static const SImportEntry* kImportTableEnd
+static const SImportEntry* const kImportTableEnd
     = kImportTable + sizeof(kImportTable)/sizeof(SImportEntry);
 
 // Feat info table
@@ -294,7 +294,8 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
         const SImportEntry* result = lower_bound(kImportTable,
                                                  kImportTableEnd,
                                                  key2);
-        if (strcmp(key2.m_Name, result->m_Name)) {
+        if ( result == kImportTableEnd ||
+             strcmp(key2.m_Name, result->m_Name) ) {
             m_FeatDataInfo.m_Subtype = eSubtype_imp;
         } else {
             m_FeatDataInfo.m_Subtype = result->m_Subtype;
