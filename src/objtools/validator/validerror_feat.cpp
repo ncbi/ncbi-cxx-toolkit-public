@@ -1872,32 +1872,47 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, 
     }
     
     // Make sure a feature has its mandatory qualifiers
-    bool found = false;
-    switch (subtype) {
-    case CSeqFeatData::eSubtype_conflict:
-    case CSeqFeatData::eSubtype_old_sequence:
-        if (!feat.IsSetCit()  &&  NStr::IsBlank(feat.GetNamedQual("compare"))) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
-                "Feature " + key + " requires either /compare or /citation (or both)",
-                feat);
+    ITERATE (CFeatQualAssoc::TGBQualTypeVec, required, CFeatQualAssoc::GetMandatoryGbquals(subtype)) {
+        bool found = false;
+        FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
+            if (CGbqualType::GetType(**qual) == *required) {
+                found = true;
+                break;
+            }
         }
-        break;
-    default:
-        ITERATE (CFeatQualAssoc::TGBQualTypeVec, required, CFeatQualAssoc::GetMandatoryGbquals(subtype)) {
-            found = false;
-            FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
-                if (CGbqualType::GetType(**qual) == *required) {
-                    found = true;
-                    break;
+        if (!found && *required == CGbqualType::e_Citation) {
+            if (feat.IsSetCit()) {
+                found = true;
+            } else if (feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
+                // RefSeq allows conflict with accession in comment instead of sfp->cit
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());
+                if (bsh) {
+                    FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
+                        if ((*it)->IsOther()) {
+                            found = true;
+                            break;
+                        }
+                    }
                 }
             }
-            if (!found) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
-                    "Missing qualifier " + CGbqualType::GetString(*required) +
-                    " for feature " + key, feat);
+            if (!found 
+                && (NStr::EqualNocase (key, "conflict") 
+                    || NStr::EqualNocase (key, "old_sequence"))) {
+                // compare qualifier can now substitute for citation qualifier for conflict and old_sequence
+                FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
+                    if (CGbqualType::GetType(**qual) == CGbqualType::e_Compare) {
+                        found = true;
+                        break;
+                    }
+                }
             }
         }
-        break;
+
+        if (!found) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
+                "Missing qualifier " + CGbqualType::GetString(*required) +
+                " for feature " + key, feat);
+        }
     }
 }
 

@@ -1742,6 +1742,12 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
 
 void CFeatQualAssoc::PopulateMandatoryGbquals(void)
 {
+    // conflict requires citation
+    m_MandatoryGbquals[CSeqFeatData::eSubtype_conflict].push_back(CGbqualType::e_Citation);
+
+    // old_sequence requires citation
+    m_MandatoryGbquals[CSeqFeatData::eSubtype_old_sequence].push_back(CGbqualType::e_Citation);
+
     // gene feature requires gene gbqual
     m_MandatoryGbquals[CSeqFeatData::eSubtype_gene].push_back(CGbqualType::e_Gene);
     // ncRNA requires ncRNA_class
@@ -1760,6 +1766,8 @@ void CFeatQualAssoc::PopulateMandatoryGbquals(void)
     // operon requires operon
     m_MandatoryGbquals[CSeqFeatData::eSubtype_operon].push_back(CGbqualType::e_Operon);
 
+    // source requires organism
+    m_MandatoryGbquals[CSeqFeatData::eSubtype_source].push_back(CGbqualType::e_Organism);
 
 }
 
