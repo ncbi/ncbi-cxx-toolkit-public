@@ -47,6 +47,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
+#include <misc/xmlwrapp/name_space.hpp>
 
 // hidden stuff
 #include <misc/xmlwrapp/impl/_cbfo.hpp>
@@ -55,6 +56,7 @@
 #include <cstddef>
 #include <iosfwd>
 #include <string>
+#include <vector>
 
 namespace xml {
 
@@ -88,6 +90,8 @@ class node {
 public:
     /// size type
     typedef std::size_t size_type;
+
+    typedef std::vector<xml::name_space>  namespaces_type;  //< type for holding XML namespaces
 
     /// enum for the different types of XML nodes
     enum node_type {
@@ -371,16 +375,32 @@ public:
     const xml::attributes& get_attributes (void) const;
 
     //####################################################################
-    /** 
-     * Get the namespace of this xml::node.
+    /**
+     * Get the namespace of this xml::node. If a node has no namespace
+     * then an object with both empty a prefix and uri is returned (the
+     * is_void() method of the xml::name_space object will return true
+     * in this case)
      *
-     * @return The namespace of this node or NULL if no namespace is
-     *         associated.
-     * @author Vaclav Slavik
-     * @since  0.6.0
+     * @return The namespace of this node. Void namespace object if no
+     *         namespace is associated.
+     * @author Sergey Satskiy
     **/
     //####################################################################
-    const char* get_namespace (void) const;
+    xml::name_space get_namespace (void) const;
+
+    //####################################################################
+    /**
+      * Get the namespaces defined at this xml::node.
+      *
+      * @return The namespace defined at this node.
+      *         If no namespaces are defined then the container is empty
+      *         If a default namespace is defined at the node then
+      *         the first element in the corresponding container item
+      *         is an empty string.
+      * @author Sergey Satskiy
+     **/
+    //####################################################################
+    namespaces_type get_namespace_definitions (void) const;
 
     //####################################################################
     /** 

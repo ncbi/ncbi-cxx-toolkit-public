@@ -289,7 +289,15 @@ const char* xml::attributes::attr::get_value (void) const {
     xmlchar_helper helper(tmpstr);
     value_.assign(helper.get());
     return value_.c_str();
-}   
+}
+//####################################################################
+xml::name_space xml::attributes::attr::get_namespace (void) const {
+    if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
+    xmlNs *     ns(reinterpret_cast<xmlAttrPtr>(prop_)->ns);
+    return ns
+        ? xml::name_space(reinterpret_cast<const char*>(ns->prefix), reinterpret_cast<const char*>(ns->href))
+        : xml::name_space(xml::name_space::type_void);
+}
 //####################################################################
 
 /*
