@@ -68,23 +68,8 @@ struct xml::attributes::pimpl : public pimpl_base<xml::attributes::pimpl> {
     { }
     //####################################################################
     pimpl (const pimpl &other) : owner_(true) {
-	xmlnode_ = xmlNewNode(0, reinterpret_cast<const xmlChar*>("blank"));
-	if (!xmlnode_) throw std::bad_alloc();
-
-	xmlAttrPtr i=other.xmlnode_->properties;
-	xmlAttrPtr copy;
-
-	// work around bug in libxml
-	for (; i!=0; i=i->next) {
-	    if ( (copy = xmlCopyProp(0, i)) == 0) {
-		xmlFreeNode(xmlnode_);
-		throw std::bad_alloc();
-	    }
-
-	    copy->prev = 0;
-	    copy->next = 0;
-	    xmlAddChild(xmlnode_, reinterpret_cast<xmlNodePtr>(copy));
-	}
+    xmlnode_ = xmlCopyNode(other.xmlnode_, 2);
+    if (!xmlnode_) throw std::bad_alloc();
     }
     //####################################################################
     ~pimpl (void)
