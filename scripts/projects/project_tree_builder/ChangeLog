@@ -27,3 +27,8 @@ version 1.7.5
 Produce list of generated and updated files.
 Optimize UNIX flat makefile to avoid attempts to build each project more than once.
 Check and exclude unneeded external projects.
+
+March 27, 2009
+version 1.7.6
+Bug fix: Corrected generation of unique build id in Unix flat makefile.
+
