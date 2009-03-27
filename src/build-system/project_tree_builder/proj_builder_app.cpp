@@ -865,8 +865,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << "# on " << CTime(CTime::eCurrent).AsString() << endl << endl;
 
     ofs << "# This is tricky part; it might work incorrectly on some platforms" << endl;
-    ofs << "MARK=$(shell date +%Y%m%d%k%M%S)" << endl;
-    ofs << "MARK:sh =date +%Y%m%d%k%M%S" << endl;
+    ofs << "MARK=$(shell date +%Y%m%d%H%M%S)" << endl;
+    ofs << "MARK:sh =date +%Y%m%d%H%M%S" << endl;
     ofs << endl;
     ofs << "prefix=.ncbi.signal." << endl;
     ofs << "s=$(prefix)$(MARK)" << endl;
