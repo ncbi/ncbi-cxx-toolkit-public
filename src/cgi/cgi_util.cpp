@@ -65,7 +65,7 @@ void CCgiArgs_Parser::x_SetIndexString(const string& query,
     }
 
     // No '=' and spaces must present in the parsed string
-    _ASSERT(query.find_first_of("=& \t\r\n") == NPOS);
+    _ASSERT(query.find_first_of("= \t\r\n") == NPOS);
 
     // Parse into indexes
     unsigned int position = 1;
@@ -111,8 +111,8 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
     }}
 
     // If no '=' present in the parsed string then try to parse it as ISINDEX
-    if (query.find_first_of("&=") == NPOS  &&
-        query.find_first_of("+")  != NPOS) {
+    // RFC3875
+    if (query.find("=") == NPOS) {
         x_SetIndexString(query, *encoder);
         return;
     }

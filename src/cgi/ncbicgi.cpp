@@ -1346,6 +1346,21 @@ typedef NCBI_PARAM_TYPE(CGI, LOG_LIMIT_ARGS) TCGI_LogLimitArgs;
 
 string CCgiRequest::GetCGIEntriesStr(void) const
 {
+    string args;
+    // If there are any indexes, ignore entries and limits
+    if ( !m_Indexes.empty() ) {
+        ITERATE(TCgiIndexes, idx, m_Indexes) {
+            if ( idx->empty() ) {
+                continue;
+            }
+            if ( !args.empty() ) {
+                args += "+";
+            }
+            args += NStr::URLEncode(*idx, NStr::eUrlEnc_PercentOnly);
+        }
+        return args;
+    }
+
     list<string> excluded, limited;
     // Map argument name to its limit. Limit of -2 indicates excluded
     // arguments, limit = -1 means no limit.
@@ -1389,7 +1404,6 @@ string CCgiRequest::GetCGIEntriesStr(void) const
         arg_limits[*it] = -2;
     }
 
-    string args;
     ITERATE(TCgiEntries, entry, m_Entries) {
         if (entry->first.empty()  &&  entry->second.empty()) {
             continue;
