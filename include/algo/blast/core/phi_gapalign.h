@@ -62,6 +62,7 @@ extern "C" {
  * @param pattern_blk Detailed pattern information. [in]
  * @return Status, 0 on success, -1 on failure.
  */
+NCBI_XBLAST_EXPORT
 Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
@@ -88,6 +89,7 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
  *   overrun was detected. [out]
  * @return Status, 0 on success, -1 on failure.
  */
+NCBI_XBLAST_EXPORT
 Int2 PHIGetGappedScore (EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
