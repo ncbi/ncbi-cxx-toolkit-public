@@ -34,7 +34,7 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
-set DEFPTB_VERSION=1.7.5
+set DEFPTB_VERSION=1.7.6
 set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
