@@ -175,8 +175,9 @@ void CWNJobsWatcher::x_KillNode(CGridWorkerNode& worker)
 //
 auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
-CGridGlobals::CGridGlobals()
-    : m_ReuseJobObject(false),
+CGridGlobals::CGridGlobals() :
+      m_ForceExit(false),
+      m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
       m_StartTime(CTime(CTime::eCurrent)),
       m_Worker(NULL)

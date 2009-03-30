@@ -515,6 +515,8 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->ActivateServerLog(server_log);
     m_WorkerNode->SetCheckStatusPeriod(check_status_period);
 
+    CGridGlobals::GetInstance().SetForceExit(reg.GetBool(kServerSec,
+        "force_exit", false, 0, CNcbiRegistry::eReturn));
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxFailuresAllowed(max_failed_jobs);

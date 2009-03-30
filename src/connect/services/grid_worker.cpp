@@ -460,7 +460,6 @@ void CGridWorkerNode::Run()
     }
 
     CNetScheduleJob job;
-    bool      job_exists = false;
 
     int try_count = 0;
     for (;;) {
@@ -478,9 +477,7 @@ void CGridWorkerNode::Run()
                 }
             }
 
-            job_exists = x_GetNextJob(job);
-
-            if (job_exists) {
+            if (x_GetNextJob(job)) {
                 if (CGridGlobals::GetInstance().
                     GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
                     x_ReturnJob(job.job_id);
@@ -533,6 +530,10 @@ void CGridWorkerNode::Run()
         try_count = 0;
     }
     LOG_POST_X(31, "Shutting down...");
+    if (CGridGlobals::GetInstance().IsForceExitEnabled()) {
+        LOG_POST("Force exit");
+        _exit(0);
+    }
     if (m_MaxThreads > 1 ) {
         try {
             LOG_POST_X(32, "Stopping worker threads...");
