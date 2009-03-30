@@ -33,11 +33,11 @@
  */
 
 /** @file
- * This file contains the definition of the xml::name_space class.
+ * This file contains the definition of the xml::ns class.
 **/
 
-#ifndef _xmlwrapp_name_space_hpp_
-#define _xmlwrapp_name_space_hpp_
+#ifndef _xmlwrapp_ns_hpp_
+#define _xmlwrapp_ns_hpp_
 
 // standard includes
 #include <string>
@@ -45,56 +45,56 @@
 namespace xml {
 
 /**
- * The xml::name_space class is used to access nodes and attributes 
+ * The xml::ns class is used to access nodes and attributes
  * name spaces.
 **/
-class name_space {
+class ns {
 public:
 
     /// enum to identify empty namespace explicitly
-    enum name_space_type {
+    enum ns_type {
     type_void       ///< a namespace with both prefix and uri empty
     };
 
     //####################################################################
     /**
-     * Create a new xml::name_space object with an empty namespace prefix
+     * Create a new xml::ns object with an empty namespace prefix
      * and with the given uri. It is helpful for a default namespace.
      *
      * @param uri The namespace uri.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    explicit name_space (const char *  uri);
+    explicit ns (const char *  uri);
 
     //####################################################################
     /**
-     * Create a new xml::name_space object with the given prefix and uri.
+     * Create a new xml::ns object with the given prefix and uri.
      *
      * @param prefix The namespace prefix.
      * @param uri The namespace uri.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    name_space (const char *  prefix, const char *  uri);
+    ns (const char *  prefix, const char *  uri);
 
     //####################################################################
     /**
-     * Create a new xml::name_space object with both prefix and uri empty.
+     * Create a new xml::ns object with both prefix and uri empty.
      *
      * @param type Dummy parameter to make a void namespace creation
      *             explicit.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    explicit name_space (enum  name_space_type  type);
+    explicit ns (enum  ns_type  type);
 
     //####################################################################
     /**
      * Get the namespace prefix.
      *
      * @return The namespace prefix.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     const char *  get_prefix (void) const;
@@ -104,7 +104,7 @@ public:
      * Get the namespace uri.
      *
      * @return The namespace uri.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     const char *  get_uri (void) const;
@@ -116,7 +116,7 @@ public:
      * method checks if the namespace is actually set.
      *
      * @return true if the namespace is blank i.e. uri is empty
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
     bool is_void (void) const;
@@ -126,15 +126,15 @@ public:
      * Compare with another namespace.
      *
      * @return true if the namespace is equal to the other
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    bool operator==(const name_space &  other) const;
+    bool operator==(const ns &  other) const;
 
     // The default copy constructor and operator=
-    // are just fine for the xml::name_space class
+    // are just fine for the xml::ns class
 private:
-    name_space (void);
+    ns (void);
 
 private:
     std::string     prefix_;    // namespace prefix

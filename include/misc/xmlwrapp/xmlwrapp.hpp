@@ -47,6 +47,6 @@
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/tree_parser.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
-#include <misc/xmlwrapp/name_space.hpp>
+#include <misc/xmlwrapp/ns.hpp>
 
 #endif

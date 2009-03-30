@@ -32,11 +32,11 @@
  */
 
 /** @file
- * This file contains the implementation of the xml::name_space class.
+ * This file contains the implementation of the xml::ns class.
 **/
 
 // xmlwrapp includes
-#include <misc/xmlwrapp/name_space.hpp>
+#include <misc/xmlwrapp/ns.hpp>
 
 // standard includes
 #include <stdexcept>
@@ -44,30 +44,30 @@
 using namespace xml;
 
 //####################################################################
-xml::name_space::name_space (enum name_space::name_space_type ) : prefix_(), uri_() {
+xml::ns::ns (enum ns::ns_type ) : prefix_(), uri_() {
 }
 //####################################################################
-xml::name_space::name_space (const char *  uri) : prefix_(), uri_(uri ? uri : "") {
-    if (uri_.empty()) throw std::runtime_error("xml::name_space::xml_namespace can't have empty uri");
+xml::ns::ns (const char *  uri) : prefix_(), uri_(uri ? uri : "") {
+    if (uri_.empty()) throw std::runtime_error("xml::ns can't have empty uri");
 }
 //####################################################################
-xml::name_space::name_space (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix : ""), uri_(uri ? uri : "") {
-    if (uri_.empty()) throw std::runtime_error("xml::name_space::xml_namespace can't have empty uri");
+xml::ns::ns (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix : ""), uri_(uri ? uri : "") {
+    if (uri_.empty()) throw std::runtime_error("xml::ns can't have empty uri");
 }
 //####################################################################
-const char *  xml::name_space::get_prefix (void) const {
+const char *  xml::ns::get_prefix (void) const {
     return prefix_.c_str();
 }
 //####################################################################
-const char *  xml::name_space::get_uri (void) const {
+const char *  xml::ns::get_uri (void) const {
     return uri_.c_str();
 }
 //####################################################################
-bool xml::name_space::is_void (void) const {
+bool xml::ns::is_void (void) const {
     return uri_.empty();
 }
 //####################################################################
-bool xml::name_space::operator==(const name_space &  other) const {
+bool xml::ns::operator==(const ns &  other) const {
     return (prefix_==other.prefix_) && (uri_==other.uri_);
 }
 //####################################################################

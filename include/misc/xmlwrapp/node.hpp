@@ -47,7 +47,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
-#include <misc/xmlwrapp/name_space.hpp>
+#include <misc/xmlwrapp/ns.hpp>
 
 // hidden stuff
 #include <misc/xmlwrapp/impl/_cbfo.hpp>
@@ -91,7 +91,7 @@ public:
     /// size type
     typedef std::size_t size_type;
 
-    typedef std::vector<xml::name_space>  namespaces_type;  //< type for holding XML namespaces
+    typedef std::vector<xml::ns>  ns_list_type;  //< type for holding XML namespaces
 
     /// enum for the different types of XML nodes
     enum node_type {
@@ -378,15 +378,15 @@ public:
     /**
      * Get the namespace of this xml::node. If a node has no namespace
      * then an object with both empty a prefix and uri is returned (the
-     * is_void() method of the xml::name_space object will return true
+     * is_void() method of the xml::ns object will return true
      * in this case)
      *
      * @return The namespace of this node. Void namespace object if no
      *         namespace is associated.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    xml::name_space get_namespace (void) const;
+    xml::ns get_namespace (void) const;
 
     //####################################################################
     /**
@@ -397,13 +397,63 @@ public:
       *         If a default namespace is defined at the node then
       *         the first element in the corresponding container item
       *         is an empty string.
-      * @author Sergey Satskiy
+      * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    namespaces_type get_namespace_definitions (void) const;
+    ns_list_type get_namespace_definitions (void) const;
 
     //####################################################################
-    /** 
+    /**
+      * Set the node namespace.
+      *
+      * @param name_space The namespace to be set for the node.
+      *           If the node already has a namespace it will be replaced with
+      *           the given one.
+      *           It is not checked that the namespace is defined somewhere.
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void set_namespace (const xml::ns &name_space);
+
+    //####################################################################
+    /**
+      * Add namespace definition to the node.
+      *
+      * @param name_space The namespace definition to be added to the node.
+      *           If the node already has a namespace definition with same
+      *           prefix then its URI will be replaced with the new one.
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void add_namespace_definition (const xml::ns &name_space);
+
+    //####################################################################
+    /**
+      * Add namespace definitions to the node.
+      *
+      * @param ns The namespace definitions to be added to the node.
+      *           If the node already has namespace definitions which
+      *           prefixes are the same as those in the given list then
+      *           the matched prefixes URIs will be replaced with the new ones.
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void add_namespace_definitions (const ns_list_type &name_spaces);
+
+    //####################################################################
+    /**
+      * Remove the node namespace.
+      *
+      * @param prefix The prefix of the namespace to be removed from the node
+      *               namespace definitions. If there is no such a namespace
+      *               definition nothing will be removed.
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void erase_namespace_definition (const char *prefix);
+
+    //####################################################################
+    /**
      * Find out if this node is a text node or sometiming like a text node,
      * CDATA for example.
      *

@@ -405,21 +405,21 @@ const xml::attributes& xml::node::get_attributes (void) const {
     return pimpl_->attrs_;
 }
 //####################################################################
-xml::name_space xml::node::get_namespace (void) const {
+xml::ns xml::node::get_namespace (void) const {
     return pimpl_->xmlnode_->ns
-        ? xml::name_space(reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->prefix),
+        ? xml::ns(reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->prefix),
                           reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->href))
-        : xml::name_space(xml::name_space::type_void);
+        : xml::ns(xml::ns::type_void);
 }
 //####################################################################
-xml::node::namespaces_type xml::node::get_namespace_definitions (void) const {
-    xml::node::namespaces_type      namespace_definitions;
+xml::node::ns_list_type xml::node::get_namespace_definitions (void) const {
+    xml::node::ns_list_type      namespace_definitions;
     if (!pimpl_->xmlnode_->nsDef) {
         return namespace_definitions;
     }
     for (xmlNs *  ns(pimpl_->xmlnode_->nsDef); ns; ns = ns->next) {
-        namespace_definitions.push_back(xml::name_space(reinterpret_cast<const char*>(ns->prefix),
-                                                        reinterpret_cast<const char*>(ns->href)));
+        namespace_definitions.push_back(xml::ns(reinterpret_cast<const char*>(ns->prefix),
+                                                reinterpret_cast<const char*>(ns->href)));
     }
     return namespace_definitions;
 }

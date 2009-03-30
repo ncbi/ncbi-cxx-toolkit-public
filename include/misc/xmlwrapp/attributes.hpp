@@ -46,7 +46,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
-#include <misc/xmlwrapp/name_space.hpp>
+#include <misc/xmlwrapp/ns.hpp>
 
 // standard includes
 #include <cstddef>
@@ -157,15 +157,15 @@ public:
     /**
      * Get the attribute namespace. If the attribute has no namespace
      * then an object with both empty a prefix and uri is returned (the
-     * is_void() method of the xml::name_space object will return true
+     * is_void() method of the xml::ns object will return true
      * in this case)
      *
      * @return The attribute namespace. Void namespace object if no
      *         namespace is associated.
-     * @author Sergey Satskiy
+     * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    xml::name_space get_namespace (void) const;
+    xml::ns get_namespace (void) const;
 
     private:
 	void *node_;
