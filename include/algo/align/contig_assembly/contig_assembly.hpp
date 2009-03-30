@@ -135,6 +135,12 @@ public:
                            vector<unsigned int>& plus_vec,
                            vector<unsigned int>& minus_vec);
 
+    typedef map<unsigned int, unsigned int> TDiagMap;
+    static void DiagCounts(const objects::CSeq_align_set& align_set,
+                           objects::CScope& scope,
+                           TDiagMap& plus_map,
+                           TDiagMap& minus_map);
+
     /// Find the range (or more than one tied range) containing
     /// the maximal diagonal count, summed over a window.
     typedef CRange<unsigned int> TRange;
@@ -142,6 +148,13 @@ public:
                              unsigned int window,
                              unsigned int& max,
                              vector<TRange>& max_range);
+
+
+    static void FindMaxRange(const TDiagMap& map,
+                             unsigned int window,
+                             unsigned int& max,
+                             vector<TRange>& max_range);
+
 
     static bool IsDovetail(const objects::CDense_seg& ds,
                            unsigned int slop, objects::CScope& scope);
@@ -213,6 +226,9 @@ public:
                                        objects::ENa_strand strand0,
                                        objects::ENa_strand strand1);
         static TSeqPos x_DensegLength(const objects::CDense_seg& ds);
+
+        static void x_GatherIdentStats(const objects::CAlnVec& vec,
+                                       SAlignStats& align_stats);
 };
 
 

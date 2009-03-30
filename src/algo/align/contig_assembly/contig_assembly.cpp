@@ -53,6 +53,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
+
+
 // Split a blast parameter string such as
 // "-W 28 -r 1 -q -3 -e 1e-5 -Z 200 -F 'm L; R -d rodents.lib'"
 // into ["-W", "28",..."-F", "m L; R -d rodents.lib"]
@@ -494,7 +496,8 @@ double CContigAssembly::FracIdent(const CDense_seg& ds, CScope& scope)
     // This way uses the same calculation as the exposed GatherAlignStats()
     // functions.
     SAlignStats stats;
-    GatherAlignStats(ds, scope, stats);
+    CAlnVec avec(ds, scope);
+    x_GatherIdentStats(avec, stats);
     Ident = stats.pct_identity;
     return Ident;
 }
@@ -840,6 +843,7 @@ void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
         }
     }
 
+
     int gap_simple = -1;  // -1 = not checked, 0 = no, 1 = yes
     bool simple = false;
     for (int i = 0;  i < vec.GetNumSegs();  ++i) {
@@ -889,29 +893,11 @@ void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
     ///
     /// identity computation
     ///
-
-    unsigned int identities = 0;
-    for (int i = 0;  i < vec.GetNumSegs();  ++i) {
-        string s1;
-        vec.GetSegSeqString(s1, 0, i);
-        for (int j = 1;  j < vec.GetNumRows();  ++j) {
-            string s2;
-            vec.GetSegSeqString(s2, j, i);
-
-            for (unsigned int k = 0;  k < min(s1.size(), s2.size());  ++k) {
-                identities += (s1[k] == s2[k]);
-            }
-        }
-    }
-
-    align_stats.mismatches = align_stats.aligned_length - identities;
-    align_stats.pct_identity =
-        100.0 * double(identities) / double(align_stats.aligned_length);
+    x_GatherIdentStats(vec, align_stats);
 
     ///
     /// overhangs (unaligned tails)
     ///
-
     s_GetTails(vec, align_stats.tails);
 
 }
@@ -992,6 +978,30 @@ TSeqPos CContigAssembly::x_DensegLength(const objects::CDense_seg& ds)
     }
     return Length;
 }
+
+
+void CContigAssembly::x_GatherIdentStats(const objects::CAlnVec& vec,
+                                         SAlignStats& align_stats)
+{
+    unsigned int identities = 0;
+    for (int i = 0;  i < vec.GetNumSegs();  ++i) {
+        string s1;
+        vec.GetSegSeqString(s1, 0, i);
+        for (int j = 1;  j < vec.GetNumRows();  ++j) {
+            string s2;
+            vec.GetSegSeqString(s2, j, i);
+
+            for (unsigned int k = 0;  k < min(s1.size(), s2.size());  ++k) {
+                identities += (s1[k] == s2[k]);
+            }
+        }
+    }
+
+    align_stats.mismatches = align_stats.aligned_length - identities;
+    align_stats.pct_identity =
+        100.0 * double(identities) / double(align_stats.aligned_length);
+}
+
 
 
 END_NCBI_SCOPE
