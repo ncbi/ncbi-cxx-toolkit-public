@@ -531,7 +531,7 @@ void CGridWorkerNode::Run()
     }
     LOG_POST_X(31, "Shutting down...");
     if (CGridGlobals::GetInstance().IsForceExitEnabled()) {
-        LOG_POST("Force exit");
+        ERR_POST_X(45, "Force exit");
         _exit(0);
     }
     if (m_MaxThreads > 1 ) {
