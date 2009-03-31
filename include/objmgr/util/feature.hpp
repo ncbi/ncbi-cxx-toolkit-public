@@ -95,7 +95,8 @@ private:
 };
 
 
-class CFeatComparatorByLabel : public CObject, public IFeatComparator
+class NCBI_XOBJUTIL_EXPORT CFeatComparatorByLabel : public CObject,
+                                                    public IFeatComparator
 {
     virtual bool Less(const CSeq_feat& f1,
                       const CSeq_feat& f2,

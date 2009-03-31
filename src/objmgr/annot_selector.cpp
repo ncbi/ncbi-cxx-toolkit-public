@@ -719,5 +719,9 @@ void SAnnotSelector::CheckLimitObjectType(void) const
 }
 
 
+IFeatComparator::~IFeatComparator()
+{
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

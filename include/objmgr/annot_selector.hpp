@@ -69,8 +69,9 @@ class CAnnotObject_Info;
 ///  should be inherited from CObject
 ///
 
-struct IFeatComparator
+struct NCBI_XOBJMGR_EXPORT IFeatComparator
 {
+    virtual ~IFeatComparator();
     virtual bool Less(const CSeq_feat& f1,
                       const CSeq_feat& f2,
                       CScope* scope) = 0;
