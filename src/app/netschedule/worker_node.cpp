@@ -378,30 +378,34 @@ void CQueueWorkerNodeList::SetPort(
 {
     CWriteLockGuard guard(m_Lock);
 
-    if (port > 0 && worker_node->m_Port != port) {
-        CWorkerNode dummy_worker_node(worker_node->GetHost(), port);
+    unsigned short old_port = worker_node->m_Port;
+
+    if (port > 0 && old_port != port) {
+        worker_node->m_Port = port;
 
         std::pair<TWorkerNodeByAddress::iterator, bool> insertion_result =
-            m_WorkerNodeByAddress.insert(&dummy_worker_node);
+            m_WorkerNodeByAddress.insert(worker_node);
 
         if (insertion_result.second) {
-            if (worker_node->m_Port > 0) {
-                m_WorkerNodeByAddress.erase(worker_node);
+            if (old_port > 0) {
+                CWorkerNode search_image(worker_node->GetHost(), old_port);
+
+                m_WorkerNodeByAddress.erase(&search_image);
 
                 LOG_POST(Warning << "Node '" << worker_node->m_Id <<
                     "' (" << CSocketAPI::gethostbyaddr(worker_node->m_Host) <<
-                    ":" << worker_node->m_Port << ") changed its control "
+                    ":" << old_port << ") changed its control "
                     "port to " << port);
             }
-
-            worker_node->m_Port = port;
-            *insertion_result.first = worker_node;
         } else {
+            worker_node->m_Port = old_port;
+
+            string host(CSocketAPI::gethostbyaddr(worker_node->m_Host));
+
             ERR_POST("Refused to replace registered WN " <<
-                (*insertion_result.first)->GetId() << " [" <<
-                CSocketAPI::gethostbyaddr(worker_node->m_Host) << ":" <<
-                worker_node->m_Port << "] with WN " <<
-                worker_node->m_Id << " by port assignment");
+                (*insertion_result.first)->m_Id << " [" <<
+                host << ":" << port << "] with WN " << worker_node->m_Id <<
+                " [" << host << ":" << old_port << "] by port assignment");
         }
     }
 }

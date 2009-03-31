@@ -278,9 +278,6 @@ public:
     void WriteErr(const string& msg = kEmptyStr);
 
 private:
-    void IdentifyWorkerNodeByAddress(unsigned peer_address, unsigned port);
-    void IdentifyWorkerNodeByJobId(TNSJobId job_id);
-
     // Message processing phases
     void ProcessMsgAuth(BUF buffer);
     void ProcessMsgQueue(BUF buffer);
@@ -415,7 +412,7 @@ private:
     char   m_MsgBuffer[kMaxMessageSize];
 
     unsigned                    m_PeerAddr;
-    // WorkerNodeInfo contains duplicates of m_AuthString and m_PeerAddr
+    // CWorkerNode contains duplicates of m_AuthString and m_PeerAddr
     TWorkerNodeRef              m_WorkerNode;
     string                      m_AuthString;
     CNetScheduleServer*         m_Server;
