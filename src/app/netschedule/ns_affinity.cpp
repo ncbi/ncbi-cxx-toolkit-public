@@ -366,9 +366,9 @@ void CWorkerNodeAffinity::ClearAffinity()
     m_AffinityMap.erase(m_AffinityMap.begin(), m_AffinityMap.end());
 }
 
-void CWorkerNodeAffinity::ClearAffinity(const string& node_id)
+void CWorkerNodeAffinity::ClearAffinity(CWorkerNode* worker_node)
 {
-    TAffMap::iterator it = m_AffinityMap.find(node_id);
+    TAffMap::iterator it = m_AffinityMap.find(worker_node);
     if (it == m_AffinityMap.end()) {
         return;
     }
@@ -377,14 +377,14 @@ void CWorkerNodeAffinity::ClearAffinity(const string& node_id)
 }
 
 CWorkerNodeAffinity::SAffinityInfo*
-CWorkerNodeAffinity::AddAffinity(const string& node_id,
+CWorkerNodeAffinity::AddAffinity(CWorkerNode*  worker_node,
                                  unsigned      aff_id,
                                  time_t        exp_time)
 {
-    SAffinityInfo* ai = GetAffinity(node_id);
+    SAffinityInfo* ai = GetAffinity(worker_node);
     if (ai == 0) {
         ai = new SAffinityInfo();
-        m_AffinityMap[node_id] = ai;
+        m_AffinityMap[worker_node] = ai;
     }
     ai->aff_ids.set(aff_id);
     return ai;
@@ -392,13 +392,13 @@ CWorkerNodeAffinity::AddAffinity(const string& node_id,
 
 
 CWorkerNodeAffinity::SAffinityInfo*
-CWorkerNodeAffinity::AddAffinity(const string& node_id,
+CWorkerNodeAffinity::AddAffinity(CWorkerNode* worker_node,
                                  const TNSBitVector& aff_ids)
 {
-    SAffinityInfo* ai = GetAffinity(node_id);
+    SAffinityInfo* ai = GetAffinity(worker_node);
     if (ai == 0) {
         ai = new SAffinityInfo();
-        m_AffinityMap[node_id] = ai;
+        m_AffinityMap[worker_node] = ai;
     }
     ai->aff_ids |= aff_ids;
     return ai;
@@ -406,25 +406,25 @@ CWorkerNodeAffinity::AddAffinity(const string& node_id,
 
 
 CWorkerNodeAffinity::SAffinityInfo*
-CWorkerNodeAffinity::AddAffinity(const string& node_id)
+CWorkerNodeAffinity::AddAffinity(CWorkerNode* worker_node)
 {
-    SAffinityInfo* ai = GetAffinity(node_id);
+    SAffinityInfo* ai = GetAffinity(worker_node);
     if (ai == 0) {
         ai = new SAffinityInfo();
-        m_AffinityMap[node_id] = ai;
+        m_AffinityMap[worker_node] = ai;
     }
     return ai;
 }
 
 
-void CWorkerNodeAffinity::BlacklistJob(const string& node_id,
+void CWorkerNodeAffinity::BlacklistJob(CWorkerNode*  worker_node,
                                        unsigned      job_id,
                                        time_t        exp_time)
 {
-    SAffinityInfo* ai = GetAffinity(node_id);
+    SAffinityInfo* ai = GetAffinity(worker_node);
     if (ai == 0) {
         ai = new SAffinityInfo();
-        m_AffinityMap[node_id] = ai;
+        m_AffinityMap[worker_node] = ai;
     }
     bool was_empty = !ai->blacklisted_jobs.any();
     ai->blacklisted_jobs.set(job_id);
@@ -448,9 +448,9 @@ void CWorkerNodeAffinity::OptimizeMemory()
 
 
 CWorkerNodeAffinity::SAffinityInfo*
-CWorkerNodeAffinity::GetAffinity(const string& node_id)
+CWorkerNodeAffinity::GetAffinity(CWorkerNode* worker_node)
 {
-    TAffMap::iterator it = m_AffinityMap.find(node_id);
+    TAffMap::iterator it = m_AffinityMap.find(worker_node);
     if( it != m_AffinityMap.end()) return it->second;
     return 0;
 }

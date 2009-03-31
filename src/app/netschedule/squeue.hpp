@@ -318,7 +318,7 @@ public:
                   unsigned& read_id, TNSBitVector& bv_jobs);
     /// Confirm reading of these jobs
     void ConfirmJobs(unsigned read_id, TNSBitVector& bv_jobs);
-    /// Fail (negative acknoledge) reading of these jobs
+    /// Fail (negative acknowledge) reading of these jobs
     void FailReadingJobs(unsigned read_id, TNSBitVector& bv_jobs);
 
 
@@ -377,12 +377,12 @@ public:
     ///
     /// @return job_id
     unsigned
-    FindPendingJob(const string& node_id,
+    FindPendingJob(CWorkerNode* worker_node,
                    const list<string>& aff_list,
                    time_t curr);
 
     /// Calculate affinity preference string - a list
-    /// of affinities accompained by number of jobs belonging to
+    /// of affinities accompanied by number of jobs belonging to
     /// them and list of nodes processing them, e.g.
     /// "a1 500 n1 n2, a2 600 n2 n3 n4, a3 200 n3"
     ///
@@ -390,12 +390,15 @@ public:
     ///     affinity preference string
     string GetAffinityList();
 
+    /// Return the list of worker nodes connected to this queue.
+    CQueueWorkerNodeList& GetWorkerNodeList() {return m_WorkerNodeList;}
+
     /// @return is job modified
-    bool FailJob(unsigned      job_id,
+    bool FailJob(CWorkerNode*  worker_node,
+                 unsigned      job_id,
                  const string& err_msg,
                  const string& output,
-                 int           ret_code,
-                 const string* node_id = 0);
+                 int           ret_code);
 
 
     void x_ReadAffIdx_NoLock(unsigned      aff_id,
@@ -410,37 +413,32 @@ public:
     void AddJobsToAffinity(CBDB_Transaction& trans,
                            const vector<CJob>& batch);
 
-    void InitWorkerNode(const SWorkerNodeInfo& node_info);
-    void ClearWorkerNode(const string& node_id);
+    /// Clear all jobs, still running for node.
+    /// Fails all such jobs, called by external node watcher, can safely
+    /// clean out node's record
+    void ClearWorkerNode(CWorkerNode* worker_node, const string& reason);
     void NotifyListeners(bool unconditional, unsigned aff_id);
     void PrintWorkerNodeStat(CNcbiOstream& out,
                              time_t curr,
                              EWNodeFormat fmt = eWNF_Old) const;
-    void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
-                                      unsigned short         port,
-                                      unsigned               timeout);
-    // Is the unregistration final? True for old style nodes.
-    bool UnRegisterNotificationListener(const string& node_id);
-    void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
-    void AddJobToWorkerNode(const string&           node_id,
+    void UnRegisterNotificationListener(CWorkerNode* worker_node);
+    void AddJobToWorkerNode(CWorkerNode*            worker_node,
                             CRequestContextFactory* rec_ctx_f,
                             const CJob&             job,
                             time_t                  exp_time);
     void UpdateWorkerNodeJob(const string&          node_id,
                              unsigned               job_id,
                              time_t                 exp_time);
-    void RemoveJobFromWorkerNode(const string&      node_id,
-                                 const CJob&        job,
+    void RemoveJobFromWorkerNode(const CJob&        job,
                                  ENSCompletion      reason);
-    void x_FailJobsAtNodeClose(TJobList& jobs, const string& reason);
     //
 
     typedef CWorkerNodeAffinity::TNetAddress TNetAddress;
-    void ClearAffinity(const string& node_id);
-    void AddAffinity(const string& node_id,
+    void ClearAffinity(CWorkerNode* worker_node);
+    void AddAffinity(CWorkerNode*  worker_node,
                      unsigned      aff_id,
                      time_t        exp_time);
-    void BlacklistJob(const string& node_id,
+    void BlacklistJob(CWorkerNode*  worker_node,
                       unsigned      job_id,
                       time_t        exp_time);
 
@@ -519,7 +517,7 @@ private:
                              TJobStatus          status);
 
     // Add job to group, creating it if necessary. Used during queue
-    // loading, so guaranteed no concurrent queue acces.
+    // loading, so guaranteed no concurrent queue access.
     void x_AddToReadGroupNoLock(unsigned group_id, unsigned job_id);
     // Thread-safe helpers for read group management
     // Create read group and assign jobs to it
@@ -567,7 +565,7 @@ private:
     int                          m_RunTimeout;      ///< Execution timeout
     /// Its precision, set at startup only, not reconfigurable
     int                          m_RunTimeoutPrecision;
-    /// How many attemts to make on different nodes before failure
+    /// How many attempts to make on different nodes before failure
     unsigned                     m_FailedRetries;
     /// How long a job lives in blacklist
     time_t                       m_BlacklistTime;

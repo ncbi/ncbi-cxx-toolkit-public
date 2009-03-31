@@ -42,6 +42,7 @@
 #include <corelib/ncbicntr.hpp>
 
 #include "ns_types.hpp"
+#include "worker_node.hpp"
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
@@ -167,21 +168,21 @@ public:
     void ClearAffinity();
 
     /// Forget affinity association
-    void ClearAffinity(const string& node_id);
+    void ClearAffinity(CWorkerNode* worker_node);
 
     /// Create/update affinity association
-    SAffinityInfo* AddAffinity(const string& node_id,
+    SAffinityInfo* AddAffinity(CWorkerNode*  worker_node,
                                unsigned      aff_id,
                                time_t        exp_time);
 
     /// Create affinity association for an affinity group
-    SAffinityInfo* AddAffinity(const string& node_id,
+    SAffinityInfo* AddAffinity(CWorkerNode* worker_node,
                                const TNSBitVector& aff_ids);
 
     /// Create empty affinity association
-    SAffinityInfo* AddAffinity(const string& node_id);
+    SAffinityInfo* AddAffinity(CWorkerNode* worker_node);
 
-    void BlacklistJob(const string& node_id,
+    void BlacklistJob(CWorkerNode*  worker_node,
                       unsigned      job_id,
                       time_t        exp_time);
 
@@ -200,13 +201,13 @@ public:
     /// Free unused memory
     void OptimizeMemory();
 
-    SAffinityInfo* GetAffinity(const string& node_id);
+    SAffinityInfo* GetAffinity(CWorkerNode* worker_node);
 private:
     CWorkerNodeAffinity(const CWorkerNodeAffinity&);
     CWorkerNodeAffinity& operator=(const CWorkerNodeAffinity&);
 private:
     /// Worker node to affinity id map
-    typedef map<string, SAffinityInfo*> TAffMap;
+    typedef map<CWorkerNode*, SAffinityInfo*> TAffMap;
     TAffMap m_AffinityMap;
 };
 

@@ -1997,45 +1997,30 @@ void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
 }
 
 
-string CQueue::GetAffinityList(SWorkerNodeInfo& node_info)
+string CQueue::GetAffinityList()
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->RegisterWorkerNodeVisit(node_info);
     return q->GetAffinityList();
 }
 
 
-void CQueue::InitWorkerNode(const SWorkerNodeInfo& node_info)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->InitWorkerNode(node_info);
-}
-
-
-void CQueue::ClearWorkerNode(const string& node_id)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->ClearWorkerNode(node_id);
-}
-
-
-void CQueue::PutResult(SWorkerNodeInfo& node_info,
+void CQueue::PutResult(CWorkerNode*     worker_node,
                        unsigned         job_id,
                        int              ret_code,
                        const string&    output)
 {
-    PutResultGetJob(node_info,
+    PutResultGetJob(worker_node,
                     job_id, ret_code, &output,
                     0, 0, 0);
 }
 
 
-void CQueue::GetJob(SWorkerNodeInfo&    node_info,
+void CQueue::GetJob(CWorkerNode* worker_node,
                     CRequestContextFactory* rec_ctx_f,
                     const list<string>* aff_list,
                     CJob*               job)
 {
-    PutResultGetJob(node_info,
+    PutResultGetJob(worker_node,
                     0, 0, 0,
                     rec_ctx_f, aff_list, job);
 }
@@ -2080,7 +2065,7 @@ CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
 
 
 void
-CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
+CQueue::PutResultGetJob(CWorkerNode* worker_node,
                         // PutResult parameters
                         unsigned         done_job_id,
                         int              ret_code,
@@ -2131,7 +2116,8 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
     // TODO: move affinity assignment there as well
     unsigned pending_job_id = 0;
     if (new_job)
-        pending_job_id = q->FindPendingJob(node_info.node_id, *aff_list, curr);
+        pending_job_id =
+            q->FindPendingJob(worker_node, *aff_list, curr);
     bool done_rec_updated = false;
     CJob job;
 
@@ -2157,7 +2143,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
 
                 if (pending_job_id) {
                     upd_status =
-                        x_UpdateDB_GetJobNoLock(node_info,
+                        x_UpdateDB_GetJobNoLock(worker_node,
                                                 curr, pending_job_id,
                                                 *new_job);
                 }
@@ -2182,9 +2168,9 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
             }
 
             if (done_job_id)
-                q->RemoveJobFromWorkerNode(node_info.node_id, job, eNSCDone);
+                q->RemoveJobFromWorkerNode(job, eNSCDone);
             if (pending_job_id)
-                q->AddJobToWorkerNode(node_info.node_id, rec_ctx_f,
+                q->AddJobToWorkerNode(worker_node, rec_ctx_f,
                                       *new_job, curr + run_timeout);
             break;
         }
@@ -2218,7 +2204,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
     unsigned job_aff_id;
     if (new_job && (job_aff_id = new_job->GetAffinityId())) {
         time_t exp_time = run_timeout ? curr + 2*run_timeout : 0;
-        q->AddAffinity(node_info.node_id, job_aff_id, exp_time);
+        q->AddAffinity(worker_node, job_aff_id, exp_time);
     }
 
     x_TimeLineExchange(done_job_id, pending_job_id, curr);
@@ -2244,7 +2230,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
             msg += " (GET) job id=";
             msg += NStr::IntToString(pending_job_id);
             msg += " worker_node=";
-            msg += node_info.node_id;
+            msg += worker_node->GetId();
         }
         MonitorPost(msg);
     }
@@ -2252,7 +2238,7 @@ CQueue::PutResultGetJob(SWorkerNodeInfo& node_info,
     // no such job found, report it as an exception with affinity preference.
     if (!pending_job_id && aff_list && aff_list->size()) {
         NCBI_THROW(CNetScheduleException, eNoJobsWithAffinity,
-                   GetAffinityList(node_info));
+                   GetAffinityList());
     }
 }
 
@@ -2288,18 +2274,7 @@ bool CQueue::PutProgressMessage(unsigned      job_id,
 }
 
 
-void CQueue::FailJob(const SWorkerNodeInfo& node_info,
-                     unsigned               job_id,
-                     const string&          err_msg,
-                     const string&          output,
-                     int                    ret_code)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->FailJob(job_id, err_msg, output, ret_code, &node_info.node_id);
-}
-
-
-void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
+void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
                                 unsigned         job_id,
                                 time_t           tm)
 {
@@ -2364,7 +2339,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
     }}
 
     trans.Commit();
-    q->UpdateWorkerNodeJob(node_info.node_id, job_id, curr + tm);
+    q->UpdateWorkerNodeJob(worker_node->GetId(), job_id, curr + tm);
 
     exp_time = x_ComputeExpirationTime(time_start, run_timeout);
 
@@ -2372,7 +2347,6 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
         CWriteLockGuard guard(q->rtl_lock);
         q->run_time_line->MoveObject(exp_time, curr + tm, job_id);
     }}
-    q->RegisterWorkerNodeVisit(node_info);
 
     if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
@@ -2394,7 +2368,7 @@ void CQueue::JobDelayExpiration(SWorkerNodeInfo& node_info,
 }
 
 
-void CQueue::ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id)
+void CQueue::ReturnJob(unsigned job_id)
 {
     // FIXME: move the body to SLockedQueue, provide fallback to
     // RegisterWorkerNodeVisit if unsuccessful
@@ -2438,7 +2412,7 @@ void CQueue::ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id)
     }}
     trans.Commit();
     js_guard.Commit();
-    q->RemoveJobFromWorkerNode(node_info.node_id, job, eNSCReturned);
+    q->RemoveJobFromWorkerNode(job, eNSCReturned);
     x_RemoveFromTimeLine(job_id);
 
     if (IsMonitoring()) {
@@ -2452,7 +2426,7 @@ void CQueue::ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id)
 
 
 CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
-                            const SWorkerNodeInfo& node_info,
+                            CWorkerNode*      worker_node,
                             time_t            curr,
                             unsigned          job_id,
                             CJob&             job)
@@ -2524,12 +2498,12 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
         run.SetStatus(CNetScheduleAPI::eRunning);
         run.SetTimeStart(curr);
 
-        // We're setting host:port here using node_info. It is faster
+        // We're setting host:port here using worker_node. It is faster
         // than looking up this info by node_id in worker node list and
         // should provide exactly same info.
-        run.SetNodeId(node_info.node_id);
-        run.SetNodeAddr(node_info.host);
-        run.SetNodePort(node_info.port);
+        run.SetNodeId(worker_node->GetId());
+        run.SetNodeAddr(worker_node->GetHost());
+        run.SetNodePort(worker_node->GetPort());
 
         job.SetStatus(CNetScheduleAPI::eRunning);
         job.SetRunTimeout(0);
@@ -2721,42 +2695,6 @@ CQueue::x_TimeLineExchange(unsigned remove_job_id,
         }
         MonitorPost(msg);
     }
-}
-
-
-void CQueue::RegisterNotificationListener(const SWorkerNodeInfo& node_info,
-                                          unsigned short         port,
-                                          unsigned               timeout)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->RegisterNotificationListener(node_info, port, timeout);
-}
-
-
-void
-CQueue::UnRegisterNotificationListener(const SWorkerNodeInfo& node_info)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    if (!q->UnRegisterNotificationListener(node_info.node_id)) {
-        SWorkerNodeInfo ni(node_info);
-        q->RegisterWorkerNodeVisit(ni);
-    }
-}
-
-
-void
-CQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->RegisterWorkerNodeVisit(node_info);
-}
-
-
-
-void CQueue::ClearAffinity(const string& node_id)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->ClearAffinity(node_id);
 }
 
 

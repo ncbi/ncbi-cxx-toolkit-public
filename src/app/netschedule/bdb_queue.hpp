@@ -126,17 +126,17 @@ public:
     void ForceReschedule(unsigned job_id);
 
     // Worker node-specific methods
-    void PutResult(SWorkerNodeInfo& node_info,
+    void PutResult(CWorkerNode*     worker_node,
                    unsigned         job_id,
                    int              ret_code,
                    const string&    output);
 
-    void GetJob(SWorkerNodeInfo&    node_info,
+    void GetJob(CWorkerNode*        worker_node,
                 CRequestContextFactory* rec_ctx_f,
                 const list<string>* aff_list,
                 CJob*               new_job);
 
-    void PutResultGetJob(SWorkerNodeInfo& node_info,
+    void PutResultGetJob(CWorkerNode*     worker_node,
                          // PutResult parameters
                          unsigned         done_job_id,
                          int              ret_code,
@@ -149,13 +149,7 @@ public:
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
 
-    void FailJob(const SWorkerNodeInfo& node_info,
-                 unsigned               job_id,
-                 const string&          err_msg,
-                 const string&          output,
-                 int                    ret_code);
-
-    void ReturnJob(const SWorkerNodeInfo& node_info, unsigned job_id);
+    void ReturnJob(unsigned job_id);
 
     /// @param expected_status
     ///    If current status is different from expected try to
@@ -180,7 +174,7 @@ public:
     /// Prolong job expiration timeout
     /// @param tm
     ///    Time worker node needs to execute the job (in seconds)
-    void JobDelayExpiration(SWorkerNodeInfo& node_info,
+    void JobDelayExpiration(CWorkerNode*     worker_node,
                             unsigned         job_id,
                             time_t           tm);
 
@@ -213,29 +207,7 @@ public:
     /// Fail (negative acknoledge) reading of these jobs
     void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
     /// Get affinity preference list
-    string GetAffinityList(SWorkerNodeInfo& node_info);
-
-    // Make new worker node record with id, host and port
-    // Also check that old nodes with same (host, port) are cleared
-    void InitWorkerNode(const SWorkerNodeInfo& node_info);
-    /// Clear all jobs, still running for node.
-    /// Fails all such jobs, called by external node watcher, can safely
-    /// clean out node's record
-    void ClearWorkerNode(const string& node_id);
-
-    /// @param host_addr
-    ///    host address in network BO
-    ///
-    void RegisterNotificationListener(const SWorkerNodeInfo& node_info,
-                                      unsigned short         port,
-                                      unsigned               timeout);
-    void UnRegisterNotificationListener(const SWorkerNodeInfo& node_info);
-    void RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info);
-
-    /// Remove affinity association for a specified host
-    ///
-    /// @note Affinity is based on worker node id
-    void ClearAffinity(const string& node_id);
+    string GetAffinityList();
 
     /// Pass socket for monitor
     void SetMonitorSocket(CSocket& socket);
@@ -317,7 +289,7 @@ public:
     double GetAverage(TStatEvent);
 
     // Service for CQueueDataBase
-    /// Free unsued memory (status storage)
+    /// Free unused memory (status storage)
     void OptimizeMem(void)
         { x_GetLQueue()->OptimizeMem(); }
 
@@ -326,6 +298,8 @@ public:
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
 
+    // TODO Must be renamed to GetLQueue()
+    CRef<SLockedQueue> x_GetLQueue(void);
 
 private:
     // Support of CQueue iterators
@@ -373,12 +347,11 @@ private:
         eGetJobUpdate_JobFailed
     };
     EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
-                                const SWorkerNodeInfo& node_info,
+                                CWorkerNode*           worker_node,
                                 time_t                 curr,
                                 unsigned               job_id,
                                 CJob&                  job);
 
-    CRef<SLockedQueue> x_GetLQueue(void);
     const CRef<SLockedQueue> x_GetLQueue(void) const;
 
     void x_AddToTimeLine(unsigned job_id, time_t curr);

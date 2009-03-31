@@ -480,21 +480,33 @@ unsigned SLockedQueue::LoadStatusMatrix()
         }
         if (run->GetStatus() != CNetScheduleAPI::eRunning)
             continue;
-        SWorkerNodeInfo wni;
+
+        // FIXME Most likely, the following is not needed.
+        if (m_WorkerNodeList.FindJobById(job_id) != NULL)
+            continue;
+
         // We don't have auth in job run, but it is not that crucial.
         // Either the node is the old style one, and jobs are going to
         // be failed (or retried) on another node registration with the
         // same host:port, or for the new style nodes with same node id,
         // auth will be fixed on the INIT command.
-        wni.node_id = run->GetNodeId();
-        wni.host    = run->GetNodeAddr();
-        wni.port    = run->GetNodePort();
-        TJobList jobs;
-        m_WorkerNodeList.RegisterNode(wni, jobs);
+        TWorkerNodeRef worker_node(m_WorkerNodeList.FindWorkerNodeByAddress(
+            run->GetNodeAddr(), run->GetNodePort()));
+
+        if (worker_node == NULL) {
+            worker_node = new CWorkerNode_Real(run->GetNodeAddr());
+
+            m_WorkerNodeList.RegisterNode(worker_node);
+            m_WorkerNodeList.SetId(worker_node, run->GetNodeId());
+            m_WorkerNodeList.SetPort(worker_node, run->GetNodePort());
+        }
+
         unsigned run_timeout = job.GetRunTimeout();
-        if (run_timeout == 0) run_timeout = queue_run_timeout;
+        if (run_timeout == 0)
+            run_timeout = queue_run_timeout;
         unsigned exp_time = run->GetTimeStart() + run_timeout;
-        m_WorkerNodeList.AddJob(wni.node_id, job, exp_time, 0, false);
+
+        m_WorkerNodeList.AddJob(worker_node, job, exp_time, 0, false);
     }
     m_LastId.Set(last_id);
     m_GroupLastId.Set(group_last_id);
@@ -1080,7 +1092,7 @@ SLockedQueue::GetJobsWithAffinity(unsigned      aff_id,
 
 
 unsigned
-SLockedQueue::FindPendingJob(const string& node_id,
+SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
                              const list<string>& aff_list,
                              time_t curr)
 {
@@ -1102,7 +1114,7 @@ SLockedQueue::FindPendingJob(const string& node_id,
     {{
         CFastMutexGuard aff_guard(m_AffinityMapLock);
         CWorkerNodeAffinity::SAffinityInfo* ai =
-            m_AffinityMap.GetAffinity(node_id);
+            m_AffinityMap.GetAffinity(worker_node);
 
         if (is_specific_aff) {
             if (ai) {
@@ -1116,7 +1128,7 @@ SLockedQueue::FindPendingJob(const string& node_id,
             } else {
                 // Add empty affinity association, correct affinity
                 // will be added later in CQueue::PutResultGetJob
-                ai = m_AffinityMap.AddAffinity(node_id);
+                ai = m_AffinityMap.AddAffinity(worker_node);
             }
         }
 
@@ -1197,7 +1209,7 @@ struct SAffinityJobs
 {
     string aff_token;
     unsigned job_count;
-    list<string> nodes;
+    list<TWorkerNodeRef> nodes;
 };
 typedef map<unsigned, SAffinityJobs> TAffinities;
 
@@ -1237,11 +1249,11 @@ string SLockedQueue::GetAffinityList()
         // what are the nodes executing this affinity
     }
     }}
-    list<string> nodes;
+    list<TWorkerNodeRef> nodes;
     m_WorkerNodeList.GetNodes(now, nodes);
     {{
         CFastMutexGuard aff_guard(m_AffinityMapLock);
-        ITERATE(list<string>, node_it, nodes) {
+        NON_CONST_ITERATE(list<TWorkerNodeRef>, node_it, nodes) {
             CWorkerNodeAffinity::SAffinityInfo* ai =
                 m_AffinityMap.GetAffinity(*node_it);
             if (ai) {
@@ -1259,20 +1271,20 @@ string SLockedQueue::GetAffinityList()
         aff_list += it->second.aff_token;
         aff_list += ' ';
         aff_list += NStr::UIntToString(it->second.job_count);
-        ITERATE(list<string>, node_it, it->second.nodes) {
+        ITERATE(list<TWorkerNodeRef>, node_it, it->second.nodes) {
             aff_list += ' ';
-            aff_list += *node_it;
+            aff_list += (*node_it)->GetId();
         } 
     }
     return aff_list;
 }
 
 
-bool SLockedQueue::FailJob(unsigned      job_id,
+bool SLockedQueue::FailJob(CWorkerNode*  worker_node,
+                           unsigned      job_id,
                            const string& err_msg,
                            const string& output,
-                           int           ret_code,
-                           const string* node_id)
+                           int           ret_code)
 {
     unsigned failed_retries;
     unsigned max_output_size;
@@ -1314,7 +1326,7 @@ bool SLockedQueue::FailJob(unsigned      job_id,
         unsigned run_count = job.GetRunCount();
         if (run_count <= failed_retries) {
             time_t exp_time = blacklist_time ? curr + blacklist_time : 0;
-            if (node_id) BlacklistJob(*node_id, job_id, exp_time);
+            BlacklistJob(worker_node, job_id, exp_time);
             job.SetStatus(CNetScheduleAPI::ePending);
             js_guard.SetStatus(CNetScheduleAPI::ePending);
             rescheduled = true;
@@ -1344,8 +1356,7 @@ bool SLockedQueue::FailJob(unsigned      job_id,
 
         job.Flush(this);
     }}
-    if (node_id)
-        RemoveJobFromWorkerNode(*node_id, job, eNSCFailed);
+    RemoveJobFromWorkerNode(job, eNSCFailed);
 
 
     trans.Commit();
@@ -1389,20 +1400,15 @@ SLockedQueue::x_ReadAffIdx_NoLock(unsigned      aff_id,
 // Worker node
 
 
-void SLockedQueue::InitWorkerNode(const SWorkerNodeInfo& node_info)
+void SLockedQueue::ClearWorkerNode(CWorkerNode* worker_node,
+    const string& reason)
 {
     TJobList jobs;
-    m_WorkerNodeList.RegisterNode(node_info, jobs);
-    x_FailJobsAtNodeClose(jobs, "replaced by new node");
-}
-
-
-void SLockedQueue::ClearWorkerNode(const string& node_id)
-{
-    TJobList jobs;
-    m_WorkerNodeList.ClearNode(node_id, jobs);
-   	ClearAffinity(node_id);
-    x_FailJobsAtNodeClose(jobs, "cleared");
+    m_WorkerNodeList.ClearNode(worker_node, jobs);
+    ITERATE(TJobList, it, jobs) {
+        FailJob(worker_node, *it, "Node closed, " + reason, "", 0);
+    }
+    ClearAffinity(worker_node);
 }
 
 
@@ -1454,47 +1460,23 @@ void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out,
 }
 
 
-void SLockedQueue::RegisterNotificationListener(const SWorkerNodeInfo& node_info,
-                                                unsigned short         port,
-                                                unsigned               timeout)
+void SLockedQueue::UnRegisterNotificationListener(CWorkerNode* worker_node)
 {
-    TJobList jobs;
-    m_WorkerNodeList.RegisterNotificationListener(node_info, port,
-                                                  timeout, jobs);
-    x_FailJobsAtNodeClose(jobs, "new node REGC");
-}
-
-
-bool SLockedQueue::UnRegisterNotificationListener(const string& node_id)
-{
-    TJobList jobs;
-    bool final =
-    	m_WorkerNodeList.UnRegisterNotificationListener(node_id, jobs);
-    if (final) {
+    if (m_WorkerNodeList.UnRegisterNotificationListener(worker_node)) {
     	// Clean affinity association only for old style worker nodes
     	// New style nodes should explicitly call ClearWorkerNode
-    	ClearAffinity(node_id);
-    	x_FailJobsAtNodeClose(jobs, "URGC");
+        ClearWorkerNode(worker_node, "URGC");
     }
-    return final;
 }
 
 
-void SLockedQueue::RegisterWorkerNodeVisit(SWorkerNodeInfo& node_info)
-{
-    TJobList jobs;
-    if (m_WorkerNodeList.RegisterNodeVisit(node_info, jobs))
-        x_FailJobsAtNodeClose(jobs, "new node visited");
-}
-
-
-void SLockedQueue::AddJobToWorkerNode(const string&           node_id,
+void SLockedQueue::AddJobToWorkerNode(CWorkerNode*            worker_node,
                                       CRequestContextFactory* rec_ctx_f,
                                       const CJob&             job,
                                       time_t                  exp_time)
 {
     unsigned log_job_state = CQueueParamAccessor(*this).GetLogJobState();
-    m_WorkerNodeList.AddJob(node_id, job, exp_time,
+    m_WorkerNodeList.AddJob(worker_node, job, exp_time,
                             rec_ctx_f, log_job_state);
     CountEvent(eStatGetEvent);
 }
@@ -1504,52 +1486,43 @@ void SLockedQueue::UpdateWorkerNodeJob(const string&          node_id,
                                        unsigned               job_id,
                                        time_t                 exp_time)
 {
-    m_WorkerNodeList.UpdateJob(node_id, job_id, exp_time);
+    m_WorkerNodeList.UpdateJob(job_id, exp_time);
 }
 
 
-void SLockedQueue::RemoveJobFromWorkerNode(const string&          node_id,
-                                           const CJob&            job,
+void SLockedQueue::RemoveJobFromWorkerNode(const CJob&            job,
                                            ENSCompletion          reason)
 {
     unsigned log_job_state = CQueueParamAccessor(*this).GetLogJobState();
-    m_WorkerNodeList.RemoveJob(node_id, job, reason, log_job_state);
+    m_WorkerNodeList.RemoveJob(job, reason, log_job_state);
     CountEvent(eStatPutEvent);
 }
 
 
-
-void SLockedQueue::x_FailJobsAtNodeClose(TJobList& jobs, const string& reason)
-{
-    ITERATE(TJobList, it, jobs) {
-    	FailJob(*it, "Node closed, " + reason, "", 0);
-    }
-}
-
 // Affinity
 
-void SLockedQueue::ClearAffinity(const string& node_id)
+void SLockedQueue::ClearAffinity(CWorkerNode* worker_node)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.ClearAffinity(node_id);
+    m_AffinityMap.ClearAffinity(worker_node);
 }
 
 
-void SLockedQueue::AddAffinity(const string& node_id,
+void SLockedQueue::AddAffinity(CWorkerNode*  worker_node,
                                unsigned      aff_id,
                                time_t        exp_time)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.AddAffinity(node_id, aff_id, exp_time);
+    m_AffinityMap.AddAffinity(worker_node, aff_id, exp_time);
 }
 
 
-void SLockedQueue::BlacklistJob(const string& node_id,
+void SLockedQueue::BlacklistJob(CWorkerNode*  worker_node,
                                 unsigned      job_id,
                                 time_t        exp_time)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.BlacklistJob(node_id, job_id, exp_time);
+    m_AffinityMap.BlacklistJob(worker_node, job_id, exp_time);
 }
 
 
@@ -1791,8 +1764,7 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
     status_tracker.SetStatus(job_id, new_status);
 
     if (status == CNetScheduleAPI::eRunning)
-        m_WorkerNodeList.RemoveJob(node_id, job,
-                                   eNSCTimeout, log_job_state);
+        m_WorkerNodeList.RemoveJob(job, eNSCTimeout, log_job_state);
 
     {{
         CTime tm(CTime::eCurrent);
