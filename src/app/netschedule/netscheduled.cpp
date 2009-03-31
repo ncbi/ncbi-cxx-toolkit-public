@@ -2815,8 +2815,8 @@ void CNetScheduleDApp::Init(void)
     SetDiagPostFlag(eDPF_DateTime);
 
     // Convert multi-line diagnostic messages into one-line ones by default.
-    //SetDiagPostFlag(eDPF_PreMergeLines);
-    //SetDiagPostFlag(eDPF_MergeLines);
+    SetDiagPostFlag(eDPF_PreMergeLines);
+    SetDiagPostFlag(eDPF_MergeLines);
 
 
     // Setup command line arguments and parameters

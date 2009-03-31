@@ -59,6 +59,7 @@ struct SWorkerNodeInfo
 };
 
 
+// Notification and worker node management
 typedef pair<unsigned, unsigned short> TWorkerNodeHostPort;
 typedef list<TNSJobId> TJobList;
 

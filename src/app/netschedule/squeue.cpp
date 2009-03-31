@@ -1482,8 +1482,7 @@ void SLockedQueue::AddJobToWorkerNode(CWorkerNode*            worker_node,
 }
 
 
-void SLockedQueue::UpdateWorkerNodeJob(const string&          node_id,
-                                       unsigned               job_id,
+void SLockedQueue::UpdateWorkerNodeJob(unsigned               job_id,
                                        time_t                 exp_time)
 {
     m_WorkerNodeList.UpdateJob(job_id, exp_time);
@@ -1710,7 +1709,6 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
 
     unsigned time_start, run_timeout;
     time_t   exp_time;
-    string node_id;
     {{
         CQueueGuard guard(this, &trans);
 
@@ -1753,8 +1751,6 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
         job.SetStatus(new_status);
         run->SetStatus(run_status);
         run->SetTimeDone(curr_time);
-
-        node_id = run->GetNodeId();
 
         job.Flush(this);
     }}

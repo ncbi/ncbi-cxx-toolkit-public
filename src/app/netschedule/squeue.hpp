@@ -426,8 +426,7 @@ public:
                             CRequestContextFactory* rec_ctx_f,
                             const CJob&             job,
                             time_t                  exp_time);
-    void UpdateWorkerNodeJob(const string&          node_id,
-                             unsigned               job_id,
+    void UpdateWorkerNodeJob(unsigned               job_id,
                              time_t                 exp_time);
     void RemoveJobFromWorkerNode(const CJob&        job,
                                  ENSCompletion      reason);

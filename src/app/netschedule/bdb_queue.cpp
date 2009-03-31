@@ -2339,7 +2339,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
     }}
 
     trans.Commit();
-    q->UpdateWorkerNodeJob(worker_node->GetId(), job_id, curr + tm);
+    q->UpdateWorkerNodeJob(job_id, curr + tm);
 
     exp_time = x_ComputeExpirationTime(time_start, run_timeout);
 
