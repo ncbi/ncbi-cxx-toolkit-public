@@ -46,6 +46,10 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_ctx.hpp>
 
+#ifdef NCBI_OS_UNIX
+#include <unistd.h>
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
