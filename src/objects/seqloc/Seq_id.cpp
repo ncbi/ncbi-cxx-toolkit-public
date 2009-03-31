@@ -1489,9 +1489,10 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             str = tsid->GetName();
         }
 
-        if ((flags & CSeq_id::fLabel_Version)  &&  !id.IsGpipe()
-            &&  !str.empty()  &&  tsid->IsSetVersion()) {
-            str += "." + NStr::IntToString(tsid->GetVersion());
+        if ( !str.empty() ) {
+            if ( (flags & CSeq_id::fLabel_Version)  &&  tsid->IsSetVersion()) {
+                str += "." + NStr::IntToString(tsid->GetVersion());
+            }
         }
         *label += str;
 
