@@ -137,6 +137,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_OverlapType = sel.m_OverlapType;
         m_ResolveMethod = sel.m_ResolveMethod;
         m_SortOrder = sel.m_SortOrder;
+        m_FeatComparator = sel.m_FeatComparator;
         m_LimitObjectType = sel.m_LimitObjectType;
         m_UnresolvedFlag = sel.m_UnresolvedFlag;
         m_LimitObject = sel.m_LimitObject;

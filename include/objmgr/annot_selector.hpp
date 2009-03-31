@@ -63,6 +63,22 @@ class CAnnotObject_Info;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  IFeatComparator
+///
+///  Interface for user-defined ordering of features,
+///  should be inherited from CObject
+///
+
+struct IFeatComparator
+{
+    virtual bool Less(const CSeq_feat& f1,
+                      const CSeq_feat& f2,
+                      CScope* scope) = 0;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  SAnnotSelector --
 ///
 ///  Structure to control retrieval of Seq-annots
@@ -216,6 +232,25 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         {
             m_SortOrder = sort_order;
             return *this;
+        }
+
+    SAnnotSelector& SetFeatComparator(IFeatComparator* comparator)
+        {
+            m_FeatComparator = comparator;
+            return *this;
+        }
+    SAnnotSelector& ResetFeatComparator(void)
+        {
+            m_FeatComparator.Reset();
+            return *this;
+        }
+    bool IsSetFeatComparator(void) const
+        {
+            return m_FeatComparator;
+        }
+    IFeatComparator* GetFeatComparator(void) const
+        {
+            return m_FeatComparator.GetNCPointerOrNull();
         }
 
     /// GetResolveMethod() returns current value of resolve_method.
@@ -604,6 +639,7 @@ protected:
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
     ESortOrder            m_SortOrder;
+    CIRef<IFeatComparator>m_FeatComparator;
 
     enum ELimitObject {
         eLimit_None,

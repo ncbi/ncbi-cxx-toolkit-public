@@ -242,6 +242,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
     arg_desc->AddFlag("reverse", "reverse order of features");
+    arg_desc->AddFlag("labels", "compare features by labels too");
     arg_desc->AddFlag("no_sort", "do not sort features");
     arg_desc->AddDefaultKey("max_feat", "MaxFeat",
                             "Max number of features to iterate",
@@ -418,6 +419,7 @@ int CDemoApp::Run(void)
         SAnnotSelector::eSortOrder_Reverse : SAnnotSelector::eSortOrder_Normal;
     if ( args["no_sort"] )
         order = SAnnotSelector::eSortOrder_None;
+    bool labels = args["labels"];
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
     bool adaptive = args["adaptive"];
@@ -832,6 +834,9 @@ int CDemoApp::Run(void)
             .SetAdaptiveDepth(adaptive)
             .SetExactDepth(exact_depth)
             .SetUnresolvedFlag(missing);
+        if ( labels ) {
+            base_sel.SetFeatComparator(new feature::CFeatComparatorByLabel());
+        }
         if ( externals_only ) {
             base_sel.SetSearchExternal(handle);
         }

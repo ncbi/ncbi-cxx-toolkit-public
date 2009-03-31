@@ -757,6 +757,17 @@ CRef<CSeq_feat> CFeatIdRemapper::RemapIds(const CFeat_CI& feat_it)
 }
 
 
+bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
+                                  const CSeq_feat& f2,
+                                  CScope* scope)
+{
+    string l1, l2;
+    GetLabel(f1, &l1, eBoth, scope);
+    GetLabel(f2, &l2, eBoth, scope);
+    return l1 < l2;
+}
+
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

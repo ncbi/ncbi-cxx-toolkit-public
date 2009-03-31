@@ -33,6 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <objmgr/annot_selector.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -91,6 +92,14 @@ private:
     typedef pair<int, CTSE_Handle> TFullId;
     typedef map<TFullId, int> TIdMap;
     TIdMap m_IdMap;
+};
+
+
+class CFeatComparatorByLabel : public CObject, public IFeatComparator
+{
+    virtual bool Less(const CSeq_feat& f1,
+                      const CSeq_feat& f2,
+                      CScope* scope);
 };
 
 

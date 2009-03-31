@@ -502,6 +502,14 @@ const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
 
 struct CAnnotObjectType_Less
 {
+    IFeatComparator* m_FeatComparator;
+    CScope* m_Scope;
+    explicit CAnnotObjectType_Less(IFeatComparator* feat_comparator = 0,
+                                   CScope* scope = 0)
+        : m_FeatComparator(feat_comparator),
+          m_Scope(scope)
+        {
+        }
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const;
 
@@ -678,6 +686,18 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
                 if ( diff != 0 )
                     return diff < 0;
             }
+            bool x_snp = !x_info;
+            bool y_snp = !y_info;
+            if ( x_snp != y_snp ) {
+                // non-SNP before SNP
+                return y_snp;
+            }
+        }
+
+        if ( m_FeatComparator && x_info && y_info ) {
+            return m_FeatComparator->Less(*x_info->GetFeatFast(),
+                                          *y_info->GetFeatFast(),
+                                          m_Scope);
         }
     }
     return x < y;
@@ -686,6 +706,11 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
 
 struct CAnnotObject_Less
 {
+    explicit CAnnotObject_Less(IFeatComparator* feat_comparator = 0,
+                               CScope* scope = 0)
+        : type_less(feat_comparator, scope)
+        {
+        }
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
@@ -722,6 +747,11 @@ struct CAnnotObject_Less
 
 struct CAnnotObject_LessReverse
 {
+    explicit CAnnotObject_LessReverse(IFeatComparator* feat_comparator = 0,
+                                      CScope* scope = 0)
+        : type_less(feat_comparator, scope)
+        {
+        }
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
@@ -1510,10 +1540,14 @@ void CAnnot_Collector::x_Sort(void)
     _ASSERT(!m_MappingCollector.get());
     switch ( m_Selector->m_SortOrder ) {
     case SAnnotSelector::eSortOrder_Normal:
-        sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Less());
+        sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+             CAnnotObject_Less(m_Selector->GetFeatComparator(),
+                               m_Scope));
         break;
     case SAnnotSelector::eSortOrder_Reverse:
-        sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_LessReverse());
+        sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+             CAnnotObject_LessReverse(m_Selector->GetFeatComparator(),
+                                      m_Scope));
         break;
     default:
         // do nothing
