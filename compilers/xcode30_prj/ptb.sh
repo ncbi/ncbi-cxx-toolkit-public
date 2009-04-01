@@ -51,6 +51,7 @@ if test "$buildptb" = "yes"; then
   echo "xcodebuild -project $BUILD_TREE_ROOT/static/UtilityProjects/PTB.xcodeproj -target $ptbname -configuration ReleaseDLL"
   echo "======================================================================"
   xcodebuild -project $BUILD_TREE_ROOT/static/UtilityProjects/PTB.xcodeproj -target $ptbname -configuration ReleaseDLL
+  test "$?" -ne 0 && exit 1
   PTB_EXE=${PTB_PATH}/$ptbname
 fi
 
@@ -69,6 +70,7 @@ echo "Running CONFIGURE."
 echo "$PTB_EXE $PTB_FLAGS -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH"
 echo "======================================================================"
 $PTB_EXE $PTB_FLAGS -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH
+test "$?" -ne 0 && exit 1
 
 if test "$TERM" = "dumb"; then
   open ${SLN_PATH}_configuration_log.txt
