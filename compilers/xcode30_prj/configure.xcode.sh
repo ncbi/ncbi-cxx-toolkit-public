@@ -178,7 +178,7 @@ cd $curr
 #--------------------------------------------------------------------------------
 # extra action
 if test -n "$use_action"; then
-  use_action=`echo $use_action | sed -e s%{}%$sln_path%g`
+  use_action=`echo $use_action | sed -e s%{}%$curr/$sln_path%g`
   echo
   echo "Executing $use_action"
   eval $use_action
