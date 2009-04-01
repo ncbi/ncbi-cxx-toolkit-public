@@ -1293,7 +1293,7 @@ CNcbiTestApplication::GetTestUnit(CTempString test_name)
                                             x_GetTrimmedTestName(test_name));
     if (it == m_AllTests.end()) {
         NCBI_THROW(CCoreException, eInvalidArg,
-                   "Test unit '" + (string)test_name + " not found.");
+                   "Test unit '" + (string)test_name + "' not found.");
     }
 
     return it->second;
