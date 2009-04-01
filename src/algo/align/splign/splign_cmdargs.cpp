@@ -122,7 +122,7 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     splign->SetEndGapDetection(true);
     splign->SetPolyaDetection(true);
 
-    splign->SetMaxIntron(args["compartment_penalty"].AsInteger());
+    splign->SetMaxIntron(args["max_intron"].AsInteger());
     splign->SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
     splign->SetMinCompartmentIdentity(args["min_compartment_idty"].AsDouble());
     if(args["min_singleton_idty"]) {
