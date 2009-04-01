@@ -1217,13 +1217,15 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
         }
         _ASSERT(!seg.m_RefObject);
 
-        // update segment
-        seg.m_SegType = eSeqData;
-        x_SetChunk(seg, chunk);
-
-        // next
-        pos += seg.m_Length;
-        length -= seg.m_Length;
+        if ( seg.m_Length > 0 ) {
+            // update segment
+            seg.m_SegType = eSeqData;
+            x_SetChunk(seg, chunk);
+            
+            // next
+            pos += seg.m_Length;
+            length -= seg.m_Length;
+        }
         ++index;
     }
 }
