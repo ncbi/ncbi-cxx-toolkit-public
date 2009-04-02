@@ -39,6 +39,12 @@
 #include <algo/align/nw/align_exception.hpp>
 #include <algo/align/util/hit_filter.hpp>
 
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+
 #include <algorithm>
 #include <numeric>
 #include <vector>
@@ -268,6 +274,15 @@ public:
     bool GetStatus(size_t i) const {
         return m_status[i];
     }
+
+    /// Retrieve all valid compartments in a seq-align-set.
+    ///
+    /// @return
+    ///    A seq-align-set object with this hierarchy.
+    ///      1. Compartment-level seq-align with bounds.
+    ///      2. Seq-align-set keeping individual hits of the compartment.
+    ///      3. Hit-level seq-align of the dense-seg type.
+    CRef<objects::CSeq_align_set> AsSeqAlignSet(void) const;
         
 private:
 
@@ -1219,6 +1234,75 @@ bool CCompartmentAccessor<THit>::GetNext(THitRefs& compartment) {
     else {
         return false;
     }
+}
+
+
+template<class THit>
+CRef<objects::CSeq_align_set> CCompartmentAccessor<THit>::AsSeqAlignSet(void) const
+{
+    USING_SCOPE(objects);
+
+    CRef<CSeq_align_set> rv (new CSeq_align_set);
+
+    // retrieve the ids
+    CRef<CSeq_id> seqid_query (new CSeq_id), seqid_subj (new CSeq_id);
+    if(m_pending.size()) {
+        if(m_pending.front().size()) {
+            const THit & h (*m_pending.front().front());
+            seqid_query->Assign(*(h.GetQueryId()));
+            seqid_subj->Assign(*(h.GetSubjId()));
+        }
+    }
+
+    CSeq_align_set::Tdata& sas1_data (rv->Set());
+
+    for(size_t i(0), idim(m_pending.size()); i < idim; ++i) {
+
+        if(m_status[i]) {
+
+            // note the range
+            TCoord range_min (i > 0 && m_strands[i-1] == m_strands[i]
+                              ? m_ranges[4*i - 1]
+                              : 0);
+
+            TCoord range_max (i + 1 < idim && m_strands[i+1] == m_strands[i]
+                              ? m_ranges[4*i + 6]
+                              : numeric_limits<TCoord>::max());
+
+            CRef<CSeq_align> sa2 (new CSeq_align);
+            sa2->SetType(CSeq_align::eType_disc);
+
+            CSeq_align::TBounds & bounds (sa2->SetBounds());
+            const ENa_strand query_strand (eNa_strand_plus);
+
+            const ENa_strand subj_strand (m_strands[i]? eNa_strand_plus: 
+                                          eNa_strand_minus);
+            CRef<CSeq_loc> seq_loc (new CSeq_loc (*seqid_subj, range_min, 
+                                                  range_max, subj_strand));
+            bounds.push_back(seq_loc);
+
+            // add the hits
+            CSeq_align_set::Tdata& sas2_data (sa2->SetSegs().SetDisc().Set());
+            ITERATE(typename THitRefs, ii, m_pending[i]) {
+
+                const THit& h (**ii);
+                CRef<CSeq_align> sa3 (new CSeq_align);
+                sa3->SetType(CSeq_align::eType_global);
+                CDense_seg & ds (sa3->SetSegs().SetDenseg());
+                ds.FromTranscript(h.GetQueryStart(), query_strand, 
+                                   h.GetSubjStart(), subj_strand, 
+                                   h.GetTranscript());
+                ds.SetIds().push_back(seqid_query);
+                ds.SetIds().push_back(seqid_subj);
+                sas2_data.push_back(sa3);
+            }
+
+            // save into the seq-align-set
+            sas1_data.push_back(sa2);
+        }
+    }
+
+    return rv;
 }
 
 
