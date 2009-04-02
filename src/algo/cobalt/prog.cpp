@@ -992,7 +992,8 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
     if (!hit.get()) {
         x_AlignProfileProfile(node_list1, node_list2, alignment, pair_info,
                               iteration);
-        string message = "No in-cluster hits were found for subtrees: ";
+        string message = "No significant alignments were found for cluster"
+            " containing sequences: ";
         ITERATE(vector<CTree::STreeLeaf>, it, node_list1) {
             message += NStr::IntToString(it->query_idx) + ", ";
         }
@@ -1000,6 +1001,8 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
         ITERATE(vector<CTree::STreeLeaf>, it, node_list2) {
             message += NStr::IntToString(it->query_idx) + ", ";
         }
+        message += ". Decreasing maximum in-cluster distance or turing off"
+            " clustering option may improve results.";
         m_Messages.push_back(message);
 
         return;

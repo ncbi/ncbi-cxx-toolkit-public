@@ -647,8 +647,8 @@ BOOST_AUTO_TEST_CASE(TestResultsForZeroClusterDiam)
 
     //Bad input file - there are two exactly same sequences
 
-    BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eWarnings);
-    BOOST_CHECK((int)aligner.GetMessages().size() > 0);
+    BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
+    BOOST_CHECK((int)aligner.GetMessages().size() == 0);
 
     s_TestResults(aligner);
 }

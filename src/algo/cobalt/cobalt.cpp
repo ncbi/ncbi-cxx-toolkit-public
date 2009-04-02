@@ -624,16 +624,15 @@ CMultiAligner::x_FindQueryClusters()
         m_Clusterer.Reset();
         m_ClustAlnMethod = CMultiAlignerOptions::eNone;
 
-        m_Messages.push_back("No query clusters were found. Try increasing" 
-                             " maximum in-cluster distance.");
         return false;
     }
 
     if (clusters.size() == 1) {
         m_Messages.push_back("All queries form only one cluster. No domain"
-                             " information will be used for constraints."
-                             " Try decreasing maximum in-cluster distance or"
-                             " turn off query clustering option");
+                             " information was used for generating constraints."
+                             " Decreasing maximum in-cluster distance or"
+                             " turning off query clustering option"
+                             " may improve results.");
     }
 
     // Select cluster prototypes
