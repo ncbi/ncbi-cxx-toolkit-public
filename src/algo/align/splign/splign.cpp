@@ -935,6 +935,22 @@ void CSplign::Run(THitRefs* phitrefs)
 }
 
 
+bool CSplign::AlignSingleCompartment(CRef<objects::CSeq_align> compartment,
+                                     SAlignedCompartment* result)
+{
+    USING_SCOPE(objects);
+    const CRef<CSeq_loc> seqloc (compartment->GetBounds().front());
+    const size_t subj_min (seqloc->GetStart(eExtreme_Positional));
+    const size_t subj_max (seqloc->GetStop(eExtreme_Positional));
+
+    THitRefs hitrefs;
+    ITERATE(CSeq_align_set::Tdata, ii, compartment->GetSegs().GetDisc().Get()) {
+    }
+
+    return AlignSingleCompartment(&hitrefs, subj_min, subj_max, result);
+}
+
+
 bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
                                      size_t subj_min, size_t subj_max,
                                      SAlignedCompartment* result)

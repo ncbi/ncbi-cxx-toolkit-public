@@ -182,10 +182,15 @@ public:
         return m_result;
     }
 
-    // align as a single compartment within given genomic bounds
+    // align single compartment within given genomic bounds
     bool AlignSingleCompartment(THitRefs* hitrefs,
                                 size_t range_left, size_t range_right,
                                 SAlignedCompartment* result);
+
+    // align single ASN.1 compartment
+    bool AlignSingleCompartment(CRef<objects::CSeq_align> compartment,
+                                SAlignedCompartment* result);
+
 
     // clear sequence vectors and scope - use with caution
     void ClearMem(void);
