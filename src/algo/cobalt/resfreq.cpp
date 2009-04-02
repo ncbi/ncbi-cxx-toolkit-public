@@ -36,7 +36,7 @@ Contents: Implementation of CProfileData
 ******************************************************************************/
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/seqsrc_seqdb.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/core/blast_rps.h>
 #include <algo/cobalt/resfreq.hpp>
 
