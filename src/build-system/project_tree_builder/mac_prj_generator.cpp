@@ -771,9 +771,13 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     tmp_str = GetApp().GetMetaMakefile().GetCompilerOpt("ARCHS", cfg);
     tmp_list.clear();
     NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
-    string def_arch( CMsvc7RegSettings::GetMsvcPlatformName());
-    if (find(tmp_list.begin(), tmp_list.end(), def_arch) == tmp_list.end()) {
-        tmp_list.push_front(def_arch);
+    string req_arch( CMsvc7RegSettings::GetRequestedArchs());
+    list<string> req_list;
+    NStr::Split(req_arch, LIST_SEPARATOR, req_list);
+    ITERATE( list<string>, r, req_list) {
+        if (find(tmp_list.begin(), tmp_list.end(), *r) == tmp_list.end()) {
+            tmp_list.push_back(*r);
+        }
     }
     CRef<CArray> archs( AddArray( *settings, "ARCHS"));
     ITERATE( list<string>, a, tmp_list) {

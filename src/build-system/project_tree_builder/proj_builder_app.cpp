@@ -362,7 +362,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,7,7) );
+    SetVersion( CVersionInfo(1,8,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -394,8 +394,10 @@ void CProjBulderApp::Init(void)
     string context;
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         context = "MSVC ";
+/*
         context += CMsvc7RegSettings::GetProjectFileFormatVersion() +
             " (" + CMsvc7RegSettings::GetMsvcPlatformName() + ")";
+*/
     } else if (CMsvc7RegSettings::GetMsvcPlatform() > CMsvc7RegSettings::eUnix) {
         context = "XCODE ";
 /*
@@ -442,8 +444,24 @@ void CProjBulderApp::Init(void)
     arg_desc->AddOptionalKey("projtag", "project_tag",
                              "Include projects that have this tags only.",
                              CArgDescriptions::eString);
+
+#if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+    arg_desc->AddOptionalKey("ide", "xcode_version",
+                             "Target version of Xcode, for example: 30",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("arch", "architecture",
+                             "Target architecture, for example: ppc, i386",
+                             CArgDescriptions::eString);
+#elif defined(NCBI_COMPILER_MSVC)
+    arg_desc->AddOptionalKey("ide", "msvc_version",
+                             "Target version of MS Visual Studio, for example: 800, 900",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("arch", "platform",
+                             "Target platform, for example: Win32, x64",
+                             CArgDescriptions::eString);
     arg_desc->AddFlag      ("cfg", 
                             "Show GUI to confirm configuration parameters (MS Windows only).");
+#endif
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }

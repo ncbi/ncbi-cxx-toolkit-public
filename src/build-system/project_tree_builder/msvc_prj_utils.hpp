@@ -228,6 +228,10 @@ public:
     {
         return sm_MsvcPlatformName;
     }
+    static const string& GetRequestedArchs(void)
+    {
+        return sm_RequestedArchs;
+    }
     static string          GetMsvcRegSection(void);
     static string          GetMsvcSection(void);
 
@@ -240,6 +244,8 @@ private:
     static EMsvcPlatform  sm_MsvcPlatform;
     static string sm_MsvcVersionName;
     static string sm_MsvcPlatformName;
+    static string sm_RequestedArchs;
+
     CMsvc7RegSettings(const CMsvc7RegSettings&);
     CMsvc7RegSettings& operator= (const CMsvc7RegSettings&);
 };

@@ -448,7 +448,7 @@ string CMsvc7RegSettings::sm_MsvcVersionName = "30";
 
 CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
     CMsvc7RegSettings::eXCode;
-string CMsvc7RegSettings::sm_MsvcPlatformName = "i386";
+string CMsvc7RegSettings::sm_MsvcPlatformName = "ppc";
 
 #elif defined(NCBI_COMPILER_MSVC)
 
@@ -487,13 +487,14 @@ CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
 string CMsvc7RegSettings::sm_MsvcPlatformName = "Unix";
 
 #endif // NCBI_COMPILER_MSVC
+string CMsvc7RegSettings::sm_RequestedArchs = "";
 
 void CMsvc7RegSettings::IdentifyPlatform()
 {
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
-    string arch( CNcbiApplication::Instance()->GetEnvironment().Get("NATIVE_ARCH"));
-    if (!arch.empty()) {
-        sm_MsvcPlatformName = arch;
+    string native( CNcbiApplication::Instance()->GetEnvironment().Get("NATIVE_ARCH"));
+    if (!native.empty()) {
+        sm_MsvcPlatformName = native;
     }
     string xcode( CNcbiApplication::Instance()->GetEnvironment().Get("XCODE_VERSION_MAJOR"));
     if (xcode >= "0300") {
@@ -501,6 +502,62 @@ void CMsvc7RegSettings::IdentifyPlatform()
         sm_MsvcVersionName = "30";
     }
     sm_MsvcPlatform = eXCode;
+    sm_RequestedArchs = sm_MsvcPlatformName;
+
+    CArgs args = CNcbiApplication::Instance()->GetArgs();
+    const CArgValue& ide = args["ide"];
+    if ((bool)ide) {
+        int i = ide.AsInteger();
+        if (i == 30) {
+            sm_MsvcVersion = eXCode30;
+            sm_MsvcVersionName = "30";
+        } else {
+            NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
+        }
+    }    
+    const CArgValue& arch = args["arch"];
+    if ((bool)arch) {
+        const string& a = arch.AsString();
+        sm_MsvcPlatform = eXCode;
+        sm_RequestedArchs = a;
+        string tmp;
+        NStr::SplitInTwo(a, " ", sm_MsvcPlatformName, tmp);
+    }
+#elif defined(NCBI_COMPILER_MSVC)
+    CArgs args = CNcbiApplication::Instance()->GetArgs();
+    const CArgValue& ide = args["ide"];
+    if ((bool)ide) {
+        switch (ide.AsInteger()) {
+        case 710:
+            sm_MsvcVersion = eMsvc710;
+            sm_MsvcVersionName = "710";
+            break;
+        case 800:
+            sm_MsvcVersion = eMsvc800;
+            sm_MsvcVersionName = "800";
+            break;
+        case 900:
+            sm_MsvcVersion = eMsvc900;
+            sm_MsvcVersionName = "900";
+            break;
+        default:
+            NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
+            break;
+        }
+    }    
+    const CArgValue& arch = args["arch"];
+    if ((bool)arch) {
+        const string& a = arch.AsString();
+        if (a == "Win32") {
+            sm_MsvcPlatform = eMsvcWin32;
+            sm_RequestedArchs = sm_MsvcPlatformName = "Win32";
+        } else if (a == "x64") {
+            sm_MsvcPlatform = eMsvcX64;
+            sm_RequestedArchs = sm_MsvcPlatformName = "x64";
+        } else {
+            NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported build platform");
+        }
+    }
 #endif
 }
 
