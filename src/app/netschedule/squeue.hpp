@@ -417,6 +417,8 @@ public:
     /// Fails all such jobs, called by external node watcher, can safely
     /// clean out node's record
     void ClearWorkerNode(CWorkerNode* worker_node, const string& reason);
+    void ClearWorkerNode(const string& node_id, const string& reason);
+
     void NotifyListeners(bool unconditional, unsigned aff_id);
     void PrintWorkerNodeStat(CNcbiOstream& out,
                              time_t curr,
@@ -523,6 +525,9 @@ private:
     void x_CreateReadGroup(unsigned group_id, const TNSBitVector& bv_jobs);
     // Remove from group, and if group is empty delete it
     void x_RemoveFromReadGroup(unsigned group_id, unsigned job_id);
+
+    void FailJobs(const TJobList& jobs,
+        CWorkerNode* worker_node, const string& err_msg);
 
 private:
     typedef map<unsigned, TNSBitVector> TGroupMap;

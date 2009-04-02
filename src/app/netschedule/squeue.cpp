@@ -1405,12 +1405,29 @@ void SLockedQueue::ClearWorkerNode(CWorkerNode* worker_node,
 {
     TJobList jobs;
     m_WorkerNodeList.ClearNode(worker_node, jobs);
-    ITERATE(TJobList, it, jobs) {
-        FailJob(worker_node, *it, "Node closed, " + reason, "", 0);
-    }
+    FailJobs(jobs, worker_node, "Node closed, " + reason);
     ClearAffinity(worker_node);
 }
 
+
+void SLockedQueue::ClearWorkerNode(const string& node_id, const string& reason)
+{
+    TJobList jobs;
+    TWorkerNodeRef worker_node = m_WorkerNodeList.ClearNode(node_id, jobs);
+
+    if (worker_node) {
+        FailJobs(jobs, worker_node, "Node closed, " + reason);
+        ClearAffinity(worker_node);
+    }
+}
+
+void SLockedQueue::FailJobs(
+    const TJobList& jobs, CWorkerNode* worker_node, const string& err_msg)
+{
+    ITERATE(TJobList, it, jobs) {
+        FailJob(worker_node, *it, err_msg, "", 0);
+    }
+}
 
 void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 {

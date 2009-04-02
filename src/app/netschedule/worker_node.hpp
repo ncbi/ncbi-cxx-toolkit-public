@@ -126,6 +126,7 @@ public:
     unsigned GetHost() const {return m_Host;}
     unsigned short GetPort() const {return m_Port;}
 
+    bool IsRegistered() const {return m_Registered;}
     bool IsIdentified() const {return m_Port > 0;}
 
 protected:
@@ -153,6 +154,7 @@ protected:
     /// Up to what time client expects notifications, if 0 - do not notify
     time_t   m_NotifyTime;
 
+    bool     m_Registered;
     // TODO Must be removed when all worker nodes become "new-style".
     bool     m_NewStyle;
 };
@@ -170,7 +172,7 @@ public:
 
 typedef CRef<CWorkerNode> TWorkerNodeRef;
 
-typedef set<CWorkerNode*> TWorkerNodeRegister;
+typedef set<TWorkerNodeRef> TWorkerNodeRegister;
 
 
 struct SCompareNodeAddress
@@ -217,6 +219,9 @@ public:
     void UnregisterNode(CWorkerNode* worker_node);
     // Return jobs assigned to the worker node and clear the assignment.
     void ClearNode(CWorkerNode* worker_node, TJobList& jobs);
+    // Do the same but also return the worker node object with the
+    // specified node_id, if it exists.
+    TWorkerNodeRef ClearNode(const string& node_id, TJobList& jobs);
 
     void SetId(CWorkerNode* worker_node, const string& node_id);
     void SetPort(CWorkerNode* worker_node, unsigned short port);
@@ -261,6 +266,8 @@ public:
     ~CQueueWorkerNodeList();
 
 private:
+    // Move all jobs assigned to the specified worker node to the 'jobs' list.
+    void DisplaceWorkerNodeJobs(CWorkerNode* worker_node, TJobList& jobs);
     void MergeWorkerNodes(TWorkerNodeRef& temporary, CWorkerNode* identified);
 
     //void x_GenerateNodeId(string& node_id);

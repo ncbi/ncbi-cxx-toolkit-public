@@ -169,7 +169,8 @@ struct SJS_Request
             case 'j':
                 if (key == "job_key") {
                     job_key = val;
-                    job_id = CNetScheduleKey(val).id;
+                    if (!val.empty())
+                        job_id = CNetScheduleKey(val).id;
                 }
                 else if (key == "job_return_code") {
                     job_return_code =
@@ -992,9 +993,6 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
             m_Incaps &= ~eNSAC_Submitter;
         if (m_Queue->IsVersionControl())
             m_VersionControl = true;
-
-        m_Queue->x_GetLQueue()->GetWorkerNodeList().
-            RegisterNode(m_WorkerNode);
     }
 
     // TODO When all worker nodes will learn to send the INIT command,
@@ -1070,6 +1068,10 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     }
 
     if (extra.role & eNSAC_Worker) {
+        if (!m_WorkerNode->IsRegistered())
+            m_Queue->x_GetLQueue()->GetWorkerNodeList().
+                RegisterNode(m_WorkerNode);
+
         if (!m_WorkerNode->IsIdentified()) {
             if (m_JobReq.port > 0)
                 m_Queue->x_GetLQueue()->GetWorkerNodeList().
@@ -1885,7 +1887,7 @@ void CNetScheduleHandler::ProcessDump()
 
     ios << "OK:" << NETSCHEDULED_FULL_VERSION << endl;
 
-    if (m_JobReq.job_id) {
+    if (m_JobReq.job_id == 0) {
         ios << "OK:" << "[Job status matrix]:";
 
         m_Queue->PrintJobStatusMatrix(ios);
@@ -2440,12 +2442,14 @@ void CNetScheduleHandler::ProcessInitWorkerNode()
     string old_id = m_WorkerNode->GetId();
     string new_id = m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize);
 
-    CRef<SLockedQueue> locked_queue = m_Queue->x_GetLQueue();
+    if (old_id != new_id) {
+        CRef<SLockedQueue> locked_queue = m_Queue->x_GetLQueue();
 
-    if (!old_id.empty() && old_id != new_id)
-        locked_queue->ClearWorkerNode(m_WorkerNode, "replaced by new node");
+        if (!old_id.empty())
+            locked_queue->ClearWorkerNode(m_WorkerNode, "replaced by new node");
 
-    locked_queue->GetWorkerNodeList().SetId(m_WorkerNode, new_id);
+        locked_queue->GetWorkerNodeList().SetId(m_WorkerNode, new_id);
+    }
 
     WriteOK();
 }
@@ -2453,8 +2457,8 @@ void CNetScheduleHandler::ProcessInitWorkerNode()
 
 void CNetScheduleHandler::ProcessClearWorkerNode()
 {
-    // XXX Unused parameter m_JobReq.param1
-    m_Queue->x_GetLQueue()->ClearWorkerNode(m_WorkerNode, "cleared");
+    m_Queue->x_GetLQueue()->ClearWorkerNode(
+        m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize), "cleared");
 
     WriteOK();
 }

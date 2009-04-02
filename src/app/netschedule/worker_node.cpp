@@ -113,6 +113,7 @@ CWorkerNode_Real::CWorkerNode_Real(unsigned host) : CWorkerNode(host, 0)
     m_VisitTimeout = 60;
     m_JobValidityTime = 0;
     m_NotifyTime = 0;
+    m_Registered = false;
     m_NewStyle = false;
 }
 
@@ -139,20 +140,20 @@ void CQueueWorkerNodeList::RegisterNode(CWorkerNode* worker_node)
     CWriteLockGuard guard(m_Lock);
 
     worker_node->m_WorkerNodeList = this;
-    m_WorkerNodeRegister.insert(worker_node);
+    m_WorkerNodeRegister.insert(TWorkerNodeRef(worker_node));
+    worker_node->m_Registered = true;
 }
 
 void CQueueWorkerNodeList::UnregisterNode(CWorkerNode* worker_node)
 {
     CWriteLockGuard guard(m_Lock);
 
-    m_WorkerNodeRegister.erase(worker_node);
     m_WorkerNodeByAddress.erase(worker_node);
     m_WorkerNodeById.erase(worker_node);
 
-    ITERATE(TJobInfoById, jobinfo_it, worker_node->m_JobInfoById) {
-        m_JobInfoById.erase(*jobinfo_it);
-        delete *jobinfo_it;
+    ITERATE(TJobInfoById, job_info_it, worker_node->m_JobInfoById) {
+        m_JobInfoById.erase(*job_info_it);
+        delete *job_info_it;
     }
 
     worker_node->m_JobInfoById.clear();
@@ -176,13 +177,20 @@ void CQueueWorkerNodeList::ClearNode(CWorkerNode* worker_node, TJobList& jobs)
 {
     CWriteLockGuard guard(m_Lock);
 
-    ITERATE(TJobInfoById, jobinfo_it, worker_node->m_JobInfoById) {
-        jobs.push_back((*jobinfo_it)->job_id);
-        m_JobInfoById.erase(*jobinfo_it);
-        delete *jobinfo_it;
-    }
+    DisplaceWorkerNodeJobs(worker_node, jobs);
+}
 
-    worker_node->m_JobInfoById.clear();
+TWorkerNodeRef CQueueWorkerNodeList::ClearNode(
+    const string& node_id, TJobList& jobs)
+{
+    CWriteLockGuard guard(m_Lock);
+
+    CWorkerNode* worker_node = FindWorkerNodeById(node_id);
+
+    if (worker_node != NULL)
+        DisplaceWorkerNodeJobs(worker_node, jobs);
+
+    return TWorkerNodeRef(worker_node);
 }
 
 void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
@@ -458,6 +466,18 @@ CQueueWorkerNodeList::~CQueueWorkerNodeList()
     }
 }
 
+void CQueueWorkerNodeList::DisplaceWorkerNodeJobs(
+    CWorkerNode* worker_node, TJobList& jobs)
+{
+    ITERATE(TJobInfoById, job_info_it, worker_node->m_JobInfoById) {
+        jobs.push_back((*job_info_it)->job_id);
+        m_JobInfoById.erase(*job_info_it);
+        delete *job_info_it;
+    }
+
+    worker_node->m_JobInfoById.clear();
+}
+
 void CQueueWorkerNodeList::MergeWorkerNodes(
     TWorkerNodeRef& temporary, CWorkerNode* identified)
 {
@@ -465,6 +485,14 @@ void CQueueWorkerNodeList::MergeWorkerNodes(
 
     identified->m_JobInfoById.insert(temporary->m_JobInfoById.begin(),
         temporary->m_JobInfoById.end());
+
+    ITERATE(TJobInfoById, job_info_it, temporary->m_JobInfoById) {
+        (*job_info_it)->assigned_node = identified;
+    }
+
+    temporary->m_JobInfoById.clear();
+
+    // FIXME Merge affinities as well
 
     if (identified->m_LastVisit < temporary->m_LastVisit)
         identified->m_LastVisit = temporary->m_LastVisit;
