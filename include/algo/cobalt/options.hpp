@@ -41,7 +41,6 @@ Contents: Interface for CMultiAlignerOptions
 /// Options for CMultiAligner
 
 #include <corelib/ncbiobj.hpp>
-#include <algo/blast/core/blast_options.h>
 #include <algo/cobalt/kmercounts.hpp>
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 
@@ -703,8 +702,8 @@ private:
 
     vector<string> m_Messages;
 
-    static const int kDefaultGapOpen = -BLAST_GAP_OPEN_PROT;
-    static const int kDefaultGapExtend = -BLAST_GAP_EXTN_PROT;
+    static const int kDefaultGapOpen = -11;
+    static const int kDefaultGapExtend = -1;
     static const int kDefaultUserConstraintsScore = 1000000;
 };
 

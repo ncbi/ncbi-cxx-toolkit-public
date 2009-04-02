@@ -39,7 +39,6 @@ Contents: Implementation of options for CMultiAligner
 /// Implementation of the CMultiAlignerOptions class
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/core/blast_options.h>
 #include <algo/cobalt/exception.hpp>
 #include <algo/cobalt/options.hpp>
 #include <algo/cobalt/patterns.hpp>
