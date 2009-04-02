@@ -1631,6 +1631,35 @@ if test "x$RANLIB" != "x:"; then
 fi
 if test "$with_strip" = yes; then
    AC_CHECK_PROG(STRIP, strip, strip, @:)
+   AC_CACHE_CHECK([whether strip loses runtime type information],
+      ncbi_cv_strip_loses_rtti,
+      [if test "$cross_compiling" = yes; then
+          case "$host_os" in
+             darwin* ) ncbi_cv_strip_loses_rtti=yes ;;
+             # No problems observed elsewhere so far.
+             *       ) ncbi_cv_strip_loses_rtti=no  ;;
+          esac
+       else
+          AC_LANG_CONFTEST([AC_LANG_PROGRAM(
+                               [[#include <iostream>
+                                 #include <typeinfo>
+                                 struct SomeStruct { };]],
+                               [[std::cout << typeid(SomeStruct).name();]])])
+          echo $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS -o conftest$ac_exeext \
+             conftest.$ac_ext >&AS_MESSAGE_LOG_FD
+          $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS -o conftest$ac_exeext \
+             conftest.$ac_ext >&AS_MESSAGE_LOG_FD 2>&1
+          $STRIP conftest$ac_exeext
+          if (ulimit -c 0; ./conftest$ac_exeext) >/dev/null 2>&1; then
+             ncbi_cv_strip_loses_rtti=no
+          else
+             ncbi_cv_strip_loses_rtti=yes
+          fi
+          rm -rf conftest*
+       fi])
+   if test "$ncbi_cv_strip_loses_rtti" = "yes"; then
+      NCBI_CAUTION([Do you still want to proceed (at your own risk)?])
+   fi
 else
    STRIP=@:
 fi

@@ -5656,6 +5656,72 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+   echo "$as_me:$LINENO: checking whether strip loses runtime type information" >&5
+echo $ECHO_N "checking whether strip loses runtime type information... $ECHO_C" >&6
+if test "${ncbi_cv_strip_loses_rtti+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test "$cross_compiling" = yes; then
+          case "$host_os" in
+             darwin* ) ncbi_cv_strip_loses_rtti=yes ;;
+             # No problems observed elsewhere so far.
+             *       ) ncbi_cv_strip_loses_rtti=no  ;;
+          esac
+       else
+          cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <iostream>
+                                 #include <typeinfo>
+                                 struct SomeStruct { };
+int
+main ()
+{
+std::cout << typeid(SomeStruct).name();
+  ;
+  return 0;
+}
+_ACEOF
+          echo $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS -o conftest$ac_exeext \
+             conftest.$ac_ext >&5
+          $CXX $CPPFLAGS $CXXFLAGS $LDFLAGS -o conftest$ac_exeext \
+             conftest.$ac_ext >&5 2>&1
+          $STRIP conftest$ac_exeext
+          if (ulimit -c 0; ./conftest$ac_exeext) >/dev/null 2>&1; then
+             ncbi_cv_strip_loses_rtti=no
+          else
+             ncbi_cv_strip_loses_rtti=yes
+          fi
+          rm -rf conftest*
+       fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_strip_loses_rtti" >&5
+echo "${ECHO_T}$ncbi_cv_strip_loses_rtti" >&6
+   if test "$ncbi_cv_strip_loses_rtti" = "yes"; then
+      case "$with_caution" in
+    yes )
+       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
+echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
+   { (exit 1); exit 1; }; } ;;
+    no )
+       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
+echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
+    * )
+       echo "Do you still want to proceed (at your own risk)? [y/N]"
+       read answer
+       case "$answer" in
+         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
+echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
+         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
+echo "$as_me: error: Configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
+       esac
+       ;;
+ esac
+   fi
 else
    STRIP=@:
 fi
