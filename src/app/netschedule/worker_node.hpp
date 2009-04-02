@@ -132,7 +132,7 @@ public:
 protected:
     friend class CQueueWorkerNodeList;
 
-    mutable CQueueWorkerNodeList* m_WorkerNodeList;
+    CQueueWorkerNodeList* m_WorkerNodeList;
 
     string           m_Id;
     string           m_Auth;

@@ -462,7 +462,7 @@ CQueueWorkerNodeList::~CQueueWorkerNodeList()
     CWriteLockGuard guard(m_Lock);
 
     NON_CONST_ITERATE(TWorkerNodeRegister, it, m_WorkerNodeRegister) {
-        (*it)->m_WorkerNodeList = NULL;
+        it->GetNCPointer()->m_WorkerNodeList = NULL;
     }
 }
 
