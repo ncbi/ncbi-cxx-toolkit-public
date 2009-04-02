@@ -317,11 +317,16 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
             CSeqFeatData::TGene& gene = data.SetGene();
             
             // remove feat.comment if equal to gene.locus
-            if (gene.IsSetLocus()  &&  feat.IsSetComment()) {
-                if (feat.GetComment() == gene.GetLocus()) {
-                    feat.ResetComment();
-                    ChangeMade(CCleanupChange::eChangeComment);
-                }
+            if (gene.IsSetLocus()  &&  feat.IsSetComment() 
+                &&  NStr::EqualCase (feat.GetComment(), gene.GetLocus())) {
+                feat.ResetComment();
+                ChangeMade(CCleanupChange::eChangeComment);
+            }
+            // remove feat.comment if equal to gene.locus_tag
+            if (gene.IsSetLocus_tag()  &&  feat.IsSetComment()
+                &&  NStr::EqualCase (gene.GetLocus_tag(), feat.GetComment())) {
+                feat.ResetComment();
+                ChangeMade(CCleanupChange::eChangeComment);
             }
                 
             // move Gene-ref.db to the Seq-feat.dbxref
@@ -397,6 +402,23 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                 prot.ResetDb();
                 ChangeMade(CCleanupChange::eChangeDbxrefs);
             }
+
+            // remove redundant comment
+            if (feat.IsSetComment()) {
+                FOR_EACH_NAME_ON_PROTREF (it, prot) {
+                    if (NStr::EqualCase (feat.GetComment(), *it)) {
+                        feat.ResetComment();
+                        ChangeMade(CCleanupChange::eChangeComment);
+                        break;
+                    }
+                }
+            }
+            if (feat.IsSetComment() && prot.IsSetDesc() 
+                && NStr::EqualCase(feat.GetComment(), prot.GetDesc())) {
+                feat.ResetComment();
+                ChangeMade(CCleanupChange::eChangeComment);
+            }
+
         }
         break;
     case CSeqFeatData::e_Rna:
