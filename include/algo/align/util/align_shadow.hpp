@@ -31,9 +31,7 @@
 * File Description:
 *   CAlignShadow class
 *
-* CAlignShadow is a simplified yet and compact representation of
-* a pairwise sequence alignment which keeps information about
-* the alignment's borders
+* CAlignShadow is a transcript-based representation of a pairwise sequence alignment.
 *
 */
 
