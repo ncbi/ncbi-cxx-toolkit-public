@@ -362,7 +362,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,7,6) );
+    SetVersion( CVersionInfo(1,7,7) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -739,52 +739,9 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     sln_gen.SaveSolution(m_Solution);
 
     CreateCheckList(configurations, projects_tree);
-    
     list<string> enabled, disabled;
     CreateFeaturesAndPackagesFiles(configurations, enabled, disabled);
-
-    // summary
-    SetDiagPostAllFlags(eDPF_Log);
-    PTB_INFO("===========================================================");
-    PTB_INFO("SOLUTION: " << m_Solution);
-    PTB_INFO("PROJECTS: " << CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree));
-    PTB_INFO("CONFIGURATIONS: " << str_config);
-    PTB_INFO("FEATURES AND PACKAGES: ");
-    string str_pkg = "     enabled: ";
-    ITERATE( list<string>, p, enabled) {
-        if (str_pkg.length() > 70) {
-            PTB_INFO(str_pkg);
-            str_pkg = "              ";
-        }
-        str_pkg += " ";
-        str_pkg += *p;
-    }
-    if (!str_pkg.empty()) {
-        PTB_INFO(str_pkg);
-    }
-    str_pkg = "    disabled: ";
-    ITERATE( list<string>, p, disabled) {
-        if (str_pkg.length() > 70) {
-            PTB_INFO(str_pkg);
-            str_pkg = "              ";
-        }
-        str_pkg += " ";
-        str_pkg += *p;
-    }
-    if (!str_pkg.empty()) {
-        PTB_INFO(str_pkg);
-    }
-    string str_path = GetProjectTreeInfo().m_Compilers;
-    str_path = CDirEntry::ConcatPath(str_path, 
-        GetRegSettings().m_CompilersSubdir);
-    str_path = CDirEntry::ConcatPath(str_path, GetBuildType().GetTypeStr());
-
-    PTB_INFO(" ");
-    PTB_INFO("    If a package is present in both lists,");
-    PTB_INFO("    it is disabled in SOME configurations only");
-    PTB_INFO("    For details see 'features_and_packages' files in");
-    PTB_INFO("    " << str_path << "/%ConfigurationName%");
-    PTB_INFO("===========================================================");
+    GenerateSummary(enabled, disabled);
 #endif //NCBI_COMPILER_MSVC
 }
 
@@ -820,6 +777,11 @@ void CProjBulderApp::GenerateMacProjects(CProjectItemsTree& projects_tree)
     // Projects
     CMacProjectGenerator prj_gen(*configurations, projects_tree);
     prj_gen.Generate(m_Solution);
+
+    CreateCheckList(configurations, projects_tree);
+    list<string> enabled, disabled;
+    CreateFeaturesAndPackagesFiles(configurations, enabled, disabled);
+    GenerateSummary(enabled, disabled);
 #endif
 }
 void CProjBulderApp::CollectLibToLibDependencies(
@@ -1052,6 +1014,7 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
     base_path = CDirEntry::ConcatPath(base_path, GetBuildType().GetTypeStr());
     ITERATE(list<SConfigInfo>, c , *configs) {
         string file_path = CDirEntry::ConcatPath(base_path, c->GetConfigFullName());
+        CDir(file_path).CreatePath();
         string enabled = CDirEntry::ConcatPath(file_path, 
             "features_and_packages.txt");
         string disabled = CDirEntry::ConcatPath(file_path, 
@@ -1108,6 +1071,54 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
     list_enabled.unique();
     list_disabled.sort();
     list_disabled.unique();
+}
+
+void CProjBulderApp::GenerateSummary(
+    const list<string>& enabled, const list<string>& disabled)
+{
+    string str_config;
+    // summary
+    SetDiagPostAllFlags(eDPF_Log);
+    PTB_INFO("===========================================================");
+    PTB_INFO("SOLUTION: " << m_Solution);
+    PTB_INFO("PROJECTS: " << CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree));
+    PTB_INFO("CONFIGURATIONS: " << str_config);
+    PTB_INFO("FEATURES AND PACKAGES: ");
+    string str_pkg = "     enabled: ";
+    ITERATE( list<string>, p, enabled) {
+        if (str_pkg.length() > 70) {
+            PTB_INFO(str_pkg);
+            str_pkg = "              ";
+        }
+        str_pkg += " ";
+        str_pkg += *p;
+    }
+    if (!str_pkg.empty()) {
+        PTB_INFO(str_pkg);
+    }
+    str_pkg = "    disabled: ";
+    ITERATE( list<string>, p, disabled) {
+        if (str_pkg.length() > 70) {
+            PTB_INFO(str_pkg);
+            str_pkg = "              ";
+        }
+        str_pkg += " ";
+        str_pkg += *p;
+    }
+    if (!str_pkg.empty()) {
+        PTB_INFO(str_pkg);
+    }
+    string str_path = GetProjectTreeInfo().m_Compilers;
+    str_path = CDirEntry::ConcatPath(str_path, 
+        GetRegSettings().m_CompilersSubdir);
+    str_path = CDirEntry::ConcatPath(str_path, GetBuildType().GetTypeStr());
+
+    PTB_INFO(" ");
+    PTB_INFO("    If a package is present in both lists,");
+    PTB_INFO("    it is disabled in SOME configurations only");
+    PTB_INFO("    For details see 'features_and_packages' files in");
+    PTB_INFO("    " << str_path << "/%ConfigurationName%");
+    PTB_INFO("===========================================================");
 }
 
 void CProjBulderApp::CreateCheckList(const list<SConfigInfo>* configs,

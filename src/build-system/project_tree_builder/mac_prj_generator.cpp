@@ -704,6 +704,7 @@ string CMacProjectGenerator::CreateProjectBuildConfigurations(
             cfg->m_rtType == SConfigInfo::rtUnknown) {
             continue;
         }
+        prj.m_CheckConfigs.insert(cfg->GetConfigFullName());
 #if USE_VERBOSE_NAMES
         string bld_cfg_name(bld_cfg + cfg->m_Name);
 #else
