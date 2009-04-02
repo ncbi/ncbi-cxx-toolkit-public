@@ -39,7 +39,6 @@ Contents: Use RPS blast to find domain hits
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
-#include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/cobalt/cobalt.hpp>
@@ -412,10 +411,11 @@ CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
 
     // run RPS blast
 
-    BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_Options->GetRpsDb(), TRUE));
+    CSearchDatabase search_database(m_Options->GetRpsDb(),
+                                    CSearchDatabase::eBlastDbIsProtein);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
 
-    CLocalBlast blaster(query_factory, opts, seq_src);
+    CLocalBlast blaster(query_factory, opts, search_database);
     CSearchResultSet results = *blaster.Run();
 
     // convert the results to the internal format used by
