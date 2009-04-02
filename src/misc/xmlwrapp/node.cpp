@@ -398,30 +398,58 @@ xml::attributes& xml::node::get_attributes (void) {
 //####################################################################
 const xml::attributes& xml::node::get_attributes (void) const {
     if (pimpl_->xmlnode_->type != XML_ELEMENT_NODE) {
-	throw std::runtime_error("get_attributes called on non-element node");
+        throw std::runtime_error("get_attributes called on non-element node");
     }
 
     pimpl_->attrs_.set_data(pimpl_->xmlnode_);
     return pimpl_->attrs_;
 }
 //####################################################################
-xml::ns xml::node::get_namespace (void) const {
-    return pimpl_->xmlnode_->ns
-        ? xml::ns(reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->prefix),
-                          reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->href))
-        : xml::ns(xml::ns::type_void);
+xml::ns xml::node::get_namespace (xml::ns::ns_safety_type type) const {
+    if (type == xml::ns::type_safe_ns) {
+        return pimpl_->xmlnode_->ns
+            ? xml::ns(reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->prefix),
+                      reinterpret_cast<const char*>(pimpl_->xmlnode_->ns->href))
+            : xml::ns(xml::ns::type_void);
+    }
+    // unsafe namespace
+    return xml::ns(pimpl_->xmlnode_->ns);
 }
 //####################################################################
-xml::node::ns_list_type xml::node::get_namespace_definitions (void) const {
+xml::node::ns_list_type xml::node::get_namespace_definitions (xml::ns::ns_safety_type type) const {
     xml::node::ns_list_type      namespace_definitions;
     if (!pimpl_->xmlnode_->nsDef) {
         return namespace_definitions;
     }
     for (xmlNs *  ns(pimpl_->xmlnode_->nsDef); ns; ns = ns->next) {
-        namespace_definitions.push_back(xml::ns(reinterpret_cast<const char*>(ns->prefix),
-                                                reinterpret_cast<const char*>(ns->href)));
+        if (type == xml::ns::type_safe_ns) {
+            namespace_definitions.push_back(xml::ns(reinterpret_cast<const char*>(ns->prefix),
+                                                    reinterpret_cast<const char*>(ns->href)));
+        }
+        else {
+            namespace_definitions.push_back(xml::ns(ns));
+        }
     }
     return namespace_definitions;
+}
+//####################################################################
+void xml::node::set_namespace (const xml::ns &name_space) {
+    return;
+}
+//####################################################################
+void xml::node::add_namespace_definition (const xml::ns &name_space) {
+    return;
+}
+//####################################################################
+void xml::node::add_namespace_definitions (const xml::node::ns_list_type &name_spaces) {
+    xml::node::ns_list_type::const_iterator  first(name_spaces.begin()), last(name_spaces.end());
+    for (; first != last; ++first) { add_namespace_definition(*first); }
+}
+//####################################################################
+void erase_namespace_definition (const char *prefix) {
+    if (!prefix) return;
+
+    return;
 }
 //####################################################################
 bool xml::node::is_text (void) const {

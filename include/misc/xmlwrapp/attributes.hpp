@@ -54,7 +54,7 @@
 #include <string>
 
 namespace xml {
-   
+
 // forward declarations
 class node;
 
@@ -160,12 +160,13 @@ public:
      * is_void() method of the xml::ns object will return true
      * in this case)
      *
+     * @param type The required type of namespace object (safe/unsafe).
      * @return The attribute namespace. Void namespace object if no
      *         namespace is associated.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    xml::ns get_namespace (void) const;
+    xml::ns get_namespace (xml::ns::ns_safety_type type = xml::ns::type_safe_ns) const;
 
     private:
 	void *node_;
@@ -402,11 +403,17 @@ private:
     // private ctor to create uninitialized instance
     explicit attributes (int);
 
+    // The attr class needs to create an unsafe namespace using a pointer.
+    // The corresponding xml::ns constructor is private and C++ forbids
+    // making nested classes friends. So this member function does nothing
+    // but creates an xml::ns object using the given pointer
+    static xml::ns createUnsafeNamespace (void *  libxml2RawNamespace);
+
     void set_data (void *node);
     void* get_data (void);
     friend struct impl::node_impl;
     friend class node;
 }; // end xml::attributes class
-    
+
 } // end xml namespace
 #endif

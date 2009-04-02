@@ -41,33 +41,72 @@
 // standard includes
 #include <stdexcept>
 
+// libxml includes
+#include <libxml/tree.h>
+
 using namespace xml;
 
 //####################################################################
-xml::ns::ns (enum ns::ns_type ) : prefix_(), uri_() {
+xml::ns::ns (enum ns::ns_type ) : prefix_(), uri_(),
+                                  unsafe_ns_(0), safety_(ns::type_safe_ns) {
 }
 //####################################################################
-xml::ns::ns (const char *  uri) : prefix_(), uri_(uri ? uri : "") {
+xml::ns::ns (const char *  uri) : prefix_(), uri_(uri ? uri : ""),
+                                  unsafe_ns_(0), safety_(ns::type_safe_ns) {
     if (uri_.empty()) throw std::runtime_error("xml::ns can't have empty uri");
 }
 //####################################################################
-xml::ns::ns (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix : ""), uri_(uri ? uri : "") {
+xml::ns::ns (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix : ""), uri_(uri ? uri : ""),
+                                                        unsafe_ns_(0), safety_(ns::type_safe_ns) {
     if (uri_.empty()) throw std::runtime_error("xml::ns can't have empty uri");
+}
+//####################################################################
+xml::ns::ns (void * rawLibXML2Namespace) : prefix_(), uri_(),
+                                           unsafe_ns_(rawLibXML2Namespace), safety_(ns::type_unsafe_ns) {
 }
 //####################################################################
 const char *  xml::ns::get_prefix (void) const {
-    return prefix_.c_str();
+    if (safety_ == ns::type_safe_ns) return prefix_.c_str();
+    if (!unsafe_ns_)     return prefix_.c_str();
+    return reinterpret_cast<xmlNs*>(unsafe_ns_)->prefix
+           ? reinterpret_cast<const char*>(reinterpret_cast<xmlNs*>(unsafe_ns_)->prefix)
+           : prefix_.c_str();
 }
 //####################################################################
 const char *  xml::ns::get_uri (void) const {
-    return uri_.c_str();
+    if (safety_ == ns::type_safe_ns) return uri_.c_str();
+    if (!unsafe_ns_)     return uri_.c_str();
+    return reinterpret_cast<xmlNs*>(unsafe_ns_)->href
+           ? reinterpret_cast<const char*>(reinterpret_cast<xmlNs*>(unsafe_ns_)->href)
+           : uri_.c_str();
 }
 //####################################################################
 bool xml::ns::is_void (void) const {
-    return uri_.empty();
+    if (safety_ == ns::type_safe_ns) return uri_.empty();
+    if (!unsafe_ns_)     return true;
+    return reinterpret_cast<xmlNs*>(unsafe_ns_)->href == 0;
+}
+//####################################################################
+void xml::ns::make_safe (void) {
+    if (safety_ == ns::type_safe_ns) return;
+    if (unsafe_ns_) {
+        uri_ = reinterpret_cast<xmlNs*>(unsafe_ns_)->href
+               ? std::string(reinterpret_cast<const char*>(reinterpret_cast<xmlNs*>(unsafe_ns_)->href))
+               : std::string();
+        prefix_ = reinterpret_cast<xmlNs*>(unsafe_ns_)->prefix
+                  ? std::string(reinterpret_cast<const char*>(reinterpret_cast<xmlNs*>(unsafe_ns_)->prefix))
+                  : std::string();
+    }
+    unsafe_ns_ = 0;
+    safety_ = ns::type_safe_ns;
+}
+//####################################################################
+bool xml::ns::is_safe (void) const {
+    return safety_ == ns::type_safe_ns;
 }
 //####################################################################
 bool xml::ns::operator==(const ns &  other) const {
-    return (prefix_==other.prefix_) && (uri_==other.uri_);
+    return (strcmp(this->get_prefix(), other.get_prefix()) == 0) &&
+           (strcmp(this->get_uri(), other.get_uri()) == 0);
 }
 //####################################################################

@@ -113,6 +113,10 @@ void* xml::attributes::get_data (void) {
     return pimpl_->xmlnode_;
 }
 //####################################################################
+xml::ns xml::attributes::createUnsafeNamespace (void *  libxml2RawNamespace) {
+    return xml::ns(libxml2RawNamespace);
+}
+//####################################################################
 void xml::attributes::set_data (void *node) {
     xmlNodePtr x = static_cast<xmlNodePtr>(node);
 

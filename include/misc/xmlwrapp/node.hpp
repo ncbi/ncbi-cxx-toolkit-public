@@ -381,17 +381,19 @@ public:
      * is_void() method of the xml::ns object will return true
      * in this case)
      *
+     * @param type The required type of namespace object (safe/unsafe).
      * @return The namespace of this node. Void namespace object if no
      *         namespace is associated.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    xml::ns get_namespace (void) const;
+    xml::ns get_namespace (xml::ns::ns_safety_type type = xml::ns::type_safe_ns) const;
 
     //####################################################################
     /**
       * Get the namespaces defined at this xml::node.
       *
+      * @param type The required type of namespace objects (safe/unsafe).
       * @return The namespace defined at this node.
       *         If no namespaces are defined then the container is empty
       *         If a default namespace is defined at the node then
@@ -400,7 +402,7 @@ public:
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    ns_list_type get_namespace_definitions (void) const;
+    ns_list_type get_namespace_definitions (xml::ns::ns_safety_type type = xml::ns::type_safe_ns) const;
 
     //####################################################################
     /**

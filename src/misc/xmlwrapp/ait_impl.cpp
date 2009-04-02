@@ -291,12 +291,16 @@ const char* xml::attributes::attr::get_value (void) const {
     return value_.c_str();
 }
 //####################################################################
-xml::ns xml::attributes::attr::get_namespace (void) const {
+xml::ns xml::attributes::attr::get_namespace (xml::ns::ns_safety_type type) const {
     if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
     xmlNs *     nspace(reinterpret_cast<xmlAttrPtr>(prop_)->ns);
-    return nspace
-        ? xml::ns(reinterpret_cast<const char*>(nspace->prefix), reinterpret_cast<const char*>(nspace->href))
-        : xml::ns(xml::ns::type_void);
+    if (type == xml::ns::type_safe_ns) {
+        return nspace
+            ? xml::ns(reinterpret_cast<const char*>(nspace->prefix), reinterpret_cast<const char*>(nspace->href))
+            : xml::ns(xml::ns::type_void);
+    }
+    // unsafe namespace
+    return xml::attributes::createUnsafeNamespace(nspace);
 }
 //####################################################################
 
