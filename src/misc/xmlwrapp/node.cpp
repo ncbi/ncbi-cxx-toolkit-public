@@ -437,16 +437,55 @@ void xml::node::set_namespace (const xml::ns &name_space) {
     return;
 }
 //####################################################################
-void xml::node::add_namespace_definition (const xml::ns &name_space) {
-    return;
+xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_definition_adding_type type) {
+    if (name_space.is_void()) throw std::runtime_error("void namespace cannot be added to namespace definitions");
+    if (!pimpl_->xmlnode_->nsDef)   return add_namespace_def(name_space.get_uri(), name_space.get_prefix());
+
+    // Search in the list of existed
+    const char *    patternPrefix(name_space.get_prefix());
+    if (strlen(patternPrefix) == 0) patternPrefix = NULL;
+
+    xmlNs *         current(pimpl_->xmlnode_->nsDef);
+    while (current) {
+        if (current->prefix == NULL) {
+            // Check if the default namespace matched
+            if (patternPrefix == NULL) return add_matched_namespace_def(current, name_space.get_uri(), type);
+        }
+        else {
+            // Check if a non default namespace matched
+            if (xmlStrEqual(reinterpret_cast<const xmlChar*>(patternPrefix), current->prefix))
+                return add_matched_namespace_def(current, name_space.get_uri(), type);
+        }
+        current = current->next;
+    }
+
+    // Not found in the existed, so simply add the namespace
+    return add_namespace_def(name_space.get_uri(), name_space.get_prefix());
 }
 //####################################################################
-void xml::node::add_namespace_definitions (const xml::node::ns_list_type &name_spaces) {
+void xml::node::add_namespace_definitions (const xml::node::ns_list_type &name_spaces,
+                                           ns_definition_adding_type type) {
     xml::node::ns_list_type::const_iterator  first(name_spaces.begin()), last(name_spaces.end());
-    for (; first != last; ++first) { add_namespace_definition(*first); }
+    for (; first != last; ++first) { add_namespace_definition(*first, type); }
 }
 //####################################################################
-void erase_namespace_definition (const char *prefix) {
+xml::ns xml::node::add_namespace_def (const char *uri, const char *prefix) {
+    if (strlen(prefix) == 0) prefix = NULL;
+    if (strlen(uri) == 0)    uri = NULL;
+    xmlNs *     newNs(xmlNewNs(pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(uri), reinterpret_cast<const xmlChar*>(prefix)));
+    if (!newNs) throw std::bad_alloc();
+    return xml::ns(newNs);
+}
+//####################################################################
+xml::ns xml::node::add_matched_namespace_def (void *libxml2RawNamespace, const char *uri, ns_definition_adding_type type) {
+    if (type == type_throw_if_exists) throw std::runtime_error("namespace is already defined");
+    if (reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href != NULL )
+        xmlFree((char*)(reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href));
+    reinterpret_cast<xmlNs*>(libxml2RawNamespace)->href = xmlStrdup(reinterpret_cast<const xmlChar*>(uri));
+    return xml::ns(libxml2RawNamespace);
+}
+//####################################################################
+void xml::node::erase_namespace_definition (const char *prefix) {
     if (!prefix) return;
 
     return;

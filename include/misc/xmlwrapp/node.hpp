@@ -114,6 +114,12 @@ public:
 	type_dtd_namespace	///< ?
     };
 
+    /// enum for policies of adding namespace definitions
+    enum ns_definition_adding_type {
+        type_replace_if_exists, ///< replace URI if ns with the same prefix exists
+        type_throw_if_exists    ///< throw exception if ns with the same prefix exists
+    };
+
     /**
      * Helper struct for creating a xml::node of type_cdata.
      *
@@ -424,23 +430,28 @@ public:
       * @param name_space The namespace definition to be added to the node.
       *           If the node already has a namespace definition with same
       *           prefix then its URI will be replaced with the new one.
+      * @param type replace or throw exception if a namespace definition exists
+      *           with the same prefix
+      * @return unsafe namespace
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    void add_namespace_definition (const xml::ns &name_space);
+    xml::ns add_namespace_definition (const xml::ns &name_space, ns_definition_adding_type type);
 
     //####################################################################
     /**
       * Add namespace definitions to the node.
       *
-      * @param ns The namespace definitions to be added to the node.
+      * @param name_spaces The namespace definitions to be added to the node.
       *           If the node already has namespace definitions which
       *           prefixes are the same as those in the given list then
       *           the matched prefixes URIs will be replaced with the new ones.
+      * @param type replace or throw exception if a namespace definition exists
+      *           with the same prefix
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    void add_namespace_definitions (const ns_list_type &name_spaces);
+    void add_namespace_definitions (const ns_list_type &name_spaces, ns_definition_adding_type type);
 
     //####################################################################
     /**
@@ -1005,6 +1016,9 @@ private:
     friend struct impl::node_cmp;
 
     void sort_fo (impl::cbfo_node_compare &fo);
+
+    xml::ns add_namespace_def (const char *uri, const char *prefix);
+    xml::ns add_matched_namespace_def (void *libxml2RawNamespace, const char *uri, ns_definition_adding_type type);
 }; // end xml::node class
 
 } // end xml namespace
