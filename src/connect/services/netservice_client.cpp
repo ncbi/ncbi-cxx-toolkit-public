@@ -320,38 +320,6 @@ void CNetServiceClient::WaitForServer(unsigned wait_sec)
 }
 
 
-void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
-{
-    WaitForServer();
-    while (1) {
-        if (!ReadStr(*m_Sock, &m_Tmp))
-            break;
-        CheckServerOK(&m_Tmp);
-        if (m_Tmp == "END")
-            break;
-        out << m_Tmp << "\n";
-    }
-}
-
-
-void CNetServiceClient::CheckServerOK(string* response)
-{
-    if (NStr::StartsWith(*response, "OK:")) {
-        m_Tmp.erase(0, 3); // "OK:"
-    } else if (NStr::StartsWith(*response, "ERR:")) {
-        response->erase(0, 4);
-        *response = NStr::ParseEscapes(*response);
-        ProcessServerError(response);
-    }
-}
-
-
-void CNetServiceClient::ProcessServerError(string* response)
-{
-    NCBI_THROW(CNetServiceException, eCommunicationError, *response);
-}
-
-
 void CNetServiceClient::ReturnSocket(CSocket* sock,
                                      const string& /* blob_comment */)
 {

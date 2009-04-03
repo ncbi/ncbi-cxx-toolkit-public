@@ -49,6 +49,19 @@ class NCBI_XCONNECT_EXPORT CNetServer
     CNetServerConnection Connect();
 };
 
+struct SNetServerGroupIteratorImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServerGroupIterator
+{
+    NET_COMPONENT(NetServerGroupIterator);
+
+    CNetServer GetServer();
+    CNetServer operator *() {return GetServer();}
+
+    CNetServerGroupIterator GetNext();
+    CNetServerGroupIterator operator ++() {return GetNext();}
+};
+
 struct SNetServerGroupImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerGroup
@@ -56,8 +69,9 @@ class NCBI_XCONNECT_EXPORT CNetServerGroup
     NET_COMPONENT(NetServerGroup);
 
     int GetCount() const;
-
     CNetServer GetServer(int index);
+
+    CNetServerGroupIterator Iterate();
 };
 
 struct SNetServiceImpl;
@@ -68,11 +82,6 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     const string& GetClientName() const;
     const string& GetServiceName() const;
-
-    CNetServerConnection GetBestConnection();
-    CNetServerConnection GetSpecificConnection(
-        const string& host,
-        unsigned int port);
 
     enum EServerSortMode {
         eSortByLoad,

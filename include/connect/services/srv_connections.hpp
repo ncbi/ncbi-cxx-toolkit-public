@@ -69,14 +69,7 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     // output of the command.
     CNetServerCmdOutput ExecMultiline(const std::string& cmd);
 
-    class IStringProcessor {
-    public:
-        // if returns false the telnet method will stop
-        virtual bool Process(string& line) = 0;
-        virtual ~IStringProcessor() {}
-    };
-     // out and processor can be NULL
-    void Telnet(CNcbiOstream* out,  IStringProcessor* processor);
+    void Telnet(CNcbiOstream& out);
 
     const string& GetHost() const;
     unsigned int GetPort() const;

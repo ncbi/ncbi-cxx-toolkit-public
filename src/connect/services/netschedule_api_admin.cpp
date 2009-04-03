@@ -46,24 +46,20 @@ void CNetScheduleAdmin::DropJob(const string& job_key)
 
 void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
+    string cmd;
 
-    string cmd = "SHUTDOWN ";
-    switch( level ) {
-    case eDie :
+    switch (level) {
+    case eDie:
         cmd = "SHUTDOWN SUICIDE ";
         break;
-    case eShutdownImmediate :
+    case eShutdownImmediate:
         cmd = "SHUTDOWN IMMEDIATE ";
         break;
     default:
-        break;
+        cmd = "SHUTDOWN ";
     }
 
-    m_Impl->m_API->m_Service.GetBestConnection().Exec(cmd);
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(cmd);
 }
 
 
@@ -74,25 +70,33 @@ void CNetScheduleAdmin::ForceReschedule(const string& job_key) const
 
 void CNetScheduleAdmin::ReloadServerConfig() const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-    m_Impl->m_API->m_Service.GetBestConnection().Exec("RECO");
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec("RECO");
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
                                     const string& comment, ECreateQueueFlags flags) const
 {
-    string param = "QCRE " + qname + " " + qclass;
+    string param = "QCRE " + qname;
+    param += ' ';
+    param += qclass;
+
     if (!comment.empty()) {
-        param.append(" \"");
-        param.append(comment);
-        param.append("\"");
+        param += " \"";
+        param += comment;
+        param += '"';
     }
-    SNSSendCmd::TFlags f = flags == eIgnoreDuplicateName ?
-        SNSSendCmd::eIgnoreDuplicateNameError : 0;
-    m_Impl->m_API->m_Service->ForEach(SNSSendCmd(m_Impl->m_API, param, f));
+
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        try {
+            (*it).Connect().Exec(param);
+        }
+        catch (CNetScheduleException& ex) {
+            if (flags != eIgnoreDuplicateName &&
+                    ex.GetErrCode() == CNetScheduleException::eDuplicateName)
+                throw;
+        }
+    }
 }
 
 
@@ -100,7 +104,9 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
 {
     string param = "QDEL " + qname;
 
-    m_Impl->m_API->m_Service->ForEach(SNSSendCmd(m_Impl->m_API, param, 0));
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it)
+        (*it).Connect().Exec(param);
 }
 
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
@@ -117,7 +123,10 @@ void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
 void CNetScheduleAdmin::DropQueue() const
 {
     string cmd = "DROPQ";
-    m_Impl->m_API->m_Service->ForEach(SNSSendCmd(m_Impl->m_API, cmd, 0));
+
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it)
+        (*it).Connect().Exec(cmd);
 }
 
 
@@ -145,13 +154,8 @@ void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
 
 unsigned CNetScheduleAdmin::CountActiveJobs()
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
-            "CountActiveJobs() cannot be used with load balanced services.");
-    }
-
     return NStr::StringToUInt(m_Impl->m_API->m_Service->
-        GetBestConnection().Exec("ACNT"));
+        RequireStandAloneServerSpec().Exec("ACNT"));
 }
 
 void CNetScheduleAdmin::GetWorkerNodes(
@@ -161,12 +165,9 @@ void CNetScheduleAdmin::GetWorkerNodes(
 
     std::set<std::pair<std::string, unsigned short> > m_Unique;
 
-    CNetServerGroup servers = m_Impl->m_API->m_Service.DiscoverServers();
-
-    int i = servers.GetCount();
-
-    while (--i >= 0) {
-        CNetServerConnection conn = servers.GetServer(i).Connect();
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServerConnection conn = (*it).Connect();
 
         CNetServerCmdOutput output = conn.ExecMultiline("STAT");
 
@@ -236,37 +237,24 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 
 void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-
-    CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
+    CNetServerConnection conn =
+        m_Impl->m_API->m_Service->RequireStandAloneServerSpec();
     conn->WriteLine("MONI QUIT");
-    conn.Telnet(&out, NULL);
+    conn.Telnet(out);
 }
 
 void CNetScheduleAdmin::Logging(bool on_off) const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-    string cmd = "LOG ";
-    cmd += on_off ? "ON" : "OFF";
-
-    m_Impl->m_API->m_Service.GetBestConnection().Exec(cmd);
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
+        on_off ? "LOG ON" : "LOG OFF");
 }
 
 
 void CNetScheduleAdmin::GetQueueList(TQueueList& qlist) const
 {
-    CNetServerGroup servers = m_Impl->m_API->m_Service.DiscoverServers();
-
-    int i = servers.GetCount();
-
-    while (--i >= 0) {
-        CNetServer server = servers.GetServer(i);
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServer server = *it;
 
         qlist.push_back(SServerQueueList(server));
 
@@ -274,191 +262,119 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist) const
     }
 }
 
-
-class CStatusProcessor : public CNetServerConnection::IStringProcessor
-{
-public:
-    CStatusProcessor(CNetScheduleAPI::TInstance api,
-        CNetScheduleAdmin::TStatusMap& status_map) :
-            m_API(api), m_StatusMap(&status_map)
-    {
-    }
-
-    virtual bool Process(string& line) {
-        // FIXME
-        m_API->m_Service->GetBestConnection()->CheckServerOK(line);
-        if (line == "END")
-            return false;
-        // parse the status message
-        string st_str, cnt_str;
-        bool delim = NStr::SplitInTwo(line, " ", st_str, cnt_str);
-        if (delim) {
-           CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::StringToStatus(st_str);
-           unsigned cnt = NStr::StringToUInt(cnt_str);
-           (*m_StatusMap)[status] += cnt;
-        }
-        return true;
-    }
-
-private:
-    CNetScheduleAPI m_API;
-    CNetScheduleAdmin::TStatusMap* m_StatusMap;
-};
-
-struct SNSTelnetRunner
-{
-    SNSTelnetRunner(
-        CNetScheduleAPI::TInstance api,
-        const string& cmd,
-        CNetServerConnection::IStringProcessor& processor,
-        CNcbiOstream* os = NULL) :
-            m_API(api),
-            m_Cmd(cmd),
-            m_Processor(&processor),
-            m_Os(os)
-    {
-    }
-
-    void operator()(CNetServerConnection conn)
-    {
-        conn->WriteLine(m_Cmd);
-        conn.Telnet(m_Os, m_Processor);
-    }
-
-    CNetScheduleAPI m_API;
-    string m_Cmd;
-    CNetServerConnection::IStringProcessor* m_Processor;
-    CNcbiOstream* m_Os;
-};
-
 void CNetScheduleAdmin::StatusSnapshot(
     CNetScheduleAdmin::TStatusMap&  status_map,
     const string& affinity_token) const
 {
-    string cmd = "STSN";
-    cmd.append(" aff=\"");
+    string cmd = "STSN aff=\"";
     cmd.append(NStr::PrintableString(affinity_token));
     cmd.append("\"");
 
-    CStatusProcessor processor(m_Impl->m_API, status_map);
-    m_Impl->m_API->m_Service->ForEach(
-        SNSTelnetRunner(m_Impl->m_API, cmd, processor));
-}
+    TDiscoveredServers servers;
 
-struct SNSJobCounter : public SNSSendCmd
-{
-    SNSJobCounter(CNetScheduleAPI::TInstance api, const string query)
-        : SNSSendCmd(api, "", 0), m_Counter(0)
-    {
-        m_Cmd = "QERY ";
-        m_Cmd.append("\"");
-        m_Cmd.append(NStr::PrintableString(query));
-        m_Cmd.append("\" COUNT");
+    CNetService service = m_Impl->m_API->m_Service;
+
+    service->DiscoverServers(servers);
+
+    ITERATE(TDiscoveredServers, it, servers) {
+        CNetServerCmdOutput cmd_output = service->
+            GetConnection(*it).ExecMultiline(cmd);
+
+        string output_line;
+
+        while (cmd_output.ReadLine(output_line)) {
+            // parse the status message
+            string st_str, cnt_str;
+            if (NStr::SplitInTwo(output_line, " ", st_str, cnt_str)) {
+                status_map[CNetScheduleAPI::StringToStatus(st_str)] +=
+                    NStr::StringToUInt(cnt_str);
+            }
+        }
     }
-    virtual void ProcessResponse(const string& resp,
-        CNetServerConnection::TInstance /* conn_impl */)
-    {
-        m_Counter += NStr::StringToULong(resp);
-    }
-    unsigned long m_Counter;
-};
+}
 
 unsigned long CNetScheduleAdmin::Count(const string& query) const
 {
-    SNSJobCounter counter = m_Impl->m_API->m_Service->
-        ForEach(SNSJobCounter(m_Impl->m_API, query));
-    return counter.m_Counter;
-}
+    std::string cmd = "QERY \"";
+    cmd.append(NStr::PrintableString(query));
+    cmd.append("\" COUNT");
 
-class CSimpleStringProcessor : public CNetServerConnection::IStringProcessor
-{
-public:
-    explicit CSimpleStringProcessor(CNetScheduleAPI::TInstance api) :
-        m_API(api) {}
+    unsigned long counter = 0;
 
-    virtual bool Process(string& line) {
-        // FIXME
-        m_API->m_Service->GetBestConnection()->CheckServerOK(line);
-        return line != "END";
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        counter += NStr::StringToULong((*it).Connect().Exec(cmd));
     }
 
-private:
-    CNetScheduleAPI m_API;
-};
+    return counter;
+}
 
 void CNetScheduleAdmin::Query(const string& query,
     const vector<string>& fields, CNcbiOstream& os) const
 {
     if (fields.empty())
         return;
-    string cmd = "QERY ";
-    cmd.append("\"");
-    cmd.append(NStr::PrintableString(query));
-    cmd.append("\" SLCT \"");
+
+    string cmd = "QERY \"";
+    cmd += NStr::PrintableString(query);
+    cmd += "\" SLCT \"";
+
     string sfields;
     ITERATE(vector<string>, it, fields) {
         if (it != fields.begin() )
-            sfields.append(",");
-        sfields.append(*it);
+            sfields += ',';
+        sfields += *it;
     }
-    cmd.append(NStr::PrintableString(sfields));
-    cmd.append("\"");
 
-    CSimpleStringProcessor processor(m_Impl->m_API);
-    m_Impl->m_API->m_Service->ForEach(
-        SNSTelnetRunner(m_Impl->m_API, cmd, processor, &os));
+    cmd += NStr::PrintableString(sfields);
+    cmd += '"';
+
+    m_Impl->DumpCmdOutput(cmd, os);
 }
+
 void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) const
 {
-    string cmd = "QSEL ";
-    cmd.append("\"");
-    cmd.append(NStr::PrintableString(select_stmt));
-    cmd.append("\"");
+    string cmd = "QSEL \"";
+    cmd += NStr::PrintableString(select_stmt);
+    cmd += '"';
 
-    CSimpleStringProcessor processor(m_Impl->m_API);
-    m_Impl->m_API->m_Service->ForEach(
-        SNSTelnetRunner(m_Impl->m_API, cmd, processor, &os));
-}
-
-
-struct SNSJobIDsGetter : public SNSSendCmd
-{
-    SNSJobIDsGetter(CNetScheduleAPI::TInstance api, const string query)
-        : SNSSendCmd(api, "", 0), m_Counter(0)
-    {
-        m_Cmd = "QERY ";
-        m_Cmd.append("\"");
-        m_Cmd.append(NStr::PrintableString(query));
-        m_Cmd.append("\" IDS");
-    }
-    virtual void ProcessResponse(const string& resp,
-        CNetServerConnection::TInstance conn_impl)
-    {
-        string ip_addr = CSocketAPI::ntoa(
-            CSocketAPI::gethostbyname(conn_impl->m_ConnectionPool->m_Host));
-        m_IDsMap[SNetScheduleAdminImpl::TIDsMap::key_type(ip_addr,
-            conn_impl->m_ConnectionPool->m_Port)] = resp;
-    }
-    unsigned long m_Counter;
-    SNetScheduleAdminImpl::TIDsMap m_IDsMap;
-};
-
-SNetScheduleAdminImpl::TIDsMap SNetScheduleAdminImpl::x_QueueIDs(
-    const string& query) const
-{
-    SNSJobIDsGetter getter = m_API->m_Service->
-        ForEach(SNSJobIDsGetter(m_API, query));
-
-    return getter.m_IDsMap;
+    m_Impl->DumpCmdOutput(cmd, os);
 }
 
 void CNetScheduleAdmin::RetrieveKeys(const string& query,
     CNetScheduleKeys& ids) const
 {
-    SNetScheduleAdminImpl::TIDsMap inter_ids = m_Impl->x_QueueIDs(query);
+    SNetScheduleAdminImpl::TIDsMap inter_ids;
+
+    std::string cmd = "QERY \"";
+    cmd.append(NStr::PrintableString(query));
+    cmd.append("\" IDS");
+
+    for (CNetServerGroupIterator it =
+            m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServer server = *it;
+
+        inter_ids[SNetScheduleAdminImpl::TIDsMap::key_type(CSocketAPI::ntoa(
+            CSocketAPI::gethostbyname(server->m_Address.first)),
+            server->m_Address.second)] = server.Connect().Exec(cmd);
+    }
+
     ids.x_Clear();
     ITERATE(SNetScheduleAdminImpl::TIDsMap, it, inter_ids) {
         ids.x_Add(it->first, it->second);
+    }
+}
+
+void SNetScheduleAdminImpl::DumpCmdOutput(
+    const string& cmd, CNcbiOstream& os) const
+{
+    for (CNetServerGroupIterator it =
+            m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServerCmdOutput cmd_output = (*it).Connect().ExecMultiline(cmd);
+
+        std::string line;
+        while (cmd_output.ReadLine(line))
+            os << line << "\n" << flush;
     }
 }
 

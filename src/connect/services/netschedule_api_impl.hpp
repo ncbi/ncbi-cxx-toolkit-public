@@ -102,53 +102,6 @@ bool s_WaitNotification(unsigned wait_time,
 ////////////////////////////////////////////////////////////////////////////////////////
 //
 
-struct SNSSendCmd
-{
-    enum EFlags {
-        eLogExceptions = 1 >> 1,
-        eIgnoreCommunicationError = 1 >> 2,
-        eIgnoreDuplicateNameError = 1 >> 3
-    };
-    typedef int TFlags;
-
-    SNSSendCmd(CNetScheduleAPI::TInstance api, const string& cmd, TFlags flags)
-        : m_API(api), m_Cmd(cmd), m_Flags(flags)
-    {}
-    virtual ~SNSSendCmd() {}
-
-    void operator()(CNetServerConnection conn)
-    {
-        string resp;
-        try {
-            resp = conn.Exec(m_Cmd);
-        } catch (CNetScheduleException& ex) {
-            if (m_Flags & eLogExceptions) {
-                ERR_POST_X(11, conn.GetHost() << ":" << conn.GetPort()
-                    << " returned error: \"" << ex.what() << "\"");
-            }
-            if (!(m_Flags & eIgnoreDuplicateNameError &&
-                ex.GetErrCode() == CNetScheduleException::eDuplicateName))
-                throw;
-        } catch (CNetServiceException& ex) {
-            if (m_Flags & eLogExceptions) {
-                ERR_POST_X(12, conn.GetHost() << ":" << conn.GetPort()
-                    << " returned error: \"" << ex.what() << "\"");
-            }
-            if (!(m_Flags & eIgnoreCommunicationError &&
-                ex.GetErrCode() == CNetServiceException::eCommunicationError))
-                throw;
-        }
-        ProcessResponse(resp, conn);
-    }
-    virtual void ProcessResponse(const string& /* resp */,
-        CNetServerConnection::TInstance /* conn_impl */) {}
-
-    CNetScheduleAPI m_API;
-    string m_Cmd;
-    TFlags m_Flags;
-};
-
-
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
 template<typename T> struct ToStr { static string Convert(T t); };
@@ -275,7 +228,7 @@ inline CNetServerConnection
     SNetScheduleAPIImpl::x_GetConnection(const string& job_key)
 {
     CNetScheduleKey nskey(job_key);
-    return m_Service.GetSpecificConnection(nskey.host, nskey.port);
+    return m_Service->GetConnection(nskey.host, nskey.port);
 }
 
 struct SNetScheduleSubmitterImpl : public CNetObject
@@ -321,9 +274,9 @@ struct SNetScheduleAdminImpl : public CNetObject
 {
     SNetScheduleAdminImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
-    typedef map<pair<string,unsigned int>, string> TIDsMap;
+    typedef map<pair<string, unsigned int>, string> TIDsMap;
 
-    TIDsMap x_QueueIDs(const string& queury) const;
+    void DumpCmdOutput(const string& cmd, CNcbiOstream& os) const;
 
     CNetScheduleAPI m_API;
 };

@@ -348,16 +348,28 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
 void SNetScheduleExecuterImpl::x_RegUnregClient(
     const string& cmd, unsigned short udp_port) const
 {
-    string tmp = cmd + ' ' + NStr::IntToString(udp_port);
+    string tmp = cmd + NStr::IntToString(udp_port);
 
-    m_API->m_Service->ForEach(SNSSendCmd(m_API, tmp,
-        SNSSendCmd::eLogExceptions | SNSSendCmd::eIgnoreCommunicationError));
+    for (CNetServerGroupIterator it =
+            m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServer server = *it;
+
+        try {
+            server.Connect().Exec(tmp);
+        } catch (CNetServiceException& ex) {
+            ERR_POST_X(12, server.GetHost() << ":" << server.GetPort()
+                << " returned error: \"" << ex.what() << "\"");
+
+            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
+                throw;
+        }
+    }
 }
 
 
 void CNetScheduleExecuter::RegisterClient(unsigned short udp_port) const
 {
-    m_Impl->x_RegUnregClient("REGC", udp_port);
+    m_Impl->x_RegUnregClient("REGC ", udp_port);
 }
 
 const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() const
@@ -367,7 +379,7 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() co
 
 void CNetScheduleExecuter::UnRegisterClient(unsigned short udp_port) const
 {
-    m_Impl->x_RegUnregClient("URGC", udp_port);
+    m_Impl->x_RegUnregClient("URGC ", udp_port);
 }
 
 const string& CNetScheduleExecuter::GetQueueName() const

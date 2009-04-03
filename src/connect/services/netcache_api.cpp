@@ -77,7 +77,7 @@ static TServerAddress* s_GetFallbackServer()
 CNetServerConnection SNetCacheAPIImpl::GetBestConnection()
 {
     try {
-        return m_Service.GetBestConnection();
+        return m_Service->GetBestConnection();
     } catch (CNetSrvConnException& e) {
         TServerAddress* backup = s_GetFallbackServer();
 
@@ -91,15 +91,14 @@ CNetServerConnection SNetCacheAPIImpl::GetBestConnection()
             ". Connecting to backup server " <<
             backup->first << ":" << backup->second << ".");
 
-        return m_Service.GetSpecificConnection(
-            backup->first, backup->second);
+        return m_Service->GetConnection(backup->first, backup->second);
     }
 }
 
 CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
 {
     CNetCacheKey key(bid);
-    return m_Service.GetSpecificConnection(key.GetHost(), key.GetPort());
+    return m_Service->GetConnection(key.GetHost(), key.GetPort());
 }
 
 SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(

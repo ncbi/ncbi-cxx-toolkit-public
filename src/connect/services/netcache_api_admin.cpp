@@ -41,21 +41,13 @@ BEGIN_NCBI_SCOPE
 
 void CNetCacheAdmin::ShutdownServer()
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-    m_Impl->m_API->GetBestConnection().Exec(
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
         m_Impl->m_API->x_MakeCommand("SHUTDOWN"));
 }
 
 void CNetCacheAdmin::Logging(bool on_off) const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-    m_Impl->m_API->GetBestConnection().Exec(
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
         m_Impl->m_API->x_MakeCommand(on_off ? "LOG ON" : "LOG OFF"));
 }
 
@@ -82,23 +74,17 @@ void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 
 void CNetCacheAdmin::DropStat() const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-    m_Impl->m_API->GetBestConnection().Exec(
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
         m_Impl->m_API->x_MakeCommand("DROPSTAT"));
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream & out) const
 {
-    if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-        NCBI_THROW(CNetCacheException, eCommandIsNotAllowed,
-                   "This command is allowed only for non-loadbalance client.");
-    }
-    CNetServerConnection conn = m_Impl->m_API->GetBestConnection();
+    CNetServerConnection conn =
+        m_Impl->m_API->m_Service->RequireStandAloneServerSpec();
+
     conn->WriteLine(m_Impl->m_API->x_MakeCommand("MONI"));
-    conn.Telnet(&out, NULL);
+    conn.Telnet(out);
 }
 
 

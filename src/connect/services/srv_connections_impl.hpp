@@ -59,7 +59,6 @@ struct SNetServerConnectionImpl : public CNetObject
     virtual void Delete();
 
     std::string ReadCmdOutputLine();
-    void CheckServerOK(string& response);
 
     bool ReadLine(string& str);
     void WriteLine(const string& line);

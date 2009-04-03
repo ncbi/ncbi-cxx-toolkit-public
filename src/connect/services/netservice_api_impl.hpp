@@ -53,6 +53,16 @@ struct SNetServerImpl : public CNetObject
     CNetService m_Service;
 };
 
+struct SNetServerGroupIteratorImpl : public CNetObject
+{
+    SNetServerGroupIteratorImpl(SNetServerGroupImpl* server_group_impl,
+        TDiscoveredServers::const_iterator position);
+
+    CNetServerGroup m_ServerGroup;
+
+    TDiscoveredServers::const_iterator m_Position;
+};
+
 struct SNetServerGroupImpl : public CNetObject
 {
     SNetServerGroupImpl(SNetServiceImpl* service_impl);
@@ -64,6 +74,14 @@ struct SNetServerGroupImpl : public CNetObject
     // that contains this NetServerGroup.
     CNetService m_Service;
 };
+
+inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
+    SNetServerGroupImpl* server_group_impl,
+    TDiscoveredServers::const_iterator position) :
+        m_ServerGroup(server_group_impl),
+        m_Position(position)
+{
+}
 
 class INetServerFinder : public CNetObject
 {
@@ -92,8 +110,10 @@ struct SNetServiceImpl : public CNetObject
     // NS and NC protocols.
     void SetListener(INetServerConnectionListener* listener);
 
-    CNetServerConnection GetBestConnection();
     CNetServerConnection GetConnection(const TServerAddress& srv);
+    CNetServerConnection GetConnection(const string& host, unsigned int port);
+    CNetServerConnection GetSingleServerConnection();
+    CNetServerConnection GetBestConnection();
 
     void DiscoverServers(TDiscoveredServers& servers,
         CNetService::EServerSortMode sort_mode = CNetService::eSortByLoad);
@@ -106,18 +126,10 @@ struct SNetServiceImpl : public CNetObject
         CNcbiOstream& output_stream,
         ECmdOutputType output_type);
 
-    template<class Func>
-    Func ForEach(Func func) {
-        TDiscoveredServers servers;
-
-        DiscoverServers(servers);
-
-        ITERATE(TDiscoveredServers, it, servers) {
-            func(GetConnection(*it));
-        }
-
-        return func;
-    }
+    // Utility method for commands that require single server (that is,
+    // a host:port pair) to be specified (not a load-balanced service
+    // name).
+    CNetServerConnection RequireStandAloneServerSpec();
 
     CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
     string m_ClientName;

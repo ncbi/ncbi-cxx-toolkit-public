@@ -66,8 +66,7 @@ public:
         ///< Cache name unknown
         eUnknnownCache,
         ///< Blob is not found
-        eBlobNotFound,
-        eCommandIsNotAllowed
+        eBlobNotFound
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -80,7 +79,6 @@ public:
         case eBlobLocked:          return "eBlobLocked";
         case eUnknnownCache:       return "eUnknnownCache";
         case eBlobNotFound:        return "eBlobNotFound";
-        case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
         default:                   return CException::GetErrCodeString();
         }
     }

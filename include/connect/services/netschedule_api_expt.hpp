@@ -81,7 +81,6 @@ public:
         eAccessDenied,
         eDuplicateName,
         eQuerySyntaxError,
-        eCommandIsNotAllowed,
         eObsoleteCommand,
         eInvalidParameter,
         eNoJobsWithAffinity
@@ -104,7 +103,6 @@ public:
         case eAccessDenied:        return "eAccessDenied";
         case eDuplicateName:       return "eDuplicateName";
         case eQuerySyntaxError:    return "eQuerySyntaxError";
-        case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
         case eNoJobsWithAffinity:  return "eNoJobsWithAffinity";

@@ -58,7 +58,22 @@ unsigned short CNetServer::GetPort() const
 
 CNetServerConnection CNetServer::Connect()
 {
-    return m_Impl->m_Service.GetSpecificConnection(GetHost(), GetPort());
+    return m_Impl->m_Service->GetConnection(GetHost(), GetPort());
+}
+
+CNetServer CNetServerGroupIterator::GetServer()
+{
+    _ASSERT(m_Impl->m_Position !=
+        m_Impl->m_ServerGroup->m_Servers.end());
+
+    return new SNetServerImpl(*m_Impl->m_Position,
+        m_Impl->m_ServerGroup->m_Service);
+}
+
+CNetServerGroupIterator CNetServerGroupIterator::GetNext()
+{
+    return new SNetServerGroupIteratorImpl(m_Impl->m_ServerGroup,
+        ++m_Impl->m_Position);
 }
 
 int CNetServerGroup::GetCount() const
@@ -71,6 +86,11 @@ CNetServer CNetServerGroup::GetServer(int index)
     _ASSERT(index < (int) m_Impl->m_Servers.size());
 
     return new SNetServerImpl(m_Impl->m_Servers[index], m_Impl->m_Service);
+}
+
+CNetServerGroupIterator CNetServerGroup::Iterate()
+{
+    return new SNetServerGroupIteratorImpl(m_Impl, m_Impl->m_Servers.begin());
 }
 
 SNetServiceImpl::SNetServiceImpl(
@@ -165,14 +185,51 @@ void SNetServiceImpl::PrintCmdOutput(const string& cmd,
     }
 }
 
-CNetServerConnection SNetServiceImpl::GetBestConnection()
+CNetServerConnection SNetServiceImpl::GetConnection(const TServerAddress& srv)
 {
-    if (!m_IsLoadBalanced) {
+    CFastMutexGuard g(m_ConnectionMutex);
+    TServerAddressToConnectionPool::iterator it =
+        m_ServerAddressToConnectionPool.find(srv);
+    CNetServerConnectionPool pool;
+    if (it != m_ServerAddressToConnectionPool.end())
+        pool = it->second;
+    if (!pool) {
+        pool = new SNetServerConnectionPoolImpl(
+            srv.first, srv.second, m_Timeout, m_Listener);
+        pool.PermanentConnection(m_PermanentConnection);
+        m_ServerAddressToConnectionPool[srv] = pool;
+    }
+    g.Release();
+    if (m_RebalanceStrategy)
+        m_RebalanceStrategy->OnResourceRequested();
+    return pool.GetConnection();
+}
+
+CNetServerConnection SNetServiceImpl::GetConnection(
+    const string& host, unsigned int port)
+{
+    return GetConnection(TServerAddress(
+        CSocketAPI::ntoa(CSocketAPI::gethostbyname(host)), port));
+}
+
+CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
+{
+    _ASSERT(!m_IsLoadBalanced);
+
+    {{
         CReadLockGuard g(m_ServersLock);
         if (m_Servers.empty())
-            NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The service is not set.");
-        return GetConnection(m_Servers[0]);
-    }
+            NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
+                "The service is not set.");
+    }}
+
+    return GetConnection(m_Servers[0]);
+}
+
+CNetServerConnection SNetServiceImpl::GetBestConnection()
+{
+    if (!m_IsLoadBalanced)
+        return GetSingleServerConnection();
 
     TDiscoveredServers servers;
 
@@ -197,16 +254,13 @@ CNetServerConnection SNetServiceImpl::GetBestConnection()
             m_ServiceDiscovery->GetServiceName() + " service.");
 }
 
-CNetServerConnection CNetService::GetBestConnection()
+CNetServerConnection SNetServiceImpl::RequireStandAloneServerSpec()
 {
-    return m_Impl->GetBestConnection();
-}
+    if (!m_IsLoadBalanced)
+        return GetSingleServerConnection();
 
-CNetServerConnection CNetService::GetSpecificConnection(
-    const string& host, unsigned int port)
-{
-    return m_Impl->GetConnection(TServerAddress(
-        CSocketAPI::ntoa(CSocketAPI::gethostbyname(host)), port));
+    NCBI_THROW(CNetServiceException, eCommandIsNotAllowed,
+        "This command requires explicit server address (host:port)");
 }
 
 void CNetService::SetCommunicationTimeout(const STimeout& to)
@@ -246,26 +300,6 @@ void CNetService::SetPermanentConnection(ESwitch type)
         it, m_Impl->m_ServerAddressToConnectionPool) {
         it->second.PermanentConnection(type);
     }
-}
-
-CNetServerConnection SNetServiceImpl::GetConnection(const TServerAddress& srv)
-{
-    CFastMutexGuard g(m_ConnectionMutex);
-    TServerAddressToConnectionPool::iterator it =
-        m_ServerAddressToConnectionPool.find(srv);
-    CNetServerConnectionPool pool;
-    if (it != m_ServerAddressToConnectionPool.end())
-        pool = it->second;
-    if (!pool) {
-        pool = new SNetServerConnectionPoolImpl(
-            srv.first, srv.second, m_Timeout, m_Listener);
-        pool.PermanentConnection(m_PermanentConnection);
-        m_ServerAddressToConnectionPool[srv] = pool;
-    }
-    g.Release();
-    if (m_RebalanceStrategy)
-        m_RebalanceStrategy->OnResourceRequested();
-    return pool.GetConnection();
 }
 
 void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers,

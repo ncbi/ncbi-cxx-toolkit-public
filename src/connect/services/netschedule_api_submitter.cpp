@@ -144,7 +144,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
 
     s_AppendClientIPAndSessionID(cmd);
 
-    job.job_id = m_API->m_Service.GetBestConnection().Exec(cmd);
+    job.job_id = m_API->m_Service->GetBestConnection().Exec(cmd);
 
     if (job.job_id.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -164,7 +164,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         s_CheckInputSize(input, max_input_size);
     }
 
-    CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
+    CNetServerConnection conn = m_Impl->m_API->m_Service->GetBestConnection();
 
     // Batch submit command.
     std::string cmd = "BSUB";
@@ -368,8 +368,7 @@ void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
         cmd += '"';
     }
 
-    m_API->m_Service.GetSpecificConnection(first_key.host,
-        first_key.port).Exec(cmd);
+    m_API->m_Service->GetConnection(first_key.host, first_key.port).Exec(cmd);
 }
 
 void CNetScheduleSubmitter::ReadConfirm(const std::string& batch_id,

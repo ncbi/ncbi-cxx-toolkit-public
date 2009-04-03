@@ -103,19 +103,14 @@ std::string SNetServerConnectionImpl::ReadCmdOutputLine()
                    "Communication error reading from " +
                    m_ConnectionPool->GetAddressAsString());
     }
-    CheckServerOK(result);
-    return result;
-}
-
-void SNetServerConnectionImpl::CheckServerOK(string& response)
-{
-    if (NStr::StartsWith(response, "OK:")) {
-        response.erase(0, sizeof("OK:") - 1);
-    } else if (NStr::StartsWith(response, "ERR:")) {
-        response.erase(0, sizeof("ERR:") - 1);
-        response = NStr::ParseEscapes(response);
-        m_ConnectionPool->m_EventListener->OnError(response, m_ConnectionPool);
+    if (NStr::StartsWith(result, "OK:")) {
+        result.erase(0, sizeof("OK:") - 1);
+    } else if (NStr::StartsWith(result, "ERR:")) {
+        result.erase(0, sizeof("ERR:") - 1);
+        result = NStr::ParseEscapes(result);
+        m_ConnectionPool->m_EventListener->OnError(result, m_ConnectionPool);
     }
+    return result;
 }
 
 bool SNetServerConnectionImpl::IsConnected()
@@ -158,29 +153,21 @@ bool SNetServerConnectionImpl::IsConnected()
 
 void SNetServerConnectionImpl::Close()
 {
-    if (IsConnected())
-        m_Socket.Close();
+    m_Socket.Close();
 }
 
 void SNetServerConnectionImpl::Abort()
 {
-    if (IsConnected())
-        m_Socket.Abort();
+    m_Socket.Abort();
 }
 
 SNetServerConnectionImpl::~SNetServerConnectionImpl()
 {
-    try {
-        Close();
-    } catch (...) {
-    }
+    Close();
 }
 
 bool SNetServerConnectionImpl::ReadLine(string& str)
 {
-    if (!IsConnected())
-        return false;
-
     EIO_Status io_st = m_Socket.ReadLine(str);
     switch (io_st)
     {
@@ -311,8 +298,7 @@ void SNetServerConnectionImpl::CheckConnect()
         pool->m_EventListener->OnConnected(this);
 }
 
-void CNetServerConnection::Telnet(CNcbiOstream* out,
-    CNetServerConnection::IStringProcessor* processor)
+void CNetServerConnection::Telnet(CNcbiOstream& out)
 {
     _ASSERT(m_Impl->IsConnected());
 
@@ -324,19 +310,13 @@ void CNetServerConnection::Telnet(CNcbiOstream* out,
 
     string line;
 
-    for (;;) {
-        EIO_Status st = the_socket->ReadLine(line);
-        if (st == eIO_Success) {
-            if (processor && !processor->Process(line))
+    for (;;)
+        if (the_socket->ReadLine(line) == eIO_Success)
+            out << line << "\n" << flush;
+        else
+            if (the_socket->GetStatus(eIO_Open) != eIO_Success)
                 break;
-            if (out) *out << line << "\n" << flush;
-        } else {
-            EIO_Status st = the_socket->GetStatus(eIO_Open);
-            if (st != eIO_Success) {
-                break;
-            }
-        }
-    }
+
     m_Impl->Close();
 }
 

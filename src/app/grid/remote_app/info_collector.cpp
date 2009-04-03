@@ -165,13 +165,9 @@ CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
 void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    CNetScheduleAPI api = x_GetAPI();
-    CNetServerGroup servers = api.GetService().DiscoverServers();
-
-    int i = servers.GetCount();
-
-    while (--i >= 0) {
-        CNetServerConnection conn = servers.GetServer(i).Connect();
+    for (CNetServerGroupIterator it =
+            x_GetAPI().GetService().DiscoverServers().Iterate(); it; ++it) {
+        CNetServerConnection conn = (*it).Connect();
 
         CNetServerCmdOutput output = conn.ExecMultiline("QPRT " +
                 CNetScheduleAPI::StatusToString(status));

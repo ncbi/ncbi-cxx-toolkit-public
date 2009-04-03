@@ -163,11 +163,6 @@ protected:
     void WriteStr(const char* str, size_t len);
     void CreateSocket(const string& hostname, unsigned port);
     void WaitForServer(unsigned wait_sec=0);
-    /// Remove "ERR:" prefix
-    void PrintServerOut(CNcbiOstream & out);
-    /// Error processing
-    void CheckServerOK(string* response);
-    virtual void ProcessServerError(string* response);
 
     /// @internal
     class CSockGuard

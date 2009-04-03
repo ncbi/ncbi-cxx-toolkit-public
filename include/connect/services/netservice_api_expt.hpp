@@ -48,17 +48,23 @@ public:
     enum EErrCode {
         eTimeout,
         eCommunicationError,
-        eProtocolError
+        eProtocolError,
+        eCommandIsNotAllowed
     };
 
     virtual const char* GetErrCodeString(void) const
     {
-        switch (GetErrCode())
-        {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        case eProtocolError:      return "eProtocolError";
-        default:                  return CException::GetErrCodeString();
+        switch (GetErrCode()) {
+        case eTimeout:
+            return "eTimeout";
+        case eCommunicationError:
+            return "eCommunicationError";
+        case eProtocolError:
+            return "eProtocolError";
+        case eCommandIsNotAllowed:
+            return "eCommandIsNotAllowed";
+        default:
+            return CException::GetErrCodeString();
         }
     }
 
