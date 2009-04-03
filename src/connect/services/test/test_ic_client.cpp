@@ -125,18 +125,6 @@ int CTestICClient::Run(void)
 
     const char test_data[] = "The quick brown fox jumps over the lazy dog.";
 
-    ICache::TTimeStampFlags flags =
-        ICache::fTimeStampOnRead | ICache::fTrackSubKey;
-    cl->SetTimeStampPolicy(flags, 1800, 0);
-
-    ICache::TTimeStampFlags fl = cl->GetTimeStampPolicy();
-    assert(flags == fl);
-
-    ICache::EKeepVersions vers = ICache::eDropOlder;
-    cl->SetVersionRetention(vers);
-    ICache::EKeepVersions v = cl->GetVersionRetention();
-    assert(vers == v);
-
     bool b = cl->IsOpen();
     assert(b == true);
 
