@@ -2785,9 +2785,18 @@ static EIO_Status s_Connect(SOCK            sock,
     memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if (sock->path[0]) {
+        size_t pathlen = strlen(sock->path);
+        if (sizeof(addr.sun.sun_path) <= pathlen++/*account for end '\0'*/) {
+            CORE_LOGF_X(142, eLOG_Error,
+                        ("%s[SOCK::Connect]  Failed to store path"
+                         " \"%s\" (%lu bytes long, %lu bytes allowed)",
+                         s_ID(sock, _id), sock->path, (unsigned long) pathlen,
+                         (unsigned long) sizeof(addr.sun.sun_path)));
+            return eIO_Unknown;
+        }
         addrlen = (SOCK_socklen_t) sizeof(addr.sun);
         addr.sun.sun_family = AF_UNIX;
-        strncpy0(addr.sun.sun_path, sock->path, sizeof(addr.sun.sun_path)-1);
+        memcpy(addr.sun.sun_path, sock->path, pathlen);
     } else
 #endif /*NCBI_OS_UNIX*/
     {
