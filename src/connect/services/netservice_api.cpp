@@ -63,17 +63,18 @@ CNetServerConnection CNetServer::Connect()
 
 CNetServer CNetServerGroupIterator::GetServer()
 {
-    _ASSERT(m_Impl->m_Position !=
-        m_Impl->m_ServerGroup->m_Servers.end());
-
     return new SNetServerImpl(*m_Impl->m_Position,
         m_Impl->m_ServerGroup->m_Service);
 }
 
-CNetServerGroupIterator CNetServerGroupIterator::GetNext()
+bool CNetServerGroupIterator::Next()
 {
-    return new SNetServerGroupIteratorImpl(m_Impl->m_ServerGroup,
-        ++m_Impl->m_Position);
+    if (++m_Impl->m_Position == m_Impl->m_ServerGroup->m_Servers.end()) {
+        m_Impl.Assign(NULL);
+        return false;
+    }
+
+    return true;
 }
 
 int CNetServerGroup::GetCount() const
@@ -90,7 +91,10 @@ CNetServer CNetServerGroup::GetServer(int index)
 
 CNetServerGroupIterator CNetServerGroup::Iterate()
 {
-    return new SNetServerGroupIteratorImpl(m_Impl, m_Impl->m_Servers.begin());
+    TDiscoveredServers::const_iterator it = m_Impl->m_Servers.begin();
+
+    return it != m_Impl->m_Servers.end() ?
+        new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
 }
 
 SNetServiceImpl::SNetServiceImpl(

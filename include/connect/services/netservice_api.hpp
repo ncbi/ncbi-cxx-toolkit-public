@@ -58,8 +58,8 @@ class NCBI_XCONNECT_EXPORT CNetServerGroupIterator
     CNetServer GetServer();
     CNetServer operator *() {return GetServer();}
 
-    CNetServerGroupIterator GetNext();
-    CNetServerGroupIterator operator ++() {return GetNext();}
+    bool Next();
+    CNetServerGroupIterator& operator ++() {Next(); return *this;}
 };
 
 struct SNetServerGroupImpl;
