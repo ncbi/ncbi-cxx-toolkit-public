@@ -276,8 +276,6 @@ struct SNetScheduleAdminImpl : public CNetObject
 
     typedef map<pair<string, unsigned int>, string> TIDsMap;
 
-    void DumpCmdOutput(const string& cmd, CNcbiOstream& os) const;
-
     CNetScheduleAPI m_API;
 };
 

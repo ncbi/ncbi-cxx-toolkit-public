@@ -89,12 +89,6 @@ public:
     virtual bool Consider(CNetServer server) = 0;
 };
 
-enum ECmdOutputType {
-    eSingleLineOutput,
-    eMultilineOutput,
-    eMultilineOutput_NetCacheStyle
-};
-
 struct SNetServiceImpl : public CNetObject
 {
     // Construct a new object. If needed, this constructor
@@ -120,11 +114,6 @@ struct SNetServiceImpl : public CNetObject
 
     bool FindServer(const CNetObjectRef<INetServerFinder>& finder,
         CNetService::EServerSortMode sort_mode = CNetService::eRandomize);
-
-    void PrintCmdOutput(
-        const string& cmd,
-        CNcbiOstream& output_stream,
-        ECmdOutputType output_type);
 
     // Utility method for commands that require single server (that is,
     // a host:port pair) to be specified (not a load-balanced service

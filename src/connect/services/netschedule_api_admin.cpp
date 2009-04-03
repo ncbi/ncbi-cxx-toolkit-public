@@ -132,15 +132,15 @@ void CNetScheduleAdmin::DropQueue() const
 
 void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service->PrintCmdOutput("VERSION",
-        output_stream, eSingleLineOutput);
+    m_Impl->m_API->m_Service.PrintCmdOutput("VERSION",
+        output_stream, CNetService::eSingleLineOutput);
 }
 
 
 void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service->PrintCmdOutput("DUMP",
-        output_stream, eMultilineOutput);
+    m_Impl->m_API->m_Service.PrintCmdOutput("DUMP",
+        output_stream, CNetService::eMultilineOutput);
 }
 
 
@@ -148,8 +148,8 @@ void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
     CNetScheduleAPI::EJobStatus status) const
 {
     string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);
-    m_Impl->m_API->m_Service->PrintCmdOutput(cmd,
-        output_stream, eMultilineOutput);
+    m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
+        output_stream, CNetService::eMultilineOutput);
 }
 
 unsigned CNetScheduleAdmin::CountActiveJobs()
@@ -229,9 +229,9 @@ void CNetScheduleAdmin::GetWorkerNodes(
 void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
     EStatisticsOptions opt) const
 {
-    m_Impl->m_API->m_Service->PrintCmdOutput(
+    m_Impl->m_API->m_Service.PrintCmdOutput(
         opt == eStatisticsBrief ? "STAT" : "STAT ALL",
-        output_stream, eMultilineOutput);
+        output_stream, CNetService::eMultilineOutput);
 }
 
 
@@ -329,7 +329,8 @@ void CNetScheduleAdmin::Query(const string& query,
     cmd += NStr::PrintableString(sfields);
     cmd += '"';
 
-    m_Impl->DumpCmdOutput(cmd, os);
+    m_Impl->m_API->m_Service.PrintCmdOutput(cmd, os,
+        CNetService::eDumpNoHeaders);
 }
 
 void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) const
@@ -338,7 +339,8 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) cons
     cmd += NStr::PrintableString(select_stmt);
     cmd += '"';
 
-    m_Impl->DumpCmdOutput(cmd, os);
+    m_Impl->m_API->m_Service.PrintCmdOutput(cmd, os,
+        CNetService::eDumpNoHeaders);
 }
 
 void CNetScheduleAdmin::RetrieveKeys(const string& query,
@@ -362,19 +364,6 @@ void CNetScheduleAdmin::RetrieveKeys(const string& query,
     ids.x_Clear();
     ITERATE(SNetScheduleAdminImpl::TIDsMap, it, inter_ids) {
         ids.x_Add(it->first, it->second);
-    }
-}
-
-void SNetScheduleAdminImpl::DumpCmdOutput(
-    const string& cmd, CNcbiOstream& os) const
-{
-    for (CNetServerGroupIterator it =
-            m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
-        CNetServerCmdOutput cmd_output = (*it).Connect().ExecMultiline(cmd);
-
-        std::string line;
-        while (cmd_output.ReadLine(line))
-            os << line << "\n" << flush;
     }
 }
 

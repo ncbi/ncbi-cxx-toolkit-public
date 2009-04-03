@@ -104,6 +104,17 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     void SetCreateSocketMaxRetries(unsigned int retries);
     unsigned int GetCreateSocketMaxRetries() const;
+
+    enum ECmdOutputStyle {
+        eSingleLineOutput,
+        eDumpNoHeaders,
+        eMultilineOutput,
+        eMultilineOutput_NetCacheStyle
+    };
+
+    void PrintCmdOutput(const string& cmd,
+        CNcbiOstream& output_stream,
+        ECmdOutputStyle output_style);
 };
 
 END_NCBI_SCOPE

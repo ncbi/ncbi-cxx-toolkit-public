@@ -159,33 +159,31 @@ void CNetService::SetRebalanceStrategy(IRebalanceStrategy* strategy)
 }
 
 
-void SNetServiceImpl::PrintCmdOutput(const string& cmd,
-    CNcbiOstream& output_stream, ECmdOutputType output_type)
+void CNetService::PrintCmdOutput(const string& cmd,
+    CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style)
 {
-    TDiscoveredServers servers;
+    for (CNetServerGroupIterator it = DiscoverServers().Iterate(); it; ++it) {
+        CNetServerConnection conn = (*it).Connect();
 
-    DiscoverServers(servers);
+        if (output_style != eDumpNoHeaders)
+            output_stream << conn.GetHost() << ":" << conn.GetPort() << endl;
 
-    ITERATE(TDiscoveredServers, it, servers) {
-        CNetServerConnection conn = GetConnection(*it);
-
-        output_stream << conn.GetHost() << ":" << conn.GetPort() << endl;
-
-        if (output_type == eSingleLineOutput)
+        if (output_style == eSingleLineOutput)
             output_stream << conn.Exec(cmd);
         else {
             CNetServerCmdOutput output = conn.ExecMultiline(cmd);
 
-            if (output_type == eMultilineOutput_NetCacheStyle)
+            if (output_style == eMultilineOutput_NetCacheStyle)
                 output->SetNetCacheCompatMode();
 
             std::string line;
 
             while (output.ReadLine(line))
-                output_stream << line << "\n";
+                output_stream << line << endl;
         }
 
-        output_stream << endl;
+        if (output_style != eDumpNoHeaders)
+            output_stream << endl;
     }
 }
 

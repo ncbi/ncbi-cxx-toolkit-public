@@ -53,23 +53,23 @@ void CNetCacheAdmin::Logging(bool on_off) const
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service->PrintCmdOutput(
+    m_Impl->m_API->m_Service.PrintCmdOutput(
         m_Impl->m_API->x_MakeCommand("GETCONF"),
-        output_stream, eMultilineOutput_NetCacheStyle);
+        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service->PrintCmdOutput(
+    m_Impl->m_API->m_Service.PrintCmdOutput(
         m_Impl->m_API->x_MakeCommand("GETSTAT"),
-        output_stream, eMultilineOutput_NetCacheStyle);
+        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service->PrintCmdOutput(
+    m_Impl->m_API->m_Service.PrintCmdOutput(
         m_Impl->m_API->x_MakeCommand("VERSION"),
-        output_stream, eSingleLineOutput);
+        output_stream, CNetService::eSingleLineOutput);
 }
 
 void CNetCacheAdmin::DropStat() const
