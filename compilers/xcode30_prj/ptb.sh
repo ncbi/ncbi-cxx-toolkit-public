@@ -75,3 +75,5 @@ test "$?" -ne 0 && exit 1
 if test "$TERM" = "dumb"; then
   open ${SLN_PATH}_configuration_log.txt
 fi
+
+exit 0
