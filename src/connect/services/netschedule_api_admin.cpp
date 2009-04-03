@@ -235,12 +235,9 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 }
 
 
-void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
+void CNetScheduleAdmin::Monitor(CNcbiOstream& out) const
 {
-    CNetServerConnection conn =
-        m_Impl->m_API->m_Service->RequireStandAloneServerSpec();
-    conn->WriteLine("MONI QUIT");
-    conn.Telnet(out);
+    m_Impl->m_API->m_Service->Monitor(out, "MONI QUIT");
 }
 
 void CNetScheduleAdmin::Logging(bool on_off) const

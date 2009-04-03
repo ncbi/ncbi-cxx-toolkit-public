@@ -120,6 +120,8 @@ struct SNetServiceImpl : public CNetObject
     // name).
     CNetServerConnection RequireStandAloneServerSpec();
 
+    void Monitor(CNcbiOstream& out, const std::string& cmd);
+
     CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
     string m_ClientName;
 

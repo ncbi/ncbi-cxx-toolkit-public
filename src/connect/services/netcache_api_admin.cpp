@@ -78,13 +78,10 @@ void CNetCacheAdmin::DropStat() const
         m_Impl->m_API->x_MakeCommand("DROPSTAT"));
 }
 
-void CNetCacheAdmin::Monitor(CNcbiOstream & out) const
+void CNetCacheAdmin::Monitor(CNcbiOstream& out) const
 {
-    CNetServerConnection conn =
-        m_Impl->m_API->m_Service->RequireStandAloneServerSpec();
-
-    conn->WriteLine(m_Impl->m_API->x_MakeCommand("MONI"));
-    conn.Telnet(out);
+    m_Impl->m_API->m_Service->Monitor(out,
+        m_Impl->m_API->x_MakeCommand("MONI"));
 }
 
 

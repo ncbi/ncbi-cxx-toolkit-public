@@ -298,28 +298,6 @@ void SNetServerConnectionImpl::CheckConnect()
         pool->m_EventListener->OnConnected(this);
 }
 
-void CNetServerConnection::Telnet(CNcbiOstream& out)
-{
-    _ASSERT(m_Impl->IsConnected());
-
-    STimeout rto = {1, 0};
-
-    CSocket* the_socket = &m_Impl->m_Socket;
-
-    the_socket->SetTimeout(eIO_Read, &rto);
-
-    string line;
-
-    for (;;)
-        if (the_socket->ReadLine(line) == eIO_Success)
-            out << line << "\n" << flush;
-        else
-            if (the_socket->GetStatus(eIO_Open) != eIO_Success)
-                break;
-
-    m_Impl->Close();
-}
-
 const string& CNetServerConnection::GetHost() const
 {
     return m_Impl->m_ConnectionPool->m_Host;

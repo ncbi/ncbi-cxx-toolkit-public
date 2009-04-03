@@ -69,8 +69,6 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     // output of the command.
     CNetServerCmdOutput ExecMultiline(const std::string& cmd);
 
-    void Telnet(CNcbiOstream& out);
-
     const string& GetHost() const;
     unsigned int GetPort() const;
 };

@@ -265,6 +265,30 @@ CNetServerConnection SNetServiceImpl::RequireStandAloneServerSpec()
         "This command requires explicit server address (host:port)");
 }
 
+void SNetServiceImpl::Monitor(CNcbiOstream& out, const std::string& cmd)
+{
+    CNetServerConnection conn = RequireStandAloneServerSpec();
+
+    conn->WriteLine(cmd);
+
+    STimeout rto = {1, 0};
+
+    CSocket* the_socket = &conn->m_Socket;
+
+    the_socket->SetTimeout(eIO_Read, &rto);
+
+    string line;
+
+    for (;;)
+        if (the_socket->ReadLine(line) == eIO_Success)
+            out << line << "\n" << flush;
+        else
+            if (the_socket->GetStatus(eIO_Open) != eIO_Success)
+                break;
+
+    conn->Close();
+}
+
 void CNetService::SetCommunicationTimeout(const STimeout& to)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
