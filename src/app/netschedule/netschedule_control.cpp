@@ -348,13 +348,11 @@ int CNetScheduleControl::Run(void)
         vector<string> fields;
         NStr::Tokenize(sfields, ",", fields);
         ctl.GetAdmin().Query(query, fields, os);
-        os << endl;
     }
     else if( args["select"]) {
         ctl = x_CreateNewClient(true);
         string select_stmt = args["select"].AsString();
         ctl.GetAdmin().Select(select_stmt, os);
-        os << endl;
     }
     else if (args["reconf"]) {
         ctl = x_CreateNewClient(false);
@@ -477,7 +475,6 @@ int CNetScheduleControl::Run(void)
                << it->second
                << endl;
         }
-        os << endl;
     } else if (args["read"]) {
         std::list<std::string> read_args;
 
