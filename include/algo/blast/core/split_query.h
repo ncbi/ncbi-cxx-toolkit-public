@@ -170,7 +170,7 @@ SplitQueryBlk_GetQueryIndicesForChunk(const SSplitQueryBlk* squery_blk,
                                       Uint4** query_indices);
 
 /** Value to represent an invalid context */
-extern const Int4 kInvalidContext;
+NCBI_XBLAST_EXPORT extern const Int4 kInvalidContext;
 
 /** Retrieve an array of query contexts for the requested chunk
  * @param squery_blk split query block structure [in]

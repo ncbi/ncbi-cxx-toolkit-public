@@ -37,7 +37,6 @@
 
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
-#include <algo/blast/api/split_query.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -126,9 +125,6 @@ private:
 
     /// Query masking information
     TSeqLocInfoVector               m_MasksForAllQueries;
-
-    /// Query splitting data structure (used only if applicable)
-    CRef<CQuerySplitter>            m_QuerySplitter;
 };
 
 inline TSearchMessages
