@@ -171,6 +171,7 @@ property xobjedit : {name:"xobjedit", path:"objtools:edit"}
 property seqdb : {name:"seqdb", path:"objtools:blast:seqdb_reader"}
 property xformat : {name:"xformat", path:"objtools:format"}
 property xblastformat : {name:"xblastformat", path:"objtools:blast_format"}
+property blast_services : {name:"blast_services", path:"objtools:blast:services"}
 property xobjsimple : {name:"xobjsimple", path:"objtools:simple"}
 property xobjcleanup : {name:"xobjcleanup", path:"objtools:cleanup"}
 
@@ -298,7 +299,7 @@ property ncbi_xreader_cache : {name:"ncbi_xreader_cache", libs:{xreader_cache}, 
 property ncbi_xreader_pubseqos : {name:"ncbi_xreader_pubseqos", libs:{xreader_pubseqos}, dep:"ncbi_core ncbi_dbapi ncbi_dbapi_driver ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_misc ncbi_general", req:true}
 property ncbi_xloader_cdd : {name:"ncbi_xloader_cdd", libs:{xloader_cdd}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_misc ncbi_general", req:true}
 property ncbi_xloader_genbank : {name:"ncbi_xloader_genbank", libs:{xloader_genbank}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_misc ncbi_general", req:true}
-property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", libs:{xloader_blastdb}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_misc ncbi_general ncbi_algo", req:true}
+property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", libs:{xloader_blastdb, blast_services}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_misc ncbi_general ncbi_algo", req:true}
 property ncbi_xloader_lds : {name:"ncbi_xloader_lds", libs:{xloader_lds}, dep:"ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_general ncbi_lds ncbi_pub ncbi_seq ncbi_seqext ncbi_misc db", req:true}
 property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_pub", req:true}
 property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_pub ncbi_misc ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2", req:true}
