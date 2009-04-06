@@ -1,3 +1,11 @@
+2009-04-06 13:17:21:
+    Finalize version 1.2.1, with the following major changes relative to 1.2.0:
+     * Pick up latest fixes to 4.0.0 stable components.
+     * Fix a logic error that could result in truncated responses when
+       using the FreeTDS driver.
+     * Ensure that exceptions that somehow slip through the cracks
+       receive proper backtraces to help debug their causes.
+
 2009-02-25 16:43:15:
     Put the final touches on what is to be version 1.2.0, with the following
     major changes relative to 1.1.1:
