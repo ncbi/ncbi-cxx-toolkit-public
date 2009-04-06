@@ -35,17 +35,17 @@
  */
 
 
-#define NCBID_WEBPATH           "/Service/ncbid.cgi"
-#define HTTP_CONNECTION_INFO    "Connection-Info:"
-#define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
-#define HTTP_DISP_MESSAGES      "Dispatcher-Messages:"
-#define HTTP_NCBI_MESSAGE       "NCBI-Message:"
-#define LBSM_DEFAULT_TIME       30    /* Default expiration time, in seconds */
-#define LBSM_DEFAULT_RATE       1000  /* For SLBSM_Service::info::rate       */
-#define DISPATCHER_CFGPATH      "/etc/lbsmd/"
-#define DISPATCHER_CFGFILE      "servrc.cfg"
-#define DISP_PROTOCOL_VERSION   "1.1"
-#define DISPD_MESSAGE_FILE      ".dispd.msg"
+#define NCBID_WEBPATH          "/Service/ncbid.cgi"
+#define HTTP_CONNECTION_INFO   "Connection-Info:"
+#define HTTP_DISP_FAILURES     "Dispatcher-Failures:"
+#define HTTP_DISP_MESSAGES     "Dispatcher-Messages:"
+#define HTTP_NCBI_MESSAGE      "NCBI-Message:"
+#define LBSM_DEFAULT_TIME      30     /* Default expiration time, in seconds */
+#define LBSM_DEFAULT_RATE      1000   /* For SLBSM_Service::info::rate       */
+#define DISPATCHER_CFGPATH     "/etc/lbsmd/"
+#define DISPATCHER_CFGFILE     "servrc.cfg"
+#define DISP_PROTOCOL_VERSION  "1.1"
+#define DISPD_MESSAGE_FILE     ".dispd.msg"
 
 
 #ifdef __cplusplus
@@ -53,7 +53,7 @@ extern "C" {
 #endif
 
 
-typedef unsigned int ticket_t;
+typedef unsigned int           ticket_t;
 
 
 #ifdef __cplusplus

@@ -50,9 +50,9 @@ typedef struct SServiceConnectorTag {
     SERV_ITER       iter;               /* Dispatcher information            */
     SMetaConnector  meta;               /* Low level comm.conn and its VT    */
     EIO_Status      status;             /* Status of last op                 */
-    unsigned int    host;               /* Parsed connection info...         */
-    unsigned short  port;
-    ticket_t        ticket;
+    unsigned int    host;               /* Parsed connection info... (n.b.o) */
+    unsigned short  port;               /*                       ... (h.b.o) */
+    ticket_t        ticket;             /* Network byte order (none if zero) */
     SSERVICE_Extra  params;
     char            service[1];         /* Untranslated service name         */
 } SServiceConnector;
@@ -139,7 +139,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
             unsigned int  i1, i2, i3, i4, ticket;
             unsigned char o1, o2, o3, o4;
-            char ipaddr[32];
+            char ipaddr[40];
 
             if (uuu->host)
                 break/*failed - duplicate connection info*/;
@@ -629,7 +629,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                       net_info->port,
                                       1/*max.try*/,
                                       &uuu->ticket,
-                                      sizeof(uuu->ticket),
+                                      uuu->ticket ? sizeof(uuu->ticket) : 0,
                                       net_info->debug_printout ==
                                       eDebugPrintout_Data ?
                                       fSOCK_LogOn : fSOCK_LogDefault);
