@@ -36,7 +36,7 @@ static char const rcsid[] =
  */
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/split_query.hpp>
+#include "split_query.hpp"
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_options.hpp>
 

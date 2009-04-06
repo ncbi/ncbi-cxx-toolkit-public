@@ -108,8 +108,7 @@ SplitQuery_SetEffectiveSearchSpace(CRef<CBlastOptions> options,
  * conversions between contexts local to query split chunks and the absolute
  * (full, unsplit) query
  */
-NCBI_XBLAST_EXPORT
-class CContextTranslator {
+class NCBI_XBLAST_EXPORT CContextTranslator {
 public:
     /// Constructor
     /// @param sqb Split query block structure [in]
@@ -176,8 +175,7 @@ private:
 
 /// Auxiliary class to determine information about the query that was split
 /// into chunks.
-NCBI_XBLAST_EXPORT
-class CQueryDataPerChunk {
+class NCBI_XBLAST_EXPORT CQueryDataPerChunk {
 public:
     /** 
      * @brief Constructor

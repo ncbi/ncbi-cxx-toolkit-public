@@ -39,7 +39,7 @@ static char const rcsid[] =
 
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
-
+#include <algo/blast/api/split_query.hpp>
 #include <algo/blast/core/gencode_singleton.h>
 
 #include "prelim_search_runner.hpp"
@@ -130,7 +130,6 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
         BlastSetupPreliminarySearchEx(query_factory, options, pssm, seqsrc,
                                       IsMultiThreaded());
     m_InternalData = setup_data->m_InternalData;
-    m_QuerySplitter = setup_data->m_QuerySplitter;
     copy(setup_data->m_Masks.begin(), setup_data->m_Masks.end(),
          back_inserter(m_MasksForAllQueries));
     m_Messages = setup_data->m_Messages;
@@ -213,16 +212,19 @@ CBlastPrelimSearch::Run()
        GenCodeSingletonAdd(m_Options->GetDbGeneticCode(), gc.get());
     }
 
-    if (m_QuerySplitter->IsQuerySplit()) {
+	// Query splitting data structure (used only if applicable)
+	CRef<SBlastSetupData> setup_data(new SBlastSetupData(m_QueryFactory, m_Options));
+	CRef<CQuerySplitter> query_splitter = setup_data->m_QuerySplitter;
+    if (query_splitter->IsQuerySplit()) {
 
-        CRef<CSplitQueryBlk> split_query_blk = m_QuerySplitter->Split();
+        CRef<CSplitQueryBlk> split_query_blk = query_splitter->Split();
 
-        for (Uint4 i = 0; i < m_QuerySplitter->GetNumberOfChunks(); i++) {
+        for (Uint4 i = 0; i < query_splitter->GetNumberOfChunks(); i++) {
             try {
                 CRef<IQueryFactory> chunk_qf = 
-                    m_QuerySplitter->GetQueryFactoryForChunk(i);
+                    query_splitter->GetQueryFactoryForChunk(i);
                 _TRACE("Query chunk " << i << "/" << 
-                       m_QuerySplitter->GetNumberOfChunks());
+                       query_splitter->GetNumberOfChunks());
                 CRef<SInternalData> chunk_data =
                     SplitQuery_CreateChunkData(chunk_qf, m_Options,
                                                m_InternalData,
@@ -252,7 +254,7 @@ CBlastPrelimSearch::Run()
                                 chunk_data->m_HspStream->GetPointer(),
                                 m_InternalData->m_HspStream->GetPointer());
                 _ASSERT(m_InternalData->m_HspStream->GetPointer());
-                // free this as the m_QuerySplitter keeps a reference to the
+                // free this as the query_splitter keeps a reference to the
                 // chunk factories, which in turn keep a reference to the local
                 // query data.
                 query_data->FlushSequenceData();        

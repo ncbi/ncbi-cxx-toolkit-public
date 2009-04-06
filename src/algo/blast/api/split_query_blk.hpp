@@ -50,8 +50,7 @@ BEGIN_SCOPE(blast)
 typedef COpenRange<TSeqPos> TChunkRange;
 
 /// Wrapper class around SSplitQueryBlk structure
-NCBI_XBLAST_EXPORT
-class CSplitQueryBlk : public CObject {
+class NCBI_XBLAST_EXPORT CSplitQueryBlk : public CObject {
 public:
     /** 
     * @brief Constructor for wrapper class for SSplitQueryBlk
