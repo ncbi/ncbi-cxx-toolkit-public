@@ -1491,7 +1491,7 @@ void CFeatureItem::x_AddQualsRna(
                     // !!!
                     return;
                 }
-                if (aa == 'U') {
+/*                if (aa == 'U') {
                     if ( ctx.Config().SelenocysteineToNote() ) {
                         x_AddQual(eFQ_selenocysteine_note,
                             new CFlatStringQVal("selenocysteine"));
@@ -1499,7 +1499,7 @@ void CFeatureItem::x_AddQualsRna(
                         x_AddQual(eFQ_selenocysteine, new CFlatBoolQVal(true));
                     }
                 }
-                if ( cfg.IupacaaOnly() ) {
+*/                if ( cfg.IupacaaOnly() ) {
                     aa = s_ToIupacaa(aa);
                 }
                 const string& aa_str = s_AaName(aa);
@@ -1643,7 +1643,7 @@ void CFeatureItem::x_AddQualCodeBreak(
             break;
         }
         
-        if ( is_U ) {
+/*        if ( is_U ) {
             if ( ctx.Config().SelenocysteineToNote() ) {
                 x_AddQual( eFQ_selenocysteine_note,
                     new CFlatStringQVal( "selenocysteine" ) );
@@ -1652,7 +1652,7 @@ void CFeatureItem::x_AddQualCodeBreak(
             }
             break;
         }
-    }
+*/    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -2802,7 +2802,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(number);
 
     DO_QUAL(pseudo);
-    DO_QUAL(selenocysteine);
+//    DO_QUAL(selenocysteine);
 
     DO_QUAL(codon_start);
 
@@ -2925,7 +2925,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(seqfeat_note);
     DO_NOTE(exception_note);
     DO_NOTE(region);
-    DO_NOTE(selenocysteine_note);
+//    DO_NOTE(selenocysteine_note);
     DO_NOTE(prot_names);
     DO_NOTE(bond);
     DO_NOTE(site);
@@ -3119,9 +3119,9 @@ void CFeatureItem::x_CleanQuals(
             }
         }
         // suppress selenocysteine note if already in comment
-        if (NStr::Find(feat_comment, "selenocysteine") != NPOS) {
-            x_RemoveQuals(eFQ_selenocysteine_note);
-        }
+//        if (NStr::Find(feat_comment, "selenocysteine") != NPOS) {
+//            x_RemoveQuals(eFQ_selenocysteine_note);
+//        }
 
         // /EC_number same as feat.comment will suppress /note
         for (TQCI it = x_GetQual(eFQ_EC_number); it != m_Quals.end()  &&  it->first == eFQ_EC_number; ++it) {
@@ -3241,8 +3241,8 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_rpt_unit_seq, CSeqFeatData::eQual_rpt_unit_seq),
     TQualPair(eFQ_rrna_its, CSeqFeatData::eQual_note),
     TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_bad),
-    TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_selenocysteine_note, CSeqFeatData::eQual_note),
+//    TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_note),
+//    TQualPair(eFQ_selenocysteine_note, CSeqFeatData::eQual_note),
     TQualPair(eFQ_seqfeat_note, CSeqFeatData::eQual_note),
     TQualPair(eFQ_site, CSeqFeatData::eQual_note),
     TQualPair(eFQ_site_type, CSeqFeatData::eQual_bad),
