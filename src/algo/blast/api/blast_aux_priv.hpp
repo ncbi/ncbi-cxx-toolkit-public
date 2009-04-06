@@ -41,7 +41,7 @@
 #include <algo/blast/api/query_data.hpp>        // for IQueryFactory
 #include <algo/blast/api/blast_options.hpp>     // for CBlastOptions
 #include <algo/blast/api/setup_factory.hpp>     // for SInternalData
-#include <algo/blast/api/split_query.hpp>       // for CQuerySplitter
+#include "split_query.hpp"                      // for CQuerySplitter
 
 /** @addtogroup AlgoBlast
  *

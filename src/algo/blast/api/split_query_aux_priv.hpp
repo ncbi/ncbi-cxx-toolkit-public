@@ -36,10 +36,9 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/core/blast_query_info.h>
-#include <algo/blast/api/split_query.hpp>
+#include "split_query.hpp"
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/setup_factory.hpp>
-#include "split_query_blk.hpp"
 #include <sstream>
 
 /** @addtogroup AlgoBlast

@@ -39,7 +39,6 @@ static char const rcsid[] =
 
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
-#include <algo/blast/api/split_query.hpp>
 #include <algo/blast/core/gencode_singleton.h>
 
 #include "prelim_search_runner.hpp"

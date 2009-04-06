@@ -42,7 +42,7 @@
 #include "blast_aux_priv.hpp"
 #include "split_query_aux_priv.hpp"
 #include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/split_query.hpp>
+#include "split_query.hpp"
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <util/random_gen.hpp>
 #include <objtools/simple/simple_om.hpp>
