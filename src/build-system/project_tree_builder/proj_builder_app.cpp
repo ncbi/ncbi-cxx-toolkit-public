@@ -1271,7 +1271,9 @@ void CProjBulderApp::ParseArguments(void)
     if (m_ProjTags.empty()) {
         m_ProjTags = "*";
     }
+#ifdef NCBI_COMPILER_MSVC
     m_ConfirmCfg =   (bool)args["cfg"];
+#endif
 }
 
 void CProjBulderApp::VerifyArguments(void)
