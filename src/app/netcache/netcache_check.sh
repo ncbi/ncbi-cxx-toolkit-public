@@ -3,10 +3,10 @@
 #
 # Check netcached services
 
-services="`svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_services.lst`"
+services="`svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_services.lst | tr $'\r\n' ' '`"
 test $? -eq 0 || exit 1
 
-hosts="`svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_servers.lst`"
+hosts="`svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_servers.lst | tr $'\r\n' ' '`"
 test $? -eq 0 || exit 2
 
 # For Nagios test
