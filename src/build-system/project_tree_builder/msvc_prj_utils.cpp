@@ -492,7 +492,8 @@ string CMsvc7RegSettings::sm_RequestedArchs = "";
 void CMsvc7RegSettings::IdentifyPlatform()
 {
 #if defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
-    string native( CNcbiApplication::Instance()->GetEnvironment().Get("NATIVE_ARCH"));
+/*
+    string native( CNcbiApplication::Instance()->GetEnvironment().Get("HOSTTYPE"));
     if (!native.empty()) {
         sm_MsvcPlatformName = native;
     }
@@ -502,9 +503,10 @@ void CMsvc7RegSettings::IdentifyPlatform()
         sm_MsvcVersionName = "30";
     }
     sm_MsvcPlatform = eXCode;
-    sm_RequestedArchs = sm_MsvcPlatformName;
+*/
+//    sm_RequestedArchs = sm_MsvcPlatformName;
 
-    CArgs args = CNcbiApplication::Instance()->GetArgs();
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     const CArgValue& ide = args["ide"];
     if ((bool)ide) {
         int i = ide.AsInteger();
@@ -517,7 +519,7 @@ void CMsvc7RegSettings::IdentifyPlatform()
     }    
     const CArgValue& arch = args["arch"];
     if ((bool)arch) {
-        const string& a = arch.AsString();
+        string a = arch.AsString();
         sm_MsvcPlatform = eXCode;
         sm_RequestedArchs = a;
         string tmp;
@@ -547,7 +549,7 @@ void CMsvc7RegSettings::IdentifyPlatform()
     }    
     const CArgValue& arch = args["arch"];
     if ((bool)arch) {
-        const string& a = arch.AsString();
+        string a = arch.AsString();
         if (a == "Win32") {
             sm_MsvcPlatform = eMsvcWin32;
             sm_RequestedArchs = sm_MsvcPlatformName = "Win32";

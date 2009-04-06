@@ -1217,7 +1217,7 @@ void CProjBulderApp::ParseArguments(void)
 {
     CMsvc7RegSettings::IdentifyPlatform();
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     m_Subtree = args["subtree"].AsString();
 
@@ -1271,7 +1271,8 @@ void CProjBulderApp::ParseArguments(void)
     if (m_ProjTags.empty()) {
         m_ProjTags = "*";
     }
-#ifdef NCBI_COMPILER_MSVC
+    m_ConfirmCfg = false;
+#if defined(NCBI_COMPILER_MSVC)
     m_ConfirmCfg =   (bool)args["cfg"];
 #endif
 }
