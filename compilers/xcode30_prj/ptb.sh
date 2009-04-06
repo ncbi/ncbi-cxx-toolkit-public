@@ -11,12 +11,29 @@
 #
 
 #-----------------------------------------------------------------------------
+# input environment vars:
+# PTB_ARCH
+# PTB_FLAGS
+# PTB_PATH
+# SLN_PATH
+# TREE_ROOT
+# BUILD_TREE_ROOT
+# PTB_PROJECT
+
+#-----------------------------------------------------------------------------
 # required version of PTB
-#DEFPTB_VERSION="1.7.5"
+#DEFPTB_VERSION="1.8.0"
 DEFPTB_VERSION="notimplemented"
 DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
+# Xcode version
+IDE="30"
+
 ptbname="project_tree_builder"
 buildptb="no"
+
+PTB_EXTRA="-ide $IDE"
+test -z "$PTB_ARCH" && PTB_ARCH=`arch`
+PTB_EXTRA="$PTB_EXTRA -arch $PTB_ARCH"
 
 if test ! "$PREBUILT_PTB_EXE" = "bootstrap"; then
   PTB_EXE="$PREBUILT_PTB_EXE"
@@ -43,7 +60,7 @@ if test ! -f "$ptbini"; then
   echo "$ptbini not found"
   exit 1
 fi
-test "$PTB_PROJECT" = "" && PTB_PROJECT=${PTB_PROJECT_REQ}
+test -z "$PTB_PROJECT" && PTB_PROJECT=${PTB_PROJECT_REQ}
 
 if test "$buildptb" = "yes"; then
   echo "======================================================================"
@@ -67,9 +84,9 @@ fi
 
 echo "======================================================================"
 echo "Running CONFIGURE."
-echo "$PTB_EXE $PTB_FLAGS -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH"
+echo "$PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH"
 echo "======================================================================"
-$PTB_EXE $PTB_FLAGS -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH
+$PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH
 test "$?" -ne 0 && exit 1
 
 if test "$TERM" = "dumb"; then

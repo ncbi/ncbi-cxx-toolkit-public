@@ -10,9 +10,12 @@
 # defaults
 use_debug="no"
 use_dll="no"
+use_64="no"
+use_universal="no"
 use_staticstd="no"
 use_projectlst="src/"
 use_action=""
+use_arch=""
 
 mk_name="Makefile"
 sln_name="configured"
@@ -38,6 +41,9 @@ OPTIONS:
   --with-debug              -- build debug versions of libs and apps
   --without-dll             -- build all toolkit libraries as static ones
   --with-dll                -- assemble toolkit libraries into DLLs where requested
+  --with-64                 -- compile to 64-bit code
+  --with-universal          -- build universal binaries
+  --with-universal=CPU      -- build universal binaries targeting the given CPU
   --with-static-exe         -- use static C++ standard libraries
   --with-projects=FILE      -- build projects listed in FILE
   --with-extra-action=SCR   -- script to call after the configuration is complete
@@ -61,15 +67,18 @@ for cmd_arg in "$@"; do
     --with-debug          )  use_debug="yes" ;;
     --without-dll         )  use_dll="no" ;;
     --with-dll            )  use_dll="yes" ;;
+    --with-64             )  use_64="yes" ;;
+    --with-universal      )  use_universal="yes" ;;
     --with-static-exe     )  use_staticstd="yes" ;;
-    --with-projects=*     )  use_projectlst=$cmd_arg ;;
-    --with-extra-action=* )  use_action=$cmd_arg ;;
+    --with-universal=*    )  use_arch="$cmd_arg" ;;
+    --with-projects=*     )  use_projectlst="$cmd_arg" ;;
+    --with-extra-action=* )  use_action="$cmd_arg" ;;
     *  )  Error "Invalid option:  $cmd_arg"
   esac
 done
+use_arch=`echo $use_arch | sed -e s/--with-universal=//`
 use_projectlst=`echo $use_projectlst | sed -e s/--with-projects=//`
 use_action=`echo $use_action | sed -e s/--with-extra-action=//`
-
 #--------------------------------------------------------------------------------
 
 xcodebuild -version >/dev/null 2>/dev/null
@@ -77,6 +86,21 @@ test $? -ne 0 && Error "xcodebuild not found"
 arch=`arch`
 platform=`xcodebuild -version 2>/dev/null | grep 'Xcode [0-9][0-9]*' | sed -e 's/[ .]//g'`
 
+# ------- target architecture
+if test -z "$use_arch"; then
+  if test "$use_universal" == "yes"; then
+    if test "$use_64" == "yes"; then
+      use_arch="ppc64 x86_64"
+    else
+      use_arch="ppc i386"
+    fi
+  else
+    use_arch="$arch"
+  fi
+fi 
+PTB_ARCH="$use_arch"
+
+# ------- configuration and flags
 if test "$use_dll" = "yes"; then
   build_results="dll"
   PTB_FLAGS="-dll"
@@ -108,11 +132,12 @@ else
     fi
   fi
 fi
-sln_path="${platform}-${conf}"
-
+sln_path="${platform}-${conf}-${use_arch}"
+sln_path=`echo $sln_path | sed -e 's/ /_/g'`
 #--------------------------------------------------------------------------------
 # prepare and run ptb.sh
 
+export PTB_ARCH
 export PTB_FLAGS
 export PTB_PATH=./static/bin/ReleaseDLL
 export SLN_PATH=$sln_path/$sln_name
