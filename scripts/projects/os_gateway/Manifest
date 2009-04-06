@@ -17,7 +17,7 @@ COPY: $srcdir/src/internal/cppcore/os_gateway/os_gateway.ini $installdir/bin
 # 2009) rather than the trunk.
 USE_COMPONENTS: os_gateway
 
-DEFAULT_CONFIGURATIONS: Linx32:plain Linux64:plain
+DEFAULT_CONFIGURATIONS: Linux32:plain Linux64:plain
 
 # Each line describes a single configuration
 # The format is as follows:
