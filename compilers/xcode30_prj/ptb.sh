@@ -33,7 +33,7 @@ buildptb="no"
 
 PTB_EXTRA="-ide $IDE"
 test -z "$PTB_ARCH" && PTB_ARCH=`arch`
-PTB_EXTRA="$PTB_EXTRA -arch $PTB_ARCH"
+PTB_EXTRA="$PTB_EXTRA -arch \"$PTB_ARCH\""
 
 if test ! "$PREBUILT_PTB_EXE" = "bootstrap"; then
   PTB_EXE="$PREBUILT_PTB_EXE"
@@ -86,7 +86,7 @@ echo "======================================================================"
 echo "Running CONFIGURE."
 echo "$PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH"
 echo "======================================================================"
-$PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH
+eval $PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $ptbini $TREE_ROOT $PTB_PROJECT $SLN_PATH
 test "$?" -ne 0 && exit 1
 
 if test "$TERM" = "dumb"; then
