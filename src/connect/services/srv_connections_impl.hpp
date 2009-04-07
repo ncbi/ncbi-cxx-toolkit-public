@@ -32,7 +32,7 @@
  *
  */
 
-#include <connect/services/srv_connections.hpp>
+#include <connect/services/netservice_api.hpp>
 
 #include <corelib/ncbimtx.hpp>
 
@@ -52,11 +52,11 @@ struct SNetServerCmdOutputImpl : public CNetObject
     bool m_ReadCompletely;
 };
 
-struct SNetServerConnectionPool;
+struct SNetServerImpl;
 
 struct SNetServerConnectionImpl : public CNetObject
 {
-    SNetServerConnectionImpl(SNetServerConnectionPool* pool);
+    SNetServerConnectionImpl(SNetServerImpl* pool);
 
     virtual void Delete();
 
@@ -76,7 +76,8 @@ struct SNetServerConnectionImpl : public CNetObject
 
     virtual ~SNetServerConnectionImpl();
 
-    CNetObjectRef<SNetServerConnectionPool> m_ConnectionPool;
+    // The server this connection is connected to.
+    CNetObjectRef<SNetServerImpl> m_Server;
     SNetServerConnectionImpl* m_NextFree;
 
     CSocket m_Socket;
@@ -96,32 +97,28 @@ class INetServerConnectionListener : public CNetObject
 public:
     virtual void OnConnected(CNetServerConnection::TInstance) = 0;
     virtual void OnError(const string& err_msg,
-        SNetServerConnectionPool* pool) = 0;
+        SNetServerImpl* pool) = 0;
 };
 
 
-struct SNetServerConnectionPool : public CNetObject
+struct SNetServerImpl : public CNetObject
 {
-    SNetServerConnectionPool(
-        const string& host,
-        unsigned short port,
-        const STimeout& timeout,
-        INetServerConnectionListener* listener);
-
     // Special constructor for making search images
-    // for searching in TConnectionPoolSet.
-    SNetServerConnectionPool(const string& host, unsigned short port) :
+    // for searching in TNetServerSet.
+    SNetServerImpl(const string& host, unsigned short port) :
         m_Host(host), m_Port(port)
     {
     }
 
     CNetServerConnection GetConnection();
     void DeleteConnection(SNetServerConnectionImpl* impl);
-    void Put(SNetServerConnectionImpl* impl);
+    void ReturnToPool(SNetServerConnectionImpl* impl);
 
     std::string GetAddressAsString() const;
 
-    virtual ~SNetServerConnectionPool();
+    // A smart pointer to the NetService object
+    // that contains this NetServer.
+    CNetService m_Service;
 
     string m_Host;
     unsigned short m_Port;
@@ -135,6 +132,17 @@ struct SNetServerConnectionPool : public CNetObject
     CFastMutex m_FreeConnectionListLock;
 
     ESwitch m_PermanentConnection;
+};
+
+struct SNetServerImplReal : public SNetServerImpl
+{
+    SNetServerImplReal(const string& host,
+        unsigned short port,
+        SNetServiceImpl* service_impl,
+        const STimeout& timeout,
+        INetServerConnectionListener* listener);
+
+    virtual ~SNetServerImplReal();
 };
 
 END_NCBI_SCOPE

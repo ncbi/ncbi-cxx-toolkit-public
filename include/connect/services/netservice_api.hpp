@@ -37,18 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SNetServerImpl;
-
-class NCBI_XCONNECT_EXPORT CNetServer
-{
-    NET_COMPONENT(NetServer);
-
-    std::string GetHost() const;
-    unsigned short GetPort() const;
-
-    CNetServerConnection Connect();
-};
-
 struct SNetServerGroupIteratorImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerGroupIterator

@@ -348,8 +348,8 @@ void CNetScheduleAdmin::RetrieveKeys(const string& query,
         CNetServer server = *it;
 
         inter_ids[SNetScheduleAdminImpl::TIDsMap::key_type(CSocketAPI::ntoa(
-            CSocketAPI::gethostbyname(server->m_Address.first)),
-            server->m_Address.second)] = server.Connect().Exec(cmd);
+            CSocketAPI::gethostbyname(server->m_Host)),
+            server->m_Port)] = server.Connect().Exec(cmd);
     }
 
     ids.x_Clear();

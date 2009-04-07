@@ -145,7 +145,7 @@ struct SNetScheduleAPIImpl : public CNetObject
     private:
         virtual void OnConnected(CNetServerConnection::TInstance);
         virtual void OnError(const string& err_msg,
-            SNetServerConnectionPool* pool);
+            SNetServerImpl* pool);
 
     private:
         std::string m_Auth;
@@ -228,7 +228,7 @@ inline CNetServerConnection
     SNetScheduleAPIImpl::x_GetConnection(const string& job_key)
 {
     CNetScheduleKey nskey(job_key);
-    return m_Service->GetConnection(nskey.host, nskey.port);
+    return m_Service->GetServer(nskey.host, nskey.port).Connect();
 }
 
 struct SNetScheduleSubmitterImpl : public CNetObject

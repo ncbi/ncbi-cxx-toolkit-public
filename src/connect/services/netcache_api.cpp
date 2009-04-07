@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko
+ * Author:  Anatoliy Kuznetsov, Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *   Implementation of net cache client.
@@ -77,7 +77,7 @@ static TServerAddress* s_GetFallbackServer()
 CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
 {
     CNetCacheKey key(bid);
-    return m_Service->GetConnection(key.GetHost(), key.GetPort());
+    return m_Service->GetServer(key.GetHost(), key.GetPort()).Connect();
 }
 
 SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
@@ -107,7 +107,7 @@ string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
 }
 
 void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
-    const string& err_msg, SNetServerConnectionPool* pool)
+    const string& err_msg, SNetServerImpl* pool)
 {
     std::string message = pool->GetAddressAsString();
 
@@ -164,7 +164,7 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
         request += *key;
     } else {
         try {
-            return m_Service.GetBestConnection();
+            conn = m_Service.GetBestConnection();
         } catch (CNetSrvConnException& e) {
             TServerAddress* backup = s_GetFallbackServer();
 
@@ -178,7 +178,8 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
                 ". Connecting to backup server " <<
                 backup->first << ":" << backup->second << ".");
 
-            return m_Service->GetConnection(backup->first, backup->second);
+            conn = m_Service->GetServer(backup->first,
+                backup->second).Connect();
         }
     }
 

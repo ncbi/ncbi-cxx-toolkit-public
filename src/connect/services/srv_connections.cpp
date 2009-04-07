@@ -85,8 +85,8 @@ bool CNetServerCmdOutput::ReadLine(std::string& output)
 }
 
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
-    SNetServerConnectionPool* pool) :
-        m_ConnectionPool(pool),
+    SNetServerImpl* pool) :
+        m_Server(pool),
         m_NextFree(NULL)
 {
     if (TServConn_UserLinger2::GetDefault()) {
@@ -97,7 +97,7 @@ inline SNetServerConnectionImpl::SNetServerConnectionImpl(
 
 void SNetServerConnectionImpl::Delete()
 {
-    m_ConnectionPool->Put(this); // may result in 'delete this'
+    m_Server->ReturnToPool(this); // may result in 'delete this'
 }
 
 std::string SNetServerConnectionImpl::ReadCmdOutputLine()
@@ -109,18 +109,18 @@ std::string SNetServerConnectionImpl::ReadCmdOutputLine()
     switch (io_st)
     {
     case eIO_Success:
-        return result;
+        break;
     case eIO_Timeout:
         Abort();
         NCBI_THROW(CNetSrvConnException, eReadTimeout,
             "Communication timeout reading from " +
-            m_ConnectionPool->GetAddressAsString());
+            m_Server->GetAddressAsString());
         break;
     default: // invalid socket or request, bailing out
         Abort();
         NCBI_THROW(CNetServiceException, eCommunicationError,
             "Communication error reading from " +
-            m_ConnectionPool->GetAddressAsString());
+            m_Server->GetAddressAsString());
     }
 
     if (NStr::StartsWith(result, "OK:")) {
@@ -128,7 +128,7 @@ std::string SNetServerConnectionImpl::ReadCmdOutputLine()
     } else if (NStr::StartsWith(result, "ERR:")) {
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);
-        m_ConnectionPool->m_EventListener->OnError(result, m_ConnectionPool);
+        m_Server->m_EventListener->OnError(result, m_Server);
     }
     return result;
 }
@@ -209,7 +209,7 @@ inline void SNetServerConnectionImpl::WriteLine(const string& line)
 
             NCBI_THROW(CNetSrvConnException, eWriteFailure,
                 "Failed to write to " +
-                m_ConnectionPool->GetAddressAsString() +
+                m_Server->GetAddressAsString() +
                 ": " + string(io_ex.what()));
         }
         len -= n_written;
@@ -222,7 +222,7 @@ void SNetServerConnectionImpl::WaitForServer(unsigned int wait_sec)
 {
     STimeout to = {wait_sec, 0};
 
-    SNetServerConnectionPool* pool = m_ConnectionPool;
+    SNetServerImpl* pool = m_Server;
 
     if (wait_sec == 0)
         to = pool->m_Timeout;
@@ -258,7 +258,7 @@ void SNetServerConnectionImpl::CheckConnect()
     if (IsConnected())
         return;
 
-    SNetServerConnectionPool* pool = m_ConnectionPool;
+    SNetServerImpl* pool = m_Server;
 
     unsigned conn_repeats = 0;
 
@@ -305,39 +305,38 @@ void SNetServerConnectionImpl::CheckConnect()
 
 const string& CNetServerConnection::GetHost() const
 {
-    return m_Impl->m_ConnectionPool->m_Host;
+    return m_Impl->m_Server->m_Host;
 }
 
 unsigned int CNetServerConnection::GetPort() const
 {
-    return m_Impl->m_ConnectionPool->m_Port;
+    return m_Impl->m_Server->m_Port;
 }
 
 
 /*************************************************************************/
-SNetServerConnectionPool::SNetServerConnectionPool(
-    const string& host,
+SNetServerImplReal::SNetServerImplReal(const string& host,
     unsigned short port,
+    SNetServiceImpl* service_impl,
     const STimeout& timeout,
-    INetServerConnectionListener* listener) :
-        m_Host(host),
-        m_Port(port),
-        m_Timeout(timeout),
-        m_EventListener(listener),
-        m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()),
-        m_FreeConnectionListHead(NULL),
-        m_FreeConnectionListSize(0),
-        m_PermanentConnection(eDefault)
+    INetServerConnectionListener* listener) : SNetServerImpl(host, port)
 {
+    m_Service = service_impl;
+    m_Timeout = timeout;
+    m_EventListener = listener;
+    m_MaxRetries = TServConn_ConnMaxRetries::GetDefault();
+    m_FreeConnectionListHead = NULL;
+    m_FreeConnectionListSize = 0;
+    m_PermanentConnection = eDefault;
 }
 
-inline void SNetServerConnectionPool::DeleteConnection(
+inline void SNetServerImpl::DeleteConnection(
     SNetServerConnectionImpl* impl)
 {
     delete impl;
 }
 
-void SNetServerConnectionPool::Put(SNetServerConnectionImpl* impl)
+void SNetServerImpl::ReturnToPool(SNetServerConnectionImpl* impl)
 {
     if (m_PermanentConnection != eOn)
         impl->Close();
@@ -361,7 +360,7 @@ void SNetServerConnectionPool::Put(SNetServerConnectionImpl* impl)
                     impl->m_NextFree = m_FreeConnectionListHead;
                     m_FreeConnectionListHead = impl;
                     ++m_FreeConnectionListSize;
-                    impl->m_ConnectionPool = NULL;
+                    impl->m_Server = NULL;
                     return;
                 }
             }
@@ -370,7 +369,7 @@ void SNetServerConnectionPool::Put(SNetServerConnectionImpl* impl)
     DeleteConnection(impl);
 }
 
-std::string SNetServerConnectionPool::GetAddressAsString() const
+std::string SNetServerImpl::GetAddressAsString() const
 {
     std::string address =
         CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(m_Host));
@@ -381,7 +380,7 @@ std::string SNetServerConnectionPool::GetAddressAsString() const
     return address;
 }
 
-SNetServerConnectionPool::~SNetServerConnectionPool()
+SNetServerImplReal::~SNetServerImplReal()
 {
     // No need to lock the mutex in the destructor.
     SNetServerConnectionImpl* impl = m_FreeConnectionListHead;
@@ -392,7 +391,7 @@ SNetServerConnectionPool::~SNetServerConnectionPool()
     }
 }
 
-CNetServerConnection SNetServerConnectionPool::GetConnection()
+CNetServerConnection SNetServerImpl::GetConnection()
 {
     TFastMutexGuard guard(m_FreeConnectionListLock);
 
@@ -404,10 +403,25 @@ CNetServerConnection SNetServerConnectionPool::GetConnection()
         impl = m_FreeConnectionListHead;
         m_FreeConnectionListHead = impl->m_NextFree;
         --m_FreeConnectionListSize;
-        impl->m_ConnectionPool = this;
+        impl->m_Server = this;
     }
 
     return impl;
+}
+
+std::string CNetServer::GetHost() const
+{
+    return m_Impl->m_Host;
+}
+
+unsigned short CNetServer::GetPort() const
+{
+    return m_Impl->m_Port;
+}
+
+CNetServerConnection CNetServer::Connect()
+{
+    return m_Impl->GetConnection();
 }
 
 END_NCBI_SCOPE

@@ -73,6 +73,20 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     unsigned int GetPort() const;
 };
 
+///////////////////////////////////////////////////////////////////////////
+//
+struct SNetServerImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServer
+{
+    NET_COMPONENT(NetServer);
+
+    std::string GetHost() const;
+    unsigned short GetPort() const;
+
+    CNetServerConnection Connect();
+};
+
 
 END_NCBI_SCOPE
 

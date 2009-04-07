@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Maxim Didenko
+ * Author:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  */
@@ -46,25 +46,10 @@
 BEGIN_NCBI_SCOPE
 
 
-std::string CNetServer::GetHost() const
-{
-    return m_Impl->m_Address.first;
-}
-
-unsigned short CNetServer::GetPort() const
-{
-    return m_Impl->m_Address.second;
-}
-
-CNetServerConnection CNetServer::Connect()
-{
-    return m_Impl->m_Service->GetConnection(GetHost(), GetPort());
-}
-
 CNetServer CNetServerGroupIterator::GetServer()
 {
-    return new SNetServerImpl(*m_Impl->m_Position,
-        m_Impl->m_ServerGroup->m_Service);
+    return m_Impl->m_ServerGroup->m_Service->GetServer(
+        m_Impl->m_Position->first, m_Impl->m_Position->second);
 }
 
 bool CNetServerGroupIterator::Next()
@@ -86,7 +71,10 @@ CNetServer CNetServerGroup::GetServer(int index)
 {
     _ASSERT(index < (int) m_Impl->m_Servers.size());
 
-    return new SNetServerImpl(m_Impl->m_Servers[index], m_Impl->m_Service);
+    const TServerAddress& server_address = m_Impl->m_Servers[index];
+
+    return m_Impl->m_Service->GetServer(
+        server_address.first, server_address.second);
 }
 
 CNetServerGroupIterator CNetServerGroup::Iterate()
@@ -117,7 +105,7 @@ SNetServiceImpl::SNetServiceImpl(
        unsigned int port = NStr::StringToInt(sport);
        host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
        // No need to lock in the c-tor: CWriteLockGuard g(m_ServersLock);
-       m_Servers.push_back(TServerAddress(host, port));
+       m_DiscoveredServers.push_back(TServerAddress(host, port));
     } else {
        m_IsLoadBalanced = true;
     }
@@ -187,28 +175,28 @@ void CNetService::PrintCmdOutput(const string& cmd,
     }
 }
 
-CNetServerConnection SNetServiceImpl::GetConnection(
-    const string& host, unsigned int port)
+CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
 {
-    SNetServerConnectionPool search_image(host, port);
+    SNetServerImpl search_image(host, port);
 
     CFastMutexGuard g(m_ConnectionMutex);
 
-    TConnectionPoolSet::iterator it = m_ConnectionPools.find(&search_image);
+    TNetServerSet::iterator it = m_Servers.find(&search_image);
 
-    CNetObjectRef<SNetServerConnectionPool> pool;
-    if (it != m_ConnectionPools.end())
-        pool = *it;
-    if (!pool) {
-        pool = new SNetServerConnectionPool(host, port, m_Timeout, m_Listener);
-        pool->m_PermanentConnection = m_PermanentConnection;
-        m_ConnectionPools.insert(pool);
-        pool->AddRef();
+    CNetServer server;
+    if (it != m_Servers.end())
+        server = *it;
+    if (!server) {
+        server = new SNetServerImplReal(host, port, this,
+            m_Timeout, m_Listener);
+        server->m_PermanentConnection = m_PermanentConnection;
+        m_Servers.insert(server);
+        server->AddRef();
     }
     g.Release();
     if (m_RebalanceStrategy)
         m_RebalanceStrategy->OnResourceRequested();
-    return pool->GetConnection();
+    return server;
 }
 
 CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
@@ -217,12 +205,13 @@ CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
 
     {{
         CReadLockGuard g(m_ServersLock);
-        if (m_Servers.empty())
+        if (m_DiscoveredServers.empty())
             NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
                 "The service is not set.");
     }}
 
-    return GetConnection(m_Servers[0].first, m_Servers[0].second);
+    return GetServer(m_DiscoveredServers[0].first,
+        m_DiscoveredServers[0].second).Connect();
 }
 
 CNetServerConnection CNetService::GetBestConnection()
@@ -284,7 +273,7 @@ void SNetServiceImpl::Monitor(CNcbiOstream& out, const std::string& cmd)
 
 SNetServiceImpl::~SNetServiceImpl()
 {
-    NON_CONST_ITERATE(TConnectionPoolSet, it, m_ConnectionPools) {
+    NON_CONST_ITERATE(TNetServerSet, it, m_Servers) {
         (*it)->Release();
     }
 }
@@ -293,7 +282,7 @@ void CNetService::SetCommunicationTimeout(const STimeout& to)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_Timeout = to;
-    NON_CONST_ITERATE(TConnectionPoolSet, it, m_Impl->m_ConnectionPools) {
+    NON_CONST_ITERATE(TNetServerSet, it, m_Impl->m_Servers) {
         (*it)->m_Timeout = to;
     }
 }
@@ -306,7 +295,7 @@ void CNetService::SetCreateSocketMaxRetries(unsigned int retries)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_MaxRetries = retries;
-    NON_CONST_ITERATE(TConnectionPoolSet, it, m_Impl->m_ConnectionPools) {
+    NON_CONST_ITERATE(TNetServerSet, it, m_Impl->m_Servers) {
         (*it)->m_MaxRetries = retries;
     }
 }
@@ -320,7 +309,7 @@ void CNetService::SetPermanentConnection(ESwitch type)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_PermanentConnection = type;
-    NON_CONST_ITERATE(TConnectionPoolSet, it, m_Impl->m_ConnectionPools) {
+    NON_CONST_ITERATE(TNetServerSet, it, m_Impl->m_Servers) {
         (*it)->m_PermanentConnection = type;
     }
 }
@@ -333,11 +322,11 @@ CNetServerGroup CNetService::DiscoverServers(
     if (m_Impl->m_IsLoadBalanced && (!m_Impl->m_RebalanceStrategy ||
             m_Impl->m_RebalanceStrategy->NeedRebalance())) {
         CWriteLockGuard g(m_Impl->m_ServersLock);
-        m_Impl->m_Servers.clear();
+        m_Impl->m_DiscoveredServers.clear();
         int try_count = 0;
         for (;;) {
             try {
-                m_Impl->m_ServiceDiscovery->QueryLoadBalancer(m_Impl->m_Servers,
+                m_Impl->m_ServiceDiscovery->QueryLoadBalancer(m_Impl->m_DiscoveredServers,
                     m_Impl->m_DiscoverLowPriorityServers == eOn);
                 break;
             } catch (CNetSrvConnException& ex) {
@@ -357,12 +346,12 @@ CNetServerGroup CNetService::DiscoverServers(
     switch (sort_mode) {
     case CNetService::eSortByLoad:
         server_group->m_Servers.insert(server_group->m_Servers.begin(),
-            m_Impl->m_Servers.begin(), m_Impl->m_Servers.end());
+            m_Impl->m_DiscoveredServers.begin(), m_Impl->m_DiscoveredServers.end());
         break;
 
     case CNetService::eRandomize:
-        if (!m_Impl->m_Servers.empty()) {
-            size_t servers_size = m_Impl->m_Servers.size();
+        if (!m_Impl->m_DiscoveredServers.empty()) {
+            size_t servers_size = m_Impl->m_DiscoveredServers.size();
 
             // Pick a random pivot element, so we do not always
             // fetch jobs using the same lookup order.
@@ -371,13 +360,13 @@ CNetServerGroup CNetService::DiscoverServers(
 
             for (; current < last; ++current)
                 server_group->m_Servers.push_back(
-                    m_Impl->m_Servers[current % servers_size]);
+                    m_Impl->m_DiscoveredServers[current % servers_size]);
         }
         break;
 
     case CNetService::eSortByAddress:
         server_group->m_Servers.insert(server_group->m_Servers.begin(),
-            m_Impl->m_Servers.begin(), m_Impl->m_Servers.end());
+            m_Impl->m_DiscoveredServers.begin(), m_Impl->m_DiscoveredServers.end());
         std::sort(server_group->m_Servers.begin(),
             server_group->m_Servers.end());
     }
@@ -400,8 +389,7 @@ bool CNetService::FindServer(const CNetObjectRef<INetServerFinder>& finder,
                 return true;
         }
         catch (CNetServiceException& ex) {
-            ERR_POST_X(5, server->m_Address.first << ":" <<
-                server->m_Address.second <<
+            ERR_POST_X(5, server->m_Host << ":" << server->m_Port <<
                 " returned error: \"" << ex.what() << "\"");
 
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
@@ -410,8 +398,7 @@ bool CNetService::FindServer(const CNetObjectRef<INetServerFinder>& finder,
             had_comm_err = true;
         }
         catch (CIO_Exception& ex) {
-            ERR_POST_X(6, server->m_Address.first << ":" <<
-                server->m_Address.second <<
+            ERR_POST_X(6, server->m_Host << ":" << server->m_Port <<
                 " returned error: \"" << ex.what() << "\"");
 
             had_comm_err = true;

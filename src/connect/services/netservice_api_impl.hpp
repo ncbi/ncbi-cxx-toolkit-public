@@ -33,15 +33,12 @@
 
 #include "srv_connections_impl.hpp"
 
-#include <connect/services/netservice_api.hpp>
-
 #include <set>
 
 BEGIN_NCBI_SCOPE
 
-struct SCompareConnectionPoolAddress {
-    bool operator()(const SNetServerConnectionPool* l,
-        const SNetServerConnectionPool* r) const
+struct SCompareServerAddress {
+    bool operator()(const SNetServerImpl* l, const SNetServerImpl* r) const
     {
         int cmp = l->m_Host.compare(r->m_Host);
 
@@ -49,21 +46,7 @@ struct SCompareConnectionPoolAddress {
     }
 };
 
-typedef set<SNetServerConnectionPool*,
-    SCompareConnectionPoolAddress> TConnectionPoolSet;
-
-struct SNetServerImpl : public CNetObject
-{
-    SNetServerImpl(const TServerAddress& address,
-        SNetServiceImpl* service_impl);
-
-    // The host:port pair that identifies this server.
-    TServerAddress m_Address;
-
-    // A smart pointer to the NetService object
-    // that contains this NetServer.
-    CNetService m_Service;
-};
+typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
 
 struct SNetServerGroupIteratorImpl : public CNetObject
 {
@@ -97,9 +80,7 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 
 struct SNetServiceImpl : public CNetObject
 {
-    // Construct a new object. If needed, this constructor
-    // can be 'published' in the CNetService component (as
-    // the CNetService::Create() method).
+    // Construct a new object.
     SNetServiceImpl(
         const std::string& service_name,
         const std::string& client_name,
@@ -110,7 +91,7 @@ struct SNetServiceImpl : public CNetObject
     // NS and NC protocols.
     void SetListener(INetServerConnectionListener* listener);
 
-    CNetServerConnection GetConnection(const string& host, unsigned int port);
+    CNetServer GetServer(const string& host, unsigned int port);
     CNetServerConnection GetSingleServerConnection();
 
     // Utility method for commands that require single server (that is,
@@ -128,9 +109,9 @@ struct SNetServiceImpl : public CNetObject
     CNetObjectRef<INetServerConnectionListener> m_Listener;
     CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
 
-    TDiscoveredServers m_Servers;
+    TDiscoveredServers m_DiscoveredServers;
     CRWLock m_ServersLock;
-    TConnectionPoolSet m_ConnectionPools;
+    TNetServerSet m_Servers;
     CFastMutex m_ConnectionMutex;
 
     bool m_IsLoadBalanced;
@@ -140,11 +121,6 @@ struct SNetServiceImpl : public CNetObject
     unsigned int m_MaxRetries;
     ESwitch m_PermanentConnection;
 };
-
-inline SNetServerImpl::SNetServerImpl(const TServerAddress& address,
-    SNetServiceImpl* service_impl) : m_Address(address), m_Service(service_impl)
-{
-}
 
 inline SNetServerGroupImpl::SNetServerGroupImpl(SNetServiceImpl* service_impl) :
     m_Service(service_impl)
