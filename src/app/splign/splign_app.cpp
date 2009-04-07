@@ -47,7 +47,7 @@
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
-#include <algo/blast/api/seqsrc_seqdb.hpp>
+#include <algo/blast/api/local_db_adapter.hpp>
 
 #include <objmgr/seq_vector.hpp>
 
@@ -626,9 +626,9 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
     USING_SCOPE(blast);
 
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
-    CSeqDB seqdb (dbname, CSeqDB::eNucleotide);
-    CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
-    CLocalBlast blast (query_factory, m_BlastOptionsHandle, seq_src);
+    CRef<CSeqDB> seqdb (new CSeqDB(dbname, CSeqDB::eNucleotide));
+    CRef<CLocalDbAdapter> blastdb (new CLocalDbAdapter(seqdb));
+    CLocalBlast blast (query_factory, m_BlastOptionsHandle, blastdb);
     CSearchResultSet results (*blast.Run());
     phitrefs->resize(0);
 
@@ -647,8 +647,8 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
                 
                 THit::TId id (hitref->GetSubjId());
                 int oid (-1);
-                seqdb.SeqidToOid(*id, oid);
-                id = seqdb.GetSeqIDs(oid).back();
+                seqdb->SeqidToOid(*id, oid);
+                id = seqdb->GetSeqIDs(oid).back();
                 hitref->SetSubjId(id);
             }
         }
