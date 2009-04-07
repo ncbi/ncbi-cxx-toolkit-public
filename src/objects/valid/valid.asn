@@ -1,0 +1,33 @@
+--$Revision$
+--**********************************************************************
+--
+--  NCBI ASN.1 structured comment validation rule specifications
+--
+--  by Colleen Bollin, 2009
+--
+--**********************************************************************
+
+NCBI-Structured-comment-validation DEFINITIONS ::=
+BEGIN
+
+EXPORTS Field-rule, Field-set, Comment-rule, Comment-set;
+
+Field-rule ::= SEQUENCE {
+    field-name VisibleString ,
+    match-expression VisibleString OPTIONAL ,
+    required BOOLEAN DEFAULT FALSE
+}
+
+Field-set ::= SET OF Field-rule
+
+Comment-rule ::= SEQUENCE {
+    prefix VisibleString ,
+    updated BOOLEAN DEFAULT FALSE ,
+    fields Field-set
+}
+
+Comment-set ::= SET OF Comment-rule
+
+
+END
+
