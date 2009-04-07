@@ -186,7 +186,7 @@ SNetServerConnectionImpl::~SNetServerConnectionImpl()
     Close();
 }
 
-inline void SNetServerConnectionImpl::WriteLine(const string& line)
+void SNetServerConnectionImpl::WriteLine(const string& line)
 {
     // TODO change to "\n" when no old NS/NC servers remain.
     std::string str(line + "\r\n");
