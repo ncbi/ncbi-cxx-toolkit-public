@@ -228,18 +228,14 @@ CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
     return GetConnection(m_Servers[0]);
 }
 
-CNetServerConnection SNetServiceImpl::GetBestConnection()
+CNetServerConnection CNetService::GetBestConnection()
 {
-    if (!m_IsLoadBalanced)
-        return GetSingleServerConnection();
+    if (!m_Impl->m_IsLoadBalanced)
+        return m_Impl->GetSingleServerConnection();
 
-    TDiscoveredServers servers;
-
-    DiscoverServers(servers);
-
-    ITERATE(TDiscoveredServers, it, servers) {
-        CNetServerConnection conn = GetConnection(*it);
+    for (CNetServerGroupIterator it = DiscoverServers().Iterate(); it; ++it) {
         try {
+            CNetServerConnection conn = (*it).Connect();
             conn->CheckConnect();
             return conn;
         } catch (CNetSrvConnException& ex) {
@@ -253,7 +249,7 @@ CNetServerConnection SNetServiceImpl::GetBestConnection()
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
         "Couldn't find any availbale servers for the " +
-            m_ServiceDiscovery->GetServiceName() + " service.");
+            m_Impl->m_ServiceDiscovery->GetServiceName() + " service.");
 }
 
 CNetServerConnection SNetServiceImpl::RequireStandAloneServerSpec()
@@ -328,18 +324,20 @@ void CNetService::SetPermanentConnection(ESwitch type)
     }
 }
 
-void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers,
+CNetServerGroup CNetService::DiscoverServers(
     CNetService::EServerSortMode sort_mode)
 {
-    if (m_IsLoadBalanced &&
-        (!m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance())) {
-        CWriteLockGuard g(m_ServersLock);
-        m_Servers.clear();
+    CNetServerGroup server_group(new SNetServerGroupImpl(*this));
+
+    if (m_Impl->m_IsLoadBalanced && (!m_Impl->m_RebalanceStrategy ||
+            m_Impl->m_RebalanceStrategy->NeedRebalance())) {
+        CWriteLockGuard g(m_Impl->m_ServersLock);
+        m_Impl->m_Servers.clear();
         int try_count = 0;
         for (;;) {
             try {
-                m_ServiceDiscovery->QueryLoadBalancer(m_Servers,
-                    m_DiscoverLowPriorityServers == eOn);
+                m_Impl->m_ServiceDiscovery->QueryLoadBalancer(m_Impl->m_Servers,
+                    m_Impl->m_DiscoverLowPriorityServers == eOn);
                 break;
             } catch (CNetSrvConnException& ex) {
                 if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)
@@ -352,17 +350,18 @@ void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers,
         }
     }
 
-    servers.clear();
-    CReadLockGuard g(m_ServersLock);
+    server_group->m_Servers.clear();
+    CReadLockGuard g(m_Impl->m_ServersLock);
 
     switch (sort_mode) {
     case CNetService::eSortByLoad:
-        servers.insert(servers.begin(), m_Servers.begin(), m_Servers.end());
+        server_group->m_Servers.insert(server_group->m_Servers.begin(),
+            m_Impl->m_Servers.begin(), m_Impl->m_Servers.end());
         break;
 
     case CNetService::eRandomize:
-        if (!m_Servers.empty()) {
-            size_t servers_size = m_Servers.size();
+        if (!m_Impl->m_Servers.empty()) {
+            size_t servers_size = m_Impl->m_Servers.size();
 
             // Pick a random pivot element, so we do not always
             // fetch jobs using the same lookup order.
@@ -370,34 +369,39 @@ void SNetServiceImpl::DiscoverServers(TDiscoveredServers& servers,
             unsigned last = current + servers_size;
 
             for (; current < last; ++current)
-                servers.push_back(m_Servers[current % servers_size]);
+                server_group->m_Servers.push_back(
+                    m_Impl->m_Servers[current % servers_size]);
         }
         break;
 
     case CNetService::eSortByAddress:
-        servers.insert(servers.begin(), m_Servers.begin(), m_Servers.end());
-        std::sort(servers.begin(), servers.end());
+        server_group->m_Servers.insert(server_group->m_Servers.begin(),
+            m_Impl->m_Servers.begin(), m_Impl->m_Servers.end());
+        std::sort(server_group->m_Servers.begin(),
+            server_group->m_Servers.end());
     }
+
+    return server_group;
 }
 
-bool SNetServiceImpl::FindServer(
-    const CNetObjectRef<INetServerFinder>& finder,
+bool CNetService::FindServer(const CNetObjectRef<INetServerFinder>& finder,
     CNetService::EServerSortMode sort_mode)
 {
-    TDiscoveredServers servers;
-
-    DiscoverServers(servers, sort_mode);
+    CNetServerGroup servers = DiscoverServers(sort_mode);
 
     bool had_comm_err = false;
 
-    ITERATE(TDiscoveredServers, server, servers) {
+    for (CNetServerGroupIterator it = servers.Iterate(); it; ++it) {
+        CNetServer server = *it;
+
         try {
-            if (finder->Consider(new SNetServerImpl(*server, this)))
+            if (finder->Consider(server))
                 return true;
         }
         catch (CNetServiceException& ex) {
-            ERR_POST_X(5, server->first << ":" << server->second
-                << " returned error: \"" << ex.what() << "\"");
+            ERR_POST_X(5, server->m_Address.first << ":" <<
+                server->m_Address.second <<
+                " returned error: \"" << ex.what() << "\"");
 
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
                 throw;
@@ -405,8 +409,9 @@ bool SNetServiceImpl::FindServer(
             had_comm_err = true;
         }
         catch (CIO_Exception& ex) {
-            ERR_POST_X(6, server->first << ":" << server->second
-                << " returned error: \"" << ex.what() << "\"");
+            ERR_POST_X(6, server->m_Address.first << ":" <<
+                server->m_Address.second <<
+                " returned error: \"" << ex.what() << "\"");
 
             had_comm_err = true;
         }
@@ -417,16 +422,6 @@ bool SNetServiceImpl::FindServer(
         eCommunicationError, "Communication error");
 
     return false;
-}
-
-CNetServerGroup CNetService::DiscoverServers(
-    CNetService::EServerSortMode sort_mode)
-{
-    CNetServerGroup server_group(new SNetServerGroupImpl(*this));
-
-    m_Impl->DiscoverServers(server_group->m_Servers, sort_mode);
-
-    return server_group;
 }
 
 END_NCBI_SCOPE

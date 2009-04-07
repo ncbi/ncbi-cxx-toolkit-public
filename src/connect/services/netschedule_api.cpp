@@ -352,14 +352,11 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
     m_ServerParams->max_output_size = kMax_UInt;
     m_ServerParams->fast_status = true;
 
-    TDiscoveredServers servers;
-
-    m_Service->DiscoverServers(servers);
-
     bool was_called = false;
 
-    ITERATE(TDiscoveredServers, it, servers) {
-        CNetServerConnection conn = m_Service->GetConnection(*it);
+    for (CNetServerGroupIterator it =
+            m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServerConnection conn = (*it).Connect();
 
         was_called = true;
 

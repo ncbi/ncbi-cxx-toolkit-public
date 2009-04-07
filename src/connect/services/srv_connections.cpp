@@ -36,10 +36,14 @@
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/netservice_api_expt.hpp>
 #include <connect/services/netservice_params.hpp>
+#include <connect/services/error_codes.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
 
 #include <corelib/ncbi_system.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
 
 BEGIN_NCBI_SCOPE
@@ -47,8 +51,10 @@ BEGIN_NCBI_SCOPE
 ///////////////////////////////////////////////////////////////////////////
 SNetServerCmdOutputImpl::~SNetServerCmdOutputImpl()
 {
-    if (!m_ReadCompletely)
+    if (!m_ReadCompletely) {
         m_Connection->Close();
+        ERR_POST_X(7, "Multiline command output was not completely read");
+    }
 }
 
 bool CNetServerCmdOutput::ReadLine(std::string& output)
@@ -97,12 +103,26 @@ void SNetServerConnectionImpl::Delete()
 std::string SNetServerConnectionImpl::ReadCmdOutputLine()
 {
     string result;
-    if (!ReadLine(result)) {
+
+    EIO_Status io_st = m_Socket.ReadLine(result);
+
+    switch (io_st)
+    {
+    case eIO_Success:
+        return result;
+    case eIO_Timeout:
+        Abort();
+        NCBI_THROW(CNetSrvConnException, eReadTimeout,
+            "Communication timeout reading from " +
+            m_ConnectionPool->GetAddressAsString());
+        break;
+    default: // invalid socket or request, bailing out
         Abort();
         NCBI_THROW(CNetServiceException, eCommunicationError,
-                   "Communication error reading from " +
-                   m_ConnectionPool->GetAddressAsString());
+            "Communication error reading from " +
+            m_ConnectionPool->GetAddressAsString());
     }
+
     if (NStr::StartsWith(result, "OK:")) {
         result.erase(0, sizeof("OK:") - 1);
     } else if (NStr::StartsWith(result, "ERR:")) {
@@ -166,27 +186,14 @@ SNetServerConnectionImpl::~SNetServerConnectionImpl()
     Close();
 }
 
-bool SNetServerConnectionImpl::ReadLine(string& str)
+inline void SNetServerConnectionImpl::WriteLine(const string& line)
 {
-    EIO_Status io_st = m_Socket.ReadLine(str);
-    switch (io_st)
-    {
-    case eIO_Success:
-        return true;
-    case eIO_Timeout:
-        Abort();
-        NCBI_THROW(CNetSrvConnException, eReadTimeout,
-            "Communication timeout reading from " +
-            m_ConnectionPool->GetAddressAsString());
-        break;
-    default: // invalid socket or request, bailing out
-        return false;
-    }
-    return true;
-}
+    // TODO change to "\n" when no old NS/NC servers remain.
+    std::string str(line + "\r\n");
 
-void SNetServerConnectionImpl::WriteBuf(const char* buf, size_t len)
-{
+    const char* buf = str.data();
+    size_t len = str.size();
+
     CheckConnect();
 
     while (len > 0) {
@@ -203,7 +210,7 @@ void SNetServerConnectionImpl::WriteBuf(const char* buf, size_t len)
             NCBI_THROW(CNetSrvConnException, eWriteFailure,
                 "Failed to write to " +
                 m_ConnectionPool->GetAddressAsString() +
-                    ": " + string(io_ex.what()));
+                ": " + string(io_ex.what()));
         }
         len -= n_written;
         buf += n_written;
@@ -255,16 +262,14 @@ void SNetServerConnectionImpl::CheckConnect()
 
     unsigned conn_repeats = 0;
 
-    CSocket* the_socket = &m_Socket;
-
     EIO_Status io_st;
 
-    while ((io_st = the_socket->Connect(pool->m_Host, pool->m_Port,
+    while ((io_st = m_Socket.Connect(pool->m_Host, pool->m_Port,
         &pool->m_Timeout, eOn)) != eIO_Success) {
 
         if (io_st == eIO_Unknown) {
 
-            the_socket->Close();
+            m_Socket.Close();
 
             // most likely this is an indication we have too many
             // open ports on the client side
@@ -289,10 +294,10 @@ void SNetServerConnectionImpl::CheckConnect()
         }
     }
 
-    the_socket->SetDataLogging(eDefault);
-    the_socket->SetTimeout(eIO_ReadWrite, &pool->m_Timeout);
-    the_socket->DisableOSSendDelay();
-    the_socket->SetReuseAddress(eOn);
+    m_Socket.SetDataLogging(eDefault);
+    m_Socket.SetTimeout(eIO_ReadWrite, &pool->m_Timeout);
+    m_Socket.DisableOSSendDelay();
+    m_Socket.SetReuseAddress(eOn);
 
     if (pool->m_EventListener)
         pool->m_EventListener->OnConnected(this);
@@ -342,9 +347,11 @@ void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
             // if it has not then we have to close the connection
             STimeout to = {0, 0};
 
-            if (impl->m_Socket.Wait(eIO_Read, &to) == eIO_Success)
+            if (impl->m_Socket.Wait(eIO_Read, &to) == eIO_Success) {
                 impl->Abort();
-            else {
+                ERR_POST_X(8,
+                    "Socket not fully read while returning to the pool");
+            } else {
                 TFastMutexGuard guard(m_FreeConnectionListLock);
 
                 int upper_limit = TServConn_MaxConnPoolSize::GetDefault();

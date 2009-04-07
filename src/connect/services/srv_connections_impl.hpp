@@ -60,10 +60,7 @@ struct SNetServerConnectionImpl : public CNetObject
 
     std::string ReadCmdOutputLine();
 
-    bool ReadLine(string& str);
     void WriteLine(const string& line);
-
-    void WriteBuf(const char* buf, size_t len);
 
      // if wait_sec is set to 0 m_Timeout will be used
     void WaitForServer(unsigned int wait_sec = 0);
@@ -72,7 +69,6 @@ struct SNetServerConnectionImpl : public CNetObject
 
     void CheckConnect();
 
-    CSocket* GetSocket();
     void Close();
     void Abort();
 
@@ -90,19 +86,6 @@ inline SNetServerCmdOutputImpl::SNetServerCmdOutputImpl(
         m_NetCacheCompatMode(false),
         m_ReadCompletely(false)
 {
-}
-
-inline void SNetServerConnectionImpl::WriteLine(const string& line)
-{
-    // TODO change to "\n" when no old NS/NC servers remain.
-    std::string str(line + "\r\n");
-
-    WriteBuf(str.data(), str.size());
-}
-
-inline CSocket* SNetServerConnectionImpl::GetSocket()
-{
-    return &m_Socket;
 }
 
 

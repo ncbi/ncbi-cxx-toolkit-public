@@ -341,7 +341,7 @@ bool CGetJobCmdExecutor::Consider(CNetServer server)
 bool SNetScheduleExecuterImpl::GetJobImpl(
     const string& cmd, CNetScheduleJob& job) const
 {
-    return m_API->m_Service->FindServer(new CGetJobCmdExecutor(cmd, job));
+    return m_API->m_Service.FindServer(new CGetJobCmdExecutor(cmd, job));
 }
 
 

@@ -83,12 +83,6 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 {
 }
 
-class INetServerFinder : public CNetObject
-{
-public:
-    virtual bool Consider(CNetServer server) = 0;
-};
-
 struct SNetServiceImpl : public CNetObject
 {
     // Construct a new object. If needed, this constructor
@@ -107,13 +101,6 @@ struct SNetServiceImpl : public CNetObject
     CNetServerConnection GetConnection(const TServerAddress& srv);
     CNetServerConnection GetConnection(const string& host, unsigned int port);
     CNetServerConnection GetSingleServerConnection();
-    CNetServerConnection GetBestConnection();
-
-    void DiscoverServers(TDiscoveredServers& servers,
-        CNetService::EServerSortMode sort_mode = CNetService::eSortByLoad);
-
-    bool FindServer(const CNetObjectRef<INetServerFinder>& finder,
-        CNetService::EServerSortMode sort_mode = CNetService::eRandomize);
 
     // Utility method for commands that require single server (that is,
     // a host:port pair) to be specified (not a load-balanced service

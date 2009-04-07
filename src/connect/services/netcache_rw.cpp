@@ -48,7 +48,7 @@ CNetCacheReader::CNetCacheReader(
     CNetServerConnection::TInstance connection, size_t blob_size)
     : m_Connection(connection), m_BlobBytesToRead(blob_size)
 {
-    m_Reader.reset(new CSocketReaderWriter(m_Connection->GetSocket()));
+    m_Reader.reset(new CSocketReaderWriter(&m_Connection->m_Socket));
 }
 
 CNetCacheReader::~CNetCacheReader()
@@ -118,7 +118,7 @@ CNetCacheWriter::CNetCacheWriter(CNetCacheAPI::TInstance api,
         m_Connection(connection)
 {
     m_Writer.reset(new CTransmissionWriter(
-        new CSocketReaderWriter(m_Connection->GetSocket()),
+        new CSocketReaderWriter(&m_Connection->m_Socket),
             eTakeOwnership, send_eof));
 }
 
@@ -182,12 +182,12 @@ ERW_Result CNetCacheWriter::Flush(void)
 bool CNetCacheWriter::x_IsStreamOk()
 {
     STimeout to = {0, 0};
-    EIO_Status io_st = m_Connection->GetSocket()->Wait(eIO_Read, &to);
+    EIO_Status io_st = m_Connection->m_Socket.Wait(eIO_Read, &to);
     string msg;
     switch (io_st) {
     case eIO_Success:
         {
-            io_st = m_Connection->GetSocket()->ReadLine(msg);
+            io_st = m_Connection->m_Socket.ReadLine(msg);
             if (io_st == eIO_Closed) {
                 m_LastError = "Server closed communication channel (timeout?)";
             } else  if (!msg.empty()) {

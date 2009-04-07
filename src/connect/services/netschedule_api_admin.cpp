@@ -267,15 +267,9 @@ void CNetScheduleAdmin::StatusSnapshot(
     cmd.append(NStr::PrintableString(affinity_token));
     cmd.append("\"");
 
-    TDiscoveredServers servers;
-
-    CNetService service = m_Impl->m_API->m_Service;
-
-    service->DiscoverServers(servers);
-
-    ITERATE(TDiscoveredServers, it, servers) {
-        CNetServerCmdOutput cmd_output = service->
-            GetConnection(*it).ExecMultiline(cmd);
+    for (CNetServerGroupIterator it =
+        m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+        CNetServerCmdOutput cmd_output = (*it).Connect().ExecMultiline(cmd);
 
         string output_line;
 

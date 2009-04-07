@@ -74,27 +74,6 @@ static TServerAddress* s_GetFallbackServer()
 }
 
 
-CNetServerConnection SNetCacheAPIImpl::GetBestConnection()
-{
-    try {
-        return m_Service->GetBestConnection();
-    } catch (CNetSrvConnException& e) {
-        TServerAddress* backup = s_GetFallbackServer();
-
-        if (backup == NULL) {
-            NCBI_THROW(CNetCacheException, eUnknnownCache,
-                "Fallback server address is not configured.");
-        }
-
-        ERR_POST_X(3, "Could not connect to " <<
-            m_Service.GetServiceName() << ":" << e.what() <<
-            ". Connecting to backup server " <<
-            backup->first << ":" << backup->second << ".");
-
-        return m_Service->GetConnection(backup->first, backup->second);
-    }
-}
-
 CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
 {
     CNetCacheKey key(bid);
@@ -179,12 +158,28 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
 
     CNetServerConnection conn;
 
-    if (key->empty())
-        conn = GetBestConnection();
-    else {
+    if (!key->empty()) {
         conn = x_GetConnection(*key);
 
         request += *key;
+    } else {
+        try {
+            return m_Service.GetBestConnection();
+        } catch (CNetSrvConnException& e) {
+            TServerAddress* backup = s_GetFallbackServer();
+
+            if (backup == NULL) {
+                NCBI_THROW(CNetCacheException, eUnknnownCache,
+                    "Fallback server address is not configured.");
+            }
+
+            ERR_POST_X(3, "Could not connect to " <<
+                m_Service.GetServiceName() << ":" << e.what() <<
+                ". Connecting to backup server " <<
+                backup->first << ":" << backup->second << ".");
+
+            return m_Service->GetConnection(backup->first, backup->second);
+        }
     }
 
     *key = conn.Exec(x_MakeCommand(request));

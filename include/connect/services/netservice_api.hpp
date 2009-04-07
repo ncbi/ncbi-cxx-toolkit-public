@@ -74,6 +74,12 @@ class NCBI_XCONNECT_EXPORT CNetServerGroup
     CNetServerGroupIterator Iterate();
 };
 
+class INetServerFinder : public CNetObject
+{
+public:
+    virtual bool Consider(CNetServer server) = 0;
+};
+
 struct SNetServiceImpl;
 
 class NCBI_XCONNECT_EXPORT CNetService
@@ -90,6 +96,11 @@ class NCBI_XCONNECT_EXPORT CNetService
     };
 
     CNetServerGroup DiscoverServers(EServerSortMode sort_mode = eSortByLoad);
+
+    bool FindServer(const CNetObjectRef<INetServerFinder>& finder,
+        EServerSortMode sort_mode = eRandomize);
+
+    CNetServerConnection GetBestConnection();
 
     bool IsLoadBalanced() const;
 
