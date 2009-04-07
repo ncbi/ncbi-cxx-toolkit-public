@@ -116,7 +116,7 @@ SNetServiceImpl::SNetServiceImpl(
     if (NStr::SplitInTwo(service_name, ":", host, sport)) {
        unsigned int port = NStr::StringToInt(sport);
        host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-       CWriteLockGuard g(m_ServersLock);
+       // No need to lock in the c-tor: CWriteLockGuard g(m_ServersLock);
        m_Servers.push_back(TServerAddress(host, port));
     } else {
        m_IsLoadBalanced = true;
@@ -187,31 +187,28 @@ void CNetService::PrintCmdOutput(const string& cmd,
     }
 }
 
-CNetServerConnection SNetServiceImpl::GetConnection(const TServerAddress& srv)
+CNetServerConnection SNetServiceImpl::GetConnection(
+    const string& host, unsigned int port)
 {
+    SNetServerConnectionPool search_image(host, port);
+
     CFastMutexGuard g(m_ConnectionMutex);
-    TServerAddressToConnectionPool::iterator it =
-        m_ServerAddressToConnectionPool.find(srv);
-    CNetServerConnectionPool pool;
-    if (it != m_ServerAddressToConnectionPool.end())
-        pool = it->second;
+
+    TConnectionPoolSet::iterator it = m_ConnectionPools.find(&search_image);
+
+    CNetObjectRef<SNetServerConnectionPool> pool;
+    if (it != m_ConnectionPools.end())
+        pool = *it;
     if (!pool) {
-        pool = new SNetServerConnectionPoolImpl(
-            srv.first, srv.second, m_Timeout, m_Listener);
-        pool.PermanentConnection(m_PermanentConnection);
-        m_ServerAddressToConnectionPool[srv] = pool;
+        pool = new SNetServerConnectionPool(host, port, m_Timeout, m_Listener);
+        pool->m_PermanentConnection = m_PermanentConnection;
+        m_ConnectionPools.insert(pool);
+        pool->AddRef();
     }
     g.Release();
     if (m_RebalanceStrategy)
         m_RebalanceStrategy->OnResourceRequested();
-    return pool.GetConnection();
-}
-
-CNetServerConnection SNetServiceImpl::GetConnection(
-    const string& host, unsigned int port)
-{
-    return GetConnection(TServerAddress(
-        CSocketAPI::ntoa(CSocketAPI::gethostbyname(host)), port));
+    return pool->GetConnection();
 }
 
 CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
@@ -225,7 +222,7 @@ CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
                 "The service is not set.");
     }}
 
-    return GetConnection(m_Servers[0]);
+    return GetConnection(m_Servers[0].first, m_Servers[0].second);
 }
 
 CNetServerConnection CNetService::GetBestConnection()
@@ -285,13 +282,19 @@ void SNetServiceImpl::Monitor(CNcbiOstream& out, const std::string& cmd)
     conn->Close();
 }
 
+SNetServiceImpl::~SNetServiceImpl()
+{
+    NON_CONST_ITERATE(TConnectionPoolSet, it, m_ConnectionPools) {
+        (*it)->Release();
+    }
+}
+
 void CNetService::SetCommunicationTimeout(const STimeout& to)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_Timeout = to;
-    NON_CONST_ITERATE(TServerAddressToConnectionPool,
-        it, m_Impl->m_ServerAddressToConnectionPool) {
-        it->second.SetCommunicationTimeout(to);
+    NON_CONST_ITERATE(TConnectionPoolSet, it, m_Impl->m_ConnectionPools) {
+        (*it)->m_Timeout = to;
     }
 }
 const STimeout& CNetService::GetCommunicationTimeout() const
@@ -303,9 +306,8 @@ void CNetService::SetCreateSocketMaxRetries(unsigned int retries)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_MaxRetries = retries;
-    NON_CONST_ITERATE(TServerAddressToConnectionPool,
-        it, m_Impl->m_ServerAddressToConnectionPool) {
-        it->second.SetCreateSocketMaxRetries(retries);
+    NON_CONST_ITERATE(TConnectionPoolSet, it, m_Impl->m_ConnectionPools) {
+        (*it)->m_MaxRetries = retries;
     }
 }
 
@@ -318,9 +320,8 @@ void CNetService::SetPermanentConnection(ESwitch type)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_PermanentConnection = type;
-    NON_CONST_ITERATE(TServerAddressToConnectionPool,
-        it, m_Impl->m_ServerAddressToConnectionPool) {
-        it->second.PermanentConnection(type);
+    NON_CONST_ITERATE(TConnectionPoolSet, it, m_Impl->m_ConnectionPools) {
+        (*it)->m_PermanentConnection = type;
     }
 }
 

@@ -85,7 +85,7 @@ bool CNetServerCmdOutput::ReadLine(std::string& output)
 }
 
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
-    SNetServerConnectionPoolImpl* pool) :
+    SNetServerConnectionPool* pool) :
         m_ConnectionPool(pool),
         m_NextFree(NULL)
 {
@@ -222,7 +222,7 @@ void SNetServerConnectionImpl::WaitForServer(unsigned int wait_sec)
 {
     STimeout to = {wait_sec, 0};
 
-    SNetServerConnectionPoolImpl* pool = m_ConnectionPool;
+    SNetServerConnectionPool* pool = m_ConnectionPool;
 
     if (wait_sec == 0)
         to = pool->m_Timeout;
@@ -258,7 +258,7 @@ void SNetServerConnectionImpl::CheckConnect()
     if (IsConnected())
         return;
 
-    SNetServerConnectionPoolImpl* pool = m_ConnectionPool;
+    SNetServerConnectionPool* pool = m_ConnectionPool;
 
     unsigned conn_repeats = 0;
 
@@ -315,7 +315,7 @@ unsigned int CNetServerConnection::GetPort() const
 
 
 /*************************************************************************/
-SNetServerConnectionPoolImpl::SNetServerConnectionPoolImpl(
+SNetServerConnectionPool::SNetServerConnectionPool(
     const string& host,
     unsigned short port,
     const STimeout& timeout,
@@ -331,13 +331,13 @@ SNetServerConnectionPoolImpl::SNetServerConnectionPoolImpl(
 {
 }
 
-inline void SNetServerConnectionPoolImpl::DeleteConnection(
+inline void SNetServerConnectionPool::DeleteConnection(
     SNetServerConnectionImpl* impl)
 {
     delete impl;
 }
 
-void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
+void SNetServerConnectionPool::Put(SNetServerConnectionImpl* impl)
 {
     if (m_PermanentConnection != eOn)
         impl->Close();
@@ -370,7 +370,7 @@ void SNetServerConnectionPoolImpl::Put(SNetServerConnectionImpl* impl)
     DeleteConnection(impl);
 }
 
-std::string SNetServerConnectionPoolImpl::GetAddressAsString() const
+std::string SNetServerConnectionPool::GetAddressAsString() const
 {
     std::string address =
         CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(m_Host));
@@ -381,7 +381,7 @@ std::string SNetServerConnectionPoolImpl::GetAddressAsString() const
     return address;
 }
 
-SNetServerConnectionPoolImpl::~SNetServerConnectionPoolImpl()
+SNetServerConnectionPool::~SNetServerConnectionPool()
 {
     // No need to lock the mutex in the destructor.
     SNetServerConnectionImpl* impl = m_FreeConnectionListHead;
@@ -392,69 +392,22 @@ SNetServerConnectionPoolImpl::~SNetServerConnectionPoolImpl()
     }
 }
 
-const string& CNetServerConnectionPool::GetHost() const
+CNetServerConnection SNetServerConnectionPool::GetConnection()
 {
-    return m_Impl->m_Host;
-}
-
-unsigned short CNetServerConnectionPool::GetPort() const
-{
-    return m_Impl->m_Port;
-}
-
-const STimeout& CNetServerConnectionPool::GetCommunicationTimeout() const
-{
-    return m_Impl->m_Timeout;
-}
-
-void CNetServerConnectionPool::SetCreateSocketMaxRetries(unsigned int retries)
-{
-    m_Impl->m_MaxRetries = retries;
-}
-
-unsigned int CNetServerConnectionPool::GetCreateSocketMaxRetries() const
-{
-    return m_Impl->m_MaxRetries;
-}
-
-void CNetServerConnectionPool::PermanentConnection(ESwitch type)
-{
-    m_Impl->m_PermanentConnection = type;
-}
-
-CNetServerConnection CNetServerConnectionPool::GetConnection()
-{
-    TFastMutexGuard guard(m_Impl->m_FreeConnectionListLock);
+    TFastMutexGuard guard(m_FreeConnectionListLock);
 
     SNetServerConnectionImpl* impl;
 
-    if (m_Impl->m_FreeConnectionListSize == 0)
-        impl = new SNetServerConnectionImpl(m_Impl);
+    if (m_FreeConnectionListSize == 0)
+        impl = new SNetServerConnectionImpl(this);
     else {
-        impl = m_Impl->m_FreeConnectionListHead;
-        m_Impl->m_FreeConnectionListHead = impl->m_NextFree;
-        --m_Impl->m_FreeConnectionListSize;
-        impl->m_ConnectionPool = m_Impl;
+        impl = m_FreeConnectionListHead;
+        m_FreeConnectionListHead = impl->m_NextFree;
+        --m_FreeConnectionListSize;
+        impl->m_ConnectionPool = this;
     }
 
     return impl;
-}
-
-void CNetServerConnectionPool::SetCommunicationTimeout(const STimeout& to)
-{
-    m_Impl->m_Timeout = to;
-}
-
-/* static */
-void CNetServerConnectionPool::SetDefaultCommunicationTimeout(const STimeout& to)
-{
-    s_SetDefaultCommTimeout(to);
-}
-
-/* static */
-void CNetServerConnectionPool::SetDefaultCreateSocketMaxReties(unsigned int retries)
-{
-    TServConn_ConnMaxRetries::SetDefault(retries);
 }
 
 END_NCBI_SCOPE

@@ -74,31 +74,6 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
 };
 
 
-///////////////////////////////////////////////////////////////////////////
-//
-struct SNetServerConnectionPoolImpl;
-
-class NCBI_XCONNECT_EXPORT CNetServerConnectionPool
-{
-    NET_COMPONENT(NetServerConnectionPool);
-
-    const string& GetHost() const;
-    unsigned short GetPort() const;
-
-    static void SetDefaultCommunicationTimeout(const STimeout& to);
-    void SetCommunicationTimeout(const STimeout& to);
-    const STimeout& GetCommunicationTimeout() const;
-
-    static void SetDefaultCreateSocketMaxReties(unsigned int retires);
-    void SetCreateSocketMaxRetries(unsigned int retries);
-    unsigned int GetCreateSocketMaxRetries() const;
-
-    void PermanentConnection(ESwitch type);
-
-    CNetServerConnection GetConnection();
-};
-
-
 END_NCBI_SCOPE
 
 #endif // CONNECT_SERVICES__SERVER_CONN_HPP

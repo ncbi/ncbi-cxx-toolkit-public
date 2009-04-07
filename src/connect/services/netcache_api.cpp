@@ -107,7 +107,7 @@ string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
 }
 
 void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
-    const string& err_msg, SNetServerConnectionPoolImpl* pool)
+    const string& err_msg, SNetServerConnectionPool* pool)
 {
     std::string message = pool->GetAddressAsString();
 

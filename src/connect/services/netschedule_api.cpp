@@ -84,7 +84,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
-    const string& err_msg, SNetServerConnectionPoolImpl* pool)
+    const string& err_msg, SNetServerConnectionPool* pool)
 {
     string code;
     string msg;

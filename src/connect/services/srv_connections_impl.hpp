@@ -52,9 +52,11 @@ struct SNetServerCmdOutputImpl : public CNetObject
     bool m_ReadCompletely;
 };
 
+struct SNetServerConnectionPool;
+
 struct SNetServerConnectionImpl : public CNetObject
 {
-    SNetServerConnectionImpl(SNetServerConnectionPoolImpl* pool);
+    SNetServerConnectionImpl(SNetServerConnectionPool* pool);
 
     virtual void Delete();
 
@@ -72,9 +74,9 @@ struct SNetServerConnectionImpl : public CNetObject
     void Close();
     void Abort();
 
-    ~SNetServerConnectionImpl();
+    virtual ~SNetServerConnectionImpl();
 
-    CNetServerConnectionPool m_ConnectionPool;
+    CNetObjectRef<SNetServerConnectionPool> m_ConnectionPool;
     SNetServerConnectionImpl* m_NextFree;
 
     CSocket m_Socket;
@@ -94,24 +96,32 @@ class INetServerConnectionListener : public CNetObject
 public:
     virtual void OnConnected(CNetServerConnection::TInstance) = 0;
     virtual void OnError(const string& err_msg,
-        SNetServerConnectionPoolImpl* pool) = 0;
+        SNetServerConnectionPool* pool) = 0;
 };
 
 
-struct SNetServerConnectionPoolImpl : public CNetObject
+struct SNetServerConnectionPool : public CNetObject
 {
-    SNetServerConnectionPoolImpl(
+    SNetServerConnectionPool(
         const string& host,
         unsigned short port,
         const STimeout& timeout,
         INetServerConnectionListener* listener);
 
+    // Special constructor for making search images
+    // for searching in TConnectionPoolSet.
+    SNetServerConnectionPool(const string& host, unsigned short port) :
+        m_Host(host), m_Port(port)
+    {
+    }
+
+    CNetServerConnection GetConnection();
     void DeleteConnection(SNetServerConnectionImpl* impl);
     void Put(SNetServerConnectionImpl* impl);
 
     std::string GetAddressAsString() const;
 
-    ~SNetServerConnectionPoolImpl();
+    virtual ~SNetServerConnectionPool();
 
     string m_Host;
     unsigned short m_Port;

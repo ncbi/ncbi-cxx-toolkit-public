@@ -35,10 +35,22 @@
 
 #include <connect/services/netservice_api.hpp>
 
+#include <set>
+
 BEGIN_NCBI_SCOPE
 
-typedef map<TServerAddress,
-    CNetServerConnectionPool> TServerAddressToConnectionPool;
+struct SCompareConnectionPoolAddress {
+    bool operator()(const SNetServerConnectionPool* l,
+        const SNetServerConnectionPool* r) const
+    {
+        int cmp = l->m_Host.compare(r->m_Host);
+
+        return cmp < 0 || (cmp == 0 && l->m_Port < r->m_Port);
+    }
+};
+
+typedef set<SNetServerConnectionPool*,
+    SCompareConnectionPoolAddress> TConnectionPoolSet;
 
 struct SNetServerImpl : public CNetObject
 {
@@ -98,7 +110,6 @@ struct SNetServiceImpl : public CNetObject
     // NS and NC protocols.
     void SetListener(INetServerConnectionListener* listener);
 
-    CNetServerConnection GetConnection(const TServerAddress& srv);
     CNetServerConnection GetConnection(const string& host, unsigned int port);
     CNetServerConnection GetSingleServerConnection();
 
@@ -109,6 +120,8 @@ struct SNetServiceImpl : public CNetObject
 
     void Monitor(CNcbiOstream& out, const std::string& cmd);
 
+    virtual ~SNetServiceImpl();
+
     CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
     string m_ClientName;
 
@@ -117,7 +130,7 @@ struct SNetServiceImpl : public CNetObject
 
     TDiscoveredServers m_Servers;
     CRWLock m_ServersLock;
-    TServerAddressToConnectionPool m_ServerAddressToConnectionPool;
+    TConnectionPoolSet m_ConnectionPools;
     CFastMutex m_ConnectionMutex;
 
     bool m_IsLoadBalanced;

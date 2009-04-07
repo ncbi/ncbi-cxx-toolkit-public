@@ -51,7 +51,7 @@ struct SNetCacheAPIImpl : public CNetObject
     private:
         virtual void OnConnected(CNetServerConnection::TInstance);
         virtual void OnError(const string& err_msg,
-            SNetServerConnectionPoolImpl* pool);
+            SNetServerConnectionPool* pool);
 
     private:
         std::string m_Auth;
