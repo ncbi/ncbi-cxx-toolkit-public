@@ -223,6 +223,7 @@ EOF
        if (sub(/\$[({]FAST_LDFLAGS[)}]/, "$(LOCAL_LDFLAGS) &", virtline)) {
           printf "\n### LOCAL_LDFLAGS automatically added\n%s", virtline;
        } else if ( !/COPIED SETTINGS/ ) {
+          sub(/^# CHECK_/, "CHECK_", virtline);
           printf "%s", virtline;
        }
        virtline = ""
@@ -269,6 +270,11 @@ include $makefile_name.in
 MAKE_LIB = \$(MAKE) -f Makefile.\$\${i}_lib \$(MFLAGS)
 MAKE_APP = \$(MAKE) -f Makefile.\$\${i}_app \$(MFLAGS)
 
+###  DIRECT THE CHECK FRAMEWORK TO LOOK IN THE RIGHT PLACE
+import_root = .
+CHECK_ADD_KET += ; sed -e 's:[^ ]*\( ____ \):.\1:' check.sh.list > .csl && \
+    mv .csl check.sh.list
+
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
 EOF
 
@@ -309,6 +315,9 @@ srcdir = .
 include \$(builddir)/Makefile.meta
 EOF
   fi >> "$makefile_name.in"
+
+  echo '# Dummy makefile for the sake of the check framework.' \
+      > "$makefile_name.out"
 }
 
 
