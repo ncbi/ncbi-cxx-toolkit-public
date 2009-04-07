@@ -1,0 +1,3 @@
+# $Id$
+LIB = valid
+SRC = valid__ valid___
