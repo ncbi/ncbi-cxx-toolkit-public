@@ -35,7 +35,10 @@
 #define ALGO_BLAST_API__SPLIT_QUERY__HPP
 
 #include <algo/blast/api/query_data.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include <objmgr/scope.hpp>
 #include "split_query_blk.hpp"
+
 
 // Forward declarations
 class CSplitQueryTestFixture;      // unit test class
