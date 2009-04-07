@@ -68,7 +68,8 @@ public:
     /// @param seqdb 
     ///     CSeqDB object for an already opened BLAST database
     CLocalDbAdapter(CRef<CSeqDB> seqdb, 
-                    const CSearchDatabase::TFilteringAlgorithms& filt_algs);
+                    const CSearchDatabase::TFilteringAlgorithms& filt_algs =
+                        CSearchDatabase::TFilteringAlgorithms());
     
     /// Constructor
     /// @param subject_sequences
