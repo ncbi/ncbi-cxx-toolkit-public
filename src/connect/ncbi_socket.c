@@ -408,7 +408,12 @@ static const char* s_ID(const SOCK sock, char* buf)
         sname = "TRIGGER";
         break;
     case eSocket:
-        sname = sock->session ? "SSOCK" : "SOCK";
+#ifdef NCBI_OS_UNIX
+        if (sock->path[0])
+            sname = sock->session ? "SUSOCK" : "USOCK";
+        else
+#endif /*NCBI_OS_UNIX*/
+            sname = sock->session ? "SSOCK"  : "SOCK";
         break;
     case eDatagram:
         sname = "DSOCK";
@@ -2739,8 +2744,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
 static EIO_Status s_Connect(SOCK            sock,
                             const char*     host,
                             unsigned short  port,
-                            const STimeout* timeout,
-                            int/*bool*/     secure)
+                            const STimeout* timeout)
 {
     union {
         struct sockaddr    sa;
@@ -2760,12 +2764,13 @@ static EIO_Status s_Connect(SOCK            sock,
     assert(sock->type == eSocket  &&  sock->side == eSOCK_Client);
 
     /* initialize internals */
-    if (s_InitAPI(secure) != eIO_Success)
+    if (s_InitAPI(sock->session ? 1/*secure*/ : 0/*regular*/) != eIO_Success)
         return eIO_NotSupported;
 
-    if (secure) {
+    if (sock->session) {
         FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
         void* session;
+        assert(sock->session == SESSION_INVALID);
         if (!sslcreate) {
             session = 0;
             x_error = 0;
@@ -2965,7 +2970,8 @@ static EIO_Status s_Connect(SOCK            sock,
     }
 
 #ifdef NCBI_OS_UNIX
-    if ((!sock->crossexec  ||  secure)  &&  !s_SetCloexec(x_sock, 1/*true*/)){
+    if ((!sock->crossexec  ||  sock->session)
+        &&  !s_SetCloexec(x_sock, 1/*true*/)){
         x_error = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EXX(129, eLOG_Warning,
                             x_error, SOCK_STRERROR(x_error),
@@ -3005,9 +3011,10 @@ static EIO_Status s_Create(const char*     hostpath,
     x_sock->type      = eSocket;
     x_sock->log       = flags;
     x_sock->side      = eSOCK_Client;
-    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
-    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn : eDefault;
-    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
+    x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
+    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
+    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
+    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
 
 #ifdef NCBI_OS_UNIX
     x_sock->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
@@ -3030,7 +3037,7 @@ static EIO_Status s_Create(const char*     hostpath,
 
 
     /* connect */
-    status = s_Connect(x_sock, hostpath, port, timeout, flags & fSOCK_Secure);
+    status = s_Connect(x_sock, hostpath, port, timeout);
     if (status != eIO_Success)
         SOCK_Close(x_sock);
     else
@@ -4076,9 +4083,10 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->type      = eSocket;
     x_sock->log       = flags;
     x_sock->side      = eSOCK_Server;
-    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
-    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn : eDefault;
-    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
+    x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
+    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
+    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
+    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
     x_sock->r_status  = eIO_Success;
     x_sock->w_status  = eIO_Success;
     x_sock->pending   = 1/*have to check at the nearest I/O*/;
@@ -4090,7 +4098,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->w_buf     = w_buf;
     x_sock->w_len     = datalen;
 
-    if (flags & fSOCK_Secure) {
+    if (x_sock->session) {
         FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
         void* session;
         if (!sslcreate) {
@@ -4183,7 +4191,7 @@ static EIO_Status s_Reconnect(SOCK            sock,
     sock->side      = eSOCK_Client;
     sock->n_read    = 0;
     sock->n_written = 0;
-    return s_Connect(sock, host, port, timeout, sock->session ? 1 : 0);
+    return s_Connect(sock, host, port, timeout);
 }
 
 
