@@ -77,8 +77,7 @@ class TSearchMessages;
  * @param messages Error/warning messages [in|out]
  * @param options PSI-BLAST options [in|out]
  */
-NCBI_XBLAST_EXPORT
-void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
+void NCBI_XBLAST_EXPORT PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                              CConstRef<objects::CPssmWithParameters> pssm,
                              TSearchMessages& messages,
                              CConstRef<CBlastOptions> options);
@@ -88,23 +87,20 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
  * @param pssm object containing the PSSM's frequency ratios [in|out]
  * @param opts PSSM engine options [in]
  */
-NCBI_XBLAST_EXPORT
-void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
+void NCBI_XBLAST_EXPORT PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts);
 
 /// Returns the lowest score from the list of scores in CDense_seg::TScores
 /// @param scores list of scores [in]
 /// @param bit_score If not NULL, returns the bit score corresponding to the
 /// lowest evalue found [in|out]
-NCBI_XBLAST_EXPORT
-double GetLowestEvalue(const objects::CDense_seg::TScores& scores,
+double NCBI_XBLAST_EXPORT GetLowestEvalue(const objects::CDense_seg::TScores& scores,
                        double* bit_score = NULL);
 
 /** Auxiliary class to retrieve sequence identifiers its position in the
  * alignment which are below the inclusion evalue threshold.
  */
-NCBI_XBLAST_EXPORT
-class CPsiBlastAlignmentProcessor {
+class NCBI_XBLAST_EXPORT CPsiBlastAlignmentProcessor {
 public:
     /// Container of Seq-ids for the subject sequences (hits) aligned with the
     /// query
@@ -125,8 +121,7 @@ public:
 
 /// Auxialiry class containing static methods to validate PSI-BLAST search
 /// components
-NCBI_XBLAST_EXPORT
-class CPsiBlastValidate {
+class NCBI_XBLAST_EXPORT CPsiBlastValidate {
 public:
 
     /** Perform validation on the PSSM
