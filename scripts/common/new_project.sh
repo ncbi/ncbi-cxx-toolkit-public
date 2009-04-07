@@ -42,8 +42,8 @@ ARGUMENTS:
      app/cgi         to build a CGI or FastCGI application
      app/dbapi       to build a DBAPI application
      app/eutils      to build an eUtils client application
-     app/gui         to build an FLTK application
      app/lds         to build an application using a local data store
+     app/netcache    to build a NetCache application
      app/netschedule to build an NCBI GRID (NetSchedule) application
      app/objects     to build an application using ASN.1 objects
      app/objmgr      to build an application using the object manager
@@ -347,7 +347,7 @@ if test ! -d "$src/app/sample/$proj_subdir"; then
     rm -rf "$tmp_app_checkout_dir"
     Usage "Unsupported application type ${proj_subdir}"
   fi
-  src="`cd "$tmp_app_checkout_dir" && pwd`"
+  src="`cd \"$tmp_app_checkout_dir\" && pwd`"
   cleanup='yes'
 fi
 
