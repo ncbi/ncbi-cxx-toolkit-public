@@ -40,6 +40,8 @@
 #include <ncbi_pch.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
 
+#include <corelib/ncbi_safe_static.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -48,6 +50,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 static const size_t kUidSize = 32; // bits
 const size_t        CEntrez2_id_list::sm_UidSize = kUidSize / 8; // bytes
+CSafeStaticPtr<CEntrez2_id_list::TUids> s_EmptyList;
 
 CEntrez2_id_list::TUidIterator CEntrez2_id_list::GetUidIterator()
 {
@@ -57,7 +60,11 @@ CEntrez2_id_list::TUidIterator CEntrez2_id_list::GetUidIterator()
 CEntrez2_id_list::TConstUidIterator
 CEntrez2_id_list::GetConstUidIterator() const
 {
-    return TConstUidIterator(GetUids(), kUidSize);
+    if (CanGetUids()) {
+        return TConstUidIterator(GetUids(), kUidSize);
+    } else {
+        return TConstUidIterator(s_EmptyList.Get(), kUidSize);
+    }
 }
 
 // destructor
