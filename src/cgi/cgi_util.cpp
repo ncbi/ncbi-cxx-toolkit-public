@@ -1168,7 +1168,6 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             pos += search.length();
             s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
         }
-        m_Platform = ePlatform_Mac;
     }
 
     return;
