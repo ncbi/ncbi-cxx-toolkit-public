@@ -49,6 +49,7 @@
 
 #include "bdb_queue.hpp"
 #include "ns_util.hpp"
+#include "netschedule_version.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -187,6 +188,9 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
         return false;
 
     CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
+    db_storage_ver = bdb_conf.GetString("netschedule", "force_storage_version",
+        CConfig::eErr_NoThrow, NETSCHEDULED_STORAGE_VERSION);
+
     db_path = bdb_conf.GetString("netschedule", "path", CConfig::eErr_Throw);
     db_log_path = ""; // doesn't work yet
         // bdb_conf.GetString("netschedule", "transaction_log_path",
@@ -294,7 +298,7 @@ CQueueDataBase::~CQueueDataBase()
 }
 
 
-void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
+bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
                           bool reinit)
 {
     const string& db_path     = params.db_path;
@@ -312,12 +316,45 @@ void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     const string* effective_log_path = trailed_log_path.empty() ?
                                        &m_Path :
                                        &trailed_log_path;
+
+    bool fresh_db(false);
     {{
         CDir dir(m_Path);
         if ( !dir.Exists() ) {
+            fresh_db = true;
             dir.Create();
         }
     }}
+
+    string db_storage_ver;
+    CFile ver_file(CFile::MakePath(m_Path, "DB_STORAGE_VER"));
+    if (fresh_db) {
+        db_storage_ver = NETSCHEDULED_STORAGE_VERSION;
+        CFileIO f;
+        f.Open(ver_file.GetPath(), CFileIO_Base::eCreate, CFileIO_Base::eReadWrite);
+        f.Write(db_storage_ver.data(), db_storage_ver.size());
+        f.Close();
+    } else {
+        if (!ver_file.Exists()) {
+            // Last storage version which does not have DB_STORAGE_VER file
+            db_storage_ver = "4.0.0";
+        } else {
+            CFileIO f;
+            char buf[32];
+            f.Open(ver_file.GetPath(), CFileIO_Base::eOpen, CFileIO_Base::eRead);
+            size_t n = f.Read(buf, sizeof(buf));
+            db_storage_ver.append(buf, n);
+            NStr::TruncateSpacesInPlace(db_storage_ver, NStr::eTrunc_End);
+            f.Close();
+        }
+        if (db_storage_ver != params.db_storage_ver) {
+            ERR_POST("Storage version mismatch, required " <<
+                     params.db_storage_ver <<
+                     " present " <<
+                     db_storage_ver);
+            return false;
+        }
+    }
 
     delete m_Env;
     m_Env = new CBDB_Env();
@@ -422,6 +459,7 @@ void CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
 
     // Allocate SQueueDbBlock's here, open/create corresponding databases
     m_QueueDbBlockArray.Init(*m_Env, m_Path, params.max_queues);
+    return true;
 }
 
 

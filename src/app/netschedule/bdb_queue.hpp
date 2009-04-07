@@ -445,6 +445,8 @@ private:
 
 struct SNSDBEnvironmentParams
 {
+    string    db_storage_ver;      ///< Version of DB schema, should match
+                                   ///  NETSCHEDULED_STORAGE_VERSION
     string    db_path;
     string    db_log_path;
     unsigned  max_queues;          ///< Number of pre-allocated queues
@@ -487,7 +489,8 @@ public:
     ///    Parameters of DB environment
     /// @param reinit
     ///    Whether to clean out database
-    void Open(const SNSDBEnvironmentParams& params, bool reinit);
+    /// @returns whether it was successful
+    bool Open(const SNSDBEnvironmentParams& params, bool reinit);
 
     // Read queue information from registry and configure queues
     // accordingly.

@@ -267,7 +267,7 @@ public:
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void OnOpen(void);
     virtual void OnWrite(void);
-    virtual void OnClose(void) { }
+    virtual void OnCloseExt(IServer_ConnectionHandler::EClosePeer peer);
     virtual void OnTimeout(void);
     virtual void OnOverflow(void);
     virtual void OnMessage(BUF buffer);
@@ -829,6 +829,13 @@ void CNetScheduleHandler::OnWrite()
 {
     if (m_DelayedOutput)
         (this->*m_DelayedOutput)();
+}
+
+
+void CNetScheduleHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
+{
+    LOG_POST(Warning << "Socket closed by " <<
+        (peer == IServer_ConnectionHandler::eOurClose ? "server" : "client"));
 }
 
 
@@ -2936,7 +2943,9 @@ int CNetScheduleDApp::Run(void)
         NcbiCout << "Mounting database at " << bdb_params.db_path << NcbiEndl;
         LOG_POST(Info << "Mounting database at " << bdb_params.db_path);
 
-        qdb->Open(bdb_params, reinit);
+        if (!qdb->Open(bdb_params, reinit)) {
+            return 1;
+        }
 
         if (params.udp_port > 0) {
             qdb->SetUdpPort(params.udp_port);
