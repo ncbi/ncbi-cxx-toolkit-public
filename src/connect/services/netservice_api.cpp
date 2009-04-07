@@ -187,7 +187,7 @@ CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
     if (it != m_Servers.end())
         server = *it;
     if (!server) {
-        server = new SNetServerImplReal(host, port, this, m_Timeout);
+        server = new SNetServerImplReal(host, port, this);
         m_Servers.insert(server);
         server->AddRef();
     }
@@ -278,9 +278,6 @@ void CNetService::SetCommunicationTimeout(const STimeout& to)
 {
     CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_Timeout = to;
-    NON_CONST_ITERATE(TNetServerSet, it, m_Impl->m_Servers) {
-        (*it)->m_Timeout = to;
-    }
 }
 const STimeout& CNetService::GetCommunicationTimeout() const
 {

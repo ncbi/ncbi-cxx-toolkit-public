@@ -60,12 +60,9 @@ struct SNetServerConnectionImpl : public CNetObject
 
     virtual void Delete();
 
-    std::string ReadCmdOutputLine();
-
     void WriteLine(const string& line);
-
-     // if wait_sec is set to 0 m_Timeout will be used
-    void WaitForServer(unsigned int wait_sec = 0);
+    std::string ReadCmdOutputLine();
+    void WaitForServer();
 
     void Close();
     void Abort();
@@ -118,8 +115,6 @@ struct SNetServerImpl : public CNetObject
     string m_Host;
     unsigned short m_Port;
 
-    STimeout m_Timeout;
-
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;
@@ -129,8 +124,7 @@ struct SNetServerImplReal : public SNetServerImpl
 {
     SNetServerImplReal(const string& host,
         unsigned short port,
-        SNetServiceImpl* service_impl,
-        const STimeout& timeout);
+        SNetServiceImpl* service_impl);
 
     virtual ~SNetServerImplReal();
 };

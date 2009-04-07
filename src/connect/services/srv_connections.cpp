@@ -216,23 +216,15 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
     }
 }
 
-// if wait_sec is set to 0 m_Timeout will be used
-void SNetServerConnectionImpl::WaitForServer(unsigned int wait_sec)
+void SNetServerConnectionImpl::WaitForServer()
 {
-    STimeout to = {wait_sec, 0};
-
-    SNetServerImpl* pool = m_Server;
-
-    if (wait_sec == 0)
-        to = pool->m_Timeout;
-
-    EIO_Status io_st = m_Socket.Wait(eIO_Read, &to);
+    EIO_Status io_st = m_Socket.Wait(eIO_Read, &m_Server->m_Service->m_Timeout);
 
     if (io_st == eIO_Timeout) {
         Abort();
 
         NCBI_THROW(CNetSrvConnException, eResponseTimeout,
-            "No response from " + pool->GetAddressAsString());
+            "No response from " + m_Server->GetAddressAsString());
     }
 }
 
@@ -266,11 +258,9 @@ unsigned int CNetServerConnection::GetPort() const
 /*************************************************************************/
 SNetServerImplReal::SNetServerImplReal(const string& host,
     unsigned short port,
-    SNetServiceImpl* service_impl,
-    const STimeout& timeout) : SNetServerImpl(host, port)
+    SNetServiceImpl* service_impl) : SNetServerImpl(host, port)
 {
     m_Service = service_impl;
-    m_Timeout = timeout;
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 }
@@ -346,27 +336,30 @@ unsigned short CNetServer::GetPort() const
 
 CNetServerConnection CNetServer::Connect()
 {
-    CNetServerConnection conn;
-
     {{
+        // Get an existing connection object from the connection pool.
+
         TFastMutexGuard guard(m_Impl->m_FreeConnectionListLock);
 
-        if (m_Impl->m_FreeConnectionListSize == 0)
-            conn = new SNetServerConnectionImpl(m_Impl);
-        else {
-            conn = m_Impl->m_FreeConnectionListHead;
+        if (m_Impl->m_FreeConnectionListSize > 0) {
+            CNetServerConnection conn = m_Impl->m_FreeConnectionListHead;
+
             m_Impl->m_FreeConnectionListHead = conn->m_NextFree;
             --m_Impl->m_FreeConnectionListSize;
             conn->m_Server = m_Impl;
+
+            return conn;
         }
     }}
+
+    CNetServerConnection conn = new SNetServerConnectionImpl(m_Impl);
 
     unsigned conn_repeats = 0;
 
     EIO_Status io_st;
 
     while ((io_st = conn->m_Socket.Connect(m_Impl->m_Host, m_Impl->m_Port,
-        &m_Impl->m_Timeout, eOn)) != eIO_Success) {
+        &m_Impl->m_Service->m_Timeout, eOn)) != eIO_Success) {
 
         if (io_st == eIO_Unknown) {
 
@@ -396,7 +389,7 @@ CNetServerConnection CNetServer::Connect()
     }
 
     conn->m_Socket.SetDataLogging(eDefault);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Impl->m_Timeout);
+    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Impl->m_Service->m_Timeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
