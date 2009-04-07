@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "srv_connections_impl.hpp"
+#include "netservice_api_impl.hpp"
 
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/netservice_api_expt.hpp>
@@ -128,11 +128,12 @@ std::string SNetServerConnectionImpl::ReadCmdOutputLine()
     } else if (NStr::StartsWith(result, "ERR:")) {
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);
-        m_Server->m_EventListener->OnError(result, m_Server);
+        m_Server->m_Service->m_Listener->OnError(result, m_Server);
     }
     return result;
 }
 
+/*
 bool SNetServerConnectionImpl::IsConnected()
 {
     EIO_Status st = m_Socket.GetStatus(eIO_Open);
@@ -170,6 +171,7 @@ bool SNetServerConnectionImpl::IsConnected()
 
     return ret;
 }
+*/
 
 void SNetServerConnectionImpl::Close()
 {
@@ -194,8 +196,6 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
     const char* buf = str.data();
     size_t len = str.size();
 
-    CheckConnect();
-
     while (len > 0) {
         size_t n_written;
 
@@ -208,8 +208,7 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
                 (CIO_Exception::EErrCode) io_st, "IO error.");
 
             NCBI_THROW(CNetSrvConnException, eWriteFailure,
-                "Failed to write to " +
-                m_Server->GetAddressAsString() +
+                "Failed to write to " + m_Server->GetAddressAsString() +
                 ": " + string(io_ex.what()));
         }
         len -= n_written;
@@ -253,56 +252,6 @@ CNetServerCmdOutput CNetServerConnection::ExecMultiline(const std::string& cmd)
     return new SNetServerCmdOutputImpl(m_Impl);
 }
 
-void SNetServerConnectionImpl::CheckConnect()
-{
-    if (IsConnected())
-        return;
-
-    SNetServerImpl* pool = m_Server;
-
-    unsigned conn_repeats = 0;
-
-    EIO_Status io_st;
-
-    while ((io_st = m_Socket.Connect(pool->m_Host, pool->m_Port,
-        &pool->m_Timeout, eOn)) != eIO_Success) {
-
-        if (io_st == eIO_Unknown) {
-
-            m_Socket.Close();
-
-            // most likely this is an indication we have too many
-            // open ports on the client side
-            // (this kernel limitation manifests itself on Linux)
-            if (++conn_repeats > pool->m_MaxRetries) {
-                if (io_st != eIO_Success) {
-                    CIO_Exception io_ex(DIAG_COMPILE_INFO,
-                        0, (CIO_Exception::EErrCode)io_st, "IO error.");
-                    NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                        "Failed to connect to " + pool->GetAddressAsString() +
-                            ": " + string(io_ex.what()));
-                }
-            }
-            // give system a chance to recover
-
-            SleepMilliSec(1000 * conn_repeats);
-        } else {
-            CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
-            NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                "Failed to connect to " + pool->GetAddressAsString() +
-                ": " + string(io_ex.what()));
-        }
-    }
-
-    m_Socket.SetDataLogging(eDefault);
-    m_Socket.SetTimeout(eIO_ReadWrite, &pool->m_Timeout);
-    m_Socket.DisableOSSendDelay();
-    m_Socket.SetReuseAddress(eOn);
-
-    if (pool->m_EventListener)
-        pool->m_EventListener->OnConnected(this);
-}
-
 const string& CNetServerConnection::GetHost() const
 {
     return m_Impl->m_Server->m_Host;
@@ -318,16 +267,12 @@ unsigned int CNetServerConnection::GetPort() const
 SNetServerImplReal::SNetServerImplReal(const string& host,
     unsigned short port,
     SNetServiceImpl* service_impl,
-    const STimeout& timeout,
-    INetServerConnectionListener* listener) : SNetServerImpl(host, port)
+    const STimeout& timeout) : SNetServerImpl(host, port)
 {
     m_Service = service_impl;
     m_Timeout = timeout;
-    m_EventListener = listener;
-    m_MaxRetries = TServConn_ConnMaxRetries::GetDefault();
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
-    m_PermanentConnection = eDefault;
 }
 
 inline void SNetServerImpl::DeleteConnection(
@@ -338,33 +283,31 @@ inline void SNetServerImpl::DeleteConnection(
 
 void SNetServerImpl::ReturnToPool(SNetServerConnectionImpl* impl)
 {
-    if (m_PermanentConnection != eOn)
-        impl->Close();
-    else
-        if (impl->m_Socket.GetStatus(eIO_Open) == eIO_Success) {
-            // we need to check if all data has been read.
-            // if it has not then we have to close the connection
-            STimeout to = {0, 0};
+    if (m_Service->m_PermanentConnection != eOff &&
+            impl->m_Socket.GetStatus(eIO_Open) == eIO_Success) {
+        // we need to check if all data has been read.
+        // if it has not then we have to close the connection
+        STimeout to = {0, 0};
 
-            if (impl->m_Socket.Wait(eIO_Read, &to) == eIO_Success) {
-                impl->Abort();
-                ERR_POST_X(8,
-                    "Socket not fully read while returning to the pool");
-            } else {
-                TFastMutexGuard guard(m_FreeConnectionListLock);
+        if (impl->m_Socket.Wait(eIO_Read, &to) == eIO_Success) {
+            impl->Abort();
+            ERR_POST_X(8,
+                "Socket not fully read while returning to the pool");
+        } else {
+            TFastMutexGuard guard(m_FreeConnectionListLock);
 
-                int upper_limit = TServConn_MaxConnPoolSize::GetDefault();
+            int upper_limit = TServConn_MaxConnPoolSize::GetDefault();
 
-                if (upper_limit == 0 ||
-                        m_FreeConnectionListSize < upper_limit) {
-                    impl->m_NextFree = m_FreeConnectionListHead;
-                    m_FreeConnectionListHead = impl;
-                    ++m_FreeConnectionListSize;
-                    impl->m_Server = NULL;
-                    return;
-                }
+            if (upper_limit == 0 ||
+                    m_FreeConnectionListSize < upper_limit) {
+                impl->m_NextFree = m_FreeConnectionListHead;
+                m_FreeConnectionListHead = impl;
+                ++m_FreeConnectionListSize;
+                impl->m_Server = NULL;
+                return;
             }
         }
+    }
 
     DeleteConnection(impl);
 }
@@ -391,24 +334,6 @@ SNetServerImplReal::~SNetServerImplReal()
     }
 }
 
-CNetServerConnection SNetServerImpl::GetConnection()
-{
-    TFastMutexGuard guard(m_FreeConnectionListLock);
-
-    SNetServerConnectionImpl* impl;
-
-    if (m_FreeConnectionListSize == 0)
-        impl = new SNetServerConnectionImpl(this);
-    else {
-        impl = m_FreeConnectionListHead;
-        m_FreeConnectionListHead = impl->m_NextFree;
-        --m_FreeConnectionListSize;
-        impl->m_Server = this;
-    }
-
-    return impl;
-}
-
 std::string CNetServer::GetHost() const
 {
     return m_Impl->m_Host;
@@ -421,7 +346,64 @@ unsigned short CNetServer::GetPort() const
 
 CNetServerConnection CNetServer::Connect()
 {
-    return m_Impl->GetConnection();
+    CNetServerConnection conn;
+
+    {{
+        TFastMutexGuard guard(m_Impl->m_FreeConnectionListLock);
+
+        if (m_Impl->m_FreeConnectionListSize == 0)
+            conn = new SNetServerConnectionImpl(m_Impl);
+        else {
+            conn = m_Impl->m_FreeConnectionListHead;
+            m_Impl->m_FreeConnectionListHead = conn->m_NextFree;
+            --m_Impl->m_FreeConnectionListSize;
+            conn->m_Server = m_Impl;
+        }
+    }}
+
+    unsigned conn_repeats = 0;
+
+    EIO_Status io_st;
+
+    while ((io_st = conn->m_Socket.Connect(m_Impl->m_Host, m_Impl->m_Port,
+        &m_Impl->m_Timeout, eOn)) != eIO_Success) {
+
+        if (io_st == eIO_Unknown) {
+
+            conn->m_Socket.Close();
+
+            // most likely this is an indication we have too many
+            // open ports on the client side
+            // (this kernel limitation manifests itself on Linux)
+            if (++conn_repeats > m_Impl->m_Service->m_MaxRetries) {
+                if (io_st != eIO_Success) {
+                    CIO_Exception io_ex(DIAG_COMPILE_INFO,
+                        0, (CIO_Exception::EErrCode)io_st, "IO error.");
+                    NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                        "Failed to connect to " + m_Impl->GetAddressAsString() +
+                            ": " + string(io_ex.what()));
+                }
+            }
+            // give system a chance to recover
+
+            SleepMilliSec(1000 * conn_repeats);
+        } else {
+            CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
+            NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                "Failed to connect to " + m_Impl->GetAddressAsString() +
+                ": " + string(io_ex.what()));
+        }
+    }
+
+    conn->m_Socket.SetDataLogging(eDefault);
+    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Impl->m_Timeout);
+    conn->m_Socket.DisableOSSendDelay();
+    conn->m_Socket.SetReuseAddress(eOn);
+
+    if (m_Impl->m_Service->m_Listener)
+        m_Impl->m_Service->m_Listener->OnConnected(conn);
+
+    return conn;
 }
 
 END_NCBI_SCOPE

@@ -187,9 +187,7 @@ CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
     if (it != m_Servers.end())
         server = *it;
     if (!server) {
-        server = new SNetServerImplReal(host, port, this,
-            m_Timeout, m_Listener);
-        server->m_PermanentConnection = m_PermanentConnection;
+        server = new SNetServerImplReal(host, port, this, m_Timeout);
         m_Servers.insert(server);
         server->AddRef();
     }
@@ -221,9 +219,7 @@ CNetServerConnection CNetService::GetBestConnection()
 
     for (CNetServerGroupIterator it = DiscoverServers().Iterate(); it; ++it) {
         try {
-            CNetServerConnection conn = (*it).Connect();
-            conn->CheckConnect();
-            return conn;
+            return (*it).Connect();
         } catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure) {
                 ERR_POST_X(2, ex.what());
@@ -293,11 +289,7 @@ const STimeout& CNetService::GetCommunicationTimeout() const
 
 void CNetService::SetCreateSocketMaxRetries(unsigned int retries)
 {
-    CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_MaxRetries = retries;
-    NON_CONST_ITERATE(TNetServerSet, it, m_Impl->m_Servers) {
-        (*it)->m_MaxRetries = retries;
-    }
 }
 
 unsigned int CNetService::GetCreateSocketMaxRetries() const
@@ -307,11 +299,7 @@ unsigned int CNetService::GetCreateSocketMaxRetries() const
 
 void CNetService::SetPermanentConnection(ESwitch type)
 {
-    CFastMutexGuard g(m_Impl->m_ConnectionMutex);
     m_Impl->m_PermanentConnection = type;
-    NON_CONST_ITERATE(TNetServerSet, it, m_Impl->m_Servers) {
-        (*it)->m_PermanentConnection = type;
-    }
 }
 
 CNetServerGroup CNetService::DiscoverServers(

@@ -67,10 +67,6 @@ struct SNetServerConnectionImpl : public CNetObject
      // if wait_sec is set to 0 m_Timeout will be used
     void WaitForServer(unsigned int wait_sec = 0);
 
-    bool IsConnected();
-
-    void CheckConnect();
-
     void Close();
     void Abort();
 
@@ -110,7 +106,6 @@ struct SNetServerImpl : public CNetObject
     {
     }
 
-    CNetServerConnection GetConnection();
     void DeleteConnection(SNetServerConnectionImpl* impl);
     void ReturnToPool(SNetServerConnectionImpl* impl);
 
@@ -124,14 +119,10 @@ struct SNetServerImpl : public CNetObject
     unsigned short m_Port;
 
     STimeout m_Timeout;
-    CNetObjectRef<INetServerConnectionListener> m_EventListener;
-    unsigned int m_MaxRetries;
 
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;
-
-    ESwitch m_PermanentConnection;
 };
 
 struct SNetServerImplReal : public SNetServerImpl
@@ -139,8 +130,7 @@ struct SNetServerImplReal : public SNetServerImpl
     SNetServerImplReal(const string& host,
         unsigned short port,
         SNetServiceImpl* service_impl,
-        const STimeout& timeout,
-        INetServerConnectionListener* listener);
+        const STimeout& timeout);
 
     virtual ~SNetServerImplReal();
 };
