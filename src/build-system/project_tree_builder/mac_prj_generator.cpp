@@ -123,6 +123,11 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> app_dependencies( new CArray);
     CRef<CArray> lib_dependencies( new CArray);
     
+#if USE_VERBOSE_NAMES
+    string root_name("ROOT_OBJECT");
+#else
+    string root_name( GetUUID());
+#endif
     // set GUIDs
     list<const CProjItem*> all_projects;
     ITERATE(CProjectItemsTree::TProjects, p, m_Projects_tree.m_Projects) {
@@ -136,8 +141,10 @@ void CMacProjectGenerator::Generate(const string& solution)
 
 #if USE_VERBOSE_NAMES
         string proj_dependency(GetProjDependency(prj));
+        string proj_container( GetProjContainer(prj));
 #else
         string proj_dependency(prj.m_GUID);
+        string proj_container( GetUUID());
 #endif
         string explicit_type( GetExplicitType( prj));
 
@@ -215,6 +222,16 @@ void CMacProjectGenerator::Generate(const string& solution)
             CRef<CDict> dict_dep( AddDict( *dict_objects, proj_dependency));
             AddString( *dict_dep, "isa", "PBXTargetDependency");
             AddString( *dict_dep, "target", proj_target);
+            AddString( *dict_dep, "targetProxy", proj_container);
+        }
+        // project container
+        {
+            CRef<CDict> dict_con( AddDict( *dict_objects, proj_container));
+            AddString( *dict_con, "containerPortal", root_name);
+            AddString( *dict_con, "isa", "PBXContainerItemProxy");
+            AddString( *dict_con, "proxyType", "1");
+            AddString( *dict_con, "remoteGlobalIDString", proj_target);
+            AddString( *dict_con, "remoteInfo", GetTargetName(prj));
         }
         // project product
         {
@@ -265,7 +282,7 @@ void CMacProjectGenerator::Generate(const string& solution)
 
 // root object
     AddString( dict_root, "rootObject",
-        CreateRootObject(configs_root, *dict_objects, targets, root_group));
+        CreateRootObject(configs_root, *dict_objects, targets, root_group, root_name));
 
 // save project
     Save(solution_name, *xproj);
@@ -823,6 +840,14 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     } else {
         AddString( *settings, "STANDARD_C_PLUS_PLUS_LIBRARY_TYPE", "static");
     }
+/* this, sort of, helps; but it is wrong
+    string built = 
+        CDirEntry::ConcatPath( CDirEntry::ConcatPath( CDirEntry::ConcatPath(
+            GetApp().GetProjectTreeInfo().m_Compilers,
+            GetApp().GetRegSettings().m_CompilersSubdir),
+            GetApp().GetBuildType().GetTypeStr()), "bin/$(CONFIGURATION)");
+    AddString( *settings, "BUILT_PRODUCTS_DIR", built);
+*/
 }
 
 void CMacProjectGenerator::CreateProjectBuildSettings(
@@ -1069,13 +1094,8 @@ string CMacProjectGenerator::AddConfigureTarget(
 
 string CMacProjectGenerator::CreateRootObject(
     const string& configs_root, CDict& dict_objects, CRef<CArray>& targets,
-    const string& root_group)
+    const string& root_group, const string& root_name)
 {
-#if USE_VERBOSE_NAMES
-    string root_name("ROOT_OBJECT");
-#else
-    string root_name( GetUUID());
-#endif
     CRef<CDict> root_obj( AddDict( dict_objects, root_name));
     AddString( *root_obj, "buildConfigurationList", configs_root);
     AddString( *root_obj, "compatibilityVersion", "Xcode 3.0");
@@ -1284,6 +1304,10 @@ string CMacProjectGenerator::GetProjHeaders(const CProjItem& prj)
 string CMacProjectGenerator::GetProjDependency(  const CProjItem& prj)
 {
     return GetProjId(prj) + "_dependency";
+}
+string CMacProjectGenerator::GetProjContainer(   const CProjItem& prj)
+{
+    return GetProjId(prj) + "_container";
 }
 string CMacProjectGenerator::GetTargetName( const CProjItem& prj)
 {

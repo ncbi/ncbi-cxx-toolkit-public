@@ -103,7 +103,8 @@ private:
     string AddConfigureTarget(const string& solution_name,
         CDict& dict_objects);
     string CreateRootObject(const string& configs_root,
-        CDict& dict_objects, CRef<CArray>& targets, const string& root_group);
+        CDict& dict_objects, CRef<CArray>& targets,
+        const string& root_group, const string& root_name);
     
     string GetUUID(void);
     string AddFile(CDict& dict, const string& name);
@@ -132,6 +133,7 @@ private:
     static string GetProjSources(  const CProjItem& prj);
     static string GetProjHeaders(  const CProjItem& prj);
     static string GetProjDependency(  const CProjItem& prj);
+    static string GetProjContainer(   const CProjItem& prj);
     static string GetTargetName(   const CProjItem& prj);
 
     static string GetMachOType(    const CProjItem& prj);
