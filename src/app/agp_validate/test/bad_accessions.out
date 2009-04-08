@@ -1,0 +1,48 @@
+
+1:chr22	1	11330000	1	N	11330000	short_arm	no
+2:chr22	11330001	13570000	2	N	2240000	centromere	no
+	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+
+No errors, 102 warnings; 101 not printed.
+  count  description
+      1  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+    101  gap line missing column 9 (null)
+
+
+
+Objects                :    1
+- with single component:    0
+
+Scaffolds              :  349
+- with single component:   54
+
+Components             : 4084 (W)
+	orientation +  : 2663
+	orientation -  : 1421
+	orientation 0  :    0
+	orientation na :    0
+
+Gaps                   : 4086 (N)
+- do not break scaffold: 3735
+  clone   , linkage yes:    0
+  fragment, linkage yes: 3735
+  fragment, linkage no :    0
+  repeat  , linkage yes:    0
+- break it, linkage no :  351
+	clone          :    0
+	repeat         :    0
+	contig         :  348
+	centromere     :    1
+	short_arm      :    1
+	heterochromatin:    0
+	telomere       :    1
+
+Object names:  1
+  chr22     :  1
+
+Component names                      :  4084
+  ABGA[01001503..01404031].[1,111111]:  4055 (some local or misspelled)
+  ABGA[01409238..01410146].1.1       :    26 (local or misspelled)
+  AAA[00027,28].1                    :     2 (some look like protein accessions)
+  .1                                 :     1 (local or misspelled)
+Use -g or -a to print lines with suspicious accessions.

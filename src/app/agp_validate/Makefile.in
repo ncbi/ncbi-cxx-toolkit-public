@@ -9,9 +9,16 @@ include @builddir@/Makefile.meta
 
 test : agp_validate
 	sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
-	diff $(srcdir)/test/bad_test.out bad_test.out
+	diff -u $(srcdir)/test/bad_test.out bad_test.out
 
 alt_test : agp_validate
 	sh -c "./agp_validate -alt $(srcdir)/test/alt_bad_test.agp >alt_bad_test.out 2>&1"
-	diff $(srcdir)/test/alt_bad_test.out alt_bad_test.out
+	diff -u $(srcdir)/test/alt_bad_test.out alt_bad_test.out
 
+test2 : agp_validate
+	sh -c 'curdir=`pwd` && cd $(srcdir) && $$curdir/agp_validate test/bad_test.agp test/alt_bad_test.agp >$$curdir/test2.out 2>&1'
+	diff -u $(srcdir)/test/test2.out test2.out
+
+acc_test : agp_validate
+	sh -c "./agp_validate $(srcdir)/test/bad_accessions.agp >bad_accessions.out 2>&1"
+	diff -u $(srcdir)/test/bad_accessions.out bad_accessions.out
