@@ -98,7 +98,7 @@ if test -z "$use_arch"; then
     use_arch="$arch"
   fi
 fi 
-PTB_ARCH="$use_arch"
+PTB_PLATFORM="$use_arch"
 
 # ------- configuration and flags
 if test "$use_dll" = "yes"; then
@@ -137,17 +137,17 @@ sln_path=`echo $sln_path | sed -e 's/ /_/g'`
 #--------------------------------------------------------------------------------
 # prepare and run ptb.sh
 
-export PTB_ARCH
+export PTB_PLATFORM
 export PTB_FLAGS
 export PTB_PATH=./static/bin/ReleaseDLL
 export SLN_PATH=$sln_path/$sln_name
 export TREE_ROOT=../../
 export BUILD_TREE_ROOT=./
-export PTB_PROJECT="$use_projectlst"
+export PTB_PROJECT_REQ="$use_projectlst"
 
 test -d "$sln_path" && rm -rf "$sln_path"
 mkdir "$sln_path"
-test -e "$TREE_ROOT/$PTB_PROJECT" || Error "$PTB_PROJECT not found"
+test -e "$TREE_ROOT/$PTB_PROJECT_REQ" || Error "$PTB_PROJECT_REQ not found"
 
 ./ptb.sh
 test $? -ne 0 && Error "Configuration failed"
