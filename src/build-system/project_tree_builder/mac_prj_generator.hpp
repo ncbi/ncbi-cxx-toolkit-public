@@ -104,7 +104,8 @@ private:
         CDict& dict_objects);
     string CreateRootObject(const string& configs_root,
         CDict& dict_objects, CRef<CArray>& targets,
-        const string& root_group, const string& root_name);
+        const string& root_group, const string& root_name,
+        const string& products_group);
     
     string GetUUID(void);
     string AddFile(CDict& dict, const string& name);

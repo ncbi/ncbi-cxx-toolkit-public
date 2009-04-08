@@ -80,6 +80,11 @@ bool s_String_less(const CRef<CArray::C_E>& x, const CRef<CArray::C_E>& y)
     return NStr::CompareNocase(x->GetString(), y->GetString()) < 0;
 }
 
+bool s_Key_less(const CRef<CDict::C_E>& x, const CRef<CDict::C_E>& y)
+{
+    return NStr::CompareNocase(x->GetKey(), y->GetKey()) < 0;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -112,6 +117,7 @@ void CMacProjectGenerator::Generate(const string& solution)
     
     xproj->SetAttlist().SetVersion("1.0");
     AddString( dict_root, "archiveVersion", "1");
+    AddDict(   dict_root, "classes");
 // 39  42  44
     AddString( dict_root, "objectVersion", GetApp().GetRegSettings().m_Version);
     CRef<CDict> dict_objects( AddDict( dict_root, "objects"));
@@ -122,6 +128,7 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> all_dependencies( new CArray);
     CRef<CArray> app_dependencies( new CArray);
     CRef<CArray> lib_dependencies( new CArray);
+    CRef<CArray> products( new CArray);
     
 #if USE_VERBOSE_NAMES
     string root_name("ROOT_OBJECT");
@@ -235,18 +242,18 @@ void CMacProjectGenerator::Generate(const string& solution)
         }
         // project product
         {
+            AddString( *products, proj_product);
             CRef<CDict> dict_product( AddDict( *dict_objects, proj_product));
             AddString( *dict_product, "explicitFileType", explicit_type);
+            AddString( *dict_product, "includeInIndex", "0");
+            AddString( *dict_product, "isa", "PBXFileReference");
             if (prj.m_ProjType == CProjKey::eDll) {
-                AddString( *dict_product, "isa", "PBXLibraryReference");
+                AddString( *dict_product, "path", string("lib") + prj.m_ID + string(".dylib"));
             } else if (prj.m_ProjType == CProjKey::eApp) {
-                AddString( *dict_product, "isa", "PBXFileReference");
                 AddString( *dict_product, "path", prj.m_ID);
             } else if (prj.m_ProjType == CProjKey::eLib) {
-                AddString( *dict_product, "isa", "PBXFileReference");
                 AddString( *dict_product, "path", string("lib") + prj.m_ID + string(".a"));
             }
-//            AddString( *dict_product, "refType", "3");
             AddString( *dict_product, "sourceTree", "BUILT_PRODUCTS_DIR");
         }
     }
@@ -255,15 +262,19 @@ void CMacProjectGenerator::Generate(const string& solution)
 #if USE_VERBOSE_NAMES
     string source_files("Source_Files");
     string root_group("Main_Group");
+    string products_group("Products_Group");
 #else
-    string source_files(GetUUID());
-    string root_group( GetUUID());    
+    string source_files(   GetUUID());
+    string root_group(     GetUUID());    
+    string products_group( GetUUID());
 #endif
 
     file_groups->Set().sort(s_String_less);
     AddGroupDict( *dict_objects, source_files, file_groups, "Sources");
+    AddGroupDict( *dict_objects, products_group, products, "Products");
     CRef<CArray> main_groups( new CArray);
     AddString( *main_groups, source_files);
+    AddString( *main_groups, products_group);
     AddGroupDict( *dict_objects, root_group, main_groups, "NCBI C++ Toolkit");
 
     targets->Set().sort(s_String_less);
@@ -282,7 +293,12 @@ void CMacProjectGenerator::Generate(const string& solution)
 
 // root object
     AddString( dict_root, "rootObject",
-        CreateRootObject(configs_root, *dict_objects, targets, root_group, root_name));
+        CreateRootObject(configs_root, *dict_objects, targets,
+            root_group, root_name, products_group));
+
+#if !USE_VERBOSE_NAMES
+    dict_objects->Set().sort(s_Key_less);
+#endif
 
 // save project
     Save(solution_name, *xproj);
@@ -817,17 +833,6 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     AddCompilerSetting( *settings, cfg, "DEBUG_INFORMATION_FORMAT");
     AddCompilerSetting( *settings, cfg, "GCC_DEBUGGING_SYMBOLS");
 
-#if 0
-// moved into project settings
-    tmp_str = GetApp().GetMetaMakefile().GetCompilerOpt("GCC_PREPROCESSOR_DEFINITIONS", cfg);
-    tmp_list.clear();
-    NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
-    CRef<CArray> preproc( AddArray( *settings, "GCC_PREPROCESSOR_DEFINITIONS"));
-    ITERATE( list<string>, a, tmp_list) {
-        AddString( *preproc, *a);
-    }
-#endif
-
     AddCompilerSetting( *settings, cfg, "SDKROOT");
     AddCompilerSetting( *settings, cfg, "FRAMEWORK_SEARCH_PATHS");
 
@@ -840,14 +845,6 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     } else {
         AddString( *settings, "STANDARD_C_PLUS_PLUS_LIBRARY_TYPE", "static");
     }
-/* this, sort of, helps; but it is wrong
-    string built = 
-        CDirEntry::ConcatPath( CDirEntry::ConcatPath( CDirEntry::ConcatPath(
-            GetApp().GetProjectTreeInfo().m_Compilers,
-            GetApp().GetRegSettings().m_CompilersSubdir),
-            GetApp().GetBuildType().GetTypeStr()), "bin/$(CONFIGURATION)");
-    AddString( *settings, "BUILT_PRODUCTS_DIR", built);
-*/
 }
 
 void CMacProjectGenerator::CreateProjectBuildSettings(
@@ -1094,7 +1091,7 @@ string CMacProjectGenerator::AddConfigureTarget(
 
 string CMacProjectGenerator::CreateRootObject(
     const string& configs_root, CDict& dict_objects, CRef<CArray>& targets,
-    const string& root_group, const string& root_name)
+    const string& root_group, const string& root_name, const string& products_group)
 {
     CRef<CDict> root_obj( AddDict( dict_objects, root_name));
     AddString( *root_obj, "buildConfigurationList", configs_root);
@@ -1102,6 +1099,7 @@ string CMacProjectGenerator::CreateRootObject(
     AddString( *root_obj, "hasScannedForEncodings", "1");
     AddString( *root_obj, "isa", "PBXProject");
     AddString( *root_obj, "mainGroup", root_group);
+    AddString( *root_obj, "productRefGroup", products_group);
     AddString( *root_obj, "projectDirPath", "");
     AddString( *root_obj, "projectRoot", "");
     AddArray(  *root_obj, "targets", targets);
@@ -1171,7 +1169,7 @@ void  CMacProjectGenerator::AddGroupDict(
     AddArray(  *group, "children", children);
     AddString( *group, "isa", "PBXGroup");
     AddString( *group, "name", name);
-    AddString( *group, "refType", "4");
+    AddString( *group, "sourceTree", "<group>");
 }
 
 
