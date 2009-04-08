@@ -257,6 +257,8 @@ inline void s_HandleRunJobError(CGridThreadContext& thr_context,
     }
 }
 
+static bool s_ReqEventsDisabled = false;
+
 class CRequestStateGuard
 {
 public:
@@ -288,7 +290,8 @@ CRequestStateGuard::CRequestStateGuard(CWorkerNodeJobContext& job_context) :
 
     request_context.SetAppState(eDiagAppState_RequestBegin);
 
-    GetDiagContext().PrintRequestStart().Print("jid", job.job_id);
+    if (!s_ReqEventsDisabled)
+        GetDiagContext().PrintRequestStart().Print("jid", job.job_id);
 }
 
 inline void CRequestStateGuard::RequestStart()
@@ -316,7 +319,8 @@ CRequestStateGuard::~CRequestStateGuard()
         /* FALL THROUGH */
 
     default:
-        GetDiagContext().PrintRequestStop();
+        if (!s_ReqEventsDisabled)
+            GetDiagContext().PrintRequestStop();
         request_context.SetAppState(eDiagAppState_NotSet);
         request_context.UnsetSessionID();
         request_context.UnsetClientIP();
@@ -758,6 +762,11 @@ bool CGridWorkerNode::IsExclusiveMode()
         return false;
     }
     return true;
+}
+
+void CGridWorkerNode::DisableDefaultRequestEventLogging()
+{
+    s_ReqEventsDisabled = true;
 }
 
 

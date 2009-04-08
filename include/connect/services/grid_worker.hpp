@@ -563,6 +563,10 @@ public:
 
     bool IsExclusiveMode();
 
+    /// Disable the automatic logging of request-start and
+    /// request-stop events by the framework itself.
+    static void DisableDefaultRequestEventLogging();
+
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
     IBlobStorageFactory&         m_NSStorageFactory;
