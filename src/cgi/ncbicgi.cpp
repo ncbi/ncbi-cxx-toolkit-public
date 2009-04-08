@@ -1339,7 +1339,7 @@ typedef NCBI_PARAM_TYPE(CGI, LOG_EXCLUDE_ARGS) TCGI_LogExcludeArgs;
 // The listed arguments are truncated to the size specified.
 // '*' may be used to limit size of all unlisted arguments.
 NCBI_PARAM_DECL(string, CGI, LOG_LIMIT_ARGS);
-NCBI_PARAM_DEF_EX(string, CGI, LOG_LIMIT_ARGS, kEmptyStr, eParam_NoThread,
+NCBI_PARAM_DEF_EX(string, CGI, LOG_LIMIT_ARGS, "*:1000000", eParam_NoThread,
                   CGI_LOG_LIMIT_ARGS);
 typedef NCBI_PARAM_TYPE(CGI, LOG_LIMIT_ARGS) TCGI_LogLimitArgs;
 
