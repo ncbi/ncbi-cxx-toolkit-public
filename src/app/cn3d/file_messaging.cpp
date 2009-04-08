@@ -73,7 +73,14 @@ static fstream * CreateLock(const CDirEntry& lockFile)
         return NULL;
     }
 
-    auto_ptr<fstream> lockStream(CFile::CreateTmpFile(lockFile.GetPath(), CFile::eText, CFile::eAllowRead));
+//    auto_ptr<fstream> lockStream(CFile::CreateTmpFile(lockFile.GetPath(), CFile::eText, CFile::eAllowRead));
+#if defined(NCBI_OS_MSWIN)
+    FILE* lockFileHandle = fopen(lockFile.GetPath().c_str(), "w+");
+    auto_ptr<fstream> lockStream(new fstream(lockFileHandle));
+#else
+    auto_ptr<fstream> lockStream(new fstream(lockFile.GetPath().c_str(), "w+"));
+#endif
+
     if (lockStream.get() == NULL || !(*lockStream)) {
         TRACEMSG("unable to establish a lock - cannot create lock file");
         return NULL;
@@ -125,10 +132,17 @@ FileMessenger::~FileMessenger(void)
                 ++nTries;
             } while (lockStream.get() == NULL && nTries <= 30);
         }
-        if (lockStream.get() != NULL)
+        if (lockStream.get() != NULL) {
             SendPendingCommands();
+
+            //  Explicitly clean up the lock file.
+            //  In case of an exception, auto_ptr should automatically delete it.
+            lockStream->close();
+            lockFile.Remove();
+        } 
         else
             ERRORMSG("Timeout occurred when attempting to flush pending commands to file");
+        
     }
 
     // sanity check to make sure each command received was sent a reply
@@ -256,7 +270,10 @@ void FileMessenger::PollMessageFile(void)
         lastKnownSize = 0;
     }
 
-    // lock file automatically deleted upon return...
+    //  Explicitly clean up the lock file.
+    //  In case of an exception, auto_ptr should automatically delete it.
+    lockStream->close();
+    lockFile.Remove();
 }
 
 static const string COMMAND_END = "### END COMMAND ###";
