@@ -480,23 +480,6 @@ void CJobStatusTracker::GetAliveJobs(TNSBitVector& ids)
 }
 
 
-unsigned
-CJobStatusTracker::GetPendingJobNoLock()
-{
-    TNSBitVector& bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
-
-    unsigned job_id;
-    job_id = bv.extract_next(m_LastPending);
-    if (job_id) {
-        TNSBitVector& bv2 =
-            *m_StatusStor[(int) CNetScheduleAPI::eRunning];
-        bv2.set_bit(job_id, true);
-        m_LastPending = job_id;
-    }
-    return job_id;
-}
-
-
 bool CJobStatusTracker::AnyPending() const
 {
     const TNSBitVector& bv =

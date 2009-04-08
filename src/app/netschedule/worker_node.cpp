@@ -97,7 +97,7 @@ std::string CWorkerNode::AsString(time_t curr, EWNodeFormat fmt) const
         if (!m_Id.empty()) {
             s += "node_id=" + m_Id + " ";
         }
-        s += "jobs:";
+        s += "jobs=";
         ITERATE(TJobInfoById, it, m_JobInfoById) {
             s += " ";
             s += NStr::UIntToString((*it)->job_id);
@@ -357,13 +357,14 @@ void CQueueWorkerNodeList::GetNodes(time_t t, list<TWorkerNodeRef>& nodes) const
 
 
 void CQueueWorkerNodeList::GetNodesInfo(time_t t,
-                                        list<string>& nodes_info) const
+                                        list<string>& nodes_info,
+                                        EWNodeFormat fmt) const
 {
     CReadLockGuard guard(m_Lock);
     ITERATE(TWorkerNodeRegister, it, m_WorkerNodeRegister) {
         const CWorkerNode* node = *it;
         if (node->ValidityTime() > t) {
-            nodes_info.push_back(node->AsString(t));
+            nodes_info.push_back(node->AsString(t, fmt));
         } else {
             // DEBUG
             //nodes_info.push_back(node.AsString(t)+" invalid");
@@ -444,6 +445,7 @@ void CQueueWorkerNodeList::IdentifyWorkerNodeByAddress(
         // Use the current WN and make it an "identified" node
         // by assigning a port number.
         use_or_replace_wn->m_Port = port;
+        m_WorkerNodeByAddress.insert(use_or_replace_wn);
 }
 
 void CQueueWorkerNodeList::IdentifyWorkerNodeByJobId(
@@ -506,6 +508,7 @@ void CQueueWorkerNodeList::MergeWorkerNodes(
     if (identified->m_NotifyTime < temporary->m_NotifyTime)
         identified->m_NotifyTime = temporary->m_NotifyTime;
 
+    m_WorkerNodeRegister.erase(temporary);
     temporary = identified;
 }
 

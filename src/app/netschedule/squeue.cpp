@@ -1172,7 +1172,7 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
     // established affinity
 
     // try to find a vacant(not taken by any other worker node) affinity id
-    if (!job_id) {
+    if (false && !job_id) { // DEBUG <- this is the most expensive affinity op, disable it for now
         TNSBitVector assigned_aff;
         {{
             CFastMutexGuard aff_guard(m_AffinityMapLock);
@@ -1470,7 +1470,7 @@ void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out,
                                        EWNodeFormat fmt) const
 {
     list<string> nodes_info;
-    m_WorkerNodeList.GetNodesInfo(curr, nodes_info);
+    m_WorkerNodeList.GetNodesInfo(curr, nodes_info, fmt);
     ITERATE(list<string>, it, nodes_info) {
         out << *it << "\n";
     }

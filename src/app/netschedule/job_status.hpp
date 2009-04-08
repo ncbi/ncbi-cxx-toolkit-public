@@ -233,7 +233,6 @@ protected:
                                 TJobStatus status,
                                 TJobStatus old_status);
 
-    unsigned GetPendingJobNoLock();
     void IncDoneJobs();
 
 private:

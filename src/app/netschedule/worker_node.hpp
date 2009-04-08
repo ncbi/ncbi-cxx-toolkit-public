@@ -120,7 +120,7 @@ public:
     bool ShouldNotify(time_t curr) const;
     time_t ValidityTime() const;
     void UpdateValidityTime();
-    string AsString(time_t curr, EWNodeFormat fmt = eWNF_Old) const;
+    string AsString(time_t curr, EWNodeFormat fmt) const;
 
     const string& GetId() const {return m_Id;}
     unsigned GetHost() const {return m_Host;}
@@ -247,7 +247,9 @@ public:
     // Get all active nodes
     void GetNodes(time_t t, list<TWorkerNodeRef>& nodes) const;
     // Get printable information about all active nodes
-    void GetNodesInfo(time_t t, list<string>& nodes_info) const;
+    void GetNodesInfo(time_t t,
+                      list<string>& nodes_info,
+                      EWNodeFormat fmt = eWNF_Old) const;
 
     void RegisterNotificationListener(CWorkerNode*           worker_node,
                                       unsigned               timeout);
