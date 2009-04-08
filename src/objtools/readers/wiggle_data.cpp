@@ -508,16 +508,16 @@ unsigned char CWiggleTrack::ByteGraphValue(
     double dRaw( 0 );
     if ( ! DataValue( uStart, dRaw ) ) {
         // return 0 as the gap value
-        return unsigned char( 0 );
+        return static_cast<unsigned char>( 0 );
     }
     else {
         // scale into interval [1,255]
         if ( m_dMinValue == m_dMaxValue ) {
-            return unsigned char( (dRaw ? 255 : 1) );
+            return static_cast<unsigned char>( (dRaw ? 255 : 1) );
         }
         double dScaled =  1 +
             ( 254 * (dRaw - m_dMinValue) / (m_dMaxValue - m_dMinValue) );
-        return unsigned char( dScaled + 0.5 );
+        return static_cast<unsigned char>( dScaled + 0.5 );
     }
     
     
@@ -553,11 +553,8 @@ void CWiggleTrack::Dump(
     CNcbiOstream& Out )
 //  ===========================================================================
 {
-    char cBuffer[ 256 ];
-    sprintf( cBuffer, 
-        "track chrom=%s seqstart=%d seqstop=%d count=%d", 
-        Chrom(), SeqStart(), SeqStop(), Count() );
-    Out << cBuffer << endl;
+    Out << "track chrom=" << Chrom() << " seqstart=" << SeqStart()
+        << " seqstop=" << SeqStop() << " count=" << Count() << endl;
     for (DataIter it = m_Entries.begin(); it != m_Entries.end(); ++it ) {
         it->second->Dump( Out );
     }
@@ -569,9 +566,7 @@ void CWiggleData::Dump(
     CNcbiOstream& Out )
 //  ===========================================================================
 {
-    char cBuffer[ 80 ];
-    sprintf( cBuffer, "  data start=%d value=%f", SeqStart(), Value() );
-    Out << cBuffer << endl;
+    Out << "  data start=" << SeqStart() << " value=" << Value() << endl;
 }
 
 END_objects_SCOPE
