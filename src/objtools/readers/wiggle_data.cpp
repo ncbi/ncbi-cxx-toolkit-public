@@ -233,7 +233,8 @@ CWiggleTrack::CWiggleTrack(
 //  ===========================================================================
     m_strName( record.Name() ),
     m_strChrom( record.Chrom() ),
-    m_uGraphType( GRAPH_UNKNOWN )
+    m_uGraphType( GRAPH_UNKNOWN ),
+    m_uSeqLength( 0 )
 {
     CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );
     m_Entries[ pData->SeqStart() ] = pData;
@@ -451,7 +452,7 @@ bool CWiggleTrack::FillGraphInt(
 bool CWiggleTrack::FillGraphByte(
     CByte_graph& graph )
 //
-//  Idea:   Scale the set of values found linearly to the intercal 1 (lowest)
+//  Idea:   Scale the set of values found linearly to the interval 1 (lowest)
 //          to 255 (highest). Gap "values" are set to 0.
 //  ===========================================================================
 {
