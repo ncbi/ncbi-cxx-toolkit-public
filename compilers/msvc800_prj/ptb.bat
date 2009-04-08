@@ -36,33 +36,56 @@ REM ===========================================================================
 
 set DEFPTB_VERSION=1.7.6
 set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
+set IDE=800
+set PTB_EXTRA=
 
-if "%PREBUILT_PTB_EXE%"=="" (
-  if "%PTB_PLATFORM%"=="x64" (
-    set PREBUILT_PTB_EXE=%DEFPTB_LOCATION%\msvc8.64\%DEFPTB_VERSION%\project_tree_builder.exe
+for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
+  if %%v=="" (
+    echo ERROR: required environment variable is missing
+    echo DO NOT ATTEMPT to run this bat file manually
+    echo It should be run by CONFIGURE project only
+    exit /b 1
+  )
+)
+
+for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do set PTB_VER=%%a%%b%%c
+if %PTB_VER% GEQ 180 (
+  set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
+)
+if "%PREBUILT_PTB_EXE%"=="bootstrap" (
+  set DEF_PTB=%PTB_PATH%\project_tree_builder.exe
+) else if not "%PREBUILT_PTB_EXE%"=="" (
+  if exist "%PREBUILT_PTB_EXE%" (
+    set DEF_PTB=%PREBUILT_PTB_EXE%
   ) else (
-    set PREBUILT_PTB_EXE=%DEFPTB_LOCATION%\msvc8\%DEFPTB_VERSION%\project_tree_builder.exe
+    echo ERROR: "%PREBUILT_PTB_EXE%" not found
+    exit /b 1
   )
 ) else (
-  if not exist "%PREBUILT_PTB_EXE%" (
-    if not "%PREBUILT_PTB_EXE%"=="bootstrap" (
-      echo ERROR: "%PREBUILT_PTB_EXE%" not found
-      exit /b 1
+  if %PTB_VER% GEQ 180 (
+    set DEF_PTB=%DEFPTB_LOCATION%\msvc\%DEFPTB_VERSION%\project_tree_builder.exe
+  ) else (
+    if "%PTB_PLATFORM%"=="x64" (
+      set DEF_PTB=%DEFPTB_LOCATION%\msvc8.64\%DEFPTB_VERSION%\project_tree_builder.exe
+    ) else (
+      set DEF_PTB=%DEFPTB_LOCATION%\msvc8\%DEFPTB_VERSION%\project_tree_builder.exe
     )
   )
 )
-set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
-if not "%PREBUILT_PTB_EXE%"=="bootstrap" (
-  "%PREBUILT_PTB_EXE%" -version >NUL
-  if errorlevel 1 (
-    echo "%PREBUILT_PTB_EXE%" not found
-    set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
-  ) else (
-    set PTB_EXE=%PREBUILT_PTB_EXE%
-  )
+if exist "%DEF_PTB%" (
+  set PTB_EXE=%DEF_PTB%
+) else (
+  echo Prebuilt project_tree_builder.exe not found
+  set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
 )
 
+set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
+if not exist "%PTB_INI%" (
+  echo ERROR: "%PTB_INI%" not found
+  exit /b 1
+)
 if "%PTB_PROJECT%"=="" set PTB_PROJECT=%PTB_PROJECT_REQ%
+
 if not exist "%PTB_EXE%" (
   echo ******************************************************************************
   echo Building project tree builder locally, please wait
@@ -74,21 +97,29 @@ if not exist "%PTB_EXE%" (
   echo Using PREBUILT project tree builder at %PTB_EXE%
   echo ******************************************************************************
 )
+if not exist "%PTB_EXE%" (
+  echo ERROR: "%PTB_EXE%" not found
+  exit /b 1
+)
 "%PTB_EXE%" -version
 if errorlevel 1 (
   echo ERROR: cannot find working %PTB_EXE%
   exit /b 1
 )
+
 call "%BUILD_TREE_ROOT%\lock_ptb_config.bat" ON "%BUILD_TREE_ROOT%\"
 if errorlevel 1 exit /b 1
+
 echo ******************************************************************************
 echo Running -CONFIGURE- please wait
 echo ******************************************************************************
 @echo on
-"%PTB_EXE%" %PTB_FLAGS% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%TREE_ROOT%\src\build-system\project_tree_builder.ini" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+"%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
 @echo off
 if errorlevel 1 (set PTB_RESULT=1) else (set PTB_RESULT=0)
+
 call "%BUILD_TREE_ROOT%\lock_ptb_config.bat" OFF "%BUILD_TREE_ROOT%\"
+
 if "%PTB_RESULT%"=="1" (
   echo ******************************************************************************
   echo -CONFIGURE- has failed
