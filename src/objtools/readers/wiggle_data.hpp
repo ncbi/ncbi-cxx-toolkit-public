@@ -145,8 +145,9 @@ protected:
     bool FillGraphByte(
         CByte_graph& );
         
-    double DataValue(
-        unsigned int );
+    bool DataValue(
+        unsigned int,
+        double& );
 
     unsigned char ByteGraphValue(
         unsigned int );

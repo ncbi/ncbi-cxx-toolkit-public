@@ -431,7 +431,21 @@ bool CWiggleTrack::FillGraphReal(
     unsigned int uDataSize = (SeqStop() - SeqStart() + 1) / SeqSpan();
     vector<double> values( uDataSize, 0 );
     for ( unsigned int u = 0; u < uDataSize; ++u ) {
-        values[ u ] = DataValue( SeqStart() + u * SeqSpan() ); 
+    
+        //  *******************************************************************
+        //  Note:
+        //  This code does not properly distiguish between missing values and 
+        //  values being ==0. Need to come up with a convention if we ever
+        //  commit to supporting float graph data.
+        //  The byte graph convention does not quite carry over.
+        //  ******************************************************************* 
+        double dRaw( 0 );
+        if ( DataValue( SeqStart() + u * SeqSpan(), dRaw ) ) {
+            values[ u ] = dRaw;
+        }
+        else {
+            values[ u ] = 0;
+        } 
     }
     graph.SetMin( m_dMinValue );
     graph.SetMax( m_dMaxValue );
@@ -470,8 +484,9 @@ bool CWiggleTrack::FillGraphByte(
 }
 
 //  ===========================================================================
-double CWiggleTrack::DataValue(
-    unsigned int uStart )
+bool CWiggleTrack::DataValue(
+    unsigned int uStart,
+    double& dValue )
 //  ===========================================================================
 {
     if ( GRAPH_UNKNOWN == m_uGraphType ) {
@@ -479,9 +494,10 @@ double CWiggleTrack::DataValue(
     }
     DataIter it = m_Entries.find( uStart );
     if ( it == m_Entries.end() ) {
-        return 0;
+        return false;
     }
-    return it->second->Value();
+    dValue = it->second->Value();
+    return true;
 }
 
 //  ===========================================================================
@@ -489,14 +505,22 @@ unsigned char CWiggleTrack::ByteGraphValue(
     unsigned int uStart )
 //  ===========================================================================
 {
-    double dRawValue = DataValue( uStart );
-    if ( m_dMinValue == m_dMaxValue ) {
-        return (dRawValue ? 255 : 0);
+    double dRaw( 0 );
+    if ( ! DataValue( uStart, dRaw ) ) {
+        // return 0 as the gap value
+        return unsigned char( 0 );
+    }
+    else {
+        // scale into interval [1,255]
+        if ( m_dMinValue == m_dMaxValue ) {
+            return unsigned char( (dRaw ? 255 : 1) );
+        }
+        double dScaled =  1 +
+            ( 254 * (dRaw - m_dMinValue) / (m_dMaxValue - m_dMinValue) );
+        return unsigned char( dScaled + 0.5 );
     }
     
-    unsigned char dByteValue = (unsigned char)
-        ( 255 * (dRawValue - m_dMinValue) / (m_dMaxValue - m_dMinValue) );
-    return dByteValue;
+    
 }
 
 //  ===========================================================================
