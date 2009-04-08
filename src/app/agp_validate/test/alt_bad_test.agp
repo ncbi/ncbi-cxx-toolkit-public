@@ -1,0 +1,20 @@
+scaffold_0	1	2106	1	W	AAGU02000001.15	1	2106	+#bad version
+scaffold_0	2107	4201	2	N	2095	fragment	yes
+scaffold_0	4202	5883	3	W	AAGU02000002	1	1682	+
+scaffold_0	5884	6957	4	N	1074	fragment	yes
+scaffold_0	6958	9528	5	W	AAAGU02000003	1	2571	+#invalid accession format
+scaffold_0	9529	9773	6	N	245	fragment	yes
+scaffold_0	9774	15308	7	W	AAGU02000004	1	5535	+
+scaffold_0	15309	16358	8	N	1050	fragment	yes
+scaffold_0	16359	18971	9	W	AAGU02222225	1	2613	+#component_end greater than sequence length
+scaffold_0	18972	33218	10	N	14247	fragment	yes
+scaffold_0	33219	39689	11	W	AAGU02000006	1	6471	+
+scaffold_0	39690	39981	12	N	292	fragment	yes
+scaffold_0	39982	41445	13	W	ABRQ01000007	1	1464	+#bad taxid
+scaffold_0	41446	41673	14	N	228	fragment	yes
+scaffold_0	41674	42468	15	W	AAGU02990008	1	795	+#does not exist
+scaffold_0	42469	42800	16	N	332	fragment	yes
+scaffold_0	42801	50886	17	W	AAGU02000009	1	8086	+
+scaffold_0	50887	51259	18	N	373	fragment	yes
+scaffold_0	51260	62231	19	W	NT_165199	1	10972	+#ambiguous without version
+scaffold_0	62232	62557	20	N	326	fragment	yes

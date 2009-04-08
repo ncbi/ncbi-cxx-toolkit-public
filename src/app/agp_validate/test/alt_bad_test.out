@@ -1,0 +1,28 @@
+
+1:scaffold_0	1	2106	1	W	AAGU02000001.15	1	2106	+#bad version
+	ERROR: component_id not in GenBank: AAGU02000001.15
+
+5:scaffold_0	6958	9528	5	W	AAAGU02000003	1	2571	+#invalid accession format
+	ERROR: invalid component_id: AAAGU02000003
+
+9:scaffold_0	16359	18971	9	W	AAGU02222225	1	2613	+#component_end greater than sequence length
+	ERROR: component_end greater than sequence length: 2613 > AAGU02222225 length = 2083 bp
+
+15:scaffold_0	41674	42468	15	W	AAGU02990008	1	795	+#does not exist
+	ERROR: component_id not in GenBank: AAGU02990008
+
+19:scaffold_0	51260	62231	19	W	NT_165199	1	10972	+#ambiguous without version
+	ERROR: component_id NT_165199 (current version 3) is ambiguous without an explicit version
+The AGP taxid is: 9785
+Components with incorrect taxids:
+	13: ABRQ01000007 - Taxid 9813
+
+
+7 lines with GenBank component accessions.
+15 errors, 10 not printed:
+  count  description
+     10  gap line missing column 9 (null)
+      1  invalid component_id
+      2  component_id not in GenBank
+      1  component_id X is ambiguous without an explicit version
+      1  component_end greater than sequence length
