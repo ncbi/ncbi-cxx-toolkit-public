@@ -165,6 +165,15 @@ TARGET="BUILD_ALL"
   echo "all :"
   echo "\txcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION}"
   echo
+  echo "clean :"
+  echo "\txcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION} clean"
+  echo
+  echo "all_r : all"
+  echo "all_p : all"
+  echo "clean_r : clean"
+  echo "clean_p : clean"
+  echo "purge : clean"
+  echo
 } > $sln_path/$mk_name
 
 #--------------------------------------------------------------------------------
