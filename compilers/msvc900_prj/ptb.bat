@@ -77,7 +77,7 @@ if "%PREBUILT_PTB_EXE%"=="bootstrap" (
 if exist "%DEF_PTB%" (
   set PTB_EXE=%DEF_PTB%
 ) else (
-  echo Prebuilt project_tree_builder.exe not found
+  echo project_tree_builder.exe not found at %DEF_PTB%
   set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
 )
 
