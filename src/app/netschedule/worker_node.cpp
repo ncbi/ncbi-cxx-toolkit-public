@@ -483,6 +483,8 @@ void CQueueWorkerNodeList::DisplaceWorkerNodeJobs(
 void CQueueWorkerNodeList::MergeWorkerNodes(
     TWorkerNodeRef& temporary, CWorkerNode* identified)
 {
+    if (temporary == identified) return;
+
     _ASSERT(identified->IsIdentified());
 
     identified->m_JobInfoById.insert(temporary->m_JobInfoById.begin(),
