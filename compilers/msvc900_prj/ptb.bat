@@ -39,6 +39,8 @@ set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 set IDE=900
 set PTB_EXTRA=
 
+call "%BUILD_TREE_ROOT%\msvcvars.bat"
+
 for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
   if %%v=="" (
     echo ERROR: required environment variable is missing
@@ -90,8 +92,11 @@ if not exist "%PTB_EXE%" (
   echo ******************************************************************************
   echo Building project tree builder locally, please wait
   echo ******************************************************************************
-  @echo msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM%
-  msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM%
+  rem --- @echo msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
+  rem --- msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
+  @echo %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
+  %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
+
 ) else (
   echo ******************************************************************************
   echo Using PREBUILT project tree builder at %PTB_EXE%
