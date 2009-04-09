@@ -432,31 +432,34 @@ CQueueWorkerNodeList::UnRegisterNotificationListener(CWorkerNode* worker_node)
 
 
 void CQueueWorkerNodeList::IdentifyWorkerNodeByAddress(
-    TWorkerNodeRef& use_or_replace_wn, unsigned short port)
+    TWorkerNodeRef& temporary_wn, unsigned short port)
 {
     CWriteLockGuard guard(m_Lock);
 
-    CWorkerNode* existing_wn = FindWorkerNodeByAddress(
-        use_or_replace_wn->GetHost(), port);
+    CWorkerNode* identified_wn = FindWorkerNodeByAddress(
+        temporary_wn->GetHost(), port);
 
-    if (existing_wn != NULL)
-        MergeWorkerNodes(use_or_replace_wn, existing_wn);
-    else
+    if (identified_wn != NULL)
+        MergeWorkerNodes(temporary_wn, identified_wn);
+    else {
         // Use the current WN and make it an "identified" node
         // by assigning a port number.
-        use_or_replace_wn->m_Port = port;
-        m_WorkerNodeByAddress.insert(use_or_replace_wn);
+        temporary_wn->m_Port = port;
+        m_WorkerNodeByAddress.insert(temporary_wn);
+    }
 }
 
 void CQueueWorkerNodeList::IdentifyWorkerNodeByJobId(
-    TWorkerNodeRef& use_or_replace_wn, TNSJobId job_id)
+    TWorkerNodeRef& temporary_wn, TNSJobId job_id)
 {
     CWriteLockGuard guard(m_Lock);
 
     SJobInfo* job_info = FindJobById(job_id);
 
-    if (job_info != NULL)
-        MergeWorkerNodes(use_or_replace_wn, job_info->assigned_node);
+    // Check that the job is not assigned to a temporary worker node.
+    if (job_info != NULL && job_info->assigned_node->IsIdentified() &&
+            temporary_wn->m_Host == job_info->assigned_node->m_Host)
+        MergeWorkerNodes(temporary_wn, job_info->assigned_node);
 }
 
 CQueueWorkerNodeList::~CQueueWorkerNodeList()
@@ -483,10 +486,6 @@ void CQueueWorkerNodeList::DisplaceWorkerNodeJobs(
 void CQueueWorkerNodeList::MergeWorkerNodes(
     TWorkerNodeRef& temporary, CWorkerNode* identified)
 {
-    if (temporary == identified) return;
-
-    _ASSERT(identified->IsIdentified());
-
     identified->m_JobInfoById.insert(temporary->m_JobInfoById.begin(),
         temporary->m_JobInfoById.end());
 

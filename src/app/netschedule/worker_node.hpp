@@ -257,12 +257,17 @@ public:
     // cleared and jobs which ran on the node should be failed.
     bool UnRegisterNotificationListener(CWorkerNode* worker_node);
 
+    // Replaces temporary_wn with a pointer to an "identified" node
+    // if it exists. Otherwise, makes this temporary_wn identified
+    // by assigning the port number to it and updates the indices.
     void IdentifyWorkerNodeByAddress(
-        TWorkerNodeRef& use_or_replace_wn,
+        TWorkerNodeRef& temporary_wn,
         unsigned short port);
 
+    // This method can leave the temporary worker node "unidentified"
+    // if job_id belongs to another (or the same) temporary worker node.
     void IdentifyWorkerNodeByJobId(
-        TWorkerNodeRef& use_or_replace_wn,
+        TWorkerNodeRef& temporary_wn,
         TNSJobId job_id);
 
     ~CQueueWorkerNodeList();
