@@ -935,10 +935,16 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
     
     string check_authors;
-    k = makefile.m_Contents.find("CHECK_AUTHORS");
+    k = makefile.m_Contents.find("WATCHERS");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
         check_authors = NStr::Join(k->second, " ");
+    } else {
+        k = makefile.m_Contents.find("CHECK_AUTHORS");
+        if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
+            check_authors = NStr::Join(k->second, " ");
+        }
     }
+
     k = makefile.m_Contents.find("CHECK_CMD");
     if ( check_requires_ok && k != makefile.m_Contents.end() ) {
         const list<string> check_cmd_list = k->second;
