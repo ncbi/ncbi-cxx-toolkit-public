@@ -1,0 +1,52 @@
+
+1:LACBIscaffold_1	1	1103	1	W	LACBIscaffold_1_Cont1	1	1103	+
+	ERROR: component_end greater than sequence length: 1103 > LACBIscaffold_1_Cont1 length = 630 bp
+
+3:LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
+	ERROR: invalid component_id: LACBIscaffold_1_Cont2
+
+5:LACBIscaffold_1	5257	7700	5	W	LACBIscaffold_1_Cont3	1	2444	+
+	ERROR: invalid component_id: LACBIscaffold_1_Cont3
+
+7:LACBIscaffold_1	7751	510427	7	W	LACBIscaffold_1_Cont4	1	502677	+
+	ERROR: invalid component_id: LACBIscaffold_1_Cont4
+
+9:LACBIscaffold_1	510478	511862	9	W	LACBIscaffold_1_Cont5	1	1385	+
+	ERROR: invalid component_id: LACBIscaffold_1_Cont5
+
+10:LACBIscaffold_1	511863	512826	10	N	964	fragment	yes	
+	WARNING: gap at the end of object LACBIscaffold_1
+
+5 errors, 1 warning.
+  count  description
+      1  gap at the end of object 
+      4  invalid component_id
+      1  component_end greater than sequence length
+
+
+
+Objects                : 1
+- with single component: 0
+
+Scaffolds              : 1
+- with single component: 0
+
+Components             : 5 (W)
+	orientation +  : 5
+	orientation -  : 0
+	orientation 0  : 0
+	orientation na : 0
+
+Gaps                   : 5 (N)
+- do not break scaffold: 5
+  clone   , linkage yes: 0
+  fragment, linkage yes: 5
+  fragment, linkage no : 0
+  repeat  , linkage yes: 0
+- break it, linkage no : 0
+
+Object names     :  1
+  LACBIscaffold_1:  1
+
+Component names             :  5
+  LACBIscaffold_1_Cont[1..5]:  5
