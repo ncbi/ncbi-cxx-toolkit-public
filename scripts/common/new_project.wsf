@@ -603,6 +603,7 @@
             }
             var ptb_command_line;
             ptb_command_line  = "\"" + ptb + "\"";
+            ptb_command_line += GetPtbTargetSolutionArgs(oShell, ptb);
             if ( oTask.DllBuild ) {
                 ptb_command_line += " -dll";
             }

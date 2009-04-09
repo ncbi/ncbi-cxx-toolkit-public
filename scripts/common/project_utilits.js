@@ -68,6 +68,26 @@ function silent_execute(oShell, command)
     return oExec.ExitCode;
 }
 
+function get_ncbiapp_version(oShell, ncbiapp)
+{
+    var ver = "";
+    var oExec = oShell.Exec("cmd /c \"" + ncbiapp + " -version\"");
+    while( oExec.Status == 0 ) {
+        WScript.Sleep(100);
+    }
+    while (!oExec.StdOut.AtEndOfStream) {
+        var line = oExec.StdOut.ReadLine();
+        if (ver.length == 0) {
+          var sep = line.indexOf(": ");
+          if (sep > 0) {
+            ver = line.substr(sep + 2);
+            ver = ver.replace(/[.]/g,"");
+          }
+        }
+    }
+    return ver;
+}
+
 // convert all back-slashes to forward ones
 function ForwardSlashes(str)
 {
@@ -299,7 +319,7 @@ function CopyPtb(oShell, oTree, oTask)
         target_path += "\\" + conf;
         target_path += "\\project_tree_builder.exe";
 //        var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
-        var source_file = GetDefaultPtbRelease();
+        var source_file = GetDefaultPtbRelease(oFso);
         if (!oFso.FileExists(source_file)) {
             WScript.Echo("WARNING: File not found: " + source_file);
             source_file = oTask.ToolkitPath;
@@ -532,14 +552,38 @@ function GetDefaultSuffix()
     }
     return s;
 }
+function GetPtbTargetSolutionArgs(oShell, ptb)
+{
+    var ver = get_ncbiapp_version(oShell, ptb);
+    var s = "";
+    if (ver < 180) {
+        return s;
+    }
+    if (g_msvcver == "80") {
+        s = " -ide 800 -arch Win32";
+    } else if (g_msvcver == "80x64") {
+        s = " -ide 800 -arch x64";
+    } else if (g_msvcver == "90") {
+        s = " -ide 900 -arch Win32";
+    } else if (g_msvcver == "90x64") {
+        s = " -ide 900 -arch x64";
+    } else {
+        s = " -ide 710 -arch Win32";
+    }
+    return s;
+}
 function GetDefaultCXX_ToolkitFolder()
 {
     var root = "\\\\snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc"
     return root + GetDefaultSuffix();
 }
-function GetDefaultPtbRelease()
+function GetDefaultPtbRelease(oFso)
 {
     var root = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\ptb\\msvc"
+    var ptb = root + "\\project_tree_builder.RELEASE";
+    if (oFso.FileExists(ptb)) {
+        return ptb;
+    }
     return root + GetDefaultSuffix() + "\\project_tree_builder.RELEASE";
 }
 function GetDefaultCXX_ToolkitSubFolder()
