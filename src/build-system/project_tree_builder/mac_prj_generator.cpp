@@ -1061,6 +1061,7 @@ string CMacProjectGenerator::AddConfigureTarget(
         CreateAggregateBuildConfigurations( target_name, dict_objects));
 
     string script;
+    script += "export PTB_PLATFORM=\"$ARCHS\"\n";
     script += "export PTB_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
     script += "export SLN_PATH=" + m_OutputDir + solution_name + "\n";
     script += "export TREE_ROOT=" +
