@@ -85,8 +85,8 @@ bool CNetServerCmdOutput::ReadLine(std::string& output)
 }
 
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
-    SNetServerImpl* pool) :
-        m_Server(pool),
+    SNetServerImpl* server) :
+        m_Server(server),
         m_NextFree(NULL)
 {
     if (TServConn_UserLinger2::GetDefault()) {
@@ -97,7 +97,34 @@ inline SNetServerConnectionImpl::SNetServerConnectionImpl(
 
 void SNetServerConnectionImpl::Delete()
 {
-    m_Server->ReturnToPool(this); // may result in 'delete this'
+    // Return this connection to the pool.
+    if (m_Server->m_Service->m_PermanentConnection != eOff &&
+            m_Socket.GetStatus(eIO_Open) == eIO_Success) {
+        // we need to check if all data has been read.
+        // if it has not then we have to close the connection
+        STimeout to = {0, 0};
+
+        if (m_Socket.Wait(eIO_Read, &to) == eIO_Success) {
+            Abort();
+            ERR_POST_X(8, "Socket not fully read while returning to the pool");
+        } else {
+            TFastMutexGuard guard(m_Server->m_FreeConnectionListLock);
+
+            int upper_limit = TServConn_MaxConnPoolSize::GetDefault();
+
+            if (upper_limit == 0 ||
+                    m_Server->m_FreeConnectionListSize < upper_limit) {
+                m_NextFree = m_Server->m_FreeConnectionListHead;
+                m_Server->m_FreeConnectionListHead = this;
+                ++m_Server->m_FreeConnectionListSize;
+                m_Server = NULL;
+                return;
+            }
+        }
+    }
+
+    // Could not return the connection to the pool, delete it.
+    delete this;
 }
 
 std::string SNetServerConnectionImpl::ReadCmdOutputLine()
@@ -257,49 +284,23 @@ unsigned int CNetServerConnection::GetPort() const
 
 /*************************************************************************/
 SNetServerImplReal::SNetServerImplReal(const string& host,
-    unsigned short port,
-    SNetServiceImpl* service_impl) : SNetServerImpl(host, port)
+    unsigned short port) : SNetServerImpl(host, port)
 {
-    m_Service = service_impl;
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 }
 
-inline void SNetServerImpl::DeleteConnection(
-    SNetServerConnectionImpl* impl)
+void SNetServerImpl::Delete()
 {
-    delete impl;
-}
+    // Before resetting the m_Service pointer, verify that nobody
+    // has acquired a reference to this server object yet (between
+    // the time the reference counter went to zero, and the
+    // current moment when m_Service is about to be reset).
 
-void SNetServerImpl::ReturnToPool(SNetServerConnectionImpl* impl)
-{
-    if (m_Service->m_PermanentConnection != eOff &&
-            impl->m_Socket.GetStatus(eIO_Open) == eIO_Success) {
-        // we need to check if all data has been read.
-        // if it has not then we have to close the connection
-        STimeout to = {0, 0};
+    CFastMutexGuard g(m_Service->m_ConnectionMutex);
 
-        if (impl->m_Socket.Wait(eIO_Read, &to) == eIO_Success) {
-            impl->Abort();
-            ERR_POST_X(8,
-                "Socket not fully read while returning to the pool");
-        } else {
-            TFastMutexGuard guard(m_FreeConnectionListLock);
-
-            int upper_limit = TServConn_MaxConnPoolSize::GetDefault();
-
-            if (upper_limit == 0 ||
-                    m_FreeConnectionListSize < upper_limit) {
-                impl->m_NextFree = m_FreeConnectionListHead;
-                m_FreeConnectionListHead = impl;
-                ++m_FreeConnectionListSize;
-                impl->m_Server = NULL;
-                return;
-            }
-        }
-    }
-
-    DeleteConnection(impl);
+    if (m_Refs.Get() == 0)
+        m_Service = NULL;
 }
 
 std::string SNetServerImpl::GetAddressAsString() const
@@ -319,7 +320,7 @@ SNetServerImplReal::~SNetServerImplReal()
     SNetServerConnectionImpl* impl = m_FreeConnectionListHead;
     while (impl != NULL) {
         SNetServerConnectionImpl* next_impl = impl->m_NextFree;
-        DeleteConnection(impl);
+        delete impl;
         impl = next_impl;
     }
 }

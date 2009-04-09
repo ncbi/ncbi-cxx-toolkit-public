@@ -58,6 +58,7 @@ struct SNetServerConnectionImpl : public CNetObject
 {
     SNetServerConnectionImpl(SNetServerImpl* pool);
 
+    // Return this connection to the pool.
     virtual void Delete();
 
     void WriteLine(const string& line);
@@ -103,8 +104,12 @@ struct SNetServerImpl : public CNetObject
     {
     }
 
-    void DeleteConnection(SNetServerConnectionImpl* impl);
-    void ReturnToPool(SNetServerConnectionImpl* impl);
+    // Releases a reference to the parent service object,
+    // and if that was the last reference, the service object
+    // will be deleted, which in turn will lead to this server
+    // object being deleted too (along with all other server
+    // objects that the parent service object may contain).
+    virtual void Delete();
 
     std::string GetAddressAsString() const;
 
@@ -122,9 +127,7 @@ struct SNetServerImpl : public CNetObject
 
 struct SNetServerImplReal : public SNetServerImpl
 {
-    SNetServerImplReal(const string& host,
-        unsigned short port,
-        SNetServiceImpl* service_impl);
+    SNetServerImplReal(const string& host, unsigned short port);
 
     virtual ~SNetServerImplReal();
 };

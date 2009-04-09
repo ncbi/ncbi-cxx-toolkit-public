@@ -65,7 +65,7 @@ protected:
 
     virtual void Delete();
 
-private:
+protected:
     CAtomicCounter_WithAutoInit m_Refs;
 };
 

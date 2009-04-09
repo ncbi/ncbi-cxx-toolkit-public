@@ -187,10 +187,10 @@ CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
     if (it != m_Servers.end())
         server = *it;
     if (!server) {
-        server = new SNetServerImplReal(host, port, this);
+        server = new SNetServerImplReal(host, port);
         m_Servers.insert(server);
-        server->AddRef();
     }
+    server->m_Service = this;
     g.Release();
     if (m_RebalanceStrategy)
         m_RebalanceStrategy->OnResourceRequested();
@@ -270,7 +270,7 @@ void SNetServiceImpl::Monitor(CNcbiOstream& out, const std::string& cmd)
 SNetServiceImpl::~SNetServiceImpl()
 {
     NON_CONST_ITERATE(TNetServerSet, it, m_Servers) {
-        (*it)->Release();
+        delete *it;
     }
 }
 
