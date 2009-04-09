@@ -131,6 +131,10 @@ public:
 	bool noFilter;
 	bool replaceOldAcc;
 	int identityThreshold;
+    //  < 0  turn off overlap w/ CD rows update filter
+    //  == 0 filter out all updates with an overlap to an existing row(s)  [DEFAULT]
+    //  == i filter out any update that overlaps an existing row on either termini by > i residues
+    int allowedOverlapWithCDRow;  
 };
 
 END_SCOPE(cd_utils)

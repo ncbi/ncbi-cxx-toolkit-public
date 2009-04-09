@@ -322,7 +322,7 @@ bool GroupUpdater::hasCd(CCdCore* cd)
 
 CDUpdater::CDUpdater(CCdCore* cd, CdUpdateParameters& config) 
 : m_config(config), m_cd(cd), m_guideAlignment(0), m_processPendingThreshold(-1), m_hitsNeeded(-1),
-m_blastQueryRow(0)
+  m_blastQueryRow(0)
 {
 }
 
@@ -1125,7 +1125,8 @@ bool CDUpdater::passedFilters(CCdCore* cd, CRef< CSeq_align > seqAlign,
 		m_stats.fragmented.push_back(gi);
 		return false;
 	}
-	if (overlapWithCDRow(cd, seqAlign))
+    //  filter overlapping updates unless disabled
+	if (m_config.allowedOverlapWithCDRow >= 0 && overlapWithCDRow(cd, seqAlign))
 	{
 		m_stats.overlap.push_back(gi);
 		return false;
@@ -1135,27 +1136,48 @@ bool CDUpdater::passedFilters(CCdCore* cd, CRef< CSeq_align > seqAlign,
 
 bool CDUpdater::overlapWithCDRow(CCdCore* cd,CRef< CSeq_align > seqAlign)
 {
+    //  Ignore overlaps by disabling this check when requested.
+    int overlap = m_config.allowedOverlapWithCDRow;
+    if (overlap < 0) return false;
+
+    bool result = false;
 	BlockModel bm(seqAlign);
+    int lo, hi, allowedOverlap;
 	int lastPos = bm.getLastAlignedPosition();
 	int firstPos = bm.getFirstAlignedPosition();
 	CRef< CSeq_id > seqId = bm.getSeqId();
 	CRef< CSeq_id > seqIdRow;
-	for(int i = 0; i < cd->GetNumRows(); i++)
+
+    //  Scan until the first overlap of significant size found.
+    //  Do not return 'false' after first seq-id match in case there are repeats.
+	for(int i = 0; !result && i < cd->GetNumRows(); i++)
 	{
 		if(cd->GetSeqIDFromAlignment(i, seqIdRow))
 		{
 			if (SeqIdsMatch(seqId, seqIdRow))
 			{
-				int lo = cd->GetLowerBound(i);
-				int hi = cd->GetUpperBound(i);
-				if (lo <= firstPos)
-					return hi >=firstPos;
+				lo = cd->GetLowerBound(i);
+				hi = cd->GetUpperBound(i);
+				if (lo + overlap <= firstPos)
+                    result = (hi - overlap >= firstPos);
 				else
-					return lo <lastPos;
+					result = (lo + overlap <lastPos);
+
+                if (result) {
+                    if (overlap > 0) {
+                        LOG_POST("CD sequence " << i << " [" << lo << ", " << hi << "] and proposed update with range [" << firstPos << ", " << lastPos << "] exceed maximum allowed overlap = " << overlap);
+                    } else {
+                        LOG_POST("Disallowed overlap of CD sequence " << i << " [" << lo << ", " << hi << "] and proposed update with range [" << firstPos << ", " << lastPos << "]");
+                    }
+                }
+//				if (lo <= firstPos)
+//					return hi >=firstPos;
+//				else
+//					return lo <lastPos;
 			}
 		}
 	}
-	return false;
+	return result;
 }
 
 bool CDUpdater::isFragmentedSeq(CCdCore* cd, CRef< CSeq_align > seqAlign, 

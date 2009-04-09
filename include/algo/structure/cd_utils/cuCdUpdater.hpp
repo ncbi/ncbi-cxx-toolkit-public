@@ -184,6 +184,8 @@ private:
 	bool passedFilters(CCdCore* cd, CRef< CSeq_align > seqAlign, 
 						CRef< CSeq_entry > seqEntry);
 
+    //  Ignore overlaps and return 'false' when overlap <= CDUpdateStats::allowedOverlapWithCDRow, or ignore
+    //  *all* overlaps when CDUpdateStats::allowedOverlapWithCDRow < 0.
 	bool overlapWithCDRow(CCdCore* cd,CRef< CSeq_align > seqAlign);
 	bool modifySeqAlignSeqEntry(CCdCore* cd, CRef< CSeq_align >& seqAlign, 
 						CRef< CSeq_entry > seqEntry);

@@ -92,7 +92,8 @@ CdUpdateParameters::CdUpdateParameters()
     useNRPrefs(false),
 	noFilter(false),
 	replaceOldAcc(true),
-	identityThreshold(-1)
+	identityThreshold(-1),
+	allowedOverlapWithCDRow(0)
 {
 }
 
