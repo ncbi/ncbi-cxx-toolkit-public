@@ -33,14 +33,14 @@
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 #include <boost/test/auto_unit_test.hpp>
-
 #include <algo/blast/blastinput/blast_scope_src.hpp>
-
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
-
 #include <objects/entrez2/entrez2_client.hpp>
 #include <objmgr/seq_vector.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
+
 
 #if defined(NCBI_COMPILER_WORKSHOP) && defined(NDEBUG) && defined(NCBI_WITHOUT_MT) && defined(__i386) && NCBI_COMPILER_VERSION == 550
 #  define BUGGY_COMPILER

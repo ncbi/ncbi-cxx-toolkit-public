@@ -39,6 +39,9 @@ static char const rcsid[] = "$Id$";
 
 #include <algorithm>
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
 
 //==========================================================================//
