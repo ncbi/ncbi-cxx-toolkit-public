@@ -39,8 +39,6 @@ set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 set IDE=800
 set PTB_EXTRA=
 
-call "%BUILD_TREE_ROOT%\msvcvars.bat"
-
 for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
   if %%v=="" (
     echo ERROR: required environment variable is missing
@@ -49,6 +47,8 @@ for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PL
     exit /b 1
   )
 )
+
+call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
 for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do set PTB_VER=%%a%%b%%c
 if %PTB_VER% GEQ 180 (
