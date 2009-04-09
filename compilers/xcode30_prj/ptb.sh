@@ -36,7 +36,7 @@
 
 #DEFPTB_VERSION="1.8.0"
 DEFPTB_VERSION="notimplemented"
-DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
+DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb"
 IDE="30"
 PTB_EXTRA=""
 
@@ -72,7 +72,7 @@ fi
 if test -x "$DEF_PTB"; then
   PTB_EXE="$DEF_PTB"
 else
-  echo Prebuilt $ptbname not found
+  echo "$ptbname not found at $DEF_PTB"
   PTB_EXE="$PTB_PATH/$ptbname"
 fi
 
