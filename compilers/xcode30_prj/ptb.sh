@@ -76,7 +76,7 @@ else
   PTB_EXE="$PTB_PATH/$ptbname"
 fi
 
-PTB_INI="${TREE_ROOT}src/build-system/${ptbname}.ini"
+PTB_INI="${TREE_ROOT}/src/build-system/${ptbname}.ini"
 if test ! -f "$PTB_INI"; then
   echo "ERROR: $PTB_INI not found"
   exit 1

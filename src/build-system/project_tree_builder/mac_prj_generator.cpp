@@ -1063,11 +1063,13 @@ string CMacProjectGenerator::AddConfigureTarget(
     string script;
     script += "export PTB_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
     script += "export SLN_PATH=" + m_OutputDir + solution_name + "\n";
-    script += "export TREE_ROOT=" + GetRelativePath( GetApp().m_Root) + "\n";
-    script += "export BUILD_TREE_ROOT=" + GetRelativePath(
+    script += "export TREE_ROOT=" +
+        CDirEntry::DeleteTrailingPathSeparator( GetRelativePath( GetApp().m_Root)) + "\n";
+    script += "export BUILD_TREE_ROOT=" +
+        CDirEntry::DeleteTrailingPathSeparator( GetRelativePath(
         CDirEntry::AddTrailingPathSeparator( CDirEntry::ConcatPath(
             GetApp().GetProjectTreeInfo().m_Compilers,
-            GetApp().GetRegSettings().m_CompilersSubdir))) + "\n";
+            GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
     script += m_OutputDir + "UtilityProjects/configure_";
     script += solution_name + ".sh";
     CRef<CDict> dict_script( AddDict( dict_objects, proj_script));

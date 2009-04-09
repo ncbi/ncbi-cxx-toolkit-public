@@ -141,8 +141,8 @@ export PTB_PLATFORM
 export PTB_FLAGS
 export PTB_PATH=./static/bin/ReleaseDLL
 export SLN_PATH=$sln_path/$sln_name
-export TREE_ROOT=../../
-export BUILD_TREE_ROOT=./
+export TREE_ROOT=../..
+export BUILD_TREE_ROOT=.
 export PTB_PROJECT_REQ="$use_projectlst"
 
 test -d "$sln_path" && rm -rf "$sln_path"
