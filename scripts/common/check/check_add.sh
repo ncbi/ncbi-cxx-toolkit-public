@@ -99,7 +99,10 @@ if test -z "$x_requires"; then
    x_requires=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 fi
 # Get list of autors to report errors
-x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+x_authors=`grep '^ *WATCHERS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+if test -z "$x_authors"; then
+   x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+fi
 
 # Write data about current test into the list file
 for x_cmd in $x_run; do
