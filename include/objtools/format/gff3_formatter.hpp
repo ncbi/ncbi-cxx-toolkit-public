@@ -73,9 +73,11 @@ private:
     static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os, const string& s);
 
     void x_FormatAlignment(const CAlignmentItem& aln,
-                           IFlatTextOStream& text_os, const CSeq_align& sa);
+                           IFlatTextOStream& text_os, const CSeq_align& sa,
+                           bool first);
     void x_FormatDenseg(const CAlignmentItem& aln,
-                           IFlatTextOStream& text_os, const CDense_seg& ds);
+                        IFlatTextOStream& text_os, const CDense_seg& ds,
+                        bool first);
 
 };
 

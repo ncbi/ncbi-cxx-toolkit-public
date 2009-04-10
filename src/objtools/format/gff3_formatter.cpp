@@ -43,6 +43,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
@@ -77,19 +78,37 @@ void CGFF3_Formatter::EndSection(const CEndSectionItem&,
 void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
                                       IFlatTextOStream& text_os)
 {
-    x_FormatAlignment(aln, text_os, aln.GetAlign());
+    x_FormatAlignment(aln, text_os, aln.GetAlign(), true);
 }
 
 void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                                         IFlatTextOStream& text_os,
-                                        const CSeq_align& sa)
+                                        const CSeq_align& sa,
+                                        bool first)
 {
     const CFlatFileConfig& config = aln.GetContext()->Config();
 
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
-        x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg());
+        x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(), first);
         break;
+
+    case CSeq_align::TSegs::e_Spliced:
+    {
+        CRef<CSeq_align> sa2;
+        try {
+             sa2 = sa.GetSegs().GetSpliced().AsDiscSeg();
+             if (sa.IsSetScore()) {
+                 sa2->SetScore().insert(sa2->SetScore().end(),
+                                        sa.GetScore().begin(),
+                                        sa.GetScore().end());
+             }
+        } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
+        if (sa2) {
+            x_FormatAlignment(aln, text_os, *sa2, first);
+        }
+        break;
+    }
 
     case CSeq_align::TSegs::e_Std:
     {
@@ -98,19 +117,22 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
              sa2 = sa.CreateDensegFromStdseg();
         } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2.NotEmpty()  &&  sa2->GetSegs().IsDenseg()) {
-            x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg());
+            x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg(), first);
         }
         break;
     }
 
     case CSeq_align::TSegs::e_Disc:
-        ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
-            x_FormatAlignment(aln, text_os, **it);
-        }
-        if ( config.GffGenerateIdTags() ) {
-            ++m_CurrentId;
-        }
+    {
+         ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
+             x_FormatAlignment(aln, text_os, **it, first);
+             first = false;
+         }
+         if ( config.GffGenerateIdTags() ) {
+             ++m_CurrentId;
+         }
         break;
+    }
 
     default: // dendiag or packed; unsupported
         break;
@@ -153,7 +175,8 @@ static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
 
 void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                                      IFlatTextOStream& text_os,
-                                     const CDense_seg& ds)
+                                     const CDense_seg& ds,
+                                     bool first)
 {
     typedef CAlnMap::TNumrow      TNumrow;
     typedef CAlnMap::TNumchunk    TNumchunk;
@@ -186,13 +209,15 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
         CNcbiOstrstream cigar;
         char            last_type = 0;
-        TSeqPos         last_count = 0, tgt_width = alnmap.GetWidth(tgt_row);
+        TSeqPos         last_count = 0;
+        TSeqPos         tgt_width = alnmap.GetWidth(tgt_row);
         int             tgt_sign = alnmap.StrandSign(tgt_row);
         TRange          ref_range, tgt_range;
         bool            trivial = true;
         if (tgt_row == ref_row) {
             continue;
         }
+
         CRef<CAlnMap::CAlnChunkVec> chunks
             = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
                                   CAlnMap::fAddUnalignedChunks);
@@ -203,8 +228,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             char                          type;
             TSeqPos                       count;
             CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
-            ref_piece.SetFrom(ref_piece.GetFrom() + ref_start);
-            ref_piece.SetTo  (ref_piece.GetTo()   + ref_start);
+
+            ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
+            ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
             if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
                 type       = 'I';
                 count      = tgt_piece.GetLength() / tgt_width;
@@ -257,22 +283,40 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             attrs << ";Gap=" << cigar_string;
         }
         // XXX - should supply appropriate score, if any
-        CSeq_loc loc(*ctx->GetPrimaryId(), ref_range.GetFrom(),
-                     ref_range.GetTo(),
+        CSeq_loc loc(*ctx->GetPrimaryId(),
+                     ref_range.GetFrom(), ref_range.GetTo(),
                      (ref_sign == 1 ? eNa_strand_plus
                       : eNa_strand_minus));
         
 
         // HACK HACK HACK
         // add score attributes
-        ITERATE (CDense_seg::TScores, score_it, aln.GetAlign().GetScore()) {
-            const CScore& score = **score_it;
-            if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
-                attrs << ';'  << score.GetId().GetStr() << '=';
-                if (score.GetValue().IsInt()) {
-                    attrs << score.GetValue().GetInt();
-                } else {
-                    attrs << score.GetValue().GetReal();
+        if (first  &&  aln.GetAlign().IsSetScore()) {
+            ITERATE (CDense_seg::TScores, score_it, aln.GetAlign().GetScore()) {
+                const CScore& score = **score_it;
+                if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
+                    attrs << ';'  << score.GetId().GetStr() << '=';
+                    if (score.GetValue().IsInt()) {
+                        attrs << score.GetValue().GetInt();
+                    } else {
+                        attrs << score.GetValue().GetReal();
+                    }
+                }
+            }
+        }
+
+        // HACK HACK HACK
+        // add score attributes
+        if (ds.IsSetScores()) {
+            ITERATE (CDense_seg::TScores, score_it, ds.GetScores()) {
+                const CScore& score = **score_it;
+                if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
+                    attrs << ';'  << score.GetId().GetStr() << '=';
+                    if (score.GetValue().IsInt()) {
+                        attrs << score.GetValue().GetInt();
+                    } else {
+                        attrs << score.GetValue().GetReal();
+                    }
                 }
             }
         }
