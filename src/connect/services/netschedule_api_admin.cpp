@@ -114,7 +114,7 @@ void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
     CNetServerCmdOutput output = m_Impl->m_API->x_GetConnection(
         job_key).ExecMultiline("DUMP " + job_key);
 
-    std::string line;
+    string line;
 
     while (output.ReadLine(line))
         out << line << "\n";
@@ -159,11 +159,11 @@ unsigned CNetScheduleAdmin::CountActiveJobs()
 }
 
 void CNetScheduleAdmin::GetWorkerNodes(
-    std::list<SWorkerNodeInfo>& worker_nodes) const
+    list<SWorkerNodeInfo>& worker_nodes) const
 {
     worker_nodes.clear();
 
-    std::set<std::pair<std::string, unsigned short> > m_Unique;
+    set<pair<string, unsigned short> > m_Unique;
 
     for (CNetServerGroupIterator it =
             m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
@@ -286,7 +286,7 @@ void CNetScheduleAdmin::StatusSnapshot(
 
 unsigned long CNetScheduleAdmin::Count(const string& query) const
 {
-    std::string cmd = "QERY \"";
+    string cmd = "QERY \"";
     cmd.append(NStr::PrintableString(query));
     cmd.append("\" COUNT");
 
@@ -339,7 +339,7 @@ void CNetScheduleAdmin::RetrieveKeys(const string& query,
 {
     SNetScheduleAdminImpl::TIDsMap inter_ids;
 
-    std::string cmd = "QERY \"";
+    string cmd = "QERY \"";
     cmd.append(NStr::PrintableString(query));
     cmd.append("\" IDS");
 

@@ -76,12 +76,12 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 {
     NET_COMPONENT(NetCacheAPI);
 
-    explicit CNetCacheAPI(const std::string& client_name);
+    explicit CNetCacheAPI(const string& client_name);
 
     /// Construct client, working with the specified service
-    CNetCacheAPI(const std::string& service_name,
-        const std::string& client_name,
-        const std::string& lbsm_affinity_name = kEmptyStr);
+    CNetCacheAPI(const string& service_name,
+        const string& client_name,
+        const string& lbsm_affinity_name = kEmptyStr);
 
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is

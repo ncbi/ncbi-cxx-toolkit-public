@@ -362,10 +362,10 @@ CNetICacheClient::CNetICacheClient(const string&  host,
 }
 
 CNetICacheClient::CNetICacheClient(
-    const std::string& lb_service_name,
-    const std::string& cache_name,
-    const std::string& client_name,
-    const std::string& lbsm_affinity_name) :
+    const string& lb_service_name,
+    const string& cache_name,
+    const string& client_name,
+    const string& lbsm_affinity_name) :
         CNetServiceClient(client_name),
         m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
         m_ServiceDiscovery(

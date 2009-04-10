@@ -125,22 +125,22 @@ template<> struct ToStr<int> {
 
 struct SNetScheduleAPIImpl : public CNetObject
 {
-    SNetScheduleAPIImpl(const std::string& service_name,
-        const std::string& client_name,
-        const std::string& queue_name,
-        const std::string& lbsm_affinity_name);
+    SNetScheduleAPIImpl(const string& service_name,
+        const string& client_name,
+        const string& queue_name,
+        const string& lbsm_affinity_name);
 
     class CNetScheduleServerListener : public INetServerConnectionListener
     {
     public:
         CNetScheduleServerListener(
-            const std::string& client_name,
-            const std::string& queue_name);
+            const string& client_name,
+            const string& queue_name);
 
         void SetAuthString(
-            const std::string& client_name,
-            const std::string& program_version,
-            const std::string& queue_name);
+            const string& client_name,
+            const string& program_version,
+            const string& queue_name);
 
     private:
         virtual void OnConnected(CNetServerConnection::TInstance);
@@ -148,7 +148,7 @@ struct SNetScheduleAPIImpl : public CNetObject
             SNetServerImpl* pool);
 
     private:
-        std::string m_Auth;
+        string m_Auth;
     };
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
@@ -208,10 +208,10 @@ struct SNetScheduleAPIImpl : public CNetObject
 };
 
 inline SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-    const std::string& service_name,
-    const std::string& client_name,
-    const std::string& queue_name,
-    const std::string& lbsm_affinity_name) :
+    const string& service_name,
+    const string& client_name,
+    const string& queue_name,
+    const string& lbsm_affinity_name) :
         m_Service(new SNetServiceImpl(service_name,
             client_name,
             lbsm_affinity_name)),
@@ -240,9 +240,9 @@ struct SNetScheduleSubmitterImpl : public CNetObject
 
     void ExecReadCommand(const char* cmd_start,
         const char* cmd_name,
-        const std::string& batch_id,
-        const std::vector<std::string>& job_ids,
-        const std::string& error_message);
+        const string& batch_id,
+        const vector<string>& job_ids,
+        const string& error_message);
 
     CNetScheduleAPI m_API;
 };

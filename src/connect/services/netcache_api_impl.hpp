@@ -41,12 +41,12 @@ struct SNetCacheAPIImpl : public CNetObject
 {
     SNetCacheAPIImpl(const string& service,
         const string& client_name,
-        const std::string& lbsm_affinity_name);
+        const string& lbsm_affinity_name);
 
     class CNetCacheServerListener : public INetServerConnectionListener
     {
     public:
-        CNetCacheServerListener(const std::string& client_name);
+        CNetCacheServerListener(const string& client_name);
 
     private:
         virtual void OnConnected(CNetServerConnection::TInstance);
@@ -54,7 +54,7 @@ struct SNetCacheAPIImpl : public CNetObject
             SNetServerImpl* pool);
 
     private:
-        std::string m_Auth;
+        string m_Auth;
     };
 
     static CNetCacheAPI::EReadResult x_ReadBuffer(
@@ -77,9 +77,9 @@ struct SNetCacheAPIImpl : public CNetObject
     bool m_NoHasBlob;
 };
 
-inline SNetCacheAPIImpl::SNetCacheAPIImpl(const std::string& service,
-    const std::string& client_name,
-    const std::string& lbsm_affinity_name) :
+inline SNetCacheAPIImpl::SNetCacheAPIImpl(const string& service,
+    const string& client_name,
+    const string& lbsm_affinity_name) :
     m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name)),
     m_NoHasBlob(false)
 {

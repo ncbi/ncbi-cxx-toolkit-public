@@ -81,7 +81,7 @@ CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
 }
 
 SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
-    const std::string& client_name)
+    const string& client_name)
 {
     m_Auth = client_name;
 }
@@ -109,7 +109,7 @@ string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
 void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
     const string& err_msg, SNetServerImpl* pool)
 {
-    std::string message = pool->GetAddressAsString();
+    string message = pool->GetAddressAsString();
 
     message += ": ";
     message += err_msg;
@@ -129,9 +129,9 @@ CNetCacheAPI::CNetCacheAPI(const string& client_name) :
 }
 
 
-CNetCacheAPI::CNetCacheAPI(const std::string& service_name,
-    const std::string& client_name,
-    const std::string& lbsm_affinity_name) :
+CNetCacheAPI::CNetCacheAPI(const string& service_name,
+    const string& client_name,
+    const string& lbsm_affinity_name) :
     m_Impl(new SNetCacheAPIImpl(service_name, client_name, lbsm_affinity_name))
 {
 }

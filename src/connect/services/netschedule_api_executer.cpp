@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 static
-void s_ParseGetJobResponse(CNetScheduleJob& job, const std::string& response)
+void s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 {
     // Server message format:
     //    JOB_KEY "input" ["affinity" ["client_ip session_id"]] [mask]
@@ -115,7 +115,7 @@ throw_err:
     if (*str == 0)
         return;
 
-    std::string client_ip_and_session_id;
+    string client_ip_and_session_id;
 
     if (*str == '"') {
         ++str;

@@ -82,9 +82,9 @@ struct SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
     SNetServiceImpl(
-        const std::string& service_name,
-        const std::string& client_name,
-        const std::string& lbsm_affinity_name);
+        const string& service_name,
+        const string& client_name,
+        const string& lbsm_affinity_name);
 
     // Set up connection event listening. In fact, this
     // listener implements the authentication part of both
@@ -99,7 +99,7 @@ struct SNetServiceImpl : public CNetObject
     // name).
     CNetServerConnection RequireStandAloneServerSpec();
 
-    void Monitor(CNcbiOstream& out, const std::string& cmd);
+    void Monitor(CNcbiOstream& out, const string& cmd);
 
     virtual ~SNetServiceImpl();
 

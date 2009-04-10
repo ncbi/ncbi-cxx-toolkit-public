@@ -248,7 +248,7 @@ inline void s_HandleRunJobError(CGridThreadContext& thr_context,
     ERR_POST_X(18, thr_context.GetJobContext().GetJobKey() << msg);
     try {
         thr_context.PutFailure(ex ? ex->what() : "Unknown error");
-    } catch (std::exception& ex1) {
+    } catch (exception& ex1) {
         ERR_POST_X(19, "Failed to report exception: " <<
             thr_context.GetJobContext().GetJobKey() << " " << ex1.what());
     } catch (...) {

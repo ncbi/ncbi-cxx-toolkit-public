@@ -62,7 +62,7 @@ struct SNetServerConnectionImpl : public CNetObject
     virtual void Delete();
 
     void WriteLine(const string& line);
-    std::string ReadCmdOutputLine();
+    string ReadCmdOutputLine();
     void WaitForServer();
 
     void Close();
@@ -111,7 +111,7 @@ struct SNetServerImpl : public CNetObject
     // objects that the parent service object may contain).
     virtual void Delete();
 
-    std::string GetAddressAsString() const;
+    string GetAddressAsString() const;
 
     // A smart pointer to the NetService object
     // that contains this NetServer.

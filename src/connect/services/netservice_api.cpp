@@ -86,9 +86,9 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
 }
 
 SNetServiceImpl::SNetServiceImpl(
-    const std::string& service_name,
-    const std::string& client_name,
-    const std::string& lbsm_affinity_name) :
+    const string& service_name,
+    const string& client_name,
+    const string& lbsm_affinity_name) :
     m_ServiceDiscovery(new CNetServiceDiscovery(service_name,
         lbsm_affinity_name)),
     m_IsLoadBalanced(false),
@@ -164,7 +164,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
             if (output_style == eMultilineOutput_NetCacheStyle)
                 output->SetNetCacheCompatMode();
 
-            std::string line;
+            string line;
 
             while (output.ReadLine(line))
                 output_stream << line << endl;
@@ -243,7 +243,7 @@ CNetServerConnection SNetServiceImpl::RequireStandAloneServerSpec()
         "This command requires explicit server address (host:port)");
 }
 
-void SNetServiceImpl::Monitor(CNcbiOstream& out, const std::string& cmd)
+void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
 {
     CNetServerConnection conn = RequireStandAloneServerSpec();
 
@@ -352,8 +352,7 @@ CNetServerGroup CNetService::DiscoverServers(
     case CNetService::eSortByAddress:
         server_group->m_Servers.insert(server_group->m_Servers.begin(),
             m_Impl->m_DiscoveredServers.begin(), m_Impl->m_DiscoveredServers.end());
-        std::sort(server_group->m_Servers.begin(),
-            server_group->m_Servers.end());
+        sort(server_group->m_Servers.begin(), server_group->m_Servers.end());
     }
 
     return server_group;

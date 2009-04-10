@@ -39,15 +39,15 @@
 BEGIN_NCBI_SCOPE
 
 // A host:port pair.
-typedef std::pair<std::string, unsigned short> TServerAddress;
-typedef std::vector<TServerAddress> TDiscoveredServers;
+typedef pair<string, unsigned short> TServerAddress;
+typedef vector<TServerAddress> TDiscoveredServers;
 
 // LBSMD-based service discovery.
 class NCBI_XCONNECT_EXPORT CNetServiceDiscovery : public CNetObject
 {
 public:
-    CNetServiceDiscovery(const std::string& service_name,
-        const std::string& lbsm_affinity_name);
+    CNetServiceDiscovery(const string& service_name,
+        const string& lbsm_affinity_name);
 
     virtual ~CNetServiceDiscovery();
 
@@ -57,8 +57,8 @@ public:
     const string& GetServiceName() const;
 
 private:
-    std::string m_ServiceName;
-    std::string m_LBSMAffinityName;
+    string m_ServiceName;
+    string m_LBSMAffinityName;
     const char* m_LBSMAffinityValue;
 };
 

@@ -51,8 +51,8 @@ CNetServiceDiscovery::~CNetServiceDiscovery()
 }
 
 CNetServiceDiscovery::CNetServiceDiscovery(
-        const std::string& service_name,
-        const std::string& lbsm_affinity_name) :
+        const string& service_name,
+        const string& lbsm_affinity_name) :
     m_ServiceName(service_name),
     m_LBSMAffinityName(lbsm_affinity_name)
 {

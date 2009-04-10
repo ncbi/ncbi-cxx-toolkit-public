@@ -45,15 +45,15 @@ class NCBI_XCONNECT_EXPORT CCmdLineArgList
 {
     NET_COMPONENT(CmdLineArgList);
 
-    static CCmdLineArgList OpenForOutput(const std::string& file_or_stdout);
+    static CCmdLineArgList OpenForOutput(const string& file_or_stdout);
 
-    void WriteLine(const std::string& line);
+    void WriteLine(const string& line);
 
-    static CCmdLineArgList CreateFrom(const std::string& file_or_list);
+    static CCmdLineArgList CreateFrom(const string& file_or_list);
 
-    bool GetNextArg(std::string& arg);
+    bool GetNextArg(string& arg);
 
-    static const std::string& GetDelimiterString();
+    static const string& GetDelimiterString();
 };
 
 class NCBI_XCONNECT_EXPORT CBitVectorEncoder
@@ -64,18 +64,18 @@ public:
     void AppendInteger(unsigned number);
     void AppendRange(unsigned from, unsigned to);
 
-    std::string Encode();
+    string Encode();
 
 private:
     void FlushRange();
 
     unsigned m_RangeFrom;
     unsigned m_RangeTo;
-    std::string m_String;
-    std::string m_Buffer;
+    string m_String;
+    string m_Buffer;
 };
 
-inline std::string CBitVectorEncoder::Encode()
+inline string CBitVectorEncoder::Encode()
 {
     if (m_RangeFrom <= m_RangeTo)
         FlushRange();
@@ -86,16 +86,16 @@ inline std::string CBitVectorEncoder::Encode()
 class NCBI_XCONNECT_EXPORT CBitVectorDecoder
 {
 public:
-    CBitVectorDecoder(const std::string source);
+    CBitVectorDecoder(const string source);
 
     bool GetNextRange(unsigned& from, unsigned& to);
 
 private:
-    std::string m_Source;
+    string m_Source;
     const char* m_Ptr;
 };
 
-inline CBitVectorDecoder::CBitVectorDecoder(const std::string source) :
+inline CBitVectorDecoder::CBitVectorDecoder(const string source) :
     m_Source(source), m_Ptr(m_Source.c_str())
 {
 }

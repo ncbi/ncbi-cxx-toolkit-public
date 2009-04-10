@@ -89,10 +89,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// @param queue_name
     ///    Name of the job queue
     ///
-    CNetScheduleAPI(const std::string& service_name,
-                    const std::string& client_name,
-                    const std::string& queue_name,
-                    const std::string& lbsm_affinity_name = kEmptyStr);
+    CNetScheduleAPI(const string& service_name,
+                    const string& client_name,
+                    const string& queue_name,
+                    const string& lbsm_affinity_name = kEmptyStr);
 
     /// Set program version (like: MyProgram v. 1.2.3)
     ///
@@ -249,8 +249,8 @@ struct CNetScheduleJob
 
     string    affinity;
 
-    std::string client_ip;
-    std::string session_id;
+    string client_ip;
+    string session_id;
 
     CNetScheduleAPI::TJobMask  mask;
     CNetScheduleAPI::TJobTags  tags;
@@ -308,8 +308,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @return
     ///    True if a batch was successfully retrieved from a NetSchedule
     ///    server.  False if no servers reported jobs marked as done.
-    bool Read(std::string& batch_id,
-        std::vector<std::string>& job_ids,
+    bool Read(string& batch_id,
+        vector<string>& job_ids,
         unsigned max_jobs,
         unsigned timeout = 0);
 
@@ -322,8 +322,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @param job_ids
     ///    Array of job ids, which results were successfully
     ///    retrieved and processed.
-    void ReadConfirm(const std::string& batch_id,
-        const std::vector<std::string>& job_ids);
+    void ReadConfirm(const string& batch_id,
+        const vector<string>& job_ids);
 
     /// Refuse from processing the results of the specified jobs.
     /// The jobs will change their status back to 'done' after
@@ -334,8 +334,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @param job_ids
     ///    Array of job ids, for which status needs to be reverted
     ///    back to 'done'.
-    void ReadRollback(const std::string& batch_id,
-        const std::vector<std::string>& job_ids);
+    void ReadRollback(const string& batch_id,
+        const vector<string>& job_ids);
 
     /// Refuse from processing the results of the specified jobs
     /// and increase the counter of failed job result retrievals.
@@ -351,9 +351,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @param error_message
     ///    This message can be used to describe the cause why the
     ///    job results could not be read.
-    void ReadFail(const std::string& batch_id,
-        const std::vector<std::string>& job_ids,
-        const std::string& error_message = kEmptyStr);
+    void ReadFail(const string& batch_id,
+        const vector<string>& job_ids,
+        const string& error_message = kEmptyStr);
 
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
@@ -695,7 +695,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         CTime last_access;
     };
 
-    void GetWorkerNodes(std::list<SWorkerNodeInfo>& worker_nodes) const;
+    void GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes) const;
 
     enum EStatisticsOptions
     {
@@ -717,12 +717,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     struct SServerQueueList {
         CNetServer server;
-        std::list<std::string> queues;
+        list<string> queues;
 
         SServerQueueList(SNetServerImpl* server_impl) : server(server_impl) {}
     };
 
-    typedef std::list<SServerQueueList> TQueueList;
+    typedef list<SServerQueueList> TQueueList;
 
     void GetQueueList(TQueueList& result) const;
 

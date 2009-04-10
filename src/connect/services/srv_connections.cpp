@@ -57,7 +57,7 @@ SNetServerCmdOutputImpl::~SNetServerCmdOutputImpl()
     }
 }
 
-bool CNetServerCmdOutput::ReadLine(std::string& output)
+bool CNetServerCmdOutput::ReadLine(string& output)
 {
     _ASSERT(!m_Impl->m_ReadCompletely);
 
@@ -127,7 +127,7 @@ void SNetServerConnectionImpl::Delete()
     delete this;
 }
 
-std::string SNetServerConnectionImpl::ReadCmdOutputLine()
+string SNetServerConnectionImpl::ReadCmdOutputLine()
 {
     string result;
 
@@ -218,7 +218,7 @@ SNetServerConnectionImpl::~SNetServerConnectionImpl()
 void SNetServerConnectionImpl::WriteLine(const string& line)
 {
     // TODO change to "\n" when no old NS/NC servers remain.
-    std::string str(line + "\r\n");
+    string str(line + "\r\n");
 
     const char* buf = str.data();
     size_t len = str.size();
@@ -255,7 +255,7 @@ void SNetServerConnectionImpl::WaitForServer()
     }
 }
 
-std::string CNetServerConnection::Exec(const string& cmd)
+string CNetServerConnection::Exec(const string& cmd)
 {
     m_Impl->WriteLine(cmd);
     m_Impl->WaitForServer();
@@ -263,7 +263,7 @@ std::string CNetServerConnection::Exec(const string& cmd)
     return m_Impl->ReadCmdOutputLine();
 }
 
-CNetServerCmdOutput CNetServerConnection::ExecMultiline(const std::string& cmd)
+CNetServerCmdOutput CNetServerConnection::ExecMultiline(const string& cmd)
 {
     m_Impl->WriteLine(cmd);
     m_Impl->WaitForServer();
@@ -303,9 +303,9 @@ void SNetServerImpl::Delete()
         m_Service = NULL;
 }
 
-std::string SNetServerImpl::GetAddressAsString() const
+string SNetServerImpl::GetAddressAsString() const
 {
-    std::string address =
+    string address =
         CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(m_Host));
 
     address += ':';
@@ -325,7 +325,7 @@ SNetServerImplReal::~SNetServerImplReal()
     }
 }
 
-std::string CNetServer::GetHost() const
+string CNetServer::GetHost() const
 {
     return m_Impl->m_Host;
 }

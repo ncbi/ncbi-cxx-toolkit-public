@@ -100,7 +100,7 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
 
 }
 
-static void s_AppendClientIPAndSessionID(std::string& cmd)
+static void s_AppendClientIPAndSessionID(string& cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
 
@@ -167,7 +167,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
     CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
 
     // Batch submit command.
-    std::string cmd = "BSUB";
+    string cmd = "BSUB";
 
     s_AppendClientIPAndSessionID(cmd);
 
@@ -270,8 +270,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 class CReadCmdExecutor : public INetServerFinder
 {
 public:
-    CReadCmdExecutor(const string& cmd, std::string& batch_id,
-            std::vector<std::string>& job_ids) :
+    CReadCmdExecutor(const string& cmd, string& batch_id,
+            vector<string>& job_ids) :
         m_Cmd(cmd), m_BatchId(batch_id), m_JobIds(job_ids)
     {
     }
@@ -279,25 +279,25 @@ public:
     virtual bool Consider(CNetServer server);
 
 private:
-    std::string m_Cmd;
-    std::string& m_BatchId;
-    std::vector<std::string>& m_JobIds;
+    string m_Cmd;
+    string& m_BatchId;
+    vector<string>& m_JobIds;
 };
 
 bool CReadCmdExecutor::Consider(CNetServer server)
 {
-    std::string response = server.Connect().Exec(m_Cmd);
+    string response = server.Connect().Exec(m_Cmd);
 
     if (response.empty() || response == "0 " || response == "0")
         return false;
 
-    std::string encoded_bitvector;
+    string encoded_bitvector;
 
     NStr::SplitInTwo(response, " ", m_BatchId, encoded_bitvector);
 
     CBitVectorDecoder bvdec(encoded_bitvector);
 
-    std::string host = server.GetHost();
+    string host = server.GetHost();
     unsigned port = server.GetPort();
 
     unsigned from, to;
@@ -309,11 +309,11 @@ bool CReadCmdExecutor::Consider(CNetServer server)
     return true;
 }
 
-bool CNetScheduleSubmitter::Read(std::string& batch_id,
-    std::vector<std::string>& job_ids,
+bool CNetScheduleSubmitter::Read(string& batch_id,
+    vector<string>& job_ids,
     unsigned max_jobs, unsigned timeout)
 {
-    std::string cmd("READ ");
+    string cmd("READ ");
 
     cmd.append(NStr::UIntToString(max_jobs));
 
@@ -328,9 +328,9 @@ bool CNetScheduleSubmitter::Read(std::string& batch_id,
 
 void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
     const char* cmd_name,
-    const std::string& batch_id,
-    const std::vector<std::string>& job_ids,
-    const std::string& error_message)
+    const string& batch_id,
+    const vector<string>& job_ids,
+    const string& error_message)
 {
     if (job_ids.empty()) {
         NCBI_THROW_FMT(CNetScheduleException, eInvalidParameter,
@@ -339,7 +339,7 @@ void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
 
     CBitVectorEncoder bvenc;
 
-    std::vector<std::string>::const_iterator job_id = job_ids.begin();
+    vector<string>::const_iterator job_id = job_ids.begin();
 
     CNetScheduleKey first_key(*job_id);
 
@@ -356,7 +356,7 @@ void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
         bvenc.AppendInteger(key.id);
     }
 
-    std::string cmd = cmd_start + batch_id;
+    string cmd = cmd_start + batch_id;
 
     cmd += " \"";
     cmd += bvenc.Encode();
@@ -372,23 +372,23 @@ void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
         Connect().Exec(cmd);
 }
 
-void CNetScheduleSubmitter::ReadConfirm(const std::string& batch_id,
-    const std::vector<std::string>& job_ids)
+void CNetScheduleSubmitter::ReadConfirm(const string& batch_id,
+    const vector<string>& job_ids)
 {
     m_Impl->ExecReadCommand("CFRM ", "ReadConfirm",
         batch_id, job_ids, kEmptyStr);
 }
 
-void CNetScheduleSubmitter::ReadRollback(const std::string& batch_id,
-    const std::vector<std::string>& job_ids)
+void CNetScheduleSubmitter::ReadRollback(const string& batch_id,
+    const vector<string>& job_ids)
 {
     m_Impl->ExecReadCommand("RDRB ", "ReadRollback",
         batch_id, job_ids, kEmptyStr);
 }
 
-void CNetScheduleSubmitter::ReadFail(const std::string& batch_id,
-    const std::vector<std::string>& job_ids,
-    const std::string& error_message)
+void CNetScheduleSubmitter::ReadFail(const string& batch_id,
+    const vector<string>& job_ids,
+    const string& error_message)
 {
     m_Impl->ExecReadCommand("FRED ", "ReadFail",
         batch_id, job_ids, error_message);

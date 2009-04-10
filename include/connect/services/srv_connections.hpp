@@ -48,7 +48,7 @@ class NCBI_XCONNECT_EXPORT CNetServerCmdOutput
 {
     NET_COMPONENT(NetServerCmdOutput);
 
-    bool ReadLine(std::string& output);
+    bool ReadLine(string& output);
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -62,12 +62,12 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     // Execute remote command 'cmd', check if the reply
     // starts with 'OK:', and return the remaining
     // characters of the reply as a string.
-    std::string Exec(const std::string& cmd);
+    string Exec(const string& cmd);
 
     // Execute remote command 'cmd' and return a smart
     // pointer to a stream object for reading multiline
     // output of the command.
-    CNetServerCmdOutput ExecMultiline(const std::string& cmd);
+    CNetServerCmdOutput ExecMultiline(const string& cmd);
 
     const string& GetHost() const;
     unsigned int GetPort() const;
@@ -81,7 +81,7 @@ class NCBI_XCONNECT_EXPORT CNetServer
 {
     NET_COMPONENT(NetServer);
 
-    std::string GetHost() const;
+    string GetHost() const;
     unsigned short GetPort() const;
 
     CNetServerConnection Connect();

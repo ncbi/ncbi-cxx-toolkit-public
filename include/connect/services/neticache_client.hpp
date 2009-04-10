@@ -69,10 +69,10 @@ public:
                      const string&  cache_name,
                      const string&  client_name);
 
-    CNetICacheClient(const std::string& lb_service_name,
-                     const std::string& cache_name,
-                     const std::string& client_name,
-                     const std::string& lbsm_affinity_name = kEmptyStr);
+    CNetICacheClient(const string& lb_service_name,
+                     const string& cache_name,
+                     const string& client_name,
+                     const string& lbsm_affinity_name = kEmptyStr);
 
     virtual ~CNetICacheClient();
 

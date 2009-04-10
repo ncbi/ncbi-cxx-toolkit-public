@@ -50,8 +50,8 @@ BEGIN_NCBI_SCOPE
 /**********************************************************************/
 
 SNetScheduleAPIImpl::CNetScheduleServerListener::CNetScheduleServerListener(
-    const std::string& client_name,
-    const std::string& queue_name)
+    const string& client_name,
+    const string& queue_name)
 {
     m_Auth = client_name;
     m_Auth += "\r\n";
@@ -60,11 +60,11 @@ SNetScheduleAPIImpl::CNetScheduleServerListener::CNetScheduleServerListener(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
-    const std::string& client_name,
-    const std::string& program_version,
-    const std::string& queue_name)
+    const string& client_name,
+    const string& program_version,
+    const string& queue_name)
 {
-    std::string auth = client_name;
+    string auth = client_name;
     if (!program_version.empty()) {
         auth += " prog='";
         auth += program_version;
@@ -101,10 +101,10 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
 CNetScheduleAPI::CNetScheduleAPI(
-    const std::string& service_name,
-    const std::string& client_name,
-    const std::string& queue_name,
-    const std::string& lbsm_affinity_name) :
+    const string& service_name,
+    const string& client_name,
+    const string& queue_name,
+    const string& lbsm_affinity_name) :
     m_Impl(new SNetScheduleAPIImpl(service_name,
         client_name,
         queue_name,

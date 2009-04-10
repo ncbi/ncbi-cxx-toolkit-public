@@ -109,7 +109,7 @@ int CTestICClient::Run(void)
 
     const string& cache_name  = args["cache"].AsString();
 
-    std::auto_ptr<CNetICacheClient> cl;
+    auto_ptr<CNetICacheClient> cl;
 
     if (args["service"].HasValue()) {
         cl.reset(new CNetICacheClient(args["service"].AsString(),

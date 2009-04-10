@@ -41,25 +41,25 @@ BEGIN_NCBI_SCOPE
 
 struct SCmdLineArgListImpl : public CNetObject
 {
-    SCmdLineArgListImpl(FILE* file, const std::string& file_name);
-    SCmdLineArgListImpl(const std::string& file_name, bool for_output);
-    SCmdLineArgListImpl(const std::string& args);
+    SCmdLineArgListImpl(FILE* file, const string& file_name);
+    SCmdLineArgListImpl(const string& file_name, bool for_output);
+    SCmdLineArgListImpl(const string& args);
 
     virtual ~SCmdLineArgListImpl();
 
     FILE* m_File;
-    std::string m_FileName;
-    std::list<std::string> m_Args;
+    string m_FileName;
+    list<string> m_Args;
 };
 
 inline SCmdLineArgListImpl::SCmdLineArgListImpl(
-        FILE* file, const std::string& file_name) :
+        FILE* file, const string& file_name) :
     m_File(file), m_FileName(file_name)
 {
 }
 
 inline SCmdLineArgListImpl::SCmdLineArgListImpl(
-        const std::string& file_name, bool for_output) :
+        const string& file_name, bool for_output) :
     m_FileName(file_name)
 {
     if ((m_File = fopen(file_name.c_str(), for_output ? "wt" : "rt")) == NULL) {
@@ -69,7 +69,7 @@ inline SCmdLineArgListImpl::SCmdLineArgListImpl(
     }
 }
 
-inline SCmdLineArgListImpl::SCmdLineArgListImpl(const std::string& args) :
+inline SCmdLineArgListImpl::SCmdLineArgListImpl(const string& args) :
     m_File(NULL)
 {
     NStr::Split(args, CCmdLineArgList::GetDelimiterString(), m_Args);
@@ -82,7 +82,7 @@ SCmdLineArgListImpl::~SCmdLineArgListImpl()
 }
 
 CCmdLineArgList CCmdLineArgList::OpenForOutput(
-    const std::string& file_or_stdout)
+    const string& file_or_stdout)
 {
     if (file_or_stdout == "-")
         return new SCmdLineArgListImpl(stdout, "stdout");
@@ -90,7 +90,7 @@ CCmdLineArgList CCmdLineArgList::OpenForOutput(
         return new SCmdLineArgListImpl(file_or_stdout, true);
 }
 
-void CCmdLineArgList::WriteLine(const std::string& line)
+void CCmdLineArgList::WriteLine(const string& line)
 {
     _ASSERT(m_Impl->m_File != NULL);
 
@@ -100,17 +100,17 @@ void CCmdLineArgList::WriteLine(const std::string& line)
     }
 }
 
-CCmdLineArgList CCmdLineArgList::CreateFrom(const std::string& file_or_list)
+CCmdLineArgList CCmdLineArgList::CreateFrom(const string& file_or_list)
 {
     if (file_or_list[0] == '@')
         return new SCmdLineArgListImpl(
-            std::string(file_or_list.begin() + 1,
+            string(file_or_list.begin() + 1,
                 file_or_list.end()), false);
     else
         return new SCmdLineArgListImpl(file_or_list);
 }
 
-bool CCmdLineArgList::GetNextArg(std::string& arg)
+bool CCmdLineArgList::GetNextArg(string& arg)
 {
     if (m_Impl->m_File != NULL) {
         char buffer[256];
@@ -140,9 +140,9 @@ bool CCmdLineArgList::GetNextArg(std::string& arg)
     return true;
 }
 
-const std::string& CCmdLineArgList::GetDelimiterString()
+const string& CCmdLineArgList::GetDelimiterString()
 {
-    static const std::string delimiters(" \t\n\r,;");
+    static const string delimiters(" \t\n\r,;");
 
     return delimiters;
 }
