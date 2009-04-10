@@ -51,6 +51,7 @@ USING_NCBI_SCOPE;
 
 ///////////////////////////////////////////////////////////////////////
 
+static const string s_ClientName("test_netcache_api");
 
 /// Test application
 ///
@@ -78,7 +79,8 @@ struct STransactionInfo
 
 /// @internal
 static
-bool s_CheckExists(const string&  key,
+bool s_CheckExists(CNetCacheAPI   nc_client,
+                   const string&  key,
                    unsigned char* buf = 0,
                    size_t         buf_size = 0,
                    vector<STransactionInfo>* log = 0)
@@ -88,7 +90,6 @@ bool s_CheckExists(const string&  key,
     info.blob_size = buf_size;
     info.connection_time = 0;
 
-    CNetCacheAPI nc_client("test");
     CStopWatch sw(CStopWatch::eStart);
 
     unsigned char dataBuf[1024] = {0,};
@@ -123,7 +124,8 @@ bool s_CheckExists(const string&  key,
 
 /// @internal
 static
-string s_PutBlob(const string&           service,
+string s_PutBlob(
+               CNetCacheAPI              nc_client,
                const void*               buf,
                size_t                    size,
                vector<STransactionInfo>* log)
@@ -132,7 +134,7 @@ string s_PutBlob(const string&           service,
     info.blob_size = size;
 
     CStopWatch sw(CStopWatch::eStart);
-    CNetCacheAPI nc_client(service, "test");
+
     STimeout to = {120, 0};
     nc_client.SetCommunicationTimeout(to);
 
@@ -216,6 +218,8 @@ void s_StressTest(const string&             service,
          << " Repeats = " << repeats
          << ". Please wait... " << endl;
 
+    CNetCacheAPI nc_client(service, s_ClientName);
+
     AutoPtr<char, ArrayDeleter<char> > buf  = new char[size];
     AutoPtr<char, ArrayDeleter<char> > buf2 = new char[size];
     memset(buf.get(),  0, size);
@@ -245,7 +249,7 @@ void s_StressTest(const string&             service,
             ch[i0] = 10;
             ch[i1] = 127;
 
-            key = s_PutBlob(service, buf.get(), size, log_write);
+            key = s_PutBlob(nc_client, buf.get(), size, log_write);
 
             keys.push_back(key);
             idx0.push_back(i0);
@@ -275,8 +279,8 @@ void s_StressTest(const string&             service,
             ch[i0] = 10;
             ch[i1] = 127;
 
-            bool exists =
-                s_CheckExists(key, (unsigned char*)buf2.get(), size, log_read);
+            bool exists = s_CheckExists(nc_client,
+                key, (unsigned char*)buf2.get(), size, log_read);
             if (!exists) {
                 cerr << "Not found: " << key << endl;
             }
@@ -297,7 +301,8 @@ void s_StressTest(const string&             service,
 
 ///@internal
 static
-void s_TestKeysRead(vector<string>&           rep_keys,
+void s_TestKeysRead(CNetCacheAPI              nc_client,
+                    vector<string>&           rep_keys,
                     unsigned                  size,
                     vector<STransactionInfo>* log_read)
 {
@@ -305,8 +310,8 @@ void s_TestKeysRead(vector<string>&           rep_keys,
 
     ITERATE(vector<string>, it, rep_keys) {
         const string& key = *it;
-        bool exists =
-            s_CheckExists( key, (unsigned char*)buf.get(), size, log_read);
+        bool exists = s_CheckExists(nc_client, key,
+            (unsigned char*) buf.get(), size, log_read);
         assert(exists);
     }
 }
@@ -338,7 +343,7 @@ void CTestNetCacheClient::Init(void)
 static
 void s_RemoveBLOB_Test(const string& service)
 {
-    CNetCacheAPI nc(service, "test");
+    CNetCacheAPI nc(service, s_ClientName);
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, 1);
@@ -357,7 +362,7 @@ void s_RemoveBLOB_Test(const string& service)
 static
 void s_ReadUpdateCharTest(const string& service)
 {
-    CNetCacheAPI nc(service, "test");
+    CNetCacheAPI nc(service, s_ClientName);
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, 100);
@@ -406,7 +411,7 @@ int CTestNetCacheClient::Run(void)
     string key;
 
     {{
-        CNetCacheAPI nc_client(service, "test");
+        CNetCacheAPI nc_client(service, s_ClientName);
 
         key = nc_client.PutData((const void*)0, 0, 120);
         NcbiCout << key << NcbiEndl;
@@ -432,7 +437,7 @@ int CTestNetCacheClient::Run(void)
 
 
     {{
-        CNetCacheAPI nc_client(service, "test");
+        CNetCacheAPI nc_client(service, s_ClientName);
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
@@ -445,7 +450,7 @@ int CTestNetCacheClient::Run(void)
     }}
 
     {{
-        CNetCacheAPI nc_client(service, "test");
+        CNetCacheAPI nc_client(service, s_ClientName);
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
@@ -462,7 +467,7 @@ int CTestNetCacheClient::Run(void)
     }}
 
     {{
-        CNetCacheAPI nc_client("test");
+        CNetCacheAPI nc_client(s_ClientName);
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
@@ -478,11 +483,11 @@ int CTestNetCacheClient::Run(void)
     // update existing BLOB
     {{
         {
-        CNetCacheAPI nc_client(service, "test");
+        CNetCacheAPI nc_client(service, s_ClientName);
         nc_client.PutData(key, test_data2, sizeof(test_data2)+1);
         }
         {
-        CNetCacheAPI nc_client(service, "test");
+        CNetCacheAPI nc_client(service, s_ClientName);
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
         CNetCacheAPI::EReadResult rres =
@@ -497,22 +502,22 @@ int CTestNetCacheClient::Run(void)
 
     // timeout test
     {{
-        CNetCacheAPI nc_client(service, "test");
+        CNetCacheAPI nc_client(service, s_ClientName);
 
         key = nc_client.PutData(test_data, sizeof(test_data), 80);
         assert(!key.empty());
     }}
 
-    bool exists;
-    exists = s_CheckExists(key);
+    CNetCacheAPI nc_client(service, s_ClientName);
+
+    bool exists = s_CheckExists(nc_client, key);
     assert(exists);
 
-    CNetCacheAPI nc_client(service, "test");
     nc_client.Remove(key);
 
     SleepMilliSec(1800);
 
-    exists = s_CheckExists(key);
+    exists = s_CheckExists(nc_client, key);
     assert(!exists);
 
     s_RemoveBLOB_Test(service);
@@ -564,7 +569,7 @@ int CTestNetCacheClient::Run(void)
         NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs="
                  << rep_keys.size()
                  << NcbiEndl;
-        s_TestKeysRead(rep_keys, 1024 * 1024 * 10, &log_read);
+        s_TestKeysRead(nc_client, rep_keys, 1024 * 1024 * 10, &log_read);
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
