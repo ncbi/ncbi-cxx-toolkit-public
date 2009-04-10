@@ -42,7 +42,7 @@
 #define TEST_MAX_TRY 2
 #define TEST_TIMEOUT 5.123456
 
-#define MIN_PORT 5001
+#define MIN_PORT 4096
 
 #define _STR(n)      #n
 #define STRINGIFY(n) _STR(n)

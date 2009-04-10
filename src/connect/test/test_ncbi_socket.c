@@ -54,7 +54,7 @@
 /* This header must go last */
 #include "test_assert.h"
 
-#define MIN_PORT 5001
+#define MIN_PORT 4096
 #define DEF_PORT 5555
 #define DEF_HOST "localhost"
 

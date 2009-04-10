@@ -40,7 +40,7 @@
 /* This header must go last */
 #include "test_assert.h"
 
-#define MIN_PORT 5001
+#define MIN_PORT 4096
 
 
 static FILE* s_LogFile;
