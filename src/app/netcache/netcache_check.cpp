@@ -98,16 +98,6 @@ int CNetCacheCheck::Run(void)
         return 0;
     }
 
-    {
-        CNetCacheAPI cl(args["service_address"].AsString(), "netcache_check");
-
-        printf("Version: %s\n",
-            cl.GetService().GetBestConnection().Exec("VERSION").c_str());
-        printf("Version again: %s\n",
-            cl.GetService().GetBestConnection().Exec("VERSION").c_str());
-        return 0;
-    }
-
     CNetCacheAPI cl(args["service_address"].AsString(), "netcache_check");
 
     // functionality test
