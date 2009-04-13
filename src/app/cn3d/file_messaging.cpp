@@ -78,7 +78,7 @@ static fstream * CreateLock(const CDirEntry& lockFile)
     FILE* lockFileHandle = fopen(lockFile.GetPath().c_str(), "w+");
     auto_ptr<fstream> lockStream(new fstream(lockFileHandle));
 #else
-    auto_ptr<fstream> lockStream(new fstream(lockFile.GetPath().c_str(), "w+"));
+    auto_ptr<fstream> lockStream(new fstream(lockFile.GetPath().c_str(), (IOS_BASE::in | IOS_BASE::out | IOS_BASE::app)));
 #endif
 
     if (lockStream.get() == NULL || !(*lockStream)) {
