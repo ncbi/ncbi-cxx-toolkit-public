@@ -15,7 +15,8 @@ PRE_LIBS = $(BOOST_TEST_LIBS)
 
 REQUIRES = Boost.Test
 
-# Uncomment next 2 lines to run automatically as part of "make check"
-# CHECK_COPY = unit_test_alt_sample.ini
-# CHECK_CMD =
+# Uncomment if you do not want it to run automatically as part of
+# "make check".
+CHECK_CMD = unit_test_alt_sample -disable_TestTimeout
+CHECK_COPY = unit_test_alt_sample.ini
 ### END COPIED SETTINGS

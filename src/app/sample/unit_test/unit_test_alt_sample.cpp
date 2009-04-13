@@ -69,36 +69,46 @@ NCBITEST_AUTO_INIT()
     //     return;
     // }
 
-    printf("Initialization function executed\n");
+    cout << "Initialization function executed" << endl;
 }
 
 NCBITEST_AUTO_FINI()
 {
     // Your application finalization code here (optional)
 
-    printf("Finalization function executed\n");
+    cout << "Finalization function executed" << endl;
 }
 
-NCBITEST_INIT_CMDLINE(descrs)
-{
-    // Here we make descriptions of command line parameters that we are
-    // going to use.
 
-    descrs->AddOptionalPositional("some_arg",
-                                  "This is custom sample command line "
-                                  "argument that will be distinguished by "
-                                  "test application",
-                                  CArgDescriptions::eString);
+NCBITEST_INIT_CMDLINE(arg_desc)
+{
+    // Describe command line parameters that we are going to use
+
+    arg_desc->AddFlag
+        ("disable_UsingArgs",
+         "This is custom sample command line argument that can be "
+         "used by test application to disable the UsingArg test");
+
+    arg_desc->AddFlag
+        ("disable_TestTimeout",
+         "Do not run TestTimeout test -- used to avoid unwanted failure "
+         "during the daily automated builds. See CHECK_CMD in the Makefile; it"
+         "is also mapped to 'enable_test_timeout' parameter in config file.");
 }
 
-NCBITEST_INIT_VARIABLES(parser)
-{
-    // Here we are initializing variables that will be used in conditions
-    // in unit_test_alt_sample.ini
 
+NCBITEST_INIT_VARIABLES(conf_parser)
+{
+    // Initialize variables that will be used in conditions
+    // in 'unit_test_alt_sample.ini'
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    parser->AddSymbol("some_arg_passed", args["some_arg"].HasValue());
+
+    conf_parser->AddSymbol("disable_using_args",
+                           args["disable_UsingArgs"] ? true : false);
+    conf_parser->AddSymbol("enable_test_timeout",
+                           !args["disable_TestTimeout"]);
 }
+
 
 NCBITEST_INIT_TREE()
 {
@@ -155,7 +165,7 @@ BOOST_AUTO_TEST_CASE(TestWithException)
 
 static void s_FuncWithoutException(void)
 {
-    printf("Here is some dummy message\n");
+    cout << "Here is some dummy message" << endl;
 }
 
 BOOST_AUTO_TEST_CASE(TestWithoutException)
@@ -173,27 +183,27 @@ BOOST_AUTO_TEST_CASE(TestTimeout)
 BOOST_AUTO_TEST_CASE(TestDependentOnArg)
 {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    string arg_value = args["some_arg"].AsString();
+    bool arg_value = args["disable_UsingArgs"];
 
     LOG_POST("Argument value is " << arg_value);
 }
 
 BOOST_AUTO_TEST_CASE(TestAlwaysDisabled)
 {
-    printf("This message will never be printed.\n");
+    cout << "This message will never be printed" << endl;
 }
 
 BOOST_AUTO_TEST_CASE(TestDisabledInConfig)
 {
-    printf("This message will be printed only after "
-           "proper editing of *.ini file or after adding command line "
-           "argument --run_test='*DisabledInConfig'.\n");
+    cout << "This message will be printed only after "
+        "proper editing of *.ini file or after adding command line "
+        "argument --run_test='*DisabledInConfig'" << endl;
 }
 
 BOOST_AUTO_TEST_CASE(TestUsingArg)
 {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    string arg_value = args["some_arg"].AsString();
+    bool arg_value = args["disable_UsingArgs"];
 
-    BOOST_CHECK( !arg_value.empty() );
+    BOOST_CHECK( !arg_value );
 }

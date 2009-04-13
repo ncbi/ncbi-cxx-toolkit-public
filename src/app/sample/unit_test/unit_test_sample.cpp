@@ -26,11 +26,11 @@
 * Author:  Pavel Ivanov, NCBI
 *
 * File Description:
-*   Sample unit tests file for main stream test developing.
+*   Sample unit tests file for the mainstream test developing.
 *
-* This file represents basic most common usage of Ncbi.Test framework based
-* on Boost.Test framework. For more advanced techniques look into another
-* sample - unit_test_alt_sample.cpp.
+* This file represents basic most common usage of Ncbi.Test framework (which
+* is based on Boost.Test framework. For more advanced techniques look into
+* another sample - unit_test_alt_sample.cpp.
 *
 * ===========================================================================
 */
@@ -38,6 +38,8 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbiapp.hpp>
+
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
@@ -61,13 +63,25 @@ USING_NCBI_SCOPE;
 NCBITEST_AUTO_INIT()
 {
     // Your application initialization code here (optional)
-    printf("Initialization function executed\n");
+    cout << "Initialization function executed" << endl;
 }
+
+
+NCBITEST_INIT_CMDLINE(arg_desc)
+{
+    // Describe command line parameters that we are going to use
+    arg_desc->AddFlag
+        ("enable_TestTimeout",
+         "Run TestTimeout test, which is artificially disabled by default in"
+         "order to avoid unwanted failure during the daily automated builds.");
+}
+
+
 
 NCBITEST_AUTO_FINI()
 {
     // Your application finalization code here (optional)
-    printf("Finalization function executed\n");
+    cout << "Finalization function executed" << endl;
 }
 
 BOOST_AUTO_TEST_CASE(TestSimpleTools)
@@ -111,7 +125,7 @@ BOOST_AUTO_TEST_CASE(TestWithException)
 
 static void s_FuncWithoutException(void)
 {
-    printf("Here is some dummy message\n");
+    cout << "Here is some dummy message" << endl;
 }
 
 BOOST_AUTO_TEST_CASE(TestWithoutException)
@@ -122,6 +136,12 @@ BOOST_AUTO_TEST_CASE(TestWithoutException)
 BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 1);
 BOOST_AUTO_TEST_CASE(TestTimeout)
 {
-    // This test will always fail due to timeout
-    SleepSec(2);
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    if ( args["enable_TestTimeout"] ) {
+        // This test will always fail due to timeout
+        SleepSec(2);
+    }
+    else {
+        cout << "To run TestTimeout pass flag '-enable_TestTimeout'" << endl;
+    }
 }
