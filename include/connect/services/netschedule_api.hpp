@@ -172,7 +172,14 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
 
     CNetScheduleSubmitter GetSubmitter();
-    CNetScheduleExecuter  GetExecuter();
+
+    /// Create an instance of CNetScheduleExecuter.
+    ///
+    /// @param port Control port that the worker node will be
+    ///             listening to.  If omitted, the INIT command
+    ///             will not be sent to NetSchedule.
+    CNetScheduleExecuter GetExecuter(unsigned short control_port = 0);
+
     CNetScheduleAdmin     GetAdmin();
 
     CNetService GetService();

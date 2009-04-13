@@ -47,9 +47,10 @@
 
 USING_NCBI_SCOPE;
 
-    
+
 ///////////////////////////////////////////////////////////////////////
 
+#define WORKER_NODE_PORT 9595
 
 /// Test application
 ///
@@ -173,7 +174,7 @@ void TestBatchSubmit(const string& service,
     job.output = "DONE";
 
     CStopWatch sw(CStopWatch::eStart);
-    CNetScheduleExecuter executer = cl.GetExecuter();
+    CNetScheduleExecuter executer = cl.GetExecuter(WORKER_NODE_PORT);
 
     for (;1;++cnt) {
         bool job_exists = executer.PutResultGetJob(job, job);
@@ -224,7 +225,7 @@ int CTestNetScheduleStress::Run(void)
     string input = "Hello " + queue;
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
-    CNetScheduleExecuter executer = cl.GetExecuter();
+    CNetScheduleExecuter executer = cl.GetExecuter(WORKER_NODE_PORT);
 
     CNetScheduleJob job(input);
     job.progress_msg = "pmsg";

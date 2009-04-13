@@ -501,8 +501,8 @@ public:
 
     /// Set a UDP port to listen to input jobs
     ///
-    void SetListeningPort(unsigned int udp_port) { m_UdpPort = udp_port; }
-    unsigned int GetListeningPort() const { return m_UdpPort; }
+    void SetListeningPort(unsigned short udp_port) { m_UdpPort = udp_port; }
+    unsigned short GetListeningPort() const { return m_UdpPort; }
 
     /// Set the maximum threads running simultaneously
     ///
@@ -575,7 +575,7 @@ private:
     CNetScheduleAPI m_SharedNSClient;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
-    unsigned int                 m_UdpPort;
+    unsigned short               m_UdpPort;
     unsigned int                 m_MaxThreads;
     unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
@@ -660,7 +660,7 @@ inline CNetScheduleAPI CGridWorkerNode::GetNSClient() const
 
 inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
 {
-    return GetNSClient().GetExecuter();
+    return GetNSClient().GetExecuter(m_UdpPort);
 }
 
 

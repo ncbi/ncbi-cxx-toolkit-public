@@ -53,6 +53,9 @@ USING_NCBI_SCOPE;
       "NCBI NetSchedule check utility Version " NETSCHEDULE_VERSION \
       " build " __DATE__ " " __TIME__
 
+#define WORKER_NODE_PORT 9898
+
+
 /// NetSchedule check application
 ///
 /// @internal
@@ -168,7 +171,7 @@ int CNetScheduleCheck::Run(void)
 int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
 {
     CNetScheduleSubmitter submitter = nc.GetSubmitter();
-    CNetScheduleExecuter executer = nc.GetExecuter();
+    CNetScheduleExecuter executer = nc.GetExecuter(WORKER_NODE_PORT);
 
     const string input = "Hello ";
     const string output = "DONE ";
@@ -179,7 +182,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
         //SleepSec(1);
 
         CNetScheduleJob job1;
-        bool job_exists = executer.WaitJob(job1,5,9898);
+        bool job_exists = executer.WaitJob(job1, 5, WORKER_NODE_PORT);
         if (job_exists) {
             if (job1.job_id != job.job_id)
                 executer.ReturnJob(job1.job_id);

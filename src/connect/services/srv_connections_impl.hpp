@@ -89,9 +89,8 @@ inline SNetServerCmdOutputImpl::SNetServerCmdOutputImpl(
 class INetServerConnectionListener : public CNetObject
 {
 public:
-    virtual void OnConnected(CNetServerConnection::TInstance) = 0;
-    virtual void OnError(const string& err_msg,
-        SNetServerImpl* pool) = 0;
+    virtual void OnConnected(CNetServerConnection conn) = 0;
+    virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
 };
 
 

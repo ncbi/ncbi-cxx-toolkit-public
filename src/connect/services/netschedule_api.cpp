@@ -77,14 +77,32 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
     m_Auth = auth;
 }
 
+void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
+    unsigned short control_port)
+{
+    m_WorkerNodeInitCmd = "INIT " + NStr::UIntToString(control_port);
+    m_WorkerNodeInitCmd += ' ';
+    m_WorkerNodeInitCmd += GetDiagContext().GetStringUID();
+}
+
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
-    CNetServerConnection::TInstance conn)
+    CNetServerConnection conn)
 {
     conn->WriteLine(m_Auth);
+
+    if (!m_WorkerNodeInitCmd.empty()) {
+        try {
+            conn.Exec(m_WorkerNodeInitCmd);
+        }
+        catch (CNetScheduleException& e) {
+            if (e.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
+                throw;
+        }
+    }
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
-    const string& err_msg, SNetServerImpl* pool)
+    const string& err_msg, SNetServerImpl* /*server*/)
 {
     string code;
     string msg;
@@ -215,10 +233,10 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
     return new SNetScheduleSubmitterImpl(m_Impl);
 }
 
-CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
+CNetScheduleExecuter CNetScheduleAPI::GetExecuter(unsigned short control_port)
 {
     m_Impl->m_Service.DiscoverLowPriorityServers(eOn);
-    return new SNetScheduleExecuterImpl(m_Impl);
+    return new SNetScheduleExecuterImpl(m_Impl, control_port);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()

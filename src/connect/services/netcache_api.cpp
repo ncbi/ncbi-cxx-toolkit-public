@@ -87,7 +87,7 @@ SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
 }
 
 void SNetCacheAPIImpl::CNetCacheServerListener::OnConnected(
-    CNetServerConnection::TInstance conn)
+    CNetServerConnection conn)
 {
     conn->WriteLine(m_Auth);
 }
@@ -107,9 +107,9 @@ string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
 }
 
 void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
-    const string& err_msg, SNetServerImpl* pool)
+    const string& err_msg, SNetServerImpl* server)
 {
-    string message = pool->GetAddressAsString();
+    string message = server->GetAddressAsString();
 
     message += ": ";
     message += err_msg;

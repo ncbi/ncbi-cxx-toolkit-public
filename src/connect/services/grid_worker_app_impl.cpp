@@ -98,7 +98,7 @@ public:
 
     void Prepare() { m_Control->StartListening(); }
 
-    unsigned int GetControlPort() { return m_Control->GetControlPort(); }
+    unsigned short GetControlPort() { return m_Control->GetControlPort(); }
     void Stop() { if (m_Control.get()) m_Control->RequestShutdown(); }
 protected:
 

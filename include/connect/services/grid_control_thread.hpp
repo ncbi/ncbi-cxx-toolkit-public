@@ -64,7 +64,7 @@ public:
                              CNcbiOstream& reply,
                              CGridWorkerNode& node) = 0;
     };
-    CWorkerNodeControlThread(unsigned int start_port, unsigned int end_port,
+    CWorkerNodeControlThread(unsigned short start_port, unsigned short end_port,
                              CGridWorkerNode& worker_node);
 
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
@@ -75,7 +75,7 @@ public:
 
     void RequestShutdown() { m_ShutdownRequested = true; }
 
-    unsigned int GetControlPort() const { return m_Port; }
+    unsigned short GetControlPort() const { return m_Port; }
 
     static IRequestProcessor* MakeProcessor(const string& cmd);
 
@@ -85,7 +85,7 @@ protected:
 private:
     CGridWorkerNode& m_WorkerNode;
     volatile bool    m_ShutdownRequested;
-    unsigned int m_Port;
+    unsigned short m_Port;
 
     CWorkerNodeControlThread(const CWorkerNodeControlThread&);
     CWorkerNodeControlThread& operator=(const CWorkerNodeControlThread&);

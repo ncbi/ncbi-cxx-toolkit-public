@@ -394,8 +394,7 @@ CNetServerConnection CNetServer::Connect()
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
-    if (m_Impl->m_Service->m_Listener)
-        m_Impl->m_Service->m_Listener->OnConnected(conn);
+    m_Impl->m_Service->m_Listener->OnConnected(conn);
 
     return conn;
 }

@@ -142,13 +142,15 @@ struct SNetScheduleAPIImpl : public CNetObject
             const string& program_version,
             const string& queue_name);
 
+        void MakeWorkerNodeInitCmd(unsigned short control_port);
+
     private:
-        virtual void OnConnected(CNetServerConnection::TInstance);
-        virtual void OnError(const string& err_msg,
-            SNetServerImpl* pool);
+        virtual void OnConnected(CNetServerConnection conn);
+        virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
     private:
         string m_Auth;
+        string m_WorkerNodeInitCmd;
     };
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
@@ -255,7 +257,8 @@ inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
 
 struct SNetScheduleExecuterImpl : public CNetObject
 {
-    SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl);
+    SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl,
+        unsigned short control_port);
 
     bool GetJobImpl(const string& cmd, CNetScheduleJob& job) const;
 
@@ -265,9 +268,10 @@ struct SNetScheduleExecuterImpl : public CNetObject
 };
 
 inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
-    CNetScheduleAPI::TInstance ns_api_impl) :
+    CNetScheduleAPI::TInstance ns_api_impl, unsigned short control_port) :
     m_API(ns_api_impl)
 {
+    ns_api_impl->m_Listener->MakeWorkerNodeInitCmd(control_port);
 }
 
 struct SNetScheduleAdminImpl : public CNetObject
