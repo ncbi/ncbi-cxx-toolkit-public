@@ -68,6 +68,7 @@ public:
     //    0 parsed successfully
     //   >0 an error code (copied to last_error)
     int FromString(const string& line);
+    // Generates G_CompEndGtLength message and returns false on error.
     string GetErrorMessage();
     string ToString(); // 9 column tab-separated string without EOL comments
 
@@ -151,6 +152,13 @@ public:
         return GapValidAtObjectEnd(gap_type);
     }
 
+
+    static bool CheckComponentEnd(const string& comp_id, int comp_end, int comp_len,
+        CAgpErr& agp_err);
+    bool CheckComponentEnd(int comp_len) {
+        return CheckComponentEnd(GetComponentId(), component_end, comp_len, *m_AgpErr);
+    }
+
 protected:
     int ParseComponentCols(bool log_errors=true);
     int ParseGapCols(bool log_errors=true);
@@ -184,7 +192,7 @@ public:
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
-    CAgpReader(CAgpErr* arg);
+    CAgpReader(CAgpErr* arg, bool ownAgpErr=false);
     CAgpReader(); // constructs a default error handler for this object instance
     virtual ~CAgpReader();
 
@@ -248,8 +256,8 @@ protected:
 
     virtual void OnObjectChange()
     {
-        // unless(at_beg): m_prev_row = the last  line of the old object
-        // unless(at_end): m_this_row = the first line of the new object
+        // unless(m_at_beg): m_prev_row = the last  line of the old object
+        // unless(m_at_end): m_this_row = the first line of the new object
     }
 
     virtual void OnGapOrComponent()
@@ -297,7 +305,6 @@ public:
 
     enum EAppliesTo{
       fAtThisLine=1,
-      //fAtSkipAfterBad=2, // Suppress this error if the previous line was invalid
       fAtPrevLine=4, // use fAtThisLine|fAtPrevLine when both lines are involved
       fAtNone    =8  // Not tied to any specifc line(s) (empty file; possibly, taxid errors)
     };
@@ -340,7 +347,7 @@ public:
         E_UnknownOrientation,   // -- agp_validate --
 
         E_ObjBegNePrevEndPlus1, // CAgpReader
-        E_NoValidLines,         // CAgpReader
+        E_NoValidLines,         // CAgpReader     (Make it a warning?)
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
@@ -359,9 +366,25 @@ public:
         W_GapLineMissingCol9,   // CAgpRow
         W_NoEolAtEof,           // CAgpReader
         W_GapLineIgnoredCol9,   // CAgpRow
+        // NOTE: "Wgs" warnings must come last so that  "Use -g..." hint
+        //        printed in CAgpValidateReader::x_PrintTotals()
+        //        comes right after the "Wgs" warning counts.
         W_CompIsWgsTypeIsNot,   // -- agp_validate --
         W_CompIsNotWgsTypeIs,   // -- agp_validate --
-        W_Last, W_First = 21
+
+        W_Last, W_First = 21,
+
+        // "GenBank" checks that rely on information about the sequence
+        G_InvalidCompId=41,     // -- agp_validate --
+        G_NotInGenbank,         // -- agp_validate --
+        G_NeedVersion,          // -- agp_validate --
+        G_CompEndGtLength,      // CAgpRow::CheckComponentEnd() (used in agp_validate)
+        G_DataError,            // -- agp_validate --
+
+        G_TaxError,             // -- agp_validate --
+        G_Last,
+
+        G_First = G_InvalidCompId,
     };
 
     static const char* GetMsg(int code);
@@ -386,29 +409,15 @@ protected:
 class NCBI_XOBJREAD_EXPORT CAgpErrEx : public CAgpErr
 {
 public:
-    // When adding entries to this enum, also update msg_ex[]
+    // ???
     enum {
-        G_InvalidCompId=41,
-        G_NotInGenbank,
-        G_NeedVersion,
-        G_CompEndGtLength,
-        G_DataError,
-
-        G_TaxError, // G_NoTaxid, G_NoOrgRef, G_AboveSpeciesLevel - all very rare
-
-        G_Last,
-        G_First = G_InvalidCompId,
-
-
         CODE_First=1,
         CODE_Extended=51, // reserve space for some user errors (to count, or to skip)
         CODE_Last=CODE_Extended+20
     };
 
     // Not needed if you use CAgpReader: it already dioes not report a 2-line error after a bad line.
-    enum EAppliesToEx{
-        fAtSkipAfterBad=2 // Suppress this error if the previous line was invalid
-    };
+    //enum EAppliesToEx{ fAtSkipAfterBad=2}; // Suppress this error if the previous line was invalid
 
     static const char* GetMsgEx(int code);
     static string GetPrintableCode(int code); // Returns a string like e01 w12
@@ -469,8 +478,6 @@ public:
     }
 
     // Print any accumulated messages.
-    // invalid_line=true: for the next line, suppress
-    //   CAgpErrEx::CAgpErr::fAtThisLine|CAgpErrEx::CAgpErr::fAtPrevLine messages
     void LineDone(const string& s, int line_num, bool invalid_line=false);
 
     // No need to call this function when reading from STDIN,
@@ -502,11 +509,10 @@ public:
     int CountTotals(int from, int to=E_First);
 
     // Print individual error counts (important if we skipped some errors)
-    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First);
+    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false);
 
 private:
-    typedef const char* TStr;
-    static const TStr msg_ex[];
+    //typedef const char* TStr;
 
     // Count errors of each type, including skipped ones.
     int m_MsgCount[CODE_Last];
@@ -523,7 +529,7 @@ private:
                                                     // (probably had another error);
                                                     // no need to-reprint "fname:linenum:content"
     bool m_two_lines_involved; // true: do not print "\n" after the previous line
-    bool m_invalid_prev;       // true: suppress errors concerning the previous line
+    //bool m_invalid_prev;       // true: suppress errors concerning the previous line
 
     // a stream to Accumulate messages for the current line.
     // (We immediately print messages that apply only to the previous line.)

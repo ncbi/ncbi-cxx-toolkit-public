@@ -1,9 +1,7 @@
 # $Id$
 
 APP = agp_validate
-SRC = agp_validate ContextValidator AgpErrEx AltValidator
-# AccessionPatterns LineValidator - dropped
-# AgpErr - renamed to AgpErrEx
+SRC = agp_validate ContextValidator AltValidator MapCompLen
 
 LIB = entrez2cli entrez2 taxon1 xobjutil xobjread \
       $(OBJMGR_LIBS:%=%$(STATIC))

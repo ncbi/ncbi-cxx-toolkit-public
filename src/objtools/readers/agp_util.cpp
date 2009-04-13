@@ -83,13 +83,29 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "extra text in the column 9 of the gap line",
     "component_id looks like a WGS accession, component_type is not W",
     "component_id looks like a non-WGS accession, yet component_type is W",
+
     // ? "component_id looks like a protein accession"
-    kEmptyCStr // W_Last
+    kEmptyCStr, // W_Last
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+
+    // GenBank-related errors
+    "invalid component_id",
+    "component_id not in GenBank",
+    "component_id X is ambiguous without an explicit version",
+    "component_end greater than sequence length",
+    "sequence data is invalid or unavailable",
+
+    "taxonomic data is not available",
+    kEmptyCStr  // G_Last
 };
 
 const char* CAgpErr::GetMsg(int code)
 {
-    return s_msg[code];
+    if(code>0 && code<G_Last) return s_msg[code];
+    return NcbiEmptyCStr;
 }
 
 string CAgpErr::FormatMessage(const string& msg, const string& details)
@@ -468,22 +484,40 @@ void CAgpRow::SetErrorHandler(CAgpErr* arg)
 {
     NCBI_ASSERT(!m_OwnAgpErr,
         "CAgpRow -- cannot redefine the default error handler. "
-        "Use different constructor, e.g. CAgpRow(NULL)"
+        "Use a different constructor, e.g. CAgpRow(NULL)"
     );
     m_AgpErr=arg;
+}
+
+bool CAgpRow::CheckComponentEnd( const string& comp_id, int comp_end, int comp_len,
+  CAgpErr& agp_err)
+{
+    if( comp_end > comp_len) {
+        string details=": ";
+        details += NStr::IntToString(comp_end);
+        details += " > ";
+        details += comp_id;
+        details += " length = ";
+        details += NStr::IntToString(comp_len);
+        details += " bp";
+
+        agp_err.Msg(CAgpErr::G_CompEndGtLength, details);
+        return false;
+    }
+    return true;
 }
 
 //// class CAgpReader
 CAgpReader::CAgpReader()
 {
-    m_OwnAgpErr=true;
+    m_OwnAgpErr=true; // delete in destructor
     m_AgpErr=new CAgpErr();
     Init();
 }
 
-CAgpReader::CAgpReader(CAgpErr* arg)
+CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr)
 {
-    m_OwnAgpErr=false;
+    m_OwnAgpErr=ownAgpErr; // delete in destructor (default=false)
     m_AgpErr=arg;
     Init();
 }
@@ -652,7 +686,7 @@ void CAgpReader::SetErrorHandler(CAgpErr* arg)
 {
     NCBI_ASSERT(!m_OwnAgpErr,
         "CAgpReader -- cannot redefine the default error handler. "
-        "Use different constructor, e.g. CAgpReader(NULL)"
+        "Use a different constructor, e.g. CAgpReader(NULL)"
     );
     m_AgpErr=arg;
     m_this_row->SetErrorHandler(arg);
@@ -694,35 +728,6 @@ string CAgpReader::GetErrorMessage(const string& filename)
 
 //// class CAgpErrEx - static members and functions
 
-const CAgpErrEx::TStr CAgpErrEx::msg_ex[]= {
-    // GenBank-related errors
-    "invalid component_id",
-    "component_id not in GenBank",
-    "component_id X is ambiguous without an explicit version",
-    "component_end greater than sequence length",
-    "sequence data is invalid or unavailable",
-
-    "taxonomic data is not available",
-    kEmptyCStr  // G_Last
-
-    // "cannot retrieve the taxonomic id",
-    // "cannot retrieve taxonomic data for taxid",
-    // "taxid X is above species level",
-};
-
-const char* CAgpErrEx::GetMsgEx(int code)
-{
-    if(code>0) {
-        if(code < W_Last) {
-            return GetMsg(code);
-        }
-        else if(code>=G_First && code<G_Last) {
-            return msg_ex[code-G_First];
-        }
-    }
-    return NcbiEmptyCStr;
-}
-
 bool CAgpErrEx::MustSkip(int code)
 {
     return m_MustSkip[code];
@@ -763,7 +768,7 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
 
     out << "### Errors for GenBank-based (-alt) and other component checks (-g, FASTA files) ###\n";
     for(int i=G_First; i<G_Last; i++) {
-        out << GetPrintableCode(i) << "\t" << GetMsgEx(i);
+        out << GetPrintableCode(i) << "\t" << GetMsg(i);
         out << "\n";
     }
     out <<
@@ -806,7 +811,7 @@ void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
     ostr<< "\t" << (
         (code>=W_First && code<W_Last) ? "WARNING" : "ERROR"
     ) << (code <=E_LastToSkipLine ? ", line skipped" : "")
-    << ": " << FormatMessage( GetMsgEx(code), details ) << "\n";
+    << ": " << FormatMessage( GetMsg(code), details ) << "\n";
 }
 
 
@@ -824,7 +829,7 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
     m_line_num_prev=0;
     m_prev_printed=false;
     m_two_lines_involved=false;
-    m_invalid_prev=false;
+    //m_invalid_prev=false;
 
     memset(m_MsgCount , 0, sizeof(m_MsgCount ));
     memset(m_MustSkip , 0, sizeof(m_MustSkip ));
@@ -833,33 +838,34 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
     m_MustSkip[W_CompIsWgsTypeIsNot]=true;
     m_MustSkip[W_CompIsNotWgsTypeIs]=true;
 
-    // A "random check" to make sure enum, msg[] and msg_ex[]
-    // are not out of skew.
+    // A "random check" to make sure enum and msg[] are not out of skew.
     //cerr << sizeof(msg)/sizeof(msg[0]) << "\n";
     //cerr << G_Last+1 << "\n";
-    NCBI_ASSERT( sizeof(msg_ex)/sizeof(msg_ex[0])==G_Last-G_First+1,
-        "msg_ex[] size  != G_Last-G_First+1" );
-    NCBI_ASSERT( string(GetMsgEx(E_Last))=="",
-        "CAgpErrEx -- GetMsgEx(E_Last) not empty" );
-    NCBI_ASSERT( string(GetMsgEx( (E_Last-1) ))!="",
-        "CAgpErrEx -- GetMsgEx(E_Last-1) is empty" );
-    NCBI_ASSERT( string(GetMsgEx(W_Last))=="",
-        "CAgpErrEx -- GetMsgEx(W_Last) not empty" );
-    NCBI_ASSERT( string(GetMsgEx( (W_Last-1) ))!="",
-        "CAgpErrEx -- GetMsgEx(W_Last-1) is empty" );
-    NCBI_ASSERT( string(GetMsgEx(G_Last))=="",
-        "CAgpErrEx -- GetMsgEx(G_Last) not empty" );
-    NCBI_ASSERT( string(GetMsgEx( (G_Last-1) ))!="",
-        "CAgpErrEx -- GetMsgEx(G_Last-1) is empty" );
+    NCBI_ASSERT( sizeof(s_msg)/sizeof(s_msg[0])==G_Last+1,
+        "s_msg[] size != G_Last+1");
+        //(string("s_msg[] size ")+NStr::IntToString(sizeof(s_msg)/sizeof(s_msg[0])) +
+        //" != G_Last+1 "+NStr::IntToString(G_Last+1)).c_str() );
+    NCBI_ASSERT( string(GetMsg(E_Last))=="",
+        "CAgpErrEx -- GetMsg(E_Last) not empty" );
+    NCBI_ASSERT( string(GetMsg( (E_Last-1) ))!="",
+        "CAgpErrEx -- GetMsg(E_Last-1) is empty" );
+    NCBI_ASSERT( string(GetMsg(W_Last))=="",
+        "CAgpErrEx -- GetMsg(W_Last) not empty" );
+    NCBI_ASSERT( string(GetMsg( (W_Last-1) ))!="",
+        "CAgpErrEx -- GetMsg(W_Last-1) is empty" );
+    NCBI_ASSERT( string(GetMsg(G_Last))=="",
+        "CAgpErrEx -- GetMsg(G_Last) not empty" );
+    NCBI_ASSERT( string(GetMsg( (G_Last-1) ))!="",
+        "CAgpErrEx -- GetMsg(G_Last-1) is empty" );
 }
 
 
 //// class CAgpErrEx - non-static functions
 void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 {
-    // Ignore possibly spurious errors generated after
+    // Ignore a possibly spurious errors generated after
     // an unacceptable line (e.g. a line with wrong # of columns)
-    if(m_invalid_prev && (appliesTo&CAgpErrEx::fAtSkipAfterBad) ) return;
+    //if(m_invalid_prev && (appliesTo&CAgpErrEx::fAtSkipAfterBad) ) return;
 
     // Suppress some messages while still counting them
     m_MsgCount[code]++;
@@ -890,6 +896,10 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
     }
     else {
         // Print it now (useful for appliesTo==CAgpErr::fAtPrevLine)
+
+        // E_NoValidLines
+        if(appliesTo==fAtNone && m_InputFiles.size() ) *m_out << m_InputFiles.back() << ":\n";
+
         PrintMessage(*m_out, code, details);
     }
 
@@ -917,12 +927,9 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
     m_filenum_prev=m_InputFiles.size()-1;
 
     if(invalid_line) {
-        m_invalid_prev = true;
         m_lines_skipped++;
     }
-    else {
-        m_invalid_prev = false;
-    }
+    // m_invalid_prev = invalid_line;
 
     m_two_lines_involved=false;
 }
@@ -978,12 +985,12 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
     res="";
     for( int i=E_First; i<CODE_Last; i++ ) {
         bool matchesCode = ( str==GetPrintableCode(i) );
-        if( matchesCode || NStr::Find(GetMsgEx(i), str) != NPOS) {
+        if( matchesCode || NStr::Find(GetMsg(i), str) != NPOS) {
             m_MustSkip[i] = !skip_other;
             res += "  (";
             res += GetPrintableCode(i);
             res += ") ";
-            res += GetMsgEx(i);
+            res += GetMsg(i);
             res += "\n";
             if(matchesCode) break;
         }
@@ -1010,7 +1017,7 @@ int CAgpErrEx::CountTotals(int from, int to)
     return count;
 }
 
-void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to)
+void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool report_lines_skipped)
 {
     if(to==E_First) {
         //// One argument: count errors/warnings/genbank errors/given type
@@ -1022,13 +1029,17 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to)
             ostr << "Internal error in CAgpErrEx::PrintMessageCounts().";
         }
     }
-    ostr<< setw(7) << "count" << "  description\n"; // code
+    if(from<to) ostr<< setw(7) << "count" << "  description\n"; // code?
     for(int i=from; i<to; i++) {
         if( m_MsgCount[i] ) {
             ostr<< setw(7) << m_MsgCount[i] << "  "
                     // << "(" << GetPrintableCode(i) << ") "
-                    << GetMsgEx(i) << "\n";
+                    << GetMsg(i) << "\n";
         }
+    }
+    if(m_lines_skipped && report_lines_skipped) {
+      ostr << "\nNOTE: " << m_lines_skipped <<
+        " invalid lines were skipped (not included in most counts, not subjected to all the checks).\n";
     }
 }
 

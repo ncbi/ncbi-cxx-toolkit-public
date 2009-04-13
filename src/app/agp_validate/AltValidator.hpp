@@ -34,8 +34,9 @@
  *
  */
 
+#include <corelib/ncbistd.hpp>
 #include <objtools/readers/agp_util.hpp>
-#include "AgpErrEx.hpp"
+#include <iostream>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -72,7 +73,6 @@ public:
   int m_GenBankCompLineCount;
 
   void Init();
-  //void ValidateLine( const string& comp_id, int line_num, int comp_end);
   void CheckTaxids();
   void PrintTotals();
 

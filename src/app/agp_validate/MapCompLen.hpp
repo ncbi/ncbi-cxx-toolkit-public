@@ -1,5 +1,5 @@
-#ifndef AGP_VALIDATE_AgpErrEx
-#define AGP_VALIDATE_AgpErrEx
+#ifndef AGP_VALIDATE_MapCompLen
+#define AGP_VALIDATE_MapCompLen
 
 /*  $Id$
  * ===========================================================================
@@ -30,23 +30,26 @@
  *      Victor Sapojnikov
  *
  * File Description:
- *      Error and warning messages produced by AGP validator.
- *      CAgpErr: print errors and related AGP lines;
- *      supress repetitive messages and the ones
- *      that user requested to suppress.
+ *      Map of string->int populated by sequence ids->lengths from a FASTA file.
  *
  */
 
 #include <corelib/ncbistd.hpp>
 #include <iostream>
-#include <objtools/readers/agp_util.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
-//// class CAgpErrEx moved to objtools/reader/agp_util.?pp
-//// This module will be removed soon.
+typedef map<string, int> TMapStrInt ;
+class CMapCompLen : public TMapStrInt
+{
+public:
+  typedef pair<TMapStrInt::iterator, bool> TMapStrIntResult;
+  // returns 0 on success, or a previous length not equal to the new one
+  int AddCompLen(const string& acc, int len);
+};
 
 END_NCBI_SCOPE
 
-#endif /* AGP_VALIDATE_AgpErrEx */
+#endif /* AGP_VALIDATE_MapCompLen */
 

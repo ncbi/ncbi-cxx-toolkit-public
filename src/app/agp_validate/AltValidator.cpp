@@ -154,6 +154,8 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
   return acc_data.gi;
 }
 
+/*
+// to do: use CAgpRow::CheckComponentEnd()
 void CAltValidator::ValidateLength(
   const string& comp_id, int comp_end, int comp_len)
 {
@@ -169,26 +171,27 @@ void CAltValidator::ValidateLength(
     agpErr.Msg(CAgpErrEx::G_CompEndGtLength, details );
   }
 }
+*/
 
 void CAltValidator::PrintTotals()
 {
   int e_count=agpErr.CountTotals(CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last);
 
   if(m_GenBankCompLineCount) {
-    cout << m_GenBankCompLineCount << " lines with GenBank component accessions";
+    cout << m_GenBankCompLineCount << " lines with valid component accessions";
   }
   else{
-    cout << "No GenBank components found";
+    cout << "No valid component accessions found";
   }
   if(e_count) {
     if(e_count==1) cout << ".\n1 error";
     else cout << ".\n" << e_count << " errors";
     if(agpErr.m_msg_skipped) cout << ", " << agpErr.m_msg_skipped << " not printed";
     cout << ":\n";
-    agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last);
+    agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
   }
   else {
-    cout << "; no non-GenBank component accessions.\n";
+    cout << "; no invalid component accessions.\n";
   }
 }
 
@@ -311,7 +314,7 @@ void CAltValidator::CheckTaxids()
     return;
   }
 
-  cerr << "The AGP taxid is: " << agp_taxid << "\n";
+  cout << "The AGP taxid is: " << agp_taxid << endl;
   if (m_TaxidMap.size() == 1) return;
 
   cerr << "Components with incorrect taxids:\n";
@@ -412,6 +415,7 @@ void CAltValidator::ProcessQueue()
 {
   int entrez_count=0;
   int objman_count=0;
+  CAgpRow row;
   //cerr << "before QueryAccessions" << endl;
   QueryAccessions(); // In: accessions; Out: mapAccData.
   //cerr << "after QueryAccessions" << endl;
@@ -482,7 +486,7 @@ void CAltValidator::ProcessQueue()
 
         if(m_check_len_taxid) {
           // Component out of bounds check
-          ValidateLength( acc, it->comp_end, acc_data.len );
+          CAgpRow::CheckComponentEnd( acc, it->comp_end, acc_data.len, agpErr );
 
           // Taxid check
           int taxid = acc_data.taxid;

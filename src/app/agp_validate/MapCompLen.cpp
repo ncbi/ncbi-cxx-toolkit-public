@@ -27,20 +27,30 @@
  *      Victor Sapojnikov
  *
  * File Description:
- *      Error and warning messages produced by AGP validator.
- *      CAgpErr: print errors and related AGP lines;
- *      supress repetitive messages and the ones
- *      that user requested to suppress.
+ *      Map of string->int populated by sequence ids->lengths from a FASTA file.
+ *
  *
  */
-#include <ncbi_pch.hpp>
-#include "AgpErrEx.hpp"
 
-USING_NCBI_SCOPE;
+#include <ncbi_pch.hpp>
+
+#include "MapCompLen.hpp"
+
+using namespace ncbi;
 BEGIN_NCBI_SCOPE
 
-//// class CAgpErrEx moved to objtools/reader/agp_util.?pp
-//// This module will be removed soon.
+//// class CMapCompLen
+int CMapCompLen::AddCompLen(const string& acc, int len)
+{
+  TMapStrInt::value_type acc_len(acc, len);
+  TMapStrIntResult insert_result = insert(acc_len);
+  if(insert_result.second == false) {
+    if(insert_result.first->second != len)
+      return insert_result.first->second; // error: already have a different length
+  }
+  return 0; // success
+}
+
 
 
 END_NCBI_SCOPE

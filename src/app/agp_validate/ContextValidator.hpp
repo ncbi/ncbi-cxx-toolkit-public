@@ -34,10 +34,13 @@
  *
  */
 
-#include "AgpErrEx.hpp"
+#include <corelib/ncbistd.hpp>
+#include <iostream>
+#include <objtools/readers/agp_util.hpp>
 
 // #include "LineValidator.hpp"
 #include <set>
+#include "MapCompLen.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -69,8 +72,6 @@ public:
   int file_num, line_num;
 
   enum { ORI_plus, ORI_minus, ORI_zero, ORI_na,  ORI_count };
-  // static TValuesMap validOri;
-  // CCompVal(); no validation needed
 
   void init(const CAgpRow& row, int line_num_arg)
   {
@@ -124,45 +125,53 @@ public:
 };
 
 
-class CAgpContextValidator
+class CAgpValidateReader : public CAgpReader
 {
 public:
-  CAgpContextValidator(bool checkCompNames=false);
-  //void ValidateLine(const SDataLine& dl, const CAgpLine& cl);
-  void ValidateRow(CAgpRow& row, int line_num);
-
-  void EndOfObject(bool afterLastLine=false);
-
-  // Adjust the context after an invalid line
-  // (to suppress some spurious errors)
-  void InvalidLine();
-
-
+  CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
   void PrintTotals();
+  bool m_CheckCompNames;
 
 protected:
-  // Assigned in ValidateRow(), used in x_OnGapRow() x_OnCompRow()
-  bool new_obj;
+  void x_PrintTotals(); // without comment counts
+  // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
+  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader);
 
-  // Private subroutines for ValidateRow()
-  void x_OnGapRow (CAgpRow& row);
-  void x_OnCompRow(CAgpRow& row, int line_num);
+  int m_CommentLineCount;
+  int m_EolComments;
 
-  /*
-  // Private subroutines for ValidateLine()
-  void x_OnGapLine(const SDataLine& dl, const CGapVal& gap);
-  void x_OnCompLine(const SDataLine& dl, const CCompVal& comp);
-  */
+  // Callbacks from CAgpReader
+  virtual void OnScaffoldEnd();
+  virtual void OnObjectChange();
+  virtual void OnGapOrComponent();
+  virtual bool OnError();
+  virtual void OnComment()
+  {
+    // Line that starts with "#".
+    // No other callbacks invoked for this line.
+    m_CommentLineCount++;
+  }
+
+  CMapCompLen& m_comp2len; // for optinal check of component lengths (or maybe object lengths)
+
+  int m_componentsInLastScaffold;
+  int m_componentsInLastObject;
+  int m_gapsInLastScaffold;
+  int m_gapsInLastObject;
+  bool m_prev_orientation_unknown;
 
   int m_ObjCount;
   int m_ScaffoldCount;
   int m_SingleCompScaffolds;
   int m_SingleCompObjects;
+  int m_SingleCompScaffolds_withGaps;
+  int m_SingleCompObjects_withGaps;
+  int m_NoCompScaffolds;
+  // add m_NoCompObjects?
+
   int m_CompCount;
   int m_GapCount;
-  //int m_CompOri[CCompVal::ORI_count];
   int m_CompOri[4];
-  bool m_CheckCompNames;
 
   //int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
   int m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapYes_count];
@@ -180,25 +189,6 @@ protected:
   typedef map<string, CCompSpans> TCompId2Spans;
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
-
-  string prev_object;
-  //CAgpRow::EGap
-  int prev_line_gap_type;
-
-  // Used for the first component in a scaffold.
-  // We do not know right away whether the scaffold is a singleton,
-  // and unknown orientation is not an error for singletons.
-  bool prev_orientation_unknown;
-
-   // End of previous element in object coords (column 3).
-   // Used for checking for intersection.
-  int  prev_end;
-  int  prev_part_num;
-  int  componentsInLastScaffold;
-  int  componentsInLastObject;
-
-  // true: a supicious mix of ids - some look like GenBank accessions, some do not.
-  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader);
 
 };
 

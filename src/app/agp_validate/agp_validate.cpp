@@ -50,15 +50,6 @@ BEGIN_NCBI_SCOPE
 
 CAgpErrEx agpErr;
 
-typedef map<string, int> TMapStrInt ;
-class CMapCompLen : public TMapStrInt
-{
-public:
-  typedef pair<TMapStrInt::iterator, bool> TMapStrIntResult;
-  // returns 0 on success, or a previous length not equal to the new one
-  int AddCompLen(const string& acc, int len);
-};
-
 class CAgpValidateApplication : public CNcbiApplication
 {
 private:
@@ -70,31 +61,24 @@ private:
 
   enum EValidationType {
       VT_Context, VT_Acc=1, VT_Len=2, VT_Taxid=4,
-      VT_AccLenTaxid = VT_Acc|VT_Len|VT_Taxid,
-      VT_AccLen   = VT_Acc|VT_Len,
-      VT_AccTaxid = VT_Acc|VT_Taxid
+      VT_AccLenTaxid = VT_Acc|VT_Len|VT_Taxid
   } m_ValidationType;
 
+  CMapCompLen m_comp2len;
+  //void x_LoadLen  (CNcbiIstream& istr, const string& filename);
+  void x_LoadLenFa(CNcbiIstream& istr, const string& filename);
+
   CAltValidator* m_AltValidator;
-  CAgpContextValidator* m_ContextValidator;
-  // data of an AGP line either
-  //  from a file or the agp adb
-  // typedef vector<SDataLine> TDataLines;
+  //CAgpContextValidator* m_ContextValidator;
+  CAgpValidateReader m_reader;
 
-
-  // Validate either from AGP files or from AGP DB
-  //  Each line (entry) of AGP data from either source is
-  //  populates a SDataLine.
-  //
   void x_ValidateUsingFiles(const CArgs& args);
   void x_ValidateFile(CNcbiIstream& istr);
 
-  CMapCompLen m_comp2len;
-  void x_LoadLen  (CNcbiIstream& istr, const string& filename);
-  void x_LoadLenFa(CNcbiIstream& istr, const string& filename);
-
-  int m_CommentLineCount;
-  int m_EolComments;
+public:
+  CAgpValidateApplication() : m_reader(agpErr, m_comp2len)
+  {
+  }
 };
 
 // Print a nicer usage message
@@ -105,7 +89,6 @@ public:
   {
     str="Validate data in the AGP format:\n"
     "http://www.ncbi.nlm.nih.gov/genome/assembly/agp/AGP_Specification.shtml\n"
-    //"http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
     "\n"
     "USAGE: agp_validate [-options] [FASTA files...] [AGP files...]\n"
     "\n"
@@ -116,6 +99,9 @@ public:
     "If component FASTA files are given in front of AGP files, also check that:\n"
     "- component_id from AGP is present in FASTA;\n"
     "- component_end does not exceed sequence length.\n"
+    //"If FASTA files for objects are given, check that:\n"
+    //"- object_id from AGP is present in FASTA;\n:
+    //"- and object lengths in FASTA and in AGP match.\n"
     "\n"
     "OPTIONS:\n"
     "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
@@ -126,7 +112,6 @@ public:
     "  The above options require that the components are available in GenBank.\n"
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
-    //"  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     /*
     "\n"
     "  -fa  FILE (fasta)\n"
@@ -141,14 +126,6 @@ public:
     "  -skip, -only WHAT  Skip, or report only a particular error or warning.\n"
     "  'WHAT' could be a part of the message text, an error code (e11, w22, etc; see -list),\n"
     "  or a keyword: all, warn, err, alt.\n"
-    /*
-    "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
-    "  -only  WHAT   Report only this particular error or warning.\n"
-    "  Multiple -skip or -only are allowed. 'WHAT' may be:\n"
-    "  - an error code (e01,.. w21,..; see '-list')\n"
-    "  - a part of the actual message\n"
-    "  - a keyword: all, warn[ings], err[ors], alt\n"
-    */
     "\n"
     ;
     return str;
@@ -158,9 +135,6 @@ public:
 
 void CAgpValidateApplication::Init(void)
 {
-  m_CommentLineCount=0;
-  m_EolComments=0;
-  //auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
   auto_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
 
   arg_desc->SetUsageContext(
@@ -169,7 +143,6 @@ void CAgpValidateApplication::Init(void)
 
   // component_id  checks that involve GenBank: Accession Length Taxid
   arg_desc->AddFlag("alt", "");
-  //arg_desc->AddFlag("a" , "");
 
   arg_desc->AddFlag("g" , "");
 
@@ -254,15 +227,15 @@ int CAgpValidateApplication::Run(void)
 
   if( args["alt"].HasValue() || args["species"].HasValue() )
     m_ValidationType = VT_AccLenTaxid;
-  //else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
   else {
     m_ValidationType = VT_Context;
     bool checkCompNames=args["g"].HasValue();
-    m_ContextValidator = new CAgpContextValidator(checkCompNames);
+    // m_ContextValidator = new CAgpContextValidator(checkCompNames);
     if(checkCompNames) {
       // also print WGS component_id/component_type mismatches.
       agpErr.SkipMsg(CAgpErr::W_CompIsWgsTypeIsNot, true);
       agpErr.SkipMsg(CAgpErr::W_CompIsNotWgsTypeIs, true);
+      m_reader.m_CheckCompNames=true;
     }
 
   }
@@ -328,14 +301,7 @@ int CAgpValidateApplication::Run(void)
   //// Process files, print results
   x_ValidateUsingFiles(args);
   if(m_ValidationType == VT_Context) {
-    m_ContextValidator->PrintTotals();
-    if(m_CommentLineCount || m_EolComments) cout << "\n";
-    if(m_CommentLineCount) {
-      cout << "#Comment line count    : " << m_CommentLineCount << "\n";
-    }
-    if(m_EolComments) {
-      cout << "End of line #comments  : " << m_EolComments << "\n";
-    }
+    m_reader.PrintTotals();
   }
   else if(m_ValidationType & VT_Acc) {
     cout << "\n";
@@ -353,18 +319,18 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       x_ValidateFile(cin);
   }
   else {
+    int num_fasta_files=0;
     bool allowFasta=true;
     for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
 
       m_CurrentFileName =
           args['#' + NStr::IntToString(i)].AsString();
-      if( args.GetNExtra()>1 ) agpErr.StartFile(m_CurrentFileName);
 
       CNcbiIstream& istr =
           args['#' + NStr::IntToString(i)].AsInputFile();
       if (!istr) {
           cerr << "Unable to open file : " << m_CurrentFileName;
-          exit (0);
+          exit (1);
       }
 
       char ch=0;
@@ -373,96 +339,77 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       }
       if(ch=='>') {
         x_LoadLenFa(istr, m_CurrentFileName);
+        num_fasta_files++;
       }
       else {
+        if( args.GetNExtra()-num_fasta_files>1 ) agpErr.StartFile(m_CurrentFileName);
         x_ValidateFile(istr);
         allowFasta=false;
       }
 
       args['#' + NStr::IntToString(i)].CloseFile();
     }
+    if(num_fasta_files==args.GetNExtra()) {
+      //cerr << "No AGP files."; exit (1);
+      x_ValidateFile(cin);
+    }
   }
-  // This is needed to check whether the last line was a gap, or a singleton.
-  if (m_ValidationType == VT_Context) {
-    m_ContextValidator->EndOfObject(true);
-  }
+
 }
 
 void CAgpValidateApplication::x_ValidateFile(
   CNcbiIstream& istr)
 {
-  int line_num = 0;
-  string  line;
-  CAgpRow agp_row(&agpErr);
 
-  bool valid=false;
+  if( 0==m_ValidationType & VT_Acc) {
+    // CAgpReader
+    m_reader.ReadStream(istr); // , false
+  }
+  else {
+    int line_num = 0;
+    string  line;
+    CAgpRow agp_row(&agpErr);
 
-  // Allow Unix, DOS, Mac EOL characters
-  while( NcbiGetline(istr, line, "\r\n") ) {
-    line_num++;
+    // Allow Unix, DOS, Mac EOL characters
+    while( NcbiGetline(istr, line, "\r\n") ) {
+      line_num++;
 
-    bool queued=false;
+      int code=agp_row.FromString(line);
+      if(code==-1) continue; // skip a comment line
+      bool queued=false;
+      bool comp2len_check_failed=false;
 
-    int code=agp_row.FromString(line);
-    if(code==-1) {
-      m_CommentLineCount++;
-      continue;
-    }
-    if(agp_row.pcomment!=NPOS) m_EolComments++;
-
-    if(code==0) {
-      valid=true;
-
-      //// begin: -len -fa
-      if( m_comp2len.size() && !agp_row.IsGap() ) {
-        TMapStrInt::iterator it = m_comp2len.find( agp_row.GetComponentId() );
-        if( it==m_comp2len.end() ) {
-          if(m_ValidationType == VT_Context) {
-            agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+agp_row.GetComponentId());
+      if(code==0) {
+        if( !agp_row.IsGap() ) {
+          if( m_comp2len.size() && !agp_row.IsGap() ) {
+            TMapStrInt::iterator it = m_comp2len.find( agp_row.GetComponentId() );
+            if( it!=m_comp2len.end() ) {
+              comp2len_check_failed=!agp_row.CheckComponentEnd(it->second);
+              // Skip regular genbank-based validation for this line;
+              // will print it verbatim, same as gap or error line.
+              m_AltValidator->QueueLine(line);
+              queued=true;
+            }
+            // else: will try Entrez and ObjMan
           }
-          // else: will try GenBank
-        }
-        else {
-          CAltValidator::ValidateLength(
-            agp_row.GetComponentId(),
-            agp_row.component_end,
-            it->second );
-          if(m_ValidationType != VT_Context) {
-            // Skip regular genbank-based validation for this line.
-            // We could print it verbatim, same as comment or a gap line.
-            m_AltValidator->QueueLine(line);
+          if(!queued){
+            // component line - queue for batch lookup
+            m_AltValidator->QueueLine(line,
+              agp_row.GetComponentId(), line_num, agp_row.component_end);
             queued=true;
           }
         }
       }
-      //// end: -len -fa
+      // else: the error message already reached the error handler
 
-      if(m_ValidationType == VT_Context) {
-        m_ContextValidator->ValidateRow(agp_row, line_num);
-      }
-      //else if( !agp_line.is_gap )
-      else if( !agp_row.IsGap() && !queued )
-      {
-        m_AltValidator->QueueLine(line,
-          agp_row.GetComponentId(), line_num, agp_row.component_end);
-        queued=true;
-      }
-
-      if(istr.eof()) {
-        agpErr.Msg(CAgpErrEx::W_NoEolAtEof, NcbiEmptyString);
-      }
-    }
-    else valid=false; // the error message must be passed already via an error handler adaptor
-
-    if(m_ValidationType & VT_Acc) {
       if(m_AltValidator->m_out && !queued) {
-        m_AltValidator->QueueLine(line); // line_orig
+        // error or gap line - queue for verbatim reprinting
+        m_AltValidator->QueueLine(line);
       }
-      if(
-        !valid ||
-        m_AltValidator->QueueSize() >= 1000
+
+      if( code!=0 || comp2len_check_failed || // process the batch now so that error lines are printed in the correct order
+          m_AltValidator->QueueSize() >= 1000
       ) {
-        // process the batch now so that error lines are printed in the correct order
         CNcbiOstrstream* tmp_messages = agpErr.m_messages;
         agpErr.m_messages =  new CNcbiOstrstream();
 
@@ -472,18 +419,11 @@ void CAgpValidateApplication::x_ValidateFile(
         delete agpErr.m_messages;
         agpErr.m_messages = tmp_messages;
       }
-    }
 
-    agpErr.LineDone(line, line_num, !valid );
-    if(!valid && m_ValidationType == VT_Context)
-    {
-      // Adjust the context after an invalid line
-      // (to suppress some spurious errors)
-      m_ContextValidator->InvalidLine();
+      agpErr.LineDone(line, line_num, code!=0 );
     }
+    m_AltValidator->ProcessQueue();
   }
-
-  if( m_ValidationType & VT_Acc) m_AltValidator->ProcessQueue();
 }
 
 void CAgpValidateApplication::Exit(void)
@@ -529,6 +469,7 @@ void CAgpValidateApplication::x_LoadLen(CNcbiIstream& istr, const string& filena
 }
 */
 
+// To be moved to MapCompLen.cpp
 void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& filename)
 {
   string line;
@@ -590,17 +531,6 @@ LengthRedefinedFa:
       << "  File: " << filename << "\n"
       << "  Lines: "<< header_line_num << ".." << line_num << "\n\n";
   exit(1);
-}
-
-int CMapCompLen::AddCompLen(const string& acc, int len)
-{
-  TMapStrInt::value_type acc_len(acc, len);
-  TMapStrIntResult insert_result = insert(acc_len);
-  if(insert_result.second == false) {
-    if(insert_result.first->second != len)
-      return insert_result.first->second; // error: already have a different length
-  }
-  return 0; // success
 }
 
 END_NCBI_SCOPE

@@ -9,6 +9,7 @@ TESTS=bad_test alt_test test2 acc_test fa_test
 .PHONY : test $(TESTS)
 
 test: $(TESTS)
+	echo All tests succeeded.
 
 bad_test : agp_validate
 	sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
