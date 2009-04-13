@@ -152,10 +152,21 @@ CJobStatusTracker::SetStatus(unsigned   job_id,
 {
     CWriteLockGuard guard(m_Lock);
 
+    TJobStatus old_status = TJobStatus(-1);
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
         TNSBitVector& bv = *m_StatusStor[i];
+        if (bv[job_id]) {
+            if (old_status != TJobStatus(-1))
+                ERR_POST("State matrix was damaged, "
+                         "more than one status active for job " << job_id);
+            old_status = TJobStatus(i);
+        }
         bv.set(job_id, (int)status == (int)i);
     }
+    if (old_status == CNetScheduleAPI::eDone &&
+        status     == CNetScheduleAPI::ePending)
+        ERR_POST("Illegal status change from Done to Pending for job " <<
+                 job_id);
     if (status == CNetScheduleAPI::eDone) {
         IncDoneJobs();
     }
@@ -311,41 +322,6 @@ CJobStatusTracker::ChangeStatus(unsigned   job_id,
     return old_status;
 }
 
-CJobStatusTracker::TStatusTrans
-CJobStatusTracker::sm_StatusTransitions[][CNetScheduleAPI::eLastStatus] =
-{
-    //  Pending, Running,   Ret,  Cancel,   Failed,    Done, Reading, Confirmed
-    // from Pending
-    {   eIgnore,  eAllow, eDeny,  eAllow, eAllowTO, eAllowTO,   eDeny,  eDeny },
-    // from Running
-    {    eAllow, eIgnore, eDeny,  eAllow,   eAllow,   eAllow,   eDeny,  eDeny },
-    // from Returned - obsolete state
-    {     eDeny,   eDeny, eDeny,   eDeny,    eDeny,    eDeny,   eDeny,  eDeny },
-    // from Canceled
-    {  eAllowRS,   eDeny, eDeny, eIgnore,    eDeny,    eDeny,   eDeny,  eDeny },
-    // from Failed
-    {  eAllowRS,   eDeny, eDeny, eIgnore,  eIgnore,    eDeny,   eDeny,  eDeny },
-    // from Done
-    {  eAllowRS,   eDeny, eDeny, eIgnore,  eIgnore,  eIgnore,  eAllow,  eDeny },
-    // from Reading
-    {  eAllowRS,   eDeny, eDeny, eIgnore,  eIgnore,   eAllow, eIgnore, eAllow },
-    // from Confirmed
-    {  eAllowRS,   eDeny, eDeny, eIgnore,  eIgnore,    eDeny,   eDeny, eIgnore }
-};
-
-CJobStatusTracker::TStatusTrans
-CJobStatusTracker::VerifyStatusTrans(TJobStatus old_status,
-                                     TJobStatus new_status)
-{
-    if (old_status == CNetScheduleAPI::eJobNotFound) {
-        if (new_status == CNetScheduleAPI::ePending)
-            return eAllow;
-        return eDeny;
-    }
-    if (new_status == CNetScheduleAPI::eJobNotFound)
-        return eDeny;
-    return sm_StatusTransitions[(int) old_status][(int) new_status];
-}
 
 void
 CJobStatusTracker::AddPendingBatch(unsigned job_id_from, unsigned job_id_to)

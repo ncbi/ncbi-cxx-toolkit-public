@@ -91,25 +91,6 @@ public:
                  TJobStatus status,
                  bool*      updated = NULL);
 
-    enum EStatusTrans {
-        // 
-        eDeny       = 0,
-        eAllow      = 1 << 0, // Allow this transition
-        eIgnore     = 1 << 1,  // Ignore this request
-        // Conditions
-        eTimedOut   = 1 << 2, // Allow only for job, which was timed-out
-        eReschedule = 1 << 3, // Allow for force reschedule only
-        // Convenience
-        eAllowTO = eAllow | eTimedOut,
-        eAllowRS = eAllow | eReschedule
-    };
-    typedef int TStatusTrans;
-
-    // Check validity of status transition from old_status to new_status
-    static
-    TStatusTrans VerifyStatusTrans(TJobStatus old_status,
-                                   TJobStatus new_status);
-
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
 
@@ -251,8 +232,6 @@ private:
     /// Done jobs counter
     unsigned                m_DoneCnt;
 
-    static CJobStatusTracker::TStatusTrans
-           sm_StatusTransitions[][CNetScheduleAPI::eLastStatus];
 };
 
 
