@@ -585,7 +585,7 @@ CFormatGuess::TestFormatBinaryAsn(
             }
         }
     }
-    return (conf != eNo);
+    return (conf == eYes);
 }
 
 
