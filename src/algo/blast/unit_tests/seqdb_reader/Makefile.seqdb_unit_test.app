@@ -13,7 +13,7 @@ LIB = test_boost seqdb xobjutil blastdb $(SOBJMGR_LIBS)
 LIBS = $(BOOST_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  = seqdb_unit_test
-CHECK_COPY = data
+CHECK_COPY = seqdb_unit_test.ini data
 
 REQUIRES = Boost.Test
 

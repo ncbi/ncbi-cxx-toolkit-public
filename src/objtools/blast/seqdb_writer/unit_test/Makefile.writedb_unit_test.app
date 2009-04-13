@@ -17,4 +17,4 @@ REQUIRES = Boost.Test
 
 CHECK_CMD = writedb_unit_test
 CHECK_AUTHORS = blastsoft
-CHECK_COPY = data
+CHECK_COPY = writedb_unit_test.ini data
