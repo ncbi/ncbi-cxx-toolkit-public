@@ -207,6 +207,23 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& id, CScope& scope,
 /* @} */
 
 
+/** @name FindLatestSequence
+ * Walk the replace history to find the latest revision of a sequence
+ * @{
+ */
+
+/// Given a seq-id check its replace history and try to find the latest
+/// revision. The function stops and returns NULL if it detects some
+/// strange conditions like an infinite recursion.
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_id> FindLatestSequence(const CSeq_id& id, CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh, CScope& scope);
+
+/* @} */
+
+
 /** @name GetTitle
  * Get sequence's title (used in various flat-file formats.)
  * @{

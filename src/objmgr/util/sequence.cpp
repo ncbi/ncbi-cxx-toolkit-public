@@ -60,6 +60,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seq/Seq_hist_rec.hpp>
 
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
@@ -414,6 +416,37 @@ string GetAccessionForId(const objects::CSeq_id& id,
             "sequence::GetAccessionForId(): seq-id not found in the scope");
     }
     return kEmptyStr;
+}
+
+
+CConstRef<CSeq_id> FindLatestSequence(const CSeq_id& id, CScope& scope)
+{
+    return FindLatestSequence(CSeq_id_Handle::GetHandle(id), scope).GetSeqId();
+}
+
+
+CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh, CScope& scope)
+{
+    CBioseq_Handle h = scope.GetBioseqHandle(idh);
+    set<CSeq_id_Handle> visited;
+    CSeq_id_Handle next = idh;
+    while (h  &&  h.IsSetInst() && h.GetInst().IsSetHist()
+        && h.GetInst().GetHist().IsSetReplaced_by()) {
+        // Make sure the list of ids is not empty
+        if ( h.GetInst().GetHist().GetReplaced_by().GetIds().empty() ) {
+            return CSeq_id_Handle();
+        }
+        visited.insert(next);
+        // If there are several replaced-by entries, use the first one
+        next = CSeq_id_Handle::GetHandle(
+            *h.GetInst().GetHist().GetReplaced_by().GetIds().front());
+        if (visited.find(next) != visited.end()) {
+            // Infinite recursion detected
+            return CSeq_id_Handle();
+        }
+        h = scope.GetBioseqHandle(next);
+    }
+    return h ? next : CSeq_id_Handle();
 }
 
 

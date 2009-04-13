@@ -606,18 +606,13 @@ CTestTranscript_PrematureStopCodon::RunTest(const CSerialObject& obj,
 
 
 // Walk the replace history to find the latest revision of a sequence
-static const CSeq_id& s_FindLatest(const CSeq_id& id, CScope& scope)
+static CConstRef<CSeq_id> s_FindLatest(const CSeq_id& id, CScope& scope)
 {
-    CBioseq_Handle hand = scope.GetBioseqHandle(id);
-    if (hand.IsSetInst() && hand.GetInst().IsSetHist()
-        && hand.GetInst().GetHist().IsSetReplaced_by()) {
-        // This assumes there's just one id in Replaced-by;
-        // what to do if there are more?
-        return s_FindLatest(*hand.GetInst().GetHist().GetReplaced_by()
-                            .GetIds().front(), scope);
-    } else {
-        return id;
+    CConstRef<CSeq_id> latest = sequence::FindLatestSequence(id, scope);
+    if ( !latest ) {
+        latest.Reset(&id);
     }
+    return latest;
 }
 
 
@@ -658,8 +653,8 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                   double(ident_count)
                   / max(prod_vec.size(), (TSeqPos)translation.size()));
 
-    const CSeq_id& updated_id = s_FindLatest(prod_id, ctx->GetScope());
-    if (updated_id.Equals(prod_id)) {
+    CConstRef<CSeq_id> updated_id = s_FindLatest(prod_id, ctx->GetScope());
+    if (updated_id->Equals(prod_id)) {
         result.SetOutput_data()
             .AddField("fraction_identity_updated_prot_prod",
                       double(ident_count)
@@ -668,7 +663,7 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                                          int(prod_vec.size()));
     } else {
         CBioseq_Handle updated_prod_hand
-            = ctx->GetScope().GetBioseqHandle(updated_id);
+            = ctx->GetScope().GetBioseqHandle(*updated_id);
         CSeqVector updated_prod_vec = updated_prod_hand.GetSeqVector();
         updated_prod_vec.SetIupacCoding();
         TSeqPos ident_count = 0;
@@ -688,9 +683,9 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                                          int(updated_prod_vec.size()));
     }
     result.SetOutput_data()
-        .AddField("prot_prod_updated", !updated_id.Equals(prod_id));
+        .AddField("prot_prod_updated", !updated_id->Equals(prod_id));
     result.SetOutput_data()
-        .AddField("updated_prod_id", updated_id.AsFastaString());
+        .AddField("updated_prod_id", updated_id->AsFastaString());
 }
 
 
