@@ -8,6 +8,7 @@ def_builddir="$NCBI/c++/Debug/build"
 
 repository_url='https://svn.ncbi.nlm.nih.gov/repos/toolkit'
 tmp_app_checkout_dir='tmp_app_sample'
+stem='sample/app'
 
 script=`basename $0`
 timestamp=`date`
@@ -164,7 +165,7 @@ CreateMakefile_App()
   app_name="$5"
   orig_app_name="$6"
 
-  base=$src/app/sample/${proj_path}/Makefile.${orig_app_name}.app
+  base=$src/$stem/${proj_path}/Makefile.${orig_app_name}.app
 
   cat > "$makefile_name" <<EOF
 #
@@ -248,7 +249,7 @@ CreateMakefile_Meta()
   proj_path=$3
   old_proj_name=$4
 
-  base=$src/app/sample/${proj_path}/Makefile.in
+  base=$src/$stem/${proj_path}/Makefile.in
 
   rm -f "$makefile_name"
   cat > "$makefile_name" <<EOF
@@ -381,10 +382,13 @@ if test "$proj_name" != `basename $proj_name` ; then
   Usage "Invalid project name:  \"$proj_name\""
 fi
 
-if test ! -d "$src/app/sample/$proj_subdir"; then
-  svn co "$repository_url/trunk/c++/src/app/sample/$proj_subdir" \
-    "$tmp_app_checkout_dir/app/sample/$proj_subdir"
-  if test ! -d "$tmp_app_checkout_dir/app/sample/$proj_subdir"; then
+if test -d "$src/app/sample/$proj_subdir"; then
+  # looking at a tree predating the April 14, 2009 rearrangements
+  stem='app/sample' # vs. sample/app
+elif test ! -d "$src/$stem/$proj_subdir"; then
+  svn co "$repository_url/trunk/c++/src/$stem/$proj_subdir" \
+    "$tmp_app_checkout_dir/$stem/$proj_subdir"
+  if test ! -d "$tmp_app_checkout_dir/$stem/$proj_subdir"; then
     rm -rf "$tmp_app_checkout_dir"
     Usage "Unsupported application type ${proj_subdir}"
   fi
@@ -456,7 +460,7 @@ fi
 old_class_name=CSample`Capitalize ${proj_subtype}`Application
 new_class_name=C`Capitalize ${proj_name}`Application
 
-old_dir=${src}/app/sample/${proj_subdir}
+old_dir=${src}/$stem/${proj_subdir}
 if test -d "${proj_name}"; then
   new_dir=`pwd`/$proj_name
 else
