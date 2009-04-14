@@ -1,0 +1,5 @@
+# $Id$
+
+LIB = sample_lib_basic
+SRC = sample_lib_basic
+

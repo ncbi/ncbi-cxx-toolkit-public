@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+LIB_PROJ = sample_lib_basic
+APP_PROJ = sample_lib_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
