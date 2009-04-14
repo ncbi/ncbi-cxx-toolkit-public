@@ -51,29 +51,33 @@ class NCBI_XUTIL_EXPORT CFormatGuess
 public:
     /// The formats are checked in the same order as declared here.
     enum EFormat {
-        eUnknown = 0,           ///< unknown format
-        eBinaryASN,             ///< binary ASN.1
-        eRmo,                   ///< RepeatMasker Output
-        eGtf,                   ///< GFF/GTF style annotations
-        eGlimmer3,              ///< Glimmer3 predictions
-        eAgp,                   ///< AGP format assembly
-        eXml,                   ///< XML
-        eWiggle,                ///< UCSC WIGGLE file format
-        eBed,                   ///< UCSC BED file format
-        eBed15,                 ///< UCSC BED15 or microarray format
-        eNewick,                ///< Newick file
-        eAlignment,             ///< Text alignment
-        eDistanceMatrix,        ///< Distance matrix file
-        eFlatFileSequence,      ///< GenBank/GenPept/DDBJ/EMBL flat-file
-                                ///< sequence portion
-        eFiveColFeatureTable,   ///< Five-column feature table
-        eSnpMarkers,            ///< SNP Marker flat file
-        eFasta,                 ///< FASTA format sequence record
-        eTextASN,               ///< text ASN.1
-        eTaxplot,               ///< Taxplot file
-        ePhrapAce,              ///< Phrap ACE assembly file
-        eTable,                 ///< Generic table
-        eFormat_max             ///< Max value of EFormat
+        // WARNING! Never change numeric values of these enumerators!
+        // E.g. these values are hard-coded in the Local Data Storage (LDS)
+        // index databases.
+        eUnknown             =  0, ///< unknown format
+        eBinaryASN           =  1, ///< Binary ASN.1
+        eRmo                 =  2, ///< RepeatMasker Output
+        eGtf                 =  3, ///< GFF/GTF style annotations
+        eGlimmer3            =  4, ///< Glimmer3 predictions
+        eAgp                 =  5, ///< AGP format assembly
+        eXml                 =  6, ///< XML
+        eWiggle              =  7, ///< UCSC WIGGLE file format
+        eBed                 =  8, ///< UCSC BED file format
+        eBed15               =  9, ///< UCSC BED15 or microarray format
+        eNewick              = 10, ///< Newick file
+        eAlignment           = 11, ///< Text alignment
+        eDistanceMatrix      = 12, ///< Distance matrix file
+        eFlatFileSequence    = 13, ///< GenBank/GenPept/DDBJ/EMBL flat-file
+                                   ///< sequence portion
+        eFiveColFeatureTable = 14, ///< Five-column feature table
+        eSnpMarkers          = 15, ///< SNP Marker flat file
+        eFasta               = 16, ///< FASTA format sequence record
+        eTextASN             = 17, ///< Text ASN.1
+        eTaxplot             = 18, ///< Taxplot file
+        ePhrapAce            = 19, ///< Phrap ACE assembly file
+        eTable               = 20, ///< Generic table
+        /// Max value of EFormat
+        eFormat_max
     };
 
     enum ESequenceType {
