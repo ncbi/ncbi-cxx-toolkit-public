@@ -42,6 +42,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -69,7 +70,7 @@ SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : mo
     prot_sid = new CSeq_id(CSeq_id::e_Local, model_tag + ".p");  
     mrna_sid = new CSeq_id(CSeq_id::e_Local, model_tag + ".m");
 
-    is_ncrna = m.GetCdsInfo().ReadingFrame().Empty();
+    is_ncrna = m.ReadingFrame().Empty();
 }
 
 
@@ -491,21 +492,65 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
 
 
     string strprot;
-    {
-        CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-        CScope scope(*obj_mgr);
-        scope.AddTopLevelSeqEntry(mrna_seq_entry);
-        CCdregion_translate::TranslateCdregion(strprot, cdregion_feature, scope, false);
-    }
+    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CScope scope(*obj_mgr);
+    scope.AddTopLevelSeqEntry(mrna_seq_entry);
+    CCdregion_translate::TranslateCdregion(strprot, cdregion_feature, scope, false);
 
-    sprot->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    sprot->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
-    sprot->SetSeq().SetInst().SetLength(strprot.size());
+    CSeq_inst& seq_inst = sprot->SetSeq().SetInst();
+    seq_inst.SetRepr(CSeq_inst::eRepr_raw);
+    seq_inst.SetMol(CSeq_inst::eMol_aa);
+    seq_inst.SetLength(strprot.size());
+
     if (model.Continuous()) {
         CRef<CSeq_data> dprot(new CSeq_data(strprot, CSeq_data::e_Ncbieaa));
         sprot->SetSeq().SetInst().SetSeq_data(*dprot);
     } else {
-        
+
+        // copy bases from coding region location
+        string bases;
+        CSeqVector seqv(cdregion_feature.GetLocation(), scope, CBioseq_Handle::eCoding_Ncbi);
+        seqv.GetSeqData(0, seqv.size(), bases);
+
+        const CCdregion& cdr = cdregion_feature.GetData().GetCdregion();
+        if (cdr.IsSetFrame ()) {
+            int offset = 0;
+
+            switch (cdr.GetFrame ()) {
+            case CCdregion::eFrame_two :
+                offset = 1;
+                break;
+            case CCdregion::eFrame_three :
+                offset = 2;
+                break;
+            default :
+                break;
+            }
+            if (offset > 0)
+                bases.erase(0, offset);
+        }
+
+        vector<string> tokens;
+        vector<SIZE_TYPE> token_pos;
+        const string null_char(1, '\0');
+        NStr::Tokenize( bases, null_char, tokens, NStr::eMergeDelims, &token_pos);
+
+        size_t b = 0;
+        size_t e = 0;
+        for( size_t i = 0; i < tokens.size(); ++i) {
+            if (i>0) {
+                _ASSERT( token_pos[i]%3 == 0 );
+                e = token_pos[i]/3;
+                seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+                seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                b = e;
+            }
+            _ASSERT( tokens[i].size()%3 == 0 || i == tokens.size()-1 );
+            e = b + tokens[i].size()/3;
+            seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
+            b = e;
+        }
+        _ASSERT( b == strprot.size() + (md.model.HasStop() ? 1 : 0) );
     }
     return sprot;
 }
@@ -533,14 +578,13 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
             CMolInfo::eCompleteness_partial
         );
 
-    smrna->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    smrna->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
-
     CResidueVec mrna_seq_vec;
     md.mrna_map.EditedSequence(contig_seq, mrna_seq_vec, true);
     string mrna_seq_str((char*)&mrna_seq_vec[0],mrna_seq_vec.size());
 
     CSeq_inst& seq_inst = smrna->SetSeq().SetInst();
+    seq_inst.SetRepr(CSeq_inst::eRepr_raw);
+    seq_inst.SetMol(CSeq_inst::eMol_rna);
     seq_inst.SetLength(mrna_seq_str.size());
 
     if (model.Continuous()) {
