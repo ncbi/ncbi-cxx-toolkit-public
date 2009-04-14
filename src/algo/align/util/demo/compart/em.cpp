@@ -1252,8 +1252,8 @@ bool CElementaryMatching::x_IsMatch(Uint4 q, Uint4 s) const
 
 
 Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0, 
-                                    const Int8 & right_limit0,
-                                    THitRef hitref)
+                                      const Int8 & right_limit0,
+                                      THitRef hitref)
 {
     const int Wm (1), Wms (-2), XDropOff(5);
     int score (int(hitref->GetLength()) * Wm 
@@ -1381,11 +1381,11 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
 
 
 void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
-                                      TSeqInfos::const_iterator ii_cdna,
-                                      TSeqInfos::const_iterator ii_genomic,
-                                      size_t  idx_start, 
-                                      size_t  idx_stop,
-                                      size_t* pidx_compacted)
+                                        TSeqInfos::const_iterator ii_cdna,
+                                        TSeqInfos::const_iterator ii_genomic,
+                                        size_t  idx_start, 
+                                        size_t  idx_stop,
+                                        size_t* pidx_compacted)
 {
     if(idx_start >= idx_stop) {
         return;
@@ -1533,6 +1533,14 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
 #undef EXTEND_USING_SEQUENCE_CHARS
 #endif
+    
+    // make sure nothing is stretching out
+    const Uint4 qmax (m_ii_cdna->m_Start + m_ii_cdna->m_Length);
+    NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
+        if((*ii)->GetQueryStop() >= qmax) {
+            (*ii)->Modify(1, qmax - 1);
+        }
+    }
 
     if(m_HitsOnly) {
 
@@ -1540,7 +1548,6 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
             THit& h (**ii);
 
-            
             h.SetQueryId (m_cDNASeqIds[m_ii_cdna->m_Oid]);
             h.SetSubjId  (m_GenomicSeqIds[m_ii_genomic->m_Oid]);
             
@@ -1576,11 +1583,11 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
         const THit::TCoord penalty = THit::TCoord(round(m_Penalty * qlen));
 
-        CCompartmentAccessor<THit> ca (hitrefs.begin(), hitrefs.end(),
-                                       penalty,
+        CCompartmentAccessor<THit> ca (penalty,
                                        min_matches1,
                                        min_matches2,
                                        true);
+        ca.Run(hitrefs.begin(), hitrefs.end());
 
         // remap and print individual compartments
         THitRefs comp;

@@ -110,7 +110,7 @@ void CCompartApp::Init()
     CArgAllow_Integers* constrain_maxvol (new CArgAllow_Integers(128,1024));
     argdescr->SetConstraint("maxvol", constrain_maxvol);
 
-    CArgAllow_Integers* constrain_minqlen (new CArgAllow_Integers(34,99999));
+    CArgAllow_Integers* constrain_minqlen (new CArgAllow_Integers(21,99999));
     argdescr->SetConstraint("min_query_len", constrain_minqlen);
 
 
