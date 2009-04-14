@@ -254,26 +254,26 @@
             this.ProjectFolder = this.ProjectName;
 
             this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
-            this.TemplatesDict.Add("app",         "app/sample/basic");
-            this.TemplatesDict.Add("app/basic",   "app/sample/basic");
-            this.TemplatesDict.Add("app/alnmgr",  "app/sample/alnmgr");
-            this.TemplatesDict.Add("app/asn",     "app/sample/asn");
-            this.TemplatesDict.Add("app/blast",   "app/sample/blast");
-            this.TemplatesDict.Add("app/cgi",     "app/sample/cgi");
-            this.TemplatesDict.Add("app/dbapi",   "app/sample/dbapi");
-            this.TemplatesDict.Add("app/eutils",  "app/sample/eutils");
-            this.TemplatesDict.Add("app/gui",     "app/sample/gui");
-            this.TemplatesDict.Add("app/lds",     "app/sample/lds");
-            this.TemplatesDict.Add("app/netcache",    "app/sample/netcache");
-            this.TemplatesDict.Add("app/netschedule", "app/sample/netschedule");
-            this.TemplatesDict.Add("app/objects",     "app/sample/objects");
-            this.TemplatesDict.Add("app/objmgr",      "app/sample/objmgr");
-            this.TemplatesDict.Add("app/soap/client", "app/sample/soap/client");
-            this.TemplatesDict.Add("app/soap/server", "app/sample/soap/server");
-            this.TemplatesDict.Add("app/unit_test",   "app/sample/unit_test");
-            this.TemplatesDict.Add("lib/asn",     "app/sample/asn_lib");
-            this.TemplatesDict.Add("lib/dtd",     "app/sample/asn_lib");
-            this.TemplatesDict.Add("lib/xsd",     "app/sample/asn_lib");
+            this.TemplatesDict.Add("app",         "sample/app/basic");
+            this.TemplatesDict.Add("app/basic",   "sample/app/basic");
+            this.TemplatesDict.Add("app/alnmgr",  "sample/app/alnmgr");
+            this.TemplatesDict.Add("app/asn",     "sample/app/asn");
+            this.TemplatesDict.Add("app/blast",   "sample/app/blast");
+            this.TemplatesDict.Add("app/cgi",     "sample/app/cgi");
+            this.TemplatesDict.Add("app/dbapi",   "sample/app/dbapi");
+            this.TemplatesDict.Add("app/eutils",  "sample/app/eutils");
+            this.TemplatesDict.Add("app/gui",     "sample/app/gui");
+            this.TemplatesDict.Add("app/lds",     "sample/app/lds");
+            this.TemplatesDict.Add("app/netcache",    "sample/app/netcache");
+            this.TemplatesDict.Add("app/netschedule", "sample/app/netschedule");
+            this.TemplatesDict.Add("app/objects",     "sample/app/objects");
+            this.TemplatesDict.Add("app/objmgr",      "sample/app/objmgr");
+            this.TemplatesDict.Add("app/soap/client", "sample/app/soap/client");
+            this.TemplatesDict.Add("app/soap/server", "sample/app/soap/server");
+            this.TemplatesDict.Add("app/unit_test",   "sample/app/unit_test");
+            this.TemplatesDict.Add("lib/asn",     "sample/app/asn_lib");
+            this.TemplatesDict.Add("lib/dtd",     "sample/app/asn_lib");
+            this.TemplatesDict.Add("lib/xsd",     "sample/app/asn_lib");
             if (this.TemplatesDict.Exists(this.ProjectType)) {
                 this.ProjectTemplate = this.TemplatesDict.Item(this.ProjectType);
             }
