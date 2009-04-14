@@ -182,10 +182,24 @@ public:
             defines += ';';
         }
 
+#if 0
         defines += GetCompilerOpt(m_MsvcMetaMakefile,
                                   m_MsvcProjectMakefile,
                                   "PreprocessorDefinitions",
                                   m_Config );
+#else
+        string opt("PreprocessorDefinitions");
+        string val;
+        val = m_MsvcProjectMakefile.GetCompilerOpt(opt, m_Config);
+        if (!val.empty()) {
+            defines += val;
+            defines += ';';
+        }
+        val = m_MsvcMetaMakefile.GetCompilerOpt(opt, m_Config);
+        if (!val.empty()) {
+            defines += val;
+        }
+#endif
         return defines;
     }
 

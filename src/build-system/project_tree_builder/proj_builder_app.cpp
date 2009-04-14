@@ -522,7 +522,7 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
 int CProjBulderApp::Run(void)
 {
 	// Set error posting and tracing on maximum.
-	SetDiagTrace(eDT_Enable);
+//	SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_File | eDPF_LongFilename | eDPF_ErrCodeMessage);
 
 	SetDiagPostLevel(eDiag_Info);
