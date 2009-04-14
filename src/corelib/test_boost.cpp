@@ -36,6 +36,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_system.hpp>
 
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -1246,6 +1247,9 @@ CNcbiTestApplication::x_SetupBoostReporters(void)
     CNcbiEnvironment env;
     string is_autobuild = env.Get("NCBI_AUTOMATED_BUILD");
     if (! is_autobuild.empty()) {
+        // There shouldn't be any message box in the automated build mode
+        SuppressSystemMessageBox(fSuppress_All);
+
         format = but::XML;
         but::results_reporter::set_level(but::DETAILED_REPORT);
 
