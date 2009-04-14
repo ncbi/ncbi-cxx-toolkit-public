@@ -1,3 +1,7 @@
+April 14, 2009
+    Use /sviewer/viewer.fcgi instead of /entrez/viewer.fcgi.
+    Allow to set the viewer.fcgi URL in the INI file.
+
 March 10, 2009
     Fixed HTTP header forwarding from viewer.fcgi to the client
     (Content-type, Content-disposition, status).
