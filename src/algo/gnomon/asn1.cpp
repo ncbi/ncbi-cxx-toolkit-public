@@ -57,6 +57,8 @@ struct SModelData {
     CEResidueVec mrna_seq;
     CRef<CSeq_id> mrna_sid;
     CRef<CSeq_id> prot_sid;
+
+    bool is_ncrna;
 };
 
 SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : model(m), mrna_map(m.Exons(),m.FrameShifts(),m.Strand(), TSignedSeqRange::GetWhole(), HOLE_SIZE)
@@ -65,7 +67,9 @@ SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : mo
 
     string model_tag = "hmm." + NStr::IntToString(model.ID());
     prot_sid = new CSeq_id(CSeq_id::e_Local, model_tag + ".p");  
-    mrna_sid = new CSeq_id(CSeq_id::e_Local, model_tag + ".m");  
+    mrna_sid = new CSeq_id(CSeq_id::e_Local, model_tag + ".m");
+
+    is_ncrna = m.GetCdsInfo().ReadingFrame().Empty();
 }
 
 
@@ -142,30 +146,36 @@ void CAnnotationASN1::CImplementationData::AddModel(const CGeneModel& model)
     nucprots->push_back(model_products);
     model_products->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
 
-    CRef<CSeq_feat> cdregion_feature = create_cdregion_feature(md,eOnMrna);
+    
+    CRef<CSeq_feat> cdregion_feature;
+    if (!md.is_ncrna)
+        cdregion_feature = create_cdregion_feature(md,eOnMrna);
     CRef<CSeq_entry> mrna_seq_entry = create_mrna_seq_entry(md, cdregion_feature);
     model_products->SetSet().SetSeq_set().push_back(mrna_seq_entry);
 
-    model_products->SetSet().SetSeq_set().push_back(create_prot_seq_entry(md, *mrna_seq_entry, *cdregion_feature));
+    if (!md.is_ncrna)
+        model_products->SetSet().SetSeq_set().push_back(create_prot_seq_entry(md, *mrna_seq_entry, *cdregion_feature));
 
     CRef<CSeq_feat> mrna_feat = create_mrna_feature(md);
     feature_table->push_back(mrna_feat);
 
-    CRef<CSeq_feat> cds_feat = create_cdregion_feature(md,eOnGenome);
-    feature_table->push_back(cds_feat);
+    if (!md.is_ncrna) {
+        CRef<CSeq_feat> cds_feat;
+        cds_feat = create_cdregion_feature(md,eOnGenome);
+        feature_table->push_back(cds_feat);
 
-    CRef< CSeqFeatXref > cdsxref( new CSeqFeatXref() );
-    cdsxref->SetId(*cds_feat->SetIds().front());
-//     cdsxref->SetData().SetCdregion();
-    
-    CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
-    mrnaxref->SetId(*mrna_feat->SetIds().front());
-//     mrnaxref->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        CRef< CSeqFeatXref > cdsxref( new CSeqFeatXref() );
+        cdsxref->SetId(*cds_feat->SetIds().front());
+        //     cdsxref->SetData().SetCdregion();
+        
+        CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
+        mrnaxref->SetId(*mrna_feat->SetIds().front());
+        //     mrnaxref->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        
+        cds_feat->SetXref().push_back(mrnaxref);
+        mrna_feat->SetXref().push_back(cdsxref);
 
-    cds_feat->SetXref().push_back(mrnaxref);
-    mrna_feat->SetXref().push_back(cdsxref);
-
-
+    }
     if (model.GeneID()) {
         TGeneMap::iterator gene = genes.find(model.GeneID());
         if (gene == genes.end()) {
@@ -368,7 +378,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
     feat_id->SetLocal(*obj_id);
     mrna_feature->SetIds().push_back(feat_id);
 
-    mrna_feature->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna_feature->SetData().SetRna().SetType(md.is_ncrna ? CRNA_ref::eType_ncRNA : CRNA_ref::eType_mRNA);
     mrna_feature->SetProduct().SetWhole(*md.mrna_sid);
 
     mrna_feature->SetLocation(*create_packed_int_seqloc(model));
@@ -509,7 +519,7 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
 
     CRef<CSeqdesc> mdes(new CSeqdesc);
     smrna->SetSeq().SetDescr().Set().push_back(mdes);
-    mdes->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+    mdes->SetMolinfo().SetBiomol(md.is_ncrna ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
 
     mdes->SetMolinfo().SetCompleteness(
         model.Continuous()?
@@ -572,16 +582,18 @@ CRef<CSeq_entry> CAnnotationASN1::CImplementationData::create_mrna_seq_entry(SMo
 
     smrna->SetSeq().SetInst().SetHist().SetAssembly().push_back(model2spliced_seq_align(md));
 
-    CRef<CSeq_annot> annot(new CSeq_annot);
-    smrna->SetSeq().SetAnnot().push_back(annot);
-    annot->SetData().SetFtable().push_back(cdregion_feature);
+    if (!cdregion_feature.Empty()) {
+        CRef<CSeq_annot> annot(new CSeq_annot);
+        smrna->SetSeq().SetAnnot().push_back(annot);
+    
+        annot->SetData().SetFtable().push_back(cdregion_feature);
 
-    if (!model.Open5primeEnd()) {
-        CRef<CSeq_feat> stop = create_5prime_stop_feature(md);
-        if (stop.NotEmpty())
-            annot->SetData().SetFtable().push_back(stop);
+        if (!model.Open5primeEnd()) {
+            CRef<CSeq_feat> stop = create_5prime_stop_feature(md);
+            if (stop.NotEmpty()) 
+                annot->SetData().SetFtable().push_back(stop);
+        }
     }
-
     return smrna;
 }
 
