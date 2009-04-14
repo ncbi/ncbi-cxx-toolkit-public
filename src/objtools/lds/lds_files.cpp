@@ -73,8 +73,6 @@ void CLDS_File::SyncWithDir(const string& path,
         LDS_THROW(eFileNotFound, err);
     }
 
-    CChecksum checksum(CChecksum::eCRC32);
-
     set<string> files;
 
     // Scan the directory, compare it against File table

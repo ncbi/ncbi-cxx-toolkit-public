@@ -184,13 +184,36 @@ void CLDS_Manager::DeleteDB()
         dir.Remove();
 }
 
+#define TABLE_objecttype "objecttype"
+#define TABLE_file "file"
+#define TABLE_annot2obj "annot2obj"
+#define TABLE_annotation "annotation"
+#define TABLE_object "object"
+#define TABLE_seq_id_list "seq_id_list"
+#define TABLE_obj_seqid_int "obj_seqid_int"
+#define TABLE_obj_seqid_txt "obj_seqid_txt"
+#define TABLE_file_filename "file_filename"
 
 void CLDS_Manager::DumpTable(const string& table_name)
 {
+    if ( table_name == "" ) {
+        NcbiCout << "Known table names:\n";
+        NcbiCout << "    " << TABLE_objecttype << NcbiEndl;
+        NcbiCout << "    " << TABLE_file << NcbiEndl;
+        NcbiCout << "    " << TABLE_annot2obj << NcbiEndl;
+        NcbiCout << "    " << TABLE_annotation << NcbiEndl;
+        NcbiCout << "    " << TABLE_object << NcbiEndl;
+        NcbiCout << "    " << TABLE_seq_id_list << NcbiEndl;
+        NcbiCout << "    " << TABLE_obj_seqid_int << NcbiEndl;
+        NcbiCout << "    " << TABLE_obj_seqid_txt << NcbiEndl;
+        return;
+    }
+
+
     NcbiCout << "LDS: Dump of table " << table_name << ":" << NcbiEndl;
     Int8 rec_count = 0;
     SLDS_TablesCollection& tables = GetDB().GetTables();
-    if ( table_name == "objecttype" ) {
+    if ( table_name == TABLE_objecttype ) {
         SLDS_ObjectTypeDB& t = tables.object_type_db;
         NcbiCout << "id\t"
                  << "name\n";
@@ -202,7 +225,7 @@ void CLDS_Manager::DumpTable(const string& table_name)
                      << t.type_name << '\n';
         }
     }
-    else if ( table_name == "file" ) {
+    else if ( table_name == TABLE_file ) {
         SLDS_FileDB& t = tables.file_db;
         NcbiCout << "id\t"
                  << "name\t"
@@ -222,7 +245,7 @@ void CLDS_Manager::DumpTable(const string& table_name)
                      << t.file_size << '\n';
         }
     }
-    else if ( table_name == "annot2obj" ) {
+    else if ( table_name == TABLE_annot2obj ) {
         SLDS_Annot2ObjectDB& t = tables.annot2obj_db;
         NcbiCout << "annot\t"
                  << "object\n";
@@ -234,7 +257,7 @@ void CLDS_Manager::DumpTable(const string& table_name)
                      << t.object_id << '\n';
         }
     }
-    else if ( table_name == "annotation" ) {
+    else if ( table_name == TABLE_annotation ) {
         SLDS_AnnotDB& t = tables.annot_db;
         NcbiCout << "annot\t"
                  << "file\t"
@@ -254,7 +277,7 @@ void CLDS_Manager::DumpTable(const string& table_name)
                      << t.parent_object_id << '\n';
         }
     }
-    else if ( table_name == "object" ) {
+    else if ( table_name == TABLE_object ) {
         SLDS_ObjectDB& t = tables.object_db;
         NcbiCout << "id\t"
                  << "file\t"
@@ -284,7 +307,7 @@ void CLDS_Manager::DumpTable(const string& table_name)
                      << t.seq_ids << '\n';
         }
     }
-    else if ( table_name == "seq_id_list" ) {
+    else if ( table_name == TABLE_seq_id_list ) {
         SLDS_SeqId_List& t = tables.seq_id_list;
         NcbiCout << "id\t"
                  << "seqid\n";
@@ -294,6 +317,42 @@ void CLDS_Manager::DumpTable(const string& table_name)
             ++rec_count;
             NcbiCout << t.object_id << '\t'
                      << t.seq_id << '\n';
+        }
+    }
+    else if ( table_name == TABLE_obj_seqid_int ) {
+        SLDS_IntIdIDX& t = tables.obj_seqid_int_idx;
+        NcbiCout << "gi\t"
+                 << "object\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.id << '\t'
+                     << t.row_id << '\n';
+        }
+    }
+    else if ( table_name == TABLE_obj_seqid_txt ) {
+        SLDS_TxtIdIDX& t = tables.obj_seqid_txt_idx;
+        NcbiCout << "seq_id\t"
+                 << "object\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.id << '\t'
+                     << t.row_id << '\n';
+        }
+    }
+    else if ( table_name == TABLE_file_filename ) {
+        SLDS_FileNameIDX& t = tables.file_filename_idx;
+        NcbiCout << "file_name\t"
+                 << "file_id\n";
+        CBDB_FileCursor cur(t);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+        while (cur.Fetch() == eBDB_Ok) {
+            ++rec_count;
+            NcbiCout << t.file_name << '\t'
+                     << t.file_id << '\n';
         }
     }
     NcbiCout << "LDS: End of table " << table_name << ": "

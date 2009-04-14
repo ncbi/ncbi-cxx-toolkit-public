@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -60,6 +61,7 @@ CLDS_CoreObjectsReader::CLDS_CoreObjectsReader(int file_id,
     AddCandidate(CObjectTypeInfo(CType<CSeq_annot>()));
     AddCandidate(CObjectTypeInfo(CType<CSeq_align>()));
     AddCandidate(CObjectTypeInfo(CType<CSeq_data>()), eSkipObject);
+    AddCandidate(CObjectTypeInfo(CType<CSeq_align_set>()));
 }
 
 

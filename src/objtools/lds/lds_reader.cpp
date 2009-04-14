@@ -36,9 +36,12 @@
 
 #include <serial/objistr.hpp>
 
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 #include <objmgr/util/obj_sniff.hpp>
 
@@ -59,20 +62,20 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
 {
     switch (obj_descr.format) {
     case CFormatGuess::eFasta:
-        {{
+    {{
         CStreamLineReader lr(in);
         CFastaReader      fr(lr, 
                              CFastaReader::fAssumeNuc |
                              CFastaReader::fOneSeq    |
                              CFastaReader::fParseRawID);
         return fr.ReadOneSeq();
-        }}
+    }}
     case CFormatGuess::eTextASN:
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
-        {
+    {
         auto_ptr<CObjectIStream> 
-          is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
+            is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Bioseq") {
             //
             // If object is a bare Bioseq: read it and 
@@ -98,8 +101,41 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
             seq_entry->SetSet(s);
             return seq_entry;
         }
-        LDS_THROW(eInvalidDataType, "Non Seq-entry object type");
+        if (obj_descr.type_str == "Seq-annot") {
+            CRef<CSeq_annot> annot(new CSeq_annot());
+            is->Read(ObjectInfo(*annot));
+
+            CRef<CSeq_entry> tse(new CSeq_entry());
+            tse->SetSet().SetSeq_set();
+            tse->SetSet().SetAnnot().push_back(annot);
+            return tse;
         }
+        if (obj_descr.type_str == "Seq-align") {
+            CRef<CSeq_align> obj(new CSeq_align());
+            is->Read(ObjectInfo(*obj));
+            CRef<CSeq_annot> annot(new CSeq_annot());
+            annot->SetData().SetAlign().push_back(obj);
+
+            CRef<CSeq_entry> tse(new CSeq_entry());
+            tse->SetSet().SetSeq_set();
+            tse->SetSet().SetAnnot().push_back(annot);
+            return tse;
+        }
+        if (obj_descr.type_str == "Seq-align-set") {
+            CRef<CSeq_align_set> obj(new CSeq_align_set());
+            is->Read(ObjectInfo(*obj));
+            CRef<CSeq_annot> annot(new CSeq_annot());
+            NON_CONST_ITERATE ( CSeq_align_set::Tdata, it, obj->Set() ) {
+                annot->SetData().SetAlign().push_back(*it);
+            }
+
+            CRef<CSeq_entry> tse(new CSeq_entry());
+            tse->SetSet().SetSeq_set();
+            tse->SetSet().SetAnnot().push_back(annot);
+            return tse;
+        }
+        LDS_THROW(eInvalidDataType, "Non Seq-entry object type");
+    }
     default:
         LDS_THROW(eNotImplemented, "Not implemeneted yet.");
     }
@@ -151,10 +187,10 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
     case CFormatGuess::eTextASN:
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
-        {
+    {
         in.seekg(obj_descr.pos);
         auto_ptr<CObjectIStream> 
-          is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
+            is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Seq-annot") {
             //
             // If object is a bare Bioseq: read it and 
@@ -163,20 +199,29 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
             CRef<CSeq_annot> annot(new CSeq_annot());
             is->Read(ObjectInfo(*annot));
             return annot;
-        } else 
-        if (obj_descr.type_str == "Seq-align") {
+        }
+        else if (obj_descr.type_str == "Seq-align") {
             CRef<CSeq_align> align(new CSeq_align());
             is->Read(ObjectInfo(*align));
             CRef<CSeq_annot> annot(new CSeq_annot());
             annot->SetData().SetAlign().push_back(align);
             return annot;
-        } else {
+        }
+        else if (obj_descr.type_str == "Seq-align-set") {
+            CRef<CSeq_align_set> align_set(new CSeq_align_set());
+            is->Read(ObjectInfo(*align_set));
+            CRef<CSeq_annot> annot(new CSeq_annot());
+            NON_CONST_ITERATE ( CSeq_align_set::Tdata, it, align_set->Set() ) {
+                annot->SetData().SetAlign().push_back(*it);
+            }
+            return annot;
+        }
+        else {
             LDS_THROW(eInvalidDataType, 
                       "Non Seq-aanot compatible object type");
         }
-
-        }
         break;
+    }
     default:
         LDS_THROW(eNotImplemented, "Invalid file format");
     }

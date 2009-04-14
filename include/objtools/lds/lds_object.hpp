@@ -47,6 +47,8 @@ BEGIN_SCOPE(objects)
 class CObjectManager;
 class CScope;
 class CSeq_entry;
+class CBioseq;
+class CSeq_annot;
 class CLDS_Database;
 class CLDS_Seq_idsCollector;
 
@@ -114,13 +116,26 @@ public:
     /// (0 - unknown, 1 - NA, 2 - protein)
     bool IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
                   string* object_str_id, 
-                  string* object_title);
+                  string* object_title,
+                  string* object_all_ids);
+
+    void GetBioseqInfo(const CLDS_CoreObjectsReader::SObjectDetails& obj_info,
+                       const CBioseq& bioseq,
+                       string* object_str_id, 
+                       string* object_title,
+                       string* object_all_ids);
+    void GetAnnotInfo(const CLDS_CoreObjectsReader::SObjectDetails& obj_info,
+                      const CSeq_annot& annot,
+                      string* object_str_id,
+                      string* object_title,
+                      string* object_all_ids);
 
     /// Save object to the database, return record id.
     /// NOTE: This function recursively finds all objects' parents and saves
     /// the whole genealogy tree (not only the immediate argument).
     int SaveObject(CLDS_CoreObjectsReader* objects,
-                   CLDS_CoreObjectsReader::SObjectDetails* obj_info);
+                   CLDS_CoreObjectsReader::SObjectDetails* obj_info,
+                   bool force_object = false);
 
     /// Save object information, return record id. This function is specific 
     /// for fasta format.

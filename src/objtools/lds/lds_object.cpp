@@ -616,6 +616,7 @@ void CLDS_Object::UpdateBinaryASNObjects(int file_id,
     types.push_back(CType<CBioseq>());
     types.push_back(CType<CSeq_annot>());
     types.push_back(CType<CSeq_align>());
+    types.push_back(CType<CSeq_align_set>());
     vector<CObjectTypeInfo> skip_types;
     skip_types.push_back(CType<CSeq_data>());
     skip_types.push_back(CType<CSeq_ext>());
@@ -762,7 +763,8 @@ int CLDS_Object::SaveObject(int file_id,
 
 
 int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
-                            CLDS_CoreObjectsReader::SObjectDetails* obj_info)
+                            CLDS_CoreObjectsReader::SObjectDetails* obj_info,
+                            bool force_object)
 {
     int top_level_id, parent_id;
 
@@ -770,35 +772,30 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
 
     if (obj_info->is_top_level) {
         top_level_id = parent_id = 0;
-    } else {
+    }
+    else {
         // Find the direct parent
         {{
-
             CLDS_CoreObjectsReader::SObjectDetails* parent_obj_info 
-                        = objects->FindObjectInfo(obj_info->parent_offset);
+                = objects->FindObjectInfo(obj_info->parent_offset);
             _ASSERT(parent_obj_info);
-            if (parent_obj_info->ext_id == 0) { // not yet in the database
+            parent_id = parent_obj_info->ext_id;
+            if ( parent_id == 0 ) { // not yet in the database
                 // Recursively save the parent
-                parent_id = SaveObject(objects, parent_obj_info);
-            } else {
-                parent_id = parent_obj_info->ext_id;
+                parent_id = SaveObject(objects, parent_obj_info, true);
             }
-
         }}
 
         // Find the top level grand parent
         {{
-
             CLDS_CoreObjectsReader::SObjectDetails* top_obj_info 
-                        = objects->FindObjectInfo(obj_info->top_level_offset);
+                = objects->FindObjectInfo(obj_info->top_level_offset);
             _ASSERT(top_obj_info);
-            if (top_obj_info->ext_id == 0) { // not yet in the database
+            top_level_id = top_obj_info->ext_id;
+            if ( top_level_id == 0 ) { // not yet in the database
                 // Recursively save the parent
-                top_level_id = SaveObject(objects, top_obj_info);
-            } else {
-                top_level_id = top_obj_info->ext_id;
+                top_level_id = SaveObject(objects, top_obj_info, true);
             }
-
         }}
 
     }
@@ -814,25 +811,12 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
 
 
     string id_str;
-    string molecule_title;
+    string title;
+    string all_ids;
 
     ++m_MaxObjRecId;
 
-    bool is_object = IsObject(*obj_info, &id_str, &molecule_title);
-    if (is_object) {
-        string all_seq_id; // Space separated list of seq_ids
-        const CBioseq* bioseq = CType<CBioseq>().Get(obj_info->info);
-        if (bioseq) {
-            const CBioseq::TId&  id_list = bioseq->GetId();
-            ITERATE(CBioseq::TId, it, id_list) {
-                const CSeq_id* seq_id = *it;
-                if (seq_id) {
-                    all_seq_id.append(seq_id->AsFastaString());
-                    all_seq_id.append(" ");
-                }
-            }
-        }
-
+    if ( IsObject(*obj_info, &id_str, &title, &all_ids) || force_object ) {
         m_db.object_db.primary_seqid = NStr::ToUpper(id_str);
 
         obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
@@ -853,17 +837,17 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
 //        m_db.object_db.object_attr_id = m_MaxObjRecId; 
         m_db.object_db.TSE_object_id = top_level_id;
         m_db.object_db.parent_object_id = parent_id;
-        m_db.object_db.object_title = molecule_title;
-        m_db.object_db.seq_ids = NStr::ToUpper(all_seq_id);
+        m_db.object_db.object_title = title;
+        m_db.object_db.seq_ids = NStr::ToUpper(all_ids);
 
 
-//        LOG_POST_X(8, Info << "Saving object: " << type_name << " " << id_str);
+//        LOG_POST_X(8, Info<<"Saving object: " << type_name << " " << id_str);
 
         err = m_db.object_db.Insert();
         BDB_CHECK(err, "LDS::Object");
 
     }
-    else if ( const CSeq_annot* annot = CType<CSeq_annot>().Get(obj_info->info)) {
+    else if ( CSeq_annot* annot = CType<CSeq_annot>().Get(obj_info->info)) {
         // Set of seq ids referenced in the annotation
         //
         set<string> ref_seq_ids;
@@ -893,47 +877,47 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
             const CSeq_annot_Base::C_Data& adata = annot->GetData();
             if (adata.Which() == CSeq_annot_Base::C_Data::e_Align) {
                 const CSeq_annot_Base::C_Data::TAlign& al_list =
-                                            adata.GetAlign();
+                    adata.GetAlign();
                 ITERATE (CSeq_annot_Base::C_Data::TAlign, it, al_list){
                     if (!(*it)->CanGetSegs())
                         continue;
 
                     const CSeq_align::TSegs& segs = (*it)->GetSegs();
                     switch (segs.Which())
-                    {
-                    case CSeq_align::C_Segs::e_Std:
                         {
-                        const CSeq_align_Base::C_Segs::TStd& std_list =
-                                                    segs.GetStd();
-                        ITERATE (CSeq_align_Base::C_Segs::TStd, it2, std_list) {
-                            const CRef<CStd_seg>& seg = *it2;
-                            const CStd_seg::TIds& ids = seg->GetIds();
+                        case CSeq_align::C_Segs::e_Std:
+                        {
+                            const CSeq_align_Base::C_Segs::TStd& std_list =
+                                segs.GetStd();
+                            ITERATE (CSeq_align_Base::C_Segs::TStd, it2, std_list) {
+                                const CRef<CStd_seg>& seg = *it2;
+                                const CStd_seg::TIds& ids = seg->GetIds();
 
-                            ITERATE(CStd_seg::TIds, it3, ids) {
-                                ref_seq_ids.insert((*it3)->AsFastaString());
+                                ITERATE(CStd_seg::TIds, it3, ids) {
+                                    ref_seq_ids.insert((*it3)->AsFastaString());
+
+                                } // ITERATE
 
                             } // ITERATE
-
-                        } // ITERATE
                         }
                         break;
-                    case CSeq_align::C_Segs::e_Denseg:
+                        case CSeq_align::C_Segs::e_Denseg:
                         {
-                        const CSeq_align_Base::C_Segs::TDenseg& denseg =
-                                                        segs.GetDenseg();
-                        const CDense_seg::TIds& ids = denseg.GetIds();
+                            const CSeq_align_Base::C_Segs::TDenseg& denseg =
+                                segs.GetDenseg();
+                            const CDense_seg::TIds& ids = denseg.GetIds();
 
-                        ITERATE (CDense_seg::TIds, it3, ids) {
-                            ref_seq_ids.insert((*it3)->AsFastaString());
-                        } // ITERATE
+                            ITERATE (CDense_seg::TIds, it3, ids) {
+                                ref_seq_ids.insert((*it3)->AsFastaString());
+                            } // ITERATE
                         
                         }
                         break;
-                        //                    case CSeq_align::C_Segs::e_Packed:
-                        //                    case CSeq_align::C_Segs::e_Disc:
-                    default:
-                        break;
-                    }
+                        //case CSeq_align::C_Segs::e_Packed:
+                        //case CSeq_align::C_Segs::e_Disc:
+                        default:
+                            break;
+                        }
 
                 } // ITERATE
             }
@@ -964,10 +948,10 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
                            << " " 
                            << id_str
                            << " " 
-                           << (const char*)(!top_level_id ? "Top Level. " : " ")
+                           << (!top_level_id ? "Top Level. " : " ")
                            << "offs=" 
                            << obj_info->offset
-                           );
+                  );
 */
 
         EBDB_ErrCode err = m_db.annot_db.Insert();
@@ -995,13 +979,12 @@ CScope* CLDS_Object::GetScope(void)
 }
 
 
-bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
-                           string* object_str_id,
-                           string* object_title)
+bool
+CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
+                      string* object_str_id,
+                      string* object_title,
+                      string* object_all_ids)
 {
-    *object_title = "";
-    *object_str_id = "";
-
     if ( CREATE_SCOPES && parse_info.is_top_level ) {
         m_TSE_Manager = CObjectManager::GetInstance();
         m_Scope.Reset();
@@ -1022,56 +1005,189 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
             m_TSE = new CSeq_entry;
             m_TSE->SetSeq(*obj);
             m_TSE->Parentize();
+            GetBioseqInfo(parse_info, *obj,
+                          object_str_id, object_title, object_all_ids);
+            return true;
+        }
+        else if ( CSeq_annot* obj = CType<CSeq_annot>().Get(m_TSE_Info) ) {
+            m_TSE = new CSeq_entry;
+            m_TSE->SetSet().SetSeq_set();
+            m_TSE->SetSet().SetAnnot().push_back(Ref(obj));
+            m_TSE->Parentize();
+            GetAnnotInfo(parse_info, *obj,
+                         object_str_id, object_title, object_all_ids);
+            return true;
+        }
+        else if ( CSeq_align* obj = CType<CSeq_align>().Get(m_TSE_Info) ) {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            CSeq_annot::TData::TAlign& arr = annot->SetData().SetAlign();
+            arr.push_back(Ref(obj));
+            m_TSE = new CSeq_entry;
+            m_TSE->SetSet().SetSeq_set();
+            m_TSE->SetSet().SetAnnot().push_back(annot);
+            m_TSE->Parentize();
+            GetAnnotInfo(parse_info, *annot,
+                         object_str_id, object_title, object_all_ids);
+            return true;
+        }
+        else if (CSeq_align_set* obj=CType<CSeq_align_set>().Get(m_TSE_Info)) {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            CSeq_annot::TData::TAlign& arr = annot->SetData().SetAlign();
+            NON_CONST_ITERATE ( CSeq_align_set::Tdata, it, obj->Set() ) {
+                arr.push_back(*it);
+            }
+            m_TSE = new CSeq_entry;
+            m_TSE->SetSet().SetSeq_set();
+            m_TSE->SetSet().SetAnnot().push_back(annot);
+            m_TSE->Parentize();
+            GetAnnotInfo(parse_info, *annot,
+                         object_str_id, object_title, object_all_ids);
             return true;
         }
     }
 
-    const CBioseq* bioseq = CType<CBioseq>().Get(parse_info.info);
-    if (bioseq) {
-        const CSeq_id* seq_id = bioseq->GetFirstId();
-        if (seq_id) {
-            *object_str_id = seq_id->AsFastaString();
-        }
-        else {
-            *object_str_id = "";
-        }
-
-        if ( TRY_FAST_TITLE && sequence::GetTitle(*bioseq, object_title) ) {
-            // Good, we've got title fast way.
-        }
-        else if (CScope* scope = GetScope()) { // we are under OM here
-            CBioseq_Handle bio_handle = scope->GetBioseqHandle(*bioseq);
-            if (bio_handle) {
-                *object_title = sequence::GetTitle(bio_handle);
-                //LOG_POST_X(10, Info << "object title: " << *object_title);
-            }
-            else {
-                // the last resort
-                bioseq->GetLabel(object_title, CBioseq::eBoth);
-            }
-            
-        }
-        else {  // non-OM controlled object
-            bioseq->GetLabel(object_title, CBioseq::eBoth);
-        }
+    if ( CBioseq* obj = CType<CBioseq>().Get(parse_info.info) ) {
+        GetBioseqInfo(parse_info, *obj,
+                      object_str_id, object_title, object_all_ids);
+        return true;
     }
-    else {
-        const CSeq_annot* annot = 
-            CType<CSeq_annot>().Get(parse_info.info);
-        if (annot) {
-            *object_str_id = "";
-            return false;
-        }
-        else {
-            const CSeq_align* align =  
-                CType<CSeq_align>().Get(parse_info.info);
-            if (align) {
-                *object_str_id = "";
-                return false;
-            }
-        }
+    else if ( CType<CSeq_annot>().Get(parse_info.info) ||
+              CType<CSeq_align>().Get(parse_info.info) ||
+              CType<CSeq_align_set>().Get(parse_info.info) ) {
+        return false;
     }
     return true;
+}
+
+
+void CLDS_Object::GetBioseqInfo(const CLDS_CoreObjectsReader::SObjectDetails& /*obj_info*/,
+                                const CBioseq& bioseq,
+                                string* object_str_id,
+                                string* object_title,
+                                string* object_all_ids)
+{
+    const CSeq_id* seq_id = bioseq.GetFirstId();
+    if ( seq_id ) {
+        *object_str_id = seq_id->AsFastaString();
+    }
+
+    if ( TRY_FAST_TITLE && sequence::GetTitle(bioseq, object_title) ) {
+        // Good, we've got title fast way.
+    }
+    else if (CScope* scope = GetScope()) { // we are under OM here
+        CBioseq_Handle bio_handle = scope->GetBioseqHandle(bioseq);
+        if ( bio_handle ) {
+            *object_title = sequence::GetTitle(bio_handle);
+            //LOG_POST_X(10, Info<<"object title: "<<*molecule_title);
+        }
+        else {
+            // the last resort
+            bioseq.GetLabel(object_title, CBioseq::eBoth);
+        }
+            
+    }
+    else {  // non-OM controlled object
+        bioseq.GetLabel(object_title, CBioseq::eBoth);
+    }
+
+    ITERATE ( CBioseq::TId, it, bioseq.GetId() ) {
+        const CSeq_id* seq_id = *it;
+        if ( seq_id ) {
+            object_all_ids->append(seq_id->AsFastaString());
+            object_all_ids->append(" ");
+        }
+    }
+}
+
+
+void CLDS_Object::GetAnnotInfo(const CLDS_CoreObjectsReader::SObjectDetails& obj_info,
+                               const CSeq_annot& annot,
+                               string* object_str_id,
+                               string* object_title,
+                               string* object_all_ids)
+{
+    set<string> ref_seq_ids;
+    CLDS_Seq_ids *ids =
+        m_Seq_idsCollector? m_Seq_idsCollector->GetIds(obj_info.info): 0;
+    if ( ids ) {
+        ITERATE ( CLDS_Seq_ids::TIds, it, ids->m_Ids ) {
+            const CSeq_id& id = **it;
+            string str_id = id.AsFastaString();
+            ref_seq_ids.insert(NStr::ToUpper(str_id));
+        }
+
+        CLDS_Seq_ids::TGis& gis = ids->m_Gis;
+        sort(gis.begin(), gis.end());
+        gis.erase(unique(gis.begin(), gis.end()), gis.end());
+        CSeq_id id;
+        ITERATE ( CLDS_Seq_ids::TGis, it, gis ) {
+            id.SetGi(*it);
+            string str_id = id.AsFastaString();
+            ref_seq_ids.insert(NStr::ToUpper(str_id));
+        }
+        //LOG_POST_X(9, Info <<
+        //           "Saving " << ref_seq_ids.size() <<
+        //           " Seq-ids in Seq-annot");
+    }
+    else if ( annot.CanGetData() ) {
+        // Check for alignment in annotation
+        //
+        const CSeq_annot_Base::C_Data& adata = annot.GetData();
+        if ( adata.IsAlign() ) {
+            const CSeq_annot_Base::C_Data::TAlign& al_list = adata.GetAlign();
+            ITERATE (CSeq_annot_Base::C_Data::TAlign, it, al_list){
+                if (!(*it)->CanGetSegs())
+                    continue;
+
+                const CSeq_align::TSegs& segs = (*it)->GetSegs();
+                switch (segs.Which())
+                    {
+                    case CSeq_align::C_Segs::e_Std:
+                    {
+                        const CSeq_align_Base::C_Segs::TStd& std_list =
+                            segs.GetStd();
+                        ITERATE (CSeq_align_Base::C_Segs::TStd, it2, std_list) {
+                            const CRef<CStd_seg>& seg = *it2;
+                            const CStd_seg::TIds& ids = seg->GetIds();
+
+                            ITERATE(CStd_seg::TIds, it3, ids) {
+                                string str_id = (*it3)->AsFastaString();
+                                ref_seq_ids.insert(NStr::ToUpper(str_id));
+
+                            } // ITERATE
+
+                        } // ITERATE
+                    }
+                    break;
+                    case CSeq_align::C_Segs::e_Denseg:
+                    {
+                        const CSeq_align_Base::C_Segs::TDenseg& denseg =
+                            segs.GetDenseg();
+                        const CDense_seg::TIds& ids = denseg.GetIds();
+
+                        ITERATE (CDense_seg::TIds, it3, ids) {
+                            string str_id = (*it3)->AsFastaString();
+                            ref_seq_ids.insert(NStr::ToUpper(str_id));
+                        } // ITERATE
+                        
+                    }
+                    break;
+                    //case CSeq_align::C_Segs::e_Packed:
+                    //case CSeq_align::C_Segs::e_Disc:
+                    default:
+                        break;
+                    }
+
+            } // ITERATE
+        }
+    }
+
+    // Save all seq ids referred by the alignment
+    //
+    ITERATE (set<string>, it, ref_seq_ids) {
+        object_all_ids->append(*it);
+        object_all_ids->append(" ");
+    }
 }
 
 
@@ -1369,11 +1485,13 @@ private:
     void x_AddToIdx(const SLDS_SeqIdBase& sbase, int rec_id)
     {
         if (sbase.int_id) {
+            _TRACE("int id: "<<sbase.int_id<<" -> "<<rec_id);
             m_coll.obj_seqid_int_idx.id = sbase.int_id;
             m_coll.obj_seqid_int_idx.row_id = rec_id;
             m_coll.obj_seqid_int_idx.Insert();
         } 
         else if (!sbase.str_id.empty()) {
+            _TRACE("str id: "<<sbase.str_id<<" -> "<<rec_id);
             m_coll.obj_seqid_txt_idx.id = sbase.str_id;
             m_coll.obj_seqid_txt_idx.row_id = rec_id;
             m_coll.obj_seqid_txt_idx.Insert();

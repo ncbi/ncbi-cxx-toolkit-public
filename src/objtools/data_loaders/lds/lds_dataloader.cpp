@@ -95,9 +95,7 @@ public:
 
 
         string seq_id_str = (const char*)dbf.primary_seqid;
-        if (seq_id_str.empty())
-            return;
-        {{
+        if ( !seq_id_str.empty() ) {
             CRef<CSeq_id> seq_id_db;
             try {
                 seq_id_db.Reset(new CSeq_id(seq_id_str));
@@ -118,7 +116,7 @@ public:
                     return;
                 }
             } // ITERATE
-        }}
+        }
 
         // Primary seq_id scan gave no results
         // Trying supplemental aliases
