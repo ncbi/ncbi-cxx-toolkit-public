@@ -66,38 +66,32 @@ FileMessenger::FileMessenger(FileMessagingManager *parentManager,
     TRACEMSG("monitoring message file " << messageFilename);
 }
 
-static fstream * CreateLock(const CDirEntry& lockFile)
+static CPIDGuard * CreateLock(const CDirEntry& lockFile)
 {
-    if (lockFile.Exists()) {
-        TRACEMSG("unable to establish a lock - lock file exists already");
-        return NULL;
+    CPIDGuard* guard = NULL;
+    try {
+        guard = new CPIDGuard(lockFile.GetPath());
+        TRACEMSG("FileMessenger:  lock file established: " << lockFile.GetPath());
+    } catch (CPIDGuardException& pidge) {
+
+        if (pidge.GetErrCode() == CPIDGuardException::eStillRunning) {
+            TRACEMSG("FileMessenger:  unable to establish a lock for new PID - old PID is still running\n" << pidge.ReportThis());
+        } else if (pidge.GetErrCode() == CPIDGuardException::eWrite) {
+            TRACEMSG("FileMessenger:  write to PID-guarded file failed\n" << pidge.ReportThis());
+        } else {
+            TRACEMSG("FileMessenger:  unknown Toolkit PID-guard failure\n" << pidge.ReportAll());
+        }
+
+        delete guard;  //  calls CPIDGuard::Release()
+        guard = NULL;
+
+    } catch (...) {
+        TRACEMSG("FileMessenger:  unknown exception while creating lock");
+        delete guard;  //  calls CPIDGuard::Release()
+        guard = NULL;
     }
 
-//    auto_ptr<fstream> lockStream(CFile::CreateTmpFile(lockFile.GetPath(), CFile::eText, CFile::eAllowRead));
-#if defined(NCBI_OS_MSWIN)
-    FILE* lockFileHandle = fopen(lockFile.GetPath().c_str(), "w+");
-    auto_ptr<fstream> lockStream(new fstream(lockFileHandle));
-#else
-    auto_ptr<fstream> lockStream(new fstream(lockFile.GetPath().c_str(), (IOS_BASE::in | IOS_BASE::out | IOS_BASE::app)));
-#endif
-
-    if (lockStream.get() == NULL || !(*lockStream)) {
-        TRACEMSG("unable to establish a lock - cannot create lock file");
-        return NULL;
-    }
-    char lockWord[4];
-    lockStream->seekg(0);
-    if (CStreamUtils::Readsome(*lockStream, lockWord, 4) == 4 &&
-            lockWord[0] == 'L' && lockWord[1] == 'O' &&
-            lockWord[2] == 'C' && lockWord[3] == 'K') {
-        ERRORMSG("lock file opened for writing but apparently already LOCKed!");
-        return NULL;
-    }
-    lockStream->seekg(0);
-    lockStream->write("LOCK", 4);
-    lockStream->flush();
-    TRACEMSG("lock file established: " << lockFile.GetPath());
-    return lockStream.release();
+    return guard;
 }
 
 FileMessenger::~FileMessenger(void)
@@ -123,7 +117,7 @@ FileMessenger::~FileMessenger(void)
 
     // last-minute attempt to write any pending commands to the file
     if (pendingCommands.size() > 0) {
-        auto_ptr<fstream> lockStream(CreateLock(lockFile.GetPath()));
+        auto_ptr<CPIDGuard> lockStream(CreateLock(lockFile));
         if (lockStream.get() == NULL) {
             int nTries = 1;
             do {
@@ -134,15 +128,11 @@ FileMessenger::~FileMessenger(void)
         }
         if (lockStream.get() != NULL) {
             SendPendingCommands();
-
-            //  Explicitly clean up the lock file.
-            //  In case of an exception, auto_ptr should automatically delete it.
-            lockStream->close();
-            lockFile.Remove();
         } 
         else
             ERRORMSG("Timeout occurred when attempting to flush pending commands to file");
-        
+
+        //  CPIDGuard pointer cleaned up when auto_ptr goes out of scope.
     }
 
     // sanity check to make sure each command received was sent a reply
@@ -252,7 +242,7 @@ void FileMessenger::PollMessageFile(void)
     if (pendingCommands.size() > 0) TRACEMSG("has pending commands to send");
 
     // since we're going to read or write the file, establish a lock now
-    auto_ptr<fstream> lockStream(CreateLock(lockFile));
+    auto_ptr<CPIDGuard> lockStream(CreateLock(lockFile));
     if (lockStream.get() == NULL)
         return; // try again later, so program isn't locked during wait
 
@@ -270,10 +260,7 @@ void FileMessenger::PollMessageFile(void)
         lastKnownSize = 0;
     }
 
-    //  Explicitly clean up the lock file.
-    //  In case of an exception, auto_ptr should automatically delete it.
-    lockStream->close();
-    lockFile.Remove();
+    //  CPIDGuard pointer cleaned up when auto_ptr goes out of scope.
 }
 
 static const string COMMAND_END = "### END COMMAND ###";
