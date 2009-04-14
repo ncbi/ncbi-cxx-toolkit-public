@@ -161,6 +161,7 @@
             usage_str += "                   app/soap/client   a SOAP client\n";
             usage_str += "                   app/soap/server   a SOAP server\n";
             usage_str += "                   app/unit_test     a Boost-based unit test application\n";
+            usage_str += "                   lib[/basic]       a simple static library\n";
             usage_str += "                   lib/asn           a static library from ASN.1 specification\n";
             usage_str += "                   lib/dtd           a static library from DTD specification\n";
             usage_str += "                   lib/xsd           a static library from XML Schema specification\n";
@@ -237,6 +238,8 @@
                 prompt += "\tapp/soap/client\n";
                 prompt += "\tapp/soap/server\n";
                 prompt += "\tapp/unit_test\n";
+                prompt += "\tlib\n";
+                prompt += "\tlib/basic\n";
                 prompt += "\tlib/asn\n";
                 prompt += "\tlib/dtd\n";
                 prompt += "\tlib/xsd\n";
@@ -271,6 +274,8 @@
             this.TemplatesDict.Add("app/soap/client", "sample/app/soap/client");
             this.TemplatesDict.Add("app/soap/server", "sample/app/soap/server");
             this.TemplatesDict.Add("app/unit_test",   "sample/app/unit_test");
+            this.TemplatesDict.Add("lib",         "sample/lib/basic");
+            this.TemplatesDict.Add("lib/basic",   "sample/lib/basic");
             this.TemplatesDict.Add("lib/asn",     "sample/app/asn_lib");
             this.TemplatesDict.Add("lib/dtd",     "sample/app/asn_lib");
             this.TemplatesDict.Add("lib/xsd",     "sample/app/asn_lib");
@@ -341,6 +346,10 @@
 //            var src = "/src/" + oTask.ProjectTemplate + "/*.*";
 //            GetFileFromTree(oShell, oTree, oTask, src, oTree.SrcProjectBranch)
             GetSubtreeFromTree(oShell, oTree, oTask, "src/" + oTask.ProjectTemplate, oTree.SrcProjectBranch);
+            if (oTask.ProjectType == "lib" ||
+                oTask.ProjectType == "lib/basic") {
+                GetSubtreeFromTree(oShell, oTree, oTask, "include/" + oTask.ProjectTemplate, oTree.IncludeProjectBranch);
+            }
 
             var rm0 = new Array (
                 "*.files"
@@ -440,6 +449,16 @@
                 AdjustDataSpecProject(oShell, oTree, oTask)
                 return;
             }
+            var XX_PROJ = "APP_PROJ";
+            var XX_EXT  = "app";
+            var XX_APP  = "APP";
+            if (oTask.ProjectType == "lib" ||
+                oTask.ProjectType == "lib/basic") {
+                XX_PROJ = "LIB_PROJ";
+                XX_EXT  = "lib";
+                XX_APP  = "LIB"
+            }
+            
             var oFso = new ActiveXObject("Scripting.FileSystemObject");
             
             var filename = oTree.SrcProjectBranch + "\\Makefile.in";
@@ -454,8 +473,7 @@
             var new_file = oFso.CreateTextFile(filename, true);
             while( !old_file.AtEndOfStream ) {
                 var old_line = old_file.ReadLine();
-                if (old_line.indexOf("APP_PROJ") == 0) {
-//                    new_file.WriteLine("APP_PROJ = " + oTask.ProjectName);
+                if (old_line.indexOf( XX_PROJ ) == 0) {
                     var subproj = old_line.split(" ");
                     var new_line = "";
                     for (var i = 0; i < subproj.length; i++) {
@@ -475,7 +493,7 @@
             new_file.Close();
             oFso.DeleteFile(modelname, true);
             
-            modelname = oTree.SrcProjectBranch + "\\" + "Makefile." + sourcename + ".app";
+            modelname = oTree.SrcProjectBranch + "\\" + "Makefile." + sourcename + "." + XX_EXT;
             if (sourcename == "" || !oFso.FileExists(modelname)) {
                 // Makefile.*.app
                 // lookup file name
@@ -490,7 +508,7 @@
                 modelname = "";
                 for( ; !src_folder_contents.atEnd() && modelname == ""; src_folder_contents.moveNext()) {
                     var src_file = src_folder_contents.item();
-                    if (oFso.GetExtensionName(src_file) == "app") {
+                    if (oFso.GetExtensionName(src_file) == XX_EXT) {
                         var t1 = oFso.GetFileName(src_file).replace(/_/g, ".");
                         var t2 = oFso.GetBaseName(t1);
                         while ( t1 != t2 ) {
@@ -507,7 +525,7 @@
                     src_folder_contents.moveFirst();
                     for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
                         var src_file = src_folder_contents.item();
-                        if (oFso.GetExtensionName(src_file) == "app") {
+                        if (oFso.GetExtensionName(src_file) == XX_EXT) {
                             modelname = src_file;
                             break;
                         }
@@ -516,7 +534,11 @@
             }
 
             samplename = oFso.GetExtensionName( oFso.GetBaseName(modelname) );
-            filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".app";
+            if (XX_EXT == "lib") {
+                ReplaceInFile( oFso, oTree.SrcProjectBranch, "app", samplename, oTask.ProjectName);
+                ReplaceInFile( oFso, oTree.SrcProjectBranch, "cpp", oTask.ProjectTemplate, oTask.ProjectName);
+            }
+            filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + "." + XX_EXT;
             VerboseEcho("Converting model file " + modelname + " into " + filename);
             // open for reading
             var old_makefile = oFso.OpenTextFile(modelname, 1);
@@ -524,7 +546,7 @@
             var new_makefile = oFso.CreateTextFile(filename, true);
             while( !old_makefile.AtEndOfStream ) {
                 var old_line = old_makefile.ReadLine();
-                if (old_line.indexOf("APP") == 0) {
+                if (old_line.indexOf( XX_APP ) == 0) {
                     if (sourcename != "") {
                         if (old_line.indexOf(sourcename) >= 0) {
                             var tt = old_line.replace(sourcename,oTask.ProjectName);
@@ -532,7 +554,7 @@
                         }
                         new_makefile.WriteLine(old_line);
                     } else {
-                        new_makefile.WriteLine("APP = " + oTask.ProjectName);
+                        new_makefile.WriteLine(XX_APP + " = " + oTask.ProjectName);
                     }
                 }
 /*
@@ -577,6 +599,33 @@
             filename += ".msvc";
             if (oFso.FileExists(modelname)) {
                 oFso.MoveFile(modelname, filename);
+            }
+        }
+        function ReplaceInFile(oFso, srcdir, srcext, findtxt, replacetxt)
+        {
+            var src_folder = oFso.GetFolder(srcdir);
+            var src_folder_contents = new Enumerator(src_folder.files);
+            var src_file;
+            for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+                src_file = src_folder_contents.item();
+                if (oFso.GetExtensionName(src_file) == srcext) {
+//                    break;
+                    var old_name = src_file;
+                    var new_name = src_file+"new";
+                    oFso.CopyFile(old_name, new_name);
+                    old_name = src_file;
+                    var old_makefile = oFso.OpenTextFile(new_name, 1);
+                    var new_makefile = oFso.CreateTextFile(old_name, true);
+                    while( !old_makefile.AtEndOfStream ) {
+                        var old_line = old_makefile.ReadLine();
+                        var tt = old_line.replace(findtxt,replacetxt);
+                        old_line = tt;
+                        new_makefile.WriteLine(old_line);
+                    }
+                    old_makefile.Close();
+                    new_makefile.Close();
+                    oFso.DeleteFile(new_name, true);
+                }
             }
         }
         // Run project tree builder
