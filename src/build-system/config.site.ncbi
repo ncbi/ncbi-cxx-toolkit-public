@@ -1,0 +1,127 @@
+#!/bin/sh
+# $Id$
+
+# Note default paths to third-party libraries, whose location and even
+# presence varies somewhat from platform to platform.
+
+case `uname -sp` in
+    Darwin\ i386    ) ncbi_platform=IntelMAC   ;;
+    Darwin\ powerpc ) ncbi_platform=PowerMAC   ;;
+    FreeBSD\ i386   ) ncbi_platform=FreeBSD32  ;;
+    Linux\ i?86     ) ncbi_platform=Linux32    ;;
+    Linux\ x86_64   ) ncbi_platform=Linux64    ;;
+    SunOS\ i?86     ) ncbi_platform=SunOSx86   ;;
+    SunOS\ sparc    ) ncbi_platform=SunOSSparc ;;
+    *               ) ncbi_platform=UNKNOWN    ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32  ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.4.20}   ;;
+    Linux*     ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
+    *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
+    SunOSx86   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.3.21}   ;;
+    SunOSSparc ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
+esac
+
+: ${BOOST_PATH=$NCBI/boost-1.35.0}
+
+case "$ncbi_platform" in
+    Linux*     ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10}   ;;
+    *MAC       ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10.2} ;;
+    SunOSSparc ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10.2} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux32    ) : ${EXPAT_PATH=$NCBI/expat-1.95.6} ;;
+    Linux64    ) : ${EXPAT_PATH=$NCBI/expat-1.95.8} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux*     ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
+    SunOSx86   ) : ${FASTCGI_PATH=$NCBI/fcgi-2.1}         ;;
+    SunOSSparc ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0-ncbi1} ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32  ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8} ;;
+    Linux32    ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8} ;;
+    SunOSx86   ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi6} ;;
+    *          ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi9} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32 | *MAC | SunOSx86 ) ;;
+    * ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
+esac
+
+: ${LIBXML_PATH=$NCBI/libxml-2.7.3}
+
+case "$ncbi_platform" in
+    FreeBSD32 ) ;;
+    * ) : ${LZO2_PATH=$NCBI/lzo-2.02} ;;
+esac
+
+case "$ncbi_platform" in
+    SunOSSparc ) : ${MYSQL_PATH=/netopt/mysql/3-23.40} ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32 | *MAC | SunOSx86 ) ;;
+    * ) : ${OPENGL_PATH=$NCBI/Mesa-7.0.2-ncbi2} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux32    ) : ${ORBACUS_PATH=$NCBI/corba-4.2.0/GCC342-ReleaseMT_v4.2.0} ;;
+    Linux64    ) : ${ORBACUS_PATH=$NCBI/corba-4.2.0/GCC401-Release64MT}      ;;
+    SunOSSparc ) : ${ORBACUS_PATH=$NCBI/corba-4.0.1/OB-4.0.1}                ;;
+esac
+
+case "$ncbi_platform" in
+    Linux32    ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.1} ;;
+    Linux64    ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
+    SunOSSparc ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux32    ) : ${SP_PATH=$NCBI/SP-1.3.4} ;;
+    SunOSSparc ) : ${SP_PATH=$NCBI/SP-1.3}   ;;
+esac
+
+case "$ncbi_platform" in
+    Linux32    ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.13} ;;
+    *MAC       ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.17} ;;
+    SunOSx86   ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.13} ;;
+    *          ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.16} ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32  ) : ${SQLITE3_PATH=$NCBI/sqlite-3.6.2} ;;
+    Linux*     ) : ${SQLITE3_PATH=$NCBI/sqlite-3.3.5} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux32    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-32bit} ;;
+    Linux64    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-64bit} ;;
+    SunOSSparc ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.0-EBF9209}    ;;
+    SunOSx86   ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.5.1}          ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32 | SunOSx86 ) ;;
+    *MAC ) : ${WXWIDGETS_PATH=$NCBI/wxMac-2.8.7} ;;
+    *    ) : ${WXWIDGETS_PATH=$NCBI/wxGTK-2.8.7} ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32 | *MAC | SunOSx86 ) ;;
+    * ) : ${XALAN_PATH=$NCBI/xalan-1.8.0-ncbi2} ;;
+esac
+
+case "$ncbi_platform" in
+    FreeBSD32 | *MAC | SunOSx86 ) ;;
+    * ) : ${XERCES_PATH=$NCBI/xerces-2.6.0} ;;
+esac
