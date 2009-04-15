@@ -57,7 +57,7 @@ CDemoeApp::Run(void)
 
         CODBCContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("msdev1.be-md.ncbi.nlm.nih.gov",
+        auto_ptr<CDB_Connection> con(my_context.Connect("msdev1",
                                                         "anyone",
                                                         "allowed",
                                                         0));

@@ -860,7 +860,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
 
             string sDbDriver(GetArgs().GetDriverName());
     //         string sDbServer("MSSQL57");
-            string sDbServer("mssql57.nac.ncbi.nlm.nih.gov");
+            string sDbServer("");
             string sDbName("NCBI_LS");
             string sDbUser("anyone");
             string sDbPasswd("allowed");
@@ -1086,7 +1086,7 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
             "anyone",
             "allowed",
     //         "MSSQL57",
-            "mssql57.nac.ncbi.nlm.nih.gov",
+            "",
             "NCBI_LS"
             );
 

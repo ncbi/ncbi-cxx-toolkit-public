@@ -487,7 +487,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             conn->Connect(
                 "anyone",
                 "allowed",
-                "mssql58.nac.ncbi.nlm.nih.gov",
+                "",
                 "GenomeHits"
                 );
 
