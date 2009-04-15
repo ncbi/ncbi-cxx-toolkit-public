@@ -382,6 +382,8 @@ public:
         G_DataError,            // -- agp_validate --
 
         G_TaxError,             // -- agp_validate --
+        G_InvalidObjId,         // -- agp_validate --
+        G_BadObjLen,            // -- agp_validate --
         G_Last,
 
         G_First = G_InvalidCompId,

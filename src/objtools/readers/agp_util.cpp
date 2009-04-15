@@ -99,6 +99,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "sequence data is invalid or unavailable",
 
     "taxonomic data is not available",
+    "object X not found in FASTA file(s)",
+    "final object_end (column 3) not equal to object length in FASTA file(s)",
     kEmptyCStr  // G_Last
 };
 
