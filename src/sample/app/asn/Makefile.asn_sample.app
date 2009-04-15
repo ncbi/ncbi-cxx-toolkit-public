@@ -21,8 +21,8 @@ LIB = sample_asn general xser xutil xncbi
 
 ### Deliberately outside the copied-settings block, as new_project.sh
 ### will supply appropriate include directives itself.
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir0)/app/sample/asn \
-           -I$(includedir)/app/sample/asn
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir0)/sample/app/asn \
+           -I$(includedir)/sample/app/asn
 
 CHECK_COPY = sample_asn.data
 CHECK_CMD  = asn_sample -input sample_asn.data -output sample_asn.xml /CHECK_NAME=asn_sample
