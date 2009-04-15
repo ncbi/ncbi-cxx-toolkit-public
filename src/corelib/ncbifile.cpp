@@ -4080,15 +4080,15 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
         errmsg = strerror(errno);
     }
 #endif
-    // Calculate user's pointer to data
-    m_DataPtr = (char*)m_DataPtrReal + (m_Offset - m_OffsetReal);
-    if ( !m_DataPtr ) {
+    if ( !m_DataPtrReal ) {
         NCBI_THROW(CFileException, eMemoryMap,
             "Unable to map a view of a file '" + 
             handle.sFileName + "' into memory (offset=" +
             NStr::Int8ToString(m_Offset) + ", length=" +
             NStr::Int8ToString(m_Length) + "): " + errmsg);
     }
+    // Calculate user's pointer to data
+    m_DataPtr = (char*)m_DataPtrReal + (m_Offset - m_OffsetReal);
 }
 
 
@@ -4242,6 +4242,7 @@ void* CMemoryFileMap::Map(off_t offset, size_t length)
         new CMemoryFileSegment(*m_Handle, *m_Attrs, offset, length);
     void* ptr = segment->GetPtr();
     if ( !ptr ) {
+        delete segment;
         NCBI_THROW(CFileException, eMemoryMap,
                    "Map() failed (file \"" + m_FileName +"\", "
                    "offset=" + NStr::Int8ToString(offset) + ", "\
