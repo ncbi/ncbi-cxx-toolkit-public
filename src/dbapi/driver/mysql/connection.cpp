@@ -89,7 +89,7 @@ void
 CMySQL_Connection::SetTimeout(size_t nof_secs)
 {
     // DATABASE_DRIVER_ERROR( "SetTimeout is not supported.", 100011 );
-    ERR_POST_X_ONCE(2, "SetTimeout is not supported.");
+    _TRACE("SetTimeout is not supported.");
 }
 
 

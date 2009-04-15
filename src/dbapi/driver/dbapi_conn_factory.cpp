@@ -155,12 +155,17 @@ unsigned int
 CDBConnectionFactory::CalculateConnectionTimeout
 (const I_DriverContext& ctx) const
 {
-    unsigned int timeout = 3;
+    unsigned int timeout = 30;
 
-    if (GetConnectionTimeout()) {
-        timeout = GetConnectionTimeout();
-    } else if (ctx.GetTimeout()) {
-        timeout = ctx.GetTimeout();
+    unsigned int to = GetConnectionTimeout();
+    if (to != 0) {
+        timeout = to;
+    }
+    else {
+        to = ctx.GetTimeout();
+        if (to != 0) {
+            timeout = to;
+        }
     }
 
     return timeout;
@@ -169,12 +174,17 @@ CDBConnectionFactory::CalculateConnectionTimeout
 unsigned int
 CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
 {
-    unsigned int timeout = 3;
+    unsigned int timeout = 30;
 
-    if (GetLoginTimeout()) {
-        timeout = GetLoginTimeout();
-    } else if (ctx.GetLoginTimeout()) {
-        timeout = ctx.GetLoginTimeout();
+    unsigned int to = GetLoginTimeout();
+    if (to != 0) {
+        timeout = to;
+    }
+    else {
+        to = ctx.GetLoginTimeout();
+        if (to != 0) {
+            timeout = to;
+        }
     }
 
     return timeout;
@@ -285,23 +295,23 @@ CDBConnectionFactory::MakeDBConnection(
 
     if ( dsp_srv.Empty() ) {
         // We are here either because server name was never dispatched or
-        // because a named coonnection pool has been used before.
+        // because a named connection pool has been used before.
         // Dispatch server name ...
 
         t_con = DispatchServerName(ctx, params);
     } else {
         // Server name is already dispatched ...
 
-        // We probably need to redispatch it ...
+        // We probably need to re-dispatch it ...
         if (GetMaxNumOfDispatches() &&
             rt_data.GetNumOfDispatches(params.GetServerName()) >= GetMaxNumOfDispatches()) {
-            // We definitely need to redispatch it ...
+            // We definitely need to re-dispatch it ...
 
             // Clean previous info ...
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
             t_con = DispatchServerName(ctx, params);
         } else {
-            // We do not need to redispatch it ...
+            // We do not need to re-dispatch it ...
 
             IConnValidator::EConnStatus conn_status =
                 IConnValidator::eInvalidConn;
@@ -339,11 +349,11 @@ CDBConnectionFactory::MakeDBConnection(
                                                        dsp_srv);
                 }
 
-                // Redispach ...
+                // Re-dispatch ...
                 t_con = DispatchServerName(ctx, params);
             } else {
                 // Dispatched server is already set, but calling of this method
-                // will increase number of succesful dispatches.
+                // will increase number of successful dispatches.
                 rt_data.SetDispatchedServer(params.GetServerName(), dsp_srv);
             }
         }
@@ -353,10 +363,9 @@ CDBConnectionFactory::MakeDBConnection(
     ctx.SetTimeout(query_timeout);
 
     // Restore original query timeout ...
-    // The method below is NOT supported by almost all drivers.
-    // if (t_con) {
-    //     t_con->SetTimeout(query_timeout);
-    // }
+    if (t_con) {
+        t_con->SetTimeout(query_timeout);
+    }
 
     return t_con;
 }

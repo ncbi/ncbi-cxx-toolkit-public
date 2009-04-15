@@ -801,7 +801,7 @@ unsigned int CTLibContext::GetTimeout(void) const
                             &t_out,
                             CS_UNUSED,
                             NULL)) == CS_SUCCEED) {
-            return t_out;
+            return t_out == -1? 0: t_out;
         }
     }
 

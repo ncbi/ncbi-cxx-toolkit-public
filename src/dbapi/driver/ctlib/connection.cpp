@@ -376,7 +376,14 @@ CTL_Connection::SetTimeout(size_t nof_secs)
 #ifdef FTDS_IN_USE
     x_GetSybaseConn()->tds_socket->query_timeout = nof_secs;
 #else
-    ERR_POST_X_ONCE(3, "SetTimeout is not supported.");
+    int sec = (nof_secs == 0 ? CS_NO_LIMIT : (int)nof_secs);
+
+    Check(ct_con_props(x_GetSybaseConn(),
+                       CS_SET,
+                       CS_TIMEOUT,
+                       &sec,
+                       CS_UNUSED,
+                       NULL));
 #endif
 }
 
