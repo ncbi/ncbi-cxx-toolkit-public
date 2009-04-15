@@ -702,8 +702,6 @@ private:
 
     vector<string> m_Messages;
 
-    static const int kDefaultGapOpen = -11;
-    static const int kDefaultGapExtend = -1;
     static const int kDefaultUserConstraintsScore = 1000000;
 };
 

@@ -200,9 +200,9 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
 
     // Query clusters
     m_UseQueryClusters = !(mode & fNoQueryClusters);
-    m_MaxInClusterDist = 0.85;
-    m_KmerLength = 6;
-    m_KmerAlphabet = TKMethods::eSE_B15;
+    m_MaxInClusterDist = 0.8;
+    m_KmerLength = 4;
+    m_KmerAlphabet = TKMethods::eRegular;
     m_ClustDistMeasure = TKMethods::eFractionCommonKmersGlobal;
     m_InClustAlnMethod = m_UseQueryClusters ? eMulti : eNone;
 
@@ -230,10 +230,10 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
     m_UserHitsScore = kDefaultUserConstraintsScore;
 
     m_MatrixName = "BLOSUM62";
-    m_EndGapOpen = kDefaultGapOpen;
-    m_EndGapExtend = kDefaultGapExtend;
-    m_GapOpen = kDefaultGapOpen;
-    m_GapExtend = kDefaultGapExtend;
+    m_EndGapOpen = -5;
+    m_EndGapExtend = -1;
+    m_GapOpen = -11;
+    m_GapExtend = -1;
 
     m_Verbose = false;
 }
