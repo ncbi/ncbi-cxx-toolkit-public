@@ -1142,7 +1142,7 @@ bool CDUpdater::overlapWithCDRow(CCdCore* cd,CRef< CSeq_align > seqAlign)
 
     bool result = false;
 	BlockModel bm(seqAlign);
-    int lo, hi, allowedOverlap;
+    int lo, hi;
 	int lastPos = bm.getLastAlignedPosition();
 	int firstPos = bm.getFirstAlignedPosition();
 	CRef< CSeq_id > seqId = bm.getSeqId();

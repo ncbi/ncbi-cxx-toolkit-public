@@ -345,17 +345,41 @@ int CCdCore::GetSeqIndex(const CRef< CSeq_id >& SeqID) const{
 //-------------------------------------------------------------------------
 //  get the sequence index with given SeqID
 //-------------------------------------------------------------------------
-  int  i, NumSequences = GetNumSequences();
-  CRef< CSeq_id > TrialSeqID;
 
-  if (SeqID.NotEmpty()) {
-      for (i=0; i<NumSequences; i++) {
-        if (GetSeqIDForIndex(i, TrialSeqID) && SeqIdsMatch(SeqID, TrialSeqID)) {
-            return(i);
+    //  Sanity check that the ASN.1 has the assumed format.
+    if (!IsSetSequences() || !GetSequences().IsSet() || GetSequences().GetSet().GetSeq_set().size() == 0) {
+        return(-1);
+    }
+
+    int  i, NumSequences = GetNumSequences();
+    CRef< CSeq_id > TrialSeqID;
+
+    //  don't need this vector of seq entries; can just loop directly over the list - w/ getseqidforindex
+    //  it was slow because that implied another search through the list to find
+    //  the specified index.
+    //  vector< CRef< CSeq_entry > > VectorOfSeqEntries;
+    //for (ii=GetSequences().GetSet().GetSeq_set().begin(); ii!=GetSequences().GetSet().GetSeq_set().end(); ii++) {
+    //    VectorOfSeqEntries.push_back(*ii);
+    // }
+
+
+    //  CBioseq_set::TSeq_set == list< CRef< CSeq_entry > >
+    CBioseq_set::TSeq_set::const_iterator seCit = GetSequences().GetSet().GetSeq_set().begin();
+    CBioseq_set::TSeq_set::const_iterator seCend = GetSequences().GetSet().GetSeq_set().end();
+
+    if (SeqID.NotEmpty()) {
+        for (i=0; seCit != seCend, i<NumSequences; ++seCit, i++) {
+            //  Stopped using GetSeqIDForIndex (or variants) as it selected only one of the possible Seq_ids -- and
+            //  even in that case, the Seq_id is returned according to a ranking of the possible results 
+            //  of Seq_id::Which().  Should be comparing against all Seq_ids in all bioseqs.
+            //const CBioseq& bioseq = VectorOfSeqEntries[i]->GetSeq();
+            //if (GetSeqIDForIndex(i, TrialSeqID) && SeqIdsMatch(SeqID, TrialSeqID)) {
+            if ((*seCit)->IsSeq() && SeqIdHasMatchInBioseq(SeqID, (*seCit)->GetSeq())) {
+                return i;
+            }
         }
     }
-  }
-  return(-1);
+    return(-1);
 }
 
 int CCdCore::GetNthMatchFor(CRef< CSeq_id >& ID, int N) {
@@ -1056,16 +1080,54 @@ void CCdCore::EraseSequences() {
 //-------------------------------------------------------------------------
 // erase sequences not in alignment
 //-------------------------------------------------------------------------
-  int  i, NumSequences;
-  CRef< CSeq_id >  ID;
+    bool hasId;
+    int  i;
+    int NumSequences = GetNumSequences();
+    set<int> indicesToErase;
+    set<int>::reverse_iterator rit, ritEnd;
 
-  NumSequences = GetNumSequences();
-  for (i=NumSequences-1; i>=0; i--) {
-    GetSeqIDForIndex(i, ID);
-    if (!HasSeqId(ID)) {
-      EraseSequence(i);
+    //  CBioseq_set::TSeq_set == list< CRef< CSeq_entry > >
+    //  CBioseq::TId == list< CRef< CSeq_id > >
+    CBioseq::TId::const_iterator idCit, idCend;
+    CBioseq_set::TSeq_set::const_iterator seCit = GetSequences().GetSet().GetSeq_set().begin();
+    CBioseq_set::TSeq_set::const_iterator seCend = GetSequences().GetSet().GetSeq_set().end();
+
+    //  Note:  GetSeqIDForIndex only checks one of the possible IDs against those in the alignment; 
+    //         look through all possible IDs them before erasing a sequence.
+
+    for (i=0; seCit != seCend, i<NumSequences; ++seCit, i++) {
+        hasId = false;
+        if ((*seCit)->IsSeq()) {
+            const CBioseq::TId& ids = (*seCit)->GetSeq().GetId();
+            idCend = ids.end();
+            for (idCit = ids.begin(); idCit != idCend; ++idCit) {
+                if (HasSeqId(*idCit)) {
+                    hasId = true;
+                    break;
+                }
+            }
+            if (!hasId) {
+                indicesToErase.insert(i);
+            }
+        }
     }
-  }
+
+    //  Need to erase in order of decreasing indices so that they don't get invalidated.
+    if (indicesToErase.size() > 0) {
+        ritEnd = indicesToErase.rend();
+        for (rit = indicesToErase.rbegin(); rit != ritEnd; ++rit) {
+            EraseSequence(*rit);
+        }
+    }
+/*
+    for (i=NumSequences-1; i>=0; i--) {
+//  GetSeqIDForIndex this only checks one of the IDs; make sure to look through all of them  
+        GetSeqIDForIndex(i, ID);  
+        if (!HasSeqId(ID)) {
+            EraseSequence(i);
+        }
+    }
+*/
   // testing
   NumSequences = GetNumSequences();
 }

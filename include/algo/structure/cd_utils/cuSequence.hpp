@@ -59,6 +59,10 @@ CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId);
 NCBI_CDUTILS_EXPORT 
 bool SeqIdsMatch(const CRef< CSeq_id>& id1, const CRef< CSeq_id>& id2);  
 
+//  Does the CSeq_id match any CSeq_id in the CBioseq?  (Uses SeqIdsMatch above.)
+NCBI_CDUTILS_EXPORT 
+bool SeqIdHasMatchInBioseq(const CRef< CSeq_id>& id, const CBioseq& bioseq);
+
 //   Return 0 if Seq_id is not of proper type (e_General and database 'CDD')
 NCBI_CDUTILS_EXPORT 
 int  GetCDDPssmIdFromSeqId(const CRef< CSeq_id >& id);

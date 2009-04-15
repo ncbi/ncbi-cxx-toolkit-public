@@ -61,10 +61,8 @@
 #include <objects/id1/id1_client.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(cd_utils) // namespace ncbi::objects::
+BEGIN_SCOPE(cd_utils)
 
-//  Mapping of index to amino acid
-//const char *cdt_stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
 bool SeqIdsMatch(const CRef< CSeq_id >& ID1, const CRef< CSeq_id >& ID2) {
 //-------------------------------------------------------------------------
@@ -74,6 +72,22 @@ bool SeqIdsMatch(const CRef< CSeq_id >& ID1, const CRef< CSeq_id >& ID2) {
         return false;
     }
     return ID1->Match(*ID2);
+}
+
+bool SeqIdHasMatchInBioseq(const CRef< CSeq_id>& id, const CBioseq& bioseq)
+{
+//-------------------------------------------------------------------------
+// return true if 'id' matches at least one element in bioseq's id list
+//-------------------------------------------------------------------------
+    if (id.Empty()) return false;
+
+    bool result = false;
+    const CBioseq::TId& bioseqIds = bioseq.GetId();
+    CBioseq::TId::const_iterator cit = bioseqIds.begin(), cend = bioseqIds.end();
+    for (; cit != cend && !result; ++cit) {
+        result = SeqIdsMatch(id, *cit);
+    }
+    return result;
 }
 
 CRef< CSeq_id > CopySeqId(const CRef< CSeq_id >& seqId)

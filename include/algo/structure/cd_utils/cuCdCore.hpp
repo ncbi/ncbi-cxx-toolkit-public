@@ -95,7 +95,7 @@ public:
     /*  Find/convert sequence list and row indices  */
     int    GetSeqIndexForRowIndex(int rowIndex) const;        // map alignment row to sequence index (-1 if invalid row)
     int    GetMasterSeqIndex() const;                         // get sequence index of the master sequence (-1 if fails)
-    int    GetSeqIndex(const CRef<CSeq_id>& SeqID) const;     // map seqId to sequence list index (-1 if fails)
+    int    GetSeqIndex(const CRef<CSeq_id>& SeqID) const;     // map seqId to the first possible sequence list index (-1 if fails)
     int    GetNthMatchFor(CRef<CSeq_id>& ID, int N);          // get RowIndex of Nth match
     /* ADDED:  find all row indices for a seqID (return # found) */ 
     int    GetAllRowIndicesForSeqId(const CRef<CSeq_id>& SeqID, list<int>& rows) const;    
@@ -138,7 +138,11 @@ public:
     bool   GetSeqIDFromAlignment(int RowIndex, CRef<CSeq_id>& SeqID) const;
 
     /*  SeqID getters ... from sequence list  */
-    bool   GetSeqIDForIndex(int SeqIndex, CRef<CSeq_id>& SeqID) const; // get SeqID from sequence list
+    // CAUTION:  the first method here may not give you the CSeq_id you expect/want.
+    // when there are multiple CSeq_ids for the specified index, priority is
+    // given to the PDB-type identifier, then to a GI, and then to 'other'.  
+    // If any other type is present, this method returned false and an empty CRef.
+    bool   GetSeqIDForIndex(int SeqIndex, CRef<CSeq_id>& SeqID) const;  // get SeqID from sequence list
     bool   GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs);   // get all SeqIDs from sequence list
     const list< CRef< CSeq_id > >& GetSeqIDs(int SeqIndex) const;   // get all SeqIDs from sequence list
 
