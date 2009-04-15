@@ -39,7 +39,7 @@
 #include <util/util_exception.hpp>
 
 #include <serial/soap/soap_client.hpp>
-#include <app/sample/soap/soap_dataobj__.hpp>
+#include <sample/app/soap/soap_dataobj__.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
