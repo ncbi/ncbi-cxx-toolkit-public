@@ -433,15 +433,20 @@ xml::node::ns_list_type xml::node::get_namespace_definitions (xml::ns::ns_safety
     return namespace_definitions;
 }
 //####################################################################
-void xml::node::set_namespace (const char *prefix) {
+xml::ns xml::node::set_namespace (const char *prefix) {
     if (prefix && prefix[0] == '\0') prefix = NULL;
     xmlNs *  definition(xmlSearchNs(NULL, pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(prefix)));
     if (!definition) throw std::runtime_error("Namespace definition is not found");
     pimpl_->xmlnode_->ns = definition;
+    return xml::ns(definition);
 }
 //####################################################################
-void xml::node::set_namespace (const xml::ns &name_space) {
-    if (name_space.is_void()) return erase_namespace();
+xml::ns xml::node::set_namespace (const xml::ns &name_space) {
+    if (name_space.is_void()) {
+        erase_namespace();
+        // The erase_namespace updates the node->ns pointer approprietly
+        return xml::ns(pimpl_->xmlnode_->ns);
+    }
     if (!name_space.is_safe()) {
         pimpl_->xmlnode_->ns = reinterpret_cast<xmlNs*>(name_space.unsafe_ns_);
     }
@@ -454,6 +459,7 @@ void xml::node::set_namespace (const xml::ns &name_space) {
         if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri()))) throw std::runtime_error("Namespace definition URI differs to the given");
         pimpl_->xmlnode_->ns = definition;
     }
+    return xml::ns(pimpl_->xmlnode_->ns);
 }
 //####################################################################
 xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_definition_adding_type type) {

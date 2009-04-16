@@ -186,10 +186,11 @@ public:
          * @param prefix Namespace prefix. The NULL pointer and empty string
          *        are considered as namespace removal request (the same as
          *        erase_namespace() call).
+         * @return unsafe namespace
          * @author Sergey Satskiy, NCBI
         **/
         //####################################################################
-        void set_namespace (const char *prefix);
+        xml::ns set_namespace (const char *prefix);
 
         //####################################################################
         /**
@@ -202,10 +203,11 @@ public:
          * There are no checks at all if an unsafe ns object is provided.
          *
          * @param name_space Name space to be set to
+         * @return unsafe namespace
          * @author Sergey Satskiy, NCBI
         **/
         //####################################################################
-        void set_namespace (const xml::ns &name_space);
+        xml::ns set_namespace (const xml::ns &name_space);
 
     private:
 	void *node_;

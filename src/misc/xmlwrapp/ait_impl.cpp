@@ -308,30 +308,41 @@ void xml::attributes::attr::erase_namespace (void) {
     reinterpret_cast<xmlAttrPtr>(prop_)->ns = NULL;
 }
 //####################################################################
-void xml::attributes::attr::set_namespace (const char *prefix) {
+xml::ns xml::attributes::attr::set_namespace (const char *prefix) {
     if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
-    if (!prefix || prefix[0] == '\0') return erase_namespace();
+    if (!prefix || prefix[0] == '\0') {
+        erase_namespace();
+        return xml::attributes::createUnsafeNamespace(NULL);
+    }
     xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(node_),
                                           reinterpret_cast<const xmlChar*>(prefix)));
     if (!definition) throw std::runtime_error("Namespace definition is not found");
     reinterpret_cast<xmlAttrPtr>(prop_)->ns = definition;
+    return xml::attributes::createUnsafeNamespace(definition);
 }
 //####################################################################
-void xml::attributes::attr::set_namespace (const xml::ns &name_space) {
+xml::ns xml::attributes::attr::set_namespace (const xml::ns &name_space) {
     if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
-    if (name_space.is_void()) return erase_namespace();
+    if (name_space.is_void()) {
+        erase_namespace();
+        return xml::attributes::createUnsafeNamespace(NULL);
+    }
     if (!name_space.is_safe()) {
         reinterpret_cast<xmlAttrPtr>(prop_)->ns = reinterpret_cast<xmlNs*>(xml::attributes::getUnsafeNamespacePointer(name_space));
     }
     else {
         const char *    prefix(name_space.get_prefix());
-        if (prefix[0] == '\0') return erase_namespace();
+        if (prefix[0] == '\0') {
+            erase_namespace();
+            return xml::attributes::createUnsafeNamespace(NULL);
+        }
         xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(node_),
                                               reinterpret_cast<const xmlChar*>(prefix)));
         if (!definition) throw std::runtime_error("Namespace definition is not found");
         if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri()))) throw std::runtime_error("Namespace definition URI differs to the given");
         reinterpret_cast<xmlAttrPtr>(prop_)->ns = definition;
     }
+    return xml::attributes::createUnsafeNamespace(reinterpret_cast<xmlAttrPtr>(prop_)->ns);
 }
 //####################################################################
 

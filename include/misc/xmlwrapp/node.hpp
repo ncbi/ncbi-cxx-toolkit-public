@@ -420,10 +420,11 @@ public:
       * erase_namespace() call).
       *
       * @param name_space to be set to
+      * @return unsafe namespace
       * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
-    void set_namespace (const xml::ns &name_space);
+    xml::ns set_namespace (const xml::ns &name_space);
 
     //####################################################################
     /**
@@ -433,10 +434,11 @@ public:
       *
       * @param prefix Namespace prefix. The NULL pointer and empty string
       *        are considered as a default namespace.
+      * @return unsafe namespace
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    void set_namespace (const char *prefix);
+    xml::ns set_namespace (const char *prefix);
 
     //####################################################################
     /**
