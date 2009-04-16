@@ -303,6 +303,37 @@ xml::ns xml::attributes::attr::get_namespace (xml::ns::ns_safety_type type) cons
     return xml::attributes::createUnsafeNamespace(nspace);
 }
 //####################################################################
+void xml::attributes::attr::erase_namespace (void) {
+    if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
+    reinterpret_cast<xmlAttrPtr>(prop_)->ns = NULL;
+}
+//####################################################################
+void xml::attributes::attr::set_namespace (const char *prefix) {
+    if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
+    if (!prefix || prefix[0] == '\0') return erase_namespace();
+    xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(node_),
+                                          reinterpret_cast<const xmlChar*>(prefix)));
+    if (!definition) throw std::runtime_error("Namespace definition is not found");
+    reinterpret_cast<xmlAttrPtr>(prop_)->ns = definition;
+}
+//####################################################################
+void xml::attributes::attr::set_namespace (const xml::ns &name_space) {
+    if (!node_ || !prop_) throw std::runtime_error("access to invalid xml::attributes::attr object!");
+    if (name_space.is_void()) return erase_namespace();
+    if (!name_space.is_safe()) {
+        reinterpret_cast<xmlAttrPtr>(prop_)->ns = reinterpret_cast<xmlNs*>(xml::attributes::getUnsafeNamespacePointer(name_space));
+    }
+    else {
+        const char *    prefix(name_space.get_prefix());
+        if (prefix[0] == '\0') return erase_namespace();
+        xmlNs *  definition(xmlSearchNs(NULL, reinterpret_cast<xmlNode*>(node_),
+                                              reinterpret_cast<const xmlChar*>(prefix)));
+        if (!definition) throw std::runtime_error("Namespace definition is not found");
+        if (!xmlStrEqual(definition->href, reinterpret_cast<const xmlChar*>(name_space.get_uri()))) throw std::runtime_error("Namespace definition URI differs to the given");
+        reinterpret_cast<xmlAttrPtr>(prop_)->ns = definition;
+    }
+}
+//####################################################################
 
 /*
  * Now some friend functions

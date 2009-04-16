@@ -413,15 +413,30 @@ public:
     //####################################################################
     /**
       * Set the node namespace.
+      * The namespace is searched up in the hierarchy of nodes. If a namespace
+      * with the given prefix is not found or uris of the found and the given
+      * namespaceas are not matched then an exception is thrown.
+      * A void namespace is treated as a namespace removal request (the same as
+      * erase_namespace() call).
       *
-      * @param name_space The namespace to be set for the node.
-      *           If the node already has a namespace it will be replaced with
-      *           the given one.
-      *           It is not checked that the namespace is defined somewhere.
+      * @param name_space to be set to
+      * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    void set_namespace (const xml::ns &name_space);
+
+    //####################################################################
+    /**
+      * Set the node namespace.
+      * The namespace is searched up in the hierarchy of nodes. If a namespace
+      * with the given prefix is not found then an exception is thrown.
+      *
+      * @param prefix Namespace prefix. The NULL pointer and empty string
+      *        are considered as a default namespace.
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    void set_namespace (const xml::ns &name_space);
+    void set_namespace (const char *prefix);
 
     //####################################################################
     /**
@@ -430,6 +445,9 @@ public:
       * @param name_space The namespace definition to be added to the node.
       *           If the node already has a namespace definition with same
       *           prefix then its URI will be replaced with the new one.
+      *           The hierarchy of nodes is walked down and if a namespace with
+      *           the given prefix is found then it is replaced with the given
+      *           namespace.
       * @param type replace or throw exception if a namespace definition exists
       *           with the same prefix
       * @return unsafe namespace
@@ -446,6 +464,9 @@ public:
       *           If the node already has namespace definitions which
       *           prefixes are the same as those in the given list then
       *           the matched prefixes URIs will be replaced with the new ones.
+      *           The hierarchy of nodes is walked down and if a namespace with
+      *           the given prefix is found then it is replaced with the given
+      *           namespace.
       * @param type replace or throw exception if a namespace definition exists
       *           with the same prefix
       * @author Sergey Satskiy, NCBI
@@ -455,15 +476,46 @@ public:
 
     //####################################################################
     /**
-      * Remove the node namespace.
+      * Remove the node namespace definition.
       *
       * @param prefix The prefix of the namespace to be removed from the node
       *               namespace definitions. If there is no such a namespace
       *               definition nothing will be removed.
+      *               The NULL and pointers to the empty string are considered
+      *               as a default namespace.
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
     void erase_namespace_definition (const char *prefix);
+
+    //####################################################################
+    /**
+      * Remove the node namespace.
+      * The hierarchy of nodes is searched up and if a default namespace is
+      * found then it is used as a new node namespace.
+      *
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void erase_namespace (void);
+
+    //####################################################################
+    /**
+      * Look up a namespace for the given prefix.
+      * The function walks the nodes hierarchy up and checks the nodes
+      * defined namespaces prefixes. If the prefix matches the given then the
+      * corresponding safe/unsafe ns object is provided.
+      *
+      * @param prefix Namespace prefix to be searched. NULL and "" are treated
+      *               as a default namespace prefix.
+      * @param type The required type of namespace object (safe/unsafe).
+      * @return safe/unsafe namespace depending on the requested type.
+      *         If a namespace is not found then a void namespace object is
+      *         returned i.e. is_void() will return true.
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    xml::ns lookup_namespace (const char *prefix, xml::ns::ns_safety_type type = xml::ns::type_safe_ns) const;
 
     //####################################################################
     /**

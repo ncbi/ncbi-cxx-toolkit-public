@@ -57,16 +57,18 @@ xmlNodePtr xml::impl::node_insert (xmlNodePtr parent, xmlNodePtr before, xmlNode
     if (!new_xml_node) throw std::bad_alloc();
 
     if (before == 0) { // insert at the end of the child list
-	if (xmlAddChild(parent, new_xml_node) == 0) {
-	    xmlFreeNode(new_xml_node);
-	    throw std::runtime_error("failed to insert xml::node; xmlAddChild failed");
-	}
+        if (xmlAddChild(parent, new_xml_node) == 0) {
+            xmlFreeNode(new_xml_node);
+            throw std::runtime_error("failed to insert xml::node; xmlAddChild failed");
+        }
     } else {
-	if (xmlAddPrevSibling(before, new_xml_node) == 0) {
-	    xmlFreeNode(new_xml_node);
-	    throw std::runtime_error("failed to insert xml::node; xmlAddPrevSibling failed");
-	}
+        if (xmlAddPrevSibling(before, new_xml_node) == 0) {
+            xmlFreeNode(new_xml_node);
+            throw std::runtime_error("failed to insert xml::node; xmlAddPrevSibling failed");
+        }
     }
+    if (!new_xml_node->ns) new_xml_node->ns = xmlSearchNs(NULL, parent, NULL);
+    if (new_xml_node->ns) set_children_default_ns(new_xml_node, new_xml_node->ns);
 
     return new_xml_node;
 }
@@ -80,11 +82,15 @@ xmlNodePtr xml::impl::node_replace (xmlNodePtr old_node, xmlNodePtr new_node) {
     xmlReplaceNode(old_node, copied_node);
 
     if (copied_node->doc == reinterpret_cast<xmlDocPtr>(old_node)) {
-	xmlFreeNode(copied_node);
-	throw std::runtime_error("failed to replace xml::node; xmlReplaceNode() failed");
+        xmlFreeNode(copied_node);
+        throw std::runtime_error("failed to replace xml::node; xmlReplaceNode() failed");
     }
 
     xmlFreeNode(old_node);
+
+    if (!copied_node->ns) copied_node->ns = xmlSearchNs(NULL, copied_node->parent, NULL);
+    if (copied_node->ns) set_children_default_ns(copied_node, copied_node->ns);
+
     return copied_node;
 }
 //####################################################################
@@ -97,3 +103,57 @@ xmlNodePtr xml::impl::node_erase (xmlNodePtr to_erase) {
     return after;
 }
 //####################################################################
+void xml::impl::set_children_default_ns (xmlNodePtr node, xmlNsPtr default_ns) {
+    if (!node->ns)  node->ns = default_ns;
+    node = node->children;
+    while (node) {
+        if (!has_default_ns_definition(node)) {
+            set_children_default_ns(node, default_ns);
+            if (!node->ns) node->ns = default_ns;
+        }
+        node = node->next;
+    }
+}
+//####################################################################
+bool xml::impl::has_default_ns_definition (xmlNodePtr node) {
+    if (!node ||!node->nsDef) return false;
+    xmlNs *     current(node->nsDef);
+    while (current) {
+        if (!current->prefix) return true;
+        current = current->next;
+    }
+    return false;
+}
+//####################################################################
+bool xml::impl::is_ns_used (xmlNodePtr node, xmlNsPtr ns) {
+    if (!node) return false;
+
+    // Does the node itself use namespace
+    if (node->ns == ns) return true;
+
+    // Do the node attributes use namespace
+    for (xmlAttrPtr current = node->properties; current; current = current->next)
+        if (current->ns == ns) return true;
+
+    node = node->children;
+    while (node) {
+        if (is_ns_used(node, ns)) return true;
+        node = node->next;
+    }
+    return false;
+}
+//####################################################################
+void xml::impl::update_children_default_ns (xmlNodePtr node, xmlNsPtr newns) {
+    if (!node) return;
+    node = node->children;
+    while (node) {
+        if (!has_default_ns_definition(node)) {
+            update_children_default_ns(node, newns);
+            if (!node->ns || !node->ns->prefix)
+                node->ns = newns;
+        }
+        node = node->next;
+    }
+}
+//####################################################################
+

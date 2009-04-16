@@ -117,6 +117,10 @@ xml::ns xml::attributes::createUnsafeNamespace (void *  libxml2RawNamespace) {
     return xml::ns(libxml2RawNamespace);
 }
 //####################################################################
+void * xml::attributes::getUnsafeNamespacePointer (const xml::ns &name_space) {
+    return name_space.unsafe_ns_;
+}
+//####################################################################
 void xml::attributes::set_data (void *node) {
     xmlNodePtr x = static_cast<xmlNodePtr>(node);
 

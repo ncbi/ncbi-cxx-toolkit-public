@@ -88,6 +88,54 @@ namespace impl {
     **/
     //####################################################################
     xmlNodePtr node_erase (xmlNodePtr to_erase);
+
+    //####################################################################
+    /** 
+     * Set the node and its children default namespace to the given. It is
+     * necessary to do when a node is inserted into a document which has
+     * a default namespace declared.
+     *
+     * @param node The node to start from.
+     * @param default_ns The pointer to the document default namespace
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    void set_children_default_ns (xmlNodePtr node, xmlNsPtr default_ns);
+
+    //####################################################################
+    /** 
+     * Check if the node holds default namespace definition
+     *
+     * @param node The node to be checked.
+     * @return true if the node holds default namespace definition.
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    bool has_default_ns_definition (xmlNodePtr node);
+
+    //####################################################################
+    /** 
+     * Check if the node, attributes and children use the namespace
+     *
+     * @param node The node to be checked.
+     * @param ns The namespace to match (pointer comparison is used)
+     * @return true if the namespace is used
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    bool is_ns_used (xmlNodePtr node, xmlNsPtr ns);
+
+    //####################################################################
+    /**
+     * Replaces the node and its children default namespace with the given.
+     * It is required when a default namespace definition is added to the node.
+     *
+     * @param node The node to start from.
+     * @param newns The namespace to be set
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    void update_children_default_ns (xmlNodePtr node, xmlNsPtr newns);
 }
 
 }
