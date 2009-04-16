@@ -40,13 +40,17 @@ BEGIN_NCBI_SCOPE
 
 struct SNetServerCmdOutputImpl : public CNetObject
 {
-    SNetServerCmdOutputImpl(SNetServerConnectionImpl* connection_impl);
+    SNetServerCmdOutputImpl(SNetServerConnectionImpl* connection_impl,
+        const string& first_output_line);
 
     virtual ~SNetServerCmdOutputImpl();
 
     void SetNetCacheCompatMode() {m_NetCacheCompatMode = true;}
 
     CNetServerConnection m_Connection;
+
+    string m_FirstOutputLine;
+    bool m_FirstLineConsumed;
 
     bool m_NetCacheCompatMode;
     bool m_ReadCompletely;
@@ -62,8 +66,8 @@ struct SNetServerConnectionImpl : public CNetObject
     virtual void Delete();
 
     void WriteLine(const string& line);
-    string ReadCmdOutputLine();
     void WaitForServer();
+    void ReadCmdOutputLine(string& result);
 
     void Close();
     void Abort();
@@ -78,8 +82,11 @@ struct SNetServerConnectionImpl : public CNetObject
 };
 
 inline SNetServerCmdOutputImpl::SNetServerCmdOutputImpl(
-    SNetServerConnectionImpl* connection_impl) :
+    SNetServerConnectionImpl* connection_impl,
+    const string& first_output_line) :
         m_Connection(connection_impl),
+        m_FirstOutputLine(first_output_line),
+        m_FirstLineConsumed(false),
         m_NetCacheCompatMode(false),
         m_ReadCompletely(false)
 {
@@ -89,7 +96,7 @@ inline SNetServerCmdOutputImpl::SNetServerCmdOutputImpl(
 class INetServerConnectionListener : public CNetObject
 {
 public:
-    virtual void OnConnected(CNetServerConnection conn) = 0;
+    virtual void OnConnected(CNetServerConnection::TInstance conn) = 0;
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
 };
 

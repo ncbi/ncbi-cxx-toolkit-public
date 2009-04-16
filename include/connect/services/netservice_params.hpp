@@ -49,6 +49,10 @@ NCBI_PARAM_DECL(unsigned int, netservice_api, connection_max_retries);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_max_retries)
     TServConn_ConnMaxRetries;
 
+NCBI_PARAM_DECL(unsigned int, netservice_api, retry_delay);
+typedef NCBI_PARAM_TYPE(netservice_api, retry_delay)
+    TServConn_RetryDelay;
+
 NCBI_PARAM_DECL(bool, netservice_api, use_linger2);
 typedef NCBI_PARAM_TYPE(netservice_api, use_linger2)
     TServConn_UserLinger2;

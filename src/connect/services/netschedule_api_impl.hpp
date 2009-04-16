@@ -145,7 +145,7 @@ struct SNetScheduleAPIImpl : public CNetObject
         void MakeWorkerNodeInitCmd(unsigned short control_port);
 
     private:
-        virtual void OnConnected(CNetServerConnection conn);
+        virtual void OnConnected(CNetServerConnection::TInstance conn);
         virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
     private:

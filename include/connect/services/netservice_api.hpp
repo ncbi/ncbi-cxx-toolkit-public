@@ -101,9 +101,6 @@ class NCBI_XCONNECT_EXPORT CNetService
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;
 
-    void SetCreateSocketMaxRetries(unsigned int retries);
-    unsigned int GetCreateSocketMaxRetries() const;
-
     enum ECmdOutputStyle {
         eSingleLineOutput,
         eDumpNoHeaders,

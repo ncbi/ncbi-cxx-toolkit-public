@@ -86,13 +86,13 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
-    CNetServerConnection conn)
+    CNetServerConnection::TInstance conn)
 {
     conn->WriteLine(m_Auth);
 
     if (!m_WorkerNodeInitCmd.empty()) {
         try {
-            conn.Exec(m_WorkerNodeInitCmd);
+            CNetServerConnection(conn).Exec(m_WorkerNodeInitCmd);
         }
         catch (CNetScheduleException& e) {
             if (e.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)

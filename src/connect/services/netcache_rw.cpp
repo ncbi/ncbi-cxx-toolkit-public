@@ -141,7 +141,8 @@ void CNetCacheWriter::Close()
     try {
         m_Writer.reset();
         m_Connection->WaitForServer();
-        m_Connection->ReadCmdOutputLine();
+        string dummy;
+        m_Connection->ReadCmdOutputLine(dummy);
     } catch (...) {
         m_Connection->Abort();
         x_Shutdown();

@@ -49,7 +49,7 @@ struct SNetCacheAPIImpl : public CNetObject
         CNetCacheServerListener(const string& client_name);
 
     private:
-        virtual void OnConnected(CNetServerConnection conn);
+        virtual void OnConnected(CNetServerConnection::TInstance conn);
         virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
     private:

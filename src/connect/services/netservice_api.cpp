@@ -284,16 +284,6 @@ const STimeout& CNetService::GetCommunicationTimeout() const
     return m_Impl->m_Timeout;
 }
 
-void CNetService::SetCreateSocketMaxRetries(unsigned int retries)
-{
-    m_Impl->m_MaxRetries = retries;
-}
-
-unsigned int CNetService::GetCreateSocketMaxRetries() const
-{
-    return m_Impl->m_MaxRetries;
-}
-
 void CNetService::SetPermanentConnection(ESwitch type)
 {
     m_Impl->m_PermanentConnection = type;
