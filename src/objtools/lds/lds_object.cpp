@@ -158,11 +158,25 @@ void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
 }
 
 
+void CLDS_Object::DeleteUpdateCascadeFiles(const CLDS_Set& files_deleted,
+                                           const CLDS_Set& files_updated)
+{
+    CLDS_Set objects_deleted;
+    CLDS_Set annotations_deleted;
+    DeleteCascadeFiles(files_deleted, &objects_deleted, &annotations_deleted);
+    UpdateCascadeFiles(files_updated);
+    if ( files_deleted.any() || files_updated.any() ) {
+        // re-index
+        BuildSeqIdIdx();
+    }
+}
+
+
 void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids, 
                                      CLDS_Set* objects_deleted,
                                      CLDS_Set* annotations_deleted)
 {
-    if (file_ids.count())
+    if (file_ids.none())
         return;
 
     //
@@ -245,18 +259,19 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     }
 
     }}
+
 }
 
 
 void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
 {
-    if (file_ids.none())
+    if (file_ids.none()) {
         return;
+    }
 
     CLDS_Set objects_deleted;
     CLDS_Set annotations_deleted;
     DeleteCascadeFiles(file_ids, &objects_deleted, &annotations_deleted);
-
 
     CLDS_Set::enumerator en(file_ids.first());
     for ( ; en.valid(); ++en) {
@@ -273,12 +288,6 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
             UpdateFileObjects(fid, fname, format);
         }
     } // ITERATE
-
-    // re-index
-
-    if (file_ids.any()) {
-        BuildSeqIdIdx();
-    }
 }
 
 
@@ -1440,17 +1449,17 @@ public:
             dbf.primary_seqid.ToString(m_PriSeqId_Str);
 
             x_AddToIdx(m_PriSeqId_Str, object_id);
+        }
 
-            dbf.seq_ids.ToString(m_SeqId_Str);
-            vector<string> seq_id_arr;
-            NStr::Tokenize(m_SeqId_Str, " ", seq_id_arr, NStr::eMergeDelims);
-            ITERATE (vector<string>, it, seq_id_arr) {
-                const string& seq_id_str = *it;
-                if (NStr::CompareNocase(seq_id_str,m_PriSeqId_Str)==0) {
-                    continue;
-                }
-                x_AddToIdx(seq_id_str, object_id);
+        dbf.seq_ids.ToString(m_SeqId_Str);
+        vector<string> seq_id_arr;
+        NStr::Tokenize(m_SeqId_Str, " ", seq_id_arr, NStr::eMergeDelims);
+        ITERATE (vector<string>, it, seq_id_arr) {
+            const string& seq_id_str = *it;
+            if (NStr::CompareNocase(seq_id_str,m_PriSeqId_Str)==0) {
+                continue;
             }
+            x_AddToIdx(seq_id_str, object_id);
         }
     }
 

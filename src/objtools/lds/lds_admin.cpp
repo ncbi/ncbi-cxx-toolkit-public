@@ -59,15 +59,9 @@ void CLDS_Management::SyncWithDir(const string&      dir_name,
     bool control = (control_sum == eComputeControlSum);
     aFile.SyncWithDir(dir_name, &files_deleted, &files_updated, rec, control);
 
-    CLDS_Set objects_deleted;
-    CLDS_Set annotations_deleted;
-
     CLDS_Object obj(m_lds_db, m_lds_db.GetObjTypeMap());
     obj.ControlDuplicateIds(dup_control == eCheckDuplicates);
-    obj.DeleteCascadeFiles(files_deleted, 
-                           &objects_deleted, &annotations_deleted);
-    obj.UpdateCascadeFiles(files_updated);
-
+    obj.DeleteUpdateCascadeFiles(files_deleted, files_updated);
 
     m_lds_db.Sync();
 }

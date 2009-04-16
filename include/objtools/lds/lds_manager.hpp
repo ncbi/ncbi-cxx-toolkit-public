@@ -120,7 +120,7 @@ public:
     void Index(ERecurse           recurse     = eRecurseSubDirs,
                EComputeControlSum control_sum = eComputeControlSum,
                EDuplicateId       dup_control = eIgnoreDuplicates);
-    void Index(TFlags             flags = fDefaultFlags);
+    void Index(TFlags             flags);
 
     /// Delete LDS database
     void DeleteDB();

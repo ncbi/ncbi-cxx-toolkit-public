@@ -88,6 +88,9 @@ public:
     /// Reload all objects in given set of files
     void UpdateCascadeFiles(const CLDS_Set& file_ids);
 
+    void DeleteUpdateCascadeFiles(const CLDS_Set& files_deleted,
+                                  const CLDS_Set& files_updated);
+
     void UpdateFileObjects(int file_id,
                            const string& file_name,
                            CFormatGuess::EFormat format);

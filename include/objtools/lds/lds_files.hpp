@@ -66,6 +66,7 @@ public:
 
     // Delete all records with ids belonging to record_set
     void Delete(const CLDS_Set& record_set);
+    void DeleteEntry(int file_id);
 
     void UpdateEntry(int    file_id, 
                      const  string& file_name,

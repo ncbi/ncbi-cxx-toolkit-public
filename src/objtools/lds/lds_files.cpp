@@ -255,30 +255,24 @@ void CLDS_File::Delete(const CLDS_Set& record_set)
 {
     CLDS_Set::enumerator en(record_set.first());
     for ( ; en.valid(); ++en) {
-        string fname;
-        {{
-        CBDB_FileCursor cur(m_FileDB);
-        cur.SetCondition(CBDB_FileCursor::eGE);
-        cur.From << *en;
+        DeleteEntry(*en);
+    }
+}
 
-        if (cur.Fetch() == eBDB_Ok) {
-            unsigned id = m_FileDB.file_id;
-            if (id == *en) {
-                fname = m_FileDB.file_name;
-            }
-        }
-        }}
 
-        m_FileDB.file_id = *en;
-        m_FileDB.Delete();
-
-        if (!fname.empty()) {
-            m_DataBase.GetTables().file_filename_idx.file_name = fname.c_str();
-            m_DataBase.GetTables().file_filename_idx.Delete();
-        }
-
+void CLDS_File::DeleteEntry(int file_id)
+{
+    CBDB_FileCursor cur(m_FileDB);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << file_id;
+    if ( cur.Fetch() != eBDB_Ok || m_FileDB.file_id != file_id ) {
+        return;
     }
 
+    m_DataBase.GetTables().file_filename_idx.file_name = m_FileDB.file_name;
+    m_DataBase.GetTables().file_filename_idx.Delete();
+
+    m_FileDB.Delete();
 }
 
 

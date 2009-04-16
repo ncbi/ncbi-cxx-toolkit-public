@@ -139,9 +139,6 @@ void CLDS_Manager::Index(TFlags flags)
     aFile.SyncWithDir(m_SourcePath, &files_deleted, &files_updated,
                       recurse, control_sum);
 
-    CLDS_Set objects_deleted;
-    CLDS_Set annotations_deleted;
-
     bool check_dup = (flags & fDupliucatesMask) == fCheckDuplicates;
     CLDS_Object obj(*lds, lds->GetObjTypeMap());
     obj.ControlDuplicateIds(check_dup);
@@ -156,9 +153,7 @@ void CLDS_Manager::Index(TFlags flags)
         obj.ControlGBRelease(CLDS_Object::eGuessGBRelease);
         break;
     }
-    obj.DeleteCascadeFiles(files_deleted, 
-                           &objects_deleted, &annotations_deleted);
-    obj.UpdateCascadeFiles(files_updated);
+    obj.DeleteUpdateCascadeFiles(files_deleted, files_updated);
 
     lds->Sync();
 }
@@ -206,11 +201,24 @@ void CLDS_Manager::DumpTable(const string& table_name)
         NcbiCout << "    " << TABLE_seq_id_list << NcbiEndl;
         NcbiCout << "    " << TABLE_obj_seqid_int << NcbiEndl;
         NcbiCout << "    " << TABLE_obj_seqid_txt << NcbiEndl;
+        NcbiCout << "    " << TABLE_file_filename << NcbiEndl;
+        return;
+    }
+    if ( table_name == "*" ) {
+        DumpTable(TABLE_objecttype);
+        DumpTable(TABLE_file);
+        DumpTable(TABLE_file_filename);
+        DumpTable(TABLE_object);
+        DumpTable(TABLE_annotation);
+        DumpTable(TABLE_annot2obj);
+        DumpTable(TABLE_seq_id_list);
+        DumpTable(TABLE_obj_seqid_int);
+        DumpTable(TABLE_obj_seqid_txt);
         return;
     }
 
-
     NcbiCout << "LDS: Dump of table " << table_name << ":" << NcbiEndl;
+
     Int8 rec_count = 0;
     SLDS_TablesCollection& tables = GetDB().GetTables();
     if ( table_name == TABLE_objecttype ) {
