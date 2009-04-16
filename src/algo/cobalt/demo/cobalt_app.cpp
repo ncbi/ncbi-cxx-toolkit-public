@@ -64,113 +64,130 @@ private:
 
 void CMultiApplication::Init(void)
 {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp
+                | fHideDryRun);
+
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                             "COBALT multiple alignment utility");
+                             "COBALT multiple sequence alignment utility");
 
-    arg_desc->AddKey("i", "infile", "Query file name",
-                     CArgDescriptions::eInputFile);
+    // Input sequences
+    arg_desc->AddKey("i", "infile", "File containing input sequences in FASTA"
+                     " format", CArgDescriptions::eInputFile);
+
+
+    // Conserved domain options
+    arg_desc->SetCurrentGroup("Conserved domain options");
+    arg_desc->AddOptionalKey("rpsdb", "database", "Conserved domain database "
+                             "name\nEither database or -norps option must be "
+                             "specified", CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("norps", "norps", "Do not perform initial "
+                            "RPS-BLAST search",
+                            CArgDescriptions::eBoolean, "F");
+    arg_desc->AddDefaultKey("rps_evalue", "evalue", 
+                            "E-value threshold for selecting conserved domains"
+                            " from results of RPS-BLAST search",
+                            CArgDescriptions::eDouble, "0.01");
     arg_desc->AddOptionalKey("p", "patternfile", 
-                     "filename containing search patterns",
-                     CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("db", "database", "domain database name",
-                     CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("seqalign", "file", 
-                     "destination filename for text seqalign",
-                     CArgDescriptions::eOutputFile);
-    arg_desc->AddOptionalKey("c", "constraintfile", 
-                     "filename containing pairwise alignment constraints, "
-                     "one per line, each of the form:\n"
-                     "seq1_idx seq1_start seq1_end "
-                     "seq2_idx seq2_start seq2_end",
-                     CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("evalue", "evalue", 
-                     "E-value threshold for selecting conserved domains",
-                     CArgDescriptions::eDouble, "0.01");
-    arg_desc->AddDefaultKey("evalue2", "evalue2", 
-                     "E-value threshold for aligning filler segments",
-                     CArgDescriptions::eDouble, "0.01");
-    arg_desc->AddDefaultKey("g0", "penalty", 
-                     "gap open penalty for initial/terminal gaps",
-                     CArgDescriptions::eInteger, "5");
-    arg_desc->AddDefaultKey("e0", "penalty", 
-                     "gap extend penalty for initial/terminal gaps",
-                     CArgDescriptions::eInteger, "1");
-    arg_desc->AddDefaultKey("g1", "penalty", 
-                     "gap open penalty for middle gaps",
-                     CArgDescriptions::eInteger, "11");
-    arg_desc->AddDefaultKey("e1", "penalty", 
-                     "gap extend penalty for middle gaps",
-                     CArgDescriptions::eInteger, "1");
-    arg_desc->AddDefaultKey("ccc", "conserved_cutoff", 
-                     "Minimum average score needed for a multiple alignment "
-                     "column to be considered as conserved",
-                     CArgDescriptions::eDouble, "0.67");
+                             "Filename containing regular expression patterns "
+                             "for conserved domains",
+                             CArgDescriptions::eString);
     arg_desc->AddDefaultKey("dfb", "domain_res_boost", 
                      "When assigning domain residue frequencies, the amount of "
-                     "extra weight (0..1) to give the actual sequence letter "
+                     "extra weight (0..1) to give to the actual sequence letter "
                      "at that position",
                      CArgDescriptions::eDouble, "0.5");
-    arg_desc->AddDefaultKey("ffb", "filler_res_boost", 
-                     "When assigning filler residue frequencies, the amount of "
-                     "extra weight (0..1) to give the actual sequence letter "
-                     "at that position",
-                     CArgDescriptions::eDouble, "1.0");
-    arg_desc->AddDefaultKey("norps", "norps", 
-                     "do not perform initial RPS blast search",
-                     CArgDescriptions::eBoolean, "F");
-    arg_desc->AddDefaultKey("v", "verbose", 
-                     "verbose output",
-                     CArgDescriptions::eBoolean, "F");
-    arg_desc->AddDefaultKey("iter", "iterate", 
-                     "look for conserved columns and iterate if "
-                     "any are found",
-                     CArgDescriptions::eBoolean, "F");
-    arg_desc->AddDefaultKey("matrix", "matrix", 
-                     "score matrix to use",
-                     CArgDescriptions::eString, "BLOSUM62");
-    arg_desc->AddDefaultKey("pseudo", "pseudocount", 
-                     "Pseudocount constant",
-                     CArgDescriptions::eDouble, "2.0");
+
+
+    // User conststraints options
+    arg_desc->SetCurrentGroup("Constraints options");
+    arg_desc->AddOptionalKey("c", "constraintfile", 
+                     "Filename containing pairwise alignment constraints, "
+                     "one per line, each represented by 6 integers:\n"
+                     "  -zero-based index of sequence 1 in the input file\n"
+                     "  -zero-based start position in sequence 1\n"
+                     "  -zero-based stop position in sequence 1\n"
+                     "  -zero-based index of sequence 2 in the input file\n"
+                     "  -zero-based start position in sequence 2\n"
+                     "  -zero-based stop position in sequence 2\n",
+                     CArgDescriptions::eString);
+
+
+    // Multiple alignment options
+    arg_desc->SetCurrentGroup("Multiple alignment options");
     arg_desc->AddDefaultKey("treemethod", "method", 
                      "Method for generating progressive alignment guide tree",
                       CArgDescriptions::eString, "clust");
     arg_desc->SetConstraint("treemethod", &(*new CArgAllow_Strings,
                                       "clust", "nj", "fastme"));
+    arg_desc->AddDefaultKey("iter", "iterate", 
+                     "After the first iteration search for conserved columns "
+                     "and realign if any are found",
+                     CArgDescriptions::eBoolean, "T");
+    arg_desc->AddDefaultKey("ccc", "conserved_cutoff", 
+                     "Minimum average score needed for a multiple alignment "
+                     "column to be considered as conserved",
+                     CArgDescriptions::eDouble, "0.67");
+    arg_desc->AddDefaultKey("pseudo", "pseudocount", 
+                     "Pseudocount constant",
+                     CArgDescriptions::eDouble, "2.0");
+    arg_desc->AddDefaultKey("ffb", "filler_res_boost", 
+                     "When assigning filler residue frequencies, the amount of "
+                     "extra weight (0..1) to give to the actual sequence letter "
+                     "at that position",
+                     CArgDescriptions::eDouble, "1.0");
 
+
+    // Pairwise alignment options
+    arg_desc->SetCurrentGroup("Pairwise alignment options");
+    arg_desc->AddDefaultKey("matrix", "matrix", 
+                     "Score matrix to use",
+                     CArgDescriptions::eString, "BLOSUM62");
+    arg_desc->AddDefaultKey("end_gapopen", "penalty", 
+                     "Gap open penalty for terminal gaps",
+                     CArgDescriptions::eInteger, "5");
+    arg_desc->AddDefaultKey("end_gapextend", "penalty", 
+                     "Gap extend penalty for terminal gaps",
+                     CArgDescriptions::eInteger, "1");
+    arg_desc->AddDefaultKey("gapopen", "penalty", 
+                     "Gap open penalty for internal gaps",
+                     CArgDescriptions::eInteger, "11");
+    arg_desc->AddDefaultKey("gapextend", "penalty", 
+                     "Gap extend penalty for internal gaps",
+                     CArgDescriptions::eInteger, "1");
+    arg_desc->AddDefaultKey("blast_evalue", "evalue", 
+                   "E-value threshold for selecting segments matched "
+                   "by BLASTP",
+                   CArgDescriptions::eDouble, "0.01");
+
+
+    // Query clustering options
+    arg_desc->SetCurrentGroup("Query clustering options");
     arg_desc->AddDefaultKey("clusters", "clusters", 
-                     "Use query clustering to minimize number of"
-                     "RPSBlast searches",
-                     CArgDescriptions::eBoolean, "F");
-
-    arg_desc->AddDefaultKey("kmer_len", "length", 
-                     "Kmer length for query clustering",
+                    "Use query clustering for faster alignment",
+                     CArgDescriptions::eBoolean, "T");
+    arg_desc->AddDefaultKey("k", "length", 
+                      "K-mer length for query clustering",
                      CArgDescriptions::eInteger, "4");
-
     arg_desc->AddDefaultKey("max_dist", "distance",
-                     "Maximum distance between sequences in a cluster",
-                     CArgDescriptions::eDouble, "0.5");
+                     "Maximum allowed distance between sequences in a cluster"
+                     " (0..1)",
+                     CArgDescriptions::eDouble, "0.8");
+    arg_desc->AddDefaultKey("alph", "name",
+                     "Alphabet for used k-mer counting",
+                     CArgDescriptions::eString, "regular");
+    arg_desc->SetConstraint("alph", &(*new CArgAllow_Strings, "regular",
+                                      "se-v10", "se-b15"));
 
-    arg_desc->AddDefaultKey("similarity", "measure",
-                     "Similarity measure to be used for clustering"
-                     "k-mer counts vectors",
-                     CArgDescriptions::eString, "kfraction_global");
-    arg_desc->SetConstraint("similarity", &(*new CArgAllow_Strings,
-                     "kfraction_local", "kfraction_global"));
 
-    arg_desc->AddOptionalKey("comp_alph", "name",
-                     "Compressed alphabet for kmer counting",
-                     CArgDescriptions::eString);
-    arg_desc->SetConstraint("comp_alph", &(*new CArgAllow_Strings, "se-v10", 
-                       "se-b15"));
+    // Output options
+    arg_desc->SetCurrentGroup("Output options");
+    arg_desc->AddOptionalKey("seqalign", "file", 
+                             "Output text seqalign to specified file",
+                             CArgDescriptions::eOutputFile);
+    arg_desc->AddFlag("v", "Verbose output");
 
-    arg_desc->AddDefaultKey("inclust", "name",
-                            "Method for within-cluster alignment of sequences",
-                            CArgDescriptions::eString, "multi");
-    arg_desc->SetConstraint("inclust", &(*new CArgAllow_Strings, "toprot",
-                                         "multi"));
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -277,29 +294,38 @@ int CMultiApplication::Run(void)
     // Process command line args
     const CArgs& args = GetArgs();
     
+
+    if (args["rpsdb"] && args["norps"].AsBoolean()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "The options -rpsdb and -norps T are mutually exclusive");
+    }
+
+    if (!args["rpsdb"] && !args["norps"].AsBoolean()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "RPS dababase not specified");
+    }
+
+
     // Set up data loaders
     m_ObjMgr = CObjectManager::GetInstance();
 
-    CRef<CMultiAlignerOptions> opts(
-               new CMultiAlignerOptions(CMultiAlignerOptions::fNoQueryClusters
-                                        | CMultiAlignerOptions::fNoIterate
-                                        | CMultiAlignerOptions::fNoPatterns
-                                        | CMultiAlignerOptions::fNoRpsBlast));
-
+    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions(
+                                      CMultiAlignerOptions::fNoRpsBlast
+                                      | CMultiAlignerOptions::fNoPatterns));
 
     // PSSM aligner parameters
-    opts->SetGapOpenPenalty(-args["g1"].AsInteger());
-    opts->SetGapExtendPenalty(-args["e1"].AsInteger());
-    opts->SetEndGapOpenPenalty(-args["g0"].AsInteger());
-    opts->SetEndGapExtendPenalty(-args["e0"].AsInteger());
+    opts->SetGapOpenPenalty(-args["gapopen"].AsInteger());
+    opts->SetGapExtendPenalty(-args["gapextend"].AsInteger());
+    opts->SetEndGapOpenPenalty(-args["end_gapopen"].AsInteger());
+    opts->SetEndGapExtendPenalty(-args["end_gapextend"].AsInteger());
     opts->SetScoreMatrixName(args["matrix"].AsString());
 
     // RPS Blast parameters
-    if (args["db"]) {
-        opts->SetRpsDb(args["db"].AsString());
+    if (args["rpsdb"]) {
+        opts->SetRpsDb(args["rpsdb"].AsString());
 
         // Check whether RPS database and auxialry files exist
-        const string dbname = args["db"].AsString();
+        const string dbname = args["rpsdb"].AsString();
         CFile rps(dbname + ".rps");
         if (!rps.Exists()) {
             NcbiCerr << "Error: RPS database file: " << dbname + ".rps"
@@ -321,11 +347,11 @@ int CMultiApplication::Run(void)
             return 1;
         }
     }
-    opts->SetRpsEvalue(args["evalue"].AsDouble());
+    opts->SetRpsEvalue(args["rps_evalue"].AsDouble());
     opts->SetDomainResFreqBoost(args["dfb"].AsDouble());
 
     // Blastp parameters
-    opts->SetBlastpEvalue(args["evalue2"].AsDouble());
+    opts->SetBlastpEvalue(args["blast_evalue"].AsDouble());
     opts->SetLocalResFreqBoost(args["ffb"].AsDouble());
 
     // Patterns
@@ -350,7 +376,7 @@ int CMultiApplication::Run(void)
         tree_method = CMultiAlignerOptions::eFastME;
     }
     else {
-        NcbiCerr << "Error: Bad tree method";
+        NcbiCerr << "Error: Incorrect tree method";
         return 1;
     }
     opts->SetTreeMethod(tree_method);
@@ -362,39 +388,32 @@ int CMultiApplication::Run(void)
 
     // Query clustering params
     opts->SetUseQueryClusters(args["clusters"].AsBoolean());
-    opts->SetKmerLength(args["kmer_len"].AsInteger());
+    opts->SetKmerLength(args["k"].AsInteger());
     opts->SetMaxInClusterDist(args["max_dist"].AsDouble());
-    CMultiAligner::TKMethods::EDistMeasures dist_measure 
-               = CMultiAligner::TKMethods::eFractionCommonKmersGlobal;
-    if (args["similarity"]) {
-        string dist_arg = args["similarity"].AsString();
-        if (dist_arg == "kfraction_local") {
-            dist_measure = CMultiAligner::TKMethods::eFractionCommonKmersLocal;
-        }
-    }
-    opts->SetKmerDistMeasure(dist_measure);
+
     CMultiAligner::TKMethods::ECompressedAlphabet alph 
                                  = CMultiAligner::TKMethods::eRegular;
-    if (args["comp_alph"]) {
-        if (args["comp_alph"].AsString() == "se-v10") {
+    if (args["alph"]) {
+        if (args["alph"].AsString() == "regular") {
+            alph = CMultiAligner::TKMethods::eRegular;
+        }
+        else if (args["comp_alph"].AsString() == "se-v10") {
             alph = CMultiAligner::TKMethods::eSE_V10;
-        } else if (args["comp_alph"].AsString() == "se-b15") {
+        } 
+        else if (args["comp_alph"].AsString() == "se-b15") {
             alph = CMultiAligner::TKMethods::eSE_B15;
         }
     }
     opts->SetKmerAlphabet(alph);
 
-    CMultiAlignerOptions::EInClustAlnMethod in_clust_aln;
-    if (args["inclust"].AsString() == "toprot") {
-        in_clust_aln = CMultiAlignerOptions::eToPrototype;
-    }
-    else {
-        in_clust_aln = CMultiAlignerOptions::eMulti;
-    }
-    opts->SetInClustAlnMethod(in_clust_aln);
+    // not option of the application
+    opts->SetInClustAlnMethod(args["clusters"].AsBoolean() 
+                              ? CMultiAlignerOptions::eMulti
+                              : CMultiAlignerOptions::eNone);
+
 
     // Verbose level
-    opts->SetVerbose(args["v"].AsBoolean());
+    opts->SetVerbose(args["v"]);
 
     // Validate options and print warning messages if any
     if (!opts->Validate()) {
