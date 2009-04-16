@@ -1,0 +1,51 @@
+Seq-entry ::= set {
+    seq-set {
+    },
+    annot {
+{
+    data align {
+        {
+            type global,
+            dim 2,
+            score {
+                {
+                    id str "score",
+                    value int 1145
+                },
+                {
+                    id str "e_value",
+                    value real { 0, 10, 0 }
+                },
+                {
+                    id str "bit_score",
+                    value real { 227029, 10, -2 }
+                },
+                {
+                    id str "num_ident",
+                    value int 1145
+                }
+            },
+            segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                    gi 2,
+                    gi 3
+                },
+                starts {
+                    0,
+                    0
+                },
+                lens {
+                    10
+                },
+                strands {
+                    plus,
+                    plus
+                }
+            }
+        }
+    }
+}
+}
+}
