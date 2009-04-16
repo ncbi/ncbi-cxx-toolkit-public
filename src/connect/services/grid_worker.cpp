@@ -642,6 +642,7 @@ bool CGridWorkerNode::x_CreateNSReadClient()
     for (;;) {
         try {
             GetNSExecuter().RegisterClient(m_UdpPort);
+            break;
         } catch (CNetServiceException& ex) {
             // if server does not understand this
             // new command just ignore the error
