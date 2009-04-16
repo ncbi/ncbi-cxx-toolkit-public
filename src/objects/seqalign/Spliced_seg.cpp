@@ -328,7 +328,7 @@ s_ExonToDenseg(const CSpliced_exon& exon,
             s_CalculateStarts(product_lens, product_strand,
                               exon.GetProduct_start().GetNucpos(),
                               exon.GetProduct_end().GetNucpos());
-    } else {
+    } else if (exon.GetProduct_start().IsProtpos()) {
         TSeqPos frame_start = exon.GetProduct_start().GetProtpos().GetFrame();
         if (frame_start) {
             --frame_start;
@@ -342,6 +342,9 @@ s_ExonToDenseg(const CSpliced_exon& exon,
             (product_lens, product_strand,
              3 * (exon.GetProduct_start().GetProtpos().GetAmin() + frame_start),
              3 * (exon.GetProduct_end().GetProtpos().GetAmin() + frame_end));
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "unhandled product-start type in Spliced-exon");
     }
     vector<TSignedSeqPos> genomic_starts =
         s_CalculateStarts(genomic_lens, genomic_strand,
@@ -389,49 +392,62 @@ CRef<CSeq_align> CSpliced_seg::AsDiscSeg() const
     CRef<CSeq_align> disc(new CSeq_align);
     disc->SetType(CSeq_align::eType_disc);
 
-    if (GetProduct_type() == eProduct_type_transcript) {
-        ENa_strand product_strand = eNa_strand_plus;
-        if (IsSetProduct_strand()) {
-            product_strand = GetProduct_strand();
-        }
-        ENa_strand genomic_strand = eNa_strand_plus;
-        if (IsSetGenomic_strand()) {
-            genomic_strand = GetGenomic_strand();
-        }
-        const CSeq_id& product_id = GetProduct_id();
-        const CSeq_id& genomic_id = GetGenomic_id();
+    switch (GetProduct_type()) {
+    case eProduct_type_transcript:
+        {{
+             ENa_strand product_strand = eNa_strand_plus;
+             if (IsSetProduct_strand()) {
+                 product_strand = GetProduct_strand();
+             }
+             ENa_strand genomic_strand = eNa_strand_plus;
+             if (IsSetGenomic_strand()) {
+                 genomic_strand = GetGenomic_strand();
+             }
+             const CSeq_id& product_id = GetProduct_id();
+             const CSeq_id& genomic_id = GetGenomic_id();
 
-        //for exon in spliced_seg.GetSegs().GetSpliced().GetExons()[:] {
-        ITERATE (CSpliced_seg::TExons, exon, GetExons()) {
-            CRef<CDense_seg> ds = s_ExonToDenseg(**exon,
-                                                 product_strand, genomic_strand,
-                                                 product_id, genomic_id);
-            CRef<CSeq_align> ds_align(new CSeq_align);
-            ds_align->SetSegs().SetDenseg(*ds);
-            ds_align->SetType(CSeq_align::eType_partial);
-            disc->SetSegs().SetDisc().Set().push_back(ds_align);
-        }
-    } else {
-        ENa_strand product_strand = eNa_strand_plus;
-        ENa_strand genomic_strand = eNa_strand_plus;
-        if (IsSetGenomic_strand()) {
-            product_strand = GetGenomic_strand();
-        }
-        const CSeq_id& product_id = GetProduct_id();
-        const CSeq_id& genomic_id = GetGenomic_id();
+             //for exon in spliced_seg.GetSegs().GetSpliced().GetExons()[:] {
+             ITERATE (CSpliced_seg::TExons, exon, GetExons()) {
+                 CRef<CDense_seg> ds = s_ExonToDenseg(**exon,
+                                                      product_strand, genomic_strand,
+                                                      product_id, genomic_id);
+                 CRef<CSeq_align> ds_align(new CSeq_align);
+                 ds_align->SetSegs().SetDenseg(*ds);
+                 ds_align->SetType(CSeq_align::eType_partial);
+                 disc->SetSegs().SetDisc().Set().push_back(ds_align);
+             }
+         }}
+        break;
 
-        //for exon in spliced_seg.GetSegs().GetSpliced().GetExons()[:] {
-        ITERATE (CSpliced_seg::TExons, exon, GetExons()) {
-            CRef<CDense_seg> ds = s_ExonToDenseg(**exon,
-                                                 product_strand, genomic_strand,
-                                                 product_id, genomic_id);
-            ds->SetWidths().push_back(3);
-            ds->SetWidths().push_back(1);
-            CRef<CSeq_align> ds_align(new CSeq_align);
-            ds_align->SetSegs().SetDenseg(*ds);
-            ds_align->SetType(CSeq_align::eType_partial);
-            disc->SetSegs().SetDisc().Set().push_back(ds_align);
-        }
+    case eProduct_type_protein:
+        {{
+             ENa_strand product_strand = eNa_strand_plus;
+             ENa_strand genomic_strand = eNa_strand_plus;
+             if (IsSetGenomic_strand()) {
+                 genomic_strand = GetGenomic_strand();
+             }
+             const CSeq_id& product_id = GetProduct_id();
+             const CSeq_id& genomic_id = GetGenomic_id();
+
+             //for exon in spliced_seg.GetSegs().GetSpliced().GetExons()[:] {
+             ITERATE (CSpliced_seg::TExons, exon, GetExons()) {
+                 CRef<CDense_seg> ds = s_ExonToDenseg(**exon,
+                                                      product_strand, genomic_strand,
+                                                      product_id, genomic_id);
+                 ds->SetWidths().push_back(3);
+                 ds->SetWidths().push_back(1);
+                 CRef<CSeq_align> ds_align(new CSeq_align);
+                 ds_align->SetSegs().SetDenseg(*ds);
+                 ds_align->SetType(CSeq_align::eType_partial);
+                 disc->SetSegs().SetDisc().Set().push_back(ds_align);
+             }
+         }}
+        break;
+
+    default:
+        NCBI_THROW(CException, eUnknown,
+                   "unhandled product type in spliced seg");
+        break;
     }
 
     return disc;
