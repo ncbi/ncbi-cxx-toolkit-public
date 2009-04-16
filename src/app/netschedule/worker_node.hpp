@@ -246,10 +246,6 @@ public:
                        int notify_timeout, list<TWorkerNodeHostPort>& notify_list);
     // Get all active nodes
     void GetNodes(time_t t, list<TWorkerNodeRef>& nodes) const;
-    // Get printable information about all active nodes
-    void GetNodesInfo(time_t t,
-                      list<string>& nodes_info,
-                      EWNodeFormat fmt = eWNF_Old) const;
 
     void RegisterNotificationListener(CWorkerNode*           worker_node,
                                       unsigned               timeout);

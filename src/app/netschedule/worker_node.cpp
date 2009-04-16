@@ -210,7 +210,6 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
 
     std::auto_ptr<SJobInfo> job_info(new SJobInfo(job.GetId(),
         exp_time, worker_node, req_ctx, req_ctx_f));
-    worker_node->UpdateValidityTime();
     worker_node->SetNotificationTimeout(0);
     if (log_job_state >= 1) {
         CDiagContext::SetRequestContext(req_ctx);
@@ -228,6 +227,7 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
         m_JobInfoById.erase(job_info.get());
         throw;
     }
+    worker_node->UpdateValidityTime();
 
     job_info.release();
 }
@@ -240,9 +240,9 @@ void CQueueWorkerNodeList::UpdateJob(TNSJobId job_id,
     SJobInfo* job_info = FindJobById(job_id);
     if (job_info != NULL) {
         job_info->exp_time = exp_time;
-        CWorkerNode* node = job_info->assigned_node;
-        node->UpdateValidityTime();
-        node->SetNotificationTimeout(0);
+        CWorkerNode* worker_node = job_info->assigned_node;
+        worker_node->UpdateValidityTime();
+        worker_node->SetNotificationTimeout(0);
     } else {
         ERR_POST("Could not find job by id " << job_id <<
             " to update expiration time");
@@ -260,12 +260,11 @@ void CQueueWorkerNodeList::RemoveJob(const CJob&   job,
         ERR_POST("Could not find job " << job.GetId() << " in WN list");
         return;
     }
-    CWorkerNode* node = job_info->assigned_node;
+    CWorkerNode* worker_node = job_info->assigned_node;
     //
     CRequestContext* req_ctx = job_info->req_ctx;
-    node->UpdateValidityTime();
     if (reason != eNSCTimeout)
-        node->SetNotificationTimeout(0);
+        worker_node->SetNotificationTimeout(0);
     if (log_job_state >= 1 && req_ctx) {
         CDiagContext::SetRequestContext(req_ctx);
         CDiagContext::GetRequestContext().SetRequestStatus(int(reason));
@@ -286,7 +285,8 @@ void CQueueWorkerNodeList::RemoveJob(const CJob&   job,
         if (job_info->factory.NotEmpty())
             job_info->factory->Return(req_ctx);
     }
-    node->m_JobInfoById.erase(job_info);
+    worker_node->m_JobInfoById.erase(job_info);
+    worker_node->UpdateValidityTime();
     // TODO Can be optimized by reusing the iterator
     // returned by find() in FindJobById().
     m_JobInfoById.erase(job_info);
@@ -348,27 +348,10 @@ CQueueWorkerNodeList::GetNotifyList(bool unconditional, time_t curr,
 void CQueueWorkerNodeList::GetNodes(time_t t, list<TWorkerNodeRef>& nodes) const
 {
     CReadLockGuard guard(m_Lock);
-    ITERATE(TWorkerNodeByAddress, it, m_WorkerNodeByAddress) {
-        CWorkerNode* node = *it;
+    ITERATE(TWorkerNodeRegister, it, m_WorkerNodeRegister) {
+        CWorkerNode* node = (*it).GetNCPointer();
         if (node->ValidityTime() > t)
             nodes.push_back(TWorkerNodeRef(node));
-    }
-}
-
-
-void CQueueWorkerNodeList::GetNodesInfo(time_t t,
-                                        list<string>& nodes_info,
-                                        EWNodeFormat fmt) const
-{
-    CReadLockGuard guard(m_Lock);
-    ITERATE(TWorkerNodeRegister, it, m_WorkerNodeRegister) {
-        const CWorkerNode* node = *it;
-        if (node->ValidityTime() > t) {
-            nodes_info.push_back(node->AsString(t, fmt));
-        } else {
-            // DEBUG
-            //nodes_info.push_back(node.AsString(t)+" invalid");
-        }
     }
 }
 

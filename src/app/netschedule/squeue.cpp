@@ -1469,10 +1469,11 @@ void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out,
                                        time_t curr,
                                        EWNodeFormat fmt) const
 {
-    list<string> nodes_info;
-    m_WorkerNodeList.GetNodesInfo(curr, nodes_info, fmt);
-    ITERATE(list<string>, it, nodes_info) {
-        out << *it << "\n";
+    list<TWorkerNodeRef> nodes;
+    m_WorkerNodeList.GetNodes(curr, nodes);
+    ITERATE(list<TWorkerNodeRef>, it, nodes) {
+        const CWorkerNode* wn = *it;
+        out << wn->AsString(curr, fmt) << "\n";
     }
 }
 

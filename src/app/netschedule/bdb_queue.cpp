@@ -2144,6 +2144,19 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
     CQueueJSGuard js_guard(q, done_job_id,
                            CNetScheduleAPI::eDone,
                            &need_update);
+
+    // FIXME: This code detects a case when a node reports results for the job
+    // which already timeouted for the node and is being executed by another
+    // node. This attempt succeeds, but the second legitimate result leads to
+    // this error. It is not correct (but may be useful) to accept results from
+    // the first node and we should better handle this case.
+    // I commented out the code to reduce Error log output, but it needs to be
+    // FIXED for real.
+    // if (done_job_id  &&  ! need_update) {
+    //    ERR_POST("Attempt to PUT already Done job "
+    //             << q->DecorateJobId(done_job_id));
+    //}
+
     // This is a HACK - if js_guard is not committed, it will rollback
     // to previous state, so it is safe to change status after the guard.
     if (delete_done) {
@@ -2205,7 +2218,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
                 _ASSERT(0);
             }
 
-            if (done_job_id)
+            if (done_rec_updated)
                 q->RemoveJobFromWorkerNode(job, eNSCDone);
             if (pending_job_id)
                 q->AddJobToWorkerNode(worker_node, rec_ctx_f,
