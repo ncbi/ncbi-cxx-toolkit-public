@@ -168,6 +168,13 @@ public:
     virtual const string& Password() const;
 
     /// @brief 
+    ///   Get the database name.
+    /// 
+    /// @return 
+    ///   Database name.
+    virtual const string& DatabaseName(void) const;
+
+    /// @brief 
     /// Get the bitmask for the connection mode (BCP, secure login, ...)
     /// 
     /// @return 
