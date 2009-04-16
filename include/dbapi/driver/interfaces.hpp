@@ -32,8 +32,6 @@
  *
  */
 
-#include <corelib/ncbi_param.hpp>
-
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 
@@ -723,20 +721,6 @@ public:
 ///  I_DriverContext::
 ///
 
-NCBI_PARAM_DECL(bool, dbapi, conn_use_encrypt_data);
-/*
-// To use TDbapi_ConnUseEncryptData outside ncbi_dbapi_driver.dll you should
-// uncomment this instead of above macro.
-struct NCBI_DBAPIDRIVER_EXPORT SNcbiParamDesc_dbapi_conn_use_encrypt_data
-{
-    typedef bool TValueType;
-    typedef SParamDescription<TValueType> TDescription;
-    static TDescription sm_ParamDescription;
-};
-*/
-typedef NCBI_PARAM_TYPE(dbapi, conn_use_encrypt_data) TDbapi_ConnUseEncryptData;
-
-
 class CDBConnParams;
 
 class NCBI_DBAPIDRIVER_EXPORT I_DriverContext
@@ -1200,13 +1184,6 @@ protected:
     /// @return 
     ///   Password value.
     virtual const string& Password(void) const = 0;
-
-    /// @brief 
-    ///   Get the database name.
-    /// 
-    /// @return 
-    ///   Password value.
-    virtual const string& DatabaseName(void) const = 0;
 
     /// @brief 
     /// Get the bitmask for the connection mode (BCP, secure login, ...)

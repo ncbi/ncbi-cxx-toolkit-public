@@ -329,12 +329,6 @@ const string& CDB_Connection::Password() const
     return m_ConnImpl->Password();
 }
 
-const string& CDB_Connection::DatabaseName() const
-{
-    CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->GetDatabaseName();
-}
-
 I_DriverContext::TConnectionMode  CDB_Connection::ConnectMode() const
 {
     CHECK_CONNECTION(m_ConnImpl);

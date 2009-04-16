@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
-#include <util/resource_info.hpp>
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
@@ -1202,72 +1201,5 @@ BOOST_AUTO_TEST_CASE(Test_Mirrors)
         BOOST_ERROR(ex.what());
     }
 }
-
-// For this test to work one should change kDefaultResourceInfoPath inside
-// util/resource_info.cpp to appropriate test value and set
-// conn_use_encrypt_data value in section dbapi to true in ini-file.
-BOOST_AUTO_TEST_CASE(Test_EncryptData)
-{
-    try {
-        // This doesn't work in present implementation of CParam
-        //TDbapi_ConnUseEncryptData::SetDefault(true);
-
-        CNcbiResourceInfoFile file(CNcbiResourceInfoFile::GetDefaultFileName());
-        string app_name = CNcbiApplication::Instance()->GetProgramDisplayName();
-
-        {{
-            CNcbiResourceInfo& info = file.GetResourceInfo_NC(app_name + "/some_user@some_server", "some_passwd");
-            info.SetValue("allowed");
-            multimap<string, string>& extra = info.GetExtraValues_NC().GetPairs();
-            extra.insert(make_pair(string("username"), string("anyone")));
-            extra.insert(make_pair(string("server"), string("MSDEV1")));
-            extra.insert(make_pair(string("database"), string()));
-            file.SaveFile();
-
-            CDBDefaultConnParams params("some_server", "some_user", "some_passwd");
-            params.SetDriverName(GetArgs().GetDriverName());
-
-            IDataSource* ds = GetDM().MakeDs(params);
-            auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
-            conn->Connect(params);
-            auto_ptr<IStatement> auto_stmt(conn->GetStatement());
-            auto_stmt->ExecuteUpdate("SELECT @@version");
-
-            BOOST_CHECK_EQUAL(conn->GetDatabase(), "");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->Password(), "allowed");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->ServerName(), "MSDEV1");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->UserName(), "anyone");
-        }}
-
-        {{
-            CNcbiResourceInfo& info = file.GetResourceInfo_NC(app_name + "/other_user@other_server:other_db", "other_passwd");
-            info.SetValue("some_passwd");
-            multimap<string, string>& extra = info.GetExtraValues_NC().GetPairs();
-            extra.insert(make_pair(string("username"), string("some_user")));
-            extra.insert(make_pair(string("server"), string("some_server")));
-            extra.insert(make_pair(string("database"), string()));
-            file.SaveFile();
-
-            CDBDefaultConnParams params("other_server", "other_user", "other_passwd");
-            params.SetDatabaseName("other_db");
-            params.SetDriverName(GetArgs().GetDriverName());
-
-            IDataSource* ds = GetDM().MakeDs(params);
-            auto_ptr<IConnection> conn(ds->CreateConnection(eTakeOwnership));
-            conn->Connect(params);
-            auto_ptr<IStatement> auto_stmt(conn->GetStatement());
-            auto_stmt->ExecuteUpdate("SELECT @@version");
-
-            BOOST_CHECK_EQUAL(conn->GetDatabase(), "");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->Password(), "allowed");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->ServerName(), "MSDEV1");
-            BOOST_CHECK_EQUAL(conn->GetCDB_Connection()->UserName(), "anyone");
-        }}
-    }
-    catch (CException& ex) {
-        BOOST_ERROR(ex.what());
-    }
-}
-
 
 END_NCBI_SCOPE

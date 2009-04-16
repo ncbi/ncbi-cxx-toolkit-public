@@ -338,15 +338,7 @@ CConnection::SetDatabaseName(const string& name)
         auto_ptr<CDB_LangCmd> auto_stmt(LangCmd(sql));
         auto_stmt->Send();
         auto_stmt->DumpResults();
-
-        m_Database = name;
     }
-}
-
-const string&
-CConnection::GetDatabaseName(void) const
-{
-    return m_Database;
 }
 
 

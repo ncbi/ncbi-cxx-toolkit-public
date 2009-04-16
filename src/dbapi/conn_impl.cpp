@@ -108,6 +108,9 @@ void CConnection::Connect(const string& user,
                           const string& server,
                           const string& database)
 {
+    CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
+
     CDBDefaultConnParams def_params(
             server,
             user,
@@ -118,8 +121,10 @@ void CConnection::Connect(const string& user,
     const CCPPToolkitConnParams params(def_params);
 
     def_params.SetDatabaseName(database);
+    // Explicitly set member value ...
+    m_database = database;
 
-    Connect(params);
+    m_connection = m_ds->GetDriverContext()->MakeConnection(params);
 }
 
 
@@ -130,7 +135,7 @@ void CConnection::Connect(const CDBConnParams& params)
 
     m_connection = m_ds->GetDriverContext()->MakeConnection(params);
     // Explicitly set member value ...
-    m_database = m_connection? m_connection->DatabaseName(): string();
+    m_database = params.GetDatabaseName();
 }
 
 
@@ -140,6 +145,9 @@ void CConnection::ConnectValidated(IConnValidator& validator,
                                    const string& server,
                                    const string& database)
 {
+    CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
+    CHECK_NCBI_DBAPI(m_ds == NULL, "m_ds is not initialized");
+
     CDBDefaultConnParams def_params(
             server,
             user,
@@ -150,9 +158,11 @@ void CConnection::ConnectValidated(IConnValidator& validator,
     const CCPPToolkitConnParams params(def_params);
 
     def_params.SetDatabaseName(database);
+    // Explicitly set member value ...
+    m_database = database;
     def_params.SetConnValidator(CRef<IConnValidator>(&validator));
 
-    Connect(params);
+    m_connection = m_ds->GetDriverContext()->MakeConnection(params);
 }
 
 CConnection::~CConnection()
