@@ -396,7 +396,7 @@ CRef<CSeq_align> CSpliced_seg::AsDiscSeg() const
         }
         ENa_strand genomic_strand = eNa_strand_plus;
         if (IsSetGenomic_strand()) {
-            product_strand = GetGenomic_strand();
+            genomic_strand = GetGenomic_strand();
         }
         const CSeq_id& product_id = GetProduct_id();
         const CSeq_id& genomic_id = GetGenomic_id();
