@@ -73,6 +73,11 @@ NCBI_PARAM_DECL(int, netservice_api, max_connection_pool_size);
 typedef NCBI_PARAM_TYPE(netservice_api, max_connection_pool_size)
     TServConn_MaxConnPoolSize;
 
+// Worker node-specific parameters
+NCBI_PARAM_DECL(bool, server, stop_on_job_errors);
+typedef NCBI_PARAM_TYPE(server, stop_on_job_errors)
+    TWorkerNode_StopOnJobErrors;
+
 
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
 NCBI_XCONNECT_EXPORT void s_SetDefaultCommTimeout(const STimeout& tm);

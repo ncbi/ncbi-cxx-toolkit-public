@@ -528,11 +528,17 @@ void CGridWorkerNode::Run()
                 continue;
             }
         } catch (exception& ex) {
-            ERR_POST_X(29, ex.what());
-            CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
+            if (TWorkerNode_StopOnJobErrors::GetDefault()) {
+                ERR_POST_X(29, ex.what());
+                CGridGlobals::GetInstance().RequestShutdown(
+                    CNetScheduleAdmin::eShutdownImmediate);
+            }
         } catch (...) {
-            ERR_POST_X(30, "Unknown error");
-            CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
+            if (TWorkerNode_StopOnJobErrors::GetDefault()) {
+                ERR_POST_X(30, "Unknown error");
+                CGridGlobals::GetInstance().RequestShutdown(
+                    CNetScheduleAdmin::eShutdownImmediate);
+            }
         }
         try_count = 0;
     }
