@@ -134,6 +134,14 @@ else
 fi
 sln_path="${platform}-${conf}-${use_arch}"
 sln_path=`echo $sln_path | sed -e 's/ /_/g'`
+
+#test -d "$sln_path" && rm -rf "$sln_path"
+#mkdir "$sln_path"
+sln_name="$sln_path"
+sln_path="$build_results"
+
+test -e "$TREE_ROOT/$PTB_PROJECT_REQ" || Error "$PTB_PROJECT_REQ not found"
+
 #--------------------------------------------------------------------------------
 # prepare and run ptb.sh
 
@@ -144,10 +152,6 @@ export SLN_PATH=$sln_path/$sln_name
 export TREE_ROOT=../..
 export BUILD_TREE_ROOT=.
 export PTB_PROJECT_REQ="$use_projectlst"
-
-test -d "$sln_path" && rm -rf "$sln_path"
-mkdir "$sln_path"
-test -e "$TREE_ROOT/$PTB_PROJECT_REQ" || Error "$PTB_PROJECT_REQ not found"
 
 ./ptb.sh
 test $? -ne 0 && Error "Configuration failed"
