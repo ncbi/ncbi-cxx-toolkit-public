@@ -4126,7 +4126,7 @@ bool CMemoryFileSegment::Unmap(void)
 #if defined(NCBI_OS_MSWIN)
     status = (UnmapViewOfFile(m_DataPtrReal) != 0);
 #elif defined(NCBI_OS_UNIX)
-    status = (munmap((char*)m_DataPtrReal, (size_t) m_Length) == 0);
+    status = (munmap((char*)m_DataPtrReal, (size_t) m_LengthReal) == 0);
 #endif
     if ( status ) {
         m_DataPtr = 0;
