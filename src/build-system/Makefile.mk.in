@@ -174,7 +174,8 @@ APP_OR_NULL = @APP_OR_NULL@
 ### DLL specifics
 # whether to build the lib as static or dynamic; valid settings
 # are lib, dll, both, $(USUAL_AND_DLL), and $(USUAL_AND_LIB).
-LIB_OR_DLL    = @LIB_OR_DLL@
+ORIG_LIB_OR_DLL = @LIB_OR_DLL@
+LIB_OR_DLL    = $(ORIG_LIB_OR_DLL)
 USUAL_AND_DLL = @USUAL_AND_DLL@
 USUAL_AND_LIB = @USUAL_AND_LIB@
 
