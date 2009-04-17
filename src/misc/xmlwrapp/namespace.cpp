@@ -54,14 +54,6 @@ xml::ns::ns (enum ns::ns_type ) : prefix_(), uri_(),
 }
 
 
-xml::ns::ns (const char *  uri) : prefix_(), uri_(uri ? uri : ""),
-                                  unsafe_ns_(NULL), safety_(ns::type_safe_ns)
-{
-    if (uri_.empty())
-        throw std::runtime_error("xml::ns can't have empty uri");
-}
-
-
 xml::ns::ns (const char *  prefix, const char *  uri) : prefix_(prefix ? prefix : ""),
                                                         uri_(uri ? uri : ""),
                                                         unsafe_ns_(NULL),

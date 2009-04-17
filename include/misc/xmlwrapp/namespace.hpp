@@ -63,6 +63,13 @@ namespace xml {
 class ns
 {
 public:
+    /// Namespace object "safety"
+    enum ns_safety_type {
+        type_safe_ns,   //< "safe" object - holds prefix and URI copies
+        type_unsafe_ns  //< "unsafe" object - holds raw libxml2 pointer
+    };
+
+public:
 
     /**
      * Create a new xml::ns object with the given prefix and URI.
@@ -174,12 +181,6 @@ private:
     ns (void * rawLibXML2Namespace);
 
 private:
-    // Namespace object "safety"
-    enum ns_safety_type {
-        type_safe_ns,   // "safe" object - holds prefix and URI copies
-        type_unsafe_ns  // "unsafe" object - holds raw libxml2 pointer
-    };
-
     std::string             prefix_;     // namespace prefix
     std::string             uri_;        // namespace URI
     void *                  unsafe_ns_;  // pointer to the libxml2 structure
