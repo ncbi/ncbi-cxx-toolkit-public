@@ -36,7 +36,7 @@
 **/
 
 // xmlwrapp includes
-#include <misc/xmlwrapp/ns.hpp>
+#include <misc/xmlwrapp/namespace.hpp>
 
 // standard includes
 #include <stdexcept>
