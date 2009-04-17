@@ -1,39 +1,36 @@
-/*
+/*  $Id$
+ * ===========================================================================
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name of the Author nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Sergey Satskiy, NCBI
+ * Credits: Denis Vakatov, NCBI (help with the original design)
+ *
  */
 
-/*
- * $Id$
- */
 
 /** @file
- * This file contains the definition of the xml::ns class.
+ * XML namespace API for XmlWrapp.
 **/
 
 #ifndef _xmlwrapp_ns_hpp_
@@ -69,8 +66,6 @@ public:
         type_unsafe_ns  //< "unsafe" object - holds raw libxml2 pointer
     };
 
-public:
-
     /**
      * Create a new xml::ns object with the given prefix and URI.
      * The created object is safe.
@@ -81,7 +76,7 @@ public:
      *  The namespace URI.
      * @author Sergey Satskiy, NCBI
     **/
-    ns (const char *  prefix, const char *  uri);
+    ns (const char* prefix, const char* uri);
 
 
     /**
@@ -94,7 +89,7 @@ public:
      *  of the underlying libxml2 document (if it's an "unsafe" object). 
      * @author Sergey Satskiy, NCBI
     **/
-    const char *  get_prefix (void) const;
+    const char* get_prefix (void) const;
 
 
     /**
@@ -107,7 +102,7 @@ public:
      *  of the underlying libxml2 document (if it's an "unsafe" object). 
      * @author Sergey Satskiy, NCBI
     **/
-    const char *  get_uri (void) const;
+    const char* get_uri (void) const;
 
 
     /**
@@ -147,7 +142,7 @@ public:
      * @return TRUE if the namespaces have the equal prefixes and URIs.
      * @author Sergey Satskiy, NCBI
     **/
-    bool operator==(const ns &  other) const;
+    bool operator==(const ns&  other) const;
 
 
     // Create a "void" xml::ns object -- with both prefix and URI empty.
@@ -157,10 +152,6 @@ public:
         type_void
     };
     explicit ns (enum  ns_type  type);
-
-
-    // The default copy constructor and operator=
-    // are just fine for the xml::ns class
 
 
 private:
@@ -178,7 +169,7 @@ private:
      * @param rawLibXML2Namespace The libxml2 xmlNs structure pointer.
      * @author Sergey Satskiy, NCBI
     **/
-    ns (void * rawLibXML2Namespace);
+    ns (void* rawLibXML2Namespace);
 
 private:
     std::string             prefix_;     // namespace prefix

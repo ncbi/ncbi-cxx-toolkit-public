@@ -153,61 +153,64 @@ public:
 	//####################################################################
 	const char* get_value (void) const;
 
-        //####################################################################
-        /**
-         * Get the attribute namespace. If the attribute has no namespace
-         * then an object with both empty a prefix and uri is returned (the
-         * is_void() method of the xml::ns object will return true
-         * in this case)
-         *
-         * @param type The required type of namespace object (safe/unsafe).
-         * @return The attribute namespace. Void namespace object if no
-         *         namespace is associated.
-         * @author Sergey Satskiy, NCBI
-        **/
-        //####################################################################
-        xml::ns get_namespace (xml::ns::ns_safety_type type = xml::ns::type_safe_ns) const;
+	//####################################################################
+	/**
+	 * Get the attribute's namespace.
+	 *
+	 * @param type The required type of namespace object (safe/unsafe).
+	 * @return
+	 *  The attribute's namespace ("void" namespace if the attribute has
+	 *  no namespace set).
+	 * @author Sergey Satskiy, NCBI
+	**/
+	//####################################################################
+	ns get_namespace (ns::ns_safety_type type = ns::type_safe_ns) const;
 
-        //####################################################################
-        /**
-         * Erase the attribute namespace.
-         *
-         * @author Sergey Satskiy, NCBI
-        **/
-        //####################################################################
-        void erase_namespace (void);
+	//####################################################################
+	/**
+	 * Unset the attribute's namespace.
+	 *
+	 * @author Sergey Satskiy, NCBI
+	**/
+	//####################################################################
+	void erase_namespace (void);
 
-        //####################################################################
-        /**
-         * Set the attribute namespace.
-         * The namespace is searched up in the hierarchy of nodes. If a namespace
-         * with the given prefix is not found then an exception is thrown.
-         *
-         * @param prefix Namespace prefix. The NULL pointer and empty string
-         *        are considered as namespace removal request (the same as
-         *        erase_namespace() call).
-         * @return unsafe namespace
-         * @author Sergey Satskiy, NCBI
-        **/
-        //####################################################################
-        xml::ns set_namespace (const char *prefix);
+	//####################################################################
+	/**
+	 * Set the attribute's namespace.
+	 *
+	 * The namespace definition is searched up in the hierarchy of nodes.
+	 * If a namespace with the given prefix is not found then throw an
+	 * exception.
+	 *
+	 * @param prefix
+	 *  Namespace prefix.
+	 *  You can use empty string or NULL to remove the namespace -- it
+	 *  works exactly the same as erase_namespace() call.
+	 * @return  Unsafe namespace
+	 * @author Sergey Satskiy, NCBI
+	**/
+	//####################################################################
+	ns set_namespace (const char* prefix);
 
-        //####################################################################
-        /**
-         * Set the attribute namespace.
-         * The namespace is searched up in the hierarchy of nodes. If a namespace
-         * with the given prefix is not found or uris of the found and the given
-         * namespaceas are not matched then an exception is thrown.
-         * A void and a default namespaces are treated as a namespace removal
-         * request (the same as erase_namespace() call).
-         * There are no checks at all if an unsafe ns object is provided.
-         *
-         * @param name_space Name space to be set to
-         * @return unsafe namespace
-         * @author Sergey Satskiy, NCBI
-        **/
-        //####################################################################
-        xml::ns set_namespace (const xml::ns &name_space);
+	//####################################################################
+	/**
+	 * Set the attribute's namespace.
+	 *
+	 * The namespace definition is searched up in the hierarchy of nodes.
+	 * If a namespace with the given prefix and URI is not found
+	 * then throw an exception.
+	 *
+	 * @param name_space
+	 *  Namespace object.
+	 *  You can use "void" or default namespace to remove the namespace --
+	 *  it works exactly the same as erase_namespace() call.
+	 * @note There are no checks at all if an unsafe ns object is provided.
+	 * @return unsafe namespace
+	 * @author Sergey Satskiy, NCBI
+	**/
+	//####################################################################
+	ns set_namespace (const ns& name_space);
 
     private:
 	void *node_;
