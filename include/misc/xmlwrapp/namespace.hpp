@@ -45,140 +45,123 @@
 
 namespace xml {
 
+
 /**
- * The xml::ns class is used to access nodes and attributes
- * name spaces.
+ * The xml::ns class is used to access and handle namespaces of nodes and
+ * attributes.
+ *
  * There are two kinds of the object: safe and unsafe. The safe version holds
- * copies of the namespace prefix and uri and is not linked to the libxml2 data
- * structures. The unsafe version does not holds a copy but a raw pointer to
- * the libxml2 data structures. The unsafe version is faster when it is require
- * to set nodes'/attributes' namespaces however must be used very attentively.
+ * copies of the namespace prefix and URI, and it is not linked to the libxml2
+ * data structures. The unsafe version holds a raw pointer to the libxml2 data
+ * structures. The unsafe version is faster but it must be used very carefully.
  * Misuse of the unsafe version will lead to an unpredictable behavior. Example
- * of improper usage unsafe namespace: get an unsafe namespace from one document
- * and use the object to set a namespace of a node from another document.
+ * of improper usage of unsafe namespace: get an unsafe namespace from one
+ * document and use the object to set a namespace of a node in another
+ * document (the unsafe namespaces "belong" to a particular document).
 **/
-class ns {
+
+class ns
+{
 public:
 
-    /// enum to identify empty namespace explicitly
-    enum ns_type {
-    type_void       ///< a namespace with both prefix and uri empty
-    };
-
-    /// enum to identify ns object safety
-    enum ns_safety_type {
-    type_safe_ns,   ///< an object is safe, i.e. holds prefix and uri copies
-    type_unsafe_ns  ///< an unsafe is unsafe, i.e. holds raw libxml2 pointer
-    };
-
-    //####################################################################
     /**
-     * Create a new xml::ns object with an empty namespace prefix
-     * and with the given uri. It is helpful for a default namespace.
+     * Create a new xml::ns object with the given prefix and URI.
      * The created object is safe.
      *
-     * @param uri The namespace uri.
+     * @param prefix
+     *  The namespace prefix. Use NULL or empty string for default namespace.
+     * @param uri
+     *  The namespace URI.
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
-    explicit ns (const char *  uri);
-
-    //####################################################################
-    /**
-     * Create a new xml::ns object with the given prefix and uri.
-     * The created object is safe.
-     *
-     * @param prefix The namespace prefix.
-     * @param uri The namespace uri.
-     * @author Sergey Satskiy, NCBI
-    **/
-    //####################################################################
     ns (const char *  prefix, const char *  uri);
 
-    //####################################################################
-    /**
-     * Create a new xml::ns object with both prefix and uri empty.
-     * The created object is safe.
-     *
-     * @param type Dummy parameter to make a void namespace creation
-     *             explicit.
-     * @author Sergey Satskiy, NCBI
-    **/
-    //####################################################################
-    explicit ns (enum  ns_type  type);
 
-    //####################################################################
     /**
      * Get the namespace prefix.
      *
      * @return The namespace prefix.
+     * @note
+     *  The lifetime of the returned string is either the lifetime of the
+     *  namespace object itself (if it's a "safe" object) or the lifetime
+     *  of the underlying libxml2 document (if it's an "unsafe" object). 
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     const char *  get_prefix (void) const;
 
-    //####################################################################
+
     /**
-     * Get the namespace uri.
+     * Get the namespace URI.
      *
-     * @return The namespace uri.
+     * @return The namespace URI.
+     * @note
+     *  The lifetime of the returned string is either the lifetime of the
+     *  namespace object itself (if it's a "safe" object) or the lifetime
+     *  of the underlying libxml2 document (if it's an "unsafe" object). 
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     const char *  get_uri (void) const;
 
-    //####################################################################
+
     /**
-     * If a node or an attribute has no namespace then a namespace
-     * with both an empty prefix and uri is returned to the user. The
+     * If a node or an attribute has no namespace, then a namespace
+     * with empty prefix and empty URI is returned to the user. The
      * method checks if the namespace is actually set.
      *
-     * @return true if the namespace is blank i.e. uri is empty
+     * @return TRUE if the namespace is void
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     bool is_void (void) const;
 
-    //####################################################################
+
     /**
-     * Convert the namespace object to a safe one i.e. the object will
-     * hold copies of prefix and uri and will not be unsafely linked to
-     * internal libxml2 structures.
+     * Convert the namespace object to a safe one (i.e. the object will
+     * hold copies of prefix and URI and will not be unsafely linked to
+     * internal libxml2 structures).
      * If the object is safe already the function does nothing.
      *
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     void make_safe (void);
 
-    //####################################################################
+
     /**
-     * Check if the object is safe i.e. holds a copy of the libxml2 prefix and
-     * uri.
+     * Check if the object is safe i.e. holds its own copies of prefix and URI.
      *
-     * @return true if the object is safe
+     * @return TRUE if the object is safe
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     bool is_safe (void) const;
 
-    //####################################################################
+
     /**
      * Compare with another namespace.
      *
-     * @return true if the namespace is equal to the other
+     * @return TRUE if the namespaces have the equal prefixes and URIs.
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     bool operator==(const ns &  other) const;
+
+
+    // Create a "void" xml::ns object -- with both prefix and URI empty.
+    // The created object is safe. This is a rather unusual operation which
+    // is used by the XmlWrapp internal code.
+    enum ns_type {
+        type_void
+    };
+    explicit ns (enum  ns_type  type);
+
 
     // The default copy constructor and operator=
     // are just fine for the xml::ns class
 
+
 private:
+    /**
+     * Use more explicit "ns(enum ns_type)" ctor to create "void" namespace
+    **/
     ns (void);
 
-    //####################################################################
     /**
      * Create a new unsafe xml::ns object with the given pointer.
      * The unsafe objects cannot be created by the user and can be created only
@@ -188,18 +171,24 @@ private:
      * @param rawLibXML2Namespace The libxml2 xmlNs structure pointer.
      * @author Sergey Satskiy, NCBI
     **/
-    //####################################################################
     ns (void * rawLibXML2Namespace);
 
 private:
-    std::string             prefix_;        // namespace prefix
-    std::string             uri_;           // namespace uri
-    void *                  unsafe_ns_;     // unsafe pointer to the libxml2 structure
-    enum ns_safety_type     safety_;        // object type: safe/unsafe
+    // Namespace object "safety"
+    enum ns_safety_type {
+        type_safe_ns,   // "safe" object - holds prefix and URI copies
+        type_unsafe_ns  // "unsafe" object - holds raw libxml2 pointer
+    };
+
+    std::string             prefix_;     // namespace prefix
+    std::string             uri_;        // namespace URI
+    void *                  unsafe_ns_;  // pointer to the libxml2 structure
+    enum ns_safety_type     safety_;     // object type: safe/unsafe
 
     friend class node;
     friend class attributes;
-    };
+};
+
 
 } // xml namespace
 
