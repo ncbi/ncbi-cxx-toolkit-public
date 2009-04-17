@@ -47,7 +47,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
-#include <misc/xmlwrapp/ns.hpp>
+#include <misc/xmlwrapp/namespace.hpp>
 
 // hidden stuff
 #include <misc/xmlwrapp/impl/_cbfo.hpp>
