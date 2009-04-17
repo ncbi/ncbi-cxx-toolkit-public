@@ -76,7 +76,7 @@ BEGIN_SCOPE(Cn3D)
 
 ///// Registry stuff /////
 
-static CNcbiRegistry registry;
+static CMemoryRegistry registry;
 static string registryFile;
 static bool registryChanged = false;
 
@@ -177,10 +177,10 @@ void LoadRegistry(void)
         registryFile = GetPrefsDir() + "Preferences";
     else
         registryFile = GetProgramDir() + "Preferences";
-    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
+    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in | IOS_BASE::binary));
     if (*iniIn) {
         TRACEMSG("loading program registry " << registryFile);
-        registry.Read(*iniIn);
+        registry.Read(*iniIn, (CNcbiRegistry::ePersistent | CNcbiRegistry::eOverride));
     }
 
     registryChanged = false;
@@ -417,9 +417,9 @@ static OSStatus MacLaunchURL(ConstStr255Param urlStr, SInt32 len)
 #endif
         if (err == noErr) {
             startSel = 0;
-//            endSel = strlen(urlStr);   //  OSX didn't like this:  invalid conversion from 
+//            endSel = strlen(urlStr);   //  OSX didn't like this:  invalid conversion from
 //                                          'const unsigned char*' to 'const char*' compiler error.
-// ConstStr255Param is an unsigned char*.  Mac developer docs do not seem to indicate the '255' 
+// ConstStr255Param is an unsigned char*.  Mac developer docs do not seem to indicate the '255'
 // means there are any length restrictions on such strings, and that implementations have some
 // backing store for longer strings.   But to be safe, I'm truncating this to 255.
 // As used in Cn3D none of the URLs are terribly long ... except when multiple annotations are selected.
@@ -454,7 +454,7 @@ void LaunchWebPage(const char *url)
 
 #elif defined(__WXMAC__)
     //  CJL:  hack of dubious generality to get the string length
-    //        of a 'ConstStr255Param' type.  
+    //        of a 'ConstStr255Param' type.
     //        Unclear if strings longer than 255 characters are safe.  See notes above in MacLaunchURL.
     unsigned int i = 0, l = strlen(url);
     unsigned char uc_url[l+1];
