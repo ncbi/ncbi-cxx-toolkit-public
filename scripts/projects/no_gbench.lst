@@ -12,6 +12,7 @@ objmgr
 objtools
 ctools
 app
+sample
 build-system
 algo
 check
