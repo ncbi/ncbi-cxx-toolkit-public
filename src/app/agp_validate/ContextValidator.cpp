@@ -63,6 +63,10 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
   m_CompCount = 0;
   m_GapCount = 0;
 
+  m_expected_obj_len=0;
+  m_comp_name_matches=0;
+  m_obj_name_matches=0;
+
   memset(m_CompOri, 0, sizeof(m_CompOri));
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
 }
@@ -208,11 +212,15 @@ void CAgpValidateReader::OnGapOrComponent()
     if( m_comp2len.size() ) {
       TMapStrInt::iterator it = m_comp2len.find( m_this_row->GetComponentId() );
       if( it==m_comp2len.end() ) {
-        // to do: check object id, do not report error if it matches
-
-        agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+m_this_row->GetComponentId());
+        if( m_expected_obj_len==0 ) {
+          if(m_obj_name_matches==0 || m_comp_name_matches>0) {
+            agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+m_this_row->GetComponentId());
+          }
+        }
+        // else: the length was given for the object id - avoid reporting missing component ids
       }
       else {
+        m_comp_name_matches++;
         m_this_row->CheckComponentEnd(it->second);
       }
 
@@ -256,6 +264,19 @@ void CAgpValidateReader::OnObjectChange()
       m_SingleCompObjects++;
       if(m_gapsInLastObject) m_SingleCompObjects_withGaps++;
     }
+    if(m_expected_obj_len) {
+      if(m_expected_obj_len!=m_prev_row->object_end) {
+        string details=": ";
+        details += NStr::IntToString(m_prev_row->object_end);
+        details += " != ";
+        details += NStr::IntToString(m_expected_obj_len);
+
+        agpErr.Msg(CAgpErr::G_BadObjLen, details, CAgpErr::fAtPrevLine);
+      }
+    }
+    else if(m_obj_name_matches>0 || m_comp_name_matches==0) {
+      agpErr.Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
+    }
 
     // if(m_prev_row->IsGap() && m_componentsInLastScaffold==0) m_ScaffoldCount--; (???)
     m_componentsInLastObject=0;
@@ -268,6 +289,18 @@ void CAgpValidateReader::OnObjectChange()
     if (obj_insert_result.second == false) {
       agpErr.Msg(CAgpErrEx::E_DuplicateObj, m_this_row->GetObject(),
         CAgpErr::fAtThisLine);
+    }
+
+    if( m_comp2len.size() ) {
+      // save expected object length (and the fact that we do expect it) for the future checks
+      TMapStrInt::iterator it_obj = m_comp2len.find( m_this_row->GetObject() );
+      if( it_obj!=m_comp2len.end() ) {
+        m_expected_obj_len=it_obj->second;
+        m_obj_name_matches++;
+      }
+      else {
+        m_expected_obj_len=0;
+      }
     }
   }
 

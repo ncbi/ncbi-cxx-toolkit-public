@@ -153,6 +153,9 @@ protected:
   }
 
   CMapCompLen& m_comp2len; // for optinal check of component lengths (or maybe object lengths)
+  int m_expected_obj_len;
+  int m_comp_name_matches;
+  int m_obj_name_matches;
 
   int m_componentsInLastScaffold;
   int m_componentsInLastObject;

@@ -1,0 +1,43 @@
+
+3:MICPUCscaffold_1	13516	33736	3	W	ACCP01000002.1	1	20221	+
+	ERROR: final object_end (column 3) not equal to object length in FASTA file(s): 33736 != 70
+
+6:MICPUCscaffold_20	6532	8981	3	W	ACCP01000496.1	1	2450	+
+	ERROR: final object_end (column 3) not equal to object length in FASTA file(s): 8981 != 630
+
+7:>MICPUCscaffold_21	1	5431	1	W	ACCP01000497.1	1	5431	+
+	ERROR: object >MICPUCscaffold_21 not found in FASTA file(s)
+
+3 errors, 2 warnings; 2 not printed.
+  count  description
+      2  gap line missing column 9 (null)
+      1  object X not found in FASTA file(s)
+      2  final object_end (column 3) not equal to object length in FASTA file(s)
+
+
+Objects                : 3
+- with single component: 1
+
+Scaffolds              : 3
+- with single component: 1
+
+Components             : 5 (W)
+	orientation +  : 5
+	orientation -  : 0
+	orientation 0  : 0
+	orientation na : 0
+
+Gaps                   : 2 (N)
+- do not break scaffold: 2
+  clone   , linkage yes: 0
+  fragment, linkage yes: 2
+  fragment, linkage no : 0
+  repeat  , linkage yes: 0
+- break it, linkage no : 0
+
+Object names           :  3
+  MICPUCscaffold_[1,20]:  2
+  >MICPUCscaffold_21   :  1
+
+Component names             :  5
+  ACCP[01000001..01000497].1:  5

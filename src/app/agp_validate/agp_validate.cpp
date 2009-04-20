@@ -99,9 +99,9 @@ public:
     "If component FASTA files are given in front of AGP files, also check that:\n"
     "- component_id from AGP is present in FASTA;\n"
     "- component_end does not exceed sequence length.\n"
-    //"If FASTA files for objects are given, check that:\n"
-    //"- object_id from AGP is present in FASTA;\n:
-    //"- and object lengths in FASTA and in AGP match.\n"
+    "If FASTA files for objects are given, check that:\n"
+    "- object_id from AGP is present in FASTA;\n"
+    "- object lengths in FASTA and in AGP match.\n"
     "\n"
     "OPTIONS:\n"
     "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
