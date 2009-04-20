@@ -97,6 +97,9 @@ public:
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
     
+    virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& id,
+                                      const TTSE_LockSet& tse_set);
+
     void SetDatabase(CLDS_Database& lds_db, EOwnership owner,
                      const string&  dl_name);
     

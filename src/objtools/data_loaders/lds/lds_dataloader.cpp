@@ -682,6 +682,28 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 }
 
 
+CDataLoader::TTSE_Lock
+CLDS_DataLoader::ResolveConflict(const CSeq_id_Handle& /*id*/,
+                                 const TTSE_LockSet& tse_set)
+{
+    TTSE_Lock best_tse;
+    int best_oid = 0;
+    ITERATE ( TTSE_LockSet, it, tse_set ) {
+        const TTSE_Lock& tse = *it;
+        const CBlobIdInt* blob_id =
+            dynamic_cast<const CBlobIdInt*>(&*tse->GetBlobId());
+        if ( blob_id ) {
+            int oid = blob_id->GetValue();
+            if ( !best_tse || oid > best_oid ) {
+                best_tse = tse;
+                best_oid = oid;
+            }
+        }
+    }
+    return best_tse;
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================

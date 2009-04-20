@@ -34,6 +34,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/lds/lds_manager.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
@@ -66,6 +67,13 @@ static void s_InitLDSDir()
     BOOST_REQUIRE(dir.Create());
 }
 
+static void s_RemoveFile(const string& name)
+{
+    CDirEntry file(CDirEntry::MakePath(LDS_DIR, name));
+    BOOST_REQUIRE(file.Exists());
+    BOOST_REQUIRE(file.Remove());
+}
+
 static void s_CopyFile(const string& name)
 {
     CDirEntry file(CDirEntry::MakePath(DATA_DIR, name));
@@ -87,21 +95,22 @@ static void s_MakeLDS()
     manager.Index();
 }
 
-static int s_RetrieveAlign(CObjectManager& om, const string& lds_name)
+static int s_RetrieveFeat(int gi, CObjectManager& om, const string& lds_name)
 {
     CScope scope(om);
     scope.AddDefaults();
-    scope.AddDataLoader(lds_name);
-    CBioseq_Handle bsh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2));
+    scope.AddDataLoader(lds_name, 88);
+    CBioseq_Handle bsh =
+        scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(gi));
     BOOST_REQUIRE(bsh);
     int count = 0;
-    for ( CAlign_CI it(bsh); it; ++it ) {
+    for ( CFeat_CI it(bsh); it; ++it ) {
         count += 1;
     }
     return count;
 }
 
-static int s_RetrieveAlign()
+static int s_RetrieveFeat(int gi)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
@@ -113,7 +122,44 @@ static int s_RetrieveAlign()
         .GetLoader()->GetName();
     
     try {
-        int count = s_RetrieveAlign(*om, lds_name);
+        int count = s_RetrieveFeat(gi, *om, lds_name);
+        om->RevokeDataLoader(lds_name);
+        return count;
+    }
+    catch (...) {
+        om->RevokeDataLoader(lds_name);
+        throw;
+    }
+}
+
+static int s_RetrieveAlign(int gi, CObjectManager& om, const string& lds_name)
+{
+    CScope scope(om);
+    scope.AddDefaults();
+    scope.AddDataLoader(lds_name, 88);
+    CBioseq_Handle bsh =
+        scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(gi));
+    BOOST_REQUIRE(bsh);
+    int count = 0;
+    for ( CAlign_CI it(bsh); it; ++it ) {
+        count += 1;
+    }
+    return count;
+}
+
+static int s_RetrieveAlign(int gi)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    
+    CLDS_Manager manager(LDS_DB_DIR);
+    auto_ptr<CLDS_Database> lds_db(manager.ReleaseDB());
+    
+    string lds_name = CLDS_DataLoader::RegisterInObjectManager(*om, *lds_db)
+        .GetLoader()->GetName();
+    
+    try {
+        int count = s_RetrieveAlign(gi, *om, lds_name);
         om->RevokeDataLoader(lds_name);
         return count;
     }
@@ -128,10 +174,10 @@ BOOST_AUTO_TEST_CASE(LDS_Test_align)
     s_InitLDSDir();
     s_CopyFile("lds_align.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign() == 3);
+    BOOST_REQUIRE(s_RetrieveAlign(2) == 3);
     s_TouchFile("lds_align.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign() == 3);
+    BOOST_REQUIRE(s_RetrieveAlign(2) == 3);
 }
 
 BOOST_AUTO_TEST_CASE(LDS_Test_annot)
@@ -139,10 +185,10 @@ BOOST_AUTO_TEST_CASE(LDS_Test_annot)
     s_InitLDSDir();
     s_CopyFile("lds_annot.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign() == 1);
+    BOOST_REQUIRE(s_RetrieveAlign(2) == 1);
     s_TouchFile("lds_annot.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign() == 1);
+    BOOST_REQUIRE(s_RetrieveAlign(2) == 1);
 }
 
 BOOST_AUTO_TEST_CASE(LDS_Test_entry)
@@ -150,10 +196,28 @@ BOOST_AUTO_TEST_CASE(LDS_Test_entry)
     s_InitLDSDir();
     s_CopyFile("lds_entry.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign() == 0);
+    BOOST_REQUIRE(s_RetrieveAlign(2) == 0);
     s_TouchFile("lds_entry.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign() == 0);
+    BOOST_REQUIRE(s_RetrieveAlign(2) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(LDS_Test_conflict)
+{
+    s_InitLDSDir();
+    s_CopyFile("lds_conflict1.asn");
+    s_CopyFile("lds_conflict2.asn");
+    s_MakeLDS();
+    BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
+    BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
+    s_RemoveFile("lds_conflict1.asn");
+    s_MakeLDS();
+    BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
+    BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
+    s_CopyFile("lds_conflict1.asn");
+    s_MakeLDS();
+    BOOST_REQUIRE(s_RetrieveFeat(5) == 4);
+    BOOST_REQUIRE(s_RetrieveFeat(6) == 2);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
