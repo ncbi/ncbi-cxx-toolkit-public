@@ -27,7 +27,6 @@ DEFAULT_CONFIGURATIONS: Linux32:plain-ICC  Linux64:plain-ICC  SunOSx86:plain-WS6
 
 Linux32    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux32    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32    : debug-GCC  : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
 
 Linux64    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux64    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
@@ -38,9 +37,9 @@ SunOSx86   : plain-GCC  : GCC.sh           --without-debug --without-mt --with-s
 SunOSx86   : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSSparc : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 PowerMAC   : universal  : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 # --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
