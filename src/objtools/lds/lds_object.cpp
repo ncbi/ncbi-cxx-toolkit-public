@@ -697,8 +697,9 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         CLDS_CoreObjectsReader sniffer(file_id, file_name);
         ESerialDataFormat stream_format = FormatGuess2Serial(format);
 
-        auto_ptr<CObjectIStream> 
-          input(CObjectIStream::Open(file_name, stream_format));
+        CNcbiIfstream str_input(file_name.c_str(), IOS_BASE::binary);
+        auto_ptr<CObjectIStream> input(CObjectIStream::Open(stream_format,
+                                                            str_input));
         sniffer.Probe(*input);
 
         SaveObjects(sniffer, false);
@@ -711,8 +712,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         type_id = it->second;
         }}
 
-        CNcbiIfstream input(file_name.c_str(), 
-                            IOS_BASE::in | IOS_BASE::binary);
+        CNcbiIfstream input(file_name.c_str(), IOS_BASE::binary);
 
         CLDS_FastaScanner fscan(*this, file_id, type_id);
         ScanFastaFile(&fscan, 

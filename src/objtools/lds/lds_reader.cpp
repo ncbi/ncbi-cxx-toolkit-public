@@ -175,8 +175,7 @@ CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database& lds_db,
 CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db, 
                                const CLDS_Query::SObjectDescr& obj_descr)
 {
-    CNcbiIfstream in(obj_descr.file_name.c_str(), 
-                     IOS_BASE::in | IOS_BASE::binary);
+    CNcbiIfstream in(obj_descr.file_name.c_str(), IOS_BASE::binary);
     if (!in.is_open()) {
         string msg = "Cannot open file:";
         msg.append(obj_descr.file_name);
