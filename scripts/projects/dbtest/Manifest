@@ -33,9 +33,9 @@ Linux64    : plain : GCC.sh           --without-debug --without-mt --with-static
 
 FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 
-SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --with-flat-makefile
+SunOSx86   : plain : WorkShop.sh 32   --without-debug --without-mt --with-static --with-flat-makefile
 
-SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --with-flat-makefile
+SunOSSparc : plain : WorkShop.sh 32   --without-debug --without-mt --with-static --with-flat-makefile
 
 PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile --with-universal
 
