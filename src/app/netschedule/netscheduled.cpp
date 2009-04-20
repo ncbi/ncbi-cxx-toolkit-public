@@ -403,7 +403,9 @@ private:
     string x_FormatErrorMessage(string header, string what);
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
-    void x_MakeLogMessage(string& lmsg);
+    void x_MakeLogMessage(string&       lmsg,
+                          const string& op,
+                          const string& text);
     void x_MakeGetAnswer(const CJob& job);
     void x_StatisticsNew(const string& what, time_t curr);
 
@@ -1021,7 +1023,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     // Logging
     if (is_log || IsMonitoring()) {
         string lmsg;
-        x_MakeLogMessage(lmsg);
+        x_MakeLogMessage(lmsg, "REQ", m_Request);
         if (is_log) {
             NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
                 << lmsg
@@ -2662,25 +2664,28 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
         buf_ptr = m_MsgBuffer;
     }
 
-    if (m_Server->IsLog()) {
+    bool is_log = m_Server->IsLog();
+    if (is_log || IsMonitoring()) {
         string lmsg;
-        lmsg = string("ANS:") + NStr::IntToString(m_CommandNumber);
-        lmsg += ';';
-        lmsg += m_AuthString;
-        lmsg += ';';
-        lmsg += m_QueueName;
-        lmsg += ';';
         size_t log_length = min(msg_length, (size_t) 1024);
         bool shortened = log_length < msg_length;
         while (log_length > 0 && (buf_ptr[log_length-1] == '\n' ||
-                                  buf_ptr[log_length-1] == '\r')) {
+            buf_ptr[log_length-1] == '\r')) {
                 log_length--;
         }
-        lmsg += string(buf_ptr, log_length);
+
+        x_MakeLogMessage(lmsg, "ANS", string(buf_ptr, log_length));
         if (shortened) lmsg += "...";
-        NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
-            << lmsg
-            << NCBI_NS_NCBI::Endm;
+
+        if (is_log) {
+            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
+                << lmsg
+                << NCBI_NS_NCBI::Endm;
+        }
+        if (IsMonitoring()) {
+            lmsg += "\n";
+            MonitorPost(lmsg);
+        }
     }
 
     size_t n_written;
@@ -2705,7 +2710,9 @@ void CNetScheduleHandler::WriteErr(const string& msg)
 }
 
 
-void CNetScheduleHandler::x_MakeLogMessage(string& lmsg)
+void CNetScheduleHandler::x_MakeLogMessage(string&       lmsg,
+                                           const string& op,
+                                           const string& text)
 {
     CSocket& socket = GetSocket();
     string peer = socket.GetPeerAddress();
@@ -2715,12 +2722,12 @@ void CNetScheduleHandler::x_MakeLogMessage(string& lmsg)
         peer.erase(offs, peer.length());
     }
 
-    lmsg = string("REQ:") + NStr::IntToString(m_CommandNumber) + ';' + peer + ';';
+    lmsg = op + ':' + NStr::IntToString(m_CommandNumber) + ';' + peer + ';';
     lmsg += m_AuthString;
     lmsg += ';';
     lmsg += m_QueueName;
     lmsg += ';';
-    lmsg += m_Request;
+    lmsg += text;
 }
 
 
