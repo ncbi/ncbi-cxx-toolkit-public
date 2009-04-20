@@ -2,6 +2,9 @@
 misc$
 misc/xmlwrapp
 
+# Required for boost test framework which is used by tests
+corelib
+
 # Tests and demo
 internal$
 internal/test$
