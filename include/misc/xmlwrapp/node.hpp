@@ -36,6 +36,7 @@
  * NOTE: This file was modified from its original version 0.6.0
  *       to fit the NCBI C++ Toolkit build framework and
  *       API and functionality requirements. 
+ * Most importantly, it adds support for XML namespaces (see "namespace.hpp").
  */
 
 /** @file
