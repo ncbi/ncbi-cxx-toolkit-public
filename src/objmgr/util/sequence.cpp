@@ -2208,10 +2208,10 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
     if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
         _ASSERT(base_seq_id);
         CSeq_loc whole;
+        whole.SetWhole().Assign(*base_seq_id);
         if (location) {
             mapper.Reset(new CSeq_loc_Mapper(*location, whole, scope));
         } else {
-            whole.SetWhole().Assign(*base_seq_id);
             // still useful for filtering out locations on other sequences
             mapper.Reset(new CSeq_loc_Mapper(whole, whole, scope));
         }
