@@ -6,7 +6,7 @@
 # Meta-makefile for misc code
 #################################
 
-SUB_PROJ            = third_party third_party_static grid_cgi
+SUB_PROJ            = third_party third_party_static grid_cgi xmlwrapp
 EXPENDABLE_SUB_PROJ = cgi_redirect
 
 
