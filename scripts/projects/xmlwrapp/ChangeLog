@@ -1,0 +1,2 @@
+- XML namespace support is implemented
+- The original libxmlwrapp 0.6.0 was adopted to fit the NCBI toolkit build framework.
