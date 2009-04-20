@@ -118,7 +118,6 @@ struct SNetServiceImpl : public CNetObject
     ESwitch m_DiscoverLowPriorityServers;
 
     STimeout m_Timeout;
-    unsigned int m_MaxRetries;
     ESwitch m_PermanentConnection;
 };
 

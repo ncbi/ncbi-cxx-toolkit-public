@@ -70,7 +70,7 @@ public:
                       unsigned short port,
                       const string&  client_name);
 
-    /// Contruction based on existing TCP/IP socket
+    /// Construction based on an existing TCP/IP socket object.
     /// @param sock
     ///    Connected socket to the primary server.
     ///    Client does not take socket ownership
@@ -110,12 +110,6 @@ public:
     void SetCommunicationTimeout(const STimeout& to);
     STimeout& SetCommunicationTimeout();
     STimeout  GetCommunicationTimeout() const;
-
-    static
-    void SetDefaultCreateSocketMaxReties(unsigned int retires);
-
-    void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
-    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
 
     void RestoreHostPort();
 
@@ -193,7 +187,6 @@ protected:
     STimeout                m_Timeout;
     string                  m_ClientNameComment;
     string                  m_Tmp;                 ///< Temporary string
-    unsigned int            m_MaxRetries;
 
 private:
     CResourcePool<CSocket>  m_SockPool;

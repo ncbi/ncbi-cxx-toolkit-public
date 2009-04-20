@@ -94,7 +94,6 @@ SNetServiceImpl::SNetServiceImpl(
     m_IsLoadBalanced(false),
     m_DiscoverLowPriorityServers(eOff),
     m_Timeout(s_GetDefaultCommTimeout()),
-    m_MaxRetries(TServConn_ConnMaxRetries::GetDefault()),
     m_PermanentConnection(eOn)
 {
     m_RebalanceStrategy = CreateDefaultRebalanceStrategy();

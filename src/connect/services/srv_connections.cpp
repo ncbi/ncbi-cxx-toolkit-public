@@ -328,7 +328,7 @@ CNetServerConnection CNetServer::Connect()
         if (conn_socket.SetTimeout(eIO_Read, &zero_timeout) == eIO_Success) {
             switch (conn_socket.Read(NULL, 1, NULL)) {
             case eIO_Success:
-                ERR_POST_X(8, "Protocol error: socket from the pool "
+                ERR_POST_X(8, "Protocol error: a socket from the pool "
                     "still has input data in it, reconnecting");
                 break;
 
@@ -349,39 +349,27 @@ CNetServerConnection CNetServer::Connect()
     // The socket must be closed at this point.
     _ASSERT(conn_socket.GetStatus(eIO_Open) != eIO_Success);
 
-    unsigned conn_repeats = 0;
+    unsigned attempt = 0;
 
     EIO_Status io_st;
 
     while ((io_st = conn_socket.Connect(m_Impl->m_Host, m_Impl->m_Port,
         &m_Impl->m_Service->m_Timeout, eOn)) != eIO_Success) {
+        conn_socket.Close();
 
-        if (io_st == eIO_Unknown) {
+        string message = "Could not connect to " +
+            m_Impl->GetAddressAsString();
+        message += ": ";
+        message += IO_StatusStr(io_st);
 
-            conn_socket.Close();
-
-            // most likely this is an indication that we have too many
-            // open ports on the client side
-            // (this kernel limitation manifests itself on Linux)
-            if (++conn_repeats > m_Impl->m_Service->m_MaxRetries) {
-                if (io_st != eIO_Success) {
-                    CIO_Exception io_ex(DIAG_COMPILE_INFO,
-                        0, (CIO_Exception::EErrCode)io_st, "IO error.");
-                    NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                        "Failed to connect to " + m_Impl->GetAddressAsString() +
-                            ": " + string(io_ex.what()));
-                }
-            }
-
-            // give the system a chance to recover
-            SleepMilliSec(TServConn_RetryDelay::GetDefault());
-        } else {
-            CIO_Exception io_ex(DIAG_COMPILE_INFO,
-                0, (CIO_Exception::EErrCode) io_st, "IO error.");
-            NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                "Failed to connect to " + m_Impl->GetAddressAsString() +
-                ": " + string(io_ex.what()));
+        if (++attempt > TServConn_ConnMaxRetries::GetDefault()) {
+            NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
         }
+
+        LOG_POST(Warning << message << ", reconnecting: attempt " <<
+            attempt << " of " << TServConn_ConnMaxRetries::GetDefault());
+
+        SleepMilliSec(TServConn_RetryDelay::GetDefault());
     }
 
     conn_socket.SetDataLogging(eDefault);

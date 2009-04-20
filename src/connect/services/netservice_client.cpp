@@ -74,8 +74,7 @@ CNetServiceClient::EUseName CNetServiceClient::GetNameUse()
 CNetServiceClient::CNetServiceClient(const string& client_name)
     : m_Sock(0),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_GetDefaultCommTimeout()),
-      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
+      m_Timeout(s_GetDefaultCommTimeout())
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName->empty()) {
         m_ClientName = s_GlobalClientName.Get() + "::" + client_name;
@@ -92,8 +91,7 @@ CNetServiceClient::CNetServiceClient(const string&  host,
       m_Host(host),
       m_Port(port),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_GetDefaultCommTimeout()),
-      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
+      m_Timeout(s_GetDefaultCommTimeout())
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName->empty()) {
         m_ClientName = s_GlobalClientName.Get() + "::" + client_name;
@@ -110,8 +108,7 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
       m_Port(0),
       m_OwnSocket(eNoOwnership),
       m_ClientName(client_name),
-      m_Timeout(s_GetDefaultCommTimeout()),
-      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
+      m_Timeout(s_GetDefaultCommTimeout())
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName->empty()) {
         m_ClientName = s_GlobalClientName.Get() + "::" + client_name;
@@ -131,12 +128,6 @@ CNetServiceClient::~CNetServiceClient()
     if (m_OwnSocket == eTakeOwnership) {
         delete m_Sock;
     }
-}
-
-/* static */
-void CNetServiceClient::SetDefaultCreateSocketMaxReties(unsigned int retries)
-{
-    TServConn_ConnMaxRetries::SetDefault(retries);
 }
 
 void CNetServiceClient::SetDefaultCommunicationTimeout(const STimeout& to)
@@ -270,7 +261,7 @@ void CNetServiceClient::CreateSocket(const string& hostname,
                 // (this kernel limitation manifests itself on Linux)
                 //
 
-                if (++conn_repeats > m_MaxRetries) {
+                if (++conn_repeats > TServConn_ConnMaxRetries::GetDefault()) {
                     if ( io_st != eIO_Success) {
                         throw CIO_Exception(DIAG_COMPILE_INFO,
                         0, (CIO_Exception::EErrCode)io_st,
