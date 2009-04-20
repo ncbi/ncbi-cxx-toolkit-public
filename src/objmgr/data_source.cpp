@@ -1004,8 +1004,8 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
         }
     }
     // Cannot resolve conflict
-    NCBI_THROW(CObjMgrException, eFindConflict,
-               "Multiple seq-id matches found");
+    NCBI_THROW_FMT(CObjMgrException, eFindConflict,
+                   "Multiple seq-id matches found for "<<handle);
 }
 
 
