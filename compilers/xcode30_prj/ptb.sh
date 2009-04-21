@@ -34,8 +34,7 @@
 #
 # ===========================================================================
 
-#DEFPTB_VERSION="1.8.0"
-DEFPTB_VERSION="notimplemented"
+DEFPTB_VERSION="1.8.0"
 DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb"
 IDE="30"
 PTB_EXTRA=""
