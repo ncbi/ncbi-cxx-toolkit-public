@@ -476,9 +476,9 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
   string acc, acc_long;
   int line_num=0;
   int acc_count=0;
-  int header_line_num;
 
   // these are initialized only to suppress the warnings
+  int header_line_num=0;
   int len=0;
   int prev_len=0;
 
