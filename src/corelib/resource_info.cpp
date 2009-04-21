@@ -35,8 +35,8 @@
 
 #include <ncbiconf.h>
 #include <corelib/ncbi_bswap.hpp>
-#include <util/md5.hpp>
-#include <util/resource_info.hpp>
+// #include <util/md5.hpp>
+#include <corelib/resource_info.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -46,6 +46,9 @@ BEGIN_NCBI_SCOPE
 //
 //  Utility finctions
 //
+
+// Forward declaration of the local MD5
+void CalcMD5(const char* data, size_t len, unsigned char* digest);
 
 inline char Hex(unsigned char c)
 {
@@ -276,7 +279,6 @@ string CNcbiResourceInfoFile::x_GetDataPassword(const string& name_pwd,
     // Name and password are swapped (name is used as encryption key)
     // so that the result is not equal to the encoded resource name.
     return BlockTEA_Encode(res_name, name_pwd);
-    // return name_pwd + res_name;
 }
 
 
@@ -388,11 +390,10 @@ void BlockTEA_Decode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
     if (n <= 1) return;
     Uint4 z = data[n - 1];
     Uint4 y = data[0];
-    Uint4 sum = 0;
     Uint4 e;
     Int4 p;
     Int4 q = 6 + 52/n;
-    sum = q*kBlockTEA_Delta;
+    Uint4 sum = q*kBlockTEA_Delta;
     while (sum != 0) {
         e = (sum >> 2) & 3;
         for (p = n - 1; p > 0; p--) {
@@ -468,14 +469,10 @@ void GenerateKey(const string& pwd, TBlockTEA_Key& key)
     char digest[37];
     memcpy(digest + 16, kBlockTEA_Salt, 21);
     {{
-        CMD5 md5;
-        md5.Update(hash.c_str(), hash.size());
-        md5.Finalize((unsigned char*)digest);
+        CalcMD5(hash.c_str(), hash.size(), (unsigned char*)digest);
     }}
     for (int i = 0; i < len; i++) {
-        CMD5 md5;
-        md5.Update(digest, 36);
-        md5.Finalize((unsigned char*)digest);
+        CalcMD5(digest, 36, (unsigned char*)digest);
     }
     StringToInt4Array(digest, key, kBlockTEA_KeySize*sizeof(Int4));
 }
@@ -550,5 +547,126 @@ string BlockTEA_Decode(const string& password,
     return ret.substr((size_t)ret[0], ret.size());
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Local MD5 implementation
+//
+
+
+Uint4 leftrotate(Uint4 x, Uint4 c)
+{
+    return (x << c) | (x >> (32 - c));
+}
+
+void CalcMD5(const char* data, size_t len, unsigned char* digest)
+{
+    const Uint4 r[64] = {
+        7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+        5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+        4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+        6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+    };
+
+    const Uint4 k[64] = {
+        3614090360, 3905402710, 606105819, 3250441966,
+        4118548399, 1200080426, 2821735955, 4249261313,
+        1770035416, 2336552879, 4294925233, 2304563134,
+        1804603682, 4254626195, 2792965006, 1236535329,
+        4129170786, 3225465664, 643717713, 3921069994,
+        3593408605, 38016083, 3634488961, 3889429448,
+        568446438, 3275163606, 4107603335, 1163531501,
+        2850285829, 4243563512, 1735328473, 2368359562,
+        4294588738, 2272392833, 1839030562, 4259657740,
+        2763975236, 1272893353, 4139469664, 3200236656,
+        681279174, 3936430074, 3572445317, 76029189,
+        3654602809, 3873151461, 530742520, 3299628645,
+        4096336452, 1126891415, 2878612391, 4237533241,
+        1700485571, 2399980690, 4293915773, 2240044497,
+        1873313359, 4264355552, 2734768916, 1309151649,
+        4149444226, 3174756917, 718787259, 3951481745
+    };
+
+    // Initialize variables:
+    Uint4 h0 = 0x67452301;
+    Uint4 h1 = 0xEFCDAB89;
+    Uint4 h2 = 0x98BADCFE;
+    Uint4 h3 = 0x10325476;
+
+    // Pre-processing:
+    // append "1" bit to message
+    // append "0" bits until message length in bits == 448 (mod 512)
+    // append bit (not byte) length of unpadded message as 64-bit
+    // little-endian integer to message
+    Uint4 padlen = 64 - len % 64;
+    if (padlen < 9) padlen += 9;
+    string buf(data, len);
+    buf += char(0x80);
+    buf.append(string(padlen - 9, 0));
+    Uint8 len8 = len*8;
+    char lenbuf[8];
+#ifdef WORDS_BIGENDIAN
+    CByteSwap::PutInt8((unsigned char*)lenbuf, len8);
+#else
+    *(Int8*)(lenbuf) = len8;
+#endif
+    buf.append(lenbuf, 8);
+
+    const char* buf_start = buf.c_str();
+    const char* buf_end = buf_start + len + padlen;
+    // Process the message in successive 512-bit chunks
+    for (const char* p = buf_start; p < buf_end; p += 64) {
+        // Break chunk into sixteen 32-bit little-endian words w[i]
+        Uint4 w[16];
+        for (int i = 0; i < 16; i++) {
+            w[i] = (Uint4)GetInt4LE(p + i*4);
+        }
+
+        // Initialize hash value for this chunk:
+        Uint4 a = h0;
+        Uint4 b = h1;
+        Uint4 c = h2;
+        Uint4 d = h3;
+
+        Uint4 f, g;
+
+        // Main loop:
+        for (int i = 0; i < 64; i++) {
+            if (i < 16) {
+                f = (b & c) | ((~b) & d);
+                g = i;
+            }
+            else if (i < 32) {
+                f = (d & b) | ((~d) & c);
+                g = (5*i + 1) % 16;
+            }
+            else if (i < 48) {
+                f = b ^ c ^ d;
+                g = (3*i + 5) % 16;
+            }
+            else {
+                f = c ^ (b | (~d));
+                g = (7*i) % 16;
+            }
+     
+            Uint4 temp = d;
+            d = c;
+            c = b;
+            b = b + leftrotate((a + f + k[i] + w[g]), r[i]);
+            a = temp;
+        }
+
+        // Add this chunk's hash to result so far:
+        h0 += a;
+        h1 += b;
+        h2 += c;
+        h3 += d;
+    }
+
+    PutInt4LE(h0, (char*)digest);
+    PutInt4LE(h1, (char*)(digest + 4));
+    PutInt4LE(h2, (char*)(digest + 8));
+    PutInt4LE(h3, (char*)(digest + 12));
+}
 
 END_NCBI_SCOPE

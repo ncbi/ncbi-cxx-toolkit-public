@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <util/resource_info.hpp>
+#include <corelib/resource_info.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 

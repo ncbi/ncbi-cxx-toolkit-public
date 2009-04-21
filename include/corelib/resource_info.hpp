@@ -1,5 +1,5 @@
-#ifndef UTIL___RESOURCE_INFO__HPP
-#define UTIL___RESOURCE_INFO__HPP
+#ifndef CORELIB___RESOURCE_INFO__HPP
+#define CORELIB___RESOURCE_INFO__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 
 /// Class for storing encrypted resource information.
-class NCBI_XUTIL_EXPORT CNcbiResourceInfo : public CObject
+class NCBI_XNCBI_EXPORT CNcbiResourceInfo : public CObject
 {
 public:
     /// Get resource name.
@@ -105,7 +105,7 @@ private:
 
 
 /// Class for handling resource info files
-class NCBI_XUTIL_EXPORT CNcbiResourceInfoFile
+class NCBI_XNCBI_EXPORT CNcbiResourceInfoFile
 {
 public:
     /// Get default resource info file location (/etc/ncbi/.info).
@@ -168,7 +168,7 @@ private:
 
 
 /// Exception thrown by resource info classes
-class NCBI_XUTIL_EXPORT CNcbiResourceInfoException :
+class NCBI_XNCBI_EXPORT CNcbiResourceInfoException :
     EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
@@ -193,14 +193,14 @@ public:
 
 
 /// Encrypt the string using XXTEA and the password.
-NCBI_XUTIL_EXPORT string BlockTEA_Encode(const string& password,
+NCBI_XNCBI_EXPORT string BlockTEA_Encode(const string& password,
                                          const string& src);
 // Decrypt the string using XXTEA and the password. Return empty
 /// string on error.
-NCBI_XUTIL_EXPORT string BlockTEA_Decode(const string& password,
+NCBI_XNCBI_EXPORT string BlockTEA_Decode(const string& password,
                                          const string& src);
 
 END_NCBI_SCOPE
 
 
-#endif  /* UTIL___RESOURCE_INFO__HPP */
+#endif  /* CORELIB___RESOURCE_INFO__HPP */
