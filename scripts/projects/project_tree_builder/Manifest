@@ -46,6 +46,6 @@ IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static
 
 #Win32      : plain : msvc710_prj  static  32  ReleaseDLL
 Win32      : 800 : msvc800_prj  static  32  ReleaseDLL
-Win64      : 800 : msvc800_prj  static  64  ReleaseDLL
-Win32      : 900 : msvc900_prj  static  32  ReleaseDLL
+#Win64      : 800 : msvc800_prj  static  64  ReleaseDLL
+#Win32      : 900 : msvc900_prj  static  32  ReleaseDLL
 #Win64      : 900 : msvc900_prj  static  64  ReleaseDLL

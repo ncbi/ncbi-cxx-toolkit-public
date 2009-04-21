@@ -32,3 +32,13 @@ March 27, 2009
 version 1.7.6
 Bug fix: Corrected generation of unique build id in Unix flat makefile.
 
+April 21, 2009
+version 1.8.0
+Added generation of check commands lists on Xcode.
+Added possibility to specify target platform in command line.
+Modified generation of unique build id in Unix flat makefile to calculate it
+only once when building multiple targets.
+Added generation of Products group on Xcode.
+Added support of WATCHERS macro
+Merge Compiler.PreprocessorDefinitions defined in project and meta-msvc files.
+ 
