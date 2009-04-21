@@ -1,2 +1,9 @@
 Jun 19, 2008
 First test release using the release procedure
+
+April 21, 2009
+version 1.9.2
+Added possibility to override command line arguments in a DEF file.
+Added generation and skipping of 'AUTOMATIC TAGS' TagDefault in ASN specifications
+Added support of long type (BigInt) attributes in Schema
+Fixed several bugs in Schema parsing, and code generation.
