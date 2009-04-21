@@ -35,7 +35,6 @@
 
 #include <ncbiconf.h>
 #include <corelib/ncbi_bswap.hpp>
-// #include <util/md5.hpp>
 #include <corelib/resource_info.hpp>
 
 
@@ -599,7 +598,7 @@ void CalcMD5(const char* data, size_t len, unsigned char* digest)
     // append bit (not byte) length of unpadded message as 64-bit
     // little-endian integer to message
     Uint4 padlen = 64 - len % 64;
-    if (padlen < 9) padlen += 9;
+    if (padlen < 9) padlen += 64;
     string buf(data, len);
     buf += char(0x80);
     buf.append(string(padlen - 9, 0));
@@ -631,7 +630,7 @@ void CalcMD5(const char* data, size_t len, unsigned char* digest)
         Uint4 f, g;
 
         // Main loop:
-        for (int i = 0; i < 64; i++) {
+        for (unsigned int i = 0; i < 64; i++) {
             if (i < 16) {
                 f = (b & c) | ((~b) & d);
                 g = i;
@@ -652,7 +651,7 @@ void CalcMD5(const char* data, size_t len, unsigned char* digest)
             Uint4 temp = d;
             d = c;
             c = b;
-            b = b + leftrotate((a + f + k[i] + w[g]), r[i]);
+            b += leftrotate((a + f + k[i] + w[g]), r[i]);
             a = temp;
         }
 
