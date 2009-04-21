@@ -5,6 +5,10 @@ misc/xmlwrapp
 # Required for boost test framework which is used by tests
 corelib$
 
+# Requires to copy third party libs on WinXX
+misc/third_party
+misc/third_party_static
+
 # Tests and demo
 internal$
 internal/test$
