@@ -110,6 +110,15 @@ XERCES_SRC = $(XERCES_BINPATH)\$(INTDIR)
 XERCES_SRC = $(XERCES_BINPATH)\$(ALTDIR)
 !ENDIF
 
+LIBXML2_SRC = $(LIBXML2_BINPATH)\$(INTDIR)
+!IF !EXIST($(LIBXML2_SRC))
+LIBXML2_SRC = $(LIBXML2_BINPATH)\$(ALTDIR)
+!ENDIF
+
+LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(INTDIR)
+!IF !EXIST($(LIBXSLT_SRC))
+LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(ALTDIR)
+!ENDIF
 
 
 
@@ -254,7 +263,6 @@ clean_xalan : $(XALAN_SRC).xalan_clean
 
 
 
-
 $(XERCES_SRC).xerces_install :
 	@echo ---- & echo Copying Xerces DLLs & $(INSTALL_CMD)
 $(XERCES_SRC).xerces_clean :
@@ -262,6 +270,23 @@ $(XERCES_SRC).xerces_clean :
 install_xerces : $(XERCES_SRC).xerces_install
 clean_xerces : $(XERCES_SRC).xerces_clean
 
+
+
+$(LIBXML2_SRC).libxml2_install :
+	@echo ---- & echo Copying LIBXML2 DLLs & $(INSTALL_CMD)
+$(LIBXML2_SRC).libxml2_clean :
+	@echo ---- & echo Deleting LIBXML2 DLLs & $(CLEAN_CMD)
+install_libxml2 : $(LIBXML2_SRC).libxml2_install
+clean_libxml2 : $(LIBXML2_SRC).libxml2_clean
+
+
+
+$(LIBXSLT_SRC).libxslt_install :
+	@echo ---- & echo Copying LIBXSLT DLLs & $(INSTALL_CMD)
+$(LIBXSLT_SRC).libxslt_clean :
+	@echo ---- & echo Deleting LIBXSLT DLLs & $(CLEAN_CMD)
+install_libxslt : $(LIBXSLT_SRC).libxslt_install
+clean_libxslt : $(LIBXSLT_SRC).libxslt_clean
 
 
 

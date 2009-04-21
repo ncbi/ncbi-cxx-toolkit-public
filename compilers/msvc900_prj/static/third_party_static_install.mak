@@ -28,7 +28,9 @@ THIRD_PARTY_LIBS = \
 	install_wxwidgets  \
 	install_wxwindows  \
 	install_xalan      \
-	install_xerces     
+	install_xerces     \
+	install_libxml2    \
+	install_libxslt     
 
 CLEAN_THIRD_PARTY_LIBS = \
 	clean_berkeleydb \
@@ -44,7 +46,9 @@ CLEAN_THIRD_PARTY_LIBS = \
 	clean_wxwidgets  \
 	clean_wxwindows  \
 	clean_xalan      \
-	clean_xerces
+	clean_xerces     \
+	clean_libxml2    \
+	clean_libxslt
 
 all : dirs $(THIRD_PARTY_LIBS)
 
