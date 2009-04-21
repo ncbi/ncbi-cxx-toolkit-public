@@ -319,7 +319,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       x_ValidateFile(cin);
   }
   else {
-    int num_fasta_files=0;
+    SIZE_TYPE num_fasta_files=0;
     bool allowFasta=true;
     for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
 
@@ -476,8 +476,11 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
   string acc, acc_long;
   int line_num=0;
   int acc_count=0;
-  int len;
-  int header_line_num, prev_len;
+  int header_line_num;
+
+  // these are initialized only to suppress the warnings
+  int len=0;
+  int prev_len=0;
 
   while( NcbiGetline(istr, line, "\r\n") ) {
     line_num++;
