@@ -274,8 +274,10 @@ void CAgpValidateReader::OnObjectChange()
         agpErr.Msg(CAgpErr::G_BadObjLen, details, CAgpErr::fAtPrevLine);
       }
     }
-    else if(m_obj_name_matches>0 || m_comp_name_matches==0) {
-      agpErr.Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
+    else if(m_comp2len.size()) {
+      if(m_obj_name_matches>0 || m_comp_name_matches==0) {
+        agpErr.Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
+      }
     }
 
     // if(m_prev_row->IsGap() && m_componentsInLastScaffold==0) m_ScaffoldCount--; (???)
