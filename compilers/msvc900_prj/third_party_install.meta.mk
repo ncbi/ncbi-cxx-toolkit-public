@@ -110,9 +110,9 @@ XERCES_SRC = $(XERCES_BINPATH)\$(INTDIR)
 XERCES_SRC = $(XERCES_BINPATH)\$(ALTDIR)
 !ENDIF
 
-LIBXML2_SRC = $(LIBXML2_BINPATH)\$(INTDIR)
-!IF !EXIST($(LIBXML2_SRC))
-LIBXML2_SRC = $(LIBXML2_BINPATH)\$(ALTDIR)
+LIBXML_SRC = $(LIBXML_BINPATH)\$(INTDIR)
+!IF !EXIST($(LIBXML_SRC))
+LIBXML_SRC = $(LIBXML_BINPATH)\$(ALTDIR)
 !ENDIF
 
 LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(INTDIR)
@@ -272,12 +272,12 @@ clean_xerces : $(XERCES_SRC).xerces_clean
 
 
 
-$(LIBXML2_SRC).libxml2_install :
-	@echo ---- & echo Copying LIBXML2 DLLs & $(INSTALL_CMD)
-$(LIBXML2_SRC).libxml2_clean :
-	@echo ---- & echo Deleting LIBXML2 DLLs & $(CLEAN_CMD)
-install_libxml2 : $(LIBXML2_SRC).libxml2_install
-clean_libxml2 : $(LIBXML2_SRC).libxml2_clean
+$(LIBXML_SRC).libxml_install :
+	@echo ---- & echo Copying LIBXML DLLs & $(INSTALL_CMD)
+$(LIBXML_SRC).libxml_clean :
+	@echo ---- & echo Deleting LIBXML DLLs & $(CLEAN_CMD)
+install_libxml : $(LIBXML_SRC).libxml_install
+clean_libxml : $(LIBXML_SRC).libxml_clean
 
 
 
