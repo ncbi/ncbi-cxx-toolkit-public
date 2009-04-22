@@ -111,6 +111,7 @@ public:
     {
         return Password();
     }
+    const string& GetDatabaseName(void) const;
 
     const string& GetExecCntxInfo(void) const
     {
@@ -274,6 +275,7 @@ private:
     const string   m_Server;
     const string   m_User;
     const string   m_Passwd;
+    string         m_Database;
     const string   m_Pool;
     const bool     m_Reusable;
     const bool     m_BCPable; //< Does this connection support BCP (It is related to Context, actually)

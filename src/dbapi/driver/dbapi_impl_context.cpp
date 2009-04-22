@@ -32,10 +32,13 @@
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
+#include <corelib/resource_info.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <algorithm>
+#include <set>
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -44,6 +47,9 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+NCBI_PARAM_DEF_EX(bool, dbapi, conn_use_encrypt_data, false, eParam_NoThread, NULL);
 
 
 namespace impl
@@ -431,28 +437,119 @@ CDriverContext::DeleteAllConn(void)
     m_InUse.clear();
 }
 
+
+struct SLoginData
+{
+    string server_name;
+    string user_name;
+    string db_name;
+    string password;
+
+    SLoginData(const string& sn, const string& un,
+               const string& dn, const string& pass)
+        : server_name(sn), user_name(un), db_name(dn), password(pass)
+    {}
+
+    bool operator< (const SLoginData& right) const
+    {
+        if (server_name != right.server_name)
+            return server_name < right.server_name;
+        else if (user_name != right.user_name)
+            return user_name < right.user_name;
+        else if (db_name != right.db_name)
+            return db_name < right.db_name;
+        else
+            return password < right.password;
+    }
+};
+
+
+static void
+s_TransformLoginData(string& server_name, string& user_name,
+                     string& db_name,     string& password)
+{
+    if (!TDbapi_ConnUseEncryptData::GetDefault())
+        return;
+
+    string app_name = CNcbiApplication::Instance()->GetProgramDisplayName();
+    set<SLoginData> visited;
+    CNcbiResourceInfoFile res_file(CNcbiResourceInfoFile::GetDefaultFileName());
+
+    visited.insert(SLoginData(server_name, user_name, db_name, password));
+    for (;;) {
+        string res_name = app_name;
+        if (!user_name.empty()) {
+            res_name += "/";
+            res_name += user_name;
+        }
+        if (!server_name.empty()) {
+            res_name += "@";
+            res_name += server_name;
+        }
+        if (!db_name.empty()) {
+            res_name += ":";
+            res_name += db_name;
+        }
+        const CNcbiResourceInfo& info
+                               = res_file.GetResourceInfo(res_name, password);
+        if (!info)
+            break;
+
+        password = info.GetValue();
+        typedef multimap<string, string>  TExtraMap;
+        typedef TExtraMap::const_iterator TExtraMapIt;
+        const TExtraMap& extra = info.GetExtraValues().GetPairs();
+
+        TExtraMapIt it = extra.find("server");
+        if (it != extra.end())
+            server_name = it->second;
+        it = extra.find("username");
+        if (it != extra.end())
+            user_name = it->second;
+        it = extra.find("database");
+        if (it != extra.end())
+            db_name = it->second;
+
+        if (!visited.insert(
+                SLoginData(server_name, user_name, db_name, password)).second)
+        {
+            DATABASE_DRIVER_ERROR(
+                   "Circular dependency inside resources info file.", 100012);
+        }
+    }
+}
+
+
 CDB_Connection* 
 CDriverContext::MakeConnection(const CDBConnParams& params)
 {
+    string server_name = params.GetServerName();
+    string user_name = params.GetUserName();
+    string db_name = params.GetDatabaseName();
+    string password = params.GetPassword();
+    s_TransformLoginData(server_name, user_name, db_name, password);
+    CMakeConnActualParams act_params(params, server_name, user_name,
+                                     db_name, password);
+
     CDB_Connection* t_con =
         CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
             *this,
-            params);
+            act_params);
 
-    if((!t_con && params.GetParam("do_not_connect") == "true")) {
+    if((!t_con && act_params.GetParam("do_not_connect") == "true")) {
         return NULL;
     }
 
     if (!t_con) {
         string err;
 
-        err += "Cannot connect to the server '" + params.GetServerName();
-        err += "' as user '" + params.GetUserName() + "'";
+        err += "Cannot connect to the server '" + act_params.GetServerName();
+        err += "' as user '" + act_params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
     // Set database ...
-    t_con->SetDatabaseName(params.GetDatabaseName());
+    t_con->SetDatabaseName(act_params.GetDatabaseName());
 
     return t_con;
 }
