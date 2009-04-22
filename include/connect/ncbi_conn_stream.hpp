@@ -225,9 +225,11 @@ private:
 /// Note that 'path' must include a leading slash,
 /// 'args' can be empty, in which case the '?' is not appended to the path.
 ///
-/// 'User_header' (if not empty) should be a sequence of lines
-/// in the form 'HTTP-tag: Tag value', separated by '\r\n', and
-/// '\r\n'-terminated. It is included in the HTTP-header of each transaction.
+/// 'User_header' (if not empty) should be a sequence of lines in the form
+/// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence
+/// and the last line terminated by a CR LF sequence.  For example:
+/// Content-Encoding: gzip\r\nContent-Length: 123\r\n
+/// It is included in the HTTP-header of each transaction.
 ///
 /// More elaborate specification of the server can be done via
 /// SConnNetInfo structure, which otherwise will be created with the
