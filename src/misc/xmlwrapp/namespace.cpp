@@ -40,6 +40,7 @@
 
 // standard includes
 #include <stdexcept>
+#include <string.h>
 
 // libxml includes
 #include <libxml/tree.h>
