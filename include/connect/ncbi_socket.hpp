@@ -247,7 +247,7 @@ public:
                     size_t*        n_read = 0,
                     EIO_ReadMethod how = eIO_ReadPlain);
 
-    /// Read up to '\r\n', '\n' or '\0', discarding any of the EOLs
+    /// Read up to CR-LF, LF, or null character, discarding any of the EOLs
     /// @param str
     ///
     EIO_Status ReadLine(string& str);
