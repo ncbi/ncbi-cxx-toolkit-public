@@ -78,6 +78,10 @@ NCBI_PARAM_DECL(bool, server, stop_on_job_errors);
 typedef NCBI_PARAM_TYPE(server, stop_on_job_errors)
     TWorkerNode_StopOnJobErrors;
 
+NCBI_PARAM_DECL(bool, server, do_not_rebalance);
+typedef NCBI_PARAM_TYPE(server, do_not_rebalance)
+    TWorkerNode_DoNotRebalance;
+
 
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
 NCBI_XCONNECT_EXPORT void s_SetDefaultCommTimeout(const STimeout& tm);

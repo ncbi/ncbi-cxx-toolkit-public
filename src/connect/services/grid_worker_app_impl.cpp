@@ -370,6 +370,7 @@ int CGridWorkerApp_Impl::Run()
     LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
 
     const IRegistry& reg = m_App.GetConfig();
+    CConfig conf(reg);
 
     unsigned int max_threads = 1;
     unsigned int init_threads = 1;
@@ -501,10 +502,8 @@ int CGridWorkerApp_Impl::Run()
 
     AttachJobWatcher(CGridGlobals::GetInstance().GetJobsWatcher());
     m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(),
-                                           GetStorageFactory(),
-                                           GetClientFactory(),
-                                           m_JobWatchers.get())
-                       );
+        GetStorageFactory(), GetClientFactory(), m_JobWatchers.get(),
+        CreateSimpleRebalanceStrategy(conf, "server")));
     m_WorkerNode->SetMaxThreads(max_threads);
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
@@ -542,8 +541,7 @@ int CGridWorkerApp_Impl::Run()
 
     control_thread->Run();
 
-    if (CGridGlobals::GetInstance().
-        GetShutdownLevel() == CNetScheduleAdmin::eNoShutdown) {
+    if (!CGridGlobals::GetInstance().IsShuttingDown()) {
         LOG_POST_X(54, "\n=================== NEW RUN : "
                    << CGridGlobals::GetInstance().GetStartTime().AsString()
                    << " ===================\n"

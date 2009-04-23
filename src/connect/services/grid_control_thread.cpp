@@ -134,12 +134,11 @@ public:
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << endl;
 
-        if (CGridGlobals::GetInstance().
-            GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
-                os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
-        }
+        if (CGridGlobals::GetInstance().IsShuttingDown())
+            os << "The node is shutting down" << endl;
+
         if (node.IsExclusiveMode())
-            os << "THE NODE IS IN AN EXCLUSIVE MODE!!!" << endl;
+            os << "The node is processing an exclusive job" << endl;
 
         CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
 

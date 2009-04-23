@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  */
 
@@ -118,6 +118,7 @@ public:
     /// Request node shutdown
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
                       { m_ShutdownLevel = level; }
+    bool IsShuttingDown();
 
     void SetForceExit(bool force_exit) {m_ForceExit = force_exit;}
     bool IsForceExitEnabled() const {return m_ForceExit;}
@@ -153,6 +154,10 @@ private:
 
 };
 
+inline bool CGridGlobals::IsShuttingDown()
+{
+    return m_ShutdownLevel != CNetScheduleAdmin::eNoShutdown;
+}
 
 END_NCBI_SCOPE
 

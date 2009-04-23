@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *    NetSchedule Worker Node implementation
@@ -195,6 +195,11 @@ void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
     }
 }
 
+#define OTHER_JOB_IS_EXCLUSIVE (1 << 0)
+#define PREV_JOB_WAS_EXCLUSIVE (1 << 1)
+#define NEW_JOB_IS_EXCLUSIVE (1 << 2)
+
+
 /// @internal
 bool CGridThreadContext::PutResult(int ret_code, CNetScheduleJob& new_job)
 {
@@ -209,23 +214,32 @@ bool CGridThreadContext::PutResult(int ret_code, CNetScheduleJob& new_job)
     if (!debug_context ||
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
-        ///cerr << "Before try Put: "  << m_JobContext->GetJobKey() << endl;
-        if (CGridGlobals::GetInstance().
-             GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown ||
-                                      !m_Worker.x_GetJobGetterSemaphore().TryWait()){
+        int decision_mask = m_Worker.IsExclusiveMode() ?
+            OTHER_JOB_IS_EXCLUSIVE : 0;
+
+        if (m_JobContext->IsJobExclusive())
+            // Set PREV_JOB_WAS_EXCLUSIVE and reset OTHER_JOB_IS_EXCLUSIVE.
+            decision_mask ^= PREV_JOB_WAS_EXCLUSIVE | OTHER_JOB_IS_EXCLUSIVE;
+
+        if (CGridGlobals::GetInstance().IsShuttingDown() ||
+                m_Worker.IsTimeToRebalance() ||
+                decision_mask & OTHER_JOB_IS_EXCLUSIVE)
             m_Reporter.PutResult(m_JobContext->m_Job);
-            if (m_JobContext->IsJobExclusive()) {
-                m_Worker.x_GetJobGetterSemaphore().Post();
-                ////cerr << "Returnd Exclusive job: " << m_JobContext->GetJobKey() << endl;
-            }
-        } else {
-            more_jobs = m_Reporter.PutResultGetJob(m_JobContext->m_Job, new_job);
-            if (more_jobs && (new_job.mask & CNetScheduleAPI::eExclusiveJob)) {
-                ///cerr << "Get Exclusive job (EXCHANGE): " << m_JobContext->GetJobKey() << endl;
-            } else {
-                ///cerr << "Post Put: "  << m_JobContext->GetJobKey() << endl;
-                m_Worker.x_GetJobGetterSemaphore().Post();
-            }
+        else {
+            more_jobs =
+                m_Reporter.PutResultGetJob(m_JobContext->m_Job, new_job);
+
+            if (more_jobs && (new_job.mask & CNetScheduleAPI::eExclusiveJob))
+                decision_mask |= NEW_JOB_IS_EXCLUSIVE;
+        }
+
+        switch (decision_mask) {
+        case PREV_JOB_WAS_EXCLUSIVE:
+            m_Worker.LeaveExclusiveMode();
+            break;
+
+        case NEW_JOB_IS_EXCLUSIVE:
+            more_jobs = m_Worker.EnterExclusiveModeOrReturnJob(new_job);
         }
     }
     m_JobContext->GetWorkerNode()

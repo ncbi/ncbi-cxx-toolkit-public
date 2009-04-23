@@ -495,7 +495,8 @@ public:
     CGridWorkerNode(IWorkerNodeJobFactory&      job_creator,
                     IBlobStorageFactory&        ns_storage_creator,
                     INetScheduleClientFactory&  ns_client_creator,
-                    IWorkerNodeJobWatcher*      job_wather);
+                    IWorkerNodeJobWatcher*      job_wather,
+                    IRebalanceStrategy*         rebalance_strategy);
 
     virtual ~CGridWorkerNode();
 
@@ -561,7 +562,13 @@ public:
     CNetScheduleAPI GetNSClient() const;
     CNetScheduleExecuter GetNSExecuter() const;
 
+    bool IsTimeToRebalance();
+
+    bool EnterExclusiveMode();
+    bool EnterExclusiveModeOrReturnJob(CNetScheduleJob& exclusive_job);
+    void LeaveExclusiveMode();
     bool IsExclusiveMode();
+    bool WaitForExclusiveJobToFinish();
 
     /// Disable the automatic logging of request-start and
     /// request-stop events by the framework itself.
@@ -583,10 +590,12 @@ private:
     mutable CFastMutex           m_JobFactoryMutex;
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
-    bool                         m_LogRequested;
-    bool                         m_UseEmbeddedStorage;
     unsigned int                 m_CheckStatusPeriod;
-    CSemaphore                   m_JobGetterSemaphore;
+    CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
+    CSemaphore                   m_ExclusiveJobSemaphore;
+    bool                         m_IsProcessingExclusiveJob;
+    bool                         m_UseEmbeddedStorage;
+    bool                         m_LogRequested;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -600,7 +609,6 @@ private:
         return  m_NSStorageFactory.CreateInstance();
     }
     friend class CWorkerNodeJobContext;
-    CSemaphore& x_GetJobGetterSemaphore() { return m_JobGetterSemaphore; }
 
     void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
                             IWorkerNodeJobWatcher::EEvent event)
@@ -661,6 +669,11 @@ inline CNetScheduleAPI CGridWorkerNode::GetNSClient() const
 inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
 {
     return GetNSClient().GetExecuter(m_UdpPort);
+}
+
+inline bool CGridWorkerNode::IsExclusiveMode()
+{
+    return m_IsProcessingExclusiveJob;
 }
 
 

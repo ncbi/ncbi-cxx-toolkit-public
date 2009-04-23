@@ -166,10 +166,12 @@ void CWorkerNodeJobContext::Reset(const CNetScheduleJob& job,
 void CWorkerNodeJobContext::RequestExclusiveMode()
 {
     if (!m_ExclusiveJob) {
-        if (!m_WorkerNode.x_GetJobGetterSemaphore().TryWait())
-            NCBI_THROW(CGridWorkerNodeException, eExclusiveModeIsAlreadySet, "");
+        if (!m_WorkerNode.EnterExclusiveMode()) {
+            NCBI_THROW(CGridWorkerNodeException,
+                eExclusiveModeIsAlreadySet, "");
+        }
+        m_ExclusiveJob = true;
     }
-    m_ExclusiveJob = true;
 }
 
 size_t CWorkerNodeJobContext::GetMaxServerOutputSize() const
@@ -421,15 +423,19 @@ void CWorkerNodeRequest::Process(void)
 CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
                                  IBlobStorageFactory&       storage_factory,
                                  INetScheduleClientFactory& client_factory,
-                                 IWorkerNodeJobWatcher*     job_watcher)
+                                 IWorkerNodeJobWatcher*     job_watcher,
+                                 IRebalanceStrategy*        rebalance_strategy)
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
       m_JobWatcher(job_watcher),
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30),
-      m_LogRequested(false),
-      m_UseEmbeddedStorage(false), m_CheckStatusPeriod(2),
-      m_JobGetterSemaphore(1,1)
+      m_CheckStatusPeriod(2),
+      m_RebalanceStrategy(rebalance_strategy),
+      m_ExclusiveJobSemaphore(1, 1),
+      m_IsProcessingExclusiveJob(false),
+      m_UseEmbeddedStorage(false),
+      m_LogRequested(false)
 {
     m_SharedNSClient = client_factory.CreateInstance();
     m_SharedNSClient.SetProgramVersion(m_JobFactory.GetJobVersion());
@@ -468,10 +474,7 @@ void CGridWorkerNode::Run()
     CNetScheduleJob job;
 
     unsigned try_count = 0;
-    for (;;) {
-        if (CGridGlobals::GetInstance().
-            GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown)
-            break;
+    while (!CGridGlobals::GetInstance().IsShuttingDown()) {
         try {
 
             if (m_MaxThreads > 1) {
@@ -484,11 +487,6 @@ void CGridWorkerNode::Run()
             }
 
             if (x_GetNextJob(job)) {
-                if (CGridGlobals::GetInstance().
-                    GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
-                    x_ReturnJob(job.job_id);
-                    break;
-                }
                 int job_number = CGridGlobals::GetInstance().GetNewJobNumber();
                 auto_ptr<CWorkerNodeJobContext>
                     job_context(new CWorkerNodeJobContext(*this,
@@ -597,27 +595,17 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
             return false;
         }
 
-        if (!x_GetJobGetterSemaphore().TryWait(m_NSTimeout))
+        if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout, m_UdpPort,
-            CNetScheduleExecuter::eNoWaitNotification);
+        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout, m_UdpPort);
 
-        if (!job_exists) {
-            x_GetJobGetterSemaphore().Post();
-
-            job_exists = CNetScheduleExecuter::WaitNotification(GetQueueName(),
-                m_NSTimeout, m_UdpPort);
-
-            if (!x_GetJobGetterSemaphore().TryWait())
-                return false;
-
-            if (job_exists)
-                job_exists = GetNSExecuter().GetJob(job, m_UdpPort);
-        }
-
-        if (!job_exists || (job.mask & CNetScheduleAPI::eExclusiveJob) == 0)
-            x_GetJobGetterSemaphore().Post();
+        if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob)
+            job_exists = EnterExclusiveModeOrReturnJob(job);
+    }
+    if (job_exists && CGridGlobals::GetInstance().IsShuttingDown()) {
+        x_ReturnJob(job.job_id);
+        return false;
     }
     return job_exists;
 }
@@ -775,19 +763,59 @@ bool CGridWorkerNode::x_AreMastersBusy() const
     return true;
 }
 
-bool CGridWorkerNode::IsExclusiveMode()
+bool CGridWorkerNode::IsTimeToRebalance()
 {
-    if (x_GetJobGetterSemaphore().TryWait()) {
-        x_GetJobGetterSemaphore().Post();
+    if (!m_SharedNSClient.GetService().IsLoadBalanced() ||
+            TWorkerNode_DoNotRebalance::GetDefault())
+        return false;
+
+    m_RebalanceStrategy->OnResourceRequested();
+    return m_RebalanceStrategy->NeedRebalance();
+}
+
+bool CGridWorkerNode::EnterExclusiveMode()
+{
+    if (m_ExclusiveJobSemaphore.TryWait()) {
+        _ASSERT(!m_IsProcessingExclusiveJob);
+
+        m_IsProcessingExclusiveJob = true;
+        return true;
+    }
+    return false;
+}
+
+bool CGridWorkerNode::EnterExclusiveModeOrReturnJob(
+    CNetScheduleJob& exclusive_job)
+{
+    _ASSERT(exclusive_job.mask & CNetScheduleAPI::eExclusiveJob);
+
+    if (!EnterExclusiveMode()) {
+        x_ReturnJob(exclusive_job.job_id);
         return false;
     }
     return true;
+}
+
+void CGridWorkerNode::LeaveExclusiveMode()
+{
+    _ASSERT(m_IsProcessingExclusiveJob);
+
+    m_IsProcessingExclusiveJob = false;
+    m_ExclusiveJobSemaphore.Post();
+}
+
+bool CGridWorkerNode::WaitForExclusiveJobToFinish()
+{
+    if (m_ExclusiveJobSemaphore.TryWait(m_NSTimeout)) {
+        m_ExclusiveJobSemaphore.Post();
+        return true;
+    }
+    return false;
 }
 
 void CGridWorkerNode::DisableDefaultRequestEventLogging()
 {
     s_ReqEventsDisabled = true;
 }
-
 
 END_NCBI_SCOPE
