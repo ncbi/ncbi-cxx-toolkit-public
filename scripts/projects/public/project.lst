@@ -14,7 +14,7 @@ misc
 objects
 objmgr
 objtools
-sample
+#sample
 serial
 util
 -app/sample/gui
