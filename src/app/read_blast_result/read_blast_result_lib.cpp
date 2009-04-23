@@ -334,8 +334,15 @@ string GetLocusTag(const CSeq_feat& f, const LocMap& loc_map)
     }
   else
     {
+    const CGene_ref& gene=aname->second->GetData().GetGene();
     string qname;
-    aname->second->GetData().GetGene().GetLabel(&qname); 
+// this is stupid, because it's not unique
+//    aname->second->GetData().GetGene().GetLabel(&qname); 
+    if(gene.IsSetLocus_tag())
+      {
+      return gene.GetLocus_tag();
+      }
+
     return qname;
     }
 }

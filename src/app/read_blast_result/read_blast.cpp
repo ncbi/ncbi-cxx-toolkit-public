@@ -507,6 +507,11 @@ int CReadBlastApp::ProcessCDD(map<string, blastStr>& blastMap)
      int sLen      = thisHitStr.sbjLen;
      string sname = thisHitStr.sbjName;
      if(sname.find(" PRK")!=string::npos) continue; // skip PRK's which are not domains
+     if(sname.find(" CHL")!=string::npos) continue; // 
+     if(sname.find(" MTH")!=string::npos) continue; // 
+     if(sname.find(" MTF")!=string::npos) continue; // 
+     if(sname.find(" PHA")!=string::npos) continue; // 
+     if(sname.find(" PTZ")!=string::npos) continue; // 
      if(thisHitStr.eval>m_eThreshold) continue;
 
      if((double)q_ali_len/qLen < m_partThreshold  &&
