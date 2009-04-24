@@ -14,7 +14,7 @@
 NCBI-Entrezgene DEFINITIONS ::= 
 BEGIN 
  
-EXPORTS Entrezgene, Entrezgene-Set, Gene-track; 
+EXPORTS Entrezgene, Entrezgene-Set, Gene-track, Gene-commentary;
  
 IMPORTS Gene-ref FROM NCBI-Gene 
     Prot-ref FROM NCBI-Protein 
