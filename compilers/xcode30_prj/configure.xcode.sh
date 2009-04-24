@@ -221,7 +221,7 @@ if test -f $sln_name$generated; then
   mv $tmpfile $sln_name$generated
 fi
 
-cd $curr
+cd "$initial_dir"
 #--------------------------------------------------------------------------------
 # extra action
 if test -n "$use_action"; then
@@ -239,4 +239,3 @@ echo "Configure succeeded"
 echo "To build the project, execute the following commands:"
 echo "cd $curr/$sln_path"
 echo "make"
-cd "$initial_dir"
