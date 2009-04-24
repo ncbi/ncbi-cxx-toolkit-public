@@ -55,11 +55,13 @@ Error()
 {
   Usage
   test -z "$1"  ||  echo ERROR: $1 1>&2
+  cd "$initial_dir"
   exit 1
 }
 
 #--------------------------------------------------------------------------------
 
+cd "$script_dir"
 for cmd_arg in "$@"; do
   case "$cmd_arg" in
     --help                )  Usage; exit 0 ;;
@@ -237,3 +239,4 @@ echo "Configure succeeded"
 echo "To build the project, execute the following commands:"
 echo "cd $curr/$sln_path"
 echo "make"
+cd "$initial_dir"
