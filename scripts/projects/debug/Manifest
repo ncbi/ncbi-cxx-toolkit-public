@@ -60,4 +60,5 @@ Win32      : 800   : msvc800_prj  static  32  ReleaseDLL
 Win32      : 800d  : msvc800_prj  static  32  DebugDLL
 Win64      : plain : msvc800_prj  static  64  ReleaseDLL
 
-XCode      : plain : ../xcode30_prj/configure.xcode.sh 
+XCode      : default : Xcode.sh 30
+
