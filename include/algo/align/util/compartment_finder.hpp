@@ -28,7 +28,14 @@
 *
 * Author:  Yuri Kapustin, Alexander Souvorov
 *
-* File Description:  CCompartmentFinder- identification of genomic compartments
+* File Description:  
+*
+*   cDNA-to-genomic compartmentization algortihms.
+*   The task of compartmentization is to identify alternative placements
+*   of a transcript on a genomic sequence.
+* 
+*   CCompartmentFinder      Identification of genomic compartments.
+*   CCompartmentAccessor    An aggregator class to CCompartmentFinder.
 *                   
 * ===========================================================================
 */
@@ -53,7 +60,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// Detect all compartments over a set of hits
 template<class THit>
 class CCompartmentFinder {
 
@@ -63,77 +69,147 @@ public:
     typedef vector<THitRef>       THitRefs;
     typedef typename THit::TCoord TCoord;
 
-    // hits must be in plus strand
+    /// Create the object from the complete set of local alignments (hits)
+    /// between the transcript and the genomic sequences.
+    /// The hits are assumed to share the same query and subject and 
+    /// to have plus strand on both sequences.
+    ///
+    /// @param start
+    ///    Start of the input set of alignments.
+    /// @param finish
+    ///    End of the input set of alignments.
+
     CCompartmentFinder(typename THitRefs::const_iterator start,
                        typename THitRefs::const_iterator finish);
 
-    // setters and getters
+    /// Set the maximum length of an intron
+    ///
+    /// @param intr_max
+    ///    Maximum length of an intron, in base pairs.
+
     void SetMaxIntron (TCoord intr_max) {
         m_intron_max = intr_max;
     }
 
-    static TCoord s_GetDefaultMaxIntron(void) {
-                        // NM_147181.3 vs NC_000004.10 (~1.1M)
-        return 1200000; // NM_001128929.1 vs NC_000003.10 (~1.2M)
-    }
+    /// Retrieve the default maximum length of an intron
     
+    static TCoord s_GetDefaultMaxIntron(void) {
+                        // Some examples:
+                        //    NM_147181.3 vs NC_000004.10 (~1.1M)
+        return 1200000; //    NM_001128929.1 vs NC_000003.10 (~1.2M)
+    }
+
+
+    /// Set the penalty to open a compartment
+    ///
+    /// @param penalty
+    ///    Compartment opening penalty, in base pairs.
+
     void SetPenalty(TCoord penalty) {
         m_penalty = penalty;
     }
         
+    /// Set the minimum matching residues per compartment.
+    ///
+    /// @param min_matches
+    ///    The min number of matching residues in base pairs
+
     void SetMinMatches(TCoord min_matches) {
         m_MinSingletonMatches = m_MinMatches = min_matches;
     }
         
+    /// Set the minimum matching residues per singleton compartment.
+    ///
+    /// @param min_matches
+    ///    The min number of matching residues in base pairs
+
     void SetMinSingletonMatches(TCoord min_matches) {
         m_MinSingletonMatches = min_matches;
     }
 
-    static TCoord GetDefaultPenalty(void) {
-        return 500;
-    }
-    
-    static TCoord GetDefaultMinCoverage(void) {
+    /// Retrieve the default compartment penalty, in base pairs
+
+    static TCoord s_GetDefaultPenalty(void) {
         return 500;
     }
 
+    /// Retrieve the default minimum coverage, in base pairs
+    
+    static TCoord s_GetDefaultMinCoverage(void) {
+        return 500;
+    }
+
+    /// Identify compartments.
+    ///
+    /// @param  cross_filter
+    ///    When activated, cross filtering will ensure that only 
+    ///    the alignments that provided non-ambguous mapping between 
+    ///    the sequences will be reported in the output.
 
     size_t Run(bool cross_filter = false); // do the compartment search
 
-    // order compartments by lower subj coordinate
+    ///  Order compartments by lower subj coordinate
+
     void OrderCompartments(void);
 
-    // single compartment representation
+    /// Individual compartment representation.
+    /// Compartment members are the hits comprising the compartment.
+
     class CCompartment {
 
     public:
         
+        /// Create an empty compartment
+
         CCompartment(void) {
             m_box[0] = m_box[2] = numeric_limits<TCoord>::max();
             m_box[1] = m_box[3] = 0;
         }
 
+        /// Retrieve compartment's members
+
         const THitRefs& GetMembers(void) {
             return m_members;
         }
     
+        /// Add a new member into the compartment
+
         void AddMember(const THitRef& hitref) {
             m_members.push_back(hitref);
         }
+
+        /// Assign all members of the compartment
 
         THitRefs& SetMembers(void) {
             return m_members;
         }
     
+        /// Make sure the compartment's box is up-to-date
+
         void UpdateMinMax(void);
 
+        /// Retrieve the compartment's strand (true == plus)
+        
         bool GetStrand(void) const;
+
+        /// Retrieve the first member.
+        /// 
+        /// @return
+        ///    A reference on the first member of the compartment,
+        ///    or a null reference if the compartment is empty.
 
         const THitRef GetFirst(void) const {
             m_iter = 0;
             return GetNext();
         }
         
+
+        /// Retrieve the next member.
+        /// 
+        /// @return
+        ///    A reference on the next member of the compartment,
+        ///    or a null reference if there are no more members.
+
         const THitRef GetNext(void) const {
             if(m_iter < m_members.size()) {
                 return m_members[m_iter++];
@@ -141,12 +217,17 @@ public:
             return THitRef(NULL);
         }
         
+        /// Retrieve the compartment's box.
+        ///
+        /// @return
+        ///    A const pointer at the compartment's box.
+
         const TCoord* GetBox(void) const {
             return m_box;
         }
               
-        static bool s_PLowerSubj(const CCompartment& c1,
-                                 const CCompartment& c2) {
+        // helper predicate
+        static bool s_PLowerSubj(const CCompartment& c1, const CCompartment& c2) {
 
             return c1.m_box[2] < c2.m_box[2];
         }
@@ -159,6 +240,7 @@ public:
     };
 
     // iterate through compartments
+
     CCompartment* GetFirst(void);
     CCompartment* GetNext(void);
 
@@ -200,6 +282,7 @@ private:
                              size_t min_compartment_hit_len);
 
     // helper predicate
+
     static bool s_PNullRef(const THitRef& hr) {
         return hr.IsNull();
     }
@@ -216,14 +299,40 @@ public:
     typedef typename TCompartmentFinder::THitRefs THitRefs;
     typedef typename TCompartmentFinder::TCoord   TCoord;
 
-    // construct and setup parameters
+    /// Construct the object and assign the parameters of the algorithm.
+    ///
+    /// @param  comp_penalty_bps
+    ///    Penalty to open a compartment, in base pairs.
+    /// @param  min_matches
+    ///    The minimum number of matching residues in a compartment, in base pairs.
+    /// @param  min_singleton_matches
+    ///    The minimum number of matching residues in a singleton, in base pairs.
+    /// @param  cross_filter
+    ///    Perform cross-filtering when true.
+
     CCompartmentAccessor(TCoord  comp_penalty_bps,
                          TCoord  min_matches,
                          TCoord  min_singleton_matches = numeric_limits<TCoord>::max(),
                          bool    cross_filter = false);
 
-    // construct, setup parameters and execute;
-    // [start,finish) are assumed to share the same query and subj
+    /// Construct the object; assign the parameters of the algorithm; execute.
+    /// The input range of alignments is assumed to contain the complete set of 
+    /// alignments between the same pair of sequences.
+    /// The alignments can be on one or both genomic strands.
+    ///
+    /// @param  start
+    ///    Start of the input range of input alignments.
+    /// @param  finish
+    ///    Stop of the input range of input alignments.
+    /// @param  comp_penalty_bps
+    ///    Penalty to open a compartment, in base pairs.
+    /// @param  min_matches
+    ///    The minimum number of matching residues in a compartment, in base pairs.
+    /// @param  min_singleton_matches
+    ///    The minimum number of matching residues in a singleton, in base pairs.
+    /// @param  cross_filter
+    ///    Perform cross-filtering when true.
+
     CCompartmentAccessor(typename THitRefs::iterator start, 
                          typename THitRefs::iterator finish,
                          TCoord  comp_penalty_bps,
@@ -231,20 +340,51 @@ public:
                          TCoord  min_singleton_matches = numeric_limits<TCoord>::max(),
                          bool    cross_filter = false);
 
-    // execute: find compartments
+    /// Execute: identify compartments. The alignments can be on one 
+    /// or both genomic strands.
+    ///
+    /// @param  start
+    ///    Start of the input range of input alignments.
+    /// @param  finish
+    ///    Stop of the input range of input alignments.
+
     void Run(typename THitRefs::iterator start, 
              typename THitRefs::iterator finish);
     
-    // max intron
-    TCoord GetMaxIntron(void) const { return m_MaxIntron; }
+    /// Assign the maximum intron length, in base pairs
+
     void   SetMaxIntron(TCoord mi) { m_MaxIntron = mi; }
 
-    // iterate over the results
+    /// Retrieve the maximum intron length, in base pairs
+
+    TCoord GetMaxIntron(void) const { return m_MaxIntron; }
+
+    /// Initialize iteration over the results.
+    ///
+    /// @param  compartment
+    ///    The first identified compartment
+    /// @return
+    ///    true if more compartments are available
+
     bool GetFirst(THitRefs& compartment);
+
+    /// Proceed with iteration over the results.
+    ///
+    /// @param  compartment
+    ///    The next identified compartment
+    /// @return
+    ///    true if more compartments are available
+
     bool GetNext(THitRefs& compartment);
     
-    // retrieve the number of compartments as the pair: (total, valid).
-    // Valid are the compartments with identities above the minimum.
+    /// Retrieve the compartment counts.
+    ///
+    /// @return
+    ///    The first number in the pair is the total count;
+    ///    the second number is the number of compartments with the number of matches
+    ///    abive the minimum.
+    ///
+
     pair<size_t,size_t> GetCounts(void) const {
 
         // std::count() not supported on some platforms
@@ -258,9 +398,15 @@ public:
         return rv;
     }
     
-    // retrieve compartment by index
-    void Get(size_t i, THitRefs& compartment) const {
-        compartment = m_pending[i];
+    /// Retrieve a compartment by index.
+    ///
+    /// @param idx
+    ///    The compartment's index
+    /// @param compartment
+    ///    The reference to receive the compartment requested.
+
+    void Get(size_t idx, THitRefs& compartment) const {
+        compartment = m_pending[idx];
     }
     
     const TCoord* GetBox(size_t i) const {
@@ -308,14 +454,14 @@ private:
 
 
 
-/////////////////////////////////////////////////////////////////////////////
+///  IMPLEMENTATION
 /////////////////////////////////////////////////////////////////////////////
 
 
-const double kPenaltyPerIntronBase = -2e-5; // a small penalty to prefer
+const double kPenaltyPerIntronBase (-2e-5); // a small penalty to prefer
                                             // more compact models among equal
 
-const double kPenaltyPerIntronPos  = -1e-9; // a small penalty to favor uniform
+const double kPenaltyPerIntronPos  (-1e-9); // a small penalty to favor uniform
                                             // selection among equivalent chains
 
 template<class THit>
@@ -346,7 +492,7 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     typename THitRefs::const_iterator finish ):
 
     m_intron_max(s_GetDefaultMaxIntron()),
-    m_penalty(GetDefaultPenalty()),
+    m_penalty(s_GetDefaultPenalty()),
     m_MinMatches(1),
     m_MinSingletonMatches(1),
     m_iter(-1)
@@ -355,7 +501,7 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     copy(start, finish, m_hitrefs.begin());
 }
 
-// accumulate matches on query
+// Query match accumulator
 template<class THit>
 class CQueryMatchAccumulator:
     public binary_function<double, CRef<THit>, double>
