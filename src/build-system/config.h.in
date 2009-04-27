@@ -585,6 +585,10 @@
 /* Define to 1 when building binaries for public release. */
 #undef NCBI_BIN_RELEASE
 
+/* Define to 1 if unable to locate an appropriate
+   libboost_unit_test_framework${BOOST_TAG}-static.a. */
+#undef NCBI_BOOST_TEST_DLL
+
 /* Compiler name */
 #undef NCBI_COMPILER
 

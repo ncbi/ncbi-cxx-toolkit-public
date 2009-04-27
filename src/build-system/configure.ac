@@ -4089,6 +4089,7 @@ if test "$with_boost" != "no"; then
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
+   test -n "$BOOST_PATH"  ||  BOOST_LIBPATH_=/usr/lib
    boost_path_digits=`basename $BOOST_PATH | sed -e 's/.0$//' | tr -cd 0123456789`
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
@@ -4128,7 +4129,6 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
          ;;
    esac
-   AC_MSG_CHECKING([for Boost library name tag])
    case "$ncbi_cv_lib_boost_version" in
       0_* | 1_[[0-9]] | 1_[[0-9]]_* | 1_[[0-2]][[0-9]] | 1_[[0-2]][[0-9]]_* ) ;;
       1_3[[0-3]] | 1_3[[0-4]]_* )
@@ -4147,6 +4147,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
             [If so, please re-run this script with the flag --without-boost.])
          ;;
    esac
+   AC_MSG_CHECKING([for Boost library name tag])
    boost_compiler_version=`echo $compiler_version | cut -c1-2`
    case "$with_boost_tag" in
       yes | "" )
@@ -4161,21 +4162,30 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
             *:COMPAQ)    BOOST_TAG="-tru" ;;
             *:MSVC)      BOOST_TAG="-vc"  ;;
          esac
-         if test "$with_mt" = "yes"; then
-            case "$host_os" in
-               # No more special casing, as we always force a distinction.
-               # darwin* ) ;; # threading always implicitly enabled
-               # IRIX*   ) ;; # threading always disabled (unsupported)
-               *       ) BOOST_TAG="${BOOST_TAG}-mt" ;;
-            esac
-         fi
-         case "$BOOST_TAG" in
-            *-mt) ;;
-            *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
-         esac
-         test "$with_debug" = "no"   ||  BOOST_TAG="${BOOST_TAG}-d"
-         BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
-         test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"
+         test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
+         test "$with_debug" = "yes"  &&  BOOST_D=-d
+         test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
+         found=no
+         for bvers in "-$ncbi_cv_lib_boost_version" ''; do         
+            for b64 in $BOOST_64 ''; do
+               for bmt in "$BOOST_MT" '-mt' ''; do
+                  for bd in "$BOOST_D" '' '-d'; do
+                     bsfx=$bmt$bd$bvers$b64
+                     if ls $BOOST_LIBPATH_/libboost*$BOOST_TAG$bsfx.* \
+                         >/dev/null 2>&1;
+                     then
+                        found=yes
+                        break
+                     fi
+                  done
+                  test "$found" = yes  &&  break
+               done
+               test "$found" = yes  &&  break
+            done
+            test "$found" = yes  &&  break
+         done
+
+         BOOST_TAG=$BOOST_TAG$bsfx
          AC_MSG_RESULT([$BOOST_TAG (autodetected)])
          ;;
       no )
@@ -4186,6 +4196,11 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          BOOST_TAG=$with_boost_tag
          AC_MSG_RESULT([$BOOST_TAG (by explicit request)])
          ;;
+   esac
+
+   case "$BOOST_TAG" in
+      *-mt*) ;;
+      *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
    esac
 
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
@@ -4230,6 +4245,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
    else
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
+       AC_DEFINE([NCBI_BOOST_TEST_DLL], 1,
+         [Define to 1 if unable to locate an appropriate
+          libboost_unit_test_framework${BOOST_TAG}-static.a.])
    fi
 
    BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
