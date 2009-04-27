@@ -448,6 +448,11 @@ public:
     void         Withdraw(TItemHandle handle)
         { m_Queue.Withdraw(handle); }
 
+    /// Get the number of requests in the queue
+    size_t       GetQueueSize(void) const
+        { return m_Queue.GetSize(); }
+
+
 protected:
 
     /// Create a new thread
