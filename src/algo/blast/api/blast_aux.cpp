@@ -558,8 +558,11 @@ FindGeneticCode(int genetic_code)
         return retval;
     }
 
-    CSeq_data gc_ncbieaa(CGen_code_table::GetNcbieaa(genetic_code),
-            CSeq_data::e_Ncbieaa);
+    const string kGenCode = CGen_code_table::GetNcbieaa(genetic_code);
+    if (kGenCode == kEmptyStr) {
+        return retval;
+    }
+    CSeq_data gc_ncbieaa(kGenCode, CSeq_data::e_Ncbieaa);
     CSeq_data gc_ncbistdaa;
 
     TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
