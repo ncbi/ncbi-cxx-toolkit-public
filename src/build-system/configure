@@ -9081,11 +9081,6 @@ _ACEOF
 else
 
 cat >>confdefs.h <<\_ACEOF
-#define NCBI_OS_MAC 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS "MAC"
 _ACEOF
 

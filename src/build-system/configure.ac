@@ -2371,7 +2371,9 @@ elif test "$x_have_unistd" = "yes" ; then
         ;;
    esac
 else
-   AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
+dnl Classic Mac OS, no longer supported; the following line is
+dnl commented out to avoid cluttering config.h.in.
+dnl AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
    NCBI_FEATURE(MacOS)
 fi
