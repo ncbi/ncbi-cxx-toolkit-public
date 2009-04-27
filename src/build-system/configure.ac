@@ -5211,8 +5211,7 @@ fi
 
 : ${LIBXSLT_PATH=$LIBXML_PATH}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libxslt, LIBXSLT, xslt,
- [AC_LANG_PROGRAM([#include <libxslt/xsltutils.h>],
-                  [xsltSaveResultToFilename("foo.xml.gz", NULL, NULL, 1)])],
+ [AC_LANG_PROGRAM([#include <libxslt/xslt.h>], [xsltInit()])],
  [], [$LIBXML_LIBS $Z_LIBS], [$LIBXML_INCLUDE])
 
 # XXX - they might be in different directories in some setups

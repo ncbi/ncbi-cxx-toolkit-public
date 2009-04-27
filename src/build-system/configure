@@ -27877,11 +27877,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <libxslt/xsltutils.h>
+#include <libxslt/xslt.h>
 int
 main ()
 {
-xsltSaveResultToFilename("foo.xml.gz", NULL, NULL, 1)
+xsltInit()
   ;
   return 0;
 }
