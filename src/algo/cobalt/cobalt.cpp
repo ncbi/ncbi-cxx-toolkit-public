@@ -319,9 +319,9 @@ CMultiAligner::x_ComputeTree(void)
     m_ProgressMonitor.stage = eTreeComputation;
 
     Blast_KarlinBlk karlin_blk;
-    if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk,
-                             -m_Options->GetGapOpenPenalty(),
-                             -m_Options->GetGapExtendPenalty(),
+    const Int4 kGapOpen = 11;
+    const Int4 kGapExtend = 1;
+    if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk, kGapOpen, kGapExtend,
                              m_Options->GetScoreMatrixName().c_str()) != 0) {
 
         NCBI_THROW(blast::CBlastException, eInvalidArgument,
