@@ -7,6 +7,7 @@
 #set -xv
 #set -x
 
+TAB="	"
 # defaults
 use_debug="no"
 use_dll="no"
@@ -170,14 +171,14 @@ cfgs="$sln_path,$build_results,$sln_name,$CONFIGURATION"
   echo CONFIGURATION=$CONFIGURATION
   echo
   echo "all :"
-  echo "\txcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION}"
-  echo "\tcd ..; echo $cfgs > cfgs.log"
+  echo "${TAB}xcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION}"
+  echo "${TAB}cd ..; echo $cfgs > cfgs.log"
   echo
   echo "clean :"
-  echo "\txcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION} clean"
+  echo "${TAB}xcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION} clean"
   echo
   echo "check :"
-  echo "\tcd ..; ./check.sh run"
+  echo "${TAB}cd ..; ./check.sh run"
   echo
   echo "all_r : all"
   echo "all_p : all"
