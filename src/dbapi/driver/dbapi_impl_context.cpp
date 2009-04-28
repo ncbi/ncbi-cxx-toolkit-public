@@ -496,8 +496,8 @@ s_TransformLoginData(string& server_name, string& user_name,
             break;
 
         password = info.GetValue();
-        typedef multimap<string, string>  TExtraMap;
-        typedef TExtraMap::const_iterator TExtraMapIt;
+        typedef CNcbiResourceInfo::TExtraValuesMap  TExtraMap;
+        typedef TExtraMap::const_iterator           TExtraMapIt;
         const TExtraMap& extra = info.GetExtraValues().GetPairs();
 
         TExtraMapIt it = extra.find("server");

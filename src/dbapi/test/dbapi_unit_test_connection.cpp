@@ -1215,12 +1215,13 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
         CNcbiResourceInfoFile file(CNcbiResourceInfoFile::GetDefaultFileName());
         string app_name = CNcbiApplication::Instance()->GetProgramDisplayName();
 
-        typedef CNcbiResourceInfo::TExtraValuesMap::value_type TExtraPair;
+        typedef CNcbiResourceInfo::TExtraValuesMap TExtraMap;
+        typedef TExtraMap::value_type              TExtraPair;
 
         {{
             CNcbiResourceInfo& info = file.GetResourceInfo_NC(app_name + "/some_user@some_server", "some_passwd");
             info.SetValue("allowed");
-            multimap<string, string>& extra = info.GetExtraValues_NC().GetPairs();
+            TExtraMap& extra = info.GetExtraValues_NC().GetPairs();
             extra.insert(TExtraPair("username", "anyone"));
             extra.insert(TExtraPair("server",   "MSDEV1"));
             extra.insert(TExtraPair("database", ""));
@@ -1244,7 +1245,7 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
         {{
             CNcbiResourceInfo& info = file.GetResourceInfo_NC(app_name + "/other_user@other_server:other_db", "other_passwd");
             info.SetValue("some_passwd");
-            multimap<string, string>& extra = info.GetExtraValues_NC().GetPairs();
+            TExtraMap& extra = info.GetExtraValues_NC().GetPairs();
             extra.insert(TExtraPair("username", "some_user"));
             extra.insert(TExtraPair("server",   "some_server"));
             extra.insert(TExtraPair("database", ""));
