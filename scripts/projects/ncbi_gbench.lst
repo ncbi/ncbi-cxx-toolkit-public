@@ -18,6 +18,7 @@ internal/mapview/objects
 internal/pubmedxml/Libs/TServer$
 internal/myncbi$
 internal/blast/DistribDbSupport
+internal/gpipe/align_db
 misc/third_party
 objects
 objmgr
