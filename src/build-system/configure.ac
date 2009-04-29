@@ -4245,9 +4245,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
    else
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
-       AC_DEFINE([NCBI_BOOST_TEST_DLL], 1,
-         [Define to 1 if unable to locate an appropriate
-          libboost_unit_test_framework${BOOST_TAG}-static.a.])
+   dnl AC_DEFINE([NCBI_BOOST_TEST_DLL], 1,
+   dnl   [Define to 1 if unable to locate an appropriate
+   dnl    libboost_unit_test_framework${BOOST_TAG}-static.a.])
    fi
 
    BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
@@ -4256,10 +4256,20 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
       
    AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
-      LIBS="$BOOST_LIBPATH $BOOST_TEST_UTF_LIBS $RT_LIBS $orig_LIBS"
-      [AC_LINK_IFELSE(
-          [AC_LANG_SOURCE(
-              [[#include <boost/test/unit_test.hpp>
+      LIBS="$RT_LIBS $orig_LIBS"
+      found=
+      for mode in included external; do 
+        if test "$mode" = external; then
+          CPPFLAGS="-DNCBI_BOOST_NOT_INCLUDED $CPPFLAGS"
+          LIBS="$BOOST_LIBPATH $BOOST_TEST_UTF_LIBS $LIBS"
+        fi
+        [AC_LINK_IFELSE(
+           [AC_LANG_SOURCE(
+              [[#ifdef NCBI_BOOST_NOT_INCLUDED
+                #  include <boost/test/unit_test.hpp>
+                #else
+                #  include <boost/test/included/unit_test.hpp>
+                #endif
                 using boost::unit_test::test_suite;
                 static void s_Test1(void) { BOOST_CHECK(1 == 1); }
                 test_suite* init_unit_test_suite(int, char*[])
@@ -4268,7 +4278,14 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
                     test->add(BOOST_TEST_CASE(&s_Test1), 0);
                     return test;
                 }]])],
-          [ncbi_cv_lib_boost_test=yes], [ncbi_cv_lib_boost_test=no])])
+           [found="$found:$mode"])]
+      done
+      [case "$found" in
+        :included:external ) ncbi_cv_lib_boost_test=yes           ;;
+        :included          ) ncbi_cv_lib_boost_test=included-only ;;
+        :external          ) ncbi_cv_lib_boost_test=external-only ;;
+        ''                 ) ncbi_cv_lib_boost_test=no            ;;
+      esac])
 
    BOOST_THREAD_LIBS=-lboost_thread${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_thread${BOOST_TAG}-static.a"; then
@@ -4311,7 +4328,12 @@ fi
 if test "$ncbi_cv_lib_boost_test" != "no"; then
    AC_DEFINE(HAVE_BOOST_TEST, 1,
              [Define to 1 if the `Boost.Test' libraries are available.])
-   NCBI_PACKAGE(Boost.Test)
+   if test "$ncbi_cv_lib_boost_test" != "included-only"; then
+      NCBI_PACKAGE(Boost.Test)
+   fi
+   if test "$ncbi_cv_lib_boost_test" != "external-only"; then
+      NCBI_PACKAGE(Boost.Test.Included)
+   fi
 else
    BOOST_TEST_PEM_LIBS=
    BOOST_TEST_PEM_STATIC_LIBS=

@@ -23485,12 +23485,7 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_spirit" >&6
        BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
    else
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
-
-cat >>confdefs.h <<\_ACEOF
-#define NCBI_BOOST_TEST_DLL 1
-_ACEOF
-
-   fi
+            fi
 
    BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
    BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
@@ -23502,14 +23497,24 @@ if test "${ncbi_cv_lib_boost_test+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
-      LIBS="$BOOST_LIBPATH $BOOST_TEST_UTF_LIBS $RT_LIBS $orig_LIBS"
-      cat >conftest.$ac_ext <<_ACEOF
+      LIBS="$RT_LIBS $orig_LIBS"
+      found=
+      for mode in included external; do
+        if test "$mode" = external; then
+          CPPFLAGS="-DNCBI_BOOST_NOT_INCLUDED $CPPFLAGS"
+          LIBS="$BOOST_LIBPATH $BOOST_TEST_UTF_LIBS $LIBS"
+        fi
+        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <boost/test/unit_test.hpp>
+#ifdef NCBI_BOOST_NOT_INCLUDED
+                #  include <boost/test/unit_test.hpp>
+                #else
+                #  include <boost/test/included/unit_test.hpp>
+                #endif
                 using boost::unit_test::test_suite;
                 static void s_Test1(void) { BOOST_CHECK(1 == 1); }
                 test_suite* init_unit_test_suite(int, char*[])
@@ -23541,15 +23546,21 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ncbi_cv_lib_boost_test=yes
+  found="$found:$mode"
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ncbi_cv_lib_boost_test=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
+      done
+      case "$found" in
+        :included:external ) ncbi_cv_lib_boost_test=yes           ;;
+        :included          ) ncbi_cv_lib_boost_test=included-only ;;
+        :external          ) ncbi_cv_lib_boost_test=external-only ;;
+        ''                 ) ncbi_cv_lib_boost_test=no            ;;
+      esac
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_test" >&5
 echo "${ECHO_T}$ncbi_cv_lib_boost_test" >&6
@@ -23653,7 +23664,12 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST_TEST 1
 _ACEOF
 
-             WithPackages="$WithPackages${WithPackagesSep}Boost.Test"; WithPackagesSep=" "
+   if test "$ncbi_cv_lib_boost_test" != "included-only"; then
+                WithPackages="$WithPackages${WithPackagesSep}Boost.Test"; WithPackagesSep=" "
+   fi
+   if test "$ncbi_cv_lib_boost_test" != "external-only"; then
+                WithPackages="$WithPackages${WithPackagesSep}Boost.Test.Included"; WithPackagesSep=" "
+   fi
 else
    BOOST_TEST_PEM_LIBS=
    BOOST_TEST_PEM_STATIC_LIBS=
@@ -30277,7 +30293,7 @@ for x in MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCOD
           ;;
       esac
    done
-  for x in Z LocalZ BZ2 LocalBZ2 LZO2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI LocalSSS LocalNCBILS LocalMSGMAIL2 SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 OECHEM JPEG PNG TIFF UNGIF GIF XPM FreeType; do
+  for x in Z LocalZ BZ2 LocalBZ2 LZO2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI LocalSSS LocalNCBILS LocalMSGMAIL2 SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 OECHEM JPEG PNG TIFF UNGIF GIF XPM FreeType; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
