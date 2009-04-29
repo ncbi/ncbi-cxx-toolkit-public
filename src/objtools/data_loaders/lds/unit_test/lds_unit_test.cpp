@@ -206,6 +206,7 @@ BOOST_AUTO_TEST_CASE(LDS_Test_conflict)
 {
     s_InitLDSDir();
     s_CopyFile("lds_conflict1.asn");
+    s_MakeLDS();
     s_CopyFile("lds_conflict2.asn");
     s_MakeLDS();
     BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
