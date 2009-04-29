@@ -38,3 +38,6 @@ PowerMAC   : plain  : GCC.sh           --without-debug --without-mt --with-stati
 IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 Win32      : plain  : msvc800_prj  static  32  ReleaseDLL
+
+XCode      : plain  : Xcode.sh 30
+
