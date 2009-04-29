@@ -47,5 +47,7 @@ PowerMAC   : universal  : GCC.sh           --with-universal --without-debug --wi
 IntelMAC   : GCC        : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
 
 Win32      : 800-static : msvc800_prj  static  32  ReleaseDLL
-Win64      : 864-static : msvc800_prj  static  64  ReleaseDLL
+Win64      : 900-static : msvc900_prj  static  64  ReleaseDLL
+
+XCode      : plain      : Xcode.sh 30
 
