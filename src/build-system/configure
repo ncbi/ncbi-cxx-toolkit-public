@@ -23324,10 +23324,6 @@ echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
             test "$found" = yes  &&  break
          done
 
-         case "$bsfx" in
-            *-mt*) ;;
-            *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
-         esac
          BOOST_TAG=$BOOST_TAG$bsfx
          echo "$as_me:$LINENO: result: $BOOST_TAG (autodetected)" >&5
 echo "${ECHO_T}$BOOST_TAG (autodetected)" >&6
@@ -23342,6 +23338,11 @@ echo "${ECHO_T}none (by explicit request)" >&6
          echo "$as_me:$LINENO: result: $BOOST_TAG (by explicit request)" >&5
 echo "${ECHO_T}$BOOST_TAG (by explicit request)" >&6
          ;;
+   esac
+
+   case "$BOOST_TAG" in
+      *-mt*) ;;
+      *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
    esac
 
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
