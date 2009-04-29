@@ -32,12 +32,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <boost/test/auto_unit_test.hpp>
 #include <objtools/blast_format/seq_writer.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <corelib/ncbifile.hpp>
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
+#include <boost/test/auto_unit_test.hpp>
 
 USING_NCBI_SCOPE;
 
