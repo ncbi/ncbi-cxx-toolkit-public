@@ -11,9 +11,8 @@ SRC = unit_test_alt_sample
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = test_boost xncbi
-PRE_LIBS = $(BOOST_TEST_LIBS)
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 # Uncomment if you do not want it to run automatically as part of
 # "make check".

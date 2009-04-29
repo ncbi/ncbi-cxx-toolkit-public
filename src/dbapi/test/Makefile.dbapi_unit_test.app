@@ -14,13 +14,12 @@ STATIC_LIB = $(DBAPI_CTLIB) $(DBAPI_MYSQL) $(DBAPI_ODBC) $(DBAPI_SQLITE3) \
              ncbi_xdbapi_ftds $(FTDS_LIB) ncbi_xdbapi_ftds_odbc \
              $(FTDS64_ODBC_LIB) $(LIB)
 
-PRE_LIBS = $(BOOST_TEST_LIBS)
 LIBS =  $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 STATIC_LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) $(SQLITE3_LIBS) \
               $(MYSQL_LIBS) $(Z_LIBS) $(FTDS_LIBS) $(FTDS64_ODBC_LIBS) \
               $(LIBS)
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 CHECK_COPY = dbapi_unit_test.ini
 

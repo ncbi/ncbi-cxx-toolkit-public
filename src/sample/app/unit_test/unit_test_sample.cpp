@@ -41,18 +41,6 @@
 #include <corelib/ncbiapp.hpp>
 
 
-// This macro should be defined before inclusion of test_boost.hpp in all
-// "*.cpp" files inside executable except one. It is like function main() for
-// non-Boost.Test executables is defined only in one *.cpp file - other files
-// should not include it. If NCBI_BOOST_NO_AUTO_TEST_MAIN will not be defined
-// then test_boost.hpp will define such "main()" function for tests.
-//
-// Usually if your unit tests contain only one *.cpp file you should not
-// care about this macro at all.
-//
-//#define NCBI_BOOST_NO_AUTO_TEST_MAIN
-
-
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 

@@ -38,14 +38,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
+#define BOOST_TEST_NO_LIB
 #include <corelib/test_boost.hpp>
-#undef init_unit_test_suite
 
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/tuple/eat.hpp>
 
+#include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
 #include <boost/test/test_observer.hpp>
@@ -73,10 +73,6 @@
 
 
 namespace but = boost::unit_test;
-
-/// Prototype of global user-defined initialization function
-extern but::test_suite*
-NcbiInitUnitTestSuite( int argc, char* argv[] );
 
 
 BEGIN_NCBI_SCOPE
@@ -1157,7 +1153,7 @@ CNcbiTestApplication::ReEnableAllTests(void)
     x_EnableAllTests(true);
 
     // Disabled tests can accidentally become not included in full list if
-    // they were disabled in NcbiInitUnitTestSuite()
+    // they were disabled in initialization
     ITERATE(TUnitsSet, it, m_DisabledTests) {
         (*it)->p_enabled.set(true);
     }
@@ -1356,15 +1352,8 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
         m_Timeout = min(max(0.0, m_Timeout - 3), 0.9 * m_Timeout);
     }
 
-    but::test_suite* global_suite = NULL;
-
     x_CollectAllTests();
     if (AppMain(argc, argv) == 0 && m_RunCalled) {
-        global_suite = ::NcbiInitUnitTestSuite(argc, argv);
-
-        if (global_suite)
-            but::framework::master_test_suite().add(global_suite);
-
         // Call should be double to support tests with automatic registration
         // and without it at the same time.
         x_CollectAllTests();
@@ -1387,13 +1376,8 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
         }
     }
 
-    // This path we'll be if something've gone wrong
-    if (global_suite) {
-        but::framework::master_test_suite().remove(global_suite->p_id);
-    }
-    else {
-        x_EnableAllTests(false);
-    }
+    // This path we'll be if something have gone wrong
+    x_EnableAllTests(false);
 
     return NULL;
 }

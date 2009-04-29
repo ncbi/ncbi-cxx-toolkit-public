@@ -7,12 +7,11 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
-PRE_LIBS = $(BOOST_LIBS)
 LIB = test_boost gene_info xncbi
 
 LIBS = $(ORIG_LIBS)
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 CHECK_CMD     = gene_info_unit_test
 CHECK_COPY    = data

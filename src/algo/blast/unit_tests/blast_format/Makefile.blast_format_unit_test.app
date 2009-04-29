@@ -2,24 +2,23 @@
 
 APP = blast_format_unit_test
 SRC = seqalignfilter_unit_test seq_writer_unit_test \
-	showdefline_unit_test blastfmtutil_unit_test blast_test_util \
-	showalign_unit_test
+    showdefline_unit_test blastfmtutil_unit_test blast_test_util \
+    showalign_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-PRE_LIBS = $(BOOST_LIBS)
 LIB_ = test_boost $(BLAST_FORMATTER_LIBS) ncbi_xloader_blastdb_rmt \
-	$(BLAST_LIBS) $(OBJMGR_LIBS)
+    $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(PCRE_LIBS) \
-	$(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) \
+    $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = blast_format_unit_test
 CHECK_COPY = data
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 CHECK_AUTHORS = blastsoft

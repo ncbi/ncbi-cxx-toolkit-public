@@ -13,9 +13,7 @@ LIB = test_boost xncbi cobalt xalgoalignnw xalgophytree fastme biotree ncbi_xloa
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-PRE_LIBS = $(BOOST_LIBS)
-
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 CHECK_CMD = cobalt_unit_test
 CHECK_COPY = data

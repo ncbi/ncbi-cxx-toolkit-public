@@ -5,18 +5,17 @@ SRC = blastinput_unit_test blast_scope_src_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-PRE_LIBS = $(BOOST_LIBS)
 ENTREZ_LIBS = entrez2cli entrez2
 
 LIB_ = test_boost $(ENTREZ_LIBS) $(BLAST_INPUT_LIBS) \
-	ncbi_xloader_blastdb_rmt $(BLAST_LIBS) $(OBJMGR_LIBS)
+    ncbi_xloader_blastdb_rmt $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(BOOST_TEST_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) \
-		$(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) \
+        $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-REQUIRES = objects Boost.Test
+REQUIRES = objects Boost.Test.Included
 
 CHECK_CMD = blastinput_unit_test
 CHECK_COPY = data

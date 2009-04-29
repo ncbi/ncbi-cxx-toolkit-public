@@ -6,8 +6,7 @@ SRC = test_weakref
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = test_boost xncbi
-PRE_LIBS = $(BOOST_LIBS)
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 CHECK_CMD =

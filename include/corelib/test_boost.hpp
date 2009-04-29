@@ -36,15 +36,14 @@
 /// This header must be included before any Boost.Test header
 /// (if you have any).
 
+#ifdef BOOST_CHECK
+#  error "test_boost.hpp should be included before any Boost.Test header"
+#endif
+
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/expr.hpp>
 #include <corelib/ncbiargs.hpp>
-
-/// Redefinition of the name of global function used in Boost.Test for
-/// initialization. It is called now from NCBI wrapper function called before
-/// user-defined.
-#define init_unit_test_suite  NcbiInitUnitTestSuite
 
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
@@ -52,11 +51,9 @@
 #  undef numeric_limits
 #endif
 
-// By default BOOST_AUTO_TEST_MAIN will be defined
-#ifndef NCBI_BOOST_NO_AUTO_TEST_MAIN
-#  ifndef BOOST_AUTO_TEST_MAIN
-#    define BOOST_AUTO_TEST_MAIN
-#  endif
+// BOOST_AUTO_TEST_MAIN should not be defined - it is in test_boost library
+#ifdef BOOST_AUTO_TEST_MAIN
+#  undef BOOST_AUTO_TEST_MAIN
 #endif
 
 #include <boost/test/auto_unit_test.hpp>
