@@ -45,6 +45,12 @@
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/tuple/eat.hpp>
 
+// On Mac OS X, some corelib headers end up pulling in system headers
+// that #define nil as a macro that ultimately expands to __null,
+// breaking Boost's internal use of a struct nil.
+#ifdef nil
+#  undef nil
+#endif
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
