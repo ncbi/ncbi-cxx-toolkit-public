@@ -121,13 +121,13 @@ BOOST_AUTO_TEST_CASE(TestWithoutException)
     BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
 }
 
-BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 1);
+BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 2);
 BOOST_AUTO_TEST_CASE(TestTimeout)
 {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     if ( args["enable_TestTimeout"] ) {
         // This test will always fail due to timeout
-        SleepSec(2);
+        SleepSec(4);
     }
     else {
         cout << "To run TestTimeout pass flag '-enable_TestTimeout'" << endl;
