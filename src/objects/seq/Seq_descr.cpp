@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/seq/Seq_descr.hpp>
 
+#include <corelib/ncbi_param.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -50,6 +52,19 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CSeq_descr::~CSeq_descr(void)
 {
+}
+
+NCBI_PARAM_DECL(bool, OBJECTS, SEQ_DESCR_ALLOW_EMPTY);
+NCBI_PARAM_DEF_EX(bool, OBJECTS, SEQ_DESCR_ALLOW_EMPTY, false,
+                  eParam_NoThread, OBJECTS_SEQ_DESCR_ALLOW_EMPTY);
+
+void CSeq_descr::PostRead(void)
+{
+    static NCBI_PARAM_TYPE(OBJECTS, SEQ_DESCR_ALLOW_EMPTY) sx_Value;
+    if ( !sx_Value.Get() && Get().empty() ) {
+        NCBI_THROW(CSerialException, eInvalidData,
+                   "empty Seq-descr is not allowed");
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

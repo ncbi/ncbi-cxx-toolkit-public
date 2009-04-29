@@ -59,6 +59,8 @@ public:
     // destructor
     ~CSeq_descr(void);
 
+    void PostRead(void);
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_descr(const CSeq_descr& value);
@@ -74,6 +76,7 @@ CSeq_descr::CSeq_descr(void)
 {
 }
 
+NCBISER_HAVE_POST_READ(CSeq_descr)
 
 /////////////////// end of CSeq_descr inline methods
 
