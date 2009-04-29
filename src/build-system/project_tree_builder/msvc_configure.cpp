@@ -32,6 +32,9 @@
 #include "proj_builder_app.hpp"
 
 #include "ptb_err_codes.hpp"
+#ifdef NCBI_XCODE_BUILD
+  #include <sys/utsname.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -254,17 +257,31 @@ void CMsvcConfigure::AnalyzeDefines(
     signature += "_";
     signature += CMsvc7RegSettings::GetMsvcVersionName();
     signature += "-" + config.m_Name;
+#ifdef NCBI_XCODE_BUILD
+    string tmp = CMsvc7RegSettings::GetRequestedArchs();
+    NStr::ReplaceInPlace(tmp, " ", "_");
+    signature += "_" + tmp;
+    signature += "--";
+    struct utsname u;
+    if (uname(&u) == 0) {
+        signature += string(u.machine) + string("-apple-") + string(u.sysname) + string(u.release);
+    } else {
+        signature += HOST;
+    }
+    signature += "-";
+    {
+        char hostname[255];
+        string tmp1, tmp2;
+        if (0 == gethostname(hostname, 255))
+            NStr::SplitInTwo(hostname,".", tmp1, tmp2);
+            signature += tmp1;
+    }
+#else
     signature += "--";
     signature += HOST;
     signature += "-";
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
-    }
-#ifdef NCBI_XCODE_BUILD
-    {
-        char hostname[255];
-        if (0 == gethostname(hostname, 255))
-            signature += hostname;
     }
 #endif
 
