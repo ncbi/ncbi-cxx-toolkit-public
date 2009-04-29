@@ -48,15 +48,44 @@ USING_SCOPE(sequence);
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
-    : m_HasBiosrcFeats(eSFS_Unknown)
+    : m_HasBiosrcFeats(eSFS_Unknown), m_Low_Quality_Fsa(false)
 
 {
+    m_Low_Quality_Fsa.AddWord ("heterogeneous population sequenced", 1);
+    m_Low_Quality_Fsa.AddWord ("low-quality sequence region", 2);
+    m_Low_Quality_Fsa.AddWord ("unextendable partial coding region", 3);
+    m_Low_Quality_Fsa.Prime ();
 }
 
 // destructor
 CDeflineGenerator::~CDeflineGenerator (void)
 
 {
+}
+
+bool CDeflineGenerator::x_CDShasLowQualityException (
+    const CSeq_feat& sft
+)
+
+{
+    if (! FEATURE_CHOICE_IS (sft, NCBI_SEQFEAT(Cdregion))) return false;
+    if (! sft.IsSetExcept()) return false;
+    if (! sft.GetExcept()) return false;
+    if (! sft.IsSetExcept_text()) return false;
+
+    const string& str = sft.GetExcept_text();
+    int current_state = 0;
+    FOR_EACH_CHAR_IN_STRING (str_itr, str) {
+        const char ch = *str_itr;
+        int next_state = m_Low_Quality_Fsa.GetNextState (current_state, ch);
+        if (m_Low_Quality_Fsa.IsMatchFound (next_state)) {
+            return true;
+        }
+        current_state = next_state;
+    }
+
+
+    return false;
 }
 
 // set instance variables from Seq-inst, Seq-ids, MolInfo, etc., but not
@@ -1083,6 +1112,7 @@ string CDeflineGenerator::x_TitleFromProtein (
 )
 
 {
+    CConstRef<CSeq_feat>  cds_feat;
     CConstRef<CProt_ref>  prot;
     CConstRef<CSeq_feat>  prot_feat;
     CConstRef<CGene_ref>  gene;
@@ -1175,6 +1205,19 @@ string CDeflineGenerator::x_TitleFromProtein (
 
     if (result.empty()) {
         result = "unnamed protein product";
+    }
+
+    const CBioseq_Handle& hnd = scope.GetBioseqHandle (bioseq);
+    cds_feat = GetCDSForProduct (hnd);
+    if (cds_feat) {
+        const CSeq_feat& cds = (*cds_feat);
+        if (x_CDShasLowQualityException (cds)) {
+          const string& low_qual = "LOW QUALITY PROTEIN: ";
+          if (NStr::FindNoCase (result, low_qual, 0) == NPOS) {
+              string tmp = result;
+              result = low_qual + tmp;
+          }
+        }
     }
 
     // strip trailing periods, commas, and spaces

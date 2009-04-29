@@ -35,6 +35,7 @@
 /// API (CDeflineGenerator) for computing sequences' titles ("definitions").
 
 #include <objects/misc/sequence_macros.hpp>
+#include <util/strsearch.hpp>
 
 /** @addtogroup ObjUtilSequence
  *
@@ -95,6 +96,10 @@ private:
     void x_SetBioSrc (
         const CBioseq& bioseq,
         CScope& scope
+    );
+
+    bool x_CDShasLowQualityException (
+        const CSeq_feat& sft
     );
 
     string x_DescribeClones (void);
@@ -219,6 +224,9 @@ private:
     /// orgmod fields
     string m_Isolate;
     string m_Strain;
+
+    /// exception fields
+    CTextFsm<int> m_Low_Quality_Fsa;
 
     /// persistent state for blob to suppress unnecessary feature indexing
     enum ESourceFeatureStatus {
