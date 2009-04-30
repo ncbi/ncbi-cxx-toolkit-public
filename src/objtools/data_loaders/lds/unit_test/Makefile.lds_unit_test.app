@@ -1,6 +1,6 @@
 # $Id$
 
-REQUIRES = Boost.Test bdb objects
+REQUIRES = Boost.Test.Included bdb objects
 
 APP = lds_unit_test
 SRC = lds_unit_test

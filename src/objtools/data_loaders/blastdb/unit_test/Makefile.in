@@ -1,6 +1,6 @@
 APP_PROJ = blast_dataloader_unit_test
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

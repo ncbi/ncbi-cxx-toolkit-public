@@ -2,7 +2,7 @@
 
 APP_PROJ = seq_id_unit_test seqalign_unit_test mapper_unit_test
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

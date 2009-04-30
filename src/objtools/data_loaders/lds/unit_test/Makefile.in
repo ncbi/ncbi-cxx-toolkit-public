@@ -2,7 +2,7 @@
 
 APP_PROJ = lds_unit_test
 
-REQUIRES = Boost.Test bdb
+REQUIRES = Boost.Test.Included bdb
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

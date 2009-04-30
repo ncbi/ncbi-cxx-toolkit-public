@@ -2,7 +2,7 @@
 
 APP_PROJ = seqdb_unit_test
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

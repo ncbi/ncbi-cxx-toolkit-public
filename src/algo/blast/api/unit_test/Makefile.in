@@ -2,7 +2,7 @@
 
 APP_PROJ = blast_unit_test
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
