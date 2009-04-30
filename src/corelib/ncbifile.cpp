@@ -5366,7 +5366,6 @@ CFileLock::~CFileLock()
         NCBI_REPORT_EXCEPTION_X(4,
                                 "CFileLock destructor: Unlock() failed", e);
     }
-    delete m_Lock;
 
     if (m_CloseHandle) {
 #if defined(NCBI_OS_MSWIN)

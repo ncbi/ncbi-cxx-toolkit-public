@@ -3121,11 +3121,11 @@ protected:
     void x_Init(const char* filename, EType type, off_t offset, size_t length);
 
 private:
-    TFileHandle  m_Handle;      ///< System file handle.
-    bool         m_CloseHandle; ///< Need to close file handle in destructor.
-    TFlags       m_Flags;       ///< General flags.
-    bool         m_IsLocked;    ///< Lock established.
-    SLock*       m_Lock;        ///< Offset and length of the locked area.
+    TFileHandle    m_Handle;      ///< System file handle.
+    bool           m_CloseHandle; ///< Need to close file handle in destructor.
+    TFlags         m_Flags;       ///< General flags.
+    bool           m_IsLocked;    ///< Lock established.
+    AutoPtr<SLock> m_Lock;        ///< Offset and length of the locked area.
 
 private:
     // Prevent copying
