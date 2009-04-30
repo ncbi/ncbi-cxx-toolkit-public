@@ -165,22 +165,73 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 /// Each parameter must be declared and defined using the macros
 ///
 
+
+// Internal definitions
+#define X_NCBI_PARAM_DECLNAME(section, name)                                \
+    SNcbiParamDesc_##section##_##name
+
+#define X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name)                   \
+    scope::SNcbiParamDesc_##section##_##name
+
+#define X_NCBI_PARAM_ENUMNAME(section, name)                                \
+    s_EnumData_##section##_##name
+
+// Common part of the param description structure. 'desctype' can be
+// SParamDescription or SParamEnumDescription.
+#define X_NCBI_PARAM_DESC_DECL(type, desctype)                              \
+    {                                                                       \
+        typedef type TValueType;                                            \
+        typedef desctype<TValueType> TDescription;                          \
+        typedef CStaticTls< type > TTls;                                    \
+        static TDescription sm_ParamDescription;                            \
+        static TValueType sm_Default;                                       \
+        static bool sm_DefaultInitialized;                                  \
+        static TTls sm_ValueTls;                                            \
+        static CParamBase::EParamState sm_State;                            \
+    }
+
+// Common definitions related to enum parser.
+#define X_NCBI_PARAM_ENUM_PARSER_DECL(type)                                 \
+    EMPTY_TEMPLATE inline                                                   \
+    CParamParser< SParamEnumDescription< type > >::TValueType               \
+    CParamParser< SParamEnumDescription< type > >::                         \
+    StringToValue(const string&     str,                                    \
+                  const TParamDesc& descr)                                  \
+    { return CEnumParser< type >::StringToEnum(str, descr); }               \
+    EMPTY_TEMPLATE inline string                                            \
+    CParamParser< SParamEnumDescription< type > >::                         \
+    ValueToString(const TValueType& val,                                    \
+                  const TParamDesc& descr)                                  \
+    { return CEnumParser< type >::EnumToString(val, descr); }
+
+// Defenition of SNcbiParamDesc_XXXX static members common for normal
+// and enum parameters.
+#define X_NCBI_PARAM_STATIC_DEF(type, descname, defval)                     \
+    type descname::sm_Default = defval;                                     \
+    bool descname::sm_DefaultInitialized = false;                           \
+    descname::TTls descname::sm_ValueTls;                                   \
+    CParamBase::EParamState descname::sm_State = CParamBase::eState_NotSet  \
+
+
 /// Generate typename for a parameter from its {section, name} attributes
-#define NCBI_PARAM_TYPE(section, name)          \
-    CParam<SNcbiParamDesc_##section##_##name>
+#define NCBI_PARAM_TYPE(section, name)                                      \
+    CParam< X_NCBI_PARAM_DECLNAME(section, name) >
 
 
 /// Parameter declaration. Generates struct for storing the parameter.
 /// Section and name may be used to set default value through a
 /// registry or environment variable section_name.
 /// @sa NCBI_PARAM_DEF
-#define NCBI_PARAM_DECL(type, section, name)                      \
-    struct SNcbiParamDesc_##section##_##name                      \
-    {                                                             \
-        typedef type TValueType;                                  \
-        typedef SParamDescription<TValueType> TDescription;       \
-        static TDescription sm_ParamDescription;                  \
-    }
+#define NCBI_PARAM_DECL(type, section, name)                                \
+    struct X_NCBI_PARAM_DECLNAME(section, name)                             \
+    X_NCBI_PARAM_DESC_DECL(type, SParamDescription)
+
+
+/// Same as NCBI_PARAM_DECL but with export specifier (e.g. NCBI_XNCBI_EXPORT)
+/// @sa NCBI_PARAM_DECL
+#define NCBI_PARAM_DECL_EXPORT(expname, type, section, name)                \
+    struct expname X_NCBI_PARAM_DECLNAME(section, name)                     \
+    X_NCBI_PARAM_DESC_DECL(type, SParamDescription)
 
 
 /// Enum parameter declaration. In addition to NCBI_PARAM_DECL also
@@ -188,84 +239,87 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 /// enum values.
 /// @sa NCBI_PARAM_ENUM_ARRAY
 /// @sa NCBI_PARAM_ENUM_DEF
-#define NCBI_PARAM_ENUM_DECL(type, section, name)                 \
-                                                                  \
-    EMPTY_TEMPLATE inline                                         \
-    CParamParser< SParamEnumDescription< type > >::TValueType     \
-    CParamParser< SParamEnumDescription< type > >::               \
-    StringToValue(const string&     str,                          \
-                  const TParamDesc& descr)                        \
-    { return CEnumParser< type >::StringToEnum(str, descr); }     \
-                                                                  \
-    EMPTY_TEMPLATE inline string                                  \
-    CParamParser< SParamEnumDescription< type > >::               \
-    ValueToString(const TValueType& val,                          \
-                  const TParamDesc& descr)                        \
-    { return CEnumParser< type >::EnumToString(val, descr); }     \
-                                                                  \
-    struct SNcbiParamDesc_##section##_##name                      \
-    {                                                             \
-        typedef type TValueType;                                  \
-        typedef SParamEnumDescription<TValueType> TDescription;   \
-        static TDescription sm_ParamDescription;                  \
-    }
+#define NCBI_PARAM_ENUM_DECL(type, section, name)                           \
+    X_NCBI_PARAM_ENUM_PARSER_DECL(type)                                     \
+    struct X_NCBI_PARAM_DECLNAME(section, name)                             \
+    X_NCBI_PARAM_DESC_DECL(type, SParamEnumDescription)
+
+
+/// Same as NCBI_PARAM_ENUM_DECL but with export specifier (e.g. NCBI_XNCBI_EXPORT)
+/// @sa NCBI_PARAM_ENUM_DECL
+#define NCBI_PARAM_ENUM_DECL_EXPORT(expname, type, section, name)           \
+    X_NCBI_PARAM_ENUM_PARSER_DECL(type)                                     \
+    struct expname X_NCBI_PARAM_DECLNAME(section, name)                     \
+    X_NCBI_PARAM_DESC_DECL(type, SParamEnumDescription)
 
 
 /// Parameter definition. "value" is used to set the initial parameter
 /// value, which may be overriden by registry or environment.
 /// @sa NCBI_PARAM_DECL
-#define NCBI_PARAM_DEF(type, section, name, default_value)     \
-    SParamDescription< type >                                  \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
-        { #section, #name, 0, default_value, eParam_Default }
-
-
-/// Similar to NCBI_PARAM_DEF except it adds "scope" (class name or 
-/// namespace) to the parameter's type.
-/// @sa NCBI_PARAM_DECL, NCBI_PARAM_DEF
-#define NCBI_PARAM_DEF_IN_SCOPE(type, section, name, default_value, scope)    \
-    SParamDescription< type >                                  \
-    scope::SNcbiParamDesc_##section##_##name::sm_ParamDescription =  \
-        { #section, #name, 0, default_value, eParam_Default }
-
-
-/// Static array of enum name+value pairs. Must be defined before
-/// NCBI_PARAM_ENUM_DEF
-/// @sa NCBI_PARAM_ENUM_DEF
-#define NCBI_PARAM_ENUM_ARRAY(type, section, name) \
-    static SEnumDescription< type > s_EnumData_##section##_##name[] =
-
-
-/// Enum parameter definition. Additional 'enums' argument should provide
-/// static array of SEnumDescription<type>.
-/// @sa NCBI_PARAM_ENUM_ARRAY
-#define NCBI_PARAM_ENUM_DEF(type, section, name, default_value) \
-    SParamEnumDescription< type >                               \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =    \
-        { #section, #name, 0, default_value, eParam_Default,    \
-          s_EnumData_##section##_##name,                        \
-          ArraySize(s_EnumData_##section##_##name) }
+#define NCBI_PARAM_DEF(type, section, name, default_value)                  \
+    SParamDescription< type >                                               \
+    X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
+        { #section, #name, 0, default_value, eParam_Default };              \
+    X_NCBI_PARAM_STATIC_DEF(type,                                           \
+        X_NCBI_PARAM_DECLNAME(section, name),                               \
+        default_value)
 
 
 /// Definition of a parameter with additional flags.
 /// @sa NCBI_PARAM_DEF
 /// @sa ENcbiParamFlags
-#define NCBI_PARAM_DEF_EX(type, section, name, default_value, flags, env) \
-    SParamDescription< type >                                             \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =              \
-        { #section, #name, #env, default_value, flags }
+#define NCBI_PARAM_DEF_EX(type, section, name, default_value, flags, env)   \
+    SParamDescription< type >                                               \
+    X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
+        { #section, #name, #env, default_value, flags };                    \
+    X_NCBI_PARAM_STATIC_DEF(type,                                           \
+        X_NCBI_PARAM_DECLNAME(section, name),                               \
+        default_value)
+
+
+/// Similar to NCBI_PARAM_DEF except it adds "scope" (class name or 
+/// namespace) to the parameter's type.
+/// @sa NCBI_PARAM_DECL, NCBI_PARAM_DEF
+#define NCBI_PARAM_DEF_IN_SCOPE(type, section, name, default_value, scope)   \
+    SParamDescription< type >                                                \
+    X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name)::sm_ParamDescription = \
+        { #section, #name, 0, default_value, eParam_Default };               \
+    X_NCBI_PARAM_STATIC_DEF(type,                                            \
+        X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name),                   \
+        default_value)
+
+
+// Static array of enum name+value pairs.
+#define NCBI_PARAM_ENUM_ARRAY(type, section, name)                        \
+    static SEnumDescription< type > X_NCBI_PARAM_ENUMNAME(section, name)[] =
+
+/// Enum parameter definition. Additional 'enums' argument should provide
+/// static array of SEnumDescription<type>.
+/// @sa NCBI_PARAM_ENUM_ARRAY
+#define NCBI_PARAM_ENUM_DEF(type, section, name, default_value)             \
+    SParamEnumDescription< type >                                           \
+    X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
+        { #section, #name, 0, default_value, eParam_Default,                \
+          X_NCBI_PARAM_ENUMNAME(section, name),                             \
+          ArraySize(X_NCBI_PARAM_ENUMNAME(section, name)) };                \
+    X_NCBI_PARAM_STATIC_DEF(type,                                           \
+        X_NCBI_PARAM_DECLNAME(section, name),                               \
+        default_value)
 
 
 /// Definition of an enum parameter with additional flags.
 /// @sa NCBI_PARAM_ENUM_DEF
 /// @sa ENcbiParamFlags
-#define NCBI_PARAM_ENUM_DEF_EX(type, section, name,            \
-                               default_value, flags, env)      \
-    SParamEnumDescription< type >                              \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
-        { #section, #name, #env, default_value, flags,         \
-          s_EnumData_##section##_##name,                       \
-          ArraySize(s_EnumData_##section##_##name) }
+#define NCBI_PARAM_ENUM_DEF_EX(type, section, name,                         \
+                               default_value, flags, env)                   \
+    SParamEnumDescription< type >                                           \
+    X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
+        { #section, #name, #env, default_value, flags,                      \
+          X_NCBI_PARAM_ENUMNAME(section, name),                             \
+          ArraySize(X_NCBI_PARAM_ENUMNAME(section, name)) };                \
+    X_NCBI_PARAM_STATIC_DEF(type,                                           \
+        X_NCBI_PARAM_DECLNAME(section, name),                               \
+        default_value)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -328,6 +382,16 @@ public:
 
 class NCBI_XNCBI_EXPORT CParamBase
 {
+public:
+    /// Current param state flag - allows to check if the global default
+    /// value has been loaded from the environment/INI file or set by user.
+    enum EParamState {
+        eState_NotSet = 0, ///< The param's value has not been set yet
+        eState_EnvVar = 1, ///< Value has been read from the environment
+        eState_Config = 2, ///< Value has been loaded from app. config
+        eState_User   = 3  ///< Value has been set by user
+    };
+
 protected:
     static SSystemMutex& s_GetLock(void);
 };
@@ -377,6 +441,7 @@ public:
     typedef typename TDescription::TDescription    TParamDescription;
     typedef typename TParamDescription::TValueType TValueType;
     typedef CParamParser<TParamDescription>        TParamParser;
+    typedef typename TDescription::TTls            TTls;
 
     /// Create parameter with the thread default or global default value.
     /// Changing defaults does not affect the existing parameter objects.
@@ -391,15 +456,6 @@ public:
     CParam(const string& section, const string& name);
 
     ~CParam(void) {}
-
-    /// Current param state flag - allows to check if the global default
-    /// value has been loaded from the environment/INI file or set by user.
-    enum EParamState {
-        eState_NotSet = 0, ///< The param's value has not been set yet
-        eState_EnvVar = 1, ///< Value has been read from the environment
-        eState_Config = 2, ///< Value has been loaded from app. config
-        eState_User   = 3  ///< Value has been set by user
-    };
 
     /// Get current state of the param.
     static EParamState GetState(void);
@@ -432,8 +488,6 @@ public:
     static void ResetThreadDefault(void);
 
 private:
-    typedef CStaticTls<TValueType> TTls;
-
     static TValueType& sx_GetDefault(bool force_reset = false);
     static TTls&       sx_GetTls    (void);
     static EParamState& sx_GetState(void);

@@ -274,20 +274,19 @@ template<class TDescription>
 typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
-    static TValueType s_Default =
-        TDescription::sm_ParamDescription.default_value;
-    static bool s_DefaultInitialized = false;
+    TValueType& def = TDescription::sm_Default;
+    bool& def_init = TDescription::sm_DefaultInitialized;
     if ( !TDescription::sm_ParamDescription.section ) {
         // Static data not initialized yet, nothing to do.
-        return s_Default;
+        return def;
     }
-    if ( !s_DefaultInitialized ) {
-        s_Default = TDescription::sm_ParamDescription.default_value;
-        s_DefaultInitialized = true;
+    if ( !def_init ) {
+        def = TDescription::sm_ParamDescription.default_value;
+        def_init = true;
     }
 
     if ( force_reset ) {
-        s_Default = TDescription::sm_ParamDescription.default_value;
+        def = TDescription::sm_ParamDescription.default_value;
         sx_GetState() = eState_NotSet;
     }
 
@@ -298,8 +297,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                                 TDescription::sm_ParamDescription.env_var_name,
                                 "");
         if ( !config_value.empty() ) {
-            s_Default =
-                TParamParser::StringToValue(config_value,
+            def = TParamParser::StringToValue(config_value,
                 TDescription::sm_ParamDescription);
         }
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -307,7 +305,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
             ? eState_Config : eState_EnvVar;
     }
 
-    return s_Default;
+    return def;
 }
 
 
@@ -315,8 +313,7 @@ template<class TDescription>
 typename CParam<TDescription>::TTls&
 CParam<TDescription>::sx_GetTls(void)
 {
-    static TTls s_ValueTls;
-    return s_ValueTls;
+    return TDescription::sm_ValueTls;
 }
 
 
@@ -324,8 +321,7 @@ template<class TDescription>
 typename CParam<TDescription>::EParamState&
 CParam<TDescription>::sx_GetState(void)
 {
-    static EParamState s_State = eState_NotSet;
-    return s_State;
+    return TDescription::sm_State;
 }
 
 
