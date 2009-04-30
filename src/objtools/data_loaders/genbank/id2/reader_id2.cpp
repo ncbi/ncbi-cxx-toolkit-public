@@ -78,10 +78,10 @@ BEGIN_SCOPE(objects)
 
 #define DEFAULT_SERVICE  "ID2"
 #define DEFAULT_NUM_CONN 3
-#define DEFAULT_RETRY_COUNT 3
+#define DEFAULT_RETRY_COUNT 5
 #define DEFAULT_TIMEOUT  20
+#define DEFAULT_OPEN_TIMEOUT  5
 #define MAX_MT_CONN      5
-
 
 //#define GENBANK_ID2_RANDOM_FAILS 1
 #define GENBANK_ID2_RANDOM_FAILS_FREQUENCY 20
@@ -133,6 +133,7 @@ NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE,
 
 CId2Reader::CId2Reader(int max_connections)
     : m_ServiceName(DEFAULT_SERVICE),
+      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT),
       m_Timeout(DEFAULT_TIMEOUT)
 {
     if ( max_connections == 0 ) {
@@ -163,6 +164,11 @@ CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
         m_ServiceName =
             NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID2)::GetDefault();
     }
+    m_OpenTimeout = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID2_PARAM_OPEN_TIMEOUT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_OPEN_TIMEOUT);
     m_Timeout = conf.GetInt(
         driver_name,
         NCBI_GBLOADER_READER_ID2_PARAM_TIMEOUT,
@@ -290,7 +296,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
     }
     
     STimeout tmout;
-    tmout.sec = m_Timeout;
+    tmout.sec = m_OpenTimeout;
     tmout.usec = 0;
 
     AutoPtr<CConn_IOStream> stream;
@@ -334,6 +340,8 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
                    "connection initialization failed: "+
                    x_ConnDescription(*stream));
     }
+    tmout.sec = m_Timeout;
+    CONN_SetTimeout(stream->GetCONN(), eIO_ReadWrite, &tmout);
 
     RequestSucceeds(conn);
     return stream.release();

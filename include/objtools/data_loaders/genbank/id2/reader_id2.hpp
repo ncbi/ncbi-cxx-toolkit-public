@@ -100,7 +100,7 @@ protected:
 
 private:
     string m_ServiceName;
-    int    m_Timeout;
+    int    m_OpenTimeout, m_Timeout;
 
     typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
     TConnections   m_Connections;

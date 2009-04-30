@@ -70,11 +70,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 #define DEFAULT_SERVICE  "ID1"
 #define DEFAULT_NUM_CONN 3
-#define DEFAULT_RETRY_COUNT 3
+#define DEFAULT_RETRY_COUNT 5
 #define DEFAULT_TIMEOUT  20
+#define DEFAULT_OPEN_TIMEOUT  5
 #define MAX_MT_CONN      5
 
 //#define GENBANK_ID1_RANDOM_FAILS 1
@@ -152,6 +152,7 @@ enum EDebugLevel
 
 CId1Reader::CId1Reader(int max_connections)
     : m_ServiceName(DEFAULT_SERVICE),
+      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT),
       m_Timeout(DEFAULT_TIMEOUT)
 {
     if ( max_connections == 0 ) {
@@ -177,6 +178,11 @@ CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
     if ( m_ServiceName.empty() ) {
         m_ServiceName = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID1)::GetDefault();
     }
+    m_OpenTimeout = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID1_PARAM_OPEN_TIMEOUT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_OPEN_TIMEOUT);
     m_Timeout = conf.GetInt(
         driver_name,
         NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT,
@@ -285,7 +291,7 @@ CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
     STimeout tmout;
-    tmout.sec = m_Timeout;
+    tmout.sec = m_OpenTimeout;
     tmout.usec = 0;
     
     AutoPtr<SConnNetInfo, ConnInfoDeleter1> info
@@ -311,6 +317,8 @@ CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
         CDebugPrinter s(conn);
         s << "New connection: " << x_ConnDescription(*stream); 
     }
+    tmout.sec = m_Timeout;
+    CONN_SetTimeout(stream->GetCONN(), eIO_ReadWrite, &tmout);
 
     RequestSucceeds(conn);
     return stream.release();

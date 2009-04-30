@@ -114,7 +114,7 @@ protected:
 
 private:
     string m_ServiceName;
-    int    m_Timeout;
+    int    m_OpenTimeout, m_Timeout;
 
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_IOStream* stream);
 
