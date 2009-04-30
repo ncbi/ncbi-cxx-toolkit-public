@@ -109,6 +109,11 @@ void CNSSubmitRemoteJobApp::Init(void)
 
     arg_desc->AddFlag("batch", "Use batch submit mode");
 
+    arg_desc->AddOptionalKey("bsize",
+                             "batch_size",
+                             "Size of submission batch",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("args", 
                              "cmd_args",
                              "Cmd args for the remote application",
@@ -288,11 +293,16 @@ int CNSSubmitRemoteJobApp::Run(void)
         return 0;
     } if (args["jf"]) {
         CGridJobBatchSubmitter* job_batch_submitter = NULL;
-        if ( args["batch"] )
+        if ( args["batch"]  ||  args["bsize"])
             job_batch_submitter = &GetGridClient().GetJobBatchSubmitter();
+
+        int batch_size = 1000;
+        if (args["bsize"])
+            batch_size = args["bsize"].AsInteger();
 
         CNcbiIstream& is = args["jf"].AsInputFile();
 
+        int njob_in_batch = 0;
         while ( !is.eof() && is.good() ) {
             string line;
             NcbiGetlineEOL(is, line);
@@ -362,6 +372,16 @@ int CNSSubmitRemoteJobApp::Run(void)
                 job_batch_submitter->SetJobMask(jmask);
                 if (!jtags.empty())
                     job_batch_submitter->SetJobTags(jtags);
+                if (++njob_in_batch >= batch_size) {
+                    job_batch_submitter->Submit();
+                    if (out) {
+                        const vector<CNetScheduleJob>& jobs = job_batch_submitter->GetBatch();
+                        ITERATE(vector<CNetScheduleJob>, it, jobs)
+                            *out << it->job_id << NcbiEndl;
+                    }
+                    job_batch_submitter->Reset();
+                    njob_in_batch = 0;
+                }
             }
         }
         if (job_batch_submitter) {
