@@ -50,6 +50,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
+#include <objects/general/Date.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -419,21 +420,24 @@ string GetAccessionForId(const objects::CSeq_id& id,
 }
 
 
-CConstRef<CSeq_id> FindLatestSequence(const CSeq_id& id, CScope& scope)
-{
-    return FindLatestSequence(CSeq_id_Handle::GetHandle(id), scope).GetSeqId();
-}
-
-
-CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh, CScope& scope)
+CSeq_id_Handle x_FindLatestSequence(const CSeq_id_Handle& idh,
+                                   CScope&               scope,
+                                   const CTime*          tlim)
 {
     CBioseq_Handle h = scope.GetBioseqHandle(idh);
     set<CSeq_id_Handle> visited;
     CSeq_id_Handle next = idh;
     while (h  &&  h.IsSetInst() && h.GetInst().IsSetHist()
         && h.GetInst().GetHist().IsSetReplaced_by()) {
+        const CSeq_hist_rec& rec = h.GetInst().GetHist().GetReplaced_by();
+
+        // Check if the next bioseq is newer than the limit.
+        if (tlim  &&  rec.IsSetDate()  &&
+            rec.GetDate().AsCTime().DiffTimeSpan(*tlim).GetSign() == ePositive) {
+            break;
+        }
         // Make sure the list of ids is not empty
-        if ( h.GetInst().GetHist().GetReplaced_by().GetIds().empty() ) {
+        if ( rec.GetIds().empty() ) {
             return CSeq_id_Handle();
         }
         visited.insert(next);
@@ -447,6 +451,33 @@ CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh, CScope& scope)
         h = scope.GetBioseqHandle(next);
     }
     return h ? next : CSeq_id_Handle();
+}
+
+
+CConstRef<CSeq_id> FindLatestSequence(const CSeq_id& id, CScope& scope)
+{
+    return x_FindLatestSequence(CSeq_id_Handle::GetHandle(id),
+        scope, NULL).GetSeqId();
+}
+
+CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh, CScope& scope)
+{
+    return x_FindLatestSequence(idh, scope, NULL);
+}
+
+CConstRef<CSeq_id> FindLatestSequence(const CSeq_id& id,
+                                      CScope&        scope,
+                                      const CTime&   tlim)
+{
+    return x_FindLatestSequence(CSeq_id_Handle::GetHandle(id),
+        scope, &tlim).GetSeqId();
+}
+
+CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh,
+                                  CScope&               scope,
+                                  const CTime&          tlim)
+{
+    return x_FindLatestSequence(idh, scope, &tlim);
 }
 
 
