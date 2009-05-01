@@ -1003,8 +1003,8 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
     m_IniParser->AddSymbol("BUILD_Dll",          IS_FLAG_DEFINED(DLL_BUILD));
     m_IniParser->AddSymbol("BUILD_Static",      !IS_FLAG_DEFINED(DLL_BUILD));
 
-    m_IniParser->AddSymbol("BUILD_Debug",        IS_FLAG_DEFINED(_DEBUG));
-    m_IniParser->AddSymbol("BUILD_Release",     !IS_FLAG_DEFINED(_DEBUG));
+    m_IniParser->AddSymbol("BUILD_Debug",        IS_VAR_DEFINED(_DEBUG));
+    m_IniParser->AddSymbol("BUILD_Release",     !IS_VAR_DEFINED(_DEBUG));
 }
 
 inline bool
