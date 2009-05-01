@@ -124,6 +124,9 @@ extern "C" {
  *       and, thus, are prohibited:  switching from https to http, and
  *       re-posting data (regradless of the transport, either http or https).
  *       This flag allows such redirects (if needed) to be honored.
+ *  fHCC_NoRetry --
+ *       do not attempt any auto-retries in case of failing connections
+ *       (this flag effectively means having SConnNetInfo::max_try set to 1).
  *
  * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "info->args")
  *       is performed by URL_Encode() and URL_Decode() -- "ncbi_connutil.[ch]".
@@ -140,7 +143,8 @@ typedef enum {
     fHCC_DropUnread       = 0x40, /* each microsession drops yet unread data */
     fHCC_NoUpread         = 0x80, /* do not use SOCK_ReadWhileWrite() at all */
     fHCC_Flushable        = 0x100,/* connector will really flush on Flush()  */
-    fHCC_InsecureRedirect = 0x200 /* any redirect will be honored            */
+    fHCC_InsecureRedirect = 0x200,/* any redirect will be honored            */
+    fHCC_NoRetry          = 0x400 /* no auto-retries allowed                 */
 } EHCC_Flags;
 typedef unsigned int THCC_Flags;  /* bitwise OR of "EHCC_Flags"              */
 
