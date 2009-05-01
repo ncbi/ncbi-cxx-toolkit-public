@@ -41,7 +41,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 
-#include <util/random_gen.hpp>
+#include <util/distribution.hpp>
 
 #include "test_netschedule_data.hpp"
 
@@ -57,147 +57,7 @@ typedef NCBI_PARAM_TYPE(output, time_distr) TParam_TimeDistr;
 NCBI_PARAM_DECL(double, output, failure_rate);
 typedef NCBI_PARAM_TYPE(output, failure_rate) TParam_FailureRate;
 
-/// @internal
-class CInvalidParamException : public CException
-{
-public:
-    enum EErrCode {
-        eUndefined = 1,
-        eNotANumber,
-        eInvalidCharacter
-    };
-
-    /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
-
-    // Standard exception boilerplate code.
-    NCBI_EXCEPTION_DEFAULT(CInvalidParamException, CException);
-};
-
-const char* CInvalidParamException::GetErrCodeString(void) const
-{
-    switch (GetErrCode()) {
-    case eUndefined:
-        return "eUndefined";
-
-    case eNotANumber:
-        return "eNotANumber";
-
-    case eInvalidCharacter:
-        return "eInvalidCharacter";
-
-    default:
-        return CException::GetErrCodeString();
-    }
-}
-
 static CRandom s_Random;
-
-///////////////////////////////////////////////////////////////////////
-// This class generates a random integer from a series of ranges
-// defined like this: 5, 6 - 9, 10 - 50
-class CDistribution
-{
-public:
-    void LoadFromParameter(const char* parameter_name,
-        const char* parameter_value);
-
-    unsigned GetNextValue() const;
-
-private:
-    typedef std::pair<unsigned, unsigned> TRange;
-    typedef std::vector<TRange> TRangeVector;
-
-    const char* SkipSpaces(const char* input_string);
-
-    TRangeVector m_RangeVector;
-};
-
-void CDistribution::LoadFromParameter(const char* parameter_name,
-    const char* parameter_value)
-{
-    if (*parameter_value == '\0') {
-        NCBI_THROW(CInvalidParamException, eUndefined,
-            string("Configuration parameter '") + parameter_name +
-                "' was not defined.");
-    }
-
-    m_RangeVector.clear();
-
-    const char* pos = parameter_value;
-
-    TRange new_range;
-
-    unsigned* current_bound_ptr = &new_range.first;
-    new_range.second = 0;
-
-    for (;;) {
-        pos = SkipSpaces(pos);
-
-        unsigned bound = (unsigned) (*pos - '0');
-
-        if (bound > 9) {
-            NCBI_THROW(CInvalidParamException, eNotANumber,
-                string("In configuration parameter '") + parameter_name +
-                    "': not a number at position " +
-                        NStr::UIntToString(pos - parameter_value + 1) + ".");
-        }
-
-        unsigned digit;
-
-        while ((digit = (unsigned) (*++pos - '0')) <= 9)
-            bound = bound * 10 + digit;
-
-        *current_bound_ptr = bound;
-
-        pos = SkipSpaces(pos);
-
-        switch (*pos) {
-        case '\0':
-            m_RangeVector.push_back(new_range);
-            return;
-
-        case ',':
-            m_RangeVector.push_back(new_range);
-            ++pos;
-            current_bound_ptr = &new_range.first;
-            new_range.second = 0;
-            break;
-
-        case '-':
-            ++pos;
-            current_bound_ptr = &new_range.second;
-            break;
-
-        default:
-            NCBI_THROW(CInvalidParamException, eInvalidCharacter,
-                string("In configuration parameter '") + parameter_name +
-                    "': invalid character at position " +
-                        NStr::UIntToString(pos - parameter_value + 1) + ".");
-        }
-    }
-}
-
-unsigned CDistribution::GetNextValue() const
-{
-    CRandom::TValue random_number = s_Random.GetRand();
-
-    TRangeVector::const_iterator random_range =
-        m_RangeVector.begin() + (random_number % m_RangeVector.size());
-
-    return random_range->second == 0 ? random_range->first :
-        random_range->first +
-            (random_number % (random_range->second - random_range->first + 1));
-}
-
-const char* CDistribution::SkipSpaces(const char* input_string)
-{
-    while (*input_string == ' ' || *input_string == '\t')
-        ++input_string;
-
-    return input_string;
-}
-
 
 /// Test application
 ///
@@ -210,8 +70,8 @@ public:
     int Run(void);
 
 private:
-    CDistribution m_SizeDistr;
-    CDistribution m_TimeDistr;
+    CDiscreteDistribution m_SizeDistr;
+    CDiscreteDistribution m_TimeDistr;
 };
 
 
@@ -255,10 +115,10 @@ void CTestNetScheduleNode::Init(void)
 
 int CTestNetScheduleNode::Run(void)
 {
-    m_SizeDistr.LoadFromParameter("size_distr",
-        TParam_SizeDistr::GetDefault().c_str());
-    m_TimeDistr.LoadFromParameter("time_distr",
-        TParam_TimeDistr::GetDefault().c_str());
+    m_SizeDistr.InitFromParameter("size_distr",
+        TParam_SizeDistr::GetDefault().c_str(), &s_Random);
+    m_TimeDistr.InitFromParameter("time_distr",
+        TParam_TimeDistr::GetDefault().c_str(), &s_Random);
 
     CArgs args = GetArgs();
 
