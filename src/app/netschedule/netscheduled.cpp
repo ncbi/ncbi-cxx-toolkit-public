@@ -2982,8 +2982,7 @@ int CNetScheduleDApp::Run(void)
 
 
         qdb->RunExecutionWatcherThread(min_run_timeout);
-        // DEBUG - turn off garbage collecting thread
-        //qdb->RunPurgeThread();
+        qdb->RunPurgeThread();
         qdb->RunNotifThread();
 
         server->SetQueueDB(qdb.release());

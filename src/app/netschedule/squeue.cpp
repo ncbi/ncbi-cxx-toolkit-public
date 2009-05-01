@@ -1141,7 +1141,6 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
 
             blacklisted_jobs = ai->GetBlacklistedJobs(curr);
             do {
-                CStopWatch sw(CStopWatch::eStart);
                 // check for candidates
                 if (!ai->candidate_jobs.any() && effective_aff_ids->any()) {
                     // there is an affinity association
@@ -1162,7 +1161,7 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
                 bool pending_jobs_avail =
                     status_tracker.GetPendingJobFromSet(
                         &ai->candidate_jobs, &job_id);
-                LOG_POST(Warning << "Pick by affinity: " << sw.Elapsed() * 1000 << "ms");
+                
                 if (!job_id && !pending_jobs_avail) return 0;
             } while (0);
             if (!job_id && is_specific_aff) return 0;
@@ -1531,9 +1530,7 @@ void SLockedQueue::AddAffinity(CWorkerNode*  worker_node,
                                time_t        exp_time)
 {
     CFastMutexGuard guard(m_AffinityMapLock);
-    CStopWatch sw(CStopWatch::eStart);
     m_AffinityMap.AddAffinity(worker_node, aff_id, exp_time);
-    LOG_POST(Warning << "Added affinity2: " << sw.Elapsed() * 1000 << "ms");
 }
 
 

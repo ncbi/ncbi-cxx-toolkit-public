@@ -386,9 +386,7 @@ CWorkerNodeAffinity::AddAffinity(CWorkerNode*  worker_node,
         ai = new SAffinityInfo();
         m_AffinityMap[worker_node] = ai;
     }
-    CStopWatch sw(CStopWatch::eStart);
     ai->aff_ids.set(aff_id);
-    LOG_POST(Warning << "Added affinity1: " << sw.Elapsed() * 1000 << "ms");
     return ai;
 }
 
