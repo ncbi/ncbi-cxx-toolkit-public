@@ -302,9 +302,10 @@ public:
     void GetPeerAddress(unsigned int*   host,
                         unsigned short* port,
                         ENH_ByteOrder   byte_order) const;
+
     /// @return
-    ///  Textual string representing the peer's address
-    string GetPeerAddress(void) const;
+    ///  Textual string representing the (parts of) peer's address
+    string GetPeerAddress(ESOCK_AddressFormat format = eSAF_Full) const;
 
     /// Specify if this "CSocket" is to own the underlying "SOCK".
     /// @return
@@ -783,6 +784,12 @@ inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
 inline EIO_Status CSocket::Abort(void)
 {
     return m_Socket ? SOCK_Abort(m_Socket) : eIO_Closed;
+}
+
+
+inline EIO_Status CSocket::Close(void)
+{
+    return m_Socket ? SOCK_CloseEx(m_Socket, 0) : eIO_Success;
 }
 
 

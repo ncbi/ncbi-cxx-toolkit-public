@@ -957,7 +957,6 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
 
 
 #if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
-/*ARGSUSED*/
 static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 {
     int fd = fcntl(sock->sock, F_DUPFD, STDERR_FILENO + 1);
@@ -3083,7 +3082,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 
 #  if defined(NCBI_OS_UNIX)
     {{
-        int fd[2];
+        int fd[3];
 
         if (pipe(fd) < 0) {
             CORE_LOGF_ERRNO_X(28, eLOG_Error, errno,
@@ -3091,6 +3090,20 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
                                " Cannot create pipe", x_id));
             return eIO_Closed;
         }
+
+#    ifdef FD_SETSIZE
+        if ((fd[2] = fcntl(fd[1], F_DUPFD, FD_SETSIZE)) < 0) {
+            /* We don't need "out" to be selectable, so move it out
+             * of the way to spare precious "selectable" fd numbers */
+            CORE_LOGF_ERRNO_X(143, eLOG_Warning, errno,
+                              ("TRIGGER#%u[?]: [TRIGGER::Create] "
+                               " Failed to dup(%d) to higher fd(%d))",
+                               x_id, fd[1], FD_SETSIZE));
+        } else {
+            close(fd[1]);
+            fd[1] = fd[2];
+        }
+#    endif /*FD_SETSIZE*/
 
         if (!s_SetNonblock(fd[0], 1/*true*/)  ||
             !s_SetNonblock(fd[1], 1/*true*/)) {
@@ -4848,14 +4861,49 @@ extern char* SOCK_GetPeerAddressString(SOCK   sock,
                                        char*  buf,
                                        size_t buflen)
 {
+    return SOCK_GetPeerAddressStringEx(sock, buf, buflen, eSAF_Full);
+}
+
+
+extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
+                                         char*               buf,
+                                         size_t              buflen,
+                                         ESOCK_AddressFormat format)
+{
+    char port[8];
+    size_t len;
+
     if (!buf  ||  !buflen)
-        return 0;
+        return 0/*error*/;
+    if (format == eSAF_Full) {
 #ifdef NCBI_OS_UNIX
-    if (sock->path[0])
-        strncpy0(buf, sock->path, buflen - 1);
-    else
+        if (sock->path[0])
+            strncpy0(buf, sock->path, buflen - 1);
+        else
 #endif /*NCBI_OS_UNIX*/
-        SOCK_HostPortToString(sock->host, sock->port, buf, buflen);
+            if (!SOCK_HostPortToString(sock->host, sock->port, buf, buflen))
+                return 0/*error*/;
+        return buf;
+    }
+    switch (format) {
+    case eSAF_Port:
+        if ((len = (size_t) sprintf(port, "%hu", sock->port)) >= buflen)
+            return 0/*error*/;
+        memcpy(buf, port, len + 1);
+        break;
+    case eSAF_IP:
+        if (SOCK_ntoa(sock->host, buf, buflen) != 0)
+            return 0/*error*/;
+        break;
+    default:
+#ifdef NCBI_OS_UNIX
+        if (sock->path[0]) {
+            *buf = '\0';
+            break;
+        }
+#endif /*NCBI_OS_UNIX*/
+        return 0/*error*/;
+    }
     return buf;
 }
 

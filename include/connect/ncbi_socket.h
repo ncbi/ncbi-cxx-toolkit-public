@@ -1177,14 +1177,31 @@ extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
  * @param buf
  *  [out] pointer to provided buffer to store the text to
  * @param buflen
- *  [in] usable size of the buffer above 
+ *  [in]  usable size of the buffer above 
+ * @param format
+ *  [in]  what parts of address to include
  * @return
  *  On success, return its "buf" argument; return 0 on error.
-*/
+ */
+typedef enum {
+    eSAF_Full = 0,  /** address in full, native form                      */
+    eSAF_Port,      /** only numeric port if INET socket, empty otherwise */
+    eSAF_IP         /** only numeric IP if INET socket,   empty otherwise */  
+} ESOCK_AddressFormat;
+
+extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
+(SOCK                sock,
+ char*               buf,
+ size_t              buflen,
+ ESOCK_AddressFormat format
+ );
+
+
+/** Equivalent to SOCK_GetPeerAddressStringEx(.,.,.,eSAF_Full) */
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
 (SOCK   sock,
- char*  buf,       
- size_t buflen     
+ char*  buf,
+ size_t buflen
  );
 
 
@@ -1199,8 +1216,8 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
 (SOCK   sock,
- void*  handle_buf,  
- size_t handle_size  
+ void*  handle_buf,
+ size_t handle_size
  );
 
 
