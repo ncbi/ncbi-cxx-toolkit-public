@@ -196,8 +196,8 @@ public:
      streamsize      buf_size = kConn_DefaultBufSize);
 
     /// This variant uses existing socket "sock" to build the stream upon it.
-    /// NOTE:  it revokes all ownership of the socket, and further assumes the
-    /// socket being in exclusive use of this stream's underlying CONN.
+    /// NOTE:  it assumes the socket being in exclusive use of this stream's
+    /// underlying CONN (so the outer code must renounce the SOCK ownership).
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
     /// @param socket
