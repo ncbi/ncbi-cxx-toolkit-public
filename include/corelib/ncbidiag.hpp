@@ -1713,8 +1713,13 @@ public:
 
     /// Return (create if not created yet) unique diagnostic ID.
     TUID GetUID(void) const;
-    /// Return string representation of UID
+    /// Return string representation of UID.
+    /// If the argument UID is 0, use the one from the diag context.
     string GetStringUID(TUID uid = 0) const;
+    /// Take the source UID and replace its timestamp part with the
+    /// current time.
+    /// If the source UID is 0, use the one from the diag context.
+    TUID UpdateUID(TUID uid = 0) const;
 
     /// Create global unique request id.
     string GetNextHitID(void) const;

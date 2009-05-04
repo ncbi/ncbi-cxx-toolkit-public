@@ -1069,6 +1069,24 @@ void CDiagContext::UpdatePID(void)
 }
 
 
+void CDiagContext::x_CreateUID(void) const
+{
+    Int8 pid = GetPID();
+    time_t t = time(0);
+    const string& host = GetHost();
+    TUID h = 212;
+    ITERATE(string, s, host) {
+        h = h*1265 + *s;
+    }
+    h &= 0xFFFF;
+    // The low 4 bits are reserved as GUID generator version number.
+    m_UID = (TUID(h) << 48) |
+        ((TUID(pid) & 0xFFFF) << 32) |
+        ((TUID(t) & 0xFFFFFFF) << 4) |
+        1; // version #1 - fixed type conversion bug
+}
+
+
 CDiagContext::TUID CDiagContext::GetUID(void) const
 {
     if ( !m_UID ) {
@@ -1091,6 +1109,19 @@ string CDiagContext::GetStringUID(TUID uid) const
     int lo = int(uid & 0xFFFFFFFF);
     sprintf(buf, "%08X%08X", hi, lo);
     return string(buf);
+}
+
+
+CDiagContext::TUID CDiagContext::UpdateUID(TUID uid) const
+{
+    if (uid == 0) {
+        uid = GetUID();
+    }
+    time_t t = time(0);
+    // Clear old timestamp
+    uid &= ~((TUID)0xFFFFFFF << 4);
+    // Add current timestamp
+    return uid | ((TUID(t) & 0xFFFFFFF) << 4);
 }
 
 
@@ -1232,24 +1263,6 @@ void CDiagContext::SetAppName(const string& app_name)
         ERR_POST("Illegal characters in application name: '" << app_name <<
             "', using URL-encode.");
     }
-}
-
-
-void CDiagContext::x_CreateUID(void) const
-{
-    Int8 pid = GetPID();
-    time_t t = time(0);
-    const string& host = GetHost();
-    TUID h = 212;
-    ITERATE(string, s, host) {
-        h = h*1265 + *s;
-    }
-    h &= 0xFFFF;
-    // The low 4 bits are reserved as GUID generator version number.
-    m_UID = (TUID(h) << 48) |
-        ((TUID(pid) & 0xFFFF) << 32) |
-        ((TUID(t) & 0xFFFFFFF) << 4) |
-        1; // version #1 - fixed type conversion bug
 }
 
 

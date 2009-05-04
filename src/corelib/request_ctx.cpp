@@ -74,7 +74,8 @@ const string& CRequestContext::SetHitID(void)
 const string& CRequestContext::SetSessionID(void)
 {
     CNcbiOstrstream oss;
-    oss << GetDiagContext().GetStringUID() << '_' << setw(4) << setfill('0')
+    CDiagContext& ctx = GetDiagContext();
+    oss << ctx.GetStringUID(ctx.UpdateUID()) << '_' << setw(4) << setfill('0')
         << GetRequestID() << "SID";
     SetSessionID(CNcbiOstrstreamToString(oss));
     return m_SessionID.GetOriginalString();
