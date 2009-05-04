@@ -635,8 +635,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                       fSOCK_LogOn : fSOCK_LogDefault);
     }
     return HTTP_CreateConnectorEx(net_info,
-                                  (uuu->params.flags & fHCC_Flushable)
-                                  | fHCC_AutoReconnect/*flags*/,
+                                  (uuu->params.flags
+                                   & (fHCC_Flushable | fHCC_NoAutoRetry))
+                                  | fHCC_AutoReconnect,
                                   s_ParseHeader, s_AdjustNetInfo,
                                   uuu/*adj.data*/, 0/*cleanup.data*/);
 }
@@ -713,6 +714,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (!(net_info = ConnNetInfo_Clone(uuu->net_info)))
             break;
 
+        net_info->scheme = eURL_Unspec;
         conn = s_Open(uuu, timeout, info, net_info, 0/*!second_try*/);
         stateless = net_info->stateless;
 
