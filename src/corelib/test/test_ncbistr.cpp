@@ -1562,3 +1562,62 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_End  ), sBegSpace  );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Both ), sTrunc     );
 }
+
+
+
+BOOST_AUTO_TEST_CASE(s_GetField)
+{
+    BOOST_CHECK_EQUAL( NStr::GetField(NULL, 17, "not important"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("", 0, ":"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("", 10, ":"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("one", 0, ":"), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one:", 0, ":"), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one: two", 0, ":"), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one: two", 1, ":"), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one: two", 1, "-.:;"), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one: two", 1, "-.:"), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one::two", 1, "-.:;"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("one::two", 176, "-.:;"), string() );
+}
+
+BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter)
+{
+    BOOST_CHECK_EQUAL( NStr::GetField(NULL, 17, 'n'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("", 0, ':'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("", 10, ':'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("one", 0, ':'), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one:", 0, ':'), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one: two", 0, ':'), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one: two", 1, ':'), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField("one::two", 1, ':'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField("one::two", 176, ':'), string() );
+}
+
+BOOST_AUTO_TEST_CASE(s_GetField_Unsafe)
+{
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe(NULL, 17, "not important"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("", 0, ":"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("", 10, ":"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one", 0, ":"), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one:", 0, ":"), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one: two", 0, ":"), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one: two", 1, ":"), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one: two", 1, "-.:;"), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one: two", 1, "-.:"), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one::two", 1, "-.:;"), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one::two", 176, "-.:;"), string() );
+}
+
+BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter_Unsafe)
+{
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe(NULL, 17, 'n'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("", 0, ':'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("", 10, ':'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one", 0, ':'), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one:", 0, ':'), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one: two", 0, ':'), string( "one" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one: two", 1, ':'), string( " two" ) );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one::two", 1, ':'), string() );
+    BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one::two", 176, ':'), string() );
+}
+

@@ -2731,6 +2731,158 @@ bool NStr::IsIPAddress(const string& ip)
 }
 
 
+string NStr::GetField(const CTempString& str,
+                      size_t             field_no,
+                      const CTempString& delimiters)
+{
+    const char *    input_str( str.data() );
+    size_t          length( str.length() );
+    size_t          current_field( 0 );
+    size_t          current_index( 0 );
+
+    // Search for the beginning of the required field
+    while (current_field != field_no)
+    {
+        while (current_index < length &&
+               (delimiters.find(input_str[current_index], 0) == NPOS))
+        {
+            ++current_index;
+        }
+
+        ++current_index;
+        ++current_field;
+    }
+
+    if ( current_index >= length )
+    {
+        return string();
+    }
+
+    // Here: the input_str[current_index] is a character after delimiter
+    const char *    field_start( input_str + current_index );
+    while ((current_index < length) &&
+           (delimiters.find(input_str[current_index], 0) == NPOS))
+    {
+        ++current_index;
+    }
+    return string( field_start, input_str + current_index - field_start );
+}
+
+
+string NStr::GetField(const CTempString& str,
+                      size_t             field_no,
+                      char               delimiter)
+{
+    const char *    input_str( str.data() );
+    size_t          length( str.length() );
+    size_t          current_field( 0 );
+    size_t          current_index( 0 );
+
+    // Search for the beginning of the required field
+    while (current_field != field_no)
+    {
+        while (current_index < length &&
+               (input_str[current_index] != delimiter))
+        {
+            ++current_index;
+        }
+
+        ++current_index;
+        ++current_field;
+    }
+
+    if ( current_index >= length )
+    {
+        return string();
+    }
+
+    // Here: the input_str[current_index] is a character after delimiter
+    const char *    field_start( input_str + current_index );
+    while ((current_index < length) &&
+               (input_str[current_index] != delimiter))
+    {
+        ++current_index;
+    }
+    return string( field_start, input_str + current_index - field_start );
+}
+
+
+CTempString NStr::GetField_Unsafe(const CTempString& str,
+                                  size_t             field_no,
+                                  const CTempString& delimiters)
+{
+    const char *    input_str( str.data() );
+    size_t          length( str.length() );
+    size_t          current_field( 0 );
+    size_t          current_index( 0 );
+
+    // Search for the beginning of the required field
+    while (current_field != field_no)
+    {
+        while (current_index < length &&
+               (delimiters.find(input_str[current_index], 0) == NPOS))
+        {
+            ++current_index;
+        }
+
+        ++current_index;
+        ++current_field;
+    }
+
+    if ( current_index >= length )
+    {
+        return CTempString();
+    }
+
+    // Here: the input_str[current_index] is a character after delimiter
+    const char *    field_start( input_str + current_index );
+    while ((current_index < length) &&
+           (delimiters.find(input_str[current_index], 0) == NPOS))
+    {
+        ++current_index;
+    }
+    return CTempString( field_start, input_str + current_index - field_start );
+}
+
+
+CTempString NStr::GetField_Unsafe(const CTempString& str,
+                                  size_t             field_no,
+                                  char               delimiter)
+{
+    const char *    input_str( str.data() );
+    size_t          length( str.length() );
+    size_t          current_field( 0 );
+    size_t          current_index( 0 );
+
+    // Search for the beginning of the required field
+    while (current_field != field_no)
+    {
+        while (current_index < length &&
+               (input_str[current_index] != delimiter))
+        {
+            ++current_index;
+        }
+
+        ++current_index;
+        ++current_field;
+    }
+
+    if ( current_index >= length )
+    {
+        return CTempString();
+    }
+
+    // Here: the input_str[current_index] is a character after delimiter
+    const char *    field_start( input_str + current_index );
+    while ((current_index < length) &&
+               (input_str[current_index] != delimiter))
+    {
+        ++current_index;
+    }
+    return CTempString( field_start, input_str + current_index - field_start );
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
 
