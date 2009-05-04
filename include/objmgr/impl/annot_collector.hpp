@@ -649,6 +649,7 @@ void CAnnotMapping_Info::Swap(CAnnotMapping_Info& info)
     swap(m_MappedFlags, info.m_MappedFlags);
     swap(m_MappedObjectType, info.m_MappedObjectType);
     swap(m_MappedStrand, info.m_MappedStrand);
+    m_GraphRanges.Swap(info.m_GraphRanges);
 }
 
 
