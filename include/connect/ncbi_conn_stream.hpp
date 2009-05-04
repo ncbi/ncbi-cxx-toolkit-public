@@ -88,6 +88,7 @@ BEGIN_NCBI_SCOPE
 
 
 class CConn_Streambuf; // Forward declaration
+class CSocket;         // Forward declaration
 
 
 const streamsize kConn_DefaultBufSize = 4096;
@@ -199,12 +200,29 @@ public:
     /// socket being in exclusive use of this stream's underlying CONN.
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
-    /// @param SOCK
+    /// @param socket
     ///  Socket to build the stream on
     /// @sa
     ///  SOCK, ncbi_socket.h
     CConn_SocketStream
     (SOCK            sock,         /* socket              */
+     unsigned int    max_try  = 3, /* number of attempts  */
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize);
+
+
+    /// This variant uses existing CSocket to build the stream upon it.
+    /// NOTE:  it revokes all ownership of the sockets internals
+    /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
+    /// is thrown if the internal SOCK is not owned by the passed CSocket.
+    /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
+    ///
+    /// @param socket
+    ///  Socket to build the stream on
+    /// @sa
+    ///  CSocket, ncbi_socket.hpp
+    CConn_SocketStream
+    (CSocket&        socket,       /* socket              */
      unsigned int    max_try  = 3, /* number of attempts  */
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);

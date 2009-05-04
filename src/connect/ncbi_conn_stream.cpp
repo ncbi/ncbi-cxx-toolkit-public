@@ -35,9 +35,10 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
+#include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/error_codes.hpp>
+#include <connect/ncbi_socket.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Connect_Stream
@@ -111,6 +112,32 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
     : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, max_try),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
+
+static SOCK s_GrabSOCK(CSocket& socket)
+{
+    SOCK sock = socket.GetSOCK();
+    if (socket.SetOwnership(eNoOwnership) == eNoOwnership) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_SocketStream::CConn_SocketStream socket not owned");
+    }
+    socket.Reset(0/*empty*/,
+                 eNoOwnership/*irrelevant*/,
+                 eCopyTimeoutsFromSOCK/*irrelevant*/);
+    return sock;
+}
+
+
+CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
+                                       unsigned int    max_try,
+                                       const STimeout* timeout,
+                                       streamsize      buf_size)
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket), max_try),
                      timeout, buf_size)
 {
     return;
