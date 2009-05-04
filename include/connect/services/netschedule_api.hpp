@@ -452,14 +452,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa WaitJob
     ///
-    bool GetJob(CNetScheduleJob& job,
-                unsigned short udp_port = 0) const;
-
-    /// Notification wait mode
-    enum EWaitMode {
-        eWaitNotification,   ///< Wait for notification
-        eNoWaitNotification  ///< Register for notification but do not wait
-    };
+    bool GetJob(CNetScheduleJob& job) const;
 
     /// Wait for a job to come.
     /// Variant of GetJob method. The difference is that if there no
@@ -489,18 +482,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///    client programs (or threads) listening on the same port. Message
     ///    is going to be delivered to just only one listener.
     ///
-    /// @param wait_mode
-    ///    Notification wait mode. Function either waits for the message in
-    ///    this call, or returns control (eNoWaitNotification).
-    ///    In the second case caller should call WaitNotification to listen
-    ///    for server signals.
-    ///
     /// @sa GetJob, WaitNotification
     ///
     bool WaitJob(CNetScheduleJob& job,
                  unsigned       wait_time,
-                 unsigned short udp_port,
-                 EWaitMode      wait_mode = eWaitNotification) const;
+                 unsigned short udp_port = 0) const;
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())
@@ -594,7 +580,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 
 
     /// Register client-listener
-    void RegisterClient(unsigned short udp_port) const;
+    void RegisterClient() const;
 
     const CNetScheduleAPI::SServerParams& GetServerParams() const;
 
@@ -602,11 +588,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// Unregister client-listener. After this call, the
     /// server will not try to send any notification messages or
     /// maintain job affinity for the client.
-    void UnRegisterClient(unsigned short udp_port) const;
-
-    static bool WaitNotification(const string&  queue_name,
-                                 unsigned       wait_time,
-                                 unsigned short udp_port);
+    void UnRegisterClient() const;
 
     /// Return Queue name
     const string& GetQueueName() const;

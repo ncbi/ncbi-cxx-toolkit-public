@@ -140,7 +140,7 @@ int CSampleNetScheduleNode::Run(void)
     CNetScheduleJob job;
 
     for (;;) {
-        job_exists = executer.WaitJob(job, 560, udp_port);
+        job_exists = executer.WaitJob(job, 560);
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;

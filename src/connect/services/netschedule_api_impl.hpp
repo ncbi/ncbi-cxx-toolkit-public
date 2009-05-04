@@ -262,14 +262,16 @@ struct SNetScheduleExecuterImpl : public CNetObject
 
     bool GetJobImpl(const string& cmd, CNetScheduleJob& job) const;
 
-    void x_RegUnregClient(const string& cmd, unsigned short udp_port) const;
+    void x_RegUnregClient(const string& cmd) const;
 
     CNetScheduleAPI m_API;
+    unsigned short m_ControlPort;
 };
 
 inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
     CNetScheduleAPI::TInstance ns_api_impl, unsigned short control_port) :
-    m_API(ns_api_impl)
+    m_API(ns_api_impl),
+    m_ControlPort(control_port)
 {
     ns_api_impl->m_Listener->MakeWorkerNodeInitCmd(control_port);
 }

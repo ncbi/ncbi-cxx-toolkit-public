@@ -157,45 +157,18 @@ void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
 }
 
 
-bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job,
-                                  unsigned short udp_port) const
+bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job) const
 {
     string cmd = "GET";
 
-    if (udp_port != 0) {
+    if (m_Impl->m_ControlPort != 0) {
         cmd += ' ';
-        cmd += NStr::IntToString(udp_port);
+        cmd += NStr::IntToString(m_Impl->m_ControlPort);
     }
 
     return m_Impl->GetJobImpl(cmd, job);
 }
 
-
-bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
-                                   unsigned   wait_time,
-                                   unsigned short udp_port,
-                                   EWaitMode      wait_mode) const
-{
-    string cmd = "WGET ";
-
-    cmd += NStr::UIntToString(udp_port);
-    cmd += ' ';
-    cmd += NStr::UIntToString(wait_time);
-
-    if (m_Impl->GetJobImpl(cmd, job))
-        return true;
-
-    if (wait_mode != eWaitNotification)
-        return false;
-
-    WaitNotification(m_Impl->m_API.GetQueueName(), wait_time, udp_port);
-
-    // no matter is WaitResult we re-try the request
-    // using reliable comm.level and notify server that
-    // we no longer on the UDP socket
-
-    return GetJob(job, udp_port);
-}
 
 struct SWaitQueuePred {
     SWaitQueuePred(const string& queue_name) : m_QueueName(queue_name)
@@ -219,14 +192,30 @@ struct SWaitQueuePred {
 };
 
 
-/* static */
-bool CNetScheduleExecuter::WaitNotification(const string&  queue_name,
-                                       unsigned       wait_time,
-                                       unsigned short udp_port)
+bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
+                                   unsigned   wait_time,
+                                   unsigned short /*udp_port*/) const
 {
-    return s_WaitNotification(wait_time, udp_port, SWaitQueuePred(queue_name));
-}
+    string cmd = "WGET ";
 
+    _ASSERT(m_Impl->m_ControlPort != 0);
+
+    cmd += NStr::UIntToString(m_Impl->m_ControlPort);
+    cmd += ' ';
+    cmd += NStr::UIntToString(wait_time);
+
+    if (m_Impl->GetJobImpl(cmd, job))
+        return true;
+
+    s_WaitNotification(wait_time, m_Impl->m_ControlPort,
+        SWaitQueuePred(m_Impl->m_API.GetQueueName()));
+
+    // no matter what WaitResult returned, re-try the request
+    // using reliable comm.level and notify server that
+    // we no longer on the UDP socket
+
+    return GetJob(job);
+}
 
 
 inline
@@ -253,7 +242,7 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
                                            CNetScheduleJob& new_job) const
 {
     if (done_job.job_id.empty())
-        return GetJob(new_job, 0);
+        return GetJob(new_job);
 
     s_CheckOutputSize(done_job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
@@ -345,10 +334,9 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
 }
 
 
-void SNetScheduleExecuterImpl::x_RegUnregClient(
-    const string& cmd, unsigned short udp_port) const
+void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd) const
 {
-    string tmp = cmd + NStr::IntToString(udp_port);
+    string tmp = cmd + NStr::IntToString(m_ControlPort);
 
     for (CNetServerGroupIterator it =
             m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
@@ -367,9 +355,9 @@ void SNetScheduleExecuterImpl::x_RegUnregClient(
 }
 
 
-void CNetScheduleExecuter::RegisterClient(unsigned short udp_port) const
+void CNetScheduleExecuter::RegisterClient() const
 {
-    m_Impl->x_RegUnregClient("REGC ", udp_port);
+    m_Impl->x_RegUnregClient("REGC ");
 }
 
 const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() const
@@ -377,9 +365,9 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() co
     return m_Impl->m_API->GetServerParams();
 }
 
-void CNetScheduleExecuter::UnRegisterClient(unsigned short udp_port) const
+void CNetScheduleExecuter::UnRegisterClient() const
 {
-    m_Impl->x_RegUnregClient("URGC ", udp_port);
+    m_Impl->x_RegUnregClient("URGC ");
 }
 
 const string& CNetScheduleExecuter::GetQueueName() const

@@ -356,15 +356,6 @@ void CGridWorkerApp_Impl::Init(bool default_merge_lines_value)
 
 const char* kServerSec = "server";
 
-static void s_ParseControlPorts(const string& sports, unsigned int& start_port, unsigned int& end_port)
-{
-    string sport1, sport2;
-    NStr::SplitInTwo(sports, "-", sport1, sport2);
-    if (sport2.empty()) sport2 = sport1;
-    start_port = NStr::StringToUInt(sport1);
-    end_port = NStr::StringToUInt(sport2);
-}
-
 int CGridWorkerApp_Impl::Run()
 {
     LOG_POST_X(50, GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
@@ -399,17 +390,16 @@ int CGridWorkerApp_Impl::Run()
         reg.GetInt(kServerSec,"job_wait_timeout",30,0,IRegistry::eReturn);
     unsigned int threads_pool_timeout =
         reg.GetInt(kServerSec,"thread_pool_timeout",30,0,IRegistry::eReturn);
-    string scontrol_port =
-        reg.GetString(kServerSec,"control_port","9300");
-
-    unsigned int start_port, end_port;
-    s_ParseControlPorts(scontrol_port, start_port, end_port);
 
     const CArgs& args = m_App.GetArgs();
-    if (args["control_port"]) {
-        scontrol_port = args["control_port"].AsString();
-        s_ParseControlPorts(scontrol_port, start_port, end_port);
-    }
+
+    unsigned int start_port, end_port;
+
+    string sport1, sport2;
+    NStr::SplitInTwo(args["control_port"] ? args["control_port"].AsString() :
+        reg.GetString(kServerSec, "control_port", "9300"), "-", sport1, sport2);
+    start_port = NStr::StringToUInt(sport1);
+    end_port = sport2.empty() ? start_port : NStr::StringToUInt(sport2);
 
     bool server_log =
         reg.GetBool(kServerSec,"log",false,0,IRegistry::eReturn);

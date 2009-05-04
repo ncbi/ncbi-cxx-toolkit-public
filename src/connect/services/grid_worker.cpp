@@ -428,7 +428,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
       m_JobWatcher(job_watcher),
-      m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
+      m_ControlPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30),
       m_CheckStatusPeriod(2),
       m_RebalanceStrategy(rebalance_strategy),
@@ -557,7 +557,7 @@ void CGridWorkerNode::Run()
         }
     }
     try {
-        GetNSExecuter().UnRegisterClient(m_UdpPort);
+        GetNSExecuter().UnRegisterClient();
     } catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
         if (ex.GetErrCode() != CNetServiceException::eCommunicationError
@@ -598,7 +598,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout, m_UdpPort);
+        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout);
 
         if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob)
             job_exists = EnterExclusiveModeOrReturnJob(job);
@@ -635,7 +635,7 @@ bool CGridWorkerNode::x_CreateNSReadClient()
 
     for (;;) {
         try {
-            GetNSExecuter().RegisterClient(m_UdpPort);
+            GetNSExecuter().RegisterClient();
             break;
         } catch (CNetServiceException& ex) {
             // if server does not understand this
