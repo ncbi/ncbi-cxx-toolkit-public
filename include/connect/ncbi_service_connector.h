@@ -61,7 +61,7 @@ typedef struct {
     FSERVICE_ResetData   reset;         /* called at each close (before iter)*/
     FSERVICE_CleanupData cleanup;       /* called at destruction             */
     FSERVICE_GetNextInfo get_next_info; /* called to get conn point          */
-    THCC_Flags           flags;         /* fHCC_Flushable, fHCC_NoRetry only */
+    THCC_Flags           flags;         /* fHCC_Flushable | fHCC_NoAutoRetry */
 } SSERVICE_Extra;
 
 
