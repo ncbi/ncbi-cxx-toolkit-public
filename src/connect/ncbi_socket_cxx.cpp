@@ -145,8 +145,8 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
         SOCK_Close(m_Socket);
     m_Socket  = sock;
     m_IsOwned = if_to_own;
-    if ( sock ) {
-        if (whence == eCopyTimeoutsFromSOCK) {
+    if (whence == eCopyTimeoutsFromSOCK) {
+        if ( sock ) {
             const STimeout* timeout;
             timeout = SOCK_GetTimeout(sock, eIO_Read);
             if ( timeout ) {
@@ -166,11 +166,12 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
                 c_timeout  = &cc_timeout;
             } else
                 c_timeout  = 0;
-        } else {
-            SOCK_SetTimeout(sock, eIO_Read,  r_timeout);
-            SOCK_SetTimeout(sock, eIO_Write, w_timeout);
-            SOCK_SetTimeout(sock, eIO_Close, c_timeout);
-        }
+        } else
+            r_timeout = w_timeout = c_timeout = 0;
+    } else if ( sock ) {
+        SOCK_SetTimeout(sock, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(sock, eIO_Write, w_timeout);
+        SOCK_SetTimeout(sock, eIO_Close, c_timeout);
     }
 }
 
@@ -183,7 +184,8 @@ EIO_Status CSocket::Connect(const string&   host,
     if ( m_Socket ) {
         if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
             return eIO_Unknown;
-        SOCK_Close(m_Socket);
+        if (m_IsOwned != eNoOwnership)
+            SOCK_Close(m_Socket);
     }
     if (timeout != kDefaultTimeout) {
         if ( timeout ) {
@@ -212,7 +214,8 @@ EIO_Status CUNIXSocket::Connect(const string&   path,
     if ( m_Socket ) {
         if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
             return eIO_Unknown;
-        SOCK_Close(m_Socket);
+        if (m_IsOwned != eNoOwnership)
+            SOCK_Close(m_Socket);
     }
     if (timeout != kDefaultTimeout) {
         if ( timeout ) {
@@ -245,19 +248,6 @@ EIO_Status CSocket::Reconnect(const STimeout* timeout)
             o_timeout = 0;
     }
     return m_Socket ? SOCK_Reconnect(m_Socket, 0, 0, o_timeout) : eIO_Closed;
-}
-
-
-EIO_Status CSocket::Close(void)
-{
-    if ( !m_Socket )
-        return eIO_Success;
-
-    if (m_IsOwned != eNoOwnership)
-        return SOCK_CloseEx(m_Socket, 0);
-
-    m_Socket = 0;
-    return eIO_Success;
 }
 
 
@@ -389,8 +379,9 @@ EIO_Status CSocket::Write(const void*     buf,
 }
 
 
-void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
-                             ENH_ByteOrder byte_order) const
+void CSocket::GetPeerAddress(unsigned int*   host,
+                             unsigned short* port,
+                             ENH_ByteOrder   byte_order) const
 {
     if ( !m_Socket ) {
         if ( host )
@@ -402,11 +393,11 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
 }
 
 
-string CSocket::GetPeerAddress(void) const
+string CSocket::GetPeerAddress(ESOCK_AddressFormat format) const
 {
     char buf[PATH_MAX + 1];
     if (m_Socket  &&
-        SOCK_GetPeerAddressString(m_Socket, buf, sizeof(buf)) != 0) {
+        SOCK_GetPeerAddressStringEx(m_Socket, buf, sizeof(buf), format) != 0) {
         return string(buf);
     }
     return "";
@@ -566,7 +557,7 @@ EIO_Status CListeningSocket::Accept(CSocket*&       sock,
             sock = new CSocket;
         } catch (...) {
             sock = 0;
-            SOCK_CloseEx(x_sock, 1);
+            SOCK_Close(x_sock);
             throw;
         }
         sock->Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
