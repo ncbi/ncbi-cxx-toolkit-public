@@ -1901,6 +1901,68 @@ public:
                                   const string& delim, list<string>& arr,
                                   TWrapFlags flags, const string& prefix,
                                   const string& prefix1);
+
+    /// Search for a field
+    ///
+    /// @param str
+    ///   NULL terminated string to search in.
+    /// @param field_no
+    ///   Zero based field number.
+    /// @param delimiters
+    ///   Single character delimiters.
+    /// @return
+    ///   Found field or empty string if the required field is not found.
+    static string GetField(const CTempString& str,
+                           size_t             field_no,
+                           const CTempString& delimiters);
+
+    /// Search for a field
+    ///
+    /// @param str
+    ///   NULL terminated string to search in.
+    /// @param field_no
+    ///   Zero based field number.
+    /// @param delimiter
+    ///   Single character delimiter.
+    /// @return
+    ///   Found field or empty string if the required field is not found.
+    static string GetField(const CTempString& str,
+                           size_t             field_no,
+                           char               delimiter);
+
+    /// Search for a field
+    ///
+    /// @param str
+    ///   NULL terminated string to search in.
+    /// @param field_no
+    ///   Zero based field number.
+    /// @param delimiters
+    ///   Single character delimiters.
+    /// @return
+    ///   Found field or empty string if the required field is not found.
+    /// @warning
+    ///   The return value stores a pointer to the input string 'str' so
+    ///   the return object validity time matches lifetime of the input 'str'
+    static CTempString GetField_Unsafe(const CTempString& str,
+                                       size_t             field_no,
+                                       const CTempString& delimiters);
+
+    /// Search for a field
+    ///
+    /// @param str
+    ///   NULL terminated string to search in.
+    /// @param field_no
+    ///   Zero based field number.
+    /// @param delimiters
+    ///   Single character delimiter.
+    /// @return
+    ///   Found field or empty string if the required field is not found.
+    /// @warning
+    ///   The return value stores a pointer to the input string 'str' so
+    ///   the return object validity time matches lifetime of the input 'str'
+    static CTempString GetField_Unsafe(const CTempString& str,
+                                       size_t             field_no,
+                                       char               delimiter);
 }; // class NStr
 
 
