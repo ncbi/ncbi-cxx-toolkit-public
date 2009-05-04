@@ -32,6 +32,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_server_info.h>
+#include <connect/ncbi_conn_stream.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
