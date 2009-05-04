@@ -144,6 +144,8 @@ static int GetDebugLevel(void)
 
 enum EDebugLevel
 {
+    eTraceError = 1,
+    eTraceOpen = 2,
     eTraceConn = 4,
     eTraceASN = 5,
     eTraceASNData = 8
@@ -151,9 +153,9 @@ enum EDebugLevel
 
 
 CId1Reader::CId1Reader(int max_connections)
-    : m_ServiceName(DEFAULT_SERVICE),
-      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT),
-      m_Timeout(DEFAULT_TIMEOUT)
+    : m_Connector(DEFAULT_SERVICE,
+                  DEFAULT_OPEN_TIMEOUT,
+                  DEFAULT_TIMEOUT)
 {
     if ( max_connections == 0 ) {
         max_connections = DEFAULT_NUM_CONN;
@@ -166,28 +168,28 @@ CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
                        const string& driver_name)
 {
     CConfig conf(params);
-    m_ServiceName = conf.GetString(
+    string service_name = conf.GetString(
         driver_name,
         NCBI_GBLOADER_READER_ID1_PARAM_SERVICE_NAME,
         CConfig::eErr_NoThrow,
         kEmptyStr);
-    if ( m_ServiceName.empty() ) {
-        m_ServiceName =
-            NCBI_PARAM_TYPE(GENBANK, ID1_SERVICE_NAME)::GetDefault();
+    if ( service_name.empty() ) {
+        service_name = NCBI_PARAM_TYPE(GENBANK,ID1_SERVICE_NAME)::GetDefault();
     }
-    if ( m_ServiceName.empty() ) {
-        m_ServiceName = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID1)::GetDefault();
+    if ( service_name.empty() ) {
+        service_name = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID1)::GetDefault();
     }
-    m_OpenTimeout = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID1_PARAM_OPEN_TIMEOUT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_OPEN_TIMEOUT);
-    m_Timeout = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_TIMEOUT);
+    m_Connector.SetServiceName(service_name);
+    m_Connector.SetTimeout(
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_TIMEOUT));
+    m_Connector.SetOpenTimeout(
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_ID1_PARAM_OPEN_TIMEOUT,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_OPEN_TIMEOUT));
     TConn max_connections = conf.GetInt(
         driver_name,
         NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
@@ -240,11 +242,12 @@ void CId1Reader::x_RemoveConnectionSlot(TConn conn)
 void CId1Reader::x_DisconnectAtSlot(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
-    if ( stream.get() ) {
+    CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
+    m_Connector.RememberIfBad(conn_info);
+    if ( conn_info.m_Stream ) {
         LOG_POST_X(2, Warning << "CId1Reader: ID1"
                    " GenBank connection failed: reconnecting...");
-        stream.reset();
+        conn_info.m_Stream.reset();
     }
 }
 
@@ -258,70 +261,47 @@ void CId1Reader::x_ConnectAtSlot(TConn conn)
 CConn_IOStream* CId1Reader::x_GetConnection(TConn conn)
 {
     _VERIFY(m_Connections.count(conn));
-    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
-    if ( !stream.get() ) {
-        stream.reset(x_NewConnection(conn));
+    CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
+    if ( !conn_info.m_Stream.get() ) {
+        conn_info = x_NewConnection(conn);
     }
-    return stream.get();
+    return conn_info.m_Stream.get();
 }
 
 
 string CId1Reader::x_ConnDescription(CConn_IOStream& stream) const
 {
-    CONN conn = stream.GetCONN();
-    if ( conn ) {
-        const char* descr = CONN_Description(conn);
-        if ( descr ) {
-            return m_ServiceName + " -> " + descr;
-        }
-    }
-    return m_ServiceName;
+    return m_Connector.GetConnDescription(stream);
 }
 
 
-struct ConnInfoDeleter1
-{
-    /// C Language deallocation function.
-    static void Delete(SConnNetInfo* object)
-    { ConnNetInfo_Destroy(object); }
-};
-
-
-CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
+CReaderServiceConnector::SConnInfo CId1Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
-    STimeout tmout;
-    tmout.sec = m_OpenTimeout;
-    tmout.usec = 0;
-    
-    AutoPtr<SConnNetInfo, ConnInfoDeleter1> info
-        (ConnNetInfo_Create(m_ServiceName.c_str()));
-    info->max_try = 1;
-    AutoPtr<CConn_IOStream> stream
-        (new CConn_ServiceStream(m_ServiceName, fSERV_Any,
-                                 info.get(), 0, &tmout));
-    // need to call CONN_Wait to force connection to open
-    if ( !stream->bad() ) {
-        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
-    }
+    CReaderServiceConnector::SConnInfo conn_info = m_Connector.Connect();
+
+    CConn_IOStream& stream = *conn_info.m_Stream;
 #ifdef GENBANK_ID1_RANDOM_FAILS
-    SetRandomFail(*stream);
+    SetRandomFail(stream);
 #endif
 
-    if ( stream->bad() ) {
+    if ( stream.bad() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
-                   "cannot open connection: "+x_ConnDescription(*stream));
+                   "cannot open connection: "+x_ConnDescription(stream));
     }
     
-    if ( GetDebugLevel() >= eTraceConn ) {
+    if ( GetDebugLevel() >= eTraceOpen ) {
         CDebugPrinter s(conn);
-        s << "New connection: " << x_ConnDescription(*stream); 
+        s << "New connection: " << x_ConnDescription(stream); 
     }
-    tmout.sec = m_Timeout;
-    CONN_SetTimeout(stream->GetCONN(), eIO_ReadWrite, &tmout);
+
+    STimeout tmout;
+    tmout.sec = m_Connector.GetTimeout();
+    tmout.usec = 0;
+    CONN_SetTimeout(stream.GetCONN(), eIO_ReadWrite, &tmout);
 
     RequestSucceeds(conn);
-    return stream.release();
+    return conn_info;
 }
 
 

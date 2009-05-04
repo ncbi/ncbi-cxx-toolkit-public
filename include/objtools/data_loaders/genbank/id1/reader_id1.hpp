@@ -31,21 +31,15 @@
 */
 
 #include <objtools/data_loaders/genbank/reader_id1_base.hpp>
+#include <objtools/data_loaders/genbank/reader_service.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
-
-class CConn_IOStream;
-class CByteSourceReader;
-class CObjectIStream;
-class CStopWatch;
-
 BEGIN_SCOPE(objects)
 
 class CID1server_back;
 class CID1server_request;
 class CID1server_maxcomplex;
-class CID1blob_info;
-class CID2S_Split_Info;
 class CLoadLockSeq_ids;
 class CLoadLockBlob_ids;
 
@@ -96,7 +90,7 @@ protected:
 
     string x_ConnDescription(CConn_IOStream& stream) const;
     CConn_IOStream* x_GetConnection(TConn conn);
-    CConn_IOStream* x_NewConnection(TConn conn);
+    CReaderServiceConnector::SConnInfo x_NewConnection(TConn conn);
 
     // returns error blob state parsed from ID1server-back.error
     TBlobState x_ResolveId(CReaderRequestResult& result,
@@ -112,13 +106,12 @@ protected:
     void x_SetBlobRequest(CID1server_request& request,
                           const CBlob_id& blob_id);
 
-private:
-    string m_ServiceName;
-    int    m_OpenTimeout, m_Timeout;
-
+protected:
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_IOStream* stream);
 
-    typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
+    CReaderServiceConnector m_Connector;
+
+    typedef map< TConn, CReaderServiceConnector::SConnInfo > TConnections;
     TConnections m_Connections;
 };
 

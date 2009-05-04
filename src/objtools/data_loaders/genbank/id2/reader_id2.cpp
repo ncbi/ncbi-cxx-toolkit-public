@@ -66,7 +66,6 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <corelib/plugin_manager_store.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 
 #include <iomanip>
 
@@ -132,9 +131,9 @@ NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE,
                   eParam_NoThread, GENBANK_SERVICE_NAME_ID2);
 
 CId2Reader::CId2Reader(int max_connections)
-    : m_ServiceName(DEFAULT_SERVICE),
-      m_OpenTimeout(DEFAULT_OPEN_TIMEOUT),
-      m_Timeout(DEFAULT_TIMEOUT)
+    : m_Connector(DEFAULT_SERVICE,
+                  DEFAULT_OPEN_TIMEOUT,
+                  DEFAULT_TIMEOUT)
 {
     if ( max_connections == 0 ) {
         max_connections = DEFAULT_NUM_CONN;
@@ -147,33 +146,31 @@ CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
                        const string& driver_name)
 {
     CConfig conf(params);
-    m_ServiceName = conf.GetString(
+    string service_name = conf.GetString(
         driver_name,
         NCBI_GBLOADER_READER_ID2_PARAM_SERVICE_NAME,
         CConfig::eErr_NoThrow,
         kEmptyStr);
-    if ( m_ServiceName.empty() ) {
-        m_ServiceName =
-            NCBI_PARAM_TYPE(GENBANK, ID2_CGI_NAME)::GetDefault();
+    if ( service_name.empty() ) {
+        service_name = NCBI_PARAM_TYPE(GENBANK, ID2_CGI_NAME)::GetDefault();
     }
-    if ( m_ServiceName.empty() ) {
-        m_ServiceName =
-            NCBI_PARAM_TYPE(GENBANK, ID2_SERVICE_NAME)::GetDefault();
+    if ( service_name.empty() ) {
+        service_name = NCBI_PARAM_TYPE(GENBANK,ID2_SERVICE_NAME)::GetDefault();
     }
-    if ( m_ServiceName.empty() ) {
-        m_ServiceName =
-            NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID2)::GetDefault();
+    if ( service_name.empty() ) {
+        service_name = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID2)::GetDefault();
     }
-    m_OpenTimeout = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID2_PARAM_OPEN_TIMEOUT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_OPEN_TIMEOUT);
-    m_Timeout = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID2_PARAM_TIMEOUT,
-        CConfig::eErr_NoThrow,
-        DEFAULT_TIMEOUT);
+    m_Connector.SetServiceName(service_name);
+    m_Connector.SetTimeout(
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_ID2_PARAM_TIMEOUT,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_TIMEOUT));
+    m_Connector.SetOpenTimeout(
+        conf.GetInt(driver_name,
+                    NCBI_GBLOADER_READER_ID2_PARAM_OPEN_TIMEOUT,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_OPEN_TIMEOUT));
     TConn max_connections = conf.GetInt(
         driver_name,
         NCBI_GBLOADER_READER_ID2_PARAM_NUM_CONN,
@@ -226,11 +223,12 @@ void CId2Reader::x_RemoveConnectionSlot(TConn conn)
 void CId2Reader::x_DisconnectAtSlot(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
-    if ( stream ) {
+    CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
+    m_Connector.RememberIfBad(conn_info);
+    if ( conn_info.m_Stream ) {
         LOG_POST_X(1, Warning << "CId2Reader("<<conn<<"): "
                    "ID2 connection failed: reconnecting...");
-        stream.reset();
+        conn_info.m_Stream.reset();
     }
 }
 
@@ -244,31 +242,24 @@ void CId2Reader::x_ConnectAtSlot(TConn conn)
 CConn_IOStream* CId2Reader::x_GetConnection(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
-    if ( !stream.get() ) {
-        stream.reset(x_NewConnection(conn));
+    CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
+    if ( !conn_info.m_Stream.get() ) {
+        conn_info = x_NewConnection(conn);
     }
-    return stream.get();
+    return conn_info.m_Stream.get();
 }
 
 
 CConn_IOStream* CId2Reader::x_GetCurrentConnection(TConn conn) const
 {
     TConnections::const_iterator iter = m_Connections.find(conn);
-    return iter == m_Connections.end()? 0: iter->second.get();
+    return iter == m_Connections.end()? 0: iter->second.m_Stream.get();
 }
 
 
 string CId2Reader::x_ConnDescription(CConn_IOStream& stream) const
 {
-    CONN conn = stream.GetCONN();
-    if ( conn ) {
-        const char* descr = CONN_Description(conn);
-        if ( descr ) {
-            return m_ServiceName + " -> " + descr;
-        }
-    }
-    return m_ServiceName;
+    return m_Connector.GetConnDescription(stream);
 }
 
 
@@ -279,72 +270,53 @@ string CId2Reader::x_ConnDescription(TConn conn) const
 }
 
 
-struct ConnInfoDeleter2
-{
-    /// C Language deallocation function.
-    static void Delete(SConnNetInfo* object)
-    { ConnNetInfo_Destroy(object); }
-};
-
-
-CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
+CReaderServiceConnector::SConnInfo CId2Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
+
     if ( GetDebugLevel() >= eTraceOpen ) {
         CDebugPrinter s(conn, "CId2Reader");
-        s << "New connection to " << m_ServiceName << "...";
+        s << "New connection to " << m_Connector.GetServiceName() << "...";
     }
     
-    STimeout tmout;
-    tmout.sec = m_OpenTimeout;
-    tmout.usec = 0;
+    CReaderServiceConnector::SConnInfo conn_info = m_Connector.Connect();
 
-    AutoPtr<CConn_IOStream> stream;
-    if ( NStr::StartsWith(m_ServiceName, "http://") ) {
-        stream.reset
-            (new CConn_HttpStream(m_ServiceName));
-    }
-    else {
-        AutoPtr<SConnNetInfo, ConnInfoDeleter2> info
-            (ConnNetInfo_Create(m_ServiceName.c_str()));
-        info->max_try = 1;
-        stream.reset
-            (new CConn_ServiceStream(m_ServiceName, fSERV_Any,
-                                     info.get(), 0, &tmout));
-    }
-    // need to call CONN_Wait to force connection to open
-    if ( !stream->bad() ) {
-        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
-    }
-    SetRandomFail(*stream, conn);
-    if ( stream->bad() ) {
+    CConn_IOStream& stream = *conn_info.m_Stream;
+    SetRandomFail(stream, conn);
+    if ( stream.bad() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
-                   "cannot open connection: "+x_ConnDescription(*stream));
+                   "cannot open connection: "+x_ConnDescription(stream));
     }
 
     if ( GetDebugLevel() >= eTraceOpen ) {
         CDebugPrinter s(conn, "CId2Reader");
-        s << "New connection: " << x_ConnDescription(*stream);
+        s << "New connection: " << x_ConnDescription(stream);
     }
     try {
-        x_InitConnection(*stream, conn);
+        x_InitConnection(stream, conn);
     }
     catch ( CException& exc ) {
+        m_Connector.RememberIfBad(conn_info);
         NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
                      "connection initialization failed: "+
-                     x_ConnDescription(*stream));
+                     x_ConnDescription(stream));
     }
-    SetRandomFail(*stream, conn);
-    if ( stream->bad() ) {
+    SetRandomFail(stream, conn);
+    if ( stream.bad() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
                    "connection initialization failed: "+
-                   x_ConnDescription(*stream));
+                   x_ConnDescription(stream));
     }
-    tmout.sec = m_Timeout;
-    CONN_SetTimeout(stream->GetCONN(), eIO_ReadWrite, &tmout);
+    // successfully received reply, server is good, forget it
+    conn_info.MarkAsGood();
+
+    STimeout tmout;
+    tmout.sec = m_Connector.GetTimeout();
+    tmout.usec = 0;
+    CONN_SetTimeout(stream.GetCONN(), eIO_ReadWrite, &tmout);
 
     RequestSucceeds(conn);
-    return stream.release();
+    return conn_info;
 }
 
 
@@ -463,6 +435,8 @@ void CId2Reader::x_ReceiveReply(TConn conn, CID2_Reply& reply)
                    "failed to receive reply: "+
                    x_ConnDescription(stream));
     }
+    // successfully receved reply, server is good, forget it
+    m_Connections[conn].MarkAsGood();
 }
 
 

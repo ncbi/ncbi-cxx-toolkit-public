@@ -31,44 +31,16 @@
 */
 
 #include <objtools/data_loaders/genbank/reader_id2_base.hpp>
-#include <corelib/ncbitime.hpp>
+#include <objtools/data_loaders/genbank/reader_service.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
-
-class CConn_IOStream;
-class CByteSourceReader;
-class CObjectIStream;
-class CObjectInfo;
-
 BEGIN_SCOPE(objects)
 
-class CSeq_id;
-class CID2_Blob_Id;
-
-class CID2_Request;
 class CID2_Request_Packet;
-class CID2_Request_Get_Seq_id;
-class CID2_Request_Get_Blob_Id;
-class CID2_Request_Get_Blob;
-class CID2_Request_Get_Blob_Info;
-class CID2_Get_Blob_Details;
-
-class CID2_Error;
 class CID2_Reply;
-class CID2_Reply_Get_Seq_id;
-class CID2_Reply_Get_Blob_Id;
-class CID2_Reply_Get_Blob_Seq_ids;
-class CID2_Reply_Get_Blob;
-class CID2_Reply_Data;
-class CID2S_Reply_Get_Split_Info;
-class CID2S_Split_Info;
-class CID2S_Reply_Get_Chunk;
-class CID2S_Chunk_Id;
-class CID2S_Chunk;
-
 class CLoadLockSeq_ids;
 class CLoadLockBlob_ids;
-
 class CReaderRequestResult;
 struct SId2LoadedSet;
 
@@ -95,14 +67,13 @@ protected:
     string x_ConnDescription(CConn_IOStream& stream) const;
     CConn_IOStream* x_GetCurrentConnection(TConn conn) const;
     CConn_IOStream* x_GetConnection(TConn conn);
-    CConn_IOStream* x_NewConnection(TConn conn);
+    CReaderServiceConnector::SConnInfo x_NewConnection(TConn conn);
     void x_InitConnection(CConn_IOStream& stream, TConn conn);
 
-private:
-    string m_ServiceName;
-    int    m_OpenTimeout, m_Timeout;
+protected:
+    CReaderServiceConnector m_Connector;
 
-    typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
+    typedef map< TConn, CReaderServiceConnector::SConnInfo > TConnections;
     TConnections   m_Connections;
 };
 
