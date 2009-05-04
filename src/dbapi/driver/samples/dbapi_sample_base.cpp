@@ -47,6 +47,7 @@
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <dbapi/driver/drivers.hpp>
 #include <dbapi/error_codes.hpp>
 #include <util/random_gen.hpp>
 
@@ -84,8 +85,22 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     m_TableUID += CTime(CTime::eCurrent).AsString("MDy");
     replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
 
+#ifdef NCBI_DLL_BUILD
     CPluginManager_DllResolver::EnableGlobally(true);
-    return;
+#else
+
+#ifdef HAVE_LIBSYBASE
+    DBAPI_RegisterDriver_CTLIB();
+#endif
+
+#ifdef HAVE_ODBC
+    DBAPI_RegisterDriver_ODBC();
+#endif
+
+    DBAPI_RegisterDriver_FTDS();
+    DBAPI_RegisterDriver_FTDS_ODBC();
+
+#endif // NCBI_DLL_BUILD
 }
 
 
@@ -223,7 +238,7 @@ CDbapiSampleApp::Run()
     if (service_mapping == "on") {
         m_UseSvcMapper = true;
     } else if (service_mapping == "random") {
-        static Uint4   rdm_seed = time(NULL);
+        static Uint4   rdm_seed = static_cast<Uint4>(time(NULL));
         static CRandom rdm_gen(rdm_seed);
         m_UseSvcMapper = (rdm_gen.GetRand(0, 1) != 0);
     }

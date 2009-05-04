@@ -23,6 +23,17 @@ else
     server_mssql2005="MS_TEST"
 fi
 
+if echo $FEATURES | grep "DLL" > /dev/null ; then
+    static_config=0
+else
+    static_config=1
+fi
+
+if echo $FEATURES | grep "MSWin" > /dev/null ; then
+    win_config=1
+else
+    win_config=0
+fi
 
 res_file="/tmp/test_lang_query.sh.$$"
 trap 'rm -f $res_file' 1 2 15
@@ -138,7 +149,7 @@ EOF
     run_sybase_app.sh dbapi_driver_check $driver
     driver_status=$?
 
-    if test $driver_status -eq 5; then 
+    if test $driver_status -eq 5 -a \( $static_config -eq 0 -o $win_config -eq 0 \); then 
         cat <<EOF
 
 Driver not found.
@@ -174,7 +185,11 @@ EOF
 
     else
         for server in $server_list ; do
-            if test $driver = "ctlib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
+            if test $driver = "ctlib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
+                continue
+            fi
+
+            if test $driver = "dblib"  -a  $static_config = 1 -a $win_config = 1; then
                 continue
             fi
 
