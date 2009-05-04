@@ -56,8 +56,8 @@ public:
                     streamsize buf_size, bool tie,
                     CT_CHAR_TYPE* ptr, size_t size);
     virtual ~CConn_Streambuf();
-    CONN    GetCONN(void) const { return m_Conn; }
-    void    Close(void)         { x_Cleanup();   }
+    CONN    GetCONN(void) const { return m_Conn;   }
+    void    Close(void)         { x_Cleanup(true); }
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -89,7 +89,7 @@ private:
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
     CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
 
-    void                x_Cleanup(bool if_close = true);
+    void                x_Cleanup(bool if_close);
 
     static void         x_OnClose(CONN conn, ECONN_Callback type, void* data);
 

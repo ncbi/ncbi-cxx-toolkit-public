@@ -88,7 +88,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
 
 CConn_Streambuf::~CConn_Streambuf()
 {
-    x_Cleanup();
+    x_Cleanup(true);
     delete[] m_WriteBuf;
 }
 
