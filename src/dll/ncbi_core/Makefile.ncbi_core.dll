@@ -7,6 +7,7 @@ HOSTED_LIBS    = xncbi     \
                  bz2       \
                  z         \
                  lzo       \
+                 regexp    \
                  tables    \
                  sequtil   \
                  creaders  \
@@ -20,7 +21,7 @@ HOSTED_LIBS    = xncbi     \
                  xser    \
                  xqueryparse
 
-DEPENDENCIES   = regexp
+#DEPENDENCIES   = regexp
 
 CPPFLAGS = -DNCBI_CORE_EXPORTS -DZLIB_DLL -DZLIB_INTERNAL
 
