@@ -38,7 +38,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#define BOOST_TEST_NO_LIB
+#ifndef BOOST_TEST_NO_LIB
+#  define BOOST_TEST_NO_LIB
+#endif
 #include <corelib/test_boost.hpp>
 
 #include <boost/preprocessor/cat.hpp>
@@ -1073,7 +1075,7 @@ CNcbiTestApplication::x_ReadConfiguration(void)
         return false;
 
     const IRegistry& registry = s_GetTestApp().GetConfig();
-    list<string> reg_entries; 
+    list<string> reg_entries;
     registry.EnumerateEntries(kTestConfigSectionName, &reg_entries);
 
     // Disable tests ...
@@ -1474,7 +1476,7 @@ CNcbiBoostReporter::test_unit_report_start(but::test_unit const&  tu,
                                         const_cast<but::test_unit*>(&tu));
 
     if (m_IsXML) {
-        ostr << '<' << (tu.p_type == but::tut_case ? "TestCase" : "TestSuite") 
+        ostr << '<' << (tu.p_type == but::tut_case ? "TestCase" : "TestSuite")
              << " name"   << but::attr_value() << tu.p_name.get()
              << " result" << but::attr_value() << descr;
 
