@@ -1430,7 +1430,8 @@ CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
                                      unsigned long         elapsed)
 {
     unsigned long timeout = tu.p_timeout.get();
-    if (timeout != 0  &&  timeout < elapsed) {
+    // elapsed comes in microseconds
+    if (timeout != 0  &&  timeout < elapsed / 1000000) {
         boost::execution_exception ex(
                boost::execution_exception::timeout_error, "Timeout exceeded");
         but::framework::exception_caught(ex);
