@@ -1132,6 +1132,8 @@ static CONNECTOR s_CreateConnector
     xxx = net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     if (!xxx)
         return 0;
+    if ((flags & fHCC_NoAutoRetry)  ||  !xxx->max_try)
+        xxx->max_try = 1;
 
     if ((xxx->scheme != eURL_Unspec  && 
          xxx->scheme != eURL_Https   &&

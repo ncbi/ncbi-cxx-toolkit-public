@@ -122,9 +122,9 @@ extern "C" {
  *  fHCC_InsecureRedirect --
  *       for security reasons the following redirects comprise security risk
  *       and, thus, are prohibited:  switching from https to http, and
- *       re-posting data (regradless of the transport, either http or https).
+ *       re-posting data (regardless of the transport, either http or https).
  *       This flag allows such redirects (if needed) to be honored.
- *  fHCC_NoRetry --
+ *  fHCC_NoAutoRetry --
  *       do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
  *
@@ -141,10 +141,10 @@ typedef enum {
     fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
     fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
     fHCC_DropUnread       = 0x40, /* each microsession drops yet unread data */
-    fHCC_NoUpread         = 0x80, /* do not use SOCK_ReadWhileWrite() at all */
+    fHCC_NoUpread         = 0x80, /* do not use SOCK_SetReadOnWrite() at all */
     fHCC_Flushable        = 0x100,/* connector will really flush on Flush()  */
     fHCC_InsecureRedirect = 0x200,/* any redirect will be honored            */
-    fHCC_NoRetry          = 0x400 /* no auto-retries allowed                 */
+    fHCC_NoAutoRetry      = 0x400 /* no auto-retries allowed                 */
 } EHCC_Flags;
 typedef unsigned int THCC_Flags;  /* bitwise OR of "EHCC_Flags"              */
 
