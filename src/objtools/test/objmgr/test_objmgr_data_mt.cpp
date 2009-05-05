@@ -569,8 +569,9 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
 bool CTestOM::TestApp_Init(void)
 {
     failed = false;
-    CORE_SetLOCK(MT_LOCK_cxx2c());
-    CORE_SetLOG(LOG_cxx2c());
+    //CORE_SetLOCK(MT_LOCK_cxx2c());
+    //CORE_SetLOG(LOG_cxx2c());
+    //CONNECT_Init(&GetConfig());
 
     const CArgs& args = GetArgs();
     if ( args["idlist"] ) {

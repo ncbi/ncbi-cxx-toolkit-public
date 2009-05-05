@@ -214,6 +214,10 @@ int CTestOM::Run(void)
 
 void CTestOM::Init(void)
 {
+    //CONNECT_Init(&GetConfig());
+    //CORE_SetLOCK(MT_LOCK_cxx2c());
+    //CORE_SetLOG(LOG_cxx2c());
+
     // Prepare command line descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -696,9 +700,6 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
 
 bool CTestOM::TestApp_Init(void)
 {
-    CORE_SetLOCK(MT_LOCK_cxx2c());
-    CORE_SetLOG(LOG_cxx2c());
-
     const CArgs& args = GetArgs();
     if ( args["idlist"] ) {
         CNcbiIstream& file = args["idlist"].AsInputFile();
