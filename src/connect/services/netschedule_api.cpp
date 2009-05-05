@@ -356,7 +356,7 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::x_GetJobStatus(
 
 const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 {
-    CFastMutexGuard g(m_ServerParamsMutex);
+    CFastMutexGuard g(m_FastMutex);
 
     if (!m_ServerParams.get())
         m_ServerParams.reset(new CNetScheduleAPI::SServerParams);

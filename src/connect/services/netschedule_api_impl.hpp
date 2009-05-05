@@ -206,7 +206,7 @@ struct SNetScheduleAPIImpl : public CNetObject
 
     auto_ptr<CNetScheduleAPI::SServerParams> m_ServerParams;
     long m_ServerParamsAskCount;
-    CFastMutex m_ServerParamsMutex;
+    CFastMutex m_FastMutex;
 };
 
 inline SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -273,6 +273,8 @@ inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
     m_API(ns_api_impl),
     m_ControlPort(control_port)
 {
+    CFastMutexGuard g(ns_api_impl->m_FastMutex);
+
     ns_api_impl->m_Listener->MakeWorkerNodeInitCmd(control_port);
 }
 
