@@ -103,12 +103,12 @@ case "$ncbi_platform" in
     Linux*     ) : ${SQLITE3_PATH=$NCBI/sqlite-3.3.5} ;;
 esac
 
-# case "$ncbi_platform" in
-#     Linux32    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-32bit} ;;
-#     Linux64    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-64bit} ;;
-#     SunOSSparc ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.0-EBF9209}    ;;
-#     SunOSx86   ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.5.1}          ;;
-# esac
+case "$ncbi_platform" in
+    Linux32    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-32bit} ;;
+    Linux64    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-64bit} ;;
+    SunOSSparc ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.0-EBF9209}    ;;
+    SunOSx86   ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.5.1}          ;;
+esac
 
 case "$ncbi_platform" in
     FreeBSD32 | SunOSx86 ) ;;
