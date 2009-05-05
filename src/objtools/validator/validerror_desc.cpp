@@ -152,7 +152,6 @@ void CValidError_desc::ValidateComment
     }
 }
 
-
 void CValidError_desc::ValidateUser
 (const CUser_object& usr,
  const CSeqdesc& desc)

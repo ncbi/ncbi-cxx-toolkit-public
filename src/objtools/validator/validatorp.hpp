@@ -257,7 +257,8 @@ private:
     void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
     void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj);
     void x_ValidatePages(const string& pages, const CSerialObject& obj);
-    void ValidateEtAl(const CPubdesc& pubdesc, const CSerialObject& obj);
+    void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj);
+    void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj);
     void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj);
     void ValidateArticleHasJournal(const CCit_art& art, const CSerialObject& obj);
     
@@ -466,8 +467,11 @@ private:
         EErrType err, EDiagSev sev);
     void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
-    void x_ValidateAbuttingCDSGroup(const TMappedFeatVec& cds_group, bool minus);
-    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq);
+    bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
+    void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
+    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
+    unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
+    bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
     void x_ValidateDupGenes(const CSeq_feat_Handle& g1, const CSeq_feat_Handle& g2);
 
@@ -494,6 +498,8 @@ private:
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
     void ValidateIDSetAgainstDb(const CBioseq& seq);
+    void x_ValidateSourceFeatures(const CBioseq_Handle& bsh);
+    void x_ValidatePubFeatures(const CBioseq_Handle& bsh);
     void x_ValidateMultiplePubs(const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
@@ -548,6 +554,23 @@ public:
     size_t GetNumGenes    (void) const { return m_NumGenes; }
     size_t GetNumGeneXrefs(void) const { return m_NumGeneXrefs; }
 
+    enum EInferenceValidCode {
+        eInferenceValidCode_valid = 0,
+        eInferenceValidCode_empty,
+        eInferenceValidCode_bad_prefix,
+        eInferenceValidCode_bad_body,
+        eInferenceValidCode_single_field,
+        eInferenceValidCode_spaces,
+        eInferenceValidCode_same_species_misused,
+        eInferenceValidCode_bad_accession,
+        eInferenceValidCode_bad_accession_version,
+        eInferenceValidCode_accession_version_not_public,
+        eInferenceValidCode_bad_accession_type
+    };
+
+    EInferenceValidCode ValidateInferenceAccession (string accession, string separator, bool fetch_accession);
+    EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
+
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat, bool is_insd_in_sep);
@@ -563,17 +586,17 @@ private:
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged,
         bool report_errors, bool& has_errors);
-    void ValidateSplice(const CSeq_feat& feat, bool check_all);
+    void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     void ValidateBothStrands(const CSeq_feat& feat);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
     void ValidateBadMRNAOverlap(const CSeq_feat& feat);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void ValidateCDSPartial(const CSeq_feat& feat);
     bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
-        const CCdregion& cdregion, bool report_erros);
+        const CCdregion& cdregion, const string& transl_prot, bool report_erros);
     void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
 
-    void ValidateProt(const CProt_ref& prot, const CSerialObject& obj);
+    void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
@@ -582,6 +605,7 @@ private:
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
     void ValidatemRNAGene (const CSeq_feat &feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
+    void ValidateIntron(const CSeq_feat& feat);
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
     void ValidateNonImpFeat (const CSeq_feat& feat, bool is_insd_in_sep);
@@ -595,7 +619,7 @@ private:
     void ValidateLabelVal (const string& val, const CSeq_feat& feat);
     void ValidateCompareVal (const string& val, const CSeq_feat& feat, bool is_insd_in_sep);
 
-
+    void ValidateGapFeature (const CSeq_feat& feat);
 
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
@@ -603,11 +627,13 @@ private:
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
+    void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat, CTSE_Handle tse);
+    void ValidateExtUserObject (const CUser_object& user_object, const CSeq_feat& feat);
+    void ValidateGoTerms (CUser_object::TData field_list, const CSeq_feat& feat, vector<pair<string, string> >& id_terms);
 
     void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
     void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
-    void ValidateBondLocs(const CSeq_feat& feat);
 
     bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat);
@@ -618,9 +644,11 @@ private:
         TSeqPos pos);
 
     bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
+    bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
     bool IsSameAsCDS(const CSeq_feat& feat);
     bool IsCDDFeat(const CSeq_feat& feat) const;
 
+    int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
 
     // data
     size_t m_NumGenes;

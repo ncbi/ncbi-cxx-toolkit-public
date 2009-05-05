@@ -604,7 +604,6 @@ bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se)
 }
 
 
-
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
  const CCit_sub* cs)
@@ -674,9 +673,13 @@ bool CValidError_imp::Validate
         }
     }
     CValidError_feat feat_validator(*this);
+    vector < int > feature_ids;
     for (CFeat_CI fi(GetTSEH()); fi; ++fi) {
         const CSeq_feat& sf = fi->GetOriginalFeature();
         try {
+            if (sf.IsSetId() && sf.GetId().IsLocal() && sf.GetId().GetLocal().IsId()) {
+                feature_ids.push_back(sf.GetId().GetLocal().GetId());
+            }
             feat_validator.ValidateSeqFeat(sf, is_insd_in_sep);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
@@ -692,6 +695,34 @@ bool CValidError_imp::Validate
             return true;
         }
     }
+    // look for colliding feature IDs
+    if (feature_ids.size() > 0) {
+        const CTSE_Handle& tse = seh.GetTSE_Handle ();
+        stable_sort (feature_ids.begin(), feature_ids.end());
+          vector <int>::iterator it = feature_ids.begin();
+          int id = *it;
+          ++it;
+          while (it != feature_ids.end()) {
+              if (*it == id) {
+                  vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, id);
+                  ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                      PostErr (eDiag_Critical, eErr_SEQ_FEAT_CollidingFeatureIDs,
+                               "Colliding feature ID " + NStr::IntToString (id), *(feat_it->GetSeq_feat()));
+                  }
+                  while (it != feature_ids.end() && *it == id) {
+                      ++it;
+                  }
+                  if (it != feature_ids.end()) {
+                      id = *it;
+                  }
+              } else {
+                  id = *it;
+                  ++it;
+              }
+        }
+    }
+
+        
     if ( feat_validator.GetNumGenes() == 0  &&  
          feat_validator.GetNumGeneXrefs() > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
@@ -1066,7 +1097,10 @@ void CValidError_imp::ValidatePubdesc
             break;
         }
     }
-    ValidateEtAl(pubdesc, obj);
+    if (pubdesc.IsSetPub()) {
+        ValidateAuthorsInPubequiv (pubdesc.GetPub(), obj);
+    }
+
 }
 
 
@@ -1453,50 +1487,94 @@ void CValidError_imp::ValidatePubHasAuthor
 }
 
 
-void CValidError_imp::ValidateEtAl
-(const CPubdesc& pubdesc,
+static bool s_BadCharsInAuthorName (string str, string& badauthor, bool allowcomma, bool allowperiod, bool last)
+{
+    if (NStr::IsBlank (str)) {
+        return false;
+    }
+
+
+    size_t stp;
+    if (last) {
+        stp = NStr::Find (str, "St.");
+        if (stp != string::npos) {
+            stp += 2;  // point to the period
+        }
+    } else {
+        stp = string::npos;
+    }
+
+    size_t pos = 0;
+    const char *ptr = str.c_str();
+
+    while (*ptr != 0) {
+        if (isalpha (*ptr)
+            || *ptr == '-'
+            || *ptr == '\''
+            || *ptr == ' '
+            || (*ptr == ',' && allowcomma)
+            || *ptr == '.' && (allowperiod || pos == stp)) {
+            // all these are ok
+            ptr++;
+            pos++;
+        } else {
+            badauthor = ptr;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static bool s_BadCharsInAuthor (const CAuthor& author, string& badauthor, bool& last_is_bad)
+{
+    badauthor = "";
+    last_is_bad = false;
+
+    if (author.IsSetName() && author.GetName().IsName()) {
+        if (author.GetName().GetName().IsSetLast()
+            && NStr::EqualNocase (author.GetName().GetName().GetLast(), "et al.")) {
+            return false;
+        }
+        if (author.GetName().GetName().IsSetLast()
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetLast(), badauthor, FALSE, FALSE, TRUE)) {
+            last_is_bad = true;
+            return true;
+        }
+        if (author.GetName().GetName().IsSetFirst()
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetFirst(), badauthor, FALSE, TRUE, FALSE)) {
+            return true;
+        }
+        if (author.GetName().GetName().IsSetInitials()
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetInitials(), badauthor, FALSE, TRUE, FALSE)) {
+            return true;
+        }
+        if (author.GetName().GetName().IsSetSuffix()
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetSuffix(), badauthor, FALSE, TRUE, FALSE)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CValidError_imp::ValidateAuthorList 
+(const CAuth_list::C_Names& names,
  const CSerialObject& obj)
 {
-    FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
-        const CPub& pub = **pub_iter;
-        const CAuth_list* authors = 0;
-        switch ( pub.Which() ) {
-        case CPub::e_Gen:
-            if ( pub.GetGen().IsSetAuthors() ) {
-                authors = &(pub.GetGen().GetAuthors());
-            }
-            break;
-        case CPub::e_Sub:
-            authors = &(pub.GetSub().GetAuthors());
-            break;
-        case CPub::e_Article:
-            if ( pub.GetArticle().IsSetAuthors() ) {
-                authors = &(pub.GetArticle().GetAuthors());
-            }
-            break;
-        case CPub::e_Book:
-            authors = &(pub.GetBook().GetAuthors());
-            break;
-        case CPub::e_Proc:
-            authors = &(pub.GetProc().GetBook().GetAuthors());
-            break;
-        case CPub::e_Man:
-            authors = &(pub.GetMan().GetCit().GetAuthors());
-            break;
-        default:
-            break;
-        }
+    EDiagSev sev = m_IsRefSeq ? eDiag_Warning : eDiag_Error;
 
-        if ( !authors ) {
-            continue;
-        }
-
-        const CAuth_list::C_Names& names = authors->GetNames();
-        if ( !names.IsStd() ) {
-            continue;
-        }
-
+    if (names.IsStd()) {
         ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
+            string badauthor = "";
+            bool   last_is_bad = false;
+            if (s_BadCharsInAuthor (**name, badauthor, last_is_bad)) {
+                if (last_is_bad) {
+                    PostErr (sev, eErr_SEQ_FEAT_BadCharInAuthorLastName, "Bad characters in author " + badauthor, obj);
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, "Bad characters in author " + badauthor, obj);
+                }
+            }
             if ( (*name)->GetName().IsName() ) {
                 const CName_std& nstd = (*name)->GetName().GetName();
                 string last = "";
@@ -1528,6 +1606,73 @@ void CValidError_imp::ValidateEtAl
                 }
             }
         }
+    } else if (names.IsMl()) {
+        ITERATE ( list< string >, str, names.GetMl()) {
+            string badauthor = "";
+            if (s_BadCharsInAuthorName (*str, badauthor, TRUE, TRUE, FALSE)) {
+                if (NStr::IsBlank (badauthor)) {
+                    badauthor = "?";
+                }
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, "Bad characters in author " + badauthor, obj);
+            }
+        }           
+    } else if (names.IsStr()) {
+        ITERATE ( list< string >, str, names.GetStr()) {
+            string badauthor = "";
+            if (s_BadCharsInAuthorName (*str, badauthor, TRUE, TRUE, FALSE)) {
+                if (NStr::IsBlank (badauthor)) {
+                    badauthor = "?";
+                }
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, "Bad characters in author " + badauthor, obj);
+            }
+        }           
+    }
+}
+
+
+void CValidError_imp::ValidateAuthorsInPubequiv 
+(const CPub_equiv& pe,
+ const CSerialObject& obj)
+{
+    FOR_EACH_PUB_ON_PUBEQUIV (pub_iter, pe) {
+        const CPub& pub = **pub_iter;
+        const CAuth_list* authors = 0;
+        switch ( pub.Which() ) {
+        case CPub::e_Gen:
+            if ( pub.GetGen().IsSetAuthors() ) {
+                authors = &(pub.GetGen().GetAuthors());
+            }
+            break;
+        case CPub::e_Sub:
+            authors = &(pub.GetSub().GetAuthors());
+            break;
+        case CPub::e_Article:
+            if ( pub.GetArticle().IsSetAuthors() ) {
+                authors = &(pub.GetArticle().GetAuthors());
+            }
+            break;
+        case CPub::e_Book:
+            authors = &(pub.GetBook().GetAuthors());
+            break;
+        case CPub::e_Proc:
+            authors = &(pub.GetProc().GetBook().GetAuthors());
+            break;
+        case CPub::e_Man:
+            authors = &(pub.GetMan().GetCit().GetAuthors());
+            break;
+        case CPub::e_Equiv:
+            ValidateAuthorsInPubequiv (pub.GetEquiv(), obj);
+            break;
+        default:
+            break;
+        }
+
+        if ( !authors ) {
+            continue;
+        }
+
+        const CAuth_list::C_Names& names = authors->GetNames();
+        ValidateAuthorList (names, obj);
     }
 }
 

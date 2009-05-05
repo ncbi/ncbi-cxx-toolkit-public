@@ -357,6 +357,8 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
                         } else {
                             ++it;
                         }
+                    } else {
+                        ++it;
                     }
                 }
             }

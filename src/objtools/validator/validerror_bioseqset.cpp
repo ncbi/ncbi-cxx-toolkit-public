@@ -371,7 +371,10 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
         if (biosrc == 0)
             continue;
         
-        const string& taxname = biosrc->GetOrg().GetTaxname();
+        string taxname = "";
+        if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname()) {
+            taxname = biosrc->GetOrg().GetTaxname();
+        }
         if (first_taxname == 0) {
             first_taxname = &taxname;
             continue;

@@ -1849,6 +1849,27 @@ CHOICE_IS (ORGMOD_CHOICE, Var, Chs)
 #define SWITCH_ON_ORGMOD_CHOICE(Var) \
 SWITCH_ON (ORGMOD_CHOICE, Var)
 
+/// CPubequiv macros
+#define PUB_ON_PUBEQUIV_Type      CPub_equiv::Tdata
+#define PUB_ON_PUBEQUIV_Test(Var) (Var).IsSet()
+#define PUB_ON_PUBEQUIV_Get(Var)  (Var).Get()
+#define PUB_ON_PUBEQUIV_Set(Var)  (Var).Set()
+
+#define FOR_EACH_PUB_ON_PUBEQUIV(Itr, Var) \
+FOR_EACH (PUB_ON_PUBEQUIV, Itr, Var)
+
+#define EDIT_EACH_PUB_ON_PUBEQUIV(Itr, Var) \
+EDIT_EACH (PUB_ON_PUBEQUIV, Itr, Var)
+
+/// ADD_PUB_TO_PUBEQUIV
+
+#define ADD_PUB_TO_PUBEQUIV(Var, Ref) \
+ADD_ITEM (PUB_ON_PUBEQUIV, Var, Ref)
+
+/// ERASE_PUB_ON_PUBEQUIV
+
+#define ERASE_PUB_ON_PUBEQUIV(Itr, Var) \
+LIST_ERASE_ITEM (PUB_ON_PUBEQUIV, Itr, Var)
 
 /// CPubdesc macros
 

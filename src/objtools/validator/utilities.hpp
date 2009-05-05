@@ -268,6 +268,9 @@ CSeqVector GetSequenceFromFeature(const CSeq_feat& feat, CScope& scope,
     CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac,
     bool product = false);
 
+string GetSequenceStringFromLoc(const CSeq_loc& loc,  CScope& scope);
+
+
 inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope);
@@ -285,6 +288,9 @@ typedef enum {
   eAccessionFormat_bad_version } EAccessionFormatError;
 
 EAccessionFormatError ValidateAccessionString (string accession, bool require_version);
+
+bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2);
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

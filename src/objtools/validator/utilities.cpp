@@ -755,6 +755,27 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_misc_RNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_misc_RNA, CGbqualType::e_Trans_splicing );
     Associate( CSeqFeatData::eSubtype_misc_RNA, CGbqualType::e_Usedin );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Allele );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Citation );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Db_xref );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Evidence );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Experiment );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Gene );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Gene_synonym );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Inference );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Locus_tag );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Note );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Old_locus_tag );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Operon );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Partial );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Pseudo );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Trans_splicing );
+    Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Usedin );
 
     //misc_signal
     Associate( CSeqFeatData::eSubtype_misc_signal, CGbqualType::e_Allele );
@@ -1748,8 +1769,6 @@ void CFeatQualAssoc::PopulateMandatoryGbquals(void)
     // old_sequence requires citation
     m_MandatoryGbquals[CSeqFeatData::eSubtype_old_sequence].push_back(CGbqualType::e_Citation);
 
-    // gene feature requires gene gbqual
-    m_MandatoryGbquals[CSeqFeatData::eSubtype_gene].push_back(CGbqualType::e_Gene);
     // ncRNA requires ncRNA_class
     m_MandatoryGbquals[CSeqFeatData::eSubtype_ncRNA].push_back(CGbqualType::e_NcRNA_class);
 
@@ -2174,6 +2193,24 @@ list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
 }
 
 
+string GetSequenceStringFromLoc
+(const CSeq_loc& loc,
+ CScope& scope)
+{
+    CNcbiOstrstream oss;
+    CFastaOstream fasta_ostr(oss);
+    fasta_ostr.SetFlag(CFastaOstream::fAssembleParts);
+    fasta_ostr.SetFlag(CFastaOstream::fInstantiateGaps);
+    for (CSeq_loc_CI citer (loc); citer; ++citer) {
+        const CSeq_loc& part = citer.GetSeq_loc();
+        CBioseq_Handle bsh = scope.GetBioseqHandle(part);
+        fasta_ostr.WriteSequence (bsh, &part);
+    }
+    string s = CNcbiOstrstreamToString(oss);
+    return s;
+}
+
+
 CSeqVector GetSequenceFromLoc
 (const CSeq_loc& loc,
  CScope& scope,
@@ -2441,6 +2478,22 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
     }
 
     return eAccessionFormat_wrong_number_of_digits;
+}
+
+
+bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2)
+{
+    if (!f1.IsLocal() || !f2.IsLocal()) {
+        return false;
+    } else if (f1.GetLocal().IsStr() && f2.GetLocal().IsStr()
+               && NStr::EqualNocase(f1.GetLocal().GetStr(), f2.GetLocal().GetStr())) {
+        return true;
+    } else if (f1.GetLocal().IsId() && f2.GetLocal().IsId()
+               && f1.GetLocal().GetId() == f2.GetLocal().GetId()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
