@@ -1537,20 +1537,20 @@ static bool s_BadCharsInAuthor (const CAuthor& author, string& badauthor, bool& 
             return false;
         }
         if (author.GetName().GetName().IsSetLast()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetLast(), badauthor, FALSE, FALSE, TRUE)) {
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetLast(), badauthor, false, false, true)) {
             last_is_bad = true;
             return true;
         }
         if (author.GetName().GetName().IsSetFirst()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetFirst(), badauthor, FALSE, TRUE, FALSE)) {
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetFirst(), badauthor, false, true, false)) {
             return true;
         }
         if (author.GetName().GetName().IsSetInitials()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetInitials(), badauthor, FALSE, TRUE, FALSE)) {
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetInitials(), badauthor, false, true, false)) {
             return true;
         }
         if (author.GetName().GetName().IsSetSuffix()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetSuffix(), badauthor, FALSE, TRUE, FALSE)) {
+            && s_BadCharsInAuthorName (author.GetName().GetName().GetSuffix(), badauthor, false, true, false)) {
             return true;
         }
     }
@@ -1609,7 +1609,7 @@ void CValidError_imp::ValidateAuthorList
     } else if (names.IsMl()) {
         ITERATE ( list< string >, str, names.GetMl()) {
             string badauthor = "";
-            if (s_BadCharsInAuthorName (*str, badauthor, TRUE, TRUE, FALSE)) {
+            if (s_BadCharsInAuthorName (*str, badauthor, true, true, false)) {
                 if (NStr::IsBlank (badauthor)) {
                     badauthor = "?";
                 }
@@ -1619,7 +1619,7 @@ void CValidError_imp::ValidateAuthorList
     } else if (names.IsStr()) {
         ITERATE ( list< string >, str, names.GetStr()) {
             string badauthor = "";
-            if (s_BadCharsInAuthorName (*str, badauthor, TRUE, TRUE, FALSE)) {
+            if (s_BadCharsInAuthorName (*str, badauthor, true, true, false)) {
                 if (NStr::IsBlank (badauthor)) {
                     badauthor = "?";
                 }
