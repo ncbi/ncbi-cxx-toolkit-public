@@ -1,12 +1,12 @@
 -- ============================================
--- ::DATATOOL:: Generated from "docsum_3.0.xsd"
+-- ::DATATOOL:: Generated from "docsum_3.1.xsd"
 -- ::DATATOOL:: by application DATATOOL version 1.8.6
--- ::DATATOOL:: on 05/02/2008 10:59:28
+-- ::DATATOOL:: on 05/05/2009 10:27:19
 -- ============================================
 
 -- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Michael Kholodov (National Library of Medicine) 
 -- edited with XMLSpy v2005 rel. 3 U (http://www.altova.com) by Michael Feolo (NCBI/NLM/NIH) 
-Docsum-3-0 DEFINITIONS ::=
+Docsum-3-1 DEFINITIONS ::=
 BEGIN
 
 Assay ::= SEQUENCE {
@@ -261,7 +261,8 @@ PrimarySequence ::= SEQUENCE {
     source ENUMERATED {
       submitter (1),
       blastmb (2),
-      xm (3)
+      xm (3),
+      remap (4)
     } OPTIONAL,
     accession VisibleString OPTIONAL
   },
