@@ -476,9 +476,6 @@ public:
       * @param type
       *  What to do (replace or throw exception) when encountering a
       *  namespace definition with the same prefix.
-      * @param type
-      *  What to do (replace or throw exception) when encountering a
-      *  namespace definition with the same prefix.
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
