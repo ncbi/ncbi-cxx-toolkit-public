@@ -20869,6 +20869,9 @@ if test "$with_sybase" != "no" ; then
    fi
 
    # Lock in the version we found, ignoring symlinks further up
+   case "$SYBASE_PATH" in
+      */[1-9]* ) resolve_sybase=false ;;
+   esac
    if test -d "$SYBASE_PATH"  &&  $resolve_sybase; then
       # SYBASE_PATH_=`cd $SYBASE_PATH && /bin/pwd`
       SYBASE_PATH_=`ls -ld $SYBASE_PATH | sed -ne 's/.* -> //p'`
