@@ -202,7 +202,7 @@ void CAlnReader::Read(bool guess)
     m_Seqs.resize(afp->num_sequences);
     m_Ids.resize(afp->num_sequences);
     for (int i = 0;  i < afp->num_sequences;  ++i) {
-        m_Seqs[i] = NStr::ToUpper(afp->sequences[i]);
+        m_Seqs[i] = afp->sequences[i];
         m_Ids[i] = afp->ids[i];
     }
     m_Organisms.resize(afp->num_organisms);
@@ -327,7 +327,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
                     new_seg = true;
                 }
             } else {
-                const char& residue = m_Seqs[row_i][aln_pos];
+                const char& residue = toupper (m_Seqs[row_i][aln_pos]);
                 if (residue != m_MiddleGap[0]  &&
                     residue != m_EndGap[0]  &&
                     residue != m_Missing[0]) {
