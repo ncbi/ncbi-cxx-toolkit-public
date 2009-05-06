@@ -402,7 +402,7 @@ void CWiggleTrack::MakeGraph(
     graph->SetTitle( m_strName );
     
     CSeq_interval& loc = graph->SetLoc().SetInt();
-    loc.SetId().Assign( CSeq_id( CSeq_id::e_Local, m_strChrom ) );
+    loc.SetId().Set( CSeq_id::e_Local, m_strChrom );
     loc.SetFrom( SeqStart() );
     loc.SetTo( SeqStop() );
         
