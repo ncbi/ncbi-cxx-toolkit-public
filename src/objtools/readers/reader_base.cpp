@@ -78,6 +78,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/microarray_reader.hpp>
@@ -227,6 +228,23 @@ bool CReaderBase::SplitLines(
     lines.clear();
     lines.push_back( data );
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::ProcessError(
+    CObjReaderLineException& err,
+    CErrorContainer* pContainer )
+//  ----------------------------------------------------------------------------
+{
+    err.SetLineNumber( m_uLineNumber );
+    if ( 0 == pContainer ) {
+        throw( err );
+    }
+    if ( ! pContainer->PostError( err ) )
+    {
+        throw( err );
+    }
 }
 
 END_objects_SCOPE
