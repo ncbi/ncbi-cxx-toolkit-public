@@ -45,6 +45,8 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
+#include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/readers/ucscid.hpp>
@@ -86,80 +88,75 @@ void CWiggleRecord::Reset()
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleRecord::ParseTrackDefinition(
-    const vector<string>& data,
-    unsigned int uMode )
+void CWiggleRecord::ParseTrackDefinition(
+    const vector<string>& data )
 //  ----------------------------------------------------------------------------
 {
     Reset();
     if ( data.size() < 2 || data[0] != "track" ) {
-        return false;
+        CObjReaderLineException err( 
+            eDiag_Critical,
+            0,
+            "Missing track line --- Is this even WIGGLE?" );
+        throw( err );
     }
     vector<string>::const_iterator it = data.begin();
     for ( ++it; it != data.end(); ++it ) {
         string strKey;
         string strValue;
         if ( ! NStr::SplitInTwo( *it, "=", strKey, strValue ) ) {
-            return false;
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid track line format --- only <key>=<value> pairs expected." );
+            throw( err );
         }
         NStr::ReplaceInPlace( strValue, "\"", "" );
-        if ( strKey == "db" ) {
-            if ( uMode == IDMODE_CHROM ) {
-                m_strBuild = "";
-            }
-            else {
-                m_strBuild = strValue;
-            }
-        }
         if ( strKey == "name" ) {
             m_strName = strValue;
         }
     }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleRecord::ParseDataBed(
-    const vector<string>& data,
-    unsigned int )
+void CWiggleRecord::ParseDataBed(
+    const vector<string>& data )
 //  ----------------------------------------------------------------------------
 {
     if ( data.size() != 4 ) {
-        return false;
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line --- BED data with exactly four columns expected" );
+        throw( err );
     }
     m_strChrom = data[0];
     m_uSeqStart = NStr::StringToUInt( data[1] );
     m_uSeqSpan = NStr::StringToUInt( data[2] ) - m_uSeqStart;
     m_dValue = NStr::StringToDouble( data[3] );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleRecord::ParseDataVarstep(
-    const vector<string>& data,
-    unsigned int )
+void CWiggleRecord::ParseDataVarstep(
+    const vector<string>& data )
 //  ----------------------------------------------------------------------------
 {
     m_uSeqStart = NStr::StringToUInt( data[0] ) - 1; // varStep is 1- based
     m_dValue = NStr::StringToDouble( data[1] );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleRecord::ParseDataFixedstep(
-    const vector<string>& data,
-    unsigned int )
+void CWiggleRecord::ParseDataFixedstep(
+    const vector<string>& data )
 //  ----------------------------------------------------------------------------
 {
     m_uSeqStart += m_uSeqStep;
     m_dValue = NStr::StringToDouble( data[0] );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleRecord::ParseDeclarationVarstep(
-    const vector<string>& data,
-    unsigned int )
+void CWiggleRecord::ParseDeclarationVarstep(
+    const vector<string>& data )
 //
 //  Note:   Once we make it in here, we know "data" starts with the obligatory
 //          "variableStep" declaration.
@@ -173,7 +170,11 @@ bool CWiggleRecord::ParseDeclarationVarstep(
         CWiggleReader::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
-            return false;
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid VarStep declaration --- only key value pairs allowed" );
+            throw( err );
         }
         if ( key_value_pair[0] == "chrom" ) {
             m_strChrom = key_value_pair[1];
@@ -183,15 +184,18 @@ bool CWiggleRecord::ParseDeclarationVarstep(
             m_uSeqSpan = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
-        return false;
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid VarStep declaration --- only \"chrom\" and \"span\" are "
+            "permissible as keys" );
+        throw( err );
     }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleRecord::ParseDeclarationFixedstep(
-    const vector<string>& data,
-    unsigned int )
+void CWiggleRecord::ParseDeclarationFixedstep(
+    const vector<string>& data )
 //  ----------------------------------------------------------------------------
 {
     Reset();
@@ -202,7 +206,11 @@ bool CWiggleRecord::ParseDeclarationFixedstep(
         CWiggleReader::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
-            return false;
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid FixedStep declaration --- only key value pairs allowed" );
+            throw( err );
         }
         if ( key_value_pair[0] == "chrom" ) {
             m_strChrom = key_value_pair[1];
@@ -220,16 +228,19 @@ bool CWiggleRecord::ParseDeclarationFixedstep(
             m_uSeqStep = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
-        return false;
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid VarStep declaration --- only \"chrom\", \"span\", \"start\" "
+            "and \"step\" are permissible as keys" );
+        throw( err );
     }
     m_uSeqStart -= m_uSeqStep;
-    return true;
 }
 
 //  ===========================================================================
 CWiggleTrack::CWiggleTrack(
-    const CWiggleRecord& record,
-    CIdMapper* pMapper ):
+    const CWiggleRecord& record ):
 //  ===========================================================================
     m_strName( record.Name() ),
     m_strChrom( record.Chrom() ),
@@ -242,15 +253,6 @@ CWiggleTrack::CWiggleTrack(
     m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
     m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
 
-    if ( record.Build() != string("genbank") ) {
-        m_MappedID = pMapper->MapID( UcscID::Label( record.Build(), 
-            record.Chrom() ), m_uSeqLength );
-    }
-    else {
-        m_MappedID = CSeq_id_Handle::GetGiHandle( 
-            NStr::StringToNumeric( record.Chrom() ) );
-    }
-    
     if ( m_uSeqLength == 0 ) {
         m_uSeqStart = record.SeqStart();
         m_uSeqStop = record.SeqStart() + record.SeqSpan();
@@ -270,22 +272,31 @@ CWiggleTrack::~CWiggleTrack()
 }
 
 //  ===========================================================================
-bool CWiggleTrack::AddRecord(
+void CWiggleTrack::AddRecord(
     const CWiggleRecord& record )
 //  ===========================================================================
 {
     if ( m_strChrom != record.Chrom() ) {
-        return false;
+        CObjReaderLineException err( 
+            eDiag_Warning,
+            0,
+            "Data record with wrong chromosome: rejected" );
+        throw( err );
     }
     if ( SeqSpan() != record.SeqSpan() ) {
-//        NCBI_THROW2( CObjReaderParseException, eFormat,
-//            string( "Data of multiple spans within a single track" ), 0 );
+        CObjReaderLineException err( 
+            eDiag_Warning,
+            0,
+            "Data record with suspicious span: rejected" );
+        throw( err );
     }
     unsigned int iResidue = (record.SeqStart() - m_uSeqStart) % SeqSpan();
     if ( 0 != (record.SeqStart() - m_uSeqStart) % SeqSpan() ) {
-//        NCBI_THROW2( CObjReaderParseException, eFormat,
-//            string( "Data records within track not aligned at span multiples" ), 
-//            0 );
+        CObjReaderLineException err( 
+            eDiag_Warning,
+            0,
+            "Data record not aligned with span multiple: rejected" );
+        throw( err );
     }
     CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );        
     m_Entries[ record.SeqStart() ] = pData;
@@ -304,14 +315,11 @@ bool CWiggleTrack::AddRecord(
     if ( record.Value() < m_dMinValue ) {
         m_dMinValue = record.Value();
     }
-    return true;
 };
 
 //  ===========================================================================
-CWiggleSet::CWiggleSet(
-    CIdMapper* pMapper ):
+CWiggleSet::CWiggleSet()
 //  ===========================================================================
-    m_pMapper( pMapper )
 {
 };
 
@@ -345,7 +353,7 @@ bool CWiggleSet::AddRecord(
         pTrack->AddRecord( record );
     }
     else {
-        m_Tracks[ record.Chrom() ] = new CWiggleTrack( record, m_pMapper );
+        m_Tracks[ record.Chrom() ] = new CWiggleTrack( record );
     }
     return true;
 };
@@ -376,18 +384,17 @@ void CWiggleSet::Dump(
 }
 
 //  ===========================================================================
-bool CWiggleSet::MakeGraph(
+void CWiggleSet::MakeGraph(
     CSeq_annot::TData::TGraph& graphset )
 //  ===========================================================================
 {
     for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
         it->second->MakeGraph( graphset );
     }       
-    return true;
 }
 
 //  ===========================================================================
-bool CWiggleTrack::MakeGraph(
+void CWiggleTrack::MakeGraph(
     CSeq_annot::TData::TGraph& graphset )
 //  ===========================================================================
 {
@@ -395,7 +402,7 @@ bool CWiggleTrack::MakeGraph(
     graph->SetTitle( m_strName );
     
     CSeq_interval& loc = graph->SetLoc().SetInt();
-    loc.SetId().Assign( *m_MappedID.GetSeqId() );
+    loc.SetId().Assign( CSeq_id( CSeq_id::e_Local, m_strChrom ) );
     loc.SetFrom( SeqStart() );
     loc.SetTo( SeqStop() );
         
@@ -420,11 +427,10 @@ bool CWiggleTrack::MakeGraph(
     }
             
     graphset.push_back( graph );
-    return true;
 }
 
 //  ===========================================================================
-bool CWiggleTrack::FillGraphReal(
+void CWiggleTrack::FillGraphReal(
     CReal_graph& graph )
 //  ===========================================================================
 {
@@ -451,19 +457,18 @@ bool CWiggleTrack::FillGraphReal(
     graph.SetMax( m_dMaxValue );
     graph.SetAxis( 0 );
     graph.SetValues() = values;
-    return true;
 }
 
 //  ===========================================================================
-bool CWiggleTrack::FillGraphInt(
+void CWiggleTrack::FillGraphInt(
     CInt_graph& graph )
 //  ===========================================================================
 {
-    return true;
+    /* to do --- if we ever have a need for this */
 }
 
 //  ===========================================================================
-bool CWiggleTrack::FillGraphByte(
+void CWiggleTrack::FillGraphByte(
     CByte_graph& graph )
 //
 //  Idea:   Scale the set of values found linearly to the interval 1 (lowest)
@@ -480,7 +485,6 @@ bool CWiggleTrack::FillGraphByte(
         values[ u ] = ByteGraphValue( SeqStart() + u * SeqSpan() );
     }
     graph.SetValues() = values;
-    return true;
 }
 
 //  ===========================================================================
@@ -534,7 +538,7 @@ double CWiggleTrack::ScaleConst() const
 double CWiggleTrack::ScaleLinear() const
 //  ===========================================================================
 {
-    return (m_dMaxValue - m_dMinValue) / 256;
+    return (m_dMaxValue - m_dMinValue) / 255;
 }
     
 //  ===========================================================================

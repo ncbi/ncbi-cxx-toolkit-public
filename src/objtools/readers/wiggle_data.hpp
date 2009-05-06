@@ -79,14 +79,13 @@ class CWiggleSet
 //  ===========================================================================
 {
 public:
-    CWiggleSet(
-        CIdMapper* );
+    CWiggleSet();
     ~CWiggleSet() {};
 
     bool AddRecord(
         const CWiggleRecord& );
 
-    bool MakeGraph(
+    void MakeGraph(
         CSeq_annot::TData::TGraph& );
 
     void Dump(
@@ -116,17 +115,16 @@ class CWiggleTrack
     
 public:
     CWiggleTrack(
-        const CWiggleRecord&,
-        CIdMapper* pMapper );
+        const CWiggleRecord& );
     ~CWiggleTrack();
 
-    bool AddRecord(
+    void AddRecord(
         const CWiggleRecord& );
 
     void Dump(
         CNcbiOstream& );
     
-    bool MakeGraph(
+    void MakeGraph(
         CSeq_annot::TData::TGraph& );
         
     const char* Chrom() const { return m_strChrom.c_str(); };
@@ -136,13 +134,13 @@ public:
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     
 protected:
-    bool FillGraphReal(
+    void FillGraphReal(
         CReal_graph& );
         
-    bool FillGraphInt(
+    void FillGraphInt(
         CInt_graph& );
         
-    bool FillGraphByte(
+    void FillGraphByte(
         CByte_graph& );
         
     bool DataValue(
@@ -156,7 +154,6 @@ protected:
     double ScaleLinear() const;              
     unsigned int GetGraphType();
 
-    CSeq_id_Handle m_MappedID;
     std::string m_strName;                       
     std::string m_strChrom;
     unsigned int m_uGraphType;
@@ -174,40 +171,34 @@ class CWiggleRecord
 //  ===========================================================================
 {
 public:
-    enum IDMODE {
-        IDMODE_NAME_CHROM,
-        IDMODE_CHROM
-    };
-    
-public:
     CWiggleRecord();
     ~CWiggleRecord() {};
 
     void Reset();
 
-    bool ParseTrackDefinition(
-        const std::vector<std::string>&,
-        unsigned int );
+    void ParseTrackDefinition( 
+        const std::vector<std::string>& );
+    /* throws CObjReaderLineException */
     
-    bool ParseDeclarationVarstep(
-        const std::vector<std::string>&,
-        unsigned int );
+    void ParseDeclarationVarstep(
+        const std::vector<std::string>& );
+    /* throws CObjReaderLineException */
 
-    bool ParseDeclarationFixedstep(
-        const std::vector<std::string>&,
-        unsigned int );
+    void ParseDeclarationFixedstep(
+        const std::vector<std::string>& );
+    /* throws CObjReaderLineException */
 
-    bool ParseDataBed(
-        const std::vector<std::string>&,
-        unsigned int );
+    void ParseDataBed(
+        const std::vector<std::string>& );
+    /* throws CObjReaderLineException */
 
-    bool ParseDataVarstep(
-        const std::vector<std::string>&,
-        unsigned int );
+    void ParseDataVarstep(
+        const std::vector<std::string>& );
+    /* throws CObjReaderLineException */
 
-    bool ParseDataFixedstep(
-        const std::vector<std::string>&,
-        unsigned int );
+    void ParseDataFixedstep(
+        const std::vector<std::string>& );
+    /* throws CObjReaderLineException */
 
     const char* Chrom() const { return m_strChrom.c_str(); };
     const char* Build() const { return m_strBuild.c_str(); };

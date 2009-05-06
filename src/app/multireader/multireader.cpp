@@ -47,8 +47,9 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/bed_reader.hpp>
+#include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/multireader.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -63,13 +64,13 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
-    virtual int ReadSeqAnnot(
-        CNcbiIstream&,
-        CRef<CSeq_annot>& );
+//    virtual int ReadSeqAnnot(
+//        CNcbiIstream&,
+//        CRef<CSeq_annot>& );
         
-    virtual int ReadSeqEntry(
-        CNcbiIstream&,
-        CRef<CSeq_entry>& );
+//    virtual int ReadSeqEntry(
+//        CNcbiIstream&,
+//        CRef<CSeq_entry>& );
     
     CReaderBase* m_pReader;
 
@@ -174,42 +175,6 @@ void CMultiReaderApp::Init(void)
 }
 
 //  ============================================================================
-int
-CMultiReaderApp::ReadSeqAnnot(
-    CNcbiIstream& ip,
-    CRef<CSeq_annot>& annot )
-//  ============================================================================
-{
-    try {
-        m_pReader->Read( ip, annot );
-    }
-    catch (...) {
-        const CArgs& args = GetArgs();
-        cerr << "Bad source file: Maybe not be " << args["f"].AsString() << endl;
-        return 1;
-    }
-    return 0;
-}
-    
-//  ============================================================================
-int
-CMultiReaderApp::ReadSeqEntry(
-    CNcbiIstream& ip,
-    CRef<CSeq_entry>& entry )
-//  ============================================================================
-{
-    try {
-        m_pReader->Read( ip, entry );
-    }
-    catch (...) {
-        const CArgs& args = GetArgs();
-        cerr << "Bad source file: Maybe not be " << args["f"].AsString() << endl;
-        return 1;
-    }
-    return 0;
-}
-
-//  ============================================================================
 int 
 CMultiReaderApp::Run(void)
 //  ============================================================================
@@ -220,63 +185,32 @@ CMultiReaderApp::Run(void)
     const CArgs& args = GetArgs();
     CNcbiIstream& ip = args["i"].AsInputFile();
     CNcbiOstream& op = args["o"].AsOutputFile();
-    
-    //
-    //  Create a suitable reader object:
-    //
+
+    CFormatGuess::EFormat fmt = CFormatGuess::eUnknown;
     string format = args["f"].AsString();
-    if ( NStr::StartsWith( GetProgramDisplayName(), "wig" ) ) {
-        format = "wig";
+    if ( NStr::StartsWith( GetProgramDisplayName(), "wig" ) || format == "wig" ) {
+        fmt = CFormatGuess::eWiggle;
     }
-    if ( NStr::StartsWith( GetProgramDisplayName(), "gff" ) ) {
-        format = "gff";
+    if ( NStr::StartsWith( GetProgramDisplayName(), "bed" ) || format == "bed" ) {
+        fmt = CFormatGuess::eBed;
     }
-    if ( NStr::StartsWith( GetProgramDisplayName(), "bed" ) ) {
-        format = "bed";
+    if ( NStr::StartsWith( GetProgramDisplayName(), "b15" ) || format == "b15" ) {
+        fmt = CFormatGuess::eBed15;
     }
-    if ( NStr::StartsWith( GetProgramDisplayName(), "b15" ) ) {
-        format = "bed15";
+    if ( fmt == CFormatGuess::eUnknown ) {
+        fmt = CFormatGuess::Format( ip );
     }
-    if ( format == "guess" ) {
-        m_pReader = CReaderBase::GetReader( 
-            CFormatGuess::Format( ip ), args );
+    
+    CMultiReader reader( fmt );
+    CErrorContainer errors;
+    CRef< CSeq_annot > annot = reader.ReadObject( ip, &errors );
+    if ( annot ) {
+        op << MSerial_AsnText << *annot << endl;
     }
     else {
-        m_pReader = CReaderBase::GetReader( format, args );
+        cerr << "No object found!" << endl;
     }
-    if ( !m_pReader ) {
-        cerr << "Bad format string: " << args["f"].AsString() << endl;
-        return 1;
-    }
-
-    //
-    //  Read and dump:
-    //
-    switch ( m_pReader->ObjectType() ) {
-    
-        default: {
-            cerr << "Bad reader type: Cannot produce object of requested type" << endl;
-            return 1;
-        }   
-        case CReaderBase::OT_SEQANNOT: {
-            CRef<CSeq_annot> annot( new CSeq_annot );
-            ReadSeqAnnot( ip, annot );
-            op << MSerial_AsnText << *annot << endl;
-            break;
-        }    
-        case CReaderBase::OT_SEQENTRY: {
-            CObjectOStreamAsn AsnOut( op );
-            CRef<CSeq_entry> entry;
-            ReadSeqEntry( ip, entry );
-            AsnOut << *entry;
-            break;
-        }
-    }
-    
-    //
-    //  Cleanup:
-    //
-    delete m_pReader;
+    errors.Dump( cerr );
     return 0;
 }
 

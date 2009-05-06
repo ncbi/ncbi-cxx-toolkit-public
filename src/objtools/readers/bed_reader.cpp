@@ -78,6 +78,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -164,6 +165,40 @@ bool CBedReader::VerifyFormat(
 }
 
 
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CBedReader::ReadObject(
+    CNcbiIstream& in,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CRef< CSeq_annot > annot( new CSeq_annot );
+    string line;
+    int linecount = 0;
+
+    while ( ! in.eof() ) {
+        ++linecount;
+        NcbiGetlineEOL( in, line );
+        if ( NStr::TruncateSpaces( line ).empty() ) {
+            continue;
+        }
+        if ( IsMetaInformation( line ) ) {
+            if ( ! x_ProcessMetaInformation( line ) ) {
+                cerr << "Warning: Junk meta info encountered in line "
+                     << linecount << endl;
+            }
+            continue;
+        }
+        if ( ! x_ParseFeature( line, annot ) ) {
+            cerr << "Warning: Junk record encountered in line " << linecount
+                 << endl;
+            continue;
+        }
+    }
+    
+    return annot;
+};
+                
 //  ----------------------------------------------------------------------------
 void CBedReader::Read( 
     CNcbiIstream& input, 

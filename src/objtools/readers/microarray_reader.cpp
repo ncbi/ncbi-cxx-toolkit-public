@@ -78,6 +78,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/error_codes.hpp>
@@ -106,6 +107,39 @@ CMicroArrayReader::~CMicroArrayReader()
 { 
 }
 
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CMicroArrayReader::ReadObject(
+    CNcbiIstream& input,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CRef< CSeq_annot > annot( new CSeq_annot );
+    string line;
+    int linecount = 0;
+
+    while ( ! input.eof() ) {
+        ++linecount;
+        NcbiGetlineEOL( input, line );
+        if ( NStr::TruncateSpaces( line ).empty() ) {
+            continue;
+        }
+        if ( IsMetaInformation( line ) ) {
+            if ( ! x_ProcessMetaInformation( line, annot ) ) {
+                cerr << "Warning: Junk meta info encountered in line "
+                     << linecount << endl;
+            }
+            continue;
+        }
+        if ( ! x_ParseFeature( line, annot ) ) {
+            cerr << "Warning: Junk record encountered in line " << linecount
+                 << endl;
+            continue;
+        }
+    }
+    return annot;
+};
+                
 //  ----------------------------------------------------------------------------
 void CMicroArrayReader::Read( 
     CNcbiIstream& input, 

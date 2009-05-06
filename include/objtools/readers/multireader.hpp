@@ -26,92 +26,57 @@
  * Author: Frank Ludwig
  *
  * File Description:
- *   BED file reader
+ *   Basic reader interface
  *
  */
 
-#ifndef OBJTOOLS_READERS___BEDREADER__HPP
-#define OBJTOOLS_READERS___BEDREADER__HPP
+#ifndef OBJTOOLS_READERS___MULTIREADER__HPP
+#define OBJTOOLS_READERS___MULTIREADER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/reader_base.hpp>
-
 #include <objects/seq/Seq_annot.hpp>
-
+#include <util/format_guess.hpp>
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_SCOPE(objects) // namespace ncbi::objects::
+BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+class CReaderBase;
+class CErrorContainer;
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJREAD_EXPORT CBedReader
+class NCBI_XOBJREAD_EXPORT CMultiReader
 //  ----------------------------------------------------------------------------
-    : public CReaderBase
 {
-    //
-    //  object management:
-    //
 public:
-    CBedReader( 
-        int =fDefaults );
-    virtual ~CBedReader();
+
+    //  
+    //  Interface:
+    //    
+public:
+    CMultiReader(
+        CFormatGuess::EFormat = CFormatGuess::eUnknown );
     
-    //
-    //  object interface:
-    //
+    ~CMultiReader();
+
 public:
-    enum EBedFlags {
-        fDefaults = 0
-    };
-    typedef int TFlags;
-
-    virtual void Read( 
-        CNcbiIstream&, 
-        CRef<CSeq_annot>& );
-
     CRef< CSeq_annot >
     ReadObject(
         CNcbiIstream&,
-        CErrorContainer* );
+        CErrorContainer* =0 );
                 
     //
-    //  class interface:
+    //  Implementation:
     //
-    static bool VerifyFormat(
+protected:
+    CReaderBase*
+    CreateReader(
         CNcbiIstream& );
 
-    static bool VerifyFormat(
-        const char*,
-        size_t );
-        
-    //
-    //  helpers:
-    //
-protected:
-    static bool IsMetaInformation(
-        const string& );
+    CFormatGuess::EFormat m_iFormat;
+};    
 
-    bool x_ProcessMetaInformation(
-        const string& );
-    bool x_ParseFeature(
-        const string&,
-        CRef<CSeq_annot>& );
-    void x_SetFeatureLocation(
-        CRef<CSeq_feat>&,
-        const vector<string>& );
-    void x_SetFeatureDisplayData(
-        CRef<CSeq_feat>&,
-        const vector<string>& );
-
-    //
-    //  data:
-    //
-protected:
-    vector<string>::size_type m_columncount;
-    bool m_usescore;
-};
-
-END_SCOPE(objects)
+END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_READERS___BEDREADER__HPP
+#endif // OBJTOOLS_READERS___MULTIREADER__HPP

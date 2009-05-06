@@ -78,6 +78,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
@@ -102,8 +103,7 @@ CWiggleReader::CWiggleReader(
 //  ----------------------------------------------------------------------------
     m_uCurrentRecordType( TYPE_NONE )
 {
-    m_pIdMapper = CIdMapper::GetIdMapper( "multi" );
-    m_pSet = new CWiggleSet( m_pIdMapper );
+    m_pSet = new CWiggleSet;
 }
 
 
@@ -129,36 +129,7 @@ CWiggleReader::CWiggleReader(
             "CReaderBase: Options \"sitemap\" and \"dbmap\" are mutually exclusive" );
     }
 
-    //
-    //  Ok, set configure the right mapper and initialize object accordingly:
-    //    
-    if ( !args["usermap"].AsString().empty() || !args["map"].AsString().empty() ) {
-        m_pIdMapper = CIdMapper::GetIdMapper( "user" );
-        m_pIdMapper->Setup( args );
-        m_uIdMode = CWiggleRecord::IDMODE_CHROM;
-        m_pSet = new CWiggleSet( m_pIdMapper );
-        return;
-    }
-    if ( !args["sitemap"].AsString().empty() ) {
-        m_pIdMapper = CIdMapper::GetIdMapper( "site" );
-        m_pIdMapper->Setup( args );
-        m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
-        m_pSet = new CWiggleSet( m_pIdMapper );
-        return;
-    }
-    if ( !args["dbmap"].AsString().empty() ) {
-        m_pIdMapper = CIdMapper::GetIdMapper( "database" );
-        m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
-        m_pSet = new CWiggleSet( m_pIdMapper );
-        return;
-    }
-        
-    //
-    //  default: builtin mappings:
-    //
-    m_pIdMapper = CIdMapper::GetIdMapper( "builtin" );
-    m_uIdMode = CWiggleRecord::IDMODE_NAME_CHROM;
-    m_pSet = new CWiggleSet( m_pIdMapper );
+    m_pSet = new CWiggleSet;
 }
 
 
@@ -178,31 +149,61 @@ bool CWiggleReader::VerifyFormat(
     return verify;
 }
 
-//  ----------------------------------------------------------------------------
-void CWiggleReader::Read( 
-    CNcbiIstream& input, 
-    CRef<CSeq_annot>& annot )
-//
-//  Note:   Expecting a sequence of: <trackline> <graph_data>*
-//  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CWiggleReader::ReadObject(
+    CNcbiIstream& input,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
 {
+    m_uLineNumber = 0;
+    
+    CRef< CSeq_annot > annot( new CSeq_annot );
     string pending;
     unsigned int count = 0;
     CWiggleRecord record;
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     x_ReadLine( input, pending );
+    if ( input.eof() && pending == "" ) {
+        // empty file
+        return CRef<CSeq_annot >();
+    }
     while ( !input.eof() ) {
-        if ( ! x_ReadTrackData( input, pending, record ) ) {
-            return;
+        //
+        //  Wrap the parsing of every single line into a try/catch block so
+        //  we have the option of continuing with the next line if resulting
+        //  exceptions are less than life threatening.
+        //
+        
+        try {
+            x_ParseTrackData( input, pending, record );
         }
-        while ( x_ReadGraphData( input, pending, record ) ) {
-            m_pSet->AddRecord( record );
+        catch( CObjReaderLineException& err ) {
+            ProcessError( err, pErrorContainer );
+        }
+        x_ReadLine( input, pending );
+        while( ! pending.empty() || ! input.eof() ) {
+        
+            try {            
+                x_ParseGraphData( input, pending, record );
+                m_pSet->AddRecord( record );
+            }
+            catch( CObjReaderLineException& err ) {
+                ProcessError( err, pErrorContainer );
+            }
+            x_ReadLine( input, pending );
+        }
+        try {
+            m_pSet->MakeGraph( graphset );
+        }
+        catch( CObjReaderLineException& err ) {
+            ProcessError( err, pErrorContainer );
         }
     }
-    m_pSet->MakeGraph( graphset );
-}
-
+    return annot; 
+};
+                
 //  ----------------------------------------------------------------------------
 void CWiggleReader::Dump(
     CNcbiOstream& Out )
@@ -212,7 +213,7 @@ void CWiggleReader::Dump(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleReader::x_ReadTrackData(
+void CWiggleReader::x_ParseTrackData(
     CNcbiIstream& input,
     string& pending,
     CWiggleRecord& record )
@@ -223,15 +224,12 @@ bool CWiggleReader::x_ReadTrackData(
 {
     vector<string> parts;
     Tokenize( pending, " \t", parts );
-    if ( ! record.ParseTrackDefinition( parts, m_uIdMode ) ) {
-        return false;
-    }
-    return x_ReadLine( input, pending );
+    record.ParseTrackDefinition( parts );
 }
 
 
 //  ----------------------------------------------------------------------------
-bool CWiggleReader::x_ReadGraphData(
+void CWiggleReader::x_ParseGraphData(
     CNcbiIstream& input,
     string& pending,
     CWiggleRecord& record )
@@ -249,54 +247,59 @@ bool CWiggleReader::x_ReadGraphData(
 //              last "fixedStep" declaration.
 //  ----------------------------------------------------------------------------
 {
-    if ( pending.empty() && input.eof() ) {
-        return false;
-    }
     vector<string> parts;
     Tokenize( pending, " \t", parts );
+    
     switch ( x_GetLineType( pending ) ) {
 
-        default:
-            return false;
-
+        default: {
+            CObjReaderLineException err( 
+                eDiag_Critical, 
+                0, 
+                "Internal error --- please report and submit input file for "
+                "inspection" );
+            throw err;
+        }
         case TYPE_DECLARATION_VARSTEP:
             m_uCurrentRecordType = TYPE_DATA_VARSTEP;
-            record.ParseDeclarationVarstep( parts, m_uIdMode );
+            record.ParseDeclarationVarstep( parts );
             x_ReadLine( input, pending );
-            return x_ReadGraphData( input, pending, record );
+            x_ParseGraphData( input, pending, record );
+            break;
 
         case TYPE_DECLARATION_FIXEDSTEP:
             m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
-            record.ParseDeclarationFixedstep( parts, m_uIdMode );
+            record.ParseDeclarationFixedstep( parts );
             x_ReadLine( input, pending );
-            return x_ReadGraphData( input, pending, record );
+            x_ParseGraphData( input, pending, record );
+            break;
 
         case TYPE_DATA_BED:
-            if ( ! record.ParseDataBed( parts, m_uIdMode ) ) {
-                return false;
-            }
+            record.ParseDataBed( parts );
             break;
 
         case TYPE_DATA_VARSTEP:
             if ( m_uCurrentRecordType != TYPE_DATA_VARSTEP ) {
-                return false;
+                CObjReaderLineException err( 
+                    eDiag_Error, 
+                    0, 
+                    "Invalid data line --- VarStep data not expected here" );
+                throw err;
             }
-            if ( ! record.ParseDataVarstep( parts, m_uIdMode ) ) {
-                return false;
-            }
+            record.ParseDataVarstep( parts );
             break;
 
         case TYPE_DATA_FIXEDSTEP:
             if ( m_uCurrentRecordType != TYPE_DATA_FIXEDSTEP ) {
-                return false;
+                CObjReaderLineException err( 
+                    eDiag_Error, 
+                    0, 
+                    "Invalid data line --- FixedStep data not expected here" );
+                throw err;
             }
-            if ( ! record.ParseDataFixedstep( parts, m_uIdMode ) ) {
-                return false;
-            }
+            record.ParseDataFixedstep( parts );
             break;
     }
-    x_ReadLine( input, pending );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -308,6 +311,7 @@ bool CWiggleReader::x_ReadLine(
     line.clear();
     while ( ! input.eof() ) {
         NcbiGetlineEOL( input, line );
+        ++m_uLineNumber;
         NStr::TruncateSpacesInPlace( line );
         if ( ! x_IsCommentLine( line ) ) {
             return true;
@@ -338,11 +342,12 @@ unsigned int CWiggleReader::x_GetLineType(
     const string& line )
 //  ----------------------------------------------------------------------------
 {
+    //
+    //  Note: blank lines and comments should have been weeded out before we
+    //  we even get here ...
+    //
     vector<string> parts;
     Tokenize( line, " \t", parts );
-    if ( parts.empty() ) {
-        return TYPE_NONE;
-    }
     if ( parts[0] == "track" ) {
         return TYPE_TRACK;
     }
@@ -361,7 +366,9 @@ unsigned int CWiggleReader::x_GetLineType(
     if ( parts.size() == 1 ) {
         return TYPE_DATA_FIXEDSTEP;
     }
-    return TYPE_NONE;
+    
+    CObjReaderLineException err( eDiag_Error, 0, "Unrecognizable line type" );
+    throw err;
 }
 
 //  ----------------------------------------------------------------------------

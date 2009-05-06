@@ -41,18 +41,14 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CErrorContainer;
+class CObjReaderLineException;
+
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
 public:
-//    enum FileFormat {
-//        FMT_UNKNOWN,
-//        FMT_BED,
-//        FMT_MICROARRAY,
-//        FMT_WIGGLE,
-//        FMT_GFF
-//    };
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,
@@ -104,7 +100,12 @@ public:
     virtual void Read( 
         CNcbiIstream&, 
         CRef<CSeq_entry>& ) { return; };
-        
+
+    virtual CRef< CSeq_annot >
+    ReadObject(
+        CNcbiIstream&,
+        CErrorContainer* =0 ) { return CRef< CSeq_annot >(); };
+                
     virtual void Dump(
         CNcbiOstream& ) { return; };
 
@@ -117,6 +118,15 @@ protected:
         size_t uSize,
         list< string>& lines );
 
+    void
+    ProcessError(
+        CObjReaderLineException&,
+        CErrorContainer* );
+        
+    //
+    //  Data:
+    //
+    unsigned int m_uLineNumber;
 };
 
 END_objects_SCOPE

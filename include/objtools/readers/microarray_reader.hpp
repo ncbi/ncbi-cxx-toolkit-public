@@ -67,7 +67,12 @@ public:
     virtual void Read( 
         CNcbiIstream&, 
         CRef<CSeq_annot>& );
-
+                
+    CRef< CSeq_annot >
+    ReadObject(
+        CNcbiIstream&,
+        CErrorContainer* =0 );
+                
     //
     //  class interface:
     //

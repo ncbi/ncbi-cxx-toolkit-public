@@ -86,10 +86,11 @@ public:
     };
     typedef int TFlags;
 
-    virtual void Read( 
-        CNcbiIstream&, 
-        CRef<CSeq_annot>& );
-
+    virtual CRef< CSeq_annot >
+    ReadObject(
+        CNcbiIstream&,
+        CErrorContainer* =0 );
+                
     virtual void Dump(
         CNcbiOstream& );
         
@@ -108,15 +109,17 @@ public:
     //  helpers:
     //
 protected:
-    bool x_ReadTrackData(
+    void x_ParseTrackData(
         CNcbiIstream&,
         string&,
         CWiggleRecord& );
+    /* throws CObjReaderLineException */
 
-    bool x_ReadGraphData(
+    void x_ParseGraphData(
         CNcbiIstream&,
         string&,
         CWiggleRecord& );
+    /* throws CObjReaderLineException */
 
     bool x_IsCommentLine(
         const string& );
@@ -127,6 +130,7 @@ protected:
 
     unsigned int x_GetLineType(
         const string& );
+    /* throws CObjReaderLineException */
 
     void x_UpdateWiggleSet();
     
@@ -135,10 +139,7 @@ protected:
     //
 protected:
     unsigned int m_uCurrentRecordType;
-
-    CIdMapper* m_pIdMapper;    
     CWiggleSet* m_pSet;
-    unsigned int m_uIdMode;
 };
 
 END_objects_SCOPE
