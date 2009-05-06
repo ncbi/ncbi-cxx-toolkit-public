@@ -41,4 +41,8 @@ only once when building multiple targets.
 Added generation of Products group on Xcode.
 Added support of WATCHERS macro
 Merge Compiler.PreprocessorDefinitions defined in project and meta-msvc files.
- 
+
+Mat 06, 2009
+version 1.8.1
+Corrected definition of NCBI_SIGNATURE on Xcode 
+Modified special handling of LibChoices on Unix
