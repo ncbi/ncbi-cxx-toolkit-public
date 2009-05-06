@@ -2731,156 +2731,138 @@ bool NStr::IsIPAddress(const string& ip)
 }
 
 
-string NStr::GetField(const CTempString& str,
-                      size_t             field_no,
-                      const CTempString& delimiters)
-{
-    const char *    input_str( str.data() );
-    size_t          length( str.length() );
-    size_t          current_field( 0 );
-    size_t          current_index( 0 );
-
-    // Search for the beginning of the required field
-    while (current_field != field_no)
+namespace {
+    // Comparator to decide if a symbol is a delimiter
+    template <typename TDelimiter>
+    class PDelimiter
     {
-        while (current_index < length &&
-               (delimiters.find(input_str[current_index], 0) == NPOS))
-        {
-            ++current_index;
+    private:
+        const TDelimiter& delimiter;
+
+    public:
+        PDelimiter(const TDelimiter& delim)
+            : delimiter(delim)
+        {}
+
+        bool operator()(char tested_symbol) const;
+    };
+
+
+    // Template search for a field
+    // @param str
+    //   C or C++ string to search in.
+    // @param field_no
+    //   Zero-based field number.
+    // @param delimiter
+    //   Functor to decide if a symbol is a delimiter
+    // @param merge
+    //   Whether to merge or not adjacent delimiters.
+    // @return
+    //   Found field; or empty string if the required field is not found.
+    template <typename TComparator, typename TResult>
+    TResult s_GetField(const CTempString& str,
+                       size_t             field_no,
+                       const TComparator& delimiter,
+                       NStr::EMergeDelims merge)
+    {
+        const char*   current_ptr   = str.data();
+        const char*   end_ptr       = current_ptr + str.length();
+        size_t        current_field = 0;
+
+        // Search for the beginning of the required field
+        for ( ;  current_field != field_no;  current_field++) {
+            while (current_ptr < end_ptr  &&  !delimiter(*current_ptr))
+                current_ptr++;
+
+            if (merge == NStr::eMergeDelims) {
+                while (current_ptr < end_ptr  &&  delimiter(*current_ptr))
+                    current_ptr++;
+            }
+            else
+                current_ptr++;
+
+            if (current_ptr >= end_ptr)
+                return TResult();
         }
 
-        ++current_index;
-        ++current_field;
+        if (current_field != field_no)
+            return TResult();
+
+        // Here: current_ptr points to the first character after the delimiter.
+        const char* field_start = current_ptr;
+        while (current_ptr < end_ptr  &&  !delimiter(*current_ptr))
+            current_ptr++;
+
+        return TResult(field_start, current_ptr - field_start);
     }
 
-    if ( current_index >= length )
+
+
+    template <>
+    bool PDelimiter<char>::operator() (char c) const
     {
-        return string();
+        return delimiter == c;
     }
 
-    // Here: the input_str[current_index] is a character after delimiter
-    const char *    field_start( input_str + current_index );
-    while ((current_index < length) &&
-           (delimiters.find(input_str[current_index], 0) == NPOS))
+    template <>
+    bool PDelimiter<CTempString>::operator() (char c) const
     {
-        ++current_index;
+        return delimiter.find(c) != NPOS;
     }
-    return string( field_start, input_str + current_index - field_start );
 }
 
 
 string NStr::GetField(const CTempString& str,
                       size_t             field_no,
-                      char               delimiter)
+                      const CTempString& delimiters,
+                      EMergeDelims       merge)
 {
-    const char *    input_str( str.data() );
-    size_t          length( str.length() );
-    size_t          current_field( 0 );
-    size_t          current_index( 0 );
+    return s_GetField<PDelimiter<CTempString>, string>
+        (str,
+         field_no,
+         PDelimiter<CTempString>(delimiters),
+         merge);
+}
 
-    // Search for the beginning of the required field
-    while (current_field != field_no)
-    {
-        while (current_index < length &&
-               (input_str[current_index] != delimiter))
-        {
-            ++current_index;
-        }
 
-        ++current_index;
-        ++current_field;
-    }
-
-    if ( current_index >= length )
-    {
-        return string();
-    }
-
-    // Here: the input_str[current_index] is a character after delimiter
-    const char *    field_start( input_str + current_index );
-    while ((current_index < length) &&
-               (input_str[current_index] != delimiter))
-    {
-        ++current_index;
-    }
-    return string( field_start, input_str + current_index - field_start );
+string NStr::GetField(const CTempString& str,
+                      size_t             field_no,
+                      char               delimiter,
+                      EMergeDelims       merge)
+{
+    return s_GetField<PDelimiter<char>, string>
+        (str,
+         field_no,
+         PDelimiter<char>(delimiter),
+         merge);
 }
 
 
 CTempString NStr::GetField_Unsafe(const CTempString& str,
                                   size_t             field_no,
-                                  const CTempString& delimiters)
+                                  const CTempString& delimiters,
+                                  EMergeDelims       merge)
 {
-    const char *    input_str( str.data() );
-    size_t          length( str.length() );
-    size_t          current_field( 0 );
-    size_t          current_index( 0 );
-
-    // Search for the beginning of the required field
-    while (current_field != field_no)
-    {
-        while (current_index < length &&
-               (delimiters.find(input_str[current_index], 0) == NPOS))
-        {
-            ++current_index;
-        }
-
-        ++current_index;
-        ++current_field;
-    }
-
-    if ( current_index >= length )
-    {
-        return CTempString();
-    }
-
-    // Here: the input_str[current_index] is a character after delimiter
-    const char *    field_start( input_str + current_index );
-    while ((current_index < length) &&
-           (delimiters.find(input_str[current_index], 0) == NPOS))
-    {
-        ++current_index;
-    }
-    return CTempString( field_start, input_str + current_index - field_start );
+    return s_GetField<PDelimiter<CTempString>, CTempString>
+        (str,
+         field_no,
+         PDelimiter<CTempString>(delimiters),
+         merge);
 }
 
 
 CTempString NStr::GetField_Unsafe(const CTempString& str,
                                   size_t             field_no,
-                                  char               delimiter)
+                                  char               delimiter,
+                                  EMergeDelims       merge)
 {
-    const char *    input_str( str.data() );
-    size_t          length( str.length() );
-    size_t          current_field( 0 );
-    size_t          current_index( 0 );
-
-    // Search for the beginning of the required field
-    while (current_field != field_no)
-    {
-        while (current_index < length &&
-               (input_str[current_index] != delimiter))
-        {
-            ++current_index;
-        }
-
-        ++current_index;
-        ++current_field;
-    }
-
-    if ( current_index >= length )
-    {
-        return CTempString();
-    }
-
-    // Here: the input_str[current_index] is a character after delimiter
-    const char *    field_start( input_str + current_index );
-    while ((current_index < length) &&
-               (input_str[current_index] != delimiter))
-    {
-        ++current_index;
-    }
-    return CTempString( field_start, input_str + current_index - field_start );
+    return s_GetField<PDelimiter<char>, CTempString>
+        (str,
+         field_no,
+         PDelimiter<char>(delimiter),
+         merge);
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
