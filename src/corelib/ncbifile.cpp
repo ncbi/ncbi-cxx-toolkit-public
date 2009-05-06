@@ -4629,7 +4629,7 @@ void x_Glob(const string& path,
     bool last = ++next == parts.end();
     TFindFiles ff = flags;
     if ( !last ) {
-        ff &= ~fFF_File;
+        ff &= ~(fFF_File | fFF_Recursive);
         ff |= fFF_Dir;
     }
     list<string> found;
