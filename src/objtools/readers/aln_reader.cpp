@@ -101,7 +101,8 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
         return 0;
     }
     string s;
-    NcbiGetline(*is, s, "\n\r");
+    NcbiGetline(*is, s, "\n");
+    NStr::ReplaceInPlace (s, "\r", "");
     return strdup(s.c_str());
 }
 
@@ -119,19 +120,22 @@ static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
                                              err_ptr->id == NULL ? "" : err_ptr->id, 
                                              err_ptr->message == NULL ? "" : err_ptr->message));
         }
+        
+        string msg = "Error reading alignment file";
+        if (err_ptr->line_num > -1) {
+            msg += " at line " + NStr::IntToString(err_ptr->line_num);
+        }
+        if (err_ptr->message) {
+            msg += ":  ";
+            msg += err_ptr->message;
+        }
 
         if (err_ptr->category == eAlnErr_Fatal) {
-            string msg = "Error reading alignment file";
-            if (err_ptr->line_num > -1) {
-                msg += " at line " + NStr::IntToString(err_ptr->line_num);
-            }
-            if (err_ptr->message) {
-                msg += ":  ";
-                msg += err_ptr->message;
-            }
-
             LOG_POST_X(1, Error << msg);
+        } else {
+            LOG_POST_X(1, Info << msg);
         }
+
         next_err = err_ptr->next;  
         free (err_ptr->id);
         free (err_ptr->message);
@@ -176,7 +180,7 @@ void CAlnReader::Read(bool guess)
         if (strlen (afp->sequences[i]) != first_len) {
             AlignmentFileFree (afp);
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                       "Error reading alignment", 0);
+                       "Error reading alignment: Not all sequences have same length", 0);
         }
     }
     
