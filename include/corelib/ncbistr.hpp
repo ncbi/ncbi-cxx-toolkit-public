@@ -1905,64 +1905,81 @@ public:
     /// Search for a field
     ///
     /// @param str
-    ///   NULL terminated string to search in.
+    ///   C or C++ string to search in.
     /// @param field_no
     ///   Zero based field number.
     /// @param delimiters
     ///   Single character delimiters.
+    /// @param merge
+    ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
-    ///   Found field or empty string if the required field is not found.
+    ///   Found field; or empty string if the required field is not found.
     static string GetField(const CTempString& str,
                            size_t             field_no,
-                           const CTempString& delimiters);
+                           const CTempString& delimiters,
+                           EMergeDelims       merge = eNoMergeDelims);
 
     /// Search for a field
     ///
     /// @param str
-    ///   NULL terminated string to search in.
+    ///   C or C++ string to search in.
     /// @param field_no
     ///   Zero based field number.
     /// @param delimiter
     ///   Single character delimiter.
+    /// @param merge
+    ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
-    ///   Found field or empty string if the required field is not found.
+    ///   Found field; or empty string if the required field is not found.
     static string GetField(const CTempString& str,
                            size_t             field_no,
-                           char               delimiter);
+                           char               delimiter,
+                           EMergeDelims       merge = eNoMergeDelims);
 
     /// Search for a field
+    /// Avoid memory allocation at the expence of some usage safety.
     ///
     /// @param str
-    ///   NULL terminated string to search in.
+    ///   C or C++ string to search in.
     /// @param field_no
     ///   Zero based field number.
     /// @param delimiters
     ///   Single character delimiters.
+    /// @param merge
+    ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
-    ///   Found field or empty string if the required field is not found.
+    ///   Found field; or empty string if the required field is not found.
     /// @warning
     ///   The return value stores a pointer to the input string 'str' so
     ///   the return object validity time matches lifetime of the input 'str'
-    static CTempString GetField_Unsafe(const CTempString& str,
-                                       size_t             field_no,
-                                       const CTempString& delimiters);
+    static
+    CTempString GetField_Unsafe(const CTempString& str,
+                                size_t             field_no,
+                                const CTempString& delimiters,
+                                EMergeDelims       merge = eNoMergeDelims);
 
-    /// Search for a field
+    /// Search for a field.
+    /// Avoid memory allocation at the expence of some usage safety.
     ///
     /// @param str
-    ///   NULL terminated string to search in.
+    ///   C or C++ string to search in.
     /// @param field_no
-    ///   Zero based field number.
+    ///   Zero-based field number.
     /// @param delimiters
     ///   Single character delimiter.
+    /// @param merge
+    ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
-    ///   Found field or empty string if the required field is not found.
+    ///   Found field; or empty string if the required field is not found.
     /// @warning
     ///   The return value stores a pointer to the input string 'str' so
     ///   the return object validity time matches lifetime of the input 'str'
-    static CTempString GetField_Unsafe(const CTempString& str,
-                                       size_t             field_no,
-                                       char               delimiter);
+    static
+    CTempString GetField_Unsafe(const CTempString& str,
+                                size_t             field_no,
+                                char               delimiter,
+                                EMergeDelims       merge = eNoMergeDelims);
+
 }; // class NStr
 
 
@@ -3485,7 +3502,6 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 {
     return WrapList(l, width, delim, arr, flags, &prefix, &prefix1);
 }
-
 
 
 
