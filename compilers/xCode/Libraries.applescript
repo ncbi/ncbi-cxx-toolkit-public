@@ -362,7 +362,7 @@ property test_objmgr_basic : {name:"test_objmgr_basic", path:"objmgr:test", inc:
 property test_validator : {name:"test_validator", path:"objtools:validator:test", inc:{"test_validator.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_xreader_id2 ncbi_xreader_cache ncbi_misc ncbi_pub ncbi_validator ncbi_seq ncbi_seqext ncbi_validator", req:true}
 property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup:test", inc:{"test_basic_cleanup.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id2 ncbi_xreader_cache ncbi_misc ncbi_pub ncbi_validator ncbi_seq", req:true}
 -- App
---property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
+property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property gi2taxid : {name:"gi2taxid", path:"app:gi2taxid", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property ini2reg : {name:"ini2reg", path:"gui:app:ini2reg", inc:{"ini2reg.cpp"}, dep:"ncbi_core ncbi_general gui_utils ncbi_seq ncbi_seqext ncbi_algo ncbi_pub ncbi_misc ncbi_validator ncbi_image" & FI_LIBS, req:true}
@@ -419,7 +419,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_feedback_agent, gbench_monitor, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, ini2reg, omssacl, omssamerge, streamtest}
+property allCTools : {datatool, gbench_plugin_scan, gbench_feedback_agent, gbench_monitor, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2flat, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, ini2reg, omssacl, omssamerge, streamtest}
 --property allCTools : {tests}
 
 
