@@ -55,8 +55,8 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
 
     TCoord spaces (0), gaps (0), aln_len (0);
     if(seq_align_segs.IsDenseg()) {
-
-        // assume Megablast alignments
+        
+        /// assume Megablast alignments
 
         const CDense_seg & ds (seq_align_segs.GetDenseg());
         const CDense_seg::TLens& lens (ds.GetLens());
@@ -77,103 +77,128 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     }
     else {
 
-        // assume BlastX alignments
+	/// Assume BlastX or tBlastN alignments.
 
-        const CSeq_align::TSegs::TStd & std_segs (seq_align_segs.GetStd());
+	/// Test which sequence is genomic.
+
+	TSeqPos row0_len (0), row1_len (0);
+	ITERATE(CSeq_align::TSegs::TStd, ii, seq_align.GetSegs().GetStd()) {
+	    
+            const CStd_seg & seg (**ii);
+            const CStd_seg::TLoc & locs (seg.GetLoc());
+            if (locs.size() != 2) {
+                NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                           "Unexpected std-seg alignment");
+            }
+	    
+            row0_len += locs[0]->GetTotalRange().GetLength();
+            row1_len += locs[1]->GetTotalRange().GetLength();
+	}
+        
+	const size_t idx_genomic (row0_len < row1_len? 1: 0);
+	const size_t idx_protein ((idx_genomic + 1) % 2);
+
+	/// parse the segments to collect basic alignment stats
+	
+	const CSeq_align::TSegs::TStd & std_segs (seq_align_segs.GetStd());
         size_t k (0);
-        TSeqPos qprev (0), sprev (0);
+        TSeqPos prev_gen (0), prev_prot (0);
         ITERATE(CSeq_align::TSegs::TStd, ii, std_segs) {
 
             const CStd_seg & seg (**ii);
             const CStd_seg::TLoc & locs (seg.GetLoc());
 
-            const CSeq_loc & loc_query (*locs[0]);
-            TSeqPos qmin (TSeqPos(-1));
-            TSeqPos qmax (TSeqPos(-1));
-            CConstRef<CSeq_interval> qinterval (new CSeq_interval);
-            if(loc_query.IsInt()) {
-                qinterval.Reset(&loc_query.GetInt());
-                qmin = qinterval->GetFrom();
-                qmax = qinterval->GetTo();
+            const CSeq_loc & loc_gen (*locs[idx_genomic]);
+            TSeqPos min_gen (TSeqPos(-1));
+            TSeqPos max_gen (TSeqPos(-1));
+            CConstRef<CSeq_interval> interval_gen (new CSeq_interval);
+            if(loc_gen.IsInt()) {
+                interval_gen.Reset(&loc_gen.GetInt());
+                min_gen = interval_gen->GetFrom();
+                max_gen = interval_gen->GetTo();
             }
 
-            const CSeq_loc & loc_subj (*locs[1]);
-            TSeqPos smin (TSeqPos(-1));
-            TSeqPos smax (TSeqPos(-1));
-            CConstRef<CSeq_interval> sinterval (new CSeq_interval);
-            if(loc_subj.IsInt()) {
-                sinterval.Reset(&loc_subj.GetInt());
-                smin = sinterval->GetFrom();
-                smax = sinterval->GetTo();
+            const CSeq_loc & loc_prot (*locs[idx_protein]);
+            TSeqPos min_prot (TSeqPos(-1));
+            TSeqPos max_prot (TSeqPos(-1));
+            CConstRef<CSeq_interval> interval_prot (new CSeq_interval);
+            if(loc_prot.IsInt()) {
+                interval_prot.Reset(&loc_prot.GetInt());
+                min_prot = interval_prot->GetFrom();
+                max_prot = interval_prot->GetTo();
             }
 
             if(k++) {
 
-                TSeqPos qdelta (0);
-                if(loc_query.IsEmpty()) {
+                TSeqPos delta_gen (0);
+                if(loc_gen.IsEmpty()) {
                     ++gaps;
+                    spaces += (max_prot - min_prot + 1);
                 }
                 else {
-                    if(qinterval->GetStrand() == eNa_strand_minus) {
-                        qdelta = qprev - qmax - 1;
-                        qprev = qmin;
+                    if(interval_gen->GetStrand() == eNa_strand_minus) {
+                        delta_gen = prev_gen - max_gen - 1;
+                        prev_gen = min_gen;
                     }
-                    else if (qinterval->GetStrand() == eNa_strand_plus) {
-                        qdelta = qmin - qprev - 1;
-                        qprev = qmax;
+                    else if (interval_gen->GetStrand() == eNa_strand_plus) {
+                        delta_gen = min_gen - prev_gen - 1;
+                        prev_gen = max_gen;
                     }
                     else {
                         NCBI_THROW(CException, eUnknown,
-                                   "Unexpected query strand when parsing "
-                                   "blastx alignments");
+                                   "Unexpected genomic strand when parsing "
+                                   "blastx or tblastn alignments");
                     }
 
-                    if(qdelta > 0) {
-                        if(qdelta % 3) {
+                    if(delta_gen > 0) {
+                        if(delta_gen % 3) {
                             NCBI_THROW(CException, eUnknown,
                                        "Unexpected nuc gap size when parsing "
-                                       "blastx alignments");
+                                       "blastx or tblastn alignments");
                         }
 
-                        spaces += qdelta / 3;
+                        spaces += delta_gen / 3;
                     }
                 }
 
-                TSeqPos sdelta (0);
-                if(loc_subj.IsEmpty()) {
+                TSeqPos delta_prot (0);
+                if(loc_prot.IsEmpty()) {
                     ++gaps;
-                    aln_len += (qmax - qmin + 1) / 3;
+                    const TCoord res_missing ((max_gen - min_gen + 1) / 3);
+                    spaces += res_missing;
+                    aln_len += res_missing;
                 }
                 else {
-                    if(sinterval->GetStrand() == eNa_strand_unknown) {
-                        sdelta = smin - sprev - 1;
-                        sprev = smax;
+                    if(interval_prot->GetStrand() == eNa_strand_unknown) {
+                        delta_prot = min_prot - prev_prot - 1;
+                        prev_prot = max_prot;
                     }
                     else {
                         NCBI_THROW(CAlgoAlignUtilException, eInternal,
-                                   "Unexpected subj strand when parsing "
-                                   "blastx alignments");
+                                   "Unexpected strand when parsing "
+                                   "blastx or tblastn alignments");
                     }
 
-                    if(sdelta > 0) {
-                        spaces += sdelta;
+                    if(delta_prot > 0) {
+                        spaces += delta_prot;
                     }
 
-                    aln_len += smax - smin + 1;
+                    aln_len += max_prot - min_prot + 1;
                 }
 
-                if(qdelta > 0 && sdelta > 0) {
+                if(delta_gen > 0 && delta_prot > 0) {
                     NCBI_THROW(CAlgoAlignUtilException, eInternal,
                                "Simultaneous gaps in both sequences not expected "
-                               "in blastx alignments");
+                               "in blastx or tblastn alignments");
                 }
             }
             else {
 
                 // first segment
-                qprev = (qinterval->GetStrand() == eNa_strand_minus)? qmin: qmax;
-                aln_len += smax -smin + 1;
-                sprev = smax;;
+                prev_gen = (interval_gen->GetStrand() == eNa_strand_minus)? 
+                            min_gen: max_gen;
+                aln_len += max_prot - min_prot + 1;
+                prev_prot = max_prot;
             }
         }
 
@@ -183,10 +208,12 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
         }
         SetScore(float(score));
     }
+    
+    /// Assign the scores
 
     double matches;
     if(seq_align.GetNamedScore("num_ident", matches) == false) {
-        matches = aln_len - spaces; // rough estimate
+        matches = aln_len - spaces; // upper estimate
     }
     SetIdentity(float(matches / aln_len));
 
