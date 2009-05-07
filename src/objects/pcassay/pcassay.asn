@@ -162,8 +162,14 @@ PC-AssayDescription ::= SEQUENCE {
     project-category  INTEGER{
                         mlscn    (1),
                         mlpcn    (2),
+                        mlscn-ap (3),
+                        mlpcn-ap (4),
                         other    (255)
                       }                 OPTIONAL,               -- to distinguish projects funded through MLSCN, MLPCN or other
+                                                                -- mlscn: assay depositions from MLSCN screen center
+                                                                -- mlpcn: assay depositions from MLPCN screen center
+                                                                -- mlscn-ap: assay depositions from MLSCN assay provider
+                                                                -- mlpcn-ap: assay depositions from MLPCN assay provider
                                                                 -- required for 'MLSCN' & 'MLPCN' projects
 
     -- annotation to indicate whether an assay is a panel, e.g. containing multiple components, or belongs to a group    
