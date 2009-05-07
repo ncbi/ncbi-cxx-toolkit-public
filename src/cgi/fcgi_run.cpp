@@ -109,10 +109,11 @@ static CTime s_GetModTime(const string& filename)
 class CAutoCgiContext
 {
 public:
-    CAutoCgiContext(auto_ptr<CCgiContext>& ctx) : m_Ctx(ctx) {}
-    ~CAutoCgiContext(void) { m_Ctx.reset(); }
+    CAutoCgiContext(void) : m_Ctx(NULL) {}
+    ~CAutoCgiContext(void) { if (m_Ctx) m_Ctx->reset(); }
+    void Reset(auto_ptr<CCgiContext>& ctx) { m_Ctx = &ctx; }
 private:
-    auto_ptr<CCgiContext>& m_Ctx;
+    auto_ptr<CCgiContext>* m_Ctx;
 };
 
 
@@ -455,6 +456,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         CTime start_time(CTime::eCurrent);
         bool skip_stat_log = false;
 
+        // Safely clear contex data and reset "m_Context" to null
+        CAutoCgiContext auto_context;
         try {
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
@@ -473,8 +476,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CNcbiStrstream result_copy;
             auto_ptr<CNcbiOstream> new_stream;
 
-            // Safely clear contex data and reset "m_Context" to zero
-            CAutoCgiContext auto_context(m_Context);
+            auto_context.Reset(m_Context);
 
             // Checking for exit request (if explicitly allowed)
             if (reg.GetBool("FastCGI", "HonorExitRequest", false, 0,
@@ -583,7 +585,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CDiagContext::GetRequestContext().SetBytesRd(ibuf.GetCount());
             CDiagContext::GetRequestContext().SetBytesWr(obuf.GetCount());
             x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
-
+            m_Context->GetResponse().SetOutput(0);
+            m_Context->GetRequest().SetInputStream(0);
         }
         catch (exception& e) {
             GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
