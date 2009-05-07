@@ -34,7 +34,7 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
-set DEFPTB_VERSION=1.8.0
+set DEFPTB_VERSION=1.8.1
 set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 set IDE=900
 set PTB_EXTRA=
