@@ -382,19 +382,6 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 
                 CRef<CSeq_id> id (new CSeq_id);
                 id->Assign(*h.GetId(where));
-                
-                /*
-                const string strid (h.GetId(where)->GetSeqIdString(true));
-                TMapIds::const_iterator im = m_IDs.find(strid), ime = m_IDs.end();
-                if(im == ime) {
-                    id.Reset(new CSeq_id());
-                    id->Assign(*h.GetId(where));
-                }
-                else {
-                    id.Reset(new CSeq_id(im->second));
-                }
-                */
-
                 ids.push_back(id);
             }
 
