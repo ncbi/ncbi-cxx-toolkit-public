@@ -60,10 +60,22 @@ CFormatRpsDbParameters::operator==(const CFormatRpsDbParameters& rhs) const
     if (GetMatrixName() != rhs.GetMatrixName()) {
         return false;
     }
-    if (GetGapOpen() != rhs.GetGapOpen()) {
+
+    if (CanGetGapOpen() && !rhs.CanGetGapOpen()) {
+        return false;
+    } else if (!CanGetGapOpen() && rhs.CanGetGapOpen()) {
+        return false;
+    } else if (CanGetGapOpen() && rhs.CanGetGapOpen() && 
+               GetGapOpen() != rhs.GetGapOpen()) {
         return false;
     }
-    if (GetGapExtend() != rhs.GetGapExtend()) {
+
+    if (CanGetGapExtend() && !rhs.CanGetGapExtend()) {
+        return false;
+    } else if (!CanGetGapExtend() && rhs.CanGetGapExtend()) {
+        return false;
+    } else if (CanGetGapExtend() && rhs.CanGetGapExtend() && 
+               GetGapExtend() != rhs.GetGapExtend()) {
         return false;
     }
     return true;
