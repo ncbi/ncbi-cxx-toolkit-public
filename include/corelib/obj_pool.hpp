@@ -1,5 +1,5 @@
-#ifndef CORELIB___OBJPOOL__HPP
-#define CORELIB___OBJPOOL__HPP
+#ifndef CORELIB___OBJ_POOL__HPP
+#define CORELIB___OBJ_POOL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -44,19 +44,6 @@ BEGIN_NCBI_SCOPE
 template <class TObjType> class CObjFactory_New;
 
 
-/// Policy of pool's ownership over objects it created.
-/// Ownership by pool is not necessarily mean that object will be deleted with
-/// the pool. It means only that on the pool destruction (or overflowing of
-/// storage) TObjFactory::DeleteObject() will be called. Whether or not object
-/// is deleted depends solely on factory implementation.
-///
-/// @sa CObjPool
-enum EObjPool_OwnPolicy
-{
-    ePoolOwnsUnused,  ///< Own only objects returned back to the pool
-    ePoolOwnsAll      ///< Own all objects created by the pool
-};
-
 /// General object pool
 ///
 /// @param TObjType
@@ -64,7 +51,11 @@ enum EObjPool_OwnPolicy
 ///   CObject). Pool holds pointers to objects, so they shouldn't be copiable.
 /// @param TObjFactory
 ///   Type of object factory, representing the policy of how objects created
-///   and how they deleted.
+///   and how they deleted. Factory should implement 2 methods -
+///   CreateObject() and DeleteObject(). CreateObject() should get no
+///   parameters, create new object and return pointer to it. Returned pointer
+///   should be always non-NULL. DeleteObject() should take one parameter
+///   (pointer to object) and should delete given object.
 /// @param TLock
 ///   Type of the lock used in the pool to protect against multi-threading
 ///   issues. If no multi-threading protection is necessary CNoLock can be
@@ -79,33 +70,28 @@ private:
     typedef deque<TObjType*>                 TObjectsList;
 
 public:
-    /// Create object pool
-    ///
-    /// @param max_storage_size
-    ///   Maximum number of unused objects that can be stored in the pool.
-    ///   0 means unlimited storage.
-    /// @param policy
-    ///   Ownership policy of the pool
-    CObjPool(size_t             max_storage_size = 0,
-             EObjPool_OwnPolicy policy = ePoolOwnsAll)
-        : m_MaxStorage(max_storage_size),
-          m_OwnPolicy(policy)
-    {}
+    /// Synonym to be able to use outside of the pool
+    typedef TObjType                         TObjectType;
 
     /// Create object pool
     ///
     /// @param max_storage_size
     ///   Maximum number of unused objects that can be stored in the pool.
     ///   0 means unlimited storage.
-    /// @param policy
-    ///   Ownership policy of the pool
+    CObjPool(size_t max_storage_size = 0)
+        : m_MaxStorage(max_storage_size)
+    {}
+
+    /// Create object pool
+    ///
     /// @param factory
     ///   Object factory implementing creation/deletion strategy
-    CObjPool(size_t             max_storage_size,
-             EObjPool_OwnPolicy policy,
-             TObjFactory        factory)
+    /// @param max_storage_size
+    ///   Maximum number of unused objects that can be stored in the pool.
+    ///   0 means unlimited storage.
+    CObjPool(TObjFactory        factory,
+             size_t             max_storage_size = 0)
         : m_MaxStorage(max_storage_size),
-          m_OwnPolicy(policy),
           m_Factory(factory)
     {}
 
@@ -114,9 +100,7 @@ public:
     {
         TLockGuard guard(m_ObjLock);
 
-        TObjectsList& obj_list = (m_OwnPolicy == ePoolOwnsAll? m_AllObjects:
-                                                               m_FreeObjects);
-        ITERATE(TObjectsList, it, obj_list)
+        ITERATE(TObjectsList, it, m_FreeObjects)
         {
             m_Factory.DeleteObject(*it);
         }
@@ -130,9 +114,7 @@ public:
         TObjType* obj;
         if (m_FreeObjects.empty()) {
             obj = m_Factory.CreateObject();
-            if (m_OwnPolicy == ePoolOwnsAll) {
-                m_AllObjects.push_back(obj);
-            }
+            _ASSERT(obj);
         }
         else {
             obj = m_FreeObjects.back();
@@ -147,7 +129,7 @@ public:
     {
         TLockGuard guard(m_ObjLock);
 
-        if (m_FreeObjects.size() >= m_MaxStorage) {
+        if (m_MaxStorage  &&  m_FreeObjects.size() >= m_MaxStorage) {
             m_Factory.DeleteObject(obj);
         }
         else {
@@ -166,22 +148,140 @@ public:
     /// 0 means unlimited storage.
     void SetMaxStorageSize(size_t max_storage_size)
     {
+        // In case if writing size_t is not atomic operation
+        TLockGuard guard(m_ObjLock);
         m_MaxStorage = max_storage_size;
     }
 
 private:
+    CObjPool(const CObjPool&);
+    CObjPool& operator= (const CObjPool&);
+
     /// Maximum number of unused objects that can be stored in the pool
     size_t              m_MaxStorage;
-    /// Ownership policy
-    EObjPool_OwnPolicy  m_OwnPolicy;
     /// Object factory
     TObjFactory         m_Factory;
     /// Lock object to change the pool
     TLock               m_ObjLock;
-    /// List of all objects created by the pool
-    TObjectsList        m_AllObjects;
     /// List of unused objects
     TObjectsList        m_FreeObjects;
+};
+
+
+/// Guard that can be used to automatically return object to the pool after
+/// leaving some scope. Guard can also be used to automatically acquire object
+/// from pool and work after that as a smart pointer automatically converting
+/// himself to the pointer to protected object. Guard can be used like this:
+/// {{
+///     TObjPoolGuard obj(pool);
+///     obj->DoSomething();
+///     FuncAcceptingPointerToObject(obj);
+/// }}
+///
+/// @param TObjPool
+///   Type of the pool which this guard works with
+///
+/// @sa CObjPool
+template <class TObjPool>
+class CObjPoolGuard
+{
+public:
+    /// Type of object to protect
+    typedef typename TObjPool::TObjectType  TObjType;
+
+    /// Create guard and automatically acquire object from the pool
+    CObjPoolGuard(TObjPool& pool)
+        : m_Pool(pool),
+          m_Object(pool.Get())
+    {}
+
+    /// Create guard to automatically return given object to the pool.
+    ///
+    /// @param pool
+    ///   Pool to return object to
+    /// @param object
+    ///   Object to protect. Parameter can be NULL, in this case no object is
+    ///   acquired and protected on construction, but can be passed to the
+    ///   guard later via Acquire().
+    CObjPoolGuard(TObjPool& pool, TObjType* object)
+        : m_Pool(pool),
+          m_Object(object)
+    {}
+
+    ~CObjPoolGuard(void)
+    {
+        Return();
+    }
+
+    /// Get pointer to protected object
+    TObjType* GetObject(void) const
+    {
+        return m_Object;
+    }
+
+    // Operators implementing smart-pointer-type conversions
+
+    /// Automatic conversion to the pointer to protected object
+    operator TObjType*   (void) const
+    {
+        return  GetObject();
+    }
+    /// Automatic dereference to the protected object
+    TObjType& operator*  (void) const
+    {
+        _ASSERT(m_Object);
+        return *GetObject();
+    }
+    /// Automatic dereference to the protected object
+    TObjType* operator-> (void) const
+    {
+        _ASSERT(m_Object);
+        return  GetObject();
+    }
+
+    /// Return protected object (if any) to the pool and acquire new object
+    /// for protection. If parameter is NULL then get object from the pool.
+    void Acquire(TObjType* object = NULL)
+    {
+        Return();
+        if (object) {
+            m_Object = object;
+        }
+        else {
+            m_Object = m_Pool.Get();
+        }
+    }
+
+    /// Release protected object without returning it to the pool. After
+    /// calling to this method it is caller responsibility to return object
+    /// to the pool.
+    ///
+    /// @return
+    ///   Object that was protected
+    TObjType* Release(void)
+    {
+        TObjType* object = m_Object;
+        m_Object = NULL;
+        return object;
+    }
+
+    /// Return protected object (if any) to the pool
+    void Return(void)
+    {
+        if (m_Object) {
+            m_Pool.Return(m_Object);
+            m_Object = NULL;
+        }
+    }
+
+private:
+    CObjPoolGuard(const CObjPoolGuard&);
+    CObjPoolGuard& operator= (const CObjPoolGuard&);
+
+    /// Pool this guard is attached to
+    TObjPool& m_Pool;
+    /// Protected object
+    TObjType* m_Object;
 };
 
 
@@ -363,4 +463,4 @@ private:
 END_NCBI_SCOPE
 
 
-#endif  /* CORELIB___OBJPOOL__HPP */
+#endif  /* CORELIB___OBJ_POOL__HPP */
