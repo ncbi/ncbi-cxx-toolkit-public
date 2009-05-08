@@ -164,6 +164,8 @@ PC-AssayDescription ::= SEQUENCE {
                         mlpcn    (2),
                         mlscn-ap (3),
                         mlpcn-ap (4),
+                        journal-article (5),
+                        assay-vendor (6),
                         other    (255)
                       }                 OPTIONAL,               -- to distinguish projects funded through MLSCN, MLPCN or other
                                                                 -- mlscn: assay depositions from MLSCN screen center
