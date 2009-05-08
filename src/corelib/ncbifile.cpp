@@ -156,10 +156,11 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
 
 #define LOG_ERROR(log_message) \
     { \
+        int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
-            int saved_error = errno; \
             ERR_POST(log_message << ": " << strerror(saved_error)); \
         } \
+        errno = saved_error; \
     }
 
 #define LOG_ERROR_AND_RETURN(log_message) \
@@ -172,10 +173,11 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
 
 #define LOG_ERROR_AND_RETURN_ERRNO(log_message) \
     { \
+        int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
-            int saved_error = errno; \
             ERR_POST(log_message << ": " << strerror(saved_error)); \
         } \
+        errno = saved_error; \
         return false; \
     }
 
@@ -1910,13 +1912,11 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
             if (NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault()) {
                 if (!SetMode(eDefault))
                     return false;
-
                 if (remove(GetPath().c_str()) == 0)
                     return true;
             }
 #endif
         }
-
         LOG_ERROR_AND_RETURN_ERRNO(
             "CDirEntry::Remove(): Could not remove " << GetPath());
     }
