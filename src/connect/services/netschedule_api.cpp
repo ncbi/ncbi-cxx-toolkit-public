@@ -229,19 +229,16 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
 
 CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 {
-    m_Impl->m_Service.DiscoverLowPriorityServers(eOff);
     return new SNetScheduleSubmitterImpl(m_Impl);
 }
 
 CNetScheduleExecuter CNetScheduleAPI::GetExecuter(unsigned short control_port)
 {
-    m_Impl->m_Service.DiscoverLowPriorityServers(eOn);
     return new SNetScheduleExecuterImpl(m_Impl, control_port);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 {
-    m_Impl->m_Service.DiscoverLowPriorityServers(eOff);
     return new SNetScheduleAdminImpl(m_Impl);
 }
 

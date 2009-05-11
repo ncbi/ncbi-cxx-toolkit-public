@@ -75,7 +75,7 @@ struct SNetServerConnectionImpl : public CNetObject
     virtual ~SNetServerConnectionImpl();
 
     // The server this connection is connected to.
-    CNetObjectRef<SNetServerImpl> m_Server;
+    CNetServer m_Server;
     SNetServerConnectionImpl* m_NextFree;
 
     CSocket m_Socket;

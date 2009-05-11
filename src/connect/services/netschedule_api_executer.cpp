@@ -330,7 +330,11 @@ bool CGetJobCmdExecutor::Consider(CNetServer server)
 bool SNetScheduleExecuterImpl::GetJobImpl(
     const string& cmd, CNetScheduleJob& job) const
 {
-    return m_API->m_Service.FindServer(new CGetJobCmdExecutor(cmd, job));
+    CGetJobCmdExecutor get_executor(cmd, job);
+
+    return m_API->m_Service.FindServer(
+        m_API->m_Service.DiscoverServers(CNetService::eIncludePenalized),
+            &get_executor);
 }
 
 
@@ -338,8 +342,8 @@ void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd) const
 {
     string tmp = cmd + NStr::IntToString(m_ControlPort);
 
-    for (CNetServerGroupIterator it =
-            m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
+    for (CNetServerGroupIterator it = m_API->m_Service.DiscoverServers(
+            CNetService::eIncludePenalized).Iterate(); it; ++it) {
         CNetServer server = *it;
 
         try {

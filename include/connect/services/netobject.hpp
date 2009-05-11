@@ -60,6 +60,8 @@ public:
     void AddRef() {m_Refs.Add(1);}
     void Release() {if (m_Refs.Add(-1) == 0) Delete();}
 
+    CAtomicCounter::TValue GetRefCount() const {return m_Refs.Get();}
+
 protected:
     virtual ~CNetObject();
 

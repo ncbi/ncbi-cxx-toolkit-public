@@ -52,7 +52,7 @@ public:
     virtual ~CNetServiceDiscovery();
 
     void QueryLoadBalancer(TDiscoveredServers& servers,
-        bool include_suppressed);
+        bool include_penalized);
 
     const string& GetServiceName() const;
 

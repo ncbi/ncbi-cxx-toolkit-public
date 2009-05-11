@@ -60,7 +60,13 @@ struct SNetServerGroupIteratorImpl : public CNetObject
 
 struct SNetServerGroupImpl : public CNetObject
 {
-    SNetServerGroupImpl(SNetServiceImpl* service_impl);
+    SNetServerGroupImpl(SNetServerGroupImpl** origin,
+        unsigned discovery_iteration);
+
+    // Releases a reference to the parent service object,
+    // and if that was the last reference, the service object
+    // will be deleted.
+    virtual void Delete();
 
     // A list of servers discovered by the load balancer.
     TDiscoveredServers m_Servers;
@@ -68,6 +74,12 @@ struct SNetServerGroupImpl : public CNetObject
     // A smart pointer to the NetService object
     // that contains this NetServerGroup.
     CNetService m_Service;
+
+    // A pointer to the SNetServiceImpl::m_ServerGroups array
+    // element where this server group object belongs.
+    SNetServerGroupImpl** m_Origin;
+
+    unsigned m_DiscoveryIteration;
 };
 
 inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
@@ -92,6 +104,7 @@ struct SNetServiceImpl : public CNetObject
     void SetListener(INetServerConnectionListener* listener);
 
     CNetServer GetServer(const string& host, unsigned int port);
+    CNetServer GetServer(const TServerAddress& server_address);
     CNetServerConnection GetSingleServerConnection();
 
     // Utility method for commands that require single server (that is,
@@ -99,36 +112,62 @@ struct SNetServiceImpl : public CNetObject
     // name).
     CNetServerConnection RequireStandAloneServerSpec();
 
+    SNetServerGroupImpl* CreateServerGroup(
+        CNetService::EDiscoveryMode discovery_mode);
+
+    SNetServerGroupImpl* DiscoverServers(
+        CNetService::EDiscoveryMode discovery_mode);
+
     void Monitor(CNcbiOstream& out, const string& cmd);
 
     virtual ~SNetServiceImpl();
 
-    CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
+    string m_ServiceName;
     string m_ClientName;
 
     CNetObjectRef<INetServerConnectionListener> m_Listener;
     CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
 
-    TDiscoveredServers m_DiscoveredServers;
-    CRWLock m_ServersLock;
-    TNetServerSet m_Servers;
-    CFastMutex m_ConnectionMutex;
+    string m_LBSMAffinityName;
+    const char* m_LBSMAffinityValue;
+    unsigned m_LatestDiscoveryIteration;
 
-    bool m_IsLoadBalanced;
-    ESwitch m_DiscoverLowPriorityServers;
+    union {
+        SNetServerGroupImpl* m_SignleServer;
+        SNetServerGroupImpl* m_ServerGroups[
+            CNetService::eNumberOfDiscoveryModes];
+    };
+    CFastMutex m_ServerGroupMutex;
+
+    TNetServerSet m_DiscoveredServers;
+    CFastMutex m_ServerMutex;
 
     STimeout m_Timeout;
     ESwitch m_PermanentConnection;
+
+    enum EServiceType {
+        eNotDefined,
+        eLoadBalanced,
+        eSingleServer
+    } m_ServiceType;
 };
 
-inline SNetServerGroupImpl::SNetServerGroupImpl(SNetServiceImpl* service_impl) :
-    m_Service(service_impl)
+inline SNetServerGroupImpl::SNetServerGroupImpl(SNetServerGroupImpl** origin,
+    unsigned discovery_iteration) :
+        m_Origin(origin),
+        m_DiscoveryIteration(discovery_iteration)
 {
 }
 
 inline void SNetServiceImpl::SetListener(INetServerConnectionListener* listener)
 {
     m_Listener = listener;
+}
+
+inline CNetServer SNetServiceImpl::GetServer(
+    const TServerAddress& server_address)
+{
+    return GetServer(server_address.first, server_address.second);
 }
 
 END_NCBI_SCOPE

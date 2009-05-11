@@ -245,14 +245,14 @@ SNetServerImplReal::SNetServerImplReal(const string& host,
 
 void SNetServerImpl::Delete()
 {
-    // Before resetting the m_Service pointer, verify that nobody
+    // Before resetting the m_Service pointer, verify that no other object
     // has acquired a reference to this server object yet (between
     // the time the reference counter went to zero, and the
     // current moment when m_Service is about to be reset).
 
-    CFastMutexGuard g(m_Service->m_ConnectionMutex);
+    CFastMutexGuard g(m_Service->m_ServerMutex);
 
-    if (m_Refs.Get() == 0)
+    if (GetRefCount() == 0)
         m_Service = NULL;
 }
 

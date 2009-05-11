@@ -61,14 +61,15 @@ CNetServiceDiscovery::CNetServiceDiscovery(
         LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinityName.c_str());
 }
 
+#define LBSMD_IS_PENALIZED_RATE(rate) (rate <= -0.01)
+
 void CNetServiceDiscovery::QueryLoadBalancer(TDiscoveredServers& servers,
-    bool include_suppressed)
+    bool include_penalized)
 {
-    SConnNetInfo* net_info =
-        ConnNetInfo_Create(m_ServiceName.c_str());
+    SConnNetInfo* net_info = ConnNetInfo_Create(m_ServiceName.c_str());
 
     SERV_ITER srv_it = SERV_OpenP(m_ServiceName.c_str(),
-        include_suppressed ?
+        include_penalized ?
             fSERV_Standalone | fSERV_IncludeSuppressed :
             fSERV_Standalone,
         SERV_LOCALHOST, 0, 0.0, net_info, NULL, 0, 0 /*false*/,
@@ -83,9 +84,14 @@ void CNetServiceDiscovery::QueryLoadBalancer(TDiscoveredServers& servers,
 
     const SSERV_Info* sinfo;
 
-    while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
-        servers.push_back(TServerAddress(
-            CSocketAPI::ntoa(sinfo->host), sinfo->port));
+    while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
+        if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
+            (sinfo->rate > 0.0 ||
+                (include_penalized && LBSMD_IS_PENALIZED_RATE(sinfo->rate)))) {
+            servers.push_back(TServerAddress(
+                CSocketAPI::ntoa(sinfo->host), sinfo->port));
+        }
+    }
 
     SERV_Close(srv_it);
 }
@@ -146,7 +152,7 @@ CNetObjectRef<IRebalanceStrategy>
 
 CNetObjectRef<IRebalanceStrategy> CreateDefaultRebalanceStrategy()
 {
-    return new CSimpleRebalanceStrategy(50, 10);
+    return new CSimpleRebalanceStrategy(5000, 5);
 }
 
 

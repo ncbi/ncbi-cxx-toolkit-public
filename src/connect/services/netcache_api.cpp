@@ -178,8 +178,7 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
                 ". Connecting to backup server " <<
                 backup->first << ":" << backup->second << ".");
 
-            conn = m_Service->GetServer(backup->first,
-                backup->second).Connect();
+            conn = m_Service->GetServer(*backup).Connect();
         }
     }
 
