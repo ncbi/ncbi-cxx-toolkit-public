@@ -275,14 +275,14 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
     }
     if (!timeout)
         timeout = &kFTPFailsafeTimeout;
-    if (SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout) != eIO_Success ||
-        SOCK_SetTimeout(xxx->data, eIO_ReadWrite, timeout) != eIO_Success ||
+    if (SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout) != eIO_Success  ||
+        SOCK_SetTimeout(xxx->data, eIO_ReadWrite, timeout) != eIO_Success  ||
         /* Send TELNET IP (Interrupt Process) command */
         (status = SOCK_Write(xxx->cntl, "\377\364", 2, &n, eIO_WritePersist))
-        != eIO_Success  ||  n != 2                                        ||
+        != eIO_Success  ||  n != 2                                         ||
         /* Send TELNET DM (Data Mark) command to complete SYNCH, RFC 854 */
         (status = SOCK_Write(xxx->cntl, "\377\362", 2, &n, eIO_WriteOutOfBand))
-        != eIO_Success  ||  n != 2                                        ||
+        != eIO_Success  ||  n != 2                                         ||
         (status = s_FTPCommand(xxx, "ABOR", 0)) != eIO_Success) {
         SOCK_Abort(xxx->data);
         xxx->data = 0;
@@ -296,9 +296,9 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
         SOCK_Close(xxx->data);
         xxx->data = 0;
     }
-    if ((status = s_FTPDrainReply(xxx, &code, 2/*2xx*/)) == eIO_Success  &&
+    if ((status = s_FTPDrainReply(xxx, &code, 2/*2xx*/)) == eIO_Success
         /* Microsoft FTP is known to return 225 (instead of 226) */
-        code != 225  &&  code != 226) {
+        &&  code != 225  &&  code != 226) {
         status = eIO_Unknown;
     }
     if (xxx->data) {
@@ -322,10 +322,11 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
     static const STimeout instant = {0, 0};
     unsigned int   host, i;
     unsigned short port;
+    EIO_Status status;
     int  code, o[6];
     char buf[128];
 
-    EIO_Status status = s_FTPCommand(xxx, "PASV", 0);
+    status = s_FTPCommand(xxx, "PASV", 0);
     if (status != eIO_Success)
         return status;
     status = s_FTPReply(xxx, &code, buf, sizeof(buf) - 1);
@@ -347,7 +348,7 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
         }
         memmove(buf, c + code, strlen(c + code) + 1);
     }
-    for (i = 0; i < (unsigned int)(sizeof(o)/sizeof(o[0])); i++) {
+    for (i = 0;  i < (unsigned int)(sizeof(o)/sizeof(o[0]));  i++) {
         if (o[i] < 0  ||  o[i] > 255)
             return eIO_Unknown;
     }
@@ -355,16 +356,19 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
     host = SOCK_HostToNetLong(i);
     i = (o[4] << 8) | o[5];
     port = (unsigned short) i;
-    if (SOCK_ntoa(host, buf, sizeof(buf)) == 0  &&
-        SOCK_CreateEx(buf, port, &instant, &xxx->data, 0, 0,
-                      xxx->flag & fFCDC_LogData
-                      ? fSOCK_LogOn
-                      : fSOCK_LogDefault)
-        == eIO_Success) {
-        return eIO_Success;
+    if (SOCK_ntoa(host, buf, sizeof(buf)) != 0)
+        return eIO_Unknown;
+    if ((status = SOCK_CreateEx(buf, port, &instant, &xxx->data, 0, 0,
+                                xxx->flag & fFCDC_LogData
+                                ? fSOCK_LogOn
+                                : fSOCK_LogDefault)) != eIO_Success) {
+        CORE_LOGF_X(2, eLOG_Error,
+                    ("[FTP]  Cannot open data connection to %s:%hu: %s",
+                     buf, port, IO_StatusStr(status)));
+        s_FTPAbort(xxx, 0, 0/*!quit*/);
+        return eIO_Unknown;
     }
-    s_FTPAbort(xxx, 0, 0/*!quit*/);
-    return eIO_Unknown;
+    return eIO_Success;
 }
 
 

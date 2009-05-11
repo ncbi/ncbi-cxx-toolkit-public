@@ -231,7 +231,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,  12);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,      304,   2);
-NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   1);
+NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,    306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,       307,  20);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LB,         308,   0);
