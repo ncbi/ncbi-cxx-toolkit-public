@@ -1160,6 +1160,19 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
         break;
 
     case CSeq_align::TSegs::e_Std:
+        ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
+            const CStd_seg& seg = **iter;
+            ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
+                for (int i = 0;  i < seg.GetDim();  ++i) {
+                    if ((*it)[i].IsEmpty()) {
+                        ++retval;
+                        break;
+                    }
+                }
+            }
+        }
+        break;
+
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetGapCount() currently does not handle "
