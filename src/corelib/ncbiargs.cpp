@@ -1397,7 +1397,13 @@ string& CArgs::Print(string& str) const
         const CArgValue& arg_value = (*this)[arg_name];
         if ( arg_value ) {
             str += " = `";
-            str += arg_value.AsString();
+            string tmp;
+            try {
+                tmp = NStr::Join( arg_value.GetStringList(), " "); 
+            } catch (...) {
+                tmp = arg_value.AsString();
+            }
+            str += tmp;
             str += "'\n";
         } else {
             str += ":  <not assigned>\n";
