@@ -37,8 +37,9 @@
 #include <objects/seqalign/seqalign__.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(prosplign)
 USING_SCOPE(objects);
+
+BEGIN_SCOPE(prosplign)
 
 class NCBI_XALGOALIGN_EXPORT CCompartOptions {
 public:
@@ -59,7 +60,7 @@ public:
     static const bool   default_ByCoverage = true;
 };
 
-struct NCBI_XALGOALIGN_EXPORT SCompartment {
+struct SCompartment {
     SCompartment(int from_, int to_, bool strand_, int covered_aa_, double score_) :
         from(from_), to(to_), strand(strand_), covered_aa(covered_aa_), score(score_) {}
 
@@ -71,7 +72,11 @@ struct NCBI_XALGOALIGN_EXPORT SCompartment {
 
     bool operator< (const SCompartment& comp) const
     {
-        return strand==comp.strand?from<comp.from:strand<comp.strand;
+        if (strand == comp.strand) {
+            return from < comp.from;
+        } else {
+            return strand < comp.strand;
+        }
     }
 };
 

@@ -47,12 +47,11 @@
 #include <math.h>
 
 
+BEGIN_NCBI_SCOPE
+
 BEGIN_SCOPE(objects)
     class CSeq_id;
 END_SCOPE(objects)
-
-
-BEGIN_NCBI_SCOPE
 
 
 class NCBI_XALGOALIGN_EXPORT CAlignShadow: public CObject
