@@ -153,7 +153,6 @@ CNSInfoCollector::CNSInfoCollector(const string& queue,
     : m_Services(service_name, "netschedule_admin", queue),
       m_Factory(factory)
 {
-    m_Services.GetService().DiscoverLowPriorityServers(eOn);
 }
 
 CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
@@ -165,8 +164,8 @@ CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
 void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    for (CNetServerGroupIterator it =
-            x_GetAPI().GetService().DiscoverServers().Iterate(); it; ++it) {
+    for (CNetServerGroupIterator it = x_GetAPI().GetService().DiscoverServers(
+            CNetService::eIncludePenalized).Iterate(); it; ++it) {
         CNetServerConnection conn = (*it).Connect();
 
         CNetServerCmdOutput output = conn.ExecMultiline("QPRT " +
