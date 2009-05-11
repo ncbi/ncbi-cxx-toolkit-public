@@ -51,6 +51,8 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
 
@@ -208,6 +210,8 @@ void CValidError_bioseqset::ValidateNucProtSet
                  "No proteins in nuc-prot set", seqset);
     }
 
+    int prot_biosource = 0;
+
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CBioseq& seq = (*se_list_it)->GetSeq();
@@ -219,12 +223,19 @@ void CValidError_bioseqset::ValidateNucProtSet
                         "Nucleotide bioseq should be product of mRNA "
                         "feature on contig, but is not",
                         seq);
-                } else if ( seq.IsAa()  &&  !IsCDSProductInGPS(seq) ) {
-                    PostErr(eDiag_Warning,
-                        eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                        "Protein bioseq should be product of CDS "
-                        "feature on contig, but is not",
-                        seq);
+                } else if ( seq.IsAa() ) {
+                    if (!IsCDSProductInGPS(seq) ) {
+                        PostErr(eDiag_Warning,
+                            eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                            "Protein bioseq should be product of CDS "
+                            "feature on contig, but is not",
+                            seq);
+                    }
+                    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+                        if ((*it)->IsSource()) {
+                            prot_biosource++;
+                        }
+                    }
                 }
             }
         }
@@ -243,6 +254,34 @@ void CValidError_bioseqset::ValidateNucProtSet
                      "Nuc-prot Bioseq-set contains wrong Bioseq-set, "
                      "its class is \"" + set_class + "\"", set);
             break;
+        }
+    }
+    if (prot_biosource > 1) {
+        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceOnProtein,
+                 "Nuc-prot set has " + NStr::IntToString (prot_biosource)
+                 + " proteins with a BioSource descriptor", seqset);
+    } else if (prot_biosource > 0) {
+        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceOnProtein,
+                 "Nuc-prot set has 1 protein with a BioSource descriptor", seqset);
+    }
+
+    bool has_source = false;
+    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
+        if ((*it)->IsSource()
+            && (*it)->GetSource().IsSetOrg()
+            && (*it)->GetSource().GetOrg().IsSetTaxname()
+            && !NStr::IsBlank ((*it)->GetSource().GetOrg().GetTaxname())) {
+            has_source = true;
+            break;
+        }
+    }
+
+    if (!has_source) {
+        // error if does not have source and is not genprodset
+        CBioseq_set_Handle gps = GetGenProdSetParent (m_Scope->GetBioseq_setHandle (seqset));
+        if (!gps) {
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceMissing,
+                     "Nuc-prot set does not contain expected BioSource descriptor", seqset);
         }
     }
 }
