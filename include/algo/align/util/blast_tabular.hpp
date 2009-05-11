@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 #include <algo/align/util/align_shadow.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -97,6 +98,9 @@ protected:
 
     virtual void   x_PartialSerialize(CNcbiOstream& os) const;
     virtual void   x_PartialDeserialize(const char* m8);
+
+    static void sx_MineSegment(size_t where, const objects::CStd_seg::TLoc & locs,
+                               TSeqPos * delta, TSeqPos * prev);
 };
 
 
