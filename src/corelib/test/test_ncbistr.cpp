@@ -1672,14 +1672,14 @@ BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter_Unsafe)
 
 BOOST_AUTO_TEST_CASE(s_SQLEncode)
 {
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("should not be touched"), string("'should not be touched'") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(""), string("''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("'"), string("''''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("\\'"), string("'\\'''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("'a"), string("'''a'") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("a'"), string("'a'''") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode("should not be touched"), CStringUTF8("'should not be touched'") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(""), CStringUTF8("''") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode("'"), CStringUTF8("''''") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode("\\'"), CStringUTF8("'\\'''") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode("'a"), CStringUTF8("'''a'") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode("a'"), CStringUTF8("'a'''") );
     BOOST_CHECK_EQUAL( NStr::SQLEncode("`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?"),
-                               string("'`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?'") );
+                               CStringUTF8("'`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?'") );
 
     const unsigned char s_UpperHalf[] = {
         0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F,
@@ -1703,9 +1703,9 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
         0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF, '\''
     };
 
-    string      upperHalf( (char*)s_UpperHalf, 128 );
-    string      expected( (char*)s_Expected, 130 );
+    CStringUTF8      upperHalf( string((char*)s_UpperHalf, 128) );
+    CStringUTF8      expected( string((char*)s_Expected, 130) );
 
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), string(expected) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), CStringUTF8(expected) );
 }
 

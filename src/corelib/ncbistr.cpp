@@ -2594,21 +2594,22 @@ string NStr::URLEncode(const string& str, EUrlEncode flag)
 }
 
 
-string NStr::SQLEncode(const string& str)
-{
-    const string  kSingleQuote = "'";
-    string        result       = kSingleQuote;
-    SIZE_TYPE     stringSize   = str.size();
+CStringUTF8 NStr::SQLEncode(const CStringUTF8& str) {
+    SIZE_TYPE     stringSize = str.size();
+    CStringUTF8   result;
 
+    result.reserve(stringSize + 6);
+    result.append(1, '\'');
     for (SIZE_TYPE i = 0;  i < stringSize;  i++) {
         char  c = str[i];
         if (c ==  '\'')
-            result.append(kSingleQuote);
+            result.append(1, '\'');
         result.append(1, c);
     }
-    return result + kSingleQuote;
-}
+    result.append(1, '\'');
 
+    return result;
+}
 
 
 void s_URLDecode(const string& src, string& dst, NStr::EUrlDecode flag)
