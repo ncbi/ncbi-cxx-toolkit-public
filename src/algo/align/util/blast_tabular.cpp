@@ -56,12 +56,12 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     TCoord spaces (0), gaps (0), aln_len (0);
     if(seq_align_segs.IsDenseg()) {
         
-        /// assume Megablast alignments
+        /// Dense-segs imply same scale on query and subject
 
-        const CDense_seg & ds (seq_align_segs.GetDenseg());
-        const CDense_seg::TLens& lens (ds.GetLens());
-        const CDense_seg::TStarts& starts (ds.GetStarts());
-        for(size_t i (0), dim = lens.size(); i < dim; ++i) {
+        const CDense_seg & ds              (seq_align_segs.GetDenseg());
+        const CDense_seg::TLens & lens     (ds.GetLens());
+        const CDense_seg::TStarts & starts (ds.GetStarts());
+        for(size_t i (0), dim (lens.size()); i < dim; ++i) {
             if(starts[2*i] == -1 || starts[2*i+1] == -1) {
                 ++gaps;
                 spaces += lens[i];
@@ -75,14 +75,22 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
         }
         SetScore(float(score));
     }
-    else {
+    else if (seq_align_segs.IsStd()) {
 
-	/// Assume BlastX or tBlastN alignments.
+	/// Std-seg allow different coordinate scales
+        /// such as in prot-nuc or nuc-prot alignments.
+        /// We assume that the scale ratio is const for all segments.
 
-	/// Test which sequence is genomic.
+	/// Find the coordinate scale ratios
 
-	TSeqPos row0_len (0), row1_len (0);
-	ITERATE(CSeq_align::TSegs::TStd, ii, seq_align.GetSegs().GetStd()) {
+	TSeqPos len [2] = {0, 0};
+        const CSeq_align::TSegs::TStd & stdsegs (seq_align_segs.GetStd());
+        if(stdsegs.empty()) {
+            NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                       "CBlastTabular(): Cannot init off of an empty seq-align.");
+        }
+
+	ITERATE(CSeq_align::TSegs::TStd, ii, stdsegs) {
 	    
             const CStd_seg & seg (**ii);
             const CStd_seg::TLoc & locs (seg.GetLoc());
@@ -91,114 +99,67 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
                            "Unexpected std-seg alignment");
             }
 	    
-            row0_len += locs[0]->GetTotalRange().GetLength();
-            row1_len += locs[1]->GetTotalRange().GetLength();
+            const TSeqPos r0 (locs[0]->GetTotalRange().GetLength());
+            const TSeqPos r1 (locs[1]->GetTotalRange().GetLength());
+            if(r0 > 0 && r1 > 0) {
+                len[0] += r0;
+                len[1] += r1;
+            }
 	}
         
-	const size_t idx_genomic (row0_len < row1_len? 1: 0);
-	const size_t idx_protein ((idx_genomic + 1) % 2);
+        size_t scale [2];
+        if(len[0] == 3 * len[1]) {
+            scale[0] = 3;
+            scale[1] = 1;
+        }
+        else if (3 * len[0] == len[1]) {
+            scale[0] = 1;
+            scale[1] = 3;
+        }
+        else if (len[0] == len[1]) {
+            scale[0] = scale[1] = 1;
+        }
+        else {
+            CNcbiOstrstream ostr;
+            ostr << "Unexpected coordinate scale ratio: "
+                 << len[0] << '(' << GetId(0)->GetSeqIdString(true) << ")\t" 
+                 << len[1] << '(' << GetId(1)->GetSeqIdString(true) << ")";
+            const string errmsg = CNcbiOstrstreamToString(ostr);
+            NCBI_THROW(CAlgoAlignUtilException, eInternal, errmsg);
+        }
 
-	/// parse the segments to collect basic alignment stats
+	/// Parse the segments to collect basic alignment stats
 	
-	const CSeq_align::TSegs::TStd & std_segs (seq_align_segs.GetStd());
-        size_t k (0);
-        TSeqPos prev_gen (0), prev_prot (0);
-        ITERATE(CSeq_align::TSegs::TStd, ii, std_segs) {
+        TSeqPos prev [2]  = { TSeqPos(-1), TSeqPos(-1) };
+        ITERATE(CSeq_align::TSegs::TStd, ii, stdsegs) {
 
             const CStd_seg & seg (**ii);
+
             const CStd_seg::TLoc & locs (seg.GetLoc());
+            TSeqPos delta [2] = {0, 0};
+            sx_MineSegment(0, locs, delta, prev);
+            sx_MineSegment(1, locs, delta, prev);
 
-            const CSeq_loc & loc_gen (*locs[idx_genomic]);
-            TSeqPos min_gen (TSeqPos(-1));
-            TSeqPos max_gen (TSeqPos(-1));
-            CConstRef<CSeq_interval> interval_gen (new CSeq_interval);
-            if(loc_gen.IsInt()) {
-                interval_gen.Reset(&loc_gen.GetInt());
-                min_gen = interval_gen->GetFrom();
-                max_gen = interval_gen->GetTo();
-            }
-
-            const CSeq_loc & loc_prot (*locs[idx_protein]);
-            TSeqPos min_prot (TSeqPos(-1));
-            TSeqPos max_prot (TSeqPos(-1));
-            CConstRef<CSeq_interval> interval_prot (new CSeq_interval);
-            if(loc_prot.IsInt()) {
-                interval_prot.Reset(&loc_prot.GetInt());
-                min_prot = interval_prot->GetFrom();
-                max_prot = interval_prot->GetTo();
-            }
-
-            if(k++) {
-
-                TSeqPos delta_gen (0);
-                if(loc_gen.IsEmpty()) {
-                    ++gaps;
-                    spaces += (max_prot - min_prot + 1);
-                }
-                else {
-                    if(interval_gen->GetStrand() == eNa_strand_minus) {
-                        delta_gen = prev_gen - max_gen - 1;
-                        prev_gen = min_gen;
-                    }
-                    else if (interval_gen->GetStrand() == eNa_strand_plus) {
-                        delta_gen = min_gen - prev_gen - 1;
-                        prev_gen = max_gen;
-                    }
-                    else {
-                        NCBI_THROW(CException, eUnknown,
-                                   "Unexpected genomic strand when parsing "
-                                   "blastx or tblastn alignments");
-                    }
-
-                    if(delta_gen > 0) {
-                        if(delta_gen % 3) {
-                            NCBI_THROW(CException, eUnknown,
-                                       "Unexpected nuc gap size when parsing "
-                                       "blastx or tblastn alignments");
-                        }
-
-                        spaces += delta_gen / 3;
-                    }
-                }
-
-                TSeqPos delta_prot (0);
-                if(loc_prot.IsEmpty()) {
-                    ++gaps;
-                    const TCoord res_missing ((max_gen - min_gen + 1) / 3);
-                    spaces += res_missing;
-                    aln_len += res_missing;
-                }
-                else {
-                    if(interval_prot->GetStrand() == eNa_strand_unknown) {
-                        delta_prot = min_prot - prev_prot - 1;
-                        prev_prot = max_prot;
-                    }
-                    else {
-                        NCBI_THROW(CAlgoAlignUtilException, eInternal,
-                                   "Unexpected strand when parsing "
-                                   "blastx or tblastn alignments");
-                    }
-
-                    if(delta_prot > 0) {
-                        spaces += delta_prot;
-                    }
-
-                    aln_len += max_prot - min_prot + 1;
-                }
-
-                if(delta_gen > 0 && delta_prot > 0) {
+            if(delta[0] == 0) {
+                if(delta[1] == 0) {
                     NCBI_THROW(CAlgoAlignUtilException, eInternal,
-                               "Simultaneous gaps in both sequences not expected "
-                               "in blastx or tblastn alignments");
+                               "CBlastTabular(): Empty std-segs not expected.");
                 }
+                else {
+                    const TSeqPos increment (delta[1] / scale[1]);
+                    aln_len += increment;
+                    spaces  += increment;
+                    ++gaps;
+                }
+            }
+            else if (delta[1] == 0) {
+                const TSeqPos increment (delta[0] / scale[0]);
+                aln_len += increment;
+                spaces  += increment;
+                ++gaps;
             }
             else {
-
-                // first segment
-                prev_gen = (interval_gen->GetStrand() == eNa_strand_minus)? 
-                            min_gen: max_gen;
-                aln_len += max_prot - min_prot + 1;
-                prev_prot = max_prot;
+                aln_len += delta[0] / scale[0];
             }
         }
 
@@ -207,6 +168,9 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
             score = 0;
         }
         SetScore(float(score));
+    }
+    else {
+        NCBI_THROW(CAlgoAlignUtilException, eInternal, "Unsupported seq-align type");
     }
     
     /// Assign the scores
@@ -227,6 +191,46 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     }
     SetEValue(evalue);
 }
+
+
+void CBlastTabular::sx_MineSegment(size_t where, const CStd_seg::TLoc & locs,
+                                   TSeqPos * delta, TSeqPos * prev)
+{
+    const CSeq_loc & row_loc (*locs[where]);
+    CConstRef<CSeq_interval> row_interval (new CSeq_interval);
+
+    if(row_loc.IsInt()) {
+        const CSeq_interval & row_interval (row_loc.GetInt());
+        bool disc_seg_found (false);
+        if(row_interval.GetStrand() == eNa_strand_minus) {
+            const TSeqPos row_stop  (row_interval.GetFrom());
+            const TSeqPos row_start (row_interval.GetTo());
+            if(prev[where] != TSeqPos(-1) && prev[where] != row_start + 1) {
+                disc_seg_found = true;
+            }
+            delta[where] = 1 + row_start - row_stop;
+            prev[where]  = row_stop;
+        }
+        else {
+            const TSeqPos row_start (row_interval.GetFrom());
+            const TSeqPos row_stop  (row_interval.GetTo());
+            if(prev[where] != TSeqPos(-1) && prev[where] + 1 != row_start) {
+                disc_seg_found = true;
+            }
+            delta[where] = 1 + row_stop - row_start;
+            prev[where]  = row_stop;
+        }
+        
+        if(disc_seg_found) {
+            NCBI_THROW(CAlgoAlignUtilException, eInternal,
+                       "CBlastTabular(): discontiguous std-segs not expected");
+        }
+    }
+    else {
+        delta[where] = 0;
+    }
+}
+
 
 
 CBlastTabular::CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
@@ -497,10 +501,12 @@ void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
     const size_t trlen = GetTranscript().size();
     if(trlen > 0) {
 
-        
- /* This is accurate but assumes that mismatches are included
-    in the transcript, not just matches coding for generic diags.
-    So keep it commented out for a while.
+
+#ifdef ALGO_ALIGN_UTIL_BT_MM_INCLUDED        
+
+        //    This is accurate but assumes that mismatches are included
+        //    in the transcript, not just matches coding for generic diags.
+        //    So keep it commented out for a while.
 
         const TCoord matches_old = TCoord(trlen * GetIdentity());
         TParent::Modify(where, new_pos);
@@ -556,7 +562,7 @@ void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
         SetGaps(gaps);
         SetLength(matches + mismatches + indels);
         SetScore(GetScore() * matches / double(matches_old));
- */
+#endif
 
         const TCoord trlen_old = s_RunLengthDecode(GetTranscript()).size();
         TParent::Modify(where, new_pos);

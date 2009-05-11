@@ -148,8 +148,8 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
         else {
             NCBI_THROW(CAlgoAlignUtilException,
                        eInternal,
-                       "CAlignShadow()::CAlignShadow(): "
-                       "save_xcript mode not yet implemented");           
+                       "CAlignShadow(): save_xcript mode not supported "
+                       "for seq-align segments other than dense-seg.");
         }
     }
 }
