@@ -2037,7 +2037,7 @@ int bvector<Alloc, MS>::compare(const bvector<Alloc, MS>& bvect) const
 // -----------------------------------------------------------------------
 
 template<typename Alloc, typename MS> 
-void bvector<Alloc, MS>::calc_stat(typename bvector<Alloc, MS>::statistics* st) const
+void bvector<Alloc, MS>::calc_stat(struct statistics* st) const
 {
     st->bit_blocks = st->gap_blocks 
                    = st->max_serialize_mem 
