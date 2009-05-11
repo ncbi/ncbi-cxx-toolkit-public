@@ -18,12 +18,18 @@ Usage() {
     exit $1
 }
 
+case "`uname -m`" in
+    x86_64 ) bits=64 ;;
+    *      ) bits=32 ;;
+esac
+
 case "$1" in
-  8            ) search=/opt/intel/compiler8* ;;
-  8.0          ) search=/opt/intel/compiler80 ;;
-  [1-9].*.*    ) search=/opt/intel/cc*/$1     ;;
-  9* | 1[0-9]* ) search=/opt/intel/cc*/$1.*   ;;
-  *            ) search=                      ;;
+  8           ) search=/opt/intel/compiler8*/bin                ;;
+  8.0         ) search=/opt/intel/compiler80/bin                ;;
+  [1-9].*.*   ) search=/opt/intel/cc*/$1/bin                    ;;
+  9* | 10     ) search=/opt/intel/cc*/$1.*/bin                  ;;
+  [1-9][0-9]* ) search=/opt/intel/Compiler/$1*/*/bin/intel$bits ;;
+  *           ) search=                                         ;;
 esac
 
 if [ -n "$search" ]; then
@@ -31,9 +37,9 @@ if [ -n "$search" ]; then
     base_CC=$CC
     base_CXX=$CXX
     for dir in $search; do
-        if test -x $dir/bin/$base_CC; then
-            CC=$dir/bin/$base_CC
-            CXX=$dir/bin/$base_CXX
+        if test -x $dir/$base_CC; then
+            CC=$dir/$base_CC
+            CXX=$dir/$base_CXX
         fi
     done
 fi
@@ -79,7 +85,7 @@ or non-default system ABIs.
 Please supply --with-build-root=$1 if you wish to name your build root "$1".
 
 EOF
-	 Usage 1 ;;
+         Usage 1 ;;
    *  )  BUILD_ROOT="--with-build-root=$1" ; shift ;;
   esac
 fi
@@ -88,4 +94,4 @@ fi
 ## Configure
 export CC CXX
 
-${CONFIG_SHELL-/bin/sh} `dirname $0`/../../configure $HELP $BUILD_ROOT "$@"
+exec ${CONFIG_SHELL-/bin/sh} `dirname $0`/../../configure $HELP $BUILD_ROOT "$@"
