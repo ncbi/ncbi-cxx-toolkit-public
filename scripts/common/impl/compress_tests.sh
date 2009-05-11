@@ -18,7 +18,7 @@ for dir in "$@"; do
         [ -f "$f" ]  ||  continue
         case "`basename $f`" in
             plugin_test | speedtest | streamtest \
-                | testipub | test_checksum | test_mghbn \
+                | testipub | test_basic_cleanup | test_checksum | test_mghbn \
                 | *.gz )
                 ;;
             *test* | *demo* | *sample*)
