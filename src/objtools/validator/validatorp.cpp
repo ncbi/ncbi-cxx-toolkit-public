@@ -699,26 +699,27 @@ bool CValidError_imp::Validate
     if (feature_ids.size() > 0) {
         const CTSE_Handle& tse = seh.GetTSE_Handle ();
         stable_sort (feature_ids.begin(), feature_ids.end());
-          vector <int>::iterator it = feature_ids.begin();
-          int id = *it;
-          ++it;
-          while (it != feature_ids.end()) {
-              if (*it == id) {
-                  vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, id);
-                  ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
-                      PostErr (eDiag_Critical, eErr_SEQ_FEAT_CollidingFeatureIDs,
-                               "Colliding feature ID " + NStr::IntToString (id), *(feat_it->GetSeq_feat()));
-                  }
-                  while (it != feature_ids.end() && *it == id) {
-                      ++it;
-                  }
-                  if (it != feature_ids.end()) {
-                      id = *it;
-                  }
-              } else {
-                  id = *it;
-                  ++it;
-              }
+        vector <int>::iterator it = feature_ids.begin();
+        int id = *it;
+        ++it;
+        while (it != feature_ids.end()) {
+            if (*it == id) {
+                vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, id);
+                ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                    PostErr (eDiag_Critical, eErr_SEQ_FEAT_CollidingFeatureIDs,
+                             "Colliding feature ID " + NStr::IntToString (id), *(feat_it->GetSeq_feat()));
+                }
+                while (it != feature_ids.end() && *it == id) {
+                    ++it;
+                }
+                if (it != feature_ids.end()) {
+                    id = *it;
+                    ++it;
+                }
+            } else {
+                id = *it;
+                ++it;
+            }
         }
     }
 
