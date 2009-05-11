@@ -1685,6 +1685,23 @@ public:
     /// URL-encode string
     static string URLEncode(const string& str,
                             EUrlEncode flag = eUrlEnc_SkipMarkChars);
+    /// SQL-encode string
+    /// There are some assumptions/notes about the function:
+    /// 1. It is purposed for MS SQL and Sybase only.
+    /// 2. It is purposed for string values in WHERE clause and for LIKE clause.
+    /// 3. The ' symbol must not be used as an escape symbol in LIKE clause.
+    /// 4. It must not be used for numeric values.
+    /// 5. EncodeSQL() expects a string without any outer quotes.
+    ///    EncodeSQL() adds single quotes to the returned string.
+    /// 6. EncodeSQL() doubles any single quote in the original string.
+    /// 7. EncodeSQL() expects UTF-8 or Win1252 string and the input encoding
+    ///    is preserved.
+    /// @param str
+    ///   The string to be encoded
+    /// @return
+    ///   Encoded string with added outer single quotas
+    static string SQLEncode(const string& str);
+
     /// URL-decode string
     static string URLDecode(const string& str,
                             EUrlDecode flag = eUrlDec_All);

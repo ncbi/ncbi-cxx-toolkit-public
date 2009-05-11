@@ -2594,6 +2594,23 @@ string NStr::URLEncode(const string& str, EUrlEncode flag)
 }
 
 
+string NStr::SQLEncode(const string& str)
+{
+    const string  kSingleQuote = "'";
+    string        result       = kSingleQuote;
+    SIZE_TYPE     stringSize   = str.size();
+
+    for (SIZE_TYPE i = 0;  i < stringSize;  i++) {
+        char  c = str[i];
+        if (c ==  '\'')
+            result.append(kSingleQuote);
+        result.append(1, c);
+    }
+    return result + kSingleQuote;
+}
+
+
+
 void s_URLDecode(const string& src, string& dst, NStr::EUrlDecode flag)
 {
     SIZE_TYPE len = src.length();
