@@ -50,15 +50,20 @@ struct SServerScanInfo
     SServerScanInfo(const TSkipServers& skip_servers)
         : m_TotalCount(0),
           m_SkippedCount(0),
-          m_SkipServers(skip_servers),
-          m_CurrentServer(0)
+          m_CurrentServer(0),
+          m_SkipServers(skip_servers)
         {
         }
     int m_TotalCount;
     int m_SkippedCount;
-    const TSkipServers& m_SkipServers;
     const SSERV_Info* m_CurrentServer;
-    
+    const TSkipServers& m_SkipServers;
+
+    void Reset(void) {
+        m_TotalCount = 0;
+        m_SkippedCount = 0;
+        m_CurrentServer = 0;
+    }
     bool SkipServer(const SSERV_Info* server);
 };
 
@@ -76,7 +81,30 @@ bool SServerScanInfo::SkipServer(const SSERV_Info* server)
 }
 
 
-static const SSERV_Info* s_GetNextInfo(SERV_ITER iter, void* data)
+struct ConnNetInfoDeleter
+{
+    /// C Language deallocation function.
+    static void Delete(SConnNetInfo* object) {
+        ConnNetInfo_Destroy(object);
+    }
+};
+
+
+static void s_ScanInfoReset(void* data)
+{
+    SServerScanInfo* scan_info = static_cast<SServerScanInfo*>(data);
+    scan_info->Reset();
+}
+
+
+static void s_ScanInfoCleanup(void* data)
+{
+    SServerScanInfo* scan_info = static_cast<SServerScanInfo*>(data);
+    delete scan_info;
+}
+
+
+static const SSERV_Info* s_ScanInfoGetNextInfo(SERV_ITER iter, void* data)
 {
     SServerScanInfo* scan_info = static_cast<SServerScanInfo*>(data);
     const SSERV_Info* info = SERV_GetNextInfo(iter);
@@ -96,29 +124,41 @@ CReaderServiceConnector::SConnInfo CReaderServiceConnector::Connect(void)
     tmout.sec = m_OpenTimeout;
     tmout.usec = 0;
     
-    SServerScanInfo scan_info(m_SkipServers);
-        
-    SSERVICE_Extra params;
-    memset(&params, 0, sizeof(params));
-    params.data = &scan_info;
-    params.get_next_info = s_GetNextInfo;
-    params.flags = fHCC_NoAutoRetry;
-        
+    SServerScanInfo* scan_info = 0;
+
     if ( NStr::StartsWith(m_ServiceName, "http://") ) {
         info.m_Stream.reset(new CConn_HttpStream(m_ServiceName));
     }
     else {
+        AutoPtr<SConnNetInfo, ConnNetInfoDeleter> net_info
+            (ConnNetInfo_Create(m_ServiceName.c_str()));
+        net_info->max_try = 1;
+        
+        AutoPtr<SServerScanInfo> scan_ptr(new SServerScanInfo(m_SkipServers));
+        SSERVICE_Extra params;
+        memset(&params, 0, sizeof(params));
+        params.data = scan_ptr.get();
+        params.reset = s_ScanInfoReset;
+        params.cleanup = s_ScanInfoCleanup;
+        params.get_next_info = s_ScanInfoGetNextInfo;
+        params.flags = fHCC_NoAutoRetry;
+        
         info.m_Stream.reset(new CConn_ServiceStream(m_ServiceName, fSERV_Any,
-                                                    0, &params, &tmout));
+                                                    net_info.get(),
+                                                    &params,
+                                                    &tmout));
+        scan_info = scan_ptr.release();
     }
 
     CConn_IOStream& stream = *info.m_Stream;
     // need to call CONN_Wait to force connection to open
     if ( !stream.bad() ) {
         CONN_Wait(stream.GetCONN(), eIO_Write, &tmout);
-        info.m_ServerInfo = scan_info.m_CurrentServer;
+        if ( scan_info ) {
+            info.m_ServerInfo = scan_info->m_CurrentServer;
+        }
     }
-    if ( scan_info.m_TotalCount == scan_info.m_SkippedCount ) {
+    if ( scan_info && scan_info->m_TotalCount == scan_info->m_SkippedCount ) {
         // all servers are skipped, reset skip-list
         m_SkipServers.clear();
     }

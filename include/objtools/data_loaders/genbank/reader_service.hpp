@@ -41,7 +41,9 @@ class CConn_IOStream;
 
 BEGIN_SCOPE(objects)
 
-class NCBI_XREADER_EXPORT CReaderServiceConnector
+class CReader;
+
+class NCBI_XREADER_EXPORT CReaderServiceConnector : CConnIniter
 {
 public:
     CReaderServiceConnector(void);
