@@ -39,9 +39,17 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
+class IEvidence
+{
+public:
+    virtual const CAlignModel* GetModel(int id) const = 0;
+protected:
+    virtual ~IEvidence() {};
+};
+
 class CAnnotationASN1 {
 public:
-    CAnnotationASN1(const string& contig_name, const CResidueVec& seq);
+    CAnnotationASN1(const string& contig_name, const CResidueVec& seq, const IEvidence& evidence);
     ~CAnnotationASN1();
 
     void AddModel(const CGeneModel& model);

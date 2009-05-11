@@ -71,36 +71,24 @@ inline bool Include(TSignedSeqRange big, TSignedSeqRange small) { return (big.Ge
 inline bool Include(TSignedSeqRange r, TSignedSeqPos p) { return (r.GetFrom()<=p && p<=r.GetTo()); }
 inline bool Enclosed(TSignedSeqRange big, TSignedSeqRange small) { return (big != small && Include(big, small)); }
 
-typedef CConstRef<objects::CSeq_id> TConstSeqidRef;
+typedef list<CRef<objects::CSeq_id> > TSeqidList;
 
 class CSupportInfo
 {
 public:
-    CSupportInfo(const TConstSeqidRef& s, bool core);
+    CSupportInfo(int model_id, bool core=false);
 
-    TConstSeqidRef Seqid() const;
-    void SetSeqid(const TConstSeqidRef sid);
-    void SetCore(bool core) { m_core_align = core; }
-    bool CoreAlignment() const { return m_core_align; }
-    void SetType(int t) { m_type = t; }
-    int Type() const { return m_type; }
+
+    int GetId() const;
+    void SetCore(bool core);
+    bool IsCore() const;
     bool operator==(const CSupportInfo& s) const;
     bool operator<(const CSupportInfo& s) const;
 
 private:
-    int m_local_id;
-    TConstSeqidRef m_seq_id;
+    int m_id;
     bool m_core_align;
-    int m_type;
 }; 
-
-struct compare_seqid_refs : public binary_function<TConstSeqidRef,TConstSeqidRef,bool>
-{
-  bool operator()(const TConstSeqidRef& s1, const TConstSeqidRef& s2) const
-  {
-    return *s1 < *s2;
-  }
-};
 
 typedef CVectorSet<CSupportInfo> CSupportInfoSet;
 
@@ -373,9 +361,9 @@ public:
     void SetGeneID(int id) { m_geneid = id; }
     int ID() const { return m_id; }
     void SetID(int id) { m_id = id; }
-    TConstSeqidRef Seqid() const;
     const CSupportInfoSet& Support() const { return m_support; }
-          CSupportInfoSet& Support()       { return m_support; }
+    void AddSupport(const CSupportInfo& support) { m_support.insert(support); }
+    void ReplaceSupport(const CSupportInfoSet& support_set) {  m_support = support_set; }
     const string& ProteinHit() const { return  m_protein_hit; }
           string& ProteinHit()       { return  m_protein_hit; }
 
@@ -454,8 +442,6 @@ public:
 
     virtual CAlignMap GetAlignMap() const;
     
-    string SupportName() const;
-
     string GetProtein (const CResidueVec& contig_sequence) const;
     
     // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
@@ -590,16 +576,21 @@ class CAlignModel : public CGeneModel {
 public:
     CAlignModel() {}
     CAlignModel(const objects::CSeq_align& seq_align);
-    CAlignModel(const CGeneModel& g) : CGeneModel(g), m_alignmap(g.GetAlignMap()) {}
+    //    CAlignModel(const CGeneModel& g) : CGeneModel(g), m_alignmap(g.GetAlignMap()) {}
     CAlignModel(const CGeneModel& g, const CAlignMap& a) : CGeneModel(g), m_alignmap(a) {}
     TSignedSeqRange TranscriptExon(int i) const;
     virtual CAlignMap GetAlignMap() const { return m_alignmap; }
+
+    string TargetAccession() const;
+    void SetTargetIds(const TSeqidList& ids) { m_target_ids = ids; }
+    const TSeqidList& GetTargetIds() const { return m_target_ids; }
     int TargetLen() const { return m_alignmap.TargetLen(); }
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
     int PolyALen();
 private:
     CAlignMap m_alignmap;
+    TSeqidList m_target_ids;
 };
 
 
@@ -618,6 +609,7 @@ NCBI_XALGOGNOMON_EXPORT CNcbiIstream& operator>>(CNcbiIstream& s, const getconti
 
 NCBI_XALGOGNOMON_EXPORT CNcbiIstream& operator>>(CNcbiIstream& s, CAlignModel& a);
 NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CAlignModel& a);
+NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CGeneModel& a);
 
 
 template<class Model> 

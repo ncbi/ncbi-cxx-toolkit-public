@@ -98,9 +98,21 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) 
         Status() |= CGeneModel::eReversed;
 
-    CRef<CSeq_id> product_idref(new CSeq_id);
-    product_idref->Assign( sps.GetProduct_id() );
-    Support().insert(CSupportInfo(product_idref,false));
+    { // set support
+        TSeqidList product_idlist;
+
+        CRef<CSeq_id> product_idref(new CSeq_id);
+        product_idref->Assign( sps.GetProduct_id() );
+        product_idlist.push_back(product_idref);
+
+        if (ID() != 0) {
+            product_idref.Reset(new CSeq_id(CSeq_id::e_Local, ID())); // compartment id
+            product_idlist.push_back(product_idref);
+        }
+
+        SetTargetIds(product_idlist);
+    }
+
     bool is_product_reversed = sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus;
     int product_len = sps.CanGetProduct_length()?sps.GetProduct_length():0;
     bool is_protein = sps.GetProduct_type()==CSpliced_seg::eProduct_type_protein;
@@ -309,7 +321,7 @@ CRef<CSeq_loc> s_ExonDataToLoc(const vector<TSignedSeqRange>& vec,
 
 CRef<CSeq_annot> CGnomonEngine::GetAnnot(const CSeq_id& id)
 {
-    list<CGeneModel> genes = GetGenes();
+    TGeneModelList genes = GetGenes();
 
     CRef<objects::CSeq_annot> annot(new CSeq_annot());
 
@@ -319,7 +331,7 @@ CRef<CSeq_annot> CGnomonEngine::GetAnnot(const CSeq_id& id)
 
     unsigned int counter = 0;
     string locus_tag_base("GNOMON_");
-    ITERATE (list<CGeneModel>, it, genes) {
+    ITERATE (TGeneModelList, it, genes) {
         const CGeneModel& igene = *it;
         int strand = igene.Strand();
         TSignedSeqRange cds_limits = igene.RealCdsLimits();

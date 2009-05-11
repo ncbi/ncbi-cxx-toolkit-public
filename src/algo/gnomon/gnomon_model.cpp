@@ -37,6 +37,7 @@
 #include <functional>
 #include <corelib/ncbiutil.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objtools/blast_format/showdefline.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -73,12 +74,12 @@ CRef<CSeq_id> CreateSeqid(int local_id)
 
 CAlignMap CGeneModel::GetAlignMap() const { return CAlignMap(Exons(), FrameShifts(), Strand()); }
 
-string CGeneModel::SupportName() const {
-    ITERATE(CSupportInfoSet, i, Support()) {
-        if (!i->Seqid()->IsLocal() || !i->Seqid()->GetLocal().IsId())
-            return NStr::Replace(i->Seqid()->GetSeqIdString(true)," ","%20");
-    }
-    return NStr::Replace(Support().begin()->Seqid()->GetSeqIdString(true)," ","%20");
+string CAlignModel::TargetAccession() const {
+    _ASSERT( !GetTargetIds().empty() );
+    if (GetTargetIds().empty())
+        return "UnknownTarget";
+    const CSeq_id* id = FindBestChoice(GetTargetIds(), CSeq_id::Score); 
+    return id->GetSeqIdString(true);
 }
 
 void CGeneModel::Remap(const CRangeMapper& mapper)
@@ -353,7 +354,7 @@ bool CGeneModel::GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) cons
 {
     int composite = 0;
     ITERATE(CSupportInfoSet, s, Support()) {
-        if(s->CoreAlignment() && ++composite > maxcomposite) return false;
+        if(s->IsCore() && ++composite > maxcomposite) return false;
     }
     
     return
@@ -893,11 +894,6 @@ TSignedSeqRange CGeneModel::MaxCdsLimits() const
     return GetCdsInfo().MaxCdsLimits() & Limits();
 }   
 
-TConstSeqidRef CGeneModel::Seqid() const
-{
-    return TConstSeqidRef(new CSeq_id(CSeq_id::e_Local,ID()));
-}
-
 template< class T>
 class CStreamState {
 #ifdef HAVE_IOS_REGISTER_CALLBACK
@@ -1248,12 +1244,23 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
     if (a.GeneID()!=0)
         mrna.attributes["Parent"] = "gene"+NStr::IntToString(a.GeneID());
 
-    ITERATE(CSupportInfoSet, i, a.Support()) {
-        mrna.attributes["support"] += ",";
-        if(i->CoreAlignment()) 
-            mrna.attributes["support"] += "*";
-        string ss = i->Seqid()->IsGi()? i->Seqid()->AsFastaString() : NStr::Replace(i->Seqid()->GetSeqIdString(true)," ","%20");
-        mrna.attributes["support"] += ss;
+    if (!a.GetTargetIds().empty()) {
+        vector<string> fasta_strings;
+        ITERATE(TSeqidList, id, a.GetTargetIds()) {
+            fasta_strings.push_back((*id)->AsFastaString());
+        }
+        string fasta_defline = NStr::Join(fasta_strings, "|");
+        mrna.attributes["support"] = NStr::Replace(fasta_defline," ","%20");
+    } else {
+        ITERATE(CSupportInfoSet, i, a.Support()) {
+            mrna.attributes["support"] += ",";
+            if(i->IsCore()) 
+                mrna.attributes["support"] += "*";
+        
+            mrna.attributes["support"] += NStr::IntToString(i->GetId());
+        }
+
+        mrna.attributes["support"].erase(0,1);
     }
 
     ITERATE(CVectorSet<int>, i, a.EntrezGene()) {
@@ -1261,8 +1268,6 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
             mrna.attributes["EntrezGene"] += ",";
         mrna.attributes["EntrezGene"] += NStr::IntToString(*i);      
     }
-
-    mrna.attributes["support"].erase(0,1);
 
     if(a.TargetLen() > 0)
         mrna.attributes["TargetLen"] = NStr::IntToString(a.TargetLen());  
@@ -1349,7 +1354,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
         if((a.Type() & CGeneModel::eGnomon)!=0 || (a.Type() & CGeneModel::eChain)!=0) {
             target = "hmm." + NStr::IntToString(a.ID()) + ".m";
         } else {
-            target = a.SupportName();           
+            target = NStr::Replace(a.TargetAccession(), " ", "%20");
         }
         
         TSignedSeqRange transcript_exon = a.TranscriptExon(i);
@@ -1499,6 +1504,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     bool has_stop = false;
     string pstops, altstarts;
     int target_len = 0;
+    CBioseq::TId target_ids;
 
     NON_CONST_ITERATE(vector<SGFFrec>, r, recs) {
         if (r->type == "mRNA") {
@@ -1507,10 +1513,15 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 
             vector<string> support;
             NStr::Tokenize(r->attributes["support"], ",", support);
-            ITERATE(vector<string>, s, support) {
-                bool core = (*s)[0] == '*';
-                string id = NStr::Replace(core ? s->substr(1) : *s, "%20", " ");
-                a.Support().insert(CSupportInfo(CreateSeqid(id), core));
+            if (support.size()==1 && !isdigit(support[0][0]) && support[0][0] != '*') {
+                string id = NStr::Replace(support[0], "%20", " ");
+                CSeq_id::ParseFastaIds(target_ids, id);
+            } else {
+                ITERATE(vector<string>, s, support) {
+                    bool core = (*s)[0] == '*';
+                    int id = NStr::StringToInt(core ? s->substr(1) : *s);
+                    a.AddSupport(CSupportInfo(id, core));
+                }
             }
 
             vector<string> entrezgene;
@@ -1675,6 +1686,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     a.SetCdsInfo(cds_info);
 
     align = CAlignModel(a, amap);
+    align.SetTargetIds(target_ids);
     contig_stream_state.slot(is) = rec.seqid;
     return is;
 }
@@ -1695,6 +1707,11 @@ CNcbiIstream& readASN(CNcbiIstream& is, CGeneModel& align)
 {
     is.setstate(ios::failbit);
     return is;
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& s, const CGeneModel& a)
+{
+    return operator<<(s, CAlignModel(a, a.GetAlignMap()));
 }
 
 CNcbiOstream& operator<<(CNcbiOstream& os, const CAlignModel& a)
@@ -1730,33 +1747,35 @@ CNcbiIstream& operator>>(CNcbiIstream& is, CAlignModel& align)
     return is;
 }
 
-CSupportInfo::CSupportInfo(const TConstSeqidRef& s, bool core)
-    : m_core_align(core), m_type(0)
+
+CSupportInfo::CSupportInfo(int model_id, bool core)
+    : m_id( model_id), m_core_align(core)
 {
-    SetSeqid(s);
 }
-TConstSeqidRef CSupportInfo::Seqid() const
+
+int CSupportInfo::GetId() const
 {
-    return m_local_id==-1?m_seq_id:CreateSeqid(m_local_id);
+    return m_id;
 }
-void CSupportInfo::SetSeqid(const TConstSeqidRef sid)
+
+void CSupportInfo::SetCore(bool core)
 {
-    if (sid->IsLocal() && sid->GetLocal().IsId()) {
-        m_local_id = sid->GetLocal().GetId();
-        m_seq_id.Reset();
-    } else {
-        m_local_id = -1;
-        m_seq_id = sid;
-    }
-    _ASSERT( !(m_local_id == -1 && m_seq_id.Empty()) );
+    m_core_align = core;
 }
+
+bool CSupportInfo::IsCore() const
+{
+    return m_core_align;
+}
+
 bool CSupportInfo::operator==(const CSupportInfo& s) const
 {
-    return m_local_id == s.m_local_id && CoreAlignment() == s.CoreAlignment() && Type() == s.Type() && (m_local_id != -1 || m_seq_id->Match(*s.m_seq_id));
+    return IsCore() == s.IsCore() && GetId() == s.GetId();
 }
+
 bool CSupportInfo::operator<(const CSupportInfo& s) const
 {
-    return (m_local_id == -1 && s.m_local_id == -1) ? *m_seq_id < *s.m_seq_id : m_local_id < s.m_local_id;
+    return GetId() == s.GetId() ? IsCore() < s.IsCore() : GetId() < s.GetId();
 }
 
 

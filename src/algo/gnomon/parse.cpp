@@ -497,7 +497,7 @@ void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, 
             
         if ((algn.ReadingFrame().Empty()?algn.Limits():algn.ReadingFrame()).IntersectingWith(reading_frame)) {
             support.Extend(algn, false);
-            support.Support().insert(CSupportInfo(algn.Seqid(),false));
+            support.AddSupport(CSupportInfo(algn.ID(),false));
             supporting_align = &algn;
 
             if((algn.Status()&CGeneModel::ePolyA) != 0)
@@ -514,7 +514,7 @@ void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, 
 
         //        gene.Extend(support, support.Continuous());
         gene.Extend(support, false);
-        gene.Support() = support.Support();
+        gene.ReplaceSupport(support.Support());
         if ( Include(support.Limits(),gene.Limits()) && support.Continuous() ) {
             if (gene.Support().size()==1)
                 gene = *supporting_align;
@@ -535,9 +535,9 @@ void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, 
 #endif
 }
 
-list<CGeneModel> CParse::GetGenes() const
+TGeneModelList CParse::GetGenes() const
 {
-    list<CGeneModel> genes;
+    TGeneModelList genes;
     vector< vector<const CExon*> > gen_exons;
     const CAlignMap& seq_map = m_seqscr.FrameShiftedSeqMap();
     

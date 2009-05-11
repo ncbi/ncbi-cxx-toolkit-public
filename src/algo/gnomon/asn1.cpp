@@ -76,7 +76,7 @@ SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : mo
 
 class CAnnotationASN1::CImplementationData {
 public:
-    CImplementationData(const string& contig_name, const CResidueVec& seq);
+    CImplementationData(const string& contig_name, const CResidueVec& seq, const IEvidence& evdnc);
 
     void AddModel(const CGeneModel& model);
     CRef<CSeq_entry> main_seq_entry;
@@ -102,11 +102,13 @@ private:
     CSeq_annot::C_Data::TFtable* feature_table;
     typedef map<int,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;
+    const IEvidence& evidence;
 };
 
-CAnnotationASN1::CImplementationData::CImplementationData(const string& contig_name, const CResidueVec& seq) :
+CAnnotationASN1::CImplementationData::CImplementationData(const string& contig_name, const CResidueVec& seq, const IEvidence& evdnc) :
     main_seq_entry(new CSeq_entry),
-    contig_sid(CreateSeqid(contig_name)), contig_seq(seq)
+    contig_sid(CreateSeqid(contig_name)), contig_seq(seq),
+    evidence(evdnc)
 {
     Convert(contig_seq, contig_ds_seq);
 
@@ -119,8 +121,8 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& contig_n
     feature_table = &seq_annot->SetData().SetFtable();       
 }
 
-CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq) :
-    m_data(new CImplementationData(contig_name, seq))
+CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, const IEvidence& evdnc) :
+    m_data(new CImplementationData(contig_name, seq, evdnc))
 {
 }
 
@@ -367,6 +369,19 @@ CRef<CSeq_loc> CAnnotationASN1::CImplementationData::create_packed_int_seqloc(co
     return seq_loc->Merge(CSeq_loc::fSort, NULL);
 }
 
+void ExpandSupport(const CSupportInfoSet& src, CSupportInfoSet& dst, const IEvidence& evidence)
+{
+    ITERATE(CSupportInfoSet, s, src) {
+        dst.insert(*s);
+
+        const CAlignModel* m = evidence.GetModel(s->GetId());
+        if (m && (m->Type()&(CAlignModel::eChain|CAlignModel::eGnomon))!=0) {
+            _ASSERT( !s->IsCore() );
+            ExpandSupport(m->Support(), dst, evidence);
+        }
+    }
+}
+
 CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModelData& md)
 {
     const CGeneModel& model = md.model;
@@ -416,38 +431,70 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         CRef<CUser_field> support_field(new CUser_field());
         user_obj->SetData().push_back(support_field);
         support_field->SetLabel().SetStr("Support");
+        vector<string> chains;
+        vector<string> cores;
         vector<string> proteins;
         vector<string> mrnas;
         vector<string> ests;
         vector<string> unknown;
-        ITERATE(CSupportInfoSet,s,model.Support()) {
-            string accession = s->Seqid()->GetSeqIdString(true);
-            if (s->Type()&CGeneModel::eChain) {
-                support_field->AddField("Chain",accession);
-                continue;
+
+        CSupportInfoSet support;
+
+        ExpandSupport(model.Support(), support, evidence);
+
+        ITERATE(CSupportInfoSet, s, support) {
+            
+            int id = s->GetId();
+            
+            const CAlignModel* m = evidence.GetModel(id);
+
+            int type = m ?  m->Type() : 0;
+
+            string accession;
+            if (m == NULL || (m->Type()&CGeneModel::eChain)) {
+                accession = NStr::IntToString(id);
+            } else {
+                accession = m->TargetAccession();
             }
-            if (s->CoreAlignment())
-                support_field->AddField("Core",accession);
-            if (s->Type()&CGeneModel::eProt)
+
+            if (s->IsCore())
+                cores.push_back(accession);
+
+            if (type&CGeneModel::eChain)
+                chains.push_back(accession);
+            else if (type&CGeneModel::eProt)
                 proteins.push_back(accession);
-            else if (s->Type()&CGeneModel::emRNA)
+            else if (type&CGeneModel::emRNA)
                 mrnas.push_back(accession);
-            else if (s->Type()&CGeneModel::eEST)
+            else if (type&CGeneModel::eEST)
                 ests.push_back(accession);
             else
                 unknown.push_back(accession);
         }
+        if (!chains.empty()) {
+            support_field->AddField("Chains",chains);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(chains.size());
+        }
+        if (!cores.empty()) {
+            support_field->AddField("Core",cores);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(cores.size());
+        }
         if (!proteins.empty()) {
+            sort(proteins.begin(),proteins.end());
             support_field->AddField("Proteins",proteins);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(proteins.size());
         }
         if (!mrnas.empty()) {
+            sort(mrnas.begin(),mrnas.end());
             support_field->AddField("mRNAs",mrnas);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(mrnas.size());
         }
         if (!ests.empty()) {
+            sort(ests.begin(),ests.end());
             support_field->AddField("ESTs",ests);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(ests.size());
@@ -455,7 +502,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
         if (!unknown.empty()) {
             support_field->AddField("unknown",unknown);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
-            support_field->SetData().SetFields().back()->SetNum(ests.size());
+            support_field->SetData().SetFields().back()->SetNum(unknown.size());
         }
     }
 
