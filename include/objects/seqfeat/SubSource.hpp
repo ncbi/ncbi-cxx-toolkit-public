@@ -100,6 +100,25 @@ CSubSource::CSubSource(const string& subtype, const TName& name)
 /////////////////// end of CSubSource inline methods
 
 
+// =============================================================================
+//                 Country Names (legal values found in country subtype)
+// =============================================================================
+
+
+class NCBI_SEQFEAT_EXPORT CCountries
+{
+public:
+    static bool IsValid(const string& country);
+    static bool WasValid(const string& country);
+
+private:
+    static const string sm_Countries[];
+    static const string sm_Former_Countries[];
+};
+
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

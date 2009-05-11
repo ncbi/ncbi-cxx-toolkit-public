@@ -89,7 +89,7 @@ class CImp_feat;
 class CSeq_literal;
 class CBioseq_Handle;
 class CSeq_feat_Handle;
-
+class CCountries;
 
 BEGIN_SCOPE(validator)
 

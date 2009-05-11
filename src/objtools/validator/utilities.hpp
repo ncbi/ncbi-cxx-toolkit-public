@@ -233,24 +233,6 @@ private:
 
 
 // =============================================================================
-//                                 Country Names
-// =============================================================================
-
-
-class CCountries
-{
-public:
-    static bool IsValid(const string& country);
-    static bool WasValid(const string& country);
-
-private:
-    static const string sm_Countries[];
-    static const string sm_Former_Countries[];
-};
-
-
-
-// =============================================================================
 //                                 Functions
 // =============================================================================
 
