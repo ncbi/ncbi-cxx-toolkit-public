@@ -48,7 +48,7 @@ template <class TObjType> class CObjFactory_New;
 ///
 /// @param TObjType
 ///   Type of objects in the pool (any type, not necessarily inherited from
-///   CObject). Pool holds pointers to objects, so they shouldn't be copiable.
+///   CObject). Pool holds pointers to objects, so they shouldn't be copyable.
 /// @param TObjFactory
 ///   Type of object factory, representing the policy of how objects created
 ///   and how they deleted. Factory should implement 2 methods -
@@ -61,15 +61,11 @@ template <class TObjType> class CObjFactory_New;
 ///   issues. If no multi-threading protection is necessary CNoLock can be
 ///   used.
 template <class TObjType,
-          class TObjFactory = CObjFactory_New<TObjType>,
-          class TLock       = CFastMutex>
+          class TObjFactory = CObjFactory_New<TObjType> >
 class CObjPool
 {
-private:
-    typedef typename TLock::TWriteLockGuard  TLockGuard;
-    typedef deque<TObjType*>                 TObjectsList;
-
 public:
+    typedef deque<TObjType*>                 TObjectsList;
     /// Synonym to be able to use outside of the pool
     typedef TObjType                         TObjectType;
 
@@ -77,8 +73,8 @@ public:
     ///
     /// @param max_storage_size
     ///   Maximum number of unused objects that can be stored in the pool.
-    ///   0 means unlimited storage.
-    CObjPool(size_t max_storage_size = 0)
+    ///   Given default effectively means unlimited storage.
+    CObjPool(size_t max_storage_size = size_t(-1))
         : m_MaxStorage(max_storage_size)
     {}
 
@@ -88,9 +84,9 @@ public:
     ///   Object factory implementing creation/deletion strategy
     /// @param max_storage_size
     ///   Maximum number of unused objects that can be stored in the pool.
-    ///   0 means unlimited storage.
-    CObjPool(TObjFactory        factory,
-             size_t             max_storage_size = 0)
+    ///   Given default effectively means unlimited storage.
+    CObjPool(const TObjFactory& factory,
+             size_t             max_storage_size = size_t(-1))
         : m_MaxStorage(max_storage_size),
           m_Factory(factory)
     {}
@@ -98,9 +94,13 @@ public:
     /// Destroy object pool and all objects it owns
     ~CObjPool(void)
     {
-        TLockGuard guard(m_ObjLock);
+        TObjectsList free_objects;
+        {{
+            CFastMutexGuard guard(m_ObjLock);
+            m_FreeObjects.swap(free_objects);
+        }}
 
-        ITERATE(TObjectsList, it, m_FreeObjects)
+        ITERATE(TObjectsList, it, free_objects)
         {
             m_Factory.DeleteObject(*it);
         }
@@ -109,31 +109,39 @@ public:
     /// Get object from the pool, create if necessary
     TObjType* Get(void)
     {
-        TLockGuard guard(m_ObjLock);
+        TObjType* obj = NULL;
+        {{
+            CFastMutexGuard guard(m_ObjLock);
 
-        TObjType* obj;
-        if (m_FreeObjects.empty()) {
+            if (!m_FreeObjects.empty()) {
+                obj = m_FreeObjects.back();
+                m_FreeObjects.pop_back();
+            }
+        }}
+
+        if (obj == NULL) {
             obj = m_Factory.CreateObject();
-            _ASSERT(obj);
-        }
-        else {
-            obj = m_FreeObjects.back();
-            m_FreeObjects.pop_back();
         }
 
+        _ASSERT(obj);
         return obj;
     }
 
     /// Return object to the pool for future use
     void Return(TObjType* obj)
     {
-        TLockGuard guard(m_ObjLock);
+        _ASSERT(obj);
 
-        if (m_MaxStorage  &&  m_FreeObjects.size() >= m_MaxStorage) {
+        {{
+            CFastMutexGuard guard(m_ObjLock);
+            if (m_FreeObjects.size() < m_MaxStorage) {
+                m_FreeObjects.push_back(obj);
+                obj = NULL;
+            }
+        }}
+
+        if (obj != NULL) {
             m_Factory.DeleteObject(obj);
-        }
-        else {
-            m_FreeObjects.push_back(obj);
         }
     }
 
@@ -149,7 +157,7 @@ public:
     void SetMaxStorageSize(size_t max_storage_size)
     {
         // In case if writing size_t is not atomic operation
-        TLockGuard guard(m_ObjLock);
+        CFastMutexGuard guard(m_ObjLock);
         m_MaxStorage = max_storage_size;
     }
 
@@ -162,7 +170,7 @@ private:
     /// Object factory
     TObjFactory         m_Factory;
     /// Lock object to change the pool
-    TLock               m_ObjLock;
+    CFastMutex          m_ObjLock;
     /// List of unused objects
     TObjectsList        m_FreeObjects;
 };
@@ -306,25 +314,6 @@ public:
     }
 };
 
-/// Object factory for objects driven by reference counting with simple
-/// creation.
-template <class TObjType>
-class CObjFactory_Ref
-{
-public:
-    TObjType* CreateObject(void)
-    {
-        TObjType* obj = new TObjType();
-        obj->AddReference();
-        return obj;
-    }
-
-    void DeleteObject(TObjType* obj)
-    {
-        obj->RemoveReference();
-    }
-};
-
 /// Object factory for simple creation and deletion of the object with one
 /// parameter passed to object's constructor.
 template <class TObjType, class TParamType>
@@ -334,7 +323,7 @@ public:
     /// @param param
     ///   Parameter value that will be passed to constructor of every new
     ///   object.
-    CObjFactory_NewParam(TParamType param)
+    CObjFactory_NewParam(const TParamType& param)
         : m_Param(param)
     {}
 
@@ -346,36 +335,6 @@ public:
     void DeleteObject(TObjType* obj)
     {
         delete obj;
-    }
-
-private:
-    /// Parameter value that will be passed to constructor of every new object
-    TParamType m_Param;
-};
-
-/// Object factory for objects driven by reference counting with one
-/// parameter passed to object's constructor.
-template <class TObjType, class TParamType>
-class CObjFactory_RefParam
-{
-public:
-    /// @param param
-    ///   Parameter value that will be passed to constructor of every new
-    ///   object.
-    CObjFactory_RefParam(TParamType param)
-        : m_Param(param)
-    {}
-
-    TObjType* CreateObject(void)
-    {
-        TObjType* obj = new TObjType(m_Param);
-        obj->AddReference();
-        return obj;
-    }
-
-    void DeleteObject(TObjType* obj)
-    {
-        obj->RemoveReference();
     }
 
 private:
@@ -409,44 +368,6 @@ public:
     void DeleteObject(TObjType* obj)
     {
         delete obj;
-    }
-
-private:
-    /// Object which method will be called to create new object
-    TMethodClass* m_MethodObj;
-    /// Method to call to create new object
-    TMethod       m_Method;
-};
-
-
-/// Object factory for creation implemented by method of some class and
-/// object lifetime driven by reference counting.
-template <class TObjType, class TMethodClass>
-class CObjFactory_RefMethod
-{
-public:
-    typedef TObjType* (TMethodClass::*TMethod)(void);
-
-    /// @param method_obj
-    ///   Object which method will be called to create new object
-    /// @param method
-    ///   Method to call to create new object
-    CObjFactory_RefMethod(TMethodClass* method_obj,
-                          TMethod       method)
-        : m_MethodObj(method_obj),
-          m_Method(method)
-    {}
-
-    TObjType* CreateObject(void)
-    {
-        TObjType* obj = (m_MethodObj->*m_Method)();
-        obj->AddReference();
-        return obj;
-    }
-
-    void DeleteObject(TObjType* obj)
-    {
-        obj->RemoveReference();
     }
 
 private:
