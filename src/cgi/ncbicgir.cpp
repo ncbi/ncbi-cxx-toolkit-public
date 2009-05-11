@@ -291,10 +291,10 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     // All header lines (in alphabetical order)
     ITERATE (TMap, i, m_HeaderValues) {
         if (skip_status  &&  NStr::EqualNocase(i->first, sm_HTTPStatusName)) {
-            break;
+            continue;
         } else if (m_IsMultipart != eMultipart_none
                    &&  NStr::StartsWith(i->first, "Content-", NStr::eNocase)) {
-            break;
+            continue;
         }
         os << i->first << ": " << i->second << HTTP_EOL;
     }
