@@ -324,7 +324,7 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
             }
             break;
         case CSeqdesc::e_Title:
-            if (CleanString( sd.SetTitle(), true ) ) {
+            if (CleanString( sd.SetTitle(), false ) ) {
                 ChangeMade(CCleanupChange::eTrimSpaces);
             }
             break;
