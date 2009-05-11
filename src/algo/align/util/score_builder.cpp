@@ -38,10 +38,14 @@
 #include <algo/blast/core/blast_options.h>
 
 #include <objtools/alnmgr/alnvec.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -229,17 +233,110 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
         break;
 
     case CSeq_align::TSegs::e_Disc:
-        {{
-            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
-                len += s_GetAlignmentLength(**iter, ungapped);
-            }
-        }}
+        ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
+                 align.GetSegs().GetDisc().Get()) {
+            len += s_GetAlignmentLength(**iter, ungapped);
+        }
         break;
 
     case CSeq_align::TSegs::e_Std:
+        {{
+             /// pass 1:
+             /// find total ranges
+             vector<TSeqPos> sizes;
+
+             size_t count = 0;
+             ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
+                 const CStd_seg& seg = **iter;
+
+                 size_t i = 0;
+                 ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
+                     if ((*it)->IsEmpty()) {
+                         /// skip
+                     } else {
+                         if (sizes.empty()) {
+                             sizes.resize(seg.GetDim(), 0);
+                         } else if (sizes.size() != seg.GetDim()) {
+                             NCBI_THROW(CException, eUnknown,
+                                        "invalid std-seg: "
+                                        "inconsistent number of locs");
+                         }
+                         TSeqRange r = (*it)->GetTotalRange();
+                         sizes[i] += (*it)->GetTotalRange().GetLength();
+                     }
+
+                     ++i;
+                 }
+                 ++count;
+             }
+
+             /// pass 2: determine shortest length
+             vector<TSeqPos>::iterator iter = sizes.begin();
+             vector<TSeqPos>::iterator smallest = iter;
+             for (++iter;  iter != sizes.end();  ++iter) {
+                 if (*iter < *smallest) {
+                     smallest = iter;
+                 }
+             }
+             return *smallest;
+         }}
+        break;
+
+    case CSeq_align::TSegs::e_Spliced:
+        ITERATE (CSpliced_seg::TExons, iter,
+                 align.GetSegs().GetSpliced().GetExons()) {
+            const CSpliced_exon& exon = **iter;
+            if (exon.IsSetParts()) {
+                ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                    const CSpliced_exon_chunk& chunk = **it;
+                    switch (chunk.Which()) {
+                    case CSpliced_exon_chunk::e_Match:
+                        len += chunk.GetMatch();
+                        break;
+
+                    case CSpliced_exon_chunk::e_Mismatch:
+                        len += chunk.GetMismatch();
+                        break;
+
+                    case CSpliced_exon_chunk::e_Diag:
+                        len += chunk.GetDiag();
+                        break;
+
+                    case CSpliced_exon_chunk::e_Product_ins:
+                        len += chunk.GetProduct_ins();
+                        break;
+
+                        /// genomic-ins is not handled explicitly
+
+                    default:
+                        break;
+                    }
+                }
+            } else {
+                size_t product_span = 0;
+                if (exon.GetProduct_start().IsNucpos()) {
+                    product_span =
+                        exon.GetProduct_end().GetNucpos() -
+                        exon.GetProduct_start().GetNucpos();
+                } else if (exon.GetProduct_start().IsProtpos()) {
+                    product_span =
+                        exon.GetProduct_end().GetProtpos().GetAmin() -
+                        exon.GetProduct_start().GetProtpos().GetAmin();
+                } else {
+                    NCBI_THROW(CException, eUnknown,
+                               "Spliced-exon is neirther nuc nor prot");
+                }
+
+                size_t genomic_span =
+                    exon.GetGenomic_end() - exon.GetGenomic_start();
+
+                len += max(genomic_span, product_span);
+            }
+        }
         break;
 
     default:
+        _ASSERT(false);
         break;
     }
 
@@ -311,14 +408,30 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
 
     case CSeq_align::TSegs::e_Disc:
         {{
-            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
-                s_GetCountIdentityMismatch(scope, **iter, identities, mismatches);
+            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
+                     align.GetSegs().GetDisc().Get()) {
+                s_GetCountIdentityMismatch(scope, **iter,
+                                           identities, mismatches);
             }
         }}
         break;
 
     case CSeq_align::TSegs::e_Std:
-        _ASSERT(false);
+        {{
+            ///
+            /// shortcut: if 'num_ident' is present, we trust it
+            ///
+            int num_ident = 0;
+            if (align.GetNamedScore("num_ident", num_ident)) {
+                size_t len     = s_GetAlignmentLength(align, true);
+                *identities = num_ident;
+                *mismatches = (len - num_ident);
+                break;
+            }
+         }}
+
+        NCBI_THROW(CException, eUnknown,
+                   "identity + mismatch function unimplemented for std-seg");
         break;
 
     case CSeq_align::TSegs::e_Spliced:
