@@ -51,6 +51,48 @@ CGb_qual::~CGb_qual(void)
 {
 }
 
+static const char * const valid_inf_prefixes [] = {
+    "ab initio prediction",
+    "nucleotide motif",
+    "profile",
+    "protein motif",
+    "similar to AA sequence",
+    "similar to DNA sequence",
+    "similar to RNA sequence",
+    "similar to RNA sequence, EST",
+    "similar to RNA sequence, mRNA",
+    "similar to RNA sequence, other RNA",
+    "similar to sequence",
+    "alignment"
+};
+
+
+// constructor
+CInferencePrefixList::CInferencePrefixList(void)
+{
+}
+
+//destructor
+CInferencePrefixList::~CInferencePrefixList(void)
+{
+}
+
+
+void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, string& prefix, string& remainder)
+{
+    prefix = "";
+    remainder = "";
+
+    for (unsigned int i = 0; i < sizeof (valid_inf_prefixes) / sizeof (char *); i++) {
+        if (NStr::StartsWith (inference, valid_inf_prefixes[i])) {
+            prefix = valid_inf_prefixes[i];
+        }
+    }
+
+    remainder = inference.substr (prefix.length());
+    NStr::TruncateSpacesInPlace (remainder);
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

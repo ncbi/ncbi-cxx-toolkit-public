@@ -101,6 +101,20 @@ int CGb_qual::Compare(const CGb_qual& gbqual) const
 
 /////////////////// end of CGb_qual inline methods
 
+/////////// inference prefix list
+class NCBI_SEQFEAT_EXPORT CInferencePrefixList
+{
+public:
+    // constructors
+    CInferencePrefixList(void);
+
+    // destructor
+    ~CInferencePrefixList(void);
+    
+    static void GetPrefixAndRemainder (const string& inference, string& prefix, string& remainder);
+    
+private:
+};
 
 END_objects_SCOPE // namespace ncbi::objects::
 

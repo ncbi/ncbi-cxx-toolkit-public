@@ -2913,23 +2913,6 @@ void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& f
 }
 
 
-static const char* kInferencePrefixes[] = {
-  "",
-  "similar to sequence",
-  "similar to AA sequence",
-  "similar to DNA sequence",
-  "similar to RNA sequence",
-  "similar to RNA sequence, mRNA",
-  "similar to RNA sequence, EST",
-  "similar to RNA sequence, other RNA",
-  "profile",
-  "nucleotide motif",
-  "protein motif",
-  "ab initio prediction",
-  "alignment"
-};
-
-
 int CValidError_feat::x_SeqIdToGiNumber(
     const string& seq_id,
     const string database_name )
@@ -3021,22 +3004,12 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
         return eInferenceValidCode_empty;
     }
 
-    int best = -1;
+    string prefix, remainder;
 
-    for (int i = 0; i < sizeof(kInferencePrefixes)/sizeof (*kInferencePrefixes); i++) {
-        if (NStr::StartsWith (inference, kInferencePrefixes[i])) {
-            best = i;
-        }
-    }
-
-    if (best < 1) {
+    CInferencePrefixList::GetPrefixAndRemainder (inference, prefix, remainder);
+    if (NStr::IsBlank (prefix)) {
         return eInferenceValidCode_bad_prefix;
     }
-
-    string prefix = kInferencePrefixes[best];
-
-    string remainder = inference.substr (prefix.length());
-    NStr::TruncateSpacesInPlace (remainder);
 
     bool same_species = false;
 
@@ -3056,14 +3029,14 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
 
     CValidError_feat::EInferenceValidCode rsult = eInferenceValidCode_valid;
 
-    if (same_species && best > 6) {
+    if (same_species && !NStr::StartsWith (prefix, "similar to")) {
         rsult = eInferenceValidCode_same_species_misused;
     }
 
     if (rsult == eInferenceValidCode_valid) {
-        if (best >= 1 && best <= 7) {
+        if (NStr::StartsWith (prefix, "similar to")) {
             rsult = ValidateInferenceAccession (remainder, ":", fetch_accession);
-        } else if (best == 12) {
+        } else if (NStr::Equal(prefix, "alignment")) {
             size_t pos = NStr::Find (remainder, ":", 0, string::npos, NStr::eLast);
             if (pos != string::npos) {
                 remainder = remainder.substr (pos);
