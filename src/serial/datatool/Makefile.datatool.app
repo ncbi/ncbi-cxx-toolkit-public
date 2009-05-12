@@ -12,7 +12,8 @@ SRC = datatool \
 	typestr ptrstr stdstr classstr enumstr stlstr choicestr choiceptrstr \
 	value mcontainer module moduleset generate filecode code \
 	fileutil alexer aparser parser lexer exceptions comments srcutil \
-	dtdaux dtdlexer dtdparser rpcgen aliasstr xsdlexer xsdparser
+	dtdaux dtdlexer dtdparser rpcgen aliasstr xsdlexer xsdparser \
+        wsdllexer wsdlparser
 LIB = xser xutil xncbi
 
 # Build even --without-exe, to avoid version skew.

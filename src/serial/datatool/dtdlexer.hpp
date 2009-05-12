@@ -48,11 +48,11 @@ public:
 protected:
     virtual TToken LookupToken(void);
     virtual void LookupComments(void);
+    virtual TToken LookupKeyword(void);
 
     bool   ProcessComment(void);
     bool   IsIdentifierSymbol(char c);
     TToken LookupIdentifier(void);
-    TToken LookupKeyword(void);
     TToken LookupEntity(void);
     TToken LookupString(void);
     bool   EndPrevToken(void);

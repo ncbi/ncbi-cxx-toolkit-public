@@ -47,6 +47,8 @@
 #include "dtdparser.hpp"
 #include "xsdlexer.hpp"
 #include "xsdparser.hpp"
+#include "wsdllexer.hpp"
+#include "wsdlparser.hpp"
 #include "moduleset.hpp"
 #include "module.hpp"
 #include "type.hpp"
@@ -79,7 +81,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,9,2) );
+    SetVersion( CVersionInfo(1,9,3) );
 }
 
 void CDataTool::Init(void)
@@ -280,7 +282,9 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& fx = args["fx"] ) {
-        if (srctype == SourceFile::eDTD || srctype == SourceFile::eXSD) {
+        if (srctype == SourceFile::eDTD ||
+            srctype == SourceFile::eXSD ||
+            srctype == SourceFile::eWSDL) {
             CDataType::SetEnforcedStdXml(true);
         }
         if ( fx.AsString() == "m" ) {
@@ -297,7 +301,9 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& ax = args["fxs"] ) {
-        if (srctype == SourceFile::eDTD || srctype == SourceFile::eXSD) {
+        if (srctype == SourceFile::eDTD ||
+            srctype == SourceFile::eXSD ||
+            srctype == SourceFile::eWSDL) {
             CDataType::SetEnforcedStdXml(true);
         }
         if ( ax.AsString() == "m" ) {
@@ -668,6 +674,14 @@ SourceFile::EType CDataTool::LoadDefinitions(
                 {
                     XSDLexer lexer(fName,name);
                     XSDParser parser(lexer);
+                    fileSet.AddFile(parser.Modules(name));
+                    CDataType::SetXmlSourceSpec(true);
+                }
+                break;
+            case SourceFile::eWSDL:
+                {
+                    WSDLLexer lexer(fName,name);
+                    WSDLParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
                     CDataType::SetXmlSourceSpec(true);
                 }

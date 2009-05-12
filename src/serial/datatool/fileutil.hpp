@@ -57,7 +57,8 @@ public:
         eUnknown,  // Unknown type
         eASN,      // ASN file
         eDTD,      // DTD file
-        eXSD       // XSD file
+        eXSD,      // XSD file
+        eWSDL      // WSDL file
     };
     EType GetType(void) const;
 

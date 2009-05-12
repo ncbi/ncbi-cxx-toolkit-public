@@ -92,6 +92,8 @@ SourceFile::EType SourceFile::GetType(void) const
         return eDTD;
     } else if (NStr::CompareNocase(ext,".xsd") == 0) {
         return eXSD;
+    } else if (NStr::CompareNocase(ext,".wsdl") == 0) {
+        return eWSDL;
     }
     return eUnknown;
 }

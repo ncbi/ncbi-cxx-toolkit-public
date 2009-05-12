@@ -127,6 +127,17 @@ static const TToken K_APPINFO        = 317;
 static const TToken K_UNION          = 318;
 static const TToken K_LIST           = 319;
 
+static const TToken K_TYPES          = 401;
+static const TToken K_MESSAGE        = 402;
+static const TToken K_PART           = 403;
+static const TToken K_PORTTYPE       = 404;
+static const TToken K_OPERATION      = 405;
+static const TToken K_INPUT          = 406;
+static const TToken K_OUTPUT         = 407;
+static const TToken K_BINDING        = 408;
+static const TToken K_SERVICE        = 409;
+static const TToken K_PORT           = 410;
+
 END_NCBI_SCOPE
 
 #endif

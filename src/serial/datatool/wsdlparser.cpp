@@ -1,6 +1,3 @@
-#ifndef XSDLEXER_HPP
-#define XSDLEXER_HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -29,34 +26,38 @@
 * Author: Andrei Gourianov
 *
 * File Description:
-*   XML Schema lexer
+*   WSDL parser
 *
 * ===========================================================================
 */
 
-#include "dtdlexer.hpp"
-#include <list>
+#include <ncbi_pch.hpp>
+#include "exceptions.hpp"
+#include "wsdlparser.hpp"
+#include "tokens.hpp"
+#include "module.hpp"
+#include <serial/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Serial_Parsers
 
 BEGIN_NCBI_SCOPE
 
-class XSDLexer : public DTDLexer
+/////////////////////////////////////////////////////////////////////////////
+// WSDL Parser
+
+WSDLParser::WSDLParser(WSDLLexer& lexer)
+    : XSDParser(lexer)
 {
-public:
-    XSDLexer(CNcbiIstream& in, const string& name);
-    virtual ~XSDLexer(void);
+}
 
-    bool ProcessDocumentation(void);
-    TToken Skip(void);
+WSDLParser::~WSDLParser(void)
+{
+}
 
-protected:
-    virtual TToken LookupToken(void);
-    virtual TToken LookupKeyword(void);
-
-    TToken LookupLexeme(void);
-    TToken LookupEndOfTag(void);
-    void   AddElement(void);
-};
+void WSDLParser::BuildDocumentTree(CDataTypeModule& module)
+{
+    XSDParser::BuildDocumentTree(module);
+}
 
 END_NCBI_SCOPE
-
-#endif // XSDLEXER_HPP

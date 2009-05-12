@@ -1,6 +1,3 @@
-#ifndef XSDLEXER_HPP
-#define XSDLEXER_HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -29,34 +26,67 @@
 * Author: Andrei Gourianov
 *
 * File Description:
-*   XML Schema lexer
+*   WSDL lexer
 *
 * ===========================================================================
 */
 
-#include "dtdlexer.hpp"
-#include <list>
+#include <ncbi_pch.hpp>
+#include "wsdllexer.hpp"
+#include "tokens.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class XSDLexer : public DTDLexer
+
+WSDLLexer::WSDLLexer(CNcbiIstream& in, const string& name)
+    : XSDLexer(in,name)
 {
-public:
-    XSDLexer(CNcbiIstream& in, const string& name);
-    virtual ~XSDLexer(void);
+}
 
-    bool ProcessDocumentation(void);
-    TToken Skip(void);
+WSDLLexer::~WSDLLexer(void)
+{
+}
 
-protected:
-    virtual TToken LookupToken(void);
-    virtual TToken LookupKeyword(void);
+#define CHECK(keyword, t, length) \
+    if ( memcmp(token, keyword, length) == 0 ) return t
 
-    TToken LookupLexeme(void);
-    TToken LookupEndOfTag(void);
-    void   AddElement(void);
-};
+TToken WSDLLexer::LookupKeyword(void)
+{
+    const char* token = CurrentTokenStart();
+    const char* token_ns = strchr(token, ':');
+    if (token_ns && (size_t)(token_ns - token) < CurrentTokenLength()) {
+        token = ++token_ns;
+    }
+    switch ( CurrentTokenEnd() - token ) {
+    default:
+        break;
+    case 4:
+        CHECK("part", K_PART, 4);
+        CHECK("port", K_PORT, 4);
+        break;
+    case 5:
+        CHECK("input", K_INPUT, 5);
+        CHECK("types", K_TYPES, 5);
+        break;
+    case 6:
+        CHECK("output", K_OUTPUT, 6);
+        break;
+    case 7:
+        CHECK("message", K_MESSAGE, 7);
+        CHECK("binding", K_BINDING, 7);
+        CHECK("service", K_SERVICE, 7);
+        break;
+    case 8:
+        CHECK("portType", K_PORTTYPE, 8);
+        break;
+    case 9:
+        CHECK("operation", K_OPERATION, 9);
+        break;
+    case 11:
+        CHECK("definitions", K_DEFINITIONS, 11);
+        break;
+    }
+    return T_IDENTIFIER;
+}
 
 END_NCBI_SCOPE
-
-#endif // XSDLEXER_HPP

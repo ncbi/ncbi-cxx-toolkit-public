@@ -1,5 +1,5 @@
-#ifndef XSDLEXER_HPP
-#define XSDLEXER_HPP
+#ifndef WSDLLEXER_HPP
+#define WSDLLEXER_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,34 +29,25 @@
 * Author: Andrei Gourianov
 *
 * File Description:
-*   XML Schema lexer
+*   WSDL lexer
 *
 * ===========================================================================
 */
 
-#include "dtdlexer.hpp"
-#include <list>
+#include "xsdlexer.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class XSDLexer : public DTDLexer
+class WSDLLexer : public XSDLexer
 {
 public:
-    XSDLexer(CNcbiIstream& in, const string& name);
-    virtual ~XSDLexer(void);
-
-    bool ProcessDocumentation(void);
-    TToken Skip(void);
+    WSDLLexer(CNcbiIstream& in, const string& name);
+    virtual ~WSDLLexer(void);
 
 protected:
-    virtual TToken LookupToken(void);
     virtual TToken LookupKeyword(void);
-
-    TToken LookupLexeme(void);
-    TToken LookupEndOfTag(void);
-    void   AddElement(void);
 };
 
 END_NCBI_SCOPE
 
-#endif // XSDLEXER_HPP
+#endif // WSDLLEXER_HPP
