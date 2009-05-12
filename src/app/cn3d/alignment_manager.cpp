@@ -784,7 +784,8 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
             BlockMultipleAlignment::UngappedAlignedBlockList blocks;
             multiple->GetUngappedAlignedBlocks(&blocks);
             BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-            unsigned int col, row, rowScore, bestScore=0, lastRow = multiple->NRows() - 1;
+            int rowScore, bestScore = 0;
+            unsigned int col, row, lastRow = multiple->NRows() - 1;
             const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
             for (row=0; row<lastRow; ++row) {
                 const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
@@ -796,6 +797,7 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
                             otherSeq->sequenceString[(*b)->GetRangeOfRow(row)->from + col]);
                     }
                 }
+                TRACEMSG("Merge score with row " << (row + 1) << " (" << multiple->GetSequenceOfRow(row)->identifier->ToString() << ") is " << rowScore);
                 if (row == 0 || rowScore > bestScore) {
                     where = row;
                     bestScore = rowScore;
