@@ -119,5 +119,5 @@ static void s_TestStdSegGaps(void)
 
 BOOST_AUTO_TEST_CASE(TestStdSegGaps)
 {
-    BOOST_CHECK_THROW(s_TestStdSegGaps(), CSeqalignException);
+    s_TestStdSegGaps();
 }
