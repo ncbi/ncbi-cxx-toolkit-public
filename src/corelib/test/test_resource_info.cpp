@@ -33,21 +33,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/resource_info.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  Test application
-
-/*
-class CTestCryptApp : public CNcbiApplication
-{
-};
-*/
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -68,37 +59,6 @@ void CResInfoTest::Init(void)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    arg_desc->AddOptionalKey("res", "ResourceName",
-        "Name of resource",
-        CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("pwd", "Password",
-        "Password for accessing the resource",
-        CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("set", "NewValue",
-        "Set new value for the selected resource",
-        CArgDescriptions::eString);
-    arg_desc->SetDependency("set", CArgDescriptions::eRequires, "res");
-    arg_desc->SetDependency("set", CArgDescriptions::eRequires, "pwd");
-    arg_desc->AddOptionalKey("extra", "ExtraValues",
-        "Add extra values for the selected resource",
-        CArgDescriptions::eString);
-    arg_desc->SetDependency("extra", CArgDescriptions::eRequires, "set");
-    arg_desc->AddFlag("del", "Delete the selected resource info", true);
-    arg_desc->SetDependency("del", CArgDescriptions::eExcludes, "set");
-    arg_desc->SetDependency("del", CArgDescriptions::eRequires, "res");
-    arg_desc->SetDependency("del", CArgDescriptions::eRequires, "pwd");
-    arg_desc->AddOptionalKey("file", "FileName",
-        "Name of file to use",
-        CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("plain", "PlainTextFile",
-        "Encrypt data from the plaintext input file. "
-        "File format is <password> <res_name> <main_value> <extras> "
-        "where password, res_name and main_value are URL-encoded, "
-        "and <extras> have usual query-string format.",
-        CArgDescriptions::eString);
-    arg_desc->SetDependency("plain", CArgDescriptions::eExcludes, "set");
-    arg_desc->SetDependency("plain", CArgDescriptions::eExcludes, "del");
-
     string prog_description = "Test for CNcbiResourceInfo\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
         prog_description, false);
@@ -107,56 +67,76 @@ void CResInfoTest::Init(void)
 }
 
 
+const char* src_name = "resinfo_plain.txt";
+
+const string test1_res = "resource_info/some_user@some_server";
+const string test1_pwd = "resinfo_password";
+const string test1_val = "server_password";
+
+const string test2_res = "resource_info/some_user@some_server";
+const string test2_pwd = "resinfo_password2";
+const string test2_val = "server_password2";
+const string test2_ex = "username=anyone&server=server_name";
+
+const string test3_res = "resource_info2/another_user@another_server";
+const string test3_pwd = "resinfo_password";
+const string test3_val = "server_password";
+const string test3_ex = "username=onemore&server=server_name";
+
+typedef CNcbiResourceInfo::TExtraValuesMap TExtraValuesMap;
+typedef CNcbiResourceInfo::TExtraValues    TExtraValues;
+
+
+void CheckExtra(const CNcbiResourceInfo& info, const string& ref)
+{
+    // The order of extra values is undefined
+    const TExtraValuesMap& info_ex = info.GetExtraValues().GetPairs();
+    TExtraValues ref_ex_pairs;
+    ref_ex_pairs.Parse(ref);
+    const TExtraValuesMap& ref_ex = ref_ex_pairs.GetPairs();
+    _ASSERT(info_ex.size() == ref_ex.size());
+    ITERATE(TExtraValuesMap, it, info_ex) {
+        TExtraValuesMap::const_iterator match = ref_ex.find(it->first);
+        _ASSERT(match != ref_ex.end());
+        _ASSERT(match->second == it->second);
+    }
+}
+
+
 int CResInfoTest::Run(void)
 {
-    const CArgs& args = GetArgs();
+    CFileDeleteAtExit file_guard;
+    string enc_name = CFile::GetTmpName();
+    _ASSERT(!enc_name.empty());
+    file_guard.Add(enc_name);
 
-    string filename = "resinfo";
+    {{
+        // Encode and save the source plaintext file
+        CNcbiResourceInfoFile newfile(enc_name);
+        newfile.ParsePlainTextFile(src_name);
+        newfile.SaveFile();
+    }}
 
-    if ( args["file"] ) {
-        filename = args["file"].AsString();
-    }
+    // Load the created file and get some resource info
+    CNcbiResourceInfoFile resfile(enc_name);
 
-    CNcbiResourceInfoFile info_file(filename);
+    const CNcbiResourceInfo& info1 =
+        resfile.GetResourceInfo(test1_res, test1_pwd);
+    _ASSERT(info1); // success?
+    _ASSERT(info1.GetValue() == test1_val); // check main value
+    _ASSERT(info1.GetExtraValues().GetPairs().empty()); // no extra data
 
-    if (args["res"]  &&  args["pwd"]) {
-        string res = args["res"].AsString();
-        string pwd = args["pwd"].AsString();
-        const CNcbiResourceInfo& info = info_file.GetResourceInfo(res, pwd);
-        cout << "Current value: ";
-        if ( info ) {
-            cout << info.GetName() << " = '" << info.GetValue()
-                << "' & '" << info.GetExtraValues().Merge() << "'" << endl;
-        }
-        else {
-            cout << "not set" << endl;
-        }
-        if (args["set"] ) {
-            CNcbiResourceInfo& nc_info = info_file.GetResourceInfo_NC(res, pwd);
-            nc_info.SetValue(args["set"].AsString());
-            if ( args["extra"] ) {
-                nc_info.GetExtraValues_NC().GetPairs().insert(
-                    CNcbiResourceInfo::TExtraValuesMap::value_type("extra",
-                    args["extra"].AsString()));
-            }
-            _ASSERT( info_file.GetResourceInfo(res, pwd) );
-            info_file.SaveFile();
-            cout << "New value:     "
-                << nc_info.GetName() << " = '" << nc_info.GetValue()
-                << "' & '" << nc_info.GetExtraValues().Merge() << "'" << endl;
-        }
-        if ( args["del"] ) {
-            info_file.DeleteResourceInfo(res, pwd);
-            _ASSERT( !info_file.GetResourceInfo(res, pwd) );
-            info_file.SaveFile();
-            cout << "Deleted resource info for " << res << endl;
-        }
-    }
+    const CNcbiResourceInfo& info2 =
+        resfile.GetResourceInfo(test2_res, test2_pwd);
+    _ASSERT(info2); // success?
+    _ASSERT(info2.GetValue() == test2_val); // check main value
+    CheckExtra(info2, test2_ex);
 
-    if ( args["plain"] ) {
-        info_file.ParsePlainTextFile(args["plain"].AsString());
-        info_file.SaveFile();
-    }
+    const CNcbiResourceInfo& info3 =
+        resfile.GetResourceInfo(test3_res, test3_pwd);
+    _ASSERT(info3); // success?
+    _ASSERT(info3.GetValue() == test3_val); // check main value
+    CheckExtra(info3, test3_ex);
 
     return 0;
 }
