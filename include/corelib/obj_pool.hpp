@@ -94,16 +94,7 @@ public:
     /// Destroy object pool and all objects it owns
     ~CObjPool(void)
     {
-        TObjectsList free_objects;
-        {{
-            CFastMutexGuard guard(m_ObjLock);
-            m_FreeObjects.swap(free_objects);
-        }}
-
-        ITERATE(TObjectsList, it, free_objects)
-        {
-            m_Factory.DeleteObject(*it);
-        }
+        Clear();
     }
 
     /// Get object from the pool, create if necessary
@@ -142,6 +133,21 @@ public:
 
         if (obj != NULL) {
             m_Factory.DeleteObject(obj);
+        }
+    }
+
+    /// Delete all objects returned to the pool so far and clean it
+    void Clear(void)
+    {
+        TObjectsList free_objects;
+        {{
+            CFastMutexGuard guard(m_ObjLock);
+            m_FreeObjects.swap(free_objects);
+        }}
+
+        ITERATE(TObjectsList, it, free_objects)
+        {
+            m_Factory.DeleteObject(*it);
         }
     }
 
