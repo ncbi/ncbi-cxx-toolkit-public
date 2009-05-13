@@ -72,10 +72,11 @@ class CSeq_annot_Remove_EditCommand;
 ///  Proxy to access the seq-feat objects data
 ///
 
-class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle
+class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle : public ISeq_feat
 {
 public:
     CSeq_feat_Handle(void);
+    ~CSeq_feat_Handle(void);
 
     void Reset(void);
 
@@ -175,6 +176,24 @@ public:
     /// All indexes are updated correspondingly.
     /// The method is deprecated, use CSeq_feat_EditHandle
     NCBI_DEPRECATED void Replace(const CSeq_feat& new_feat) const;
+
+
+    // Methods redirected to corresponding Seq-feat object:
+    /// get gene (if present) from Seq-feat.xref list
+    const CGene_ref* GetGeneXref(void) const;
+
+    /// get protein (if present) from Seq-feat.xref list
+    const CProt_ref* GetProtXref(void) const;
+
+    /// Return a specified DB xref.  This will find the *first* item in the
+    /// given referenced database.  If no item is found, an empty CConstRef<>
+    /// is returned.
+    CConstRef<CDbtag> GetNamedDbxref(const string& db) const;
+
+    /// Return a named qualifier.  This will return the first item matching the
+    /// qualifier name.  If no such qualifier is found, an empty string is
+    /// returned.
+    const string& GetNamedQual(const string& qual_name) const;
 
 protected:
     friend class CMappedFeat;
@@ -572,6 +591,22 @@ public:
 
     /// Update index after manual modification of the object
     void Update(void) const;
+
+    // Methods redirected to corresponding Seq-feat object:
+    /// get gene (if present) from Seq-feat.xref list
+    void SetGeneXref(CGene_ref& value);
+    CGene_ref& SetGeneXref(void);
+
+    /// get protein (if present) from Seq-feat.xref list
+    void SetProtXref(CProt_ref& value);
+    CProt_ref& SetProtXref(void);
+
+    /// Add a qualifier to this feature
+    void AddQualifier(const string& qual_name, const string& qual_val);
+
+    /// add a DB xref to this feature
+    void AddDbxref(const string& db_name, const string& db_key);
+    void AddDbxref(const string& db_name, int db_key);
 
 protected:
     friend class CSeq_annot_EditHandle;

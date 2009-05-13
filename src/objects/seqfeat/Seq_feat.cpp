@@ -182,29 +182,31 @@ const CGene_ref* CSeq_feat::GetGeneXref(void) const
 void CSeq_feat::SetGeneXref(CGene_ref& value)
 
 {
+    TXref& xref = SetXref();
     NON_CONST_ITERATE(CSeq_feat::TXref, it, SetXref ()) {
-        if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()) {
-            (*it)->SetData ().SetGene ().Assign(value);
+        CSeqFeatXref& ref = **it;
+        if (ref.IsSetData() && ref.GetData().IsGene()) {
+            ref.SetData().SetGene(value);
             return;
         }
     }
-    TXref& xref = SetXref ();
-    CRef<CSeqFeatXref> gref (new CSeqFeatXref);
-    xref.push_back (gref);
-    gref->SetData ().SetGene ().Assign (value);
+    CRef<CSeqFeatXref> gref(new CSeqFeatXref);
+    xref.push_back(gref);
+    gref->SetData().SetGene(value);
 }
 
 CGene_ref& CSeq_feat::SetGeneXref(void)
 {
-    NON_CONST_ITERATE(CSeq_feat::TXref, it, SetXref ()) {
-        if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()) {
-            return ((*it)->SetData ().SetGene ());
+    TXref& xref = SetXref();
+    NON_CONST_ITERATE(CSeq_feat::TXref, it, xref) {
+        CSeqFeatXref& ref = **it;
+        if (ref.IsSetData() && ref.GetData().IsGene()) {
+            return ref.SetData().SetGene();
         }
     }
-    TXref& xref = SetXref ();
-    CRef<CSeqFeatXref> gref (new CSeqFeatXref);
-    xref.push_back (gref);
-    return gref->SetData ().SetGene ();
+    CRef<CSeqFeatXref> gref(new CSeqFeatXref);
+    xref.push_back(gref);
+    return gref->SetData().SetGene();
 }
 
 const CProt_ref* CSeq_feat::GetProtXref(void) const
@@ -221,30 +223,32 @@ const CProt_ref* CSeq_feat::GetProtXref(void) const
 void CSeq_feat::SetProtXref(CProt_ref& value)
 
 {
-    NON_CONST_ITERATE(CSeq_feat::TXref, it, SetXref ()) {
-        if ((*it)->IsSetData () && (*it)->GetData ().IsProt ()) {
-            (*it)->SetData ().SetProt ().Assign(value);
+    TXref& xref = SetXref();
+    NON_CONST_ITERATE(CSeq_feat::TXref, it, xref) {
+        CSeqFeatXref& ref = **it;
+        if (ref.IsSetData() && ref.GetData().IsProt()) {
+            ref.SetData().SetProt(value);
             return;
         }
     }
-    TXref& xref = SetXref ();
-    CRef<CSeqFeatXref> pref (new CSeqFeatXref);
-    xref.push_back (pref);
-    pref->SetData ().SetProt ().Assign (value);
+    CRef<CSeqFeatXref> pref(new CSeqFeatXref);
+    xref.push_back(pref);
+    pref->SetData().SetProt(value);
 }
 
 CProt_ref& CSeq_feat::SetProtXref(void)
 
 {
-    NON_CONST_ITERATE(CSeq_feat::TXref, it, SetXref ()) {
-        if ((*it)->IsSetData () && (*it)->GetData ().IsProt ()) {
-            return ((*it)->SetData ().SetProt ());
+    TXref& xref = SetXref();
+    NON_CONST_ITERATE(CSeq_feat::TXref, it, xref) {
+        CSeqFeatXref& ref = **it;
+        if (ref.IsSetData() && ref.GetData().IsProt()) {
+            return ref.SetData().SetProt();
         }
     }
-    TXref& xref = SetXref ();
-    CRef<CSeqFeatXref> pref (new CSeqFeatXref);
-    xref.push_back (pref);
-    return pref->SetData ().SetProt ();
+    CRef<CSeqFeatXref> pref(new CSeqFeatXref);
+    xref.push_back(pref);
+    return pref->SetData().SetProt();
 }
 
 
@@ -302,6 +306,10 @@ const string& CSeq_feat::GetNamedQual(const string& qual_name) const
     return kEmptyStr;
 }
 
+
+ISeq_feat::~ISeq_feat(void)
+{
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

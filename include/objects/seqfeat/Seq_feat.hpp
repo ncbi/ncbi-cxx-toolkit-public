@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqfeat/Seq_feat_.hpp>
+#include <objects/seqfeat/ISeq_feat.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
@@ -51,7 +52,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE /// namespace ncbi::objects::
 
-class NCBI_SEQFEAT_EXPORT CSeq_feat : public CSeq_feat_Base
+class NCBI_SEQFEAT_EXPORT CSeq_feat : public CSeq_feat_Base,
+                                      public ISeq_feat
 {
     typedef CSeq_feat_Base Tparent;
 public:

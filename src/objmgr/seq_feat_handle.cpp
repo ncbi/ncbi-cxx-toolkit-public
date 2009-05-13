@@ -41,6 +41,8 @@
 
 #include <objmgr/impl/seq_annot_edit_commands.hpp>
 
+#include <objects/general/Dbtag.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -79,6 +81,11 @@ CSeq_feat_Handle::CSeq_feat_Handle(CScope& scope,
     : m_Seq_annot(scope.GetSeq_annotHandle
                   (*info->GetSeq_annot_Info().GetSeq_annotSkeleton())),
       m_FeatIndex(info->GetAnnotIndex())
+{
+}
+
+
+CSeq_feat_Handle::~CSeq_feat_Handle(void)
 {
 }
 
@@ -278,6 +285,34 @@ void CSeq_feat_Handle::Replace(const CSeq_feat& new_feat) const
 
 
 /////////////////////////////////////////////////////////////////////////////
+// Methods redirected to corresponding Seq-feat object
+/////////////////////////////////////////////////////////////////////////////
+
+const CGene_ref* CSeq_feat_Handle::GetGeneXref(void) const
+{
+    return GetSeq_feat()->GetGeneXref();
+}
+
+
+const CProt_ref* CSeq_feat_Handle::GetProtXref(void) const
+{
+    return GetSeq_feat()->GetProtXref();
+}
+
+
+CConstRef<CDbtag> CSeq_feat_Handle::GetNamedDbxref(const string& db) const
+{
+    return GetSeq_feat()->GetNamedDbxref(db);
+}
+
+
+const string& CSeq_feat_Handle::GetNamedQual(const string& qual_name) const
+{
+    return GetSeq_feat()->GetNamedQual(qual_name);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CSeq_feat_EditHandle
 
 
@@ -346,6 +381,59 @@ void CSeq_feat_EditHandle::x_RealReplace(const CSeq_feat& new_feat) const
         NCBI_THROW(CObjMgrException, eNotImplemented,
                    "CSeq_feat_Handle::Replace: handle is SNP table");
     }
+}
+
+
+void CSeq_feat_EditHandle::SetGeneXref(CGene_ref& value)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).SetGeneXref(value);
+    //Update(); no index information is changed by GeneXref
+}
+
+
+CGene_ref& CSeq_feat_EditHandle::SetGeneXref(void)
+{
+    CGene_ref& ret = const_cast<CSeq_feat&>(*GetSeq_feat()).SetGeneXref();
+    //Update(); no index information is changed by GeneXref
+    return ret;
+}
+
+
+void CSeq_feat_EditHandle::SetProtXref(CProt_ref& value)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).SetProtXref(value);
+    //Update(); no index information is changed by ProtXref
+}
+
+
+CProt_ref& CSeq_feat_EditHandle::SetProtXref(void)
+{
+    CProt_ref& ret = const_cast<CSeq_feat&>(*GetSeq_feat()).SetProtXref();
+    //Update(); no index information is changed by ProtXref
+    return ret;
+}
+
+
+void CSeq_feat_EditHandle::AddQualifier(const string& qual_name,
+                                        const string& qual_val)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).AddQualifier(qual_name, qual_val);
+    //Update(); no index information is changed by qualifiers
+}
+
+
+void CSeq_feat_EditHandle::AddDbxref(const string& db_name,
+                                     const string& db_key)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).AddDbxref(db_name, db_key);
+    //Update(); no index information is changed by dbxref
+}
+
+
+void CSeq_feat_EditHandle::AddDbxref(const string& db_name, int db_key)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).AddDbxref(db_name, db_key);
+    //Update(); no index information is changed by dbxref
 }
 
 
