@@ -66,6 +66,9 @@ public:
     TSignedSeqPos         GetSeqStop (TDim row) const;
     CRange<TSignedSeqPos> GetSeqRange(TDim row) const;
     
+    /// Swap two rows (changing *order*, not content)
+    void SwapRows(TDim row1, TDim row2);
+
 
     /// Offset row's coords
     void OffsetRow(TDim row, TSignedSeqPos offset);

@@ -519,6 +519,13 @@ void CSeq_align::SwapRows(TDim row1, TDim row2)
     case C_Segs::e_Denseg:
         SetSegs().SetDenseg().SwapRows(row1, row2);
         break;
+
+    case C_Segs::e_Std:
+        NON_CONST_ITERATE (C_Segs::TStd, it, SetSegs().SetStd()) {
+            (*it)->SwapRows(row1, row2);
+        }
+        break;
+
     case C_Segs::e_Disc:
         SetSegs().SetDisc().SwapRows(row1, row2);
         break;

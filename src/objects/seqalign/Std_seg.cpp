@@ -124,6 +124,21 @@ void CStd_seg::Validate(bool /* full_test */) const
 }
 
 
+void CStd_seg::SwapRows(int row0, int row1)
+{
+    _ASSERT(row0 < GetLoc().size());
+    _ASSERT(row1 < GetLoc().size());
+    if (row0 < GetLoc().size()  &&  row1 < GetLoc().size()) {
+        swap(SetLoc()[row0], SetLoc()[row1]);
+    } else {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CStd_seg::SwapRows():"
+                   " Invalid row number");
+
+    }
+}
+
+
 CRange<TSignedSeqPos> CStd_seg::GetSeqRange(TDim row) const
 {
     TDim dim = 0;
