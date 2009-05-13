@@ -478,10 +478,10 @@ bool CContigAssembly::IsContained(const CDense_seg& ds,
     bool FirstContainsSecond;
     bool SecondContainsFirst;
 
-    FirstContainsSecond = ((stats.tails[0].left > (stats.tails[1].left+slop)) &&
-                           (stats.tails[0].right > (stats.tails[1].right+slop)));
-    SecondContainsFirst = ((stats.tails[1].left > (stats.tails[0].left+slop)) &&
-                           (stats.tails[1].right > (stats.tails[0].right+slop)));
+    FirstContainsSecond = ((((long)stats.tails[0].left  - stats.tails[1].left)  >= -int(slop)) &&
+                           (((long)stats.tails[0].right - stats.tails[1].right) >= -int(slop)));
+    SecondContainsFirst = ((((long)stats.tails[1].left  - stats.tails[0].left)  >= -int(slop)) &&
+                           (((long)stats.tails[1].right - stats.tails[0].right) >= -int(slop)));
 
     return (FirstContainsSecond | SecondContainsFirst);
 }
