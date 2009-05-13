@@ -498,7 +498,7 @@ double CContigAssembly::FracIdent(const CDense_seg& ds, CScope& scope)
     SAlignStats stats;
     CAlnVec avec(ds, scope);
     x_GatherIdentStats(avec, stats);
-    Ident = stats.pct_identity;
+    Ident = stats.pct_identity/100.0;
     return Ident;
 }
 
@@ -983,6 +983,23 @@ TSeqPos CContigAssembly::x_DensegLength(const objects::CDense_seg& ds)
 void CContigAssembly::x_GatherIdentStats(const objects::CAlnVec& vec,
                                          SAlignStats& align_stats)
 {
+    TSeqPos AlignedLength = 0;
+
+    for (int i = 0;  i < vec.GetNumSegs();  ++i) {
+        bool is_gap = false;
+        for (int j = 0;  j < vec.GetNumRows();  ++j) {
+            if (vec.GetStart(j, i) == -1) {
+                is_gap = true;
+            }
+        }
+
+        if (!is_gap) {
+            AlignedLength += vec.GetLen(i);
+        } else {
+            ;
+        }
+    }
+
     unsigned int identities = 0;
     for (int i = 0;  i < vec.GetNumSegs();  ++i) {
         string s1;
@@ -997,9 +1014,9 @@ void CContigAssembly::x_GatherIdentStats(const objects::CAlnVec& vec,
         }
     }
 
-    align_stats.mismatches = align_stats.aligned_length - identities;
+    align_stats.mismatches = AlignedLength - identities;
     align_stats.pct_identity =
-        100.0 * double(identities) / double(align_stats.aligned_length);
+        100.0 * double(identities) / double(AlignedLength);
 }
 
 
