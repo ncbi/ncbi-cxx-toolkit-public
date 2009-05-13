@@ -1150,7 +1150,6 @@ BOOST_AUTO_TEST_CASE(AmbigBioseq)
         "  id {\n"
         "    gi 12831944,\n"
         "    embl {\n"
-        "      name \"DBI389663\",\n"
         "      accession \"AJ389663\",\n"
         "      version 1\n"
         "    }\n"
