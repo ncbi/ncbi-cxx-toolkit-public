@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
     CSubjectRangesSet srs;
     const int kQueryId(0);
     const int kSubjectId(1);
-    const TSeqPos kSeqLength(135374737);
+    const TSeqPos kSeqLength(180857866);
     TSeqRange range1(500, 2000), range2(10000, 12000), range3(130000, 400000);
     srs.AddRange(kQueryId, kSubjectId, range1.GetFrom(), range1.GetTo());
     srs.AddRange(kQueryId+1, kSubjectId, range2.GetFrom(), range2.GetTo());
