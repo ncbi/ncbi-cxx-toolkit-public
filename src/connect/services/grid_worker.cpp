@@ -681,7 +681,7 @@ void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
             continue;
         try {
             m_Masters.insert(SServerAddress(NStr::ToLower(host),
-                (short) NStr::StringToUInt(port)));
+                (unsigned short) NStr::StringToUInt(port)));
         } catch(...) {}
     }
 }

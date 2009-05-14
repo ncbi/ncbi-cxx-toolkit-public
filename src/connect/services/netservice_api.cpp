@@ -150,12 +150,8 @@ bool CNetService::IsLoadBalanced() const
 
 void CNetService::SetRebalanceStrategy(IRebalanceStrategy* strategy)
 {
-    if ( strategy != NULL ) {
-        m_Impl->m_RebalanceStrategy = strategy;
-    }
-    else {
-        m_Impl->m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
-    }
+    m_Impl->m_RebalanceStrategy = strategy != NULL ? strategy :
+        CreateDefaultRebalanceStrategy().GetPtr();
 }
 
 

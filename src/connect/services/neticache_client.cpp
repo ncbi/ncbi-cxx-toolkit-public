@@ -469,8 +469,8 @@ bool CNetICacheClient::CheckConnect()
             if (servers.empty())
                 m_Host.erase();
             else {
-                m_Host = servers.front().first;
-                m_Port = servers.front().second;
+                m_Host = servers.front().host;
+                m_Port = servers.front().port;
             }
         }
     }
