@@ -81,23 +81,9 @@ bool CNetServerGroupIterator::Next()
     return true;
 }
 
-int CNetServerGroup::GetCount() const
-{
-    return (int) m_Impl->m_Servers.size();
-}
-
-CNetServer CNetServerGroup::GetServer(int index)
-{
-    _ASSERT(index < (int) m_Impl->m_Servers.size());
-
-    const TServerAddress& server_address = m_Impl->m_Servers[index];
-
-    return m_Impl->m_Service->GetServer(server_address);
-}
-
 CNetServerGroupIterator CNetServerGroup::Iterate()
 {
-    TDiscoveredServers::const_iterator it = m_Impl->m_Servers.begin();
+    TNetServerList::const_iterator it = m_Impl->m_Servers.begin();
 
     return it != m_Impl->m_Servers.end() ?
         new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
@@ -126,8 +112,11 @@ SNetServiceImpl::SNetServiceImpl(
             host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
             // No need to lock in the constructor:
             // CFastMutexGuard g(m_ServerGroupMutex);
-            (m_SignleServer = new SNetServerGroupImpl(&m_SignleServer, 0))->
-                m_Servers.push_back(TServerAddress(host, port));
+            SNetServerImpl* single_server = new SNetServerImplReal(host, port);
+            m_Servers.insert(single_server);
+            (m_SignleServerGroup =
+                new SNetServerGroupImpl(&m_SignleServerGroup, 0))->
+                    m_Servers.push_back(single_server);
         } else {
             m_ServiceType = eLoadBalanced;
             memset(&m_ServerGroups, 0, sizeof(m_ServerGroups));
@@ -177,7 +166,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
         CNetServerConnection conn = (*it).Connect();
 
         if (output_style != eDumpNoHeaders)
-            output_stream << conn.GetHost() << ":" << conn.GetPort() << endl;
+            output_stream << (*it)->m_Address.AsString() << endl;
 
         if (output_style == eSingleLineOutput)
             output_stream << conn.Exec(cmd);
@@ -198,24 +187,41 @@ void CNetService::PrintCmdOutput(const string& cmd,
     }
 }
 
-CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
+SNetServerImpl* SNetServiceImpl::FindOrCreateServerImpl(
+    const string& host, unsigned short port)
 {
     SNetServerImpl search_image(host, port);
 
+    TNetServerSet::iterator it = m_Servers.find(&search_image);
+
+    if (it != m_Servers.end())
+        return *it;
+
+    SNetServerImpl* server = new SNetServerImplReal(host, port);
+
+    m_Servers.insert(server);
+
+    return server;
+}
+
+CNetServer SNetServiceImpl::GetServer(SNetServerImpl* server_impl)
+{
+    m_RebalanceStrategy->OnResourceRequested();
+
     CFastMutexGuard g(m_ServerMutex);
 
-    TNetServerSet::iterator it = m_DiscoveredServers.find(&search_image);
+    server_impl->m_Service = this;
+    return server_impl;
+}
 
-    CNetServer server;
-    if (it != m_DiscoveredServers.end())
-        server = *it;
-    if (!server) {
-        server = new SNetServerImplReal(host, port);
-        m_DiscoveredServers.insert(server);
-    }
-    server->m_Service = this;
-    g.Release();
+CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
+{
     m_RebalanceStrategy->OnResourceRequested();
+
+    CFastMutexGuard g(m_ServerMutex);
+
+    SNetServerImpl* server = FindOrCreateServerImpl(host, port);
+    server->m_Service = this;
     return server;
 }
 
@@ -227,7 +233,7 @@ CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
         NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
             "The service is not set.");
 
-    return GetServer(m_SignleServer->m_Servers.front()).Connect();
+    return GetServer(m_SignleServerGroup->m_Servers.front()).Connect();
 }
 
 CNetServerConnection CNetService::GetBestConnection()
@@ -290,8 +296,8 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
             "Service name is not set.");
 
     case SNetServiceImpl::eSingleServer:
-        m_SignleServer->m_Service = this;
-        return m_SignleServer;
+        m_SignleServerGroup->m_Service = this;
+        return m_SignleServerGroup;
 
     case SNetServiceImpl::eLoadBalanced:
         break;
@@ -357,6 +363,8 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
             discovery_mode == CNetService::eIncludePenalized ?
                 CNetService::eIncludePenalized : CNetService::eSortByLoad);
 
+        CFastMutexGuard g(m_ServerMutex);
+
         const SSERV_Info* sinfo;
 
         while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
@@ -364,10 +372,13 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
                 (sinfo->rate > 0.0 ||
                     (discovery_mode == CNetService::eIncludePenalized &&
                         LBSMD_IS_PENALIZED_RATE(sinfo->rate)))) {
-                base_group->m_Servers.push_back(TServerAddress(
+
+                base_group->m_Servers.push_back(FindOrCreateServerImpl(
                     CSocketAPI::ntoa(sinfo->host), sinfo->port));
             }
         }
+
+        g.Release();
 
         SERV_Close(srv_it);
 
@@ -380,9 +391,9 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
     result = CreateServerGroup(discovery_mode);
 
     if (discovery_mode == CNetService::eRandomize) {
-        size_t servers_size = m_DiscoveredServers.size();
+        size_t servers_size = base_group->m_Servers.size();
 
-        if (!m_DiscoveredServers.empty()) {
+        if (servers_size > 0) {
             // Pick a random pivot element, so we do not always
             // fetch jobs using the same lookup order.
             for (unsigned current = rand() % servers_size,
@@ -426,8 +437,8 @@ void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
 
 SNetServiceImpl::~SNetServiceImpl()
 {
-    // Clean up m_DiscoveredServers
-    NON_CONST_ITERATE(TNetServerSet, it, m_DiscoveredServers) {
+    // Clean up m_Servers
+    NON_CONST_ITERATE(TNetServerSet, it, m_Servers) {
         delete *it;
     }
 
@@ -446,7 +457,7 @@ SNetServiceImpl::~SNetServiceImpl()
         break;
 
     case eSingleServer:
-        delete m_SignleServer;
+        delete m_SignleServerGroup;
         break;
 
     case eNotDefined:
@@ -477,11 +488,11 @@ CNetServerGroup CNetService::DiscoverServers(
     return m_Impl->DiscoverServers(discovery_mode);
 }
 
-bool CNetService::FindServer(CNetServerGroup servers, INetServerFinder* finder)
+bool CNetServerGroup::FindServer(INetServerFinder* finder)
 {
     bool had_comm_err = false;
 
-    for (CNetServerGroupIterator it = servers.Iterate(); it; ++it) {
+    for (CNetServerGroupIterator it = Iterate(); it; ++it) {
         CNetServer server = *it;
 
         try {
@@ -489,7 +500,7 @@ bool CNetService::FindServer(CNetServerGroup servers, INetServerFinder* finder)
                 return true;
         }
         catch (CNetServiceException& ex) {
-            ERR_POST_X(5, server->m_Host << ":" << server->m_Port <<
+            ERR_POST_X(5, server->m_Address.AsString() <<
                 " returned error: \"" << ex.what() << "\"");
 
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
@@ -498,7 +509,7 @@ bool CNetService::FindServer(CNetServerGroup servers, INetServerFinder* finder)
             had_comm_err = true;
         }
         catch (CIO_Exception& ex) {
-            ERR_POST_X(6, server->m_Host << ":" << server->m_Port <<
+            ERR_POST_X(6, server->m_Address.AsString() <<
                 " returned error: \"" << ex.what() << "\"");
 
             had_comm_err = true;

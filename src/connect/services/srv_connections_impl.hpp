@@ -106,7 +106,7 @@ struct SNetServerImpl : public CNetObject
     // Special constructor for making search images
     // for searching in TNetServerSet.
     SNetServerImpl(const string& host, unsigned short port) :
-        m_Host(host), m_Port(port)
+        m_Address(host, port)
     {
     }
 
@@ -117,14 +117,11 @@ struct SNetServerImpl : public CNetObject
     // objects that the parent service object may contain).
     virtual void Delete();
 
-    string GetAddressAsString() const;
-
     // A smart pointer to the NetService object
     // that contains this NetServer.
     CNetService m_Service;
 
-    string m_Host;
-    unsigned short m_Port;
+    SServerAddress m_Address;
 
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;

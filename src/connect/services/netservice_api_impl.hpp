@@ -40,22 +40,21 @@ BEGIN_NCBI_SCOPE
 struct SCompareServerAddress {
     bool operator()(const SNetServerImpl* l, const SNetServerImpl* r) const
     {
-        int cmp = l->m_Host.compare(r->m_Host);
-
-        return cmp < 0 || (cmp == 0 && l->m_Port < r->m_Port);
+        return l->m_Address < r->m_Address;
     }
 };
 
+typedef vector<SNetServerImpl*> TNetServerList;
 typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
 
 struct SNetServerGroupIteratorImpl : public CNetObject
 {
     SNetServerGroupIteratorImpl(SNetServerGroupImpl* server_group_impl,
-        TDiscoveredServers::const_iterator position);
+        TNetServerList::const_iterator position);
 
     CNetServerGroup m_ServerGroup;
 
-    TDiscoveredServers::const_iterator m_Position;
+    TNetServerList::const_iterator m_Position;
 };
 
 struct SNetServerGroupImpl : public CNetObject
@@ -69,7 +68,7 @@ struct SNetServerGroupImpl : public CNetObject
     virtual void Delete();
 
     // A list of servers discovered by the load balancer.
-    TDiscoveredServers m_Servers;
+    TNetServerList m_Servers;
 
     // A smart pointer to the NetService object
     // that contains this NetServerGroup.
@@ -84,7 +83,7 @@ struct SNetServerGroupImpl : public CNetObject
 
 inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
     SNetServerGroupImpl* server_group_impl,
-    TDiscoveredServers::const_iterator position) :
+    TNetServerList::const_iterator position) :
         m_ServerGroup(server_group_impl),
         m_Position(position)
 {
@@ -103,8 +102,11 @@ struct SNetServiceImpl : public CNetObject
     // NS and NC protocols.
     void SetListener(INetServerConnectionListener* listener);
 
+    SNetServerImpl* FindOrCreateServerImpl(
+        const string& host, unsigned short port);
+    CNetServer GetServer(SNetServerImpl* server_impl);
     CNetServer GetServer(const string& host, unsigned int port);
-    CNetServer GetServer(const TServerAddress& server_address);
+    CNetServer GetServer(const SServerAddress& server_address);
     CNetServerConnection GetSingleServerConnection();
 
     // Utility method for commands that require single server (that is,
@@ -133,13 +135,13 @@ struct SNetServiceImpl : public CNetObject
     unsigned m_LatestDiscoveryIteration;
 
     union {
-        SNetServerGroupImpl* m_SignleServer;
+        SNetServerGroupImpl* m_SignleServerGroup;
         SNetServerGroupImpl* m_ServerGroups[
             CNetService::eNumberOfDiscoveryModes];
     };
     CFastMutex m_ServerGroupMutex;
 
-    TNetServerSet m_DiscoveredServers;
+    TNetServerSet m_Servers;
     CFastMutex m_ServerMutex;
 
     STimeout m_Timeout;
@@ -165,9 +167,9 @@ inline void SNetServiceImpl::SetListener(INetServerConnectionListener* listener)
 }
 
 inline CNetServer SNetServiceImpl::GetServer(
-    const TServerAddress& server_address)
+    const SServerAddress& server_address)
 {
-    return GetServer(server_address.first, server_address.second);
+    return GetServer(server_address.host, server_address.port);
 }
 
 END_NCBI_SCOPE

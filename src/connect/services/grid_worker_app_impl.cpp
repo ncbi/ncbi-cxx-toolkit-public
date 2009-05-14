@@ -92,7 +92,7 @@ class CGridControlThread : public CThread
 {
 public:
     CGridControlThread(unsigned int start_port, unsigned int end_port, CGridWorkerNode& wnode)
-        : m_Control(new CWorkerNodeControlThread(start_port, end_port, wnode)) {}
+        : m_Control(new CWorkerNodeControlServer(start_port, end_port, wnode)) {}
 
     ~CGridControlThread() {}
 
@@ -115,7 +115,7 @@ protected:
     }
 
 private:
-    auto_ptr<CWorkerNodeControlThread> m_Control;
+    auto_ptr<CWorkerNodeControlServer> m_Control;
 };
 
 /////////////////////////////////////////////////////////////////////////////

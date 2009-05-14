@@ -50,24 +50,23 @@ class NCBI_XCONNECT_EXPORT CNetServerGroupIterator
     CNetServerGroupIterator& operator ++() {Next(); return *this;}
 };
 
-struct SNetServerGroupImpl;
-
-class NCBI_XCONNECT_EXPORT CNetServerGroup
-{
-    NET_COMPONENT(NetServerGroup);
-
-    int GetCount() const;
-    CNetServer GetServer(int index);
-
-    CNetServerGroupIterator Iterate();
-};
-
 class INetServerFinder
 {
 public:
     virtual bool Consider(CNetServer server) = 0;
 
     virtual ~INetServerFinder() {}
+};
+
+struct SNetServerGroupImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServerGroup
+{
+    NET_COMPONENT(NetServerGroup);
+
+    CNetServerGroupIterator Iterate();
+
+    bool FindServer(INetServerFinder* finder);
 };
 
 struct SNetServiceImpl;
@@ -89,8 +88,6 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetServerGroup DiscoverServers(
         EDiscoveryMode discovery_mode = eSortByLoad);
-
-    bool FindServer(CNetServerGroup servers, INetServerFinder* finder);
 
     CNetServerConnection GetBestConnection();
 

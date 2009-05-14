@@ -324,9 +324,8 @@ bool CNetScheduleSubmitter::Read(string& batch_id,
 
     CReadCmdExecutor read_executor(cmd, batch_id, job_ids);
 
-    return m_Impl->m_API->m_Service.FindServer(
-        m_Impl->m_API->m_Service.DiscoverServers(CNetService::eRandomize),
-            &read_executor);
+    return m_Impl->m_API->m_Service.DiscoverServers(CNetService::eRandomize).
+        FindServer(&read_executor);
 }
 
 void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,

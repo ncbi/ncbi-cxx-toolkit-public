@@ -675,13 +675,13 @@ void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
     NStr::Tokenize(hosts, " ;,", vhosts);
     m_Masters.clear();
     ITERATE(vector<string>, it, vhosts) {
-        string host, sport;
-        NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, sport);
-        if (host.empty() || sport.empty())
+        string host, port;
+        NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, port);
+        if (host.empty() || port.empty())
             continue;
         try {
-            unsigned int port = NStr::StringToUInt(sport);
-            m_Masters.insert(SHost(NStr::ToLower(host),port));
+            m_Masters.insert(SServerAddress(NStr::ToLower(host),
+                (short) NStr::StringToUInt(port)));
         } catch(...) {}
     }
 }
@@ -722,7 +722,7 @@ bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
 
 bool CGridWorkerNode::x_AreMastersBusy() const
 {
-    ITERATE(set<SHost>, it, m_Masters) {
+    ITERATE(set<SServerAddress>, it, m_Masters) {
         STimeout tmo = {0, 500};
         CSocket socket(it->host, it->port, &tmo, eOff);
         if (socket.GetStatus(eIO_Open) != eIO_Success)
@@ -745,7 +745,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
         if (NStr::StartsWith(reply, "ERR:")) {
             string msg;
             NStr::Replace(reply, "ERR:", "", msg);
-            ERR_POST_X(43, "Worker Node at " << it->host << ":" << it->port <<
+            ERR_POST_X(43, "Worker Node at " << it->AsString() <<
                 " returned error: " << msg);
         } else if (NStr::StartsWith(reply, "OK:")) {
             string msg;
@@ -756,7 +756,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
                     return false;
             } catch (...) {}
         } else {
-            ERR_POST_X(44, "Worker Node at " << it->host << ":" << it->port <<
+            ERR_POST_X(44, "Worker Node at " << it->AsString() <<
                 " returned unknown reply: " << reply);
         }
     }

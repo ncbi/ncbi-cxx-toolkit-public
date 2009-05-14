@@ -39,8 +39,36 @@
 BEGIN_NCBI_SCOPE
 
 // A host:port pair.
-typedef pair<string, unsigned short> TServerAddress;
-typedef vector<TServerAddress> TDiscoveredServers;
+struct SServerAddress {
+    SServerAddress(string h, unsigned short p) : host(h), port(p) {}
+
+    bool operator ==(const SServerAddress& h) const
+    {
+        return host == h.host && port == h.port;
+    }
+
+    bool operator <(const SServerAddress& right) const
+    {
+        int cmp = host.compare(right.host);
+        return cmp < 0 || (cmp == 0 && port < right.port);
+    }
+
+    string AsString() const
+    {
+        string address =
+            CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(host));
+
+        address += ':';
+        address += NStr::UIntToString(port);
+
+        return address;
+    }
+
+    string host;
+    unsigned short port;
+};
+
+typedef vector<SServerAddress> TDiscoveredServers;
 
 // LBSMD-based service discovery.
 class NCBI_XCONNECT_EXPORT CNetServiceDiscovery : public CNetObject

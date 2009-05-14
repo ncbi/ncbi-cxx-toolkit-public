@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 //
 ///@internal
 
-class CGetVersionProcessor : public CWorkerNodeControlThread::IRequestProcessor
+class CGetVersionProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     virtual ~CGetVersionProcessor() {}
@@ -64,7 +64,7 @@ public:
     }
 };
 
-class CShutdownProcessor : public CWorkerNodeControlThread::IRequestProcessor
+class CShutdownProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     virtual ~CShutdownProcessor() {}
@@ -113,7 +113,7 @@ private:
     string m_Host;
 };
 
-class CGetStatisticsProcessor : public CWorkerNodeControlThread::IRequestProcessor
+class CGetStatisticsProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     CGetStatisticsProcessor() {}
@@ -146,7 +146,7 @@ public:
     }
 };
 
-class CGetLoadProcessor : public CWorkerNodeControlThread::IRequestProcessor
+class CGetLoadProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     CGetLoadProcessor()  {}
@@ -188,7 +188,7 @@ public:
     }
 };
 
-class CUnknownProcessor : public CWorkerNodeControlThread::IRequestProcessor
+class CUnknownProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     virtual ~CUnknownProcessor() {}
@@ -211,8 +211,8 @@ const string GETLOAD_CMD = "GETLOAD";
 ///@internal
 
 /* static */
-CWorkerNodeControlThread::IRequestProcessor*
-CWorkerNodeControlThread::MakeProcessor(const string& cmd)
+CWorkerNodeControlServer::IRequestProcessor*
+CWorkerNodeControlServer::MakeProcessor(const string& cmd)
 {
     if (NStr::StartsWith(cmd, SHUTDOWN_CMD))
         return new CShutdownProcessor;
@@ -228,7 +228,7 @@ CWorkerNodeControlThread::MakeProcessor(const string& cmd)
 class CWNCTConnectionFactory : public IServer_ConnectionFactory
 {
 public:
-    CWNCTConnectionFactory(CWorkerNodeControlThread& server,
+    CWNCTConnectionFactory(CWorkerNodeControlServer& server,
         unsigned short& start_port, unsigned short end_port)
         : m_Server(server), m_Port(start_port), m_EndPort(end_port)
     {}
@@ -244,13 +244,13 @@ public:
     }
 
 private:
-    CWorkerNodeControlThread& m_Server;
+    CWorkerNodeControlServer& m_Server;
     unsigned short& m_Port;
     unsigned short m_EndPort;
 };
 
 static STimeout kAcceptTimeout = {1,0};
-CWorkerNodeControlThread::CWorkerNodeControlThread(
+CWorkerNodeControlServer::CWorkerNodeControlServer(
     unsigned short start_port,
     unsigned short end_port,
     CGridWorkerNode& worker_node) :
@@ -266,16 +266,16 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(
     AddListener(new CWNCTConnectionFactory(*this, m_Port, end_port),m_Port);
 }
 
-CWorkerNodeControlThread::~CWorkerNodeControlThread()
+CWorkerNodeControlServer::~CWorkerNodeControlServer()
 {
     LOG_POST_X(14, "Control server stopped.");
 }
-bool CWorkerNodeControlThread::ShutdownRequested(void)
+bool CWorkerNodeControlServer::ShutdownRequested(void)
 {
     return m_ShutdownRequested;
 }
 
-void CWorkerNodeControlThread::ProcessTimeout(void)
+void CWorkerNodeControlServer::ProcessTimeout(void)
 {
     CGridGlobals::GetInstance().GetJobsWatcher().CheckInfinitLoop();
 }
@@ -291,7 +291,7 @@ static string s_ReadStrFromBUF(BUF buf)
     return ret;
 }
 
-CWNCTConnectionHandler::CWNCTConnectionHandler(CWorkerNodeControlThread& server)
+CWNCTConnectionHandler::CWNCTConnectionHandler(CWorkerNodeControlServer& server)
     : m_Server(server)
 {}
 
@@ -342,7 +342,7 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
     string host = socket.GetPeerAddress();
 
     CNcbiOstrstream os;
-    auto_ptr<CWorkerNodeControlThread::IRequestProcessor>
+    auto_ptr<CWorkerNodeControlServer::IRequestProcessor>
         processor(m_Server.MakeProcessor(request));
     if (processor->Authenticate(host, m_Auth, m_Queue, os,
                                 m_Server.GetWorkerNode()))

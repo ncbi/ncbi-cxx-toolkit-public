@@ -89,7 +89,7 @@ public:
 };
 
 class CWorkerNodeJobContext;
-class CWorkerNodeControlThread;
+class CWorkerNodeControlServer;
 /// Worker Node Job interface.
 ///
 /// This interface is a worker node workhorse.
@@ -620,17 +620,7 @@ private:
         }
     }
 
-    struct SHost {
-        SHost(string h, unsigned int p) : host(h), port(p) {}
-        bool operator== (const SHost& h) const
-        { return host == h.host && port == h.port; }
-        bool operator< (const SHost& h) const
-        { return (host == h.host ? (port < h.port) : (host < h.host)); }
-
-        string host;
-        unsigned int port;
-    };
-    set<SHost> m_Masters;
+    set<SServerAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
 
     bool x_GetNextJob(CNetScheduleJob& job);
@@ -644,7 +634,6 @@ private:
 
     CGridWorkerNode(const CGridWorkerNode&);
     CGridWorkerNode& operator=(const CGridWorkerNode&);
-
 };
 
 inline const string& CGridWorkerNode::GetQueueName() const
@@ -703,6 +692,6 @@ public:
 
 END_NCBI_SCOPE
 
-#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 3.0.0)"
+#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 4.0.0)"
 
 #endif //CONNECT_SERVICES__GRID_WOKER_HPP

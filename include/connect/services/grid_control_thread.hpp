@@ -45,7 +45,7 @@ class CGridWorkerNode;
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class NCBI_XCONNECT_EXPORT CWorkerNodeControlThread : public CServer
+class NCBI_XCONNECT_EXPORT CWorkerNodeControlServer : public CServer
 {
 public:
 
@@ -64,12 +64,12 @@ public:
                              CNcbiOstream& reply,
                              CGridWorkerNode& node) = 0;
     };
-    CWorkerNodeControlThread(unsigned short start_port, unsigned short end_port,
+    CWorkerNodeControlServer(unsigned short start_port, unsigned short end_port,
                              CGridWorkerNode& worker_node);
 
     CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
 
-    virtual ~CWorkerNodeControlThread();
+    virtual ~CWorkerNodeControlServer();
 
     virtual bool ShutdownRequested(void);
 
@@ -87,8 +87,8 @@ private:
     volatile bool    m_ShutdownRequested;
     unsigned short m_Port;
 
-    CWorkerNodeControlThread(const CWorkerNodeControlThread&);
-    CWorkerNodeControlThread& operator=(const CWorkerNodeControlThread&);
+    CWorkerNodeControlServer(const CWorkerNodeControlServer&);
+    CWorkerNodeControlServer& operator=(const CWorkerNodeControlServer&);
 };
 
 
@@ -97,7 +97,7 @@ class NCBI_XCONNECT_EXPORT CWNCTConnectionHandler
     : public IServer_LineMessageHandler
 {
 public:
-    CWNCTConnectionHandler(CWorkerNodeControlThread& server);
+    CWNCTConnectionHandler(CWorkerNodeControlServer& server);
     virtual ~CWNCTConnectionHandler();
 
     virtual void OnOpen(void);
@@ -108,7 +108,7 @@ public:
 
 private:
 
-    CWorkerNodeControlThread& m_Server;
+    CWorkerNodeControlServer& m_Server;
     string m_Auth;
     string m_Queue;
 

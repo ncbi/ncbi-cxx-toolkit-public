@@ -88,7 +88,7 @@ void CNetServiceDiscovery::QueryLoadBalancer(TDiscoveredServers& servers,
         if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
             (sinfo->rate > 0.0 ||
                 (include_penalized && LBSMD_IS_PENALIZED_RATE(sinfo->rate)))) {
-            servers.push_back(TServerAddress(
+            servers.push_back(SServerAddress(
                 CSocketAPI::ntoa(sinfo->host), sinfo->port));
         }
     }

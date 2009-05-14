@@ -134,13 +134,13 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
         Abort();
         NCBI_THROW(CNetSrvConnException, eReadTimeout,
             "Communication timeout reading from " +
-            m_Server->GetAddressAsString());
+                m_Server->m_Address.AsString());
         break;
     default: // invalid socket or request, bailing out
         Abort();
         NCBI_THROW(CNetServiceException, eCommunicationError,
             "Communication error reading from " +
-            m_Server->GetAddressAsString());
+                m_Server->m_Address.AsString());
     }
 
     if (NStr::StartsWith(result, "OK:")) {
@@ -188,7 +188,7 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
                 (CIO_Exception::EErrCode) io_st, "IO error.");
 
             NCBI_THROW(CNetSrvConnException, eWriteFailure,
-                "Failed to write to " + m_Server->GetAddressAsString() +
+                "Failed to write to " + m_Server->m_Address.AsString() +
                 ": " + string(io_ex.what()));
         }
         len -= n_written;
@@ -204,7 +204,7 @@ void SNetServerConnectionImpl::WaitForServer()
         Abort();
 
         NCBI_THROW(CNetSrvConnException, eResponseTimeout,
-            "No response from " + m_Server->GetAddressAsString());
+            "No response from " + m_Server->m_Address.AsString());
     }
 }
 
@@ -226,12 +226,12 @@ CNetServerCmdOutput CNetServerConnection::ExecMultiline(const string& cmd)
 
 const string& CNetServerConnection::GetHost() const
 {
-    return m_Impl->m_Server->m_Host;
+    return m_Impl->m_Server->m_Address.host;
 }
 
 unsigned int CNetServerConnection::GetPort() const
 {
-    return m_Impl->m_Server->m_Port;
+    return m_Impl->m_Server->m_Address.port;
 }
 
 
@@ -256,17 +256,6 @@ void SNetServerImpl::Delete()
         m_Service = NULL;
 }
 
-string SNetServerImpl::GetAddressAsString() const
-{
-    string address =
-        CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(m_Host));
-
-    address += ':';
-    address += NStr::UIntToString(m_Port);
-
-    return address;
-}
-
 SNetServerImplReal::~SNetServerImplReal()
 {
     // No need to lock the mutex in the destructor.
@@ -280,12 +269,12 @@ SNetServerImplReal::~SNetServerImplReal()
 
 string CNetServer::GetHost() const
 {
-    return m_Impl->m_Host;
+    return m_Impl->m_Address.host;
 }
 
 unsigned short CNetServer::GetPort() const
 {
-    return m_Impl->m_Port;
+    return m_Impl->m_Address.port;
 }
 
 CNetServerConnection CNetServer::Connect()
@@ -353,12 +342,13 @@ CNetServerConnection CNetServer::Connect()
 
     EIO_Status io_st;
 
-    while ((io_st = conn_socket.Connect(m_Impl->m_Host, m_Impl->m_Port,
+    while ((io_st = conn_socket.Connect(m_Impl->m_Address.host,
+        m_Impl->m_Address.port,
         &m_Impl->m_Service->m_Timeout, eOn)) != eIO_Success) {
+
         conn_socket.Close();
 
-        string message = "Could not connect to " +
-            m_Impl->GetAddressAsString();
+        string message = "Could not connect to " + m_Impl->m_Address.AsString();
         message += ": ";
         message += IO_StatusStr(io_st);
 

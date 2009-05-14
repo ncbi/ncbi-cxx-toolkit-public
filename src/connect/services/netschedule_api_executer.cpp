@@ -332,9 +332,8 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
 {
     CGetJobCmdExecutor get_executor(cmd, job);
 
-    return m_API->m_Service.FindServer(
-        m_API->m_Service.DiscoverServers(CNetService::eIncludePenalized),
-            &get_executor);
+    return m_API->m_Service.DiscoverServers(CNetService::eIncludePenalized).
+        FindServer(&get_executor);
 }
 
 
@@ -349,7 +348,7 @@ void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd) const
         try {
             server.Connect().Exec(tmp);
         } catch (CNetServiceException& ex) {
-            ERR_POST_X(12, server.GetHost() << ":" << server.GetPort()
+            ERR_POST_X(12, server->m_Address.AsString()
                 << " returned error: \"" << ex.what() << "\"");
 
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)

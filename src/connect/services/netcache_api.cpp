@@ -53,9 +53,9 @@
 BEGIN_NCBI_SCOPE
 
 static bool s_FallbackServer_Initialized = false;
-static CSafeStaticPtr<auto_ptr<TServerAddress> > s_FallbackServer;
+static CSafeStaticPtr<auto_ptr<SServerAddress> > s_FallbackServer;
 
-static TServerAddress* s_GetFallbackServer()
+static SServerAddress* s_GetFallbackServer()
 {
     if (s_FallbackServer_Initialized)
         return s_FallbackServer->get();
@@ -65,7 +65,7 @@ static TServerAddress* s_GetFallbackServer()
        if ( NStr::SplitInTwo(hostport, ":", host, sport) ) {
           unsigned int port = NStr::StringToInt(sport);
           host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
-          s_FallbackServer->reset(new TServerAddress(host, port));
+          s_FallbackServer->reset(new SServerAddress(host, port));
        }
     } catch (...) {
     }
@@ -109,7 +109,7 @@ string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
 void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
     const string& err_msg, SNetServerImpl* server)
 {
-    string message = server->GetAddressAsString();
+    string message = server->m_Address.AsString();
 
     message += ": ";
     message += err_msg;
@@ -166,7 +166,7 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
         try {
             conn = m_Service.GetBestConnection();
         } catch (CNetSrvConnException& e) {
-            TServerAddress* backup = s_GetFallbackServer();
+            SServerAddress* backup = s_GetFallbackServer();
 
             if (backup == NULL) {
                 NCBI_THROW(CNetCacheException, eUnknnownCache,
@@ -175,8 +175,7 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
 
             ERR_POST_X(3, "Could not connect to " <<
                 m_Service.GetServiceName() << ":" << e.what() <<
-                ". Connecting to backup server " <<
-                backup->first << ":" << backup->second << ".");
+                ". Connecting to backup server " << backup->AsString() << ".");
 
             conn = m_Service->GetServer(*backup).Connect();
         }
