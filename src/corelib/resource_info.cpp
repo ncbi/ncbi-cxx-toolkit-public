@@ -259,7 +259,7 @@ CNcbiResourceInfoFile::AddResourceInfo(const string& plain_text)
 void CNcbiResourceInfoFile::ParsePlainTextFile(const string& filename)
 {
     CNcbiIfstream in(filename.c_str());
-    while ( !in.eof() ) {
+    while ( in.good()  &&  !in.eof() ) {
         string line;
         getline(in, line);
         if ( line.empty() ) continue;
