@@ -632,7 +632,8 @@ void CFastaReader::x_CloseMask(void)
 {
     _ASSERT(m_MaskRangeStart != kInvalidSeqPos);
     m_CurrentMask->SetPacked_int().AddInterval
-        (GetBestID(), m_MaskRangeStart, GetCurrentPos(ePosWithGapsAndSegs) - 1);
+        (GetBestID(), m_MaskRangeStart, GetCurrentPos(ePosWithGapsAndSegs) - 1,
+         eNa_strand_plus);
     m_MaskRangeStart = kInvalidSeqPos;
 }
 
