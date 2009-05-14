@@ -118,3 +118,9 @@
 
 /* Define to 1 if Xerces-C++ is available. */
 /* #undef HAVE_XERCES */
+
+/* Define to 1 if using a local copy of bzlib. */
+/* #undef USE_LOCAL_BZLIB */
+
+/* Define to 1 if using a local copy of PCRE. */
+#define USE_LOCAL_PCRE 1

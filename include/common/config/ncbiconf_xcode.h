@@ -658,12 +658,6 @@
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
 
-/* Define to 1 if using a local copy of bzlib. */
-/* #undef USE_LOCAL_BZLIB */
-
-/* Define to 1 if using a local copy of PCRE. */
-#define USE_LOCAL_PCRE 1
-
 /* Define to 1 if the X Window System is missing or not being used. */
 /* #undef X_DISPLAY_MISSING */
 
