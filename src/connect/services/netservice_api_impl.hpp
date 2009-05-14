@@ -104,7 +104,7 @@ struct SNetServiceImpl : public CNetObject
 
     SNetServerImpl* FindOrCreateServerImpl(
         const string& host, unsigned short port);
-    CNetServer GetServer(SNetServerImpl* server_impl);
+    CNetServer ReturnServer(SNetServerImpl* server_impl);
     CNetServer GetServer(const string& host, unsigned int port);
     CNetServer GetServer(const SServerAddress& server_address);
     CNetServerConnection GetSingleServerConnection();

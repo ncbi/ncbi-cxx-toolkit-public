@@ -68,7 +68,7 @@ void SNetServerGroupImpl::Delete()
 
 CNetServer CNetServerGroupIterator::GetServer()
 {
-    return m_Impl->m_ServerGroup->m_Service->GetServer(*m_Impl->m_Position);
+    return m_Impl->m_ServerGroup->m_Service->ReturnServer(*m_Impl->m_Position);
 }
 
 bool CNetServerGroupIterator::Next()
@@ -200,7 +200,7 @@ SNetServerImpl* SNetServiceImpl::FindOrCreateServerImpl(
     return server;
 }
 
-CNetServer SNetServiceImpl::GetServer(SNetServerImpl* server_impl)
+CNetServer SNetServiceImpl::ReturnServer(SNetServerImpl* server_impl)
 {
     m_RebalanceStrategy->OnResourceRequested();
 
@@ -229,7 +229,7 @@ CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
         NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
             "The service is not set.");
 
-    return GetServer(m_SignleServerGroup->m_Servers.front()).Connect();
+    return ReturnServer(m_SignleServerGroup->m_Servers.front()).Connect();
 }
 
 CNetServerConnection CNetService::GetBestConnection()
