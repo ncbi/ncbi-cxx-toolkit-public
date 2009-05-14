@@ -40,6 +40,7 @@
 
 #include <memory> // for auto_ptr<>
 
+#include <util/line_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -59,15 +60,30 @@ public:
     };
     typedef int TFlags;
 
+
     // read 5-column feature table and return Seq-annot
+    static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
+                                                   const TFlags flags = 0);
+
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const TFlags flags = 0);
+
+    static CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
+                                                    const string& seqid,
+                                                    const string& annotname,
+                                                    const TFlags flags = 0);
+
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const string& seqid,
                                                     const string& annotname,
                                                     const TFlags flags = 0);
+
     // read all feature tables available from the input, attaching each
     // at an appropriate position within the Seq-entry object
+    static void ReadSequinFeatureTables(ILineReader& reader,
+                                        CSeq_entry& entry,
+                                        const TFlags flags = 0);
+
     static void ReadSequinFeatureTables(CNcbiIstream& ifs,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0);

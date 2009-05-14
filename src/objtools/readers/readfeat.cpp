@@ -199,7 +199,7 @@ public:
     ~CFeature_table_reader_imp(void);
 
     // read 5-column feature table and return Seq-annot
-    CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
+    CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
                                              const string& seqid,
                                              const string& annotname,
                                              const CFeature_table_reader::TFlags flags);
@@ -1700,14 +1700,12 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
 
 
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
-    CNcbiIstream& ifs,
+    ILineReader& reader,
     const string& seqid,
     const string& annotname,
     const CFeature_table_reader::TFlags flags
 )
-
 {
-    string line;
     string feat, qual, val;
     Int4 start, stop;
     bool partial5, partial3, ispoint, isminus, ignore = false;;
@@ -1724,14 +1722,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
       descr.Set().push_back (annot);
     }
 
-    while (ifs.good ()) {
+    while ( !reader.AtEOF() ) {
 
-        if (CT_EQ_INT_TYPE(ifs.peek(), CT_TO_INT_TYPE('>'))) {
+        if (CT_EQ_INT_TYPE(reader.PeekChar(), CT_TO_INT_TYPE('>'))) {
             // if next feature table, return current sap
             return sap;
         }
 
-        NcbiGetlineEOL (ifs, line);
+        CTempString line = *++reader;
 
         if (! line.empty ()) {
             if (line [0] == '[') {
@@ -1906,11 +1904,22 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     const string& annotname,
     const TFlags flags
 )
+{
+    CStreamLineReader reader(ifs);
+    return ReadSequinFeatureTable(reader, seqid, annotname, flags);
+}
 
+
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
+    ILineReader& reader,
+    const string& seqid,
+    const string& annotname,
+    const TFlags flags
+)
 {
     // just read features from 5-column table
 
-    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname, flags);
+    CRef<CSeq_annot> sap = x_GetImplementation().ReadSequinFeatureTable (reader, seqid, annotname, flags);
 
     // go through all features and demote single interval seqlocmix to seqlocint
     for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
@@ -1941,15 +1950,23 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
     const TFlags flags
 )
-
 {
-    string line, fst, scd, seqid, annotname;
+    CStreamLineReader reader(ifs);
+    return ReadSequinFeatureTable(reader, flags);
+}
+
+
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
+    ILineReader& reader,
+    const TFlags flags
+)
+{
+    string fst, scd, seqid, annotname;
 
     // first look for >Feature line, extract seqid and optional annotname
+    while (seqid.empty () && !reader.AtEOF() ) {
 
-    while (seqid.empty () && ifs.good ()) {
-
-        NcbiGetlineEOL (ifs, line);
+        CTempString line = *++reader;
 
         if (! line.empty ()) {
             if (line [0] == '>') {
@@ -1962,8 +1979,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     }
 
     // then read features from 5-column table
-
-    return ReadSequinFeatureTable (ifs, seqid, annotname, flags);
+    return ReadSequinFeatureTable (reader, seqid, annotname, flags);
 
 }
 
@@ -1973,10 +1989,20 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     CSeq_entry& entry,
     const TFlags flags
 )
-
 {
-    while ( !ifs.eof() ) {
-        CRef<CSeq_annot> annot = ReadSequinFeatureTable(ifs, flags);
+    CStreamLineReader reader(ifs);
+    return ReadSequinFeatureTables(reader, entry, flags);
+}
+
+
+void CFeature_table_reader::ReadSequinFeatureTables(
+    ILineReader& reader,
+    CSeq_entry& entry,
+    const TFlags flags
+)
+{
+    while ( !reader.AtEOF() ) {
+        CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags);
         if (entry.IsSeq()) { // only one place to go
             entry.SetSeq().SetAnnot().push_back(annot);
             continue;
