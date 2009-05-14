@@ -327,13 +327,16 @@ bool CCyclicDepends::AnalyzeProjItemNew(
     TProjects::const_iterator p = tree.find(proj_id);
     if (p == tree.end()) {
         if (!SMakeProjectT::IsConfigurableDefine(proj_id.Id())) {
-            string str_chain("Dependency chain: ");
-            ITERATE(TDependsChain, n, chain) {
-                str_chain += n->Id();
-                str_chain += " - ";
+            if (!GetApp().GetSite().IsLibWithChoice(proj_id.Id()) ||
+                 GetApp().GetSite().GetChoiceForLib(proj_id.Id()) == CMsvcSite::eLib ) {
+                string str_chain("Dependency chain: ");
+                ITERATE(TDependsChain, n, chain) {
+                    str_chain += n->Id();
+                    str_chain += " - ";
+                }
+                str_chain += proj_id.Id();
+                LOG_POST( Warning << str_chain << ": Undefined project: " << proj_id.Id() );
             }
-            str_chain += proj_id.Id();
-            LOG_POST( Warning << str_chain << ": Undefined project: " << proj_id.Id() );
         }
         return false;
     }

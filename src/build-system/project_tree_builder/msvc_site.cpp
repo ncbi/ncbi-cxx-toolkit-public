@@ -76,6 +76,24 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         ITERATE (list<string>, it, not_provided) {
             m_NotProvidedThing.insert(*it);
         }
+        // special cases
+        str = x_GetConfigureEntry("ComponentChoices");
+        list<string> comp_choices;
+        NStr::Split(str, LIST_SEPARATOR, comp_choices);
+        ITERATE(list<string>, p, comp_choices) {
+            const string& choice_str = *p;
+            string lib_id;
+            string lib_3party_id;
+            if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
+                if (IsProvided(lib_3party_id))
+                {
+                    m_NotProvidedThing.insert(lib_id);
+                }
+            } else {
+               PTB_ERROR_EX(reg_path, ePTB_ConfigurationError,
+                            "ComponentChoices: " << choice_str);
+            }
+        }
     } else {
         // unix
         string unix_cfg = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(),"MetaData");
