@@ -514,9 +514,7 @@ void CGFFFormatter::x_AddFeature
 
         if (IsReverse(it.GetStrand())) {
             strand = '-';
-        } else if (it.GetRange().IsWhole()
-                   ||  (m_Strandedness <= CSeq_inst::eStrand_ss
-                        &&  ctx.GetMol() == CSeq_inst::eMol_aa)) {
+        } else if (it.GetRange().IsWhole()) {
             strand = '.'; // N/A
         }
 

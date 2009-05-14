@@ -206,6 +206,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     TSeqPos ref_width = alnmap.GetWidth(ref_row);
     TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
     int     ref_sign  = alnmap.StrandSign(ref_row);
+    int     phase     = 0;
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
         CNcbiOstrstream cigar;
         char            last_type = 0;
@@ -287,7 +288,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                      ref_range.GetFrom(), ref_range.GetTo(),
                      (ref_sign == 1 ? eNa_strand_plus
                       : eNa_strand_minus));
-        
 
         // HACK HACK HACK
         // add score attributes
@@ -322,9 +322,17 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         }
 
         string attr_string = CNcbiOstrstreamToString(attrs);
+
+        if (ctx->GetHandle().IsNa()) {
+            phase = -1;
+        }
         
-        x_AddFeature(l, loc, source, s_GetMatchType(ref_id, tgt_id), "." /*score*/, -1 /*frame*/,
+        x_AddFeature(l, loc, source,
+                     s_GetMatchType(ref_id, tgt_id),
+                     "." /*score*/, phase /*phase*/,
                      attr_string, false /*gtf*/, *ctx);
+
+        phase = (phase + tgt_range.GetLength()) % 3;
     }
     text_os.AddParagraph(l, &ds);
 }
