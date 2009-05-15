@@ -196,58 +196,8 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
         eVIAffinity = 2
     };
     typedef int TQueueKind;
-private:
-    friend class CQueueGuard;
-    friend class CQueueJSGuard;
-    friend class CJob;
-
-    string                       m_QueueName;
-    string                       m_QueueClass;      ///< Parameter class
-    TQueueKind                   m_Kind;            ///< 0 - static, 1 - dynamic
-
-    friend class CQueueEnumCursor;
-    SQueueDbBlock*               m_QueueDbBlock;
-
-    // Databases
-//    SQueueDB                     m_JobDB;           ///< Main queue database
-#define m_JobDB m_QueueDbBlock->job_db
-    SJobInfoDB                   m_JobInfoDB;       ///< Aux info on jobs, tags etc.
-#define m_JobInfoDB m_QueueDbBlock->job_info_db
-
-//    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
-#define m_RunsDB m_QueueDbBlock->runs_db
-    auto_ptr<CBDB_FileCursor>    m_RunsCursor;      ///< DB cursor for RunsDB
-
-    CFastMutex                   m_DbLock;          ///< db, cursor lock
-
 public:
     CJobStatusTracker            status_tracker;    ///< status FSA
-
-private:
-    // Affinity
-//    SAffinityIdx                 m_AffinityIdx;     ///< Q affinity index
-#define m_AffinityIdx m_QueueDbBlock->affinity_idx
-    CFastMutex                   m_AffinityIdxLock;
-
-
-    // affinity dictionary does not need a mutex, because
-    // CAffinityDict is a syncronized class itself (mutex included)
-    CAffinityDict                m_AffinityDict;    ///< Affinity tokens
-
-    CWorkerNodeAffinity          m_AffinityMap;     ///< Affinity map
-    CFastMutex                   m_AffinityMapLock; ///< m_AffinityMap lock
-
-    // Tags
-//    STagDB                       m_TagDB;
-#define m_TagDB m_QueueDbBlock->tag_db
-    CFastMutex                   m_TagLock;
-
-    ///< When it became empty, guarded by 'lock'
-    time_t                       m_BecameEmpty;
-
-    // List of active worker node listeners waiting for pending jobs
-    CQueueWorkerNodeList         m_WorkerNodeList;
-    string                       q_notif;       ///< Queue notification message
 
 public:
     // Timeline object to control job execution timeout
@@ -432,10 +382,8 @@ public:
                              time_t                 exp_time);
     void RemoveJobFromWorkerNode(const CJob&        job,
                                  ENSCompletion      reason);
-    //
 
-    typedef CWorkerNodeAffinity::TNetAddress TNetAddress;
-    void ClearAffinity(CWorkerNode* worker_node);
+    void GetAllAssignedAffinities(time_t t, TNSBitVector& aff_ids);
     void AddAffinity(CWorkerNode*  worker_node,
                      unsigned      aff_id,
                      time_t        exp_time);
@@ -511,7 +459,7 @@ public:
 
 private:
     friend class CNS_Transaction;
-    CBDB_Env& GetEnv() { return *m_JobDB.GetEnv(); }
+    CBDB_Env& GetEnv() { return *m_QueueDbBlock->job_db.GetEnv(); }
 
     void x_ChangeGroupStatus(unsigned            group_id,
                              const TNSBitVector& bv_jobs,
@@ -530,6 +478,56 @@ private:
         CWorkerNode* worker_node, const string& err_msg);
 
 private:
+    friend class CQueueGuard;
+    friend class CQueueJSGuard;
+    friend class CJob;
+
+    string                       m_QueueName;
+    string                       m_QueueClass;      ///< Parameter class
+    TQueueKind                   m_Kind;            ///< 0 - static, 1 - dynamic
+
+    friend class CQueueEnumCursor;
+    SQueueDbBlock*               m_QueueDbBlock;
+
+    // Databases
+    //    SQueueDB                     m_JobDB;           ///< Main queue database
+#define m_JobDB m_QueueDbBlock->job_db
+    //    SJobInfoDB                   m_JobInfoDB;       ///< Aux info on jobs, tags etc.
+#define m_JobInfoDB m_QueueDbBlock->job_info_db
+
+    //    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
+#define m_RunsDB m_QueueDbBlock->runs_db
+    auto_ptr<CBDB_FileCursor>    m_RunsCursor;      ///< DB cursor for RunsDB
+
+    CFastMutex                   m_DbLock;          ///< db, cursor lock
+
+    // Affinity
+    //    SAffinityIdx                 m_AffinityIdx;     ///< Q affinity index
+#define m_AffinityIdx m_QueueDbBlock->affinity_idx
+    CFastMutex                   m_AffinityIdxLock;
+
+
+    // affinity dictionary does not need a mutex, because
+    // CAffinityDict is a syncronized class itself (mutex included)
+    CAffinityDict                m_AffinityDict;    ///< Affinity tokens
+
+    /*
+    CWorkerNodeAffinity          m_AffinityMap;     ///< Affinity map
+    CFastMutex                   m_AffinityMapLock; ///< m_AffinityMap lock
+    */
+
+    // Tags
+    //    STagDB                       m_TagDB;
+#define m_TagDB m_QueueDbBlock->tag_db
+    CFastMutex                   m_TagLock;
+
+    ///< When it became empty, guarded by 'lock'
+    time_t                       m_BecameEmpty;
+
+    // List of active worker node listeners waiting for pending jobs
+    CQueueWorkerNodeList         m_WorkerNodeList;
+
+
     typedef map<unsigned, TNSBitVector> TGroupMap;
     /// Last valid id for queue
     CAtomicCounter               m_LastId;

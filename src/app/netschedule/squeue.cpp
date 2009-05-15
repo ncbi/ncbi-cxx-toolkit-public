@@ -287,6 +287,8 @@ SLockedQueue::SLockedQueue(const string& queue_name,
                            const string& qclass_name,
                            TQueueKind queue_kind)
   :
+    run_time_line(NULL),
+    delete_database(false),
     m_QueueName(queue_name),
     m_QueueClass(qclass_name),
     m_Kind(queue_kind),
@@ -294,9 +296,6 @@ SLockedQueue::SLockedQueue(const string& queue_name,
 
     m_BecameEmpty(-1),
     m_WorkerNodeList(queue_name),
-    q_notif("NCBI_JSQ_"),
-    run_time_line(NULL),
-    delete_database(false),
     m_AffWrapped(false),
     m_CurrAffId(0),
     m_LastAffId(0),
@@ -317,7 +316,6 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_LogJobState(0)
 {
     _ASSERT(!queue_name.empty());
-    q_notif.append(queue_name);
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
         m_EventCounter[n].Set(0);
         m_Average[n] = 0;
@@ -1112,60 +1110,42 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
     // affinity: get list of job candidates
     // previous FindPendingJob() call may have precomputed candidate job ids
     {{
-        CFastMutexGuard aff_guard(m_AffinityMapLock);
-        CWorkerNodeAffinity::SAffinityInfo* ai =
-            m_AffinityMap.GetAffinity(worker_node);
+        CWorkerNodeAffinityGuard na(*worker_node);
 
-        if (is_specific_aff) {
-            if (ai) {
-                // Filter out affinities not in requested list, and if
-                // something was actually filtered drop cached candidate_jobs
-                unsigned old_count = ai->aff_ids.count();
-                ai->aff_ids &= aff_ids;
-                if (old_count != ai->aff_ids.count()) {
-                    ai->candidate_jobs.clear();
-                }
-            } else {
-                // Add empty affinity association, correct affinity
-                // will be added later in CQueue::PutResultGetJob
-                ai = m_AffinityMap.AddAffinity(worker_node);
-            }
-        }
+        if (is_specific_aff)
+            na.CleanCandidates(aff_ids);
 
-        if (ai) {  // established affinity association
+        // If we have a specific affinity request, use it for job search,
+        // otherwise use what we have for the node
+        if (is_specific_aff) effective_aff_ids = &aff_ids;
+        else effective_aff_ids = &na.GetAffinityInfo()->aff_ids;
 
-            // If we have a specific affinity request, use it for job search,
-            // otherwise use what we have for the node
-            if (is_specific_aff) effective_aff_ids = &aff_ids;
-            else effective_aff_ids = &ai->aff_ids;
-
-            blacklisted_jobs = ai->GetBlacklistedJobs(curr);
-            do {
-                // check for candidates
-                if (!ai->candidate_jobs.any() && effective_aff_ids->any()) {
-                    // there is an affinity association
-                    // NB: locks m_AffinityIdxLock, thereby creating
-                    // m_AffinityMapLock < m_AffinityIdxLock locking order
-                    GetJobsWithAffinity(*effective_aff_ids, &ai->candidate_jobs);
-                    if (!ai->candidate_jobs.any()) // no candidates
-                        break;
-                    status_tracker.PendingIntersect(&ai->candidate_jobs);
-                    ai->candidate_jobs -= blacklisted_jobs;
-                    ai->candidate_jobs.count(); // speed up any()
-                    if (!ai->candidate_jobs.any())
-                        break;
-                    ai->candidate_jobs.optimize(0, TNSBitVector::opt_free_0);
-                }
-                if (!ai->candidate_jobs.any())
+        blacklisted_jobs = na.GetBlacklistedJobs(curr);
+        do {
+            // check for candidates
+            if (!na.HasCandidates() && effective_aff_ids->any()) {
+                // there is an affinity association
+                // NB: locks m_AffinityIdxLock, thereby creating
+                // m_AffinityMapLock < m_AffinityIdxLock locking order
+                GetJobsWithAffinity(*effective_aff_ids, na.GetCandidates());
+                if (!na.HasCandidates()) // no candidates
                     break;
-                bool pending_jobs_avail =
-                    status_tracker.GetPendingJobFromSet(
-                        &ai->candidate_jobs, &job_id);
-                
-                if (!job_id && !pending_jobs_avail) return 0;
-            } while (0);
-            if (!job_id && is_specific_aff) return 0;
-        }
+                status_tracker.PendingIntersect(na.GetCandidates());
+                *na.GetCandidates() -= blacklisted_jobs;
+                na.GetCandidates()->count(); // speed up any()
+                if (!na.HasCandidates())
+                    break;
+                na.GetCandidates()->optimize(0, TNSBitVector::opt_free_0);
+            }
+            if (!na.HasCandidates())
+                break;
+            bool pending_jobs_avail =
+                status_tracker.GetPendingJobFromSet(
+                    na.GetCandidates(), &job_id);
+            
+            if (!job_id && !pending_jobs_avail) return 0;
+        } while (0);
+        if (!job_id && is_specific_aff) return 0;
     }}
 
     // No affinity association or there are no more jobs with
@@ -1174,10 +1154,7 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
     // try to find a vacant(not taken by any other worker node) affinity id
     if (false && !job_id) { // DEBUG <- this is the most expensive affinity op, disable it for now
         TNSBitVector assigned_aff;
-        {{
-            CFastMutexGuard aff_guard(m_AffinityMapLock);
-            m_AffinityMap.GetAllAssignedAffinity(assigned_aff);
-        }}
+        GetAllAssignedAffinities(curr, assigned_aff);
 
         if (assigned_aff.any()) {
             // get all jobs belonging to other (already assigned) affinities,
@@ -1249,19 +1226,17 @@ string SLockedQueue::GetAffinityList()
         // what are the nodes executing this affinity
     }
     }}
-    list<TWorkerNodeRef> nodes;
-    m_WorkerNodeList.GetNodes(now, nodes);
+
     {{
-        CFastMutexGuard aff_guard(m_AffinityMapLock);
+        CQueueWorkerNodeListGuard wnl(m_WorkerNodeList);
+        list<TWorkerNodeRef> nodes;
+        wnl.GetNodes(now, nodes);
         NON_CONST_ITERATE(list<TWorkerNodeRef>, node_it, nodes) {
-            CWorkerNodeAffinity::SAffinityInfo* ai =
-                m_AffinityMap.GetAffinity(*node_it);
-            if (ai) {
-                TNSBitVector::enumerator en(ai->aff_ids.first());
-                for (; en.valid(); ++en) {
-                    unsigned aff_id = *en;
-                    affinities[aff_id].nodes.push_back(*node_it);
-                }
+            TNSBitVector::enumerator
+                en(wnl.GetNodeAffinities(now, *node_it).first());
+            for (; en.valid(); ++en) {
+                unsigned aff_id = *en;
+                affinities[aff_id].nodes.push_back(*node_it);
             }
         }
     }}
@@ -1406,7 +1381,6 @@ void SLockedQueue::ClearWorkerNode(CWorkerNode* worker_node,
     TJobList jobs;
     m_WorkerNodeList.ClearNode(worker_node, jobs);
     FailJobs(jobs, worker_node, "Node closed, " + reason);
-    ClearAffinity(worker_node);
 }
 
 
@@ -1415,10 +1389,8 @@ void SLockedQueue::ClearWorkerNode(const string& node_id, const string& reason)
     TJobList jobs;
     TWorkerNodeRef worker_node = m_WorkerNodeList.ClearNode(node_id, jobs);
 
-    if (worker_node) {
+    if (worker_node)
         FailJobs(jobs, worker_node, "Node closed, " + reason);
-        ClearAffinity(worker_node);
-    }
 }
 
 void SLockedQueue::FailJobs(
@@ -1444,8 +1416,11 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
         m_WorkerNodeList.GetNotifyList(unconditional, curr,
                                        notify_timeout, notify_list)) {
 
-        const char* msg = q_notif.c_str();
-        size_t msg_len = q_notif.length()+1;
+#define JSQ_PREFIX "NCBI_JSQ_"
+        char msg[256];
+        strcpy(msg, JSQ_PREFIX);
+        strncat(msg, m_QueueName.c_str(), sizeof(msg) - sizeof(JSQ_PREFIX) - 1);
+        size_t msg_len = sizeof(JSQ_PREFIX) + m_QueueName.length();
 
         unsigned i = 0;
         ITERATE(list<TWorkerNodeHostPort>, it, notify_list) {
@@ -1518,10 +1493,10 @@ void SLockedQueue::RemoveJobFromWorkerNode(const CJob&            job,
 
 // Affinity
 
-void SLockedQueue::ClearAffinity(CWorkerNode* worker_node)
+void SLockedQueue::GetAllAssignedAffinities(time_t t, TNSBitVector& aff_ids)
 {
-    CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.ClearAffinity(worker_node);
+    CQueueWorkerNodeListGuard wnl(m_WorkerNodeList);
+    wnl.GetAffinities(t, aff_ids);
 }
 
 
@@ -1529,8 +1504,8 @@ void SLockedQueue::AddAffinity(CWorkerNode*  worker_node,
                                unsigned      aff_id,
                                time_t        exp_time)
 {
-    CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.AddAffinity(worker_node, aff_id, exp_time);
+    CWorkerNodeAffinityGuard na(*worker_node);
+    na.AddAffinity(aff_id,exp_time);
 }
 
 
@@ -1538,8 +1513,8 @@ void SLockedQueue::BlacklistJob(CWorkerNode*  worker_node,
                                 unsigned      job_id,
                                 time_t        exp_time)
 {
-    CFastMutexGuard guard(m_AffinityMapLock);
-    m_AffinityMap.BlacklistJob(worker_node, job_id, exp_time);
+    CWorkerNodeAffinityGuard na(*worker_node);
+    na.BlacklistJob(job_id, exp_time);
 }
 
 

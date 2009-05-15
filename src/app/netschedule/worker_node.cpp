@@ -41,6 +41,51 @@
 
 BEGIN_NCBI_SCOPE
 
+
+///////////////////////////////////////////////////////////////////////
+// SAffinityInfo
+
+const TNSBitVector& 
+SAffinityInfo::GetBlacklistedJobs(time_t t)
+{
+    if (! blacklisted_expirations.empty()  &&  t >= min_expire_time) {
+        TExpirations new_blacklisted_expirations;
+        bool expired = false;
+        bool inited = false;
+        ITERATE(TExpirations, it, blacklisted_expirations) {
+            time_t exp_time = it->first;
+            _ASSERT(exp_time);
+            if (! inited  ||  exp_time < min_expire_time) {
+                min_expire_time = exp_time;
+                inited = true;
+            }
+            if (exp_time <= t) {
+                expired = true;
+                blacklisted_jobs.set(it->second, false);
+            } else {
+                new_blacklisted_expirations.push_back(*it);
+            }
+        }
+        if (expired)
+            blacklisted_expirations = new_blacklisted_expirations;
+    }
+    return blacklisted_jobs;
+}
+
+
+void SAffinityInfo::BlacklistJob(unsigned job_id, time_t exp_time)
+{
+    bool was_empty = !blacklisted_jobs.any();
+    blacklisted_jobs.set(job_id);
+    if (exp_time) {
+        blacklisted_expirations.push_back(
+            pair<time_t, unsigned>(exp_time, job_id));
+        if (was_empty || exp_time < min_expire_time)
+            min_expire_time = exp_time;
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////
 // CWorkerNode
 
@@ -121,6 +166,79 @@ CWorkerNode_Real::~CWorkerNode_Real()
 {
     if (m_WorkerNodeList != NULL)
         m_WorkerNodeList->UnregisterNode(this);
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// CWorkerNodeAffinityGuard
+
+CWorkerNodeAffinityGuard::CWorkerNodeAffinityGuard(CWorkerNode& wn)
+    : m_WorkerNode(wn)
+{
+    // FIXME: It is very unfortunate that there can be a CWorkerNode
+    // not bound to CWorkerNodeList. May be it is easier to remove
+    // node from the list rather than insert it only upon identification.
+    if (!m_WorkerNode.m_WorkerNodeList)
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Attempt to lock unidentified node");
+    m_WorkerNode.m_WorkerNodeList->m_Lock.ReadLock();
+    m_WorkerNode.m_Lock.Lock();
+}
+
+
+CWorkerNodeAffinityGuard::~CWorkerNodeAffinityGuard()
+{
+    m_WorkerNode.m_WorkerNodeList->m_Lock.Unlock();
+    m_WorkerNode.m_Lock.Unlock();
+}
+
+
+bool CWorkerNodeAffinityGuard::HasCandidates()
+{
+    return m_WorkerNode.m_AffinityInfo.candidate_jobs.any();
+}
+
+
+TNSBitVector* CWorkerNodeAffinityGuard::GetCandidates()
+{
+    return &m_WorkerNode.m_AffinityInfo.candidate_jobs;
+}
+
+
+void CWorkerNodeAffinityGuard::CleanCandidates(const TNSBitVector& aff_ids)
+{
+    SAffinityInfo& ai = m_WorkerNode.m_AffinityInfo;
+
+    // Filter out affinities not in requested list, and if
+    // something was actually filtered drop cached candidate_jobs
+    unsigned old_count = ai.aff_ids.count();
+    ai.aff_ids &= aff_ids;
+    if (old_count != ai.aff_ids.count())
+        ai.candidate_jobs.clear();
+}
+
+
+SAffinityInfo* CWorkerNodeAffinityGuard::GetAffinityInfo()
+{
+    return &m_WorkerNode.m_AffinityInfo;
+}
+
+
+const TNSBitVector& CWorkerNodeAffinityGuard::GetBlacklistedJobs(time_t t)
+{
+    return m_WorkerNode.m_AffinityInfo.GetBlacklistedJobs(t);
+}
+
+
+void CWorkerNodeAffinityGuard::AddAffinity(unsigned aff_id, time_t exp_time)
+{
+    m_WorkerNode.m_AffinityInfo.aff_ids.set(aff_id);
+}
+
+
+void CWorkerNodeAffinityGuard::BlacklistJob(unsigned job_id, time_t exp_time)
+{
+    m_WorkerNode.m_AffinityInfo.BlacklistJob(job_id, exp_time);
 }
 
 
@@ -372,33 +490,34 @@ void CQueueWorkerNodeList::SetPort(
 
     unsigned short old_port = worker_node->m_Port;
 
-    if (port > 0 && old_port != port) {
-        worker_node->m_Port = port;
+    if (port == 0 || old_port == port)
+        return;
 
-        std::pair<TWorkerNodeByAddress::iterator, bool> insertion_result =
-            m_WorkerNodeByAddress.insert(worker_node);
+    worker_node->m_Port = port;
 
-        if (insertion_result.second) {
-            if (old_port > 0) {
-                CWorkerNode search_image(worker_node->GetHost(), old_port);
+    std::pair<TWorkerNodeByAddress::iterator, bool> insertion_result =
+        m_WorkerNodeByAddress.insert(worker_node);
 
-                m_WorkerNodeByAddress.erase(&search_image);
+    if (insertion_result.second) {
+        if (old_port > 0) {
+            CWorkerNode search_image(worker_node->GetHost(), old_port);
 
-                LOG_POST(Warning << "Node '" << worker_node->m_Id <<
-                    "' (" << CSocketAPI::gethostbyaddr(worker_node->m_Host) <<
-                    ":" << old_port << ") changed its control "
-                    "port to " << port);
-            }
-        } else {
-            worker_node->m_Port = old_port;
+            m_WorkerNodeByAddress.erase(&search_image);
 
-            string host(CSocketAPI::gethostbyaddr(worker_node->m_Host));
-
-            ERR_POST("Refused to replace registered WN " <<
-                (*insertion_result.first)->m_Id << " [" <<
-                host << ":" << port << "] with WN " << worker_node->m_Id <<
-                " [" << host << ":" << old_port << "] by port assignment");
+            LOG_POST(Warning << "Node '" << worker_node->m_Id <<
+                "' (" << CSocketAPI::gethostbyaddr(worker_node->m_Host) <<
+                ":" << old_port << ") changed its control "
+                "port to " << port);
         }
+    } else {
+        worker_node->m_Port = old_port;
+
+        string host(CSocketAPI::gethostbyaddr(worker_node->m_Host));
+
+        ERR_POST("Refused to replace registered WN " <<
+            (*insertion_result.first)->m_Id << " [" <<
+            host << ":" << port << "] with WN " << worker_node->m_Id <<
+            " [" << host << ":" << old_port << "] by port assignment");
     }
 }
 
@@ -494,6 +613,50 @@ void CQueueWorkerNodeList::MergeWorkerNodes(
 
     m_WorkerNodeRegister.erase(temporary);
     temporary = identified;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+// CQueueWorkerNodeListGuard
+
+CQueueWorkerNodeListGuard::CQueueWorkerNodeListGuard(CQueueWorkerNodeList& wnl)
+    : m_WorkerNodeList(wnl)
+{
+    m_WorkerNodeList.m_Lock.WriteLock();
+}
+
+
+CQueueWorkerNodeListGuard::~CQueueWorkerNodeListGuard()
+{
+    m_WorkerNodeList.m_Lock.Unlock();
+}
+
+
+void CQueueWorkerNodeListGuard::GetNodes(time_t t,
+                                         list<TWorkerNodeRef>& nodes) const
+{
+    ITERATE(TWorkerNodeRegister, it, m_WorkerNodeList.m_WorkerNodeRegister) {
+        CWorkerNode* node = (*it).GetNCPointer();
+        if (node->ValidityTime() > t)
+            nodes.push_back(TWorkerNodeRef(node));
+    }
+}
+
+
+const TNSBitVector&
+CQueueWorkerNodeListGuard::GetNodeAffinities(time_t t, CWorkerNode* wn)
+{
+    return wn->m_AffinityInfo.aff_ids;
+}
+
+
+void CQueueWorkerNodeListGuard::GetAffinities(time_t t, TNSBitVector& aff_ids)
+{
+    ITERATE(TWorkerNodeRegister, it, m_WorkerNodeList.m_WorkerNodeRegister) {
+        CWorkerNode* node = (*it).GetNCPointer();
+        if (node->ValidityTime() > t)
+            aff_ids |= node->m_AffinityInfo.aff_ids;
+    }
 }
 
 

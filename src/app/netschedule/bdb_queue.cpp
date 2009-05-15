@@ -2193,6 +2193,9 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
                 }
 
                 if (pending_job_id) {
+                    // NB Synchronized access to worker_node is required inside,
+                    // and it's under queue lock already. Take out this access
+                    // it is host, port, node_id read.
                     upd_status =
                         x_UpdateDB_GetJobNoLock(worker_node,
                                                 curr, pending_job_id,
@@ -2218,6 +2221,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
                 _ASSERT(0);
             }
 
+            // NB BOTH Remove and Add lock worker node list
             if (done_rec_updated)
                 q->RemoveJobFromWorkerNode(job, eNSCDone);
             if (pending_job_id)
@@ -2281,6 +2285,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
             msg += " (GET) job id=";
             msg += NStr::IntToString(pending_job_id);
             msg += " worker_node=";
+            // NB synchronized access?
             msg += worker_node->GetId();
         }
         MonitorPost(msg);

@@ -1934,7 +1934,6 @@ void CNetScheduleHandler::ProcessReloadConfig()
 void CNetScheduleHandler::x_StatisticsNew(const string& what,
                                           time_t curr)
 {
-    CSocket& socket = GetSocket();
     if (what == "WNODE") {
         CNcbiOstrstream ostr;
         m_Queue->PrintWorkerNodeStat(ostr, curr, eWNF_WithNodeId);

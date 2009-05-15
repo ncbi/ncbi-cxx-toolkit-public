@@ -44,18 +44,31 @@
 #include <list>
 #include <set>
 
+#include <vector>
+
 BEGIN_NCBI_SCOPE
 
 
-// This structure is passed from upper level code. Some functions can modify
-// it by assigning missing parts.
-struct SWorkerNodeInfo
+/// Affinity association information
+struct SAffinityInfo
 {
-    SWorkerNodeInfo() : host(0), port(0) {}
-    string          node_id;
-    string          auth;
-    unsigned        host;
-    unsigned short  port;
+    // These members are unsynchronized and should only be used through
+    // synchronizing accessor - CWorkerNodeAffinityGuard
+    TNSBitVector  aff_ids;          ///< List of affinity tokens
+    TNSBitVector  candidate_jobs;   ///< List of job candidates for this node
+    TNSBitVector  blacklisted_jobs; ///< List of jobs, blacklisted for node
+    // Blacklist expiration handling
+    /// We should not bother revise the list before this time
+    time_t        min_expire_time;
+    typedef vector<pair<time_t, unsigned> > TExpirations;
+    TExpirations blacklisted_expirations;
+
+    SAffinityInfo()
+        : aff_ids(bm::BM_GAP), candidate_jobs(bm::BM_GAP),
+        blacklisted_jobs(bm::BM_GAP)
+    {}
+    const TNSBitVector& GetBlacklistedJobs(time_t t);
+    void BlacklistJob(unsigned job_id, time_t exp_time);
 };
 
 
@@ -98,6 +111,9 @@ enum EWNodeFormat {
 };
 
 class CQueueWorkerNodeList;
+class CQueueWorkerNodeListGuard;
+class CWorkerNodeAffinityGuard;
+
 
 // CWorkerNode keeps information about worker node which is on the other
 // end of network connection. There are two styles of worker node: old style
@@ -131,13 +147,21 @@ public:
 
 protected:
     friend class CQueueWorkerNodeList;
+    friend class CWorkerNodeAffinityGuard;
+    friend class CQueueWorkerNodeListGuard;
 
+    // Locking order for node is ALWAYS m_WorkerNodeList.m_Lock (Read or Write,
+    // depending on purpose) and then m_Lock.
     CQueueWorkerNodeList* m_WorkerNodeList;
+    CFastMutex       m_Lock;
 
     string           m_Id;
     string           m_Auth;
     unsigned         m_Host;
     unsigned short   m_Port;
+
+    // Interim, for compatibility only
+    SAffinityInfo    m_AffinityInfo;
 
     TJobInfoById     m_JobInfoById;
 
@@ -196,6 +220,32 @@ struct SCompareNodeId
 };
 
 typedef set<CWorkerNode*, SCompareNodeId> TWorkerNodeById;
+
+
+// Synchronizing accessor to WorkerNode methods. Through using both
+// WorkerNodeList and WorkerNode locks it provides reliable access
+// with low lock pressure.
+class CWorkerNodeAffinityGuard
+{
+public:
+    CWorkerNodeAffinityGuard(CWorkerNode& wn);
+    ~CWorkerNodeAffinityGuard();
+    bool HasCandidates();
+    // TEMP
+    TNSBitVector* GetCandidates();
+    // Mask worker node affinities to aff_ids and if candidate vector
+    // contains jobs, not belonging to the result, flush it.
+    void CleanCandidates(const TNSBitVector& aff_ids);
+    // TEMP
+    SAffinityInfo* GetAffinityInfo();
+    const TNSBitVector& GetBlacklistedJobs(time_t t);
+    void AddAffinity(unsigned aff_id, time_t exp_time);
+    void BlacklistJob(unsigned job_id, time_t exp_time);
+private:
+    CWorkerNode& m_WorkerNode;
+};
+
+
 
 
 // According to log system requirements, completion codes should follow
@@ -269,6 +319,8 @@ public:
     ~CQueueWorkerNodeList();
 
 private:
+    friend class CWorkerNodeAffinityGuard;
+    friend class CQueueWorkerNodeListGuard;
     // Move all jobs assigned to the specified worker node to the 'jobs' list.
     void DisplaceWorkerNodeJobs(CWorkerNode* worker_node, TJobList& jobs);
     void MergeWorkerNodes(TWorkerNodeRef& temporary, CWorkerNode* identified);
@@ -288,6 +340,21 @@ private:
     string          m_HostName;
     time_t          m_StartTime;
     mutable CRWLock m_Lock;
+};
+
+
+class CQueueWorkerNodeListGuard
+{
+public:
+    CQueueWorkerNodeListGuard(CQueueWorkerNodeList& wnl);
+    ~CQueueWorkerNodeListGuard();
+    void GetNodes(time_t t, list<TWorkerNodeRef>& nodes) const;
+    // Get affinities for the node 'wn'
+    const TNSBitVector& GetNodeAffinities(time_t t, CWorkerNode* wn);
+    // Get all assigned affinities for the list ORed into 'aff_ids'
+    void GetAffinities(time_t t, TNSBitVector& aff_ids);
+private:
+    CQueueWorkerNodeList& m_WorkerNodeList;
 };
 
 END_NCBI_SCOPE
