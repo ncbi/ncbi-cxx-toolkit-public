@@ -76,7 +76,7 @@ SModelData::SModelData(const CGeneModel& m, const CEResidueVec& contig_seq) : mo
 
 class CAnnotationASN1::CImplementationData {
 public:
-    CImplementationData(const string& contig_name, const CResidueVec& seq, const IEvidence& evdnc);
+    CImplementationData(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc);
 
     void AddModel(const CGeneModel& model);
     CRef<CSeq_entry> main_seq_entry;
@@ -95,7 +95,9 @@ private:
     CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand) const;
     CRef<CSeq_loc> create_packed_int_seqloc(const CGeneModel& model, TSignedSeqRange limits = TSignedSeqRange::GetWhole());
     void DumpEvidence(SModelData& md);
+    void DumpUnusedChains();
 
+    string contig_name;
     CRef<CSeq_id> contig_sid;
     const CResidueVec& contig_seq;
     CDoubleStrandSeq  contig_ds_seq;
@@ -107,12 +109,15 @@ private:
 
     typedef map<int,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;
-    const IEvidence& evidence;
+    IEvidence& evidence;
+
+    friend class CAnnotationASN1;
 };
 
-CAnnotationASN1::CImplementationData::CImplementationData(const string& contig_name, const CResidueVec& seq, const IEvidence& evdnc) :
+CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc) :
     main_seq_entry(new CSeq_entry),
-    contig_sid(CreateSeqid(contig_name)), contig_seq(seq),
+    contig_name(a_contig_name),
+    contig_sid(CreateSeqid(a_contig_name)), contig_seq(seq),
     evidence(evdnc)
 {
     Convert(contig_seq, contig_ds_seq);
@@ -134,7 +139,7 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& contig_n
     seq_annot->SetTitle("Model Alignments");
 }
 
-CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, const IEvidence& evdnc) :
+CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc) :
     m_data(new CImplementationData(contig_name, seq, evdnc))
 {
 }
@@ -145,6 +150,7 @@ CAnnotationASN1::~CAnnotationASN1()
 
 CRef<CSeq_entry> CAnnotationASN1::GetASN1() const
 {
+    m_data->DumpUnusedChains();
     return m_data->main_seq_entry;
 }
 
@@ -395,7 +401,7 @@ CRef<CSeq_loc> CAnnotationASN1::CImplementationData::create_packed_int_seqloc(co
     return seq_loc->Merge(CSeq_loc::fSort, NULL);
 }
 
-void ExpandSupport(const CSupportInfoSet& src, CSupportInfoSet& dst, const IEvidence& evidence)
+void ExpandSupport(const CSupportInfoSet& src, CSupportInfoSet& dst, IEvidence& evidence)
 {
     ITERATE(CSupportInfoSet, s, src) {
         dst.insert(*s);
@@ -411,6 +417,7 @@ void ExpandSupport(const CSupportInfoSet& src, CSupportInfoSet& dst, const IEvid
 void CAnnotationASN1::CImplementationData::DumpEvidence(SModelData& md)
 {
     const CGeneModel& model = md.model;
+    evidence.GetModel(model.ID()); // complete chains might not get marked as used otherwise
 
     if (model.Support().empty())
         return;
@@ -423,14 +430,48 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(SModelData& md)
     
     ITERATE(CSupportInfoSet, s, model.Support()) {
         int id = s->GetId();
+        CRef<CSeq_align> a = evidence.GetSeq_align(id);
+        if (a.NotEmpty()) {
+            aligns->push_back(a);
+            continue;
+        }
+
         const CAlignModel* m = evidence.GetModel(id);
+        if (m == NULL)
+            continue;
+
         SModelData smd(*m, contig_ds_seq[ePlus]);
-        aligns->push_back(model2spliced_seq_align(smd));
 
         if (m->Type()&CGeneModel::eChain) {
             CreateModelProducts(smd);
             DumpEvidence(smd);
+        } else {
+            smd.mrna_sid.Reset( FindBestChoice(m->GetTargetIds(), CSeq_id::Score) ); 
         }
+        aligns->push_back(model2spliced_seq_align(smd));
+    }
+}
+
+void CAnnotationASN1::CImplementationData::DumpUnusedChains()
+{
+    CRef<CSeq_annot> seq_annot(new CSeq_annot);
+    main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
+    CSeq_annot::C_Data::TAlign* aligns = &seq_annot->SetData().SetAlign();
+    seq_annot->AddName("Unused chains");
+    seq_annot->SetTitle("Unused chains");
+
+    auto_ptr<IEvidence::iterator> it( evidence.GetUnusedModels(contig_name) );
+    const CAlignModel* m;
+    while ((m = it->GetNext()) != NULL) {
+        if ((m->Type()&CAlignModel::eChain) == 0)
+            continue;
+        
+        SModelData smd(*m, contig_ds_seq[ePlus]);
+
+        aligns->push_back(model2spliced_seq_align(smd));
+
+        CreateModelProducts(smd);
+        DumpEvidence(smd);
     }
 }
 

@@ -42,14 +42,23 @@ BEGIN_SCOPE(gnomon)
 class IEvidence
 {
 public:
-    virtual const CAlignModel* GetModel(int id) const = 0;
-protected:
     virtual ~IEvidence() {};
+    virtual const CAlignModel* GetModel(int id) = 0;
+    virtual CRef<objects::CSeq_align> GetSeq_align(int id) const = 0;
+
+    class iterator {
+    public:
+        virtual ~iterator() {}
+        virtual const CAlignModel* GetNext() =0;
+    };
+    // creates iterator over models that have not been looked up with GetModel
+    // caller have to delete the iterator after use
+    virtual iterator* GetUnusedModels(const string& contig_name) const =0;
 };
 
 class CAnnotationASN1 {
 public:
-    CAnnotationASN1(const string& contig_name, const CResidueVec& seq, const IEvidence& evidence);
+    CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evidence);
     ~CAnnotationASN1();
 
     void AddModel(const CGeneModel& model);

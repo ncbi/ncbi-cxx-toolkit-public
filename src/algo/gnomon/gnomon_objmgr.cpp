@@ -83,16 +83,19 @@ int GetCompartmentNum(const CSeq_align& sa)
 }
 }
 
-void debug() {
+void debug()
+{
 }
 
 
 CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     CGeneModel(seq_align.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus,
-               GetCompartmentNum(seq_align),
-               seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA) {
-   
+               seq_align.GetId().back()->GetId(),
+               seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA)
+{
+#ifdef _DEBUG   
     debug();
+#endif
 
     const CSpliced_seg& sps = seq_align.GetSegs().GetSpliced();
     if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) 
@@ -105,11 +108,25 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         product_idref->Assign( sps.GetProduct_id() );
         product_idlist.push_back(product_idref);
 
-        if (ID() != 0) {
-            product_idref.Reset(new CSeq_id(CSeq_id::e_Local, ID())); // compartment id
+        int id  = GetCompartmentNum(seq_align);
+        if (id != 0) {
+            product_idref.Reset(new CSeq_id(CSeq_id::e_Local, id));
             product_idlist.push_back(product_idref);
         }
 
+        // all seq-align.id except the last, which we used as model's id
+        CSeq_align::TId::const_iterator it = seq_align.GetId().begin();
+        for (size_t i = 0; i < seq_align.GetId().size()-1; ++i, ++it) {
+            const CObject_id& id = **it;
+            if (id.IsId()) {
+                product_idref.Reset(new CSeq_id(CSeq_id::e_Local, id.GetId()));
+            } else if (id.IsStr()) {
+                product_idref.Reset(new CSeq_id(id.GetStr()));
+            } else {
+                continue;
+            }
+            product_idlist.push_back(product_idref);
+        }
         SetTargetIds(product_idlist);
     }
 
