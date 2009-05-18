@@ -93,7 +93,9 @@ public:
     const CSeq_annot_Handle& GetAnnot(void) const;
 
     /// Get current seq-feat
-    CConstRef<CSeq_feat> GetSeq_feat(void) const;
+    CConstRef<CSeq_feat> GetPlainSeq_feat(void) const;
+    CConstRef<CSeq_feat> GetOriginalSeq_feat(void) const;
+    virtual CConstRef<CSeq_feat> GetSeq_feat(void) const;
 
     /// Check if this is plain feature
     bool IsPlainFeat(void) const;
@@ -107,22 +109,22 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     /// Get range for current seq-feat
-    TRange GetRange(void) const;
+    virtual TRange GetRange(void) const;
 
     // Mappings for CSeq_feat methods
     bool IsSetId(void) const;
     const CFeat_id& GetId(void) const;
     bool IsSetData(void) const;
     const CSeqFeatData& GetData(void) const;
-    bool IsSetPartial(void) const;
-    bool GetPartial(void) const;
+    virtual bool IsSetPartial(void) const;
+    virtual bool GetPartial(void) const;
     bool IsSetExcept(void) const;
     bool GetExcept(void) const;
     bool IsSetComment(void) const;
     const string& GetComment(void) const;
     bool IsSetProduct(void) const;
-    const CSeq_loc& GetProduct(void) const;
-    const CSeq_loc& GetLocation(void) const;
+    virtual const CSeq_loc& GetProduct(void) const;
+    virtual const CSeq_loc& GetLocation(void) const;
     bool IsSetQual(void) const;
     const CSeq_feat::TQual& GetQual(void) const;
     bool IsSetTitle(void) const;
@@ -355,21 +357,7 @@ const CFeat_id& CSeq_feat_Handle::GetId(void) const
 inline
 const CSeqFeatData& CSeq_feat_Handle::GetData(void) const
 {
-    return GetSeq_feat()->GetData();
-}
-
-
-inline
-bool CSeq_feat_Handle::IsSetPartial(void) const
-{
-    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetPartial();
-}
-
-
-inline
-bool CSeq_feat_Handle::GetPartial(void) const
-{
-    return IsSetPartial() && x_GetPlainSeq_feat().GetPartial();
+    return x_GetPlainSeq_feat().GetData();
 }
 
 
@@ -410,20 +398,6 @@ bool CSeq_feat_Handle::IsSetProduct(void) const
 
 
 inline
-const CSeq_loc& CSeq_feat_Handle::GetProduct(void) const
-{
-    return x_GetPlainSeq_feat().GetProduct();
-}
-
-
-inline
-const CSeq_loc& CSeq_feat_Handle::GetLocation(void) const
-{
-    return GetSeq_feat()->GetLocation();
-}
-
-
-inline
 bool CSeq_feat_Handle::IsSetQual(void) const
 {
     return IsTableSNP() || (IsPlainFeat() && x_GetPlainSeq_feat().IsSetQual());
@@ -433,7 +407,7 @@ bool CSeq_feat_Handle::IsSetQual(void) const
 inline
 const CSeq_feat::TQual& CSeq_feat_Handle::GetQual(void) const
 {
-    return GetSeq_feat()->GetQual();
+    return x_GetPlainSeq_feat().GetQual();
 }
 
 
@@ -461,7 +435,7 @@ bool CSeq_feat_Handle::IsSetExt(void) const
 inline
 const CUser_object& CSeq_feat_Handle::GetExt(void) const
 {
-    return GetSeq_feat()->GetExt();
+    return x_GetPlainSeq_feat().GetExt();
 }
 
 
@@ -518,7 +492,7 @@ bool CSeq_feat_Handle::IsSetDbxref(void) const
 inline
 const CSeq_feat::TDbxref& CSeq_feat_Handle::GetDbxref(void) const
 {
-    return GetSeq_feat()->GetDbxref();
+    return x_GetPlainSeq_feat().GetDbxref();
 }
 
 

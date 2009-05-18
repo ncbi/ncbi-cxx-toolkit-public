@@ -44,6 +44,13 @@ CMappedFeat::CMappedFeat(void)
 }
 
 
+CMappedFeat::CMappedFeat(const CSeq_feat_Handle& feat)
+    : CSeq_feat_Handle(feat)
+{
+    m_MappingInfoPtr = &m_MappingInfoObj;
+}
+
+
 CMappedFeat::CMappedFeat(const CMappedFeat& feat)
 {
     *this = feat;
@@ -114,19 +121,75 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 }
 
 
+const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
+{
+    return *m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr);
+}
+
+
 const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
 {
-    CRef<CSeq_loc> mapped_location(&const_cast<CSeq_loc&>(GetLocation()));
-    return *m_MappedFeat.MakeMappedFeature(*this,
-                                           *m_MappingInfoPtr,
-                                           *mapped_location);
+    if ( m_MappingInfoPtr->IsMapped() ) {
+        CRef<CSeq_loc> mapped_location
+            (&const_cast<CSeq_loc&>(GetMappedLocation()));
+        return *m_MappedFeat.MakeMappedFeature(*this,
+                                               *m_MappingInfoPtr,
+                                               *mapped_location);
+    }
+    else {
+        return GetOriginalFeature();
+    }
+}
+
+
+const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
+{
+    if ( !m_OriginalSeq_feat_Lock ) {
+        m_OriginalSeq_feat_Lock = GetOriginalSeq_feat();
+    }
+    return *m_OriginalSeq_feat_Lock;
+}
+
+
+CConstRef<CSeq_feat> CMappedFeat::GetSeq_feat(void) const
+{
+    return ConstRef(&GetMappedFeature());
+}
+
+
+bool CMappedFeat::IsSetPartial(void) const
+{
+    return m_MappingInfoPtr->IsPartial();
+}
+
+
+bool CMappedFeat::GetPartial(void) const
+{
+    return m_MappingInfoPtr->IsPartial();
+}
+
+
+const CSeq_loc& CMappedFeat::GetProduct(void) const
+{
+    return m_MappingInfoPtr->IsMappedProduct()?
+        GetMappedLocation(): GetSeq_feat()->GetProduct();
+}
+
+
+const CSeq_loc& CMappedFeat::GetLocation(void) const
+{
+    return m_MappingInfoPtr->IsMappedLocation()?
+        GetMappedLocation(): GetSeq_feat()->GetLocation();
 }
 
 
 CMappedFeat::TRange CMappedFeat::GetRange(void) const
 {
-    return GetMappedLocation().GetTotalRange();
+    return m_MappingInfoPtr->IsMappedLocation()?
+        m_MappingInfoPtr->GetTotalRange():
+        GetSeq_feat()->GetLocation().GetTotalRange();
 }
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -938,7 +938,7 @@ CCreatedFeat_Ref::MakeOriginalFeature(const CSeq_feat_Handle& feat_h)
         ResetRefsFrom(&orig_feat, 0, &created_point, &created_interval);
     }
     else {
-        ret = feat_h.GetSeq_feat();
+        ret = feat_h.GetPlainSeq_feat();
     }
     return ret;
 }
@@ -1002,7 +1002,7 @@ CCreatedFeat_Ref::MakeMappedFeature(const CSeq_feat_Handle& orig_feat,
         if ( !mapped_feat || !mapped_feat->ReferencedOnlyOnce() ) {
             mapped_feat.Reset(new CSeq_feat);
         }
-        CConstRef<CSeq_feat> orig_seq_feat = orig_feat.GetSeq_feat();
+        CConstRef<CSeq_feat> orig_seq_feat = orig_feat.GetOriginalSeq_feat();
         map_info.InitializeMappedSeq_feat(*orig_seq_feat, *mapped_feat);
 
         if ( map_info.IsMappedLocation() ) {
@@ -1022,7 +1022,7 @@ CCreatedFeat_Ref::MakeMappedFeature(const CSeq_feat_Handle& orig_feat,
         m_CreatedSeq_feat.AtomicResetFrom(mapped_feat);
     }
     else {
-         ret = orig_feat.GetSeq_feat();
+         ret = orig_feat.GetOriginalSeq_feat();
     }
     return ret;
 }

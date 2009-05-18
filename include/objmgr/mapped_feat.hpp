@@ -60,6 +60,7 @@ class NCBI_XOBJMGR_EXPORT CMappedFeat : public CSeq_feat_Handle
 {
 public:
     CMappedFeat(void);
+    CMappedFeat(const CSeq_feat_Handle& feat);
     CMappedFeat(const CMappedFeat& feat);
     CMappedFeat& operator=(const CMappedFeat& feat);
     ~CMappedFeat(void);
@@ -79,34 +80,19 @@ public:
     /// WARNING! The function is rather slow and should be used with care.
     const CSeq_feat& GetMappedFeature(void) const;
 
-    bool IsSetPartial(void) const
-        { return m_MappingInfoPtr->IsPartial(); }
-    bool GetPartial(void) const
-        { return m_MappingInfoPtr->IsPartial(); }
+    bool IsSetPartial(void) const;
+    bool GetPartial(void) const;
 
-    const CSeq_loc& GetProduct(void) const
-        {
-            return m_MappingInfoPtr->IsMappedProduct()?
-                GetMappedLocation(): CSeq_feat_Handle::GetProduct();
-        }
-    const CSeq_loc& GetLocation(void) const
-        {
-            return m_MappingInfoPtr->IsMappedLocation()?
-                GetMappedLocation(): CSeq_feat_Handle::GetLocation();
-        }
-    CRange<TSeqPos> GetTotalRange(void) const
-        {
-            return m_MappingInfoPtr->IsMappedLocation()?
-                m_MappingInfoPtr->GetTotalRange():
-                CSeq_feat_Handle::GetLocation().GetTotalRange();
-        }
+    const CSeq_loc& GetProduct(void) const;
+    const CSeq_loc& GetLocation(void) const;
 
     /// Get current seq-feat
-    CConstRef<CSeq_feat> GetSeq_feat(void) const
-        { return ConstRef(&GetMappedFeature()); }
+    CConstRef<CSeq_feat> GetSeq_feat(void) const;
 
-    /// Get range for current seq-feat
+    /// Get range for mapped seq-feat's location
     TRange GetRange(void) const;
+    TRange GetTotalRange(void) const
+        { return GetRange(); }
 
 private:
     friend class CFeat_CI;
@@ -132,23 +118,6 @@ private:
     // Original feature is not locked by handle, lock here.
     mutable CConstRef<CSeq_feat> m_OriginalSeq_feat_Lock;
 };
-
-
-inline
-const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
-{
-    if ( !m_OriginalSeq_feat_Lock ) {
-        m_OriginalSeq_feat_Lock = CSeq_feat_Handle::GetSeq_feat();
-    }
-    return *m_OriginalSeq_feat_Lock;
-}
-
-
-inline
-const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
-{
-    return *m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr);
-}
 
 
 /* @} */

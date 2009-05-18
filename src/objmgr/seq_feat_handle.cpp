@@ -173,7 +173,13 @@ const CSeq_feat& CSeq_feat_Handle::x_GetPlainSeq_feat(void) const
 }
 
 
-CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
+CConstRef<CSeq_feat> CSeq_feat_Handle::GetPlainSeq_feat(void) const
+{
+    return ConstRef(&x_GetPlainSeq_feat());
+}
+
+
+CConstRef<CSeq_feat> CSeq_feat_Handle::GetOriginalSeq_feat(void) const
 {
     if ( IsPlainFeat() ) {
         return ConstRef(&x_GetPlainSeq_feat());
@@ -181,6 +187,36 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
     else {
         return m_CreatedFeat->MakeOriginalFeature(*this);
     }
+}
+
+
+CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
+{
+    return GetOriginalSeq_feat();
+}
+
+
+bool CSeq_feat_Handle::IsSetPartial(void) const
+{
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetPartial();
+}
+
+
+bool CSeq_feat_Handle::GetPartial(void) const
+{
+    return IsSetPartial() && x_GetPlainSeq_feat().GetPartial();
+}
+
+
+const CSeq_loc& CSeq_feat_Handle::GetProduct(void) const
+{
+    return x_GetPlainSeq_feat().GetProduct();
+}
+
+
+const CSeq_loc& CSeq_feat_Handle::GetLocation(void) const
+{
+    return GetSeq_feat()->GetLocation();
 }
 
 
