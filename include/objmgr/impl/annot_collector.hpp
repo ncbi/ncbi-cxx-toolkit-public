@@ -176,7 +176,8 @@ public:
                      const SSNP_Info& snp_info,
                      CSeq_loc_Conversion* cvt);
 
-    bool IsRegular(void) const;
+    bool HasAnnotObject_Info(void) const;
+    bool IsPlainFeat(void) const;
     bool IsSNPFeat(void) const;
     bool IsTableFeat(void) const;
 
@@ -673,9 +674,17 @@ CAnnotObject_Ref::TAnnotIndex CAnnotObject_Ref::GetAnnotIndex(void) const
 
 
 inline
-bool CAnnotObject_Ref::IsRegular(void) const
+bool CAnnotObject_Ref::HasAnnotObject_Info(void) const
 {
     return (m_AnnotIndex & kSNPTableBit) == 0;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsPlainFeat(void) const
+{
+    return (m_AnnotIndex & kSNPTableBit) == 0 &&
+        GetAnnotObject_Info().IsRegular();
 }
 
 
@@ -683,6 +692,14 @@ inline
 bool CAnnotObject_Ref::IsSNPFeat(void) const
 {
     return (m_AnnotIndex & kSNPTableBit) != 0;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsTableFeat(void) const
+{
+    return (m_AnnotIndex & kSNPTableBit) == 0 &&
+        !GetAnnotObject_Info().IsRegular();
 }
 
 
