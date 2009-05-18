@@ -121,9 +121,11 @@ void WSDLParser::ParseTypes(CDataTypeModule& module)
 {
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
-        BeginScope();
-        XSDParser::BuildDocumentTree(module);
-        EndScope();
+        while (DTDParser::GetNextToken() == K_SCHEMA) {
+            BeginScope();
+            XSDParser::BuildDocumentTree(module);
+            EndScope();
+        }
         tok = GetNextToken();
         if (tok != K_ENDOFTAG) {
             ParseError("Unexpected token", "end of tag");

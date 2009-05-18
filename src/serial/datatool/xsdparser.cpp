@@ -630,9 +630,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             break;
         case K_ANY:
             node.SetTypeIfUnknown(DTDElement::eSequence);
-            if (node.GetType() != DTDElement::eSequence) {
-                ParseError("sequence");
-            } else {
+            {
                 string name = CreateTmpEmbeddedName(node.GetName(), emb);
                 DTDElement& elem = m_MapElement[name];
                 elem.SetName(name);
@@ -898,11 +896,13 @@ void XSDParser::ParseAttributeGroupRef(DTDElement& node)
 void XSDParser::ParseAny(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
+#if 0
     if (GetAttribute("processContents")) {
         if (!IsValue("lax") && !IsValue("skip")) {
             ParseError("lax or skip");
         }
     }
+#endif
     node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
     node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
     if (GetAttribute("namespace")) {
@@ -1147,6 +1147,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
     string closing;
     TToken tok;
     CComments comments;
+    bool doctag_open = false;
     for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
         if (tok == T_EOF) {
             break;
@@ -1163,15 +1164,20 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
             }
         }
         if (tok == K_DOCUMENTATION) {
-            data += "<" + m_Raw;
+            if (!doctag_open) {
+                data += "<" + m_Raw;
+            }
             m_Comments = &comments;
             ParseDocumentation();
-            if (m_Raw == "/>") {
-                data += "/>";
-                closing.erase();
-            } else {
-                data += ">";
-                closing = m_Raw;
+            if (!doctag_open) {
+                if (m_Raw == "/>") {
+                    data += "/>";
+                    closing.erase();
+                } else {
+                    data += ">";
+                    closing = m_Raw;
+                    doctag_open = true;
+                }
             }
         } else if (tok == K_APPINFO) {
             ParseAppInfo();
@@ -1256,6 +1262,7 @@ void XSDParser::ProcessNamedTypes(void)
                 list<DTDAttribute>::iterator a;
                 for (a = atts.begin(); a != atts.end(); ++a) {
                     if (a->GetType() == DTDAttribute::eUnknown &&
+                        a->GetTypeName().empty() &&
                         m_MapAttribute.find(a->GetName()) != m_MapAttribute.end()) {
                         found = true;
                         a->Merge(m_MapAttribute[a->GetName()]);
