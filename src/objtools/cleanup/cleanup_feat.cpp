@@ -424,6 +424,18 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
         }
         break;
     case CSeqFeatData::e_Rna:
+        if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
+            if (feat.IsSetLocation()                 
+                && feat.GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon()
+                && feat.GetData().GetRna().GetExt().GetTRNA().GetAnticodon().IsInt()) {                
+                ENa_strand loc_strand = feat.GetLocation().GetStrand();
+                ENa_strand ac_strand = feat.GetData().GetRna().GetExt().GetTRNA().GetAnticodon().GetStrand();
+                if (loc_strand == eNa_strand_minus && ac_strand != eNa_strand_minus) {
+                    feat.SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetStrand(eNa_strand_minus);
+                    ChangeMade (CCleanupChange::eChangeAnticodon);
+                }
+            }
+        }
         break;
     case CSeqFeatData::e_Pub:
         break;
