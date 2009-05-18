@@ -204,15 +204,6 @@ void CCleanup_imp::BasicCleanup(CPerson_id& pid, bool fix_initials)
 /*****  CName_std   Basic Cleanup  */
 
 
-static const CName_std::TSuffixes& s_GetStandardSuffixes(void)
-{
-    static const string sfxs[] = {"II", "III", "IV", "Jr.", "Sr.", "V", "VI"};
-    DEFINE_STATIC_ARRAY_MAP(CName_std::TSuffixes, suffixes, sfxs);
-
-    return suffixes;
-}
-
-
 void CCleanup_imp::BasicCleanup(CName_std& name, bool fix_initials)
 {
     // before cleanup, get information from initials
@@ -465,7 +456,7 @@ void CCleanup_imp::x_ExtractSuffixFromInitials(CName_std& name)
 
     // look for standard suffixes in intials
     typedef CName_std::TSuffixes TSuffixes;
-    const TSuffixes& suffixes = s_GetStandardSuffixes();
+    const TSuffixes& suffixes = CName_std::GetStandardSuffixes();
     TSuffixes::const_iterator best = suffixes.end();
     ITERATE (TSuffixes, it, suffixes) {
         if (NStr::EndsWith(initials, *it)) {
