@@ -154,7 +154,10 @@ static const string s_old_organelle_prefix[] = {
   "Apicoplast ",
   "Leucoplast ",
   "Proplastid ",
-  kEmptyStr
+  kEmptyStr,
+  "Hydrogenosome ",
+  kEmptyStr,
+  "Chromatophore "
 };
 
 static const string s_organelle_prefix[] = {
@@ -177,9 +180,13 @@ static const string s_organelle_prefix[] = {
   "apicoplast ",
   "leucoplast ",
   "proplastid ",
-  kEmptyStr
+  kEmptyStr,
+  "hydrogenosome ",
+  kEmptyStr,
+  "chromatophore "
 };
-
+static const unsigned int s_organelle_prefix_size
+    = sizeof( s_organelle_prefix ) /sizeof( const string );
 
 void CSourceItem::x_SetSource
 (const CBioSource& bsrc,
@@ -204,8 +211,12 @@ void CSourceItem::x_SetSource
     {{
         CBioSource::TGenome genome = bsrc.CanGetGenome() ? bsrc.GetGenome() 
             : CBioSource::eGenome_unknown;
-        
-        m_Organelle = &(s_organelle_prefix[genome]);
+        if ( genome >= s_organelle_prefix_size ) {
+            m_Organelle = &(kEmptyStr);
+        }
+        else {
+            m_Organelle = &(s_organelle_prefix[genome]);
+        }
         
         // If the organelle prefix is already on the  name, don't add it.
         if ( NStr::StartsWith(*m_Taxname, *m_Organelle, NStr::eNocase) ) {
