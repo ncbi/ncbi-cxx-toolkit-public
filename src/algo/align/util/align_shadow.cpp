@@ -57,14 +57,7 @@ TStrands RetrieveStdStrands(const objects::CSeq_align& seq_align)
     const CSeq_align::TSegs::TStd & std_list (seq_align.GetSegs().GetStd());
     const CStd_seg & stdseg (*(std_list.front()));
     const CStd_seg::TLoc & locs (stdseg.GetLoc());
-
-    TStrands rv (eNa_strand_unknown, eNa_strand_unknown);
-    const CSeq_interval & qinterval (locs[0]->GetInt());
-    const CSeq_interval & sinterval (locs[1]->GetInt());
-
-    rv = TStrands(qinterval.GetStrand(), sinterval.GetStrand());
-
-    return rv;
+    return TStrands(locs[0]->GetStrand(), locs[1]->GetStrand());
 }
 
 

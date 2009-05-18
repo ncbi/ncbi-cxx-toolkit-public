@@ -77,36 +77,36 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     }
     else if (seq_align_segs.IsStd()) {
 
-	/// Std-seg allow different coordinate scales
+        /// Std-seg allow different coordinate scales
         /// such as in prot-nuc or nuc-prot alignments.
         /// We assume that the scale ratio is const for all segments.
 
-	/// Find the coordinate scale ratios
+        /// Find the coordinate scale ratios
 
-	TSeqPos len [2] = {0, 0};
+        TSeqPos len [2] = {0, 0};
         const CSeq_align::TSegs::TStd & stdsegs (seq_align_segs.GetStd());
         if(stdsegs.empty()) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal,
                        "CBlastTabular(): Cannot init off of an empty seq-align.");
         }
 
-	ITERATE(CSeq_align::TSegs::TStd, ii, stdsegs) {
-	    
+        ITERATE(CSeq_align::TSegs::TStd, ii, stdsegs) {
+
             const CStd_seg & seg (**ii);
             const CStd_seg::TLoc & locs (seg.GetLoc());
             if (locs.size() != 2) {
                 NCBI_THROW(CAlgoAlignUtilException, eInternal,
                            "Unexpected std-seg alignment");
             }
-	    
+
             const TSeqPos r0 (locs[0]->GetTotalRange().GetLength());
             const TSeqPos r1 (locs[1]->GetTotalRange().GetLength());
             if(r0 > 0 && r1 > 0) {
                 len[0] += r0;
                 len[1] += r1;
             }
-	}
-        
+        }
+
         size_t scale [2];
         if(len[0] == 3 * len[1]) {
             scale[0] = 3;
@@ -122,14 +122,14 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
         else {
             CNcbiOstrstream ostr;
             ostr << "Unexpected coordinate scale ratio: "
-                 << len[0] << '(' << GetId(0)->GetSeqIdString(true) << ")\t" 
-                 << len[1] << '(' << GetId(1)->GetSeqIdString(true) << ")";
+                << len[0] << '(' << GetId(0)->GetSeqIdString(true) << ")\t" 
+                << len[1] << '(' << GetId(1)->GetSeqIdString(true) << ")";
             const string errmsg = CNcbiOstrstreamToString(ostr);
             NCBI_THROW(CAlgoAlignUtilException, eInternal, errmsg);
         }
 
-	/// Parse the segments to collect basic alignment stats
-	
+        /// Parse the segments to collect basic alignment stats
+
         TSeqPos prev [2]  = { TSeqPos(-1), TSeqPos(-1) };
         ITERATE(CSeq_align::TSegs::TStd, ii, stdsegs) {
 
@@ -172,7 +172,7 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
     else {
         NCBI_THROW(CAlgoAlignUtilException, eInternal, "Unsupported seq-align type");
     }
-    
+
     /// Assign the scores
 
     double matches;
@@ -202,7 +202,7 @@ void CBlastTabular::sx_MineSegment(size_t where, const CStd_seg::TLoc & locs,
     if(row_loc.IsInt()) {
         const CSeq_interval & row_interval (row_loc.GetInt());
         bool disc_seg_found (false);
-        if(row_interval.GetStrand() == eNa_strand_minus) {
+        if(row_loc.GetStrand() == eNa_strand_minus) {
             const TSeqPos row_stop  (row_interval.GetFrom());
             const TSeqPos row_start (row_interval.GetTo());
             if(prev[where] != TSeqPos(-1) && prev[where] != row_start + 1) {
