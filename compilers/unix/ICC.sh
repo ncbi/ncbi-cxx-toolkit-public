@@ -27,7 +27,7 @@ case "$1" in
   8           ) search=/opt/intel/compiler8*/bin                ;;
   8.0         ) search=/opt/intel/compiler80/bin                ;;
   [1-9].*.*   ) search=/opt/intel/cc*/$1/bin                    ;;
-  9 | 10*     ) search=/opt/intel/cc*/$1.*/bin                  ;;
+  9* | 10*    ) search=/opt/intel/cc*/$1.*/bin                  ;;
   [1-9][0-9]* ) search=/opt/intel/Compiler/$1*/*/bin/intel$bits ;;
   *           ) search=                                         ;;
 esac
