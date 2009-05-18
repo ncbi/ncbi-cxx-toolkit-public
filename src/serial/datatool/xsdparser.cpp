@@ -51,15 +51,20 @@ XSDParser::XSDParser(XSDLexer& lexer)
 {
     m_SrcType = eSchema;
     m_ResolveTypes = false;
+    m_EnableNamespaceRedefinition = false;
 }
 
 XSDParser::~XSDParser(void)
 {
 }
 
-void XSDParser::BuildDocumentTree(CDataTypeModule& module)
+void XSDParser::BeginDocumentTree(void)
 {
     Reset();
+}
+
+void XSDParser::BuildDocumentTree(CDataTypeModule& module)
+{
     ParseHeader();
     CopyComments(module.Comments());
 
@@ -87,7 +92,6 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
         case K_ATTPAIR:
             break;
         case K_ENDOFTAG:
-            break;
         case T_EOF:
             ProcessNamedTypes();
             return;
@@ -158,7 +162,8 @@ TToken XSDParser::GetNextToken(void)
         data = data2.substr(first+1, last - first - 1);
         if (tok == K_XMLNS) {
             if (m_PrefixToNamespace.find(m_Attribute) != m_PrefixToNamespace.end()) {
-                if (!m_PrefixToNamespace[m_Attribute].empty() &&
+                if (!m_EnableNamespaceRedefinition &&
+                    !m_PrefixToNamespace[m_Attribute].empty() &&
                     m_PrefixToNamespace[m_Attribute] != data) {
                     ParseError("Unexpected xmlns data", "");
                 }
@@ -286,12 +291,15 @@ void XSDParser::ParseHeader()
             ;
         tok = GetNextToken();
     } else {
-        ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
+        if (typeid(*this) == typeid(XSDParser)) {
+            ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
+        }
     }
 // schema    
     if (tok != K_SCHEMA) {
         ParseError("Unexpected token", "schema");
     }
+    m_EnableNamespaceRedefinition = true;
     for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken()) {
         if (tok == K_ATTPAIR) {
             if (IsAttribute("targetNamespace")) {
@@ -301,6 +309,7 @@ void XSDParser::ParseHeader()
             }
         }
     }
+    m_EnableNamespaceRedefinition = false;
     if (tok != K_CLOSING) {
         ParseError("tag closing");
     }
@@ -590,7 +599,10 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         emb= node.GetContent().size();
         switch (tok) {
         case T_EOF:
-            return;
+            if (m_StackLexer.size() <= 1) {
+                return;
+            }
+            break;
         case K_ENDOFTAG:
             if (eatEOT) {
                 eatEOT= false;
@@ -1293,28 +1305,36 @@ void XSDParser::ProcessNamedTypes(void)
     m_ResolveTypes = false;
 }
 
-void XSDParser::PushEntityLexer(const string& name)
+void XSDParser::BeginScope(void)
 {
-    DTDParser::PushEntityLexer(name);
-
     m_StackPrefixToNamespace.push(m_PrefixToNamespace);
     m_StackNamespaceToPrefix.push(m_NamespaceToPrefix);
     m_StackTargetNamespace.push(m_TargetNamespace);
     m_StackElementFormDefault.push(m_ElementFormDefault);
 }
+void XSDParser::EndScope(void)
+{
+    m_PrefixToNamespace = m_StackPrefixToNamespace.top();
+    m_NamespaceToPrefix = m_StackNamespaceToPrefix.top();
+    m_TargetNamespace = m_StackTargetNamespace.top();
+    m_ElementFormDefault = m_StackElementFormDefault.top();
+
+    m_StackPrefixToNamespace.pop();
+    m_StackNamespaceToPrefix.pop();
+    m_StackTargetNamespace.pop();
+    m_StackElementFormDefault.pop();
+}
+
+void XSDParser::PushEntityLexer(const string& name)
+{
+    DTDParser::PushEntityLexer(name);
+    BeginScope();
+}
 
 bool XSDParser::PopEntityLexer(void)
 {
     if (DTDParser::PopEntityLexer()) {
-        m_PrefixToNamespace = m_StackPrefixToNamespace.top();
-        m_NamespaceToPrefix = m_StackNamespaceToPrefix.top();
-        m_TargetNamespace = m_StackTargetNamespace.top();
-        m_ElementFormDefault = m_StackElementFormDefault.top();
-
-        m_StackPrefixToNamespace.pop();
-        m_StackNamespaceToPrefix.pop();
-        m_StackTargetNamespace.pop();
-        m_StackElementFormDefault.pop();
+        EndScope();
         return true;
     }
     return false;

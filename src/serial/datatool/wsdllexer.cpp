@@ -86,7 +86,7 @@ TToken WSDLLexer::LookupKeyword(void)
         CHECK("definitions", K_DEFINITIONS, 11);
         break;
     }
-    return T_IDENTIFIER;
+    return XSDLexer::LookupKeyword();
 }
 
 END_NCBI_SCOPE

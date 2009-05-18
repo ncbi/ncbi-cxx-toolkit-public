@@ -51,6 +51,7 @@ public:
     virtual ~XSDParser(void);
 
 protected:
+    virtual void BeginDocumentTree(void);
     virtual void BuildDocumentTree(CDataTypeModule& module);
     void Reset(void);
     TToken GetNextToken(void);
@@ -107,6 +108,8 @@ protected:
     void ParseTypeDefinition(DTDEntity& ent);
     void ProcessNamedTypes(void);
 
+    void BeginScope(void);
+    void EndScope(void);
     virtual void PushEntityLexer(const string& name);
     virtual bool PopEntityLexer(void);
     virtual AbstractLexer* CreateEntityLexer(
@@ -140,6 +143,7 @@ private:
     stack<bool> m_StackElementFormDefault;
     set<string> m_EmbeddedNames;
     bool m_ResolveTypes;
+    bool m_EnableNamespaceRedefinition;
 };
 
 END_NCBI_SCOPE

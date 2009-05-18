@@ -77,6 +77,7 @@ public:
 protected:
     AutoPtr<CDataTypeModule> Module(const string& name);
 
+    virtual void BeginDocumentTree(void);
     virtual void BuildDocumentTree(CDataTypeModule& module);
     void SkipConditionalSection(void);
 

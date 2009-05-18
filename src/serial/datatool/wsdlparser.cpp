@@ -57,7 +57,111 @@ WSDLParser::~WSDLParser(void)
 
 void WSDLParser::BuildDocumentTree(CDataTypeModule& module)
 {
-    XSDParser::BuildDocumentTree(module);
+    ParseHeader();
+    CopyComments(module.Comments());
+
+    TToken tok;
+    int emb=0;
+    for (;;) {
+        tok = GetNextToken();
+        switch ( tok ) {
+        case K_TYPES:
+            ParseTypes(module);
+            break;
+        case K_MESSAGE:
+            ParseMessage();
+            break;
+        case K_PORTTYPE:
+            ParsePortType();
+            break;
+        case K_BINDING:
+            ParseBinding();
+            break;
+        case K_SERVICE:
+            ParseService();
+            break;
+        case K_ENDOFTAG:
+        case T_EOF:
+            return;
+        default:
+            ParseError("Invalid keyword", "keyword");
+            return;
+        }
+    }
 }
+
+void WSDLParser::ParseHeader(void)
+{
+// xml header
+    TToken tok = GetNextToken();
+    if (tok == K_XML) {
+        for ( ; tok != K_ENDOFTAG; tok=GetNextToken())
+            ;
+        tok = GetNextToken();
+    } else {
+        ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
+    }
+// schema    
+    if (tok != K_DEFINITIONS) {
+        ParseError("Unexpected token", "definitions");
+    }
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken()) {
+        if (tok == K_ATTPAIR) {
+            if (IsAttribute("targetNamespace")) {
+                m_TargetNamespace = m_Value;
+            }
+        }
+    }
+    if (tok != K_CLOSING) {
+        ParseError("tag closing");
+    }
+}
+
+void WSDLParser::ParseTypes(CDataTypeModule& module)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        BeginScope();
+        XSDParser::BuildDocumentTree(module);
+        EndScope();
+        tok = GetNextToken();
+        if (tok != K_ENDOFTAG) {
+            ParseError("Unexpected token", "end of tag");
+        }
+    }
+}
+
+void WSDLParser::ParseMessage(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParsePortType(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParseBinding(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParseService(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
 
 END_NCBI_SCOPE

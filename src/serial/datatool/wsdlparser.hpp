@@ -52,6 +52,14 @@ public:
 
 protected:
     virtual void BuildDocumentTree(CDataTypeModule& module);
+
+    void ParseHeader(void);
+
+    void ParseTypes(CDataTypeModule& module);
+    void ParseMessage(void);
+    void ParsePortType(void);
+    void ParseBinding(void);
+    void ParseService(void);
 };
 
 END_NCBI_SCOPE

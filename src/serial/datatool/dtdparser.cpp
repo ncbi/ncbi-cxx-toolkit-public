@@ -112,6 +112,7 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 
     try {
         CopyComments(module->Comments());
+        BeginDocumentTree();
         BuildDocumentTree(*module);
         EndCommentBlock();
     }
@@ -129,6 +130,10 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 
     GenerateDataTree(*module);
     return module;
+}
+
+void DTDParser::BeginDocumentTree(void)
+{
 }
 
 void DTDParser::BuildDocumentTree(CDataTypeModule& /*module*/)
@@ -246,8 +251,9 @@ TToken DTDParser::GetNextToken(void)
             if (PopEntityLexer()) {
                 if (Lexer().TokenStarted()) {
                     Consume();
+                    break;
                 }
-                break;
+                return tok;
             } else {
                 if (!m_IdentifierText.empty()) {
                     return T_IDENTIFIER;
