@@ -141,15 +141,6 @@ CWiggleReader::~CWiggleReader()
     delete m_pSet;
 }
 
-//  ----------------------------------------------------------------------------
-bool CWiggleReader::VerifyFormat(
-    CNcbiIstream& is )
-//  ----------------------------------------------------------------------------
-{
-    bool verify = false;
-    return verify;
-}
-
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CWiggleReader::ReadObject(

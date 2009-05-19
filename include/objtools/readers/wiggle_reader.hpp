@@ -102,9 +102,6 @@ public:
     //
     //  class interface:
     //
-    static bool VerifyFormat(
-        CNcbiIstream& );
-
     static void Tokenize(
         const string&,
         const string&,
