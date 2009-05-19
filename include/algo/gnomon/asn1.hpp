@@ -61,7 +61,7 @@ public:
     CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evidence);
     ~CAnnotationASN1();
 
-    void AddModel(const CGeneModel& model);
+    void AddModel(const CAlignModel& model);
     CRef<objects::CSeq_entry> GetASN1() const;
 private:
     class CImplementationData;
