@@ -78,15 +78,6 @@ public:
         CFormatGuess::EFormat,
         const CArgs& );
 
-    static bool VerifyFormat(               // for reference only, should be
-        CNcbiIstream& );                    //  reimplemented in concrete sub-
-                                            //  classes
-
-    static bool VerifyFormat(               // for reference only, should be
-        const char*,                        //  reimplemented in concrete sub-
-        size_t ) { return false; };         //  classes
-                                            
-
     //
     //  Object interface:
     //
