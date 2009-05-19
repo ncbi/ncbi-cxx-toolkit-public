@@ -171,55 +171,6 @@ void CMicroArrayReader::Read(
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::VerifyFormat(
-    CNcbiIstream& is )
-//  ----------------------------------------------------------------------------
-{
-    CT_POS_TYPE orig_pos = is.tellg();
-
-    unsigned char pcBuffer[1024];
-
-    is.read( (char*)pcBuffer, sizeof( pcBuffer ) );
-    size_t uCount = is.gcount();
-    is.clear();  // in case we reached eof
-    CStreamUtils::Stepback( is, (CT_CHAR_TYPE*)pcBuffer, (streamsize)uCount);
-
-    return VerifyFormat( (const char*)pcBuffer, uCount );
-}
-
-//  ----------------------------------------------------------------------------
-bool CMicroArrayReader::VerifyFormat(
-    const char* pcBuffer,
-    size_t uSize )
-//  ----------------------------------------------------------------------------
-{
-    size_t columncount = 15;
-    list<string> lines;
-    if ( ! CReaderBase::SplitLines( pcBuffer, uSize, lines ) ) {
-        //  seemingly not even ASCII ...
-        return false;
-    }
-    if ( ! lines.empty() ) {
-        //  the last line is probably incomplete. We won't even bother with it.
-        lines.pop_back();
-    }
-    for ( list<string>::iterator it = lines.begin(); it != lines.end(); ++it ) {
-        if ( NStr::TruncateSpaces( *it ).empty() ) {
-            continue;
-        }
-        if ( IsMetaInformation( *it ) ) {
-            continue;
-        }        
-        vector<string> columns;
-        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
-        if ( columns.size() != columncount ) {
-            return false;
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CMicroArrayReader::IsMetaInformation(
     const string& line )
 //  ----------------------------------------------------------------------------
