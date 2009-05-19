@@ -126,7 +126,7 @@ int CMySQL_RowResult::GetColumnNum(void) const
 
 
 static CDB_Object* s_GetItem(I_Result::EGetItem policy,
-							 EDB_Type    data_type,
+                             EDB_Type    data_type,
                              CDB_Object* item_buff,
                              EDB_Type    b_type,
                              const char* d_ptr,
@@ -151,9 +151,9 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
         if ( !item_buff ) {
             item_buff = new CDB_Image;
         } else if (policy == I_Result::eAssignLOB) {
-			// Explicitly truncate previous value ...
-			static_cast<CDB_Image*>(item_buff)->Truncate();
-		}
+            // Explicitly truncate previous value ...
+            static_cast<CDB_Image*>(item_buff)->Truncate();
+        }
 
         if ( d_len ) {
             ((CDB_Image*) item_buff)->Append(d_ptr, d_len);
@@ -168,8 +168,8 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
         if ( !item_buff ) {
             item_buff = new CDB_Text;
         } else if (policy == I_Result::eAssignLOB) {
-			// Explicitly truncate previous value ...
-			static_cast<CDB_Text*>(item_buff)->Truncate();
+            // Explicitly truncate previous value ...
+            static_cast<CDB_Text*>(item_buff)->Truncate();
         }
 
         if ( d_len ) {
@@ -181,7 +181,7 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
         return item_buff;
     }
 
-    long   int_val;
+    long   int_val = 0;
     Int8   int8_val;
     double double_val;
 
