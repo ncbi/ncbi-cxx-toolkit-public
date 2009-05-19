@@ -145,7 +145,7 @@ public:
             m_FreeObjects.swap(free_objects);
         }}
 
-        ITERATE(TObjectsList, it, free_objects)
+        ITERATE(typename TObjectsList, it, free_objects)
         {
             m_Factory.DeleteObject(*it);
         }
