@@ -350,6 +350,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Remove SeqID",
     "Add ProtXref",
     "Change Partial",
+    "Change Prot Names",
     // set when any other change is made.
     "Change Other", 
     "Invalid Change Code"

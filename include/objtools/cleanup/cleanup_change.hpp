@@ -127,6 +127,7 @@ public:
         eRemoveSeqId,
         eAddProtXref,
         eChangePartial,
+        eChangeProtNames,
         // set when any other change is made.
         eChangeOther,
         

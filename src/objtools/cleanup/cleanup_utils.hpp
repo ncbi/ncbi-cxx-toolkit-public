@@ -74,6 +74,8 @@ bool ConvertDoubleQuotes(string& str)
 /// truncate spaces and other trailing characters.
 bool CleanString(string& str, bool rm_trailing_period = false);
 
+bool CleanStringList(list< string >& string_list);
+
 /// remove a trailing period, 
 bool RemoveTrailingPeriod(string& str);
 

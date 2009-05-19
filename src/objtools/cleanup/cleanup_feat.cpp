@@ -1113,7 +1113,11 @@ void CCleanup_imp::BasicCleanup(CGene_ref& gene_ref)
 void CCleanup_imp::BasicCleanup(CProt_ref& prot_ref)
 {
     CLEAN_STRING_MEMBER(prot_ref, Desc);
-    CLEAN_STRING_LIST_JUNK(prot_ref, Name);
+    if (prot_ref.IsSetName()) {
+        if (CleanStringList (prot_ref.SetName())) {
+            ChangeMade (CCleanupChange::eChangeProtNames);
+        }
+    }
 //    CLEAN_STRING_LIST_JUNK(prot_ref, Ec);
     CLEAN_STRING_LIST(prot_ref, Activity);
     
