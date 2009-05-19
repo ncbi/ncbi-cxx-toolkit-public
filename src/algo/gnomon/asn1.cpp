@@ -879,6 +879,7 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
     CSpliced_seg& spliced_seg = seq_align->SetSegs().SetSpliced();
 
     spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    spliced_seg.SetProduct_length(model.TargetLen());
     spliced_seg.SetProduct_id(*md.mrna_sid);
     spliced_seg.SetGenomic_id(*contig_sid);
     spliced_seg.SetProduct_strand((model.Status() & CGeneModel::eReversed)==0 ? eNa_strand_plus : eNa_strand_minus);
