@@ -39,6 +39,7 @@
 #include <corelib/stream_utils.hpp>
 
 #include <util/static_map.hpp>
+#include <util/line_reader.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
@@ -110,7 +111,7 @@ CMicroArrayReader::~CMicroArrayReader()
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CMicroArrayReader::ReadObject(
-    CNcbiIstream& input,
+    ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
@@ -118,9 +119,9 @@ CMicroArrayReader::ReadObject(
     string line;
     int linecount = 0;
 
-    while ( ! input.eof() ) {
+    while ( ! lr.AtEOF() ) {
         ++linecount;
-        NcbiGetlineEOL( input, line );
+        line = *++lr;
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
@@ -137,7 +138,19 @@ CMicroArrayReader::ReadObject(
             continue;
         }
     }
+    
     return annot;
+}
+    
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CMicroArrayReader::ReadObject(
+    CNcbiIstream& input,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CStreamLineReader lr( input );
+    return ReadObject( lr, pErrorContainer );
 };
                 
 //  ----------------------------------------------------------------------------
