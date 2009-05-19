@@ -80,16 +80,6 @@ public:
         CErrorContainer* );
                 
     //
-    //  class interface:
-    //
-    static bool VerifyFormat(
-        CNcbiIstream& );
-
-    static bool VerifyFormat(
-        const char*,
-        size_t );
-        
-    //
     //  helpers:
     //
 protected:
