@@ -39,6 +39,7 @@
 #include <corelib/stream_utils.hpp>
 
 #include <util/static_map.hpp>
+#include <util/line_reader.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
@@ -152,10 +153,10 @@ bool CWiggleReader::VerifyFormat(
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CWiggleReader::ReadObject(
-    CNcbiIstream& input,
+    ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
-{
+{ 
     m_uLineNumber = 0;
     
     CRef< CSeq_annot > annot( new CSeq_annot );
@@ -164,12 +165,12 @@ CWiggleReader::ReadObject(
     CWiggleRecord record;
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
-    x_ReadLine( input, pending );
-    if ( input.eof() && pending == "" ) {
+    x_ReadLine( lr, pending );
+    if ( lr.AtEOF() && pending.empty() ) {
         // empty file
         return CRef<CSeq_annot >();
     }
-    while ( !input.eof() ) {
+    while ( !lr.AtEOF() ) {
         //
         //  Wrap the parsing of every single line into a try/catch block so
         //  we have the option of continuing with the next line if resulting
@@ -177,22 +178,22 @@ CWiggleReader::ReadObject(
         //
         
         try {
-            x_ParseTrackData( input, pending, record );
+            x_ParseTrackData( pending, record );
         }
         catch( CObjReaderLineException& err ) {
             ProcessError( err, pErrorContainer );
         }
-        x_ReadLine( input, pending );
-        while( ! pending.empty() || ! input.eof() ) {
+        x_ReadLine( lr, pending );
+        while( !pending.empty() || !lr.AtEOF() ) {
         
             try {            
-                x_ParseGraphData( input, pending, record );
+                x_ParseGraphData( lr, pending, record );
                 m_pSet->AddRecord( record );
             }
             catch( CObjReaderLineException& err ) {
                 ProcessError( err, pErrorContainer );
             }
-            x_ReadLine( input, pending );
+            x_ReadLine( lr, pending );
         }
         try {
             m_pSet->MakeGraph( graphset );
@@ -202,6 +203,17 @@ CWiggleReader::ReadObject(
         }
     }
     return annot; 
+}
+    
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CWiggleReader::ReadObject(
+    CNcbiIstream& input,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{
+    CStreamLineReader lr( input );
+    return ReadObject( lr, pErrorContainer );
 };
                 
 //  ----------------------------------------------------------------------------
@@ -214,7 +226,6 @@ void CWiggleReader::Dump(
 
 //  ----------------------------------------------------------------------------
 void CWiggleReader::x_ParseTrackData(
-    CNcbiIstream& input,
     string& pending,
     CWiggleRecord& record )
 //
@@ -227,10 +238,9 @@ void CWiggleReader::x_ParseTrackData(
     record.ParseTrackDefinition( parts );
 }
 
-
 //  ----------------------------------------------------------------------------
 void CWiggleReader::x_ParseGraphData(
-    CNcbiIstream& input,
+    ILineReader& lr,
     string& pending,
     CWiggleRecord& record )
 //
@@ -263,15 +273,15 @@ void CWiggleReader::x_ParseGraphData(
         case TYPE_DECLARATION_VARSTEP:
             m_uCurrentRecordType = TYPE_DATA_VARSTEP;
             record.ParseDeclarationVarstep( parts );
-            x_ReadLine( input, pending );
-            x_ParseGraphData( input, pending, record );
+            x_ReadLine( lr, pending );
+            x_ParseGraphData( lr, pending, record );
             break;
 
         case TYPE_DECLARATION_FIXEDSTEP:
             m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
             record.ParseDeclarationFixedstep( parts );
-            x_ReadLine( input, pending );
-            x_ParseGraphData( input, pending, record );
+            x_ReadLine( lr, pending );
+            x_ParseGraphData( lr, pending, record );
             break;
 
         case TYPE_DATA_BED:
@@ -304,13 +314,13 @@ void CWiggleReader::x_ParseGraphData(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::x_ReadLine(
-    CNcbiIstream& input,
+    ILineReader& lr,
     string& line )
 //  ----------------------------------------------------------------------------
 {
     line.clear();
-    while ( ! input.eof() ) {
-        NcbiGetlineEOL( input, line );
+    while ( ! lr.AtEOF() ) {
+        line = *++lr;
         ++m_uLineNumber;
         NStr::TruncateSpacesInPlace( line );
         if ( ! x_IsCommentLine( line ) ) {

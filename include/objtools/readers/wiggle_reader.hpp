@@ -91,6 +91,11 @@ public:
         CNcbiIstream&,
         CErrorContainer* =0 );
                 
+    virtual CRef< CSeq_annot >
+    ReadObject(
+        ILineReader&,
+        CErrorContainer* =0 );
+                
     virtual void Dump(
         CNcbiOstream& );
         
@@ -110,13 +115,12 @@ public:
     //
 protected:
     void x_ParseTrackData(
-        CNcbiIstream&,
         string&,
         CWiggleRecord& );
     /* throws CObjReaderLineException */
 
     void x_ParseGraphData(
-        CNcbiIstream&,
+        ILineReader&,
         string&,
         CWiggleRecord& );
     /* throws CObjReaderLineException */
@@ -125,7 +129,7 @@ protected:
         const string& );
 
     bool x_ReadLine(
-        CNcbiIstream&,
+        ILineReader&,
         string& );
 
     unsigned int x_GetLineType(

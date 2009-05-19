@@ -114,6 +114,17 @@ CMultiReader::~CMultiReader()
 //  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CMultiReader::ReadObject(
+    ILineReader& lr,
+    CErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    CReaderBase* pReader = CreateReader( lr );
+    return pReader->ReadObject( lr, pErrorContainer );
+};
+
+//  ----------------------------------------------------------------------------
+CRef< CSeq_annot >
+CMultiReader::ReadObject(
     CNcbiIstream& in,
     CErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
@@ -121,6 +132,28 @@ CMultiReader::ReadObject(
     CReaderBase* pReader = CreateReader( in );
     return pReader->ReadObject( in, pErrorContainer );
 };
+
+//  ----------------------------------------------------------------------------
+CReaderBase*
+CMultiReader::CreateReader(
+    ILineReader& /* not used */ )
+//  ----------------------------------------------------------------------------
+{
+    switch( m_iFormat ) {
+    case CFormatGuess::eBed:
+        return new CBedReader();
+        
+    case CFormatGuess::eBed15:
+        return new CMicroArrayReader();
+        
+    case CFormatGuess::eWiggle:
+        return new CWiggleReader();
+        
+    default:
+        NCBI_THROW2( CObjReaderParseException, eFormat,
+            "File format not supported", 0 );
+    }
+}
 
 //  ----------------------------------------------------------------------------
 CReaderBase*

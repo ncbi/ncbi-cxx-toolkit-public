@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <util/format_guess.hpp>
+#include <util/line_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -62,9 +63,14 @@ public:
 public:
     CRef< CSeq_annot >
     ReadObject(
+        ILineReader&,
+        CErrorContainer* =0 );
+        
+    CRef< CSeq_annot >
+    ReadObject(
         CNcbiIstream&,
         CErrorContainer* =0 );
-                
+         
     //
     //  Implementation:
     //
@@ -72,6 +78,10 @@ protected:
     CReaderBase*
     CreateReader(
         CNcbiIstream& );
+
+    CReaderBase*
+    CreateReader(
+        ILineReader& );
 
     CFormatGuess::EFormat m_iFormat;
 };    

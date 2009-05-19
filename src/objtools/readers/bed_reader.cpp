@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistd.hpp>              
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -39,6 +39,7 @@
 #include <corelib/stream_utils.hpp>
 
 #include <util/static_map.hpp>
+#include <util/line_reader.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
@@ -168,7 +169,7 @@ bool CBedReader::VerifyFormat(
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CBedReader::ReadObject(
-    CNcbiIstream& in,
+    ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
@@ -176,9 +177,9 @@ CBedReader::ReadObject(
     string line;
     int linecount = 0;
 
-    while ( ! in.eof() ) {
+    while ( ! lr.AtEOF() ) {
         ++linecount;
-        NcbiGetlineEOL( in, line );
+        line = *++lr;
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
@@ -197,6 +198,17 @@ CBedReader::ReadObject(
     }
     
     return annot;
+}
+    
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CBedReader::ReadObject(
+    CNcbiIstream& in,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CStreamLineReader lr( in );
+    return ReadObject( lr, pErrorContainer );
 };
                 
 //  ----------------------------------------------------------------------------

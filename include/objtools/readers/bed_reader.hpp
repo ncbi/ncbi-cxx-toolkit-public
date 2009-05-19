@@ -69,6 +69,11 @@ public:
         CNcbiIstream&, 
         CRef<CSeq_annot>& );
 
+    virtual CRef< CSeq_annot >
+    ReadObject(
+        ILineReader&,
+        CErrorContainer* =0 );
+                
     CRef< CSeq_annot >
     ReadObject(
         CNcbiIstream&,
