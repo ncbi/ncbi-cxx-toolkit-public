@@ -132,50 +132,6 @@ CGff3Reader::~CGff3Reader()
 
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::VerifyFormat(
-    CNcbiIstream& is )
-//  ----------------------------------------------------------------------------
-{
-    return false;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::VerifyFormat(
-    const char* pcBuffer,
-    size_t uSize )
-//  ----------------------------------------------------------------------------
-{
-    list<string> lines;
-    if ( ! CReaderBase::SplitLines( pcBuffer, uSize, lines ) ) {
-        //  seemingly not even ASCII ...
-        return false;
-    }
-    if ( ! lines.empty() ) {
-        //  the last line is probably incomplete. We won't even bother with it.
-        lines.pop_back();
-    }
-    if ( lines.empty() ) {
-        return false;
-    }
-
-    list<string>::iterator it = lines.begin();
-    for ( ;  it != lines.end();  ++it) {
-        if ( !it->empty()  &&  (*it)[0] != '#') {
-            break;
-        }
-    }
-    
-    for ( ;  it != lines.end();  ++it) {
-        if ( !VerifyLine( *it ) ) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
 bool CGff3Reader::VerifyLine(
     const string& line )
 //  ----------------------------------------------------------------------------

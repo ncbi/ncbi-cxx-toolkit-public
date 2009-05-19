@@ -74,16 +74,6 @@ public:
         CRef<CSeq_entry>& );
 
     //
-    //  class interface:
-    //
-    static bool VerifyFormat(
-        CNcbiIstream& );
-
-    static bool VerifyFormat(
-        const char*,
-        size_t );
-        
-    //
     //  helpers:
     //
 protected:
