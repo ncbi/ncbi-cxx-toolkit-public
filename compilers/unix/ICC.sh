@@ -8,7 +8,6 @@
 # $Revision$  // Dmitriy Beloslyudtsev, NCBI (beloslyu@ncbi.nlm.nih.gov)
 #############################################################################
 
-## Transparently add hint for the Add command.  JIRA: PB-459.
 
 ## Path to the compiler
 CC="icc"
