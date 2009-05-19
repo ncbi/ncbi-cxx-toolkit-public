@@ -429,9 +429,9 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
     }
 
     // gather references from features
-    CFeat_CI it(scope, loc, CSeqFeatData::e_Pub);
-    for ( ; it; ++it) {
-        CBioseqContext::TRef ref(new CReferenceItem(it->GetOriginalFeature(),
+    CFeat_CI fci(scope, loc, CSeqFeatData::e_Pub);
+    for ( ; fci; ++fci) {
+        CBioseqContext::TRef ref(new CReferenceItem( fci->GetOriginalFeature(),
             *m_Current));
         refs.push_back(ref);
     }
