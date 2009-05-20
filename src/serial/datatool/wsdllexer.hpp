@@ -44,8 +44,16 @@ public:
     WSDLLexer(CNcbiIstream& in, const string& name);
     virtual ~WSDLLexer(void);
 
+    void UseXSDLexer(bool use)
+    {
+        m_UseXsd = use;
+    }
+
 protected:
     virtual TToken LookupKeyword(void);
+
+private:
+    bool m_UseXsd;
 };
 
 END_NCBI_SCOPE

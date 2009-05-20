@@ -122,9 +122,12 @@ void WSDLParser::ParseTypes(CDataTypeModule& module)
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
         while (DTDParser::GetNextToken() == K_SCHEMA) {
+            WSDLLexer& l = dynamic_cast<WSDLLexer&>(Lexer());
+            l.UseXSDLexer(true);
             BeginScope();
             XSDParser::BuildDocumentTree(module);
             EndScope();
+            l.UseXSDLexer(false);
         }
         tok = GetNextToken();
         if (tok != K_ENDOFTAG) {

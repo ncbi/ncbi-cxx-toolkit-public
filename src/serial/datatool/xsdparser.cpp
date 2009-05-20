@@ -52,6 +52,7 @@ XSDParser::XSDParser(XSDLexer& lexer)
     m_SrcType = eSchema;
     m_ResolveTypes = false;
     m_EnableNamespaceRedefinition = false;
+    m_InitialLexerStackSize = 0;
 }
 
 XSDParser::~XSDParser(void)
@@ -65,6 +66,7 @@ void XSDParser::BeginDocumentTree(void)
 
 void XSDParser::BuildDocumentTree(CDataTypeModule& module)
 {
+    m_InitialLexerStackSize = m_StackLexer.size();
     ParseHeader();
     CopyComments(module.Comments());
 
@@ -599,7 +601,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         emb= node.GetContent().size();
         switch (tok) {
         case T_EOF:
-            if (m_StackLexer.size() <= 1) {
+            if (m_StackLexer.size() <= m_InitialLexerStackSize) {
                 return;
             }
             break;

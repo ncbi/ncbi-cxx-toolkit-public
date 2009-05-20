@@ -144,6 +144,7 @@ private:
     set<string> m_EmbeddedNames;
     bool m_ResolveTypes;
     bool m_EnableNamespaceRedefinition;
+    size_t m_InitialLexerStackSize;
 };
 
 END_NCBI_SCOPE

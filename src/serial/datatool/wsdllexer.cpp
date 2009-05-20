@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 
 WSDLLexer::WSDLLexer(CNcbiIstream& in, const string& name)
-    : XSDLexer(in,name)
+    : XSDLexer(in,name), m_UseXsd(false)
 {
 }
 
@@ -52,6 +52,10 @@ WSDLLexer::~WSDLLexer(void)
 
 TToken WSDLLexer::LookupKeyword(void)
 {
+    if (m_UseXsd)
+    {
+        return XSDLexer::LookupKeyword();
+    }
     const char* token = CurrentTokenStart();
     const char* token_ns = strchr(token, ':');
     if (token_ns && (size_t)(token_ns - token) < CurrentTokenLength()) {
@@ -59,6 +63,9 @@ TToken WSDLLexer::LookupKeyword(void)
     }
     switch ( CurrentTokenEnd() - token ) {
     default:
+        break;
+    case 3:
+        CHECK("xml", K_XML, 3);
         break;
     case 4:
         CHECK("part", K_PART, 4);
@@ -69,6 +76,7 @@ TToken WSDLLexer::LookupKeyword(void)
         CHECK("types", K_TYPES, 5);
         break;
     case 6:
+        CHECK("schema", K_SCHEMA, 6);
         CHECK("output", K_OUTPUT, 6);
         break;
     case 7:
@@ -86,7 +94,7 @@ TToken WSDLLexer::LookupKeyword(void)
         CHECK("definitions", K_DEFINITIONS, 11);
         break;
     }
-    return XSDLexer::LookupKeyword();
+    return T_IDENTIFIER;
 }
 
 END_NCBI_SCOPE
