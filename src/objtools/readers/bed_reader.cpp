@@ -126,19 +126,24 @@ CBedReader::ReadObject(
             continue;
         }
         if ( IsMetaInformation( line ) ) {
-            if ( ! x_ProcessMetaInformation( line ) ) {
-                cerr << "Warning: Junk meta info encountered in line "
-                     << linecount << endl;
+            try {
+                x_ProcessMetaInformation( line );
+            }
+            catch( CObjReaderLineException& err ) {
+                err.SetLineNumber( linecount );
+                ProcessError( err, pErrorContainer );
             }
             continue;
         }
-        if ( ! x_ParseFeature( line, annot ) ) {
-            cerr << "Warning: Junk record encountered in line " << linecount
-                 << endl;
-            continue;
+        try {
+            x_ParseFeature( line, annot );
         }
-    }
-    
+        catch( CObjReaderLineException& err ) {
+            err.SetLineNumber( linecount );
+            ProcessError( err, pErrorContainer );
+        }
+        continue;
+    }    
     return annot;
 }
     
@@ -169,17 +174,11 @@ void CBedReader::Read(
             continue;
         }
         if ( IsMetaInformation( line ) ) {
-            if ( ! x_ProcessMetaInformation( line ) ) {
-                cerr << "Warning: Junk meta info encountered in line "
-                     << linecount << endl;
-            }
+            x_ProcessMetaInformation( line );
             continue;
         }
-        if ( ! x_ParseFeature( line, annot ) ) {
-            cerr << "Warning: Junk record encountered in line " << linecount
-                 << endl;
-            continue;
-        }
+        x_ParseFeature( line, annot );
+        continue;
     }
 }
 
@@ -198,8 +197,8 @@ bool CBedReader::IsMetaInformation(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::x_ProcessMetaInformation(
-    const string& line )
+void CBedReader::x_ProcessMetaInformation(
+    const string& line ) /* throws CObjReaderLineException */
 //  ----------------------------------------------------------------------------
 {
     vector<string> fields;
@@ -213,22 +212,29 @@ bool CBedReader::x_ProcessMetaInformation(
                     m_usescore = (1 == NStr::StringToInt(splits[1]));
                 }
                 else {
-                    return false;
+                    CObjReaderLineException err(
+                        eDiag_Error,
+                        0,
+                        "Bad track line: key=value pair expected" );
+                    throw( err );
                 }
             }
         }
-        return true;
     }
     if ( fields[0] == "browser" ) {
-        return true;
+        return;
     }
-    return false;
+    CObjReaderLineException err(
+        eDiag_Error,
+        0,
+        "Line type not recognized. Maybe not meta information?" );
+    throw( err );
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::x_ParseFeature(
+void CBedReader::x_ParseFeature(
     const string& record,
-    CRef<CSeq_annot>& annot )
+    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
 //  ----------------------------------------------------------------------------
 {
     CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
@@ -242,23 +248,28 @@ bool CBedReader::x_ParseFeature(
             m_columncount = fields.size();
         }
         else {
-            return false;
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Bad data line: Inconsistent column count." );
+            throw( err );
         }
     }
 
     //  assign
     feature.Reset( new CSeq_feat );
-
     try {
         x_SetFeatureLocation( feature, fields );
         x_SetFeatureDisplayData( feature, fields );
     }
-    catch (...) {
-        return false;
+    catch( ... ) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: General parsing error." );
+        throw( err );    
     }
-
     ftable.push_back( feature );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -274,35 +285,35 @@ void CBedReader::x_SetFeatureDisplayData(
     }
     if ( m_columncount >= 5 ) {
         if ( !m_usescore ) {
-            display_data->AddField( "score",
-                                    NStr::StringToInt(fields[4],
-                                                      NStr::fConvErr_NoThrow) );
+            display_data->AddField( 
+                "score",
+                NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow) );
         }
         else {
-            display_data->AddField( "greylevel",
-                                    NStr::StringToInt(fields[4],
-                                                      NStr::fConvErr_NoThrow) );
+            display_data->AddField( 
+                "greylevel",
+               NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow) );
         }
     }
     if ( m_columncount >= 6 ) {
-        display_data->AddField( "thickStart",
-                                NStr::StringToInt(fields[6],
-                                                  NStr::fConvErr_NoThrow) );
+        display_data->AddField( 
+            "thickStart",
+            NStr::StringToInt(fields[6], NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 7 ) {
-        display_data->AddField( "thickEnd",
-                                NStr::StringToInt(fields[7],
-                                                  NStr::fConvErr_NoThrow) - 1 );
+        display_data->AddField( 
+            "thickEnd",
+            NStr::StringToInt(fields[7], NStr::fConvErr_NoThrow) - 1 );
     }
     if ( m_columncount >= 8 ) {
-        display_data->AddField( "itemRGB",
-                                NStr::StringToInt(fields[8],
-                                                  NStr::fConvErr_NoThrow) );
+        display_data->AddField( 
+            "itemRGB",
+            NStr::StringToInt(fields[8], NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 9 ) {
-        display_data->AddField( "blockCount",
-                                NStr::StringToInt(fields[9],
-                                                  NStr::fConvErr_NoThrow) );
+        display_data->AddField( 
+            "blockCount",
+            NStr::StringToInt(fields[9], NStr::fConvErr_NoThrow) );
     }
     if ( m_columncount >= 10 ) {
         display_data->AddField( "blockSizes", fields[10] );
