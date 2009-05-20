@@ -85,13 +85,17 @@ protected:
     static bool IsMetaInformation(
         const string& );
 
-    bool x_ProcessMetaInformation(
+    void x_ProcessMetaInformation(
         const string&,
         CRef<CSeq_annot>& );
-    bool x_ParseFeature(
+    /* throws CObjReaderLineException */
+
+    void x_ParseFeature(
         const string&,
         CRef<CSeq_annot>& );
-    bool x_ProcessTrackLine(
+    /* throws CObjReaderLineException */
+
+    void x_ProcessTrackLine(
         const vector<string>&,
         CRef<CSeq_annot>& );
     void x_SetFeatureLocation(

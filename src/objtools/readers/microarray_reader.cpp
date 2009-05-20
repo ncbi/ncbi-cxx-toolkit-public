@@ -126,17 +126,23 @@ CMicroArrayReader::ReadObject(
             continue;
         }
         if ( IsMetaInformation( line ) ) {
-            if ( ! x_ProcessMetaInformation( line, annot ) ) {
-                cerr << "Warning: Junk meta info encountered in line "
-                     << linecount << endl;
+            try {
+                x_ProcessMetaInformation( line, annot );
+            }
+            catch( CObjReaderLineException& err ) {
+                err.SetLineNumber( linecount );
+                ProcessError( err, pErrorContainer );
             }
             continue;
         }
-        if ( ! x_ParseFeature( line, annot ) ) {
-            cerr << "Warning: Junk record encountered in line " << linecount
-                 << endl;
-            continue;
+        try {
+            x_ParseFeature( line, annot );
         }
+        catch( CObjReaderLineException& err ) {
+            err.SetLineNumber( linecount );
+            ProcessError( err, pErrorContainer );
+        }
+        continue;
     }
     
     return annot;
@@ -169,17 +175,10 @@ void CMicroArrayReader::Read(
             continue;
         }
         if ( IsMetaInformation( line ) ) {
-            if ( ! x_ProcessMetaInformation( line, annot ) ) {
-                cerr << "Warning: Junk meta info encountered in line "
-                     << linecount << endl;
-            }
+            x_ProcessMetaInformation( line, annot );
             continue;
         }
-        if ( ! x_ParseFeature( line, annot ) ) {
-            cerr << "Warning: Junk record encountered in line " << linecount
-                 << endl;
-            continue;
-        }
+        x_ParseFeature( line, annot );
     }
 }
 
@@ -198,7 +197,7 @@ bool CMicroArrayReader::IsMetaInformation(
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::x_ProcessMetaInformation(
+void CMicroArrayReader::x_ProcessMetaInformation(
     const string& line,
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
@@ -206,16 +205,20 @@ bool CMicroArrayReader::x_ProcessMetaInformation(
     vector<string> fields;
     NStr::Tokenize( line, " \t", fields, NStr::eMergeDelims );
     if ( fields[0] == "track" ) {
-        return x_ProcessTrackLine( fields, annot );
+        x_ProcessTrackLine( fields, annot );
     }
     if ( fields[0] == "browser" ) {
-        return true;
+        return;
     }
-    return false;
+    CObjReaderLineException err(
+        eDiag_Error,
+        0,
+        "Line type not recognized. Maybe not meta information?" );
+    throw( err );
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::x_ProcessTrackLine(
+void CMicroArrayReader::x_ProcessTrackLine(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
@@ -232,9 +235,11 @@ bool CMicroArrayReader::x_ProcessTrackLine(
                 m_usescore = (1 == NStr::StringToInt(splits[1]));
                 continue;
             }
-            else {
-                return false;
-            }
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Track Line Processing. Invalid \"useScore\" parameter." );
+            throw( err );
         }
         if ( NStr::StartsWith( fields[i], "expNames=" ) ) {
             NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
@@ -242,9 +247,11 @@ bool CMicroArrayReader::x_ProcessTrackLine(
                 expNames = splits[1];
                 continue;
             }
-            else {
-                return false;
-            }
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Track Line Processing. Invalid \"expNames\" parameter." );
+            throw( err );
         }
         if ( NStr::StartsWith( fields[i], "expScale=" ) ) {
             NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
@@ -252,9 +259,11 @@ bool CMicroArrayReader::x_ProcessTrackLine(
                 expScale = NStr::StringToInt(splits[1]);
                 continue;
             }
-            else {
-                return false;
-            }
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Track Line Processing. Invalid \"expScale\" parameter." );
+            throw( err );
         }
         if ( NStr::StartsWith( fields[i], "expStep=" ) ) {
             NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
@@ -262,17 +271,23 @@ bool CMicroArrayReader::x_ProcessTrackLine(
                 expStep = NStr::StringToInt(splits[1]);
                 continue;
             }
-            else {
-                return false;
-            }
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Track Line Processing. Invalid \"expStep\" parameter." );
+            throw( err );
         }
     }
     if ( m_flags & fReadAsBed ) {
-        return true;
+        return;
     }
 
     if ( expNames == "" || expScale == -1 || expStep == -1 ) {
-        return false;
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Track Line Processing. Missing \"exp\" parameter." );
+            throw( err );
     }
 
     CSeq_annot::TDesc::Tdata& data = annot->SetDesc().Set();
@@ -286,12 +301,10 @@ bool CMicroArrayReader::x_ProcessTrackLine(
 
     annotdesc->SetUser( *track_line );
     data.push_back( annotdesc );
-        
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::x_ParseFeature(
+void CMicroArrayReader::x_ParseFeature(
     const string& record,
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
@@ -303,7 +316,11 @@ bool CMicroArrayReader::x_ParseFeature(
     vector<string> fields;
     NStr::Tokenize( record, " \t", fields, NStr::eMergeDelims );
     if (fields.size() != columncount) {
-        return false;
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Feature Processing: Bad column count. Should be 15." );
+            throw( err );
     }
 
     //  assign
@@ -313,10 +330,13 @@ bool CMicroArrayReader::x_ParseFeature(
         x_SetFeatureDisplayData( feature, fields );
     }
     catch (...) {
-        return false;
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Feature Processing: General Parse Error." );
+        throw( err );
     }
     annot->SetData().SetFtable().push_back( feature );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
