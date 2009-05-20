@@ -163,7 +163,30 @@ bool GetBioseqWithType(CRef< CSeq_entry >& seqEntry, CSeq_id::E_Choice choice, C
 NCBI_CDUTILS_EXPORT 
 bool AddCommentToBioseq(CBioseq& bioseq, const string& comment);
 
+//  First two are wrappers for the third function, that extracts a database source or accession
+//  for any Seq-id type. 
+NCBI_CDUTILS_EXPORT 
+string GetDbSourceForSeqId(const CRef< CSeq_id >& seqID);   //  gets the most exact source 
+NCBI_CDUTILS_EXPORT 
+string GetAccessionForSeqId(const CRef< CSeq_id >& seqID);
 
+//  If the 'getGenericSource' flag is true, only the generic type of the database source is reported; 
+//  when false, a more exact dbSource is returned, where possible:  relevant primarily when dealing 
+//  with a refseq.
+NCBI_CDUTILS_EXPORT 
+void GetAccessionAndDatabaseSource(const CRef< CSeq_id >& seqID, string& accession, string& dbSource, bool getGenericSource = true);
+
+struct BioseqInfo
+{
+	string acession;
+	int version;
+	string defline;
+	short dbsource;
+};
+
+//return false if no accession is found
+NCBI_CDUTILS_EXPORT 
+bool extractBioseqInfo(const CRef< CBioseq > bioseq, BioseqInfo&);
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 

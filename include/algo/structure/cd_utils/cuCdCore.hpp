@@ -128,6 +128,9 @@ public:
     //  Returns true if this is possible; false otherwise.
     bool   CopyBioseqForSeqId(const CRef< CSeq_id>& seqId, CRef< CBioseq >& bioseq) const;
 
+    //  Recursively look for a bioseq with the given seqid in the sequence list; return the first instance found.
+    bool GetBioseqWithSeqId(const CRef< CSeq_id>& seqid, const CBioseq*& bioseq) const;
+
     /*  Examine alignment for a SeqId or footprint */
     bool   HasSeqId(const CRef<CSeq_id>& ID) const;                 // see if ID matches any ID in alignment  (deprecate???)
     bool   HasSeqId(const CRef<CSeq_id>& ID, int& RowIndex) const;  // same, but return row that matches
@@ -161,8 +164,8 @@ public:
 	bool   GetRowsForMmdbId(int mmdbId, list<int>& rows) const;  // find all rows with this mmdbId
 	bool   GetRowsWithMmdbId(vector<int>& rows) const;     // find all rows with a mmdbid
     bool   GetMmdbId(int SeqIndex, int& id) const;         // get mmdb-id from sequence list
-	int	   GetMmdbIdWithEvidence(set<int>& MmdbIds);
-	int		GetStructuralRowsWithEvidence(vector<int>& rows);
+	int	   GetMmdbIdWithEvidence(set<int>& MmdbIds) const;
+	int	   GetStructuralRowsWithEvidence(vector<int>& rows) const;
 
     //  Returns true only if one of the following is true:
     //  a) the master is not a structure and master3d is empty,
@@ -204,7 +207,7 @@ public:
     bool   FindConsensusInSequenceList(vector<int>* indices = NULL) const;
 
     bool   IsInPendingList(const CRef<CSeq_id>& ID, vector<int>& listIndex) const;  //  true if ID is in pending list; returns all indices found
-    int    GetNumPending() {return(GetPending().size());}
+    int    GetNumPending() const {return(GetPending().size());}
 
 	//add aligns or sequences to CD
 
@@ -271,7 +274,8 @@ protected:
 
 private:
 
-    bool GetBioseqWithSeqid(CSeq_id& seqid, const list< CRef< CSeq_entry > >& bsset, const CBioseq*& bioseq) const;
+    static bool GetBioseqWithSeqid(const CRef< CSeq_id>& seqid, const list< CRef< CSeq_entry > >& bsset, const CBioseq*& bioseq);
+
     bool IsNoEvidenceFor(list<int>& MmdbIds, list< CRef< CFeature_evidence > >::iterator& FeatureIterator);
     list< CRef< CFeature_evidence > >& GetFeatureSet(list<int>& MmdbIds);
 

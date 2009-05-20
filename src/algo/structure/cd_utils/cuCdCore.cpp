@@ -1405,14 +1405,14 @@ bool CCdCore::Has3DSuperpos(list<int>& MMDBId_vec) const {
                         sid1 = dd->GetIds().front();
                         sid2 = dd->GetIds().back();
                         if (nstruct == 0 && sid1->IsPdb()) {
-                            if (GetBioseqWithSeqid(*sid1, (*bsSet).GetSeq_set(), bs)) {
+                            if (GetBioseqWithSeqid(sid1, (*bsSet).GetSeq_set(), bs)) {
                                 mmdbid = GetMMDBId(*bs);
                                 MMDBId_vec.push_back(mmdbid);
                                 nstruct++;
                             }
                         }
                         if (sid2->IsPdb()) {
-                            if (GetBioseqWithSeqid(*sid2, (*bsSet).GetSeq_set(), bs)) {
+                            if (GetBioseqWithSeqid(sid2, (*bsSet).GetSeq_set(), bs)) {
                                 mmdbid = GetMMDBId(*bs);
                                 MMDBId_vec.push_back(mmdbid);
                                 nstruct++;
@@ -1504,11 +1504,11 @@ bool CCdCore::GetRowsWithMmdbId(vector<int>& rows) const {
 	return false;
 }
 
-int	CCdCore::GetStructuralRowsWithEvidence(vector<int>& rows)
+int	CCdCore::GetStructuralRowsWithEvidence(vector<int>& rows) const
 {
 	set<int> mmdbIds;
 	GetMmdbIdWithEvidence(mmdbIds);
-	for (set<int>::iterator sit = mmdbIds.begin(); sit != mmdbIds.end(); sit++)
+	for (set<int>::const_iterator sit = mmdbIds.begin(); sit != mmdbIds.end(); sit++)
 	{
 		list<int> mRows;
 		GetRowsForMmdbId(*sit, mRows);
@@ -2255,25 +2255,25 @@ list< CRef< CFeature_evidence > >& CCdCore::GetFeatureSet(list<int>& MmdbIds) {
   return((*i)->SetEvidence());
 }
 
-int CCdCore::GetMmdbIdWithEvidence(set<int>& MmdbIds) {
+int CCdCore::GetMmdbIdWithEvidence(set<int>& MmdbIds) const {
 //-------------------------------------------------------------------------
 // this function mirrors IsNoEvidenceFor.  It returns the list of features
 // that is modified.
 //-------------------------------------------------------------------------
-  list< CRef< CAlign_annot > >::iterator  i;
-  list< CRef< CFeature_evidence > >::iterator j;
-  list< CRef< CBiostruc_id > >::iterator k;
+  list< CRef< CAlign_annot > >::const_iterator  i;
+  list< CRef< CFeature_evidence > >::const_iterator j;
+  list< CRef< CBiostruc_id > >::const_iterator k;
 
   // look through each align-annot in the align-annot-set
   if (IsSetAlignannot()) {
-    for (i=SetAlignannot().Set().begin(); i!=SetAlignannot().Set().end(); i++) {
+    for (i=GetAlignannot().Get().begin(); i!=GetAlignannot().Get().end(); i++) {
       // look through each feature-evidence in the feature-evidence-set
       if ((*i)->IsSetEvidence()) {
-        for (j=(*i)->SetEvidence().begin(); j!=(*i)->SetEvidence().end(); j++) {
+        for (j=(*i)->GetEvidence().begin(); j!=(*i)->GetEvidence().end(); j++) {
           // look through each biostruc-id in the biostruc-id-set
           if ((*j)->IsBsannot()) {
-            if ((*j)->SetBsannot().IsSetId()) {
-              for (k=(*j)->SetBsannot().SetId().begin(); k!=(*j)->SetBsannot().SetId().end(); k++) {
+            if ((*j)->GetBsannot().IsSetId()) {
+              for (k=(*j)->GetBsannot().GetId().begin(); k!=(*j)->GetBsannot().GetId().end(); k++) {
                 if ((*k)->IsMmdb_id()) {
                    MmdbIds.insert((*k)->GetMmdb_id().Get()); 
                 }
@@ -2314,7 +2314,18 @@ bool  CCdCore::CopyBioseqForSeqId(const CRef< CSeq_id>& seqId, CRef< CBioseq >& 
 }
 
 //  Recursively look for a bioseq with the given seqid; return the first instance found.
-bool CCdCore::GetBioseqWithSeqid(CSeq_id& seqid, const list< CRef< CSeq_entry > >& seqEntryList, const CBioseq*& bioseq) const{
+bool  CCdCore::GetBioseqWithSeqId(const CRef< CSeq_id>& seqId, const CBioseq*& bioseq) const
+{
+    if (!IsSetSequences() || !GetSequences().IsSet() || !GetSequences().GetSet().IsSetSeq_set()) {
+        return false;
+    }
+
+    const CBioseq_set::TSeq_set& seqEntryList = GetSequences().GetSet().GetSeq_set();
+    return GetBioseqWithSeqid(seqId, seqEntryList, bioseq);
+}
+
+//  Recursively look for a bioseq with the given seqid in seqEntryList; return the first instance found.
+bool CCdCore::GetBioseqWithSeqid(const CRef< CSeq_id>& seqid, const list< CRef< CSeq_entry > >& seqEntryList, const CBioseq*& bioseq) {
 
 	bool result = false;
 
@@ -2332,7 +2343,7 @@ bool CCdCore::GetBioseqWithSeqid(CSeq_id& seqid, const list< CRef< CSeq_entry > 
 		} else if ((*lsei)->IsSeq()) {
 			const list< CRef< CSeq_id > > seqIdList = (*lsei)->GetSeq().GetId();
 			for (lsii = seqIdList.begin(); lsii != seqIdList.end(); ++lsii) {
-				if (seqid.Match(**lsii)) {
+				if (seqid->Match(**lsii)) {
 					bioseq = &(*lsei)->GetSeq();
 					return true;
 				}

@@ -52,13 +52,16 @@
 #include <objects/seqfeat/Org_ref.hpp>
 
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqblock/PDB_block.hpp>
+#include <objects/seqloc/Giimport_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/id1/id1_client.hpp>
 
 #include <util/sequtil/sequtil_convert.hpp>
 
 #include <algo/structure/cd_utils/cuSequence.hpp>
-#include <objects/seqblock/PDB_block.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/id1/id1_client.hpp>
+#include <algo/structure/cd_utils/cuDbPriority.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -774,6 +777,134 @@ bool AddCommentToBioseq(CBioseq& bioseq, const string& comment)
     return result;
 }
 
+string GetDbSourceForSeqId(const CRef< CSeq_id >& seqID)
+{
+    string acc, dbSource;
+    GetAccessionAndDatabaseSource(seqID, acc, dbSource, false);
+    return dbSource;
+}
+
+string GetAccessionForSeqId(const CRef< CSeq_id >& seqID)
+{
+    string acc, dbSource;
+    GetAccessionAndDatabaseSource(seqID, acc, dbSource);
+    return acc;
+}
+
+
+void GetAccessionAndDatabaseSource(const CRef< CSeq_id >& seqID, string& accession, string& dbSource, bool getGenericSource)
+{
+    dbSource = CCdDbPriority::GetSourceName(CCdDbPriority::eDPUnknown);
+    accession = "unknown";
+    if (!seqID) {
+        return;
+    }
+
+    //  Only getting the generic source at this point.
+    dbSource = CCdDbPriority::SeqIdTypeToSource((unsigned int) seqID->Which());
+
+	if (seqID->IsGi()) {
+        accession = NStr::IntToString(seqID->GetGi());
+	} 
+    else if (seqID->IsPdb()) {
+		const CPDB_seq_id& pPDB_ID = seqID->GetPdb();
+        accession =  pPDB_ID.GetMol().Get() + " " + (char) pPDB_ID.GetChain();
+	}
+	else if (seqID->IsLocal()) {
+		const CObject_id& pLocal = seqID->GetLocal();
+		if (pLocal.IsId()) {
+            accession = NStr::IntToString(pLocal.GetId());
+		}
+		else if (pLocal.IsStr()) {
+			accession = pLocal.GetStr();
+		}
+	}
+	else if (seqID->IsGeneral()) {
+		const CDbtag& pGeneral = seqID->GetGeneral();
+		if (pGeneral.IsSetDb() && !getGenericSource) {  //  look for a specific type only if requested
+            dbSource = dbSource + ": " + pGeneral.GetDb();
+        }
+		if (pGeneral.IsSetTag()) {
+			if (pGeneral.GetTag().IsId()) {
+                accession = NStr::IntToString(pGeneral.GetTag().GetId());
+			}
+			else if (pGeneral.GetTag().IsStr()) {
+				accession = pGeneral.GetTag().GetStr();
+			}
+		}
+	}
+    //  Four unexpected Seq-id types added for completeness
+    else if (seqID->IsGibbsq()) {
+        accession = NStr::IntToString(seqID->GetGibbsq());
+    }
+    else if (seqID->IsGibbmt()) {
+        accession = NStr::IntToString(seqID->GetGibbmt());
+    }
+    else if (seqID->IsGiim()) {
+        if (seqID->GetGiim().CanGetDb()) {
+            dbSource = seqID->GetGiim().GetDb();
+        }
+        accession = NStr::IntToString(seqID->GetGiim().GetId());
+    }
+    else if (seqID->IsPatent()) {
+        accession = NStr::IntToString(seqID->GetPatent().GetSeqid());
+    }
+
+    //  The rest have a CTextseq_id type....
+    else {
+		const CTextseq_id* textseqId = seqID->GetTextseq_Id();
+        if (!textseqId) return;
+
+        //  Report the 'accession' field as the accession.
+        //  If the accession field is not set, use the 'name' field if available, as some
+        //  types (PRF, PIR) use the 'name' field in Entrez Genpept reports as an accession.
+        string tidName = (textseqId->CanGetName()) ? textseqId->GetName() : "";
+        accession = (textseqId->CanGetAccession()) ? textseqId->GetAccession() : tidName;
+
+    }
+
+    //  Use a specific source based on accession when requested...
+    //  (as a special case, general IDs have the specific source set above)
+    if (!getGenericSource && !seqID->IsGeneral()) {
+        dbSource = CCdDbPriority::SeqIdTypeToSource((unsigned int) seqID->Which(), accession);
+    }
+}
+
+bool extractBioseqInfo(const CRef< CBioseq > bioseq, BioseqInfo& info)
+{
+	info.acession.erase();
+	const list< CRef< CSeq_id > >& seqIds = bioseq->GetId();
+	for (list< CRef< CSeq_id > >::const_iterator cit = seqIds.begin();
+		cit != seqIds.end(); cit++)
+	{
+		const CTextseq_id* textId = (*cit)->GetTextseq_Id();
+		if (textId)
+		{
+			if (textId->CanGetAccession())
+				info.acession = textId->GetAccession();
+			if (info.acession.size() >= 0)
+			{
+				if (textId->CanGetVersion())
+					info.version = textId->GetVersion();	
+				info.dbsource = (*cit)->Which();
+				break;
+			}
+		}
+	}
+	if (bioseq->IsSetDescr()) 
+	{
+		list< CRef< CSeqdesc > >::const_iterator  dit;
+        // look through the sequence descriptions
+        for (dit=bioseq->GetDescr().Get().begin();
+			dit!=bioseq->GetDescr().Get().end(); dit++) 
+		{
+            // if there's a title, return that description
+			if ((*dit)->IsTitle()) 
+				info.defline = ((*dit)->GetTitle());
+        }
+	}
+	return !info.acession.empty();
+}
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 END_NCBI_SCOPE
