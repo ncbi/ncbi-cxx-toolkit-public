@@ -181,7 +181,8 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eASN ||
                          info.m_Type == SMakeProjectT::SMakeInInfo::eDTD ||
-                         info.m_Type == SMakeProjectT::SMakeInInfo::eXSD) {
+                         info.m_Type == SMakeProjectT::SMakeInInfo::eXSD ||
+                         info.m_Type == SMakeProjectT::SMakeInInfo::eWSDL) {
 
                     SAsnProjectT::DoCreate(source_base_dir, 
                                            proj_name, 

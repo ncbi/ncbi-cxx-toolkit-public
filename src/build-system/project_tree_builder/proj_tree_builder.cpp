@@ -534,6 +534,12 @@ void SMakeProjectT::AnalyzeMakeIn
         info->push_back(SMakeInInfo(SMakeInInfo::eXSD, p->second,
             makein_contents.GetMakeType())); 
     }
+    p = makein_contents.m_Contents.find("WSDL_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eWSDL, p->second,
+            makein_contents.GetMakeType())); 
+    }
 
     p = makein_contents.m_Contents.find("MSVC_PROJ");
     if (p != makein_contents.m_Contents.end()) {
@@ -1424,6 +1430,10 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         if ( CDirEntry(source_file_path + ".xsd").Exists() )
             source_file_path += ".xsd";
         break;
+    case SMakeProjectT::SMakeInInfo::eWSDL:
+        if ( CDirEntry(source_file_path + ".wsdl").Exists() )
+            source_file_path += ".wsdl";
+        break;
     default:
         break;
     }
@@ -1906,7 +1916,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             }
         }
         string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",
-                            "ASN_PROJ","DTD_PROJ","XSD_PROJ",""};
+                            "ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ",""};
         EMakeFileType libtype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential,
             eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined};
         if (filter->ExcludePotential()) {
