@@ -113,6 +113,9 @@ public:
     bool IsNa(void) const;
     bool IsAa(void) const;
 
+    /// Determine the tax-id for this bioseq
+    int GetTaxId() const;
+
     // convenience functions for access to Bioseq length
     bool IsSetLength(void) const;
     TSeqPos GetLength(void) const;

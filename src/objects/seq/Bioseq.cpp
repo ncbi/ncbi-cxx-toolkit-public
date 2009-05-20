@@ -56,6 +56,10 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -162,6 +166,33 @@ CBioseq::CBioseq(const CSeq_loc& loc, const string& str_id)
 
     CDelta_ext& ext = inst.SetExt().SetDelta();
     x_SeqLoc_To_DeltaExt(loc, ext);
+}
+
+
+/// Determine the tax-id for this bioseq
+int CBioseq::GetTaxId() const
+{
+    int taxid = 0;
+
+    if (IsSetDescr()) {
+        ITERATE (TDescr::Tdata, it, GetDescr().Get()) {
+            const CSeqdesc& desc = **it;
+            if (desc.IsOrg()  &&  desc.GetOrg().IsSetDb()) {
+                ITERATE (COrg_ref::TDb, dbiter, desc.GetOrg().GetDb()) {
+                    if ((*dbiter)->GetDb() == "taxon") {
+                        taxid = (*dbiter)->GetTag().GetId();
+                        break;
+                    }
+                }
+            }
+
+            if (taxid) {
+                break;
+            }
+        }
+    }
+
+    return taxid;
 }
 
 
