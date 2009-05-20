@@ -36,6 +36,8 @@
 #include <objmgr/blob_id.hpp>
 #include <objmgr/bio_object_id.hpp>
 
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/seq_align_handle.hpp>
 #include <objmgr/seq_graph_handle.hpp>

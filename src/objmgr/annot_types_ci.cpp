@@ -32,6 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>

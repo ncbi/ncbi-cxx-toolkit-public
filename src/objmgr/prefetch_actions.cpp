@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/prefetch_actions.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
 
