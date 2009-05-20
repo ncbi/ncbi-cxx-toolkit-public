@@ -39,6 +39,10 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/data_loader.hpp>
+#include <objmgr/annot_selector.hpp>
+#include <map>
+#include <set>
+#include <vector>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -227,6 +231,54 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
             }
             catch (exception& e) {
                 NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
+            }
+        }
+    }
+}
+{
+    SAnnotSelector sel;
+    map<string, set<int> > nav;
+    vector<string> aa;
+    for ( int i = 0; i < 100; ++i ) {
+        string acc = "NA"+NStr::IntToString(rand()%1000);
+        if ( nav.count(acc) ) continue;
+        aa.push_back(acc);
+        set<int>& vv = nav[acc];
+        int nv = rand()%4;
+        for ( int j = 0; j < nv; ++j ) {
+            int v = rand()%10;
+            vv.insert(v);
+            string accv = acc+"."+NStr::IntToString(v);
+            sel.IncludeNamedAnnotAccession(accv);
+            //NcbiCout << "IncludeNamedAnnotAccession("<<accv<<")"<<NcbiEndl;
+        }
+        if ( nv == 0 ) {
+            sel.IncludeNamedAnnotAccession(acc);
+            //NcbiCout << "IncludeNamedAnnotAccession("<<acc<<")"<<NcbiEndl;
+        }
+    }
+    for ( size_t t = 0; t < aa.size(); ++t ) {
+        string acc = aa[t];
+        acc[acc.size()-1]--;
+        for ( int t1 = 0; t1 < 2; ++t1, acc[acc.size()-1]++ ) {
+            const set<int>* vv = nav.count(acc)? &nav[acc]: 0;
+            //NcbiCout << "IsIncludedNamedAnnotAccession("<<acc<<") "<< (vv?vv->size():0) <<NcbiEndl;
+            if ( !vv || !vv->empty() ) {
+                assert(!sel.IsIncludedNamedAnnotAccession(acc));
+            }
+            else {
+                assert(sel.IsIncludedNamedAnnotAccession(acc));
+            }
+            for ( int s = 0; s < 100; ++s ) {
+                int v = rand()%10;
+                string accv = acc+"."+NStr::IntToString(v);
+                //NcbiCout<<"IsIncludedNamedAnnotAccession("<<accv<<")"<<NcbiEndl;
+                if ( !vv || !vv->empty() && !vv->count(v) ) {
+                    assert(!sel.IsIncludedNamedAnnotAccession(accv));
+                }
+                else {
+                    assert(sel.IsIncludedNamedAnnotAccession(accv));
+                }
             }
         }
     }
