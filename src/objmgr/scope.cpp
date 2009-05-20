@@ -169,6 +169,13 @@ CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot,
 }
 
 
+CSeq_feat_Handle CScope::GetSeq_featHandle(const CSeq_feat& feat,
+                                           EMissing action)
+{
+    return m_Impl->GetSeq_featHandle(feat, action);
+}
+
+
 CSeq_entry_EditHandle CScope::GetSeq_entryEditHandle(const CSeq_entry& entry)
 {
     CSeq_entry_Handle h = m_Impl->GetSeq_entryHandle(entry, eMissing_Throw);

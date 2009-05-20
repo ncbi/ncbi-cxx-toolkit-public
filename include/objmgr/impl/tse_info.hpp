@@ -157,6 +157,7 @@ public:
     TSeq_annot_InfoMap  m_Seq_annot_InfoMap;
     TBioseq_set_InfoMap m_Bioseq_set_InfoMap;
     //    TBioseq_InfoMap m_Bioseq_InfoMap;
+    CRef<CSeq_entry> m_TSE;
 
 private:
     CTSE_SetObjectInfo(const CTSE_SetObjectInfo&);
@@ -374,6 +375,12 @@ public:
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                                     TFeatId id,
                                     bool xref) const;
+
+    typedef pair<CConstRef<CSeq_annot_Info>, CTSE_Lock> TSeq_annot_Lock;
+    typedef pair<TSeq_annot_Lock, int> TSeq_feat_Lock;
+    TSeq_feat_Lock x_FindSeq_feat(const CSeq_id_Handle& loc_id,
+                                  TSeqPos loc_pos,
+                                  const CSeq_feat& feat) const;
 
 private:
     friend class CTSE_Guard;

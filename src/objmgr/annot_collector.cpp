@@ -1427,13 +1427,26 @@ bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
 }
 
 
+static inline
+CScope::EGetBioseqFlag sx_GetFlag(const SAnnotSelector& selector)
+{
+    switch (selector.GetResolveMethod()) {
+    case SAnnotSelector::eResolve_All:
+        return CScope::eGetBioseq_All;
+    default:
+        // Do not load new TSEs
+        return CScope::eGetBioseq_Loaded;
+    }
+}
+
+
 bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
                                         int level)
 {
     bool has_more = false;
     ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
         CBioseq_Handle bh =
-            m_Scope->GetBioseqHandle(idit->first, GetGetFlag());
+            m_Scope->GetBioseqHandle(idit->first, sx_GetFlag(GetSelector()));
         if ( !bh ) {
             if (m_Selector->m_UnresolvedFlag == SAnnotSelector::eFailUnresolved) {
                 // resolve by Seq-id only
@@ -2263,7 +2276,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
             // any data source
             const CTSE_Handle* tse = 0;
             CScope::EGetBioseqFlag flag =
-                top_level? CScope::eGetBioseq_All: GetGetFlag();
+                top_level? CScope::eGetBioseq_All: sx_GetFlag(GetSelector());
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first, flag);
             if ( !bh ) {
                 if ( m_Selector->m_UnresolvedFlag ==
@@ -2359,7 +2372,7 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                 if ( tse_info.HasMatchingAnnotIds() ) {
                     if ( !syns_initialized ) {
                         syns = m_Scope->GetSynonyms(idit->first,
-                                                    GetGetFlag());
+                                                    sx_GetFlag(GetSelector()));
                         syns_initialized = true;
                     }
                     if ( !syns ) {

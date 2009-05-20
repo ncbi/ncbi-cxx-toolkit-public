@@ -86,6 +86,7 @@ class CSeq_entry;
 class CSeq_annot;
 class CBioseq;
 class CBioseq_set;
+class CSeq_feat;
 
 template<typename Key, typename Value>
 class CDeleteQueue
@@ -219,6 +220,7 @@ public:
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
     typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef CScopeInfo_Ref<CBioseq_ScopeInfo>           TBioseq_Lock;
+    typedef pair<TSeq_annot_Lock, int>                  TSeq_feat_Lock;
 
     TTSE_Lock GetTSE_Lock(const CTSE_Lock& tse);
     TTSE_Lock FindTSE_Lock(const CSeq_entry& tse);
@@ -226,6 +228,9 @@ public:
     TSeq_annot_Lock FindSeq_annot_Lock(const CSeq_annot& annot);
     TBioseq_set_Lock FindBioseq_set_Lock(const CBioseq_set& seqset);
     TBioseq_Lock FindBioseq_Lock(const CBioseq& bioseq);
+    TSeq_feat_Lock FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
+                                     TSeqPos loc_pos,
+                                     const CSeq_feat& feat);
 
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
 

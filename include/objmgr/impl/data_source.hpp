@@ -249,6 +249,7 @@ public:
 
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
     typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
+    typedef pair<TSeq_annot_Lock, int> TSeq_feat_Lock;
     typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef pair<CConstRef<CBioseq_Info>, TTSE_Lock> TBioseq_Lock;
 
@@ -262,6 +263,9 @@ public:
                                        const TTSE_LockSet& history) const;
     TBioseq_Lock FindBioseq_Lock(const CBioseq& bioseq,
                                  const TTSE_LockSet& history) const;
+    TSeq_feat_Lock FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
+                                     TSeqPos loc_pos,
+                                     const CSeq_feat& feat) const;
 
     typedef vector<TBlobId> TLoadedBlob_ids;
     enum {

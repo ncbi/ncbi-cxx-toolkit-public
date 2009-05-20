@@ -48,6 +48,7 @@
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -147,6 +148,8 @@ public:
                                          EMissing action = eMissing_Default);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot,
                                          EMissing action = eMissing_Default);
+    CSeq_feat_Handle GetSeq_featHandle(const CSeq_feat& feat,
+                                       EMissing action = eMissing_Default);
 
     CBioseq_Handle GetObjectHandle(const CBioseq& bioseq,
                                    EMissing action = eMissing_Default);
@@ -156,6 +159,8 @@ public:
                                       EMissing action = eMissing_Default);
     CSeq_annot_Handle GetObjectHandle(const CSeq_annot& annot,
                                       EMissing action = eMissing_Default);
+    CSeq_feat_Handle GetObjectHandle(const CSeq_feat& feat,
+                                     EMissing action = eMissing_Default);
 
     /// Get edit handle for the specified object
     /// Throw an exception if object is not found, or non-editable
@@ -418,6 +423,14 @@ CSeq_annot_Handle CScope::GetObjectHandle(const CSeq_annot& obj,
                                           EMissing action)
 {
     return GetSeq_annotHandle(obj, action);
+}
+
+
+inline
+CSeq_feat_Handle CScope::GetObjectHandle(const CSeq_feat& feat,
+                                         EMissing action)
+{
+    return GetSeq_featHandle(feat, action);
 }
 
 

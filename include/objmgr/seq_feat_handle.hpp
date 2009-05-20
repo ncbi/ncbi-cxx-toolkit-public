@@ -204,6 +204,7 @@ protected:
     friend class CSeq_annot_ftable_CI;
     friend class CSeq_annot_ftable_I;
     friend class CTSE_Handle;
+    friend class CScope_Impl;
     typedef Int4 TFeatIndex;
     enum {
         kSNPTableBit   = 0x80000000,

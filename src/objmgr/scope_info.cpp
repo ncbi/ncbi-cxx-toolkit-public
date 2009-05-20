@@ -483,6 +483,26 @@ CDataSource_ScopeInfo::FindBioseq_Lock(const CBioseq& bioseq)
 }
 
 
+CDataSource_ScopeInfo::TSeq_feat_Lock
+CDataSource_ScopeInfo::FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
+                                         TSeqPos loc_pos,
+                                         const CSeq_feat& feat)
+{
+    TSeq_feat_Lock ret;
+    CDataSource::TSeq_feat_Lock lock;
+    {{
+        TTSE_LockSetMutex::TReadLockGuard guard(m_TSE_LockSetMutex);
+        lock = GetDataSource().FindSeq_feat_Lock(loc_id, loc_pos, feat);
+    }}
+    if ( lock.first.first ) {
+        ret.first.first = lock.first.first;
+        ret.first.second = GetTSE_Lock(lock.first.second);
+        ret.second = lock.second;
+    }
+    return ret;
+}
+
+
 SSeqMatch_Scope CDataSource_ScopeInfo::BestResolve(const CSeq_id_Handle& idh,
                                                    int get_flag)
 {

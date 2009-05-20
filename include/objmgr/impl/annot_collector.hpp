@@ -35,9 +35,9 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/tse_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
@@ -267,7 +267,6 @@ private:
     CScope& GetScope(void) const;
 
     const SAnnotSelector& GetSelector(void);
-    CScope::EGetBioseqFlag GetGetFlag(void) const;
     bool CanResolveId(const CSeq_id_Handle& idh, const CBioseq_Handle& bh);
 
     void x_Clear(void);
@@ -774,19 +773,6 @@ inline
 const SAnnotSelector& CAnnot_Collector::GetSelector(void)
 {
     return *m_Selector;
-}
-
-
-inline
-CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
-{
-    switch (m_Selector->m_ResolveMethod) {
-    case SAnnotSelector::eResolve_All:
-        return CScope::eGetBioseq_All;
-    default:
-        // Do not load new TSEs
-        return CScope::eGetBioseq_Loaded;
-    }
 }
 
 

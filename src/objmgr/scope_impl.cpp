@@ -1078,6 +1078,42 @@ CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(const CTSE_Handle& tse)
 }
 
 
+CSeq_feat_Handle CScope_Impl::GetSeq_featHandle(const CSeq_feat& feat,
+                                                TMissing action)
+{
+    CSeq_id_Handle loc_id;
+    TSeqPos loc_pos = kInvalidSeqPos;
+    if ( CSeq_loc_CI it = feat.GetLocation() ) {
+        loc_id = it.GetSeq_id_Handle();
+        loc_pos = it.GetRange().GetFrom();
+    }
+    if ( !loc_id || loc_pos == kInvalidSeqPos ) {
+        if ( action == CScope::eMissing_Null ) {
+            return CSeq_feat_Handle();
+        }
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope_Impl::GetSeq_featHandle: "
+                   "Seq-feat location is empty");
+    }
+    
+    TConfWriteLockGuard guard(m_ConfLock);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CDataSource_ScopeInfo::TSeq_feat_Lock lock =
+            it->FindSeq_feat_Lock(loc_id, loc_pos, feat);
+        if ( lock.first.first ) {
+            return CSeq_feat_Handle(CSeq_annot_Handle(*lock.first.first,
+                                                      *lock.first.second),
+                                    lock.second);
+        }
+    }
+    if ( action == CScope::eMissing_Null ) {
+        return CSeq_feat_Handle();
+    }
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "CScope_Impl::GetSeq_featHandle: Seq-feat not found");
+}
+
+
 CRef<CDataSource_ScopeInfo> CScope_Impl::AddDS(CRef<CDataSource> ds,
                                                TPriority priority)
 {

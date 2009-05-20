@@ -309,6 +309,8 @@ public:
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot,
                                          TMissing action);
     CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Handle& tse);
+    CSeq_feat_Handle GetSeq_featHandle(const CSeq_feat& feat,
+                                       TMissing action);
 
     CScope& GetScope(void);
 

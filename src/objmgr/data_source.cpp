@@ -394,6 +394,31 @@ CDataSource::FindBioseq_Lock(const CBioseq& bioseq,
 }
 
 
+CDataSource::TSeq_feat_Lock
+CDataSource::FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
+                               TSeqPos loc_pos,
+                               const CSeq_feat& feat) const
+{
+    TSeq_feat_Lock ret;
+    TAnnotLock::TReadLockGuard guard(m_DSAnnotLock);
+    for ( int i = 0; i < 2; ++i ) {
+        const TSeq_id2TSE_Set& index = i? m_TSE_seq_annot: m_TSE_orphan_annot;
+        TSeq_id2TSE_Set::const_iterator it = index.find(loc_id);
+        if ( it != index.end() ) {
+            ITERATE ( TTSE_Set, it2, it->second ) {
+                ret = (*it2)->x_FindSeq_feat(loc_id, loc_pos, feat);
+                if ( ret.first.first ) {
+                    x_SetLock(ret.first.second,
+                              ConstRef(&ret.first.first->GetTSE_Info()));
+                    return ret;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+
 void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                     TLoadedTypes types,
                                     TLoadedBlob_ids& blob_ids) const

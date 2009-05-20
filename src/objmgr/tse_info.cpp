@@ -310,10 +310,6 @@ void CTSE_Info::SetUsedMemory(size_t size)
 
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
 {
-    m_SetObjectInfo = set_info;
-
-    entry.Parentize();
-
     if ( Which() != CSeq_entry::e_not_set ) {
         if ( m_LoadState == eNotLoaded ) {
             Reset();
@@ -326,6 +322,9 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
         }
     }
 
+    entry.Parentize();
+
+    m_SetObjectInfo = set_info;
     if ( HasDataSource() ) {
         {{
             CDataSource::TMainLock::TWriteLockGuard guard
@@ -337,15 +336,15 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
     else {
         x_SetObject(entry);
     }
-
-    if ( m_SetObjectInfo ) {
-        if ( !m_SetObjectInfo->m_Seq_annot_InfoMap.empty() ) {
+    if ( set_info ) {
+        if ( !set_info->m_Seq_annot_InfoMap.empty() ) {
             NCBI_THROW(CObjMgrException, eAddDataError,
                        "Unknown SNP annots");
         }
         m_SetObjectInfo = null;
     }
 }
+
 
 CBioObjectId CTSE_Info::x_IndexBioseq(CBioseq_Info* info) 
 {
@@ -778,10 +777,10 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
             m_Bioseqs.insert(TBioseqs::value_type(id, info));
         if ( !ins.second ) {
             // No duplicate bioseqs in the same TSE
-            NCBI_THROW(CObjMgrException, eAddDataError,
-                       "duplicate Bioseq id "+id.AsString()+" present in"+
-                       "\n  seq1: " + ins.first->second->IdString()+
-                       "\n  seq2: " + info->IdString());
+            NCBI_THROW_FMT(CObjMgrException, eAddDataError,
+                           "duplicate Bioseq id " << id << " present in" <<
+                           "\n  seq1: " << ins.first->second->IdString() <<
+                           "\n  seq2: " << info->IdString());
         }
     }}
     // register this TSE in data source as containing the sequence
@@ -1444,6 +1443,48 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
         }
     }
     return objects;
+}
+
+
+CTSE_Info::TSeq_feat_Lock
+CTSE_Info::x_FindSeq_feat(const CSeq_id_Handle& loc_id,
+                          TSeqPos loc_pos,
+                          const CSeq_feat& feat) const
+{
+    TSeq_feat_Lock ret;
+    CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
+    size_t index = CAnnotType_Index::GetSubtypeIndex(subtype);
+    TRange range(loc_pos, loc_pos);
+    ITERATE ( TNamedAnnotObjs, it_n, m_NamedAnnotObjs ) {
+        const SIdAnnotObjs* objs = x_GetIdObjects(it_n->second, loc_id);
+        if ( !objs ) {
+            continue;
+        }
+        if ( index < objs->x_GetRangeMapCount() &&
+             !objs->x_RangeMapIsEmpty(index) ) {
+            const TRangeMap& rmap = objs->x_GetRangeMap(index);
+            for ( TRangeMap::const_iterator it(rmap.begin(range)); it; ++it ) {
+                const CAnnotObject_Info& annot_info =
+                    *it->second.m_AnnotObject_Info;
+                if ( !annot_info.IsRegular() ) {
+                    continue;
+                }
+                const CSeq_feat* found_feat = annot_info.GetFeatFast();
+                if ( found_feat == &feat ) {
+                    ret.first.first = &annot_info.GetSeq_annot_Info();
+                    ret.second = annot_info.GetAnnotIndex();
+                    return ret;
+                }
+            }
+        }
+        /*
+        if ( subtype == CSeqFeatData::eSubtype_variation &&
+             !objs->m_SNPSet.empty() ) {
+            
+        }
+        */
+    }
+    return ret;
 }
 
 
