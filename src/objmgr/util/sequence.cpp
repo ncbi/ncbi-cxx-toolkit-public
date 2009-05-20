@@ -2605,8 +2605,8 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
             ENa_strand strand = loc_iter.GetStrand();
             CSeq_loc_CI::TRange range = loc_iter.GetRange();
             if (range.GetFrom() < bsh.GetBioseqLength()) {
-                int from = range.GetFrom();
-                int to = range.GetTo();
+                TSeqPos from = range.GetFrom();
+                TSeqPos to = range.GetTo();
                 if (to >= bsh.GetBioseqLength()) {
                     to = bsh.GetBioseqLength() - 1;
                 }               

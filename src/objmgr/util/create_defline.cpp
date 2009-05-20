@@ -48,8 +48,8 @@ USING_SCOPE(sequence);
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (void)
-    : m_HasBiosrcFeats(eSFS_Unknown), m_Low_Quality_Fsa(false)
-
+    : m_Low_Quality_Fsa(false),
+      m_HasBiosrcFeats(eSFS_Unknown)
 {
     m_Low_Quality_Fsa.AddWord ("heterogeneous population sequenced", 1);
     m_Low_Quality_Fsa.AddWord ("low-quality sequence region", 2);
