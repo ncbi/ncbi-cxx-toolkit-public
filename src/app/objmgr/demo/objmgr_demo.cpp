@@ -236,6 +236,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
+    arg_desc->AddFlag("get_feat_handle", "reverse lookup of feature handle");
     arg_desc->AddFlag("check_cds", "check correctness cds");
     arg_desc->AddFlag("check_seq_data", "check availability of seq_data");
     arg_desc->AddFlag("skip_alignments", "do not search for alignments");
@@ -409,6 +410,7 @@ int CDemoApp::Run(void)
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
+    bool get_feat_handle = args["get_feat_handle"];
     bool print_alignments = args["print_alignments"];
     bool check_cds = args["check_cds"];
     bool check_seq_data = args["check_seq_data"];
@@ -1121,6 +1123,20 @@ int CDemoApp::Run(void)
                 }
 
                 CSeq_annot_Handle annot = it.GetAnnot();
+                if ( get_feat_handle && it->IsPlainFeat() ) {
+                    CSeq_feat_Handle fh =
+                        scope.GetSeq_featHandle(it->GetOriginalFeature());
+                    if ( !fh ) {
+                        NcbiCout << "Reverse CSeq_feat_Handle lookup failed."
+                                 << NcbiEndl;
+                    }
+                    else if ( fh.GetOriginalSeq_feat() !=
+                              &it->GetOriginalFeature() ) {
+                        NcbiCout << "Reverse CSeq_feat_Handle differs: "
+                                 << MSerial_AsnText<<*fh.GetOriginalSeq_feat()
+                                 << NcbiEndl;
+                    }
+                }
             }
             NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
                      << count << NcbiEndl;
