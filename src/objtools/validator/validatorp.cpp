@@ -166,6 +166,8 @@ CValidError_imp::CValidError_imp
       m_IsXR(false),
       m_IsGI(false),
       m_IsGB(false),
+      m_FeatLocHasGI(false),
+      m_ProductLocHasGI(false),
       m_PrgCallback(0),
       m_NumAlign(0),
       m_NumAnnot(0),
@@ -345,10 +347,32 @@ void CValidError_imp::PostErr
 static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress_context)
 {
     str += "BIOSEQ-SET: ";
-    if (supress_context) {
-        st.GetLabel(&str, CBioseq_set::eContent);
+
+    // GetLabel for CBioseq_set does not follow C Toolkit conventions
+    // AND is a horrible performance hit for sets with lots of sequences
+
+    if (!supress_context && st.IsSetClass()) {
+        const CEnumeratedTypeValues* tv =
+            CBioseq_set::GetTypeInfo_enum_EClass();
+        const string& cn = tv->FindName(st.GetClass(), true);
+        str += cn;
+        str += ": ";
+    }
+
+    const CBioseq* best = 0;
+    CTypeConstIterator<CBioseq> si(ConstBegin(st));
+    if (si) {
+        best = &(*si);
+    }
+    // Add content to label.
+    if (!best) {
+        str += "(No Bioseqs)";
     } else {
-        st.GetLabel(&str, CBioseq_set::eBoth);
+        CNcbiOstrstream os;
+        if (best->GetFirstId()) {
+            os << best->GetFirstId()->DumpAsFasta();
+            str += CNcbiOstrstreamToString(os);
+        }
     }
 }
 
@@ -1605,6 +1629,25 @@ void CValidError_imp::ValidateAuthorList
                             "Author list contains et al.", obj);
                     }
                 }
+                // validate suffix, if set and nonempty
+                if (nstd.IsSetSuffix() && !NStr::IsBlank (nstd.GetSuffix())) {
+                    string suffix = nstd.GetSuffix();
+
+                    typedef CName_std::TSuffixes TSuffixes;
+                    const TSuffixes& suffixes = CName_std::GetStandardSuffixes();
+                    bool found = false;
+                    ITERATE (TSuffixes, it, suffixes) {
+                        if (NStr::EqualNocase (suffix, *it)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAuthorSuffix, 
+                                 "Bad author suffix " + suffix,
+                                 obj);
+                    }
+                }
             }
         }
     } else if (names.IsMl()) {
@@ -2569,6 +2612,19 @@ bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
 }
 
 
+static bool s_SeqLocHasGI (const CSeq_loc& loc)
+{
+    bool rval = false;
+
+    for ( CSeq_loc_CI it(loc); it && !rval; ++it ) {
+        if (it.GetSeq_id().IsGi()) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
@@ -2671,6 +2727,16 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                 default:
                     break;
             }
+        }
+    }
+
+    // examine features for location gi and product gi
+    for (CFeat_CI feat_ci (seh); feat_ci && (!m_FeatLocHasGI || !m_ProductLocHasGI); ++feat_ci) {
+        if (s_SeqLocHasGI(feat_ci->GetLocation())) {
+            m_FeatLocHasGI = true;
+        }
+        if (feat_ci->IsSetProduct() && s_SeqLocHasGI(feat_ci->GetProduct())) {
+            m_ProductLocHasGI = true;
         }
     }
     

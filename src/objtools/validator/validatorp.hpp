@@ -216,6 +216,8 @@ public:
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsCuratedRefSeq(void) const;
     inline bool IsGenbank(void) const { return m_IsGB; }
+    inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
+    inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }
     
     const CSeq_entry& GetTSE(void) { return *m_TSE; }
     CSeq_entry_Handle GetTSEH(void) { return m_TSEH; }
@@ -323,7 +325,9 @@ private:
     bool m_IsXR;
     bool m_IsGI;
     bool m_IsGB;
-    
+    bool m_FeatLocHasGI;
+    bool m_ProductLocHasGI;
+
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
     vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
@@ -457,6 +461,7 @@ private:
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);
     void ValidateSeqParts(const CBioseq& seq);
     void x_ValidateTitle(const CBioseq& seq);
+    void x_ValidateBarcode(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
     void ValidateNs(const CBioseq& seq);
     

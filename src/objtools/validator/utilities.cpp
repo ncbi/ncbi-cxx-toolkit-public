@@ -2171,6 +2171,35 @@ bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2)
 }
 
 
+bool s_StringHasPMID (string str)
+{
+    if (NStr::IsBlank (str)) {
+        return false;
+    }
+
+    size_t pos = NStr::Find (str, "(PMID ");
+    if (pos == string::npos) {
+        return false;
+    }
+
+    const char *ptr = str.c_str() + pos + 6;
+    unsigned int numdigits = 0;
+    while (*ptr != 0 && *ptr != ')') {
+        if (isdigit (*ptr)) {
+            numdigits++;
+        }
+        ptr++;
+    }
+
+    if (*ptr == ')' && numdigits > 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

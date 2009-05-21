@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include "validatorp.hpp"
+#include "utilities.hpp"
 
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -103,6 +104,25 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Name:
             break;
         case CSeqdesc::e_Title:
+            if (NStr::IsBlank (desc.GetTitle())) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+                         "Title descriptor needs text", desc);
+            } else {
+                string title = desc.GetTitle();
+                if (s_StringHasPMID (desc.GetTitle())) {
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TitleHasPMID, 
+                             "Title descriptor has internal PMID", desc);
+                }
+                NStr::TruncateSpacesInPlace (title);
+                if (NStr::EndsWith (title, "...")) {
+                    // ok - ends with ellipsis
+                } else if (NStr::EndsWith (title, ",")
+                           || NStr::EndsWith (title, ";")
+                           || NStr::EndsWith (title, ":")) {
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation, 
+                             "Title descriptor ends in bad punctuation", desc);
+                }
+            }
             break;
         case CSeqdesc::e_Org:
             break;
@@ -163,7 +183,7 @@ void CValidError_desc::ValidateUser
     if ( !oi.IsStr() ) {
         return;
     }
-    if ( NStr::CompareNocase(oi.GetStr(), "RefGeneTracking") == 0 ) {
+    if ( NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
         bool has_ref_track_status = false;
         ITERATE(CUser_object::TData, field, usr.GetData()) {
             if ( (*field)->CanGetLabel() ) {
@@ -180,6 +200,11 @@ void CValidError_desc::ValidateUser
         if ( !has_ref_track_status ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
                 "RefGeneTracking object needs to have Status set", *m_Ctx, desc);
+        }
+    } else if ( NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+        if (!usr.IsSetData() || usr.GetData().size() == 0) {
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
+                     "Structured Comment user object descriptor is empty", desc);
         }
     }
 }

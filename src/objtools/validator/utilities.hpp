@@ -272,6 +272,7 @@ typedef enum {
 EAccessionFormatError ValidateAccessionString (string accession, bool require_version);
 
 bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2);
+bool s_StringHasPMID (string str);
 
 
 END_SCOPE(validator)

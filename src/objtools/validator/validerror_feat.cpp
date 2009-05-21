@@ -606,7 +606,7 @@ void CValidError_feat::ValidateSeqFeatProduct
         }
     }
     // look for accession IDs in location
-    if (s_SeqLocHasAccession (prod)) {
+    if (m_Imp.DoesAnyProductLocHaveGI() && s_SeqLocHasAccession (prod)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureRefersToAccession, "Feature product refers to accession", feat);
     }
 }
@@ -1111,6 +1111,36 @@ static int s_GetStrictGenCode(const CBioSource& src)
 }
 
 
+static const string sc_BadGeneSynText [] = {
+  "HLA",
+  "alpha",
+  "alternative",
+  "beta",
+  "cellular",
+  "cytokine",
+  "delta",
+  "drosophila",
+  "epsilon",
+  "gamma",
+  "homolog",
+  "mouse",
+  "orf",
+  "partial",
+  "plasma",
+  "precursor",
+  "pseudogene",
+  "putative",
+  "rearranged",
+  "small",
+  "trna",
+  "unknown",
+  "unknown function",
+  "unknown protein",
+  "unnamed"
+};
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BadGeneSyn, sc_BadGeneSynText);
+
+
 void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat)
 {
     ++m_NumGenes;
@@ -1161,6 +1191,29 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     if ( gene.CanGetDb () ) {
         m_Imp.ValidateDbxref(gene.GetDb(), feat);
     }
+
+    if (m_Imp.IsRefSeq()) {
+        FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
+            if (sc_BadGeneSyn.find (*it) != sc_BadGeneSyn.end()) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym, 
+                         "Uninformative gene synonym '" + *it + "'",
+                         feat);
+            }
+        }
+    }
+
+    if (gene.IsSetLocus() && gene.IsSetDesc() && NStr::EqualCase (gene.GetLocus(), gene.GetDesc())) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
+                 "gene description has same value as gene locus", feat);
+    }
+
+    if (!gene.IsSetLocus() && !gene.IsSetDesc() && gene.IsSetSyn() && gene.GetSyn().size() > 0) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
+                 "gene synonym without gene locus or description", feat);
+    }
+                 
+
+
 }
 
 
@@ -1865,6 +1918,175 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 }
 
 
+static const string sc_BadProtNameText [] = {
+  "'hypothetical protein",
+  "HLA",
+  "alpha",
+  "alternative",
+  "alternatively spliced",
+  "bacteriophage hypothetical protein",
+  "beta",
+  "cellular",
+  "cnserved hypothetical protein",
+  "conesrved hypothetical protein",
+  "conserevd hypothetical protein",
+  "conserved archaeal protein",
+  "conserved domain protein",
+  "conserved hypohetical protein",
+  "conserved hypotehtical protein",
+  "conserved hypotheical protein",
+  "conserved hypothertical protein",
+  "conserved hypothetcial protein",
+  "conserved hypothetical",
+  "conserved hypothetical exported protein",
+  "conserved hypothetical integral membrane protein",
+  "conserved hypothetical membrane protein",
+  "conserved hypothetical phage protein",
+  "conserved hypothetical prophage protein",
+  "conserved hypothetical protein",
+  "conserved hypothetical protein - phage associated",
+  "conserved hypothetical protein fragment 3",
+  "conserved hypothetical protein, fragment",
+  "conserved hypothetical protein, putative",
+  "conserved hypothetical protein, truncated",
+  "conserved hypothetical protein, truncation",
+  "conserved hypothetical protein.",
+  "conserved hypothetical protein; possible membrane protein",
+  "conserved hypothetical protein; putative membrane protein",
+  "conserved hypothetical proteins",
+  "conserved hypothetical protien",
+  "conserved hypothetical transmembrane protein",
+  "conserved hypotheticcal protein",
+  "conserved hypthetical protein",
+  "conserved in bacteria",
+  "conserved membrane protein",
+  "conserved protein",
+  "conserved protein of unknown function",
+  "conserved protein of unknown function ; putative membrane protein",
+  "conserved unknown protein",
+  "conservedhypothetical protein",
+  "conserverd hypothetical protein",
+  "conservered hypothetical protein",
+  "consrved hypothetical protein",
+  "converved hypothetical protein",
+  "cytokine",
+  "delta",
+  "drosophila",
+  "duplicated hypothetical protein",
+  "epsilon",
+  "gamma",
+  "homeodomain",
+  "homeodomain protein",
+  "homolog",
+  "hyopthetical protein",
+  "hypotethical",
+  "hypotheical protein",
+  "hypothertical protein",
+  "hypothetcical protein",
+  "hypothetical",
+  "hypothetical  protein",
+  "hypothetical conserved protein",
+  "hypothetical exported protein",
+  "hypothetical novel protein",
+  "hypothetical orf",
+  "hypothetical phage protein",
+  "hypothetical prophage protein",
+  "hypothetical protein",
+  "hypothetical protein (fragment)",
+  "hypothetical protein (multi-domain)",
+  "hypothetical protein (phage associated)",
+  "hypothetical protein - phage associated",
+  "hypothetical protein fragment",
+  "hypothetical protein fragment 1",
+  "hypothetical protein predicted by genemark",
+  "hypothetical protein predicted by glimmer",
+  "hypothetical protein predicted by glimmer/critica",
+  "hypothetical protein, conserved",
+  "hypothetical protein, phage associated",
+  "hypothetical protein, truncated",
+  "hypothetical protein-putative conserved hypothetical protein",
+  "hypothetical protein.",
+  "hypothetical proteins",
+  "hypothetical protien",
+  "hypothetical transmembrane protein",
+  "hypothetoical protein",
+  "hypothteical protein",
+  "identified by sequence similarity; putative; ORF located~using Blastx/FrameD",
+  "identified by sequence similarity; putative; ORF located~using Blastx/Glimmer/Genemark",
+  "ion channel",
+  "membrane protein, putative",
+  "mouse",
+  "narrowly conserved hypothetical protein",
+  "novel protein",
+  "orf",
+  "orf, conserved hypothetical protein",
+  "orf, hypothetical",
+  "orf, hypothetical protein",
+  "orf, hypothetical, fragment",
+  "orf, partial conserved hypothetical protein",
+  "orf; hypothetical protein",
+  "orf; unknown function",
+  "partial",
+  "partial cds, hypothetical",
+  "partially conserved hypothetical protein",
+  "phage hypothetical protein",
+  "phage-related conserved hypothetical protein",
+  "phage-related protein",
+  "plasma",
+  "possible hypothetical protein",
+  "precursor",
+  "predicted coding region",
+  "predicted protein",
+  "predicted protein (pseudogene)",
+  "predicted protein family",
+  "product uncharacterised protein family",
+  "protein family",
+  "protein of unknown function",
+  "pseudogene",
+  "putative",
+  "putative conserved protein",
+  "putative exported protein",
+  "putative hypothetical protein",
+  "putative membrane protein",
+  "putative orf; unknown function",
+  "putative phage protein",
+  "putative protein",
+  "rearranged",
+  "repeats containing protein",
+  "reserved",
+  "ribosomal protein",
+  "similar to",
+  "small",
+  "small hypothetical protein",
+  "transmembrane protein",
+  "trna",
+  "trp repeat",
+  "trp-repeat protein",
+  "truncated conserved hypothetical protein",
+  "truncated hypothetical protein",
+  "uncharacterized conserved membrane protein",
+  "uncharacterized conserved protein",
+  "uncharacterized conserved secreted protein",
+  "uncharacterized protein",
+  "uncharacterized protein conserved in archaea",
+  "uncharacterized protein conserved in bacteria",
+  "unique hypothetical",
+  "unique hypothetical protein",
+  "unknown",
+  "unknown CDS",
+  "unknown function",
+  "unknown gene",
+  "unknown protein",
+  "unknown, conserved protein",
+  "unknown, hypothetical",
+  "unknown-related protein",
+  "unknown; predicted coding region",
+  "unnamed",
+  "unnamed protein product",
+  "very hypothetical protein"
+};
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BadProtName, sc_BadProtNameText);
+
 void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat) 
 {
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
@@ -1933,6 +2155,11 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
                      "Unknown or hypothetical protein should not have EC number",
                      feat);
         }
+        if (sc_BadProtName.find (*it) != sc_BadProtName.end()) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredProteinName, 
+                     "Uninformative protein name '" + *it + "'",
+                     feat);
+        }
     }
 
     if (prot.IsSetDesc() && feat.IsSetComment() 
@@ -1994,9 +2221,11 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 {
     const CRNA_ref::EType& rna_type = rna.GetType ();
 
-    if ( rna_type == CRNA_ref::eType_mRNA ) {
-        bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||  IsOverlappingGenePseudo(feat);
-        
+    bool feat_pseudo = feat.IsSetPseudo() && feat.GetPseudo();
+    bool gene_pseudo = IsOverlappingGenePseudo(feat);
+    bool pseudo = feat_pseudo || gene_pseudo;
+
+    if ( rna_type == CRNA_ref::eType_mRNA ) {        
         if ( !pseudo ) {
             ValidateMrnaTrans(feat);      /* transcription check */
             ValidateSplice(feat);
@@ -2076,8 +2305,19 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             "RNA type 0 (unknown) not supported", feat);
     }
 
-    if ( feat.CanGetProduct() ) {
+    if ( feat.IsSetProduct() ) {
         ValidateRnaProductType(rna, feat);
+
+        if (!feat.IsSetExcept_text() 
+            || NStr::FindNoCase (feat.GetExcept_text(), "transcribed pseudogene") == string::npos) {
+            if (feat_pseudo) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_PseudoRnaHasProduct,
+                         "A pseudo RNA should not have a product", feat);
+            } else if (gene_pseudo) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_PseudoRnaViaGeneHasProduct,
+                         "An RNA overlapped by a pseudogene should not have a product", feat);
+            }
+        }
     }
 }
 
@@ -2137,6 +2377,16 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
     if (adjacent) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_AbuttingIntervals,
             "Adjacent intervals in Anticodon", feat);
+    }
+
+    ENa_strand loc_strand = feat.GetLocation().GetStrand();
+    ENa_strand ac_strand = anticodon.GetStrand();
+    if (loc_strand == eNa_strand_minus && ac_strand != eNa_strand_minus) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_BadAnticodonStrand, 
+                 "Anticodon should be on minus strand", feat);
+    } else if (loc_strand != eNa_strand_minus && ac_strand == eNa_strand_minus) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_BadAnticodonStrand, 
+                 "Anticodon should be on plus strand", feat);
     }
 
     // trans splicing exception turns off both mixed_strand and out_of_order messages
@@ -2318,13 +2568,16 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     aaname += "/";
     aaname += GetAAName (aa, true);
         
-    EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
+    EDiagSev sev = (aa == 'U' || aa == 'O') ? eDiag_Warning : eDiag_Error;
 
     bool modified_codon_recognition = false;
     if ( feat.CanGetExcept_text()  &&
          NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") != NPOS ) {
         modified_codon_recognition = true;
     }
+
+    vector<string> recognized_codon_values;
+    vector<unsigned char> recognized_taa_values;
 
     ITERATE( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
         if (*iter == 255) continue;
@@ -2338,13 +2591,16 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 
         if ( !modified_codon_recognition ) {
             unsigned char taa = ncbieaa[*iter];
+            string codon = CGen_code_table::IndexToCodon(*iter);
+            recognized_codon_values.push_back (codon);
+            recognized_taa_values.push_back (taa);
+
             if ( taa != aa ) {
                 if ( (aa == 'U')  &&  (taa == '*')  &&  (*iter == 14) ) {
                     // selenocysteine normally uses TGA (14), so ignore without requiring exception in record
                     // TAG (11) is used for pyrrolysine in archaebacteria
                     // TAA (10) is not yet known to be used for an exceptional amino acid
                 } else {
-                    string codon = CGen_code_table::IndexToCodon(*iter);
                     NStr::ReplaceInPlace (codon, "T", "U");
 
                     PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
@@ -2352,6 +2608,127 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
                        + aaname + ") specified by genetic code ("
                        + NStr::IntToString (gcode) + "/" + codename + ")", feat);
                 }
+            }
+        }
+    }
+
+    // see if anticodon is compatible with codons recognized and amino acid
+    string anticodon = "?";
+    vector<string> codon_values;
+    vector<unsigned char> taa_values;
+
+    if (trna.IsSetAnticodon() && GetLength (trna.GetAnticodon(), m_Scope) == 3) {
+        try {
+            anticodon = GetSequenceStringFromLoc(trna.GetAnticodon(), *m_Scope);
+            // get reverse complement sequence for location
+            CRef<CSeq_loc> codon_loc (new CSeq_loc());
+            codon_loc->Add (trna.GetAnticodon());
+            if (codon_loc->GetStrand() == eNa_strand_minus) {
+                codon_loc->SetStrand (eNa_strand_plus);
+            } else {
+                codon_loc->SetStrand (eNa_strand_minus);
+            }
+            string codon = GetSequenceStringFromLoc(*codon_loc, *m_Scope);
+            if (codon.length() > 3) {
+                codon = codon.substr (0, 3);
+            }
+
+            // expand wobble base to known binding partners
+            string wobble = "";
+
+
+            char ch = anticodon.c_str()[0];
+            switch (ch) {
+                case 'A' :
+                    wobble = "ACT";
+                    break;
+                case 'C' :
+                    wobble = "G";
+                    break;
+                case 'G' :
+                    wobble = "CT";
+                    break;
+                case 'T' :
+                    wobble = "AG";
+                    break;
+                default :
+                    break;
+            }
+            if (!NStr::IsBlank(wobble)) {
+                string::iterator str_it = wobble.begin();
+                while (str_it != wobble.end()) {
+                    codon[2] = *str_it;
+                    int index = CGen_code_table::CodonToIndex (codon);
+                    if (index < 64 && index > -1) {
+                        unsigned char taa = ncbieaa[index];
+                        taa_values.push_back(taa);
+                        codon_values.push_back(codon);
+                    }
+                    ++str_it;
+                }
+            }
+            NStr::ReplaceInPlace (anticodon, "T", "U");
+            if (anticodon.length() > 3) {
+                anticodon = anticodon.substr(0, 3);
+            }
+        } catch (...) {
+        }
+    }
+
+    // check that codons predicted from anticodon can transfer indicated amino acid
+    bool ok = false;
+    for (int i = 0; i < codon_values.size(); i++) {
+        if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
+            ok = true;
+        }
+    }
+    if (!ok) {
+        if (aa == 'U' && NStr::Equal (anticodon, "UCA")) {
+            // ignore TGA codon for selenocysteine
+        } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
+            // ignore TAG codon for pyrrolysine
+        } else if (!feat.IsSetExcept_text()
+                  || (NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") == string::npos 
+                      &&NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") == string::npos)) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonAA,
+                      "Codons predicted from anticodon (" + anticodon
+                      + ") cannot produce amino acid (" + aaname + ")",
+                      feat);
+        }
+    }
+
+    // check that codons recognized match codons predicted from anticodon
+    if (codon_values.size() > 0 && recognized_codon_values.size() > 0) {
+        ok = false;
+        for (int i = 0; i < codon_values.size() && !ok; i++) {
+            for (int j = 0; j < recognized_codon_values.size() && !ok; j++) {
+                if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
+                    ok = true;
+                }
+            }
+        }
+        if (!ok 
+            && (!feat.IsSetExcept_text() 
+                || NStr::FindNoCase (feat.GetExcept_text(), "RNA editing") == string::npos)) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonCodon,
+                     "Codon recognized cannot be produced from anticodon ("
+                     + anticodon + ")", feat);
+        }
+    }
+
+    if (!feat.IsSetPseudo() || !feat.GetPseudo()) {
+        if (aa == 0 || aa == 255) {
+            PostErr (sev, eErr_SEQ_FEAT_BadTrnaAA, "Missing tRNA amino acid", feat);
+        } else {
+            // verify that legal amino acid is indicated
+            unsigned int idx;
+            if (aa != '*') {
+                idx = aa - 64;
+            } else {
+                idx = 25;
+            }
+            if (idx == 0 || idx >= 28) {
+                PostErr (sev, eErr_SEQ_FEAT_BadTrnaAA, "Invalid tRNA amino acid", feat);
             }
         }
     }
@@ -3670,13 +4047,15 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
         if ( genomicgrp != 0 ) {
             // get gene for mRNA product sequence
             CBioseq_Handle seq = m_Scope->GetBioseqHandle (feat.GetProduct());
-            CFeat_CI mrna_gene(seq, CSeqFeatData::e_Gene);
-            if ( mrna_gene ) {
-                const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
-                if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
-                        "Gene on mRNA bioseq does not match gene on genomic bioseq",
-                        mrna_gene->GetOriginalFeature());
+            if (seq) {
+                CFeat_CI mrna_gene(seq, CSeqFeatData::e_Gene);
+                if ( mrna_gene ) {
+                    const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
+                    if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
+                            "Gene on mRNA bioseq does not match gene on genomic bioseq",
+                            mrna_gene->GetOriginalFeature());
+                    }
                 }
             }
         }
@@ -4848,42 +5227,53 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         if (overlapping_genes.size() > 1) {
             unsigned int num_genes = 1;
             bool equivalent = false;
+            
             TFeatScores::iterator f1 = overlapping_genes.begin();
+            size_t max = GetLength(f1->second->GetLocation(), m_Scope);
             TFeatScores::iterator f2 = f1;
             ++f2;
-            while (f2 != overlapping_genes.end()) {                
-                if (f1->second->GetData().GetGene().IsSetLocus_tag()
-                    && f2->second->GetData().GetGene().IsSetLocus_tag()
-                    && NStr::EqualNocase(f1->second->GetData().GetGene().GetLocus_tag(),
-                                         f2->second->GetData().GetGene().GetLocus_tag())) {
-                    equivalent = true;
-                } else if (f1->second->GetData().GetGene().IsSetLocus()
-                           && f2->second->GetData().GetGene().IsSetLocus()
-                           && NStr::EqualNocase(f1->second->GetData().GetGene().GetLocus(),
-                                                f2->second->GetData().GetGene().GetLocus())) {
-                    equivalent = true;
-                } else if (f1->second->GetData().GetGene().IsSetSyn()
-                           && f2->second->GetData().GetGene().IsSetSyn()
-                           && NStr::EqualNocase (f1->second->GetData().GetGene().GetSyn().front(),
-                                                 f2->second->GetData().GetGene().GetSyn().front())) {
-                    equivalent = true;
-                }                    
-                num_genes++;
-                ++f1;
+            while (f2 != overlapping_genes.end()) {
+                size_t len = GetLength(f2->second->GetLocation(), m_Scope);
+                if (len < max) {
+                    num_genes = 1;
+                    max = len;
+                    equivalent = false;
+                    f1 = f2;
+                } else if (len == max) {
+                    if (f1->second->GetData().GetGene().IsSetLocus_tag()
+                        && f2->second->GetData().GetGene().IsSetLocus_tag()
+                        && NStr::EqualNocase(f1->second->GetData().GetGene().GetLocus_tag(),
+                                             f2->second->GetData().GetGene().GetLocus_tag())) {
+                        equivalent = true;
+                    } else if (f1->second->GetData().GetGene().IsSetLocus()
+                               && f2->second->GetData().GetGene().IsSetLocus()
+                               && NStr::EqualNocase(f1->second->GetData().GetGene().GetLocus(),
+                                                    f2->second->GetData().GetGene().GetLocus())) {
+                        equivalent = true;
+                    } else if (f1->second->GetData().GetGene().IsSetSyn()
+                               && f2->second->GetData().GetGene().IsSetSyn()
+                               && NStr::EqualNocase (f1->second->GetData().GetGene().GetSyn().front(),
+                                                     f2->second->GetData().GetGene().GetSyn().front())) {
+                        equivalent = true;
+                    }                    
+                    num_genes++;
+                }
                 ++f2;
             }
-            if (equivalent) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
-                         "Feature overlapped by "
-                         + NStr::IntToString(num_genes)
-                         + " identical-length equivalent genes but has no cross-references",
-                         feat);
-            } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
-                         "Feature overlapped by "
-                         + NStr::IntToString(num_genes)
-                         + " identical-length genes but has no cross-references",
-                         feat);
+            if (num_genes > 1) {
+                if (equivalent) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
+                             "Feature overlapped by "
+                             + NStr::IntToString(num_genes)
+                             + " identical-length equivalent genes but has no cross-references",
+                             feat);
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
+                             "Feature overlapped by "
+                             + NStr::IntToString(num_genes)
+                             + " identical-length genes but has no cross-references",
+                             feat);
+                }
             }
         } else if (overlapping_genes.size() == 1 
                    && overlapping_genes.begin()->second->GetData().GetGene().IsSetAllele()
@@ -5431,7 +5821,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
     }
 
     // look for accession IDs in location
-    if (s_SeqLocHasAccession (feat.GetLocation())) {
+    if (m_Imp.DoesAnyFeatLocHaveGI() && s_SeqLocHasAccession (feat.GetLocation())) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureRefersToAccession, "Feature location refers to accession", feat);
     }
                     
@@ -5495,7 +5885,88 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
             }
         }
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_WholeLocation, prefix + " may not have whole location", feat);
-    }        
+    }
+
+    // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
+    if (bsh.IsNa()) {
+        try {
+            int num_n = 0;
+            int num_real = 0;
+            int num_gap = 0;
+            int num_unknown_gap = 0;
+            bool first_in_gap = false, last_in_gap = false;
+            bool first = true;
+
+            for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
+                CSeqVector vec = GetSequenceFromLoc (loc_it.GetSeq_loc(), *m_Scope);
+                if ( !vec.empty() ) {
+                    CBioseq_Handle ph = m_Scope->GetBioseqHandle (loc_it.GetSeq_loc());
+                    TSeqPos offset = loc_it.GetSeq_loc().GetStart (eExtreme_Positional);
+                    string vec_data = GetSequenceStringFromLoc (loc, *m_Scope);
+                    int pos = 0;
+                    string::iterator it = vec_data.begin();
+                    while (it != vec_data.end()) {
+                        if (*it == 'N') {
+                            CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
+                            if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                                if (map_iter.IsUnknownLength()) {
+                                    num_unknown_gap ++;
+                                } else {
+                                    num_gap++;
+                                }
+                            } else {
+                                num_n++;
+                            }
+                        } else {
+                            num_real++;
+                        }
+                        ++it;
+                        ++pos;
+                    }
+                }
+                if (first) {
+                    if (vec.IsInGap(0)) {
+                        first_in_gap = true;
+                    }
+                    first = false;
+                }
+                last_in_gap = vec.IsInGap(vec.size() - 1);
+            }
+            bool misc_feature_matches_gap = false;
+
+            if (num_real == 0 && num_n == 0
+                && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+                TSeqPos start = loc.GetStart(eExtreme_Positional);
+                TSeqPos stop = loc.GetStop(eExtreme_Positional);
+                if ((start == 0 || CSeqMap_CI(bsh, SSeqMapSelector(), start - 1).GetType() != CSeqMap::eSeqGap ) 
+                    && (stop == bsh.GetBioseqLength() - 1 || CSeqMap_CI(bsh, SSeqMapSelector(), stop + 1).GetType() != CSeqMap::eSeqGap )) {
+                    misc_feature_matches_gap = true;
+                }
+            }
+                    
+
+            if (num_gap == 0 && num_unknown_gap == 0 && num_n == 0) {
+                // ignore features that do not cover any gap characters
+            } else if (first_in_gap || last_in_gap) {
+                if (num_real > 0) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
+                             "Feature begins or ends in gap", feat);
+                } else if (misc_feature_matches_gap) {
+                    // ignore (misc_) features that exactly cover the gap
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
+                             "Feature inside sequence gap", feat);
+                }
+            } else if (num_real == 0 && num_gap == 0 && num_unknown_gap == 0 && num_n >= 50) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
+                         "Feature inside gap of Ns", feat);
+            } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && num_unknown_gap > 0) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
+                         "Feature crosses gap of unknown length", feat);
+            }            
+        } catch (...) {
+        }
+    }
 }
 
 

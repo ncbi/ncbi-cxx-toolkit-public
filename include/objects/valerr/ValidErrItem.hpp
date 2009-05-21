@@ -202,6 +202,8 @@ enum EErrType {
     eErr_SEQ_DESCR_BadCountryCapitalization,
     eErr_SEQ_DESCR_WrongVoucherType,
     eErr_SEQ_DESCR_UserObjectProblem,
+    eErr_SEQ_DESCR_TitleHasPMID,
+    eErr_SEQ_DESCR_BadKeyword,
     eErr_SEQ_DESCR_Obsolete,
     ERR_CODE_END(SEQ_DESCR),
 
