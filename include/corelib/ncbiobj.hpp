@@ -268,6 +268,17 @@ public:
     /// Set mode from configuration parameter value.
     static void SetAllocFillMode(const string& value);
 
+protected:
+    /// Virtual method "deleting" this object.
+    /// Method is called whenever by all other indicators this object should
+    /// be deleted. These indicators are: last reference to the object is
+    /// removed, object created on heap and method DoNotDeleteThisObject()
+    /// was not called. Default implementation actually deletes the object,
+    /// but derived classes are free to do whatever they want (e.g. if they
+    /// know that they are allocated at some pool they should return
+    /// themselves to this pool).
+    virtual void DeleteThis(void) const;
+
 private:
     typedef CAtomicCounter   TCounter;  ///< Counter type is CAtomiCounter
     typedef TCounter::TValue TCount;    ///< Alias for value type of counter
@@ -282,7 +293,7 @@ private:
     /// Least significant bits are the "memory" bits and the most
     /// significant bit (or the one after it) is the "valid" bit.
     ///
-    /// The following bit positions have special signifcance:
+    /// The following bit positions have special significance:
     /// - Least significant bit = 0 means object not in heap.
     /// - Least significant bit = 1 means object in heap.
     /// - Most significant bit (or one after it) = 0 means object not valid
@@ -1989,6 +2000,12 @@ private:
 /// The extended CObject class not only counting references to it but
 /// containing additional information to allow weak references to it.
 ///
+/// NOTE: If your class is derived from CObjectEx, you override DelteThis()
+///       method, you do not actually delete the object in your implementation
+///       of DeleteThis() and you do not want all existing CWeakRefs to
+///       reference to this object any longer then you must call method
+///       CleanWeakRefs().
+///
 /// @sa CWeakRef<>
 
 class CObjectEx : public CObject
@@ -2000,8 +2017,18 @@ public:
     NCBI_XNCBI_EXPORT
     virtual ~CObjectEx(void);
 
-    /// Get pointer to proxy object containg pointer to this object
+    /// Get pointer to proxy object containing pointer to this object
     CPtrToObjectExProxy* GetPtrProxy(void) const;
+
+protected:
+    /// Method cleaning all CWeakRefs referencing at this moment to the object
+    /// After calling to this method all existing CWeakRefs referencing to the
+    /// object will return NULL, so it effectively will be equal to deleting
+    /// the object. This method should be called from DeleteThis() if it is
+    /// overridden, if it does not actually deletes the object and if you want
+    /// it to behave the same way as default DeleteThis() does in relation to
+    /// CWeakRefs.
+    void CleanWeakRefs(void);
 
 private:
     /// Add reference to the object in "weak" manner

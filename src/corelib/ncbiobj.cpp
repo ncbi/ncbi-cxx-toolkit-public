@@ -509,18 +509,27 @@ void CObject::CheckReferenceOverflow(TCount count) const
 }
 
 
+void CObject::DeleteThis(void) const
+{
+    TCount count = m_Counter.Get();
+    // Counter could be changed by some other thread,
+    // we should take care of that.
+    if ( (count & eInitCounterInHeap) == TCount(eInitCounterInHeap) ) {
+        delete this;
+    }
+    else {
+        _ASSERT((count & eInitCounterInPool) == TCount(eInitCounterInPool));
+        CObjectMemoryPool::Delete(this);
+    }
+}
+
+
 void CObject::RemoveLastReference(TCount count) const
 {
     if ( ObjectStateCanBeDeleted(count) ) {
         // last reference to heap object -> delete it
         if ( ObjectStateUnreferenced(count) ) {
-            if ( count == TCount(eInitCounterInHeap) ) {
-                delete this;
-            }
-            else {
-                _ASSERT(count == TCount(eInitCounterInPool));
-                CObjectMemoryPool::Delete(this);
-            }
+            DeleteThis();
             return;
         }
     }
@@ -748,6 +757,13 @@ bool CObjectEx::WeakAddReference(void)
     return true;
 }
 
+void
+CObjectEx::CleanWeakRefs(void)
+{
+    m_SelfPtrProxy->Clear();
+    m_SelfPtrProxy.Reset(new CPtrToObjectExProxy(this))
+}
+
 
 CPtrToObjectExProxy::CPtrToObjectExProxy(CObjectEx* ptr)
     : m_Ptr(ptr)
@@ -776,7 +792,7 @@ CObjectEx* CPtrToObjectExProxy::GetLockedObject(void)
     // So if m_Ptr here is not NULL then it will be possible to execute
     // WeakAddReference() without interfering with destructor.
     if (m_Ptr  &&  ! m_Ptr->WeakAddReference()) {
-        m_Ptr = NULL;
+        return NULL;
     }
 
     return m_Ptr;
