@@ -446,7 +446,7 @@ bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, C
 		{
 			if (textId->CanGetAccession())
 				acc = textId->GetAccession();
-			if (acc.size() >= 0)
+			if (acc.size() > 0)
 			{
 				if (textId->CanGetVersion())
 					version = textId->GetVersion();	
