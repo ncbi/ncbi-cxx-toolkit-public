@@ -1,7 +1,7 @@
-corelib$
+corelib
 corelib/hash_impl$
 corelib/impl$
-util$
+util
 util/bitset$
 util/regexp$
 serial$
