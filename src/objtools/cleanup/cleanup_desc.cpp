@@ -330,7 +330,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     // clean origin
     if (block.IsSetOrigin()) {
         string origin = block.GetOrigin();
-        changed |= CleanString (origin);
+        changed |= CleanString (origin, true);
         if (NStr::IsBlank (origin)) {
             block.ResetOrigin();
             changed = true;
