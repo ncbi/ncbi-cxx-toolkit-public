@@ -220,6 +220,7 @@ void CBedReader::x_ProcessMetaInformation(
                 }
             }
         }
+        return;
     }
     if ( fields[0] == "browser" ) {
         return;

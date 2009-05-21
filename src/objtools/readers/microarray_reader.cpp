@@ -206,6 +206,7 @@ void CMicroArrayReader::x_ProcessMetaInformation(
     NStr::Tokenize( line, " \t", fields, NStr::eMergeDelims );
     if ( fields[0] == "track" ) {
         x_ProcessTrackLine( fields, annot );
+        return;
     }
     if ( fields[0] == "browser" ) {
         return;
