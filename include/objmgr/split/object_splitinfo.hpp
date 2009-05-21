@@ -106,6 +106,8 @@ public:
     EAnnotPriority GetPriority(void) const;
     EAnnotPriority CalcPriority(void) const;
 
+    int Compare(const CAnnotObject_SplitInfo& other) const;
+
     int         m_ObjectType;
     CConstRef<CObject> m_Object;
 
@@ -209,6 +211,8 @@ public:
                          const SSplitterParams& params);
 
     EAnnotPriority GetPriority(void) const;
+
+    int Compare(const CSeq_descr_SplitInfo& other) const;
 
     CConstRef<CSeq_descr> m_Descr;
 

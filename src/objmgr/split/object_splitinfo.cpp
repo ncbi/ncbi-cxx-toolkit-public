@@ -50,6 +50,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqtable/Seq_table.hpp>
 
 #include <objmgr/split/asn_sizer.hpp>
 
@@ -57,6 +58,24 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 static CAsnSizer s_Sizer; // for size estimation
+
+namespace {
+    template<class C>
+    string AsnText(const C& obj)
+    {
+        CNcbiOstrstream str;
+        str << MSerial_AsnText << obj;
+        return CNcbiOstrstreamToString(str);
+    }
+
+    template<class C>
+    int AsnCompare(const C& obj1, const C& obj2)
+    {
+        string str1 = AsnText(obj1);
+        string str2 = AsnText(obj2);
+        return str1.compare(str2);
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -279,6 +298,52 @@ EAnnotPriority CAnnotObject_SplitInfo::GetPriority(void) const
 }
 
 
+int CAnnotObject_SplitInfo::Compare(const CAnnotObject_SplitInfo& other) const
+{
+    if ( m_Object == other.m_Object ) {
+        return 0;
+    }
+    if ( int cmp = m_ObjectType - other.m_ObjectType ) {
+        return cmp;
+    }
+    if ( int cmp = m_Size.Compare(other.m_Size) ) {
+        return cmp;
+    }
+    if ( m_ObjectType == CSeq_annot::C_Data::e_Ftable ) {
+        const CSeq_feat& f1 = dynamic_cast<const CSeq_feat&>(*m_Object);
+        const CSeq_feat& f2 = dynamic_cast<const CSeq_feat&>(*other.m_Object);
+        if ( int cmp = f1.GetData().GetSubtype() - f2.GetData().GetSubtype() ) {
+            return cmp;
+        }
+        if ( int cmp = AsnCompare(f1, f2) ) {
+            return cmp;
+        }
+    }
+    else if ( m_ObjectType == CSeq_annot::C_Data::e_Align ) {
+        const CSeq_align& a1 = dynamic_cast<const CSeq_align&>(*m_Object);
+        const CSeq_align& a2 = dynamic_cast<const CSeq_align&>(*other.m_Object);
+        if ( int cmp = AsnCompare(a1, a2) ) {
+            return cmp;
+        }
+    }
+    else if ( m_ObjectType == CSeq_annot::C_Data::e_Graph ) {
+        const CSeq_graph& g1 = dynamic_cast<const CSeq_graph&>(*m_Object);
+        const CSeq_graph& g2 = dynamic_cast<const CSeq_graph&>(*other.m_Object);
+        if ( int cmp = AsnCompare(g1, g2) ) {
+            return cmp;
+        }
+    }
+    else if ( m_ObjectType == CSeq_annot::C_Data::e_Seq_table ) {
+        const CSeq_table& t1 = dynamic_cast<const CSeq_table&>(*m_Object);
+        const CSeq_table& t2 = dynamic_cast<const CSeq_table&>(*other.m_Object);
+        if ( int cmp = AsnCompare(t1, t2) ) {
+            return cmp;
+        }
+    }
+    return 0;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBioseq_SplitInfo
 /////////////////////////////////////////////////////////////////////////////
@@ -348,6 +413,29 @@ CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(const CPlaceId& place_id,
 EAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
 {
     return m_Priority;
+}
+
+
+int CSeq_descr_SplitInfo::Compare(const CSeq_descr_SplitInfo& other) const
+{
+    const CSeq_descr::Tdata& d1 = m_Descr->Get();
+    const CSeq_descr::Tdata& d2 = other.m_Descr->Get();
+    for ( CSeq_descr::Tdata::const_iterator i1(d1.begin()), i2(d2.begin());
+          i1 != d1.end() || i2 != d2.end(); ++i1, ++i2 ) {
+        if ( int cmp = (i1 != d1.end()) - (i2 != d2.end()) ) {
+            return cmp;
+        }
+        if ( int cmp = (*i1)->Which() - (*i2)->Which() ) {
+            return cmp;
+        }
+    }
+    if ( int cmp = m_Size.Compare(other.m_Size) ) {
+        return cmp;
+    }
+    if ( int cmp = AsnCompare(*m_Descr, *other.m_Descr) ) {
+        return cmp;
+    }
+    return 0;
 }
 
 

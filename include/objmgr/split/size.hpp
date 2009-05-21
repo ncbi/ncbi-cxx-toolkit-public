@@ -98,7 +98,7 @@ public:
         {
             return double(m_ZipSize)/m_AsnSize;
         }
-    
+
     CNcbiOstream& Print(CNcbiOstream& out) const;
 
     DECLARE_OPERATOR_BOOL(m_Count != 0);
@@ -108,6 +108,8 @@ public:
             return m_ZipSize > size.m_ZipSize;
         }
 
+    int Compare(const CSize& size) const;
+    
 private:
     size_t m_Count;
     TDataSize m_AsnSize;

@@ -55,6 +55,24 @@ CSize::CSize(TDataSize asn_size, double ratio)
 }
 
 
+int CSize::Compare(const CSize& size) const
+{
+    if ( int cmp = size.GetZipSize() - GetZipSize() ) {
+        // larger compressed size first
+        return cmp;
+    }
+    if ( int cmp = size.GetAsnSize() - GetAsnSize() ) {
+        // larger ASN.1 size first
+        return cmp;
+    }
+    if ( int cmp = GetCount() - size.GetCount() ) {
+        // fewer object count first
+        return cmp;
+    }
+    return 0;
+}
+
+
 CNcbiOstream& CSize::Print(CNcbiOstream& out) const
 {
     return out <<

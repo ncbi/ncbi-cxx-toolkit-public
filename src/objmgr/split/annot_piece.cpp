@@ -153,10 +153,21 @@ bool SAnnotPiece::operator<(const SAnnotPiece& piece) const
         return m_ObjectType < piece.m_ObjectType;
     }
     if ( m_Object != piece.m_Object ) {
-        return m_Object < piece.m_Object;
+        if ( m_ObjectType == seq_descr ) {
+            int cmp = m_Seq_descr->Compare(*piece.m_Seq_descr);
+            if ( cmp ) {
+                return cmp < 0;
+            }
+        }
+        else {
+            return m_Object < piece.m_Object;
+        }
     }
     if ( m_AnnotObject != piece.m_AnnotObject ) {
-        return m_AnnotObject < piece.m_AnnotObject;
+        int cmp = m_AnnotObject->Compare(*piece.m_AnnotObject);
+        if ( cmp ) {
+            return cmp < 0;
+        }
     }
     return false;
 }
