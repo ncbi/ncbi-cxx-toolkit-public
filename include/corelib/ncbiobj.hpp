@@ -277,6 +277,7 @@ protected:
     /// but derived classes are free to do whatever they want (e.g. if they
     /// know that they are allocated at some pool they should return
     /// themselves to this pool).
+    NCBI_XNCBI_EXPORT
     virtual void DeleteThis(void) const;
 
 private:
@@ -2028,6 +2029,7 @@ protected:
     /// overridden, if it does not actually deletes the object and if you want
     /// it to behave the same way as default DeleteThis() does in relation to
     /// CWeakRefs.
+    NCBI_XNCBI_EXPORT
     void CleanWeakRefs(void) const;
 
 private:
