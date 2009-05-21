@@ -545,8 +545,10 @@ FREETYPE_INCLUDE = @FREETYPE_INCLUDE@
 FREETYPE_LIBS    = @FREETYPE_LIBS@
 
 SRA_INCLUDE = -I$(includedir)/../src/internal/sra/api/inc \
+              -I$(includedir)/../src/internal/sra/api/itf++ \
               -I$(includedir)/../src/internal/sra/api/itf \
               -I$(top_srcdir)/src/internal/sra/api/inc \
+              -I$(top_srcdir)/src/internal/sra/api/itf++ \
               -I$(top_srcdir)/src/internal/sra/api/itf
 
 #################################
