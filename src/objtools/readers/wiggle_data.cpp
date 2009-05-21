@@ -288,7 +288,6 @@ void CWiggleTrack::AddRecord(
             "Data record with suspicious span: rejected" );
         throw( err );
     }
-    unsigned int iResidue = (record.SeqStart() - m_uSeqStart) % SeqSpan();
     if ( 0 != (record.SeqStart() - m_uSeqStart) % SeqSpan() ) {
         CObjReaderLineException err( 
             eDiag_Warning,
