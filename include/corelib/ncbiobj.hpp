@@ -2028,7 +2028,7 @@ protected:
     /// overridden, if it does not actually deletes the object and if you want
     /// it to behave the same way as default DeleteThis() does in relation to
     /// CWeakRefs.
-    void CleanWeakRefs(void);
+    void CleanWeakRefs(void) const;
 
 private:
     /// Add reference to the object in "weak" manner
@@ -2040,7 +2040,7 @@ private:
 
 
     /// Proxy object with pointer to this instance
-    CRef<CPtrToObjectExProxy> m_SelfPtrProxy;
+    mutable CRef<CPtrToObjectExProxy> m_SelfPtrProxy;
 };
 
 ////////////////////////////////////////////////////////////////////////////

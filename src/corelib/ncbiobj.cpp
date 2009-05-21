@@ -758,10 +758,11 @@ bool CObjectEx::WeakAddReference(void)
 }
 
 void
-CObjectEx::CleanWeakRefs(void)
+CObjectEx::CleanWeakRefs(void) const
 {
     m_SelfPtrProxy->Clear();
-    m_SelfPtrProxy.Reset(new CPtrToObjectExProxy(this))
+    m_SelfPtrProxy.Reset(new CPtrToObjectExProxy(
+                                               const_cast<CObjectEx*>(this)));
 }
 
 
