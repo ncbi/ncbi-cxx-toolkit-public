@@ -61,7 +61,6 @@ void WSDLParser::BuildDocumentTree(CDataTypeModule& module)
     CopyComments(module.Comments());
 
     TToken tok;
-    int emb=0;
     for (;;) {
         tok = GetNextToken();
         switch ( tok ) {
