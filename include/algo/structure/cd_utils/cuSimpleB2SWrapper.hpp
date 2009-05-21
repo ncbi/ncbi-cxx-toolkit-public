@@ -52,6 +52,7 @@ public:
 	static const unsigned int HITLIST_SIZE_DEFAULT;
 	static const unsigned int MAX_HITLIST_SIZE;
 	static const int    CDD_DATABASE_SIZE              ;
+	static const double E_VAL_DEFAULT                  ; // default e-value threshold
 	static const double E_VAL_WHEN_NO_SEQ_ALIGN        ; // eval when Blast doesn't return a seq-align
 	static const double SCORE_WHEN_NO_SEQ_ALIGN        ;  
 	static const double DO_NOT_USE_PERC_ID_THRESHOLD;
@@ -76,6 +77,10 @@ public:
     //  Returns the resulting value of m_hitlistSize.
     unsigned int SetHitlistSize(unsigned int hitlistSize);
 
+    //  Sanity checks that eValueThold is non-negative; returns resulting value of m_eValueThold.
+    double SetEValueThreshold(double eValueThold);
+
+    //  E-value threshold is 10.0 unless user has previously called 'SetEValueThreshold'.
     bool DoBlast2Seqs();
 
     //  If there are no hits, the returned CRef will be invalid.  Test the CRef before using.
@@ -107,6 +112,7 @@ private:
 	string m_scoringMatrix;
     unsigned int m_hitlistSize;
     double m_percIdThold;   //  only used if explicitly set by user.
+    double m_eValueThold;
 	vector< CRef<CSeq_align> > m_alignments;
 	
 	vector< double > m_scores;

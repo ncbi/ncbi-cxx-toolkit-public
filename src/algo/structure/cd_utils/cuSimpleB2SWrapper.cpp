@@ -64,19 +64,20 @@ BEGIN_SCOPE(cd_utils)
 const unsigned int CSimpleB2SWrapper::HITLIST_SIZE_DEFAULT     = 100;
 const unsigned int CSimpleB2SWrapper::MAX_HITLIST_SIZE         = 10000;
 const int    CSimpleB2SWrapper::CDD_DATABASE_SIZE              = 1000000;
-const double CSimpleB2SWrapper::E_VAL_WHEN_NO_SEQ_ALIGN        = 1000000; // eval when Blast doesn't return a seq-align
+const double CSimpleB2SWrapper::E_VAL_DEFAULT                  = 10.0;    // default e-value threshold
+const double CSimpleB2SWrapper::E_VAL_WHEN_NO_SEQ_ALIGN        = 1000000; // e-value when Blast doesn't return a seq-align
 const double CSimpleB2SWrapper::SCORE_WHEN_NO_SEQ_ALIGN        = -1.0;    
 const double CSimpleB2SWrapper::DO_NOT_USE_PERC_ID_THRESHOLD   = -1.0;    
 const string CSimpleB2SWrapper::SCORING_MATRIX_DEFAULT = BLOSUM62NAME;
 
 CSimpleB2SWrapper::CSimpleB2SWrapper(double percIdThold, string matrixName)
-    : m_scoringMatrix(matrixName), m_hitlistSize(HITLIST_SIZE_DEFAULT)
+    : m_scoringMatrix(matrixName), m_hitlistSize(HITLIST_SIZE_DEFAULT), m_eValueThold(E_VAL_DEFAULT)
 {
     SetPercIdThreshold(percIdThold);
 }
 
 CSimpleB2SWrapper::CSimpleB2SWrapper(CRef<CBioseq>& seq1, CRef<CBioseq>& seq2, double percIdThold, string matrixName)
-: m_scoringMatrix(matrixName), m_hitlistSize(HITLIST_SIZE_DEFAULT)
+: m_scoringMatrix(matrixName), m_hitlistSize(HITLIST_SIZE_DEFAULT), m_eValueThold(E_VAL_DEFAULT)
 {
     SetSeq(seq1, true, 0, 0);
     SetSeq(seq2, false, 0, 0);
@@ -120,13 +121,20 @@ unsigned int CSimpleB2SWrapper::SetHitlistSize(unsigned int hitlistSize)
     return m_hitlistSize;
 }
 
+double CSimpleB2SWrapper::SetEValueThreshold(double eValueThold)
+{
+    if (eValueThold >= 0) {
+        m_eValueThold = eValueThold;
+    }
+    return m_eValueThold;
+}
+
 bool CSimpleB2SWrapper::DoBlast2Seqs()
 {
 	CRef< CSeq_align > nullRef;
 	
 	CRef<CBlastAdvancedProteinOptionsHandle> options(new CBlastAdvancedProteinOptionsHandle);
-	options->SetEvalueThreshold(10.0);
-	//options->SetPercentIdentity(10.0);
+	options->SetEvalueThreshold(m_eValueThold);
 	options->SetMatrixName(m_scoringMatrix.c_str());
 	options->SetSegFiltering(false);
 	options->SetDbLength(CDD_DATABASE_SIZE);
