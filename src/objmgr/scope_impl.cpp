@@ -329,6 +329,13 @@ void CScope_Impl::RemoveDataLoader(const string& name,
                    "data loader not found in the scope");
     }
     CRef<CDataSource_ScopeInfo> ds_info = ds_it->second;
+    try {
+        ds_info->ResetHistory(action);
+    }
+    catch (...) {
+        x_ClearCacheOnRemoveData();
+        throw;
+    }
     if ( action != eRemoveIfLocked ) {
         // we need to process each TSE individually checking if it's unlocked
         CDataSource_ScopeInfo::TTSE_InfoMap tse_map;
