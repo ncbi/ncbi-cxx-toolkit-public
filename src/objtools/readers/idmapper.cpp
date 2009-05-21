@@ -34,8 +34,11 @@
 #include <corelib/ncbiapp.hpp>
 
 // Objects includes
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqres/Seq_graph.hpp>
 
 #include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
@@ -98,6 +101,55 @@ CIdMapper::MapID(
     CSeq_id id( CSeq_id::e_Local, strKey );
     return CSeq_id_Handle::GetHandle( id );
 };
+
+//  ============================================================================
+void
+CIdMapper::MapSeqAnnot(
+    const string& strBuild,
+    CRef<CSeq_annot>& annot )
+//  ============================================================================
+{
+    if ( ! annot->CanGetData() ) {
+        return;
+    }
+    CSeq_annot::TData& data = annot->SetData();
+    switch( data.Which() ) {
+    
+    case CSeq_annot::C_Data::e_Graph:
+        MapGraphIds( strBuild, data.SetGraph() );
+        break;
+        
+    default: 
+        break;
+    }
+};
+
+//  ============================================================================
+void
+CIdMapper::MapGraphIds(
+    const string& strBuild,
+    list< CRef< CSeq_graph > >& graphs )
+//  ============================================================================
+{
+    NON_CONST_ITERATE( CSeq_annot_Base::C_Data::TGraph, it, graphs ) {
+        CSeq_loc& loc = (*it)->SetLoc();
+        const CSeq_id* pId = loc.GetId();
+        if ( ! pId || pId->Which() != CSeq_id::e_Local ) {
+            continue;
+        }
+        const CSeq_id::TLocal& locid = pId->GetLocal();
+        if ( ! locid.IsStr() ) {
+            continue;
+        }
+        string strChrom = locid.GetStr();
+        
+        unsigned int iDummy( 0 );
+        CSeq_id_Handle mapped_handle = MapID( 
+            UcscID::Label( strBuild, strChrom ), iDummy );            
+        loc.SetId( *(mapped_handle.GetSeqId()) );
+    }
+};
+
 
 //  ============================================================================
 void

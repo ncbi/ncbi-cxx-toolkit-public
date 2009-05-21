@@ -35,6 +35,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_annot_Base;
+class CSeq_graph;
+
 //  ============================================================================
 class NCBI_XOBJREAD_EXPORT CIdMapper
 //  ============================================================================
@@ -55,11 +58,21 @@ public:
         const std::string&,
         unsigned int& );
 
+    virtual void
+    MapSeqAnnot(
+        const std::string&, 
+        CRef<CSeq_annot>& );
+                
     virtual void Dump(
         CNcbiOstream&,
         const std::string& = "" );
                 
 protected:                                  
+    virtual void
+    MapGraphIds(
+        const std::string&, 
+        list< CRef< CSeq_graph > >& );
+        
     CIdMapper() {};
 };
            
