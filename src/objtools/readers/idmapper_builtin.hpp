@@ -60,6 +60,13 @@ public:
 protected:                                  
     CIdMapperBuiltin();
     
+    void
+    AddMapping(
+        const std::string&,
+        const std::string&,
+        const std::string&,
+        unsigned int =0 );
+        
     CIdMap m_Map;
 };
            
