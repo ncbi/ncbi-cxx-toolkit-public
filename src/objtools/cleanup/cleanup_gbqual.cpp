@@ -869,6 +869,16 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
             }
         }
         return true;  // mark qual for deletion
+    } else if (NStr::EqualNocase(qual, "experiment")) {
+        if (NStr::EqualNocase(val, "experimental evidence, no additional details recorded")) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+            return true;  // mark qual for deletion
+        }
+    } else if (NStr::EqualNocase(qual, "inference")) {
+        if (NStr::EqualNocase(val, "non-experimental evidence, no additional details recorded")) {
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+            return true;  // mark qual for deletion
+        }
     } else if (NStr::EqualNocase(qual, "note")  ||
                NStr::EqualNocase(qual, "notes")  ||
                NStr::EqualNocase(qual, "comment")) {
