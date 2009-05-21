@@ -83,8 +83,6 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/error_codes.hpp>
-#include <objtools/readers/ucscid.hpp>
-#include <objtools/readers/idmapper.hpp>
 
 #include <algorithm>
 #include <objects/seqres/Seq_graph.hpp>
@@ -152,7 +150,6 @@ CWiggleReader::ReadObject(
     
     CRef< CSeq_annot > annot( new CSeq_annot );
     string pending;
-    unsigned int count = 0;
     CWiggleRecord record;
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
