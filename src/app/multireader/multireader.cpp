@@ -33,10 +33,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistl.hpp>
-#include <corelib/ncbitime.hpp>
 #include <util/format_guess.hpp>
 
 #include <serial/iterator.hpp>
@@ -45,8 +43,12 @@
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
+#include <objtools/readers/ucscid.hpp>
+#include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/multireader.hpp>
@@ -63,17 +65,6 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
-
-//    virtual int ReadSeqAnnot(
-//        CNcbiIstream&,
-//        CRef<CSeq_annot>& );
-        
-//    virtual int ReadSeqEntry(
-//        CNcbiIstream&,
-//        CRef<CSeq_entry>& );
-    
-    CReaderBase* m_pReader;
-
 };
 
 //  ============================================================================
@@ -116,60 +107,10 @@ void CMultiReaderApp::Init(void)
             "gff",
             "guess"));
 
-    //
-    //  wiggle specific flags and parameters:
-    //
-    arg_desc->AddDefaultKey( "map",
-        "map",
-        "User defined mappings, format: \"src1:target1;...;srcN:targetN\" ",
-        CArgDescriptions::eString,
-        "" );
-        
-    arg_desc->AddDefaultKey( "usermap",
-        "usermap",
-        "Source for user defined mappings",
-        CArgDescriptions::eInputFile,
-        "" );
-        
-    arg_desc->AddDefaultKey( "sitemap",
-        "sitemap",
-        "Source for site defined mappings",
-        CArgDescriptions::eInputFile,
-        "" );
-        
-    arg_desc->AddDefaultKey( "dbmap",
-        "dbmap",
-        "Source for database provided mappings",
-        CArgDescriptions::eString,
-        "" );
-
-    //
-    //  gff specific flags and parameters:
-    //
-    arg_desc->AddFlag(
-        "all-ids-to-local", 
-        "All identifiers are local IDs",
-        true );
-
-    arg_desc->AddFlag(
-        "numeric-ids-to-local", 
-        "Numeric identifiers are local IDs",
-        true );
-    
-    arg_desc->AddFlag(
-        "attribute-to-gbqual", 
-        "Attribute tags are GenBank qualifiers",
-        true );
-    
-    arg_desc->AddFlag(
-        "id-to-product", 
-        "Move protein_id and transcript_id to products for mRNA and CDS",
-        true );
-    
-    arg_desc->AddFlag(
-        "no-gtf", 
-        "Don't honor or recognize GTF conventions",
-        true );
+    arg_desc->AddDefaultKey(
+        "ucsc-build", "UCSC_build_number",
+        "UCSC build number",
+        CArgDescriptions::eString, "" );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -204,6 +145,13 @@ CMultiReaderApp::Run(void)
     CMultiReader reader( fmt );
     CErrorContainer errors;
     CRef< CSeq_annot > annot = reader.ReadObject( ip, &errors );
+    
+    if ( ! args[ "ucsc-build" ].AsString().empty() ) {
+        CIdMapper* pMapper = CIdMapper::GetIdMapper( "builtin" );
+        pMapper->MapSeqAnnot( args[ "ucsc-build" ].AsString(), annot );
+        delete pMapper;
+    }
+    
     if ( annot ) {
         op << MSerial_AsnText << *annot << endl;
     }
