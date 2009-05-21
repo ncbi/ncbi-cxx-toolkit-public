@@ -695,6 +695,10 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
             sl.SetStrand(eNa_strand_unknown);
             ChangeMade(CCleanupChange::eChangeSeqloc);
         }
+        if (bsh && bsh.IsProtein() && sl.Which() == CSeq_loc::e_Int) {
+            sl.SetStrand(eNa_strand_unknown);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        }
     }
     
 }
