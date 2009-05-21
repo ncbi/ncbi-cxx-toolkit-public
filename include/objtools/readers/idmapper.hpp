@@ -69,9 +69,9 @@ public:
                 
 protected:                                  
     virtual void
-    MapGraphIds(
-        const std::string&, 
-        list< CRef< CSeq_graph > >& );
+    MapLocation(
+        const std::string&,
+        CSeq_loc& );
         
     CIdMapper() {};
 };

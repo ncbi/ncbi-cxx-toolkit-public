@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
@@ -104,6 +105,29 @@ CIdMapper::MapID(
 
 //  ============================================================================
 void
+CIdMapper::MapLocation(
+    const string& strBuild,
+    CSeq_loc& location )
+//  ============================================================================
+{
+    const CSeq_id* pId = location.GetId();
+    if ( ! pId || pId->Which() != CSeq_id::e_Local ) {
+        return;
+    }
+    const CSeq_id::TLocal& locid = pId->GetLocal();
+    if ( ! locid.IsStr() ) {
+        return;
+    }
+    string strChrom = locid.GetStr();
+    
+    unsigned int iDummy( 0 );
+    CSeq_id_Handle mapped_handle = MapID( 
+        UcscID::Label( strBuild, strChrom ), iDummy );            
+    location.SetId( *(mapped_handle.GetSeqId()) );
+};
+
+//  ============================================================================
+void
 CIdMapper::MapSeqAnnot(
     const string& strBuild,
     CRef<CSeq_annot>& annot )
@@ -115,41 +139,26 @@ CIdMapper::MapSeqAnnot(
     CSeq_annot::TData& data = annot->SetData();
     switch( data.Which() ) {
     
-    case CSeq_annot::C_Data::e_Graph:
-        MapGraphIds( strBuild, data.SetGraph() );
+    case CSeq_annot::C_Data::e_Graph: {
+            list< CRef< CSeq_graph > >& graphs = data.SetGraph();
+            NON_CONST_ITERATE( list< CRef< CSeq_graph > >, it, graphs ) {
+                MapLocation( strBuild, (*it)->SetLoc() );
+            }
+        }
         break;
-        
+    
+    case CSeq_annot::C_Data::e_Ftable: {
+            list< CRef< CSeq_feat > >& features = data.SetFtable();
+            NON_CONST_ITERATE( list< CRef< CSeq_feat > >, it, features ) {
+                MapLocation( strBuild, (*it)->SetLocation() );
+            }
+        }
+        break;
+            
     default: 
         break;
     }
 };
-
-//  ============================================================================
-void
-CIdMapper::MapGraphIds(
-    const string& strBuild,
-    list< CRef< CSeq_graph > >& graphs )
-//  ============================================================================
-{
-    NON_CONST_ITERATE( CSeq_annot_Base::C_Data::TGraph, it, graphs ) {
-        CSeq_loc& loc = (*it)->SetLoc();
-        const CSeq_id* pId = loc.GetId();
-        if ( ! pId || pId->Which() != CSeq_id::e_Local ) {
-            continue;
-        }
-        const CSeq_id::TLocal& locid = pId->GetLocal();
-        if ( ! locid.IsStr() ) {
-            continue;
-        }
-        string strChrom = locid.GetStr();
-        
-        unsigned int iDummy( 0 );
-        CSeq_id_Handle mapped_handle = MapID( 
-            UcscID::Label( strBuild, strChrom ), iDummy );            
-        loc.SetId( *(mapped_handle.GetSeqId()) );
-    }
-};
-
 
 //  ============================================================================
 void
