@@ -10,7 +10,7 @@
 #
 
 APP: os_gateway probe_os_gateway simple_os_gateway test_osgregrouper
-COPY: $srcdir/src/internal/cppcore/os_gateway/kill_os_gateway.sh $installdir/bin
+COPY: $srcdir/src/internal/cppcore/os_gateway/*.sh $installdir/bin
 COPY: $srcdir/src/internal/cppcore/os_gateway/os_gateway.ini $installdir/bin
 
 # Use stable components (specified at version 4.0.0 as of February
