@@ -1,3 +1,8 @@
+2009-05-06 14:52:59:
+    Slip belated infrastructure changes into version 1.2.1 (binaries untouched):
+     * Track probe results and report appropriate penalties to LBSMD.
+     * Have os_gateway.sh bomb out and send mail if /log/srv is unwritable.
+
 2009-04-06 13:17:21:
     Finalize version 1.2.1, with the following major changes relative to 1.2.0:
      * Pick up latest fixes to 4.0.0 stable components.
