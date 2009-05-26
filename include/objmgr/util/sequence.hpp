@@ -96,6 +96,16 @@ enum EGetIdFlags {
                                ///< function
     eGetId_HandleDefault = 0x0003, ///< returns the ID associated with a bioseq-handle
 
+    eGetId_Seq_id_Score       = 0x0004, ///< use CSeq_id::Score() as the scoring function
+    eGetId_Seq_id_BestRank    = 0x0005, ///< use CSeq_id::BestRank() as the scoring function
+    eGetId_Seq_id_WorstRank   = 0x0006, ///< use CSeq_id::WorstRank() as the scoring function
+    eGetId_Seq_id_FastaAARank = 0x0007, ///< use CSeq_id::FastaAARank() as the scoring function
+    eGetId_Seq_id_FastaNARank = 0x0008, ///< use CSeq_id::FastaNARank() as the scoring function
+
+    ///< "canonical" here means "most specific"; this differs from "best" in
+    ///< that "best" is intended for display purposes
+    eGetId_Canonical = eGetId_Seq_id_BestRank,
+
     eGetId_TypeMask = 0x00FF,  ///< Mask for requested id type
 
     /// Check if the seq-id is present in the scope

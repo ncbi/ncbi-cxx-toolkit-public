@@ -225,13 +225,50 @@ const char* CSeqIdFromHandleException::GetErrCodeString(void) const
 }
 
 
-int ScoreSeqIdHandle(const CSeq_id_Handle& idh)
+int Score_SeqIdHandle(const CSeq_id_Handle& idh)
 {
     CConstRef<CSeq_id> id = idh.GetSeqId();
     CRef<CSeq_id> id_non_const
         (const_cast<CSeq_id*>(id.GetPointer()));
     return CSeq_id::Score(id_non_const);
 }
+
+
+int BestRank_SeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::BestRank(id_non_const);
+}
+
+
+int WorstRank_SeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::WorstRank(id_non_const);
+}
+
+
+int FastaAARank_SeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::FastaAARank(id_non_const);
+}
+
+
+int FastaNARank_SeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::FastaNARank(id_non_const);
+}
+
 
 
 CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
@@ -272,7 +309,32 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
 
     case eGetId_Best:
         {{
-            return FindBestChoice(ids, ScoreSeqIdHandle);
+            return FindBestChoice(ids, Score_SeqIdHandle);
+        }}
+
+    case eGetId_Seq_id_Score:
+        {{
+            return FindBestChoice(ids, Score_SeqIdHandle);
+        }}
+
+    case eGetId_Seq_id_BestRank:
+        {{
+            return FindBestChoice(ids, BestRank_SeqIdHandle);
+        }}
+
+    case eGetId_Seq_id_WorstRank:
+        {{
+            return FindBestChoice(ids, WorstRank_SeqIdHandle);
+        }}
+
+    case eGetId_Seq_id_FastaAARank:
+        {{
+            return FindBestChoice(ids, FastaAARank_SeqIdHandle);
+        }}
+
+    case eGetId_Seq_id_FastaNARank:
+        {{
+            return FindBestChoice(ids, FastaNARank_SeqIdHandle);
         }}
 
     default:
