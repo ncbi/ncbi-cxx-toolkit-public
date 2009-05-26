@@ -425,7 +425,11 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
         break;
     case CSeqFeatData::e_Rna:
         if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
-            if (feat.IsSetLocation()                 
+            if (feat.IsSetLocation()
+                && feat.IsSetData()
+                && feat.GetData().IsRna()
+                && feat.GetData().GetRna().IsSetExt()
+                && feat.GetData().GetRna().GetExt().IsTRNA()
                 && feat.GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon()
                 && feat.GetData().GetRna().GetExt().GetTRNA().GetAnticodon().IsInt()) {                
                 ENa_strand loc_strand = feat.GetLocation().GetStrand();
