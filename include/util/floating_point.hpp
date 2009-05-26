@@ -34,57 +34,116 @@
  */
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbiexpt.hpp>
 #include <util/impl/floating_point_comparison.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-/// Floating point comparison with fraction tolerance
+/// Floating point supported operations
+enum EFloatingPointOperation {
+    eFP_LessThan,       ///< '<' operation
+    eFP_EqualTo,        ///< '==' operation
+    eFP_GreaterThan     ///< '>' operation
+};
+
+/// Supported types of tolerances
+enum EFloatingPointTolerance {
+    eFP_WithFraction,   ///< fraction tolerance
+    eFP_WithPercent     ///< percent tolerance
+};
+
+
+/// Exception class for g_FloatingPoint_Compare
+class NCBI_XNCBI_EXPORT  CFloatingPointCompareException : public CException
+{
+public:
+    enum EErrCode {
+        eOperationError,    ///< Unknown operation requested
+        eToleranceError     ///< Unknown tolerance requested
+    };
+
+    /// Translate from the error code value to its string representation
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eOperationError: return "eOperationError";
+        case eToleranceError: return "eToleranceError";
+        default:              return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CFloatingPointCompareException, CException);
+};
+
+
+/// Floating point comparisons
 /// It uses boost implementation of the comparison so the details are available
 /// here:
 /// http://www.boost.org/doc/libs/1_39_0/libs/test/doc/html/utf/testing-tools/floating_point_comparison.html
 ///
 /// @param lhs
 ///   Left hand side value to compare
+/// @param operation
+///   Required comparison
 /// @param rhs
 ///   Right hand side value to compare
-/// @param fraction
-///   Fraction tolerance value
+/// @param tolerance
+///   Tolerance type to be used
+/// @param threshold
+///   Tolerance value
 /// @return
-///   true if lhs and rhs are nearly equal
-template<typename TFloatingPoint>
-bool g_FloatingPoint_EqualWithFractionTolerance(TFloatingPoint lhs,
-                                                TFloatingPoint rhs,
-                                                TFloatingPoint fraction)
+///   Evaluation of the required operation
+/// @exception
+///   Throws CFloatingPointCompareException in case of problems
+template< typename TFloatingPoint>
+bool g_FloatingPoint_Compare(TFloatingPoint          lhs,
+                             EFloatingPointOperation operation,
+                             TFloatingPoint          rhs,
+                             EFloatingPointTolerance tolerance,
+                             TFloatingPoint          threshold)
 {
-    return boost_fp_impl::check_is_close(lhs, rhs,
-                                         boost_fp_impl::fraction_tolerance(fraction));
+    if (tolerance == eFP_WithFraction) {
+        switch (operation) {
+        case eFP_LessThan:
+            return (lhs < rhs) &&
+                   !boost_fp_impl::check_is_close(lhs, rhs,
+                            boost_fp_impl::fraction_tolerance(threshold));
+        case eFP_EqualTo:
+            return boost_fp_impl::check_is_close(lhs, rhs,
+                            boost_fp_impl::fraction_tolerance(threshold));
+        case eFP_GreaterThan:
+            return (lhs > rhs) &&
+                   !boost_fp_impl::check_is_close(lhs, rhs,
+                            boost_fp_impl::fraction_tolerance(threshold));
+        default:
+            NCBI_THROW(CFloatingPointCompareException, eOperationError,
+                       "g_FloatingPoint_Compare(): unknown operation "
+                       "requested for fraction tolerance");
+        }
+    } else if (tolerance == eFP_WithPercent) {
+        switch (operation) {
+        case eFP_LessThan:
+            return (lhs < rhs) &&
+                   !boost_fp_impl::check_is_close(lhs, rhs,
+                            boost_fp_impl::percent_tolerance(threshold));
+        case eFP_EqualTo:
+            return boost_fp_impl::check_is_close(lhs, rhs,
+                            boost_fp_impl::percent_tolerance(threshold));
+        case eFP_GreaterThan:
+            return (lhs > rhs) &&
+                   !boost_fp_impl::check_is_close(lhs, rhs,
+                            boost_fp_impl::percent_tolerance(threshold));
+        default:
+            NCBI_THROW(CFloatingPointCompareException, eOperationError,
+                       "g_FloatingPoint_Compare(): unknown operation "
+                       "requested for percent tolerance");
+        }
+    }
+    NCBI_THROW(CFloatingPointCompareException, eToleranceError,
+               "g_FloatingPoint_Compare(): unknown tolerance requested");
 }
-
-
-/// Floating point comparison with percent tolerance
-/// It uses boost implementation of the comparison so the details are available
-/// here:
-/// http://www.boost.org/doc/libs/1_39_0/libs/test/doc/html/utf/testing-tools/floating_point_comparison.html
-///
-/// @param lhs
-///   Left hand side value to compare
-/// @param rhs
-///   Right hand side value to compare
-/// @param percent
-///   Percent tolerance value
-/// @return
-///   true if lhs and rhs are nearly equal
-template<typename TFloatingPoint>
-bool g_FloatingPoint_EqualWithPercentTolerance(TFloatingPoint lhs,
-                                               TFloatingPoint rhs,
-                                               TFloatingPoint percent)
-{
-    return boost_fp_impl::check_is_close(lhs, rhs,
-                                         boost_fp_impl::percent_tolerance(percent));
-}
-
 
 END_NCBI_SCOPE
 

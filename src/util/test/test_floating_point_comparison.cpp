@@ -48,7 +48,8 @@ int main(int argc, char** argv)
     double      v2df = 1.112e-10;
     double      fraction_d = 0.0008999;
 
-    if (g_FloatingPoint_EqualWithFractionTolerance(v1df, v2df, fraction_d)) {
+    if (g_FloatingPoint_Compare(v1df, eFP_EqualTo, v2df,
+                                eFP_WithFraction, fraction_d)) {
         ret++;
         cerr << "Fraction comparison (double) failed. "
                 "Expected: false. Received: true." << endl;
@@ -59,7 +60,8 @@ int main(int argc, char** argv)
     double      v2dp = 1.23457e-10;
     double      percent_d = 0.0001;
 
-    if (g_FloatingPoint_EqualWithPercentTolerance(v1dp, v2dp, percent_d)) {
+    if (g_FloatingPoint_Compare(v1dp, eFP_EqualTo, v2dp,
+                                eFP_WithPercent, percent_d)) {
         ret++;
         cerr << "Percent comparison (double) failed. "
                 "Expected: false. Received: true." << endl;
@@ -70,7 +72,8 @@ int main(int argc, char** argv)
     v2df = 1.112e-10;
     fraction_d = 0.009;
 
-    if (!g_FloatingPoint_EqualWithFractionTolerance(v1df, v2df, fraction_d)) {
+    if (!g_FloatingPoint_Compare(v1df, eFP_EqualTo, v2df,
+                                 eFP_WithFraction, fraction_d)) {
         ret++;
         cerr << "Fraction comparison (double) failed. "
                 "Expected: true. Received: false." << endl;
@@ -80,7 +83,8 @@ int main(int argc, char** argv)
     v2dp = 1.23457e-10;
     percent_d = 0.001;
 
-    if (!g_FloatingPoint_EqualWithPercentTolerance(v1dp, v2dp, percent_d)) {
+    if (!g_FloatingPoint_Compare(v1dp, eFP_EqualTo, v2dp,
+                                 eFP_WithPercent, percent_d)) {
         ret++;
         cerr << "Percent comparison (double) failed. "
                 "Expected: true. Received: false." << endl;
@@ -93,7 +97,8 @@ int main(int argc, char** argv)
     float       v2ff = 1.112e-10F;
     float       fraction_f = 0.0008999F;
 
-    if (g_FloatingPoint_EqualWithFractionTolerance(v1ff, v2ff, fraction_f)) {
+    if (g_FloatingPoint_Compare(v1ff, eFP_EqualTo, v2ff,
+                                eFP_WithFraction, fraction_f)) {
         ret++;
         cerr << "Fraction comparison (float) failed. "
                 "Expected: false. Received: true." << endl;
@@ -104,7 +109,8 @@ int main(int argc, char** argv)
     float       v2fp = 1.23457e-10F;
     float       percent_f = 0.0001F;
 
-    if (g_FloatingPoint_EqualWithPercentTolerance(v1fp, v2fp, percent_f)) {
+    if (g_FloatingPoint_Compare(v1fp, eFP_EqualTo, v2fp,
+                                eFP_WithPercent, percent_f)) {
         ret++;
         cerr << "Percent comparison (float) failed. "
                 "Expected: false. Received: true." << endl;
@@ -115,7 +121,8 @@ int main(int argc, char** argv)
     v2ff = 1.112e-10F;
     fraction_f = 0.009F;
 
-    if (!g_FloatingPoint_EqualWithFractionTolerance(v1ff, v2ff, fraction_f)) {
+    if (!g_FloatingPoint_Compare(v1ff, eFP_EqualTo, v2ff,
+                                 eFP_WithFraction, fraction_f)) {
         ret++;
         cerr << "Fraction comparison (float) failed. "
                 "Expected: true. Received: false." << endl;
@@ -125,7 +132,8 @@ int main(int argc, char** argv)
     v2fp = 1.23457e-10F;
     percent_f = 0.001F;
 
-    if (!g_FloatingPoint_EqualWithPercentTolerance(v1fp, v2fp, percent_f)) {
+    if (!g_FloatingPoint_Compare(v1fp, eFP_EqualTo, v2fp,
+                                 eFP_WithFraction, percent_f)) {
         ret++;
         cerr << "Percent comparison (float) failed. "
                 "Expected: true. Received: false." << endl;
@@ -134,6 +142,26 @@ int main(int argc, char** argv)
     /*
      * Mixing types for arguments is not allowed (not compiled)
      */
+
+
+    v1dp = 1.23456e-10;
+    v2dp = 1.23457e-10;
+    percent_d = 0.0001;
+
+    if (!g_FloatingPoint_Compare(v1dp, eFP_LessThan, v2dp,
+                                 eFP_WithPercent, percent_d)) {
+        ret++;
+        cerr << "Percent less double failed. "
+                "Expected: false. Received: true." << endl;
+    }
+
+    if (!g_FloatingPoint_Compare(v2dp, eFP_GreaterThan, v1dp,
+                                 eFP_WithPercent, percent_d)) {
+        ret++;
+        cerr << "Percent greter double failed. "
+                "Expected: false. Received: true." << endl;
+    }
+
 
     return ret;
 }
