@@ -448,7 +448,8 @@ CDBConnectionFactory::DispatchServerName(
                         || GetMaxNumOfValidationAttempts()
                            && rt_data.GetNumOfValidationFailures(service_name)
                                           >= GetMaxNumOfValidationAttempts())
-                && !full_retry_made)
+                && !full_retry_made
+                && tried_servers.size() != 0)
             {
                 _TRACE("List of servers for service " << service_name
                        << " is exhausted. Giving excluded a try.");
