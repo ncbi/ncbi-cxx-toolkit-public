@@ -45,12 +45,16 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 // Object Manager includes
@@ -111,6 +115,10 @@ private:
 
     size_t m_Level;
     size_t m_Reported;
+
+protected:
+    CRef<CObjectManager> m_objmgr;
+    CRef<CScope> m_scope;
 };
 
 
@@ -219,6 +227,11 @@ void CTest_cleanupApplication::ReadClassMember
                 CCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
+                    m_objmgr = CObjectManager::GetInstance();
+                    m_scope.Reset( new CScope( *m_objmgr ) );
+                    m_scope->AddTopLevelSeqEntry( *se );
+                    se->Parentize();
+                    cleanup.SetScope (m_scope);
                     changes = cleanup.BasicCleanup(*se, m_Options);
                 }
                 if ( changes->ChangeCount() > 0 ) {
@@ -276,6 +289,11 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
     CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
+        m_objmgr = CObjectManager::GetInstance();
+        m_scope.Reset( new CScope( *m_objmgr ) );
+        m_scope->AddTopLevelSeqEntry( *se );
+        se->Parentize();
+        cleanup.SetScope (m_scope);
         changes = cleanup.BasicCleanup(*se, m_Options);
     }
     *m_Out << (*se);
@@ -294,6 +312,15 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
+        if (ss->IsEntrys()) {
+            m_objmgr = CObjectManager::GetInstance();
+            m_scope.Reset( new CScope( *m_objmgr ) );
+            EDIT_EACH_SEQENTRY_ON_SEQSUBMIT (it, *ss) {
+                m_scope->AddTopLevelSeqEntry(**it);
+                (*it)->Parentize();
+            }
+            cleanup.SetScope (m_scope);
+        }
         changes = cleanup.BasicCleanup(*ss, m_Options);
     }
     *m_Out << (*ss);
