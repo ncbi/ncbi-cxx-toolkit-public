@@ -165,7 +165,7 @@ x_FillResidueFrequencies(double **freq_data,
 
         _ASSERT(start + size <= query_data[index].GetLength());
         for (int j = 0; j < size; j++) {
-            if (query_data[index].GetLetter(j) == CSequence::kGapChar) {
+            if (query_data[index].GetLetter(start + j) == CSequence::kGapChar) {
                 freq_data[j][0] += weight;
             }
             else {
