@@ -43,6 +43,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -658,7 +660,8 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
     TAttributes attributes;
     CollectAttributes(model, attributes);
     ITERATE (TAttributes, a, attributes) {
-        user->AddField(a->first, a->second);
+        if (!a->second.empty())
+            user->AddField(a->first, a->second);
     }
     if (model.Score() != BadScore())
         user->AddField("cds_score", model.Score());
@@ -964,6 +967,11 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
     const CAlignModel& model = md.model;
 
     CRef< CSeq_align > seq_align( new CSeq_align );
+
+    CRef<CObject_id> id(new CObject_id());
+    id->SetId(model.ID());
+    seq_align->SetId().push_back(id);
+
     seq_align->SetType(CSeq_align::eType_partial);
     CSpliced_seg& spliced_seg = seq_align->SetSegs().SetSpliced();
 
@@ -1039,12 +1047,12 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
     } catch (...) {
         _ASSERT(false);
     }
-    try {
-        CNcbiOstrstream ostream;
-        ostream << MSerial_AsnBinary << *seq_align;
-    } catch (...) {
-        _ASSERT(false);
-    }
+//     try {
+//         CNcbiOstrstream ostream;
+//         ostream << MSerial_AsnBinary << *seq_align;
+//     } catch (...) {
+//         _ASSERT(false);
+//     }
 #endif
 
     return seq_align;
@@ -1102,5 +1110,118 @@ struct collect_indels : public unary_function<CRef<CDelta_seq>, void>
     TSignedSeqPos next_seg_start;
 };
 */
+
+TAttributes GetAttributes(int id, const CTSE_Handle& tse_handle)
+{
+    TAttributes attributes;
+
+    CSeq_feat_Handle feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Rna, id);
+    if (!feat_handle)
+        feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, id);
+    _ASSERT(feat_handle);
+    
+    const CUser_object& user = *feat_handle.GetOriginalSeq_feat()->GetExts().front();
+    _ASSERT( user.GetClass() == "Gnomon" );
+    _ASSERT( user.GetType().GetStr() == "Model Internal Attributes" );
+
+    ITERATE(CUser_object::TData, f, user.GetData()) {
+        const CUser_field& fld = **f;
+        if (fld.GetData().IsStr()) 
+            attributes[fld.GetLabel().GetStr()] = fld.GetData().GetStr();
+        else if (fld.GetLabel().GetStr() == "cds_score") 
+            attributes["cds_score"] = NStr::DoubleToString(fld.GetData().GetReal());
+    }
+    return attributes;
+}
+
+CAlignModel* RestoreModel(const CSeq_feat_Handle& feat, CSeq_annot_Handle internal_feature_table)
+{
+    CScope& scope = feat.GetScope();
+    CBioseq_Handle mrna_handle = scope.GetBioseqHandle(feat.GetProduct());
+    CConstRef<CBioseq> mrna = mrna_handle.GetCompleteBioseq();
+    _ASSERT(mrna->IsNa());
+
+    const CSeq_align& align = *mrna->GetInst().GetHist().GetAssembly().front();
+    CAlignModel* model = new CAlignModel(align);
+
+    model->SetTargetIds(TSeqidList()); // Will be populated later from internal feature user object
+
+    {
+        const CUser_object& user = *feat.GetSeq_feat()->GetExts().front();
+        _ASSERT( user.GetType().GetStr() == "ModelEvidence" );
+        string method = user.GetField("Method").GetData().GetStr();
+        if (method == "Gnomon") model->SetType(CGeneModel::eGnomon);
+        else if (method == "Chainer") model->SetType(CGeneModel::eChain);
+    }
+    {
+        CFeat_CI cds_feat(mrna_handle);
+        while (cds_feat && !cds_feat->GetOriginalFeature().GetData().IsCdregion())
+            ++cds_feat;
+        if (cds_feat) {
+            TSeqRange cds_range = cds_feat->GetLocation().GetTotalRange();
+            TSignedSeqRange rf = model->GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(cds_range.GetFrom(), cds_range.GetTo()), false);
+            CCDSInfo cds_info;
+            cds_info.SetReadingFrame(rf, false);
+            model->SetCdsInfo(cds_info);
+        }
+    }
+
+    TAttributes attributes = GetAttributes(model->ID(), internal_feature_table.GetTopLevelEntry().GetTSE_Handle());
+
+    ParseAttributes(attributes, *model);
+
+    if (attributes.find("cds_score") != attributes.end()) {
+        double score = NStr::StringToDouble(attributes["cds_score"]);
+        CCDSInfo cds_info = model->GetCdsInfo();
+        cds_info.SetScore(score, cds_info.OpenCds());
+        model->SetCdsInfo(cds_info);
+    }
+
+    return model;
+}
+
+string CAnnotationASN1::ExtractModels(const objects::CSeq_entry& seq_entry,
+                                      TAlignModelList& model_list,
+                                      TAlignModelList& evidence_models,
+                                      list<CRef<CSeq_align> > evidence_alignments)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seq_entry_handle = scope.AddTopLevelSeqEntry(seq_entry);
+
+    CSeq_annot_Handle feature_table;
+    CSeq_annot_Handle internal_feature_table;
+
+    CSeq_annot_CI annot_ci(seq_entry_handle, CSeq_annot_CI::eSearch_entry);
+    for (; annot_ci; ++annot_ci) {
+        string name = annot_ci->IsNamed() ? annot_ci->GetName() : kEmptyStr;
+        if (name == "Gnomon models") {
+            _ASSERT(annot_ci->IsFtable());
+SAnnotSelector sel;
+            feature_table = *annot_ci;
+        } else if (name == "Gnomon internal attributes") {
+            _ASSERT(annot_ci->IsFtable());
+            internal_feature_table = *annot_ci;
+        }
+    }
+    _ASSERT(feature_table);
+    _ASSERT(internal_feature_table);
+
+    SAnnotSelector sel;
+    sel.SetFeatType(CSeqFeatData::e_Rna);
+    CFeat_CI feat_ci(feature_table, sel);
+
+    string contig;
+    if (feat_ci) {
+        contig = feat_ci->GetLocation().GetId()->GetSeqIdString(true);
+    }
+
+    for (; feat_ci; ++feat_ci) {
+        auto_ptr<CAlignModel> model( RestoreModel(feat_ci->GetSeq_feat_Handle(), internal_feature_table) );
+        model_list.push_back(*model);
+    }
+    
+    return contig;
+}
+
 END_SCOPE(gnomon)
 END_NCBI_SCOPE

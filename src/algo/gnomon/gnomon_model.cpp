@@ -1319,7 +1319,6 @@ TSignedSeqRange StringToRange(const string& s)
 
 void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
 {
-    TSignedSeqRange max_cds_limits;
     bool open_cds = false;
     bool confirmed_start = false;
     bool confirmed_stop = false;
@@ -1382,11 +1381,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
 
     TSignedSeqRange start, stop;
     if (reading_frame.NotEmpty()) {
-        max_cds_limits = cds_info.MaxCdsLimits();
         cds_info.Clear5PrimeCdsLimit();
-        if (!attributes["maxCDS"].empty()) {
-            max_cds_limits = StringToRange(attributes["maxCDS"]);
-        }
         if (!attributes["protCDS"].empty()) {
             cds_info.SetReadingFrame( StringToRange(attributes["protCDS"]), true );
         }
@@ -1419,12 +1414,6 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         cds_info.SetReadingFrame(reading_frame, (a.Type()&CGeneModel::eProt)!=0 && cds_info.ProtReadingFrame().Empty());
         cds_info.SetStart(start,confirmed_start);
         
-        if (max_cds_limits.NotEmpty()) {
-            if (a.Strand()==ePlus && a.Limits().GetFrom()<max_cds_limits.GetFrom())
-                cds_info.Set5PrimeCdsLimit(max_cds_limits.GetFrom());
-            else if (a.Strand()==eMinus && a.Limits().GetTo()>max_cds_limits.GetTo())
-                cds_info.Set5PrimeCdsLimit(max_cds_limits.GetTo());
-        }
         cds_info.SetStop(stop,confirmed_stop);
         
         string pstops;
@@ -1435,6 +1424,18 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
             ITERATE(vector<string>, s, stops)
                 cds_info.AddPStop(StringToRange(*s));
         }
+
+        TSignedSeqRange max_cds_limits;
+        if (attributes["maxCDS"].empty()) {
+            a.SetCdsInfo(cds_info);
+            max_cds_limits = a.RealCdsLimits();
+        } else {
+            max_cds_limits = StringToRange(attributes["maxCDS"]);
+        }
+        if (a.Strand()==ePlus && a.Limits().GetFrom()<max_cds_limits.GetFrom())
+            cds_info.Set5PrimeCdsLimit(max_cds_limits.GetFrom());
+        else if (a.Strand()==eMinus && a.Limits().GetTo()>max_cds_limits.GetTo())
+            cds_info.Set5PrimeCdsLimit(max_cds_limits.GetTo());
     }
     
     cds_info.SetScore(cds_info.Score(), open_cds);
