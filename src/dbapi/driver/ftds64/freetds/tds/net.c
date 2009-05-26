@@ -323,7 +323,6 @@ static int
 tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfinished)
 {
 	double start, global_start;
-	int timeout = 0;
 	int got = 0;
 	fd_set rfds, efds;
 	struct timeval tv;
@@ -484,10 +483,10 @@ tds_read_packet(TDSSOCKET * tds)
 		tds->in_len = 0;
 		tds->in_pos = 0;
 		tds->last_packet = 1;
-		if (tds->state != TDS_IDLE && len == 0) {
+/*		if (tds->state != TDS_IDLE && len == 0) {
 			tds_close_socket(tds);
-		}
-		return -1;
+		}*/
+		return 0;
 	}
 	tdsdump_dump_buf(TDS_DBG_NETWORK, "Received header", header, sizeof(header));
 
