@@ -325,15 +325,17 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 	double start, global_start;
 	int timeout = 0;
 	int got = 0;
-	fd_set rfds;
+	fd_set rfds, efds;
 	struct timeval tv;
-
-	tv.tv_usec = 0;
+    int canceled = 0;
 
 	if (buf == NULL || buflen < 1 || tds == NULL)
 		return 0;
 
 	global_start = start = GetTimeMark();
+
+    tv.tv_usec = 0;
+    tv.tv_sec = 1;
 
 	while (buflen > 0) {
 
@@ -345,18 +347,16 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 
 		FD_ZERO(&rfds);
 		FD_SET(tds->s, &rfds);
+        FD_ZERO(&efds);
+        FD_SET(tds->s, &efds);
 
-		timeout = 0;
-		if (tds->query_timeout > 0) {
-			timeout = tds->query_timeout - (int)(now - start);
-			if (timeout < 1)
-				timeout = 1;
-		}
-		tv.tv_sec = timeout;
+		if ((len = select(tds->s + 1, &rfds, NULL, &efds, &tv)) > 0) {
 
-		if ((len = select(tds->s + 1, &rfds, NULL, NULL, timeout > 0 ? &tv : NULL)) > 0) {
 			len = 0;
-			if (FD_ISSET(tds->s, &rfds)) {
+            if (FD_ISSET(tds->s, &efds)) {
+                len = -1;
+            }
+			else if (FD_ISSET(tds->s, &rfds)) {
 #ifndef MSG_NOSIGNAL
 				len = READSOCKET(tds->s, buf + got, buflen);
 #else
@@ -393,6 +393,9 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 
 			tdsdump_log(TDS_DBG_NETWORK, "exceeded query timeout: %d\n", tds->query_timeout);
 
+            if (canceled)
+                return got;
+
 			if (tds->query_timeout_func && tds->query_timeout)
 				timeout_action = (*tds->query_timeout_func) (tds->query_timeout_param, (int)(now - global_start));
 
@@ -402,6 +405,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 				break;
 			case TDS_INT_CANCEL:
 				tds_send_cancel(tds);
+                canceled = 1;
 				break;
 
 			case TDS_INT_CONTINUE:

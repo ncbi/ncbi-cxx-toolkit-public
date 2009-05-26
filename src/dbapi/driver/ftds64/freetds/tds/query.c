@@ -2146,10 +2146,10 @@ tds_send_cancel(TDSSOCKET * tds)
     /* TODO discard any partial packet here ?? */
     /* tds_init_write_buf(tds); */
 
-    /* disable timeout */
-    tds->query_start_time = 0;
+    /* disable timeout ?? */
+    /*tds->query_start_time = 0;
     tds->save_query_timeout = tds->query_timeout;
-    tds->query_timeout = 0;
+    tds->query_timeout = 0;*/
 
     tds->out_flag = TDS_CANCEL;
     tds->in_cancel = 1;
