@@ -959,7 +959,7 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
         delete [] freq2_data[0];
         delete [] freq2_data;
 
-        t = m_Aligner.GetTranscript();
+        t = m_Aligner.GetTranscript(false);
 }
 
 void CMultiAligner::x_AlignProfileProfileUsingHit(

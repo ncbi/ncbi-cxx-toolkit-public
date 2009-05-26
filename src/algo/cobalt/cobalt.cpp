@@ -469,6 +469,8 @@ void CMultiAligner::x_Run(void)
 
     case CMultiAlignerOptions::eMulti:
         if (m_Clusterer.GetClusters().size() == 1) {
+            // node id >= kClusterNodeId denotes root of cluster tree
+            cluster_trees[0]->GetValue().SetId(kClusterNodeId);
             m_Tree.SetTree(cluster_trees[0]);
         }
         else {
