@@ -842,6 +842,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         // skipped row
         return CSeq_id_Handle(); // aln_row.m_Id;
     }
+
     const CMappingRanges::TIdMap& idmap = mapper.m_Mappings->GetIdMap();
     CMappingRanges::TIdIterator id_it = idmap.find(aln_row.m_Id);
     if (id_it == idmap.end()) {
@@ -1425,10 +1426,13 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         if ( prod_row.m_Width == 3 ) {
             ex->SetProduct_start().SetProtpos().SetAmin(start);
             ex->SetProduct_start().SetProtpos().SetFrame(prod_row.m_Frame);
+            // Calculate frame:
+            // len = genomic_end - genomic_start =
+            // end_amin*3+(end_frame - 1) - (start_amin*3 + (start_frame - 1))
             int fr = prod_row.m_Frame ? prod_row.m_Frame - 1 : 0;
             TSeqPos end_pos = start*3 + fr + seg->m_Len - 1;
             ex->SetProduct_end().SetProtpos().SetAmin(end_pos/3);
-            ex->SetProduct_end().SetProtpos().SetFrame((end_pos - fr)%3+1);
+            ex->SetProduct_end().SetProtpos().SetFrame(end_pos%3+1);
         }
         else {
             prod_protein = false;
