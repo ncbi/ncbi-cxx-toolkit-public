@@ -413,17 +413,7 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
     
     CLEAN_STRING_MEMBER(gbb, Source);
     CLEAN_STRING_MEMBER(gbb, Origin);
-    //
-    //  origin:
-    //  append period if there isn't one already
-    //
-    if ( gbb.CanGetOrigin() ) {
-        const CGB_block::TOrigin& origin = gbb.GetOrigin();
-        if ( ! origin.empty() && ! NStr::EndsWith(origin, ".")) {
-            gbb.SetOrigin() += '.';
-            ChangeMade(CCleanupChange::eChangeOther);
-        }
-    }
+
     CLEAN_STRING_MEMBER(gbb, Date);
     CLEAN_STRING_MEMBER_JUNK(gbb, Div);
     gbb.ResetTaxonomy();
@@ -575,11 +565,11 @@ bool x_IsOneMinusStrand(const CSeq_loc& sl)
             }
             break;
         case CSeq_loc::e_Bond:
-            if (IsReverse(sl.GetBond().GetA().GetStrand())) {
+            if (sl.GetBond().IsSetA() && sl.GetBond().GetA().IsSetStrand() && IsReverse(sl.GetBond().GetA().GetStrand())) {
                 return true;
             }
             if (sl.GetBond().IsSetB()) {
-                if (IsReverse(sl.GetBond().GetB().GetStrand())) {
+                if (sl.GetBond().IsSetB() && sl.GetBond().GetB().IsSetStrand() && IsReverse(sl.GetBond().GetB().GetStrand())) {
                     return true;
                 }
             }
