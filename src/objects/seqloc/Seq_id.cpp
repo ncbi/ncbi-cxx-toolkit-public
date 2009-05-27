@@ -353,7 +353,14 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
     case e_Other:
         return GetOther().Match(sid2.GetOther()) ? e_YES : e_NO;
     case e_General:
-        return GetGeneral().Match(sid2.GetGeneral()) ? e_YES : e_NO;
+        if ( GetGeneral().Match(sid2.GetGeneral()) ) {
+            return e_YES;
+        }
+        else if ( NStr::CompareNocase(GetGeneral().GetDb(),
+            sid2.GetGeneral().GetDb()) ) {
+                return e_DIFF;
+        }
+        return e_NO;
     case e_Gi:
         return GetGi() == sid2.GetGi() ? e_YES : e_NO;
     case e_Prf:
