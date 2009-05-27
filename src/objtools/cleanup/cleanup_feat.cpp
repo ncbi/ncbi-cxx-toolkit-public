@@ -318,7 +318,7 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
             
             // move gene.pseudo to feat.pseudo
             if (gene.IsSetPseudo()) {
-                feat.SetPseudo();
+                feat.SetPseudo(true);
                 gene.ResetPseudo();
             }
             
