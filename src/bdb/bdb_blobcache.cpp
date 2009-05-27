@@ -4746,7 +4746,7 @@ void CBDB_Cache::x_DropBlob(const string&      key,
     if (blob_id) {
         bool delete_split = false;
         {{
-        m_CacheAttrDB->SetTransaction(0);
+        //m_CacheAttrDB->SetTransaction(0);
 
         CBDB_FileCursor cur(*m_CacheAttrDB);
         cur.SetCondition(CBDB_FileCursor::eEQ);
