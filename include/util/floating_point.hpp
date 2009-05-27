@@ -65,14 +65,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eOperationError: return "eOperationError";
-        case eToleranceError: return "eToleranceError";
-        default:              return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     NCBI_EXCEPTION_DEFAULT(CFloatingPointCompareException, CException);
 };
