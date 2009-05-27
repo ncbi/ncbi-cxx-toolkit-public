@@ -71,6 +71,8 @@ struct CSeqFormatterConfig {
     /// Determines whether Ctrl-A characters should be used as defline
     /// separators
     bool m_UseCtrlA;
+    /// List of filtering algorithm IDs to use to mask the FASTA
+    vector<int> m_FiltAlgoIds;
 };
 
 /// Customizable sequence writer interface

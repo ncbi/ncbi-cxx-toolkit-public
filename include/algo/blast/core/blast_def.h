@@ -301,8 +301,14 @@ typedef struct SBlastTargetTranslation {
 
 /** Enumeration for the stages in the BLAST search */
 typedef enum EBlastStage {
-    ePrelimSearch,
-    eTracebackSearch
+    /** None specified */
+    eNone               = 0x0,
+    /** Preliminary stage */
+    ePrelimSearch       = 0x1 << 0,
+    /** Traceback stage */
+    eTracebackSearch    = 0x1 << 1,
+    /** Both preliminary and traceback stages */
+    eBoth               = (ePrelimSearch | eTracebackSearch)
 } EBlastStage;
 
 /** Progress monitoring structure. This is updated by the engine to provided to

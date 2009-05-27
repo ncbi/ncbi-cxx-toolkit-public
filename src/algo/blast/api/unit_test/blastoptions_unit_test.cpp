@@ -361,6 +361,10 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffs )
 
     s_FillSearchSpace(query_info, 98483910471LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -384,6 +388,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffs )
     BOOST_CHECK_EQUAL(41, link_hsp_params->cutoff_small_gap); 
 
     sbp = BlastScoreBlkFree(sbp);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
@@ -425,6 +430,7 @@ BOOST_AUTO_TEST_CASE( testBadKbpForLinkHSPCutoffs )
     const Int4 kAvgSubjectLength = 335;
     const Int4 kSpecificSubjectLength = 186;
     const Int8 kDbLength = 703698559;
+    const bool kIsGapped = true;
 
 
     CBlastQueryInfo query_info(BlastQueryInfoNew(kBlastProgram, 1));
@@ -439,8 +445,12 @@ BOOST_AUTO_TEST_CASE( testBadKbpForLinkHSPCutoffs )
  
     s_FillSearchSpace(query_info, 98483910471LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options, kIsGapped);
+
     BlastHitSavingOptions* hit_options;
-    BlastHitSavingOptionsNew(kBlastProgram, &hit_options, true);
+    BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
+                             kIsGapped);
     BOOST_CHECK(hit_options->do_sum_stats);
 
     BlastHitSavingParameters* hit_params;
@@ -458,6 +468,7 @@ BOOST_AUTO_TEST_CASE( testBadKbpForLinkHSPCutoffs )
     BOOST_CHECK_EQUAL(0, link_hsp_params->cutoff_small_gap); 
 
     sbp = BlastScoreBlkFree(sbp);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
     return;
@@ -508,6 +519,10 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffsSmallDB )
 
     s_FillSearchSpace(query_info, 218039195);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -531,6 +546,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffsSmallDB )
     BOOST_CHECK_EQUAL(0, link_hsp_params->cutoff_small_gap);
 
     sbp = BlastScoreBlkFree(sbp);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
@@ -584,6 +600,10 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPResetGapProb )
 
     s_FillSearchSpace(query_info, 98483910471LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -615,6 +635,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPResetGapProb )
     query_blk = BlastSequenceBlkFree(query_blk);
     sbp = BlastScoreBlkFree(sbp);
     scoring_options = BlastScoringOptionsFree(scoring_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
     word_params = BlastInitialWordParametersFree(word_params);
@@ -844,6 +865,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewSomeInvalidKbp )
 
     s_FillSearchSpace(query_info, 10000000LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -856,6 +881,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewSomeInvalidKbp )
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     sbp = BlastScoreBlkFree(sbp);
 }
 
@@ -902,6 +928,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnLargeSubjectSequence )
 
     s_FillSearchSpace(query_info, 481002014850LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -915,6 +945,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnLargeSubjectSequence )
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     sbp = BlastScoreBlkFree(sbp);
 }
 
@@ -961,6 +992,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnMidsizeSubjectSequence )
 
     s_FillSearchSpace(query_info, 20007999590LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -974,6 +1009,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnMidsizeSubjectSequence )
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     sbp = BlastScoreBlkFree(sbp);
 }
 
@@ -1018,6 +1054,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamUpdateMultipleCalls )
 
     s_FillSearchSpace(query_info, 20007999590LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -1040,6 +1080,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamUpdateMultipleCalls )
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     sbp = BlastScoreBlkFree(sbp);
 }
 
@@ -1085,6 +1126,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnSmallSubjectSequence )
 
     s_FillSearchSpace(query_info, 1480902925051LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -1100,6 +1145,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnSmallSubjectSequence )
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     sbp = BlastScoreBlkFree(sbp);
 }
 
@@ -1159,6 +1205,10 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
 
     s_FillSearchSpace(query_info, 1480902925051LL);
 
+    BlastExtensionOptions* ext_options;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options,
+                             scoring_options->gapped_calculation);
+
     BlastHitSavingOptions* hit_options;
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
@@ -1181,6 +1231,7 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
     hit_options = BlastHitSavingOptionsFree(hit_options);
     word_params = BlastInitialWordParametersFree(word_params);
     word_options = BlastInitialWordOptionsFree(word_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
     sbp = BlastScoreBlkFree(sbp);
 }
 

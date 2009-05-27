@@ -61,19 +61,6 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
-class IBlastSeqInfoSrc;
-
-/** Initializes the IBlastSeqInfoSrc from data obtained from the BlastSeqSrc
- * (for database searches only, uses CSeqDB)
- * @param seqsrc BlastSeqSrc from which to obtain the database information
- */
-IBlastSeqInfoSrc* InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
-
-/** Initializes the IBlastSeqInfoSrc from an existing CSeqDB object.
- * @param seqdb CSeqDB object to use as a source of database information.
- */
-IBlastSeqInfoSrc* InitSeqInfoSrc(CSeqDB * seqdb);
-
 /** Create a single CSeq_loc of type whole from the first id in the list.
  * @param seqids identifiers for the Seq-loc [in]
  */

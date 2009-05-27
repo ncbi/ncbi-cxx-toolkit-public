@@ -1222,17 +1222,11 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
     return;
 }
 
-CSeq_align_set*
-CreateEmptySeq_align_set(CSeq_align_set* sas)
+static CRef<CSeq_align_set> s_CreateEmptySeq_align_set()
 {
-    CSeq_align_set* retval = NULL;
-
-    if (!sas) {
-        retval = new CSeq_align_set;
-    } else {
-        retval = sas;
-    }
-
+    CRef<CSeq_align_set> retval(new CSeq_align_set);
+    retval->Set().clear();
+    _ASSERT(retval->Get().empty());
     return retval;
 }
 
@@ -1292,7 +1286,7 @@ static TSeqRange s_GetSubjRanges(const BlastHSPList* hsp_list)
     return retval;
 }
 
-CSeq_align_set*
+CRef<CSeq_align_set>
 BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           EBlastProgramType        prog,
                           const CSeq_loc         & query_loc,
@@ -1302,10 +1296,10 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           bool                     is_ooframe,
                           TSeqLocInfoVector      & subj_masks)
 {
-    CSeq_align_set* seq_aligns = new CSeq_align_set();
+    CRef<CSeq_align_set> seq_aligns = s_CreateEmptySeq_align_set();
     
     if (!hit_list) {
-        return CreateEmptySeq_align_set(seq_aligns);
+        return seq_aligns;
     }
     
     CRef<CSeq_id> query_id(new CSeq_id);
@@ -1567,7 +1561,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                 seq_aligns->Set().push_back(*iter);
             }
         } else {
-            seq_aligns.Reset(CreateEmptySeq_align_set(NULL));
+            seq_aligns = s_CreateEmptySeq_align_set();
         }
         retval.push_back(seq_aligns);
     }

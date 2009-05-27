@@ -35,8 +35,8 @@
 #define ALGO_BLAST_API__SPLIT_QUERY__HPP
 
 #include <algo/blast/api/query_data.hpp>
-#include <algo/blast/api/sseqloc.hpp>
-#include <objmgr/scope.hpp>
+#include <objmgr/scope.hpp>					// for CScope
+#include <algo/blast/api/sseqloc.hpp>		// for CBlastQueryVector
 #include "split_query_blk.hpp"
 
 

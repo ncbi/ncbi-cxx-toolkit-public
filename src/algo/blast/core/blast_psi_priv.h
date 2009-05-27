@@ -379,11 +379,13 @@ _PSIPurgeBiasedSegments(_PSIPackedMsa* msa);
 /** Main validation function for multiple sequence alignment structure. Should
  * be called after _PSIPurgeBiasedSegments.
  * @param msa multiple sequence alignment data structure [in]
+ * @param ignored_unaligned_positions determines whether the unaligned
+ * positions test should be performend or not [in]
  * @return One of the errors defined above if validation fails or bad
  * parameter is passed in, else PSI_SUCCESS
  */
 int
-_PSIValidateMSA(const _PSIMsa* msa);
+_PSIValidateMSA(const _PSIMsa* msa, Boolean ignored_unaligned_positions);
 
 /** Main function to compute aligned blocks' properties for each position 
  * within multiple alignment (stage 3) 
@@ -622,8 +624,6 @@ _PSICalculateInformationContentFromFreqRatios(
     Uint4 alphabet_sz);
 
 #ifdef DEBUG_PSSM_ENGINE
-void PrintMsa(const char* filename, const PSIMsa* msa);
-void PrintMsaFP(FILE* fp, const PSIMsa* msa);
 void __printMsa(const char* filename, const _PSIPackedMsa* msa);
 void __printMsaFP(FILE* fp, const _PSIPackedMsa* msa);
 #endif /* DEBUG_PSSM_ENGINE */

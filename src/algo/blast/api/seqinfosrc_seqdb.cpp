@@ -111,11 +111,9 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     CSeqDB::TSequenceRanges ranges;
-    m_iSeqDb->GetMaskData(index, m_FilteringAlgoIds, false, ranges);
+    m_iSeqDb->GetMaskData(index, m_FilteringAlgoIds, ranges);
     ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
-        // N.B.: the Seq_intervals returned are 0-based for the formatter's
-        // sake
-        if (target.IntersectingWith(TSeqRange(itr->first, itr->second-1))) {
+        if (target.IntersectingWith(*itr)) {
             CRef<CSeq_interval> si
                 (new CSeq_interval(*id, itr->first, itr->second-1));
             CRef<CSeqLocInfo> sli(new CSeqLocInfo(si, kFrame));

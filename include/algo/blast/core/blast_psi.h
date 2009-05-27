@@ -103,6 +103,13 @@ NCBI_XBLAST_EXPORT
 PSIMsa*
 PSIMsaFree(PSIMsa* msa);
 
+#ifdef DEBUG_PSSM_ENGINE
+NCBI_XBLAST_EXPORT
+void PrintMsa(const char* filename, const PSIMsa* msa);
+NCBI_XBLAST_EXPORT
+void PrintMsaFP(FILE* fp, const PSIMsa* msa);
+#endif /* DEBUG_PSSM_ENGINE */
+
 /** This is the main return value from the PSSM engine */
 typedef struct PSIMatrix {
     Uint4   ncols;      /**< Number of columns in PSSM (query_length) */
@@ -186,6 +193,17 @@ typedef struct PSIDiagnosticsResponse {
 NCBI_XBLAST_EXPORT
 PSIDiagnosticsRequest* 
 PSIDiagnosticsRequestNew(void);
+
+/** Allocates a PSIDiagnosticsRequest structure, setting fields to their
+ * default values for their use in the context of the PSI-BLAST application.
+ * @param save_ascii_pssm corresponds to the command line argument to save the
+ * PSSM in ASCII format [in]
+ * @return newly allocated structure or NULL in case of memory allocation
+ * failure 
+ */
+NCBI_XBLAST_EXPORT
+PSIDiagnosticsRequest* 
+PSIDiagnosticsRequestNewEx(Boolean save_ascii_pssm);
 
 /** Deallocates the PSIDiagnosticsRequest structure passed in
  * @param diags_request structure to deallocate [in]

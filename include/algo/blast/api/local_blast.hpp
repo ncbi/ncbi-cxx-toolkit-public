@@ -75,14 +75,6 @@ public:
     /// @param query_factory query sequence(s) [in]
     /// @param opts_handle BLAST options handle [in]
     /// @param seqsrc BlastSeqSrc object to search [in]
-    CLocalBlast(CRef<IQueryFactory> query_factory,
-                CRef<CBlastOptionsHandle> opts_handle,
-                BlastSeqSrc* seqsrc);
-
-    /// Constructor with database description
-    /// @param query_factory query sequence(s) [in]
-    /// @param opts_handle BLAST options handle [in]
-    /// @param seqsrc BlastSeqSrc object to search [in]
     /// @param seqInfoSrc user-specified IBlastSeqInfoSrc [in]
     CLocalBlast(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptionsHandle> opts_handle,

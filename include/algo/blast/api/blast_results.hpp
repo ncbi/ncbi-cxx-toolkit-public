@@ -70,13 +70,14 @@ public:
      * @param k Pair of ungapped and gapped k (in that order) [in]
      * @param h Pair of ungapped and gapped h (in that order) [in]
      * @param effective_search_space effective search space [in]
-     * @note PSI-BLAST Karlin & Altschul structures cannot be passed in here,
-     * the BLAST 3 network protocol doesn't transmit these
+     * @param is_psiblast true if the statistical parameters are for PSI-BLAST
+     * [in]
      */
     CBlastAncillaryData(pair<double, double> lambda,
                         pair<double, double> k,
                         pair<double, double> h,
-                        Int8 effective_search_space);
+                        Int8 effective_search_space,
+                        bool is_psiblast = false);
 
     /// Destructor
     ~CBlastAncillaryData();
@@ -163,6 +164,9 @@ public:
                    const TMaskedQueryRegions     * query_masks = NULL,
                    const string                  & rid = kEmptyStr,
                    const SPHIQueryInfo           * phi_query_info = NULL);
+
+    /// Our destructor
+    ~CSearchResults();
         
     /// Sets the RID for these results
     /// @param rid RID to set [in]
@@ -255,6 +259,10 @@ private:
     /// PHI-BLAST information.
     SPHIQueryInfo *m_PhiQueryInfo;
 
+    /// Prohibit copy constructor
+    CSearchResults(const CSearchResults& rhs);
+    /// Prohibit assignment operator
+    CSearchResults& operator=(const CSearchResults& rhs);
 };
 
 

@@ -50,6 +50,7 @@ static char const rcsid[] =
 // CORE BLAST includes
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_traceback.h>
+#include <algo/blast/core/blast_hits.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -60,83 +61,39 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
-                                             CRef<CBlastOptions>     opts,
-                                             CSearchDatabase const & db,
-                                             CRef<TBlastHSPStream>   hsps)
-    : m_QueryFactory (qf),
-      m_Options      (opts),
-      m_InternalData (new SInternalData),
-      m_OptsMemento  (0),
-      m_SeqInfoSrc   (0),
-      m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch),
-      m_DBscanInfo(0)
-{
-    x_Init(qf, opts, CRef<CPssmWithParameters>(), db.GetDatabaseName());
-    BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
-    m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
-    m_OwnSeqInfoSrc = true;
-    m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
-    m_InternalData->m_HspStream.Reset(hsps);
-}
-
-CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
-                             CRef<CBlastOptions>     opts,
-                             CRef<CSeqDB>            db,
-                             CRef<TBlastHSPStream>   hsps,
-                             CConstRef<objects::CPssmWithParameters> pssm)
-    : m_QueryFactory (qf),
-      m_Options      (opts),
-      m_InternalData (new SInternalData),
-      m_OptsMemento  (0),
-      m_SeqInfoSrc   (0),
-      m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch),
-      m_DBscanInfo(0)
-{
-    x_Init(qf, opts, pssm, db->GetDBNameList());
-    BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
-    m_SeqInfoSrc = InitSeqInfoSrc(&*db);
-    m_OwnSeqInfoSrc = true;
-    m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
-    m_InternalData->m_HspStream.Reset(hsps);
-}
-
 CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                                              CRef<CBlastOptions>   opts,
                                              BlastSeqSrc         * seqsrc,
-                                             CRef<TBlastHSPStream> hsps)
+                                             CRef<IBlastSeqInfoSrc> seqinfosrc,
+                                             CRef<TBlastHSPStream> hsps,
+                                             CConstRef<objects::CPssmWithParameters> pssm)
     : m_QueryFactory (qf),
       m_Options      (opts),
       m_InternalData (new SInternalData),
       m_OptsMemento  (0),
-      m_SeqInfoSrc   (InitSeqInfoSrc(seqsrc)),
-      m_OwnSeqInfoSrc(true),
+      m_SeqInfoSrc   (seqinfosrc),
       m_ResultType(eDatabaseSearch),
       m_DBscanInfo(0)
 {
-    x_Init(qf, opts, CRef<CPssmWithParameters>(), BlastSeqSrcGetName(seqsrc));
+    x_Init(qf, opts, pssm, BlastSeqSrcGetName(seqsrc), hsps);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
-    m_InternalData->m_HspStream.Reset(hsps);
 }
 
 CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
                                              CRef<SInternalData> internal_data, 
-                                             const CBlastOptions& opts, 
-                                             const IBlastSeqInfoSrc& seqinfosrc,
+                                             CRef<CBlastOptions>   opts,
+                                             CRef<IBlastSeqInfoSrc> seqinfosrc,
                                              TSearchMessages& search_msgs)
     : m_QueryFactory (qf),
-      m_Options      (const_cast<CBlastOptions*>(&opts)),
+      m_Options      (opts),
       m_InternalData (internal_data),
-      m_OptsMemento  (opts.CreateSnapshot()),
+      m_OptsMemento  (opts->CreateSnapshot()),
       m_Messages     (search_msgs),
-      m_SeqInfoSrc   (const_cast<IBlastSeqInfoSrc*>(&seqinfosrc)),
-      m_OwnSeqInfoSrc(false),
+      m_SeqInfoSrc   (seqinfosrc),
       m_ResultType(eDatabaseSearch),
       m_DBscanInfo(0)
 {
-      if (Blast_ProgramIsPhiBlast(opts.GetProgramType())) {
+      if (Blast_ProgramIsPhiBlast(opts->GetProgramType())) {
            if (m_InternalData)
            {
               BlastDiagnostics* diag = m_InternalData->m_Diagnostics->GetPointer();
@@ -153,9 +110,6 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
 CBlastTracebackSearch::~CBlastTracebackSearch()
 {
     delete m_OptsMemento;
-    if (m_OwnSeqInfoSrc) {
-        delete m_SeqInfoSrc;
-    }
 }
 
 void
@@ -174,7 +128,8 @@ void
 CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
                               CRef<CBlastOptions>   opts,
                               CConstRef<objects::CPssmWithParameters> pssm,
-                              const string        & dbname)
+                              const string        & dbname,
+                              CRef<TBlastHSPStream> hsps)
 {
     opts->Validate();
     
@@ -233,106 +188,132 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
     m_InternalData->m_Diagnostics.Reset
         (new TBlastDiagnostics(diags, Blast_DiagnosticsFree));
 
-    // 6. Create HSP stream
-    BlastHSPStream* hsp_stream =
-        CSetupFactory::CreateHspStream(m_OptsMemento, 
-                                       query_data->GetNumQueries());
-    m_InternalData->m_HspStream.Reset
-        (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
+    // 6. Attach HSP stream
+    m_InternalData->m_HspStream.Reset(hsps);
+}
+
+bool
+CBlastTracebackSearch::x_IsSuitableForPartialFetching()
+{
+    if ( !Blast_SubjectIsNucleotide(m_Options->GetProgramType()) ) {
+        // don't bother doing this for proteins, as the sequences are never
+        // long enough to cause performance degradation
+        return false;
+    }
+
+    CSeqDbSeqInfoSrc* seqdb_infosrc = 
+        dynamic_cast<CSeqDbSeqInfoSrc*>(m_SeqInfoSrc.GetPointer());
+    if (seqdb_infosrc == NULL) {
+        // Nothing to do as this is probably a bl2seq search...
+        // FIXME: what if the data loader still uses CSeqDB... how to hint
+        // which sequences to partially fetch?
+        return false;
+    }
+
+    BlastSeqSrc* seqsrc = m_InternalData->m_SeqSrc->GetPointer();
+    _ASSERT(seqsrc);
+
+    // If longest sequence is below this we exit.
+    static const int kMaxLengthCutoff = 5000;  
+    if (BlastSeqSrcGetMaxSeqLen(seqsrc) < kMaxLengthCutoff) {
+        return false;
+    }
+
+    // If average length is below this amount we exit.
+    static const int kAvgLengthCutoff = 2048;  
+    if (BlastSeqSrcGetAvgSeqLen(seqsrc) < kAvgLengthCutoff) {
+        return false;
+    }
+
+    return true;
 }
 
 void
 CBlastTracebackSearch::x_SetSubjectRangesForPartialFetching()
 {
-    if ( !Blast_SubjectIsNucleotide(m_Options->GetProgramType()) ) {
-        // don't bother doing this for proteins, as the sequences are never
-        // long enough to cause performance degradation
+    if ( !x_IsSuitableForPartialFetching() ) {
         return;
     }
 
     CSeqDbSeqInfoSrc* seqdb_infosrc = 
-        dynamic_cast<CSeqDbSeqInfoSrc*>(m_SeqInfoSrc);
-    if (seqdb_infosrc == NULL) {
-        // Nothing to do as this is probably a bl2seq search...
-        // FIXME: what if the data loader still uses CSeqDB... how to hint
-        // which sequences to partially fetch?
-        return;
-    }
-    CSeqDB& seqdb_handle = *seqdb_infosrc->m_iSeqDb;
+        dynamic_cast<CSeqDbSeqInfoSrc*>(m_SeqInfoSrc.GetPointer());
+    _ASSERT(seqdb_infosrc);
 
+    CSeqDB& seqdb_handle = *seqdb_infosrc->m_iSeqDb;
     CRef<CSubjectRangesSet> hsp_ranges(new CSubjectRangesSet);
 
     const bool kTranslateSubjects =
         Blast_SubjectIsTranslated(m_Options->GetProgramType()) ? true : false;
-    BlastHSPStream* new_hsp_stream =
-        CSetupFactory::CreateHspStream(m_OptsMemento, 
-                                   m_InternalData->m_QueryInfo->num_queries);
+
+    // Temporary implementation to avoid calling StreamWrite and/or possible filtering
+    // TODO:  will re-implement this as a pipe
     set<int> query_indices;
-    BlastHSPStream* hsp_stream = m_InternalData->m_HspStream->GetPointer();
+
+    const BlastHSPResults* results = m_InternalData->m_HspStream->GetPointer()->results;
     BlastHSPList* hsp_list = NULL;
-    while (BlastHSPStreamRead(hsp_stream, &hsp_list) != kBlastHSPStream_Eof) {
-        if ( !hsp_list )
-            continue;
-        const int kQueryIdx = hsp_list->query_index;
-        query_indices.insert(kQueryIdx);
-        const int kSubjOid = hsp_list->oid;
-        const int kApproxLength = seqdb_handle.GetSeqLengthApprox(kSubjOid);
 
-        // iterate over HSPs, recording the offsets needed
-        for (int i = 0; i < hsp_list->hspcnt; i++) {
-            const BlastHSP* hsp = hsp_list->hsp_array[i];
-
-            // Note: This code tries to get at least as much data as is
-            // needed; it may end up getting a few extra bases on each
-            // side.  It should not be used as a guide for doing precise
-            // codon coordinate translation.
+    for (int qidx = 0; qidx < results->num_queries; ++qidx) {
+        if ( results->hitlist_array[qidx] ) {
+             for (int sidx = 0; sidx < results->hitlist_array[qidx]->hsplist_count; ++sidx) {
+                 hsp_list = results->hitlist_array[qidx]->hsplist_array[sidx];
+                 if ( !hsp_list ) continue;
+                 const int kQueryIdx = hsp_list->query_index;
+                 query_indices.insert(kQueryIdx);
+                 const int kSubjOid = hsp_list->oid;
+                 const int kApproxLength = seqdb_handle.GetSeqLengthApprox(kSubjOid);
+                 // iterate over HSPs, recording the offsets needed
+                 for (int i = 0; i < hsp_list->hspcnt; i++) {
+                     const BlastHSP* hsp = hsp_list->hsp_array[i];
+         
+                     // Note: This code tries to get at least as much data as is
+                     // needed; it may end up getting a few extra bases on each
+                     // side.  It should not be used as a guide for doing precise
+                     // codon coordinate translation.
+                     
+                     int start_off = hsp->subject.offset;
+                     int end_off   = hsp->subject.end;
             
-            int start_off = hsp->subject.offset;
-            int end_off   = hsp->subject.end;
-            
-            if (kTranslateSubjects) {
-                if (hsp->subject.frame > 0) {
-                    start_off = start_off * CODON_LENGTH + hsp->subject.frame;
-                    end_off   = end_off * CODON_LENGTH + hsp->subject.frame;
-                } else {
-                    int start2 = kApproxLength - end_off   * CODON_LENGTH;
-                    int end2   = kApproxLength - start_off * CODON_LENGTH;
-                    
-                    start_off = start2;
-                    end_off = end2;
-                }
+                     if (kTranslateSubjects) {
+                         if (hsp->subject.frame > 0) {
+                             start_off = start_off * CODON_LENGTH + hsp->subject.frame;
+                             end_off   = end_off * CODON_LENGTH + hsp->subject.frame;
+                         } else {
+                             int start2 = kApproxLength - end_off   * CODON_LENGTH;
+                             int end2   = kApproxLength - start_off * CODON_LENGTH;
+                             
+                             start_off = start2;
+                             end_off = end2;
+                         }
+                         
+                         // Approximate length can be off by 4, plus 3 for the
+                         // maximum frame adjustment.
+                         
+                         start_off -= (CODON_LENGTH + 4);
+                         end_off += (CODON_LENGTH + 4);
                 
-                // Approximate length can be off by 4, plus 3 for the
-                // maximum frame adjustment.
+                         if (start_off < 0) {
+                             start_off = 0;
+                         }
+                         
+                         // The approximate length might underestimate here.
                 
-                start_off -= (CODON_LENGTH + 4);
-                end_off += (CODON_LENGTH + 4);
-                
-                if (start_off < 0) {
-                    start_off = 0;
-                }
-                
-                // The approximate length might underestimate here.
-                
-                if (end_off > (kApproxLength + 4)) {
-                    end_off = (kApproxLength + 4);
-                }
-            }
-            
-            hsp_ranges->AddRange(kQueryIdx, kSubjOid, start_off, end_off);
+                         if (end_off > (kApproxLength + 4)) {
+                             end_off = (kApproxLength + 4);
+                         }
+                     }
+                     
+                     hsp_ranges->AddRange(kQueryIdx, kSubjOid, start_off, end_off);
+                 }
+             }
         }
-        BlastHSPStreamWrite(new_hsp_stream, &hsp_list);
     }
-    BlastHSPStreamClose(new_hsp_stream);
-    m_InternalData->m_HspStream.Reset
-        (new TBlastHSPStream(new_hsp_stream, BlastHSPStreamFree));
 
     // Remove any queries if they were added to the hsp_ranges object, as we'll
     // fetch those entirely
+    CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
     ITERATE(set<int>, query_idx, query_indices) {
         try {
-            CRef<CSeq_id> query_id =
-                m_SeqInfoSrc->GetId((Uint4)*query_idx).front();
+            const CSeq_id* query_id = qdata->GetSeq_loc(*query_idx)->GetId();
             vector<int> oids;
             seqdb_handle.SeqidToOids(*query_id, oids);
             ITERATE(vector<int>, oid, oids) {
@@ -383,7 +364,7 @@ CBlastTracebackSearch::Run()
                                 m_OptsMemento->m_ScoringOpts,
                                 &bhp);
         m_OptsMemento->m_HitSaveOpts->hitlist_size = bhp->prelim_hitlist_size;
-        bhp = SBlastHitsParametersFree(bhp);
+        SBlastHitsParametersFree(bhp);
     }
     
     BlastHSPResults * hsp_results(0);

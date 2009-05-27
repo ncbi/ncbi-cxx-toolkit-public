@@ -722,39 +722,7 @@ Int2 Blast_HSPResultsPerformCulling(BlastHSPResults *results,
                                     Int4 culling_limit,
                                     Int4 query_length);
 
-/** Blast_HSPResultsSaveRPSHSPList
- *  Save the HSPs from an HSPList obtained on the preliminary stage of 
- * RPS BLAST to appropriate places in the results structure. Input HSPList
- * contains HSPs from a single query, but from all RPS BLAST database 
- * sequences. The HSPs in the list are assumed to be sorted by score.
- * @param program The type of BLAST search [in]
- * @param results The structure holding results for all queries [in] [out]
- * @param hsp_list The results for the current subject sequence; in case of 
- *                 multiple queries, offsets are still in the concatenated 
- *                 sequence coordinates [in]
- * @param blasthit_params The parameters related to saving hits [in]
- */
-NCBI_XBLAST_EXPORT
-Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params);
-
-/** Blast_HSPResultsSaveHSPList
- *  Save the current HSP list to appropriate places in the results structure.
- * The input HSPList contains HSPs from a single BLAST database sequence, but
- * possibly from multiple queries. The HSPs in the list are assumed to be sorted
- * by score.
- * @param program The type of BLAST search [in]
- * @param results The structure holding results for all queries [in] [out]
- * @param hsp_list The results for the current subject sequence; in case of 
- *                 multiple queries, offsets are still in the concatenated 
- *                 sequence coordinates [in]
- * @param blasthit_params The parameters related to saving hits [in]
- */
-NCBI_XBLAST_EXPORT
-Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params);
-
-/** Blast_HSPResultsSaveHSPList
+/** Blast_HSPResultsInsertHSPList
  * Insert an HSP list to the appropriate place in the results structure.
  * All HSPs in this list must be from the same query and same subject; the oid
  * and query_index fields must be set in the BlastHSPList input structure.
@@ -773,21 +741,14 @@ struct BlastHSPStream;
  * structure.
  * @param hsp_stream The HSPStream [in][out]
  * @param num_queries Number of queries in the search [in]
- * @param hit_options Hit saving options, used to determine
- *                      hit list sizes [in]
- * @param ext_options Extension options, used to determine
- *                      hit list sizes [in]
- * @param scoring_options Scoring options, used to determine
- *                      hit list sizes [in]
+ * @param hit_param Hit parameters [in]
  * @return The generated collection of HSP results
  */
 NCBI_XBLAST_EXPORT
 BlastHSPResults*
 Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream, 
                               size_t num_queries, 
-                              const BlastHitSavingOptions* hit_options, 
-                              const BlastExtensionOptions* ext_options, 
-                              const BlastScoringOptions* scoring_options);
+                              SBlastHitsParameters* hit_param);
 
 /** As Blast_HSPResultsFromHSPStream, except the total number of
  * HSPs kept for each query does not exceed an explicit limit.
@@ -797,12 +758,7 @@ Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream,
  * of DB sequences with hits to query i))
  * @param hsp_stream The HSPStream [in][out]
  * @param num_queries Number of queries in the search [in]
- * @param hit_options Hit saving options, used to determine
- *                      hit list sizes [in]
- * @param ext_options Extension options, used to determine
- *                      hit list sizes [in]
- * @param scoring_options Scoring options, used to determine
- *                      hit list sizes [in]
+ * @param hit_param Hit parameters [in]
  * @param max_num_hsps The limit on the number of HSPs to be
  *                     kept for each query sequence [in]
  * @param removed_hsps Set to TRUE if any hits were removed [out]
@@ -811,9 +767,7 @@ Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream,
 BlastHSPResults*
 Blast_HSPResultsFromHSPStreamWithLimit(struct BlastHSPStream* hsp_stream, 
                                    Uint4 num_queries, 
-                                   const BlastHitSavingOptions* hit_options, 
-                                   const BlastExtensionOptions* ext_options, 
-                                   const BlastScoringOptions* scoring_options,
+                                   SBlastHitsParameters* hit_param,
                                    Uint4 max_num_hsps,
                                    Boolean* removed_hsps);
 

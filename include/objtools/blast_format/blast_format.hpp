@@ -117,6 +117,44 @@ public:
                  bool is_megablast = false,
                  bool is_indexed = false);
 
+    /// Constructor
+    /// @param opts BLAST options used in the search [in]
+    /// @param dbinfo_list Database info list, provided directly [in]
+    /// @param format_type Integer indication the type of output [in]
+    /// @param believe_query true if sequence ID's of query sequences
+    ///                are to be parsed. If multiple queries are provieded,
+    ///                their sequence ID's must be distinct [in]
+    /// @param outfile Stream that will receive formatted output
+    /// @param num_summary The number of 1-line summaries at the top of
+    ///                   the blast report (for output types that have
+    ///                   1-line summaries) [in]
+    /// @param num_alignments The number of alignments to display in the BLAST
+    ///                 report [in] 
+    /// @param scope The scope to use for retrieving sequence data
+    ///              (must contain query and database sequences) [in]
+    /// @param show_gi When printing database sequence identifiers, 
+    ///                include the GI number if set to true; otherwise
+    ///                database sequences only have an accession [in]
+    /// @param is_html true if the output is to be in HTML format [in]
+    /// @param is_remote_search is this formatting the results of a remote
+    /// search [in]
+    /// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
+    /// applicable) [in]
+    /// @param custom_output_format custom output format specification for
+    /// tabular/comma-separated value output format. An empty string implies to
+    /// use the default value when applicable. [in]
+    CBlastFormat(const blast::CBlastOptions& opts, 
+                 const vector< CBlastFormatUtil::SDbInfo >& dbinfo_list,
+                 blast::CFormattingArgs::EOutputFormat format_type, 
+                 bool believe_query, CNcbiOstream& outfile,
+                 int num_summary, 
+                 int num_alignments,
+                 CScope & scope,
+                 bool show_gi = false, 
+                 bool is_html = false, 
+                 bool is_remote_search = false,
+                 const string& custom_output_format = kEmptyStr);
+
     /// Print the header of the blast report
     void PrintProlog();
 
@@ -167,15 +205,6 @@ public:
     /// than when using other output formats.
     void ResetScopeHistory();
     
-    /// Enable formatting of searches with non-Blast databases.
-    ///
-    /// The class initially distinguished only between Bl2seq and
-    /// Blast DB searches. This method was introduced to allow a third
-    /// kind of searches to be properly formatted. Call this method
-    /// to enable displaying subject sequences from a non-Blast database
-    /// source (e.g. SRA searches fall under this category).
-    void EnableNonBlastDB();
-
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;

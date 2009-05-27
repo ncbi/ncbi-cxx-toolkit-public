@@ -190,6 +190,7 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
     : m_UseMmap           (use_mmap),
       m_CurAlloc          (0),
       m_LastFID           (0),
+      m_MaxFileSize       (0),
       m_OpenRegionsTrigger(CSeqDBMapStrategy::eOpenRegionsWindow),
       m_Strategy          (*this)
 {
@@ -337,6 +338,7 @@ bool CSeqDBAtlas::GetFileSizeL(const string & fname,
         if (file_length >= 0) {
             data.first  = true;
             data.second = SeqDB_CheckLength<Int8,TIndx>(file_length);
+            if (file_length > m_MaxFileSize) m_MaxFileSize = file_length;
         } else {
             data.first  = false;
             data.second = 0;
@@ -1580,6 +1582,8 @@ void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
     m_SliceSize = x_Pick(e_MinSlice,
                          max_slice,
                          m_MaxBound / slice_ratio);
+
+    m_DefaultSliceSize = m_SliceSize;
     
     m_RetBound = x_Pick(e_MinMemory,
                         m_MaxBound-((m_SliceSize*3)/2),

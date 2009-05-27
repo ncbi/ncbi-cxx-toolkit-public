@@ -1865,6 +1865,9 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
             }
         }
 
+        // N.B.: apparently the BLAST3 protocol doesn't send PSI-BLAST Karlin &
+        // Altschul parameters, so we don't set the is_psiblast
+        // CBlastAncillaryData constructor argument
         CRef<CBlastAncillaryData> ancillary_data
             (new CBlastAncillaryData(lambdas, Ks, Hs, effective_search_space));
         ancill_vector.insert(ancill_vector.end(), alignments.size(),

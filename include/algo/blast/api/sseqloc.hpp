@@ -179,6 +179,12 @@ public:
     CConstRef<objects::CSeq_loc> GetQuerySeqLoc() const {
         return seqloc;
     }
+
+    /// Get the query Seq-id.
+    /// @return The Seq-id representing the query
+    CConstRef<objects::CSeq_id> GetQueryId() const {
+        return CConstRef<objects::CSeq_id>(seqloc->GetId());
+    }
     
     /// Get the query CScope.
     /// @return The CScope containing the query
@@ -314,6 +320,16 @@ public:
         _ASSERT(i < m_Queries.size());
         return m_Queries[i]->GetMaskedRegions();
     }
+
+    /// Convenience method to get a CSeq_loc representing the masking locations
+    /// @param i The index of a query.
+    /// @return The masked (filtered) regions of that query.
+    /// @throws CBlastException in case of errors in conversion
+    CRef<objects::CSeq_loc> GetMasks(size_type i) const
+    {
+        TMaskedQueryRegions mqr = GetMaskedRegions(i);
+        return MaskedQueryRegionsToPackedSeqLoc(mqr);
+    }
     
     /// Assign a list of masked regions to one query.
     /// @param i The index of the query.
@@ -339,6 +355,14 @@ public:
     {
         _ASSERT(i < m_Queries.size());
         return m_Queries[i];
+    }
+
+    /// Get the CBlastSearchQuery object at index i
+    /// @param i The index of a query.
+    CRef<CBlastSearchQuery>
+    operator[](size_type i) const
+    {
+        return GetBlastSearchQuery(i);
     }
     
     /// Identical to Size, provided to facilitate STL-style iteration

@@ -372,11 +372,16 @@ public:
     ///   The returned sequence data. [out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
+    /// @param in_lease
+    ///   Only perform sequence retrieval if the requested oid is 
+    ///   within the previous lease [in]
     /// @return
     ///   The length of this sequence in bases.
-    int GetSequence(int oid, const char ** buffer, CSeqDBLockHold & locked) const
+    int GetSequence(int oid, const char ** buffer, 
+                    CSeqDBLockHold & locked,
+                    bool in_lease = false) const
     {
-        return x_GetSequence(oid, buffer, true, locked, true);
+        return x_GetSequence(oid, buffer, true, locked, false, in_lease);
     }
     
     /// Get a sequence with ambiguous regions.
@@ -780,6 +785,10 @@ public:
                          bool               cache_data,
                          CSeqDBLockHold   & locked) const;
     
+    /// Flush all offset ranges cached
+    /// @param locked        Lock holder object for this thread. [in]
+    void FlushOffsetRangeCache(CSeqDBLockHold& locked);
+
     /// Get the sequence hash for a given OID.
     ///
     /// The sequence data is fetched and the sequence hash is
@@ -1177,13 +1186,16 @@ private:
     ///     The lock holder object for this thread. [in]
     /// @param can_release
     ///     Specify true if the atlas lock can be released. [in]
+    /// @param in_lease
+    ///     Only perform retrieval if the oid is within previous lease [in]
     /// @return
     ///     The length of the sequence in bases.
     int x_GetSequence(int              oid,
                       const char    ** buffer,
                       bool             keep,
                       CSeqDBLockHold & locked,
-                      bool             can_release) const;
+                      bool             can_release,
+                      bool             in_lease = false) const;
     
     /// Get partial sequence data.
     /// 

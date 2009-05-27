@@ -251,21 +251,28 @@ public:
     /// multi-threaded applications
     static BlastDiagnostics* CreateDiagnosticsStructureMT();
 
-    /// Create and initialize the BlastHSPStream structure for single-threaded
-    /// applications
+    /// Create and initialize the BlastHSPStream structure 
     /// @param opts_memento Memento options object [in]
     /// @param number_of_queries number of queries involved in the search [in]
+    /// @param writer writer to be used within this stream [in]
     static BlastHSPStream* 
     CreateHspStream(const CBlastOptionsMemento* opts_memento, 
-                    size_t number_of_queries);
+                    size_t number_of_queries,
+                    BlastHSPWriter *writer);
 
-    /// Create and initialize the BlastHSPStream structure for multi-threaded
-    /// applications
+    /// Create a writer to be registered for use by stream
     /// @param opts_memento Memento options object [in]
-    /// @param number_of_queries number of queries involved in the search [in]
-    static BlastHSPStream* 
-    CreateHspStreamMT(const CBlastOptionsMemento* opts_memento, 
-                      size_t number_of_queries);
+    /// @param query_info Information about queries [in]
+    static BlastHSPWriter* 
+    CreateHspWriter(const CBlastOptionsMemento* opts_memento,
+                    BlastQueryInfo* query_info);
+
+    /// Create a pipe to be registered for use by stream
+    /// @param opts_memento Memento options object [in]
+    /// @param query_info Information about queries [in]
+    static BlastHSPPipe* 
+    CreateHspPipe(const CBlastOptionsMemento* opts_memento,
+                    BlastQueryInfo* query_info);
 
     /// Create a BlastSeqSrc from a CSearchDatabase (uses CSeqDB)
     /// @param db description of BLAST database to search [in]
@@ -285,15 +292,6 @@ public:
     InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
                                CRef<CBlastOptions> options);
     
-private:
-    /// Auxiliary function to create the BlastHSPStream structure
-    /// @param opts_memento Memento options object [in]
-    /// @param number_of_queries number of queries involved in the search [in]
-    /// @param is_multi_threaded true in case of multi-threaded search, else
-    static BlastHSPStream*
-    x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
-                      size_t number_of_queries,
-                      bool is_multi_threaded);
 };
 
 #ifndef SKIP_DOXYGEN_PROCESSING

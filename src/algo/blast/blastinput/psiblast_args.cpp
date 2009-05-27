@@ -80,7 +80,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CWordThresholdArg);
     m_Args.push_back(arg);
 
-    arg.Reset(new CCullingArgs);
+    arg.Reset(new CHspFilteringArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
@@ -154,17 +154,17 @@ CPsiBlastAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int 
 CPsiBlastAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(ePSIBlast);
+    return blast::GetQueryBatchSize(ePSIBlast, m_IsUngapped);
 }
 
 bool
 CPsiBlastAppArgs::SaveCheckpoint() const
 {
-    return static_cast<bool>(m_PsiBlastArgs->GetCheckPointOutputStream() != 0);
+    return m_PsiBlastArgs->RequiresCheckPointOutput();
 }
 
 CNcbiOstream*
-CPsiBlastAppArgs::GetCheckpointStream() const
+CPsiBlastAppArgs::GetCheckpointStream()
 {
     return m_PsiBlastArgs->GetCheckPointOutputStream();
 }
@@ -172,11 +172,11 @@ CPsiBlastAppArgs::GetCheckpointStream() const
 bool
 CPsiBlastAppArgs::SaveAsciiPssm() const
 {
-    return static_cast<bool>(m_PsiBlastArgs->GetAsciiMatrixOutputStream() != 0);
+    return m_PsiBlastArgs->RequiresAsciiPssmOutput();
 }
 
 CNcbiOstream*
-CPsiBlastAppArgs::GetAsciiPssmStream() const
+CPsiBlastAppArgs::GetAsciiPssmStream()
 {
     return m_PsiBlastArgs->GetAsciiMatrixOutputStream();
 }

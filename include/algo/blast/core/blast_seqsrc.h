@@ -198,12 +198,15 @@ typedef struct BlastSeqSrcGetSeqArg {
      * eBlastEncodingNucleotide, etc [in] */
     EBlastEncoding encoding;
 
-    /** Specify true here to enable this OID's ranges before fetching.
-     * OID ranges are a (somewhat complicated) performance feature that
-     * reduces the amount of nucleotide unpacking needed for some OIDs.
-     * If in doubt, specify FALSE here.
-     * TRUE to use ranges if they exist, FALSE to disable them. [in] */
-    Boolean enable_ranges;
+    /** This option allows the BLAST engine to communicate with the BlastSeqSrc
+     * that the offset ranges for a given OID should be reset and the entire
+     * sequence data should be fetched. The motivation for this option is to
+     * exploit CSeqDB's performance feature that allows to retrieve only
+     * pre-selected portions of the sequence data for the traceback stage.
+     * BlastSeqSrc implementations that do not have this feature can safely
+     * ignore this field.
+     * By default, this should be set to FALSE. [in] */
+    Boolean reset_ranges;
 
     /** Check whether an OID is excluded due to overlapping filtering.
      * The disease is rare, and the test for it is somewhat expensive,
@@ -328,7 +331,9 @@ BlastSeqSrcGetGis(const BlastSeqSrc* seq_src, void* oid);
 NCBI_XBLAST_EXPORT
 BlastSeqSrcIterator* BlastSeqSrcIteratorNew(void);
 
-/** How many database sequences to process in one database chunk. */
+/** How many database sequences to process in one database chunk. 
+ * this value is overriden in seqdb implementation, where the number of sequences
+ * is determined by the mmaped slice size */
 extern const unsigned int kBlastSeqSrcDefaultChunkSize;
 
 /** Allocate and initialize an iterator over a BlastSeqSrc. 
@@ -361,6 +366,12 @@ Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src,
  */
 NCBI_XBLAST_EXPORT
 void BlastSeqSrcResetChunkIterator(BlastSeqSrc* seq_src);
+
+/** Set the number of threads for MT mode 
+ * @param nthreads the number of threads [in]
+ */
+NCBI_XBLAST_EXPORT
+void BlastSeqSrcSetNumberOfThreads(BlastSeqSrc* seq_src, int nthreads);
 
 /*****************************************************************************/
 

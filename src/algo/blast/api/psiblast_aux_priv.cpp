@@ -426,11 +426,9 @@ CScorematPssmConverter::GetNumMatchingSeqs
 
 void
 PsiBlastAddAncillaryPssmData(objects::CPssmWithParameters& pssm, 
-                         const objects::CBioseq& query, 
                          int gap_open, 
                          int gap_extend)
 {
-    pssm.SetPssm().SetQuery().SetSeq(const_cast<CBioseq&>(query));
     _ASSERT(pssm.GetParams().GetRpsdbparams().IsSetMatrixName());
     pssm.SetParams().SetRpsdbparams().SetGapOpen(gap_open);
     pssm.SetParams().SetRpsdbparams().SetGapExtend(gap_extend);
@@ -502,7 +500,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
     pssm->SetPssm().SetFinalData().SetH() =
         pssm_with_scores->GetPssm().GetFinalData().GetH();
 
-    PsiBlastAddAncillaryPssmData(*pssm, *query, 
+    PsiBlastAddAncillaryPssmData(*pssm,
                                   opts.GetGapOpeningCost(), 
                                   opts.GetGapExtensionCost());
 }
@@ -559,15 +557,12 @@ CPsiBlastAlignmentProcessor::operator()
     output.clear();
 
     ITERATE(CSeq_align_set::Tdata, hsp, alignments.Get()) {
-            
-            // Look for HSP with score less than inclusion_ethresh
-            double e = GetLowestEvalue((*hsp)->GetScore());
-            if (e < evalue_inclusion_threshold) {
-                CRef<CSeq_id> id(const_cast<CSeq_id*>(&(*hsp)->GetSeq_id(1)));
-                if (output.empty() || !id->Match(*output.back()) ) {
-                    output.push_back(id);
-                }
-            }
+        // Look for HSP with score less than inclusion_ethresh
+        double e = GetLowestEvalue((*hsp)->GetScore());
+        if (e < evalue_inclusion_threshold) {
+            CRef<CSeq_id> id(const_cast<CSeq_id*>(&(*hsp)->GetSeq_id(1)));
+            output.insert(id);
+        }
     }
 }
 

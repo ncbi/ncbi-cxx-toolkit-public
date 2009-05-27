@@ -46,7 +46,7 @@ Author: Jason Papadopoulos
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
 
 #include <objtools/blast_format/blastxml_format.hpp>
-#include "data4xmlformat.hpp"
+#include "data4xmlformat.hpp"       /* NCBI_FAKE_WARNING */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -88,8 +88,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_QueriesFormatted(0),
           m_Megablast(is_megablast),
           m_IndexedMegablast(is_indexed), 
-          m_CustomOutputFormatSpec(custom_output_format),
-          m_IsNonBlastDB(false)
+          m_CustomOutputFormatSpec(custom_output_format)
 {
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
@@ -107,10 +106,59 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     }
 }
 
-void CBlastFormat::EnableNonBlastDB()
+CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
+                 const vector< CBlastFormatUtil::SDbInfo >& dbinfo_list,
+                 blast::CFormattingArgs::EOutputFormat format_type, 
+                 bool believe_query, CNcbiOstream& outfile,
+                 int num_summary, 
+                 int num_alignments,
+                 CScope& scope,
+                 bool show_gi, 
+                 bool is_html, 
+                 bool is_remote_search,
+                 const string& custom_output_format)
+        : m_FormatType(format_type),
+          m_IsHTML(is_html), 
+          m_DbIsAA(!Blast_SubjectIsNucleotide(opts.GetProgramType())),
+          m_BelieveQuery(believe_query),
+          m_Outfile(outfile),
+          m_NumSummary(num_summary),
+          m_NumAlignments(num_alignments),
+          m_Program(Blast_ProgramNameFromType(opts.GetProgramType())), 
+          m_DbName(kEmptyStr),
+          m_QueryGenCode(opts.GetQueryGeneticCode()),
+          m_DbGenCode(opts.GetDbGeneticCode()),
+          m_ShowGi(show_gi),
+          m_ShowLinkedSetSize(false),
+          m_IsUngappedSearch(!opts.GetGappedMode()),
+          m_MatrixName(opts.GetMatrixName()),
+          m_Scope(&scope),
+          m_IsBl2Seq(false),
+          m_IsRemoteSearch(is_remote_search),
+          m_QueriesFormatted(0),
+          m_Megablast(opts.GetProgram() == eMegablast ||
+                      opts.GetProgram() == eDiscMegablast),
+          m_IndexedMegablast(opts.GetMBIndexLoaded()), 
+          m_CustomOutputFormatSpec(custom_output_format)
 {
-    m_IsNonBlastDB = true;
+    m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
+    vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
+    for (itInfo = m_DbInfo.begin(); itInfo != m_DbInfo.end(); itInfo++)
+    {
+        m_DbName += itInfo->name + " ";
+    }
+
+    m_IsBl2Seq = false;
+
+    if (m_FormatType == CFormattingArgs::eXml) {
+        m_AccumulatedQueries.Reset(new CBlastQueryVector());
+    }
+
+    if (opts.GetSumStatisticsMode() && m_IsUngappedSearch) {
+        m_ShowLinkedSetSize = true;
+    }
 }
+
 
 static const string kHTML_Prefix =
 "<HTML>\n"
@@ -234,29 +282,6 @@ CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef)
     showdef.SetDbType(!m_DbIsAA);
 }
 
-/** Auxiliary class to sort the CPsiBlastIterationState::TSeqIds */
-class CSeqIdComparer {
-public:
-    /// Construct with Seq-id target
-    /// @param target_seqid Seq-id to be searched [in]
-    CSeqIdComparer(const CSeq_id& target_seqid)
-        : m_Target(target_seqid) {}
-
-    /// Returns true if the candidate_seqid matches the target Seq-id provided
-    /// when creating this object
-    /// @param candidate_seqid Candidate Seq-id for comparison [in]
-    bool operator() (CRef<CSeq_id> candidate_seqid) const {
-        bool retval = false;
-        if (m_Target.Match(*candidate_seqid)) {
-            retval = true;
-        }
-        return retval;
-    }
-
-private:
-    const CSeq_id& m_Target;    ///< The target Seq-id of the search
-};
-
 void
 CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
                        CSeq_align_set& repeated_seqs,
@@ -270,12 +295,9 @@ CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
     _ASSERT(new_seqs.IsEmpty());
 
     ITERATE(CSeq_align_set::Tdata, alignment, full_alignment->Get()) {
-        const CSeq_id& subj_id = (*alignment)->GetSeq_id(kSubjRow);
-
-        CPsiBlastIterationState::TSeqIds::iterator pos =
-            find_if(prev_seqids.begin(), prev_seqids.end(), 
-                    CSeqIdComparer(subj_id));
-        if (pos != prev_seqids.end()) { 
+        CSeq_id& subj_id =
+            const_cast<CSeq_id&>((*alignment)->GetSeq_id(kSubjRow));
+        if (prev_seqids.find(CRef<CSeq_id>(&subj_id)) != prev_seqids.end()) {
             // if found among previously seen Seq-ids...
             repeated_seqs.Set().push_back(*alignment);
         } else {
@@ -445,13 +467,15 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eXml) {
-        // Prepare for XML formatting
-        if (results.HasAlignments()) {
-            CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
-            m_AccumulatedResults.push_back(res);
-        }
+        CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
+        m_AccumulatedResults.push_back(res);
+        CConstRef<CSeq_id> query_id = results.GetSeqId();
+        // FIXME: this can be a bottleneck with large numbers of queries
         ITERATE(CBlastQueryVector, itr, *queries) {
-            m_AccumulatedQueries->push_back(*itr);
+            if (query_id->Match(*(*itr)->GetQueryId())) {
+                m_AccumulatedQueries->push_back(*itr);
+                break;
+            }
         }
         return;
     }
@@ -588,7 +612,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, kIsTabularOutput,
                                             results.GetRID());
-    if (m_IsBl2Seq && !m_IsNonBlastDB) {
+    if (m_IsBl2Seq) {
         m_Outfile << "\n";
         // FIXME: this might be configurable in the future
         const bool kBelieveSubject = false; 
@@ -616,7 +640,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     //-------------------------------------------------
     // print 1-line summaries
-    if ( !m_IsBl2Seq || m_IsNonBlastDB ) {
+    if ( !m_IsBl2Seq ) {
         x_DisplayDeflines(aln_set, itr_num, prev_seqids);
     }
 
@@ -631,7 +655,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq && !m_IsNonBlastDB);
+                           m_IsBl2Seq);
 
     CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
@@ -765,7 +789,7 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq && !m_IsNonBlastDB);
+                           m_IsBl2Seq);
 
     if (phi_query_info)
     {

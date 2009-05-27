@@ -42,7 +42,9 @@ extern "C" {
 #endif
 
 /** Initialize the genetic code singleton.
- * @note this function is *NOT* thread safe, call it from the main thread */
+ * @note this function is *NOT* thread safe, call it from the main thread 
+ * @sa CAutomaticGenCodeSingleton
+ */
 NCBI_XBLAST_EXPORT void 
 GenCodeSingletonInit();
 
@@ -53,7 +55,7 @@ GenCodeSingletonFini();
 /** Add a genetic code entry to the singleton
  * @param gen_code_id genetic code id [in]
  * @param gen_code_str genetic code string [in]
- * @return 0 if SUCESS or already there, otherwise BLASTERR_MEMORY
+ * @return 0 if SUCCESS or already there, otherwise BLASTERR_MEMORY
  */
 NCBI_XBLAST_EXPORT Int2 
 GenCodeSingletonAdd(Uint4 gen_code_id, const Uint1* gen_code_str);

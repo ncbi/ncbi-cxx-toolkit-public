@@ -108,19 +108,32 @@ CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
 CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
                                          pair<double, double> k,
                                          pair<double, double> h,
-                                         Int8 effective_search_space)
+                                         Int8 effective_search_space,
+                                         bool is_psiblast /* = false */)
 : m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
   m_PsiGappedKarlinBlk(0), m_SearchSpace(0)
 {
-    m_GappedKarlinBlk = Blast_KarlinBlkNew();
-    m_GappedKarlinBlk->Lambda = lambda.second;
-    m_GappedKarlinBlk->K = k.second;
-    m_GappedKarlinBlk->H = h.second;
+    if (is_psiblast) {
+        m_PsiGappedKarlinBlk = Blast_KarlinBlkNew();
+        m_PsiGappedKarlinBlk->Lambda = lambda.second;
+        m_PsiGappedKarlinBlk->K = k.second;
+        m_PsiGappedKarlinBlk->H = h.second;
 
-    m_UngappedKarlinBlk = Blast_KarlinBlkNew();
-    m_UngappedKarlinBlk->Lambda = lambda.first;
-    m_UngappedKarlinBlk->K = k.first;
-    m_UngappedKarlinBlk->H = h.first;
+        m_PsiUngappedKarlinBlk = Blast_KarlinBlkNew();
+        m_PsiUngappedKarlinBlk->Lambda = lambda.first;
+        m_PsiUngappedKarlinBlk->K = k.first;
+        m_PsiUngappedKarlinBlk->H = h.first;
+    } else {
+        m_GappedKarlinBlk = Blast_KarlinBlkNew();
+        m_GappedKarlinBlk->Lambda = lambda.second;
+        m_GappedKarlinBlk->K = k.second;
+        m_GappedKarlinBlk->H = h.second;
+
+        m_UngappedKarlinBlk = Blast_KarlinBlkNew();
+        m_UngappedKarlinBlk->Lambda = lambda.first;
+        m_UngappedKarlinBlk->K = k.first;
+        m_UngappedKarlinBlk->H = h.first;
+    }
 
     m_SearchSpace = effective_search_space;
 }
@@ -170,12 +183,19 @@ CSearchResults::CSearchResults(CConstRef<objects::CSeq_id> query,
                                const string& rid /* = kEmptyStr */,
                                const SPHIQueryInfo *phi_query_info /* = NULL */)
 : m_QueryId(query), m_Alignment(align), m_Errors(errs), 
-  m_AncillaryData(ancillary_data) 
+  m_AncillaryData(ancillary_data), m_RID(kEmptyStr), m_PhiQueryInfo(0)
 {
     if (query_masks)
         SetMaskedQueryRegions(*query_masks);
     if (phi_query_info)
         m_PhiQueryInfo = SPHIQueryInfoCopy(phi_query_info);
+}
+
+CSearchResults::~CSearchResults()
+{
+    if (m_PhiQueryInfo) {
+        SPHIQueryInfoFree(m_PhiQueryInfo);
+    }
 }
 
 void

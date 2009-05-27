@@ -38,6 +38,7 @@
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/composition_adjustment/composition_constants.h>
+#include <algo/blast/core/hspfilter_besthit.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -174,6 +175,11 @@ public:
 
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
+
+    double GetBestHitOverhang() const;
+    void SetBestHitOverhang(double s);
+    void SetBestHitScoreEdge(double score_edge);
+    double GetBestHitScoreEdge() const;
 
     // Expect value cut-off threshold for an HSP, or a combined hit if sum
     // statistics is used
@@ -397,6 +403,10 @@ CBlastOptionsLocal::SetProgram(EProgram p)
     GetInitWordOpts()->program_number = prog_type;
     GetExtnOpts()->program_number = prog_type;
     GetHitSaveOpts()->program_number = prog_type;
+    if ( !Blast_SubjectIsTranslated(prog_type) ) {
+        // not needed for non-translated databases/subjects
+        GetDbOpts()->genetic_code = 0;  
+    }
 }
 
 inline const char*
@@ -975,13 +985,99 @@ CBlastOptionsLocal::SetMaxNumHspPerSequence(int m)
 inline int
 CBlastOptionsLocal::GetCullingLimit() const
 {
+    _ASSERT( (m_HitSaveOpts->culling_limit &&
+              m_HitSaveOpts->hsp_filt_opt->culling_opts->max_hits ==
+              m_HitSaveOpts->culling_limit) ||
+
+             (m_HitSaveOpts->culling_limit == 0 &&
+              ( (m_HitSaveOpts->hsp_filt_opt == NULL) ||
+                (m_HitSaveOpts->hsp_filt_opt->culling_opts == NULL) ) ) 
+           );
     return m_HitSaveOpts->culling_limit;
 }
 
 inline void
 CBlastOptionsLocal::SetCullingLimit(int s)
 {
+    if (s <= 0) {
+        return;
+    }
+
+    if ( !m_HitSaveOpts->hsp_filt_opt ) {
+        m_HitSaveOpts->hsp_filt_opt = BlastHSPFilteringOptionsNew();
+    }
+    // N.B.: ePrelimSearch is the default culling implemetation 
+    if (m_HitSaveOpts->hsp_filt_opt->culling_opts == NULL) {
+        BlastHSPCullingOptions* culling = BlastHSPCullingOptionsNew(s);
+        BlastHSPFilteringOptions_AddCulling(m_HitSaveOpts->hsp_filt_opt,
+                                            &culling,
+                                            ePrelimSearch);
+        _ASSERT(culling == NULL);
+    } else {
+        m_HitSaveOpts->hsp_filt_opt->culling_opts->max_hits = s;
+    }
+    // for backwards compatibility reasons
     m_HitSaveOpts->culling_limit = s;
+}
+
+inline double
+CBlastOptionsLocal::GetBestHitScoreEdge() const
+{
+    if (m_HitSaveOpts->hsp_filt_opt &&
+        m_HitSaveOpts->hsp_filt_opt->best_hit) {
+        return m_HitSaveOpts->hsp_filt_opt->best_hit->score_edge;
+    } else {
+        return kBestHit_ScoreEdgeMin;
+    }
+}
+
+inline void
+CBlastOptionsLocal::SetBestHitScoreEdge(double score_edge)
+{
+    if ( !m_HitSaveOpts->hsp_filt_opt ) {
+        m_HitSaveOpts->hsp_filt_opt = BlastHSPFilteringOptionsNew();
+    }
+    // per this object's assumption, just set the value
+    if (m_HitSaveOpts->hsp_filt_opt->best_hit) {
+        m_HitSaveOpts->hsp_filt_opt->best_hit->score_edge = score_edge;
+    } else {
+        BlastHSPBestHitOptions* best_hit_opts =
+            BlastHSPBestHitOptionsNew(kBestHit_OverhangDflt, score_edge);
+        BlastHSPFilteringOptions_AddBestHit(m_HitSaveOpts->hsp_filt_opt,
+                                            &best_hit_opts,
+                                            eBoth);
+        _ASSERT(best_hit_opts == NULL);
+    }
+}
+
+inline double
+CBlastOptionsLocal::GetBestHitOverhang() const
+{
+    if (m_HitSaveOpts->hsp_filt_opt &&
+        m_HitSaveOpts->hsp_filt_opt->best_hit) {
+        return m_HitSaveOpts->hsp_filt_opt->best_hit->overhang;
+    } else {
+        return kBestHit_OverhangMin;
+    }
+}
+
+inline void
+CBlastOptionsLocal::SetBestHitOverhang(double overhang)
+{
+    if ( !m_HitSaveOpts->hsp_filt_opt ) {
+        m_HitSaveOpts->hsp_filt_opt = BlastHSPFilteringOptionsNew();
+    }
+    // per this object's assumption, just set the value
+    if (m_HitSaveOpts->hsp_filt_opt->best_hit) {
+        m_HitSaveOpts->hsp_filt_opt->best_hit->overhang = overhang;
+    } else {
+        BlastHSPBestHitOptions* best_hit_opts =
+            BlastHSPBestHitOptionsNew(overhang, kBestHit_ScoreEdgeDflt);
+        BlastHSPFilteringOptions_AddBestHit(m_HitSaveOpts->hsp_filt_opt,
+                                            &best_hit_opts,
+                                            eBoth);
+        _ASSERT(best_hit_opts == NULL);
+    }
 }
 
 inline double

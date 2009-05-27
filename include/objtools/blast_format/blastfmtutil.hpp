@@ -613,6 +613,13 @@ public:
     static string BuildUserUrl(const CBioseq::TId& ids, int taxid, string user_url,
                                string database, bool db_is_na, string rid,
                                int query_number, bool for_alignment);
+
+    ///return the SRA (Short Read Archive) URL
+    ///@param ids: the id list
+    ///@param user_url: the URL of SRA cgi
+    ///@return newly constructed SRA URL pointing to the identified spot
+    ///
+    static string BuildSRAUrl(const CBioseq::TId& ids, string user_url);
     
  
     ///calculate the percent identity for a seqalign

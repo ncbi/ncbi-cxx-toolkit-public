@@ -528,7 +528,7 @@ public:
     
     /// Returns any resources associated with the sequence.
     /// 
-    /// Calls to GetSequence and GetAmbigSeq (but not GetBioseq())
+    /// Calls to GetSequence (but not GetBioseq())
     /// either increment a counter corresponding to a section of the
     /// database where the sequence data lives, or allocate a buffer
     /// to return to the user.  This method decrements that counter or
@@ -540,6 +540,21 @@ public:
     /// @param buffer
     ///   A pointer to the sequence data to release.
     void RetSequence(const char ** buffer) const;
+    
+    /// Returns any resources associated with the sequence.
+    /// 
+    /// Calls to GetAmbigSeq (but not GetBioseq())
+    /// either increment a counter corresponding to a section of the
+    /// database where the sequence data lives, or allocate a buffer
+    /// to return to the user.  This method decrements that counter or
+    /// frees the allocated buffer, so that the memory can be used by
+    /// other processes.  Each allocating call should be paired with a
+    /// returning call.  Note that this does not apply to GetBioseq(),
+    /// or GetHdr(), for example.
+    ///
+    /// @param buffer
+    ///   A pointer to the sequence data to release.
+    void RetAmbigSeq(const char ** buffer) const;
     
     /// Gets a list of sequence identifiers.
     /// 
@@ -696,8 +711,10 @@ public:
     ///   First included oid (if eOidRange is returned).
     /// @param end_chunk
     ///   OID after last included (if eOidRange is returned).
+    /// @param oid_size
+    ///   Number of OID to retrieve (ignored in MT environment)
     /// @param oid_list
-    ///   List of oids (if eOidList is returned).  Set size before call.
+    ///   An empty list.  Will contain oid list if eOidList is returned.
     /// @param oid_state
     ///   Optional address of a state variable (for concurrent iterations).
     /// @return
@@ -705,6 +722,7 @@ public:
     EOidListType
     GetNextOIDChunk(int         & begin_chunk,       // out
                     int         & end_chunk,         // out
+                    int         oid_size,            // in
                     vector<int> & oid_list,          // out
                     int         * oid_state = NULL); // in+out
 
@@ -992,15 +1010,90 @@ public:
                              string & output,
                              TSeqRange range = TSeqRange()) const;
     
-    /// List of sequence offset ranges.
-    typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
+    /// Structure to represent a range
+    struct TOffsetPair {
+        TSeqPos first;
+        TSeqPos second;
 
-    /// Invert the sequence ranges so that they represent the offset ranges to
-    /// SEARCH (as opposed to those to exclude from the search).
-    /// @param ranges sequence ranges to invert [in|out]
-    /// @param seq_length sequence length [in]
-    static void InvertSequenceRanges(TSequenceRanges& ranges, int seq_length);
-    
+        /// Default constructor
+        TOffsetPair() : first(0), second(0) {}
+        /// Convenient operator to convert to TSeqRange
+        operator TSeqRange() const { return TSeqRange(first, second-1); }
+    };
+
+    /// List of sequence offset ranges.
+    struct TSequenceRanges {
+        typedef size_t size_type;
+        typedef TOffsetPair value_type;
+        typedef const value_type* const_iterator;
+
+        size_type _size;
+        size_type _capacity;
+        TOffsetPair* _data;
+
+        TSequenceRanges() {
+            x_reset_all();
+        }
+
+        ~TSequenceRanges() {
+            free(_data);
+            x_reset_all();
+        }
+
+        void clear() {
+            _size = 0;
+        }
+
+        size_type size() const { return _size; }
+
+        const_iterator begin() const { return &_data[0]; }
+        const_iterator end() const { return &_data[_size]; }
+
+        /// Reserves capacity for at least num_elements elements
+        /// @throw CSeqDBException in case of memory allocation failure
+        void reserve(size_t num_elements) {
+            if (num_elements > _capacity) {
+                value_type* reallocation =
+                    (value_type*) realloc(_data, num_elements *
+                                          sizeof(value_type));
+                if ( !reallocation ) {
+                    string msg("Failed to allocate ");
+                    msg += NStr::IntToString(num_elements) + " elements";
+                    NCBI_THROW(CSeqDBException, eMemErr, msg);
+                }
+                _data = reallocation;
+                _capacity = num_elements;
+            }
+        }
+
+        void resize(size_type num_elements) { reserve(num_elements); }
+
+        void push_back(const value_type& element) {
+            x_reallocate_if_necessary();
+            _data[_size] = element;
+            _size++;
+        }
+
+        value_type& operator[](size_type i) { return _data[i]; }
+
+        bool empty() const { return _size == 0; }
+
+    private:
+        /// Resets all data members
+        void x_reset_all() {
+            _size = _capacity = 0;
+            _data = NULL;
+        }
+
+        /// Reallocates the data array if necessary to add one more element
+        void x_reallocate_if_necessary() {
+            static size_t kResizeFactor = 2;
+            if (_size+1 > _capacity) {
+                reserve(_capacity*kResizeFactor);
+            }
+        }
+    };
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// List columns titles found in this database.
@@ -1118,17 +1211,13 @@ public:
     ///
     /// For the provided OID and list of algorithm IDs, this method
     /// gets a list of masked areas of those sequences.  The list of
-    /// masked areas is returned via the ranges parameter.  If the
-    /// 'inverted' flag is set, the list of ranges will be inverted,
-    /// so that a list of non-masked areas is returned.
+    /// masked areas is returned via the ranges parameter.
     ///
     /// @param oid The ordinal ID of the sequence. [in]
     /// @param algo_ids The algorithm IDs to get data for. [in]
-    /// @param inverted If true, return a list of included ranges. [in]
     /// @param ranges The list of sequence offset ranges. [out]
     void GetMaskData(int                 oid,
                      const vector<int> & algo_ids,
-                     bool                inverted,
                      TSequenceRanges   & ranges);
 #endif
 
@@ -1176,9 +1265,24 @@ public:
                          const TRangeList & offset_ranges,
                          bool               append_ranges,
                          bool               cache_data);
-    
+
+    /// Remove any offset ranges for the given OID
+    /// @param oid           OID of the sequence.
+    void RemoveOffsetRanges(int oid);
+
+    /// Flush all offset ranges cached
+    void FlushOffsetRangeCache();
+
     /* END: support for partial sequence fetching                          */
     /***********************************************************************/
+
+    /// Setting the number of threads
+    ///
+    /// This should be called by the master thread, before and after 
+    /// multiple threads run.
+    /// 
+    /// @param num_threads   Number of threads
+    void SetNumberOfThreads(int num_threads);
 
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

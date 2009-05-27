@@ -37,11 +37,11 @@
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
-#include "test_objmgr.hpp"
 #include <algo/blast/core/blast_hspstream.h>
-#include <algo/blast/api/hspstream_queue.hpp>
+#include <algo/blast/core/hspfilter_collector.h>
+
+#include "test_objmgr.hpp"
 #include "hspstream_test_util.hpp"
-#include <algo/blast/core/hspstream_collector.h>
 // For C++ mutex locking
 #include <algo/blast/api/blast_mtlock.hpp>
 
@@ -62,47 +62,43 @@ void testHSPStream(EHSPStreamType stream_type) {
     const int kNumThreads = 40;
     int num_hsp_lists = 1000;
     BlastHSPList* hsp_list = NULL;
-    BlastHSPStream* hsp_stream = NULL;
     int num_reads=0, num_hsps=0;
     int status, write_status=0;
     int index;
         
     const EBlastProgramType kProgram = eBlastTypeBlastp;
+    const bool kIsGapped = true;
 
+    BlastExtensionOptions* ext_options = NULL;
+    BlastExtensionOptionsNew(kProgram, &ext_options, kIsGapped);
     BlastHitSavingOptions* hit_options = NULL;
-    BlastHitSavingOptionsNew(kProgram, &hit_options, true);
+    BlastHitSavingOptionsNew(kProgram, &hit_options, kIsGapped);
 
-    SBlastHitsParameters* blasthit_params=NULL;
+    MT_LOCK lock = Blast_CMT_LOCKInit();
 
-    if (stream_type == eHSPListCollector) {
-        MT_LOCK lock = Blast_CMT_LOCKInit();
+    BlastScoringOptions* scoring_options = NULL;
+    BlastScoringOptionsNew(kProgram, &scoring_options);
 
-        BlastExtensionOptions* ext_options = NULL;
-        BlastExtensionOptionsNew(kProgram, &ext_options, true);
+    BlastHSPCollectorParams* col_params = BlastHSPCollectorParamsNew(
+    hit_options, ext_options->compositionBasedStats,
+    scoring_options->gapped_calculation);
 
-        BlastScoringOptions* scoring_options = NULL;
-        BlastScoringOptionsNew(kProgram, &scoring_options);
+    BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(col_params);
 
-        SBlastHitsParametersNew(hit_options, ext_options, scoring_options,
-                                &blasthit_params);
+	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+    BOOST_REQUIRE(writer_info == NULL);
 
-        scoring_options = BlastScoringOptionsFree(scoring_options);
+    BlastHSPStream* hsp_stream = BlastHSPStreamNew(kProgram, ext_options, TRUE,
+                                                   kNumQueries, writer);
 
-        hsp_stream = 
-            Blast_HSPListCollectorInitMT(kProgram, blasthit_params,
-                                         ext_options, TRUE, kNumQueries,
-                                         lock);
-        ext_options = BlastExtensionOptionsFree(ext_options);
-        /* One written HSP list will be split into one per query. */
-        num_reads = kNumQueries;
-        num_hsps = 1;
-        write_status = kBlastHSPStream_Error;
-    } else if (stream_type == eHSPListQueue) {
-        hsp_stream = Blast_HSPListCQueueInit();
-        num_reads = 1;
-        num_hsps = 10;
-        write_status = kBlastHSPStream_Success;
-    }
+	BlastHSPStreamRegisterMTLock(hsp_stream, lock);
+
+    scoring_options = BlastScoringOptionsFree(scoring_options);
+    ext_options = BlastExtensionOptionsFree(ext_options);
+    /* One written HSP list will be split into one per query. */
+    num_reads = kNumQueries;
+    num_hsps = 1;
+    write_status = kBlastHSPStream_Error;
 
     // Writing a NULL does not cause error.
     status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
@@ -126,13 +122,10 @@ void testHSPStream(EHSPStreamType stream_type) {
         write_thread->Run();
     }
 
-    if (stream_type == eHSPListCollector) {
-        // Join threads first, then read results
-        for (index = 0; index < kNumThreads; ++index) {
-            write_thread_v[index]->Join();
-        }
-        num_hsp_lists = MIN(num_hsp_lists, blasthit_params->prelim_hitlist_size);
+    for (index = 0; index < kNumThreads; ++index) {
+        write_thread_v[index]->Join();
     }
+    num_hsp_lists = MIN(num_hsp_lists, col_params->prelim_hitlist_size);
 
     // For the collector-type stream, HSP lists should 
     // be read out of the HSPStream in order of increasing 
@@ -142,24 +135,10 @@ void testHSPStream(EHSPStreamType stream_type) {
     for (index = 0; index < num_hsp_lists*num_reads; ++index) {
         status = BlastHSPStreamRead(hsp_stream, &hsp_list);
         BOOST_REQUIRE_EQUAL(kBlastHSPStream_Success, status);
-        if (stream_type == eHSPListCollector) {
-            BOOST_REQUIRE(hsp_list->oid >= last_oid);
-            last_oid = hsp_list->oid;
-        }
-        else {
-            BOOST_REQUIRE_EQUAL(index/num_hsp_lists, 
-                                 hsp_list->query_index);
-        }
+        BOOST_REQUIRE(hsp_list->oid >= last_oid);
+        last_oid = hsp_list->oid;
         BOOST_REQUIRE_EQUAL(num_hsps, hsp_list->hspcnt);
         hsp_list = Blast_HSPListFree(hsp_list);
-    }
-
-    if (stream_type != eHSPListCollector) {
-        // Join writing threads after reading, to allow reading and writing
-        // at the same time
-        for (index = 0; index < kNumThreads; ++index) {
-            write_thread_v[index]->Join();
-        }
     }
 
     /* Check whether we can write more results. */
@@ -208,15 +187,18 @@ BOOST_AUTO_TEST_CASE(testMultiSeqHSPCollector) {
     BlastHitSavingOptionsNew(kProgram, &hit_options,
                              scoring_options->gapped_calculation);
 
-    SBlastHitsParameters* blasthit_params=NULL;
-    SBlastHitsParametersNew(hit_options, ext_options, scoring_options, 
-                            &blasthit_params);
+    BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(
+            BlastHSPCollectorParamsNew(
+        hit_options, ext_options->compositionBasedStats,
+        scoring_options->gapped_calculation));
+
+	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+    BOOST_REQUIRE(writer_info == NULL);
+
+    BlastHSPStream* hsp_stream = BlastHSPStreamNew(
+        kProgram, ext_options, FALSE, 1, writer);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
-
-    BlastHSPStream* hsp_stream = 
-        Blast_HSPListCollectorInit(kProgram, blasthit_params, ext_options,
-                                   FALSE, 1);
     ext_options = BlastExtensionOptionsFree(ext_options);
 
     BlastHSPList* hsp_list = NULL;

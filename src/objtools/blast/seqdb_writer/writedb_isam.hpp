@@ -399,6 +399,10 @@ private:
     
     /// The data file associated with this index file.
     CRef<CWriteDB_IsamData> m_DataFile;
+
+    /// Ugly patch to fix SB218
+    int                     m_Oid;
+    vector<string>          m_OidStringData;  ///< All string IDs added
 };
 
 /// CWriteDB_IsamData class

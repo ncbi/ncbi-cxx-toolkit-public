@@ -441,6 +441,13 @@ int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
     return rv;
 }
 
+void CSeqDB::RetAmbigSeq(const char ** buffer) const
+{
+    m_Impl->Verify();
+    m_Impl->RetAmbigSeq(buffer);
+    m_Impl->Verify();
+}
+
 int CSeqDB::GetAmbigSeq(int           oid,
                         const char ** buffer,
                         int           nucl_code,
@@ -553,13 +560,14 @@ bool CSeqDB::CheckOrFindOID(int & oid) const
 CSeqDB::EOidListType
 CSeqDB::GetNextOIDChunk(int         & begin,
                         int         & end,
+                        int         size,
                         vector<int> & lst,
                         int         * state)
 {
     m_Impl->Verify();
     
     CSeqDB::EOidListType rv =
-        m_Impl->GetNextOIDChunk(begin, end, lst, state);
+        m_Impl->GetNextOIDChunk(begin, end, size, lst, state);
     
     m_Impl->Verify();
     
@@ -973,10 +981,10 @@ void CSeqDB::GetSequenceAsString(int                 oid,
         raw.assign(buffer, length);
     }
     catch(...) {
-        RetSequence(& buffer);
+        RetAmbigSeq(& buffer);
         throw;
     }
-    RetSequence(& buffer);
+    RetAmbigSeq(& buffer);
     
     CSeqUtil::ECoding code_from = ((GetSequenceType() == CSeqDB::eProtein)
                                    ? CSeqUtil::e_Ncbistdaa
@@ -1078,72 +1086,13 @@ void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,
 
 void CSeqDB::GetMaskData(int                 oid,
                          const vector<int> & algo_ids,
-                         bool                invert,
                          TSequenceRanges   & ranges)
 {
-    m_Impl->GetMaskData(oid, algo_ids, invert, ranges);
+    m_Impl->GetMaskData(oid, algo_ids, ranges);
 }
 
 #endif
 
-void 
-CSeqDB::InvertSequenceRanges(CSeqDB::TSequenceRanges& ranges, int seq_length)
-{
-    if (ranges.size() == 0) {
-        pair<TSeqPos,TSeqPos> rng(0, seq_length);
-        ranges.push_back(rng);
-    } else {
-        // The inverse of a range list is a range from 0 to the
-        // first offset of the first range (the 'pre'), then from
-        // the last offset of each range to the first offset of
-        // the next, then from the last offset of the last range
-        // to the end (the 'post').
-        
-        int last_off = ranges[ranges.size()-1].second;
-        
-        if (last_off > seq_length) {
-            NCBI_THROW(CSeqDBException,
-                       eFileErr,
-                       "Mask data range exceeds sequence length.");
-        }
-        
-        if (ranges[0].first == 0) {
-            // If the first range starts at zero, the 'pre' range
-            // would be empty.  We avoid creating it, and iterate
-            // in an ascending direction.
-            
-            int LAST = ranges.size()-1;
-            
-            for(int q = 0; q < LAST; q++) {
-                ranges[q].first = ranges[q].second;
-                ranges[q].second = ranges[q+1].first;
-            }
-            
-            if (last_off == seq_length) {
-                ranges.pop_back();
-            } else {
-                ranges[LAST].first = ranges[LAST].second;
-                ranges[LAST].second = seq_length;
-            }
-        } else {
-            // To insert the `pre' range without an extra vector
-            // copy, iterate over the elements backwards.
-            
-            if (last_off != seq_length) {
-                pair<TSeqPos, TSeqPos> post(seq_length, 0);
-                ranges.push_back(post);
-            }
-            
-            for(int q = ranges.size()-1; q > 0; q--) {
-                ranges[q].second = ranges[q].first;
-                ranges[q].first = ranges[q-1].second;
-            }
-            
-            ranges[0].second = ranges[0].first;
-            ranges[0].first = 0;
-        }
-    }
-}
 
 void CSeqDB::GarbageCollect(void)
 {
@@ -1163,6 +1112,24 @@ void CSeqDB::SetOffsetRanges(int                        oid,
                             cache_data);
     
     m_Impl->Verify();
+}
+
+void CSeqDB::RemoveOffsetRanges(int oid)
+{
+    static TRangeList empty;
+    SetOffsetRanges(oid, empty, false, false);
+}
+
+void CSeqDB::FlushOffsetRangeCache()
+{
+    m_Impl->FlushOffsetRangeCache();
+}
+
+void CSeqDB::SetNumberOfThreads(int num_threads)
+{
+    m_Impl->Verify();
+
+    m_Impl->SetNumberOfThreads(num_threads);
 }
 
 END_NCBI_SCOPE

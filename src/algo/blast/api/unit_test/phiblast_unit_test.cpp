@@ -422,11 +422,15 @@ BOOST_AUTO_TEST_CASE(testPHIBlastHSPResultsSplitNoHits) {
 // but set up functions are here.
 BOOST_AUTO_TEST_CASE(testPHIBlastHitSavingParameters) {
     const EBlastProgramType kBlastProgram = eBlastTypePhiBlastp;
+    const bool kIsGapped = true;
     setUpLookupTable("[ED]-x(32,40)-E-x(2)-H");
     x_FindQueryOccurrences();
 
+    BlastExtensionOptions* ext_options = NULL;
+    BlastExtensionOptionsNew(kBlastProgram, &ext_options, kIsGapped);
+
     BlastHitSavingOptions* hit_options;
-    BlastHitSavingOptionsNew(kBlastProgram, &hit_options, true);
+    BlastHitSavingOptionsNew(kBlastProgram, &hit_options, kIsGapped);
 
     m_QueryInfo->contexts[0].eff_searchsp = 10000000;
     const int k_avg_subject_length=343;
@@ -436,6 +440,7 @@ BOOST_AUTO_TEST_CASE(testPHIBlastHitSavingParameters) {
     BOOST_REQUIRE_EQUAL(28, hit_params->cutoffs[0].cutoff_score);
     BOOST_REQUIRE_EQUAL(28, hit_params->cutoff_score_min);
 
+    ext_options = BlastExtensionOptionsFree(ext_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
     hit_options = BlastHitSavingOptionsFree(hit_options);
 }

@@ -120,7 +120,7 @@ CLocalBlastDbAdapter::GetSequence(int oid,
         } else {
             TSeqPos length = m_SeqDB->GetAmbigSeq(oid, &buffer, kNuclCode);
             s_AssignBufferToSeqData(buffer, *retval, length); 
-            m_SeqDB->RetSequence(&buffer);
+            m_SeqDB->RetAmbigSeq(&buffer);
         }
     } else {
         // Get parts of the sequence
@@ -135,7 +135,7 @@ CLocalBlastDbAdapter::GetSequence(int oid,
                 m_SeqDB->GetAmbigSeq(oid, &buffer, kNuclCode, begin, end);
             _ASSERT((end-begin) == (int)length);
             s_AssignBufferToSeqData(buffer, *retval, length); 
-            m_SeqDB->RetSequence(&buffer);
+            m_SeqDB->RetAmbigSeq(&buffer);
         }
     }
     return retval;

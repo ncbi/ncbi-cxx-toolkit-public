@@ -60,6 +60,7 @@ CBlastxAppArgs::CBlastxAppArgs()
     SetTask(kDefaultTask);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
+    m_BlastDbArgs->SetDatabaseMaskingSupport(true);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
@@ -89,7 +90,7 @@ CBlastxAppArgs::CBlastxAppArgs()
     arg.Reset(new CWordThresholdArg);
     m_Args.push_back(arg);
 
-    arg.Reset(new CCullingArgs);
+    arg.Reset(new CHspFilteringArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
@@ -132,7 +133,7 @@ CBlastxAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastxAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastx);
+    return blast::GetQueryBatchSize(eBlastx, m_IsUngapped);
 }
 
 END_SCOPE(blast)

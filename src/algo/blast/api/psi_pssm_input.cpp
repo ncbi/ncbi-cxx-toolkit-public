@@ -56,6 +56,7 @@ static char const rcsid[] =
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seq/seqport_util.hpp>
 
 #include "psiblast_aux_priv.hpp"
 
@@ -132,6 +133,37 @@ CPsiBlastInputData::Process()
 
     x_CopyQueryToMsa();
     x_ExtractAlignmentData();
+    x_ExtractQueryForPssm();
+}
+
+void
+CPsiBlastInputData::x_ExtractQueryForPssm()
+{
+    // Test our pre-conditions
+    _ASSERT(m_Query && m_SeqAlignSet.NotEmpty());
+    _ASSERT(m_QueryBioseq.Empty());
+
+    m_QueryBioseq.Reset(new CBioseq);
+    // set the sequence id
+    CRef<CSeq_align> aln =
+        const_cast<CSeq_align_set*>(&*m_SeqAlignSet)->Set().front();
+    CRef<CSeq_id> query_id(const_cast<CSeq_id*>(&aln->GetSeq_id(0)));
+    m_QueryBioseq->SetId().push_back(query_id);
+
+    // set required Seq-inst fields
+    m_QueryBioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    m_QueryBioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
+    m_QueryBioseq->SetInst().SetLength(GetQueryLength());
+
+    // set the sequence data in ncbistdaa format
+    CNCBIstdaa& seq = m_QueryBioseq->SetInst().SetSeq_data().SetNcbistdaa();
+    seq.Set().reserve(GetQueryLength());
+    for (TSeqPos i = 0; i < GetQueryLength(); i++) {
+        seq.Set().push_back(m_Query[i]);
+    }
+
+    // Test our post-condition
+    _ASSERT(m_QueryBioseq.NotEmpty());
 }
 
 unsigned int

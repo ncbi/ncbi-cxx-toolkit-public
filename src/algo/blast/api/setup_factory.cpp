@@ -55,7 +55,10 @@ static char const rcsid[] =
 
 // CORE BLAST includes
 #include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/hspstream_collector.h>
+#include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/hspfilter_collector.h>
+#include <algo/blast/core/hspfilter_besthit.h>
+#include <algo/blast/core/hspfilter_culling.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -251,43 +254,95 @@ CSetupFactory::CreateDiagnosticsStructureMT()
 
 BlastHSPStream*
 CSetupFactory::CreateHspStream(const CBlastOptionsMemento* opts_memento,
-                               size_t number_of_queries)
+                               size_t number_of_queries,
+                               BlastHSPWriter* writer)
 {
-    return x_CreateHspStream(opts_memento, number_of_queries, false);
+    _ASSERT(opts_memento);
+    return BlastHSPStreamNew(opts_memento->m_ProgramType, 
+                             opts_memento->m_ExtnOpts, TRUE,
+                             number_of_queries, writer);
 }
 
-BlastHSPStream*
-CSetupFactory::CreateHspStreamMT(const CBlastOptionsMemento* opts_memento,
-                                 size_t number_of_queries)
+BlastHSPWriter*
+CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
+                               BlastQueryInfo* query_info)
 {
-    return x_CreateHspStream(opts_memento, number_of_queries, true);
+    BlastHSPWriterInfo* writer_info = NULL;
+    
+    const BlastHSPFilteringOptions* filt_opts =
+        opts_memento->m_HitSaveOpts->hsp_filt_opt;
+    if (filt_opts) {
+        bool hsp_writer_found = false;
+        if (filt_opts->best_hit && (filt_opts->best_hit_stage & ePrelimSearch)) 
+        {
+            BlastHSPBestHitParams* params = 
+                BlastHSPBestHitParamsNew(opts_memento->m_HitSaveOpts,
+                                         filt_opts->best_hit);
+            writer_info = BlastHSPBestHitInfoNew(params);
+            hsp_writer_found = true;
+        }
+        else if (filt_opts->culling_opts && 
+                 (filt_opts->culling_stage & ePrelimSearch))
+        {
+            _ASSERT(hsp_writer_found == false);
+            BlastHSPCullingParams* params = 
+                BlastHSPCullingParamsNew(opts_memento->m_HitSaveOpts,
+                     filt_opts->culling_opts,
+                     opts_memento->m_ExtnOpts->compositionBasedStats,
+                     opts_memento->m_ScoringOpts->gapped_calculation);
+            writer_info = BlastHSPCullingInfoNew(params);
+            hsp_writer_found = true;
+        }
+    } else {
+        /* Use the collector filtering algorithm as the default */
+        BlastHSPCollectorParams * params = 
+            BlastHSPCollectorParamsNew(opts_memento->m_HitSaveOpts, 
+                       opts_memento->m_ExtnOpts->compositionBasedStats, 
+                       opts_memento->m_ScoringOpts->gapped_calculation);
+        writer_info = BlastHSPCollectorInfoNew(params);
+    }
+    
+    BlastHSPWriter* retval = BlastHSPWriterNew(&writer_info, query_info);
+    _ASSERT(writer_info == NULL);
+    return retval;
 }
 
-BlastHSPStream*
-CSetupFactory::x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
-                                 size_t number_of_queries,
-                                 bool is_multi_threaded)
+BlastHSPPipe*
+CSetupFactory::CreateHspPipe(const CBlastOptionsMemento* opts_memento,
+                             BlastQueryInfo* query_info)
 {
     _ASSERT(opts_memento);
 
-    SBlastHitsParameters* blast_hit_params(0);
-    SBlastHitsParametersNew(opts_memento->m_HitSaveOpts,
-                            opts_memento->m_ExtnOpts,
-                            opts_memento->m_ScoringOpts,
-                            &blast_hit_params);
-
-    if (is_multi_threaded) {
-        return Blast_HSPListCollectorInitMT(opts_memento->m_ProgramType,
-                                            blast_hit_params,
-                                            opts_memento->m_ExtnOpts, TRUE,
-                                            number_of_queries,
-                                            Blast_CMT_LOCKInit());
+    BlastHSPPipe* retval = NULL;
+    BlastHSPPipeInfo* pipe_info = NULL;
+    
+    const BlastHSPFilteringOptions* filt_opts =
+        opts_memento->m_HitSaveOpts->hsp_filt_opt;
+    if (filt_opts) {
+        if (filt_opts->best_hit && 
+            (filt_opts->best_hit_stage & eTracebackSearch)) {
+            BlastHSPBestHitParams* params = 
+                BlastHSPBestHitParamsNew(opts_memento->m_HitSaveOpts,
+                                         filt_opts->best_hit);
+            BlastHSPPipeInfo_Add(&pipe_info, 
+                                 BlastHSPBestHitPipeInfoNew(params));
+        } else if (filt_opts->culling_opts &&
+                   (filt_opts->culling_stage & eTracebackSearch)) {
+            BlastHSPCullingParams* params = 
+                BlastHSPCullingParamsNew(opts_memento->m_HitSaveOpts,
+                     filt_opts->culling_opts,
+                     opts_memento->m_ExtnOpts->compositionBasedStats,
+                     opts_memento->m_ScoringOpts->gapped_calculation);
+            BlastHSPPipeInfo_Add(&pipe_info, 
+                                 BlastHSPCullingPipeInfoNew(params));
+        }
     } else {
-        return Blast_HSPListCollectorInit(opts_memento->m_ProgramType,
-                                          blast_hit_params,
-                                          opts_memento->m_ExtnOpts, TRUE,
-                                          number_of_queries);
+        ; /* the default is to use no pipes */
     }
+    
+    retval = BlastHSPPipeNew(&pipe_info, query_info);
+    _ASSERT(pipe_info == NULL);
+    return retval;
 }
 
 BlastSeqSrc*

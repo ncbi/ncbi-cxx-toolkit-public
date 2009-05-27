@@ -150,6 +150,7 @@ typedef struct BlastNaLookupTable {
                                 backbone cell contains hits */
     void *scansub_callback;  /**< function for scanning subject sequences */
     void *extend_callback;  /**< function for extending hits */
+    BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
 } BlastNaLookupTable;
   
 /** Create a new nucleotide lookup table.
@@ -159,6 +160,7 @@ typedef struct BlastNaLookupTable {
  *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
  * @param lut Pointer to the lookup table to be created [out]
  * @param opt Options for lookup table creation [in]
+ * @param query_options query options used to get filtering options [in]
  * @param lut_width The number of nucleotides in one lookup table word [in]
  * @return 0 if successful, nonzero on failure
  */
@@ -166,6 +168,7 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
                            BlastSeqLoc* locations,
                            BlastNaLookupTable * *lut,
                            const LookupTableOptions * opt,
+                           const QuerySetUpOptions* query_options,
                            Int4 lut_width);
 
 /** Free a nucleotide lookup table.
@@ -258,6 +261,7 @@ typedef struct BlastMBLookupTable {
 
    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
    Int4 num_words_added; /**< Number of words added to the l.t. */
+    BlastSeqLoc* masked_locations; /**< masked locations, only non-NULL for soft-masking. */
 
 } BlastMBLookupTable;
 
@@ -269,6 +273,7 @@ typedef struct BlastMBLookupTable {
  *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
  * @param mb_lt_ptr Pointer to the lookup table to be created [out]
  * @param lookup_options Options for lookup table creation [in]
+ * @param query_options query options used to get filtering options [in]
  * @param approx_table_entries An upper bound on the number of words
  *        that must be added to the lookup table [in]
  * @param lut_width The number of nucleotides in one lookup table word [in]
@@ -276,6 +281,7 @@ typedef struct BlastMBLookupTable {
 Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                            BlastMBLookupTable** mb_lt_ptr,
                            const LookupTableOptions* lookup_options,
+                           const QuerySetUpOptions* query_options,
                            Int4 approx_table_entries,
                            Int4 lut_width);
 

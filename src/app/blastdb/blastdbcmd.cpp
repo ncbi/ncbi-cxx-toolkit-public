@@ -290,6 +290,26 @@ static string s_FormatCBlastDBSeqID(CRef<CBlastDBSeqId> id, CSeqDB& blastdb)
     return retval;
 }
 
+static void 
+s_ExtractFilteringAlgorithmIds(CSeqFormatterConfig& conf, const CArgs& args)
+{
+    if ( !args["mask_sequence_with"].HasValue() ) {
+        return;
+    }
+    vector<string> tokens;
+    NStr::Tokenize(args["mask_sequence_with"].AsString(), ",", tokens);
+    ITERATE(vector<string>, token, tokens) {
+        int algo_id(-1);
+        try { algo_id = NStr::StringToInt(*token); } 
+        catch (...) {
+            ERR_POST(Warning << "Ignoring '" << *token << "'");
+            continue;
+        }
+        _ASSERT(algo_id != -1);
+        conf.m_FiltAlgoIds.push_back(algo_id);
+    }
+}
+
 int
 CBlastDBCmdApp::x_ProcessSearchRequest()
 {
@@ -306,6 +326,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     conf.m_Strand = m_Strand;
     conf.m_TargetOnly = args["target_only"];
     conf.m_UseCtrlA = args["ctrl_a"];
+    s_ExtractFilteringAlgorithmIds(conf, args);
 
     bool errors_found = false;
     CSeqFormatter seq_fmt(kOutFmt, *m_BlastDb, out, conf);
@@ -384,6 +405,11 @@ void CBlastDBCmdApp::Init()
                             CArgDescriptions::eString, "plus");
     arg_desc->SetConstraint("strand", &(*new CArgAllow_Strings, "minus",
                                         "plus"));
+
+    arg_desc->AddOptionalKey("mask_sequence_with", "numbers",
+                             "Produce lower-case masked FASTA using the "
+                             "algorithm IDs specified (Format: N,M,...)",
+                             CArgDescriptions::eString);
 
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey("out", "output_file", "Output file name", 

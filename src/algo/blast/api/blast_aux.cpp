@@ -358,6 +358,19 @@ CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) 
 }
 
 void
+CPSIMsa::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CPSIMsa");
+    if (!m_Ptr)
+        return;
+
+    if (m_Ptr->dimensions) {
+        ddc.Log("dimensions::query_length", m_Ptr->dimensions->query_length);
+        ddc.Log("dimensions::num_seqs", m_Ptr->dimensions->num_seqs);
+    }
+}
+
+void
 CPSIMatrix::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     ddc.SetFrame("CPSIMatrix");
@@ -590,14 +603,15 @@ Uint4 CAutomaticGenCodeSingleton::m_RefCounter = 0;
 
 CAutomaticGenCodeSingleton::CAutomaticGenCodeSingleton()
 {
-    {{
-        CFastMutex mutex;
-        m_RefCounter++;
-        GenCodeSingletonInit(); 
-    }}
+    CFastMutex mutex;
+    m_RefCounter++;
+    GenCodeSingletonInit(); 
     // N.B.: this is added as this is the default value
-    TAutoUint1ArrayPtr gc = FindGeneticCode(BLAST_GENETIC_CODE);
-    GenCodeSingletonAdd(BLAST_GENETIC_CODE, gc.get());
+    const int kDefaultGeneticCode(BLAST_GENETIC_CODE);
+    if (GenCodeSingletonFind(kDefaultGeneticCode) == NULL) {
+        TAutoUint1ArrayPtr gc = FindGeneticCode(BLAST_GENETIC_CODE);
+        GenCodeSingletonAdd(BLAST_GENETIC_CODE, gc.get());
+    }
 }
 
 CAutomaticGenCodeSingleton::~CAutomaticGenCodeSingleton()
@@ -722,9 +736,10 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         return ePSIBlast;
     } else if (lowercase_program_name == "dc-megablast") {
         return eDiscMegablast;
+    } else {
+        NCBI_THROW(CBlastException, eNotSupported, 
+                   "Program type '" + program_name + "' not supported");
     }
-    NCBI_THROW(CBlastException, eNotSupported, 
-               "Program type '" + program_name + "' not supported");
 }
 
 string Blast_ProgramNameFromType(EBlastProgramType program)

@@ -43,7 +43,6 @@
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -298,6 +297,28 @@ typedef struct BlastExtensionOptions {
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastExtensionOptions;
 
+/** Options for the Best Hit HSP collection algorithm */
+typedef struct BlastHSPBestHitOptions {
+    double overhang;
+    double score_edge;
+} BlastHSPBestHitOptions;
+
+/** Options for the HSP culling algorithm */
+typedef struct BlastHSPCullingOptions {
+    int max_hits; /**< Maximum number of hits per area of query. */
+} BlastHSPCullingOptions;
+
+/** Structure containing the HSP filtering/writing options */
+typedef struct BlastHSPFilteringOptions {
+    /** Best Hit algorithm */
+    BlastHSPBestHitOptions* best_hit;
+    EBlastStage best_hit_stage; /*<< when to apply the best hit algorithm */
+
+    /** culling algorithm */
+    BlastHSPCullingOptions* culling_opts;
+    EBlastStage culling_stage; /*<< when to apply the culling algorithm */
+} BlastHSPFilteringOptions;
+
 /** Options used when evaluating and saving hits
  *  These include: 
  *  a. Restrictions on the number of hits to be saved;
@@ -333,6 +354,12 @@ typedef struct BlastHitSavingOptions {
    Int4 min_diag_separation; /**< How many diagonals separate a hit from a substantial alignment
                                   before it's not blocked out. Must be > 0 to be used. */
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
+
+   /** Contains options to configure the HSP filtering/writering structures
+    * If not set, the default HSP filtering strategy is used.
+    */
+   BlastHSPFilteringOptions* hsp_filt_opt;
+
 } BlastHitSavingOptions;
 
 /** Scoring options block 
@@ -423,6 +450,12 @@ typedef struct PSIBlastOptions {
      * engine. Do not change this unless you know what you are doing.
      */
     double impala_scaling_factor;
+
+    /** This turns off a validation for the multiple sequence alignment in the
+     * PSSM engine for unaligned positions. Needed when a multiple sequence
+     * alignment is provided on the command line (e.g.: -in_msa option). 
+     */
+    Boolean ignore_unaligned_positions;
 
 } PSIBlastOptions;
 
@@ -894,6 +927,78 @@ Int2 PSIBlastOptionsValidate(const PSIBlastOptions* psi_options,
 /** Deallocate PSI BLAST options */
 NCBI_XBLAST_EXPORT
 PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options);
+
+/** Allocate and initialize a BlastHSPBestHitOptions structure */
+NCBI_XBLAST_EXPORT
+BlastHSPBestHitOptions* BlastHSPBestHitOptionsNew(double overhang, 
+                                                  double score_edge);
+
+/** Validate the best hit algorithm parameters (if any) in the
+ * @param opts BlastHSPFilteringOptions structure 
+ * @return 0 on success, else non-zero
+ */
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPBestHitOptionsValidate(const BlastHSPFilteringOptions* opts);
+
+/** Deallocate a BlastHSPBestHitOptions structure 
+ * @param opt object to be deallocated. [in]
+ */
+NCBI_XBLAST_EXPORT
+BlastHSPBestHitOptions* BlastHSPBestHitOptionsFree(BlastHSPBestHitOptions* opt);
+
+/** Allocate a new object for culling options.
+ * @param max number of HSPs that may be aligned to one part of query [in]
+ */
+NCBI_XBLAST_EXPORT
+BlastHSPCullingOptions* BlastHSPCullingOptionsNew(int max);
+
+/** Validate culling options.
+ * @param opts BlastHSPFilteringOptions structure 
+ * @return 0 on success, else non-zero
+ */
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPCullingOptionsValidate(const BlastHSPFilteringOptions* opts);
+
+/** Deallocates culling options structure.
+ * @param culling_opts object to be deallocated. [in]
+ */
+NCBI_XBLAST_EXPORT
+BlastHSPCullingOptions* 
+BlastHSPCullingOptionsFree(BlastHSPCullingOptions* culling_opts);
+
+/** Allocate and initialize a BlastHSPFilteringOptions structure */
+NCBI_XBLAST_EXPORT
+BlastHSPFilteringOptions* BlastHSPFilteringOptionsNew();
+
+/** Add the best hit options. Responsibility for best_hit is taken over by the 
+ * BlastHSPFilteringOptions
+ * @param filt_opts HSP filtering options [in]
+ * @param best_hit Best Hit algorithm options. Ownership of this is taken by
+ * the BlastHSPFilteringOptions structure [in|out]
+ */
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPFilteringOptions_AddBestHit(BlastHSPFilteringOptions* filt_opts,
+                                    BlastHSPBestHitOptions** opts, 
+                                    EBlastStage stage);
+/** Validates the BlastHSPFilteringOptions structure */
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPFilteringOptions_AddCulling(BlastHSPFilteringOptions* filt_opts,
+                                    BlastHSPCullingOptions** opts, 
+                                    EBlastStage stage);
+
+/** Validates the BlastHSPFilteringOptions structure */
+NCBI_XBLAST_EXPORT
+Int2
+BlastHSPFilteringOptionsValidate(const BlastHSPFilteringOptions* opts);
+
+/** Deallocate a BlastHSPFilteringOptions structure */
+NCBI_XBLAST_EXPORT
+BlastHSPFilteringOptions*
+BlastHSPFilteringOptionsFree(BlastHSPFilteringOptions* opts);
 
 /** Allocates the BlastDatabase options structure and sets the default
  * database genetic code value (BLAST_GENETIC_CODE). Genetic code string in

@@ -50,15 +50,36 @@ static const int kConvFlags =
 
 BOOST_AUTO_TEST_CASE(TestNoFormatSpecifier)
 {
-    CSeqDB db("data/seqp", CSeqDB::eProtein);
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
     const string format_spec("hello world!");
     BOOST_REQUIRE_THROW(CSeqFormatter f(format_spec, db, std::cout),
                         blast::CInputException);
 }
 
+BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_Empty)
+{
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    BOOST_REQUIRE_THROW(CSeqFormatter f(kEmptyStr, db, std::cout),
+                        blast::CInputException);
+}
+
+BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_InvalidAlgoId)
+{
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    BOOST_REQUIRE_THROW(CSeqFormatter f("%m15", db, std::cout),
+                        blast::CInputException);
+}
+
+BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_InvalidAlgoIdSpec)
+{
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    BOOST_REQUIRE_THROW(CSeqFormatter f("%mhello", db, std::cout),
+                        blast::CInputException);
+}
+
 BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)
 {
-    CSeqDB db("data/seqp", CSeqDB::eProtein);
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
 
     vector<string> format_specs;
     format_specs.push_back("%o print %% sign");   // escape '%'
@@ -70,6 +91,13 @@ BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)
     format_specs.push_back("%l");
     format_specs.push_back("%T");
     format_specs.push_back("%P");
+    format_specs.push_back("%m"); // should print all masks
+    format_specs.push_back(" %m "); // should print all masks
+    format_specs.push_back("%m20"); // should print all masks for algo ID 20
+    format_specs.push_back("%m20 "); // should print all masks for algo ID 20
+    format_specs.push_back("%m40"); // should print all masks for algo ID 40
+    format_specs.push_back("%m40 "); // should print all masks for algo ID 40
+    format_specs.push_back("%m20,40"); // should print all masks
 
     ITERATE(vector<string>, itr, format_specs) {
         CSeqFormatter f(*itr, db, std::cout);
@@ -190,4 +218,83 @@ BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
     BOOST_REQUIRE_EQUAL(len, kLength);
     BOOST_REQUIRE_EQUAL(kSeqData, seq_data);
 }
+
+BOOST_AUTO_TEST_CASE(TestMaskedFasta)
+{
+    const int kGi(15597722);
+    const TSeqPos kLength = 1036;
+
+    CTmpFile tmpfile;
+    const string& fname = tmpfile.GetFileName();
+    const string format_spec("%f");
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    ofstream out(fname.c_str());
+    CSeqFormatterConfig config;
+    config.m_SeqRange = TSeqRange(0, 100);
+    config.m_LineWidth = config.m_SeqRange.GetLength();
+    config.m_FiltAlgoIds.push_back(20);
+    config.m_FiltAlgoIds.push_back(40);
+    CSeqFormatter f(format_spec, db, out, config);
+    CBlastDBSeqId id(NStr::IntToString(kGi));
+    f.Write(id);
+    out.close();
+
+    ifstream in(fname.c_str());
+    char buffer[kLength+1] = { '\0' };
+    while (in.getline(buffer, sizeof(buffer))) {
+        if (NStr::StartsWith(buffer, "MSLS")) {
+            // found the sequence data
+            break;
+        }
+    }
+
+    const TSeqRange masked_range(22,72);
+    for (TSeqPos i = 0; i < masked_range.GetFrom(); i++) {
+        BOOST_REQUIRE(isupper(buffer[i]));
+    }
+    for (TSeqPos i = masked_range.GetFrom(); i < masked_range.GetTo(); i++) {
+        BOOST_REQUIRE(islower(buffer[i]));
+    }
+    for (TSeqPos i = masked_range.GetTo()+1; i < config.m_SeqRange.GetTo(); i++)
+    {
+        ostringstream os;
+        os << "Failed at position " << i << ": " << buffer[i];
+        BOOST_REQUIRE_MESSAGE(isupper(buffer[i]), os.str());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestMaskedSequenceData)
+{
+    const int kGi(15597722);
+    const TSeqPos kLength = 1036;
+
+    CTmpFile tmpfile;
+    const string& fname = tmpfile.GetFileName();
+    const string format_spec("%s");
+    CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
+    ofstream out(fname.c_str());
+    CSeqFormatterConfig config;
+    config.m_FiltAlgoIds.push_back(20);
+    config.m_FiltAlgoIds.push_back(40);
+    CSeqFormatter f(format_spec, db, out, config);
+    CBlastDBSeqId id(NStr::IntToString(kGi));
+    f.Write(id);
+    out.close();
+
+    ifstream in(fname.c_str());
+    char buffer[kLength+1] = { '\0' };
+    in.getline(buffer, sizeof(buffer));     // read the sequence data
+
+    const TSeqRange masked_range(22,72);
+    for (TSeqPos i = 0; i < masked_range.GetFrom(); i++) {
+        BOOST_REQUIRE(isupper(buffer[i]));
+    }
+    for (TSeqPos i = masked_range.GetFrom(); i < masked_range.GetTo(); i++) {
+        BOOST_REQUIRE(islower(buffer[i]));
+    }
+    for (TSeqPos i = masked_range.GetTo(); i < kLength; i++) {
+        BOOST_REQUIRE(isupper(buffer[i]));
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END();

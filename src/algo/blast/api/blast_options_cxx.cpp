@@ -118,7 +118,9 @@ enum EBlastOptIdx {
     eBlastOpt_SmithWatermanMode,
     eBlastOpt_UnifiedP,
     eBlastOpt_WindowMaskerDatabase,
-    eBlastOpt_WindowMaskerTaxId
+    eBlastOpt_WindowMaskerTaxId,
+    eBlastOpt_ForceMbIndex,         // corresponds to -use_index flag
+    eBlastOpt_MbIndexName           // corresponds to -index_name flag
 };
 
 /// Encapsulates all blast input parameters
@@ -408,6 +410,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
     case eBlastOpt_WordSize:
         x_SetParam(B4Param_WordSize, v);
         return;
+
+    case eBlastOpt_LookupTableType: 
+        // do nothing, should be specified by the task
+        return;
         
     case eBlastOpt_StrandOption:
         {
@@ -641,6 +647,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
     case eBlastOpt_PHIPattern:
         x_SetParam(B4Param_PHIPattern, v);
         return;
+
+    case eBlastOpt_MbIndexName:
+        x_SetParam(B4Param_MbIndexName, v);
+        return;
         
     default:
         break;
@@ -722,6 +732,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
 
     case eBlastOpt_SmithWatermanMode:
         x_SetParam(B4Param_SmithWatermanMode, v);
+        return;
+
+    case eBlastOpt_ForceMbIndex:
+        x_SetParam(B4Param_ForceMbIndex, v);
         return;
 
     default:
@@ -1592,6 +1606,46 @@ CBlastOptions::SetCullingLimit(int s)
 }
 
 double 
+CBlastOptions::GetBestHitOverhang() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetBestHitOverhangMode() not available.");
+    }
+    return m_Local->GetBestHitOverhang();
+}
+void 
+CBlastOptions::SetBestHitOverhang(double overhang)
+{
+    if (m_Local) {
+        m_Local->SetBestHitOverhang(overhang);
+    }
+    // N/A for the time being
+    //if (m_Remote) {
+    //    m_Remote->SetValue(eBlastOpt_BestHitOverhangLimit, overhang);
+    //}
+}
+
+double 
+CBlastOptions::GetBestHitScoreEdge() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetBestHitScoreEdgeMode() not available.");
+    }
+    return m_Local->GetBestHitScoreEdge();
+}
+void 
+CBlastOptions::SetBestHitScoreEdge(double score_edge)
+{
+    if (m_Local) {
+        m_Local->SetBestHitScoreEdge(score_edge);
+    }
+    // N/A for the time being
+    //if (m_Remote) {
+    //    m_Remote->SetValue(eBlastOpt_BestHitScoreEdgeLimit, ScoreEdge);
+    //}
+}
+
+double 
 CBlastOptions::GetEvalueThreshold() const
 {
     if (! m_Local) {
@@ -2099,11 +2153,16 @@ const string CBlastOptions::GetIndexName() const
 
 void CBlastOptions::SetUseIndex( bool use_index, const string & index_name, bool force_index )
 {
-    if (! m_Local) {
-        x_Throwx("Error: SetUseIndex() not available.");
+    if (m_Local) {
+        m_Local->SetUseIndex( use_index, index_name, force_index );
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_ForceMbIndex, force_index);
+        if ( !index_name.empty() ) {
+            m_Remote->SetValue(eBlastOpt_MbIndexName, index_name.c_str());
+        }
     }
 
-    m_Local->SetUseIndex( use_index, index_name, force_index );
 }
 
 void CBlastOptions::SetMBIndexLoaded( bool index_loaded )

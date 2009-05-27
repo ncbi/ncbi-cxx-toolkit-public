@@ -181,7 +181,6 @@ public:
         int at_a_time = 1000;
         
         vector<int> oids;
-        oids.resize(at_a_time);
         
         // These will be set to a range if SeqDB chooses to return one.
         
@@ -215,16 +214,16 @@ public:
         
         while(! done) {
             
-            // The GetNextOIDChunk() uses the length of oids to
+            // The GetNextOIDChunk() uses the third argument to
             // determine how many OIDs the user needs, even if the
             // begin/end variables are used to return the range.  In
-            // other words, oids.size() is an INPUT to this call, and
+            // other words, at_a_time is an INPUT to this call, and
             // begin, end, and the size and contents of oids, are all
             // outputs.  local_state keeps track of the position in
             // the iteration - the only user adjustment of it should
             // be to reset it to 0 at the beginning of each iteration.
             
-            switch(sp.GetNextOIDChunk(begin, end, oids, & local_state)) {
+            switch(sp.GetNextOIDChunk(begin, end, at_a_time, oids, & local_state)) {
             case CSeqDB::eOidList:
                 for(int index = 0; index < (int)oids.size(); index++) {
                     x_UseOID(sp, oids[index], oid_count, length_1000);

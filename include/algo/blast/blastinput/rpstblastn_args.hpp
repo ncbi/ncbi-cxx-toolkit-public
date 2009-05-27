@@ -46,9 +46,11 @@ public:
     /// Constructor
     CRPSTBlastnAppArgs();
 
+    /// @inheritDoc
     virtual int GetQueryBatchSize() const;
 
 protected:
+    /// @inheritDoc
     virtual CRef<CBlastOptionsHandle>
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args);

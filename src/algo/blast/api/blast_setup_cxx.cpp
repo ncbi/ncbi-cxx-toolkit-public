@@ -630,17 +630,6 @@ SetupQueries_OMF(IBlastQuerySource& queries,
     (*seqblk)->lcase_mask_allocated = TRUE;
 }
 
-//static void
-//s_MaskedQueryRegions2MaskedSubjRanges(const TMaskedQueryRegions& subj_masks,
-//                                      CSeqDB::TSequenceRanges& output)
-//{
-//    output.clear();
-//    output.reserve(subj_masks.size());
-//    ITERATE(TMaskedQueryRegions, itr, subj_masks) {
-//        output.push_back(**itr);
-//    }
-//}
-
 static void
 s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp, CSeqDB::TSequenceRanges& output)
 {
@@ -656,22 +645,31 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp, CSeqDB::TSequenceRanges& output)
 
     if (slp->IsInt()) {
         output.reserve(1);
-        output.push_back(make_pair(slp->GetInt().GetFrom(), 
-                                   slp->GetInt().GetTo()));
+		CSeqDB::TOffsetPair p;
+		p.first=slp->GetInt().GetFrom();
+		p.second=slp->GetInt().GetTo();
+        output.push_back(p);
     } else if (slp->IsPacked_int()) {
         output.reserve(slp->GetPacked_int().Get().size());
         ITERATE(CPacked_seqint::Tdata, itr, slp->GetPacked_int().Get()) {
-            output.push_back(make_pair((*itr)->GetFrom(), (*itr)->GetTo()));
+    		CSeqDB::TOffsetPair p;
+		    p.first=(*itr)->GetFrom();
+		    p.second=(*itr)->GetTo();
+            output.push_back(p);
         }
     } else if (slp->IsMix()) {
         output.reserve(slp->GetMix().Get().size());
         ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
             if ((*itr)->IsInt()) {
-                output.push_back(make_pair((*itr)->GetInt().GetFrom(),
-                                           (*itr)->GetInt().GetTo()));
+				CSeqDB::TOffsetPair p;
+				p.first=(*itr)->GetInt().GetFrom();
+				p.second=(*itr)->GetInt().GetTo();
+                output.push_back(p);
             } else if ((*itr)->IsPnt()) {
-                output.push_back(make_pair((*itr)->GetPnt().GetPoint(),
-                                           (*itr)->GetPnt().GetPoint()));
+				CSeqDB::TOffsetPair p;
+				p.first=(*itr)->GetPnt().GetPoint();
+				p.second=(*itr)->GetPnt().GetPoint();
+                output.push_back(p);
             }
         }
     } else {
@@ -738,14 +736,11 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
             _ASSERT(masks);
             s_SeqLoc2MaskedSubjRanges(masks, masked_ranges);
             _ASSERT( !masked_ranges.empty() );
-            CSeqDB::InvertSequenceRanges(masked_ranges, subjects.GetLength(i));
             /// @todo: FIXME: this is inefficient, ideally, the masks shouldn't
             /// be copied for performance reasons...
             if (BlastSeqBlkSetSeqRanges(subj, (SSeqRange*)& masked_ranges[0],
                                     masked_ranges.size(), true) != 0) {
             }
-            _ASSERT(subj->seq_ranges != NULL);
-            _ASSERT(subj->num_seq_ranges > 1);
         }
         subj->lcase_mask = NULL;                // unused for subjects
         subj->lcase_mask_allocated = FALSE;     // unused for subjects
@@ -1454,6 +1449,19 @@ CBlastQueryFilteredFrames(EBlastProgramType program)
     m_TranslateCoords = x_NeedsTrans();
 }
 
+/// Auxiliary function to retrieve all available frames
+static set<CSeqLocInfo::ETranslationFrame> s_GetAllAvailableFrames()
+{
+    set<CSeqLocInfo::ETranslationFrame> retval;
+    retval.insert(CSeqLocInfo::eFramePlus1);
+    retval.insert(CSeqLocInfo::eFramePlus2);
+    retval.insert(CSeqLocInfo::eFramePlus3);
+    retval.insert(CSeqLocInfo::eFrameMinus1);
+    retval.insert(CSeqLocInfo::eFrameMinus2);
+    retval.insert(CSeqLocInfo::eFrameMinus3);
+    return retval;
+}
+
 CBlastQueryFilteredFrames::
 CBlastQueryFilteredFrames(EBlastProgramType           program,
                           const TMaskedQueryRegions & mqr)
@@ -1465,6 +1473,7 @@ CBlastQueryFilteredFrames(EBlastProgramType           program,
         return;
     }
     
+    set<ETranslationFrame> frames;
     ITERATE(TMaskedQueryRegions, itr, mqr) {
         const CSeq_interval & intv = (**itr).GetInterval();
         
@@ -1472,6 +1481,22 @@ CBlastQueryFilteredFrames(EBlastProgramType           program,
             (ETranslationFrame) (**itr).GetFrame();
         
         AddSeqLoc(intv, frame);
+        frames.insert(frame);
+    }
+
+    if (Blast_QueryIsNucleotide(m_Program) && m_TranslateCoords) {
+        // add masks to other frames if missing
+        set<ETranslationFrame> all_available_frames = s_GetAllAvailableFrames();
+        set<ETranslationFrame> frames_wo_masks;
+        set_difference(all_available_frames.begin(),
+                       all_available_frames.end(),
+                       frames.begin(), frames.end(),
+                       inserter(frames_wo_masks, frames_wo_masks.begin()));
+        ITERATE(set<ETranslationFrame>, fr, frames_wo_masks) {
+            ITERATE(TMaskedQueryRegions, itr, mqr) {
+                AddSeqLoc((**itr).GetInterval(), *fr);
+            }
+        }
     }
 }
 
@@ -1490,17 +1515,30 @@ void CBlastQueryFilteredFrames::Release(int frame)
     m_SeqlocTails.erase((ETranslationFrame)frame);
 }
 
+// some of the logic in this function is shamelessly copied from
+// BlastMaskLocDNAToProtein, which should have been used instead of creating
+// this class (which I presume was added ignoring the former function)
 void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
 {
     if (m_TranslateCoords) {
         m_TranslateCoords = false;
+        map<ETranslationFrame, int> frame_lengths;
+        frame_lengths[CSeqLocInfo::eFramePlus1] = 
+            frame_lengths[CSeqLocInfo::eFrameMinus1] = dna_length /
+            CODON_LENGTH;
+        frame_lengths[CSeqLocInfo::eFramePlus2] = 
+            frame_lengths[CSeqLocInfo::eFrameMinus2] = (dna_length-1) /
+            CODON_LENGTH;
+        frame_lengths[CSeqLocInfo::eFramePlus3] = 
+            frame_lengths[CSeqLocInfo::eFrameMinus3] = (dna_length-2) /
+            CODON_LENGTH;
         
         ITERATE(TFrameSet, iter, m_Seqlocs) {
             short frame = iter->first;
             BlastSeqLoc * bsl = iter->second;
-            
+
             for (BlastSeqLoc* itr = bsl; itr; itr = itr->next) {
-                TSeqPos to(0), from(0);
+                int to(0), from(0);
                 
                 if (frame < 0) {
                     from = (dna_length + frame - itr->ssr->right) / CODON_LENGTH;
@@ -1509,7 +1547,18 @@ void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
                     from = (itr->ssr->left - frame + 1) / CODON_LENGTH;
                     to = (itr->ssr->right - frame + 1) / CODON_LENGTH;
                 }
+                if (from < 0)
+                    from = 0;
+                if (to < 0)
+                    to = 0;
+                const int kFrameLength = frame_lengths[(CSeqLocInfo::ETranslationFrame)frame];
+                if (from >= kFrameLength)
+                    from = kFrameLength - 1;
+                if (to >= kFrameLength)
+                    to = kFrameLength - 1;
                 
+                _ASSERT(from >= 0 && to >= 0);
+                _ASSERT(from < kFrameLength && to < kFrameLength);
                 itr->ssr->left  = from;
                 itr->ssr->right = to;
             }

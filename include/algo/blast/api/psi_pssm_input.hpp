@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/pssm_input.hpp>
+#include <objmgr/scope.hpp>
 
 /// Forward declaration for unit test classes
 class CPssmEngineTest;
@@ -53,7 +54,6 @@ BEGIN_SCOPE(objects)
 #ifndef SKIP_DOXYGEN_PROCESSING
     class CSeq_align_set;
     class CDense_seg;
-    class CScope;
 #endif /* SKIP_DOXYGEN_PROCESSING */
 END_SCOPE(objects)
 
@@ -119,7 +119,6 @@ private:
 /// implements the traditional PSI-BLAST algorithm for building a multiple
 /// sequence alignment from a list of pairwise alignments using the C++ object
 /// manager.
-/// @todo FIXME rename to CPsiBlastInputMsa
 class NCBI_XBLAST_EXPORT CPsiBlastInputData : public IPssmInputData
 {
 public:
@@ -168,6 +167,11 @@ public:
     /// Obtain the diagnostics data that is requested from the PSSM engine
     const PSIDiagnosticsRequest* GetDiagnosticsRequest();
 
+    /// @inheritDoc
+    CRef<objects::CBioseq> GetQueryForPssm() {
+        return m_QueryBioseq;
+    }
+
 private:
 
     /// Pointer to query sequence
@@ -186,6 +190,8 @@ private:
     PSIDiagnosticsRequest*          m_DiagnosticsRequest;
     /// Underlying matrix to use
     string                          m_MatrixName;
+    /// Query as CBioseq for PSSM
+    CRef<objects::CBioseq>          m_QueryBioseq;
 
     /////////////////////////// Auxiliary functions ///////////////////////////
 
@@ -235,6 +241,9 @@ private:
     void x_ProcessDenseg(const objects::CDense_seg& denseg, 
                          unsigned int msa_index,
                          double evalue, double bit_score);
+
+    /// Extracts the query bioseq from m_SeqAlignSet
+    void x_ExtractQueryForPssm();
 
     /// unit test class
     friend class ::CPssmEngineTest;

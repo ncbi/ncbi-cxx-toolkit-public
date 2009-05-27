@@ -54,6 +54,13 @@ typedef Int4 (*TNaScanSubjectFunction)(const LookupTableWrap* lookup_wrap,
 NCBI_XBLAST_EXPORT
 void BlastChooseNucleotideScanSubject(LookupTableWrap *lookup_wrap);
 
+/** Return the most generic function to scan through
+ * nucleotide subject sequences
+ * @param lookup_wrap Structure containing lookup table [in][out]
+ */
+NCBI_XBLAST_EXPORT
+void * BlastChooseNucleotideScanSubjectAny(LookupTableWrap *lookup_wrap);
+
 #ifdef __cplusplus
 }
 #endif

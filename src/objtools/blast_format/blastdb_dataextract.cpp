@@ -155,6 +155,13 @@ string CSeqDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
     try {
         blastdb.GetSequenceAsString(kOid, retval, m_SeqRange);
+        CSeqDB::TSequenceRanges masked_ranges;
+        CMaskingDataExtractor mask_extractor(m_FiltAlgoIds);
+        mask_extractor.GetMaskedRegions(id, blastdb, masked_ranges);
+        ITERATE(CSeqDB::TSequenceRanges, mask, masked_ranges) {
+            transform(&retval[mask->first], &retval[mask->second],
+                      &retval[mask->first], (int (*)(int))tolower);
+        }
         if (m_Strand == eNa_strand_minus) {
             CSeqManip::ReverseComplement(retval, CSeqUtil::e_Iupacna, 
                                          0, retval.size());
@@ -250,6 +257,36 @@ CScientificNameExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     return tax_info.scientific_name;
 }
 
+CConstRef<CSeq_loc>
+CMaskingDataExtractor::GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
+                                        CRef<CSeq_id> seqid)
+{
+    CSeqDB::TSequenceRanges masked_ranges;
+    GetMaskedRegions(id, blastdb, masked_ranges);
+    CRef<CSeq_loc> retval;
+    if (masked_ranges.empty()) {
+        return retval;
+    }
+    retval.Reset(new CSeq_loc);
+    ITERATE(CSeqDB::TSequenceRanges, itr, masked_ranges) {
+        CRef<CSeq_loc> mask(new CSeq_loc(*seqid, itr->first, itr->second));
+        retval->SetMix().Set().push_back(mask);
+    }
+    return CConstRef<CSeq_loc>(retval.GetPointer());
+}
+
+void 
+CMaskingDataExtractor::GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
+                                        CSeqDB::TSequenceRanges& masked_ranges)
+{
+    masked_ranges.clear();
+    if (m_AlgoIds.empty()) {
+        return;
+    }
+    const int kOid = COidExtractor().ExtractOID(id, blastdb);
+    blastdb.GetMaskData(kOid, m_AlgoIds, masked_ranges);
+}
+
 string
 CMaskingDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
@@ -258,13 +295,8 @@ CMaskingDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
      defined(NCBI_COMPILER_MIPSPRO))
     return kNoMasksFound;
 #else
-    static const bool kInverted = false;
-    const int kOid = COidExtractor().ExtractOID(id, blastdb);
-    if (m_AlgoIds.empty()) {
-        return kNoMasksFound;
-    }
     CSeqDB::TSequenceRanges masked_ranges;
-    blastdb.GetMaskData(kOid, m_AlgoIds, kInverted, masked_ranges);
+    GetMaskedRegions(id, blastdb, masked_ranges);
     if (masked_ranges.empty()) {
         return kNoMasksFound;
     }
@@ -280,9 +312,11 @@ CFastaExtractor::CFastaExtractor(TSeqPos line_width,
              TSeqRange range /* = TSeqRange() */,
              objects::ENa_strand strand /* = objects::eNa_strand_other */,
              bool target_only /* = false */,
-             bool ctrl_a /* = false */)
-    : CSeqDataExtractor(range, strand), m_FastaOstream(m_OutputStream),
-    m_ShowTargetOnly(target_only), m_UseCtrlA(ctrl_a)
+             bool ctrl_a /* = false */,
+             const vector<int>& filt_algo_ids /* = vector<int>() */)
+    : CSeqDataExtractor(range, strand, filt_algo_ids), 
+    m_FastaOstream(m_OutputStream), m_ShowTargetOnly(target_only),
+    m_UseCtrlA(ctrl_a)
 {
     m_FastaOstream.SetWidth(line_width);
     m_FastaOstream.SetAllFlags(CFastaOstream::fKeepGTSigns);
@@ -307,10 +341,11 @@ string CFastaExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     if (m_UseCtrlA) {
         s_ReplaceCtrlAsInTitle(bioseq);
     }
+    CRef<CSeq_id> seqid = FindBestChoice(bioseq->GetId(), CSeq_id::BestRank);
+
+    // Handle the case when a sequence range is provided
     CRef<CSeq_loc> range;
     if (m_SeqRange.NotEmpty() || m_Strand != eNa_strand_other) {
-        CRef<CSeq_id> seqid = FindBestChoice(bioseq->GetId(), 
-                                             CSeq_id::BestRank);
         if (m_SeqRange.NotEmpty()) {
             range.Reset(new CSeq_loc(*seqid, m_SeqRange.GetFrom(),
                                      m_SeqRange.GetTo(), m_Strand));
@@ -321,6 +356,13 @@ string CFastaExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
             m_FastaOstream.SetFlag(CFastaOstream::fSuppressRange);
         }
     }
+
+    // Handle any requests for masked FASTA
+    static const CFastaOstream::EMaskType kMaskType = CFastaOstream::eSoftMask;
+    CMaskingDataExtractor mask_extractor(m_FiltAlgoIds);
+    m_FastaOstream.SetMask(kMaskType, 
+                           mask_extractor.GetMaskedRegions(id, blastdb, seqid));
+
     m_OutputStream.str(""); // clean the buffer
     try { m_FastaOstream.Write(*bioseq, range); }
     catch (const CObjmgrUtilException& e) {

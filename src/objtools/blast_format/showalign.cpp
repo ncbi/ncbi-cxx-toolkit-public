@@ -137,7 +137,8 @@ static const string k_Checkbox = "<input type=\"checkbox\" \
 name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
 'getSeqAlignment%d', 'getSeqGi', this.checked)\">";
 
-static const string k_CheckboxEx = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%s\">";
+static const string k_CheckboxEx = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%s\" \
+checked=\"checked\" onClick=\"synchAl(this);\">";
 #ifdef USE_ORG_IMPL
 static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
@@ -411,16 +412,16 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
     if(form_name){             
         string localClientButtons = "";
         if(showTreeButtons) {
-	    string l_GetTreeViewForm  = CBlastFormatUtil::GetURLFromRegistry( "TREEVIEW_FRM");
+            string l_GetTreeViewForm  = CBlastFormatUtil::GetURLFromRegistry( "TREEVIEW_FRM");
             localClientButtons = "<td>" + l_GetTreeViewForm + "</td>";
         }
-	string l_GetSeqSubmitForm  = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SUB_FRM", db_type); 
-	string l_GetSeqSelectForm = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SEL_FRM");
-	
+        string l_GetSeqSubmitForm  = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SUB_FRM", db_type); 
+        string l_GetSeqSelectForm = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SEL_FRM");
+        
         string template_str = "<table border=\"0\"><tr><td>" +
-	                    l_GetSeqSubmitForm + //k_GetSeqSubmitForm[db_type] +
+                            l_GetSeqSubmitForm + //k_GetSeqSubmitForm[db_type] +
                             "</td><td>" +
- 	                    l_GetSeqSelectForm + //k_GetSeqSelectForm +
+                             l_GetSeqSelectForm + //k_GetSeqSelectForm +
                             "</td>" +
                             localClientButtons +
                             "</tr></table>";
@@ -429,7 +430,7 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
             sprintf(buf.get(), template_str.c_str(), form_name, query_number,
                 db_is_na?1:0, query_number, form_name, query_number, db_type, 
                 query_number,query_number,             
-                    rid,queryID,form_name,query_number,rid,query_number,form_name,query_number);  	        
+                    rid,queryID,form_name,query_number,rid,query_number,form_name,query_number);                  
         
         }
         else {
@@ -1033,7 +1034,19 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
     gi = (gi == 0) ? s_GetGiForSeqIdList(ids):gi;
     string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
 
-    if (user_url != NcbiEmptyString && 
+    if (user_url.find("sra.cgi") != string::npos) {
+        
+        string url_with_parameters = 
+            CBlastFormatUtil::BuildSRAUrl(ids, user_url);
+
+        if (url_with_parameters != NcbiEmptyString) {
+            urlLink += "<a href=\"";
+            urlLink += url_with_parameters;
+            urlLink += "\">";
+        }
+
+    }
+    else if (user_url != NcbiEmptyString && 
         !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0) || 
           (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer &&
           m_AlignOption & eShowSortControls))) { 
@@ -1104,7 +1117,13 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         m_AV->SetAnchor(0);
     }
     m_AV->SetGapChar('-');
-    m_AV->SetEndChar(' ');
+
+    if (m_AlignOption & eShowEndGaps) {
+        m_AV->SetEndChar('-');
+    }
+    else {
+        m_AV->SetEndChar(' ');
+    }
     vector<string> sequence(rowNum);
     vector<CAlnMap::TSeqPosList> seqStarts(rowNum);
     vector<CAlnMap::TSeqPosList> seqStops(rowNum);
@@ -1239,7 +1258,9 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         //here is each row
         for (int row=0; row<rowNum; row++) {
             bool hasSequence = true;   
-            hasSequence = curRange.IntersectingWith(rowRng[row]);
+            if (!(m_AlignOption & eShowGapOnlyLines)) {
+                hasSequence = curRange.IntersectingWith(rowRng[row]);
+            }
             //only output rows that have sequence
             if (hasSequence){
                 int start = seqStarts[row].front() + 1;  //+1 for 1 based
@@ -1284,7 +1305,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     }
                     //get sequence checkbox
                     if((m_AlignOption & eMergeAlign) && 
-			(m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
+                        (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
                         char checkboxBuf[512];
                         if (row == 0) {
                             sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
@@ -1362,8 +1383,9 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 CBlastFormatUtil::AddSpace(out, 
                                            maxIdLen-seqidArray[row].size()+
                                            k_IdStartMargin);
-                //not to display start and stop number for empty row in the middle
-                if (j > 0 && end == prev_stop[row]) {
+                //not to display start and stop number for empty row
+                if (j > 0 && end == prev_stop[row] 
+                    || j == 0 && start == 1 && end == 1) {
                     startLen = 0;
                 } else {
                     out << start;
@@ -1379,7 +1401,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 CBlastFormatUtil::AddSpace(out, k_SeqStopMargin);
 
                  //not to display stop number for empty row in the middle
-                if (!(j > 0 && end == prev_stop[row])) {
+                if (!(j > 0 && end == prev_stop[row])
+                    && !(j == 0 && start == 1 && end == 1)) {
                     out << end;
                 }
                 
@@ -1606,7 +1629,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         m_HspNumber.insert(map<string, int>::value_type(idString, 1));
                     }
                 }
-            }	    
+            }            
             
         } 
   
@@ -1737,7 +1760,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
                 //*out2 << *ds;      
                 try{
-                    if (m_AlignOption & eTranslateNucToNucAlignment) {	 
+                    if (m_AlignOption & eTranslateNucToNucAlignment) {         
                         mix[i]->Add(*ds, CAlnMix::fForceTranslation);
                     } else {
                         if (ds->IsSetWidths() &&
@@ -3145,30 +3168,40 @@ CDisplaySeqalign::x_FillLocList(TSAlnSeqlocInfoList& loc_list,
 
     ITERATE(blast::TMaskedQueryRegions, iter, *masks) {
         CRef<SAlnSeqlocInfo> alnloc(new SAlnSeqlocInfo);
+        bool has_valid_loc = false;
         for (int i=0; i<m_AV->GetNumRows(); i++){
-            if((*iter)->GetInterval().GetId().Match(m_AV->GetSeqId(i))){
+            TSeqRange loc_range(**iter);
+            if((*iter)->GetInterval().GetId().Match(m_AV->GetSeqId(i)) &&
+               m_AV->GetSeqRange(i).IntersectingWith(loc_range)){
                 int actualAlnStart = 0, actualAlnStop = 0;
                 if(m_AV->IsPositiveStrand(i)){
                     actualAlnStart =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                            (*iter)->GetInterval().GetFrom());
+                                                  (*iter)->GetInterval().GetFrom(),
+                                                          CAlnMap::eBackwards, true);
                     actualAlnStop =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                            (*iter)->GetInterval().GetTo());
+                                                  (*iter)->GetInterval().GetTo(),
+                                                  CAlnMap::eBackwards, true);
                 } else {
                     actualAlnStart =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                            (*iter)->GetInterval().GetTo());
+                                                  (*iter)->GetInterval().GetTo(),
+                                                  CAlnMap::eBackwards, true);
                     actualAlnStop =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                            (*iter)->GetInterval().GetFrom());
+                                                  (*iter)->GetInterval().GetFrom(),
+                                                  CAlnMap::eBackwards, true);
                 }
-                alnloc->aln_range.Set(actualAlnStart, actualAlnStop);      
+                alnloc->aln_range.Set(actualAlnStart, actualAlnStop);  
+                has_valid_loc = true;
                 break;
             }
         }
-        alnloc->seqloc = *iter;   
-        loc_list.push_back(alnloc);
+        if (has_valid_loc) {
+            alnloc->seqloc = *iter;   
+            loc_list.push_back(alnloc);
+        }
     }
 }
 

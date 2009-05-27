@@ -357,6 +357,7 @@ BLAST_StrToUpper(const char* string);
  * of partially decoded sequences.  If an alignment finds this value
  * in a subject sequence, the fence_hit flag should be used to request
  * a refetch of the whole sequence, and the alignment restarted.
+ * @note this value is repeated in seqdbgeneral.hpp
  */
 #define FENCE_SENTRY 201
 

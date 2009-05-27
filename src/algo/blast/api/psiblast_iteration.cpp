@@ -68,21 +68,6 @@ CPsiBlastIterationState::HasMoreIterations() const
     return false;
 }
 
-struct CSeqIdComparator : 
-    public binary_function<bool, CRef<CSeq_id>, CRef<CSeq_id> >
-{
-    /// Returns true if a < b, else false
-    bool operator() (CRef<CSeq_id> a, CRef<CSeq_id> b) {
-        if (a.Empty()) {
-            return false;
-        }
-        if (b.Empty()) {
-            return true;
-        }
-        return !! ( *a < *b );
-    }
-};
-
 bool
 CPsiBlastIterationState::HasConverged()
 {
@@ -97,26 +82,16 @@ CPsiBlastIterationState::HasConverged()
     if ( !m_PreviousData.empty() && m_CurrentData.empty() ) {
         return true;
     }
-    // if the size differs, they're obviously not the same :)
-    if (m_PreviousData.size() != m_CurrentData.size()) {
-        return false;
-    }
 
-    sort(m_PreviousData.begin(), m_PreviousData.end(), CSeqIdComparator());
-    sort(m_CurrentData.begin(), m_CurrentData.end(), CSeqIdComparator());
-
-    // Element by element comparison
-    const TSeqIds::const_iterator end = m_PreviousData.end();
-    TSeqIds::const_iterator prev = m_PreviousData.begin();
-    TSeqIds::const_iterator curr = m_CurrentData.begin();
+    // Element by element comparison: has every element in the current Seq-id
+    // list been found in the previous iterations?
     bool retval = true;
-    for (; prev != end; ++prev, ++curr) {
-        if ( !(**prev).Match(**curr) ) {
+    ITERATE(TSeqIds, current_id, m_CurrentData) {
+        if (m_PreviousData.find(*current_id) == m_PreviousData.end()) {
             retval = false;
             break;
         }
     }
-
     return retval;
 }
 
@@ -167,7 +142,6 @@ CPsiBlastIterationState::GetSeqIds(CConstRef<objects::CSeq_align_set> seqalign,
 {
     retval.clear();
     CPsiBlastAlignmentProcessor proc;
-    CPsiBlastAlignmentProcessor::THitIdentifiers hit_ids;
     proc(*seqalign, opts->GetInclusionThreshold(), retval);
 }
 

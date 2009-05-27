@@ -43,6 +43,7 @@ static char const rcsid[] =
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
 
 // Object includes
 #include <objects/seqset/Seq_entry.hpp>
@@ -140,13 +141,13 @@ CPsiBlastImpl::Run()
     CRef<SInternalData> core_data = prelim_search.Run();
 
     // Run the traceback stage
-    IBlastSeqInfoSrc* seqinfo_src(m_Subject->MakeSeqInfoSrc());
-    _ASSERT(seqinfo_src);
+    CRef<IBlastSeqInfoSrc> seqinfo_src(m_Subject->MakeSeqInfoSrc());
+    _ASSERT(seqinfo_src.NotEmpty());
     TSearchMessages search_messages = prelim_search.GetSearchMessages();
     CBlastTracebackSearch tback(m_Query, 
                                 core_data, 
-                                *opts, 
-                                *seqinfo_src,
+                                opts, 
+                                seqinfo_src,
                                 search_messages);
     tback.SetResultType(m_ResultType);
     m_Results = tback.Run();

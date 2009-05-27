@@ -423,6 +423,7 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
         return;
     }
     m_OutputDb->SetMaskData(rng);
+    m_FoundMatchingMasks = true;
 }
 #endif
 
@@ -905,7 +906,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_DeflineCount (0),
       m_OIDCount     (0),
       m_Verbose      (false),
-      m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false))
+      m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false)),
+      m_FoundMatchingMasks(false)
 {
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
@@ -944,7 +946,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_DeflineCount (0),
       m_OIDCount     (0),
       m_Verbose      (false),
-      m_ParseIDs     (parse_seqids)
+      m_ParseIDs     (parse_seqids),
+      m_FoundMatchingMasks(false)
 {
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
@@ -971,6 +974,15 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
 
     if (!m_ParseIDs) m_OutputDb->SetNoParseID();
+}
+
+CBuildDatabase::~CBuildDatabase()
+{
+    if (m_MaskData.NotEmpty() && !m_FoundMatchingMasks) {
+        ERR_POST(Error << "No sequences matched any of the masks provided.\n"
+                       << "Please ensure that the -parse_seqids option is used "
+                       << "in the\nfiltering program as well as makeblastdb.");
+    }
 }
 
 void CBuildDatabase::SetTaxids(CTaxIdSet & taxids)

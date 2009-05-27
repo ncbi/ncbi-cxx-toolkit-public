@@ -125,10 +125,10 @@ private:
 };
 
 const char * const CConvert2BlastMaskApplication::USAGE_LINE 
-    = "Convert masking info in lower-case masked FASTA file to formats ready for makeblastdb";
+    = "Convert masking information in lower-case masked FASTA input to file formats suitable for makeblastdb";
 
 void CConvert2BlastMaskApplication::Init(void) {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -138,15 +138,15 @@ void CConvert2BlastMaskApplication::Init(void) {
                               USAGE_LINE);
 
     arg_desc->AddDefaultKey("in", "input_file_name",
-                            "input file name",
+                            "Input file name",
                             CArgDescriptions::eInputFile, "-");
 
     arg_desc->AddDefaultKey("out", "output_file_name",
-                            "output file name",
+                            "Output file name",
                             CArgDescriptions::eOutputFile, "-");
 
     arg_desc->AddDefaultKey("outfmt", "output_format",
-                            "controls the format of the masker output",
+                            "Output file format",
                             CArgDescriptions::eString, "maskinfo_asn1_text");
 
     CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
@@ -159,12 +159,14 @@ void CConvert2BlastMaskApplication::Init(void) {
                              "Parse Seq-ids in FASTA input", true );
 
     arg_desc->AddKey       ("masking_algorithm", "mask_program_name",
-                            "mask program name, use `other' for user-defined type",
+                            "Masking algorithm name (e.g.: dust, seg, "
+                            "windowmasker, repeat). Use 'other' for "
+                            "user-defined type",
                             CArgDescriptions::eString);
                             
-    arg_desc->AddKey       ("masking_options", "mask_program_options",
-                            "mask program options used",
-                            CArgDescriptions::eString);
+    arg_desc->AddKey     ("masking_options", "mask_program_options",
+                          "Masking algorithm options to create the masked input",
+                          CArgDescriptions::eString);
                             
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());

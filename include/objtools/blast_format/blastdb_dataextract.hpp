@@ -128,9 +128,11 @@ public:
     /// @param strand All SeqLoc types will have this strand assigned;
     ///             If set to 'other', the strand will be set to 'unknown'
     ///             for protein sequences and 'both' for nucleotide [in]
+    /// @para filt_algo_ids filtering algorithm IDs to apply to FASTA output
     CSeqDataExtractor(TSeqRange range = TSeqRange(),
-                      objects::ENa_strand strand = objects::eNa_strand_both) 
-    : m_SeqRange(range), m_Strand(strand) {}
+                      objects::ENa_strand strand = objects::eNa_strand_both,
+                      const vector<int>& filt_algo_ids = vector<int>())
+    : m_SeqRange(range), m_Strand(strand), m_FiltAlgoIds(filt_algo_ids) {}
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 
@@ -139,6 +141,8 @@ protected:
     TSeqRange m_SeqRange;
     /// The strand of the sequence requested
     objects::ENa_strand m_Strand;
+    /// List of filtering algorithm IDs to use to mask the FASTA
+    vector<int> m_FiltAlgoIds;
 };
 
 /// Extracts the FASTA for a given sequence id
@@ -152,10 +156,12 @@ public:
     /// @param strand All SeqLoc types will have this strand assigned;
     ///             If set to 'other', the strand will be set to 'unknown'
     ///             for protein sequences and 'both' for nucleotide [in]
+    /// @para filt_algo_ids filtering algorithm IDs to apply to FASTA output
     CFastaExtractor(TSeqPos line_width, TSeqRange range = TSeqRange(),
                     objects::ENa_strand strand = objects::eNa_strand_other,
                     bool target_only = false,
-                    bool ctrl_a = false);
+                    bool ctrl_a = false,
+                    const vector<int>& filt_algo_ids = vector<int>());
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 private:
@@ -210,10 +216,24 @@ public:
 /// (CSeqFormatter associates this with %m)
 class NCBI_XBLASTFORMAT_EXPORT CMaskingDataExtractor : public IBlastDBExtract {
 public:
-    CMaskingDataExtractor(const vector<int> masking_algorithm_ids)
-        : m_AlgoIds(masking_algorithm_ids) {}
+    CMaskingDataExtractor(const vector<int>& filt_algo_ids)
+        : m_AlgoIds(filt_algo_ids) {}
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
+
+    /// Retrieve the masked regions for a given sequence id
+    /// @param id sequence ID to fetch [in]
+    /// @param blastdb BLAST database handle [in]
+    /// @param masked_ranges masked ranges will be stored here [in|out]
+    void GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
+                          CSeqDB::TSequenceRanges& masked_ranges);
+
+    /// Retrieve the masked regions for a given sequence id
+    /// @param id sequence ID to fetch [in]
+    /// @param blastdb BLAST database handle [in]
+    /// @param seqid Seq-id object corresponding the id provided [in]
+    CConstRef<CSeq_loc> GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
+                                         CRef<CSeq_id> seqid);
 private:
     /// The masking algorithm IDs
     vector<int> m_AlgoIds;

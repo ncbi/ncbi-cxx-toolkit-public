@@ -1078,6 +1078,9 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
                                     hit_params->options->hitlist_size);
    }
 
+   /* post-traceback pipes */
+   BlastHSPStreamTBackClose(hsp_stream, results);
+
    if (make_up_kbp)
        sbp->kbp_gap[0] = NULL;
 
@@ -1163,10 +1166,6 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
       const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
       BlastHSPStreamResultBatch *batch = 
                       Blast_HSPStreamResultBatchInit(query_info->num_queries);
-      const Boolean kSubjectRanges = !(hit_params->restricted_align ||
-                                     score_params->options->is_ooframe ||
-                                     ext_params->options->eTbackExt == 
-                                                     eSmithWatermanTbck);
 
       memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
@@ -1187,7 +1186,6 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
          if (perform_traceback) {
             seq_arg.oid = batch->hsplist_array[0]->oid;
             seq_arg.encoding = encoding;
-            seq_arg.enable_ranges = kSubjectRanges;
             seq_arg.check_oid_exclusion = TRUE;
             
             BlastSequenceBlkClean(seq_arg.seq);
@@ -1242,31 +1240,23 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                             query_info, pattern_blk);
                } else {
                   Boolean fence_hit = FALSE;
-                  Boolean * fence_hit_ptr = NULL;
-                    
-                  /* prepare to deal with partial subject sequence
-                     ranges, if these are configured and a previous
-                     HSP list has not turned them off */
-                  if (seq_arg.enable_ranges == TRUE)
-                     fence_hit_ptr = &fence_hit;
-                    
                   Blast_TracebackFromHSPList(program_number, hsp_list, query,
                                              seq_arg.seq, query_info, 
                                              gap_align, sbp, score_params,
                                              ext_params->options, hit_params,
                                              seq_arg.seq->gen_code_string,
-                                             fence_hit_ptr);
+                                             &fence_hit);
                     
                   if (fence_hit) {
                      /* Disable range support and refetch the 
                         (whole) subject sequence */
                         
-                     seq_arg.enable_ranges = FALSE;
+                     seq_arg.reset_ranges = TRUE;
                      BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
                      BlastSeqSrcGetSequence(seq_src, &seq_arg);
                         
                      /* Retry the alignment */
-                       
+                     fence_hit = FALSE;  
                      Blast_TracebackFromHSPList(program_number, hsp_list, 
                                                 query, seq_arg.seq, 
                                                 query_info, gap_align,
@@ -1274,7 +1264,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                                 ext_params->options, 
                                                 hit_params, 
                                                 seq_arg.seq->gen_code_string,
-                                                NULL);
+                                                &fence_hit);
+                     ASSERT(fence_hit == FALSE);
                   } /* fence_hit */
                }    /* !phi_blast */
 
@@ -1305,13 +1296,11 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
       }         /* loop over all batches */
 
       batch = Blast_HSPStreamResultBatchFree(batch);
+      /* post-traceback pipes */
+      BlastHSPStreamTBackClose(hsp_stream, results);
+
       BlastSequenceBlkFree(seq_arg.seq);
    }
-
-   if (hit_params->options->culling_limit > 0)
-      Blast_HSPResultsPerformCulling(results, query_info, 
-                                    hit_params->options->culling_limit,
-                                    query->length);
 
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed. Only do this for a database search. */

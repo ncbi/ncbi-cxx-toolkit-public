@@ -475,6 +475,9 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                            &BlastFindMatrixPath));
 
         BOOST_REQUIRE(blast_msg == NULL);
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(program_number, &ext_options, 
+                                 scoring_options->gapped_calculation);
         BlastHitSavingOptionsNew(program_number, &hit_options,
                                  scoring_options->gapped_calculation);
         hit_options->expect_value = kEvalue; 
@@ -515,6 +518,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastSequenceBlkFree(query_blk);
         sfree(subject_seq);
         BlastInitialWordParametersFree(word_params);
+        BlastExtensionOptionsFree(ext_options);
         BlastHitSavingParametersFree(hit_params);
         BlastInitialWordOptionsFree(word_options);
         BlastHitSavingOptionsFree(hit_options);
@@ -617,6 +621,9 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                            &sbp, 1.0, &blast_msg,
                                            &BlastFindMatrixPath));
 
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(program_number, &ext_options, 
+                                 scoring_options->gapped_calculation);
         BlastHitSavingOptionsNew(program_number, &hit_options,
                                  scoring_options->gapped_calculation);
 
@@ -671,6 +678,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastInitialWordParametersFree(word_params);
         BlastHitSavingParametersFree(hit_params);
         BlastInitialWordOptionsFree(word_options);
+        BlastExtensionOptionsFree(ext_options);
         BlastHitSavingOptionsFree(hit_options);
         BlastScoringParametersFree(score_params);
         BlastScoringOptionsFree(scoring_options);
@@ -785,6 +793,9 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                           query_blk, subj_length, &query_info);
         s_SetupScoringOptionsForReevaluateHSP(&scoring_options, true, false);
 
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(program_number, &ext_options, 
+                                 scoring_options->gapped_calculation);
         BlastHitSavingOptionsNew(program_number, &hit_options,
                                  scoring_options->gapped_calculation);
         hit_options->expect_value = 1; 
@@ -850,6 +861,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         Blast_HSPFree(hsp);
         BlastSequenceBlkFree(query_blk);
         sfree(subject_seq);
+        BlastExtensionOptionsFree(ext_options);
         BlastHitSavingOptionsFree(hit_options);
         BlastHitSavingParametersFree(hit_params);
         BlastScoringOptionsFree(scoring_options);
@@ -883,6 +895,9 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastScoringParameters* score_params = NULL;
         BlastScoringParametersNew(score_opts, sbp, &score_params);
         BlastHitSavingOptions* hit_opts = NULL;
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(kProgram, &ext_options, 
+                                 score_opts->gapped_calculation);
         BlastHitSavingOptionsNew(kProgram, &hit_opts,
                                  score_opts->gapped_calculation);
         BlastHitSavingParameters* hit_params = (BlastHitSavingParameters*)
@@ -902,6 +917,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         hsp = Blast_HSPFree(hsp);
         sbp = BlastScoreBlkFree(sbp);
         score_params = BlastScoringParametersFree(score_params);
+        ext_options = BlastExtensionOptionsFree(ext_options);
         score_opts = BlastScoringOptionsFree(score_opts);
         hit_params = BlastHitSavingParametersFree(hit_params);
         hit_opts = BlastHitSavingOptionsFree(hit_opts);
@@ -1121,12 +1137,13 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastScoringOptions* scoring_options = NULL;
         BlastScoringOptionsNew(kProgram, &scoring_options);
 
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(kProgram, &ext_options, 
+                                 scoring_options->gapped_calculation);
+
         BlastHitSavingOptions* hit_options = NULL;
         BlastHitSavingOptionsNew(kProgram, &hit_options,
                                  scoring_options->gapped_calculation);
-
-        BlastExtensionOptions* ext_options = NULL;
-        BlastExtensionOptionsNew(kProgram, &ext_options, scoring_options->gapped_calculation);
 
         SBlastHitsParameters* blasthit_params=NULL;
         SBlastHitsParametersNew(hit_options, ext_options, scoring_options,
@@ -1138,6 +1155,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size, 
              hit_options->hitlist_size+50);
 
+        ext_options = BlastExtensionOptionsFree(ext_options);
         blasthit_params = SBlastHitsParametersFree(blasthit_params);
         hit_options = BlastHitSavingOptionsFree(hit_options);
    }
@@ -1150,12 +1168,13 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastScoringOptionsNew(kProgram, &scoring_options);
         scoring_options->gapped_calculation = FALSE;
 
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(kProgram, &ext_options, 
+                                 scoring_options->gapped_calculation);
+
         BlastHitSavingOptions* hit_options = NULL;
         BlastHitSavingOptionsNew(kProgram, &hit_options,
                                  scoring_options->gapped_calculation);
-
-        BlastExtensionOptions* ext_options = NULL;
-        BlastExtensionOptionsNew(kProgram, &ext_options, scoring_options->gapped_calculation);
 
         SBlastHitsParameters* blasthit_params=NULL;
         SBlastHitsParametersNew(hit_options, ext_options, scoring_options, 
@@ -1167,6 +1186,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size, 
              hit_options->hitlist_size);
 
+        ext_options = BlastExtensionOptionsFree(ext_options);
         blasthit_params = SBlastHitsParametersFree(blasthit_params);
         hit_options = BlastHitSavingOptionsFree(hit_options);
    }
@@ -1178,11 +1198,14 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastScoringOptions* scoring_options = NULL;
         BlastScoringOptionsNew(kProgram, &scoring_options);
 
+        BlastExtensionOptions* ext_options = NULL;
+        BlastExtensionOptionsNew(kProgram, &ext_options, 
+                                 scoring_options->gapped_calculation);
+
         BlastHitSavingOptions* hit_options = NULL;
         BlastHitSavingOptionsNew(kProgram, &hit_options,
                                  scoring_options->gapped_calculation);
 
-        BlastExtensionOptions* ext_options = NULL;
         BlastExtensionOptionsNew(kProgram, &ext_options, scoring_options->gapped_calculation);
         ext_options->compositionBasedStats = TRUE;
 
@@ -1196,6 +1219,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(blasthit_params->prelim_hitlist_size, 
              (2*hit_options->hitlist_size)+50);
 
+        ext_options = BlastExtensionOptionsFree(ext_options);
         blasthit_params = SBlastHitsParametersFree(blasthit_params);
         hit_options = BlastHitSavingOptionsFree(hit_options);
     }

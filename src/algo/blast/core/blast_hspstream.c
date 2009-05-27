@@ -23,12 +23,13 @@
  *
  * ===========================================================================
  *
- * Author:  Christiam Camacho
+ * Author:  Ilya Dondoshansky
  *
  */
 
 /** @file blast_hspstream.c
- * Definition of ADT to save and retrieve lists of HSPs in the BLAST engine.
+ * BlastHSPStream is used to save hits from preliminary stage and 
+ * pass on to the traceback stage.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -36,278 +37,713 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
+
 #include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/blast_util.h>
 
-/** Complete type definition of Blast Hsp Stream ADT */
-struct BlastHSPStream {
-   BlastHSPStreamConstructor NewFnPtr;    /**< Constructor */
-   BlastHSPStreamDestructor  DeleteFnPtr; /**< Destructor */
+/** Default hit saving stream methods */
+
+/** Free the BlastHSPStream with its HSP list collector data structure.
+ * @param hsp_stream The HSP stream to free [in]
+ * @return NULL.
+ */
+BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream) 
+{
+   int index=0;
+   BlastHSPPipe *p;
+
+   if (!hsp_stream) {
+       return NULL;
+   }
+
+   hsp_stream->x_lock = MT_LOCK_Delete(hsp_stream->x_lock);
+   Blast_HSPResultsFree(hsp_stream->results);
+   for (index=0; index < hsp_stream->num_hsplists; index++)
+   {
+        hsp_stream->sorted_hsplists[index] =
+            Blast_HSPListFree(hsp_stream->sorted_hsplists[index]);
+   }
+   sfree(hsp_stream->sort_by_score);
+   sfree(hsp_stream->sorted_hsplists);
    
-   /* The operational interface */
-   
-   BlastHSPStreamMethod      WriteFnPtr;  /**< Write to BlastHSPStream */
-   BlastHSPStreamMethod      ReadFnPtr;   /**< Read from BlastHSPStream */
-   BlastHSPStreamMergeFnType MergeFnPtr;  /**< Merge two BlastHSPStreams */
-   BlastHSPStreamBatchReadMethod  BatchReadFnPtr;  /**< Batch read from 
-                                                     BlastHSPStream */
-   BlastHSPStreamCloseFnType CloseFnPtr;  /**< Close BlastHSPStream for
-                                             writing */
-   void* DataStructure;                   /**< ADT holding HSPStream */
-};
-
-BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info)
-{
-    BlastHSPStream* retval = NULL;
-    BlastHSPStreamFunctionPointerTypes fnptr;
-
-    if ( bhsn_info == NULL ) {
-        return NULL;
-    }
-
-    if ( !(retval = (BlastHSPStream*) calloc(1, sizeof(BlastHSPStream)))) {
-        return NULL;
-    }
-
-    /* Save the constructor and invoke it */
-    fnptr.ctor = bhsn_info->constructor;
-    SetMethod(retval, eConstructor, fnptr);
-    if (retval->NewFnPtr) {
-        retval = (*retval->NewFnPtr)(retval, bhsn_info->ctor_argument);
-    } else {
-        sfree(retval);
-    }
-
-    ASSERT(retval->DeleteFnPtr);
-    ASSERT(retval->WriteFnPtr);
-    ASSERT(retval->ReadFnPtr);
-
-    return retval;
+   if (hsp_stream->writer) {
+       (hsp_stream->writer->FreeFnPtr) (hsp_stream->writer);
+       hsp_stream->writer = NULL;
+   }
+ 
+   /* free un-used pipes */
+   while (hsp_stream->pre_pipe) {
+       p = hsp_stream->pre_pipe;
+       hsp_stream->pre_pipe = p->next;
+       sfree(p);
+   }
+   while (hsp_stream->tback_pipe) {
+       p = hsp_stream->tback_pipe;
+       hsp_stream->tback_pipe = p->next;
+       sfree(p);
+   }
+       
+   sfree(hsp_stream);
+   return NULL;
 }
 
-BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream)
-{
-    BlastHSPStreamDestructor destructor_fnptr = NULL;
-
-    if (!hsp_stream) {
-        return (BlastHSPStream*) NULL;
-    }
-
-    if ( !(destructor_fnptr = (*hsp_stream->DeleteFnPtr))) {
-        sfree(hsp_stream);
-        return NULL;
-    }
-
-    return (BlastHSPStream*) (*destructor_fnptr)(hsp_stream);
+/** callback used to sort HSP lists in order of decreasing OID
+ * @param x First HSP list [in]
+ * @param y Second HSP list [in]
+ * @return compare result
+ */           
+static int s_SortHSPListByOid(const void *x, const void *y)
+{   
+        BlastHSPList **xx = (BlastHSPList **)x;
+            BlastHSPList **yy = (BlastHSPList **)y;
+                return (*yy)->oid - (*xx)->oid;
 }
 
-int BlastHSPStreamMerge(SSplitQueryBlk *squery_blk,
-                        Uint4 chunk_num,
-                        BlastHSPStream* hsp_stream,
-                        BlastHSPStream* combined_hsp_stream)
-{
-    BlastHSPStreamMergeFnType merge_fnptr = NULL;
-
-    if (!hsp_stream || !combined_hsp_stream)
-       return kBlastHSPStream_Error;
-
-    /* Make sure the input streams are compatible */
-    if (hsp_stream->MergeFnPtr != hsp_stream->MergeFnPtr)
-       return kBlastHSPStream_Error;
-
-    /** Merge functionality is optional. If merge function is not provided,
-        just do nothing. */
-    if ( !(merge_fnptr = (*hsp_stream->MergeFnPtr))) {
-       return kBlastHSPStream_Success;
-    }
-
-    return (*merge_fnptr)(squery_blk, chunk_num, 
-                          hsp_stream, combined_hsp_stream);
-}
-
-
-BlastHSPStreamResultBatch * 
-Blast_HSPStreamResultBatchInit(Int4 num_hsplists)
-{
-    BlastHSPStreamResultBatch *retval = (BlastHSPStreamResultBatch *)
-                             calloc(1, sizeof(BlastHSPStreamResultBatch));
-
-    retval->hsplist_array = (BlastHSPList **)calloc((size_t)num_hsplists,
-                                               sizeof(BlastHSPList *));
-    return retval;
-}
-
-BlastHSPStreamResultBatch * 
-Blast_HSPStreamResultBatchFree(BlastHSPStreamResultBatch *batch)
-{
-    if (batch != NULL) {
-        sfree(batch->hsplist_array);
-        sfree(batch);
-    }
-    return NULL;
-}
-
-void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch)
-{
-    Int4 i;
-    for (i = 0; i < batch->num_hsplists; i++) {
-        batch->hsplist_array[i] = 
-           Blast_HSPListFree(batch->hsplist_array[i]);
-    }
-    batch->num_hsplists = 0;
-}
-
-int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
-                            BlastHSPStreamResultBatch *batch)
-{
-    BlastHSPStreamBatchReadMethod batch_read = NULL;
-
-    if (!hsp_stream || !batch)
-       return kBlastHSPStream_Error;
-
-    /** Batch read functionality is optional. If batch read 
-        function is not provided, just do nothing. */
-    if ( !(batch_read = (*hsp_stream->BatchReadFnPtr))) {
-       return kBlastHSPStream_Success;
-    }
-
-    return (*batch_read)(hsp_stream, batch);
-}
-
+/** Prohibit any future writing to the HSP stream when all results are written.
+ * Also perform sorting of results here to prepare them for reading.
+ * @param hsp_stream The HSP stream to close [in] [out]
+ */ 
 void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
 {
-    BlastHSPStreamCloseFnType close_fnptr = NULL;
+   Int4 i, j, k;
+   Int4 num_hsplists;
+   BlastHSPResults *results;
+   BlastHSPPipe *pipe;
 
-    if (!hsp_stream)
+   if (!hsp_stream || !hsp_stream->results || hsp_stream->results_sorted)
+      return;
+
+   /* perform post-writer clean ups */
+   if (hsp_stream->writer && hsp_stream->writer_initialized) {
+       (hsp_stream->writer->FinalFnPtr)
+            (hsp_stream->writer->data, hsp_stream->results);
+   }
+
+   /* apply preliminary stage pipes */
+   while (hsp_stream->pre_pipe) {
+       pipe = hsp_stream->pre_pipe;
+       hsp_stream->pre_pipe = pipe->next;
+       (pipe->RunFnPtr) (pipe->data, hsp_stream->results);
+       (pipe->FreeFnPtr) (pipe);
+   }
+
+   if (hsp_stream->sort_by_score) {
+       if (hsp_stream->sort_by_score->sort_on_read) {
+           Blast_HSPResultsReverseSort(hsp_stream->results);
+       } else {
+           /* Reverse the order of HSP lists, because they will be returned
+              starting from end, for the sake of convenience */
+           Blast_HSPResultsReverseOrder(hsp_stream->results);
+       }
+       hsp_stream->results_sorted = TRUE;
+       hsp_stream->x_lock = MT_LOCK_Delete(hsp_stream->x_lock);
        return;
+   }
 
-    /** Close functionality is optional. If closing function is not provided,
-        just do nothing. */
-    if ( !(close_fnptr = (*hsp_stream->CloseFnPtr))) {
+   results = hsp_stream->results;
+   num_hsplists = hsp_stream->num_hsplists;
+
+   /* concatenate all the HSPLists from 'results' */
+
+   for (i = 0; i < results->num_queries; i++) {
+
+       BlastHitList *hitlist = results->hitlist_array[i];
+       if (hitlist == NULL)
+           continue;
+
+       /* grow the list if necessary */
+
+       if (num_hsplists + hitlist->hsplist_count > 
+                                hsp_stream->num_hsplists_alloc) {
+
+           Int4 alloc = MAX(num_hsplists + hitlist->hsplist_count + 100,
+                            2 * hsp_stream->num_hsplists_alloc);
+           hsp_stream->num_hsplists_alloc = alloc;
+           hsp_stream->sorted_hsplists = (BlastHSPList **)realloc(
+                                         hsp_stream->sorted_hsplists,
+                                         alloc * sizeof(BlastHSPList *));
+       }
+
+       for (j = k = 0; j < hitlist->hsplist_count; j++) {
+
+           BlastHSPList *hsplist = hitlist->hsplist_array[j];
+           if (hsplist == NULL)
+               continue;
+
+           hsplist->query_index = i;
+           hsp_stream->sorted_hsplists[num_hsplists + k] = hsplist;
+           k++;
+       }
+
+       hitlist->hsplist_count = 0;
+       num_hsplists += k;
+   }
+
+   /* sort in order of decreasing subject OID. HSPLists will be
+      read out from the end of hsplist_array later */
+
+   hsp_stream->num_hsplists = num_hsplists;
+   if (num_hsplists > 1) {
+      qsort(hsp_stream->sorted_hsplists, num_hsplists, 
+                    sizeof(BlastHSPList *), s_SortHSPListByOid);
+   }
+
+   hsp_stream->results_sorted = TRUE;
+   hsp_stream->x_lock = MT_LOCK_Delete(hsp_stream->x_lock);
+}
+
+/** Closing the HSP after traceback is done.
+ * This is mainly to provide a chance to apply post-traceback pipes.
+ * @param hsp_stream The HSP stream to close [in] [out]
+ * @param results The traceback results [in] [out]
+ */ 
+void BlastHSPStreamTBackClose(BlastHSPStream* hsp_stream, 
+                              BlastHSPResults* results)
+{
+   BlastHSPPipe *pipe;
+
+   if (!hsp_stream || !results) {
        return;
-    }
+   }
 
-    (*close_fnptr)(hsp_stream);
+   /* apply traceback stage pipes */
+   while (hsp_stream->tback_pipe) {
+       pipe = hsp_stream->tback_pipe;
+       hsp_stream->tback_pipe = pipe->next;
+       (pipe->RunFnPtr) (pipe->data, results);
+       (pipe->FreeFnPtr) (pipe);
+   }
+   return;
 }
 
 const int kBlastHSPStream_Error = -1;
 const int kBlastHSPStream_Success = 0;
 const int kBlastHSPStream_Eof = 1;
 
-/** This method is akin to a vtable dispatcher, invoking the method registered
- * upon creation of the implementation of the BlastHSPStream interface 
- * @param hsp_stream The BlastHSPStream object [in]
- * @param name Name of the method to invoke on hsp_stream [in]
- * @param hsp_list HSP list to work with [in] [out]
- * @return kBlastHSPStream_Error on NULL hsp_stream or NULL method pointer 
- * (i.e.: unimplemented or uninitialized method on the BlastHSPStream 
- * interface) or return value of the implementation.
+/** Read one HSP list from the results saved in an HSP list collector. Once an
+ * HSP list is read from the stream, it relinquishes ownership and removes it
+ * from the internal results data structure.
+ * @param hsp_stream The HSP stream to read from [in]
+ * @param hsp_list_out The read HSP list. [out]
+ * @return Success, error, or end of reading, when nothing left to read.
  */
-static int 
-_MethodDispatcher(BlastHSPStream* hsp_stream, EMethodName name, 
-                  BlastHSPList** hsp_list)
+int BlastHSPStreamRead(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list_out) 
 {
-    BlastHSPStreamMethod method_fnptr = NULL;
+   *hsp_list_out = NULL;
 
-    if (!hsp_stream) {
-        return kBlastHSPStream_Error;
-    }
+   if (!hsp_stream) 
+      return kBlastHSPStream_Error;
 
-    ASSERT(name < eMethodBoundary); 
+   if (!hsp_stream->results)
+      return kBlastHSPStream_Eof;
 
-    switch (name) {
-    case eRead:
-        method_fnptr = (*hsp_stream->ReadFnPtr);
-        break;
+   /* If this stream is not yet closed for writing, close it. In particular,
+      this includes sorting of results. 
+      NB: to lift the prohibition on write after the first read, the 
+      following 2 lines should be removed, and stream closure for writing 
+      should be done outside of the read function. */
+   if (!hsp_stream->results_sorted)
+       BlastHSPStreamClose(hsp_stream);
 
-    case eWrite:
-        method_fnptr = (*hsp_stream->WriteFnPtr);
-        break;
+   if (hsp_stream->sort_by_score) {
+       Int4 last_hsplist_index = -1, index = 0;
+       BlastHitList* hit_list = NULL;
+       BlastHSPResults* results = hsp_stream->results;
 
-    default:
-        abort();    /* should never happen */
-    }
+       /* Find index of the first query that has results. */
+       for (index = hsp_stream->sort_by_score->first_query_index; 
+            index < results->num_queries; ++index) {
+          if (results->hitlist_array[index] && 
+              results->hitlist_array[index]->hsplist_count > 0)
+             break;
+       }
+       if (index >= results->num_queries)
+          return kBlastHSPStream_Eof;
 
-    if (!method_fnptr) {
-        return kBlastHSPStream_Error;
-    }
+       hsp_stream->sort_by_score->first_query_index = index;
 
-    return (*method_fnptr)(hsp_stream, hsp_list);
+       hit_list = results->hitlist_array[index];
+       last_hsplist_index = hit_list->hsplist_count - 1;
+
+       *hsp_list_out = hit_list->hsplist_array[last_hsplist_index];
+       /* Assign the query index here so the caller knows which query this HSP 
+          list comes from */
+       (*hsp_list_out)->query_index = index;
+       /* Dequeue this HSP list by decrementing the HSPList count */
+       --hit_list->hsplist_count;
+       if (hit_list->hsplist_count == 0) {
+          /* Advance the first query index, without checking that the next
+           * query has results - that will be done on the next call. */
+          ++hsp_stream->sort_by_score->first_query_index;
+       }
+   } else {
+       /* return the next HSPlist out of the collection stored */
+
+       if (!hsp_stream->num_hsplists)
+          return kBlastHSPStream_Eof;
+
+       *hsp_list_out = 
+           hsp_stream->sorted_hsplists[--hsp_stream->num_hsplists];
+
+   }
+   return kBlastHSPStream_Success;
 }
 
-int BlastHSPStreamRead(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list)
-{
-    return _MethodDispatcher(hsp_stream, eRead, hsp_list);
-}
-
+/** Write an HSP list to the collector HSP stream. The HSP stream assumes 
+ * ownership of the HSP list and sets the dereferenced pointer to NULL.
+ * @param hsp_stream Stream to write to. [in] [out]
+ * @param hsp_list Pointer to the HSP list to save in the collector. [in]
+ * @return Success or error, if stream is already closed for writing.
+ */
 int BlastHSPStreamWrite(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list)
 {
-    return _MethodDispatcher(hsp_stream, eWrite, hsp_list);
+   Int2 status = 0;
+
+   if (!hsp_stream) 
+      return kBlastHSPStream_Error;
+
+   /** Lock the mutex, if necessary */
+   MT_LOCK_Do(hsp_stream->x_lock, eMT_Lock);
+
+   /** Prohibit writing after reading has already started. This prohibition
+    *  can be lifted later. There is no inherent problem in using read and
+    *  write in any order, except that sorting would have to be done on 
+    *  every read after a write. 
+    */
+   if (hsp_stream->results_sorted) {
+      MT_LOCK_Do(hsp_stream->x_lock, eMT_Unlock);
+      return kBlastHSPStream_Error;
+   }
+
+   if (hsp_stream->writer) { 
+       /** if writer has not been initialized, initialize it first */
+      if (!(hsp_stream->writer_initialized)) {
+          (hsp_stream->writer->InitFnPtr)
+                   (hsp_stream->writer->data, hsp_stream->results);
+          hsp_stream->writer_initialized = TRUE;
+      }
+          
+      /** filtering processing */
+      status = (hsp_stream->writer->RunFnPtr)
+               (hsp_stream->writer->data, *hsp_list);
+   }
+
+   if (status != 0) {
+      MT_LOCK_Do(hsp_stream->x_lock, eMT_Unlock);
+      return kBlastHSPStream_Error;
+   }
+   /* Results structure is no longer sorted, even if it was before. 
+      The following assignment is only necessary if the logic to prohibit
+      writing after the first read is removed. */
+   hsp_stream->results_sorted = FALSE;
+
+   /* Free the caller from this pointer's ownership. */
+   *hsp_list = NULL;
+
+   /** Unlock the mutex */
+   MT_LOCK_Do(hsp_stream->x_lock, eMT_Unlock);
+
+   return kBlastHSPStream_Success;
 }
 
-/*****************************************************************************/
-
-void* GetData(BlastHSPStream* hsp_stream)
+/* #define _DEBUG_VERBOSE 1 */
+/** Merge two HSPStreams. The HSPs from the first stream are
+ *  moved to the second stream.
+ * @param squery_blk Structure controlling the merge process [in]
+ * @param chunk_num Unique integer assigned to hsp_stream [in]
+ * @param stream1 The stream to merge [in][out]
+ * @param stream2 The stream that will contain the
+ *         HSPLists of the first stream [in][out]
+ */
+int BlastHSPStreamMerge(SSplitQueryBlk *squery_blk,
+                             Uint4 chunk_num,
+                             BlastHSPStream* stream1,
+                             BlastHSPStream* stream2)
 {
-    if ( !hsp_stream ) {
-        return NULL;
-    }
+   Int4 i, j, k;
+   BlastHSPResults *results1 = NULL;
+   BlastHSPResults *results2 = NULL;
+   Int4 contexts_per_query = 0;
+#ifdef _DEBUG
+   Int4 num_queries = 0, num_ctx = 0, num_ctx_offsets = 0;
+   Int4 max_ctx;
+#endif
+   
+   Uint4 *query_list = NULL, *offset_list = NULL, num_contexts = 0;
+   Int4 *context_list = NULL;
 
-    return hsp_stream->DataStructure;
+
+   if (!stream1 || !stream2) 
+       return kBlastHSPStream_Error;
+
+   results1 = stream1->results;
+   results2 = stream2->results;
+   contexts_per_query = BLAST_GetNumberOfContexts(stream2->program);
+
+   SplitQueryBlk_GetQueryIndicesForChunk(squery_blk, chunk_num, &query_list);
+   SplitQueryBlk_GetQueryContextsForChunk(squery_blk, chunk_num, 
+                                          &context_list, &num_contexts);
+   SplitQueryBlk_GetContextOffsetsForChunk(squery_blk, chunk_num, &offset_list);
+
+#if defined(_DEBUG_VERBOSE)
+   fprintf(stderr, "Chunk %d\n", chunk_num);
+   fprintf(stderr, "Queries : ");
+   for (num_queries = 0; query_list[num_queries] != UINT4_MAX; num_queries++)
+       fprintf(stderr, "%d ", query_list[num_queries]);
+   fprintf(stderr, "\n");
+   fprintf(stderr, "Contexts : ");
+   for (num_ctx = 0; num_ctx < num_contexts; num_ctx++)
+       fprintf(stderr, "%d ", context_list[num_ctx]);
+   fprintf(stderr, "\n");
+   fprintf(stderr, "Context starting offsets : ");
+   for (num_ctx_offsets = 0; offset_list[num_ctx_offsets] != UINT4_MAX;
+        num_ctx_offsets++)
+       fprintf(stderr, "%d ", offset_list[num_ctx_offsets]);
+   fprintf(stderr, "\n");
+#elif defined(_DEBUG)
+   for (num_queries = 0; query_list[num_queries] != UINT4_MAX; num_queries++) ;
+   for (num_ctx = 0, max_ctx = INT4_MIN; num_ctx < num_contexts; num_ctx++) 
+       max_ctx = MAX(max_ctx, context_list[num_ctx]);
+   for (num_ctx_offsets = 0; offset_list[num_ctx_offsets] != UINT4_MAX;
+        num_ctx_offsets++) ;
+#endif
+
+   for (i = 0; i < results1->num_queries; i++) {
+       BlastHitList *hitlist = results1->hitlist_array[i];
+       Int4 global_query = query_list[i];
+       Int4 split_points[NUM_FRAMES];
+#ifdef _DEBUG
+       ASSERT(i < num_queries);
+#endif
+
+       if (hitlist == NULL) {
+#if defined(_DEBUG_VERBOSE)
+fprintf(stderr, "No hits to query %d\n", global_query);
+#endif
+           continue;
+       }
+
+       /* we will be mapping HSPs from the local context to
+          their place on the unsplit concatenated query. Once
+          that's done, overlapping HSPs need to get merged, and
+          to do that we must know the offset within each context
+          where the last chunk ended and the current chunk begins */
+       for (j = 0; j < contexts_per_query; j++) {
+           Int4 local_context = i * contexts_per_query + j;
+           split_points[context_list[local_context] % contexts_per_query] = 
+                                offset_list[local_context];
+       }
+
+#if defined(_DEBUG_VERBOSE)
+       fprintf(stderr, "query %d split points: ", i);
+       for (j = 0; j < contexts_per_query; j++) {
+           fprintf(stderr, "%d ", split_points[j]);
+       }
+       fprintf(stderr, "\n");
+#endif
+
+       for (j = 0; j < hitlist->hsplist_count; j++) {
+           BlastHSPList *hsplist = hitlist->hsplist_array[j];
+
+           for (k = 0; k < hsplist->hspcnt; k++) {
+               BlastHSP *hsp = hsplist->hsp_array[k];
+               Int4 local_context = hsp->context;
+#ifdef _DEBUG
+               ASSERT(local_context <= max_ctx);
+               ASSERT(local_context < num_ctx);
+               ASSERT(local_context < num_ctx_offsets);
+#endif
+
+               hsp->context = context_list[local_context];
+               hsp->query.offset += offset_list[local_context];
+               hsp->query.end += offset_list[local_context];
+               hsp->query.gapped_start += offset_list[local_context];
+               hsp->query.frame = BLAST_ContextToFrame(stream2->program,
+                                                       hsp->context);
+           }
+
+           hsplist->query_index = global_query;
+       }
+
+       Blast_HitListMerge(results1->hitlist_array + i,
+                          results2->hitlist_array + global_query,
+                          contexts_per_query, split_points,
+                          SplitQueryBlk_GetChunkOverlapSize(squery_blk));
+   }
+
+   /* Sort to the canonical order, which the merge may not have done. */
+   for (i = 0; i < results2->num_queries; i++) {
+       BlastHitList *hitlist = results2->hitlist_array[i];
+       if (hitlist == NULL)
+           continue;
+
+       for (j = 0; j < hitlist->hsplist_count; j++)
+           Blast_HSPListSortByScore(hitlist->hsplist_array[j]);
+   }
+
+   stream2->results_sorted = FALSE;
+
+#if _DEBUG_VERBOSE
+   fprintf(stderr, "new results: %d queries\n", results2->num_queries);
+   for (i = 0; i < results2->num_queries; i++) {
+       BlastHitList *hitlist = results2->hitlist_array[i];
+       if (hitlist == NULL)
+           continue;
+
+       for (j = 0; j < hitlist->hsplist_count; j++) {
+           BlastHSPList *hsplist = hitlist->hsplist_array[j];
+           fprintf(stderr, 
+                   "query %d OID %d\n", hsplist->query_index, hsplist->oid);
+
+           for (k = 0; k < hsplist->hspcnt; k++) {
+               BlastHSP *hsp = hsplist->hsp_array[k];
+               fprintf(stderr, "c %d q %d-%d s %d-%d score %d\n", hsp->context,
+                      hsp->query.offset, hsp->query.end,
+                      hsp->subject.offset, hsp->subject.end,
+                      hsp->score);
+           }
+       }
+   }
+#endif
+
+   sfree(query_list);
+   sfree(context_list);
+   sfree(offset_list);
+
+   return kBlastHSPStream_Success;
 }
 
-int SetData(BlastHSPStream* hsp_stream, void* data)
+/** Batch read function for this BlastHSPStream implementation.      
+ * @param hsp_stream The BlastHSPStream object [in]
+ * @param batch List of HSP lists for the HSPStream to return. The caller
+ * acquires ownership of all HSP lists returned [out]
+ * @return kBlastHSPStream_Success on success, kBlastHSPStream_Error, or
+ * kBlastHSPStream_Eof on end of stream
+ */
+int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
+                            BlastHSPStreamResultBatch* batch) 
 {
-    if ( !hsp_stream ) {
-        return kBlastHSPStream_Error;
-    }
+   Int4 i;
+   Int4 num_hsplists;
+   Int4 target_oid;
+   BlastHSPList *hsplist;
 
-    hsp_stream->DataStructure = data;
+   if (!hsp_stream || !batch)
+       return kBlastHSPStream_Error;
 
-    return kBlastHSPStream_Success;
+   batch->num_hsplists = 0;
+   if (!hsp_stream->results)
+      return kBlastHSPStream_Eof;
+
+   /* If this stream is not yet closed for writing, close it. In particular,
+      this includes sorting of results. 
+      NB: to lift the prohibition on write after the first read, the 
+      following 2 lines should be removed, and stream closure for writing 
+      should be done outside of the read function. */
+   if (!hsp_stream->results_sorted)
+      BlastHSPStreamClose(hsp_stream);
+
+   /* return all the HSPlists with the same subject OID as the
+      last HSPList in the collection stored. We assume there is
+      at most one HSPList per query sequence */
+
+   num_hsplists = hsp_stream->num_hsplists;
+   if (num_hsplists == 0)
+      return kBlastHSPStream_Eof;
+
+   hsplist = hsp_stream->sorted_hsplists[num_hsplists - 1];
+   target_oid = hsplist->oid;
+
+   for (i = 0; i < num_hsplists; i++) {
+       hsplist = hsp_stream->sorted_hsplists[num_hsplists - 1 - i];
+       if (hsplist->oid != target_oid)
+           break;
+
+       batch->hsplist_array[i] = hsplist;
+   }
+
+   hsp_stream->num_hsplists = num_hsplists - i;
+   batch->num_hsplists = i;
+
+   return kBlastHSPStream_Success;
 }
 
-int SetMethod(BlastHSPStream* hsp_stream, 
-              EMethodName name,
-              BlastHSPStreamFunctionPointerTypes fnptr_type)
+BlastHSPStreamResultBatch *                                                                                
+Blast_HSPStreamResultBatchInit(Int4 num_hsplists)                                                          
+{                                                                                                          
+    BlastHSPStreamResultBatch *retval = (BlastHSPStreamResultBatch *)                                      
+                             calloc(1, sizeof(BlastHSPStreamResultBatch));                                 
+                                                                                                           
+    retval->hsplist_array = (BlastHSPList **)calloc((size_t)num_hsplists,                                  
+                                               sizeof(BlastHSPList *));                                    
+    return retval;                                                                                         
+}                                                                                                          
+                                                                                                           
+BlastHSPStreamResultBatch *                                                                                
+Blast_HSPStreamResultBatchFree(BlastHSPStreamResultBatch *batch)                                           
+{                                                                                                          
+    if (batch != NULL) {                                                                                   
+        sfree(batch->hsplist_array);                                                                       
+        sfree(batch);                                                                                      
+    }                                                                                                      
+    return NULL;                                                                                           
+}                                                                                                          
+                                                                                                           
+void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch)                                     
+{                                                                                                          
+    Int4 i;                                                                                                
+    for (i = 0; i < batch->num_hsplists; i++) {                                                            
+        batch->hsplist_array[i] =                                                                          
+           Blast_HSPListFree(batch->hsplist_array[i]);                                                     
+    }                                                                                                      
+    batch->num_hsplists = 0;                                                                               
+}                                                
+
+BlastHSPStream* 
+BlastHSPStreamNew(EBlastProgramType program, 
+                  const BlastExtensionOptions* extn_opts,
+                  Boolean sort_on_read,
+                  Int4 num_queries,
+                  BlastHSPWriter *writer)
 {
-    if ( !hsp_stream ) {
-        return kBlastHSPStream_Error;
+    BlastHSPStream* hsp_stream = 
+       (BlastHSPStream*) malloc(sizeof(BlastHSPStream));
+
+    hsp_stream->program = program;
+
+    hsp_stream->num_hsplists = 0;
+    hsp_stream->num_hsplists_alloc = 100;
+    hsp_stream->sorted_hsplists = (BlastHSPList **)malloc(
+                                           hsp_stream->num_hsplists_alloc *
+                                           sizeof(BlastHSPList *));
+    hsp_stream->results = Blast_HSPResultsNew(num_queries);
+
+    hsp_stream->results_sorted = FALSE;
+
+    /* This is needed to meet a pre-condition of the composition-based
+     * statistics code */
+    if ((Blast_QueryIsProtein(program) || Blast_QueryIsPssm(program)) &&
+        extn_opts->compositionBasedStats != 0) {
+        hsp_stream->sort_by_score = 
+            (SSortByScoreStruct*)calloc(1, sizeof(SSortByScoreStruct));
+        hsp_stream->sort_by_score->sort_on_read = sort_on_read;
+        hsp_stream->sort_by_score->first_query_index = 0;
+    } else {
+        hsp_stream->sort_by_score = NULL;
+    }
+    hsp_stream->x_lock = NULL;
+    hsp_stream->writer = writer;
+    hsp_stream->writer_initialized = FALSE;
+    hsp_stream->pre_pipe = NULL;
+    hsp_stream->tback_pipe = NULL;
+
+    return hsp_stream;
+}
+
+int BlastHSPStreamRegisterMTLock(BlastHSPStream* hsp_stream,
+                                 MT_LOCK lock)
+{
+    /* only one lock can be registered */
+    if (!hsp_stream || (hsp_stream->x_lock && lock)) {
+        MT_LOCK_Delete(lock);
+        return -1;
+    }
+    hsp_stream->x_lock = lock;
+    return 0;
+}
+
+int BlastHSPStreamRegisterPipe(BlastHSPStream* hsp_stream,
+                               BlastHSPPipe* pipe,
+                               EBlastStage stage)
+{
+    BlastHSPPipe *p;
+
+    if (!hsp_stream || !pipe) {
+        return -1;
     }
 
-    ASSERT(name < eMethodBoundary); 
+    pipe->next = NULL;
 
-    switch (name) {
-    case eConstructor:
-        hsp_stream->NewFnPtr = fnptr_type.ctor;
+    switch(stage) {
+    case ePrelimSearch:
+        p = hsp_stream->pre_pipe; 
+        if (!p) {
+            hsp_stream->pre_pipe = pipe;
+            return 0;
+        }
         break;
-
-    case eDestructor:
-        hsp_stream->DeleteFnPtr = fnptr_type.dtor;
+    case eTracebackSearch:
+        p = hsp_stream->tback_pipe; 
+        if (!p) {
+            hsp_stream->tback_pipe = pipe;
+            return 0;
+        }
         break;
-
-    case eRead:
-        hsp_stream->ReadFnPtr = fnptr_type.method;
-        break;
-
-    case eBatchRead:
-        hsp_stream->BatchReadFnPtr = fnptr_type.batch_read;
-        break;
-
-    case eWrite:
-        hsp_stream->WriteFnPtr = fnptr_type.method;
-        break;
-
-    case eMerge:
-        hsp_stream->MergeFnPtr = fnptr_type.mergeFn;
-        break;
-
-    case eClose:
-       hsp_stream->CloseFnPtr = fnptr_type.closeFn;
-       break;
-
     default:
-        abort();    /* should never happen */
+        return -1;
     }
 
-    return kBlastHSPStream_Success;
+    /* insert the pipe at the end */
+    for (; p && p->next; p = p->next);
+    p->next = pipe;
+   
+    return 0;
 }
+
+BlastHSPWriter*
+BlastHSPWriterNew (BlastHSPWriterInfo** writer_info,
+                   BlastQueryInfo* query_info)
+{
+    BlastHSPWriter * writer = NULL;
+    if(writer_info && *writer_info) {
+        writer = ((*writer_info)->NewFnPtr) ((*writer_info)->params, query_info);
+        sfree(*writer_info);
+    }
+    ASSERT(writer_info && *writer_info == NULL);
+    return writer;
+}
+
+BlastHSPPipeInfo*
+BlastHSPPipeInfo_Add(BlastHSPPipeInfo** head,
+                     BlastHSPPipeInfo* node)
+{
+    if (head) {
+        if (*head) {
+            BlastHSPPipeInfo* tmp = *head;
+            while (tmp->next) {
+                tmp = tmp->next;
+            }
+            tmp->next = node;
+        } else {
+            *head = node;
+        }
+    }
+    return node;
+}
+
+BlastHSPPipe*
+BlastHSPPipeNew (BlastHSPPipeInfo** pipe_info,
+                 BlastQueryInfo* query_info)
+{
+    BlastHSPPipe *pipe = NULL;
+    BlastHSPPipe *p = pipe;
+    BlastHSPPipeInfo *info = *pipe_info;
+    BlastHSPPipeInfo *q = info;
+
+    while(info) {
+        if (p) {
+            p->next = (info->NewFnPtr) (info->params, query_info);
+            p = p->next;
+        } else {
+            pipe = (info->NewFnPtr) (info->params, query_info);
+            p = pipe;
+        }
+        p->next = NULL;
+        q = info;
+        info = info->next;
+        sfree(q);
+    }
+    *pipe_info = NULL;
+    return pipe;
+}
+

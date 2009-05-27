@@ -378,7 +378,7 @@ public:
     
     /// Returns any resources associated with the sequence.
     ///
-    /// Calls to GetSequence and GetAmbigSeq (but not GetBioseq())
+    /// Calls to GetSequence (but not GetBioseq())
     /// either increment a counter corresponding to a section of the
     /// database where the sequence data lives, or allocate a buffer
     /// to return to the user.  This method decrements that counter or
@@ -390,6 +390,21 @@ public:
     /// @param buffer
     ///   A pointer to the sequence data to release.
     void RetSequence(const char ** buffer) const;
+    
+    /// Returns any resources associated with the sequence.
+    ///
+    /// Calls to GetAmbigSeq (but not GetBioseq())
+    /// either increment a counter corresponding to a section of the
+    /// database where the sequence data lives, or allocate a buffer
+    /// to return to the user.  This method decrements that counter or
+    /// frees the allocated buffer, so that the memory can be used by
+    /// other processes.  Each allocating call should be paired with a
+    /// returning call.  Note that this does not apply to GetBioseq(),
+    /// or GetHdr(), for example.
+    ///
+    /// @param buffer
+    ///   A pointer to the sequence data to release.
+    void RetAmbigSeq(const char ** buffer) const;
     
     /// Gets a list of sequence identifiers.
     /// 
@@ -490,8 +505,10 @@ public:
     ///   First included oid (if eOidRange is returned).
     /// @param end_chunk
     ///   OID after last included (if eOidRange is returned).
+    /// @param oid_size
+    ///   Number of OID to retrieve (ignored in MT environment).
     /// @param oid_list
-    ///   List of oids (if eOidList is returned).  Set size before call.
+    ///   Empty list to be filled if eOidList is returned.
     /// @param oid_state
     ///   Optional address of a state variable (for concurrent iterations).
     /// @return
@@ -499,6 +516,7 @@ public:
     CSeqDB::EOidListType
     GetNextOIDChunk(int         & begin_chunk,
                     int         & end_chunk,
+                    int         oid_size,
                     vector<int> & oid_list,
                     int         * oid_state);
     
@@ -819,6 +837,9 @@ public:
                          bool               append_ranges,
                          bool               cache_data);
     
+    /// Flush all offset ranges cached
+    void FlushOffsetRangeCache();
+
     /// Set global default memory bound for SeqDB.
     ///
     /// The memory bound for individual SeqDB objects can be adjusted
@@ -964,8 +985,6 @@ public:
                                  string            & program_name,
                                  string            & algo_opts);
     
-    /// List of sequence offset ranges.
-    typedef vector< pair<TSeqPos, TSeqPos> > TSequenceRanges;
     
     /// Get masked ranges of a sequence.
     ///
@@ -981,13 +1000,15 @@ public:
     /// @param ranges The list of sequence offset ranges. [out]
     void GetMaskData(int                 oid,
                      const vector<int> & algo_ids,
-                     bool                inverted,
-                     TSequenceRanges   & ranges);
+                     CSeqDB::TSequenceRanges   & ranges);
 #endif
 
     /// Invoke the garbage collector to free up memory
     void GarbageCollect(void);
     
+    /// Set number of threads
+    void SetNumberOfThreads(int num_threads);
+
 private:
     CLASS_MARKER_FIELD("IMPL")
     
@@ -1152,6 +1173,22 @@ private:
     ///   A reference to the list filtering info object.
     const CSeqDBFiltInfo & x_GetFiltInfo(CSeqDBLockHold & locked);
     
+    /// Get local cache ID for current thread.
+    ///
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   The mapped local cache ID
+    int x_GetCacheID(CSeqDBLockHold &locked) const {
+        int threadID = CThread::GetSelf();
+        if (m_CacheID.find(threadID) != m_CacheID.end()) {
+            return m_CacheID[threadID];
+        }
+        m_Atlas.Lock(locked);
+        m_CacheID[threadID] = m_NextCacheID;
+        return m_NextCacheID++;
+    }
+
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.
     CSeqDBImplFlush m_FlushCB;
@@ -1254,6 +1291,42 @@ private:
     
     /// Cached membership bit info.
     CSeqDBFiltInfo m_FiltInfo;
+
+    /// number of thread clients
+    int m_NumThreads;
+
+    /// mapping thread ID to storage ID
+    mutable std::map<int, int> m_CacheID;
+    mutable int m_NextCacheID;
+
+    /// Structure to keep sequence retrieval results
+    struct SSeqRes {
+        int length;   // length of the sequence
+        const char* address;// mapped memory start
+    };
+
+    /// Structure to buffer multiple TSeqRes
+    struct SSeqResBuffer {
+        int oid_start;    // starting oid for this buffer
+        int checked_out;  // number of sequences checked out
+        vector<SSeqRes> results;
+        SSeqResBuffer() : oid_start(0), checked_out(0) {
+            results.reserve(2 << 20);
+        }
+    };
+
+    /// Cached sequences.
+    mutable vector<SSeqResBuffer *> m_CachedSeqs;
+
+    /// Fill up the buffer
+    void x_FillSeqBuffer(SSeqResBuffer * buffer, int oid, CSeqDBLockHold &locked) const;
+
+    /// Get sequence from buffer
+    int x_GetSeqBuffer(SSeqResBuffer * buffer, int oid, const char ** seq) const;
+
+    /// Return sequence to buffer
+    void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
+    
 };
 
 END_NCBI_SCOPE

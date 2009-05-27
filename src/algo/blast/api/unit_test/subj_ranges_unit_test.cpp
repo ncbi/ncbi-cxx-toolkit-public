@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
     BOOST_REQUIRE_EQUAL(kSentinel, buf[range2.GetFrom()-kPadSize]);
     BOOST_REQUIRE_EQUAL(kSentinel, buf[range2.GetToOpen()+kPadSize]);
     BOOST_REQUIRE_EQUAL(kSentinel, buf[range3.GetFrom()-kPadSize]);
-    db.RetSequence(&buf);
+    db.RetAmbigSeq(&buf);
 }
 
 BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetRemoveSubject)

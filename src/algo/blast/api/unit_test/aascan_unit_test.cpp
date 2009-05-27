@@ -129,9 +129,7 @@ struct AascanTestFixture {
         BOOST_REQUIRE(query_blk->sequence[query_blk->length - 1] != 0);
         BOOST_REQUIRE(query_blk->sequence_start[0] == 0);
         BOOST_REQUIRE(query_blk->sequence_start[query_blk->length + 1] == 0);
-        BOOST_REQUIRE_EQUAL(1, (int)query_blk->num_seq_ranges);
-        BOOST_REQUIRE_EQUAL(0, (int)query_blk->seq_ranges[0].left);
-        BOOST_REQUIRE_EQUAL(query_blk->length, query_blk->seq_ranges[0].right);
+        BOOST_REQUIRE_EQUAL(0, (int)query_blk->num_seq_ranges);
 
         // indicate which regions of the query to index
 
@@ -168,10 +166,7 @@ struct AascanTestFixture {
         BOOST_REQUIRE(subject_blk->sequence[subject_blk->length - 1] != 0);
         BOOST_REQUIRE(subject_blk->sequence_start[0] == 0);
         BOOST_REQUIRE(subject_blk->sequence_start[subject_blk->length + 1] == 0);
-        BOOST_REQUIRE_EQUAL(1, (int)subject_blk->num_seq_ranges);
-        BOOST_REQUIRE_EQUAL(0, (int)subject_blk->seq_ranges[0].left);
-        BOOST_REQUIRE_EQUAL(subject_blk->length, 
-                            subject_blk->seq_ranges[0].right);
+        BOOST_REQUIRE_EQUAL(0, (int)subject_blk->num_seq_ranges);
 
         //----------------------------------- LOOKUP TABLE SETUP -----------
         // set lookup table options
@@ -388,11 +383,11 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
                     (TAaScanSubjectFunction)(lut->scansub_callback);
     BOOST_REQUIRE(scansub != NULL);
 
-    SSeqRange ranges2scan[] = { { 0, 500} , {700, 1000} };
+    SSeqRange ranges2scan[] = { {501, 700} , {1001, subject_length} };
     const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
     BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
 
-    while (offset_now < (subject_length - 2)) 
+    while (offset_now < 999) 
     {
         hits = scansub(lookup_wrap_ptr,
                 subject_blk,
@@ -406,11 +401,11 @@ BOOST_AUTO_TEST_CASE(SkipMaskedRanges)
         // Ensure that hits fall in the subject's "approved" ranges
         for (int i = 0; i < hits; i++) {
             const Uint4 s_off = offset_pairs[i].qs_offsets.s_off;
-            bool hit_found = FALSE;
+            bool hit_found = TRUE;
             for (size_t j = 0; j < kNumRanges; j++) {
                 if ( s_off >= (Uint4)ranges2scan[j].left && 
-                     s_off <= (Uint4)ranges2scan[j].right ) {
-                    hit_found = TRUE;
+                     s_off <  (Uint4)ranges2scan[j].right ) {
+                    hit_found = FALSE;
                 }
             }
             BOOST_REQUIRE( hit_found );

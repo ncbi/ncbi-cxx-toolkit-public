@@ -51,6 +51,7 @@ static char const rcsid[] =
 #include "blast_app_util.hpp"
 #include <algo/blast/api/psiblast.hpp>
 #include <algo/blast/api/psiblast_iteration.hpp>
+#include <objects/scoremat/Pssm.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -77,7 +78,7 @@ private:
     /// @param pssm PSSM to save [in]
     /// @param itr Iteration object, NULL in case of remote search [in]
     void SavePssmToFile(CRef<CPssmWithParameters> pssm, 
-                        const CPsiBlastIterationState* itr = NULL) const;
+                        const CPsiBlastIterationState* itr = NULL);
 
     CRef<CPssmWithParameters>
     ComputePssmForNextIteration(const CBioseq& bioseq,
@@ -137,22 +138,32 @@ CPsiBlastApp::ComputePssmForNextIteration(const CBioseq& bioseq,
                               CRef<CScope> scope,
                               CRef<CBlastAncillaryData> ancillary_data)
 {
-    CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNew());
-    diags->frequency_ratios = true;
-    if (m_CmdLineArgs->SaveAsciiPssm()) {
-        diags->information_content = true;
-        diags->weighted_residue_frequencies = true;
-        diags->gapless_column_weights = true;
-        diags->sigma = diags->interval_sizes = diags->num_matching_seqs = true;
-    }
+    CPSIDiagnosticsRequest
+        diags(PSIDiagnosticsRequestNewEx(m_CmdLineArgs->SaveAsciiPssm()));
     m_AncillaryData = ancillary_data;
     return PsiBlastComputePssmFromAlignment(bioseq, sset, scope, *opts_handle,
                                             m_AncillaryData, diags);
 }
 
+/// Auxiliary function to extract the ancillary data from the PSSM.
+static CRef<CBlastAncillaryData>
+s_ExtractAncillaryData(const CPssmWithParameters& pssm)
+{
+    _ASSERT(pssm.CanGetPssm());
+    pair<double, double> lambda, k, h;
+    lambda.first = pssm.GetPssm().GetLambdaUngapped();
+    lambda.second = pssm.GetPssm().GetLambda();
+    k.first = pssm.GetPssm().GetKappaUngapped();
+    k.second = pssm.GetPssm().GetKappa();
+    h.first = pssm.GetPssm().GetHUngapped();
+    h.second = pssm.GetPssm().GetH();
+    return CRef<CBlastAncillaryData>(new CBlastAncillaryData(lambda, k, h, 0,
+                                                             true));
+}
+
 void
 CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm, 
-                             const CPsiBlastIterationState* itr) const
+                             const CPsiBlastIterationState* itr)
 {
     if (pssm.Empty()) {
         return;
@@ -160,13 +171,17 @@ CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm,
 
     if (m_CmdLineArgs->SaveCheckpoint() &&
         (itr == NULL || // this is true in the case of remote PSI-BLAST
-         itr->GetIterationNumber() > 1)) {
+         itr->GetIterationNumber() >= 1)) {
         *m_CmdLineArgs->GetCheckpointStream() << MSerial_AsnText << *pssm;
     }
 
     if (m_CmdLineArgs->SaveAsciiPssm() &&
         (itr == NULL || // this is true in the case of remote PSI-BLAST
          itr->GetIterationNumber() >= 1)) {
+        if (m_AncillaryData.Empty() && pssm.NotEmpty()) {
+            _ASSERT(itr->GetIterationNumber() == 1);
+            m_AncillaryData = s_ExtractAncillaryData(*pssm);
+        }
         CBlastFormatUtil::PrintAsciiPssm(*pssm, 
                                          m_AncillaryData,
                                          *m_CmdLineArgs->GetAsciiPssmStream());
@@ -223,6 +238,7 @@ int CPsiBlastApp::Run(void)
             }
             query_factory.Reset(new CObjMgr_QueryFactory(*query));
         } else {
+            _ASSERT(pssm->HasQuery());
             _ASSERT(pssm->GetQuery().IsSeq());  // single query only!
             query.Reset(new CBlastQueryVector());
             scope->AddTopLevelSeqEntry(pssm->SetQuery());
@@ -361,12 +377,12 @@ int CPsiBlastApp::Run(void)
                 	itr.Advance(ids);
 
                 	if (itr) {
-                    		CConstRef<CBioseq> seq =
-                       		 s_GetQueryBioseq(query, scope, pssm);
-                    		pssm = 
-                       		 ComputePssmForNextIteration(*seq, aln, psi_opts, scope,
-                                          results_1st_query.GetAncillaryData());
-                    		psiblast->SetPssm(pssm);
+                        CConstRef<CBioseq> seq =
+                         s_GetQueryBioseq(query, scope, pssm);
+                        pssm = 
+                         ComputePssmForNextIteration(*seq, aln, psi_opts, scope,
+                                      results_1st_query.GetAncillaryData());
+                        psiblast->SetPssm(pssm);
                 	}
                 }
                 else

@@ -53,7 +53,8 @@
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
-#include <algo/blast/core/hspstream_collector.h>
+#include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/hspfilter_collector.h>
 #include "blast_aux_priv.hpp"
 
 
@@ -326,18 +327,25 @@ CBl2Seq::RunFullSearch()
     mi_pDiagnostics = Blast_DiagnosticsInit();
 
     const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
-    SBlastHitsParameters* blasthit_params=NULL;
-    SBlastHitsParametersNew(kOptions.GetHitSaveOpts(), kOptions.GetExtnOpts(),
-                            kOptions.GetScoringOpts(), &blasthit_params);
+
+    // the following should be moved to APP layer ...
+    BlastHSPWriterInfo* writer_info = BlastHSPCollectorInfoNew(
+                             BlastHSPCollectorParamsNew(
+                                   kOptions.GetHitSaveOpts(), 
+                                   kOptions.GetExtnOpts()->compositionBasedStats,
+                                   kOptions.GetScoringOpts()->gapped_calculation));
+    // the above should be moved to APP layer ...
+
     /* Initialize an HSPList stream to collect hits; 
        results should not be sorted for reading from the stream. */
-    BlastHSPStream* hsp_stream = 
-        Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
+    BlastHSPStream* hsp_stream = BlastHSPStreamNew(
+                                   kOptions.GetProgramType(), 
                                    kOptions.GetExtnOpts(), FALSE,
-                                   mi_clsQueryInfo->num_queries);
+                                   mi_clsQueryInfo->num_queries,
+                                   BlastHSPWriterNew(&writer_info, NULL));
+
     TBlastHSPStream thsp_stream(hsp_stream, BlastHSPStreamFree);
     
-                  
     SBlastProgressReset(m_ProgressMonitor);
     Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),
                                       mi_clsQueries, mi_clsQueryInfo, 

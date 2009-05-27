@@ -39,7 +39,9 @@ static char const rcsid[] =
 
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
+#include <algo/blast/api/blast_mtlock.hpp>
 #include <algo/blast/core/gencode_singleton.h>
+#include <algo/blast/core/blast_hits.h>
 
 #include "prelim_search_runner.hpp"
 #include "blast_aux_priv.hpp"
@@ -109,13 +111,9 @@ CBlastPrelimSearch::SetNumberOfThreads(size_t nthreads)
             (m_QueryFactory->MakeLocalQueryData(&*m_Options));
         auto_ptr<const CBlastOptionsMemento> opts_memento
             (m_Options->CreateSnapshot());
-        BlastHSPStream* hsp_stream = IsMultiThreaded()
-            ? CSetupFactory::CreateHspStreamMT(opts_memento.get(),
-                                               query_data->GetNumQueries())
-            : CSetupFactory::CreateHspStream(opts_memento.get(),
-                                             query_data->GetNumQueries());
-        m_InternalData->m_HspStream.Reset
-            (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
+        if (IsMultiThreaded())
+            BlastHSPStreamRegisterMTLock(m_InternalData->m_HspStream->GetPointer(),
+                                         Blast_CMT_LOCKInit());
     }
 }
 
@@ -144,6 +142,9 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
         (m_Options->CreateSnapshot());
     _TRACE("Launching BLAST with " << GetNumberOfThreads() << " threads");
 
+    BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 
+                                  GetNumberOfThreads());
+
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
         thread->Reset(new CPrelimSearchThread(internal_data,
@@ -168,6 +169,8 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
             error_occurred = true;
         }
     }
+
+    BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 0);
 
     if (error_occurred) {
         NCBI_THROW(CBlastException, eCoreBlastError, 
@@ -204,11 +207,13 @@ CBlastPrelimSearch::Run()
 
     GetDbIndexSetNumThreadsFn()( seqsrc, GetNumberOfThreads() );
 
-    if (m_Options->GetDbGeneticCode() > 0 && 
-       GenCodeSingletonFind(m_Options->GetDbGeneticCode()) == NULL)
-    {
-       TAutoUint1ArrayPtr gc = FindGeneticCode(m_Options->GetDbGeneticCode());
-       GenCodeSingletonAdd(m_Options->GetDbGeneticCode(), gc.get());
+    int db_genetic_code = 0;
+    if ( (db_genetic_code = m_Options->GetDbGeneticCode()) > 0) {
+        CFastMutex mutex;
+        if (GenCodeSingletonFind(db_genetic_code) == NULL) {
+            TAutoUint1ArrayPtr gc = FindGeneticCode(db_genetic_code);
+            GenCodeSingletonAdd(db_genetic_code, gc.get());
+        }
     }
 
 	// Query splitting data structure (used only if applicable)
@@ -278,6 +283,10 @@ CBlastPrelimSearch::Run()
         if (m_InternalData->m_Queries == NULL) {
             CRef<ILocalQueryData> query_data
                 (m_QueryFactory->MakeLocalQueryData(&*m_Options));
+            // Query masking info is calculated as a side-effect
+            CBlastScoreBlk sbp
+                (CSetupFactory::CreateScoreBlock(opts_memento.get(), query_data,
+                                        NULL, m_Messages, NULL, NULL));
             m_InternalData->m_Queries = query_data->GetSequenceBlk();
         }
     } else {
@@ -309,12 +318,15 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
 
     _ASSERT(m_InternalData->m_QueryInfo->num_queries > 0);
     Boolean removed_hsps = FALSE;
+    SBlastHitsParameters* hit_param = NULL;
+    SBlastHitsParametersNew(opts_memento->m_HitSaveOpts,
+                            opts_memento->m_ExtnOpts,
+                            opts_memento->m_ScoringOpts,
+                            &hit_param);
     BlastHSPResults* retval =
         Blast_HSPResultsFromHSPStreamWithLimit(stream,
            (Uint4) m_InternalData->m_QueryInfo->num_queries,
-           opts_memento->m_HitSaveOpts,
-           opts_memento->m_ExtnOpts,
-           opts_memento->m_ScoringOpts,
+           hit_param,
            max_num_hsps,
            &removed_hsps);
     if (rm_hsps) {

@@ -202,11 +202,9 @@ struct RpsTestFixture {
         TSeqLocVector query_v;
         query_v.push_back(*query);
 
-        CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(m_DbName, TRUE));
-        TestUtil::CheckForBlastSeqSrcErrors(seq_src);
-
+        CSearchDatabase dbinfo(m_DbName, CSearchDatabase::eBlastDbIsProtein);
         CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_v));
-        CLocalBlast blaster(query_factory, opts, seq_src);
+        CLocalBlast blaster(query_factory, opts, dbinfo);
         CSearchResultSet results = *blaster.Run();
 
         testNuclHitList(*results[0].GetSeqAlign(), strand);
@@ -227,11 +225,9 @@ BOOST_AUTO_TEST_CASE(WholeSequenceMatch) {
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
 
-    CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(m_DbName, TRUE));
-    TestUtil::CheckForBlastSeqSrcErrors(seq_src);
-
+    CSearchDatabase dbinfo(m_DbName, CSearchDatabase::eBlastDbIsProtein);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_v));
-    CLocalBlast blaster(query_factory, opts, seq_src);
+    CLocalBlast blaster(query_factory, opts, dbinfo);
     CSearchResultSet results = *blaster.Run();
 
     const CSeq_align& hitlist_sa = *results[0].GetSeqAlign()->Get().front();

@@ -79,19 +79,29 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                    "Invalid format specification");
     }
 
+    // Validate filtering algorithms provided, if any
+    if ( !config.m_FiltAlgoIds.empty() ) {
+        CMaskingFmtSpecHelper::ValidateFilteringAlgorithms
+            (m_BlastDb, config.m_FiltAlgoIds);
+    }
+
     ITERATE(vector<char>, fmt, repl_types) {
         switch (*fmt) {
         case 'f':
-            m_DataExtractors.push_back(new CFastaExtractor(config.m_LineWidth, 
-                                                           config.m_SeqRange,
-                                                           config.m_Strand, 
-                                                           config.m_TargetOnly, 
-                                                           config.m_UseCtrlA));
+            m_DataExtractors.push_back
+                (new CFastaExtractor(config.m_LineWidth, 
+                                     config.m_SeqRange,
+                                     config.m_Strand, 
+                                     config.m_TargetOnly, 
+                                     config.m_UseCtrlA,
+                                     config.m_FiltAlgoIds));
             break;
 
         case 's':
-            m_DataExtractors.push_back(new CSeqDataExtractor(config.m_SeqRange,
-                                                             config.m_Strand));
+            m_DataExtractors.push_back
+                (new CSeqDataExtractor(config.m_SeqRange, 
+                                       config.m_Strand, 
+                                       config.m_FiltAlgoIds));
             break;
 
         case 'a':
@@ -133,8 +143,9 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
 
         case 'm':
             {
+                _ASSERT(masking_algo_helper.get());
                 vector<int> filt_algo_ids = 
-                    m_MaskingAlgoHelper->GetFilteringAlgorithms();
+                    masking_algo_helper->GetFilteringAlgorithms();
                 m_DataExtractors.push_back
                     (new CMaskingDataExtractor(filt_algo_ids));
                 break;

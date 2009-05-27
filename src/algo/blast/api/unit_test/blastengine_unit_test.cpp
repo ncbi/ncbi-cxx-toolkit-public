@@ -67,7 +67,7 @@
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/hspstream_collector.h>
+#include <algo/blast/core/blast_hspstream.h>
 
 #include <algo/blast/api/blast_nucl_options.hpp>
 
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
     CScope* query_scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
     query_scope->AddDefaults();
     m_vQuery.push_back(SSeqLoc(query_loc, query_scope));
-    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(kDbName, false, 0, 0);
+    CSearchDatabase dbinfo(kDbName, CSearchDatabase::eBlastDbIsNucleotide);
 
     CDiscNucleotideOptionsHandle opts_handle;
     
@@ -380,11 +380,9 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
 
     CRef<CBlastOptionsHandle> options(&opts_handle);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(m_vQuery));
-    CLocalBlast blaster(query_factory, options, seq_src);
+    CLocalBlast blaster(query_factory, options, dbinfo);
     CSearchResultSet results = *blaster.Run();
 
-    BlastSeqSrcFree(seq_src);
-    
     // Check results
     BOOST_REQUIRE_EQUAL((int)1, (int)results.GetNumResults());
     CConstRef<CSeq_align_set> alignment = results[0].GetSeqAlign();

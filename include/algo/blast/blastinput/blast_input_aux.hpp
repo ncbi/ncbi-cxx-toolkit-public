@@ -35,11 +35,36 @@
 #define ALGO_BLAST_BLASTINPUT__BLAST_INPUT_AUX__HPP
 
 #include <algo/blast/api/sseqloc.hpp>   /* for CBlastQueryVector */
-#include <algo/blast/blastinput/blast_args.hpp>
-#include <sstream>
+#include <objects/seqset/Bioseq_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
+
+/// Auxiliary class to store the name of an output file, which is reset every
+/// time its GetStream method is invoked. This is needed to handle files which
+/// are over-written at every PSI-BLAST iteration (e.g.: PSSM and ASCII PSSM)
+class NCBI_BLASTINPUT_EXPORT CAutoOutputFileReset : public CObject
+{
+public:
+    /// Constructor
+    /// @param file_name name of the output file [in]
+    CAutoOutputFileReset(const string& file_name)
+        : m_FileName(file_name), m_FileStream(0) {}
+
+    /// Retrieve the newly opened stream, caller doesn't own the return value
+    CNcbiOstream* GetStream();
+
+private:
+    /// The file's name
+    string m_FileName;
+    /// The output stream
+    auto_ptr<CNcbiOstream> m_FileStream;
+
+    /// Prohibit copy constructor
+    CAutoOutputFileReset(const CAutoOutputFileReset& rhs);
+    /// Prohibit assignment operator
+    CAutoOutputFileReset& operator=(const CAutoOutputFileReset& rhs);
+};
 
 /// Class to constrain the values of an argument to those greater than or equal
 /// to the value specified in the constructor
@@ -91,6 +116,50 @@ private:
     double m_MaxValue;  /**< Maximum value for this object */
 };
 
+/// Class to constrain the values of an argument to those in between the values
+/// specified in the constructor
+class NCBI_BLASTINPUT_EXPORT CArgAllowValuesBetween : public CArgAllow
+{
+public:
+    /// Constructor taking an integer
+    CArgAllowValuesBetween(int min, int max, bool inclusive = false) 
+        : m_MinValue(min), m_MaxValue(max), m_Inclusive(inclusive) {}
+    /// Constructor taking a double
+    CArgAllowValuesBetween(double min, double max) 
+        : m_MinValue(min), m_MaxValue(max) {}
+
+protected:
+    /// Overloaded method from CArgAllow
+    virtual bool Verify(const string& value) const {
+        double val = NStr::StringToDouble(value);
+        bool retval = false;
+        if ( !m_Inclusive ) {
+            retval = (val > m_MinValue && val < m_MaxValue);
+        } else {
+            retval = (val >= m_MinValue && val <= m_MaxValue);
+        }
+        return retval;
+    }
+
+    /// Overloaded method from CArgAllow
+    virtual string GetUsage(void) const {
+        string retval;
+        if ( !m_Inclusive ) {
+            retval = "(>" + NStr::DoubleToString(m_MinValue) + " and <"
+                + NStr::DoubleToString(m_MaxValue) + ")";
+        } else {
+            retval = "(>=" + NStr::DoubleToString(m_MinValue) + " and =<"
+                + NStr::DoubleToString(m_MaxValue) + ")";
+        }
+        return retval;
+    }
+    
+private:
+    double m_MinValue;  /**< Minimum value for this object */
+    double m_MaxValue;  /**< Maximum value for this object */
+    bool m_Inclusive;   /**< Whether the values above should be included or not */
+};
+
 /** 
  * @brief Macro to create a subclass of CArgAllow that allows the specification
  * of sets of data
@@ -123,12 +192,12 @@ protected:                                                                  \
     }                                                                       \
                                                                             \
     virtual string GetUsage(void) const {                                   \
-        ostringstream os;                                                   \
+        CNcbiOstrstream os;                                                 \
         os << "Permissible values: ";                                       \
         ITERATE(set<DataType>, itr, m_AllowedValues) {                      \
             os << "'" << *itr << "' ";                                      \
         }                                                                   \
-        return os.str();                                                    \
+        return CNcbiOstrstreamToString(os);                                 \
     }                                                                       \
                                                                             \
 private:                                                                    \
@@ -152,24 +221,13 @@ NCBI_BLASTINPUT_EXPORT
 TSeqRange
 ParseSequenceRange(const string& range_str, const char* error_msg = NULL);
 
-/** 
- * @brief Create a CArgDescriptions object and invoke SetArgumentDescriptions
- * for each of the TBlastCmdLineArgs in its argument list
- * 
- * @param args arguments to configure the return value [in]
- * 
- * @return a CArgDescriptions object with the command line options set
- */
-NCBI_BLASTINPUT_EXPORT
-CArgDescriptions* 
-SetUpCommandLineArguments(TBlastCmdLineArgs& args);
-
 /** Retrieve the appropriate batch size for the specified task 
  * @param program BLAST task [in]
+ * @param is_ungapped true if ungapped BLAST search is requested [in]
  */
 NCBI_BLASTINPUT_EXPORT
 int
-GetQueryBatchSize(EProgram program);
+GetQueryBatchSize(EProgram program, bool is_ungapped = false);
 
 /** Read sequence input for BLAST 
  * @param in input stream from which to read [in]
@@ -239,7 +297,7 @@ CheckForEmptySequences(CRef<CBlastQueryVector> sequences, string& warnings);
 /// among non-empty sequences [in|out]
 /// @throw CInputException if there is only 1 empty sequence
 NCBI_BLASTINPUT_EXPORT void
-CheckForEmptySequences(CRef<CBioseq_set> sequences, string& warnings);
+CheckForEmptySequences(CRef<objects::CBioseq_set> sequences, string& warnings);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

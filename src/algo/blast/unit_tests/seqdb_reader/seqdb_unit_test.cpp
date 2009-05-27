@@ -82,8 +82,8 @@ static void s_TestPartialAmbigRange(CSeqDB & db, int oid, int begin, int end)
     
     BOOST_REQUIRE_MESSAGE(0 == memcmp(slice, whole + begin, sliceL), op);
     
-    db.RetSequence(& whole);
-    db.RetSequence(& slice);
+    db.RetAmbigSeq(& whole);
+    db.RetAmbigSeq(& slice);
 }
 
 static void s_TestPartialAmbig(CSeqDB & db, int nt_gi)
@@ -251,7 +251,7 @@ public:
     ~CReturnSeqBuffer()
     {
         if (m_Buffer) {
-            m_SeqDB->RetSequence(& m_Buffer);
+            m_SeqDB->RetAmbigSeq(& m_Buffer);
         }
     }
     
@@ -497,8 +497,8 @@ BOOST_AUTO_TEST_CASE(GetAmbigSeqN)
     Uint4 hashval1 = s_BufHash(bufp1, length1);
     Uint4 hashval2 = s_BufHash(bufp2, length2);
     
-    seqp.RetSequence(& bufp1);
-    seqp.RetSequence(& bufp2);
+    seqp.RetAmbigSeq(& bufp1);
+    seqp.RetAmbigSeq(& bufp2);
     
     BOOST_REQUIRE_EQUAL(Uint4(30118382ul), hashval1);
     BOOST_REQUIRE_EQUAL(Uint4(3084382219ul), hashval2);
@@ -516,8 +516,8 @@ BOOST_AUTO_TEST_CASE(GetAmbigSeqP)
     Uint4 hashval1 = s_BufHash(bufp1, length1);
     Uint4 hashval2 = s_BufHash(bufp2, length2);
     
-    seqp.RetSequence(& bufp1);
-    seqp.RetSequence(& bufp2);
+    seqp.RetAmbigSeq(& bufp1);
+    seqp.RetAmbigSeq(& bufp2);
     
     BOOST_REQUIRE_EQUAL(Uint4(3219499033ul), hashval1);
     BOOST_REQUIRE_EQUAL(Uint4(3219499033ul), hashval2);
@@ -1528,8 +1528,6 @@ BOOST_AUTO_TEST_CASE(OidRanges)
             
             int obegin(0), oend(0);
             
-            oids.resize(10);
-            
             int count(0);
             int lowest(INT_MAX);
             int highest(0);
@@ -1545,7 +1543,7 @@ BOOST_AUTO_TEST_CASE(OidRanges)
             
             while(1) {
                 CSeqDB::EOidListType range_type =
-                    db.GetNextOIDChunk(obegin, oend, oids);
+                    db.GetNextOIDChunk(obegin, oend, 10, oids);
                 
                 unsigned num_found(0);
                 
@@ -1581,7 +1579,7 @@ BOOST_AUTO_TEST_CASE(OidRanges)
                     }
                 }
                 
-                if (! num_found) {
+                if (obegin == oend) {
                     break;
                 }
                 
@@ -1929,12 +1927,12 @@ BOOST_AUTO_TEST_CASE(GiListInOidRangeIteration)
     CSeqDB db("data/seqn", CSeqDB::eNucleotide, gi_list);
     
     int start, end;
-    vector<int> oid_list(kNumTestGis);
+    vector<int> oid_list;
     
     db.SetIterationRange(0, kGiOids[0]+1);
     
     CSeqDB::EOidListType chunk_type = 
-        db.GetNextOIDChunk(start, end, oid_list);
+        db.GetNextOIDChunk(start, end, kNumTestGis, oid_list);
     BOOST_REQUIRE(chunk_type == CSeqDB::eOidList);
     
     // One of the 3 gis falls within ordinal id range.
@@ -1942,8 +1940,7 @@ BOOST_AUTO_TEST_CASE(GiListInOidRangeIteration)
     
     db.SetIterationRange(kGiOids[0]+1, kGiOids[1]+1);
     
-    oid_list.resize(kNumTestGis);
-    chunk_type = db.GetNextOIDChunk(start, end, oid_list);
+    chunk_type = db.GetNextOIDChunk(start, end, kNumTestGis, oid_list);
     BOOST_REQUIRE(chunk_type == CSeqDB::eOidList);
     
     // Two of the 3 gis falls within ordinal id range.
@@ -1951,8 +1948,7 @@ BOOST_AUTO_TEST_CASE(GiListInOidRangeIteration)
     
     db.SetIterationRange(kGiOids[1]+1, 0);
     
-    oid_list.resize(kNumTestGis);
-    chunk_type = db.GetNextOIDChunk(start, end, oid_list);
+    chunk_type = db.GetNextOIDChunk(start, end, kNumTestGis, oid_list);
     BOOST_REQUIRE(chunk_type == CSeqDB::eOidList);
     
     // Two of the 3 gis falls within ordinal id range.
@@ -1995,21 +1991,21 @@ BOOST_AUTO_TEST_CASE(TestResetInternalChunkBookmark)
     db.SetIterationRange(kFirstOid, kLastOid);
     
     int start, end;
-    vector<int> oid_list(kLastOid);
+    vector<int> oid_list;
     
     CSeqDB::EOidListType chunk_type = 
-        db.GetNextOIDChunk(start, end, oid_list);
+        db.GetNextOIDChunk(start, end, kLastOid, oid_list);
     BOOST_REQUIRE(chunk_type == CSeqDB::eOidRange);
     BOOST_REQUIRE_EQUAL(kFirstOid, start);
     BOOST_REQUIRE_EQUAL(kLastOid, end);
     
-    chunk_type = db.GetNextOIDChunk(start, end, oid_list);
+    chunk_type = db.GetNextOIDChunk(start, end, kLastOid, oid_list);
     BOOST_REQUIRE(chunk_type == CSeqDB::eOidRange);
     BOOST_REQUIRE_EQUAL(kFirstOid, start);
     BOOST_REQUIRE_EQUAL(kFirstOid, end);
     
     db.ResetInternalChunkBookmark();
-    chunk_type = db.GetNextOIDChunk(start, end, oid_list);
+    chunk_type = db.GetNextOIDChunk(start, end, kLastOid, oid_list);
     BOOST_REQUIRE(chunk_type == CSeqDB::eOidRange);
     BOOST_REQUIRE_EQUAL(kFirstOid, start);
     BOOST_REQUIRE_EQUAL(kLastOid, end);
@@ -2059,7 +2055,7 @@ BOOST_AUTO_TEST_CASE(ExpertRawData)
     unsigned h = s_BufHash(buffer + slen, alen);
     unsigned exp_hash = 705445389u;
     
-    db.RetSequence(& buffer);
+    db.RetAmbigSeq(& buffer);
     
     BOOST_REQUIRE_EQUAL((290/4) + 1, slen);
     BOOST_REQUIRE_EQUAL(20,          alen);
@@ -2832,10 +2828,9 @@ CSeqDBException);
     
     int begin(0), end(0);
     vector<int> oids;
-    oids.resize(100);
     
     CSeqDB::EOidListType ol_type = CSeqDB::eOidList;
-    BOOST_REQUIRE_NO_THROW(ol_type = db.GetNextOIDChunk(begin, end, oids, NULL));
+    BOOST_REQUIRE_NO_THROW(ol_type = db.GetNextOIDChunk(begin, end, 100, oids, NULL));
     
     if (ol_type == CSeqDB::eOidList) {
         BOOST_REQUIRE_EQUAL(size_t(0), oids.size());
@@ -3613,44 +3608,6 @@ BOOST_AUTO_TEST_CASE(VersionedSparseId)
     BOOST_REQUIRE(o3.size() == 1);
 }
 
-typedef vector< pair<TSeqPos, TSeqPos> > TRangeVector;
-
-vector< pair<TSeqPos, TSeqPos> >
-s_CombineInvertRanges(const TRangeVector & a, int length, bool invert)
-{
-    TRangeVector rv;
-    vector<int> bytes(length);
-    
-    for(size_t i = 0; i < a.size(); i++) {
-        int b = a[i].first;
-        int e = a[i].second;
-        
-        for(int j = b; j < e; j++) {
-            BOOST_REQUIRE(j < length);
-            
-            if (j < length) {
-                bytes[j] = 1;
-            }
-        }
-    }
-    
-    int value = invert ? 0 : 1;
-    
-    // Slow, simple, but reliable way to build ranges.
-    
-    for(size_t j = 0; j < bytes.size(); j++) {
-        if (bytes[j] == value) {
-            if ((rv.size() == 0) || (rv[rv.size()-1].second != j)) {
-                rv.push_back(pair<TSeqPos, TSeqPos>(j,j+1));
-            } else {
-                rv[rv.size()-1].second = j+1;
-            }
-        }
-    }
-    
-    return rv;
-}
-
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 BOOST_AUTO_TEST_CASE(MaskDataColumn)
@@ -3684,82 +3641,6 @@ BOOST_AUTO_TEST_CASE(MaskDataColumn)
     const int kCount = 10;
     
     BOOST_REQUIRE_EQUAL(db.GetNumOIDs(), kCount);
-    
-    // Check each subset.
-    
-    for(int oid = 0; oid < kCount; oid++) {
-        CSeqDB::TSequenceRanges ranges1, ranges2, ranges3;
-        CSeqDB::TSequenceRanges iranges1, iranges2, iranges3;
-        
-        if (oid & 1) {
-            for(int j = 0; j < (oid+5); j++) {
-                pair<TSeqPos, TSeqPos> rng;
-                rng.first = oid * 13 + j * 7 + 2;
-                rng.second = rng.first + 3 + (oid+j) % 11;
-                
-                ranges1.push_back(rng);
-                ranges3.push_back(rng);
-            }
-        }
-        
-        if (oid & 2) {
-            for(int j = 0; j < (oid+5); j++) {
-                pair<TSeqPos, TSeqPos> rng;
-                rng.first = oid * 10 + j * 5 + 2;
-                rng.second = rng.first + 20;
-                
-                ranges2.push_back(rng);
-                ranges3.push_back(rng);
-            }
-        }
-        
-        int seq_len = db.GetSeqLength(oid);
-        
-        CSeqDB::TSequenceRanges r1, r2, r3;
-        CSeqDB::TSequenceRanges ir1, ir2, ir3;
-        
-        if (oid == 5) {
-            // Verify that GetMaskData resets ranges to size 0 rather
-            // than just appending data to it.
-            r2.resize(19);
-        }
-        
-        vector<int> get_algos;
-        
-        get_algos.push_back((int)eBlast_filter_program_seg);
-        db.GetMaskData(oid, get_algos, false, r1);
-        db.GetMaskData(oid, get_algos, true, ir1);
-        
-        get_algos[0] = (int)eBlast_filter_program_repeat;
-        db.GetMaskData(oid, get_algos, false, r2);
-        db.GetMaskData(oid, get_algos, true, ir2);
-        
-        get_algos[0] = (int)eBlast_filter_program_seg;
-        get_algos.push_back((int)eBlast_filter_program_repeat);
-        db.GetMaskData(oid, get_algos, false, r3);
-        db.GetMaskData(oid, get_algos, true, ir3);
-        
-        ranges1 = s_CombineInvertRanges(ranges1, seq_len, false);
-        ranges2 = s_CombineInvertRanges(ranges2, seq_len, false);
-        ranges3 = s_CombineInvertRanges(ranges3, seq_len, false);
-        
-        iranges1 = s_CombineInvertRanges(ranges1, seq_len, true);
-        iranges2 = s_CombineInvertRanges(ranges2, seq_len, true);
-        iranges3 = s_CombineInvertRanges(ranges3, seq_len, true);
-        
-        BOOST_REQUIRE(r1 == ranges1);
-        BOOST_REQUIRE(r2 == ranges2);
-        BOOST_REQUIRE(r3 == ranges3);
-        
-        BOOST_REQUIRE(ir1 == iranges1);
-        BOOST_REQUIRE(ir2 == iranges2);
-        BOOST_REQUIRE(ir3 == iranges3);
-        
-        if (r1.size() || r2.size()) {
-            BOOST_REQUIRE(r1 != ranges2);
-            BOOST_REQUIRE(r2 != ranges1);
-        }
-    }
 }
 
 BOOST_AUTO_TEST_CASE(CheckColumnFailureCleanup)

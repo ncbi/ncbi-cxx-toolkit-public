@@ -65,9 +65,9 @@
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/core/blast_lookup.h>
-//#include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/lookup_util.h>
-#include <algo/blast/core/hspstream_collector.h>
+#include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/hspfilter_collector.h>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/api/blast_types.hpp>
 
@@ -75,6 +75,9 @@
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/traceback_stage.hpp>
+
+#include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <algo/blast/api/seqinfosrc_seqdb.hpp>
 
 #include "test_objmgr.hpp"
 #include "blast_test_util.hpp"
@@ -120,16 +123,15 @@ public:
     }
 
     static BlastHSPStream* x_MakeStream(const CBlastOptions &opt) {
-        SBlastHitsParameters* blasthit_params=NULL;
-        SBlastHitsParametersNew(opt.GetHitSaveOpts(),
-                                opt.GetExtnOpts(),
-                                opt.GetScoringOpts(),
-                                &blasthit_params);
+        BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(
+                  BlastHSPCollectorParamsNew(opt.GetHitSaveOpts(), 
+                                             opt.GetExtnOpts()->compositionBasedStats, 
+                                             opt.GetScoringOpts()->gapped_calculation));
 
-        return Blast_HSPListCollectorInit(opt.GetProgramType(), 
-                                          blasthit_params, 
-                                          opt.GetExtnOpts(),
-                                          FALSE, 1);
+        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+        BOOST_REQUIRE(writer_info == NULL);
+        return BlastHSPStreamNew(opt.GetProgramType(), opt.GetExtnOpts(), 
+                                 FALSE, 1, writer);
     }
 
     void x_SetupMain(const CBlastOptions &opt, 
@@ -750,7 +752,9 @@ BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
      CBlastQueryVector query;
      query.AddQuery(Q1);
      
-     CBlastSeqSrc seq_src = SeqDbBlastSeqSrcInit(kDbName, false);
+     CRef<CSeqDB> seqdb(new CSeqDB(kDbName, CSeqDB::eNucleotide));
+     CBlastSeqSrc seq_src = SeqDbBlastSeqSrcInit(seqdb);
+     CRef<blast::IBlastSeqInfoSrc> seq_info_src(new blast::CSeqDbSeqInfoSrc(seqdb));
      
      BlastHSPList* hsp_list = Blast_HSPListNew(kNumHsps);
      for (int index = 0; index < kNumHsps; ++index) {
@@ -776,16 +780,18 @@ BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
      BlastHitSavingOptionsNew(kProgramType, &hit_options,
                               scoring_options->gapped_calculation);
 
-     SBlastHitsParameters* blasthit_params=NULL;
-     SBlastHitsParametersNew(hit_options, ext_options, scoring_options, 
-                             &blasthit_params);
+	BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(
+	            BlastHSPCollectorParamsNew(
+			hit_options, ext_options->compositionBasedStats,
+            scoring_options->gapped_calculation));
+
+	BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+    BOOST_REQUIRE(writer_info == NULL);
+    BlastHSPStream* hsp_stream = BlastHSPStreamNew(
+			kProgramType, ext_options, FALSE, 1, writer);
 
      hit_options = BlastHitSavingOptionsFree(hit_options);
      scoring_options = BlastScoringOptionsFree(scoring_options);
-
-     BlastHSPStream* hsp_stream = 
-        Blast_HSPListCollectorInit(kProgramType, blasthit_params,
-                                   ext_options, FALSE, 1);
      ext_options = BlastExtensionOptionsFree(ext_options);
      // needed after tie-breaking algorithm for scores was changed in
      // ScoreCompareHSP (blast_hits.c, revision 1.139)
@@ -807,7 +813,7 @@ BOOST_AUTO_TEST_CASE(testNoHSPEvalueCutoffBeforeLink) {
      CRef< CStructWrapper<BlastHSPStream> > hsps
          (WrapStruct(hsp_stream, BlastHSPStreamFree));
      
-     CBlastTracebackSearch search(qf, opts, seq_src.Get(), hsps);
+     CBlastTracebackSearch search(qf, opts, seq_src.Get(), seq_info_src, hsps);
 
      CSearchResultSet crs = *search.Run();
      

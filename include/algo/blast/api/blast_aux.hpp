@@ -60,7 +60,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
-    class CSeq_interval;
     class CPacked_seqint;
 END_SCOPE(objects)
 
@@ -139,6 +138,11 @@ public:
         : m_Interval(interval)
     { SetFrame(frame); }
 
+    CSeqLocInfo(objects::CSeq_id& id, TSeqRange& range, int frame)
+        : m_Interval(new objects::CSeq_interval(id, range.GetFrom(),
+                                                range.GetToOpen()))
+    { SetFrame(frame); }
+
     const objects::CSeq_interval& GetInterval() const { return *m_Interval; }
     const objects::CSeq_id& GetSeqId() const { return m_Interval->GetId(); }
     void SetInterval(objects::CSeq_interval* interval) 
@@ -146,9 +150,7 @@ public:
     int GetFrame() const { return (int) m_Frame; }
     void SetFrame(int frame); // Throws exception on out-of-range input
     operator TSeqRange() const {
-        TSeqRange retval(m_Interval->GetFrom(), 0);
-        retval.SetToOpen(m_Interval->GetTo());
-        return retval;
+        return TSeqRange(m_Interval->GetFrom(), m_Interval->GetTo()-1);
     }
     operator pair<TSeqPos, TSeqPos>() const {
         return make_pair<TSeqPos, TSeqPos>(m_Interval->GetFrom(), 
@@ -158,6 +160,27 @@ public:
         out << "CSeqLocInfo = { " << MSerial_AsnText << *rhs.m_Interval 
             << "ETranslationFrame = " << rhs.m_Frame << "\n}";
         return out;
+    }
+    bool operator==(const CSeqLocInfo& rhs) const {
+        if (this != &rhs) {
+            if (GetFrame() != rhs.GetFrame()) {
+                return false;
+            }
+
+            if ( !GetSeqId().Match(rhs.GetSeqId()) ) {
+                return false;
+            }
+
+            TSeqRange me = (TSeqRange)*this;
+            TSeqRange you = (TSeqRange) rhs;
+            if (me != you) {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool operator!=(const CSeqLocInfo& rhs) const {
+        return ! (*this == rhs);
     }
 private:
     CRef<objects::CSeq_interval> m_Interval; 
@@ -254,11 +277,9 @@ PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc,
                                  EBlastProgramType program,
                                  bool assume_both_strands = false);
 
-/// Interface to build a CSeq-loc from a TMaskedQueryRegion; this
-/// method always throws an exception, because conversion in this
-/// direction can be lossy.  The conversion could be supported for
-/// cases where it can be done safely, but it might be better to
-/// convert the calling code to use a CBlastQueryVector.
+/// Interface to build a CSeq-loc from a TMaskedQueryRegion; note that
+/// conversion conversion in this direction can be lossy.
+/// It might be better to convert the calling code to use a CBlastQueryVector.
 NCBI_XBLAST_EXPORT
 CRef<objects::CSeq_loc>
 MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc);
@@ -305,7 +326,7 @@ class NCBI_XBLAST_EXPORT C##struct_name : public CObject                    \
 public:                                                                     \
     C##struct_name() : m_Ptr(NULL) {}                                       \
     C##struct_name(struct_name* p) : m_Ptr(p) {}                            \
-    ~C##struct_name() { Reset(); }                                          \
+    virtual ~C##struct_name() { Reset(); }                                  \
     void Reset(struct_name* p = NULL) {                                     \
         if (m_Ptr) {                                                        \
             free_func(m_Ptr);                                               \
@@ -329,6 +350,8 @@ private:                                                                    \
 }
 
 #ifndef SKIP_DOXYGEN_PROCESSING
+
+/* Don't forget to define DebugDump for each of these in blast_aux.cpp! */
 
 DECLARE_AUTO_CLASS_WRAPPER(BLAST_SequenceBlk, BlastSequenceBlkFree);
 
@@ -366,6 +389,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsParameters,
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
 
+DECLARE_AUTO_CLASS_WRAPPER(PSIMsa, PSIMsaFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsRequest, PSIDiagnosticsRequestFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);

@@ -401,6 +401,9 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
         lcase_mask = m_InputReader->SaveMask();
 
     CRef<CSeq_entry> seq_entry(m_InputReader->ReadOneSeq());
+    if (lcase_mask && lcase_mask->Which() != CSeq_loc::e_not_set) {
+        lcase_mask->SetStrand(eNa_strand_plus);
+    }
     _ASSERT(seq_entry.NotEmpty());
     scope.AddTopLevelSeqEntry(*seq_entry);
 
@@ -488,7 +491,6 @@ CBlastFastaInputSource::GetNextSSeqLoc(CScope& scope)
     return retval;
 }
 
-
 CRef<CBlastSearchQuery>
 CBlastFastaInputSource::GetNextSequence(CScope& scope)
 {
@@ -499,7 +501,7 @@ CBlastFastaInputSource::GetNextSequence(CScope& scope)
     if (m_Config.GetLowercaseMask()) {
         const EBlastProgramType program = m_ReadProteins ? 
                                 eBlastTypeBlastp : eBlastTypeBlastn;
-        const bool apply_mask_to_both_strands = true;
+        const bool apply_mask_to_both_strands = false;
         masks_in_query = 
             PackedSeqLocToMaskedQueryRegions(
                                 static_cast<CConstRef<CSeq_loc> >(lcase_mask),

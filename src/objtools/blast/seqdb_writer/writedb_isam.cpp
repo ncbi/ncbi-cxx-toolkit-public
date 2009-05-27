@@ -180,7 +180,8 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
       m_BytesPerElem (0),
       m_DataFileSize (0),
       m_UseInt8      (false),
-      m_DataFile     (datafile)
+      m_DataFile     (datafile),
+      m_Oid          (-1)
 {
     // This is the one case where I don't worry about file size; if
     // the data file can hold the relevant data, the index file can
@@ -212,6 +213,7 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
 
 CWriteDB_IsamIndex::~CWriteDB_IsamIndex()
 {
+    m_OidStringData.clear();
 }
 
 void CWriteDB_IsamIndex::x_WriteHeader()
@@ -882,10 +884,27 @@ void CWriteDB_IsamIndex::x_AddStringData(int oid, const char * sbuf, int ssize)
     buf[sz++] = (char) eKeyDelim;
     sz += sprintf(buf + sz, "%d", oid);
     buf[sz++] = (char) eRecordDelim;
-    
-    m_StringSort.Insert(buf, sz);
-    
-    m_DataFileSize += sz;
+
+    // fix for SB218
+    string tmp(buf, sz);
+    bool uniq = true;
+    if (oid != m_Oid) {
+        m_Oid = oid;
+        m_OidStringData.clear();
+    } else {
+        for (int i = 0; i < m_OidStringData.size(); i++) {
+            if (m_OidStringData[i] == tmp) {
+                uniq = false;
+                break;
+            }
+        }
+    }
+   
+    if (uniq) {
+        m_OidStringData.push_back(tmp);
+        m_StringSort.Insert(buf, sz);
+        m_DataFileSize += sz;
+    }
 }
 
 void CWriteDB_IsamIndex::x_AddString(int oid, const CTempString & acc, int ver)

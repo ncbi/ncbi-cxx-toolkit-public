@@ -153,7 +153,19 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
  
     bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
     
-    if (user_url != NcbiEmptyString && 
+    if (user_url.find("sra.cgi") != string::npos) {
+        
+        string url_with_parameters = 
+            CBlastFormatUtil::BuildSRAUrl(ids, user_url);
+
+        if (url_with_parameters != NcbiEmptyString) {
+            url_link += "<a href=\"";
+            url_link += url_with_parameters;
+            url_link += "\">";
+        }
+
+    }
+    else if (user_url != NcbiEmptyString && 
         !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0) || 
           (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
         

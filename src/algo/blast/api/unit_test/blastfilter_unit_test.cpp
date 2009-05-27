@@ -644,6 +644,52 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
     BOOST_REQUIRE_EQUAL(masked_regions.size(), loc_index);
 }
 
+BOOST_AUTO_TEST_CASE(CSeqLocInfo_EqualityOperators)
+{
+    CSeq_id id("gi|197670657");
+    TSeqRange r(1, 100);
+    CSeqLocInfo a(id, r, (int)CSeqLocInfo::eFramePlus1);
+    CSeqLocInfo b(id, r, (int)CSeqLocInfo::eFramePlus1);
+    BOOST_REQUIRE(a == b);
+
+    b.SetFrame(2);
+    BOOST_REQUIRE(a != b);
+}
+
+BOOST_AUTO_TEST_CASE(CombineDustAndLowerCaseMasking_WithBlastQueryVector) {
+    CSeq_id id("gi|197670657");
+    TSeqRange r(2, 299);
+    CRef<CSeqLocInfo> lower_case_mask
+        (new CSeqLocInfo(id, r, (int)CSeqLocInfo::eFramePlus1));
+    CRef<blast::CBlastSearchQuery> query =
+        CTestObjMgr::Instance().CreateBlastSearchQuery(id, eNa_strand_both);
+    query->AddMask(lower_case_mask);
+    CBlastQueryVector queries;
+    queries.AddQuery(query);
+
+    CBlastNucleotideOptionsHandle nucl_handle;
+    nucl_handle.SetDustFiltering(true);
+    Blast_FindDustFilterLoc(queries, 
+                            nucl_handle.GetDustFilteringLevel(),
+                            nucl_handle.GetDustFilteringWindow(),
+                            nucl_handle.GetDustFilteringLinker());
+    TMaskedQueryRegions mqr = queries.GetMaskedRegions(0);
+
+    BOOST_REQUIRE( !mqr.empty() );
+    try { CRef<CSeq_loc> masks = queries.GetMasks(0); }
+    catch (const CBlastException& e) {
+        BOOST_REQUIRE(e.GetErrCode() == CBlastException::eNotSupported);
+        BOOST_REQUIRE(e.GetMsg().find("lossy direction") != NPOS);
+    }
+
+    CRef<CSeqLocInfo> sli = mqr.front();
+    BOOST_REQUIRE(sli.NotEmpty());
+    BOOST_REQUIRE(*sli == *lower_case_mask);
+    BOOST_REQUIRE_EQUAL((int)2, (int)mqr.size());
+    BOOST_REQUIRE(mqr.front()->GetFrame() == 1);
+    BOOST_REQUIRE(mqr.back()->GetFrame() == -1);
+}
+
 
 BOOST_AUTO_TEST_CASE(RepeatsAndDustFilter) {
 
@@ -885,6 +931,40 @@ BOOST_AUTO_TEST_CASE(RestrictLowerCaseMask) {
     restriction.SetTo(20000);
     restricted_mask = mqr.RestrictToSeqInt(restriction);
     BOOST_REQUIRE(restricted_mask.empty());
+}
+
+BOOST_AUTO_TEST_CASE(BlastxLowerCaseMask) {
+    vector<TSeqRange> masks;
+    masks.push_back(TSeqRange(0, 75));
+    masks.push_back(TSeqRange(78, 208));
+    masks.push_back(TSeqRange(217, 316));
+    masks.push_back(TSeqRange(380, 685));
+    masks.push_back(TSeqRange(694, 1004));
+    masks.push_back(TSeqRange(1018, 1122));
+    masks.push_back(TSeqRange(1128, 1298));
+    masks.push_back(TSeqRange(2817, 2952));
+    masks.push_back(TSeqRange(2084, 3409));
+    masks.push_back(TSeqRange(3428, 3733));
+    masks.push_back(TSeqRange(3782, 3916));
+
+    TMaskedQueryRegions mqr;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 1945388));
+    ITERATE(vector<TSeqRange>, range, masks) {
+        CRef<CSeq_interval> intv(new CSeq_interval(*id,
+                                                   range->GetFrom(),
+                                                   range->GetTo()));
+        CRef<CSeqLocInfo> sli(new CSeqLocInfo(intv, 
+                                              CSeqLocInfo::eFramePlus1));
+        mqr.push_back(sli);
+    }
+    CBlastQueryFilteredFrames bqff(eBlastTypeBlastx, mqr);
+    BOOST_REQUIRE(!bqff.Empty());
+    BOOST_REQUIRE(bqff.QueryHasMultipleFrames());
+    const set<CSeqLocInfo::ETranslationFrame>& frames = bqff.ListFrames();
+    ITERATE(set<CSeqLocInfo::ETranslationFrame>, fr, frames) {
+        BOOST_REQUIRE(bqff[*fr] != NULL);
+    }
+    BOOST_REQUIRE(bqff.GetNumFrames() == NUM_FRAMES);
 }
 
 BOOST_AUTO_TEST_CASE(LowerCaseMask_PlusStrand) {

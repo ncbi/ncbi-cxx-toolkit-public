@@ -42,6 +42,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 
 #include <objmgr/scope.hpp>     // for CScope
 #include <objects/seqloc/Na_strand.hpp>
@@ -444,8 +445,7 @@ public:
      */
     CPsiBlastArgs(ETargetDatabase db_target = eProteinDb) 
         : m_DbTarget(db_target), m_NumIterations(1),
-        m_CheckPointOutputStream(0), m_AsciiMatrixOutputStream(0),
-        m_MSAInputStream(0)
+        m_CheckPointOutput(0), m_AsciiMatrixOutput(0)
     {};
 
     /// Our virtual destructor
@@ -461,20 +461,23 @@ public:
     size_t GetNumberOfIterations() const { 
         return m_NumIterations; 
     }
+    /// Returns true if checkpoint PSSM is required to be printed
+    bool RequiresCheckPointOutput() const {
+        return m_CheckPointOutput != NULL;
+    }
     /// Get the checkpoint file output stream
     /// @return pointer to output stream, not to be free'd by the caller
-    CNcbiOstream* GetCheckPointOutputStream() const { 
-        return m_CheckPointOutputStream; 
+    CNcbiOstream* GetCheckPointOutputStream() {
+        return m_CheckPointOutput ? m_CheckPointOutput->GetStream() : NULL;
+    }
+    /// Returns true if ASCII PSSM is required to be printed
+    bool RequiresAsciiPssmOutput() const {
+        return m_AsciiMatrixOutput != NULL;
     }
     /// Get the ASCII matrix output stream
     /// @return pointer to output stream, not to be free'd by the caller
-    CNcbiOstream* GetAsciiMatrixOutputStream() const { 
-        return m_AsciiMatrixOutputStream; 
-    }
-    /// Get the multiple sequence alignment input stream
-    /// @return pointer to output stream, not to be free'd by the caller
-    CNcbiIstream* GetMSAInputStream() const { 
-        return m_MSAInputStream; 
+    CNcbiOstream* GetAsciiMatrixOutputStream() {
+        return m_AsciiMatrixOutput ? m_AsciiMatrixOutput->GetStream() : NULL;
     }
 
     /// Get the PSSM read from checkpoint file
@@ -493,13 +496,16 @@ private:
     /// number of iterations to perform
     size_t m_NumIterations;
     /// checkpoint output file
-    CNcbiOstream* m_CheckPointOutputStream;
+    CRef<CAutoOutputFileReset> m_CheckPointOutput;
     /// ASCII matrix output file
-    CNcbiOstream* m_AsciiMatrixOutputStream;
-    /// multiple sequence alignment input file
-    CNcbiIstream* m_MSAInputStream;
+    CRef<CAutoOutputFileReset> m_AsciiMatrixOutput;
     /// PSSM
     CRef<objects::CPssmWithParameters> m_Pssm;
+
+    /// Prohibit copy constructor
+    CPsiBlastArgs(const CPsiBlastArgs& rhs);
+    /// Prohibit assignment operator
+    CPsiBlastArgs& operator=(const CPsiBlastArgs& rhs);
 };
 
 /// Argument class to collect options specific to PHI-BLAST
@@ -595,6 +601,11 @@ public:
     virtual void ExtractAlgorithmOptions(const CArgs& args, 
                                          CBlastOptions& opts);
 
+    /// Turns on/off database masking support
+    void SetDatabaseMaskingSupport(bool val) {
+        m_SupportsDatabaseMasking = val;
+    }
+
     /// Is the database/subject protein?
     bool IsProtein() const { return m_IsProtein; }
 
@@ -663,6 +674,7 @@ private:
     CRef<IQueryFactory> m_Subjects; /**< The subject sequences */
     CRef<objects::CScope> m_Scope;  /**< CScope object in which all subject
                                       sequences read are kept */
+    bool m_SupportsDatabaseMasking; /**< true if it's supported */
 };
 
 /// Argument class to collect formatting options, use this to create a 
@@ -826,8 +838,9 @@ private:
     bool m_RmtDebugOutput;
 };
 
-/// Argument class to retrieve calling options
-class NCBI_BLASTINPUT_EXPORT CCullingArgs : public IBlastCmdLineArgs
+/// Argument class to retrieve options for filtering HSPs (e.g.: culling
+/// options, best hit algorithm options)
+class NCBI_BLASTINPUT_EXPORT CHspFilteringArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -985,6 +998,8 @@ protected:
     /// Client ID used for remote BLAST submissions, must be populated by
     /// subclasses
     string m_ClientId;
+    /// Is this application being run ungapped
+    bool m_IsUngapped;
 
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely
@@ -994,6 +1009,18 @@ protected:
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args) = 0;
 };
+
+/** 
+ * @brief Create a CArgDescriptions object and invoke SetArgumentDescriptions
+ * for each of the TBlastCmdLineArgs in its argument list
+ * 
+ * @param args arguments to configure the return value [in]
+ * 
+ * @return a CArgDescriptions object with the command line options set
+ */
+NCBI_BLASTINPUT_EXPORT
+CArgDescriptions* 
+SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

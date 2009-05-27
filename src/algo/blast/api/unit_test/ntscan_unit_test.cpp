@@ -103,6 +103,7 @@ struct TestFixture {
     EBlastProgramType program_number;
     BlastInitialWordOptions* word_options;
     BlastHitSavingOptions* hitsaving_options;
+    BlastExtensionOptions* ext_options;
 
     TestFixture() {
         query_blk = NULL;
@@ -115,6 +116,7 @@ struct TestFixture {
         program_number = eBlastTypeBlastn;
         word_options = NULL;
         hitsaving_options = NULL;
+        ext_options = NULL;
     }
 
     void SetUpQuery(Uint4 query_gi, ENa_strand strand)
@@ -156,9 +158,7 @@ struct TestFixture {
         BOOST_REQUIRE(query_blk->sequence_start[0] == NULL_NUCL_SENTINEL);
         BOOST_REQUIRE(query_blk->sequence_start[query_blk->length + 1] == 
                                                 NULL_NUCL_SENTINEL);
-        BOOST_REQUIRE_EQUAL(1, (int)query_blk->num_seq_ranges);
-        BOOST_REQUIRE_EQUAL(0, (int)query_blk->seq_ranges[0].left);
-        BOOST_REQUIRE_EQUAL(query_blk->length, query_blk->seq_ranges[0].right);
+        BOOST_REQUIRE_EQUAL(0, (int)query_blk->num_seq_ranges);
 
         query_info = BlastQueryInfoNew(program_number, 1);
 
@@ -226,10 +226,7 @@ struct TestFixture {
         BOOST_REQUIRE(subject_blk->length > 0);
         BOOST_REQUIRE(subject_blk->length / COMPRESSION_RATIO <=
                        (Int4)subj_sequence.length);
-        BOOST_REQUIRE_EQUAL(1, (int)subject_blk->num_seq_ranges);
-        BOOST_REQUIRE_EQUAL(0, (int)subject_blk->seq_ranges[0].left);
-        BOOST_REQUIRE_EQUAL(subject_blk->length, 
-                            subject_blk->seq_ranges[0].right);
+        BOOST_REQUIRE_EQUAL(0, (int)subject_blk->num_seq_ranges);
     }
 
     void SetUpLookupTable(Boolean mb_lookup, 
@@ -309,6 +306,7 @@ struct TestFixture {
         lookup_options = LookupTableOptionsFree(lookup_options);
         score_options = BlastScoringOptionsFree(score_options);
         BlastInitialWordOptionsNew(program_number, &word_options);
+        BlastExtensionOptionsNew(program_number, &ext_options, TRUE);
         BlastHitSavingOptionsNew(program_number, &hitsaving_options, TRUE);
     }
 
@@ -346,6 +344,8 @@ struct TestFixture {
             word_options = BlastInitialWordOptionsFree(word_options);
         if (hitsaving_options)
             hitsaving_options = BlastHitSavingOptionsFree(hitsaving_options);
+        if (ext_options)
+            ext_options = BlastExtensionOptionsFree(ext_options);
     }
 
     ~TestFixture()
@@ -408,7 +408,7 @@ struct TestFixture {
             mb_lt = (BlastMBLookupTable *)lookup_wrap_ptr->lut;
             bases_per_lut_word = mb_lt->lut_word_length;
             discontig = mb_lt->discontiguous;
-            mb_lt->scan_step = 1;
+            //mb_lt->scan_step = 1;
 
             last_lut_word_end = subject_bases;
             if (discontig) {
@@ -516,7 +516,7 @@ struct TestFixture {
         if (lookup_wrap_ptr->lut_type == eMBLookupTable) {
             mb_lt = (BlastMBLookupTable *)lookup_wrap_ptr->lut;
             discontig = mb_lt->discontiguous;
-            mb_lt->scan_step = 1;
+            //mb_lt->scan_step = 1;
 
             last_lut_word_end = subject_bases;
             if (discontig) {
@@ -593,7 +593,7 @@ struct TestFixture {
             mb_lt = (BlastMBLookupTable *)lookup_wrap_ptr->lut;
             bases_per_lut_word = mb_lt->lut_word_length;
             discontig = mb_lt->discontiguous;
-            mb_lt->scan_step = 1;
+            //mb_lt->scan_step = 1;
 
             last_lut_word_end = subject_bases;
             if (discontig) {
@@ -753,7 +753,7 @@ struct TestFixture {
         BOOST_REQUIRE(offset_pairs != NULL);
         BOOST_REQUIRE(lookup_segments != NULL);
 
-        SSeqRange ranges2scan[] = { { 0, 500} , {700, 1000} };
+        SSeqRange ranges2scan[] = { {501, 700} , {1001, subject_bases} };
         const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
         BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE);
 
@@ -787,11 +787,11 @@ struct TestFixture {
         for (int i = 0; i < init_hitlist->total; i++) {
             const BlastInitHSP& init_hsp = init_hitlist->init_hsp_array[i];
             const Uint4 s_off = init_hsp.offsets.qs_offsets.s_off;
-            bool hit_found = FALSE;
+            bool hit_found = TRUE;
             for (size_t j = 0; j < kNumRanges; j++) {
                 if ( s_off >= (Uint4)ranges2scan[j].left && 
-                     s_off <= (Uint4)ranges2scan[j].right ) {
-                    hit_found = TRUE;
+                     s_off <  (Uint4)ranges2scan[j].right ) {
+                    hit_found = FALSE;
                 }
             }
             BOOST_REQUIRE( hit_found );
@@ -822,7 +822,7 @@ BOOST_AUTO_TEST_CASE( DiscontigTwoSubjects )
                      kTemplateSize, kWordSize);
     BOOST_REQUIRE(lookup_wrap_ptr->lut_type == eMBLookupTable);
     mb_lt = (BlastMBLookupTable *)lookup_wrap_ptr->lut;
-    mb_lt->scan_step = 1;
+    //mb_lt->scan_step = 1;
 
     SetUpSubject(313959);
     first_word_start = 0;

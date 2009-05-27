@@ -178,6 +178,8 @@ public:
                    bool                   sparse,
                    bool                   parse_seqids,
                    ostream              * logfile);
+
+    ~CBuildDatabase();
     
     /// Specify a mapping of sequence ids to taxonomic ids.
     ///
@@ -560,6 +562,11 @@ private:
     
     /// If true, string IDs found in FASTA input will be parsed as Seq-ids.
     bool m_ParseIDs;
+
+    /// If true, there were sequences whose IDs matched those in the provided
+    /// masking locations (via SetMaskDataSource). Used to display a warning in
+    /// case this didn't happen
+    bool m_FoundMatchingMasks;
 };
 
 END_NCBI_SCOPE

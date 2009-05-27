@@ -156,7 +156,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         _PSIStructureGroupCustomization(msa);
         status = _PSIValidateMSA_StructureGroup(msa);
     } else {
-        status = _PSIValidateMSA(msa);
+        status = _PSIValidateMSA(msa, options->ignore_unaligned_positions);
     }
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
@@ -493,6 +493,26 @@ PSIDiagnosticsRequest*
 PSIDiagnosticsRequestNew(void)
 {
     return calloc(1, sizeof(PSIDiagnosticsRequest));
+}
+
+PSIDiagnosticsRequest* 
+PSIDiagnosticsRequestNewEx(Boolean save_ascii_pssm)
+{
+    PSIDiagnosticsRequest* retval = PSIDiagnosticsRequestNew(); 
+    if ( !retval ) {
+        return NULL;
+    }
+
+    retval->frequency_ratios = TRUE;
+    if (save_ascii_pssm) {
+        retval->information_content = TRUE;
+        retval->weighted_residue_frequencies = TRUE;
+        retval->gapless_column_weights = TRUE;
+        retval->sigma = TRUE;
+        retval->interval_sizes = TRUE;
+        retval->num_matching_seqs = TRUE;
+    }
+    return retval;
 }
 
 PSIDiagnosticsRequest* 

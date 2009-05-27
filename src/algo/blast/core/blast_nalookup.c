@@ -359,6 +359,22 @@ static BlastSeqLoc* s_SeqLocListInvert(const BlastSeqLoc* locations, Int4 length
      return retval;
 }
 
+/** Determine whether mask at hash is enabled from the QuerySetUpOptions */
+static Boolean s_HasMaskAtHashEnabled(const QuerySetUpOptions* query_options)
+{
+    if ( !query_options ) {
+        return FALSE;
+    }
+    if (SBlastFilterOptionsMaskAtHash(query_options->filtering_options)) {
+        return TRUE;
+    }
+    if (query_options->filter_string && 
+        strstr(query_options->filter_string, "m")) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
 Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query, 
                            BlastSeqLoc* locations,
                            BlastSmallNaLookupTable * *lut,
@@ -388,10 +404,9 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
                                       BITS_PER_NUC,
                                       lookup->lut_word_length,
                                       query, locations);
-    if (locations && lookup->word_length > lookup->lut_word_length && 
-       ((query_options->filtering_options && SBlastFilterOptionsMaskAtHash(query_options->filtering_options)) ||
-        (query_options->filter_string && strstr(query_options->filter_string, "m"))))
-    {
+    if (locations && 
+        lookup->word_length > lookup->lut_word_length && 
+        s_HasMaskAtHashEnabled(query_options)) {
        lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
     }
 
@@ -534,6 +549,7 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
                            BlastSeqLoc* locations,
                            BlastNaLookupTable * *lut,
                            const LookupTableOptions * opt, 
+                           const QuerySetUpOptions* query_options,
                            Int4 lut_width)
 {
     Int4 **thin_backbone;
@@ -557,6 +573,11 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
                                       BITS_PER_NUC,
                                       lookup->lut_word_length,
                                       query, locations);
+    if (locations && 
+        lookup->word_length > lookup->lut_word_length && 
+        s_HasMaskAtHashEnabled(query_options)) {
+       lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
+    }
     s_BlastNaLookupFinalize(thin_backbone, lookup);
     sfree(thin_backbone);
     return 0;
@@ -566,6 +587,8 @@ BlastNaLookupTable *BlastNaLookupTableDestruct(BlastNaLookupTable * lookup)
 {
     sfree(lookup->thick_backbone);
     sfree(lookup->overflow);
+    if (lookup->masked_locations)
+       lookup->masked_locations = BlastSeqLocFree(lookup->masked_locations);
     sfree(lookup->pv);
     sfree(lookup);
     return NULL;
@@ -912,6 +935,7 @@ s_FillContigMBTable(BLAST_SequenceBlk* query,
 Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         BlastMBLookupTable** mb_lt_ptr,
         const LookupTableOptions* lookup_options,
+        const QuerySetUpOptions* query_options,
         Int4 approx_table_entries,
         Int4 lut_width)
 {
@@ -942,6 +966,12 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    if (mb_lt->hashtable == NULL) {
       BlastMBLookupTableDestruct(mb_lt);
       return -1;
+   }
+
+   if (location && 
+       mb_lt->word_length > mb_lt->lut_word_length && 
+       s_HasMaskAtHashEnabled(query_options)) {
+      mb_lt->masked_locations = s_SeqLocListInvert(location, query->length);
    }
 
    /* Allocate the PV array. To fit in the external cache of 
@@ -1014,6 +1044,8 @@ BlastMBLookupTable* BlastMBLookupTableDestruct(BlastMBLookupTable* mb_lt)
    sfree(mb_lt->hashtable2);
    sfree(mb_lt->next_pos2);
    sfree(mb_lt->pv_array);
+   if (mb_lt->masked_locations)
+      mb_lt->masked_locations = BlastSeqLocFree(mb_lt->masked_locations);
    sfree(mb_lt);
    return mb_lt;
 }

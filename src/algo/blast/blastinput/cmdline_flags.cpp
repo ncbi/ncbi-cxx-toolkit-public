@@ -41,6 +41,7 @@ static char const rcsid[] =
 #ifndef SKIP_DOXYGEN_PROCESSING
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/hspfilter_besthit.h>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -59,7 +60,8 @@ const string kArgDbType("dbtype");
 
 const string kArgGiList("gilist");
 const string kArgNegativeGiList("negative_gilist");
-const string kArgMaskSubjects("mask_subjects");
+const string kArgDbSoftMask("db_soft_mask");
+//const string kArgDbHardMask("db_hard_mask");
 
 const string kTask("task");
 
@@ -231,6 +233,11 @@ const int kDfltArgMaxIntronLength = 0;
 
 const string kArgCullingLimit("culling_limit");
 const int kDfltArgCullingLimit = 0;
+
+const string kArgBestHitOverhang("best_hit_overhang");
+const double kDfltArgBestHitOverhang = kBestHit_OverhangDflt;
+const string kArgBestHitScoreEdge("best_hit_score_edge");
+const double kDfltArgBestHitScoreEdge = kBestHit_ScoreEdgeDflt;
 
 const string kArgFrameShiftPenalty("frame_shift_penalty");
 

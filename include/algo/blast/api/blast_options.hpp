@@ -249,6 +249,11 @@ public:
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 
+    double GetBestHitOverhang() const;
+    void SetBestHitOverhang(double overhang);
+    double GetBestHitScoreEdge() const;
+    void SetBestHitScoreEdge(double score_edge);
+
     // Expect value cut-off threshold for an HSP, or a combined hit if sum
     // statistics is used
     double GetEvalueThreshold() const;

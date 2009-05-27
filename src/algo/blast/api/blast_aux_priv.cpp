@@ -38,6 +38,8 @@ static char const rcsid[] =
 #include "blast_aux_priv.hpp"
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_query_info.h>
+#include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/api/blast_mtlock.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include "psiblast_aux_priv.hpp"
@@ -55,28 +57,6 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
-
-IBlastSeqInfoSrc*
-InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
-{
-    string db_name;
-    if (const char* seqsrc_name = BlastSeqSrcGetName(seqsrc)) {
-        db_name.assign(seqsrc_name);
-    }
-    if (db_name.empty()) {
-        NCBI_THROW(CBlastException, eNotSupported,
-                   "BlastSeqSrc does not provide a name, probably it is not a"
-                   " BLAST database");
-    }
-    bool is_prot = BlastSeqSrcGetIsProt(seqsrc) ? true : false;
-    return new CSeqDbSeqInfoSrc(db_name, is_prot);
-}
-
-IBlastSeqInfoSrc*
-InitSeqInfoSrc(CSeqDB* seqdb)
-{
-    return new CSeqDbSeqInfoSrc(seqdb);
-}
 
 CConstRef<objects::CSeq_loc> 
 CreateWholeSeqLocFromIds(const list< CRef<objects::CSeq_id> > seqids)
@@ -227,11 +207,21 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
         (new TBlastDiagnostics(diags, Blast_DiagnosticsFree));
 
     // 7. Create the HSP stream
-    BlastHSPStream* hsp_stream = is_multi_threaded
-        ? CSetupFactory::CreateHspStreamMT(opts_memento.get(),
-                                           query_data->GetNumQueries())
-        : CSetupFactory::CreateHspStream(opts_memento.get(),
-                                         query_data->GetNumQueries());
+    BlastHSPStream* hsp_stream = 
+        CSetupFactory::CreateHspStream(opts_memento.get(),
+                                       query_data->GetNumQueries(),
+        CSetupFactory::CreateHspWriter(opts_memento.get(),
+                                       query_data->GetQueryInfo()));
+    
+    if (is_multi_threaded) 
+        BlastHSPStreamRegisterMTLock(hsp_stream, Blast_CMT_LOCKInit());
+
+    // 8. Register a traceback HSP Pipe(s)
+    BlastHSPStreamRegisterPipe(hsp_stream, 
+        CSetupFactory::CreateHspPipe(opts_memento.get(),
+                                     query_data->GetQueryInfo()),
+                                     eTracebackSearch);
+
     retval->m_InternalData->m_HspStream.Reset
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
 
@@ -454,13 +444,23 @@ MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc )
         return CRef<objects::CSeq_loc>();
     }
 
-    // This function could produce this error only in cases where a
-    // clean (non-information-losing) conversion failed.
+    vector<string> warnings;
+    CRef<objects::CPacked_seqint> psi = sloc.ConvertToCPacked_seqint(&warnings);
+    CRef<objects::CSeq_loc> retval;
+    if (psi.NotEmpty()) {
+        retval.Reset(new objects::CSeq_loc);
+        retval->SetPacked_int(*psi);
+    }
+
+    if ( !warnings.empty() ) {
+        string msg("Attempt to convert mask information in lossy direction.\n");
+        ITERATE(vector<string>, i, warnings) {
+            msg += *i + "\n";
+        }
+        NCBI_THROW(CBlastException, eNotSupported, msg);
+    }
     
-    NCBI_THROW(CBlastException, eNotSupported, 
-               "Attempt to convert mask information in lossy direction.");
-    
-    return CRef<objects::CSeq_loc>();
+    return retval;
 }
 
 END_SCOPE(blast)

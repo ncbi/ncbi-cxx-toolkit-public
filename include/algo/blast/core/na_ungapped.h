@@ -55,7 +55,8 @@ typedef Int4 (*TNaExtendFunction)(const BlastOffsetPair* offset_pairs,
                     BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
                     Int4** matrix, BlastQueryInfo* query_info,
                     Blast_ExtendWord* ewp, 
-                    BlastInitHitList* init_hitlist);
+                    BlastInitHitList* init_hitlist,
+                    Int4 * range);
 
 /** Find all words for a given subject sequence and perform 
  * ungapped extensions, assuming ordinary blastn.

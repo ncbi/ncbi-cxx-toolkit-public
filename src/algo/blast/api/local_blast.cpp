@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include "blast_aux_priv.hpp"
 #include <objects/scoremat/PssmWithParameters.hpp>
+#include <algo/blast/api/seqinfosrc_seqdb.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -74,17 +75,6 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
 
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
                          CRef<CBlastOptionsHandle> opts_handle,
-                         BlastSeqSrc* seqsrc)
-: m_QueryFactory    (qf),
-  m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
-  m_InternalData    (0),
-  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, seqsrc,
-                                            CRef<CPssmWithParameters>())),
-  m_TbackSearch     (0)
-{}
-
-CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
-                         CRef<CBlastOptionsHandle> opts_handle,
                          BlastSeqSrc* seqsrc,
                          CRef<IBlastSeqInfoSrc> seqInfoSrc)
 : m_QueryFactory    (qf),
@@ -95,6 +85,30 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
   m_TbackSearch     (0),
   m_SeqInfoSrc      (seqInfoSrc)
 {}
+
+/** FIXME: this should be removed as soon as we safely can
+ * We will be able to do this once we are guaranteed that every
+ * constructor to CLocalBlast takes or can construct a IBlastSeqInfoSrc
+ * on it's own.
+ * This function is dangerous as it assumes that the BlastSeqSrc
+ * is based upon CSeqDB, which is not guaranteed.
+ */
+static IBlastSeqInfoSrc*
+s_InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
+{
+     string db_name;
+     if (const char* seqsrc_name = BlastSeqSrcGetName(seqsrc)) {
+         db_name.assign(seqsrc_name);
+     }
+     if (db_name.empty()) {
+         NCBI_THROW(CBlastException, eNotSupported,
+                    "BlastSeqSrc does not provide a name, probably it is not a"
+                    " BLAST database");
+     }
+     bool is_prot = BlastSeqSrcGetIsProt(seqsrc) ? true : false;
+     return new CSeqDbSeqInfoSrc(db_name, is_prot);
+}
+
     
 CRef<CSearchResultSet>
 CLocalBlast::Run()
@@ -129,13 +143,13 @@ CLocalBlast::Run()
         
         seqinfo_src.Reset(m_LocalDbAdapter->MakeSeqInfoSrc());
     } else {
-        seqinfo_src.Reset(InitSeqInfoSrc(m_InternalData->m_SeqSrc->GetPointer()));
+        seqinfo_src.Reset(s_InitSeqInfoSrc(m_InternalData->m_SeqSrc->GetPointer()));
     }
     
     m_TbackSearch.Reset(new CBlastTracebackSearch(m_QueryFactory,
                                                   m_InternalData,
-                                                  *m_Opts,
-                                                  *seqinfo_src,
+                                                  m_Opts,
+                                                  seqinfo_src,
                                                   search_msgs));
     if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
         m_TbackSearch->SetResultType(eSequenceComparison);

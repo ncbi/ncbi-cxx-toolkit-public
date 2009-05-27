@@ -152,11 +152,12 @@ void CBlastDbCheckApplication::Init(void)
         ("dir", "DirName",
          "Specify a directory containing one or more databases.",
          CArgDescriptions::eString);
+    arg_desc->SetDependency("dir", CArgDescriptions::eExcludes, "db");
     
     arg_desc->AddFlag
         ("recurse",
          "Specify true to recurse through all dbs in directory tree.");
-    
+    arg_desc->SetDependency("recurse", CArgDescriptions::eExcludes, "db");
     
     
     arg_desc->SetCurrentGroup("Output Options");
@@ -172,14 +173,19 @@ void CBlastDbCheckApplication::Init(void)
          s_VerbosityText(),
          CArgDescriptions::eInteger,
          NStr::IntToString(e_Summary));
-    
-    
+    arg_desc->SetConstraint("verbosity", new
+                            CArgAllowValuesBetween((int)e_Silent,
+                                                   (int)e_Max, true));
     
     arg_desc->SetCurrentGroup("Test Methods");
     
     arg_desc->AddFlag
         ("full",
-         "If true, test every OID (warning: may be slow).");
+         "If true, test every sequence (warning: may be slow).");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "stride");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "samples");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "ends");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "isam");
     
 // Threading and multiprocess support should not be too complex, but
 // I'll defer writing them until it is more obvious that there is
@@ -195,18 +201,18 @@ void CBlastDbCheckApplication::Init(void)
 //          CArgDescriptions::eInteger, "1");
     
     arg_desc->AddDefaultKey
-        ("stride", "OidStride",
-         "Check integrity of every Nth OID.",
+        ("stride", "StrideLength",
+         "Check integrity of every Nth sequence.",
          CArgDescriptions::eInteger, "10000");
     
     arg_desc->AddDefaultKey
-        ("samples", "OidSamples",
-         "Check this many randomly selected OIDs.",
+        ("random", "NumSequences",
+         "Check this many randomly selected sequences.",
          CArgDescriptions::eInteger, "200");
     
     arg_desc->AddDefaultKey
-        ("ends", "EndPointChecks",
-         "Check this many OIDs at each end of the database.",
+        ("ends", "NumSequences",
+         "Check this many sequences at each end of the database.",
          CArgDescriptions::eInteger, "200");
     
     arg_desc->AddDefaultKey
@@ -699,7 +705,7 @@ bool CDbTest::Test(CTestAction & action)
     CSeqDB::ESeqType seqtype = ParseTypeString(m_DbType);
     
     m_Out.Log(e_Summary)
-        << "app: Testing " << dbs.size() << " database(s)." << endl;
+        << "Testing " << dbs.size() << " database(s)." << endl;
     
     int total = dbs.size(), passed = 0;
     
@@ -716,11 +722,11 @@ bool CDbTest::Test(CTestAction & action)
     
     if (total == passed) {
         m_Out.Log(e_Brief)
-            << "app:  Result=SUCCESS. No errors reported for "
+            << " Result=SUCCESS. No errors reported for "
             << total << " databases." << endl;
     } else {
         m_Out.Log(e_Brief)
-            << "app:  Result=FAILURE. "
+            << " Result=FAILURE. "
             << (total-passed) << " errors reported for "
             << total << " databases." << endl;
     }
@@ -823,14 +829,14 @@ bool CDirTest::Test(CTestAction & action)
     bool success = true;
     
     m_Out.Log(e_Summary)
-        << "app: Finding database volumes..." << flush;
+        << "Finding database volumes..." << flush;
     
     x_FindDbs();
     
     m_Out.Log(e_Summary) << "(done)" << endl;
     
     m_Out.Log(e_Summary)
-        << "app: Testing " << m_DBs.size() << " volume(s)." << endl;
+        << "Testing " << m_DBs.size() << " volume(s)." << endl;
     
     sort(m_DBs.begin(), m_DBs.end());
     
@@ -856,11 +862,11 @@ bool CDirTest::Test(CTestAction & action)
     
     if (total == passed) {
         m_Out.Log(e_Brief)
-            << "app:  Result=SUCCESS. No errors reported for "
+            << " Result=SUCCESS. No errors reported for "
             << total << " volumes." << endl;
     } else {
         m_Out.Log(e_Brief)
-            << "app:  Result=FAILURE. "
+            << " Result=FAILURE. "
             << (total-passed) << " errors reported for "
             << total << " volumes." << endl;
     }
@@ -887,27 +893,11 @@ int CBlastDbCheckApplication::Run(void)
         ostream* lg = args["logfile"] ? &args["logfile"].AsOutputFile() : &cout;
         
         // Get verbosity as well
-        int verbosity = args["verbosity"].AsInteger();
-        
-        bool warn = false;
-        
-        if (verbosity < 0) {
-            verbosity = 0;
-            warn = true;
-        } else if (verbosity > e_Max) {
-            verbosity = e_Max;
-            warn = true;
-        }
-        
-        if (warn) {
-            *lg << "Warning: Specified verbosity ("
-                << args["verbosity"].AsInteger() << ") was not in valid range (0.."
-                << e_Max << "), using " << verbosity << endl;
-        }
+        const int verbosity = args["verbosity"].AsInteger();
         
         CBlastDbCheckLog output(*lg, verbosity);
         
-        output.Log(e_Summary) << "app: Writing messages to ";
+        output.Log(e_Summary) << "Writing messages to ";
         
         if (args["logfile"]) {
             output.Log(e_Summary)
@@ -949,11 +939,11 @@ int CBlastDbCheckApplication::Run(void)
         int stride = args["stride"].AsInteger();
         int samples = args["samples"].AsInteger();
         int end_amt = args["ends"].AsInteger();
-        bool isam = args["isam"];
+        bool isam = args["isam"].AsString() == "T";
         
         if (full) {
             output.Log(e_Summary)
-                << "app: Using `full' mode: every OID will be tested." << endl;
+                << "Using `full' mode: every OID will be tested." << endl;
             
             stride = 1;
             samples = 0;
@@ -965,7 +955,7 @@ int CBlastDbCheckApplication::Run(void)
         int flags = 0;
         
         output.Log(e_Summary)
-            << "app: ISAM testing is " << (isam ? "EN" : "DIS") << "ABLED." << endl;
+            << "ISAM testing is " << (isam ? "EN" : "DIS") << "ABLED." << endl;
         
         if (isam) {
             flags |= e_IsamLookup;
@@ -980,7 +970,7 @@ int CBlastDbCheckApplication::Run(void)
         if (stride) {
             if (! full) {
                 output.Log(e_Summary)
-                    << "app: Testing every " << stride << "-th OID." << endl;
+                    << "Testing every " << stride << "-th OID." << endl;
             }
             
             tests->Add(new CStrideTest(output, stride, flags));
@@ -988,14 +978,14 @@ int CBlastDbCheckApplication::Run(void)
         
         if (samples) {
             output.Log(e_Summary)
-                << "app: Testing " << samples << " randomly sampled OIDs." << endl;
+                << "Testing " << samples << " randomly sampled OIDs." << endl;
             
             tests->Add(new CSampleTest(output, samples, flags));
         }
         
         if (end_amt) {
             output.Log(e_Summary)
-                << "app: Testing first " << end_amt
+                << "Testing first " << end_amt
                 << " and last " << end_amt << " OIDs." << endl;
             
             tests->Add(new CEndsTest(output, end_amt, flags));
@@ -1003,7 +993,7 @@ int CBlastDbCheckApplication::Run(void)
         
         //if (fork1) {
         //    output.Log(e_Summary)
-        //        << "app: Using fork() before each action for safety." << endl;
+        //        << "Using fork() before each action for safety." << endl;
         //    
         //    tests->SetWrap(new CForkWrap);
         //}

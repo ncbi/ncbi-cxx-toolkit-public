@@ -47,13 +47,15 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp> /* for CObjMgrQueryFactory */
 #include <algo/blast/core/blast_nalookup.h>
+#include <algo/blast/core/hspfilter_besthit.h>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
-#include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <connect/ncbi_connutil.h>
-#include <sstream>
+
+#include <algo/blast/api/msa_pssm_input.hpp>    // for CPsiBlastInputClustalW
+#include <algo/blast/api/pssm_engine.hpp>       // for CPssmEngine
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -930,9 +932,26 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
+/// Auxiliary function to create a PSSM from a multiple sequence alignment file
+static CRef<CPssmWithParameters>
+s_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt,
+                    bool save_ascii_pssm)
+{
+    // FIXME get these from CBlastOptions
+    CPSIBlastOptions psiblast_opts;
+    PSIBlastOptionsNew(&psiblast_opts); 
+
+    CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(save_ascii_pssm));
+    // FIXME: if query is provided, pass it in in ncbistdaa + query length!
+    CPsiBlastInputClustalW pssm_input(input_stream, *psiblast_opts,
+                                      opt.GetMatrixName(), diags);
+    CPssmEngine pssm_engine(&pssm_input);
+    return pssm_engine.Run();
+}
+
 void
 CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
-                                       CBlastOptions& /* opt */)
+                                       CBlastOptions& opt)
 {
     if (m_DbTarget == eProteinDb) {
         if (args[kArgPSINumIterations]) {
@@ -940,20 +959,25 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
         if (args.Exist(kArgPSIOutputChkPntFile) &&
             args[kArgPSIOutputChkPntFile]) {
-            m_CheckPointOutputStream = 
-                &args[kArgPSIOutputChkPntFile].AsOutputFile(); 
+            m_CheckPointOutput.Reset
+                (new CAutoOutputFileReset
+                 (args[kArgPSIOutputChkPntFile].AsString())); 
         }
-        if (args[kArgAsciiPssmOutputFile]) {
-            m_AsciiMatrixOutputStream = 
-                &args[kArgAsciiPssmOutputFile].AsOutputFile(); 
+        const bool kSaveAsciiPssm = args[kArgAsciiPssmOutputFile];
+        if (kSaveAsciiPssm) {
+            m_AsciiMatrixOutput.Reset
+                (new CAutoOutputFileReset
+                 (args[kArgAsciiPssmOutputFile].AsString()));
         }
         if (args[kArgMSAInputFile]) {
-            m_MSAInputStream = &args[kArgMSAInputFile].AsInputFile();
+            CNcbiIstream& in = args[kArgMSAInputFile].AsInputFile();
+            m_Pssm = s_CreatePssmFromMsa(in, opt, kSaveAsciiPssm);
         }
     }
 
     if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {
         CNcbiIstream& in = args[kArgPSIInputChkPntFile].AsInputFile();
+        _ASSERT(m_Pssm.Empty());
         m_Pssm.Reset(new CPssmWithParameters);
         try {
             switch (CFormatGuess().Format(in)) {
@@ -1041,11 +1065,6 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "(Format: start-stop)",
                             CArgDescriptions::eString);
 
-    arg_desc.SetCurrentGroup("Miscellaneous options");
-    arg_desc.AddFlag(kArgParseDeflines,
-                 "Should the query and subject defline(s) be parsed?", true);
-    arg_desc.SetCurrentGroup("");
-
     if ( !m_QueryCannotBeNucl ) {
         // search strands
         arg_desc.AddDefaultKey(kArgStrand, "strand", 
@@ -1054,6 +1073,10 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetConstraint(kArgStrand, &(*new CArgAllow_Strings, 
                                              kDfltArgStrand, "plus", "minus"));
     }
+
+    arg_desc.SetCurrentGroup("Miscellaneous options");
+    arg_desc.AddFlag(kArgParseDeflines,
+                 "Should the query and subject defline(s) be parsed?", true);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -1093,7 +1116,7 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */)
     : m_RequestMoleculeType(request_mol_type), m_IsRpsBlast(is_rpsblast),
-    m_IsProtein(true)
+    m_IsProtein(true), m_SupportsDatabaseMasking(false)
 {}
 
 bool
@@ -1123,8 +1146,13 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                &(*new CArgAllow_Strings, "prot", "nucl"));
     }
 
-    const string* kDatabaseArgs[] =  
-        { &kArgDb, &kArgGiList, &kArgNegativeGiList, &kArgMaskSubjects, NULL };
+    vector<string> database_args;
+    database_args.push_back(kArgDb);
+    database_args.push_back(kArgGiList);
+    database_args.push_back(kArgNegativeGiList);
+    if (m_SupportsDatabaseMasking) {
+        database_args.push_back(kArgDbSoftMask);
+    }
 
     // DB size
     arg_desc.SetCurrentGroup("Statistical options");
@@ -1154,11 +1182,13 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Masking of database
-    arg_desc.AddOptionalKey(kArgMaskSubjects, 
-            "filtering_algorithms",
-            "Filtering algorithms IDs to apply from the database specified "
-            "as soft masking for subjects (Format: N,M,...)",
-            CArgDescriptions::eString);
+    if (m_SupportsDatabaseMasking) {
+        arg_desc.AddOptionalKey(kArgDbSoftMask, 
+                "filtering_algorithm",
+                "Filtering algorithm ID to apply to the BLAST database as soft "
+                "masking",
+                CArgDescriptions::eInteger);
+    }
 #endif
 
     // There is no RPS-BLAST 2 sequences
@@ -1168,9 +1198,9 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
                                 "Subject sequence(s) to search",
                                 CArgDescriptions::eInputFile);
-        for (size_t i = 0; kDatabaseArgs[i] != NULL; i++) {
+        ITERATE(vector<string>, dbarg, database_args) {
             arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
-                                   *kDatabaseArgs[i]);
+                                   *dbarg);
         }
 
         // subject location
@@ -1178,10 +1208,10 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "Location on the subject sequence "
                                 "(Format: start-stop)",
                                 CArgDescriptions::eString);
-        for (size_t i = 0; kDatabaseArgs[i] != NULL; i++) {
+        ITERATE(vector<string>, dbarg, database_args) {
             arg_desc.SetDependency(kArgSubjectLocation, 
                                    CArgDescriptions::eExcludes, 
-                                   *kDatabaseArgs[i]);
+                                   *dbarg);
         }
         // Because Blast4-subject does not support Seq-locs, specifying a
         // subject range does not work for remote searches
@@ -1247,14 +1277,9 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-        if (args[kArgMaskSubjects]) {
-            const string kDelims(",");
-            vector<string> tokens;
-            NStr::Tokenize(args[kArgMaskSubjects].AsString(), kDelims, tokens);
-            CSearchDatabase::TFilteringAlgorithms flist;
-            ITERATE(vector<string>, token, tokens) {
-                flist.push_back(NStr::StringToInt(*token));
-            }
+        if (args.Exist(kArgDbSoftMask) && args[kArgDbSoftMask]) {
+            CSearchDatabase::TFilteringAlgorithms 
+                flist(1, args[kArgDbSoftMask].AsInteger());
             m_SearchDb->SetFilteringAlgorithms(flist);
         }
 #endif
@@ -1375,9 +1400,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         int val = 0;
         try { val =NStr::StringToInt(fmt_choice); }
         catch (const CStringException&) {   // probably a conversion error
-            ostringstream os;
+            CNcbiOstrstream os;
             os << "'" << fmt_choice << "' is not a valid output format";
-            NCBI_THROW(CInputException, eInvalidInput, os.str());
+            string msg = CNcbiOstrstreamToString(os);
+            NCBI_THROW(CInputException, eInvalidInput, msg);
         }
         if (val < 0 || val >= static_cast<int>(eEndValue)) {
             string msg("Formatting choice is out of range");
@@ -1508,26 +1534,58 @@ CDebugArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */
 }
 
 void
-CCullingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+CHspFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // culling limit
     arg_desc.SetCurrentGroup("Restrict search or results");
-    arg_desc.AddDefaultKey(kArgCullingLimit, "int_value",
+    arg_desc.AddOptionalKey(kArgCullingLimit, "int_value",
                      "If the query range of a hit is enveloped by that of at "
                      "least this many higher-scoring hits, delete the hit",
-                     CArgDescriptions::eInteger,
-                     NStr::IntToString(kDfltArgCullingLimit));
+                     CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgCullingLimit, 
-                           new CArgAllowValuesGreaterThanOrEqual(0));
+    // best hit algorithm arguments
+               new CArgAllowValuesGreaterThanOrEqual(kDfltArgCullingLimit));
+
+    arg_desc.AddOptionalKey(kArgBestHitOverhang, "float_value", 
+                            "Best Hit algorithm overhang value "
+                            "(recommended value: " +
+                            NStr::DoubleToString(kDfltArgBestHitOverhang) +
+                            ")",
+                            CArgDescriptions::eDouble);
+    arg_desc.SetConstraint(kArgBestHitOverhang, 
+                           new CArgAllowValuesBetween(kBestHit_OverhangMin, 
+                                                      kBestHit_OverhangMax));
+    arg_desc.SetDependency(kArgBestHitOverhang,
+                           CArgDescriptions::eExcludes,
+                           kArgCullingLimit);
+
+    arg_desc.AddOptionalKey(kArgBestHitScoreEdge, "float_value", 
+                            "Best Hit algorithm score edge value "
+                            "(recommended value: " +
+                            NStr::DoubleToString(kDfltArgBestHitScoreEdge) +
+                            ")",
+                            CArgDescriptions::eDouble);
+    arg_desc.SetConstraint(kArgBestHitScoreEdge, 
+                           new CArgAllowValuesBetween(kBestHit_ScoreEdgeMin, 
+                                                      kBestHit_ScoreEdgeMax));
+    arg_desc.SetDependency(kArgBestHitScoreEdge,
+                           CArgDescriptions::eExcludes,
+                           kArgCullingLimit);
     arg_desc.SetCurrentGroup("");
 }
 
 void
-CCullingArgs::ExtractAlgorithmOptions(const CArgs& args,
+CHspFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, 
                                       CBlastOptions& opts)
 {
     if (args[kArgCullingLimit]) {
         opts.SetCullingLimit(args[kArgCullingLimit].AsInteger());
+    }
+    if (args[kArgBestHitOverhang]) {
+        opts.SetBestHitOverhang(args[kArgBestHitOverhang].AsDouble());
+    }
+    if (args[kArgBestHitScoreEdge]) {
+        opts.SetBestHitScoreEdge(args[kArgBestHitScoreEdge].AsDouble());
     }
 }
 
@@ -1694,6 +1752,7 @@ CBlastAppArgs::CBlastAppArgs()
 {
     m_SearchStrategyArgs.Reset(new CSearchStrategyArgs);
     m_Args.push_back(CRef<IBlastCmdLineArgs>(&*m_SearchStrategyArgs));
+    m_IsUngapped = false;
 }
 
 CArgDescriptions*
@@ -1719,6 +1778,7 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         if (CBlastDatabaseArgs::HasBeenSet(args)) {
             m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
         }
+        m_IsUngapped = !opts.GetGappedMode();
         try { m_OptsHandle->Validate(); }
         catch (const CBlastException& e) {
             NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());
@@ -1743,6 +1803,7 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         (*arg)->ExtractAlgorithmOptions(args, opts);
     }
 
+    m_IsUngapped = !opts.GetGappedMode();
     try { retval->Validate(); }
     catch (const CBlastException& e) {
         NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());
@@ -1756,6 +1817,32 @@ void CBlastAppArgs::SetTask(const string& task)
     ThrowIfInvalidTask(task);
 #endif
     m_Task.assign(task);
+}
+
+CArgDescriptions* 
+SetUpCommandLineArguments(TBlastCmdLineArgs& args)
+{
+    auto_ptr<CArgDescriptions> retval(new CArgDescriptions);
+
+    // Create the groups so that the ordering is established
+    retval->SetCurrentGroup("Input query options");
+    retval->SetCurrentGroup("General search options");
+    retval->SetCurrentGroup("BLAST database options");
+    retval->SetCurrentGroup("BLAST-2-Sequences options");
+    retval->SetCurrentGroup("Formatting options");
+    retval->SetCurrentGroup("Query filtering options");
+    retval->SetCurrentGroup("Restrict search or results");
+    retval->SetCurrentGroup("Discontiguous MegaBLAST options");
+    retval->SetCurrentGroup("Statistical options");
+    retval->SetCurrentGroup("Search strategy options");
+    retval->SetCurrentGroup("Extension options");
+    retval->SetCurrentGroup("");
+
+
+    NON_CONST_ITERATE(TBlastCmdLineArgs, arg, args) {
+        (*arg)->SetArgumentDescriptions(*retval);
+    }
+    return retval.release();
 }
 
 END_SCOPE(blast)

@@ -88,7 +88,7 @@ CTblastxAppArgs::CTblastxAppArgs()
     arg.Reset(new CWordThresholdArg);
     m_Args.push_back(arg);
 
-    arg.Reset(new CCullingArgs);
+    arg.Reset(new CHspFilteringArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
@@ -131,7 +131,7 @@ CTblastxAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CTblastxAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eTblastx);
+    return blast::GetQueryBatchSize(eTblastx, m_IsUngapped);
 }
 
 END_SCOPE(blast)

@@ -133,7 +133,7 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
     engine.SetUngappedStatisticalParams(ancillary_data);
     CRef<CPssmWithParameters> retval(engine.Run());
 
-    PsiBlastAddAncillaryPssmData(*retval, query, 
+    PsiBlastAddAncillaryPssmData(*retval,
                                   opts_handle.GetGapOpeningCost(), 
                                   opts_handle.GetGapExtensionCost());
     return retval;

@@ -177,6 +177,8 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SmithWatermanMode;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerDatabase;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerTaxId;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_ForceMbIndex;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MbIndexName;
 
 // List of web-related options
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_BlastSpecialPage;
@@ -187,6 +189,7 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_OrganismName;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_RunPsiBlast;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ShortQueryAdjust;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_StepNumber;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBInput;
 
 END_objects_SCOPE // namespace ncbi::objects::
 

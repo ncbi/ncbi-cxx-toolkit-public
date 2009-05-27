@@ -119,7 +119,8 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
           if (lookup_wrap->lut_type == eMBLookupTable) {
              BlastMBLookupTableNew(query, lookup_segments, 
                                (BlastMBLookupTable* *) &(lookup_wrap->lut), 
-                               lookup_options, num_table_entries, lut_width);
+                               lookup_options, query_options,
+                               num_table_entries, lut_width);
           }
           else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
              status = BlastSmallNaLookupTableNew(query, lookup_segments,
@@ -129,13 +130,13 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
                 lookup_wrap->lut_type = eNaLookupTable;
                 status = BlastNaLookupTableNew(query, lookup_segments,
                             (BlastNaLookupTable* *) &(lookup_wrap->lut), 
-                             lookup_options, lut_width);
+                             lookup_options, query_options, lut_width);
              }
           }
           else {
              BlastNaLookupTableNew(query, lookup_segments,
                             (BlastNaLookupTable* *) &(lookup_wrap->lut), 
-                             lookup_options, lut_width);
+                             lookup_options, query_options, lut_width);
           }
       }
       break;

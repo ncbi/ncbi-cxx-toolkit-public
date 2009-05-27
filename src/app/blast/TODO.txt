@@ -1,4 +1,5 @@
 * psi-tblastn implementation (see tblastn_app.cpp)
+* in_msa option to PSI-BLAST
 
 * Alignment results: Dense-seg vs. disc (fails for remote blast)
 * Remote searches: obtaining BLAST database information for formatter

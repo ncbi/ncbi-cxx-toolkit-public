@@ -33,7 +33,6 @@ seqsrc_seqdb \
 seqsrc_query_factory \
 bl2seq \
 blast_objmgr_tools \
-hspstream_queue \
 repeats_filter_cxx \
 blast_mtlock \
 psibl2seq \
@@ -42,6 +41,7 @@ psiblast \
 psiblast_impl \
 psiblast_iteration \
 psi_pssm_input \
+msa_pssm_input \
 psiblast_aux_priv \
 blast_aux_priv \
 blast_advprot_options \

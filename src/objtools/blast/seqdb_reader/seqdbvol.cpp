@@ -1791,7 +1791,8 @@ int CSeqDBVol::x_GetSequence(int              oid,
                              const char    ** buffer,
                              bool             keep,
                              CSeqDBLockHold & locked,
-                             bool             can_release) const
+                             bool             can_release,
+                             bool             in_lease) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -1800,8 +1801,10 @@ int CSeqDBVol::x_GetSequence(int              oid,
     
     m_Atlas.Lock(locked);
     
+    if (oid >= m_Idx->GetNumOIDs()) return -1;
+
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
-    
+
     char seqtype = m_Idx->GetSeqType();
     
     if ('p' == seqtype) {
@@ -1820,7 +1823,10 @@ int CSeqDBVol::x_GetSequence(int              oid,
                                    end_offset+1,
                                    keep,
                                    false,
-                                   locked) + 1;
+                                   locked,
+                                   in_lease) + 1;
+        if (! (*buffer - 1)) return -1;
+
     } else if ('n' == seqtype) {
         // The last byte is partially full; the last two bits of the
         // last byte store the number of nucleotides in the last byte
@@ -1838,8 +1844,11 @@ int CSeqDBVol::x_GetSequence(int              oid,
                                    end_offset,
                                    keep,
                                    hold,
-                                   locked);
+                                   locked,
+                                   in_lease);
         
+        if (! (*buffer))  return -1;
+
         // If we are returning a hold on the sequence (keep), and the
         // caller does not need the lock after this (can_release) we
         // can let go of the lock (because the hold will prevent GC of
@@ -1847,9 +1856,10 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // access to occur outside of the locked duration - lowering
         // contention in the nucleotide case.
         
+        /* do not release the lock since we may be getting more...
         if (keep && can_release) {
             m_Atlas.Unlock(locked);
-        }
+        }*/
         
         int whole_bytes = int(end_offset - start_offset - 1);
         
@@ -3002,6 +3012,12 @@ void CSeqDBVol::SetOffsetRanges(int                oid,
     }
     
     R->SetRanges(offset_ranges, append_ranges, cache_data);
+}
+
+void CSeqDBVol::FlushOffsetRangeCache(CSeqDBLockHold& locked)
+{
+    m_Atlas.Lock(locked);
+    m_RangeCache.clear();
 }
 
 void CSeqDBRangeList::SetRanges(const TRangeList & offset_ranges,

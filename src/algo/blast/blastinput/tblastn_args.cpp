@@ -92,7 +92,7 @@ CTblastnAppArgs::CTblastnAppArgs()
     arg.Reset(new CWordThresholdArg);
     m_Args.push_back(arg);
 
-    arg.Reset(new CCullingArgs);
+    arg.Reset(new CHspFilteringArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
@@ -148,7 +148,7 @@ CTblastnAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int
 CTblastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eTblastn);
+    return blast::GetQueryBatchSize(eTblastn, m_IsUngapped);
 }
 
 END_SCOPE(blast)

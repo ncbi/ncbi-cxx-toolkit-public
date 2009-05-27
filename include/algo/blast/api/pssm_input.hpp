@@ -38,6 +38,7 @@
 #include <corelib/ncbistl.hpp>
 #include <algo/blast/core/blast_psi.h>
 #include <util/math/matrix.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -67,6 +68,14 @@ struct IPssmInput_Base : public CObject
     virtual const char* GetMatrixName() {
         return BLAST_DEFAULT_MATRIX;
     }
+
+    /// Get a CBioseq object for attachment into the CPssmWithParameters
+    /// that CPssmEngine produces (only attached if it's not NULL). This is
+    /// required for any PSSM which is intended to be used as a starting point
+    /// for a PSI-BLAST iteration
+    virtual CRef<objects::CBioseq> GetQueryForPssm() {
+        return CRef<objects::CBioseq>(NULL);
+    }
 };
 
 /// Abstract base class to encapsulate the source(s) and pre-processing of 
@@ -81,7 +90,6 @@ struct IPssmInput_Base : public CObject
 /// Seq-aligns, Cdd models, multiple sequence alignments, etc).
 /// @note Might need to add the PSIDiagnosticsRequest structure
 /// @sa CPsiBlastInputData
-/// @todo FIXME: rename to IPssmInputMsa
 struct IPssmInputData : public IPssmInput_Base
 {
     /// virtual destructor

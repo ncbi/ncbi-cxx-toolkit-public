@@ -1215,6 +1215,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
 /// data that are included in partially fetched sequences; this only
 /// applies to CSeqDBExpert objects, where SetOffsetRanges() has been
 /// called.
+/// @note this value is repeated in blast_util.h
 #define FENCE_SENTRY 201
 
 

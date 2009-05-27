@@ -627,6 +627,8 @@ Blast4-simple-alignment ::= SEQUENCE {
 Blast4-range ::= SEQUENCE {
     start               INTEGER OPTIONAL,
     end                 INTEGER OPTIONAL,
+    -- The frame of the range (absent for proteins; -1/1 for nucleotides;
+    -- -1,-2,-3,1,2,3 for translated sequences)
     strand              INTEGER OPTIONAL
 }
 

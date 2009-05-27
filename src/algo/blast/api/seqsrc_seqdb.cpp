@@ -132,6 +132,15 @@ s_SeqDbGetMaxLength(void* seqdb_handle, void*)
     return seqdb.GetMaxLength();
 }
 
+/// Setting number of threads in MT mode
+/// @param n_threads number of threads [in]
+static void
+s_SeqDbSetNumberOfThreads(void* seqdb_handle, int n)
+{
+    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
+    seqdb.SetNumberOfThreads(n);
+}
+
 /// Retrieves the number of sequences in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Int4 
@@ -248,15 +257,11 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     if (args->seq)
         BlastSequenceBlkClean(args->seq);
     
-    /* If nucleotide and ranges are disabled, remove any range list
-       stored in the SeqDB object.  Protein databases ignore ranges in
-       any case. */
-    
-    if (! args->enable_ranges) {
-        if (seqdb.GetSequenceType() == CSeqDB::eNucleotide) {
-            CSeqDBExpert::TRangeList none;
-            seqdb.SetOffsetRanges(oid, none, false, false);
-        }
+    /* This occurs if the pre-selected partial sequence in the traceback stage
+     * was too small to perform the traceback. Only do this for nucleotide
+     * sequences as proteins are not long enough to be of significance */
+    if (args->reset_ranges && seqdb.GetSequenceType() == CSeqDB::eNucleotide) {
+        seqdb.RemoveOffsetRanges(oid);
     }
     
     const char *buf;
@@ -294,12 +299,16 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     if ( !filtering_algorithms.empty() ) {
         static const Boolean kCopySequenceRanges = false;
         CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
-        seqdb.GetMaskData(oid, filtering_algorithms, true, ranges);
-        _ASSERT( !ranges.empty() );
-        if (BlastSeqBlkSetSeqRanges(args->seq, 
+        seqdb.GetMaskData(oid, filtering_algorithms, ranges);
+        if ( !ranges.empty() ) {
+            if (BlastSeqBlkSetSeqRanges(args->seq, 
                                     (SSeqRange*)& ranges[0],
                                     ranges.size(), kCopySequenceRanges) != 0) {
             return BLAST_SEQSRC_ERROR;
+            }
+		else {
+			args->seq->num_seq_ranges=0;
+			}
         }
     }
 #endif
@@ -322,7 +331,7 @@ s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     _ASSERT(args->seq);
 
     if (args->seq->sequence_start_allocated) {
-        seqdb.RetSequence((const char**)&args->seq->sequence_start);
+        seqdb.RetAmbigSeq((const char**)&args->seq->sequence_start);
         args->seq->sequence_start_allocated = FALSE;
         args->seq->sequence_start = NULL;
     }
@@ -361,26 +370,34 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
     
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
     
-    vector<int> oid_list(itr->chunk_sz);
+    vector<int> oid_list;
 
     CSeqDB::EOidListType chunk_type = 
         seqdb.GetNextOIDChunk(itr->oid_range[0], itr->oid_range[1], 
-                                  oid_list);
+                              itr->chunk_sz, oid_list);
     
+    if (itr->oid_range[1] <= itr->oid_range[0])
+        return BLAST_SEQSRC_EOF;
+
     if (chunk_type == CSeqDB::eOidRange) {
-        if (itr->oid_range[1] <= itr->oid_range[0])
-            return BLAST_SEQSRC_EOF;
         itr->itr_type = eOidRange;
         itr->current_pos = itr->oid_range[0];
     } else if (chunk_type == CSeqDB::eOidList) {
+        Uint4 new_sz = (Uint4) oid_list.size();
         itr->itr_type = eOidList;
-        itr->chunk_sz = (Uint4) oid_list.size();
-        if (itr->chunk_sz == 0)
-            return BLAST_SEQSRC_EOF;
-        itr->current_pos = 0;
-        Uint4 index;
-        for (index = 0; index < itr->chunk_sz; ++index)
-            itr->oid_list[index] = oid_list[index];
+        if (new_sz > 0) {
+            itr->current_pos = 0;
+            Uint4 index;
+            if (itr->chunk_sz < new_sz) { 
+                sfree(itr->oid_list);
+                itr->oid_list = (int *) malloc (new_sz * sizeof(unsigned int));
+            }
+            itr->chunk_sz = new_sz;
+            for (index = 0; index < new_sz; ++index)
+                itr->oid_list[index] = oid_list[index];
+        } else {
+            return s_SeqDbGetNextChunk(seqdb_handle, itr);
+        }
     }
 
     return BLAST_SEQSRC_SUCCESS;
@@ -440,6 +457,7 @@ s_SeqDbResetChunkIterator(void* seqdb_handle)
     _ASSERT(seqdb_handle);
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
     seqdb.ResetInternalChunkBookmark();
+    seqdb.FlushOffsetRangeCache();
 }
 
 }
@@ -545,6 +563,7 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, TSeqDBData * datap)
     _BlastSeqSrcImpl_SetIterNext      (retval, & s_SeqDbIteratorNext);
     _BlastSeqSrcImpl_SetResetChunkIterator(retval, & s_SeqDbResetChunkIterator);
     _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_SeqDbReleaseSequence);
+    _BlastSeqSrcImpl_SetSetNumberOfThreads    (retval, & s_SeqDbSetNumberOfThreads);
 #ifdef KAPPA_PRINT_DIAGNOSTICS
     _BlastSeqSrcImpl_SetGetGis        (retval, & s_SeqDbGetGiList);
 #endif /* KAPPA_PRINT_DIAGNOSTICS */

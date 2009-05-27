@@ -41,10 +41,15 @@
 #include <algo/blast/api/local_search.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 
-#include <algo/blast/core/hspstream_collector.h>
 #include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/hspfilter_collector.h>
 
 #include <objects/seqalign/seqalign__.hpp>
+
+#include <algo/blast/api/seqsrc_seqdb.hpp>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <algo/blast/api/seqinfosrc_seqdb.hpp>
+
 
 // needed for objmgr dependent tests of query data interface
 #include "test_objmgr.hpp"
@@ -85,19 +90,19 @@ public:
         hsp_list->hsp_array = (BlastHSP**)
             malloc(hsp_list->allocated*sizeof(BlastHSP*));
         
-        SBlastHitsParameters* blasthit_params(0);
+	BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(
+	               BlastHSPCollectorParamsNew(
+                                opts->GetHitSaveOpts(),
+                                opts->GetExtnOpts()->compositionBasedStats,
+                                opts->GetScoringOpts()->gapped_calculation));
         
-        SBlastHitsParametersNew(opts->GetHitSaveOpts(),
-                                opts->GetExtnOpts(),
-                                opts->GetScoringOpts(),
-                                & blasthit_params);
+        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+        BOOST_REQUIRE(writer_info == NULL);
         
-        // Build the actual 'collector' object.
-        
-        BlastHSPStream* hsp_stream =
-            Blast_HSPListCollectorInit(opts->GetProgramType(),
-                                       blasthit_params, opts->GetExtnOpts(),
-                                       FALSE, 1);
+        BlastHSPStream* hsp_stream = BlastHSPStreamNew(
+                                       opts->GetProgramType(),
+                                       opts->GetExtnOpts(),
+                                       FALSE, 1, writer);
 
         const int query_offset[k_num_hsps_start] =
             { 0, 3864, 3254, 1828, 2189, 795,
@@ -168,19 +173,20 @@ public:
         hsp_list->hsp_array = (BlastHSP**)
             malloc(hsp_list->allocated*sizeof(BlastHSP*));
         
-        SBlastHitsParameters* blasthit_params(0);
         
-        SBlastHitsParametersNew(opts->GetHitSaveOpts(),
-                                opts->GetExtnOpts(),
-                                opts->GetScoringOpts(),
-                                & blasthit_params);
+        BlastHSPWriterInfo * writer_info = BlastHSPCollectorInfoNew(
+                   BlastHSPCollectorParamsNew(
+                                    opts->GetHitSaveOpts(),
+                                    opts->GetExtnOpts()->compositionBasedStats,
+                                    opts->GetScoringOpts()->gapped_calculation));
 
-        // Build the actual 'collector' object.
+        BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+        BOOST_REQUIRE(writer_info == NULL);
         
-        BlastHSPStream* hsp_stream =
-            Blast_HSPListCollectorInit(opts->GetProgramType(),
-                                       blasthit_params, opts->GetExtnOpts(),
-                                       FALSE, 1);
+        BlastHSPStream* hsp_stream = BlastHSPStreamNew(
+                                       opts->GetProgramType(),
+                                       opts->GetExtnOpts(),
+                                       FALSE, 1, writer);
 
         const int query_offset[k_num_hsps_start] = { 0 };
         const int query_end[k_num_hsps_start] = { k_seq_length - 1 };
@@ -317,15 +323,10 @@ public:
         // Build the object itself
         CRef<CBlastTracebackSearch> tbs;
         
-        if (gi_list) {
-            BOOST_REQUIRE(subject_seqdb.NotEmpty());
-            tbs.Reset(new CBlastTracebackSearch(qf, opts, subject_seqdb, hsps));
-        } else {
-            // Build a CSearchDatabase object
-            CSearchDatabase dbinfo("nr", CSearchDatabase::eBlastDbIsProtein);
-            
-            tbs.Reset(new CBlastTracebackSearch(qf, opts, dbinfo, hsps));
-        }
+        BOOST_REQUIRE(subject_seqdb.NotEmpty());
+        CBlastSeqSrc seq_src = SeqDbBlastSeqSrcInit(subject_seqdb);
+        CRef<blast::IBlastSeqInfoSrc> seq_info_src(new blast::CSeqDbSeqInfoSrc(subject_seqdb));
+        tbs.Reset(new CBlastTracebackSearch(qf, opts, seq_src.Get(), seq_info_src, hsps));
         
         CSearchResultSet v = *tbs->Run();
         
@@ -370,8 +371,10 @@ BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
         hsps(x_GetSelfHitHspStream(opts, *subject_seqdb, query));
 
     // Build the object itself
+    CBlastSeqSrc seq_src = SeqDbBlastSeqSrcInit(subject_seqdb);
+    CRef<blast::IBlastSeqInfoSrc> seq_info_src(new blast::CSeqDbSeqInfoSrc(subject_seqdb));
     CRef<CBlastTracebackSearch> tbs
-        (new CBlastTracebackSearch(qf, opts, subject_seqdb, hsps, pssm));
+        (new CBlastTracebackSearch(qf, opts, seq_src.Get(), seq_info_src, hsps, pssm));
 
     CSearchResultSet v = *tbs->Run();
     

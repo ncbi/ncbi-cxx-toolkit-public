@@ -207,6 +207,8 @@ TField B4Param_GapXDropoff           ("GapXDropoff",           CBlast4_value::e_
 TField B4Param_GapXDropoffFinal      ("GapXDropoffFinal",      CBlast4_value::e_Real);
 TField B4Param_SmithWatermanMode     ("SmithWatermanMode",     CBlast4_value::e_Boolean);
 TField B4Param_UnifiedP              ("UnifiedP",              CBlast4_value::e_Integer);
+TField B4Param_ForceMbIndex          ("ForceMbIndex",          CBlast4_value::e_Boolean);
+TField B4Param_MbIndexName           ("MbIndexName",           CBlast4_value::e_String);
 
 TField B4Param_Web_BlastSpecialPage  ("Web_BlastSpecialPage", CBlast4_value::e_String);
 TField B4Param_Web_EntrezQuery       ("Web_EntrezQuery",      CBlast4_value::e_String);
@@ -216,6 +218,7 @@ TField B4Param_Web_OrganismName      ("Web_OrganismName",     CBlast4_value::e_S
 TField B4Param_Web_RunPsiBlast       ("Web_RunPsiBlast",      CBlast4_value::e_Boolean);
 TField B4Param_Web_ShortQueryAdjust  ("Web_ShortQueryAdjust", CBlast4_value::e_Boolean);
 TField B4Param_Web_StepNumber        ("Web_StepNumber",       CBlast4_value::e_Integer);
+TField B4Param_Web_DBInput  	     ("Web_DBInput", 	      CBlast4_value::e_Boolean);
 
 END_objects_SCOPE // namespace ncbi::objects::
 

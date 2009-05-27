@@ -807,7 +807,7 @@ _PSIValidateMSA_StructureGroup(const _PSIMsa* msa)
 }
 
 int
-_PSIValidateMSA(const _PSIMsa* msa)
+_PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_unaligned_positions)
 {
     int retval = PSI_SUCCESS;
 
@@ -820,9 +820,11 @@ _PSIValidateMSA(const _PSIMsa* msa)
         return retval;
     }
 
-    retval = s_PSIValidateAlignedColumns(msa);
-    if (retval != PSI_SUCCESS) {
-        return retval;
+    if ( !ignore_unaligned_positions ) {
+        retval = s_PSIValidateAlignedColumns(msa);
+        if (retval != PSI_SUCCESS) {
+            return retval;
+        }
     }
 
     retval = s_PSIValidateNoGapsInQuery(msa);

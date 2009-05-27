@@ -80,7 +80,7 @@ SSeqRangeArrayLessThanOrEqual(const SSeqRange* ranges, Int4 num_ranges, Int4
     }
     /* if the target isn't in the range at index b and there is still more
      * data, return the next element */
-    if (target > ranges[b].right && b < num_ranges) {
+    if ( (target > ranges[b].right) && (b < (num_ranges-1) ) ) {
         return b + 1;
     } else {
         return b;
@@ -100,34 +100,6 @@ s_BlastSequenceBlkFreeSeqRanges(BLAST_SequenceBlk* seq_blk)
         seq_blk->num_seq_ranges = 0;
         seq_blk->seq_ranges_allocated = FALSE;
     }
-}
-
-/** Allocate and populate the seq_ranges field of the BLAST_SequenceBlk with
- * default values as to indicate that the entire sequence should be searched 
- * @note assumes the BLAST_SequenceBlk::length has been initialized
- * @param seq_blk the data structure to populate [in|out]
- * @return 0 on success, BLASTERR_MEMORY if memory allocation fails
- */
-static Int2
-s_BlastSeqBlkSetLookupTableRangesToIndex(BLAST_SequenceBlk* seq_blk)
-{
-    static const Uint4 kDfltSize = 1;
-    if (seq_blk->seq_ranges != NULL) {
-        return 0;
-    }
-
-    s_BlastSequenceBlkFreeSeqRanges(seq_blk);
-    seq_blk->seq_ranges = (SSeqRange*) calloc(kDfltSize, 
-                                              sizeof(*seq_blk->seq_ranges));
-    if ( !seq_blk->seq_ranges ) {
-        return BLASTERR_MEMORY;
-    }
-    seq_blk->seq_ranges[0].left = 0;
-    seq_blk->seq_ranges[0].right = seq_blk->length;
-    seq_blk->num_seq_ranges = kDfltSize;
-    seq_blk->seq_ranges_allocated = TRUE;
-
-    return 0;
 }
 
 Int2
@@ -153,10 +125,6 @@ BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
     }
     
     (*seq_blk)->length = length;
-
-    if (s_BlastSeqBlkSetLookupTableRangesToIndex(*seq_blk) != 0) {
-        return -1;
-    }
    
     return 0;
 }
@@ -188,9 +156,6 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
     seq_blk->sequence = (Uint1*) sequence + 1;
     seq_blk->length = seqlen;
     seq_blk->oof_sequence = NULL;
-    if (s_BlastSeqBlkSetLookupTableRangesToIndex(seq_blk) != 0) {
-        return -1;
-    }
 
     return 0;
 }
@@ -205,10 +170,6 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
     seq_blk->sequence_allocated = TRUE;
     seq_blk->sequence = (Uint1*) sequence;
     seq_blk->oof_sequence = NULL;
-
-    if (s_BlastSeqBlkSetLookupTableRangesToIndex(seq_blk) != 0) {
-        return -1;
-    }
 
     return 0;
 }

@@ -76,7 +76,8 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_NegativeList    (neg_list),
       m_IdSet           (idset),
       m_NeedTotalsScan  (false),
-      m_MaskDataColumn  (kUnknownTitle)
+      m_MaskDataColumn  (kUnknownTitle),
+      m_NumThreads      (0)
 {
     INIT_CLASS_MARK();
     
@@ -161,7 +162,8 @@ CSeqDBImpl::CSeqDBImpl()
       m_SeqType         ('-'),
       m_OidListSetup    (true),
       m_NeedTotalsScan  (false),
-      m_MaskDataColumn  (kUnknownTitle)
+      m_MaskDataColumn  (kUnknownTitle),
+      m_NumThreads      (0)
 {
     INIT_CLASS_MARK();
     
@@ -204,6 +206,9 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 CSeqDBImpl::~CSeqDBImpl()
 {
     CHECK_MARKER();
+
+    SetNumberOfThreads(0);
+
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
@@ -278,22 +283,16 @@ bool CSeqDBImpl::x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked)
 CSeqDB::EOidListType
 CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
                             int         & end_chunk,   // out
+                            int         oid_size,      // in
                             vector<int> & oid_list,    // out
                             int         * state_obj)   // in+out
 {
     CHECK_MARKER();
-    CFastMutexGuard guard(m_OIDLock);
-    
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+
     if (! state_obj) {
         state_obj = & m_NextChunkOID;
-    }
-    
-    int max_oids = (int) oid_list.size();
-    
-    if (! max_oids) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "GetNextOIDChunk(): Illegal argument; OIDs requested = 0.");
     }
     
     // This has to be done before ">=end" check, to insure correctness
@@ -308,54 +307,71 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     if (*state_obj >= m_RestrictEnd) {
         begin_chunk = 0;
         end_chunk   = 0;
-        
         return CSeqDB::eOidRange;
+    }
+    
+    begin_chunk = * state_obj;
+
+    // fill the cache for all sequence in mmaped slice
+    if (m_NumThreads) {
+        int cacheID = x_GetCacheID(locked);
+        SSeqResBuffer * buffer = m_CachedSeqs[cacheID];
+        x_FillSeqBuffer(buffer, begin_chunk, locked);
+        end_chunk = begin_chunk + buffer->results.size();
+    } else {
+        end_chunk = begin_chunk + oid_size;
+    }
+ 
+    if (end_chunk > m_RestrictEnd) {
+        end_chunk = m_RestrictEnd;
+    }
+    *state_obj = end_chunk;
+        
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
     }
     
     // Case 2: Return a range
     
-    if (! m_OidListSetup) {
-        CSeqDBLockHold locked(m_Atlas);
-        x_GetOidList(locked);
-    }
-    
     if (m_OIDList.Empty()) {
-        begin_chunk = * state_obj;
-        end_chunk   = m_RestrictEnd;
-        
-        if ((end_chunk - begin_chunk) > max_oids) {
-            end_chunk = begin_chunk + int(max_oids);
-        }
-        
-        *state_obj = end_chunk;
-        
         return CSeqDB::eOidRange;
     }
     
     // Case 3: Ones and Zeros - The bitmap provides OIDs.
     
-    int next_oid = *state_obj;
-    int iter = 0;
-    
-    while(iter < max_oids) {
-        if (next_oid >= m_RestrictEnd) {
-            break;
+    int next_oid = begin_chunk;
+    if (m_NumThreads) {
+        oid_list.clear();
+        while(next_oid < end_chunk) {
+            // Find next ordinal id, and save it if it falls within iteration range.
+            if (m_OIDList->CheckOrFindOID(next_oid) &&
+                next_oid < end_chunk) {
+                oid_list.push_back(next_oid++);
+            } else {
+                next_oid = end_chunk;
+                break;
+            }
         }
-        // Find next ordinal id, and save it if it falls within iteration range.
-        if (m_OIDList->CheckOrFindOID(next_oid) &&
-            next_oid < m_RestrictEnd) {
-            oid_list[iter++] = next_oid++;
-        } else {
-            next_oid = m_RestrictEnd;
-            break;
+    } else {
+        int iter = 0;
+        oid_list.resize(oid_size);
+        while (iter < oid_size) {
+            if (next_oid >= m_RestrictEnd) break;
+            // Find next ordinal id, and save it if it falls within iteration range.
+            if (m_OIDList->CheckOrFindOID(next_oid) &&
+                next_oid < m_RestrictEnd) {
+                oid_list[iter++] = next_oid++;
+            } else {
+                next_oid = m_RestrictEnd;
+                break;
+            }
         }
+        if (iter < oid_size) {
+            oid_list.resize(iter);       
+        }
+        *state_obj = next_oid;
     }
-    
-    if (iter < max_oids) {
-        oid_list.resize(iter);
-    }
-    
-    *state_obj = next_oid;
+          
     return CSeqDB::eOidList;
 }
 
@@ -502,9 +518,27 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata)
 void CSeqDBImpl::RetSequence(const char ** buffer) const
 {
     CHECK_MARKER();
+
+    CSeqDBLockHold locked(m_Atlas);
+
+    if (m_NumThreads) {
+        int cacheID = x_GetCacheID(locked);
+        (m_CachedSeqs[cacheID]->checked_out)--; 
+        *buffer = 0;
+        return;
+    }
+
+    // This returns a reference to part of a memory mapped region.
     
-    // This can return either an allocated object or a reference to
-    // part of a memory mapped region.
+    m_Atlas.Lock(locked);
+    
+    m_Atlas.RetRegion(*buffer);
+    *buffer = 0;
+}
+
+void CSeqDBImpl::RetAmbigSeq(const char ** buffer) const
+{
+    // This returns an allocated object.
     
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
@@ -513,10 +547,87 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
     *buffer = 0;
 }
 
+void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer, 
+                                CSeqDBLockHold & locked ) const
+{
+    // client must return sequence before getting a new one
+    if (buffer->checked_out > 0) {
+        NCBI_THROW(CSeqDBException, eArgErr, "Sequence not returned.");
+    } 
+
+    buffer->checked_out = 0;
+
+    m_Atlas.Lock(locked);
+    
+    for(Uint4 index = 0; index < buffer->results.size(); ++index) {
+        m_Atlas.RetRegion(buffer->results[index].address);
+    }
+
+    buffer->results.clear();
+}
+
+int CSeqDBImpl::x_GetSeqBuffer(SSeqResBuffer * buffer, int oid, 
+                               const char ** seq) const
+{
+    // Search local cache for oid
+    Uint4 index = oid - buffer->oid_start;
+    if (index < buffer->results.size()) {
+        (buffer->checked_out)++;
+        *seq = buffer->results[index].address;
+        return buffer->results[index].length;
+    }
+
+    // Not in cache, fill the cache
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    x_FillSeqBuffer(buffer, oid, locked);
+    (buffer->checked_out)++;
+    *seq = buffer->results[0].address;
+    return buffer->results[0].length;
+}
+
+void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer, 
+                                 int             oid,
+                                 CSeqDBLockHold &locked) const
+{
+    // Must lock the atlas
+    m_Atlas.Lock(locked);
+    
+    // clear the buffer first
+    x_RetSeqBuffer(buffer, locked);
+
+    buffer->oid_start = oid;
+    Int4 vol_oid = 0;
+
+    // Get all sequences within the lease
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        SSeqRes res;
+        const char * seq;
+        res.length = vol->GetSequence(vol_oid++, &seq, locked);
+
+        while (res.length >= 0) {
+            res.address = seq;
+            buffer->results.push_back(res);
+            res.length = vol->GetSequence(vol_oid++, &seq, locked, true);
+        } 
+        //cout << CThread::GetSelf()-1 << ": " << buffer->results.size() << " | " << oid << endl;
+        return;
+    } 
+
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
+}
+
 int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
 {
     CHECK_MARKER();
+
     CSeqDBLockHold locked(m_Atlas);
+
+    if (m_NumThreads) {
+        int cacheID = x_GetCacheID(locked);
+        return x_GetSeqBuffer(m_CachedSeqs[cacheID], oid, buffer);
+    }
+
     int vol_oid = 0;
     
     m_Atlas.Lock(locked);
@@ -1388,6 +1499,19 @@ void CSeqDBImpl::SetOffsetRanges(int                oid,
     }
 }
 
+void CSeqDBImpl::FlushOffsetRangeCache()
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+
+    for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        CSeqDBVol* volp = m_VolSet.GetVolNonConst(vol_idx);
+        volp->FlushOffsetRangeCache(locked);
+    }
+}
+
+
 void CSeqDBImpl::SetDefaultMemoryBound(Uint8 bytes)
 {
     CSeqDBAtlas::SetDefaultMemoryBound(bytes);
@@ -1404,7 +1528,7 @@ unsigned CSeqDBImpl::GetSequenceHash(int oid)
     
     unsigned h = SeqDB_SequenceHash(datap, base_len);
     
-    RetSequence(const_cast<const char**>(& datap));
+    RetAmbigSeq(const_cast<const char**>(& datap));
     
     return h;
 }
@@ -1935,56 +2059,6 @@ void CSeqDBImpl::x_BuildMaskAlgorithmList(CSeqDBLockHold & locked)
     m_AlgorithmIds.SetNotEmpty();
 }
 
-struct SReadInt1 {
-    enum { numeric_size = 1 };
-    
-    static int Read(CBlastDbBlob & blob)
-    {
-        return blob.ReadInt1();
-    }
-  
-    static void Read(CBlastDbBlob & blob, int n, 
-                     CSeqDBImpl::TSequenceRanges & ranges)
-    {
-        typedef pair<TSeqPos, TSeqPos> TOffsetPair;
-        const Int1 * ptr = (const Int1 *) blob.ReadRaw(n*2);
-        for (int i = 0; i < n; ++i) {
-                TOffsetPair p;
-                p.first = ptr[i*2];
-                p.second = ptr[i*2+1];
-                
-                _ASSERT(((int)p.first) >= 0);
-                _ASSERT(p.second >= p.first);
-                ranges.push_back(p);
-        }
-    }
-};
-
-struct SReadInt2 {
-    enum { numeric_size = 2 };
-    
-    static int Read(CBlastDbBlob & blob)
-    {
-        return blob.ReadInt2();
-    }
-  
-    static void Read(CBlastDbBlob & blob, int n, 
-                     CSeqDBImpl::TSequenceRanges & ranges)
-    {
-        typedef pair<TSeqPos, TSeqPos> TOffsetPair;
-        const Int2 * ptr = (const Int2 *) blob.ReadRaw(n*4);
-        for (int i = 0; i < n; ++i) {
-                TOffsetPair p;
-                p.first = ptr[i*2];
-                p.second = ptr[i*2+1];
-                
-                _ASSERT(((int)p.first) >= 0);
-                _ASSERT(p.second >= p.first);
-                ranges.push_back(p);
-        }
-    }
-};
-
 struct SReadInt4 {
     enum { numeric_size = 4 };
     
@@ -1994,25 +2068,23 @@ struct SReadInt4 {
     }
   
     static void Read(CBlastDbBlob & blob, int n, 
-                     CSeqDBImpl::TSequenceRanges & ranges)
+                     CSeqDB::TSequenceRanges & ranges)
     {
-        typedef pair<TSeqPos, TSeqPos> TOffsetPair;
-        const Int4 * ptr = (const Int4 *) blob.ReadRaw(n*8);
-        for (int i = 0; i < n; ++i) {
-                TOffsetPair p;
-                p.first = ptr[i*2];
-                p.second = ptr[i*2+1];
-                
-                _ASSERT(((int)p.first) >= 0);
-                _ASSERT(p.second >= p.first);
-                ranges.push_back(p);
-        }
+    const void * src = (const void *) blob.ReadRaw(n*8);
+
+    // reallocate if necessary
+    if (ranges._capacity < (ranges._size + n) ) {
+	    ranges._data = (CSeqDB::TOffsetPair *) realloc(ranges._data, (ranges._size+n)*8 );
+    }
+	
+    memcpy(ranges._data + ranges._size*8,src,n*8);
+	ranges._size += n;
     }
 };
 
 template<class TRead>
 void s_ReadRanges(const vector<int>           & vol_algos,
-                  CSeqDBImpl::TSequenceRanges & ranges,
+                  CSeqDB::TSequenceRanges & ranges,
                   CBlastDbBlob                & blob)
 {
     int num_ranges = TRead::Read(blob);
@@ -2041,45 +2113,15 @@ void s_ReadRanges(const vector<int>           & vol_algos,
     }
 }
 
-static void s_CombineConnectedRanges(CSeqDBImpl::TSequenceRanges & ranges)
-{
-    if (! ranges.size())
-        return;
-    
-    // The input ranges must be sorted before calling this function.
-    // This function iterates over some sorted ranges, combining any
-    // that overlap (or abut), in-place.
-    
-    size_t w=0, r=1; // The 'write' pointer.
-    
-    for(r = 1; r < ranges.size(); ++r) {
-        if (ranges[r].first <= ranges[w].second) {
-            if (ranges[r].second > ranges[w].second) {
-                ranges[w].second = ranges[r].second;
-            }
-        } else {
-            ++w;
-            if (w != r) {
-                ranges[w] = ranges[r];
-            }
-        }
-    }
-    ++w;
-    if (w < r) {
-        ranges.resize(w);
-    }
-}
-
 void CSeqDBImpl::GetMaskData(int                 oid,
                              const vector<int> & algo_ids,
-                             bool                invert,
-                             TSequenceRanges   & ranges)
+                             CSeqDB::TSequenceRanges   & ranges)
 {
     CHECK_MARKER();
     
     // This reads the data written by CWriteDB_Impl::SetMaskData
     
-    ranges.resize(0);
+    ranges._size=0;
     
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
@@ -2112,21 +2154,9 @@ void CSeqDBImpl::GetMaskData(int                 oid,
         s_ReadRanges<SReadInt4>(vol_algos, ranges, blob);
     }
     
-    int seq_length = 0;
-    
-    if (invert) {
-        seq_length = x_GetSeqLength(oid, locked);
-    }
+    //int seq_length = 0;
     
     m_Atlas.Unlock(locked);
-    
-    sort(ranges.begin(), ranges.end());
-    
-    s_CombineConnectedRanges(ranges);
-    
-    if (invert) {
-        CSeqDB::InvertSequenceRanges(ranges, seq_length);
-    }
 }
 #endif
 
@@ -2135,6 +2165,32 @@ void CSeqDBImpl::GarbageCollect(void)
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.GarbageCollect(locked);
+}
+
+void CSeqDBImpl::SetNumberOfThreads(int num_threads)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+
+    if (num_threads <= 1) num_threads = 0;
+
+    if (num_threads > m_NumThreads ) {
+        for (int thread = m_NumThreads; thread < num_threads; ++thread) {
+            m_CachedSeqs.push_back(new SSeqResBuffer());
+        }
+    } else if (num_threads < m_NumThreads) {
+        for (int thread = num_threads; thread < m_NumThreads; ++thread) {
+            SSeqResBuffer * buffer = m_CachedSeqs.back();
+            x_RetSeqBuffer(buffer, locked);
+            m_CachedSeqs.pop_back();
+            delete buffer;
+        }
+        m_CacheID.clear();
+    }
+           
+    m_NextCacheID = 0;
+    m_NumThreads = num_threads;
+    m_Atlas.SetMTSliceSize(num_threads);
 }
 
 const CSeqDBFiltInfo & CSeqDBImpl::x_GetFiltInfo(CSeqDBLockHold & locked)

@@ -187,7 +187,7 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            widths require two bytes of the compressed subject sequence, and
            possibly a third if the word is not aligned on a 4-base boundary */
 
-        if (scan_step % COMPRESSION_RATIO == 0) {
+        if (scan_step % COMPRESSION_RATIO == 0 && !(subject->num_seq_ranges)) {
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
@@ -232,31 +232,16 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                this by first handling all the cases where 12-base regions
                fit, then handling the last few offsets separately */
 
-            Int4 last_offset3 = last_offset;
-            switch (subject->length % COMPRESSION_RATIO) {
-            case 2:
-                if (lut_word_length == 6)
-                    last_offset3--;
-                break;
-            case 3:
-                if (lut_word_length == 6)
-                    last_offset3 -= 2;
-                else if (lut_word_length == 7)
-                    last_offset3--;
-                break;
-            }
+            for (s_off = start_offset; s_off < last_offset; s_off += scan_step) {
 
-            for (s_off = start_offset; s_off <= last_offset3;
-                 s_off += scan_step) {
-
-                Int4 shift =
-                    2 * (12 - (s_off % COMPRESSION_RATIO + lut_word_length));
+                Int4 shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
                 s = abs_start + (s_off / COMPRESSION_RATIO);
 
                 index = s[0] << 16 | s[1] << 8 | s[2];
                 index = (index >> shift) & mask;
 
                 num_hits = s_BlastLookupGetNumHits(lookup, index);
+
                 if (num_hits == 0)
                     continue;
                 if (num_hits > (max_hits - total_hits))
@@ -268,31 +253,32 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                 total_hits += num_hits;
             }
 
-            /* repeat the loop but only read two bytes at a time. For
-               lut_word_length = 6 the loop runs at most twice, and for
-               lut_word_length = 7 it runs at most once */
+            /* make sure the last_offset is scanned, this is necessary for
+               db masked case */
 
-            for (; s_off > last_offset3 && s_off <= last_offset;
-                 s_off += scan_step) {
+            if (total_hits < max_hits) {
+                Int4 shift = 0;
+                s_off = last_offset;
 
-                Int4 shift =
-                    2 * (8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+                shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
                 s = abs_start + (s_off / COMPRESSION_RATIO);
 
-                index = s[0] << 8 | s[1];
+                index = s[0] << 16 | s[1] << 8 | s[2];
                 index = (index >> shift) & mask;
 
                 num_hits = s_BlastLookupGetNumHits(lookup, index);
-                if (num_hits == 0)
-                    continue;
-                if (num_hits > (max_hits - total_hits))
-                    break;
 
-                s_BlastLookupRetrieve(lookup,
-                                      index,
-                                      offset_pairs + total_hits, s_off);
-                total_hits += num_hits;
+                if (num_hits <= (max_hits - total_hits)) {
+                    if (num_hits) {
+                        s_BlastLookupRetrieve(lookup,
+                                              index,
+                                              offset_pairs + total_hits, s_off);
+                        total_hits += num_hits;
+                    }
+                    s_off += scan_step;
+                }
             }
+
             *end_offset = s_off;
         }
     } else {
@@ -304,16 +290,16 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            the following does not need to be corrected when scanning near the 
            end of the subject sequence */
 
-        for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
+        for (s_off = start_offset; s_off < last_offset; s_off += scan_step) {
 
-            Int4 shift =
-                2 * (8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            Int4 shift = 2*(8 - (s_off % COMPRESSION_RATIO + lut_word_length));
             s = abs_start + (s_off / COMPRESSION_RATIO);
 
             index = s[0] << 8 | s[1];
             index = (index >> shift) & mask;
 
             num_hits = s_BlastLookupGetNumHits(lookup, index);
+
             if (num_hits == 0)
                 continue;
             if (num_hits > (max_hits - total_hits))
@@ -325,6 +311,33 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                                   s_off);
             total_hits += num_hits;
         }
+
+        /* make sure the last_offset is scanned, this is necessary for
+           db masked case */
+
+        if (total_hits < max_hits) {
+            Int4 shift = 0;
+            s_off = last_offset;
+
+            shift = 2*(8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            s = abs_start + (s_off / COMPRESSION_RATIO);
+
+            index = s[0] << 8 | s[1];
+            index = (index >> shift) & mask;
+
+            num_hits = s_BlastLookupGetNumHits(lookup, index);
+
+            if (num_hits <= (max_hits - total_hits)) {
+                if (num_hits) {
+                    s_BlastLookupRetrieve(lookup,
+                                          index,
+                                          offset_pairs + total_hits, s_off);
+                    total_hits += num_hits;
+                }
+                s_off += scan_step;
+            }
+        }
+
         *end_offset = s_off;
     }
 
@@ -523,7 +536,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            widths require two bytes of the compressed subject sequence, and
            possibly a third if the word is not aligned on a 4-base boundary */
 
-        if (scan_step % COMPRESSION_RATIO == 0) {
+        if (scan_step % COMPRESSION_RATIO == 0 && !(subject->num_seq_ranges)) {
 
             /* for strides that are a multiple of 4, words are always aligned 
                and two bytes of the subject sequence will always hold a
@@ -566,25 +579,9 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                this by first handling all the cases where 12-base regions
                fit, then handling the last few offsets separately */
 
-            Int4 last_offset3 = last_offset;
-            switch (subject->length % COMPRESSION_RATIO) {
-            case 2:
-                if (lut_word_length == 6)
-                    last_offset3--;
-                break;
-            case 3:
-                if (lut_word_length == 6)
-                    last_offset3 -= 2;
-                else if (lut_word_length == 7)
-                    last_offset3--;
-                break;
-            }
+            for (s_off = start_offset; s_off < last_offset; s_off += scan_step) {
 
-            for (s_off = start_offset; s_off <= last_offset3;
-                 s_off += scan_step) {
-
-                Int4 shift =
-                    2 * (12 - (s_off % COMPRESSION_RATIO + lut_word_length));
+                Int4 shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
                 s = abs_start + (s_off / COMPRESSION_RATIO);
 
                 index = s[0] << 16 | s[1] << 8 | s[2];
@@ -592,21 +589,27 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                 SMALL_NA_ACCESS_HITS(0);
             }
 
-            /* repeat the loop but only read two bytes at a time. For
-               lut_word_length = 6 the loop runs at most twice, and for
-               lut_word_length = 7 it runs at most once */
+            /* make sure the last_offset is scanned, this is necessary for
+               db masked case */
+            if (total_hits < max_hits) {
+                Int4 shift = 0;
+                s_off = last_offset;
 
-            for (; s_off > last_offset3 && s_off <= last_offset;
-                 s_off += scan_step) {
-
-                Int4 shift =
-                    2 * (8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+                shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
                 s = abs_start + (s_off / COMPRESSION_RATIO);
 
-                index = s[0] << 8 | s[1];
+                index = s[0] << 16 | s[1] << 8 | s[2];
                 index = backbone[(index >> shift) & mask];
-                SMALL_NA_ACCESS_HITS(0);
+
+                if (index != -1) {
+                    total_hits += s_BlastSmallNaRetrieveHits(offset_pairs,
+                                                             index, s_off,
+                                                             total_hits,
+                                                             overflow);
+                }
+                s_off += scan_step;
             }
+
             *end_offset = s_off;
         }
     } else {
@@ -618,17 +621,38 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
            the following does not need to be corrected when scanning near the 
            end of the subject sequence */
 
-        for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
+        for (s_off = start_offset; s_off < last_offset; s_off += scan_step) {
 
-            Int4 shift =
-                2 * (8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            Int4 shift = 2*(8 - (s_off % COMPRESSION_RATIO + lut_word_length));
             s = abs_start + (s_off / COMPRESSION_RATIO);
 
             index = s[0] << 8 | s[1];
             index = backbone[(index >> shift) & mask];
             SMALL_NA_ACCESS_HITS(0);
         }
-        *end_offset = s_off;
+
+        /* make sure the last_offset is scanned, this is necessary for
+           db masked case */
+        if (total_hits < max_hits) {
+            Int4 shift = 0;
+            s_off = last_offset;
+
+            shift = 2*(8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            s = abs_start + (s_off / COMPRESSION_RATIO);
+
+            index = s[0] << 8 | s[1];
+            index = backbone[(index >> shift) & mask];
+
+            if (index != -1) {
+                total_hits += s_BlastSmallNaRetrieveHits(offset_pairs,
+                                                         index, s_off,
+                                                         total_hits,
+                                                         overflow);
+            }
+            s_off += scan_step;
+        }
+
+        *end_offset = s_off + scan_step;
     }
 
     return total_hits;
@@ -1637,6 +1661,8 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
    Int4 lut_word_length = mb_lt->lut_word_length;
    Int4 last_offset = *end_offset;
    Int4 scan_step = mb_lt->scan_step;
+//printf("%d -- %d -- %d  %d\n",mb_lt->lut_word_length, mb_lt->word_length, scan_step, mb_lt->);
+//if(mb_lt->discontiguous) printf("discontiguous\n");
    
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    ASSERT(lut_word_length == 9 || 
@@ -1648,7 +1674,7 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
       subtract the longest chain length from the allowed offset array size. */
    max_hits -= mb_lt->longest_chain;
 
-   if (scan_step % COMPRESSION_RATIO == 0) {
+   if (scan_step % COMPRESSION_RATIO == 0 && !(subject->num_seq_ranges)) {
 
       /* for strides that are a multiple of 4, words are
          always aligned and three bytes of the subject sequence 
@@ -1679,8 +1705,8 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
          }
       }
       *end_offset = (s - abs_start)*COMPRESSION_RATIO;
-   }
-   else if (lut_word_length > 9) {
+
+   } else if (lut_word_length > 9) {
 
       /* when the stride is not a multiple of 4, extra bases
          may occur both before and after every word read from
@@ -1697,23 +1723,7 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
          the cases where 16-base regions fit, then handling the 
          last few offsets separately */
 
-      Int4 last_offset4 = last_offset;
-      switch (subject->length % COMPRESSION_RATIO) {
-      case 2:
-          if (lut_word_length == 10)
-              last_offset4--;
-          break;
-      case 3:
-          if (lut_word_length == 10)
-              last_offset4 -= 2;
-          else if (lut_word_length == 11)
-              last_offset4--;
-          break;
-      default:
-          break;
-      }
-
-      for (s_off = start_offset; s_off <= last_offset4; s_off += scan_step) {
+      for (s_off = start_offset; s_off < last_offset; s_off += scan_step) {
    
          Int4 shift = 2*(16 - (s_off % COMPRESSION_RATIO + lut_word_length));
          s = abs_start + (s_off / COMPRESSION_RATIO);
@@ -1723,30 +1733,36 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
          MB_ACCESS_HITS();
       }
 
-      /* repeat the loop but only read three bytes at a time. For
-         lut_word_length = 10 the loop runs at most twice, and for
-         lut_word_length = 11 it runs at most once */
-
-      for (; s_off > last_offset4 && s_off <= last_offset; 
-                                             s_off += scan_step) {
+      /* make sure the last_offset is scanned, this is necessary for
+         db masked case */
+      if (total_hits < max_hits) {
+         Int4 shift = 0;
+         s_off = last_offset;
    
-         Int4 shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
+         shift = 2*(16 - (s_off % COMPRESSION_RATIO + lut_word_length));
          s = abs_start + (s_off / COMPRESSION_RATIO);
    
-         index = s[0] << 16 | s[1] << 8 | s[2];
+         index = s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3];
          index = (index >> shift) & mask;
-         MB_ACCESS_HITS();
+
+         if (s_BlastMBLookupHasHits(mb_lt, index)) {
+             total_hits += s_BlastMBLookupRetrieve(mb_lt, index,
+                                                   offset_pairs + total_hits,
+                                                   s_off);
+         } 
+         s_off += scan_step;
       }
+
       *end_offset = s_off;
-   }
-   else {
+
+   } else {
       /* perform scanning for a lookup table of width 9 with
          stride not a multiple of 4. The last word is always 
          three bytes from the end of the sequence, so the 
          following does not need to be corrected when scanning 
          near the end of the subject sequence */
 
-      for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
+      for (s_off = start_offset; s_off < last_offset; s_off += scan_step) {
    
          Int4 shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
          s = abs_start + (s_off / COMPRESSION_RATIO);
@@ -1755,6 +1771,28 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
          index = (index >> shift) & mask;
          MB_ACCESS_HITS();
       }
+
+      /* make sure the last_offset is scanned, this is necessary for
+         db masked case */
+
+      if (total_hits < max_hits) {
+         Int4 shift = 0;
+         s_off = last_offset;
+
+         shift = 2*(12 - (s_off % COMPRESSION_RATIO + lut_word_length));
+         s = abs_start + (s_off / COMPRESSION_RATIO);
+   
+         index = s[0] << 16 | s[1] << 8 | s[2];
+         index = (index >> shift) & mask;
+
+         if (s_BlastMBLookupHasHits(mb_lt, index)) {
+             total_hits += s_BlastMBLookupRetrieve(mb_lt, index,
+                                                   offset_pairs + total_hits,
+                                                   s_off);
+         } 
+         s_off += scan_step;
+      }
+ 
       *end_offset = s_off;
    }
 
@@ -2870,4 +2908,15 @@ void BlastChooseNucleotideScanSubject(LookupTableWrap *lookup_wrap)
         s_SmallNaChooseScanSubject(lookup_wrap);
     else
         s_MBChooseScanSubject(lookup_wrap);
+}
+
+void * BlastChooseNucleotideScanSubjectAny(LookupTableWrap *lookup_wrap)
+{
+    if (lookup_wrap->lut_type == eNaLookupTable)
+        return (void *)s_BlastNaScanSubject_Any;
+
+    if (lookup_wrap->lut_type == eSmallNaLookupTable)
+        return (void *)s_BlastSmallNaScanSubject_Any;
+ 
+    return (void *)s_MBScanSubject_Any;
 }

@@ -1015,6 +1015,20 @@ public:
     {
         return m_SliceSize;
     }
+
+    /// Set the slice size for mmap requests.
+    void SetSliceSize(int n_threads, TIndx size)
+    {
+        if (n_threads > 1) {
+            Uint8 max_slice = (sizeof(int*) == 8) ?
+                              e_MaxSlice64 : e_MaxSlice32;
+            m_SliceSize = x_Pick(e_MinSlice,
+                                 max_slice/n_threads,
+                                 size/n_threads);
+        } else {
+            m_SliceSize = m_DefaultSliceSize;
+        }
+    }
     
     /// Return the total memory bound.
     ///
@@ -1095,6 +1109,9 @@ private:
     
     /// Atlas will try to map files in blocks this size.
     Int8 m_SliceSize;
+
+    /// The saved slice size.
+    Int8 m_DefaultSliceSize;
     
     /// Mapped areas of files should overlap this much.
     Int8 m_Overhang;
@@ -1604,6 +1621,13 @@ public:
         return m_Strategy.GetSliceSize();
     }
     
+    /// Set the MT slice size.
+    /// This sets the current slice size used for mmap() allocations.
+    void SetMTSliceSize(int n_threads)
+    {
+        m_Strategy.SetSliceSize(n_threads, m_MaxFileSize);
+    }
+
     /// Return the current number of bytes allocated.
     /// 
     /// This returns the number of bytes currently allocated by the
@@ -1989,6 +2013,9 @@ private:
     
     /// Cache of file existence and length.
     map< string, pair<bool, TIndx> > m_FileSize;
+
+    /// Maxium file size.
+    Uint8 m_MaxFileSize;
     
     /// Callbacks to flush memory leases before a garbage collection.
     vector<CSeqDBFlushCB*> m_Flushers;

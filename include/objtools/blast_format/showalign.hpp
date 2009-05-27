@@ -142,7 +142,11 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
                                                //for this to work
         eShowSortControls = (1 << 23),
         eShowGeneInfo = (1 << 24),
-        eShowCheckBox = (1 << 25)
+        eShowCheckBox = (1 << 25),
+
+        eShowEndGaps = (1 << 26),      // if set end gaps will be shown as '-'
+                                       // otherwise as spaces
+        eShowGapOnlyLines = (1 << 27)  // Show lines than contain only gaps
     };
     
     ///Middle line style option

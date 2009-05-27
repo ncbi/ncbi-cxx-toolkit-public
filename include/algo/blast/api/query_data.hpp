@@ -35,7 +35,6 @@
 #ifndef ALGO_BLAST_API___BLAST_QUERY_DATA_HPP
 #define ALGO_BLAST_API___BLAST_QUERY_DATA_HPP
 
-#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_def.h>
 #include <objects/seqloc/Seq_loc.hpp>

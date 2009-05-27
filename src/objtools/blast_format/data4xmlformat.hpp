@@ -143,7 +143,8 @@ public:
     /// @inheritDoc
     const blast::TMaskedQueryRegions* 
         GetMaskLocations(int query_index) const {
-        if (m_NoHitsFound || query_index >= (int)m_Masks.size()) {
+        _ASSERT(query_index < (int)m_Masks.size());
+        if (m_NoHitsFound) {
             return NULL;
         }
         return &m_Masks[query_index];
@@ -168,7 +169,8 @@ public:
 
     /// @inheritDoc
     Int8 GetEffectiveSearchSpace(int query_index) const {
-        if (m_NoHitsFound || query_index >= (int)m_AncillaryData.size()) {
+        _ASSERT(query_index < (int)m_AncillaryData.size());
+        if (m_NoHitsFound) {
             return 0;
         }
         return m_AncillaryData[query_index]->GetSearchSpace();
@@ -185,17 +187,20 @@ public:
 
     /// @inheritDoc
     const objects::CSeq_loc* GetQuery(int query_index) const {
+        _ASSERT(query_index < (int)m_Queries->Size());
         return m_Queries->GetQuerySeqLoc(query_index);
     }
 
     /// @inheritDoc
     objects::CScope* GetScope(int query_index) const {
+        _ASSERT(query_index < (int)m_Queries->Size());
         return m_Queries->GetScope(query_index);
     }
 
     /// @inheritDoc
     const CSeq_align_set* GetAlignment(int query_index) const {
-        if (m_NoHitsFound || query_index >= (int)m_Alignments.size()) {
+        _ASSERT(query_index < (int)m_Alignments.size());
+        if (m_NoHitsFound) {
             return NULL;
         }
         return m_Alignments[query_index].GetPointer();

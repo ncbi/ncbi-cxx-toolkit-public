@@ -66,8 +66,10 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGiList;
 /// argument for gi list to exclude from a BLAST database search
 NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeGiList;
 
-/// List of filtering algorithms to apply to subjects
-extern const string kArgMaskSubjects;
+/// List of filtering algorithms to apply to subjects as soft masking
+extern const string kArgDbSoftMask;
+// List of filtering algorithms to apply to subjects as hard masking
+//extern const string kArgDbHardMask;
 
 /// Task to perform
 NCBI_BLASTINPUT_EXPORT extern const string kTask;
@@ -259,6 +261,15 @@ NCBI_BLASTINPUT_EXPORT extern const int kDfltArgMaxIntronLength;
 NCBI_BLASTINPUT_EXPORT extern const string kArgCullingLimit;
 /// Default argument to specify the culling limit
 NCBI_BLASTINPUT_EXPORT extern const int kDfltArgCullingLimit;
+
+/// Argument to specify the overhang parameter to the best hit algorithm
+NCBI_BLASTINPUT_EXPORT extern const string kArgBestHitOverhang;
+/// Default argument for the overhang parameter to the best hit algorithm
+NCBI_BLASTINPUT_EXPORT extern const double kDfltArgBestHitOverhang;
+/// Argument to specify the score edge parameter to the best hit algorithm
+NCBI_BLASTINPUT_EXPORT extern const string kArgBestHitScoreEdge;
+/// Default argument for the score edge parameter to the best hit algorithm
+NCBI_BLASTINPUT_EXPORT extern const double kDfltArgBestHitScoreEdge;
 
 /// Argument to specify the frame shift penality
 NCBI_BLASTINPUT_EXPORT extern const string kArgFrameShiftPenalty;

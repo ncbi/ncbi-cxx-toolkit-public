@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <algo/blast/core/blast_export.h>
+#include <algo/blast/api/psiblast_iteration.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -104,7 +105,7 @@ class NCBI_XBLAST_EXPORT CPsiBlastAlignmentProcessor {
 public:
     /// Container of Seq-ids for the subject sequences (hits) aligned with the
     /// query
-    typedef vector< CRef<objects::CSeq_id> > THitIdentifiers;
+    typedef CPsiBlastIterationState::TSeqIds THitIdentifiers;
 
     /// Extract all the THitId which have evalues below the inclusion threshold
     /// @param alignments 
@@ -148,7 +149,6 @@ public:
  * product of the PSSM engine, set them as they are required for the
  * PSI-BLAST (query sequence) and RPS-BLAST/formatrpsdb (gap costs)
  * @param pssm PSSM to modify [in|out]
- * @param query Query sequence which corresponds to the PSSM [in]
  * @param gap_open Gap opening cost associated with the matrix used to build
  * the PSSM [in]
  * @param gap_extend Gap extension cost associated with the matrix used to 
@@ -157,7 +157,6 @@ public:
 NCBI_XBLAST_EXPORT
 void
 PsiBlastAddAncillaryPssmData(objects::CPssmWithParameters& pssm, 
-                             const objects::CBioseq& query, 
                              int gap_open, 
                              int gap_extend);
 

@@ -94,6 +94,59 @@ s_CreateSeqLocMapper(CSeq_id& query_id,
                              scope));
 }
 
+void s_CombineDustMasksWithUserProvidedMasks(CSeqVector& data,
+           CConstRef<CSeq_loc> seqloc,
+           CRef<CScope> scope,
+           CRef<CSeq_id> query_id, 
+           CRef<CSeq_loc>& orig_query_mask,
+           Uint4 level, Uint4 window, Uint4 linker)
+{
+    CSymDustMasker duster(level, window, linker);
+
+    CRef<CPacked_seqint> masked_locations =
+        duster.GetMaskedInts(*query_id, data);
+    CPacked_seqint::Tdata locs = masked_locations->Get();
+    if (locs.empty()) {
+        return;
+    }
+
+    CRef<CSeq_loc> query_masks(new CSeq_loc);
+    ITERATE(CPacked_seqint::Tdata, masked_loc, locs) {
+        CRef<CSeq_loc> seq_interval(new CSeq_loc(*query_id, 
+                                                 (*masked_loc)->GetFrom(), 
+                                                 (*masked_loc)->GetTo()));
+        query_masks->Add(*seq_interval);
+    }
+
+    CRef<CSeq_loc_Mapper> mapper = s_CreateSeqLocMapper(*query_id, seqloc,
+                                                        scope);
+    query_masks.Reset(mapper->Map(*query_masks));
+
+    const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All|CSeq_loc::fSort;
+    if (orig_query_mask.NotEmpty() && !orig_query_mask->IsNull()) {
+        CRef<CSeq_loc> tmp = orig_query_mask->Add(*query_masks,  kTopFlags, 0);
+        orig_query_mask.Reset(tmp);
+    } else {
+        query_masks->Merge(kTopFlags, 0);
+        orig_query_mask.Reset(query_masks);
+    }
+
+    if (orig_query_mask->IsNull() || orig_query_mask->IsEmpty()) {
+        orig_query_mask.Reset();
+        return;
+    }
+
+    // in the event this happens, change to Seq-interval so that
+    // CSeq_loc::ChangeToPackedInt can process it
+    if (orig_query_mask->IsWhole()) {
+        orig_query_mask.Reset
+            (new CSeq_loc(*query_id, 0, 
+                          sequence::GetLength(*query_id, scope) -1));
+    }
+    orig_query_mask->ChangeToPackedInt();
+    _ASSERT(orig_query_mask->IsPacked_int());
+}
+
 void
 Blast_FindDustFilterLoc(TSeqLocVector& queries, 
                         Uint4 level, Uint4 window, Uint4 linker)
@@ -103,53 +156,12 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
     {
         CSeqVector data(*query->seqloc, *query->scope, 
                         CBioseq_Handle::eCoding_Iupac);
-
-        CSymDustMasker duster(level, window, linker);
-        CSeq_id& query_id = const_cast<CSeq_id&>(*query->seqloc->GetId());
-
-        CRef<CPacked_seqint> masked_locations =
-            duster.GetMaskedInts(query_id, data);
-        CPacked_seqint::Tdata locs = masked_locations->Get();
-        if (locs.empty()) {
-            continue;
-        }
-
-        CRef<CSeq_loc> query_masks(new CSeq_loc);
-        ITERATE(CPacked_seqint::Tdata, masked_loc, locs) {
-            CRef<CSeq_loc> seq_interval(new CSeq_loc(query_id, 
-                                                     (*masked_loc)->GetFrom(), 
-                                                     (*masked_loc)->GetTo()));
-            query_masks->Add(*seq_interval);
-        }
-
-        CRef<CSeq_loc_Mapper> mapper = s_CreateSeqLocMapper(query_id,
-                                                            query->seqloc,
-                                                            query->scope);
-        query_masks.Reset(mapper->Map(*query_masks));
-
-        const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All|CSeq_loc::fSort;
-        if (query->mask.NotEmpty() && !query->mask->IsNull()) {
-            CRef<CSeq_loc> tmp = query->mask->Add(*query_masks,  kTopFlags, 0);
-            query->mask.Reset(tmp);
-        } else {
-            query_masks->Merge(kTopFlags, 0);
-            query->mask.Reset(query_masks);
-        }
-
-        if (query->mask->IsNull() || query->mask->IsEmpty()) {
-            query->mask.Reset();
-            continue;
-        }
-
-        // in the event this happens, change to Seq-interval so that
-        // CSeq_loc::ChangeToPackedInt can process it
-        if (query->mask->IsWhole()) {
-            query->mask.Reset
-                (new CSeq_loc(query_id, 0, 
-                              sequence::GetLength(query_id, query->scope) -1 ));
-        }
-        query->mask->ChangeToPackedInt();
-        _ASSERT(query->mask->IsPacked_int());
+        CRef<CSeq_id> query_id
+            (const_cast<CSeq_id*>(query->seqloc->GetId()));
+        s_CombineDustMasksWithUserProvidedMasks(data, query->seqloc,
+                                                query->scope, query_id,
+                                                query->mask, level, window,
+                                                linker);
     }
 
 }
@@ -158,54 +170,24 @@ void
 Blast_FindDustFilterLoc(CBlastQueryVector& queries, 
                         Uint4 level, Uint4 window, Uint4 linker)
 {
-
-    for(size_t i = 0; i < queries.Size(); i++) {
+    for(size_t i = 0; i < queries.Size(); i++) 
+    {
         CSeqVector data(*queries.GetQuerySeqLoc(i), *queries.GetScope(i),
                         CBioseq_Handle::eCoding_Iupac);
 
-        CSymDustMasker duster(level, window, linker);
-        CSeq_id& query_id = const_cast<CSeq_id&>(*queries.GetQuerySeqLoc(i)->GetId());
-
-        CRef<CPacked_seqint> masked_locations =
-            duster.GetMaskedInts(query_id, data);
-        CPacked_seqint::Tdata locs = masked_locations->Get();
-
-        if (locs.size() > 0)
-        {
-           CRef<CSeq_loc> entire_slp(new CSeq_loc);
-           entire_slp->SetWhole().Assign(query_id);
-           
-           // FIXME: this code might have quadratic asymptotic performance...
-           // fix to use approach in overloaded function which takes a
-           // TSeqLocVector
-           CSeq_loc_Mapper mapper(*entire_slp, *queries.GetQuerySeqLoc(i), &*queries.GetScope(i));
-           CRef<CSeq_loc> tmp;
-           tmp = NULL;
-           
-           // I think the TSeqLocVector version of this code merges
-           // overlapping regions.  This version does not - it does
-           // not seem to be necessary for our case, since the regions
-           // are only being memset() with the masking character, so I
-           // have not taken the time to implement overlap removal.
-           
-           ITERATE(CPacked_seqint::Tdata, masked_loc, locs)
-           {
-               CRef<CSeq_loc> seq_interval
-                   (new CSeq_loc(query_id,
-                                 (*masked_loc)->GetFrom(), 
-                                 (*masked_loc)->GetTo()));
-               
-               CRef<CSeq_loc> tmp1 = mapper.Map(*seq_interval);
-               
-               int frame = CSeqLocInfo::eFrameNotSet;
-               
-               CRef<CSeqLocInfo> sli(new CSeqLocInfo(& tmp1->SetInt(), frame));
-               
-               queries.AddMask(i, sli);
-           }
+        CRef<CSeq_id> query_id
+            (const_cast<CSeq_id*>(queries.GetQuerySeqLoc(i)->GetId()));
+        CRef<CSeq_loc> masks = queries.GetMasks(i);
+        s_CombineDustMasksWithUserProvidedMasks(data,
+                                                queries.GetQuerySeqLoc(i),
+                                                queries.GetScope(i), query_id,
+                                                masks, level, window, linker);
+        if (masks.NotEmpty()) {
+            TMaskedQueryRegions mqr = 
+                PackedSeqLocToMaskedQueryRegions(masks, eBlastTypeBlastn);
+            queries.SetMaskedRegions(i, mqr);
         }
     }
-
 }
 
 END_SCOPE(blast)

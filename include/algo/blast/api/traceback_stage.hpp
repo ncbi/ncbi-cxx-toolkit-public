@@ -55,33 +55,21 @@ class IBlastSeqInfoSrc;
 class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject
 {
 public:
-    /// Create a BlastSeqSrc wrapping the provided CSeqDB object.
-    CBlastTracebackSearch(CRef<IQueryFactory>     qf,
-                          CRef<CBlastOptions>     opts,
-                          CRef<CSeqDB>            dbinfo,
-                          CRef<TBlastHSPStream>   hsps,
-                          CConstRef<objects::CPssmWithParameters> pssm = null);
-    
-    /// Create a BlastSeqSrc using a newly constructed CSeqDB.
-    CBlastTracebackSearch(CRef<IQueryFactory>     qf,
-                          CRef<CBlastOptions>     opts,
-                          const CSearchDatabase & dbinfo,
-                          CRef<TBlastHSPStream>   hsps);
-    
-    
     /// Create a BlastSeqSrc re-using an already created BlastSeqSrc
     /// @note We don't own the BlastSeqSrc
     CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                           CRef<CBlastOptions>   opts,
                           BlastSeqSrc         * seqsrc,
-                          CRef<TBlastHSPStream> hsps);
+                          CRef<IBlastSeqInfoSrc> seqinfosrc,
+                          CRef<TBlastHSPStream> hsps,
+                          CConstRef<objects::CPssmWithParameters> pssm = null);
     
     /// Use the internal data and return value of the preliminary
     /// search to proceed with the traceback.
     CBlastTracebackSearch(CRef<IQueryFactory> query_factory,
                           CRef<SInternalData> internal_data,
-                          const CBlastOptions& opts,
-                          const IBlastSeqInfoSrc& seqinfo_src,
+                          CRef<CBlastOptions>   opts,
+                          CRef<IBlastSeqInfoSrc> seqinfosrc,
                           TSearchMessages& search_msgs);
     
     /// Destructor.
@@ -102,7 +90,8 @@ private:
     void x_Init(CRef<IQueryFactory>   qf, 
                 CRef<CBlastOptions>   opts,
                 CConstRef<objects::CPssmWithParameters> pssm,
-                const string        & dbname);
+                const string        & dbname,
+                CRef<TBlastHSPStream> hsps);
     
     /// Prohibit copy constructor
     CBlastTracebackSearch(CBlastTracebackSearch &);
@@ -112,6 +101,9 @@ private:
     /// Sets up the underlying BLAST database object handle to retrieve subject
     /// sequences partially during the traceback processing
     void x_SetSubjectRangesForPartialFetching();
+
+    /// Determines if the search is suitable for partial fetching or not
+    bool x_IsSuitableForPartialFetching();
 
     // C++ data
     
@@ -132,10 +124,7 @@ private:
     
     /// Pointer to the IBlastSeqInfoSrc object to use to generate the
     /// Seq-aligns
-    IBlastSeqInfoSrc* m_SeqInfoSrc;
-    
-    /// True if the field above must be deleted by this class, false otherwise
-    bool m_OwnSeqInfoSrc;
+    CRef<IBlastSeqInfoSrc> m_SeqInfoSrc;
     
     /// Determines if BLAST database search or BLAST 2 sequences style of
     /// results should be produced

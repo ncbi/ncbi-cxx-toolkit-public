@@ -48,6 +48,7 @@ static char const rcsid[] =
 #include <objects/scoremat/PssmIntermediateData.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/scoremat/FormatRpsDbParameters.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 // Core BLAST includes
 #include <algo/blast/core/blast_options.h>
@@ -315,6 +316,10 @@ CPssmEngine::x_CreatePssmFromFreqRatios()
     // Convert core BLAST matrix structure into ASN.1 score matrix object
     CRef<CPssmWithParameters> retval;
     retval = x_PSIMatrix2Asn1(pssm, m_PssmInputFreqRatios->GetMatrixName());
+    CRef<CBioseq> query = m_PssmInputFreqRatios->GetQueryForPssm();
+    if (query.NotEmpty()) {
+        retval->SetQuery().SetSeq(*query);
+    }
 
     return retval;
 }
@@ -346,6 +351,10 @@ CPssmEngine::x_CreatePssmFromMsa()
     CRef<CPssmWithParameters> retval;
     retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetMatrixName(), 
                               m_PssmInput->GetOptions(), diagnostics);
+    CRef<CBioseq> query = m_PssmInput->GetQueryForPssm();
+    if (query.NotEmpty()) {
+        retval->SetQuery().SetSeq(*query);
+    }
 
     return retval;
 }

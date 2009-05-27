@@ -34,13 +34,27 @@
 #ifndef ALGO_BLAST_CORE__BLAST_HSPSTREAM_H
 #define ALGO_BLAST_CORE__BLAST_HSPSTREAM_H
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/split_query.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_hspfilter.h>
+#include <connect/ncbi_core.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** Auxiliary structure to allow sorting the results by score for the
+ * composition-based statistics code */
+typedef struct SSortByScoreStruct {
+    Boolean sort_on_read;    /**< Should the results be sorted on the first read
+                               call? */
+    Int4 first_query_index;  /**< Index of the first query to try getting
+                               results from */
+} SSortByScoreStruct;
 
 /** structure used to hold a collection of hits
     retrieved from the HSPStream */
@@ -49,7 +63,7 @@ typedef struct BlastHSPStreamResultBatch {
     BlastHSPList **hsplist_array;  /**< array of HSP lists returned */
 } BlastHSPStreamResultBatch;
 
-/** create a new batch to hold HSP results 
+/** create a new batch to hold HSP results
  * @param num_hsplists Maximum number of results to hold
  * @return Pointer to newly allocated structure
  */
@@ -72,79 +86,48 @@ BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchFree(
 NCBI_XBLAST_EXPORT
 void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch);
 
-/** The BlastHSPStream ADT is an opaque data type that defines a thread-safe
- *  interface which is used by the core BLAST code to save lists of HSPs.
- *  The interface currently provides the following services:
- *  - Management of the ADT (construction, destruction)
- *  - Writing lists of HSPs to the ADT
- *  - Reading lists of HSPs from the ADT
- *  - Merging two instances of the ADT
- *  .
- *  The default implementation simply buffers HSPs from one stage of the
- *  algorithm to the next @sa FIXME
- *  Implementations of this interface should provide functions for all
- *  the functions listed above.
- */
-typedef struct BlastHSPStream BlastHSPStream;
-
-/** Function pointer typedef to create a new BlastHSPStream structure.
- * First argument is a pointer to the structure to be populated (allocated for
- * client implementations), second argument should be typecast'd to the 
- * correct type by user-defined constructor function */
-typedef BlastHSPStream* (*BlastHSPStreamConstructor) (BlastHSPStream*, void*);
-
-/** Function pointer typedef to deallocate a BlastHSPStream structure.
- * Argument is the BlastHSPStream structure to free, always returns NULL. */
-typedef BlastHSPStream* (*BlastHSPStreamDestructor) (BlastHSPStream*);
-
-/** Function pointer typedef to implement the read/write functionality of the
- * BlastHSPStream. The first argument is the BlastHSPStream structure used, 
- * second argument is the list of HSPs to be saved/read (reading assumes
- * ownership, writing releases ownership) */
-typedef int (*BlastHSPStreamMethod) (BlastHSPStream*, BlastHSPList**);
-
-/** Function pointer typedef to implement the batch read functionality of the
- * BlastHSPStream. The first argument is the BlastHSPStream structure used, 
- * second argument is the list of HSP listss that are read (reading assumes
- * ownership) */
-typedef int (*BlastHSPStreamBatchReadMethod) (BlastHSPStream*, 
-                                              BlastHSPStreamResultBatch*);
-
-/** Function pointer typedef to implement the merge functionality of the
- * BlastHSPStream. The first argument is the BlastHSPStream structure to merge, 
- * second argument is the BlastHSPStream that will contain the combined
- * result. Note that this function does not lock either of it inputs */
-typedef int (*BlastHSPStreamMergeFnType) (SSplitQueryBlk*, Uint4,
-                                     BlastHSPStream*, BlastHSPStream*);
-
-/** Function pointer typedef to implement the close functionality of the 
- * BlastHSPStream. Argument is a pointer to the structure to close for 
- * writing.
- */
-typedef void (*BlastHSPStreamCloseFnType) (BlastHSPStream*);
+/** Default implementation of BlastHSPStream */
+typedef struct BlastHSPStream {
+   EBlastProgramType program;           /**< BLAST program type */
+   Int4 num_hsplists;          /**< number of HSPlists saved */
+   Int4 num_hsplists_alloc;    /**< number of entries in sorted_hsplists */
+   BlastHSPList **sorted_hsplists; /**< list of all HSPlists from 'results'
+                                       combined, sorted in order of
+                                       decreasing subject OID */
+   BlastHSPResults* results;/**< Structure for saving HSP lists */
+   Boolean results_sorted;  /**< Have the results already been sorted?
+                               Set to true after the first read call. */
+   /**< Non-NULL if the results should be sorted by score as opposed to subject
+    * OID. This is necessary to meet a pre-condition of the composition-based
+    * statistics processing */
+   SSortByScoreStruct* sort_by_score;
+   MT_LOCK x_lock;   /**< Mutex for writing and reading results. */
+   /* support for writer and pipes */
+   BlastHSPWriter* writer;         /**< writer to be applied when writing*/
+   Boolean writer_initialized;     /**< Is writer already initialized? */
+   BlastHSPPipe *pre_pipe;         /**< registered preliminary pipeline (unused
+                                    for now) */
+   BlastHSPPipe *tback_pipe;       /**< registered traceback pipeline */
+} BlastHSPStream;
 
 /*****************************************************************************/
-
-/** Structure that contains the information needed for BlastHSPStreamNew to 
- * fully populate the BlastHSPStream structure it returns */
-typedef struct BlastHSPStreamNewInfo {
-    BlastHSPStreamConstructor constructor; /**< User-defined function to 
-                                           initialize a BlastHSPStream 
-                                           structure */
-    void* ctor_argument;                 /**< Argument to the above function */
-} BlastHSPStreamNewInfo;
-
-/** Allocates memory for a BlastHSPStream structure and then invokes the
- * constructor function defined in its first argument, passing the 
- * ctor_argument member of that same structure. If the constructor function
- * pointer is not set, NULL is returned.
- * @param bhsn_info Structure defining constructor and its argument to be
- *        invoked from this function [in]
+/** Initialize the HSP stream. 
+ * @param program Type of BlAST program [in]
+ * @param extn_opts Extension options to determine composition-based statistics
+ * mode [in]
+ * @param sort_on_read Should results be sorted on the first read call? Only
+ * applicable if composition-based statistics is on [in]
+ * @param num_queries Number of query sequences in this BLAST search [in]
+ * @param writer Writer to be registered [in]
  */
 NCBI_XBLAST_EXPORT
-BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info);
+BlastHSPStream* BlastHSPStreamNew(EBlastProgramType program,
+                             const BlastExtensionOptions* extn_opts,
+                             Boolean sort_on_read,
+                             Int4 num_queries,
+                             BlastHSPWriter* writer);
 
-/** Frees the BlastHSPStream structure by invoking the destructor function set 
+/** Frees the BlastHSPStream structure by invoking the destructor function set
  * by the user-defined constructor function when the structure is initialized
  * (indirectly, by BlastHSPStreamNew). If the destructor function pointer is not
  * set, a memory leak could occur.
@@ -160,6 +143,15 @@ BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream);
  */
 NCBI_XBLAST_EXPORT
 void BlastHSPStreamClose(BlastHSPStream* hsp_stream);
+
+/** Closes the BlastHSPStream structure after traceback. 
+ * This is mainly to provide a chance to apply post-traceback pipes.
+ * @param hsp_stream The stream to close [in] [out]
+ * @param results The traceback results [in] [out]
+ */
+NCBI_XBLAST_EXPORT
+void BlastHSPStreamTBackClose(BlastHSPStream* hsp_stream,
+                              BlastHSPResults* results);
 
 /** Moves the HSPlists from an HSPStream into the list contained
  * by a second HSPStream
@@ -195,7 +187,7 @@ extern const int kBlastHSPStream_Eof;
  * @param hsp_stream The BlastHSPStream object [in]
  * @param hsp_list List of HSPs for the HSPStream to keep track of. The caller
  * releases ownership of the hsp_list [in]
- * @return kBlastHSPStream_Success on success, otherwise kBlastHSPStream_Error 
+ * @return kBlastHSPStream_Success on success, otherwise kBlastHSPStream_Error
  */
 NCBI_XBLAST_EXPORT
 int BlastHSPStreamWrite(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
@@ -220,79 +212,27 @@ int BlastHSPStreamRead(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
  * kBlastHSPStream_Eof on end of stream
  */
 NCBI_XBLAST_EXPORT
-int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream, 
+int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
                             BlastHSPStreamResultBatch* batch);
 
-/*****************************************************************************/
-/* The following enumeration and function are only of interest to implementors
- * of this interface */
-
-/** Defines the methods supported by the BlastHSPStream ADT */
-typedef enum EMethodName {
-    eConstructor,       /**< Constructor for a BlastHSPStream implementation */
-    eDestructor,        /**< Destructor for a BlastHSPStream implementation */
-    eRead,              /**< Read from the BlastHSPStream */
-    eBatchRead,         /**< Batch read from the BlastHSPStream */
-    eWrite,             /**< Write to the BlastHSPStream */
-    eMerge,             /**< Merge with a second BlastHSPStream */
-    eClose,             /**< Close the BlastHSPStream for writing */ 
-    eMethodBoundary     /**< Limit to facilitate error checking */
-} EMethodName;
-
-/** Union to encapsulate the supported methods on the BlastHSPStream interface
- */
-typedef union BlastHSPStreamFunctionPointerTypes {
-   /** Used for read/write function pointers */
-   BlastHSPStreamMethod method;        
-   
-   /** Used for constructor function pointer */
-   BlastHSPStreamConstructor ctor;     
-   
-   /** Used for destructor function pointer */
-   BlastHSPStreamDestructor dtor;      
-
-   /** Use for merge function pointer */
-   BlastHSPStreamMergeFnType mergeFn;
-
-   /** Use for merge function pointer */
-   BlastHSPStreamBatchReadMethod batch_read;
-
-   /** Use for close function pointer */
-   BlastHSPStreamCloseFnType closeFn;
-} BlastHSPStreamFunctionPointerTypes;
-
-/** Sets implementation specific data structure 
- * @param hsp_stream structure to initialize [in]
- * @param data structure to assign to the hsp_stream [in]
- * @return kBlastHSPStream_Error if hsp_stream is NULL else,
- * kBlastHSPStream_Success;
+/** Attach a mutex lock to a stream to protect multiple access during writing
+ * @param hsp_stream  The stream to attach [in]
+ * @param lock        Pointer to locking structure for writing by multiple
+ *                    threads. Locking will not be performed if NULL. [in]
  */
 NCBI_XBLAST_EXPORT
-int SetData(BlastHSPStream* hsp_stream, void* data);
+int BlastHSPStreamRegisterMTLock(BlastHSPStream* hsp_stream,
+                                 MT_LOCK lock);
 
-/** Gets implementation specific data structure 
- * @param hsp_stream structure from which to obtain the internal data. It is
- * expected that the caller (implementation of BlastHSPStream) knows what type
- * to cast the return value to. [in]
- * @return pointer to internal data structure of the implementation of the
- * BlastHSPStream, or NULL if hsp_stream is NULL
+/** Insert the user-specified pipe to the *end* of the pipeline.
+ * @param hsp_stream The BlastHSPStream object [in]
+ * @param pipe The pipe to be registered [in]
+ * @param stage At what stage should this pipeline be applied [in]
  */
 NCBI_XBLAST_EXPORT
-void* GetData(BlastHSPStream* hsp_stream);
-
-/** Use this function to set the pointers to functions implementing the various
- * methods supported in the BlastHSPStream interface 
- * @param hsp_stream structure to initialize [in]
- * @param name method for which a function pointer is being provided [in]
- * @param fnptr_type union containing the pointer to the function specified by
- * name [in]
- * @return kBlastHSPStream_Error if hsp_stream is NULL else,
- * kBlastHSPStream_Success;
- */
-NCBI_XBLAST_EXPORT
-int SetMethod(BlastHSPStream* hsp_stream, 
-               EMethodName name,
-               BlastHSPStreamFunctionPointerTypes fnptr_type);
+int BlastHSPStreamRegisterPipe(BlastHSPStream* hsp_stream,
+                               BlastHSPPipe* pipe,
+                               EBlastStage stage);
 
 #ifdef __cplusplus
 }

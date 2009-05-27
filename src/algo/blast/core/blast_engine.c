@@ -240,7 +240,7 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
     }
 
     /* Save a copy of the BLAST_SequenceBlk::seq_ranges */
-    if (*seq_ranges_backup == NULL) {
+    if ( (*seq_ranges_backup == NULL) && (subject->num_seq_ranges) ) {
         size_t num_bytes = sizeof(*subject->seq_ranges)*subject->num_seq_ranges;
         ASSERT(subject->num_seq_ranges);
         *num_seq_ranges_backup = subject->num_seq_ranges;
@@ -252,12 +252,11 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
 
     /* Adjust BLAST_SequenceBlk::seq_ranges so that they correspond to the
      * subject chunk being processed */
-    {
+    if (*num_seq_ranges_backup) {
         const Int4 start = subject->chunk * MAX_DBSEQ_LEN - 
             subject->chunk * DBSEQ_CHUNK_OVERLAP;
         const Int4 stop = start + subject->length;
-        /* This is the chunk_range in the context of the full subject sequence*/
-        const SSeqRange chunk_range = { start, stop };
+
         Int4 i = 0, starting_idx = 0, ending_idx = 0;
 
         ASSERT(start < stop);
@@ -268,15 +267,30 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
         ending_idx = SSeqRangeArrayLessThanOrEqual(*seq_ranges_backup,
                                          *num_seq_ranges_backup, stop);
 
-        ASSERT(starting_idx >= 0);
-        ASSERT(ending_idx >= 0);
-        
-        subject->num_seq_ranges = ending_idx - starting_idx;
+		/* fix up SSeqRangeArrayLessThanOrEqual() output */
+		if (stop < (*seq_ranges_backup)[ending_idx].left) {
+			if (ending_idx) ending_idx--;
+			}
 
+        subject->num_seq_ranges = ending_idx - starting_idx + 1;
+
+		ASSERT(starting_idx >= 0);
+		ASSERT(ending_idx >= 0);
+		ASSERT(starting_idx < *num_seq_ranges_backup);
+		ASSERT(ending_idx < *num_seq_ranges_backup);
+
+		/* sanity check cases where masks lie outside the subject chunk */
+		
+		/* if the subject starts after the last mask ends, there's nothing to mask. */
+		if (start > (*seq_ranges_backup)[ending_idx].right)
+			return;
+	
+		/* if the subject ends before the first mask begins, there's nothing to mask. */
+		if (stop < (*seq_ranges_backup)[starting_idx].left)
+			return;
+		
         /* copy the relevant ranges ... */
-        if (subject->num_seq_ranges == 0) {
-            subject->seq_ranges[subject->num_seq_ranges++] = chunk_range;
-        } else {
+        if (subject->num_seq_ranges > 0) {
             memcpy((void*)subject->seq_ranges,
                    (void*)&(*seq_ranges_backup)[starting_idx], 
                    sizeof(*subject->seq_ranges)*subject->num_seq_ranges);
@@ -299,11 +313,13 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
 
 /** 
  * @brief Restore the BLAST_SequenceBlk::{seq_ranges,num_seq_ranges} fields
+ * backed up in s_AdjustSubjectChunks
  * 
  * @param subject subject sequence block to be modified [in|out]
  * @param seq_ranges_backup original data in BLAST_SequenceBlk::seq_ranges [in]
  * @param num_seq_ranges_backup original data in
  * BLAST_SequenceBlk::num_seq_ranges [in]
+ * @sa s_AdjustSubjectChunks
  */
 static void
 s_RestoreSeqRanges(BLAST_SequenceBlk* subject, 

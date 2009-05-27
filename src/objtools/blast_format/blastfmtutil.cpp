@@ -1567,6 +1567,53 @@ CBlastFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
 
 
 
+string CBlastFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
+{
+    string link = NcbiEmptyString;
+    CConstRef<CSeq_id> seqId = GetSeq_idByType(ids, CSeq_id::e_General);
+
+    if (!seqId.Empty())
+    {
+        // Get the SRA tag from seqId
+        if (seqId->GetGeneral().CanGetDb() &&
+            seqId->GetGeneral().CanGetTag() &&
+            seqId->GetGeneral().GetTag().IsStr())
+        {
+            // Decode the tag to collect the SRA-specific indices
+            string strTag = seqId->GetGeneral().GetTag().GetStr();
+            if (!strTag.empty())
+            {
+                vector<string> vecInfo;
+                try
+                {
+                    NStr::Tokenize(strTag, ".", vecInfo);
+                }
+                catch (...)
+                {
+                    return NcbiEmptyString;
+                }
+
+                if (vecInfo.size() != 3)
+                {
+                    return NcbiEmptyString;
+                }
+
+                string strRun = vecInfo[0];
+                string strSpotId = vecInfo[1];
+                string strReadIndex = vecInfo[2];
+
+                // Generate the SRA link to the identified spot
+                link += user_url;
+                link += "?run=" + strRun;
+                link += "." + strSpotId;
+                link += "." + strReadIndex;
+            }
+        }
+    }
+
+    return link;
+}
+
 string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
                                       string user_url, string database,
                                       bool db_is_na, string rid, int query_number,
@@ -2293,6 +2340,7 @@ CBlastFormatUtil::PrintAsciiPssm
      CConstRef<blast::CBlastAncillaryData> ancillary_data, 
      CNcbiOstream& out)
 {
+    _ASSERT(ancillary_data.NotEmpty());
     static const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA[(int)'X'];
     vector<double> info_content, gapless_col_weights, sigma;
     blast::CScorematPssmConverter::GetInformationContent(pssm_with_params, 
@@ -2400,18 +2448,26 @@ CBlastFormatUtil::PrintAsciiPssm
         ancillary_data->GetPsiGappedKarlinBlk();
     out << "\n\n" << setprecision(4);
     out << "                      K         Lambda\n";
-    out << "Standard Ungapped    "
-        << ungapped_kbp->K << "     "
-        << ungapped_kbp->Lambda << "\n";
-    out << "Standard Gapped      "
-        << gapped_kbp->K << "     "
-        << gapped_kbp->Lambda << "\n";
-    out << "PSI Ungapped         "
-        << psi_ungapped_kbp->K << "     "
-        << psi_ungapped_kbp->Lambda << "\n";
-    out << "PSI Gapped           "
-        << psi_gapped_kbp->K << "     "
-        << psi_gapped_kbp->Lambda << "\n";
+    if (ungapped_kbp) {
+        out << "Standard Ungapped    "
+            << ungapped_kbp->K << "     "
+            << ungapped_kbp->Lambda << "\n";
+    }
+    if (gapped_kbp) {
+        out << "Standard Gapped      "
+            << gapped_kbp->K << "     "
+            << gapped_kbp->Lambda << "\n";
+    }
+    if (psi_ungapped_kbp) {
+        out << "PSI Ungapped         "
+            << psi_ungapped_kbp->K << "     "
+            << psi_ungapped_kbp->Lambda << "\n";
+    }
+    if (psi_gapped_kbp) {
+        out << "PSI Gapped           "
+            << psi_gapped_kbp->K << "     "
+            << psi_gapped_kbp->Lambda << "\n";
+    }
 }
 
 END_NCBI_SCOPE

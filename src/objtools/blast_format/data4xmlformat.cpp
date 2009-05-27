@@ -38,7 +38,7 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <util/tables/raw_scoremat.h>
-#include "data4xmlformat.hpp"
+#include "data4xmlformat.hpp"       /* NCBI_FAKE_WARNING */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -90,24 +90,24 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
         m_Masks.resize(GetNumQueries());
         for (size_t i = 0; i < GetNumQueries(); i++) {
 
-            if (i < results.size()) {
-                m_Alignments.push_back(results[i].GetSeqAlign());
-                m_AncillaryData.push_back(results[i].GetAncillaryData());
-                results[i].GetMaskedQueryRegions(m_Masks[i]);
+            m_Alignments.push_back(results[i].GetSeqAlign());
+            m_AncillaryData.push_back(results[i].GetAncillaryData());
+            results[i].GetMaskedQueryRegions(m_Masks[i]);
 
-                // Check in case there are any errors/warnings
-                {
-                    string errors = results[i].GetErrorStrings();
-                    if (results[i].HasWarnings()) {
-                        if ( !errors.empty() ) {
-                            errors += " ";
-                        }
-                        errors += results[i].GetWarningStrings();
+            // Check in case there are any errors/warnings
+            {
+                string errors = results[i].GetErrorStrings();
+                if (results[i].HasWarnings()) {
+                    if ( !errors.empty() ) {
+                        errors += " ";
                     }
-                    m_Errors.push_back(errors);
+                    errors += results[i].GetWarningStrings();
                 }
-            } else {
-                m_Errors.push_back(CBlastFormatUtil::kNoHitsFound);
+                if ( !results[i].HasAlignments() ) {
+                    errors += (errors.empty() ? kEmptyStr : " ");
+                    errors += CBlastFormatUtil::kNoHitsFound;
+                }
+                m_Errors.push_back(errors);
             }
         }
     }

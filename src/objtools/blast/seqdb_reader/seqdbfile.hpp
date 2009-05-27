@@ -347,11 +347,15 @@ protected:
                              TIndx            end,
                              bool             keep,
                              bool             hold,
-                             CSeqDBLockHold & locked) const
+                             CSeqDBLockHold & locked,
+                             bool             in_lease = false) const
     {
         m_Atlas.Lock(locked);
         
         if (! m_Lease.Contains(start, end)) {
+            if (in_lease) {
+                return NULL;
+            }
             m_Atlas.GetRegion(m_Lease, m_FileName, start, end);
         }
         
@@ -879,9 +883,10 @@ public:
                            TIndx            end,
                            bool             keep,
                            bool             hold,
-                           CSeqDBLockHold & locked) const
+                           CSeqDBLockHold & locked,
+                           bool             in_lease = false) const
     {
-        return x_GetRegion(start, end, keep, hold, locked);
+        return x_GetRegion(start, end, keep, hold, locked, in_lease);
     }
 };
 

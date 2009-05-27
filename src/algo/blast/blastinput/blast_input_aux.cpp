@@ -51,36 +51,27 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CArgDescriptions* 
-SetUpCommandLineArguments(TBlastCmdLineArgs& args)
+CNcbiOstream*
+CAutoOutputFileReset::GetStream()
 {
-    auto_ptr<CArgDescriptions> retval(new CArgDescriptions);
-
-    // Create the groups so that the ordering is established
-    retval->SetCurrentGroup("Input query options");
-    retval->SetCurrentGroup("General search options");
-    retval->SetCurrentGroup("BLAST database options");
-    retval->SetCurrentGroup("BLAST-2-Sequences options");
-    retval->SetCurrentGroup("Formatting options");
-    retval->SetCurrentGroup("Query filtering options");
-    retval->SetCurrentGroup("Restrict search or results");
-    retval->SetCurrentGroup("Discontiguous MegaBLAST options");
-    retval->SetCurrentGroup("Statistical options");
-    retval->SetCurrentGroup("Search strategy options");
-    retval->SetCurrentGroup("Extension options");
-    retval->SetCurrentGroup("");
-
-
-    NON_CONST_ITERATE(TBlastCmdLineArgs, arg, args) {
-        (*arg)->SetArgumentDescriptions(*retval);
+    CFile file_deleter(m_FileName);
+    if (file_deleter.Exists()) {
+        file_deleter.Remove();
     }
-    return retval.release();
+    m_FileStream.reset(new ofstream(m_FileName.c_str()));
+    return m_FileStream.get();
 }
 
 int
-GetQueryBatchSize(EProgram program)
+GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
 {
     int retval = 0;
+
+    if (is_ungapped) {
+        retval = 1;
+        _TRACE("Using query batch size " << retval);
+        return retval;
+    }
 
     // used for experimentation purposes
     char* batch_sz_str = getenv("BATCH_SIZE");
