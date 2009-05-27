@@ -316,6 +316,12 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& feat, CSeqFeatData& data)
         {
             CSeqFeatData::TGene& gene = data.SetGene();
             
+            // move gene.pseudo to feat.pseudo
+            if (gene.IsSetPseudo()) {
+                feat.SetPseudo();
+                gene.ResetPseudo();
+            }
+            
             // remove feat.comment if equal to gene.locus
             if (gene.IsSetLocus()  &&  feat.IsSetComment() 
                 &&  NStr::EqualCase (feat.GetComment(), gene.GetLocus())) {
