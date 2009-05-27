@@ -48,7 +48,7 @@ BEGIN_SCOPE(blast)
 
 /// Class used to return ancillary data from a blast search,
 /// i.e. information that is not the list of alignment found
-class CBlastAncillaryData : public CObject
+class NCBI_XBLAST_EXPORT CBlastAncillaryData : public CObject
 {
 
 public:
