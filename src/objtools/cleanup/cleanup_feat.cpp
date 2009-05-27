@@ -1243,6 +1243,12 @@ void CCleanup_imp::BasicCleanup(CRNA_ref& rr)
             default:
                 break;
         }
+    } else {
+        CRNA_ref::EType rna_type = rr.GetType();
+        if (rna_type == CRNA_ref::eType_other) {
+            rr.SetExt().SetName("misc_RNA");
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
     }
 }
 
