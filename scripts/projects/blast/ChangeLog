@@ -1,5 +1,21 @@
-February 3, 2009 (SVN revision: 151309)
-* First 2.2.20 release
+May 27, 2009 (SVN revision: 161402)
+* First 2.2.21 release
+* Added support for Best-Hit algorithm.
+* Added support for -in_msa psiblast option. 
+* Performance improvements and bug fixes to subject soft masking feature (note:
+  the file format for the files containing the masking information has changed
+  in a non-backwards compatible way).
+* Changed command line option to specify single soft masking algorithm to mask
+  BLAST databases from -mask_subjects to -db_soft_mask.
+* Masked FASTA and subject masks can be obtained via blastdbcmd.
+* Improved error messages when makeblastdb processes masking information.
+* Bug fixes in tabular output for translated searches.
+* Bug fixes to makeblastdb.
+* Bug fixes to search strategies and megablast.
+* Bug fixes to XML output.
+* Bug fixes and performance improvements to multi-threaded execution.
+* Bug fixes to lower case masking in blastx.
+* Bug fixes to ungapped searches.
 * Added support for smaller lookup tables for small queries.
 * Added support for partial sequence fetching during traceback.
 * Fixed the 2-hit algorithm so that no overlap between two hits is allowed.
