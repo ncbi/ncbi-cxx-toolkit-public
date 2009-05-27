@@ -428,8 +428,13 @@ void CCleanup_imp::BasicCleanup(CEMBL_block& emb)
         emb.SetExtra_acc().sort();
         ChangeMade(CCleanupChange::eCleanQualifiers);
     }
+
+    CLEAN_STRING_LIST(emb, Keywords);
     if (RemoveDupsNoSort(emb.SetKeywords(), false)) { // case insensitive
         ChangeMade(CCleanupChange::eCleanKeywords);
+    }
+    if (emb.GetKeywords().size() == 0) {
+        emb.ResetKeywords();
     }
 }
  
