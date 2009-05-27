@@ -387,6 +387,17 @@ void CCleanup_imp::x_FixInitials(CName_std& name)
         return;
     }
 
+    if (! name.IsSetSuffix()) {
+        CName_std::TInitials& initials = name.SetInitials();
+        if (NStr::EndsWith (initials, ".Jr.")) {
+            initials.erase (initials.end() - 3);
+            name.SetSuffix ("Jr.");
+        } else if (NStr::EndsWith (initials, ".Sr.")) {
+            initials.erase (initials.end() - 3);
+            name.SetSuffix ("Sr.");
+        }
+    }
+
     if (!name.IsSetFirst()) {
         return;
     }
