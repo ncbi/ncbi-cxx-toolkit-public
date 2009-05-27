@@ -723,17 +723,8 @@ public:
 ///  I_DriverContext::
 ///
 
-NCBI_PARAM_DECL(bool, dbapi, conn_use_encrypt_data);
-/*
-// To use TDbapi_ConnUseEncryptData outside ncbi_dbapi_driver.dll you should
-// uncomment this instead of above macro.
-struct NCBI_DBAPIDRIVER_EXPORT SNcbiParamDesc_dbapi_conn_use_encrypt_data
-{
-    typedef bool TValueType;
-    typedef SParamDescription<TValueType> TDescription;
-    static TDescription sm_ParamDescription;
-};
-*/
+NCBI_PARAM_DECL_EXPORT(NCBI_DBAPIDRIVER_EXPORT,
+                       bool, dbapi, conn_use_encrypt_data);
 typedef NCBI_PARAM_TYPE(dbapi, conn_use_encrypt_data) TDbapi_ConnUseEncryptData;
 
 

@@ -1209,8 +1209,7 @@ BOOST_AUTO_TEST_CASE(Test_Mirrors)
 BOOST_AUTO_TEST_CASE(Test_EncryptData)
 {
     try {
-        // This doesn't work in present implementation of CParam
-        //TDbapi_ConnUseEncryptData::SetDefault(true);
+        TDbapi_ConnUseEncryptData::SetDefault(true);
 
         CNcbiResourceInfoFile file(CNcbiResourceInfoFile::GetDefaultFileName());
         string app_name = CNcbiApplication::Instance()->GetProgramDisplayName();
@@ -1270,6 +1269,8 @@ BOOST_AUTO_TEST_CASE(Test_EncryptData)
     catch (CException& ex) {
         BOOST_ERROR(ex.what());
     }
+
+    TDbapi_ConnUseEncryptData::SetDefault(false);
 }
 
 
