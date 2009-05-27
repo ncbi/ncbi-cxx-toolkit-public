@@ -742,7 +742,7 @@ static bool s_IsCompoundRptTypeValue(
 static void s_ExpandThisQual( 
     CSeq_feat::TQual& quals,        // the list of CGb_qual's.
     CSeq_feat::TQual::iterator& it, // points to the one qual we might expand.
-    CSeq_feat::TQual new_quals )    // new quals that will need to be inserted
+    CSeq_feat::TQual& new_quals )    // new quals that will need to be inserted
 //
 //  Rules for "rpt_type" qualifiers (as of 2006-03-07):
 //
