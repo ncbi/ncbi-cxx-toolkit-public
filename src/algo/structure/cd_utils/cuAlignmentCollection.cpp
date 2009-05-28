@@ -559,8 +559,8 @@ int AlignmentCollection::FindSeqInterval (const CSeq_interval& seqLoc) const
 	GetRowsWithSeqID(seqIdRef, rows);
 	for (unsigned int i = 0; i < rows.size(); i++)
 	{
-		if (seqLoc.GetFrom() >= GetLowerBound(rows[i]) 
-			&& seqLoc.GetTo() <= GetUpperBound(rows[i]))
+		if ((int)seqLoc.GetFrom() >= GetLowerBound(rows[i]) 
+			&& (int)seqLoc.GetTo() <= GetUpperBound(rows[i]))
 			return rows[i];
 	}
 	return -1;	
@@ -625,10 +625,12 @@ void AlignmentCollection::GetAllSequences(vector<string>& sequences)
 
 string AlignmentCollection::GetSequenceForRow(int row)
 {
-	CRef< CBioseq > bioseq;
 	string seq;
-	GetBioseqForRow(row, bioseq);
-	GetNcbieaaString(*bioseq, seq);
+	CRef< CBioseq > bioseq;
+	if (GetBioseqForRow(row, bioseq))
+	{
+		GetNcbieaaString(*bioseq, seq);
+	}
 	return seq;
 }
 
@@ -722,10 +724,13 @@ void AlignmentCollection::GetAlignedResiduesForAll(char** & ppAlignedResidues, b
 
 bool AlignmentCollection::IsStruct(int row)
 {
+    bool result = false;
 	CRef< CBioseq > bioSeq;
-	GetBioseqForRow(row, bioSeq);
-	//  Return -1 on failure; was FindMMDBIdInBioseq
-	return GetMMDBId (*bioSeq) > 0;
+	if (GetBioseqForRow(row, bioSeq) && bioSeq.NotEmpty()) {
+        //  Return -1 on failure; was FindMMDBIdInBioseq
+        result = (GetMMDBId (*bioSeq) > 0);
+    }
+    return result;
 }
 
 bool AlignmentCollection::IsPdb(int row) const

@@ -77,16 +77,30 @@ class FlexiDm : public DistanceMatrix {
 
 public:
 
-    FlexiDm(EScoreMatrixType type = GLOBAL_DEFAULT_SCORE_MATRIX);
+    FlexiDm(EScoreMatrixType type = GLOBAL_DEFAULT_SCORE_MATRIX, int uniformLength = -1);
 
     ~FlexiDm();
     bool ComputeMatrix(pProgressFunction pFunc);
+
+    //  Allow the user to define a single length to use in GetPercentIdentities.
+    //  This length will *not* be used if (# of identities/uniformLength) > 1.
+    void SetUniformLength(int uniformLength) {m_uniformLength = (uniformLength != 0) ? uniformLength : -1;}
+    int GetUniformLength() const {return m_uniformLength;}
 
     //     Distance is 1 - (fraction of identical residues)
     static double GetDistance(int identities, int alignment_length);
 
 private:
-    
+
+    //  When positive, always use this as the length when computing distances 
+    //  to force normalization to a common size alignment.  E.g., when there
+    //  are normal and pending rows, one might wish to force to measure the 
+    //  number of identities between pending rows relative to the length of the
+    //  normal alignment.
+    //  When zero or negative, this value is ignored.
+    //  In addition, this length will *not* be used if (# of identities/uniformLength) > 1.
+    int m_uniformLength;
+
     void GetPercentIdentities(pProgressFunction pFunc);
     void initDMIdentities(EScoreMatrixType type, int nExt=0, int cExt=0);
 };

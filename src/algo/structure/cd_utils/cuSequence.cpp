@@ -882,7 +882,7 @@ bool extractBioseqInfo(const CRef< CBioseq > bioseq, BioseqInfo& info)
 		{
 			if (textId->CanGetAccession())
 				info.acession = textId->GetAccession();
-			if (info.acession.size() >= 0)
+			if (info.acession.size() > 0)
 			{
 				if (textId->CanGetVersion())
 					info.version = textId->GetVersion();	

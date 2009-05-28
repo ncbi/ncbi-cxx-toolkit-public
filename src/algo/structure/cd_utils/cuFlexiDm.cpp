@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 ResidueMatrix::ResidueMatrix(unsigned numRows)
-: m_numRows(numRows), m_rows(numRows, RowContent())
+    : m_rows(numRows, RowContent()), m_numRows(numRows)
 {
 }
 
@@ -69,7 +69,7 @@ bool ResidueMatrix::getAlignedPair(unsigned row1, unsigned row2, pair< string, s
 	seqPair.first.reserve(rc1.size());
 	seqPair.second.reserve(rc2.size());
     //assert(rc1.size() == rc2.size());
-    for (int i = 0; i < rc1.size(); i++)
+    for (unsigned int i = 0; i < rc1.size(); i++)
     {
         if (rc1[i].aligned && rc2[i].aligned)
         {
@@ -93,7 +93,7 @@ const EDistMethod FlexiDm::DIST_METHOD = ePercentIdentityRelaxed;
 FlexiDm::~FlexiDm() {
 }
 
-FlexiDm::FlexiDm(EScoreMatrixType type) : DistanceMatrix() {
+FlexiDm::FlexiDm(EScoreMatrixType type, int uniformLength) : DistanceMatrix(), m_uniformLength(uniformLength) { 
     initDMIdentities(type);
 }
     
@@ -154,7 +154,7 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
 			Identity = 0;
 			TotalAligned = 0;
 			ResidueMatrix::RowContent& rc2 = rm->getRow(k);
-		    for (int i = 0; i < rc1.size(); i++)
+		    for (unsigned int i = 0; i < rc1.size(); i++)
 			{
 				if (rc1[i].aligned && rc2[i].aligned)
 				{
@@ -163,6 +163,13 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
 						Identity++;
 				}
 			}
+
+            // testing a modification to the algorithm to normalize the identity count to a 
+            // single value, although need to deal w/ the possibility that some alignments may be
+            // longer than the value specified.  E.g., if have two pending rows which overlap
+            // by only one or two identical residues, is that really 100% identity????!!!
+            if (m_uniformLength > 0 && Identity <= m_uniformLength) TotalAligned = m_uniformLength;
+
             m_Array[j][k] = GetDistance(Identity, TotalAligned);
             m_Array[k][j] = m_Array[j][k]; 
         }
