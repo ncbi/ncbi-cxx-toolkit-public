@@ -595,7 +595,11 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qua
             }
         } else if (rna.IsSetExt() && !rna.GetExt().IsName()) {
             return false;
+        } else if (type == CRNA_ref::eType_other) {
+            // new convention follows ASN.1 spec comments, allows new RNA types
+            return false;
         } else {
+            // subsequent /product now added to comment
             string rna_name = "";
             string val = gb_qual.GetVal();
             if (rna.IsSetExt() && rna.GetExt().IsName()) {
