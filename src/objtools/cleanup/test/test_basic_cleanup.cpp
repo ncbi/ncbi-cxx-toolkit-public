@@ -294,7 +294,8 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
         m_scope->AddTopLevelSeqEntry( *se );
         se->Parentize();
         cleanup.SetScope (m_scope);
-        changes = cleanup.BasicCleanup(*se, m_Options);
+        CSeq_entry_Handle seh = m_scope->GetSeq_entryHandle(*se);
+        changes = cleanup.BasicCleanup(seh, m_Options);
     }
     *m_Out << (*se);
     return changes;
