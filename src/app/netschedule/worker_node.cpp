@@ -199,12 +199,6 @@ bool CWorkerNodeAffinityGuard::HasCandidates()
 }
 
 
-TNSBitVector* CWorkerNodeAffinityGuard::GetCandidates()
-{
-    return &m_WorkerNode.m_AffinityInfo.candidate_jobs;
-}
-
-
 void CWorkerNodeAffinityGuard::CleanCandidates(const TNSBitVector& aff_ids)
 {
     SAffinityInfo& ai = m_WorkerNode.m_AffinityInfo;
@@ -218,9 +212,9 @@ void CWorkerNodeAffinityGuard::CleanCandidates(const TNSBitVector& aff_ids)
 }
 
 
-SAffinityInfo* CWorkerNodeAffinityGuard::GetAffinityInfo()
+const TNSBitVector& CWorkerNodeAffinityGuard::GetAffinities(time_t t)
 {
-    return &m_WorkerNode.m_AffinityInfo;
+    return m_WorkerNode.m_AffinityInfo.aff_ids;
 }
 
 
@@ -234,6 +228,40 @@ void CWorkerNodeAffinityGuard::AddAffinity(unsigned aff_id, time_t exp_time)
 {
     m_WorkerNode.m_AffinityInfo.aff_ids.set(aff_id);
 }
+
+unsigned
+CWorkerNodeAffinityGuard::GetJobWithAffinities(const TNSBitVector* aff_ids,
+                                               CJobStatusTracker& status_tracker,
+                                               IAffinityResolver& affinity_resolver)
+{
+    unsigned job_id = 0;
+    SAffinityInfo& ai = m_WorkerNode.m_AffinityInfo;
+    if (aff_ids == 0)
+        aff_ids = &ai.aff_ids;
+    if (!ai.candidate_jobs.any() && aff_ids->any()) {
+        // NB: locks m_AffinityIdxLock, thereby creating
+        // m_WorkerNode.m_WorkerNodeList->m_Lock < m_AffinityIdxLock locking order
+        affinity_resolver.GetJobsWithAffinities(*aff_ids, &ai.candidate_jobs);
+        if (!ai.candidate_jobs.any()) // no candidates
+            return 0;
+        status_tracker.PendingIntersect(&ai.candidate_jobs);
+        ai.candidate_jobs -= ai.blacklisted_jobs;
+        ai.candidate_jobs.count(); // speed up any()
+        if (!ai.candidate_jobs.any())
+            return 0;
+        ai.candidate_jobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+    if (!ai.candidate_jobs.any())
+        return 0;
+    bool pending_jobs_avail =
+        status_tracker.GetPendingJobFromSet(
+        &ai.candidate_jobs, &job_id);
+
+    if (!job_id && !pending_jobs_avail)
+        return unsigned(-1); // signal outer code that there no more jobs at all
+    return job_id;
+}
+
 
 
 void CWorkerNodeAffinityGuard::BlacklistJob(unsigned job_id, time_t exp_time)

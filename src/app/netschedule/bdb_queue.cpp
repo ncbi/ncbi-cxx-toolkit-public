@@ -2258,8 +2258,10 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
 
     unsigned job_aff_id;
     if (new_job && (job_aff_id = new_job->GetAffinityId())) {
+        CStopWatch sw(CStopWatch::eStart);
         time_t exp_time = run_timeout ? curr + 2*run_timeout : 0;
         q->AddAffinity(worker_node, job_aff_id, exp_time);
+//        LOG_POST(Warning << "Added affinity: " << sw.Elapsed() * 1000 << "ms");
     }
 
     x_TimeLineExchange(done_job_id, pending_job_id, curr);

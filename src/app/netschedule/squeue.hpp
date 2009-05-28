@@ -305,15 +305,15 @@ public:
     /// @param jobs
     ///     OUT set of jobs associated with specified affinities
     ///
-    void GetJobsWithAffinity(const TNSBitVector& aff_id_set,
-                             TNSBitVector*       jobs);
+    void GetJobsWithAffinities(const TNSBitVector& aff_id_set,
+                               TNSBitVector*       jobs);
     /// Read queue affinity index, retrieve all jobs, with
     /// given affinity id, append it to 'jobs'
     ///
-    /// @param aff_id_set
-    ///     set of affinity ids to read
+    /// @param aff_id
+    ///     affinity id to read
     /// @param jobs
-    ///     OUT set of jobs associated with specified affinities
+    ///     OUT set of jobs associated with specified affinity
     ///
     void GetJobsWithAffinity(unsigned            aff_id,
                              TNSBitVector*       jobs);

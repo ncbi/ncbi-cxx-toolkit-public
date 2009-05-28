@@ -221,6 +221,13 @@ struct SCompareNodeId
 
 typedef set<CWorkerNode*, SCompareNodeId> TWorkerNodeById;
 
+class IAffinityResolver {
+public:
+    virtual ~IAffinityResolver() {}
+    virtual void GetJobsWithAffinities(const TNSBitVector& aff_id_set,
+                                       TNSBitVector*       jobs) = 0;
+};
+
 
 // Synchronizing accessor to WorkerNode methods. Through using both
 // WorkerNodeList and WorkerNode locks it provides reliable access
@@ -231,15 +238,15 @@ public:
     CWorkerNodeAffinityGuard(CWorkerNode& wn);
     ~CWorkerNodeAffinityGuard();
     bool HasCandidates();
-    // TEMP
-    TNSBitVector* GetCandidates();
     // Mask worker node affinities to aff_ids and if candidate vector
     // contains jobs, not belonging to the result, flush it.
     void CleanCandidates(const TNSBitVector& aff_ids);
-    // TEMP
-    SAffinityInfo* GetAffinityInfo();
+    const TNSBitVector& GetAffinities(time_t t);
     const TNSBitVector& GetBlacklistedJobs(time_t t);
     void AddAffinity(unsigned aff_id, time_t exp_time);
+    unsigned GetJobWithAffinities(const TNSBitVector* aff_ids,
+                                  CJobStatusTracker& status_tracker,
+                                  IAffinityResolver& affinity_resolver);
     void BlacklistJob(unsigned job_id, time_t exp_time);
 private:
     CWorkerNode& m_WorkerNode;

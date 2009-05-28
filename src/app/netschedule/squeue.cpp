@@ -1066,7 +1066,7 @@ void SLockedQueue::AddJobsToAffinity(CBDB_Transaction& trans,
 
 
 void 
-SLockedQueue::GetJobsWithAffinity(const TNSBitVector& aff_id_set,
+SLockedQueue::GetJobsWithAffinities(const TNSBitVector& aff_id_set,
                                   TNSBitVector*       jobs)
 {
     CFastMutexGuard guard(m_AffinityIdxLock);
@@ -1089,6 +1089,20 @@ SLockedQueue::GetJobsWithAffinity(unsigned      aff_id,
 }
 
 
+class CAffinityResolver : public IAffinityResolver
+{
+public:
+    CAffinityResolver(SLockedQueue& queue) : m_Queue(queue) {}
+    virtual void GetJobsWithAffinities(const TNSBitVector& aff_id_set,
+                                       TNSBitVector*       jobs)
+    {
+        m_Queue.GetJobsWithAffinities(aff_id_set, jobs);
+    }
+private:
+    SLockedQueue& m_Queue;
+};
+
+
 unsigned
 SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
                              const list<string>& aff_list,
@@ -1098,7 +1112,7 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
 
     TNSBitVector blacklisted_jobs;
     TNSBitVector aff_ids;
-    TNSBitVector* effective_aff_ids;
+    const TNSBitVector* effective_aff_ids = 0;
 
     // request specified affinity explicitly - client managed affinity
     bool is_specific_aff = !aff_list.empty();
@@ -1118,34 +1132,16 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
         // If we have a specific affinity request, use it for job search,
         // otherwise use what we have for the node
         if (is_specific_aff) effective_aff_ids = &aff_ids;
-        else effective_aff_ids = &na.GetAffinityInfo()->aff_ids;
+        // else effective_aff_ids = &na.GetAffinities(curr);
 
+        // 'blacklisted_jobs' are also required in the code, finding new
+        // affinity association below
         blacklisted_jobs = na.GetBlacklistedJobs(curr);
-        do {
-            // check for candidates
-            if (!na.HasCandidates() && effective_aff_ids->any()) {
-                // there is an affinity association
-                // NB: locks m_AffinityIdxLock, thereby creating
-                // m_AffinityMapLock < m_AffinityIdxLock locking order
-                GetJobsWithAffinity(*effective_aff_ids, na.GetCandidates());
-                if (!na.HasCandidates()) // no candidates
-                    break;
-                status_tracker.PendingIntersect(na.GetCandidates());
-                *na.GetCandidates() -= blacklisted_jobs;
-                na.GetCandidates()->count(); // speed up any()
-                if (!na.HasCandidates())
-                    break;
-                na.GetCandidates()->optimize(0, TNSBitVector::opt_free_0);
-            }
-            if (!na.HasCandidates())
-                break;
-            bool pending_jobs_avail =
-                status_tracker.GetPendingJobFromSet(
-                    na.GetCandidates(), &job_id);
-            
-            if (!job_id && !pending_jobs_avail) return 0;
-        } while (0);
-        if (!job_id && is_specific_aff) return 0;
+        CAffinityResolver affinity_resolver(*this);
+        job_id = na.GetJobWithAffinities(effective_aff_ids,
+                                         status_tracker,
+                                         affinity_resolver);
+        if (job_id == unsigned(-1) || (!job_id && is_specific_aff)) return 0;
     }}
 
     // No affinity association or there are no more jobs with
@@ -1161,7 +1157,7 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
             // ORing them with our own blacklisted jobs
             TNSBitVector assigned_candidate_jobs(blacklisted_jobs);
             // GetJobsWithAffinity actually ORs into second argument
-            GetJobsWithAffinity(assigned_aff, &assigned_candidate_jobs);
+            GetJobsWithAffinities(assigned_aff, &assigned_candidate_jobs);
             // we got list of jobs we do NOT want to schedule, use them as
             // blacklisted to get a job with possibly with unassigned affinity
             // (or without affinity at all).
@@ -1505,7 +1501,9 @@ void SLockedQueue::AddAffinity(CWorkerNode*  worker_node,
                                time_t        exp_time)
 {
     CWorkerNodeAffinityGuard na(*worker_node);
+    CStopWatch sw(CStopWatch::eStart);
     na.AddAffinity(aff_id,exp_time);
+//    LOG_POST(Warning << "Added affinity1: " << sw.Elapsed() * 1000 << "ms");
 }
 
 

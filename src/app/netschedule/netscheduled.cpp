@@ -836,8 +836,8 @@ void CNetScheduleHandler::OnWrite()
 
 void CNetScheduleHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
 {
-    LOG_POST(Warning << "Socket closed by " <<
-        (peer == IServer_ConnectionHandler::eOurClose ? "server" : "client"));
+//    LOG_POST(Warning << "Socket closed by " <<
+//        (peer == IServer_ConnectionHandler::eOurClose ? "server" : "client"));
 }
 
 
