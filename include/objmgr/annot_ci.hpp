@@ -87,6 +87,14 @@ public:
               const CSeq_loc& loc,
               const SAnnotSelector& sel);
 
+    /// Iterate all Seq-annot objects from the seq-entry
+    /// regardless of their location, using SAnnotSelector for filtering
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAnnot_CI(const CSeq_entry_Handle& entry,
+              const SAnnotSelector& sel);
+
     /// Copy constructor
     CAnnot_CI(const CAnnot_CI& iter);
 

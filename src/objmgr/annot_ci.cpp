@@ -107,6 +107,19 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
 }
 
 
+CAnnot_CI::CAnnot_CI(const CSeq_entry_Handle& entry,
+                     const SAnnotSelector& sel)
+{
+    x_Initialize(
+        CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                       entry,
+                       &SAnnotSelector(sel)
+                       .SetNoMapping(true)
+                       .SetCollectSeq_annots(true)
+                       .SetSortOrder(SAnnotSelector::eSortOrder_None)));
+}
+
+
 CAnnot_CI::CAnnot_CI(const CAnnotTypes_CI& iter)
 {
     x_Initialize(iter);
