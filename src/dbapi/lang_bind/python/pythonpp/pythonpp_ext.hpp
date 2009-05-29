@@ -471,7 +471,7 @@ public:
 
             // Prepare data for python ...
 			resize<N>(hndl_list);
-            hndl_list[ePosition] = SMethodDef(name, HandleMethodVarArgs, METH_VARARGS, doc);
+            hndl_list[ePosition] = SMethodDef(name, (PyCFunction)HandleMethodVarArgs, METH_VARARGS, doc);
 
             // Prepare data for our handler ...
             GetMethodList().push_back(func);
@@ -511,7 +511,11 @@ public:
         enum EPosition {ePosition = N};
     };
 
+#if !defined(NCBI_COMPILER_ICC) || NCBI_COMPILER_VERSION != 1010
+    // ICC 10 has a bug and doesn't compile with this line.
+    // Luckily it compiles successfully without it.
     template <size_t N> friend class CClass;
+#endif
 
     static void Declare(
         const char* name, 
