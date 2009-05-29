@@ -2472,6 +2472,16 @@ void CAnnot_Collector::x_SearchAll(const CSeq_entry_Info& entry_info)
 
 void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 {
+    if ( !m_Selector->m_IncludeAnnotsNames.empty() ) {
+        // only included
+        if ( !m_Selector->IncludedAnnotName(annot_info.GetName()) ) {
+            return;
+        }
+    }
+    else if ( m_Selector->ExcludedAnnotName(annot_info.GetName()) ) {
+        return;
+    }
+
     _ASSERT(m_Selector->m_LimitTSE);
     CSeq_annot_Handle sah(annot_info, m_Selector->m_LimitTSE);
     // Collect all annotations from the annot
@@ -2482,7 +2492,7 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
         }
         CAnnotObject_Ref annot_ref(*aoit, sah);
         x_AddObject(annot_ref);
-        if ( x_NoMoreObjects() ) {
+        if ( m_Selector->m_CollectSeq_annots || x_NoMoreObjects() ) {
             return;
         }
     }
@@ -2499,7 +2509,7 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
             const SSNP_Info& snp = *snp_it;
             CAnnotObject_Ref annot_ref(snp_annot, sah, snp, 0);
             x_AddObject(annot_ref);
-            if ( x_NoMoreObjects() ) {
+            if ( m_Selector->m_CollectSeq_annots || x_NoMoreObjects() ) {
                 return;
             }
             ++index;
