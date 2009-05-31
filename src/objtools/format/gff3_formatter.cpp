@@ -44,6 +44,9 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
+#include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
@@ -78,19 +81,20 @@ void CGFF3_Formatter::EndSection(const CEndSectionItem&,
 void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
                                       IFlatTextOStream& text_os)
 {
-    x_FormatAlignment(aln, text_os, aln.GetAlign(), true);
+    int phase = 0;
+    x_FormatAlignment(aln, text_os, aln.GetAlign(), phase, true);
 }
 
 void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                                         IFlatTextOStream& text_os,
                                         const CSeq_align& sa,
-                                        bool first)
+                                        int& phase, bool first)
 {
     const CFlatFileConfig& config = aln.GetContext()->Config();
 
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
-        x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(), first);
+        x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(), phase, first);
         break;
 
     case CSeq_align::TSegs::e_Spliced:
@@ -105,7 +109,15 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
              }
         } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2) {
-            x_FormatAlignment(aln, text_os, *sa2, first);
+            const CSpliced_exon& first_exon =
+                *sa.GetSegs().GetSpliced().GetExons().front();
+            if (first_exon.GetProduct_start().IsProtpos()) {
+                phase = first_exon.GetProduct_start().GetProtpos().GetFrame();
+                if (phase) {
+                    phase -= 1;
+                }
+            }
+            x_FormatAlignment(aln, text_os, *sa2, phase, first);
         }
         break;
     }
@@ -117,7 +129,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
              sa2 = sa.CreateDensegFromStdseg();
         } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2.NotEmpty()  &&  sa2->GetSegs().IsDenseg()) {
-            x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg(), first);
+            x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg(), phase, first);
         }
         break;
     }
@@ -125,7 +137,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     case CSeq_align::TSegs::e_Disc:
     {
          ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
-             x_FormatAlignment(aln, text_os, **it, first);
+             x_FormatAlignment(aln, text_os, **it, phase, first);
              first = false;
          }
          if ( config.GffGenerateIdTags() ) {
@@ -176,7 +188,7 @@ static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
 void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                                      IFlatTextOStream& text_os,
                                      const CDense_seg& ds,
-                                     bool first)
+                                     int& phase, bool first)
 {
     typedef CAlnMap::TNumrow      TNumrow;
     typedef CAlnMap::TNumchunk    TNumchunk;
@@ -206,7 +218,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     TSeqPos ref_width = alnmap.GetWidth(ref_row);
     TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
     int     ref_sign  = alnmap.StrandSign(ref_row);
-    int     phase     = 0;
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
         CNcbiOstrstream cigar;
         char            last_type = 0;

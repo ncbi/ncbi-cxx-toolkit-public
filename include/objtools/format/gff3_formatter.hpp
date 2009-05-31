@@ -74,10 +74,10 @@ private:
 
     void x_FormatAlignment(const CAlignmentItem& aln,
                            IFlatTextOStream& text_os, const CSeq_align& sa,
-                           bool first);
+                           int& phase, bool first);
     void x_FormatDenseg(const CAlignmentItem& aln,
                         IFlatTextOStream& text_os, const CDense_seg& ds,
-                        bool first);
+                        int& phase, bool first);
 
 };
 
