@@ -340,8 +340,8 @@ s_ExonToDenseg(const CSpliced_exon& exon,
         product_starts =
             s_CalculateStarts
             (product_lens, product_strand,
-             3 * (exon.GetProduct_start().GetProtpos().GetAmin() + frame_start),
-             3 * (exon.GetProduct_end().GetProtpos().GetAmin() + frame_end));
+             3 * exon.GetProduct_start().GetProtpos().GetAmin() + frame_start,
+             3 * exon.GetProduct_end().GetProtpos().GetAmin() + frame_end);
     } else {
         NCBI_THROW(CException, eUnknown,
                    "unhandled product-start type in Spliced-exon");
