@@ -118,8 +118,12 @@ Spliced-seg ::= SEQUENCE {
     exons SEQUENCE OF Spliced-exon ,
 
     -- start of poly(A) tail on the transcript
-    -- aligned product positions < poly-a <= product-length
-    -- poly-a == product-length indicates inferred poly(A) tail at transcript's end
+    -- For sense transcripts:
+    --   aligned product positions < poly-a <= product-length
+    --   poly-a == product-length indicates inferred poly(A) tail at transcript's end
+    -- For antisense transcripts:
+    --   -1 <= poly-a < aligned product positions
+    --   poly-a == -1 indicates inferred poly(A) tail at transcript's start
     poly-a INTEGER OPTIONAL,
 
     -- length of the product, in bases/residues
