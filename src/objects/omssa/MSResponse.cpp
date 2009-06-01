@@ -57,8 +57,8 @@ CMSResponse::~CMSResponse(void)
 string CMSResponse::CSVString(const string& in)
 {
   
-    string retval(in);
-    NStr::Replace(retval, "\"", "\"\"");
+    string retval;
+    retval = NStr::Replace(in, "\"", "\"\"");
     if(retval.find_first_of(",\"") < retval.size()) retval = "\"" + retval + "\"";
     return retval;
 }
