@@ -33,6 +33,7 @@ objtools/seqmasks_io$
 objtools/blast$
 objtools/blast/seqdb_reader$
 objtools/blast/gene_info_reader$
+objtools/blast/services$
 objtools/cleanup$
 objtools/format$
 objtools/format/items$
