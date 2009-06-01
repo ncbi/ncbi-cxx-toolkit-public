@@ -294,7 +294,11 @@ void CCleanup_imp::x_SubtypeCleanup (
     }
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
       CSubSource& ss = **it;
-      if (SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(plastid_name))) {
+      TSUBSOURCE_SUBTYPE chs = ss.GetSubtype();
+      if (s_NoNameSubtype (chs)) {
+          ss.ResetName();
+          ss.SetName("");
+      } else if (chs == NCBI_SUBSOURCE(plastid_name)) {
           if (NStr::Equal (ss.GetName(), plastid_name)) {
               ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
               ChangeMade (CCleanupChange::eCleanSubsource);
@@ -365,7 +369,11 @@ void CCleanup_imp::BasicCleanup(
     EDIT_EACH_DBXREF_ON_ORGREF (it, oref) {
         CDbtag& dbt = (**it);
         BasicCleanup (dbt);
-        if ((!dbt.IsSetDb() || NStr::IsBlank (dbt.GetDb()))
+        if (dbt.IsSetDb() && NStr::IsBlank (dbt.GetDb())) {
+            ERASE_DBXREF_ON_ORGREF (it, oref);
+            ChangeMade (CCleanupChange::eCleanDbxrefs);
+            continue;
+        } else if ((!dbt.IsSetDb() || NStr::IsBlank (dbt.GetDb()))
             && (!dbt.IsSetTag() 
                 || dbt.GetTag().Which() == CObject_id ::e_not_set
                 || ((dbt.GetTag().IsId() && dbt.GetTag().GetId() == 0) 
