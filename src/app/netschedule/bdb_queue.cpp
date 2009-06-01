@@ -117,65 +117,32 @@ bool CQueueCollection::RemoveQueue(const string& name)
 
 // FIXME: remove this arcane construct, SLockedQueue now has all
 // access methods required by ITERATE(CQueueCollection, it, m_QueueCollection)
-CQueueIterator CQueueCollection::begin() const
+CQueueIterator CQueueCollection::begin()
 {
-    return CQueueIterator(m_QueueDataBase, m_QMap.begin(), &m_Lock);
+    return CQueueIterator(m_QMap.begin(), &m_Lock);
 }
 
 
-CQueueIterator CQueueCollection::end() const
+CQueueIterator CQueueCollection::end()
 {
-    return CQueueIterator(m_QueueDataBase, m_QMap.end(), NULL);
+    return CQueueIterator(m_QMap.end(), NULL);
 }
 
 
-CQueueIterator::CQueueIterator(const CQueueDataBase& db,
-                               CQueueCollection::TQueueMap::const_iterator iter,
-                               CRWLock* lock) :
-    m_QueueDataBase(db), m_Iter(iter), m_Queue(db), m_Lock(lock)
+CQueueConstIterator CQueueCollection::begin() const
 {
-    if (m_Lock) m_Lock->ReadLock();
+    return CQueueConstIterator(m_QMap.begin(), &m_Lock);
 }
 
 
-CQueueIterator::CQueueIterator(const CQueueIterator& rhs) :
-    m_QueueDataBase(rhs.m_QueueDataBase),
-    m_Iter(rhs.m_Iter),
-    m_Queue(rhs.m_QueueDataBase),
-    m_Lock(rhs.m_Lock)
+CQueueConstIterator CQueueCollection::end() const
 {
-    // Linear on lock
-    if (m_Lock) rhs.m_Lock = 0;
-}
-
-
-CQueueIterator::~CQueueIterator()
-{
-    if (m_Lock) m_Lock->Unlock();
-}
-
-
-CQueue& CQueueIterator::operator*()
-{
-    m_Queue.x_Assume(m_Iter->second);
-    return m_Queue;
-}
-
-
-const string CQueueIterator::GetName()
-{
-    return m_Iter->first;
-}
-
-
-void CQueueIterator::operator++()
-{
-    ++m_Iter;
+    return CQueueConstIterator(m_QMap.end(), NULL);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
-// SNSDBEnvironmentParams implemenetation
+// SNSDBEnvironmentParams implementation
 
 bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
 {
@@ -774,15 +741,15 @@ void CQueueDataBase::TransactionCheckPoint(bool clean_log)
 
 void CQueueDataBase::NotifyListeners(void)
 {
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).NotifyListeners();
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        (*it).NotifyListeners(false, 0);
     }
 }
 
 
 void CQueueDataBase::CheckExecutionTimeout(void)
 {
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
         (*it).CheckExecutionTimeout();
     }
 }
@@ -805,7 +772,7 @@ void CQueueDataBase::Purge(void)
                               sizeof(CNetScheduleAPI::EJobStatus);
 
     vector<string> queues_to_delete;
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
         unsigned queue_del_rec = 0;
         const unsigned batch_size = 100;
         if ((*it).IsExpired()) {
@@ -856,7 +823,7 @@ void CQueueDataBase::Purge(void)
     // TODO: Handle tags here - see below for affinity
 
     // Remove unused affinity elements
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
         (*it).ClearAffinityIdx();
     }
 
@@ -877,8 +844,8 @@ void CQueueDataBase::Purge(void)
 unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
     // Purge unconditional jobs
     unsigned del_rec = 0;
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        del_rec += (*it).DoDeleteBatch(batch_size);
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        del_rec += (*it).DeleteBatch(batch_size);
     }
     return del_rec;
 }
@@ -895,10 +862,10 @@ void CQueueDataBase::x_OptimizeStatusMatrix(void)
         m_FreeStatusMemCnt = 0;
         m_LastFreeMem = curr;
 
-        ITERATE(CQueueCollection, it, m_QueueCollection) {
+        NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
             (*it).OptimizeMem();
             if (x_CheckStopPurge()) return;
-        } // ITERATE
+        }
     }
 }
 
@@ -2658,37 +2625,12 @@ CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
 }
 
 
-unsigned
-CQueue::DoDeleteBatch(unsigned batch_size)
-{
-
-    CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned del_rec = q->DeleteBatch(batch_size);
-    // monitor this
-    if (del_rec > 0 && IsMonitoring()) {
-        CTime tm(CTime::eCurrent);
-        string msg = tm.AsString();
-        msg += " CQueue::DeleteBatch: " +
-                NStr::IntToString(del_rec) + " job(s) deleted";
-        MonitorPost(msg);
-    }
-    return del_rec;
-}
-
-
-void CQueue::ClearAffinityIdx()
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->ClearAffinityIdx();
-}
-
-
 void CQueue::Truncate(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     q->Clear();
     // Next call updates 'm_BecameEmpty' timestamp
-    IsExpired(); // locks SLockedQueue lock
+    q->IsExpired(); // locks SLockedQueue lock
 }
 
 

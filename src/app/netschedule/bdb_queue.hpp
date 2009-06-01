@@ -183,14 +183,6 @@ public:
     ///    Number of deleted jobs
     unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
 
-    /// Delete batch_size jobs using jobs-to-delete vector
-    /// @return
-    ///    Number of deleted jobs
-    unsigned DoDeleteBatch(unsigned batch_size);
-
-    /// Delete all job ids already deleted (physically) from the queue
-    void ClearAffinityIdx(void);
-
     /// Remove all jobs
     void Truncate(void);
 
@@ -288,11 +280,6 @@ public:
     typedef SLockedQueue::TStatEvent TStatEvent;
     double GetAverage(TStatEvent);
 
-    // Service for CQueueDataBase
-    /// Free unused memory (status storage)
-    void OptimizeMem(void)
-        { x_GetLQueue()->OptimizeMem(); }
-
     // BerkeleyDB-specific statistics
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
@@ -302,21 +289,6 @@ public:
     CRef<SLockedQueue> x_GetLQueue(void);
 
 private:
-    // Support of CQueue iterators
-    friend class CQueueIterator;
-    CQueue(const CQueueDataBase& db) :
-        m_Db(const_cast<CQueueDataBase&>(db)), // HACK! - legitimate here,
-                                               // because iterator access is
-                                               // const, and this constructor
-                                               // is for CQueueIterator only
-        m_ClientHostAddr(0) {}
-
-    // Helper method for CQueueIterator so that it can return the same
-    // CQueue object reference every iteration, only modifying underlying
-    // SLockedQueue.
-    void x_Assume(CRef<SLockedQueue> slq) { m_LQueue = slq; }
-
-    //
     time_t x_ComputeExpirationTime(time_t time_run,
                                    time_t run_timeout) const;
 
@@ -377,12 +349,13 @@ private:
 /// @internal
 ///
 class CQueueIterator;
+class CQueueConstIterator;
 class CQueueCollection
 {
 public:
     typedef map<string, CRef<SLockedQueue> > TQueueMap;
     typedef CQueueIterator iterator;
-    typedef CQueueIterator const_iterator; // HACK
+    typedef CQueueConstIterator const_iterator;
 
 public:
     CQueueCollection(const CQueueDataBase& db);
@@ -399,8 +372,11 @@ public:
     // through week reference mechanism.
     bool RemoveQueue(const string& name);
 
-    CQueueIterator begin() const;
-    CQueueIterator end() const;
+    // Iteration over queue map
+    CQueueIterator begin();
+    CQueueIterator end();
+    CQueueConstIterator begin() const;
+    CQueueConstIterator end() const;
 
     size_t GetSize() const { return m_QMap.size(); }
 
@@ -409,6 +385,7 @@ private:
     CQueueCollection& operator=(const CQueueCollection&);
 private:
     friend class CQueueIterator;
+    friend class CQueueConstIterator;
     const CQueueDataBase&  m_QueueDataBase;
     TQueueMap              m_QMap;
     mutable CRWLock        m_Lock;
@@ -419,16 +396,38 @@ private:
 class CQueueIterator
 {
 public:
-    CQueueIterator(const CQueueDataBase& db,
-        CQueueCollection::TQueueMap::const_iterator iter, CRWLock* lock);
+    CQueueIterator(CQueueCollection::TQueueMap::iterator iter,
+                   CRWLock* lock)
+    : m_Iter(iter), m_Lock(lock)
+    {
+        if (m_Lock) m_Lock->ReadLock();
+    }
     // MSVC8 (Studio 2005) can not (or does not want to) perform
     // copy constructor optimization on return, thus it needs
     // explicit copy constructor because CQueue does not have it.
-    CQueueIterator(const CQueueIterator& rhs);
-    ~CQueueIterator();
-    CQueue& operator*();
-    const string GetName();
-    void operator++();
+    CQueueIterator(const CQueueIterator& rhs)
+    : m_Iter(rhs.m_Iter),
+        m_Lock(rhs.m_Lock)
+    {
+        // Linear on lock
+        if (m_Lock) rhs.m_Lock = 0;
+    }
+    ~CQueueIterator()
+    {
+        if (m_Lock) m_Lock->Unlock();
+    }
+    SLockedQueue& operator*()
+    {
+        return *m_Iter->second;
+    }
+    const string GetName() const 
+    {
+        return m_Iter->first;
+    }
+    void operator++()
+    {
+        ++m_Iter;
+    }
     bool operator==(const CQueueIterator& rhs) {
         return m_Iter == rhs.m_Iter;
     }
@@ -436,10 +435,55 @@ public:
         return m_Iter != rhs.m_Iter;
     }
 private:
-    const CQueueDataBase&                       m_QueueDataBase;
+    CQueueCollection::TQueueMap::iterator m_Iter;
+    mutable CRWLock*                      m_Lock;
+};
+
+
+class CQueueConstIterator
+{
+public:
+    CQueueConstIterator(CQueueCollection::TQueueMap::const_iterator iter,
+        CRWLock* lock)
+        : m_Iter(iter), m_Lock(lock)
+    {
+        if (m_Lock) m_Lock->ReadLock();
+    }
+    // MSVC8 (Studio 2005) can not (or does not want to) perform
+    // copy constructor optimization on return, thus it needs
+    // explicit copy constructor because CQueue does not have it.
+    CQueueConstIterator(const CQueueConstIterator& rhs)
+        : m_Iter(rhs.m_Iter),
+        m_Lock(rhs.m_Lock)
+    {
+        // Linear on lock
+        if (m_Lock) rhs.m_Lock = 0;
+    }
+    ~CQueueConstIterator()
+    {
+        if (m_Lock) m_Lock->Unlock();
+    }
+    const SLockedQueue& operator*() const
+    {
+        return *m_Iter->second;
+    }
+    const string GetName() const 
+    {
+        return m_Iter->first;
+    }
+    void operator++()
+    {
+        ++m_Iter;
+    }
+    bool operator==(const CQueueConstIterator& rhs) {
+        return m_Iter == rhs.m_Iter;
+    }
+    bool operator!=(const CQueueConstIterator& rhs) {
+        return m_Iter != rhs.m_Iter;
+    }
+private:
     CQueueCollection::TQueueMap::const_iterator m_Iter;
-    CQueue                                      m_Queue;
-    mutable CRWLock*                            m_Lock;
+    mutable CRWLock*                      m_Lock;
 };
 
 

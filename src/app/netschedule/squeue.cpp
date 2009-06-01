@@ -1471,15 +1471,14 @@ void SLockedQueue::AddJobToWorkerNode(CWorkerNode*            worker_node,
 }
 
 
-void SLockedQueue::UpdateWorkerNodeJob(unsigned               job_id,
-                                       time_t                 exp_time)
+void SLockedQueue::UpdateWorkerNodeJob(unsigned job_id, time_t exp_time)
 {
     m_WorkerNodeList.UpdateJob(job_id, exp_time);
 }
 
 
-void SLockedQueue::RemoveJobFromWorkerNode(const CJob&            job,
-                                           ENSCompletion          reason)
+void SLockedQueue::RemoveJobFromWorkerNode(const CJob&   job,
+                                           ENSCompletion reason)
 {
     unsigned log_job_state = CQueueParamAccessor(*this).GetLogJobState();
     m_WorkerNodeList.RemoveJob(job, reason, log_job_state);
@@ -1945,6 +1944,13 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
         }
         trans.Commit();
         // x_RemoveTags(trans, batch);
+    }
+    if (del_rec > 0 && IsMonitoring()) {
+        CTime tm(CTime::eCurrent);
+        string msg = tm.AsString();
+        msg += " CQueue::DeleteBatch: " +
+            NStr::IntToString(del_rec) + " job(s) deleted";
+        MonitorPost(msg);
     }
     return del_rec;
 }

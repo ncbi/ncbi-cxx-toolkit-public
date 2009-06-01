@@ -315,8 +315,7 @@ public:
     /// @param jobs
     ///     OUT set of jobs associated with specified affinity
     ///
-    void GetJobsWithAffinity(unsigned            aff_id,
-                             TNSBitVector*       jobs);
+    void GetJobsWithAffinity(unsigned aff_id, TNSBitVector* jobs);
 
     /// Find the pending job.
     /// This method takes into account jobs available
