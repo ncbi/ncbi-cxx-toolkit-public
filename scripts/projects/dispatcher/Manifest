@@ -13,7 +13,7 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
-DEFAULT_CONFIGURATIONS:  Linux32:ICC  Linux64:ICC  FreeBSD32:GCC  SunOSx86:GCC  SunOSSparc:WS64  PowerMAC:GCC
+DEFAULT_CONFIGURATIONS:  Linux32:ICC  Linux64:ICC  FreeBSD32:GCC  SunOSx86:GCC  SunOSSparc:WS64  IntelMAC:GCC
 
 COPY: $srcdir/src/connect/daemons/mod/*mod*  $installdir/src/
 COPY: $srcdir/include/connect/*.h            $installdir/include/connect/
@@ -38,4 +38,4 @@ SunOSx86   : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static -
 SunOSSparc : WS64  : WorkShop.sh 64 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-PowerMAC   : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+IntelMAC   : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal
