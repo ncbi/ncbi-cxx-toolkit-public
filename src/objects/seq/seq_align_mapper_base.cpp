@@ -1386,8 +1386,6 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     bool single_prod_str = true;
     bool prod_protein = true;
 
-    TSeqPos prod_len = 0;
-
     ITERATE(TSegments, seg, m_Segs) {
         const SAlignment_Segment::SAlignment_Row& gen_row = seg->m_Rows[0];
         const SAlignment_Segment::SAlignment_Row& prod_row = seg->m_Rows[1];
@@ -1422,7 +1420,6 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         if (start < 0) {
             continue; // ??? How to reflect a missing part
         }
-        prod_len += seg->m_Len;
         if ( prod_row.m_Width == 3 ) {
             ex->SetProduct_start().SetProtpos().SetAmin(start);
             ex->SetProduct_start().SetProtpos().SetFrame(prod_row.m_Frame);
@@ -1495,11 +1492,9 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
 
     if ( prod_protein ) {
         spliced.SetProduct_type(CSpliced_seg::eProduct_type_protein);
-        spliced.SetProduct_length(prod_len/3);
     }
     else {
         spliced.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
-        spliced.SetProduct_length(prod_len);
     }
 }
 
