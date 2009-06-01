@@ -117,13 +117,13 @@ Spliced-seg ::= SEQUENCE {
     -- exons are always in biological order
     exons SEQUENCE OF Spliced-exon ,
 
-    -- optional poly(A) tail
+    -- start of poly(A) tail on the transcript
+    -- aligned product positions < poly-a <= product-length
+    -- poly-a == product-length indicates inferred poly(A) tail at transcript's end
     poly-a INTEGER OPTIONAL,
 
     -- length of the product, in bases/residues
-    -- from this, a 3' unaligned length can be extracted; this also captures
-    -- the case in which a protein aligns leaving a partial codon alignment
-    -- at the 3' end
+    -- from this (or from poly-a if present), a 3' unaligned length can be extracted
     product-length INTEGER OPTIONAL,
 
     -- alignment descriptors / modifiers
