@@ -84,7 +84,7 @@ extern "C" {
 #define kBestHit_OverhangMax 0.5
 
 /// Default value for score_edge
-#define kBestHit_ScoreEdgeDflt 0.05
+#define kBestHit_ScoreEdgeDflt 0.1
 /// Minimum value for score_edge
 #define kBestHit_ScoreEdgeMin  0.0
 /// Maximum value for score_edge
