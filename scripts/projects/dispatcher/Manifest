@@ -13,6 +13,7 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
+DEFAULT_CONFIGURATIONS:  Linux32:ICC  Linux64:ICC  FreeBSD32:GCC  SunOSx86:GCC  SunOSSparc:WS64  PowerMAC:GCC
 
 COPY: $srcdir/src/connect/daemons/mod/*mod*  $installdir/src/
 COPY: $srcdir/include/connect/*.h            $installdir/include/connect/
