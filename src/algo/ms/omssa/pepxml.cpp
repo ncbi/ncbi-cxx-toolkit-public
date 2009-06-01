@@ -357,7 +357,9 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     string dbname = inOMSSA.GetRequest().front()->GetSettings().GetDb();
     sSum->SetSearch_database().SetAttlist().SetLocal_path(dbname);
 
-    int dbtype = inOMSSA.GetResponse().front()->GetBioseqs().Get().front()->GetSeq().GetInst().GetMol();
+    int dbtype(3);
+    if(inOMSSA.GetResponse().front()->IsSetBioseqs() && inOMSSA.GetResponse().front()->GetBioseqs().Get().size() > 0)
+        dbtype = inOMSSA.GetResponse().front()->GetBioseqs().Get().front()->GetSeq().GetInst().GetMol();
     switch (dbtype) {
     case 3:
         sSum->SetSearch_database().SetAttlist().SetType(CSearch_database::C_Attlist::eAttlist_type_AA);

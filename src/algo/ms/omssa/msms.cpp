@@ -618,7 +618,7 @@ void CMassArray::Init(const CMSMod &Mods,
         return;
     }
     x_Init(SearchType);
-    CMSSearchSettings::TVariable::const_iterator i;  // iterate thru fixed mods
+    CMSMod::TModLists::const_iterator i;  // iterate thru fixed mods
     int j; // the number of characters affected by the fixed mod
 
     for(i = Mods.GetAAMods(eMSModType_modaa).begin(); i != Mods.GetAAMods(eMSModType_modaa).end(); i++) {

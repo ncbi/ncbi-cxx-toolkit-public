@@ -37,6 +37,7 @@
 #ifndef OBJECTS_OMSSA_MOD_HPP
 #define OBJECTS_OMSSA_MOD_HPP
 
+#include <vector>
 
 // generated includes
 #include <objects/omssa/MSMod.hpp>
@@ -72,15 +73,16 @@ public:
     bool Init(const CMSSearchSettings::TVariable &Mods,
                CRef<CMSModSpecSet> Modset);
 
-    const CMSSearchSettings::TVariable &GetAAMods(EMSModType Type) const;    
+    typedef vector < int > TModLists;
+    const TModLists &GetAAMods(EMSModType Type) const;    
 private:
-    CMSSearchSettings::TVariable ModLists[eMSModType_modmax];
+    TModLists ModLists[eMSModType_modmax];
 };
 
 ///////////////////  CMSMod  inline methods
 
 inline 
-const CMSSearchSettings::TVariable & CMSMod::GetAAMods(EMSModType Type) const
+const CMSMod::TModLists & CMSMod::GetAAMods(EMSModType Type) const
 { 
     return ModLists[Type]; 
 }

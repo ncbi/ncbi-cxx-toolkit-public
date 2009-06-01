@@ -783,18 +783,18 @@ void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
                           bool setfixed,
                           CRef <CMSModSpecSet> &Modset)
 {
-    // iterator thru mods
-    CMSSearchSettings::TVariable::const_iterator iMods;
+    // iterator thru mods VariableMods.GetAAMods(ModType)
+    int iMods;
     int iChar;
 
-    for (iMods = VariableMods.GetAAMods(ModType).begin();
-        iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
-        for (iChar = 0; iChar < Modset->GetModNumChars(*iMods); iChar++) {
-            if (SeqChar == Modset->GetModChar(*iMods, iChar) && NumMod < MaxNumMod) {
+    for (iMods = 0;
+        iMods <  VariableMods.GetAAMods(ModType).size(); ++iMods) {
+        for (iChar = 0; iChar < Modset->GetModNumChars(VariableMods.GetAAMods(ModType)[iMods]); ++iChar) {
+            if (SeqChar == Modset->GetModChar(VariableMods.GetAAMods(ModType)[iMods], iChar) && NumMod < MaxNumMod) {
                 ModList[NumMod].SetSite() = iPepStart;
-                ModList[NumMod].SetPrecursorDelta() = Modset->GetModMass(*iMods);
-                ModList[NumMod].SetProductDelta() = Modset->GetNeutralLoss(*iMods);
-                ModList[NumMod].SetEnum() = *iMods;
+                ModList[NumMod].SetPrecursorDelta() = Modset->GetModMass(VariableMods.GetAAMods(ModType)[iMods]);
+                ModList[NumMod].SetProductDelta() = Modset->GetNeutralLoss(VariableMods.GetAAMods(ModType)[iMods]);
+                ModList[NumMod].SetEnum() = VariableMods.GetAAMods(ModType)[iMods];
                 if (setfixed) ModList[NumMod].SetFixed() = 1;
                 else ModList[NumMod].SetFixed() = 0;
                 NumMod++; 
@@ -813,15 +813,15 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
                                    CRef <CMSModSpecSet> &Modset)
 {
     // iterator thru mods
-    CMSSearchSettings::TVariable::const_iterator iMods;
+    int iMods;
 
-    for (iMods = VariableMods.GetAAMods(ModType).begin();
-        iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
+    for (iMods = 0;
+        iMods <  VariableMods.GetAAMods(ModType).size(); ++iMods) {
         if (NumMod < MaxNumMod) {
             ModList[NumMod].SetSite() = iPepStart;
-            ModList[NumMod].SetPrecursorDelta() = Modset->GetModMass(*iMods);
-            ModList[NumMod].SetProductDelta() = Modset->GetNeutralLoss(*iMods);
-            ModList[NumMod].SetEnum() = *iMods;
+            ModList[NumMod].SetPrecursorDelta() = Modset->GetModMass(VariableMods.GetAAMods(ModType)[iMods]);
+            ModList[NumMod].SetProductDelta() = Modset->GetNeutralLoss(VariableMods.GetAAMods(ModType)[iMods]);
+            ModList[NumMod].SetEnum() = VariableMods.GetAAMods(ModType)[iMods];
             if (setfixed) ModList[NumMod].SetFixed() = 1;
             else  ModList[NumMod].SetFixed() = 0;
             NumMod++; 

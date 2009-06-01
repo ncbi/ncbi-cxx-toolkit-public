@@ -634,7 +634,9 @@ void CSearch::DeleteVariableOverlap(int& NumMod,
             // if last mod, then just return
             if (i == NumMod) return;
             // otherwise, delete the modification
-            ModList[i] = ModList[i+1];
+            for (j=i; j < NumMod; ++j) {
+                ModList[j] = ModList[j+1];
+            }
         }
         else i++;
     }
