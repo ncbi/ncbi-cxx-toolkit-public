@@ -14,6 +14,9 @@
 # The DLL: statement describes shared objects
 # The ETC: statement describes configuration files
 # It is allowed to have more than one of each statements
+# NOTE: When applications are added/removed from this list, please update
+# the application listings in post_build/win/{make_win.py,ncbi-blast.nsi} and
+# post_build/macosx/ncbi-blast.sh
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck
@@ -45,4 +48,4 @@ SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-ma
 
 IntelMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal --with-ncbi-public
 
-USE_COMPONENTS 
+#USE_COMPONENTS 
