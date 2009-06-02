@@ -220,9 +220,9 @@ public:
     }
 
     
-    /// Canonical Multiple: one alignment only.
+    /// Canonical Multiple: Single alignment with multiple sequences.
     bool IsCanonicalMultiple() const {
-        return (GetAlnCount() == 1);
+        return GetAlnCount() == 1  &&  ! IsCanonicalQueryAnchored();
     }
 
 
