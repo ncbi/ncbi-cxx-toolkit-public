@@ -50,4 +50,4 @@ SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-ma
 
 IntelMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal --with-ncbi-public
 
-USE_COMPONENTS 
+#USE_COMPONENTS 
