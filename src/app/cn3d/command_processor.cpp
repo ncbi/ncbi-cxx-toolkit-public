@@ -179,6 +179,10 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
             GlobalMessenger()->AddHighlights(seq, from, to);
         }
     }
+
+    // store messaged highlights in the cache
+    INFOMSG("Cached incoming highlights");
+    GlobalMessenger()->CacheHighlights();
 }
 
 IMPLEMENT_COMMAND_FUNCTION(LoadFile)
