@@ -15,11 +15,6 @@ internal/gbench
 internal/ID/utils$
 internal/mapview/objects
 -internal/mapview/objects/cache
-internal/pubmedxml/Libs/TServer$
-internal/txserver$
-internal/myncbi$
-internal/blast/DistribDbSupport
-internal/gpipe/align_db
 misc/third_party
 objects
 objmgr
