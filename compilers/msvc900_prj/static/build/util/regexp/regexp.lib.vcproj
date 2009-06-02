@@ -6,7 +6,7 @@
   </Platforms>
   <Configurations>
     <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\..\lib\$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;" AdditionalIncludeDirectories="..\..\..\..\..\..\include\, ..\..\..\..\..\..\include\internal\, ..\..\..\..\..\..\include\util\regexp\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" ProgramDataBaseFileName="$(IntDir)\regexp.pdb" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="2" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="3" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"/>
+      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="HAVE_CONFIG_H;NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;" AdditionalIncludeDirectories="..\..\..\..\..\..\include\, ..\..\..\..\..\..\include\internal\, ..\..\..\..\..\..\include\util\regexp\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" ProgramDataBaseFileName="$(IntDir)\regexp.pdb" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="2" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="3" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"/>
       <Tool Name="VCLinkerTool" OutputFile="" AdditionalDependencies="" LargeAddressAware="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE" FixedBaseAddress=""/>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)\$(ProjectName)" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"/>
       <Tool Name="VCCustomBuildTool"/>
@@ -39,7 +39,7 @@
   <References></References>
   <Files>
     <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
-      <File RelativePath="..\..\..\..\..\..\src\util\regexp\chartables.c">
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_chartables.c">
         <FileConfiguration Name="ReleaseDLL|Win32">
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
@@ -47,7 +47,7 @@
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
       </File>
-      <File RelativePath="..\..\..\..\..\..\src\util\regexp\get.c">
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_compile.c">
         <FileConfiguration Name="ReleaseDLL|Win32">
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
@@ -55,7 +55,7 @@
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
       </File>
-      <File RelativePath="..\..\..\..\..\..\src\util\regexp\maketables.c">
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_config.c">
         <FileConfiguration Name="ReleaseDLL|Win32">
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
@@ -63,7 +63,135 @@
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
       </File>
-      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre.c">
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_dfa_exec.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_exec.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_fullinfo.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_get.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_globals.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_info.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_maketables.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_newline.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_ord2utf8.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_refcount.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_study.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_tables.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_try_flipped.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_ucd.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_valid_utf8.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_version.c">
+        <FileConfiguration Name="ReleaseDLL|Win32">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+        <FileConfiguration Name="ReleaseDLL|x64">
+          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
+        </FileConfiguration>
+      </File>
+      <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcre_xclass.c">
         <FileConfiguration Name="ReleaseDLL|Win32">
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
@@ -72,14 +200,6 @@
         </FileConfiguration>
       </File>
       <File RelativePath="..\..\..\..\..\..\src\util\regexp\pcreposix.c">
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|x64">
-          <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\..\src\util\regexp\study.c">
         <FileConfiguration Name="ReleaseDLL|Win32">
           <Tool Name="VCCLCompilerTool" UsePrecompiledHeader="0" PrecompiledHeaderThrough=""/>
         </FileConfiguration>
