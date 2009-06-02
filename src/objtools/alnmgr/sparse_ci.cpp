@@ -174,7 +174,7 @@ void CSparse_CI::x_InitIterator()
         m_It_1 = m_It_2 = m_Coll->begin();
     }
 
-    // adjsutiterators
+    // adjsut iterators
     switch(m_Flag)  {
     case eAllSegments:
         if(first_gap)   {
