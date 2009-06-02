@@ -51,11 +51,15 @@ def main():
              "psiblast.exe",
              "blastdbcmd.exe",
              "makeblastdb.exe",
+             "makembindex.exe",
              "blastdb_aliastool.exe",
              "segmasker.exe",
              "dustmasker.exe",
              "windowmasker.exe",
-             "legacy_blast.pl" ]
+             "convert2blastmask.exe",
+             "blastdbcheck.exe",
+             "legacy_blast.pl",
+             "update_blastdb.pl" ]
     
     cwd = os.getcwd()
     for app in apps:

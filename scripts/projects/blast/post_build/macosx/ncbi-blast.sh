@@ -12,7 +12,7 @@ fi
 
 BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn legacy_blast.pl update_blastdb.pl"
 MASKING_BINS="windowmasker dustmasker segmasker"
-DB_BINS="blastdbcmd makeblastdb makembindex"
+DB_BINS="blastdbcmd makeblastdb makembindex blastdb_aliastool convert2blastmask blastdbcheck"
 ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
 rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
