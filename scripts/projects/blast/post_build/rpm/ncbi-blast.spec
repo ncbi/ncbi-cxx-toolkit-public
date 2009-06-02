@@ -22,9 +22,8 @@ members of gene families.
 %setup -q
 
 %build
-./configure --without-debug --with-mt --with-flat-makefile \
-            --with-build-root=ReleaseMT
-cd c++/ReleaseMT/build
+./configure
+cd c++/*/build
 %__make -f Makefile.flat
 
 %install
