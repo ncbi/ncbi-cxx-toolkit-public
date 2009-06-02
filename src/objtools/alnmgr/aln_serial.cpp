@@ -125,12 +125,12 @@ ostream& operator<<(ostream& out, const TAlnSeqIdIRef& aln_seq_id_iref)
 
 ostream& operator<<(ostream& out, const CPairwiseAln& pairwise_aln)
 {
-    out << "CPairwiseAln" << endl;
+    out << "CPairwiseAln between ";
 
-    out << pairwise_aln.GetFirstId() << ", "
+    out << pairwise_aln.GetFirstId() << " and "
         << pairwise_aln.GetSecondId();
     
-    cout << pairwise_aln.GetFlags();
+    cout << " with flags=" << pairwise_aln.GetFlags() << " and segments:" << endl;
 
     ITERATE (CPairwiseAln, aln_rng_it, pairwise_aln) {
         out << *aln_rng_it;
