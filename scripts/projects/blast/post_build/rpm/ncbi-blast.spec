@@ -23,13 +23,13 @@ members of gene families.
 
 %build
 ./configure
-cd c++/ReleaseMT/build
+cd c++/*/build
 %__make -f Makefile.flat
 
 %install
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
-cd c++/ReleaseMT
-%__install -m755 bin/* $RPM_BUILD_ROOT/%_bindir
+cd c++/*/bin
+%__install -m755 * $RPM_BUILD_ROOT/%_bindir
 
 %clean
 rm -rf $RPM_BUILD_ROOT
