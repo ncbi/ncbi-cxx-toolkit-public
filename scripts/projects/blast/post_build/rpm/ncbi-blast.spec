@@ -23,7 +23,7 @@ members of gene families.
 
 %build
 ./configure
-cd c++/*/build
+cd c++/ReleaseMT/build
 %__make -f Makefile.flat
 
 %install
