@@ -279,6 +279,13 @@ void CSeqVector::GetPackedSeqData(string& dst_str,
         return;
     }
 
+    if ( m_TSE && !CanGetRange(src_pos, src_end) ) { 
+        NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                       "CSeqVector::GetPackedSeqData: "
+                       "cannot get seq-data in range: "
+                       <<src_pos<<"-"<<src_end);
+    }
+
     TCoding dst_coding = GetCoding();
     switch ( dst_coding ) {
     case CSeq_data::e_Iupacna:

@@ -630,25 +630,41 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
 void CSeqVector_CI::GetSeqData(string& buffer, TSeqPos count)
 {
     buffer.erase();
-    count = min(count, x_GetSize() - GetPos());
-    if ( count ) {
-        buffer.reserve(count);
-        do {
-            TCache_I cache = m_Cache;
-            TCache_I cache_end = m_CacheEnd;
-            TSeqPos chunk_count = min(count, TSeqPos(cache_end - cache));
-            _ASSERT(chunk_count > 0);
-            TCache_I chunk_end = cache + chunk_count;
-            buffer.append(cache, chunk_end);
-            if ( chunk_end == cache_end ) {
-                x_NextCacheSeg();
-            }
-            else {
-                m_Cache = chunk_end;
-            }
-            count -= chunk_count;
-        } while ( count );
+    TSeqPos pos = GetPos();
+    _ASSERT(pos <= x_GetSize());
+    count = min(count, x_GetSize() - pos);
+    if ( !count ) {
+        return;
     }
+
+    if ( m_TSE ) {
+        SSeqMapSelector sel;
+        sel.SetRange(pos, count).SetStrand(m_Strand).SetLinkUsedTSE(m_TSE)
+            .SetResolveCount(size_t(-1));
+        if ( !m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
+            NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                           "CSeqVector_CI::GetSeqData: "
+                           "cannot get seq-data in range: "
+                           <<pos<<"-"<<pos+count);
+        }
+    }
+    
+    buffer.reserve(count);
+    do {
+        TCache_I cache = m_Cache;
+        TCache_I cache_end = m_CacheEnd;
+        TSeqPos chunk_count = min(count, TSeqPos(cache_end - cache));
+        _ASSERT(chunk_count > 0);
+        TCache_I chunk_end = cache + chunk_count;
+        buffer.append(cache, chunk_end);
+        if ( chunk_end == cache_end ) {
+            x_NextCacheSeg();
+        }
+        else {
+            m_Cache = chunk_end;
+        }
+        count -= chunk_count;
+    } while ( count );
 }
 
 

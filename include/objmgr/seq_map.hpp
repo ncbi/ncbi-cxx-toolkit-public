@@ -343,6 +343,7 @@ protected:
     virtual bool x_GetRefMinusStrand(const CSegment& seg) const;
     
     void x_LoadObject(const CSegment& seg) const;
+    CRef<CTSE_Chunk_Info> x_GetChunkToLoad(const CSegment& seg) const;
     const CObject* x_GetObject(const CSegment& seg) const;
     void x_SetObject(CSegment& seg, const CObject& obj);
     void x_SetChunk(CSegment& seg, CTSE_Chunk_Info& chunk);
