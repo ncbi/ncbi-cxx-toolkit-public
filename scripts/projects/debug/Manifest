@@ -10,59 +10,101 @@
 #
 
 
-# USE_DEFAULT_COMPONENTS
+## USE_DEFAULT_COMPONENTS
+#
+#APP: datatool
+#
+##COPY: $srcdir/include/corelib/hash_impl/*    $installdir/include/corelib/hash_impl/
+##COPY: $srcdir/include/util/bitset/*.h        $installdir/include/util/bitset/
+##COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/
+##COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/my_checksum.cpp
+#
+#DEFAULT_CONFIGURATIONS: Linux32:plain-ICC  Linux64:plain-ICC  SunOSx86:plain-WS64 SunOSSparc:plain-WS64
+#
+## APP: test_ncbi_disp -- not now
+#
+## Each line describes a single configuration
+## The format is as follows:
+## <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+## Configuration script is relative to c++/compilers/unix/ .
+## Release configurator assumes that this script will eventually call standard configure script and pass all options
+## to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+## --with-distcc, --with-action etc.
+#
+#Linux32    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux32    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux32    : debug-GCC  : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
+#
+#Linux64    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux64    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#
+#FreeBSD32  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#
+#SunOSx86   : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#SunOSx86   : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#SunOSx86   : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#
+#SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#SunOSSparc : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#
+#PowerMAC   : universal  : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+## --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
+## work similar to the configurations where it is mentioned explicitly
+#IntelMAC   : GCC        : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
+#
+#Win32      : 800        : msvc800_prj  static  32  ReleaseDLL
+#Win32      : 800d       : msvc800_prj  static  32  DebugDLL
+#Win64      : plain      : msvc800_prj  static  64  ReleaseDLL
+#Win64      : dll        : msvc800_prj  dll     64  ReleaseDLL
+#Win32_9    : 900-32     : msvc900_prj  static  32  DebugDLL
+#Win64_9    : 900-64     : msvc900_prj  static  64  ReleaseDLL
+#Win64_9    : 900-64-dll : msvc900_prj  dll  64  ReleaseDLL
+#
+#XCode      : default : Xcode.sh 30
+#
 
-APP: datatool
+# --------------------------------
+# Copy of the blast's Manifest
 
-#COPY: $srcdir/include/corelib/hash_impl/*    $installdir/include/corelib/hash_impl/
-#COPY: $srcdir/include/util/bitset/*.h        $installdir/include/util/bitset/
-#COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/
-#COPY: $srcdir/src/util/checksum.cpp          $installdir/src/util/my_checksum.cpp
+APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn
+APP: makembindex segmasker dustmasker windowmasker
+APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck
 
-DEFAULT_CONFIGURATIONS: Linux32:plain-ICC  Linux64:plain-ICC  SunOSx86:plain-WS64 SunOSSparc:plain-WS64
+COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
+COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 
-# APP: test_ncbi_disp -- not now
+POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir
 
-# The -t key prevents inclusion of the tree builder into the release
-# SVN_TAG_RELEASE_ADD_FLAGS: -t
 
 # Each line describes a single configuration
 # The format is as follows:
-# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# <HardwareIdentifier> : <ReleaseSuffix> :
+# <CompilerConfigurationScriptWithKeys>
 # Configuration script is relative to c++/compilers/unix/ .
-# Release configurator assumes that this script will eventually call standard configure script and pass all options
-# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# Release configurator assumes that this script will eventually call standard
+# configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as
+# --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux32    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32    : debug-GCC  : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
+# ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
+# that. The build-root is needed so that rpmbuild can find the proper
+# directories
+# to copy the binaries from
+Linux32     : icc : ICC.sh            --without-debug --with-mt --with-flat-makefile --without-dll LDFLAGS=-static-libcxa
+Linux64     : icc : ICC.sh            --without-debug --with-mt --with-flat-makefile
 
-Linux64    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+DEFAULT_CONFIGURATIONS: Linux32:icc Linux64:icc
 
-FreeBSD32  : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Win32       : plain : msvc800_prj   static  32  ReleaseDLL
+Win64       : plain : msvc800_prj   static  64  ReleaseDLL
 
-SunOSx86   : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSx86   : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSx86   : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86    : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
+SunOSSparc  : plain : WorkShop59.sh 64  --without-debug --with-mt --with-flat-makefile
 
-SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+IntelMAC    : universal : GCC.sh        --without-debug --with-mt --with-flat-makefile --with-universal --with-ncbi-public
 
-PowerMAC   : universal  : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-# --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
-# work similar to the configurations where it is mentioned explicitly
-IntelMAC   : GCC        : GCC.sh           --with-universal --without-debug --without-mt --with-static --without-runpath
+USE_COMPONENTS
 
-Win32      : 800        : msvc800_prj  static  32  ReleaseDLL
-Win32      : 800d       : msvc800_prj  static  32  DebugDLL
-Win64      : plain      : msvc800_prj  static  64  ReleaseDLL
-Win64      : dll        : msvc800_prj  dll     64  ReleaseDLL
-Win32_9    : 900-32     : msvc900_prj  static  32  DebugDLL
-Win64_9    : 900-64     : msvc900_prj  static  64  ReleaseDLL
-Win64_9    : 900-64-dll : msvc900_prj  dll  64  ReleaseDLL
-
-XCode      : default : Xcode.sh 30
 

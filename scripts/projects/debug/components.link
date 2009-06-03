@@ -1,0 +1,10 @@
+[components]
+infrastructure  4.0.0
+core            4.0.0
+dbase           4.0.0
+web             4.0.0
+objects         4.0.0
+objtools        4.0.0
+algo            4.0.0
+blast           4.1.0
+
