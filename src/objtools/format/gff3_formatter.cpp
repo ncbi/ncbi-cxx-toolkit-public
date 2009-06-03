@@ -241,6 +241,8 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             TSeqPos                       count;
             CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
 
+            // Adjusting for start position, converting to natural cordinates
+            // (aa for protein locations, which would imply divide by 3).
             ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
             ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
             if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
@@ -249,14 +251,21 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 tgt_range += tgt_piece;
             } else if ( !(flags & CAlnMap::fSeq) ) {
                 type       = 'D';
-                count      = ref_piece.GetLength() / ref_width;
+                // Length already adjusted, e.g. in aa for protein.
+                count      = ref_piece.GetLength();
                 ref_range += ref_piece;
             } else {
                 type       = 'M';
-                count      = ref_piece.GetLength() / ref_width;
+                // Length already adjusted, e.g. in aa for protein.
+                count      = ref_piece.GetLength();
                 ref_range += ref_piece;
                 tgt_range += tgt_piece;
             }
+            // TODO:
+            // Above assumes that tgt_piece.GetLength() % ref_width == 0,
+            // and conversely, that ref_piece.GetLength() % tgt_width == 0,
+            // that is, that there are no frameshifts, which would require
+            // emitting F and R codes.
             if (type == last_type) {
                 last_count += count;
             } else {
