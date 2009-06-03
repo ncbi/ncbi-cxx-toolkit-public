@@ -19,7 +19,7 @@ util$
 util/creaders$
 util/tables$
 util/compress$
-util/regexp$
+util/regexp
 util/xregexp$
 util/sequtil$
 util/bitset$
