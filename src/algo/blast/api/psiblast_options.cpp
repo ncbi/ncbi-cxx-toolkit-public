@@ -66,6 +66,13 @@ void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
     m_Opts->SetPseudoCount( PSI_PSEUDO_COUNT_CONST );
 }
 
+void CPSIBlastOptionsHandle::SetPSITblastnDefaults(void)
+{
+    m_Opts->SetProgram(ePSITblastn);
+    m_Opts->SetSmithWatermanMode(false);
+    m_Opts->SetDbGeneticCode(BLAST_GENETIC_CODE);
+}
+ 
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

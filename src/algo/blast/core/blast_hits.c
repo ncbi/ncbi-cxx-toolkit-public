@@ -923,7 +923,7 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
                if (translation_length <= stop-start)
                {
                     target_t->range[2*context] = start_shift;
-                    target_t->range[2*context+1] = start_shift+(stop-start);
+                    target_t->range[2*context+1] = start_shift+ translation_length;
                }
                else
                {

@@ -153,6 +153,11 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         retval = new CPSIBlastOptionsHandle(locality);
         break;
 
+    case ePSITblastn:
+        retval = new CPSIBlastOptionsHandle(locality);
+        (dynamic_cast<CPSIBlastOptionsHandle *> (retval))->SetPSITblastnDefaults();
+        break;
+
     case ePHIBlastp:
         retval = new CPHIBlastProtOptionsHandle(locality);
         break;        
@@ -197,6 +202,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("rpstblastn");
         retval.insert("blastx");
         retval.insert("tblastn");
+        retval.insert("psitblastn");
         retval.insert("tblastx");
     }
 
@@ -244,6 +250,9 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
         retval.append("a database of motifs");
     } else if (task == "tblastn") {
         retval.assign("Search of a protein query against a (translated) ");
+        retval += "nucleotide database";
+    } else if (task == "psitblastn") {
+        retval.assign("Search of a PSSM against a (translated) ");
         retval += "nucleotide database";
     } else if (task == "tblastx") {
         retval.assign("Search of a (translated) nucleotide query against ");
@@ -319,6 +328,10 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     else if (!NStr::CompareNocase(task, "psiblast"))
     {
          retval = CBlastOptionsFactory::Create(ePSIBlast, locality);
+    }
+    else if (!NStr::CompareNocase(task, "psitblastn"))
+    {
+         retval = CBlastOptionsFactory::Create(ePSITblastn, locality);
     }
     else if (!NStr::CompareNocase(task, "phiblast"))
     {

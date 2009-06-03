@@ -650,6 +650,7 @@ string EProgramToTaskName(EProgram p)
     case eRPSBlast:         retval.assign("rpsblast"); break;
     case eRPSTblastn:       retval.assign("rpstblastn"); break;
     case ePSIBlast:         retval.assign("psiblast"); break;
+    case ePSITblastn:       retval.assign("psitblastn"); break;
     case ePHIBlastp:        retval.assign("phiblastp"); break;
     case ePHIBlastn:        retval.assign("phiblastn"); break;
     default:
@@ -694,6 +695,9 @@ EProgramToEBlastProgramType(EProgram p)
     case ePSIBlast:
         return eBlastTypePsiBlast;
         
+    case ePSITblastn:
+        return eBlastTypePsiTblastn;
+
     case ePHIBlastp:
         return eBlastTypePhiBlastp;
         
@@ -734,6 +738,8 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         return eMegablast; 
     } else if (lowercase_program_name == "psiblast") {
         return ePSIBlast;
+    } else if (lowercase_program_name == "psitblastn") {
+        return ePSITblastn;
     } else if (lowercase_program_name == "dc-megablast") {
         return eDiscMegablast;
     } else {

@@ -71,6 +71,9 @@ public:
     /// Sets PseudoCount
     /// @param p PseudoCount [in]
     void SetPseudoCount(int p) { m_Opts->SetPseudoCount(p); }
+
+    /// Sets default options for psi tblastn search
+    void SetPSITblastnDefaults();
     
 protected:
     /// Set the program and service name for remote blast.

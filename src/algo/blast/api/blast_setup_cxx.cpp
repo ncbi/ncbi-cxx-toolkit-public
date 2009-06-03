@@ -693,7 +693,9 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
 	bool subj_is_na = Blast_SubjectIsNucleotide(prog) ? true : false;
 
     ESentinelType sentinels = eSentinels;
-    if (prog == eBlastTypeTblastn || prog == eBlastTypeTblastx) {
+    if (prog == eBlastTypeTblastn 
+     || prog == eBlastTypePsiTblastn
+     || prog == eBlastTypeTblastx) {
         sentinels = eNoSentinels;
     }
 
@@ -1012,6 +1014,7 @@ GetQueryEncoding(EBlastProgramType program)
 
     case eBlastTypeBlastp: 
     case eBlastTypeTblastn:
+    case eBlastTypePsiTblastn:
     case eBlastTypeRpsBlast: 
     case eBlastTypePsiBlast:
     case eBlastTypePhiBlastp:
@@ -1048,6 +1051,7 @@ GetSubjectEncoding(EBlastProgramType program)
         break;
 
     case eBlastTypeTblastn:
+    case eBlastTypePsiTblastn:
     case eBlastTypeTblastx:
         retval = eBlastEncodingNcbi4na;
         break;
@@ -1591,6 +1595,7 @@ void CBlastQueryFilteredFrames::x_VerifyFrame(int frame)
     switch(m_Program) {
     case eBlastTypeBlastp:
     case eBlastTypeTblastn:
+    case eBlastTypePsiTblastn:
     case eBlastTypeRpsBlast:
     case eBlastTypePsiBlast:
     case eBlastTypePhiBlastp:
@@ -1638,6 +1643,7 @@ bool CBlastQueryFilteredFrames::QueryHasMultipleFrames() const
     switch(m_Program) {
     case eBlastTypeBlastp:
     case eBlastTypeTblastn:
+    case eBlastTypePsiTblastn:
     case eBlastTypeRpsBlast:
     case eBlastTypePhiBlastp:
     case eBlastTypePsiBlast:

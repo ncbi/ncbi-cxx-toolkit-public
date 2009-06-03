@@ -305,22 +305,24 @@ CBlastTracebackSearch::x_SetSubjectRangesForPartialFetching()
                      hsp_ranges->AddRange(kQueryIdx, kSubjOid, start_off, end_off);
                  }
              }
-        }
+         }
     }
 
-    // Remove any queries if they were added to the hsp_ranges object, as we'll
-    // fetch those entirely
-    CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
-    ITERATE(set<int>, query_idx, query_indices) {
-        try {
-            const CSeq_id* query_id = qdata->GetSeq_loc(*query_idx)->GetId();
-            vector<int> oids;
-            seqdb_handle.SeqidToOids(*query_id, oids);
-            ITERATE(vector<int>, oid, oids) {
-                hsp_ranges->RemoveSubject(*oid);
+    if (m_Options->GetProgramType() != eBlastTypePsiTblastn ) {
+        // Remove any queries if they were added to the hsp_ranges object, as we'll
+        // fetch those entirely
+        CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
+        ITERATE(set<int>, query_idx, query_indices) {
+            try {
+                const CSeq_id* query_id = qdata->GetSeq_loc(*query_idx)->GetId();
+                vector<int> oids;
+                seqdb_handle.SeqidToOids(*query_id, oids);
+                ITERATE(vector<int>, oid, oids) {
+                    hsp_ranges->RemoveSubject(*oid);
+                }
+            } catch (const CSeqDBException&) {
+                continue;
             }
-        } catch (const CSeqDBException&) {
-            continue;
         }
     }
 
@@ -357,7 +359,7 @@ CBlastTracebackSearch::Run()
     // When dealing with PSI-BLAST iterations, we need to keep a larger
     // alignment for the PSSM engine as to replicate blastpgp's behavior
     int hitlist_size_backup = m_OptsMemento->m_HitSaveOpts->hitlist_size;
-    if (m_OptsMemento->m_ProgramType == eBlastTypePsiBlast) {
+    if (m_OptsMemento->m_ProgramType == eBlastTypePsiBlast ) {
         SBlastHitsParameters* bhp = NULL;
         SBlastHitsParametersNew(m_OptsMemento->m_HitSaveOpts, 
                                 m_OptsMemento->m_ExtnOpts,

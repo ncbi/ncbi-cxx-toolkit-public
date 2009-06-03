@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/local_blast.hpp>
+#include <algo/blast/api/psiblast.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
@@ -65,7 +66,6 @@ private:
     virtual void Init();
     /** @inheritDoc */
     virtual int Run();
-
     /// This application's command line args
     CRef<CTblastnAppArgs> m_CmdLineArgs;
 };
@@ -73,11 +73,8 @@ private:
 void CTblastnApp::Init()
 {
     // formulate command line arguments
-
     m_CmdLineArgs.Reset(new CTblastnAppArgs());
-
     // read the command line
-
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
@@ -106,6 +103,11 @@ int CTblastnApp::Run(void)
         CRef<CBlastInput> input;
         SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
         dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        CRef<CBlastQueryVector> query;
+        CRef<IQueryFactory> query_factory;
+
         if (pssm.Empty()) {
             CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
@@ -118,20 +120,25 @@ int CTblastnApp::Run(void)
             input.Reset(new CBlastInput(&*fasta,
                                         m_CmdLineArgs->GetQueryBatchSize()));
         } else {
-            throw runtime_error("PSI-TBLASTN is not implemented");
+            _ASSERT(pssm->HasQuery());
+            _ASSERT(pssm->GetQuery().IsSeq());
+            query.Reset(new CBlastQueryVector());
+            scope->AddTopLevelSeqEntry(pssm->SetQuery());
+
+            CRef<CSeq_loc> sl(new CSeq_loc());
+            sl->SetWhole().Assign(*pssm->GetQuery().GetSeq().GetFirstId());
+
+            CRef<CBlastSearchQuery> q(new CBlastSearchQuery(*sl, *scope));
+            query->AddQuery(q);
+            _ASSERT(query.NotEmpty());
         }
 
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;
-        CRef<CScope> scope;
         InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
                          db_adapter, scope);
         _ASSERT(db_adapter && scope);
-        if (pssm.NotEmpty() && db_args->GetSubjects(scope)) {
-            NCBI_THROW(CInputException, eInvalidInput,
-                                "PSI-TBLASTN with subject sequences is not supported");
-        }
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
@@ -155,29 +162,58 @@ int CTblastnApp::Run(void)
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        for (; !input->End(); formatter.ResetScopeHistory()) {
+        CRef<CSearchResultSet> results;
+        if (pssm.Empty()) {
+            for (; !input->End(); formatter.ResetScopeHistory()) {
 
-            CRef<CBlastQueryVector> query_batch(input->GetNextSeqBatch(*scope));
-            CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
+                query =  input->GetNextSeqBatch(*scope);
+                query_factory.Reset(new CObjMgr_QueryFactory(*query));
 
-            SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl);
+                SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl);
 
-            CRef<CSearchResultSet> results;
+                if (m_CmdLineArgs->ExecuteRemotely()) {
+                    CRef<CRemoteBlast> rmt_blast = 
+                        InitializeRemoteBlast(query_factory, db_args, opts_hndl,
+                              m_CmdLineArgs->ProduceDebugRemoteOutput(),
+                              m_CmdLineArgs->GetClientId());
+                    results = rmt_blast->GetResultSet();
+                } else {
+                    CLocalBlast lcl_blast(query_factory, opts_hndl, db_adapter);
+                    lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                    results = lcl_blast.Run();
+                }
 
+                ITERATE(CSearchResultSet, result, *results) {
+                    formatter.PrintOneResultSet(**result, query);
+                }
+            }
+
+        } else {
+            SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm);
+            
             if (m_CmdLineArgs->ExecuteRemotely()) {
-                CRef<CRemoteBlast> rmt_blast = 
-                    InitializeRemoteBlast(queries, db_args, opts_hndl,
-                          m_CmdLineArgs->ProduceDebugRemoteOutput(),
-                          m_CmdLineArgs->GetClientId());
-                results = rmt_blast->GetResultSet();
+
+                CRef<CRemoteBlast> rmt_psiblast =
+                    InitializeRemoteBlast(query_factory, db_args, opts_hndl,
+                               m_CmdLineArgs->ProduceDebugRemoteOutput(),
+                               m_CmdLineArgs->GetClientId(), pssm);
+     
+                results = rmt_psiblast->GetResultSet();
+            
             } else {
-                CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
-                lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
-                results = lcl_blast.Run();
+
+                CRef<CPSIBlastOptionsHandle> psi_opts
+                           (dynamic_cast <CPSIBlastOptionsHandle *> (&*opts_hndl));
+                _ASSERT(psi_opts.NotEmpty());
+
+                CRef<CPsiBlast> psiblast(new CPsiBlast(pssm, db_adapter, psi_opts));
+                psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+
+                results = psiblast->Run(); 
             }
 
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, query_batch);
+                  formatter.PrintOneResultSet(**result, query);
             }
         }
 
@@ -186,7 +222,6 @@ int CTblastnApp::Run(void)
         if (m_CmdLineArgs->ProduceDebugOutput()) {
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
-
     } CATCH_ALL(status)
     return status;
 }

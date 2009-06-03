@@ -57,8 +57,7 @@ typedef struct SBlastHitsParameters {
    Int4 hsp_num_max; /**< number of HSPs to save per db sequence. */
 } SBlastHitsParameters; 
 
-/** Sets up small structures used by blast_hit.c and hspstream_collector.c
- * for saving HSPs.
+/** Sets up small structures used by blast_hit.c for saving HSPs.
  * @param hit_options field hitlist_size and hsp_num_max needed, a pointer to 
  *      this structure will be stored on resulting structure.[in]
  * @param ext_options field compositionBasedStats needed here. [in]

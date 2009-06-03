@@ -39,6 +39,7 @@ static char const rcsid[]
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/api/version.hpp>
 
@@ -128,9 +129,15 @@ CTblastnAppArgs::CTblastnAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                      const CArgs& /*args*/)
+                                      const CArgs& args)
 {
-    return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
+    if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {
+       CPSIBlastOptionsHandle * rv(new CPSIBlastOptionsHandle(locality));
+       rv->SetPSITblastnDefaults();
+       return CRef<CBlastOptionsHandle>(rv);
+    }
+    else
+       return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
 }
 
 CRef<objects::CPssmWithParameters>

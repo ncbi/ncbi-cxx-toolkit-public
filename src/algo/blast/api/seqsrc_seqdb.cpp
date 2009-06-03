@@ -306,9 +306,8 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
                                     ranges.size(), kCopySequenceRanges) != 0) {
             return BLAST_SEQSRC_ERROR;
             }
-		else {
-			args->seq->num_seq_ranges=0;
-			}
+        } else {
+        args->seq->num_seq_ranges=0;
         }
     }
 #endif

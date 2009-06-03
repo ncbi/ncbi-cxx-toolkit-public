@@ -48,7 +48,6 @@ static char const rcsid[] =
 // Object manager dependencies
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 // BLAST includes
 #include <algo/blast/api/local_search.hpp>

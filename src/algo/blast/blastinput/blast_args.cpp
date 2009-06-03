@@ -647,7 +647,8 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                            bool* ungapped = NULL)
 {
     const EProgram program = opt.GetProgram();
-    if (program == eBlastp || program == eTblastn || program == ePSIBlast) {
+    if (program == eBlastp || program == eTblastn || 
+        program == ePSIBlast || program == ePSITblastn) {
 
         ECompoAdjustModes compo_mode = eNoCompositionBasedStats;
     
@@ -665,6 +666,10 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
             case '3':
                 compo_mode = eCompoForceFullMatrixAdjust;
                 break;
+        } 
+
+        if(program == ePSITblastn) {
+            compo_mode = eNoCompositionBasedStats;
         }
 
         if (ungapped && *ungapped && compo_mode != eNoCompositionBasedStats) {
@@ -887,6 +892,9 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
                                 "PSI-TBLASTN checkpoint file",
                                 CArgDescriptions::eInputFile);
+        arg_desc.SetDependency(kArgPSIInputChkPntFile,
+                                CArgDescriptions::eExcludes,
+                                kArgRemote);
     } else {
         arg_desc.SetCurrentGroup("PSI-BLAST options");
 

@@ -453,7 +453,8 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
     translate1 = (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
                   program == eBlastTypeRpsTblastn);
-    translate2 = (program == eBlastTypeTblastn || program == eBlastTypeTblastx);
+    translate2 = (program == eBlastTypeTblastn || program == eBlastTypePsiTblastn ||
+                  program == eBlastTypeTblastx);
 
     if (is_disc_align) {
 
