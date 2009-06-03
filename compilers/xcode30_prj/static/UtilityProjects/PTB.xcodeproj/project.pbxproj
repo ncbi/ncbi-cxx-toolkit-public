@@ -212,87 +212,407 @@
         <key>isa</key>
         <string>XCConfigurationList</string>
       </dict>
-      <key>FILE0</key>
+      <key>FILE000</key>
       <dict>
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>chartables.c</string>
+        <string>pcre_chartables.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/chartables.c</string>
+        <string>../../../../src/util/regexp/pcre_chartables.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>SRC_FILE0</key>
+      <key>SRC_FILE000</key>
       <dict>
         <key>fileRef</key>
-        <string>FILE0</string>
+        <string>FILE000</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
-      <key>FILE1</key>
+      <key>FILE001</key>
       <dict>
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>get.c</string>
+        <string>pcre_compile.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/get.c</string>
+        <string>../../../../src/util/regexp/pcre_compile.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>SRC_FILE1</key>
+      <key>SRC_FILE001</key>
       <dict>
         <key>fileRef</key>
-        <string>FILE1</string>
+        <string>FILE001</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
-      <key>FILE2</key>
+      <key>FILE002</key>
       <dict>
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>maketables.c</string>
+        <string>pcre_config.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/maketables.c</string>
+        <string>../../../../src/util/regexp/pcre_config.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>SRC_FILE2</key>
+      <key>SRC_FILE002</key>
       <dict>
         <key>fileRef</key>
-        <string>FILE2</string>
+        <string>FILE002</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
-      <key>FILE3</key>
+      <key>FILE003</key>
       <dict>
         <key>isa</key>
         <string>PBXFileReference</string>
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre.c</string>
+        <string>pcre_dfa_exec.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre.c</string>
+        <string>../../../../src/util/regexp/pcre_dfa_exec.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>SRC_FILE3</key>
+      <key>SRC_FILE003</key>
       <dict>
         <key>fileRef</key>
-        <string>FILE3</string>
+        <string>FILE003</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
-      <key>FILE4</key>
+      <key>FILE004</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_exec.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_exec.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE004</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE004</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE005</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_fullinfo.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_fullinfo.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE005</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE005</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE006</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_get.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_get.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE006</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE006</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE007</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_globals.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_globals.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE007</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE007</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE008</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_info.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_info.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE008</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE008</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE009</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_maketables.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_maketables.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE009</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE009</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE010</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_newline.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_newline.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE010</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE010</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE011</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_ord2utf8.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_ord2utf8.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE011</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE011</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE012</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_refcount.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_refcount.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE012</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE012</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE013</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_study.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_study.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE013</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE013</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE014</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_tables.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_tables.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE014</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE014</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE015</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_try_flipped.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_try_flipped.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE015</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE015</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE016</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_ucd.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_ucd.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE016</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE016</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE017</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_valid_utf8.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_valid_utf8.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE017</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE017</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE018</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_version.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_version.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE018</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE018</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE019</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_xclass.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_xclass.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE019</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE019</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>FILE020</key>
       <dict>
         <key>isa</key>
         <string>PBXFileReference</string>
@@ -305,30 +625,10 @@
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
-      <key>SRC_FILE4</key>
+      <key>SRC_FILE020</key>
       <dict>
         <key>fileRef</key>
-        <string>FILE4</string>
-        <key>isa</key>
-        <string>PBXBuildFile</string>
-      </dict>
-      <key>FILE5</key>
-      <dict>
-        <key>isa</key>
-        <string>PBXFileReference</string>
-        <key>lastKnownFileType</key>
-        <string>sourcecode.c.c</string>
-        <key>name</key>
-        <string>study.c</string>
-        <key>path</key>
-        <string>../../../../src/util/regexp/study.c</string>
-        <key>sourceTree</key>
-        <string>SOURCE_ROOT</string>
-      </dict>
-      <key>SRC_FILE5</key>
-      <dict>
-        <key>fileRef</key>
-        <string>FILE5</string>
+        <string>FILE020</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
@@ -388,12 +688,27 @@
       <dict>
         <key>children</key>
         <array>
-          <string>FILE0</string>
-          <string>FILE1</string>
-          <string>FILE2</string>
-          <string>FILE3</string>
-          <string>FILE4</string>
-          <string>FILE5</string>
+          <string>FILE000</string>
+          <string>FILE001</string>
+          <string>FILE002</string>
+          <string>FILE003</string>
+          <string>FILE004</string>
+          <string>FILE005</string>
+          <string>FILE006</string>
+          <string>FILE007</string>
+          <string>FILE008</string>
+          <string>FILE009</string>
+          <string>FILE010</string>
+          <string>FILE011</string>
+          <string>FILE012</string>
+          <string>FILE013</string>
+          <string>FILE014</string>
+          <string>FILE015</string>
+          <string>FILE016</string>
+          <string>FILE017</string>
+          <string>FILE018</string>
+          <string>FILE019</string>
+          <string>FILE020</string>
         </array>
         <key>isa</key>
         <string>PBXGroup</string>
@@ -436,12 +751,27 @@
       <dict>
         <key>files</key>
         <array>
-          <string>SRC_FILE0</string>
-          <string>SRC_FILE1</string>
-          <string>SRC_FILE2</string>
-          <string>SRC_FILE3</string>
-          <string>SRC_FILE4</string>
-          <string>SRC_FILE5</string>
+          <string>SRC_FILE000</string>
+          <string>SRC_FILE001</string>
+          <string>SRC_FILE002</string>
+          <string>SRC_FILE003</string>
+          <string>SRC_FILE004</string>
+          <string>SRC_FILE005</string>
+          <string>SRC_FILE006</string>
+          <string>SRC_FILE007</string>
+          <string>SRC_FILE008</string>
+          <string>SRC_FILE009</string>
+          <string>SRC_FILE010</string>
+          <string>SRC_FILE011</string>
+          <string>SRC_FILE012</string>
+          <string>SRC_FILE013</string>
+          <string>SRC_FILE014</string>
+          <string>SRC_FILE015</string>
+          <string>SRC_FILE016</string>
+          <string>SRC_FILE017</string>
+          <string>SRC_FILE018</string>
+          <string>SRC_FILE019</string>
+          <string>SRC_FILE020</string>
         </array>
         <key>isa</key>
         <string>PBXSourcesBuildPhase</string>
@@ -472,6 +802,7 @@
           <string>regexp</string>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_CONFIG_H</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -512,6 +843,7 @@
           <string>regexp</string>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_CONFIG_H</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -552,6 +884,7 @@
           <string>regexp</string>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_CONFIG_H</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -592,6 +925,7 @@
           <string>regexp</string>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_CONFIG_H</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
