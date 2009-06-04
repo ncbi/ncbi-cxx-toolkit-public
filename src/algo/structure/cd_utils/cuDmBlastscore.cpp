@@ -90,7 +90,7 @@ void DM_BlastScore::initDMBlastScore(EScoreMatrixType type, int nTermExt, int cT
     m_nTermExt = nTermExt;
     m_cTermExt = cTermExt;
 	SetUseFullSequence(USE_FULL_SEQUENCE_DEFAULT);
-    if (type == eScoreBlastFoot && m_nTermExt == 0 && m_cTermExt == 0) {
+    if (m_dMethod == eScoreBlastFoot && m_nTermExt == 0 && m_cTermExt == 0) {
         m_useAligned = true;
     }
 }
