@@ -87,10 +87,14 @@ void debug()
 {
 }
 
+int GetModelId(const CSeq_align& seq_align)
+{
+    return seq_align.GetId().back()->GetId();
+}
 
 CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     CGeneModel(seq_align.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus,
-               seq_align.GetId().back()->GetId(),
+               GetModelId(seq_align),
                seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA)
 {
 #ifdef _DEBUG   
@@ -283,6 +287,17 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             cds_info.SetStop(stop, GetProdPosInBases(sps.GetExons().back()->GetProduct_end()) == product_len-1 );
         }
         SetCdsInfo(cds_info);
+    }
+
+    if (sps.IsSetPoly_a()) {
+        int product_alignable_end = sps.GetPoly_a() + (is_product_reversed ? +1 : -1);
+        int product_aligned_end = (Strand() == ePlus ?
+                                   m_alignmap.MapOrigToEdited(Limits().GetTo()) :
+                                   m_alignmap.MapOrigToEdited(Limits().GetFrom()));
+
+        if (product_aligned_end == product_alignable_end) {
+            Status() |= CGeneModel::ePolyA;
+        }
     }
 }
 

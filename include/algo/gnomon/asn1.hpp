@@ -44,7 +44,7 @@ class IEvidence
 public:
     virtual ~IEvidence() {};
     virtual const CAlignModel* GetModel(int id) = 0;
-    virtual CRef<objects::CSeq_align> GetSeq_align(int id) const = 0;
+    virtual CConstRef<objects::CSeq_align> GetSeq_align(int id) const = 0;
 
     class iterator {
     public:
@@ -67,7 +67,7 @@ public:
                                 const objects::CSeq_entry& seq_entry,
                                 TAlignModelList& model_list,
                                 TAlignModelList& evidence_models,
-                                list<CRef<objects::CSeq_align> > evidence_alignments);
+                                list<CConstRef<objects::CSeq_align> >& evidence_alignments);
 private:
     class CImplementationData;
     auto_ptr<CImplementationData> m_data;
