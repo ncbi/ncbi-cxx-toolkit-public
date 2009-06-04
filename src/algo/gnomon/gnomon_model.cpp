@@ -955,7 +955,7 @@ private:
 #endif
 };
 
-int CAlignModel::PolyALen() {
+int CAlignModel::PolyALen() const {
     if((Status()&ePolyA) == 0)
         return 0;
 
@@ -1684,7 +1684,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
         align.FrameShifts() = amap.GetInDels(true);
         TSignedSeqRange rf = amap.MapRangeOrigToEdited(cds, false);
 
-        if(align.Strand() == orientation) {
+        if(notreversed) {
             rf.SetFrom(rf.GetFrom()+phase);
             rf.SetTo(rf.GetTo()-rf.GetLength()%3);
         } else {

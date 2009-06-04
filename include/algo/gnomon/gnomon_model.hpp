@@ -587,7 +587,7 @@ public:
     int TargetLen() const { return m_alignmap.TargetLen(); }
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
-    int PolyALen();
+    int PolyALen() const;
 private:
     CAlignMap m_alignmap;
     TSeqidList m_target_ids;
