@@ -405,8 +405,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 			case TDS_INT_CANCEL:
 				tds_send_cancel(tds);
                 canceled = 1;
-				break;
-
+                /* fall through to wait while cancelling happens */
 			case TDS_INT_CONTINUE:
 				start = now;
 			default:
@@ -483,10 +482,10 @@ tds_read_packet(TDSSOCKET * tds)
 		tds->in_len = 0;
 		tds->in_pos = 0;
 		tds->last_packet = 1;
-/*		if (tds->state != TDS_IDLE && len == 0) {
+		if (tds->state != TDS_IDLE && len == 0) {
 			tds_close_socket(tds);
-		}*/
-		return 0;
+		}
+		return -1;
 	}
 	tdsdump_dump_buf(TDS_DBG_NETWORK, "Received header", header, sizeof(header));
 
