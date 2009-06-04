@@ -88,6 +88,29 @@ void CSpliced_seg::Validate(bool full_test) const
 {
     bool prot = GetProduct_type() == eProduct_type_protein;
 
+    TSeqRange product_position_limits = TSeqRange::GetWhole();
+    if (IsSetProduct_length()) {
+        TSeqPos product_length = GetProduct_length();
+        product_position_limits.SetTo((prot ? product_length * 3 : product_length) -1);
+    }
+    if (IsSetPoly_a()) {
+        if (prot) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "CSpliced_seg::Validate(): poly-a on a protein");
+        }
+        int poly_a = GetPoly_a();
+        if (poly_a > 0 && TSeqPos(poly_a) > product_position_limits.GetTo()+1) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "CSpliced_seg::Validate(): poly-a > product-length");
+        }
+        if (CanGetProduct_strand() && GetProduct_strand() == eNa_strand_minus) {
+            product_position_limits.SetFrom(poly_a+1);
+        } else {
+            product_position_limits.SetTo(poly_a-1);
+        }
+    }
+
+
     if (GetExons().empty()) {
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "CSpliced_seg::Validate(): Spiced-seg is empty (has no exons)");
@@ -96,6 +119,27 @@ void CSpliced_seg::Validate(bool full_test) const
     ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
 
         const CSpliced_exon& exon = **exon_it;
+
+        /// Positions
+        TSeqPos product_start = prot ?
+            exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1 :
+            exon.GetProduct_start().GetNucpos();
+        TSeqPos product_end = prot ?
+            exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 :
+            exon.GetProduct_end().GetNucpos();
+        if (product_start > product_end) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CSpliced_seg::Validate(): product_start > product_end");
+        }
+        if (product_start < product_position_limits.GetFrom() || product_position_limits.GetTo() < product_end) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CSpliced_seg::Validate(): illegal product position in regard to poly-a and/or product-length ");
+        }
+        if (exon.GetGenomic_end() < exon.GetGenomic_start()) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CSpliced_seg::Validate(): genomic_start > genomic_end");
+        }
+
 
         /// Ids
         if ( !(IsSetProduct_id()  ||  exon.IsSetProduct_id()) ) {
@@ -176,11 +220,7 @@ void CSpliced_seg::Validate(bool full_test) const
                 exon_product_len += chunk_product_len;
                 exon_genomic_len += chunk_genomic_len;
             }
-            if (exon_product_len != 
-                (prot ? 
-                 exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 -
-                 (exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1) + 1 :
-                 exon.GetProduct_end().GetNucpos() - exon.GetProduct_start().GetNucpos() + 1)) {
+            if (exon_product_len != product_end - product_start + 1) {
                 NCBI_THROW(CSeqalignException, eInvalidAlignment,
                            "Product exon range length is not consistent with exon chunks.");
             }
