@@ -447,20 +447,23 @@ CDBConnectionFactory::DispatchServerName(
                 &&  (conn_status != IConnValidator::eTempInvalidConn
                         || GetMaxNumOfValidationAttempts()
                            && rt_data.GetNumOfValidationFailures(service_name)
-                                          >= GetMaxNumOfValidationAttempts())
-                && !full_retry_made
-                && tried_servers.size() != 0)
+                                          >= GetMaxNumOfValidationAttempts()))
             {
-                _TRACE("List of servers for service " << service_name
-                       << " is exhausted. Giving excluded a try.");
+                if (!full_retry_made  &&  tried_servers.size() != 0) {
+                    _TRACE("List of servers for service " << service_name
+                           << " is exhausted. Giving excluded a try.");
 
-                rt_data.GetDBServiceMapper().CleanExcluded(service_name);
-                ITERATE(list<TSvrRef>, it, tried_servers) {
-                    rt_data.GetDBServiceMapper().Exclude(service_name, *it);
+                    rt_data.GetDBServiceMapper().CleanExcluded(service_name);
+                    ITERATE(list<TSvrRef>, it, tried_servers) {
+                        rt_data.GetDBServiceMapper().Exclude(service_name, *it);
+                    }
+
+                    full_retry_made = true;
+                    need_exclude = false;
                 }
-
-                full_retry_made = true;
-                need_exclude = false;
+                else {
+                    return NULL;
+                }
             }
             else {
                 tried_servers.push_back(dsp_srv);
