@@ -44,6 +44,8 @@
           <string>$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk</string>
           <key>FRAMEWORK_SEARCH_PATHS</key>
           <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
+          <key>USE_HEADERMAP</key>
+          <string>NO</string>
           <key>DEAD_CODE_STRIPPING</key>
           <string>YES</string>
           <key>PREBINDING</key>

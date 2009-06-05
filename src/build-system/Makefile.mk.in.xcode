@@ -19,6 +19,7 @@ GCC_ENABLE_CPP_EXCEPTIONS = YES
 GCC_ENABLE_CPP_RTTI = YES
 SDKROOT = $(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk
 FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks
+USE_HEADERMAP = NO
 
 [Compiler.debug]
 COPY_PHASE_STRIP = NO
