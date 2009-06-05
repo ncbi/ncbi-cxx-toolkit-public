@@ -231,6 +231,10 @@ private:
     void x_FillCache(TSeqPos start, TSeqPos count);
     void x_UpdateSeg(TSeqPos pos);
     void x_InitSeg(TSeqPos pos);
+    void x_IncSeg(void);
+    void x_DecSeg(void);
+    void x_CheckForward(void);
+    void x_CheckBackward(void);
     void x_InitRandomizer(CRandom& random_gen);
 
     void x_NextCacheSeg(void);
@@ -274,7 +278,10 @@ private:
     TSeqPos                  m_BackupPos;
     TCacheData               m_BackupData;
     TCache_I                 m_BackupEnd;
+    // optional ambiguities randomizer
     CRef<INcbi2naRandomizer> m_Randomizer;
+    // scanned range
+    TSeqPos                  m_ScannedStart, m_ScannedEnd;
 };
 
 
