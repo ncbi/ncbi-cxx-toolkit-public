@@ -1402,9 +1402,8 @@ bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
 
     bool has_more = false;
     const CRange<TSeqPos>& range = master_range.begin()->first;
-    for ( CSeqMap_CI smit(bh, sel, range);
-          smit && smit.GetPosition() < range.GetToOpen();
-          ++smit ) {
+    sel.SetRange(range.GetFrom(), range.GetLength());
+    for ( CSeqMap_CI smit(bh, sel, range); smit; ++smit ) {
         _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
         if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
             // External bioseq, try to search if limit is set
@@ -1476,9 +1475,8 @@ bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
         }
 
         CHandleRange::TRange range = idit->second.GetOverlappingRange();
-        for ( CSeqMap_CI smit(bh, sel, range);
-              smit && smit.GetPosition() < range.GetToOpen();
-              ++smit ) {
+        sel.SetRange(range.GetFrom(), range.GetLength());
+        for ( CSeqMap_CI smit(bh, sel, range); smit; ++smit ) {
             _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
             if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
                 // External bioseq, try to search if limit is set
