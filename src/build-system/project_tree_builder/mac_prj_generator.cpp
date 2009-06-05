@@ -835,6 +835,7 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
 
     AddCompilerSetting( *settings, cfg, "SDKROOT");
     AddCompilerSetting( *settings, cfg, "FRAMEWORK_SEARCH_PATHS");
+    AddCompilerSetting( *settings, cfg, "USE_HEADERMAP");
 
     AddLinkerSetting( *settings, cfg, "DEAD_CODE_STRIPPING");
     AddLinkerSetting( *settings, cfg, "PREBINDING");
