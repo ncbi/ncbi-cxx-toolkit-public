@@ -80,6 +80,9 @@ public:
 
     /// Return the current (absolute) position.
     virtual CT_POS_TYPE GetPosition(void) const = 0;
+
+    /// Return the current line number (counting from 1, not 0).
+    virtual unsigned int GetLineNumber(void) const = 0;
 };
 
 
@@ -114,6 +117,7 @@ public:
     void               UngetLine(void);
     CTempString        operator*(void) const;
     CT_POS_TYPE        GetPosition(void) const;
+    unsigned int       GetLineNumber(void) const;
 
 private:
     EEOLStyle x_AdvanceEOLUnknown(void);
@@ -122,6 +126,7 @@ private:
 
     AutoPtr<CNcbiIstream> m_Stream;
     string                m_Line;
+    unsigned int          m_LineNumber;
     bool                  m_UngetLine;
     bool                  m_AutoEOL;
     EEOLStyle             m_EOLStyle;
@@ -147,6 +152,7 @@ public:
     void               UngetLine(void);
     CTempString        operator*(void) const;
     CT_POS_TYPE        GetPosition(void) const;
+    unsigned int       GetLineNumber(void) const;
 
 private:
     const char*           m_Start;
@@ -154,6 +160,7 @@ private:
     const char*           m_Pos;
     CTempString           m_Line;
     AutoPtr<CMemoryFile>  m_MemFile;
+    unsigned int          m_LineNumber;
 };
 
 /// Implementation of ILineReader for IReader
@@ -180,6 +187,8 @@ public:
     void                UngetLine(void);
     CTempString         operator*(void) const;
     CT_POS_TYPE         GetPosition(void) const;
+    unsigned int        GetLineNumber(void) const;
+
 private:
     CBufferedLineReader(const CBufferedLineReader&);
     CBufferedLineReader& operator=(const CBufferedLineReader&);
@@ -197,6 +206,7 @@ private:
     CTempString   m_Line;
     string        m_String;
     CT_POS_TYPE   m_InputPos;
+    unsigned int  m_LineNumber;
 };
 
 
