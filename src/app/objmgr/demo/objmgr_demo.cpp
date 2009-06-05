@@ -195,6 +195,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("seg_labels", "get labels of all segments in Delta");
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
+    arg_desc->AddFlag("scan_whole_sequence", "scan whole sequence");
     arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
     arg_desc->AddFlag("print_seq", "print sequence");
@@ -223,6 +224,8 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("range_to", "RangeTo",
                              "features ending at this point on the sequence",
                              CArgDescriptions::eInteger);
+    arg_desc->AddFlag("minus_strand",
+                      "use minus strand of the sequence");
     arg_desc->AddOptionalKey("range_loc", "RangeLoc",
                              "features on this Seq-loc in ASN.1 text format",
                              CArgDescriptions::eString);
@@ -239,6 +242,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_feat_handle", "reverse lookup of feature handle");
     arg_desc->AddFlag("check_cds", "check correctness cds");
     arg_desc->AddFlag("check_seq_data", "check availability of seq_data");
+    arg_desc->AddFlag("seq_vector_tse", "use TSE as a base for CSeqVector");
     arg_desc->AddFlag("skip_alignments", "do not search for alignments");
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
@@ -414,6 +418,7 @@ int CDemoApp::Run(void)
     bool print_alignments = args["print_alignments"];
     bool check_cds = args["check_cds"];
     bool check_seq_data = args["check_seq_data"];
+    bool seq_vector_tse = args["seq_vector_tse"];
     bool skip_alignments = args["skip_alignments"];
     bool get_mapped_alignments = args["get_mapped_alignments"];
     SAnnotSelector::ESortOrder order =
@@ -436,6 +441,7 @@ int CDemoApp::Run(void)
     bool noexternal = args["noexternal"];
     bool whole_tse = args["whole_tse"];
     bool whole_sequence = args["whole_sequence"];
+    bool scan_whole_sequence = args["scan_whole_sequence"];
     bool used_memory_check = args["used_memory_check"];
     bool get_synonyms = false;
     bool get_ids = args["get_ids"];
@@ -635,8 +641,9 @@ int CDemoApp::Run(void)
     // No region restrictions -- the whole bioseq is used:
     whole_loc->SetWhole(*search_id);
     CRef<CSeq_loc> range_loc;
+    bool minus_strand = args["minus_strand"];
     TSeqPos range_from, range_to;
-    if ( args["range_from"] || args["range_to"] ) {
+    if ( minus_strand || args["range_from"] || args["range_to"] ) {
         if ( args["range_from"] ) {
             range_from = args["range_from"].AsInteger();
         }
@@ -653,6 +660,9 @@ int CDemoApp::Run(void)
         range_loc->SetInt().SetId(*search_id);
         range_loc->SetInt().SetFrom(range_from);
         range_loc->SetInt().SetTo(range_to);
+        if ( minus_strand ) {
+            range_loc->SetInt().SetStrand(eNa_strand_minus);
+        }
     }
     else {
         range_from = range_to = 0;
@@ -733,38 +743,57 @@ int CDemoApp::Run(void)
 
             // Get the sequence using CSeqVector. Use default encoding:
             // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-            CSeqVector seq_vect(*whole_loc, scope, CBioseq_Handle::eCoding_Iupac);
+            CSeqVector seq_vect(*range_loc, scope,
+                                CBioseq_Handle::eCoding_Iupac);
+            if ( seq_vector_tse ) {
+                seq_vect = CSeqVector(*range_loc, handle.GetTSE_Handle(),
+                                      CBioseq_Handle::eCoding_Iupac);
+            }
             //handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             // -- use the vector: print length and the first 10 symbols
-            NcbiCout << "Sequence: length=" << seq_vect.size();
+            NcbiCout << "Sequence: length=" << seq_vect.size() << NcbiFlush;
             if ( check_seq_data ) {
-                if (seq_vect.CanGetRange(0, seq_vect.size() - 1)) {
+                CStopWatch sw(CStopWatch::eStart);
+                if ( seq_vect.CanGetRange(0, seq_vect.size() - 1) ) {
                     NcbiCout << " data=";
                     sout.erase();
-                    for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
+                    TSeqPos size = min(seq_vect.size(), 10u);
+                    for ( TSeqPos i=0; i < size; ++i ) {
                         // Convert sequence symbols to printable form
                         sout += seq_vect[i];
                     }
-                    NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-
-                    if ( whole_sequence ) {
-                        sout.erase();
-                        size_t size = seq_vect.size();
-                        seq_vect.GetSeqData(0, size, sout);
-                        NcbiCout << " data["<<size<<"] = ";
-                        size_t start = min(size, size_t(10));
-                        size_t end = min(size-start, size_t(10));
-                        NcbiCout << NStr::PrintableString(sout.substr(0, start));
-                        if ( start + end != size )
-                            NcbiCout << "..";
-                        NcbiCout << NStr::PrintableString(sout.substr(size-end,
-                                                                      end));
-                        NcbiCout << NcbiEndl;
-                    }
+                    NcbiCout << NStr::PrintableString(sout)
+                             << " in " << sw;
                 }
                 else {
-                    NcbiCout << " data unavailable" << NcbiEndl;
+                    NcbiCout << " data unavailable"
+                             << " in " << sw;
                 }
+            }
+            NcbiCout << NcbiEndl;
+            if ( whole_sequence ) {
+                CStopWatch sw(CStopWatch::eStart);
+                TSeqPos size = seq_vect.size();
+                NcbiCout << "Whole seq data["<<size<<"] = " << NcbiFlush;
+                seq_vect.GetSeqData(0, size, sout);
+                if ( size <= 20u ) {
+                    NcbiCout << NStr::PrintableString(sout);
+                }
+                else {
+                    TSeqPos start2 = 10u;
+                    TSeqPos end2 = size-10u;
+                    NcbiCout << NStr::PrintableString(sout.substr(0, 10));
+                    NcbiCout << "..";
+                    NcbiCout << NStr::PrintableString(sout.substr(size-10));
+                }
+                NcbiCout << " in " << sw << NcbiEndl;
+            }
+            if ( scan_whole_sequence ) {
+                CStopWatch sw(CStopWatch::eStart);
+                NcbiCout << "Scanning sequence..." << NcbiFlush;
+                for ( CSeqVector_CI it(seq_vect); it; ++it)
+                    ;
+                NcbiCout << "done" << " in " << sw << NcbiEndl;
             }
             // CSeq_descr iterator: iterates all descriptors starting
             // from the bioseq and going the seq-entries tree up to the
