@@ -400,6 +400,15 @@ CDBConnectionFactory::DispatchServerName(
             if (dsp_srv.Empty()) {
                 return NULL;
             }
+            // If connection attempts will take too long mapper can return
+            // the same server once more. Let's not try to connect to it
+            // again.
+            ITERATE(list<TSvrRef>, it, tried_servers) {
+                if (**it == *dsp_srv) {
+                    rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+                    continue;
+                }
+            }
 
             // curr_conn_attr.srv_name = dsp_srv->GetName();
             cur_srv_name = dsp_srv->GetName();
@@ -465,9 +474,6 @@ CDBConnectionFactory::DispatchServerName(
                     return NULL;
                 }
             }
-            else {
-                tried_servers.push_back(dsp_srv);
-            }
 
             if (need_exclude) {
                 // Server might be temporarily unavailable ...
@@ -477,6 +483,7 @@ CDBConnectionFactory::DispatchServerName(
                 } else {
                     // conn_status == IConnValidator::eInvalidConn
                     rt_data.GetDBServiceMapper().Exclude(service_name, dsp_srv);
+                    tried_servers.push_back(dsp_srv);
                 }
             }
         } else {
