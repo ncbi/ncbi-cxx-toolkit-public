@@ -58,6 +58,7 @@
 #include <objects/blast/Blast4_database_info.hpp>
 //#include <objtools/simple/simple_om.hpp>
 
+#include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuBlast2Seq.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <objects/seq/NCBIeaa.hpp>
@@ -400,7 +401,7 @@ void CdBlaster::processBlastHits(int queryRow, CSearchResultSet& hits)
 		const list< CRef< CSeq_align > >& seqAlignList = hits[i].GetSeqAlign()->Get();
 		if (seqAlignList.size() > 0) 
 		{
-            CRef< CSeq_align > sa = *(seqAlignList.begin());  
+            CRef< CSeq_align > sa = ExtractFirstSeqAlign(*(seqAlignList.begin()));  
             if (!sa.Empty()) {
                 if (m_scoreType == CSeq_align::eScore_PercentIdentity)
                     {
@@ -416,23 +417,6 @@ void CdBlaster::processBlastHits(int queryRow, CSearchResultSet& hits)
 		}
 		m_scores.push_back(score);
 	}
-}
-
-//input seqAlign may actually contain CSeq_align_set
-CRef< CSeq_align > CdBlaster::extractOneSeqAlign(CRef< CSeq_align > seqAlign)
-{
-	if (seqAlign.Empty())
-		return seqAlign;
-	if (!seqAlign->GetSegs().IsDisc())
-		return seqAlign;
-	if (seqAlign->GetSegs().GetDisc().CanGet())
-	{
-		const list< CRef< CSeq_align > >& saList = seqAlign->GetSegs().GetDisc().Get();
-		if (saList.begin() != saList.end())
-			return *saList.begin();
-	}
-	CRef< CSeq_align > nullRef;
-	return nullRef;
 }
 
 int CdBlaster::getCompositeIndex(int query, int subject)

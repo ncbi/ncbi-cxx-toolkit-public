@@ -43,24 +43,28 @@
 #include <algo/structure/cd_utils/cuScoringMatrix.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+USING_SCOPE(blast);
 BEGIN_SCOPE(cd_utils)
 
 class NCBI_CDUTILS_EXPORT CSimpleB2SWrapper
 {
 public:
-	static const unsigned int HITLIST_SIZE_DEFAULT;
-	static const unsigned int MAX_HITLIST_SIZE;
-	static const int    CDD_DATABASE_SIZE              ;
-	static const double E_VAL_DEFAULT                  ; // default e-value threshold
-	static const double E_VAL_WHEN_NO_SEQ_ALIGN        ; // eval when Blast doesn't return a seq-align
-	static const double SCORE_WHEN_NO_SEQ_ALIGN        ;  
-	static const double DO_NOT_USE_PERC_ID_THRESHOLD;
-	static const string SCORING_MATRIX_DEFAULT;
+	static const unsigned int HITLIST_SIZE_DEFAULT    ;
+	static const unsigned int MAX_HITLIST_SIZE        ;
+	static const Int8   CDD_DATABASE_SIZE             ;
+	static const double E_VAL_DEFAULT                 ; // default e-value threshold
+	static const double E_VAL_WHEN_NO_SEQ_ALIGN       ; // eval when Blast doesn't return a seq-align
+	static const double SCORE_WHEN_NO_SEQ_ALIGN       ;  
+	static const string SCORING_MATRIX_DEFAULT        ;
+    static const ECompoAdjustModes COMPOSITION_ADJ_DEF;
+	static const double DO_NOT_USE_PERC_ID_THRESHOLD  ; // user must provide this; no default is set
+	static const Int8   DO_NOT_USE_EFF_SEARCH_SPACE   ; // user must provide this; no default is set
 
+    //  If the default for 'percIdThold' is used, then the %identity filter will be off in B2S.
     CSimpleB2SWrapper(double percIdThold = DO_NOT_USE_PERC_ID_THRESHOLD, string matrixName = SCORING_MATRIX_DEFAULT);
 
-    //  Uses full-length sequences.
+    //  Searches using the full-length sequences specified.
+    //  If the default for 'percIdThold' is used, then the %identity filter will be off in B2S.
     CSimpleB2SWrapper(CRef<CBioseq>& seq1, CRef<CBioseq>& seq2, double percIdThold = DO_NOT_USE_PERC_ID_THRESHOLD, string matrixName = SCORING_MATRIX_DEFAULT);
 
     //  If from = to = 0, or from > to, use the full length.  
@@ -68,18 +72,39 @@ public:
     void SetSeq1(CRef<CBioseq>& seq, unsigned int from = 0, unsigned int to = 0) { SetSeq(seq, true, from, to);}
     void SetSeq2(CRef<CBioseq>& seq, unsigned int from = 0, unsigned int to = 0) { SetSeq(seq, false, from, to);}
 
-    //  Must be between 0 and 100; otherwise no change is made.  Returns the resulting value of m_percIdThold.
+    //  GENERAL NOTE on Set....() functions:
+    //  the return value is the value of the corresponding member variable on completion
+    //  (which is also the corresponding value in m_options when m_options is valid).
+    //  Invalid values used in these functions are ignored and no changes are made
+    //  to the settings, and return value will therefore differ from the passed argument.
+
+    //  Must be between 0 and 100; otherwise no change is made.
     //  NOTE:  this sets the %identity filter in the b2s algorithm, which seems to calculate %identity using 
     //         the smaller of the two sequences.
     double SetPercIdThreshold(double percIdThold);
 
     //  Must be between 1 and MAX_HITLIST_SIZE, otherwise change is not made.  
-    //  Returns the resulting value of m_hitlistSize.
     unsigned int SetHitlistSize(unsigned int hitlistSize);
 
-    //  Sanity checks that eValueThold is non-negative; returns resulting value of m_eValueThold.
+    //  Must be > 0, otherwise change is not made.  
+    Int8 SetDbLength(Int8 dbLength);
+
+    //  Must be > 0, otherwise change is not made.  
+    Int8 SetEffSearchSpace(Int8 effSearchSpace);
+
+    //  Must be > 0, otherwise change is not made.  
+    ECompoAdjustModes SetCompoAdjustMode(ECompoAdjustModes caMode);
+
+    //  Sanity checks that eValueThold is non-negative.
     double SetEValueThreshold(double eValueThold);
 
+    //  Set matrix name; sanity checks that matrixName is one of those defined in cuScoringMatrix.hpp
+    string SetMatrixName(string matrixName);
+
+    //  Expose the options handle object so any parameter can be manipulated.
+    CRef< CBlastAdvancedProteinOptionsHandle >& GetOptionsHandle() { return m_options; }
+
+    //  Do all parameter configurations before calling this method.
     //  E-value threshold is 10.0 unless user has previously called 'SetEValueThreshold'.
     bool DoBlast2Seqs();
 
@@ -111,19 +136,26 @@ private:
 
 	string m_scoringMatrix;
     unsigned int m_hitlistSize;
-    double m_percIdThold;   //  only used if explicitly set by user.
+    Int8 m_dbLength;
     double m_eValueThold;
+    double m_percIdThold;    //  only used if explicitly set by user.
+    Int8 m_effSearchSpace;   //  only used if explicitly set by user.
+    ECompoAdjustModes m_caMode;
 	vector< CRef<CSeq_align> > m_alignments;
 	
 	vector< double > m_scores;
 	vector< double > m_evals;
 	vector< double > m_percIdents;
 
+    // Stores all options needed for the query.
+	CRef<CBlastAdvancedProteinOptionsHandle> m_options;
+
+    //  Create the options object and set defaults.
+    void InitializeToDefaults();
+
 	void SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int from, unsigned int to);
 
 	void processBlastHits(ncbi::blast::CSearchResults&);
-	//input seqAlign may actually contain CSeq_align_set
-	CRef< CSeq_align > extractOneSeqAlign(CRef< CSeq_align > seqAlign);
 };
 
 END_SCOPE(cd_utils)

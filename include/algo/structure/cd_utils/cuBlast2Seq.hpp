@@ -125,8 +125,6 @@ private:
 	int getCompositeIndex(int query, int subject);
 	//not needed for now
 	//CRef< CSeq_align > remapSeqAlign(int query, int subject, CRef< CSeq_align > seqAlign);
-	//input seqAlign may actually contain CSeq_align_set
-	CRef< CSeq_align > extractOneSeqAlign(CRef< CSeq_align > seqAlign);
 };
 
 END_SCOPE(cd_utils)

@@ -176,6 +176,13 @@ void BuildAdjacentDiags(const TDendiag_cit& begin_orig, const TDendiag_cit& end_
 NCBI_CDUTILS_EXPORT 
 bool EraseRow(CRef< CSeq_annot >& seqAnnot, int row);
 
+//  Returns 'seqAlign' unless the input is wrapping a CSeq_align_set 
+//  (has segs of type 'disc'), in which case the first seq-align found
+//  will be returned.  Returns an empty CRef on failure.  
+//  Note:  this is a recursive function.
+//  Was 'extractOneSeqAlign' from cuBlast2Seq and cuSimpleB2SWrapper.
+NCBI_CDUTILS_EXPORT
+CRef< CSeq_align > ExtractFirstSeqAlign(CRef< CSeq_align > seqAlign);
 
 //  Functions moved from algDD  
 

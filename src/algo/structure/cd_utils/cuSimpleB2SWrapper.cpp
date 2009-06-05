@@ -52,7 +52,7 @@
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
-//#include <algo/structure/cd_utils/cuBlast2Seq.hpp>
+#include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 #include <algo/structure/cd_utils/cuSimpleB2SWrapper.hpp>
@@ -63,27 +63,55 @@ BEGIN_SCOPE(cd_utils)
 
 const unsigned int CSimpleB2SWrapper::HITLIST_SIZE_DEFAULT     = 100;
 const unsigned int CSimpleB2SWrapper::MAX_HITLIST_SIZE         = 10000;
-const int    CSimpleB2SWrapper::CDD_DATABASE_SIZE              = 1000000;
+const Int8   CSimpleB2SWrapper::CDD_DATABASE_SIZE              = 1000000;
 const double CSimpleB2SWrapper::E_VAL_DEFAULT                  = 10.0;    // default e-value threshold
 const double CSimpleB2SWrapper::E_VAL_WHEN_NO_SEQ_ALIGN        = 1000000; // e-value when Blast doesn't return a seq-align
 const double CSimpleB2SWrapper::SCORE_WHEN_NO_SEQ_ALIGN        = -1.0;    
+const ECompoAdjustModes CSimpleB2SWrapper::COMPOSITION_ADJ_DEF = eNoCompositionBasedStats;
+const string CSimpleB2SWrapper::SCORING_MATRIX_DEFAULT         = BLOSUM62NAME;
 const double CSimpleB2SWrapper::DO_NOT_USE_PERC_ID_THRESHOLD   = -1.0;    
-const string CSimpleB2SWrapper::SCORING_MATRIX_DEFAULT = BLOSUM62NAME;
+const Int8   CSimpleB2SWrapper::DO_NOT_USE_EFF_SEARCH_SPACE    = -1; 
 
 CSimpleB2SWrapper::CSimpleB2SWrapper(double percIdThold, string matrixName)
-    : m_scoringMatrix(matrixName), m_hitlistSize(HITLIST_SIZE_DEFAULT), m_eValueThold(E_VAL_DEFAULT)
 {
+    InitializeToDefaults();     //  must be called before any Set...() methods
     SetPercIdThreshold(percIdThold);
+    SetMatrixName(matrixName);
 }
 
 CSimpleB2SWrapper::CSimpleB2SWrapper(CRef<CBioseq>& seq1, CRef<CBioseq>& seq2, double percIdThold, string matrixName)
-: m_scoringMatrix(matrixName), m_hitlistSize(HITLIST_SIZE_DEFAULT), m_eValueThold(E_VAL_DEFAULT)
 {
+    InitializeToDefaults();    //  must be called before any Set...() methods
     SetSeq(seq1, true, 0, 0);
     SetSeq(seq2, false, 0, 0);
     SetPercIdThreshold(percIdThold);
+    SetMatrixName(matrixName);
 }
 
+void CSimpleB2SWrapper::InitializeToDefaults() 
+{
+    m_hitlistSize = HITLIST_SIZE_DEFAULT;
+    m_dbLength = CDD_DATABASE_SIZE;
+    m_eValueThold = E_VAL_DEFAULT;
+    m_effSearchSpace = DO_NOT_USE_EFF_SEARCH_SPACE;
+    m_caMode = COMPOSITION_ADJ_DEF;
+
+
+	m_options.Reset(new CBlastAdvancedProteinOptionsHandle);
+
+    //  Fill object with defaults we want to set.
+    if (m_options.NotEmpty()) {
+        m_options->SetEvalueThreshold(E_VAL_DEFAULT);
+        m_options->SetHitlistSize(HITLIST_SIZE_DEFAULT);
+        m_options->SetMatrixName(SCORING_MATRIX_DEFAULT.c_str());
+        m_options->SetSegFiltering(false);
+        m_options->SetDbLength(CDD_DATABASE_SIZE);
+        m_options->SetCompositionBasedStats(COMPOSITION_ADJ_DEF);
+
+        m_options->SetDbSeqNum(1);
+    }
+
+}
 
 void CSimpleB2SWrapper::SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int from, unsigned int to)
 {
@@ -107,32 +135,79 @@ void CSimpleB2SWrapper::SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int fro
 
 double CSimpleB2SWrapper::SetPercIdThreshold(double percIdThold)
 {
-    if (percIdThold == DO_NOT_USE_PERC_ID_THRESHOLD || (percIdThold >= 0 && percIdThold <= 100.0)) {
+    if ((percIdThold == DO_NOT_USE_PERC_ID_THRESHOLD || (percIdThold >= 0 && percIdThold <= 100.0)) && m_options.NotEmpty()) {
         m_percIdThold = percIdThold;
+        m_options->SetPercentIdentity(m_percIdThold);
     }
     return m_percIdThold;
 }
 
 unsigned int CSimpleB2SWrapper::SetHitlistSize(unsigned int hitlistSize)
 {
-    if (hitlistSize > 0 && hitlistSize <= MAX_HITLIST_SIZE) {
+    if (hitlistSize > 0 && hitlistSize <= MAX_HITLIST_SIZE && m_options.NotEmpty()) {
         m_hitlistSize = hitlistSize;
+        m_options->SetHitlistSize(m_hitlistSize);
     }
     return m_hitlistSize;
 }
 
+Int8 CSimpleB2SWrapper::SetDbLength(Int8 dbLength)
+{
+    if (dbLength > 0 && m_options.NotEmpty()) {
+        m_dbLength = dbLength;
+        m_options->SetDbLength(m_dbLength);
+    }
+    return m_dbLength;
+}
+
+Int8 CSimpleB2SWrapper::SetEffSearchSpace(Int8 effSearchSpace)
+{
+    if (effSearchSpace > 0 && m_options.NotEmpty()) {
+        m_effSearchSpace = effSearchSpace;
+        m_options->SetEffectiveSearchSpace(m_effSearchSpace);
+    }
+    return m_effSearchSpace;
+}
+
+ECompoAdjustModes CSimpleB2SWrapper::SetCompoAdjustMode(ECompoAdjustModes caMode)
+{
+    if (m_options.NotEmpty()) {
+        m_caMode = caMode;
+        m_options->SetCompositionBasedStats(m_caMode);
+    }
+    return m_caMode;
+}
+
 double CSimpleB2SWrapper::SetEValueThreshold(double eValueThold)
 {
-    if (eValueThold >= 0) {
+    if (eValueThold >= 0 && m_options.NotEmpty()) {
         m_eValueThold = eValueThold;
+        m_options->SetEvalueThreshold(m_eValueThold);
     }
     return m_eValueThold;
 }
 
+string CSimpleB2SWrapper::SetMatrixName(string matrixName)
+{
+    bool isNameKnown = false;
+
+    if (matrixName == BLOSUM62NAME || matrixName == BLOSUM45NAME || matrixName == BLOSUM80NAME ||
+        matrixName == PAM30NAME || matrixName == PAM70NAME || matrixName == PAM250NAME) {
+        isNameKnown = true;
+    }
+
+    if (isNameKnown && m_options.NotEmpty()) {
+        m_scoringMatrix = matrixName;
+        m_options->SetMatrixName(m_scoringMatrix.c_str());
+    }
+    return m_scoringMatrix;
+}
+
 bool CSimpleB2SWrapper::DoBlast2Seqs()
 {
-	CRef< CSeq_align > nullRef;
-	
+    if (m_options.Empty()) return false;
+
+/*	
 	CRef<CBlastAdvancedProteinOptionsHandle> options(new CBlastAdvancedProteinOptionsHandle);
 	options->SetEvalueThreshold(m_eValueThold);
 	options->SetMatrixName(m_scoringMatrix.c_str());
@@ -144,8 +219,10 @@ bool CSimpleB2SWrapper::DoBlast2Seqs()
 
     if (m_percIdThold != DO_NOT_USE_PERC_ID_THRESHOLD) options->SetPercentIdentity(m_percIdThold);
 //    cout << "m_percIdThold = " << m_percIdThold << ";  DO_... = " << DO_NOT_USE_PERC_ID_THRESHOLD << endl;
+*/
 
-	CRef<CBlastProteinOptionsHandle> blastOptions((CBlastProteinOptionsHandle*)options.GetPointer());
+	CRef< CSeq_align > nullRef;
+	CRef<CBlastProteinOptionsHandle> blastOptions((CBlastProteinOptionsHandle*)m_options.GetPointer());
 	
     //  construct 'query' from m_seq1
     CRef< CBioseq > queryBioseq = m_seq1.bs;   
@@ -240,7 +317,8 @@ void CSimpleB2SWrapper::processBlastHits(CSearchResults& hits)
 
     int nIdent = 0;
 	double score = 0.0, eVal = kMax_Double, percIdent = 0.0;
-	CRef< CSeq_align > sa = *(seqAlignList.begin());
+//	CRef< CSeq_align > sa = *(seqAlignList.begin());
+	CRef< CSeq_align > sa = ExtractFirstSeqAlign(*(seqAlignList.begin()));
 	if (!sa.Empty()) 
 	{
 		sa->GetNamedScore(CSeq_align::eScore_Score, score);
@@ -261,23 +339,6 @@ void CSimpleB2SWrapper::processBlastHits(CSearchResults& hits)
         m_percIdents.push_back(percIdent);
         m_alignments.push_back(sa);
 	}
-}
-
-//input seqAlign may actually contain CSeq_align_set
-CRef< CSeq_align > CSimpleB2SWrapper::extractOneSeqAlign(CRef< CSeq_align > seqAlign)
-{
-	if (seqAlign.Empty())
-		return seqAlign;
-	if (!seqAlign->GetSegs().IsDisc())
-		return seqAlign;
-	if (seqAlign->GetSegs().GetDisc().CanGet())
-	{
-		const list< CRef< CSeq_align > >& saList = seqAlign->GetSegs().GetDisc().Get();
-		if (saList.begin() != saList.end())
-			return *saList.begin();
-	}
-	CRef< CSeq_align > nullRef;
-	return nullRef;
 }
 
 END_SCOPE(cd_utils)

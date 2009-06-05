@@ -35,7 +35,7 @@
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
-//#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
@@ -936,6 +936,22 @@ bool EraseRow(CRef< CSeq_annot >& seqAnnot, int RowIndex) {
     return(false);
 }
 
+//input seqAlign may actually contain CSeq_align_set
+CRef< CSeq_align > ExtractFirstSeqAlign(CRef< CSeq_align > seqAlign)
+{
+	if (seqAlign.Empty())
+		return seqAlign;
+	if (!seqAlign->GetSegs().IsDisc())
+		return seqAlign;
+	if (seqAlign->GetSegs().GetDisc().CanGet())
+	{
+		const list< CRef< CSeq_align > >& saList = seqAlign->GetSegs().GetDisc().Get();
+		if (saList.begin() != saList.end())
+			return ExtractFirstSeqAlign(*saList.begin());
+	}
+	CRef< CSeq_align > nullRef;
+	return nullRef;
+}
 
 
 int ddLen(TDendiag * pDD)
@@ -1117,10 +1133,10 @@ static int ddAcumAliCord(TDendiag * pDD, int interRow, ALICORD * acL,int seqRow)
                 
                 
                 if(!acL){ // just get the maximum size - used to allocate the acL bufer in calling function
-                        if(maxPos < posInter+len)maxPos =posInter+len;
+                    if(maxPos < (int) (posInter+len) )maxPos = posInter+len;
                 }
                 else {
-                        for(i=posInter;i<posInter+len;i++){
+                    for(i=posInter;i< (int) (posInter+len);i++){
                                 acL[i].hits++;
                                 acL[i].crdSeq[0]=i;
                                 acL[i].crdSeq[seqRow]=posSeq+(i-posInter);
