@@ -23,9 +23,9 @@ case "`uname -s`" in
    echo --------------- Test 2 ----------------------
    $pcre -q testdata/testinput2 > $out
    diff testdata/testoutput2 $out  ||  errcode=2
-   echo --------------- Test 3 ----------------------
-   $pcre -q testdata/testinput3 > $out
-   diff testdata/testoutput3 $out  ||  errcode=3
+#   echo --------------- Test 3 ----------------------
+#   $pcre -q testdata/testinput3 > $out
+#   diff testdata/testoutput3 $out  ||  errcode=3
    ;;
 esac
 
