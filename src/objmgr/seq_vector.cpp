@@ -197,6 +197,11 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, CScope& scope,
       m_Strand(strand),
       m_Coding(CSeq_data::e_not_set)
 {
+    if ( const CSeq_id* id = loc.GetId() ) {
+        if ( CBioseq_Handle bh = scope.GetBioseqHandle(*id) ) {
+            m_TSE = bh.GetTSE_Handle();
+        }
+    }
     m_Size = m_SeqMap->GetLength(m_Scope);
     m_Mol = m_SeqMap->GetMol();
     SetCoding(coding);
