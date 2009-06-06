@@ -64,10 +64,18 @@ class CFlatFeature;
 class NCBI_FORMAT_EXPORT CGFFFormatter : public CFlatItemFormatter
 {
 public:
+
+    /// Most of these options don't belong here, where they would be
+    /// completely useless. There's already a set of flags via
+    /// CFlatFileConfig::EGffOptions, which are exposed via API, whereas
+    /// the following flags are not exposed, and cannot be changed.
+    ///
+    /// @deprecated Avoid these flags and use those from CFlatFileConfig.
+    /// @see CFlatFileConfig::EGffOptions
     enum EGFFFlags {
-        fGTFCompat = 0x1, ///< Represent CDSs (and exons) per GTF.
-        fGTFOnly   = 0x3, ///< Omit all other features.
-        fShowSeq   = 0x4  ///< Show the actual sequence in a "##" comment.
+        fGTFCompat = 0x1, ///< @deprecated Represent CDSs (and exons) per GTF.
+        fGTFOnly   = 0x3, ///< @deprecated Omit all other features.
+        fShowSeq   = 0x4  ///< @deprecated Show the actual sequence in a "##" comment.
     };
     typedef int TGFFFlags; ///< Binary OR of EGFFFlags
 
@@ -102,7 +110,6 @@ private:
     string x_GetTranscriptID(const CFlatFeature& feat, const string& gene_id,
                              CBioseqContext& ctx) const;
 
-    mutable TGFFFlags           m_GFFFlags;
     //CRef<IFlatTextOStream> m_Stream;
     mutable string              m_SeqType;
     mutable string              m_EndSequence;

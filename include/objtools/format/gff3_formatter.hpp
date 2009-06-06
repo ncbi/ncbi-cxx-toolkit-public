@@ -37,6 +37,7 @@
 
 
 #include <objtools/format/gff_formatter.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
 
 
 /** @addtogroup Miscellaneous
@@ -72,12 +73,29 @@ private:
 
     static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os, const string& s);
 
+    /// Formats any pairwise alignment into GFF3 format with CIGAR notation.
+    ///
+    /// @param width_inverted See x_FormatDenseg().
     void x_FormatAlignment(const CAlignmentItem& aln,
                            IFlatTextOStream& text_os, const CSeq_align& sa,
-                           int& phase, bool first);
+                           int& phase, bool first, bool width_inverted);
+    /// Formats a Dense-seg alignment into GFF3 format with CIGAR notation.
+    ///
+    /// @attention There is a disagreement in the meaning of widths
+    ///            for a Dense-seg, as multiplier vs divisor relative to
+    ///            the target sequence length. This function tries to
+    ///            accommodate this problem.
+    /// @param width_inverted If false, as in most cases, the widths are
+    ///        a multiplier, i.e. width 3 means every 1 unit (aa) in the
+    ///        alignment corresponds to an alignment of 3 units (na) on
+    ///        the sequence. If true, as is the case with 
+    ///        CSpliced_seg::s_ExonToDenseg, the widths act as divisors,
+    ///        i.e. width 3 means every 3 units (na) in the alignment
+    ///        correspond to 1 unit (aa) on the sequence.
     void x_FormatDenseg(const CAlignmentItem& aln,
                         IFlatTextOStream& text_os, const CDense_seg& ds,
-                        int& phase, bool first);
+                        int& phase, bool first,
+                        bool width_inverted);
 
 };
 

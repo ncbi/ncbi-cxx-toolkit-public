@@ -57,8 +57,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CGFFFormatter::CGFFFormatter(void) :
-    m_GFFFlags(CGFFFormatter::fGTFCompat)
+CGFFFormatter::CGFFFormatter(void)
 {
 }
 
@@ -138,20 +137,21 @@ void CGFFFormatter::FormatFeature
     string           key(f.GetKey()), oldkey;
     bool             gtf     = false;
     CBioseqContext& ctx = *f.GetContext();
+    const CFlatFileConfig& cfg = ctx.Config();
     CScope* scope = &ctx.GetScope();
 
     // CSeq_loc         tentative_stop;
 
-    if ((m_GFFFlags & fGTFCompat)  &&  !ctx.IsProt()
+    if (( cfg.GffGTFCompat() )  &&  !ctx.IsProt()
         &&  (key == "CDS"  ||  key == "exon")) {
         gtf = true;
-    } else if ((m_GFFFlags & fGTFCompat)
+    } else if (( cfg.GffGTFCompat() )
                &&  ctx.GetMol() == CSeq_inst::eMol_dna
                &&  seqfeat.GetData().IsRna()) {
         oldkey = key;
         key    = "exon";
         gtf    = true;
-    } else if ((m_GFFFlags & fGTFOnly) == fGTFOnly) {
+    } else if ( cfg.GffGTFOnly() ) {
         return;
     }
 
@@ -170,7 +170,7 @@ void CGFFFormatter::FormatFeature
             continue; // suppressed to reduce verbosity
         } else if (name == "number"  &&  key == "exon") {
             name = "exon_number";
-        } else if ((m_GFFFlags & fGTFCompat)  &&  !ctx.IsProt()
+        } else if (( cfg.GffGTFCompat() )  &&  !ctx.IsProt()
                    &&  name == "gene") {
             string gene_id = x_GetGeneID(*feat, (*it)->GetValue(), ctx);
             string transcript_id;
@@ -337,10 +337,11 @@ void CGFFFormatter::FormatBasecount
 (const CBaseCountItem& bc,
  IFlatTextOStream& text_os)
 {
-    if ( !(m_GFFFlags & fShowSeq) )
-        return;
-
     CBioseqContext& ctx = *bc.GetContext();
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    if ( ! ( cfg.GffShowSeq() ) )
+        return;
 
     list<string> l;
     l.push_back("##" + m_SeqType + ' ' + ctx.GetAccession());
@@ -357,9 +358,11 @@ void CGFFFormatter::FormatSequence
 (const CSequenceItem& seq,
  IFlatTextOStream& text_os)
 {
-    if ( !(m_GFFFlags & fShowSeq) )
-        return;
     CBioseqContext& ctx = *seq.GetContext();
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    if ( ! ( cfg.GffShowSeq() ) )
+        return;
 
     list<string> l;
     CSeqVector v = seq.GetSequence();

@@ -117,6 +117,18 @@ public:
     enum EGffOptions {
         // specifies special features of GFF(3) generation
         fGffGenerateIdTags     = 1 << 0,
+        fGffGTFCompat          = 1 << 1, ///< Represent CDSs (and exons) per GTF.
+        fGffGTFOnly            = 1 << 2, ///< Omit all other features.
+        fGffShowSeq            = 1 << 3, ///< Show the actual sequence in a "##" comment.
+        // There are at least 3 flavours of GFF3, discounting multiple
+        // versions of each:
+        // - "Official specifications" by the Sequence Ontology group (SO),
+        //   see http://www.sequenceontology.org/gff3.shtml
+        // - GFF3 as modified by the Interoperability Working Group (IOWG),
+        //   see http://www.pathogenportal.org/gff3-usage-conventions.html
+        // - GFF3 as modified for exchange with Flybase. This alters
+        //   such critical information as how phase is represented.
+        fGffForFlybase         = 1 << 4, ///< Flybase flavour of GFF3.
     };
 
     // types
@@ -133,7 +145,7 @@ public:
                     TStyle  style = eStyle_Normal,
                     TFlags  flags = 0,
                     TView   view = fViewNucleotides,
-                    TGffOptions gff_options = 0 );
+                    TGffOptions gff_options = fGffGTFCompat );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -230,7 +242,7 @@ public:
     bool ShowFtableRefs        (void) const;
     bool OldFeaturesOrder      (void) const;
     bool HideGapFeatures       (void) const;
-    bool NeverTranslateCDS	   (void) const;
+    bool NeverTranslateCDS     (void) const;
     // mode dependant flags
     bool SuppressLocalId     (void) const;
     bool ValidateFeatures    (void) const;
@@ -302,11 +314,52 @@ public:
         return m_GffOptions & fGffGenerateIdTags;
     };
 
+    bool GffGTFCompat        (void) const 
+    { 
+        return m_GffOptions & fGffGTFCompat;
+    };
+
+    bool GffGTFOnly          (void) const 
+    { 
+        return m_GffOptions & fGffGTFOnly;
+    };
+
+    bool GffShowSeq          (void) const 
+    { 
+        return m_GffOptions & fGffShowSeq;
+    };
+
+    bool GffForFlybase       (void) const 
+    { 
+        return m_GffOptions & fGffForFlybase;
+    };
+
     // setters
     void SetGffGenerateIdTags (bool val = true)
     {
         m_GffOptions |= fGffGenerateIdTags;
     };
+
+    void SetGffGTFCompat      (bool val = true)
+    {
+        m_GffOptions |= fGffGTFCompat;
+    };
+
+    void SetGffGTFOnly        (bool val = true)
+    {
+        m_GffOptions |= fGffGTFOnly;
+    };
+
+    void SetGffShowSeq        (bool val = true)
+    {
+        m_GffOptions |= fGffShowSeq;
+    };
+
+    void SetGffForFlybase     (bool val = true)
+    {
+        m_GffOptions |= fGffForFlybase;
+    };
+
 
 private:
     // mode specific flags

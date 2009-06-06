@@ -38,6 +38,7 @@
 #include <objtools/format/items/alignment_item.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/flat_file_config.hpp>
+#include <objtools/format/flat_expt.hpp>
 
 #include <serial/iterator.hpp>
 #include <objects/general/Object_id.hpp>
@@ -63,7 +64,30 @@ USING_SCOPE(sequence);
 void CGFF3_Formatter::Start(IFlatTextOStream& text_os)
 {
     list<string> l;
+    // The GFF version is rquired to be 3, with no minor revisions.
+    // This is unfortunate, since there are multiple revisions of the
+    // specifications (up to GFF3 specs version 1.14 as of 6/5/2009),
+    // and some of them hav minor differences of significance,
+    // such as refinement of allowable character code vs escape.
+    //
+    // Also, there are at least 3 flavours of GFF3, discounting multiple
+    // versions of each:
+    // - "Official specifications" by the Sequence Ontology group (SO),
+    //   see http://www.sequenceontology.org/gff3.shtml
+    // - GFF3 as modified by the Interoperability Working Group (IOWG),
+    //   see http://www.pathogenportal.org/gff3-usage-conventions.html
+    // - GFF3 as modified for exchange with Flybase. This alters
+    //   such critical information as how phase is represented.
+    //
     l.push_back("##gff-version 3");
+    // Add unofficial metadata directives.
+    l.push_back("##gff-spec-version 1.14");
+    if ( GetContext().GetConfig().GffForFlybase() ) {
+        l.push_back("##gff-variant flybase");
+        l.push_back("# This variant of GFF3 interprets ambiguities in the");
+        l.push_back("# GFF3 specifications in accordance with the views of Flybase.");
+        l.push_back("# This impacts the feature tag set, and meaning of the phase.");
+    }
     l.push_back("##source-version NCBI C++ formatter 0.2");
     l.push_back("##date " + CurrentTime().AsString("Y-M-D"));
     text_os.AddParagraph(l);
@@ -82,19 +106,21 @@ void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
                                       IFlatTextOStream& text_os)
 {
     int phase = 0;
-    x_FormatAlignment(aln, text_os, aln.GetAlign(), phase, true);
+    x_FormatAlignment(aln, text_os, aln.GetAlign(), phase, true, false);
 }
 
 void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                                         IFlatTextOStream& text_os,
                                         const CSeq_align& sa,
-                                        int& phase, bool first)
+                                        int& phase, bool first,
+                                        bool width_inverted)
 {
     const CFlatFileConfig& config = aln.GetContext()->Config();
 
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
-        x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(), phase, first);
+        x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(),
+        phase, first, width_inverted);
         break;
 
     case CSeq_align::TSegs::e_Spliced:
@@ -117,7 +143,9 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                     phase -= 1;
                 }
             }
-            x_FormatAlignment(aln, text_os, *sa2, phase, first);
+            // HACK HACK HACK WORKAROUND
+            // Conversion from Spliced to Disc invertes meaning of width!!!
+            x_FormatAlignment(aln, text_os, *sa2, phase, first, true);
         }
         break;
     }
@@ -129,7 +157,8 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
              sa2 = sa.CreateDensegFromStdseg();
         } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2.NotEmpty()  &&  sa2->GetSegs().IsDenseg()) {
-            x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg(), phase, first);
+            x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg(),
+                           phase, first, width_inverted);
         }
         break;
     }
@@ -137,7 +166,8 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     case CSeq_align::TSegs::e_Disc:
     {
          ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
-             x_FormatAlignment(aln, text_os, **it, phase, first);
+             x_FormatAlignment(aln, text_os, **it, phase,
+                               first, width_inverted);
              first = false;
          }
          if ( config.GffGenerateIdTags() ) {
@@ -147,30 +177,53 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     }
 
     default: // dendiag or packed; unsupported
-        break;
+        NCBI_THROW(CFlatException, eNotSupported,
+                   "Conversion of alignments of type dendiag and packed "
+                   "not supported in current GFF3 CIGAR output");
     }
 }
 
 
-static const string& s_GetMatchType(const CSeq_id& ref_id, const CSeq_id& tgt_id)
+static const string& s_GetMatchType(
+        const CSeq_id& ref_id, const CSeq_id& tgt_id,
+        bool flybase)
 {
     static const string kMatch     = "match";  // generic match
     static const string kEST       = "EST_match";
     static const string kcDNA      = "cDNA_match";
+    static const string kProt      = "protein_match";
     static const string kTransNuc  = "translated_nucleotide_match";
     static const string kNucToProt = "nucleotide_to_protein_match";
     
     CSeq_id::EAccessionInfo ref_info = ref_id.IdentifyAccession();
     CSeq_id::EAccessionInfo tgt_info = tgt_id.IdentifyAccession();
-    if ((ref_info & CSeq_id::fAcc_prot)  ||  (tgt_info & CSeq_id::fAcc_prot)) {
-        return kNucToProt;
-    } else if (((ref_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) ||
-               ((tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est)) {
-        return kEST;
+    if (flybase) {
+        if ((ref_info & CSeq_id::fAcc_prot)  ||  (tgt_info & CSeq_id::fAcc_prot)) {
+            return kNucToProt; // NOT a valid SOFA term!!!
+        } else if (((ref_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) ||
+                   ((tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est)) {
+            return kEST;
+        }
+        // HACK HACK HACK
+        // we should provide a check for cDNA and retuen kMatch as the default.
+        return kcDNA;
     }
-    // HACK HACK HACK
-    // we should provide a check for cDNA and retuen kMatch as the default.
-    return kcDNA;
+    // Rules according to GFF3 specifications using a more strict
+    // interpretation. If we can't reliably tell the kind of match,
+    // then don't add possibly incorrect levels of detail.
+    // Note how none of these categorizations currently in SOFA
+    // state anything about the reference side of the alignment!
+    if ( tgt_info & CSeq_id::fAcc_prot ) {
+        return kProt; // "A match against a protein sequence."
+    }
+    if ( (tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+        return kEST; // "A match against an EST sequence."
+    }
+    if ( ref_info & CSeq_id::fAcc_prot  &&  ! (tgt_info & CSeq_id::fAcc_prot) ) {
+        return kTransNuc; // "A match against a translated sequence."
+    }
+    // Should check for more refined categorization.
+    return kMatch;
 }
 
 
@@ -188,8 +241,38 @@ static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
 void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                                      IFlatTextOStream& text_os,
                                      const CDense_seg& ds,
-                                     int& phase, bool first)
+                                     int& phase, bool first,
+                                     bool width_inverted)
 {
+    // HACK HACK HACK WORKAROUND
+    // I do believe there is lack of agreement on what
+    // the "widths" of a dense-seg mean -- as multiplier, or as divisor.
+    //
+    // In CSpliced_seg::s_ExonToDenseg, the widths act as divisors,
+    // i.e. width 3 means every 3 units (na) in the alignment
+    // correspond to 1 unit (aa) on the sequence.
+    //
+    // In CAlnMix as witnessed by e.g. x_ExtendDSWithWidths,
+    // or even CDense_seg::Validate, the widths are a multiplier,
+    // i.e. width 3 means every 1 unit (aa) in the alignment
+    // corresponds to an alignment of 3 units (na) on the sequence.
+    //
+    // These definitions are incompatible.
+    // The problem with the latter definition as a multiplier,
+    // is that the smallest unit of alignment (in a protein-to-nucleotide)
+    // is 1 aa = 3 bp... no opportunity for a frameshift. :-(
+    //
+    // To compensate (or rather, avoid double-compentating), avoid use
+    // of widths, and copy to a temporary alignment, storing the old widths
+    // for lookup, but reset them in the temporary alignment.
+    const CDense_seg* ds_for_alnmix(&ds);
+    CDense_seg ds_no_widths;
+    if (width_inverted) {
+        ds_no_widths.Assign(ds);
+        ds_no_widths.ResetWidths();
+        ds_for_alnmix = &ds_no_widths;
+    }
+
     typedef CAlnMap::TNumrow      TNumrow;
     typedef CAlnMap::TNumchunk    TNumchunk;
     typedef CAlnMap::TSignedRange TRange;
@@ -197,10 +280,11 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     CBioseqContext* ctx     = aln.GetContext();
     list<string>    l;
     string          source  = x_GetSourceName(*ctx);
-    CAlnMap         alnmap(ds);
+    CAlnMap         alnmap(*ds_for_alnmix);
     TNumrow         ref_row = -1;
     CScope&         scope = ctx->GetScope();
     const CFlatFileConfig& config = ctx->Config();
+    int             net_frameshift(0);
 
     const CSeq_id& ref_id = *ctx->GetPrimaryId();
     for (TNumrow row = 0;  row < alnmap.GetNumRows();  ++row) {
@@ -214,21 +298,54 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                       "no row with a matching ID found!");
         return;
     }
+
     alnmap.SetAnchor(ref_row);
-    TSeqPos ref_width = alnmap.GetWidth(ref_row);
+    TSeqPos ref_width = ds.GetWidths()[ref_row];
     TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
     int     ref_sign  = alnmap.StrandSign(ref_row);
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
-        CNcbiOstrstream cigar;
-        char            last_type = 0;
-        TSeqPos         last_count = 0;
-        TSeqPos         tgt_width = alnmap.GetWidth(tgt_row);
-        int             tgt_sign = alnmap.StrandSign(tgt_row);
-        TRange          ref_range, tgt_range;
-        bool            trivial = true;
         if (tgt_row == ref_row) {
             continue;
         }
+        CNcbiOstrstream cigar;
+        char            last_type = 0;
+        TSeqPos         last_count = 0;
+        TSeqPos         tgt_width = ds.GetWidths()[tgt_row];
+        int             tgt_sign = alnmap.StrandSign(tgt_row);
+        TRange          ref_range, tgt_range;
+        bool            trivial = true;
+        TSignedSeqPos   last_frameshift = 0;
+        
+        if (! width_inverted  &&  (ref_width != 1  ||  tgt_width != 1)) {
+            // Supporting widths ONLY in the unamiguous case when we
+            // know they are WRONG and put there incorrectly from conversion
+            // from Spliced-seg. If we didn't get widths that way, we don't
+            // know what they mean, so punt if not all widths are 1.
+            NCBI_THROW(CFlatException, eNotSupported,
+                       "Widths in alignments do not have clear semantics, "
+                       "and thus are not supported in current GFF3 CIGAR output");
+        }
+
+        // HACK HACK HACK
+        // Is the following correct???
+        //
+        // Expecting all coordinates to be normalized relative to
+        // some reference width, which might be the
+        // Least Common Multiple of length in nucleotide bases of
+        // the coordinate system used for each row, e.g. using
+        // LCM of 3 if either row is protein. The Least Common Multiple
+        // would allow accurately representing frameshifts in either
+        // sequence.
+        //
+        // What does width for an alignment really mean, biologically?
+        // It can't have arbitrary meaning, because CIGAR has fixed
+        // semantics that M/I/D/F/R are in 3-bp units (i.e. one aa) for
+        // proteins and 1-bp units for cDNA.
+        //
+        // Thus, in practice, I think we are expecting widths to be
+        // one of (1, 1) for nuc-nuc, (1, 3) for nuc-prot,
+        // (3, 1) for prot-nuc, and (3, 3) for prot-prot.
+        TSeqPos         width = max(ref_width, tgt_width);
 
         CRef<CAlnMap::CAlnChunkVec> chunks
             = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
@@ -239,42 +356,115 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             TRange                        tgt_piece = chunk->GetRange();
             char                          type;
             TSeqPos                       count;
+            TSignedSeqPos                 frameshift = 0;
             CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
 
-            // Adjusting for start position, converting to natural cordinates
-            // (aa for protein locations, which would imply divide by 3).
-            ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
-            ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
             if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
+                // See MakeGapString() in:
+                // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
+                //
+                //         elif starts[2 * i] == -1:
+                //            # gap in prot
+                //            if (starts[2 * (i - 1)] + lens[i - 1]) % 3 and i != 0:
+                //                raise 'non-initial prot gap does not start on aa boundary'
+                //            if seg_len / 3:
+                //                l.append('I%d' % (seg_len / 3))
+                //            if seg_len % 3:
+                //                l.append('R%d' % (seg_len % 3))
+                //
+                // TODO: Handle non-initial protein gap that does not start
+                //       on an aa boundary.
+                //
                 type       = 'I';
-                count      = tgt_piece.GetLength() / tgt_width;
+                count      = tgt_piece.GetLength() / width;
+                frameshift = -(tgt_piece.GetLength() % width);
+                net_frameshift += frameshift;
+                tgt_piece.SetFrom(tgt_piece.GetFrom() / tgt_width);
+                tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
             } else if ( !(flags & CAlnMap::fSeq) ) {
+                // See MakeGapString() in:
+                // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
+                //
+                //        else:
+                //            # gap in nuc
+                //            if starts[2 * i] % 3:
+                //                raise 'nuc gap does not start on aa boundary'
+                //            if seg_len / 3:
+                //                l.append('D%d' % (seg_len / 3))
+                //            if seg_len % 3:
+                //                l.append('F%d' % (seg_len % 3))
+                //
+                // TODO: Handle gap that does not start on an aa boundary.
+                //
                 type       = 'D';
-                // Length already adjusted, e.g. in aa for protein.
-                count      = ref_piece.GetLength();
+                count      = ref_piece.GetLength() / width;
+                frameshift = +(ref_piece.GetLength() % width);
+                net_frameshift += frameshift;
+                // Adjusting for start position, converting to natural cordinates
+                // (aa for protein locations, which would imply divide by 3).
+                ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
+                ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
                 ref_range += ref_piece;
             } else {
+                // See MakeGapString() in:
+                // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
+                //
+                //        if starts[2 * i] != -1 and starts[2 * i + 1] != -1:
+                //            # non-gap
+                //
+                //            # for internal segs, length is easy
+                //            if numseg != 1 and i != numseg - 1:
+                //                # One end should be a codon boundary
+                //                # Check this
+                //                if starts[2 * i] % 3 != 0 and (starts[2 * i] + seg_len) % 3 != 0:
+                //                    raise 'a bad thing happened; i = %d' % i
+                //                length = (seg_len + 2) / 3
+                //            else:
+                //                # single segment or last segment
+                //                length = (starts[2 * i] % 3 + seg_len + 2) / 3
+                //            l.append('M%d' % length)
+                //
+                // TODO: Resolve why the following implementation is different
+                //       from the above historic implementation. The difference
+                //       will be in rounding down vs up on single or last
+                //       segment.
+                //
                 type       = 'M';
-                // Length already adjusted, e.g. in aa for protein.
-                count      = ref_piece.GetLength();
+                if (ref_piece.GetLength()  !=  tgt_piece.GetLength()) {
+                    // There's a frameshift.. somewhere. Is this valid? Bail.
+                    NCBI_THROW(CFlatException, eNotSupported,
+                               "Frameshift(s) in Spliced-exon-chunk's diag "
+                               "not supported in current GFF3 CIGAR output");
+                }
+                // Adjusting for start position, converting to natural cordinates
+                // (aa for protein locations, which would imply divide by 3).
+                count      = ref_piece.GetLength() / width;
+                ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
+                ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
                 ref_range += ref_piece;
+                tgt_piece.SetFrom(tgt_piece.GetFrom() / tgt_width);
+                tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
             }
-            // TODO:
-            // Above assumes that tgt_piece.GetLength() % ref_width == 0,
-            // and conversely, that ref_piece.GetLength() % tgt_width == 0,
-            // that is, that there are no frameshifts, which would require
-            // emitting F and R codes.
             if (type == last_type) {
                 last_count += count;
+                last_frameshift += frameshift;
             } else {
                 if (last_type) {
-                    cigar << last_type << last_count << '+';
-                    trivial = false;
+                    if (last_count) {
+                        trivial = false;
+                        cigar << last_type << last_count << '+';
+                    }
+                    if (last_frameshift) {
+                        trivial = false;
+                        cigar << (last_frameshift < 0 ? 'F' : 'R')
+                              << abs(last_frameshift) << '+';
+                    }
                 }
                 last_type  = type;
                 last_count = count;
+                last_frameshift = frameshift;
             }
         }
         // We can't use x_FormatAttr because we seem to need literal
@@ -343,16 +533,31 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
 
         string attr_string = CNcbiOstrstreamToString(attrs);
 
-        if (ctx->GetHandle().IsNa()) {
+        // if (ctx->GetHandle().IsNa()) {
+        if ( ! config.GffForFlybase()  ||  width != 3 ) {
+            // Semantics of the phase aren't defined in GFF3 for
+            // feature types other than a CDS, and this is an alignment.
+            // Since phase is not required for alignment features, don't
+            // emit one, unless we have been requested with the special
+            // Flybase variant of GFF3 -- they did ask for phase.
+            //
+            // Also, phase can only be interpreted if we have an alignment
+            // in terms of protein aa, and a width of 3 for one or
+            // the other.
             phase = -1;
         }
         
+        // Phase has a different interpretation in GFF3 for Flybase.
+        // Seriously. Adjust the phase for display, as appropriate.
         x_AddFeature(l, loc, source,
-                     s_GetMatchType(ref_id, tgt_id),
-                     "." /*score*/, phase /*phase*/,
+                     s_GetMatchType(ref_id, tgt_id, config.GffForFlybase()),
+                     "." /*score*/,
+                     config.GffForFlybase()  &&  phase > 0 ?
+                        3 - phase /* phase for Flybase */
+                        : phase /* phase for everybody else */,
                      attr_string, false /*gtf*/, *ctx);
 
-        phase = (phase + tgt_range.GetLength()) % 3;
+        phase = (phase + tgt_range.GetLength() + net_frameshift) % 3;
     }
     text_os.AddParagraph(l, &ds);
 }
