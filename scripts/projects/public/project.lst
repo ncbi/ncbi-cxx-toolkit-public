@@ -18,6 +18,9 @@ objtools
 serial
 util
 -app/sample/gui
+-dll/_ncbi
+-dll/gui
+-dll/internal
 -./include/cgi/caf_encoded.hpp
 -./include/cgi/caf_plain.hpp
 -./include/connect/daemons
