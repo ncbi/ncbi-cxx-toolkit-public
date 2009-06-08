@@ -49,6 +49,10 @@ for v in "$PTB_PATH" "$SLN_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
   fi
 done
 
+DEFPTB_VERSION_FILE="${TREE_ROOT}/src/build-system/ptb_version.txt"
+if test -r "$DEFPTB_VERSION_FILE"; then
+  DEFPTB_VERSION=`cat "$DEFPTB_VERSION_FILE" | sed -e 's/ //g'`
+fi
 if test -x "$PREBUILT_PTB_EXE"; then
   ptbver=`$PREBUILT_PTB_EXE -version | grep ^$ptbname | sed -e s/$ptbname:// | sed -e 's/ //g'`
   if ! test "$ptbver" = "$DEFPTB_VERSION"; then
