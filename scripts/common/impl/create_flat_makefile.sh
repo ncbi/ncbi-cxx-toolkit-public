@@ -149,6 +149,13 @@ fi
 
 
 #-----------------------------------------------------------------------------
+# get required version of PTB
+ptbver="$srcdir/src/build-system/ptb_version.txt"
+if test -r "$ptbver"; then
+  ptbreqver=`cat "$ptbver" | sed -e 's/ //'`
+fi
+
+#-----------------------------------------------------------------------------
 # find PTB
 if test $buildptb = "no"; then
   ptb="$PREBUILT_PTB_EXE"
