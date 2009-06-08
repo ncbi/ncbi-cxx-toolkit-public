@@ -34,10 +34,11 @@
 #
 # ===========================================================================
 
-DEFPTB_VERSION="1.8.2"
+DEFPTB_VERSION="1.8.1"
 DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb"
 IDE="30"
 PTB_EXTRA=""
+ptbname="project_tree_builder"
 
 for v in "$PTB_PATH" "$SLN_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
   if test "$v" = ""; then
@@ -48,8 +49,15 @@ for v in "$PTB_PATH" "$SLN_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
   fi
 done
 
+if test -x "$PREBUILT_PTB_EXE"; then
+  ptbver=`$PREBUILT_PTB_EXE -version | grep ^$ptbname | sed -e s/$ptbname:// | sed -e 's/ //g'`
+  if ! test "$ptbver" = "$DEFPTB_VERSION"; then
+    echo "WARNING: requested PTB version $ptbver does not match default one: $DEFPTB_VERSION"
+    DEFPTB_VERSION=$ptbver
+  fi
+fi
+
 #PTB_VER=`echo $DEFPTB_VERSION | sed -e s/[.]//g`
-ptbname="project_tree_builder"
 test -z "$PTB_PLATFORM" && PTB_PLATFORM=`arch`
 PTB_EXTRA="$PTB_EXTRA -ide $IDE -arch \"$PTB_PLATFORM\""
 
