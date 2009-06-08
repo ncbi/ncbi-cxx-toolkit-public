@@ -176,6 +176,8 @@ protected:
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
     Int8 StreamPosition(void) const
         { return NcbiStreamposToInt8(m_LineReader->GetPosition()); }
+    unsigned int LineNumber(void) const
+        { return m_LineReader->GetLineNumber(); }
 
     ILineReader&  GetLineReader(void)         { return *m_LineReader; }
     bool          TestFlag(EFlags flag) const

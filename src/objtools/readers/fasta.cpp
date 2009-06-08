@@ -178,7 +178,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         if (GetLineReader().AtEOF()) {
             NCBI_THROW2(CObjReaderParseException, eEOF,
                         "CFastaReader: Input stream no longer valid",
-                        StreamPosition());
+                        LineNumber());
         }
         if (c == '>') {
             if (need_defline) {
@@ -195,7 +195,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
             if (need_defline) {
                 NCBI_THROW2(CObjReaderParseException, eEOF,
                             "CFastaReader: Reached end of segmented set",
-                            StreamPosition());
+                            LineNumber());
             } else {
                 break;
             }
@@ -219,7 +219,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
                 NCBI_THROW2(CObjReaderParseException, eNoDefline,
                             "CFastaReader: Input doesn't start with"
                             " a defline or comment",
-                            StreamPosition());
+                            LineNumber());
             }
         }
 
@@ -230,8 +230,8 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
 
     if (need_defline  &&  GetLineReader().AtEOF()) {
         NCBI_THROW2(CObjReaderParseException, eEOF,
-                    "CFastaReader: reached end of input",
-                    StreamPosition());
+                    "CFastaReader: Reached end of input",
+                    LineNumber());
     }
 
     AssembleSeq();
@@ -261,11 +261,11 @@ CRef<CSeq_entry> CFastaReader::x_ReadSegSet(void)
     if (GetLineReader().AtEOF()) {
         NCBI_THROW2(CObjReaderParseException, eBadSegSet,
                     "CFastaReader: Segmented set not properly terminated",
-                    StreamPosition());
+                    LineNumber());
     } else if (!parts->IsSet()  ||  parts->GetSet().GetSeq_set().empty()) {
         NCBI_THROW2(CObjReaderParseException, eBadSegSet,
                     "CFastaReader: Segmented set contains no sequences",
-                    StreamPosition());
+                    LineNumber());
     }
 
     const CBioseq& first_seq = parts->GetSet().GetSeq_set().front()->GetSeq();
@@ -380,7 +380,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
         if (TestFlag(fRequireID)) {
             NCBI_THROW2(CObjReaderParseException, eNoIDs,
                         "CFastaReader: Defline lacks a proper ID",
-                        StreamPosition());
+                        LineNumber());
         }
         GenerateID();
     } else if ( !TestFlag(fForceType) ) {
@@ -440,8 +440,9 @@ void CFastaReader::ParseDefLine(const TStr& s)
             CSeq_id_Handle h = CSeq_id_Handle::GetHandle(**it);
             if ( !m_IDTracker.insert(h).second ) {
                 NCBI_THROW2(CObjReaderParseException, eDuplicateID,
-                            "Seq-id " + h.AsString() + " is a duplicate",
-                            StreamPosition());
+                            "CFastaReader: Seq-id " + h.AsString()
+                            + " is a duplicate",
+                            LineNumber());
             }
         }
     }
@@ -550,8 +551,9 @@ void CFastaReader::CheckDataLine(const TStr& s)
     }
     if (bad >= good / 3  &&  (len > 3  ||  good == 0  ||  bad > good)) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "CFastaReader: purported data line fails sanity check",
-                    StreamPosition());
+                    "CFastaReader: Input not marked as defline or comment, but "
+                    "contains too many special characters to be plausible data",
+                    LineNumber());
     }
 }
 
@@ -591,7 +593,8 @@ void CFastaReader::ParseDataLine(const TStr& s)
             break;
         } else if ( !isspace(c) ) {
             ERR_POST_X(1, Warning << "CFastaReader: Ignoring invalid residue "
-                       << c << " at position " << (StreamPosition() + pos - len));
+                       << c << " at line " << LineNumber() << ", position "
+                       << pos);
         }
     }
     m_SeqData.resize(m_CurrentPos);
@@ -653,8 +656,8 @@ void CFastaReader::AssembleSeq(void)
         CSeq_data tmp_data(m_SeqData, format);
         if ( !CSeqportUtil::FastValidate(tmp_data) ) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                        "Invalid residue(s) in input sequence",
-                        StreamPosition());
+                        "CFastaReader: Invalid residue(s) in input sequence",
+                        LineNumber());
         }
     }
 
@@ -753,8 +756,8 @@ void CFastaReader::AssignMolType(void)
     default:
         if (default_mol == CSeq_inst::eMol_not_set) {
             NCBI_THROW2(CObjReaderParseException, eAmbiguous,
-                        "CFastaReader: unable to determine sequence type",
-                        StreamPosition());
+                        "CFastaReader: Unable to determine sequence type",
+                        LineNumber());
         } else {
             inst.SetMol(default_mol);
         }
