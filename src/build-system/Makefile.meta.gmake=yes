@@ -6,4 +6,5 @@
 # occurrence to a single instance.  (Stripping it altogether backfires
 # with the patched make Mac OS X 10.5 ships.)
 
-MFLAGS_NR = $(filter-out --jobserver-fds=%,$(MFLAGS)) $(word 1,$(filter --jobserver-fds=%,$(MFLAGS)))
+MFLAGS_NR = $(filter-out -,$(filter-out --jobserver-fds=%,$(MFLAGS))) \
+            $(word 1,$(filter --jobserver-fds=%,$(MFLAGS)))
