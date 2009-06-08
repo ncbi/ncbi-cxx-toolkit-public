@@ -2004,6 +2004,17 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 	            ProcessUserProjFile(dir_entry->GetPath(), makefiles, maketype);
 
         }
+
+        if (!GetApp().IsScanningWholeTree()) {
+            contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomMetaData);
+            ITERATE(CDir::TEntries, p, contents) {
+                GetApp().AddCustomMetaData( (*p)->GetPath());
+            }
+            contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomConfH);
+            ITERATE(CDir::TEntries, p, contents) {
+                GetApp().AddCustomConfH( (*p)->GetPath());
+            }
+        }
     }
 
     // Convert subprojects to subdirs

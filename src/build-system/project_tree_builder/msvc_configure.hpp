@@ -48,6 +48,10 @@ public:
                    const list<SConfigInfo>& configs,
                    const string&            root_dir);
 
+    void CreateConfH(CMsvcSite&         site, 
+                   const list<SConfigInfo>& configs,
+                   const string&            root_dir);
+
 private:
     string       m_ConfigureDefinesPath;
     list<string> m_ConfigureDefines;

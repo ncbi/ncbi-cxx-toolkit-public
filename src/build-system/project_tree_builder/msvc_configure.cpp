@@ -135,17 +135,6 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     InitializeFrom(site);
     site.ProcessMacros(configs);
 
-    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
-        return;
-    }
-    
-    const CBuildType& build_type(GetApp().GetBuildType());
-    ITERATE(list<SConfigInfo>, p, configs) {
-        if (!p->m_VTuneAddon) {
-            AnalyzeDefines( site, root_dir, *p, build_type);
-        }
-    }
-
     if (CMsvc7RegSettings::GetMsvcPlatform() > CMsvc7RegSettings::eUnix) {
         return;
     }
@@ -159,7 +148,24 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
         s_CreateThirdPartyLibsInstallMakefile(site, 
                                               third_party_to_install, 
                                               config, 
-                                              build_type);
+                                              GetApp().GetBuildType());
+    }
+}
+
+void CMsvcConfigure::CreateConfH(
+    CMsvcSite& site,
+    const list<SConfigInfo>& configs,
+    const string& root_dir)
+{
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        return;
+    }
+    _TRACE("*** Creating local ncbiconf headers ***");
+    const CBuildType& build_type(GetApp().GetBuildType());
+    ITERATE(list<SConfigInfo>, p, configs) {
+        if (!p->m_VTuneAddon) {
+            AnalyzeDefines( site, root_dir, *p, build_type);
+        }
     }
 }
 
@@ -355,6 +361,28 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(
     }
     ofs << endl;
     ofs << "#define NCBI_SIGNATURE \\" << endl << "  \"" << signature << "\"" << endl;
+
+    list<string> customH;
+    GetApp().GetCustomConfH(&customH);
+    ITERATE(list<string>, c, customH) {
+        string file (CDirEntry::CreateRelativePath(GetApp().m_Root, *c));
+        NStr::ReplaceInPlace(file, "\\", "/");
+        ofs << endl << "/*"
+            << endl << "* ==========================================================================="
+            << endl << "* Included contents of " << file
+            << endl << "*/"
+            << endl;
+
+            CNcbiIfstream is(c->c_str(), IOS_BASE::in | IOS_BASE::binary);
+            if ( !is ) {
+                continue;
+            }
+            char   buf[1024];
+            while ( is ) {
+                is.read(buf, sizeof(buf));
+                ofs.write(buf, is.gcount());
+            }
+    }
 }
 
 

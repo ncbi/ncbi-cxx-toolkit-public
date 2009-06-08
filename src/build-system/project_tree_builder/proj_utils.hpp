@@ -88,6 +88,9 @@ struct SProjectTreeInfo
 
     /// Makefile in the tree node 
     string m_TreeNode;
+    
+    string m_CustomMetaData;
+    string m_CustomConfH;
 };
 
 // Get parent directory

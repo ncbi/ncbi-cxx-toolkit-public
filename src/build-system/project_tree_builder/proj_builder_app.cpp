@@ -552,6 +552,9 @@ int CProjBulderApp::Run(void)
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
+    configure.CreateConfH(const_cast<CMsvcSite&>(GetSite()), 
+                        GetRegSettings().m_ConfigInfo, 
+                        m_IncDir);
     
     // MSVC specific part:
     PTB_INFO("Checking project requirements...");
@@ -1339,12 +1342,27 @@ void CProjBulderApp::DumpFiles(const TFiles& files,
     }
 }
 
+void CProjBulderApp::AddCustomMetaData(const string& file)
+{
+    m_CustomMetaData.push_back( CDirEntry::CreateRelativePath(
+        GetProjectTreeInfo().m_Src, file));
+}
 
 void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 {
-    files->clear();
+    *files = m_CustomMetaData;
     NStr::Split(GetConfig().Get("ProjectTree", "MetaData"), LIST_SEPARATOR,
                 *files);
+}
+
+void CProjBulderApp::AddCustomConfH(const string& file)
+{
+    m_CustomConfH.push_back(file);
+}
+
+void CProjBulderApp::GetCustomConfH(list<string>* files) const
+{
+    *files = m_CustomConfH;
 }
 
 
@@ -1504,6 +1522,11 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     /// Makefile in tree node
     m_ProjectTreeInfo->m_TreeNode = 
         GetConfig().Get("ProjectTree", "TreeNode");
+
+    m_ProjectTreeInfo->m_CustomMetaData =
+        GetConfig().Get("ProjectTree", "CustomMetaData");
+    m_ProjectTreeInfo->m_CustomConfH =
+        GetConfig().Get("ProjectTree", "CustomConfH");
 
     return *m_ProjectTreeInfo;
 }

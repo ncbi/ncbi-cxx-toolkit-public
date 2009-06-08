@@ -106,6 +106,8 @@ private:
     int m_ExitCode;
     set<CProjKey> m_SuspiciousProj;
     list<string>  m_GeneratedFiles;
+    list<string>  m_CustomMetaData;
+    list<string>  m_CustomConfH;
 
 public:
 
@@ -128,7 +130,11 @@ public:
 
 public:
 
+    void AddCustomMetaData(const string& file);
     void GetMetaDataFiles(list<string>* files) const;
+
+    void AddCustomConfH(const string& file);
+    void GetCustomConfH(list<string>* files) const;
 
 
     const CMsvc7RegSettings& GetRegSettings    (void);
