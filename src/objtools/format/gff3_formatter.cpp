@@ -105,14 +105,13 @@ void CGFF3_Formatter::EndSection(const CEndSectionItem&,
 void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
                                       IFlatTextOStream& text_os)
 {
-    int phase = 0;
-    x_FormatAlignment(aln, text_os, aln.GetAlign(), phase, true, false);
+    x_FormatAlignment(aln, text_os, aln.GetAlign(), true, false);
 }
 
 void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                                         IFlatTextOStream& text_os,
                                         const CSeq_align& sa,
-                                        int& phase, bool first,
+                                        bool first,
                                         bool width_inverted)
 {
     const CFlatFileConfig& config = aln.GetContext()->Config();
@@ -120,7 +119,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         x_FormatDenseg(aln, text_os, sa.GetSegs().GetDenseg(),
-        phase, first, width_inverted);
+        first, width_inverted);
         break;
 
     case CSeq_align::TSegs::e_Spliced:
@@ -135,17 +134,9 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
              }
         } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2) {
-            const CSpliced_exon& first_exon =
-                *sa.GetSegs().GetSpliced().GetExons().front();
-            if (first_exon.GetProduct_start().IsProtpos()) {
-                phase = first_exon.GetProduct_start().GetProtpos().GetFrame();
-                if (phase) {
-                    phase -= 1;
-                }
-            }
             // HACK HACK HACK WORKAROUND
-            // Conversion from Spliced to Disc invertes meaning of width!!!
-            x_FormatAlignment(aln, text_os, *sa2, phase, first, true);
+            // Conversion from Spliced to Disc inverts meaning of width!!!
+            x_FormatAlignment(aln, text_os, *sa2, first, true);
         }
         break;
     }
@@ -158,7 +149,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
         } STD_CATCH_ALL_X(4, "CGFF3_Formatter::x_FormatAlignment")
         if (sa2.NotEmpty()  &&  sa2->GetSegs().IsDenseg()) {
             x_FormatDenseg(aln, text_os, sa2->GetSegs().GetDenseg(),
-                           phase, first, width_inverted);
+                           first, width_inverted);
         }
         break;
     }
@@ -166,7 +157,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
     case CSeq_align::TSegs::e_Disc:
     {
          ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
-             x_FormatAlignment(aln, text_os, **it, phase,
+             x_FormatAlignment(aln, text_os, **it,
                                first, width_inverted);
              first = false;
          }
@@ -241,9 +232,14 @@ static const CSeq_id& s_GetTargetId(const CSeq_id& id, CScope& scope)
 void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                                      IFlatTextOStream& text_os,
                                      const CDense_seg& ds,
-                                     int& phase, bool first,
+                                     bool first,
                                      bool width_inverted)
 {
+cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
+    // Frame, as a value of 0, 1, 2, or -1 for undefined.
+    // This is NOT the same frame as the frame in ASN.1!
+    int frame(-1);
+
     // HACK HACK HACK WORKAROUND
     // I do believe there is lack of agreement on what
     // the "widths" of a dense-seg mean -- as multiplier, or as divisor.
@@ -284,7 +280,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
     TNumrow         ref_row = -1;
     CScope&         scope = ctx->GetScope();
     const CFlatFileConfig& config = ctx->Config();
-    int             net_frameshift(0);
 
     const CSeq_id& ref_id = *ctx->GetPrimaryId();
     for (TNumrow row = 0;  row < alnmap.GetNumRows();  ++row) {
@@ -376,9 +371,12 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 //       on an aa boundary.
                 //
                 type       = 'I';
+                if (i0 == 0  &&  config.GffForFlybase()  &&  tgt_width == 3) {
+                    // See comments about frame and phase, below.
+                    frame = (tgt_piece.GetFrom()            ) % tgt_width;
+                }
                 count      = tgt_piece.GetLength() / width;
                 frameshift = -(tgt_piece.GetLength() % width);
-                net_frameshift += frameshift;
                 tgt_piece.SetFrom(tgt_piece.GetFrom() / tgt_width);
                 tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
@@ -398,9 +396,12 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 // TODO: Handle gap that does not start on an aa boundary.
                 //
                 type       = 'D';
+                if (i0 == 0  &&  config.GffForFlybase()  &&  ref_width == 3) {
+                    // See comments about frame and phase, below.
+                    frame = (ref_piece.GetFrom()            ) % ref_width;
+                }
                 count      = ref_piece.GetLength() / width;
                 frameshift = +(ref_piece.GetLength() % width);
-                net_frameshift += frameshift;
                 // Adjusting for start position, converting to natural cordinates
                 // (aa for protein locations, which would imply divide by 3).
                 ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
@@ -436,6 +437,37 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                     NCBI_THROW(CFlatException, eNotSupported,
                                "Frameshift(s) in Spliced-exon-chunk's diag "
                                "not supported in current GFF3 CIGAR output");
+                }
+                if (i0 == 0  &&  config.GffForFlybase()) {
+                    // Semantics of the phase aren't defined in GFF3 for
+                    // feature types other than a CDS, and this is an alignment.
+                    //
+                    // Since phase is not required for alignment features, don't
+                    // emit one, unless we have been requested with the special
+                    // Flybase variant of GFF3 -- they did ask for phase.
+                    //
+                    // Also, phase can only be interpreted if we have an alignment
+                    // in terms of protein aa, and a width of 3 for one or
+                    // the other.
+                    //
+                    // For an alignment, the meaning of phase is ambiguous,
+                    // particularly in dealing with a protein-protein
+                    // alignment (if ever it allowed alignment to parts of
+                    // a codon), and when the seqid is the protein, rather
+                    // than the target.
+                    //
+                    // A protein won't be "reverse complemented" thus,
+                    // can assume that it's plus-strand and look at start
+                    // position.
+                    //
+                    // The computation below is actually for the frame.
+                    // The phase is not the same, and will be derived from
+                    // the frame.
+                    if (ref_width == 3) {
+                        frame = (ref_piece.GetFrom() + ref_start) % ref_width;
+                    } else if (tgt_width == 3) {
+                        frame = (tgt_piece.GetFrom()            ) % tgt_width;
+                    }
                 }
                 // Adjusting for start position, converting to natural cordinates
                 // (aa for protein locations, which would imply divide by 3).
@@ -533,31 +565,21 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
 
         string attr_string = CNcbiOstrstreamToString(attrs);
 
-        // if (ctx->GetHandle().IsNa()) {
-        if ( ! config.GffForFlybase()  ||  width != 3 ) {
-            // Semantics of the phase aren't defined in GFF3 for
-            // feature types other than a CDS, and this is an alignment.
-            // Since phase is not required for alignment features, don't
-            // emit one, unless we have been requested with the special
-            // Flybase variant of GFF3 -- they did ask for phase.
-            //
-            // Also, phase can only be interpreted if we have an alignment
-            // in terms of protein aa, and a width of 3 for one or
-            // the other.
-            phase = -1;
-        }
-        
         // Phase has a different interpretation in GFF3 for Flybase.
         // Seriously. Adjust the phase for display, as appropriate.
+        // Note that the API expects frame, which is not the same as
+        // the phase, and it also wants that frame to be 0-based, with
+        // values 0, 1, 2, or -1 for undefined, which is not the same
+        // as the frame in ASN.1. Confused? Convert as appropriate.
         x_AddFeature(l, loc, source,
                      s_GetMatchType(ref_id, tgt_id, config.GffForFlybase()),
                      "." /*score*/,
-                     config.GffForFlybase()  &&  phase > 0 ?
-                        3 - phase /* phase for Flybase */
-                        : phase /* phase for everybody else */,
+                     config.GffForFlybase() ?
+                        /* frame vs phase inverted for flybase! */
+                        (frame > 0 ? 3 - frame : frame) 
+                        /* frame for everybody else... undefined! */
+                        : -1,
                      attr_string, false /*gtf*/, *ctx);
-
-        phase = (phase + tgt_range.GetLength() + net_frameshift) % 3;
     }
     text_os.AddParagraph(l, &ds);
 }

@@ -78,7 +78,7 @@ private:
     /// @param width_inverted See x_FormatDenseg().
     void x_FormatAlignment(const CAlignmentItem& aln,
                            IFlatTextOStream& text_os, const CSeq_align& sa,
-                           int& phase, bool first, bool width_inverted);
+                           bool first, bool width_inverted);
     /// Formats a Dense-seg alignment into GFF3 format with CIGAR notation.
     ///
     /// @attention There is a disagreement in the meaning of widths
@@ -94,7 +94,7 @@ private:
     ///        correspond to 1 unit (aa) on the sequence.
     void x_FormatDenseg(const CAlignmentItem& aln,
                         IFlatTextOStream& text_os, const CDense_seg& ds,
-                        int& phase, bool first,
+                        bool first,
                         bool width_inverted);
 
 };
