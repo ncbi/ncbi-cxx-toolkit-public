@@ -97,7 +97,6 @@ CDBSetConnParams::GetPassword(void) const
 
 
 ////////////////////////////////////////////////////////////////////////////////
-const char* ftds8_driver = "ftds8";
 const char* ftds64_driver = "ftds";
 const char* ftds_driver = ftds64_driver;
 
@@ -408,7 +407,6 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("SERVER_SQLite", GetArgs().GetServerType() == CDBConnParams::eSqlite);
 
     parser->AddSymbol("DRIVER_ftds", GetArgs().GetDriverName() == ftds_driver);
-    parser->AddSymbol("DRIVER_ftds8", GetArgs().GetDriverName() == ftds8_driver);
     parser->AddSymbol("DRIVER_ftds64", GetArgs().GetDriverName() == ftds64_driver);
     parser->AddSymbol("DRIVER_ftds_odbc", GetArgs().GetDriverName() == ftds_odbc_driver);
     parser->AddSymbol("DRIVER_ftds_dblib", GetArgs().GetDriverName() == ftds_dblib_driver);
@@ -462,7 +460,6 @@ CUnitTestParams::GetServerType(void) const
 
     if (driver_name == "dblib" 
         || driver_name == "ftds_dblib"
-        || driver_name == "ftds8"
         ) {
         if (NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
             || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
@@ -551,10 +548,7 @@ CTestArguments::IsBCPAvailable(void) const
         // Solaris Intel native Sybase drivers ...
         // There is no apropriate client
         return false;
-    } else if ( GetDriverName() == ftds_odbc_driver
-         || (GetDriverName() == ftds8_driver
-             && GetServerType() == CDBConnParams::eSybaseSQLServer)
-         ) {
+    } else if ( GetDriverName() == ftds_odbc_driver ) {
         return false;
     }
 
@@ -578,8 +572,7 @@ bool CTestArguments::DriverAllowsMultipleContexts(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ((GetDriverName() == ftds8_driver ||
-         GetDriverName() == ftds64_driver ||
+    if ((GetDriverName() == ftds64_driver ||
          // GetDriverName() == odbc_driver ||
          // GetDriverName() == ftds_odbc_driver ||
          GetDriverName() == ftds_dblib_driver) && GetServerType() == CDBConnParams::eMSSqlServer
@@ -620,24 +613,23 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 {
 // Describe the expected command-line arguments
 #define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver, \
-                    ftds_dblib_driver, ftds_odbc_driver, ftds8_driver
+                    ftds_dblib_driver, ftds_odbc_driver
 
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
 //#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver,
-//                    ftds_dblib_driver, ftds_odbc_driver, ftds8_driver
+//                    ftds_dblib_driver, ftds_odbc_driver
 
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "Sybase"
 //#define DEF_DRIVER    ctlib_driver
 //#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds_dblib_driver,
-//                    ftds_odbc_driver, ftds8_driver
+//                    ftds_odbc_driver
 #else
 #define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
-//#define ALL_DRIVERS   ftds64_driver, ftds_dblib_driver, ftds_odbc_driver,
-//                    ftds8_driver
+//#define ALL_DRIVERS   ftds64_driver, ftds_dblib_driver, ftds_odbc_driver
 #endif
 
     arg_desc->AddDefaultKey("S", "server",

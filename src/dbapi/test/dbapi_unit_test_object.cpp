@@ -462,9 +462,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         }
 
                         while (rs->Fetch()) {
-                            if ((GetArgs().GetDriverName() == ftds8_driver 
-                                || GetArgs().GetDriverName() == ftds_dblib_driver
-                                )
+                            if (GetArgs().GetDriverName() == ftds_dblib_driver
                                 && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
                                 CDB_Double db_obj;
 
@@ -501,8 +499,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         }
 
                         while (rs->Fetch()) {
-                            if ((GetArgs().GetDriverName() == ftds8_driver 
-                                || GetArgs().GetDriverName() == ftds_dblib_driver)
+                            if (GetArgs().GetDriverName() == ftds_dblib_driver
                                 && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
                                 CDB_Double db_obj;
 
@@ -550,8 +547,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                     }
 
                     while (rs->Fetch()) {
-                            if ((GetArgs().GetDriverName() == ftds8_driver 
-                                || GetArgs().GetDriverName() == ftds_dblib_driver)
+                            if (GetArgs().GetDriverName() == ftds_dblib_driver
                                 && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
                             CDB_Double db_obj;
 
@@ -836,8 +832,6 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
             }
 
             // varbinary
-            // A problem with ftds8 driver !!!!
-            if (GetArgs().GetDriverName() != ftds8_driver)
             {
                 sql = "select Convert(varbinary(32), '12345')";
 

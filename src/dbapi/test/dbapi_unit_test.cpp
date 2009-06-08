@@ -1951,8 +1951,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         }
 
         // varbinary
-        // A problem with ftds8 driver !!!!
-        if (GetArgs().GetDriverName() != ftds8_driver)
         {
             sql = "select Convert(varbinary(32), '12345')";
 
@@ -2379,8 +2377,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
 
-                    if (GetArgs().GetDriverName() == ftds8_driver
-                        || GetArgs().GetDriverName() == dblib_driver
+                    if (GetArgs().GetDriverName() == dblib_driver
                         || GetArgs().GetDriverName() == ftds_dblib_driver
                         ) {
                         BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
@@ -2392,9 +2389,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         }
 
         // varbinary
-        // A problem with ftds8 driver !!!!
-        if (GetArgs().GetDriverName() != ftds8_driver
-            && GetArgs().GetDriverName() != ftds_odbc_driver
+        if (GetArgs().GetDriverName() != ftds_odbc_driver
             && GetArgs().GetDriverName() != odbc_driver
             )
         {
@@ -2470,9 +2465,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
     // Second test ...
     {
-        // A problem with ftds8 driver !!!!
-        if (GetArgs().GetDriverName() != ftds8_driver
-            && GetArgs().GetDriverName() != dblib_driver
+        if (GetArgs().GetDriverName() != dblib_driver
             && GetArgs().GetDriverName() != ftds_dblib_driver
             )
         {
@@ -2530,7 +2523,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe)
         DoTest_CDBCmdConvertSafe<Int4>("select 1, 2.0, '3'", 1);
         if (!((GetArgs().GetDriverName() == dblib_driver || 
                 GetArgs().GetDriverName() == ftds_driver || 
-                GetArgs().GetDriverName() == ftds8_driver || 
                 GetArgs().GetDriverName() == ftds_dblib_driver || 
                 GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
@@ -3014,7 +3006,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert)
         DoTest_CDBCmdConvert<Int4>("select 1, 2.0, '3'", 1);
         if (!((GetArgs().GetDriverName() == dblib_driver || 
                 GetArgs().GetDriverName() == ftds_driver || 
-                GetArgs().GetDriverName() == ftds8_driver || 
                 GetArgs().GetDriverName() == ftds_dblib_driver || 
                 GetArgs().GetDriverName() == ctlib_driver) 
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)

@@ -124,7 +124,7 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
-            if test \( $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "odbc" -o $driver = "ftds_odbc" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
                 continue
             fi
 

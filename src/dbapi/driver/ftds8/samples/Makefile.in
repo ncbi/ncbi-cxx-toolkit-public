@@ -1,6 +1,0 @@
-# $Id$
-
-APP_PROJ = ftds_sp_who ftds_lang
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

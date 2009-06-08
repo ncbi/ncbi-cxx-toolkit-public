@@ -213,8 +213,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
         }
 
         // Read Blob
-        // There is a bug in implementation of ReadItem in ftds8 driver.
-        if (GetArgs().GetDriverName() != ftds8_driver) {
+        {
             string result;
             char buff[3];
 
@@ -249,8 +248,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 }
 
             }
-        } else {
-            GetArgs().PutMsgDisabled("Test_LOB - Read Blob");
         }
 
         // Test NULL values ...
@@ -363,7 +360,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             }
 
             // Read Blob
-            if (GetArgs().GetDriverName() != ftds8_driver) {
+            {
                 char buff[3];
 
                 sql = "SELECT text_field FROM "+ GetTableName();
@@ -411,8 +408,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                     }
 
                 }
-            } else {
-                GetArgs().PutMsgDisabled("Test_LOB Read Read Blob");
             } // Read Blob
         } // Test NULL values ...
 

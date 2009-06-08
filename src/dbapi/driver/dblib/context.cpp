@@ -770,23 +770,6 @@ DBAPI_RegisterDriver_MSDBLIB(void)
 
 #elif defined(FTDS_IN_USE)
 
-#define NCBI_FTDS 8
-
-///////////////////////////////////////////////////////////////////////////////
-// Version-specific driver name and DLL entry point
-#if defined(NCBI_FTDS)
-#  if   NCBI_FTDS == 7
-#    define NCBI_FTDS_DRV_NAME    "ftds7"
-#    define NCBI_FTDS_ENTRY_POINT DBAPI_E_ftds7
-#  elif NCBI_FTDS == 8
-#    define NCBI_FTDS_DRV_NAME    "ftds8"
-#    define NCBI_FTDS_ENTRY_POINT DBAPI_E_ftds8
-#  elif
-#    error "This version of FreeTDS is not supported"
-#  endif
-#endif
-
-
 class CDbapiFtdsCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
 {
 public:
@@ -908,15 +891,6 @@ public:
     }
 };
 
-class CDbapiFtdsCF63 : public CDbapiFtdsCFBase
-{
-public:
-    CDbapiFtdsCF63(void)
-    : CDbapiFtdsCFBase("ftds63")
-    {
-    }
-};
-
 class CDbapiFtdsCF64 : public CDbapiFtdsCFBase
 {
 public:
@@ -936,14 +910,6 @@ NCBI_EntryPoint_xdbapi_ftds(
 }
 
 void
-NCBI_EntryPoint_xdbapi_ftds63(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiFtdsCF63>::NCBI_EntryPointImpl( info_list, method );
-}
-
-void
 NCBI_EntryPoint_xdbapi_ftds_dblib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
@@ -956,7 +922,6 @@ void
 DBAPI_RegisterDriver_FTDS(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds63 );
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_dblib );
 }
 

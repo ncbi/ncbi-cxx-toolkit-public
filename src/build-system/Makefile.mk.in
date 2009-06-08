@@ -57,7 +57,7 @@ COPY     = cp -p
 BINCOPY  = @BINCOPY@
 TOUCH    = touch
 BINTOUCH = $(TOUCH)
-LN_S	   = @LN_S@
+LN_S       = @LN_S@
 
 ### filters for screening out bogus messages
 CC_FILTER    = @CC_FILTER@
@@ -333,17 +333,7 @@ SYBASE_LIBS    = @SYBASE_LIBS@
 SYBASE_DLLS    = @SYBASE_DLLS@
 SYBASE_DBLIBS  = @SYBASE_DBLIBS@
 
-# FreeTDS -- version 0.60 (named after protocol v8), v0.63, v0.64, default
-ftds8         = @ftds8@
-FTDS8_LIBS    = @FTDS8_LIBS@
-FTDS8_LIB     = @FTDS8_LIB@
-FTDS8_INCLUDE = @FTDS8_INCLUDE@
-
-ftds63         = @ftds63@
-FTDS63_LIBS    = @FTDS63_LIBS@
-FTDS63_LIB     = @FTDS63_LIB@
-FTDS63_INCLUDE = @FTDS63_INCLUDE@
-
+# FreeTDS -- version v0.64, default
 ftds64               = @ftds64@
 FTDS64_CTLIB_LIBS    = @FTDS64_CTLIB_LIBS@
 FTDS64_CTLIB_LIB     = @FTDS64_CTLIB_LIB@
@@ -562,8 +552,8 @@ COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
 
 GENBANK_LDEP = \
-	ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
-	$(GENBANK_READER_PUBSEQOS_LIBS)
+    ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
+    $(GENBANK_READER_PUBSEQOS_LIBS)
 GENBANK_LIBS = ncbi_xloader_genbank $(GENBANK_LDEP)
 
 GENBANK_READER_LDEP = id1 id2 seqsplit $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
@@ -586,7 +576,7 @@ GENBANK_READER_CACHE_LIBS = ncbi_xreader_cache $(GENBANK_READER_CACHE_LDEP)
 
 SEQ_LIBS = seq seqcode sequtil
 SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \
-	xser xutil xncbi
+    xser xutil xncbi
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
@@ -607,7 +597,7 @@ BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
 QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 seqset $(SEQ_LIBS) pub medline biblio \
-	general xcompress $(CMPRS_LIB)
+    general xcompress $(CMPRS_LIB)
 QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
 QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
 

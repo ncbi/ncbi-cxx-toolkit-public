@@ -46,7 +46,7 @@ License:  Unrestricted when distributed with the Toolkit;
 Location: {src,include}/dbapi/driver/ftds*/freetds
 Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
-          [src/dbapi/driver/ftds8/freetds/COPYING.LIB]
+          [src/dbapi/driver/ftds*/freetds/COPYING.LIB]
 
 Location: include/dbapi/driver/odbc/unix_odbc
 Authors:  Peter Harvey and Nick Gorham

@@ -1201,8 +1201,6 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     if ( ( args.GetDriverName() == "ctlib" && sybase_client_v125) ||
          ( (args.GetDriverName() == "ftds"
-            // || args.GetDriverName() == "ftds8" // 05/22/08 // Stoped working
-            || args.GetDriverName() == "ftds63"
             || args.GetDriverName() == "ftds_odbc"
             ) &&
            args.GetServerType() == CTestArguments::eMsSql )
@@ -1245,7 +1243,6 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     NStr::ToUpper( server_name );
     // Do not run this test case for the ODBC driver.
     if ( server_name.compare("ODBC") != 0
-         && server_name.compare("ODBCW") != 0
          && server_name.compare("FTDS_ODBC") != 0
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteStoredProc, DBAPIInstance);
@@ -1286,13 +1283,13 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "odbcw", "gateway", "ftds8", "ftds_odbc"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", "odbc", \
+                      "gateway", "ftds_odbc"
 #else
 #define DEF_SERVER    "THALBERG"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds8", "ftds_odbc"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway", \
+                      "ftds_odbc"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -1369,9 +1366,7 @@ CTestArguments::SetDatabaseParameters(void)
 				m_DatabaseParameters["version"] = "100";
 		} else if ( (GetDriverName() == "ftds")) {
 				m_DatabaseParameters["version"] = "42";
-		} else if ( (GetDriverName() == "ftds8")) {
-				m_DatabaseParameters["version"] = "42";
-		} else if (GetDriverName() == "ftds63" || GetDriverName() == "ftds64_dblib") {
+		} else if (GetDriverName() == "ftds64_dblib") {
 				// ftds work with Sybase databases using protocol v42 only ...
 				m_DatabaseParameters["version"] = "100";
 		} else if (GetDriverName() == "ftds_odbc") {

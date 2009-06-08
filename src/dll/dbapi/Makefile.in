@@ -16,7 +16,6 @@ SUB_PROJ =  \
     ncbi_xdbapi_msdblib \
     ncbi_xdbapi_mysql \
     ncbi_xdbapi_odbc \
-    ncbi_xdbapi_odbcw \
     ncbi_xdbapi_sqlite3
 
 srcdir = @srcdir@

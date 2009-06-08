@@ -158,7 +158,6 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
     try {
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
-            // Not in ftds8 ...
 //             if (r.get()) {
 //                 while (r->Fetch())
 //                     continue;
@@ -209,7 +208,6 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
         // For some starnge reason this code does not work with Sybase dblib ...
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
-            // Not in ftds8 ...
 //             if (r.get()) {
 //                 while (r->Fetch())
 //                     continue;
@@ -253,7 +251,6 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
     try {
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
-            // Not in ftds8 ...
 //             if (r.get()) {
 //
 //                 while (r->Fetch())

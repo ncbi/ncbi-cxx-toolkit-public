@@ -480,7 +480,7 @@ EDB_Type CDB_Result::ItemDataType(unsigned int item_num) const
 bool CDB_Result::Fetch()
 {
     // An exception should be thrown from this place. We cannot omit this exception
-    // because it is expected by ftds and ftds63 drivers in CursorResult::Fetch.
+    // because it is expected by ftds driver in CursorResult::Fetch.
     CHECK_RESULT( GetIResultPtr() );
 //     if ( !GetIResultPtr() ) {
 //         return false;

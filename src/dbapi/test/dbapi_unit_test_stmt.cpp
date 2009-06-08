@@ -1374,9 +1374,8 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                             GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
                         ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
-                    } else if (GetArgs().GetDriverName() == ftds8_driver ||
-                        (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)
+                    } else if (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer
                         ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
                     } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
@@ -1410,9 +1409,8 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                             GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
                         ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
-                    } else if (GetArgs().GetDriverName() == ftds8_driver ||
-                        (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)
+                    } else if (GetArgs().GetDriverName() == ftds_dblib_driver && 
+                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer
                         ) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
                     } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
@@ -1608,7 +1606,6 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
                 } else if (GetArgs().GetDriverName() == ctlib_driver ||
-                    GetArgs().GetDriverName() == ftds8_driver ||
                     GetArgs().GetDriverName() == ftds_odbc_driver ||
                     GetArgs().GetDriverName() == odbc_driver
                     ) {
@@ -1716,7 +1713,6 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 } else if ((GetArgs().GetDriverName() == ftds_driver && 
                         GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) ||
                     GetArgs().GetDriverName() == ctlib_driver ||
-                    GetArgs().GetDriverName() == ftds8_driver ||
                     GetArgs().GetDriverName() == ftds_odbc_driver ||
                     GetArgs().GetDriverName() == odbc_driver
                     ) {

@@ -6,6 +6,5 @@ util/cache$
 connect$
 connect/ext$
 dbapi
--dbapi/driver/odbc/odbcw
 misc/third_party
 misc/third_party_static

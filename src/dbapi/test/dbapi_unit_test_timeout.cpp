@@ -48,37 +48,21 @@ static void s_WaitForDelay(IConnection& conn)
 
     auto_stmt.reset(conn.GetStatement());
 
-    if(GetArgs().GetDriverName() == ftds8_driver) {
-        try {
-            auto_stmt->SendSql("waitfor delay '0:00:04'");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-        } catch(const CDB_Exception&) {
-            timeout_was_reported = true;
-            auto_stmt->Cancel();
-        } catch(...) {
-            BOOST_CHECK(false);
-        }
-    } else {
-        try {
-            auto_stmt->SendSql("waitfor delay '0:00:04'");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-        } catch(const CDB_TimeoutEx&) {
-            timeout_was_reported = true;
-            auto_stmt->Cancel();
-        }
+    try {
+        auto_stmt->SendSql("waitfor delay '0:00:04'");
+        BOOST_CHECK(auto_stmt->HasMoreResults());
+    } catch(const CDB_TimeoutEx&) {
+        timeout_was_reported = true;
+        auto_stmt->Cancel();
     }
 
 
     // Check if connection is alive ...
-    if (GetArgs().GetDriverName() != ftds8_driver) {
-        auto_stmt->SendSql("SELECT name FROM sysobjects");
-        BOOST_CHECK( auto_stmt->HasMoreResults() );
-        BOOST_CHECK( auto_stmt->HasRows() );
-        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-        BOOST_CHECK( rs.get() != NULL );
-    } else {
-        GetArgs().PutMsgDisabled("Test_Timeout. Check if connection is alive.");
-    }
+    auto_stmt->SendSql("SELECT name FROM sysobjects");
+    BOOST_CHECK( auto_stmt->HasMoreResults() );
+    BOOST_CHECK( auto_stmt->HasRows() );
+    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+    BOOST_CHECK( rs.get() != NULL );
 
     BOOST_CHECK(timeout_was_reported);
 }
@@ -230,7 +214,7 @@ BOOST_AUTO_TEST_CASE(Test_Timeout)
 
             s_WaitForDelay(*conn);
 
-            // Crete new connection because some drivers (ftds8 for example)
+            // Crete new connection because some drivers
             // can close connection in the Test_WaitForDelay test.
             conn.reset(GetDS().CreateConnection());
             BOOST_CHECK(conn.get() != NULL);

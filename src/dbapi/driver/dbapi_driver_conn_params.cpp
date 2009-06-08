@@ -64,13 +64,6 @@ string CDBConnParamsBase::GetDriverName(void) const
 #ifdef HAVE_LIBSYBASE
                 return "ctlib";
 #else
-                // the "ftds8" driver cannot coexist with the current
-                // "ftds_dblib" driver, as they merely take care to avoid
-                // colliding with the Sybase "dblib" driver rather than also with each other.
-                //
-                // Aaron Ucko (c)
-                
-                // return "ftds8";
                 return "ftds";
 #endif
             case eMSSqlServer:
@@ -97,20 +90,14 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
             case eSybaseSQLServer:
                 // ftds64 can autodetect tds version by itself.
 
-                if (NStr::Compare(driver_name, "ftds8") == 0) {
-                    // ftds8 works with Sybase databases using protocol v42 only ...
-                    return 42;
-                } else if (NStr::Compare(driver_name, "dblib") == 0) {
+                if (NStr::Compare(driver_name, "dblib") == 0) {
                     // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
                     // BcpIn to it using protocol version other than "100".
                     return 100;
                 } else if (NStr::Compare(driver_name, "ftds_odbc") == 0) {
                     return 50;
-                } else if (NStr::Compare(driver_name, "ftds63") == 0) {
-                    // ftds8 works with Sybase databases using protocol v42 only ...
-                    return 42;
                 } else if (NStr::Compare(driver_name, "ftds_dblib") == 0) {
-                    // ftds8 works with Sybase databases using protocol v42 only ...
+                    // ftds_dblib works with Sybase databases using protocol v42 only ...
                     return 42;
                 }
             default:

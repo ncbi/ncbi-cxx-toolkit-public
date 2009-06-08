@@ -347,7 +347,7 @@ void CStatement::PurgeResults()
         if (HasRows()) {
             auto_ptr<IResultSet> rs( GetResultSet() );
             if (rs.get()) {
-                // The fetch below is required by ftds_odbc and ftds8 drivers in
+                // The fetch below is required by ftds_odbc driver in
                 // order to retrieve number of rows.
                 while (rs->Next()) {
                     ;

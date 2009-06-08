@@ -58,39 +58,6 @@
 }
 
 {
-    ftds63/dbapi
-    Memcheck:Cond
-    fun:__underflow
-    fun:getdelim
-    fun:read_conf_file
-}
-
-{
-    ftds63/dbapi
-    Memcheck:Cond
-    fun:add_*
-    fun:read_conf_file
-    fun:__gconv_*
-}
-
-{
-    ftds63/dbapi
-    Memcheck:Cond
-    fun:*
-    fun:add_*
-    fun:read_conf_file
-    fun:__gconv_*
-}
-
-{
-    ftds63/dbapi
-    Memcheck:Cond
-    fun:find_derivation
-    fun:__gconv_*
-    fun:__gconv_*
-}
-
-{
     write(buf)/pthread
     Memcheck:Param
     write(buf)

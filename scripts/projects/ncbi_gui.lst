@@ -36,8 +36,7 @@ util
 -bdb/.*
 -corelib/.*test_mt
 -dbapi/cache/admintool
--dbapi/driver/ftds6[34]/freetds/ctlib
--dbapi/driver/ftds8
+-dbapi/driver/ftds64/freetds/ctlib
 -dbapi/driver/util
 -dbapi/lang_bind
 -objtools/align

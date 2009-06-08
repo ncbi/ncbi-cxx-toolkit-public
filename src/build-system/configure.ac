@@ -1252,7 +1252,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         ;;
       WorkShop5[[89]]* )
         # Limit optimization to -xO2 (-O now maps to -xO3) due to compiler bugs.
-        subst='s/[[ 	]]-x*O[[1-9]]*//g'
+        subst='s/[[     ]]-x*O[[1-9]]*//g'
         CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
         CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
         LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
@@ -2268,25 +2268,25 @@ changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
       with_optimization=${with_optimization:="yes"}
-      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
-      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
-      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
+      CFLAGS=`  echo " $CFLAGS"   | sed 's/[    ]-g[0-9]*//g'`
+      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[    ]-g[0-9]*//g'`
+      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[    ]-g[0-9]*//g'`
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
    else
       with_optimization=${with_optimization:="no"}
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[   ]-g[0-9]*' ; then
          CFLAGS="$CFLAGS -g"     ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[   ]-g[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
       CPPFLAGS="-D_DEBUG $CPPFLAGS"
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[   ]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP="@:"
    fi
 
-   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-x*O[0-9]*//g'`
-   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-x*O[0-9]*//g'`
-   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-x*O[0-9]*//g'`
+   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[     ]-x*O[0-9]*//g'`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[     ]-x*O[0-9]*//g'`
+   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[     ]-x*O[0-9]*//g'`
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
@@ -2295,11 +2295,11 @@ if test "$compiler" != "MSVC" ; then
       FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
    else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[   ]-x*O[0-9]*' ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[   ]-x*O[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[   ]-x*O[0-9]*' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
@@ -3639,20 +3639,10 @@ SYBASE_LIBPATH=
 ## FreeTDS libraries
 freetds=
 if test "$with_ftds" != "no" ; then
-   ftds8=ftds8
-   ftds63=ftds63
    ftds64=ftds64
    try_local=yes
    : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
    case "$with_ftds" in
-      8 )
-         with_ftds=8
-         ftds8=ftds
-         ;;
-      63 )
-         with_ftds=63
-         ftds63=ftds
-         ;;
       64 | yes | '' )
          with_ftds=64
          ftds64=ftds
@@ -3709,12 +3699,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_INCLUDE=
    FTDS_LIBS=
    FTDS_LIB=
-   FTDS8_INCLUDE=
-   FTDS8_LIBS=
-   FTDS8_LIB=
-   FTDS63_INCLUDE=
-   FTDS63_LIBS=
-   FTDS63_LIB=
    FTDS64_INCLUDE=
    FTDS64_LIBS=
    FTDS64_LIB=
@@ -3733,12 +3717,6 @@ else
              [Define to 1 if FreeTDS libraries are available.])
    NCBI_PACKAGE(FreeTDS)
 fi
-AC_SUBST(FTDS8_INCLUDE)
-AC_SUBST(FTDS8_LIBS)
-AC_SUBST(FTDS8_LIB)
-AC_SUBST(FTDS63_INCLUDE)
-AC_SUBST(FTDS63_LIBS)
-AC_SUBST(FTDS63_LIB)
 AC_SUBST(FTDS64_INCLUDE)
 AC_SUBST(FTDS64_LIBS)
 AC_SUBST(FTDS64_LIB)
@@ -3755,8 +3733,6 @@ AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
 AC_SUBST(freetds)
-AC_SUBST(ftds8)
-AC_SUBST(ftds63)
 AC_SUBST(ftds64)
 
 
@@ -3858,7 +3834,7 @@ if test "$with_bdb" != "no" ; then
 ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
           ]])])
           eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d '  ' > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
@@ -4117,7 +4093,7 @@ if test "$with_boost" != "no"; then
 ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           ]])])
           eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d '  ' > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
