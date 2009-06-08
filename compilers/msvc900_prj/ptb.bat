@@ -50,6 +50,17 @@ for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PL
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
+if exist "%PREBUILT_PTB_EXE%" (
+  set ptbver=
+  for /f "tokens=2" %%a in ('%PREBUILT_PTB_EXE% -version') do (set ptbver=%%a & goto donepb)
+  :donepb
+  set ptbver=%ptbver: =%
+  if not "%DEFPTB_VERSION%"=="%ptbver%" (
+    echo WARNING: requested PTB version %ptbver% does not match default one: %DEFPTB_VERSION%
+    set DEFPTB_VERSION=%ptbver%
+  )
+)
+
 for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do set PTB_VER=%%a%%b%%c
 if %PTB_VER% GEQ 180 (
   set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
