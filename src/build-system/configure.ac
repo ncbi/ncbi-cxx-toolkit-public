@@ -320,6 +320,10 @@ AC_ARG_WITH(oechem,
    [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
 AC_ARG_WITH(oechem2,
    [ --without-oechem        do not use OEChem])
+AC_ARG_WITH(sge,
+   [ --with-sge=DIR          use Sun Grid Engine installation in DIR])
+AC_ARG_WITH(sge2,
+   [ --without-sge           do not use Sun Grid Engine])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
 AC_ARG_WITH(gif2,
@@ -386,7 +390,7 @@ geo included-geo \
 z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
-sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
+sp expat sablot libxml libxslt xerces xalan oechem sge gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -437,7 +441,7 @@ for x_arg in "$@" ; do
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
-      | --with-boost=* | --with-boost-tag=* | --with-orbacus=* \
+      | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
       | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -5428,6 +5432,33 @@ if test -n "$OECHEM_LIBS"; then
    OECHEM_LIBS=`echo $OECHEM_LIBS | sed -e 's/-loechem \(.*-loechem .*\)/\1/'`
 fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
+
+
+### Sun Grid Engine
+if test -z "${SGE_PATH+set}"; then
+   case "$with_sge" in
+      yes | no ) ;;
+      '' ) SGE_PATH=/netopt/sge ;;
+      *  ) SGE_PATH=$with_sge   ;;
+   esac
+fi
+if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
+   case "$host:$NCBI_PLATFORM_BITS" in
+      i?86-*-darwin*      ) SGE_LIBPATH=$SGE_PATH/lib/darwin-x86  ;;
+      i?86-*-linux*       ) SGE_LIBPATH=$SGE_PATH/lib/lx24-x86    ;;
+      i?86-*-solaris*:32  ) SGE_LIBPATH=$SGE_PATH/lib/sol-x86     ;;
+      i?86-*-solaris*:64  ) SGE_LIBPATH=$SGE_PATH/lib/sol-amd64   ;;
+      powerpc-*-darwin*   ) SGE_LIBPATH=$SGE_PATH/lib/darwin-ppc  ;;
+      sparc-*-solaris*:32 ) SGE_LIBPATH=$SGE_PATH/lib/sol-sparc   ;;
+      sparc-*-solaris*:64 ) SGE_LIBPATH=$SGE_PATH/lib/sol-sparc64 ;;
+      x86_64-*-linux*     ) SGE_LIBPATH=$SGE_PATH/lib/lx24-amd64  ;;
+   esac
+   NCBI_RPATHIFY(SGE_LIBPATH, $SGE_LIBPATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
+  [[AC_LANG_PROGRAM([[#include <sys/types.h>
+                      #include <drmaa.h>]],
+     [[char buf[1024]; drmaa_init("SGE", buf, sizeof(buf));]])]])
 
 
 ### Image libraries

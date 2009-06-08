@@ -87,6 +87,11 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    FreeBSD32 | *MAC ) ;;
+    *                ) : ${SGE_PATH=/netopt/sge} ;;
+esac
+
+case "$ncbi_platform" in
     Linux32    ) : ${SP_PATH=$NCBI/SP-1.3.4} ;;
     SunOSSparc ) : ${SP_PATH=$NCBI/SP-1.3}   ;;
 esac

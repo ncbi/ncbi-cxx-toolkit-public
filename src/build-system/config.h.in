@@ -260,6 +260,9 @@
 /* Define to 1 if libsablot is available. */
 #undef HAVE_LIBSABLOT
 
+/* Define to 1 if libdrmaa is available. */
+#undef HAVE_LIBSGE
+
 /* Define to 1 if the SP SGML library is available. */
 #undef HAVE_LIBSP
 
