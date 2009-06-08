@@ -32296,6 +32296,36 @@ done
 # test -f "$status_dir"/LocalBZ2.enabled  ||  \
 #    touch -t 197001010000 $status_dir/.bz2.dep
 
+find "$srcdir/src" -name .svn -prune -o -name 'Makefile.*.mk' -print \
+   | grep -v /src/internal/gpipe/action_nodes/scripts/gnomon/ \
+   | while read x; do
+      echo
+      echo "### Extra macro definitions from $x"
+      echo
+      cat "$x"
+   done >> "$builddir/Makefile.mk"
+find "$srcdir/src" -name .svn -prune -o -name 'ncbiconf.*.h' -print \
+   | while read x; do
+      echo
+      echo "/*** Extra macro definitions from $x ***/"
+      echo
+      cat "$x"
+   done > "$build_root/inc/ncbiconf_extra.h"
+if test -s "$build_root/inc/ncbiconf_extra.h"; then
+   ncbiconf=$build_root/inc/ncbiconf_unix.h
+   newconf=$ncbiconf.extra.new
+   savedconf=$ncbiconf.extra.prev
+   cat "$ncbiconf" "$build_root/inc/ncbiconf_extra.h" > "$newconf"
+   if test -f "$savedconf"  &&  cmp "$newconf" "$savedconf" >/dev/null; then
+      echo "$ncbiconf is unchanged"
+   else
+      cp -p "$newconf" "$savedconf"
+   fi
+   cp -p "$savedconf" "$ncbiconf"
+else
+   rm "$build_root/inc/ncbiconf_extra.h"
+fi
+
 ncbicfg="$builddir/corelib/ncbicfg.c"
 if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
    echo "$ncbicfg" is unchanged

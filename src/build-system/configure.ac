@@ -6241,6 +6241,37 @@ dnl This is a stopgap measure, and fails for installations in non-system dirs.
 # test -f "$status_dir"/LocalBZ2.enabled  ||  \
 #    touch -t 197001010000 $status_dir/.bz2.dep
 
+dnl Incorporate any Makefile.*.mk and ncbiconf.*.h files found in the tree.
+find "$srcdir/src" -name .svn -prune -o -name 'Makefile.*.mk' -print \
+   | grep -v /src/internal/gpipe/action_nodes/scripts/gnomon/ \
+   | while read x; do
+      echo
+      echo "### Extra macro definitions from $x"
+      echo
+      cat "$x"
+   done >> "$builddir/Makefile.mk"
+find "$srcdir/src" -name .svn -prune -o -name 'ncbiconf.*.h' -print \
+   | while read x; do
+      echo
+      echo "/*** Extra macro definitions from $x ***/"
+      echo
+      cat "$x"
+   done > "$build_root/inc/ncbiconf_extra.h"
+if test -s "$build_root/inc/ncbiconf_extra.h"; then
+   ncbiconf=$build_root/inc/ncbiconf_unix.h
+   newconf=$ncbiconf.extra.new
+   savedconf=$ncbiconf.extra.prev
+   cat "$ncbiconf" "$build_root/inc/ncbiconf_extra.h" > "$newconf"
+   if test -f "$savedconf"  &&  cmp "$newconf" "$savedconf" >/dev/null; then
+      echo "$ncbiconf is unchanged"
+   else
+      cp -p "$newconf" "$savedconf"
+   fi
+   cp -p "$savedconf" "$ncbiconf"
+else
+   rm "$build_root/inc/ncbiconf_extra.h"
+fi
+
 dnl Avoid gratuitous relinking
 ncbicfg="$builddir/corelib/ncbicfg.c"
 if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
@@ -6254,6 +6285,7 @@ else
    echo "$ncbicfg" is not present
 fi
 
+dnl Create Makefile.flat if requested
 if test "$with_flat_makefile" = "yes"; then
    cfm_flags=''
    case "$with_projects" in
