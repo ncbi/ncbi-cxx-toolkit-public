@@ -783,6 +783,11 @@ BOOST_AUTO_TEST_CASE(Test_Authentication)
     }
 }
 
+#else
+
+BOOST_AUTO_TEST_CASE(Test_Authentication)
+{}
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
