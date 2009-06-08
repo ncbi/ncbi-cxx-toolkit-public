@@ -139,7 +139,7 @@ AC_ARG_WITH(makefile-auto-update,
 AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
 AC_ARG_WITH(flat-makefile,
-   [ --with-flat-makefile    generate a flat makefile to build all projects)])
+   [ --without-flat-makefile do not generate an all-encompassing flat makefile])
 AC_ARG_WITH(check,
    [ --with-check            run test suite after the build])
 AC_ARG_WITH(check-tools,
@@ -6316,7 +6316,7 @@ else
 fi
 
 dnl Create Makefile.flat if requested
-if test "$with_flat_makefile" = "yes"; then
+if test "$with_flat_makefile" != "no"; then
    cfm_flags=''
    case "$with_projects" in
       yes     ) cfm_flags="$cfm_flags -p projects" ;;

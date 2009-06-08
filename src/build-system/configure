@@ -896,7 +896,7 @@ Optional Packages:
  --without-deactivation  keep old copies of libraries that no longer build
  --without-makefile-auto-update  do not auto-update generated makefiles
  --with-projects=FILE    build projects listed in FILE by default
- --with-flat-makefile    generate a flat makefile to build all projects)
+ --without-flat-makefile do not generate an all-encompassing flat makefile
  --with-check            run test suite after the build
  --with-check-tools=...  use the specified tools for testing
  --with-ncbi-public      ensure compatibility for all in-house platforms
@@ -32533,7 +32533,7 @@ else
    echo "$ncbicfg" is not present
 fi
 
-if test "$with_flat_makefile" = "yes"; then
+if test "$with_flat_makefile" != "no"; then
    cfm_flags=''
    case "$with_projects" in
       yes     ) cfm_flags="$cfm_flags -p projects" ;;
