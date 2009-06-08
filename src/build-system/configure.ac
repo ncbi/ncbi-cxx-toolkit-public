@@ -6243,7 +6243,6 @@ dnl This is a stopgap measure, and fails for installations in non-system dirs.
 
 dnl Incorporate any Makefile.*.mk and ncbiconf.*.h files found in the tree.
 find "$srcdir/src" -name .svn -prune -o -name 'Makefile.*.mk' -print \
-   | grep -v /src/internal/gpipe/action_nodes/scripts/gnomon/ \
    | while read x; do
       echo
       echo "### Extra macro definitions from $x"
