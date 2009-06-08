@@ -55,12 +55,9 @@ case "$method" in
     run )
         rm -f "$res_log"
         rm -f "$build_dir/check.sh.*.log" > /dev/null 2>&1
-        # Init checks
-        $build_dir/../../scripts/common/check/check_make_xcode_cfg.sh init  || \
-            error "Check initialization failed"
         ;;
     clean )
-        # not implemented, 'clean' method is not used on Windows 
+        # not implemented, 'clean' method is not used with Xcode
         exit 0
         ;;
     concat )
@@ -70,7 +67,6 @@ case "$method" in
         egrep 'ERR \[|TO  -' $res_log > $res_concat_err
         ;;
     concat_cfg )
-        #rm -f "$build_dir/check.sh.*.out"     > /dev/null 2>&1
         rm -f "$build_dir/check.sh.*.out_err" > /dev/null 2>&1
         ;;
     load_to_db )
@@ -87,30 +83,22 @@ for cfg in $cfgs ; do
     if [ -z "$cfg" ] ; then
         error "Unknown configuration name"
     fi
-#    x_tree=`echo $cfg | sed -e 's/,.*$//'`
-#    x_sol=`echo $cfg | sed -e 's/^[^,]*,//' -e 's/,.*$//' -e 's/\.sln//' -e 's|\\\|/|g'`
-#    x_cfg=`echo $cfg | sed -e 's/^.*,//'`
     cfg_params=`echo $cfg | sed -e 's/,/ /g'`
-    cfg_count=0
+    cfg_count=1
     for cfg_p in $cfg_params; do
-    case $cfg_count in
-      0 ) x_check=$cfg_p ;;
-      1 ) x_tree=$cfg_p ;;
-      2 ) x_sol=$cfg_p ;;
-      3 ) x_cfg=$cfg_p ;;
-    esac
-    cfg_count=`expr $cfg_count + 1`
+      case $cfg_count in
+        1 ) x_tree=$cfg_p ;;
+        2 ) x_sol=$cfg_p ;;
+        3 ) x_cfg=$cfg_p ;;
+      esac
+      cfg_count=`expr $cfg_count + 1`
     done
     echo CHECK_$method: $x_tree/$x_sol/$x_cfg
 
     cd $build_dir
-#    check_dir="$x_tree/build/${x_sol}.check/$x_cfg"
-    check_dir="$x_check/${x_sol}.check/$x_cfg"
+    check_dir="$x_tree/${x_sol}.check/$x_cfg"
     if [ ! -d "$check_dir" ] ; then
-      check_dir="$x_check/build/${x_sol}.check/$x_cfg"
-      if [ ! -d "$check_dir" ] ; then
-          error "Check directory \"$check_dir\" not found"
-      fi
+        error "Check directory \"$check_dir\" not found"
     fi
     if test "$method" != "run"; then
         test -x "$check_dir/check.sh"  ||  error "Run checks first. $check_dir/check.sh not found."
@@ -120,7 +108,7 @@ for cfg in $cfgs ; do
     
     case "$method" in
         run )
-            ../../scripts/common/check/check_make_xcode_cfg.sh create "$x_sol" "$x_check" "$x_tree" "$x_cfg"  || \
+            ../../scripts/common/check/check_make_cfg.sh XCODE create "$x_sol" "$x_tree" "$x_cfg"  || \
                 error "Creating check script for \"$check_dir\" failed"
             $check_dir/check.sh run  ||  errcode=$?
             cat $check_dir/check.sh.log >> $res_log
@@ -147,31 +135,19 @@ done
 
 if test "$method" = "concat_cfg"; then
     for cfg in $cfgs ; do
-#        x_tree=`echo $cfg | sed -e 's/,.*$//'`
-#        x_sol=`echo $cfg | sed -e 's/^[^,]*,//' -e 's/,.*$//' -e 's/\.sln//' -e 's|\\\|/|g'`
-#        x_cfg=`echo $cfg | sed -e 's/^.*,//'`
          cfg_params=`echo $cfg | sed -e 's/,/ /g'`
-         cfg_count=0
+         cfg_count=1
          for cfg_p in $cfg_params; do
-         case $cfg_count in
-           0 ) x_check=$cfg_p ;;
-           1 ) x_tree=$cfg_p ;;
-           2 ) x_sol=$cfg_p ;;
-           3 ) x_cfg=$cfg_p ;;
-         esac
-         cfg_count=`expr $cfg_count + 1`
+           case $cfg_count in
+             1 ) x_tree=$cfg_p ;;
+             2 ) x_sol=$cfg_p ;;
+             3 ) x_cfg=$cfg_p ;;
+           esac
+           cfg_count=`expr $cfg_count + 1`
          done
-        cd $build_dir
-#        check_dir="$x_tree/build/${x_sol}.check/$x_cfg"
-         check_dir="$x_check/${x_sol}.check/$x_cfg"
-         if [ ! -d "$check_dir" ] ; then
-           check_dir="$x_check/build/${x_sol}.check/$x_cfg"
-           if [ ! -d "$check_dir" ] ; then
-               error "Check directory \"$check_dir\" not found"
-           fi
-         fi
-       #cat $check_dir/check.sh.out     >> $build_dir/check.sh.${x_tree}_${x_cfg}.out
-        cat $check_dir/check.sh.out_err >> $build_dir/check.sh.${x_tree}_${x_cfg}.out_err
+         cd $build_dir
+         check_dir="$x_tree/${x_sol}.check/$x_cfg"
+         cat $check_dir/check.sh.out_err >> $build_dir/check.sh.${x_tree}_${x_cfg}.out_err
     done
 fi
 
