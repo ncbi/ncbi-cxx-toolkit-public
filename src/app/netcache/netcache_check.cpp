@@ -49,18 +49,18 @@ USING_NCBI_SCOPE;
 
 #define NETCACHE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
 
-#define NETCACHE_HUMAN_VERSION \
+#define NETCACHE_CHECK_VERSION \
       "NCBI NetCache check utility Version " NETCACHE_VERSION \
       " build " __DATE__ " " __TIME__
 
 ///////////////////////////////////////////////////////////////////////
 
 
-/// Netcache stop application
+/// NetCache check application
 ///
 /// @internal
 ///
-class CNetCacheCheck : public CNcbiApplication
+class CNetCacheCheckApp : public CNcbiApplication
 {
 public:
     void Init(void);
@@ -69,7 +69,7 @@ public:
 
 
 
-void CNetCacheCheck::Init(void)
+void CNetCacheCheckApp::Init(void)
 {
     // Setup command line arguments and parameters
 
@@ -82,23 +82,35 @@ void CNetCacheCheck::Init(void)
         "NetCache host or service name: { host:port | lb_service_name }.", 
         CArgDescriptions::eString,
         "");
+    arg_desc->AddFlag("check-health", "Return server health percentage");
+    arg_desc->AddDefaultKey("delay", "phase_delay",
+        "Delay between test phases. Default: 3000 ms",
+        CArgDescriptions::eInteger, "3000");
     arg_desc->AddFlag("version-full", "Version");
 
     SetupArgDescriptions(arg_desc.release());
 }
 
+#define CHECK_FAILED_RETVAL 100
 
-
-int CNetCacheCheck::Run(void)
+int CNetCacheCheckApp::Run(void)
 {
     CArgs args = GetArgs();
 
     if (args["version-full"]) {
-        printf(NETCACHE_HUMAN_VERSION "\n");
+        printf(NETCACHE_CHECK_VERSION "\n");
         return 0;
     }
 
-    CNetCacheAPI cl(args["service_address"].AsString(), "netcache_check");
+    string service_name = args["service_address"].AsString();
+
+    if (service_name.empty()) {
+        NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
+    }
+
+    bool return_health = args["check-health"];
+
+    CNetCacheAPI cl(service_name, "netcache_check");
 
     // functionality test
 
@@ -108,7 +120,7 @@ int CNetCacheCheck::Run(void)
 
     if (key.empty()) {
         NcbiCerr << "Failed to put data. " << NcbiEndl;
-        return 1;
+        return CHECK_FAILED_RETVAL;
     }
     NcbiCout << key << NcbiEndl;
 
@@ -118,52 +130,80 @@ int CNetCacheCheck::Run(void)
 
     if (blob_size != sizeof(test_data)) {
         NcbiCerr << "Failed to retrieve data size." << NcbiEndl;
-        return 1;
+        return CHECK_FAILED_RETVAL;
     }
 
     auto_ptr<IReader> reader(cl.GetData(key, &blob_size));
 
     if (reader.get() == 0) {
         NcbiCerr << "Failed to read data." << NcbiEndl;
-        return 1;
+        return CHECK_FAILED_RETVAL;
     }
 
     reader->Read(data_buf, 1024);
     int res = strcmp(data_buf, test_data);
     if (res != 0) {
-        NcbiCerr << "Incorrect functionality while reading data." << NcbiEndl;
-        NcbiCerr << "Server returned:" << NcbiEndl << data_buf << NcbiEndl;
-        NcbiCerr << "Expected:" << NcbiEndl << test_data << NcbiEndl;
-        return 1;
+        NcbiCerr << "Could not read data." << NcbiEndl <<
+            "Server returned:" << NcbiEndl << data_buf << NcbiEndl <<
+            "Expected:" << NcbiEndl << test_data << NcbiEndl;
+
+        return CHECK_FAILED_RETVAL;
     }
     reader.reset(0);
 
-    
-    auto_ptr<IWriter> wrt(cl.PutData(&key));
-    size_t bytes_written;
-    //ERW_Result wres = 
+    {{
+        auto_ptr<IWriter> wrt(cl.PutData(&key));
+        size_t bytes_written;
         wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
-    wrt.reset(0);
+    }}
 
-    SleepMilliSec(3000);
+    SleepMilliSec(args["delay"].AsInteger());
 
     memset(data_buf, 0xff, sizeof(data_buf));
     reader.reset(cl.GetData(key, &blob_size));
     reader->Read(data_buf, 1024);
     res = strcmp(data_buf, test_data2);
     if (res != 0) {
-        NcbiCerr << "Incorrect functionality while reading updated data." << NcbiEndl;
-        NcbiCerr << "Server returned:" << NcbiEndl << data_buf << NcbiEndl;
-        NcbiCerr << "Expected:" << NcbiEndl << test_data2 << NcbiEndl;
-        return 1;
+        NcbiCerr << "Could not read updated data." << NcbiEndl <<
+            "Server returned:" << NcbiEndl << data_buf << NcbiEndl <<
+            "Expected:" << NcbiEndl << test_data2 << NcbiEndl;
+
+        return CHECK_FAILED_RETVAL;
     }
 
-    
+    if (return_health) {
+        if (cl.GetService().IsLoadBalanced()) {
+            NcbiCerr << "Cannot use -check-health "
+                "for a load-balanced server." << NcbiEndl;
+            return CHECK_FAILED_RETVAL + 1;
+        }
+
+        CNcbiOstrstream health_cmd_output_stream;
+        try {
+            cl.GetAdmin().PrintHealth(health_cmd_output_stream);
+        }
+        catch (CNetCacheException& e) {
+            if (e.GetErrCode() != CNetCacheException::eUnknownCommand)
+                throw;
+            return 0;
+        }
+        string health_cmd_output =
+            CNcbiOstrstreamToString(health_cmd_output_stream);
+        string::size_type new_line_pos = health_cmd_output.find('\n');
+        if (new_line_pos != string::npos)
+            health_cmd_output.erase(0, new_line_pos);
+        unsigned health_percentage = NStr::StringToUInt(health_cmd_output,
+            NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSymbols);
+        if (health_percentage > 100)
+            health_percentage = 100;
+        return 100 - health_percentage;
+    }
+
     return 0;
 }
 
 
 int main(int argc, const char* argv[])
 {
-    return CNetCacheCheck().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CNetCacheCheckApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

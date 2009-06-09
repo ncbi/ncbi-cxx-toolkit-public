@@ -66,7 +66,9 @@ public:
         ///< Cache name unknown
         eUnknnownCache,
         ///< Blob is not found
-        eBlobNotFound
+        eBlobNotFound,
+        ///< The requested command is (yet) unknown
+        eUnknownCommand,
     };
 
     virtual const char* GetErrCodeString(void) const

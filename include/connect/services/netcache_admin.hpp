@@ -71,6 +71,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     /// Print server statistics
     void PrintStat(CNcbiOstream& output_stream) const;
 
+    // Print server health information
+    void PrintHealth(CNcbiOstream& output_stream) const;
+
     /// Reinitialize server-side statistics collector
     void DropStat() const;
 

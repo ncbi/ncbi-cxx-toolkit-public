@@ -120,6 +120,11 @@ void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
     if (NStr::strncmp(err_msg.c_str(), "BLOB locked", 11) == 0)
         NCBI_THROW(CNetCacheException, eBlobLocked, message);
 
+    static const char s_UnknownCommandMsg[] = "Unknown command";
+    if (NStr::strncmp(err_msg.c_str(), s_UnknownCommandMsg,
+        sizeof(s_UnknownCommandMsg) - 1) == 0)
+        NCBI_THROW(CNetCacheException, eUnknownCommand, message);
+
     NCBI_THROW(CNetServiceException, eCommunicationError, message);
 }
 

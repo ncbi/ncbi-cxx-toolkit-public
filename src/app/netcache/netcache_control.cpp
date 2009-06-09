@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:  NetCache administration utility
  *
@@ -87,6 +87,7 @@ void CNetCacheControl::Init()
     arg_desc->AddFlag("version-full",  "Version");
     arg_desc->AddFlag("ver",           "Server version");
     arg_desc->AddFlag("getconf",       "Server config");
+    arg_desc->AddFlag("health",        "Server health");
     arg_desc->AddFlag("stat",          "Server statistics");
     arg_desc->AddFlag("dropstat",      "Drop server statistics");
     arg_desc->AddFlag("monitor",       "Monitor server");
@@ -169,6 +170,9 @@ int CNetCacheControl::Run()
 
     if (args["getconf"])
         admin.PrintConfig(NcbiCout);
+
+    if (args["health"])
+        admin.PrintHealth(NcbiCout);
 
     if (args["monitor"])
         admin.Monitor(NcbiCout);

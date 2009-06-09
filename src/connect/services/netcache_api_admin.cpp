@@ -65,6 +65,13 @@ void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream) const
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
+void CNetCacheAdmin::PrintHealth(CNcbiOstream& output_stream) const
+{
+    m_Impl->m_API->m_Service.PrintCmdOutput(
+        m_Impl->m_API->x_MakeCommand("HEALTH"),
+        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
+}
+
 void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
