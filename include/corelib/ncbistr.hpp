@@ -148,7 +148,7 @@ public:
                                              ///< Can have leading non-nums
         fAllowTrailingSpaces  = (1 << 14),   ///< Can have trailing spaces
         fAllowTrailingSymbols = (1 << 15) | fAllowTrailingSpaces,
-                                             ///< Can have leading non-nums
+                                             ///< Can have trailing non-nums
         fAllStringToNumFlags  = 0x7F00
     };
     typedef int TStringToNumFlags;   ///< Binary OR of "EStringToNumFlags"
