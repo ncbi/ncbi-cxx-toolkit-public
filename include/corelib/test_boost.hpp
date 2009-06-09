@@ -118,7 +118,7 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
     try {                                                               \
         t.test_method();                                                \
     }                                                                   \
-    catch (CException& ex) {                                            \
+    catch (NCBI_NS_NCBI::CException& ex) {                              \
         ERR_POST("Uncaught exception in \""                             \
                  << boost::unit_test                                    \
                          ::framework::current_test_case().p_name        \
