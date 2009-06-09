@@ -34,7 +34,6 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
-set DEFPTB_VERSION=1.8.1
 set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 set IDE=800
 set PTB_EXTRA=
@@ -50,6 +49,7 @@ for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PL
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
+set DEFPTB_VERSION=
 set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
 if exist "%DEFPTB_VERSION_FILE%" (
   for /f %%a in ('type %DEFPTB_VERSION_FILE%') do (set DEFPTB_VERSION=%%a & goto donedf)
