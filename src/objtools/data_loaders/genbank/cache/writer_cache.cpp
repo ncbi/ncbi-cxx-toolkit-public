@@ -363,6 +363,8 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
         return;
     }
 
+    string subkey, true_subkey;
+    GetBlob_idsSubkey(sel, subkey, true_subkey);
     CStoreBuffer str;
     str.StoreInt4(IDS_MAGIC);
     str.StoreUint4(ids->GetState());
@@ -379,8 +381,10 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
             str.StoreString(*it2);
         }
     }
-    m_IdCache->Store(GetIdKey(seq_id), 0, GetBlob_idsSubkey(sel),
-                     str.data(), str.size());
+    if ( !true_subkey.empty() ) {
+        str.StoreString(true_subkey);
+    }
+    m_IdCache->Store(GetIdKey(seq_id), 0, subkey, str.data(), str.size());
 }
 
 

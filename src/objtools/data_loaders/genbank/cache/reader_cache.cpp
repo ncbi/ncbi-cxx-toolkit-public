@@ -88,17 +88,53 @@ string SCacheInfo::GetIdKey(const CSeq_id_Handle& id)
 }
 
 
-string SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel)
+static const size_t kHashLimit = 100;
+
+
+void SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel,
+                                   string& subkey,
+                                   string& true_subkey)
 {
-    string subkey = "blobs";
-    if ( sel ) {
-        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
-                  sel->GetNamedAnnotAccessions() ) {
-            subkey += ';';
-            subkey += *it;
-        }
+    if ( !sel ) {
+        subkey = "blobs";
+        return;
     }
-    return subkey;
+    const SAnnotSelector::TNamedAnnotAccessions& accs =
+        sel->GetNamedAnnotAccessions();
+    if ( accs.empty() ) {
+        subkey = "blobs";
+        return;
+    }
+
+    CNcbiOstrstream str;
+    str << "blobs";
+    size_t total_size = 0;
+    ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
+        total_size += 1+it->size();
+    }
+    bool add_hash = total_size > kHashLimit;
+    if ( add_hash ) {
+        size_t hash = 5381;
+        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
+            hash = hash*17 + it->size();
+            ITERATE ( string, i, *it ) {
+                hash = hash*17 + (*i & 0xff);
+            }
+        }
+        str << ";#" << hex << hash << dec;
+    }
+    ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
+              sel->GetNamedAnnotAccessions() ) {
+        str << ';';
+        str << *it;
+    }
+    if ( add_hash ) {
+        true_subkey = CNcbiOstrstreamToString(str);
+        subkey = true_subkey.substr(0, kHashLimit);
+    }
+    else {
+        subkey = CNcbiOstrstreamToString(str);
+    }
 }
 
 
@@ -496,8 +532,10 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     if( ids.IsLoaded() ) {
         return true;
     }
-
-    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetBlob_idsSubkey(sel));
+    
+    string subkey, true_subkey;
+    GetBlob_idsSubkey(sel, subkey, true_subkey);
+    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, subkey);
     if ( str.Found() ) {
         if ( str.ParseInt4() != IDS_MAGIC ) {
             return false;
@@ -516,6 +554,10 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                 info.AddNamedAnnotName(str.ParseString());
             }
             ids.AddBlob_id(id, info);
+        }
+        if ( !true_subkey.empty() && str.ParseString() != true_subkey ) {
+            ids->clear();
+            return false;
         }
         ids.SetLoaded();
         if ( !str.Done() ) {

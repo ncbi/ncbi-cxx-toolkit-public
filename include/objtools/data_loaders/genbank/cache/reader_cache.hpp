@@ -67,7 +67,9 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
 
     /// Id cache subkeys:
     // Seq-id/gi -> blob_id & contents info
-    static string GetBlob_idsSubkey(const SAnnotSelector* sel);
+    static void GetBlob_idsSubkey(const SAnnotSelector* sel,
+                                  string& subkey,
+                                  string& true_subkey);
     // Seq-id -> gi (1 int)
     static const char* GetGiSubkey(void);
     // Seq-id -> acc (string: fasta)
