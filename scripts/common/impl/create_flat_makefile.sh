@@ -17,9 +17,6 @@ defptbpath="$NCBI/c++.metastable/Release/bin/"
 # release path to project_tree_builder
 relptbpath="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
 
-# required version of PTB
-ptbreqver="1.8.1"
-
 # dependencies
 ptbdep="corelib util util/regexp util/xregexp build-system/project_tree_builder"
 #-----------------------------------------------------------------------------
@@ -150,6 +147,7 @@ fi
 
 #-----------------------------------------------------------------------------
 # get required version of PTB
+ptbreqver=""
 ptbver="$srcdir/src/build-system/ptb_version.txt"
 if test -r "$ptbver"; then
   ptbreqver=`cat "$ptbver" | sed -e 's/ //'`
