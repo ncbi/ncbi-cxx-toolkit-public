@@ -56,6 +56,9 @@
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_GFF
 
+#define GFF3_USE_ANCHOR_BUG
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
@@ -235,7 +238,8 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                                      bool first,
                                      bool width_inverted)
 {
-cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
+    // cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
+
     // Frame, as a value of 0, 1, 2, or -1 for undefined.
     // This is NOT the same frame as the frame in ASN.1!
     int frame(-1);
@@ -295,8 +299,13 @@ cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
     }
 
     alnmap.SetAnchor(ref_row);
-    TSeqPos ref_width = ds.GetWidths()[ref_row];
+    TSeqPos ref_width = (ref_row < ds.GetWidths().size()) ?
+                                ds.GetWidths()[ref_row] : 1;
+#ifdef GFF3_USE_ANCHOR_BUG
     TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
+#else
+    TSeqPos ref_start(0);
+#endif
     int     ref_sign  = alnmap.StrandSign(ref_row);
     for (TNumrow tgt_row = 0;  tgt_row < alnmap.GetNumRows();  ++tgt_row) {
         if (tgt_row == ref_row) {
@@ -305,7 +314,8 @@ cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
         CNcbiOstrstream cigar;
         char            last_type = 0;
         TSeqPos         last_count = 0;
-        TSeqPos         tgt_width = ds.GetWidths()[tgt_row];
+        TSeqPos         tgt_width = (tgt_row < ds.GetWidths().size()) ?
+                                        ds.GetWidths()[tgt_row] : 1;
         int             tgt_sign = alnmap.StrandSign(tgt_row);
         TRange          ref_range, tgt_range;
         bool            trivial = true;
@@ -342,6 +352,7 @@ cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
         // (3, 1) for prot-nuc, and (3, 3) for prot-prot.
         TSeqPos         width = max(ref_width, tgt_width);
 
+#ifdef GFF3_USE_ANCHOR_BUG
         CRef<CAlnMap::CAlnChunkVec> chunks
             = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
                                   CAlnMap::fAddUnalignedChunks);
@@ -349,13 +360,28 @@ cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
             CConstRef<CAlnMap::CAlnChunk> chunk     = (*chunks)[i0];
             TRange                        ref_piece = chunk->GetAlnRange();
             TRange                        tgt_piece = chunk->GetRange();
+            CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
+#else
+        for (TNumchunk i0 = 0;  i0 < alnmap.GetNumSegs();  ++i0) {
+            TRange                        ref_piece = alnmap.GetRange(ref_row, i0);
+            TRange                        tgt_piece = alnmap.GetRange(tgt_row, i0);
+            CAlnMap::TSegTypeFlags        ref_flags = alnmap.GetSegType(ref_row, i0);
+            CAlnMap::TSegTypeFlags        tgt_flags = alnmap.GetSegType(tgt_row, i0);
+#endif
             char                          type;
             TSeqPos                       count;
             TSignedSeqPos                 frameshift = 0;
-            CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
 
+            // cerr << "TARGET PIECE " << tgt_piece.GetFrom()
+            //      << " to " << tgt_piece.GetTo() << endl;
+            // cerr << "REF    PIECE " << ref_piece.GetFrom() << " to " << ref_piece.GetTo()
+            //       << " + " << ref_start << "\n" << endl;
+#ifdef GFF3_USE_ANCHOR_BUG
             if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
-                // See MakeGapString() in:
+#else
+            if (! (ref_flags & CAlnMap::fSeq)) {
+#endif
+            // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
                 //         elif starts[2 * i] == -1:
@@ -380,7 +406,11 @@ cerr << "DENSEG:\n" << MSerial_AsnText << ds << endl;
                 tgt_piece.SetFrom(tgt_piece.GetFrom() / tgt_width);
                 tgt_piece.SetTo  (tgt_piece.GetTo()   / tgt_width);
                 tgt_range += tgt_piece;
+#ifdef GFF3_USE_ANCHOR_BUG
             } else if ( !(flags & CAlnMap::fSeq) ) {
+#else
+            } else if (! (tgt_flags & CAlnMap::fSeq)) {
+#endif
                 // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
