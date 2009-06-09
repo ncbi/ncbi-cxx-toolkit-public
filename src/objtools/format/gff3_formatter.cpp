@@ -56,7 +56,7 @@
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_GFF
 
-#define GFF3_USE_ANCHOR_BUG
+//#define GFF3_USE_ANCHOR_BUG
 
 
 BEGIN_NCBI_SCOPE
@@ -298,10 +298,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         return;
     }
 
-    alnmap.SetAnchor(ref_row);
     TSeqPos ref_width = (ref_row < ds.GetWidths().size()) ?
                                 ds.GetWidths()[ref_row] : 1;
 #ifdef GFF3_USE_ANCHOR_BUG
+    alnmap.SetAnchor(ref_row);
     TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
 #else
     TSeqPos ref_start(0);
@@ -379,7 +379,8 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
 #ifdef GFF3_USE_ANCHOR_BUG
             if ((flags & CAlnMap::fInsert) == CAlnMap::fInsert) {
 #else
-            if (! (ref_flags & CAlnMap::fSeq)) {
+            if (  (tgt_flags & CAlnMap::fSeq)  &&
+                ! (ref_flags & CAlnMap::fSeq)) {
 #endif
             // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
@@ -409,7 +410,8 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
 #ifdef GFF3_USE_ANCHOR_BUG
             } else if ( !(flags & CAlnMap::fSeq) ) {
 #else
-            } else if (! (tgt_flags & CAlnMap::fSeq)) {
+            } else if (! (tgt_flags & CAlnMap::fSeq)  &&
+                         (ref_flags & CAlnMap::fSeq)) {
 #endif
                 // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
@@ -437,7 +439,18 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 ref_piece.SetFrom((ref_piece.GetFrom() + ref_start) / ref_width);
                 ref_piece.SetTo  ((ref_piece.GetTo()   + ref_start) / ref_width);
                 ref_range += ref_piece;
+#ifdef GFF3_USE_ANCHOR_BUG
             } else {
+#else
+            } else if (  (tgt_flags & CAlnMap::fSeq)  &&
+                         (ref_flags & CAlnMap::fSeq)) {
+                // Hanlde case when sequences aligned.
+                // The remaining case is when both don't align at all,
+                // which shouldn't happen in a pairwise alignment. If we
+                // happen to have a multiple alignment, the remaining case
+                // would be one that aligns unrelated sequences, thus has
+                // no affect on the current GFF3 output.
+#endif
                 // See MakeGapString() in:
                 // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
