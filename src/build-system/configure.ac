@@ -3659,8 +3659,6 @@ if test "$with_ftds" != "no" ; then
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    NCBI_RPATHIFY(FTDS_ODBCLIBS, $FTDS_PATH/lib/odbc, [ ]$FTDS_ODBCLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   NCBI_LOCAL_FTDS_OLD(8)
-   NCBI_LOCAL_FTDS_OLD(63)
    NCBI_LOCAL_FTDS(64)
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${with_ftds}_LIB)"

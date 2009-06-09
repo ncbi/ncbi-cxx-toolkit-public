@@ -366,21 +366,6 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
  AC_SUBST($1_LIBS)
 ])
  
-AC_DEFUN(NCBI_LOCAL_FTDS_OLD,
-[d="dbapi/driver/ftds$1/freetds"
-      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
-         test "$with_ftds" = $1  &&  FTDS_PATH="<$d>"
-         FTDS$1[_LIB]="sybdb_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_LIBS]=
-         FTDS$1[_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
-         freetds=freetds
-      elif test -d "$FTDS_PATH" ; then
-         FTDS$1[_LIB]=
-         FTDS$1[_LIBS]=$FTDS_DBLIBS
-         FTDS$1[_INCLUDE]=$FTDS_INCLUDE
-      fi
-])
-
 AC_DEFUN(NCBI_LOCAL_FTDS,
 [d="dbapi/driver/ftds$1/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
