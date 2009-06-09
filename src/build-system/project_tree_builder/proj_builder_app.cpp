@@ -856,6 +856,13 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << "s=$(prefix)$(MARK)" << endl;
     ofs << "sign=rm -f $(prefix)*.$@; touch $(s).$@" << endl;
     ofs << endl;
+    ofs << "top_srcdir=" << m_Root << endl;
+    ofs << "# Non-redundant flags (will be overridden for GNU Make to avoid" << endl;
+    ofs << "# --jobserver-fds=* proliferation)" << endl;
+    ofs << "MFLAGS_NR = $(MFLAGS)" << endl;
+    ofs << "include $(top_srcdir)/src/build-system/Makefile.is_gmake" << endl;
+    ofs << "include $(top_srcdir)/src/build-system/Makefile.meta.$(is_gmake)" << endl;
+    ofs << endl;
 
     ofs << "MINPUT=" << CDirEntry(m_Solution).GetName() << endl << endl;
     ofs << "# Use empty MTARGET to build a project;" << endl;
@@ -878,7 +885,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         ofs << endl << endl;
 
         ofs << "ptb_all :" << endl
-	    << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) ptb_all.real MTARGET=$(MTARGET) MARK=$(MARK)";
+	    << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) ptb_all.real MTARGET=$(MTARGET) MARK=$(MARK)";
         ofs << endl << endl;
         ofs << "ptb_all.real :" << " $(all_projects)";
         ofs << endl << endl;
@@ -898,7 +905,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         ofs << endl << endl;
 
         ofs << "all_libs :" << endl
-	    << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) all_libs.real MTARGET=$(MTARGET) MARK=$(MARK)";
+	    << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) all_libs.real MTARGET=$(MTARGET) MARK=$(MARK)";
         ofs << endl << endl;
         ofs << "all_libs.real :" << " $(all_libraries)";
         ofs << endl << endl;
@@ -983,7 +990,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ofs << target << " : " << rel_path << "$(s)." << target << ".real";
 	    ofs << endl << endl;
 	    ofs << rel_path << "$(s)." << target << ".real" << " :" << endl
-	        << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << ".real" << " MTARGET=$(MTARGET) MARK=$(MARK)";
+	        << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << ".real" << " MTARGET=$(MTARGET) MARK=$(MARK)";
 	    ofs << endl << endl;
 	    ofs << target << ".real" << " :";
 	    ITERATE(list<string>, d, dependencies) {
@@ -994,7 +1001,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 	    if (p->second.m_MakeType == eMakeType_Expendable) {
 	        ofs << "-";
             }
-	    ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS)"
+	    ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS_NR)"
 	        << " APP_PROJ=" << target_app
 		<< " LIB_PROJ=" << target_lib
 		<< " $(MTARGET)" << endl
@@ -1008,7 +1015,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 	    string target(pt->first);
             ofs << ".PHONY : " << target << endl << endl;
             ofs << target << " :" << endl
-	        << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << ".real MTARGET=$(MTARGET) MARK=$(MARK)";
+	        << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << ".real MTARGET=$(MTARGET) MARK=$(MARK)";
             ofs << endl << endl;
             ofs << target << ".real :";
             if (!pt->second.empty()) {
