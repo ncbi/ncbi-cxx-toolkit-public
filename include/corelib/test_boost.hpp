@@ -58,6 +58,8 @@
 
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/framework.hpp>
+#include <boost/test/execution_monitor.hpp>
 
 #include <boost/preprocessor/tuple/rem.hpp>
 #include <boost/preprocessor/repeat.hpp>
@@ -113,7 +115,17 @@ struct test_name : public F { void test_method(); };                    \
 static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
 {                                                                       \
     test_name t;                                                        \
-    t.test_method();                                                    \
+    try {                                                               \
+        t.test_method();                                                \
+    }                                                                   \
+    catch (CException& ex) {                                            \
+        ERR_POST("Uncaught exception in \""                             \
+                 << boost::unit_test                                    \
+                         ::framework::current_test_case().p_name        \
+                 << "\"" << ex);                                        \
+        throw boost::execution_exception(                               \
+                boost::execution_exception::cpp_exception_error, "");   \
+    }                                                                   \
 }                                                                       \
                                                                         \
 struct BOOST_AUTO_TC_UNIQUE_ID( test_name ) {};                         \
