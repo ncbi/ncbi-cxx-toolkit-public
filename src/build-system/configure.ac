@@ -5386,12 +5386,21 @@ if test -d "$SQLITE3_PATH"; then
    NCBI_FIX_DIR(SQLITE3_PATH)
 fi
 if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
-   NCBI_RPATHIFY(SQLITE3_LIBPATH,
-       $SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib)
+   SQLITE3_LIBDIR=$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib
+elif test -d $SQLITE3_PATH/lib${bit64_sfx}; then
+   SQLITE3_LIBDIR=$SQLITE3_PATH/lib${bit64_sfx}
+else
+   SQLITE3_LIBDIR=$SQLITE3_PATH/lib
 fi
+NCBI_RPATHIFY(SQLITE3_LIBPATH, $SQLITE3_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
  AC_LANG_PROGRAM([#include <sqlite3.h>],
     [sqlite3* db; int status = sqlite3_open("foo.db", &db);]))
+if test -n "$SQLITE3_LIBS" -a -f "$SQLITE3_LIBDIR/libsqlite3-static.a"; then
+   SQLITE3_STATIC_LIBS="-L$SQLITE3_LIBDIR -lsqlite3-static"
+else
+   SQLITE3_STATIC_LIBS=$SQLITE3_LIBS
+fi
 
 
 ### OEChem
@@ -6143,6 +6152,7 @@ AC_SUBST(XERCES_STATIC_LIBS)
 AC_SUBST(XALAN_INCLUDE)
 AC_SUBST(XALAN_LIBS)
 AC_SUBST(XALAN_STATIC_LIBS)
+AC_SUBST(SQLITE3_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
