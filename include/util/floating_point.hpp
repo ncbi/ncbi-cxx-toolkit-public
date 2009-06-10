@@ -55,22 +55,6 @@ enum EFloatingPointTolerance {
 };
 
 
-/// Exception class for g_FloatingPoint_Compare
-class NCBI_XNCBI_EXPORT  CFloatingPointCompareException : public CException
-{
-public:
-    enum EErrCode {
-        eOperationError,    ///< Unknown operation requested
-        eToleranceError     ///< Unknown tolerance requested
-    };
-
-    /// Translate from the error code value to its string representation
-    virtual const char* GetErrCodeString(void) const;
-
-    NCBI_EXCEPTION_DEFAULT(CFloatingPointCompareException, CException);
-};
-
-
 /// Floating point comparisons
 /// It uses boost implementation of the comparison so the details are available
 /// here:
@@ -88,8 +72,6 @@ public:
 ///   Tolerance value
 /// @return
 ///   Evaluation of the required operation
-/// @exception
-///   Throws CFloatingPointCompareException in case of problems
 template< typename TFloatingPoint>
 bool g_FloatingPoint_Compare(TFloatingPoint          lhs,
                              EFloatingPointOperation operation,
@@ -111,9 +93,7 @@ bool g_FloatingPoint_Compare(TFloatingPoint          lhs,
                    !boost_fp_impl::check_is_close(lhs, rhs,
                             boost_fp_impl::fraction_tolerance(threshold));
         default:
-            NCBI_THROW(CFloatingPointCompareException, eOperationError,
-                       "g_FloatingPoint_Compare(): unknown operation "
-                       "requested for fraction tolerance");
+            _TROUBLE;   // Unknown operation
         }
     } else if (tolerance == eFP_WithPercent) {
         switch (operation) {
@@ -129,13 +109,12 @@ bool g_FloatingPoint_Compare(TFloatingPoint          lhs,
                    !boost_fp_impl::check_is_close(lhs, rhs,
                             boost_fp_impl::percent_tolerance(threshold));
         default:
-            NCBI_THROW(CFloatingPointCompareException, eOperationError,
-                       "g_FloatingPoint_Compare(): unknown operation "
-                       "requested for percent tolerance");
+            _TROUBLE;   // Unknown operation
         }
+    } else {
+        _TROUBLE;       // Unknown tolerance
     }
-    NCBI_THROW(CFloatingPointCompareException, eToleranceError,
-               "g_FloatingPoint_Compare(): unknown tolerance requested");
+    return false;
 }
 
 END_NCBI_SCOPE
