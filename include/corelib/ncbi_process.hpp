@@ -377,8 +377,20 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CPIDGuard --
+/// CPIDGuard -- 
 ///
+/// Define process guard.
+///
+/// If file already exists, CPIDGuard try to check that the process with PID
+/// specified in the file is running or not. If guarded process is still
+/// running, CPIDGuard throw an exception. Otherwise, it create file with
+/// current PID. CPIDGuard use reference counters in the PID file.
+/// This means that some CPIDGuard objects can be created for the same PID
+/// and file name.
+///
+/// NOTE: This method to protect PID file works only within one process.
+///       CPIDGuard know nothing about PID file modification or deletion 
+///       by other processes. Be aware.
 
 class NCBI_XNCBI_EXPORT CPIDGuard
 {
