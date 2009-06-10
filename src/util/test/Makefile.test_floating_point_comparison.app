@@ -8,4 +8,4 @@ APP = test_floating_point_comparison
 SRC = test_floating_point_comparison
 LIB = xutil xncbi
 
-CHECK_CMD = test_floating_point_comparison
+CHECK_CMD =
