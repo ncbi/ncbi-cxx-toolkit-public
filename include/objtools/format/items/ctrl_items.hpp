@@ -44,7 +44,8 @@ BEGIN_SCOPE(objects)
 
 
 class CBioseqContext;
-
+class CSeq_entry;
+class CSeq_entry_Handle;
 
 class NCBI_FORMAT_EXPORT CCtrlItem : public CFlatItem
 {
@@ -62,10 +63,16 @@ public:
 class NCBI_FORMAT_EXPORT CStartItem : public CCtrlItem
 {
 public:
-    CStartItem(void) {}
+    CStartItem() : CCtrlItem() {};
+    
+    CStartItem(CSeq_entry_Handle);
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.Start(text_os);
     }
+private:
+    void x_SetDate(CSeq_entry_Handle);
+    string m_Date;
+
 };
 
 
