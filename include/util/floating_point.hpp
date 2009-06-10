@@ -56,6 +56,7 @@ enum EFloatingPointTolerance {
 
 
 /// Floating point comparisons
+///
 /// It uses boost implementation of the comparison so the details are available
 /// here:
 /// http://www.boost.org/doc/libs/1_39_0/libs/test/doc/html/utf/testing-tools/floating_point_comparison.html
