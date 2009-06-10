@@ -401,11 +401,19 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 }
 
 
+NCBI_PARAM_DECL(bool, CGI, Merge_Log_Lines);
+NCBI_PARAM_DEF_EX(bool, CGI, Merge_Log_Lines, true, eParam_NoThread,
+                  CGI_MERGE_LOG_LINES);
+static NCBI_PARAM_TYPE(CGI, Merge_Log_Lines) s_MergeLogLines;
+
+
 void CCgiApplication::Init(void)
 {
-    // Convert multi-line diagnostic messages into one-line ones by default.
-    SetDiagPostFlag(eDPF_PreMergeLines);
-    SetDiagPostFlag(eDPF_MergeLines);
+    if ( s_MergeLogLines.Get() ) {
+        // Convert multi-line diagnostic messages into one-line ones by default.
+        SetDiagPostFlag(eDPF_PreMergeLines);
+        SetDiagPostFlag(eDPF_MergeLines);
+    }
 
     CParent::Init();
 
