@@ -10,7 +10,8 @@ APP_PROJ = test_utf8 test_rangemap test_resize_iter \
            test_cache_mt test_id_mux test_compress_mt test_thread_pool \
            test_uttp test_line_reader test_queue_mt test_thread_pool_old \
            test_scheduler test_value_convert example_value_convert \
-           formatguess_unit_test test_floating_point_comparison
+           formatguess_unit_test test_floating_point_comparison \
+           test_get_console_password
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
