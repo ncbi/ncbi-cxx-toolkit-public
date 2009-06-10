@@ -396,7 +396,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_5prime_stop_feature
     if (FindUpstreamStop(stops[frame],starts[frame][0],stop_5prime) && stop_5prime>=0) {
         CRef<CSeq_feat> stop_5prime_feature(new CSeq_feat);
         stop_5prime_feature->SetData().SetImp().SetKey("misc_feature");
-        stop_5prime_feature->SetData().SetImp().SetDescr("5' stop");
+        stop_5prime_feature->SetComment("upstream in-frame stop codon");
         CRef<CSeq_loc> stop_5prime_location(new CSeq_loc(*md.mrna_sid, stop_5prime, stop_5prime+2, eNa_strand_plus));
         stop_5prime_feature->SetLocation(*stop_5prime_location);
         return stop_5prime_feature;
