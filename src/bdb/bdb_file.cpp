@@ -37,6 +37,8 @@
 
 #include <db.h>
 
+#include <vector>
+
 #ifdef verify
 #undef verify
 #endif
@@ -388,6 +390,91 @@ unsigned int CBDB_RawFile::Truncate()
                              0);
 
     BDB_CHECK(ret, FileName().c_str());
+    return count;
+}
+
+class DBT_ptr {
+public:
+    DBT_ptr() {
+        memset(&m_DBT, 0, sizeof(m_DBT));
+    }
+    ~DBT_ptr() {
+        if (m_DBT.data) free(m_DBT.data);
+        m_DBT.size = 0;
+        m_DBT.data = 0;
+    }
+    DBT_ptr& operator=(const DBT& dbt) {
+        if (m_DBT.data) free(m_DBT.data);
+        m_DBT.size = dbt.size;
+        m_DBT.data = malloc(dbt.size);
+        memcpy(m_DBT.data, dbt.data, dbt.size);
+        return *this;
+    }
+    DBT* operator*() {
+        return &m_DBT;
+    }
+private:
+    DBT m_DBT;
+};
+
+
+unsigned int CBDB_RawFile::SafeTruncate()
+{
+    _ASSERT(m_DB != 0);
+    u_int32_t count = 0;
+
+    SetTransaction(NULL);
+    bool done = false;
+    const int k_bulk_init = 1000;
+    int bulk = k_bulk_init;
+    int bulk_age = 0;
+
+    vector<DBT_ptr> keys;
+    keys.resize(k_bulk_init);
+    while (!done) {
+        int nrec, ret;
+        DBC* dbcp = 0;
+        DBT key, data;
+        ret = m_DB->cursor(m_DB, NULL, &dbcp, 0);
+        BDB_CHECK(ret, FileName().c_str());
+        memset(&key, 0, sizeof(key));
+        memset(&data, 0, sizeof(data));
+        for (nrec = 0; nrec < bulk  &&  (ret = dbcp->c_get(dbcp, &key, &data, DB_NEXT)) == 0;
+            ++nrec) {
+            keys[nrec] = key;
+        }
+        if (dbcp) dbcp->c_close(dbcp);
+        dbcp = 0;
+        if (ret != DB_NOTFOUND) {
+            BDB_CHECK(ret, FileName().c_str());
+        }
+        if (!nrec) break;
+        DB_TXN* txn = m_Env->CreateTxn();
+        try {
+            for (int n = 0; n < nrec; ++n) {
+                ret = m_DB->del(m_DB, txn, *keys[n], 0);
+                if (ret) break;
+            }
+            if (ret == 0) txn->commit(txn, 0);
+            else {
+                txn->abort(txn);
+                BDB_CHECK(ret, FileName().c_str());
+            }
+            done = nrec < bulk;
+            count += nrec;
+            if (! done  &&  bulk < k_bulk_init  &&  ++bulk_age > 3) {
+                bulk *=2;
+                if (bulk > k_bulk_init) bulk = k_bulk_init;
+                bulk_age = 0;
+            }
+        } catch (CBDB_ErrnoException& ex) {
+            if (! ex.IsNoMem()) throw;
+            bulk /= 2;
+            if (bulk == 0) throw;
+            bulk_age = 0;
+            done = false;
+        }
+    }
     return count;
 }
 

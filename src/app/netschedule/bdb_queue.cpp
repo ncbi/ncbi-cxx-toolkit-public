@@ -1018,13 +1018,6 @@ string CQueue::GetParamValue(unsigned n) const
 }
 
 
-bool CQueue::IsExpired(void)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->IsExpired();
-}
-
-
 #define NS_PRINT_TIME(msg, t) \
     do \
     { time_t tt = t; \
@@ -2617,14 +2610,6 @@ bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
 }
 
 
-unsigned 
-CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->CheckJobsExpiry(batch_size, status);
-}
-
-
 void CQueue::Truncate(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
@@ -2729,13 +2714,6 @@ void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 
     CRef<SLockedQueue> q(x_GetLQueue());
     q->NotifyListeners(unconditional, aff_id);
-}
-
-
-void CQueue::CheckExecutionTimeout()
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->CheckExecutionTimeout();
 }
 
 

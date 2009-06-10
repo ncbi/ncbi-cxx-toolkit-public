@@ -163,6 +163,9 @@ public:
     void Remove(const string& filename, const string& database = kEmptyStr);
     /// Empty the database. Return number of records removed.
     unsigned int Truncate();
+    /// Workaround for truncate of large databases. Executes out of transaction,
+    /// and as such cannot be rolled back/
+    unsigned int SafeTruncate();
     /// Rename a database.  NOTE: This cannot be called on an opened file.
     void Rename(const string& fname,
                 const string& old_name,

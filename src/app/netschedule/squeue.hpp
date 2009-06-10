@@ -67,7 +67,6 @@ struct SQueueDbBlock
 {
     void Open(CBDB_Env& env, const string& path, int pos);
     void Close();
-    void ResetTransaction();
     void Truncate();
 
     bool                  allocated; // Am I allocated?
@@ -412,6 +411,9 @@ public:
     void x_CheckExecutionTimeout(unsigned queue_run_timeout,
                                  unsigned job_id, time_t curr_time);
 
+    /// Check jobs for expiry and if expired, delete up to batch_size jobs
+    /// @return
+    ///    Number of deleted jobs
     unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
 
     unsigned DeleteBatch(unsigned batch_size);
@@ -678,6 +680,12 @@ public:
                     ETransSync            tsync = eEnvDefault,
                     EKeepFileAssociation  assoc = eNoAssociation)
         : CBDB_Transaction(queue->GetEnv(), tsync, assoc)
+    {
+    }
+    CNS_Transaction(CBDB_RawFile&         dbf,
+                    ETransSync            tsync = eEnvDefault,
+                    EKeepFileAssociation  assoc = eNoAssociation)
+        : CBDB_Transaction(*dbf.GetEnv(), tsync, assoc)
     {
     }
 };

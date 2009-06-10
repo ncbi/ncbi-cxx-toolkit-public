@@ -107,29 +107,17 @@ void SQueueDbBlock::Close()
 }
 
 
-void SQueueDbBlock::ResetTransaction()
-{
-    tag_db.SetTransaction(NULL);
-    aff_dict_token_idx.SetTransaction(NULL);
-    aff_dict_db.SetTransaction(NULL);
-    affinity_idx.SetTransaction(NULL);
-    deleted_jobs_db.SetTransaction(NULL);
-    runs_db.SetTransaction(NULL);
-    job_info_db.SetTransaction(NULL);
-    job_db.SetTransaction(NULL);
-}
-
-
 void SQueueDbBlock::Truncate()
 {
-    tag_db.Truncate();
-    aff_dict_token_idx.Truncate();
-    aff_dict_db.Truncate();
-    affinity_idx.Truncate();
-    deleted_jobs_db.Truncate();
-    runs_db.Truncate();
-    job_info_db.Truncate();
-    job_db.Truncate();
+    tag_db.SafeTruncate();
+    aff_dict_token_idx.SafeTruncate();
+    aff_dict_db.SafeTruncate();
+    affinity_idx.SafeTruncate();
+    deleted_jobs_db.SafeTruncate();
+    runs_db.SafeTruncate();
+    job_info_db.SafeTruncate();
+    job_db.SafeTruncate();
+
     CBDB_Env& env = *job_db.GetEnv();
     env.ForceTransactionCheckpoint();
     env.CleanLog();
@@ -348,10 +336,8 @@ void SLockedQueue::Detach()
 {
     m_AffinityDict.Detach();
     if (!m_QueueDbBlock) return;
-    if (delete_database) {
-        m_QueueDbBlock->ResetTransaction();
+    if (delete_database)
         m_QueueDbBlock->Truncate();
-    }
     delete_database = false;
     // We can do this here unprotected by mutex, because only other place
     // accessing 'allocated' flag simultaneously is in

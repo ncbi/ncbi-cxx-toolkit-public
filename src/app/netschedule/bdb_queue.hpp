@@ -110,9 +110,6 @@ public:
            CRef<SLockedQueue> queue,
            unsigned           client_host_addr);
 
-    /// Is the queue empty long enough to be deleted?
-    bool IsExpired(void);
-
     unsigned Submit(CJob& job);
 
     /// Submit job batch
@@ -178,11 +175,6 @@ public:
                             unsigned         job_id,
                             time_t           tm);
 
-    /// Check jobs for expiry and if expired, delete up to batch_size jobs
-    /// @return
-    ///    Number of deleted jobs
-    unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
-
     /// Remove all jobs
     void Truncate(void);
 
@@ -211,10 +203,6 @@ public:
     /// UDP notification to all listeners
     void NotifyListeners(bool unconditional=false,
                          unsigned aff_id=0);
-
-    /// Check execution timeout. Now checks reading timeout as well.
-    /// All jobs failed to execute, go back to pending
-    void CheckExecutionTimeout(void);
 
     unsigned CountStatus(TJobStatus) const;
 
