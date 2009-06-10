@@ -42,7 +42,19 @@ Added generation of Products group on Xcode.
 Added support of WATCHERS macro
 Merge Compiler.PreprocessorDefinitions defined in project and meta-msvc files.
 
-Mat 06, 2009
+May 06, 2009
 version 1.8.1
 Corrected definition of NCBI_SIGNATURE on Xcode 
 Modified special handling of LibChoices on Unix
+
+June 10, 2009
+Modified handling of ComponentChoices on Windows.
+Added processing of WSDL_PROJ macro in makefiles.
+Made it find Makefile.*.in in 'src' tree
+and take into account macros defined there;
+also, find ncbiconf.*.h and include them into generated
+ncbiconf_msvc_site.h.
+Modified generation of makefile on Unix to avoid multipication
+of 'jobserver-fds' argument in parallel builds.
+
+
