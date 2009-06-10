@@ -128,11 +128,6 @@ protected:
     // sequence 
     void x_GatherSequence  (void) const;
     
-
-private:
-    CFlatGatherer(const CFlatGatherer&);
-    CFlatGatherer& operator=(const CFlatGatherer&);
-
     // types
     typedef vector< CRef<CCommentItem> > TCommentVec;
 
@@ -141,6 +136,11 @@ private:
     mutable CRef<CFlatFileContext>   m_Context;
     mutable CRef<CBioseqContext>     m_Current;
     mutable TCommentVec              m_Comments;
+
+private:
+    CFlatGatherer(const CFlatGatherer&);
+    CFlatGatherer& operator=(const CFlatGatherer&);
+
 };
 
 

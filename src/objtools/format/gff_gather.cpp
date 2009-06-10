@@ -52,6 +52,22 @@ CGFFGatherer::CGFFGatherer(void)
 }
 
 
+void CGFFGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
+{
+    const CSeq_entry_Handle& seh = ctx.GetEntry();
+    
+    m_ItemOS.Reset(&os);
+    m_Context.Reset(&ctx);
+
+    CConstRef<IFlatItem> item;
+    item.Reset( new CStartItem(seh) );
+    os << item;
+    x_GatherSeqEntry(ctx.GetEntry());
+    item.Reset( new CEndItem() );
+    os << item;
+}
+
+
 void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
     CConstRef<IFlatItem> item;

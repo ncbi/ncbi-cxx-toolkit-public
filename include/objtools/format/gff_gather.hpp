@@ -48,6 +48,8 @@ class NCBI_FORMAT_EXPORT CGFFGatherer : public CFlatGatherer
 public:
     CGFFGatherer(void);
 
+    virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const;
+
     virtual void x_DoSingleSection(CBioseqContext& ctx) const;
 
 private:
