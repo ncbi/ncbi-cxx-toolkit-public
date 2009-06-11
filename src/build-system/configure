@@ -28548,6 +28548,8 @@ ncbi_rp_L_flags=
     done
     SQLITE3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
+{ echo "$as_me:$LINENO: SQLite3's asynchronous VFS extension to be required." >&5
+echo "$as_me: SQLite3's asynchronous VFS extension to be required." >&6;}
 if test "$with_sqlite3" != "no"; then
     case "$with_sqlite3" in
        yes | "" ) ;;
@@ -28622,11 +28624,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <sqlite3.h>
+#include <sqlite3async.h>
 int
 main ()
 {
-sqlite3* db; int status = sqlite3_open("foo.db", &db);
+int status = sqlite3async_initialize("parent-VFS", 1);
   ;
   return 0;
 }
