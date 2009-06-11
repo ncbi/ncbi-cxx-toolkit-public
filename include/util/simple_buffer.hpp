@@ -200,12 +200,10 @@ public:
 
     const value_type* data() const
     {
-        _ASSERT(m_Buffer);
         return m_Buffer;
     }
     value_type* data()
     {
-        _ASSERT(m_Buffer);
         return m_Buffer;
     }
 
