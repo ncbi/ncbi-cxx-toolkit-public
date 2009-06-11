@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("XMLWrapp" project)
+#################################
+
+LIB_PROJ = sqlitewrapp
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
