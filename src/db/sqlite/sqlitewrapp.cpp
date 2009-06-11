@@ -35,7 +35,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <sqlitewrapp.hpp>
+#include <db/sqlite/sqlitewrapp.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -80,7 +80,7 @@ const int kSQLITE_DefPageSize = 32768;
 ///   Additional explanation of the error
 #define SQLITE_LOG_ERROR(err_subcode, handle, msg)               \
     ERR_POST_X(err_subcode,                                      \
-               SQLITE_ERRMSG_STRM(handle, msg));
+               SQLITE_ERRMSG_STRM(handle, msg))
 
 
 /// Background thread for executing all asynchronous writes to database
@@ -273,7 +273,41 @@ CSQLITE_Global::Finalize(void)
     _VERIFY(sqlite3_shutdown() == SQLITE_OK);
 }
 
+void
+CSQLITE_Global::Initialize(void)
+{
+    _VERIFY(sqlite3_enable_shared_cache(true)          == SQLITE_OK);
+    _VERIFY(sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK);
+    _VERIFY(sqlite3_initialize()                       == SQLITE_OK);
+    _VERIFY(sqlite3async_initialize(NULL, 0)           == SQLITE_OK);
+    _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_NEVER)
+                                                       == SQLITE_OK);
+}
 
+void
+CSQLITE_Global::SetCustomPageCache(sqlite3_pcache_methods* methods)
+{
+    if (sqlite3_config(SQLITE_CONFIG_PCACHE, methods) != SQLITE_OK) {
+        ERR_POST_X(6, "Custom page cache is not set because of an error");
+    }
+}
+
+void
+CSQLITE_Global::SetAsyncWritesFileLocking(bool lock_files)
+{
+    if (sqlite3async_control(SQLITEASYNC_LOCKFILES, int(lock_files))
+        != SQLITE_OK)
+    {
+        ERR_POST_X(7, "File locking for asynchronous writing mode is not set "
+                      "because of an error");
+    }
+}
+
+
+
+CSQLITE_HandleFactory::CSQLITE_HandleFactory(CSQLITE_Connection* conn)
+    : m_Conn(conn)
+{}
 
 sqlite3*
 CSQLITE_HandleFactory::CreateObject(void)
@@ -337,6 +371,25 @@ CSQLITE_HandleFactory::DeleteObject(sqlite3* handle)
 }
 
 
+
+void
+CSQLITE_Connection::x_CheckFlagsValidity(TOperationFlags flags,
+                                         EOperationFlags mask)
+{
+    TOperationFlags fls = flags & mask;
+    if (fls & (fls - 1)) {
+        NCBI_THROW(CSQLITE_Exception, eWrongFlags,
+                   "Incorrect flags in CSQLITE_Connection: 0x"
+                   + NStr::IntToString(flags, 0, 16));
+    }
+}
+
+inline void
+CSQLITE_Connection::x_ExecuteSql(sqlite3* handle, CTempString sql)
+{
+    CSQLITE_Statement stmt(handle, sql);
+    stmt.Execute();
+}
 
 CSQLITE_Connection::CSQLITE_Connection(CTempString     file_name,
                                        TOperationFlags flags/*=eDefaultFlags*/)
@@ -425,6 +478,18 @@ CSQLITE_Connection::SetupNewConnection(sqlite3* handle)
         // Evidently this will throw an exception
         x_CheckFlagsValidity(m_Flags, eAllSync);
     }
+}
+
+void
+CSQLITE_Connection::SetFlags(TOperationFlags flags)
+{
+    if ((flags & eAllVacuum) != (m_Flags & eAllVacuum)) {
+        NCBI_THROW(CSQLITE_Exception, eWrongFlags,
+                   "Cannot change vacuuming flags after database creation");
+    }
+
+    m_Flags = flags;
+    m_HandlePool.Clear();
 }
 
 CSQLITE_Statement*
@@ -661,6 +726,43 @@ typedef CGuard<CSQLITE_Blob,
     SQLITE_SAFE_CALL((blob_call), m_ConnHandle, ex_type,          \
                      err_msg << " " << m_Table << "." << m_Column \
                      << " where rowid = " << m_Rowid)
+
+
+inline void
+CSQLITE_Blob::x_Init(void)
+{
+    m_ConnHandle = NULL;
+    m_BlobHandle = NULL;
+    m_Size = 0;
+    m_Position = 0;
+}
+
+CSQLITE_Blob::CSQLITE_Blob(CSQLITE_Connection* conn,
+                           CTempString         table,
+                           CTempString         column,
+                           Int8                rowid)
+    : m_Conn(conn),
+      m_Database("main"),
+      m_Table(table),
+      m_Column(column),
+      m_Rowid(rowid)
+{
+    x_Init();
+}
+
+CSQLITE_Blob::CSQLITE_Blob(CSQLITE_Connection* conn,
+                           CTempString         db_name,
+                           CTempString         table,
+                           CTempString         column,
+                           Int8                rowid)
+    : m_Conn(conn),
+      m_Database(db_name),
+      m_Table(table),
+      m_Column(column),
+      m_Rowid(rowid)
+{
+    x_Init();
+}
 
 void
 CSQLITE_Blob::x_OpenBlob(bool readwrite /* = false */)

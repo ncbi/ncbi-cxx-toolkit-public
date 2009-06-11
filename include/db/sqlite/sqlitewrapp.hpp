@@ -58,32 +58,6 @@ class CSQLITE_Blob;
 NCBI_DEFINE_ERRCODE_X(DB_SqliteWrapp, 2001,  7);
 
 
-/// Exception thrown from all SQLite-related objects and functions
-class CSQLITE_Exception : public CException
-{
-public:
-    enum EErrCode {
-        eUnknown,       ///< Unknown error
-        eWrongFlags,    ///< Incorrect set of flags in connection constructor
-        eDBOpen,        ///< Error during database opening
-        eStmtPrepare,   ///< Error preparing statement
-        eStmtFinalize,  ///< Error finalizing statement
-        eStmtBind,      ///< Error binding statement parameters
-        eStmtStep,      ///< Error stepping through the statement
-        eStmtReset,     ///< Error reseting statement
-        eBlobOpen,      ///< Error opening blob object
-        eBlobClose,     ///< Error closing blob object
-        eBlobRead,      ///< Error reading directly from blob
-        eBlobWrite,     ///< Error writing directly to blob
-        eConstraint,    ///< Constraint violation during statement execution
-        eDeadLock       ///< SQLite detected possible deadlock between
-                        ///< different threads
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CSQLITE_Exception, CException);
-};
-
-
 /// Utility class for some global-purpose functions tuning SQLite as a whole
 /// as opposed to tuning connection-by-connection.
 class CSQLITE_Global
@@ -96,10 +70,12 @@ public:
     /// Method can be called only before SQLite is initialized with
     /// Initialize() method.
     static void SetCustomPageCache(sqlite3_pcache_methods* methods);
+
     /// Initialization of SQLite and tuning some default parameters.
     /// For these SQLite wrappers to work properly this method should be
     /// called before any work with other classes.
     static void Initialize(void);
+
     /// Setup the option for asynchronous file system to do the actual locking
     /// of database files on disk. If lock_files is TRUE then files will be
     /// actually locked on hard disk, if it is FALSE files will not be locked
@@ -107,9 +83,11 @@ public:
     /// writing flag set will be maintained only inside current process.
     /// Method should be called only when there's no connections opened.
     static void SetAsyncWritesFileLocking(bool lock_files);
+
     /// Launch background thread doing all asynchronous writes to databases.
     /// Method is no-op if background thread has already launched.
     static void RunAsyncWritesThread(void);
+
     /// Finish all SQLite operations. Method should be called at the end of
     /// application execution. After it has been called any further attempts
     /// to use wrapper classes will likely cause application crash.
@@ -128,8 +106,10 @@ class CSQLITE_HandleFactory
 {
 public:
     CSQLITE_HandleFactory(CSQLITE_Connection* conn);
+
     /// Create new database handle
     sqlite3* CreateObject(void);
+
     /// Destroy database handle
     void DeleteObject(sqlite3* handle);
 
@@ -249,8 +229,10 @@ public:
 
     /// Get database file name for the connection
     const string&   GetFileName(void) const;
+
     /// Get flags controlling database connection operation
     TOperationFlags GetFlags   (void) const;
+
     /// Change flags controlling database connection operation.
     /// NOTE: Vacuuming flags cannot be changed here. New flags will be
     ///       applied only to newly created low-level SQLite connections.
@@ -260,16 +242,20 @@ public:
     ///       mandatory - you will get memory and other resources leak
     ///       otherwise.
     void SetFlags(TOperationFlags flags);
+
     /// Set page size for the database (in bytes). Setting has any value only
     /// if database is empty (has no tables) and no statements are created
     /// yet. Page size should be power of 2 and be less than or equal to
     /// 32768. If page size is not set default value is used.
     void SetPageSize(unsigned int size);
+
     /// Get page size used in the database (in bytes)
     unsigned int GetPageSize(void);
+
     /// Set recommended size of the database cache (number of pages). If value
     /// is not set or set to 0 then default SQLite value is used.
     void SetCacheSize(unsigned int size);
+
     /// Get recommended size of the database cache. If cache size was not set
     /// by SetCacheSize() method then this method returns 0, though actually
     /// SQLite uses some default value.
@@ -280,13 +266,16 @@ public:
     ///
     /// @sa EOperationFlags
     void Vacuum(size_t max_free_size);
+
     /// Create statement for executing manual vacuuming.
     /// Caller is responsible for deleting returned statement object.
     ///
     /// @sa Vacuum
     CSQLITE_Statement* CreateVacuumStmt(size_t max_free_size);
+
     /// Execute sql statement without returning any results.
     void ExecuteSql(CTempString sql);
+
     /// Delete database under this connection. Method makes sure that journal
     /// file is deleted along with database file itself. All CSQLITE_Statement
     /// and CSQLITE_Blob objects on this connection should be deleted before
@@ -340,9 +329,11 @@ public:
     /// Create and prepare statement for given database connection.
     /// If sql is empty nothing is prepared in the constructor.
     CSQLITE_Statement(CSQLITE_Connection* conn, CTempString sql = kEmptyStr);
+
     /// Create and prepare statement for particular low-level connection.
     /// If sql is empty nothing is prepared in the constructor.
     CSQLITE_Statement(sqlite3* conn_handle, CTempString sql = kEmptyStr);
+
     ~CSQLITE_Statement();
 
     /// Change sql text for the object and prepare new statement
@@ -351,38 +342,47 @@ public:
     /// Bind integer value to parameter index.
     /// Parameters' numbers start from 1.
     void Bind          (int index, int          val);
+
     /// Bind unsigned integer value to parameter index.
     /// Parameters' numbers start from 1.
     void Bind          (int index, unsigned int val);
+
     /// Bind 64-bit integer value to parameter index.
     /// Parameters' numbers start from 1.
     void Bind          (int index, Int8         val);
+
     /// Bind unsigned 64-bit integer value to parameter index.
     /// Parameters' numbers start from 1.
     void Bind          (int index, Uint8        val);
+
     /// Bind double value to parameter index.
     /// Parameters' numbers start from 1.
     void Bind          (int index, double       val);
+
     /// Bind text value to parameter index.
     /// Parameters' numbers start from 1. Value of parameter is copied inside
     /// the method so it may disappear after call.
     void Bind          (int index, CTempString  val);
+
     /// Bind text value to parameter index.
     /// Parameters' numbers start from 1. Value of parameter is not copied,
     /// pointer is remembered instead. So given value should exist until
     /// statement is executed.
     void Bind          (int index, const char*  data, size_t size);
+
     /// Bind blob value to parameter index.
     /// Parameters' numbers start from 1. Value of parameter is not copied,
     /// pointer is remembered instead. So given value should exist until
     /// statement is executed.
     void Bind          (int index, const void*  data, size_t size);
+
     /// Bind blob value of given size containing only zeros to parameter
     /// index. Parameters' numbers start from 1.
     void BindZeroedBlob(int index, size_t       size);
 
     /// Execute statement without returning any result
     void Execute(void);
+
     /// Step through results of the statement.
     /// If statement wasn't executed yet it starts executing. If statement
     /// already returned some rows then it moves to the next row. Be aware
@@ -395,6 +395,7 @@ public:
     ///   FALSE if no more rows are available and thus statement finished
     ///   executing and released all locks held.
     bool Step(void);
+
     /// Reset the statement to release all locks and to be ready to execute
     /// again.
     void Reset(void);
@@ -402,6 +403,7 @@ public:
     /// Get number of columns in result set. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     int GetColumnsCount(void) const;
+
     /// Get name of column at index col_ind in result set. The leftmost column
     /// of result set has the index 0. Method should be executed only after
     /// Step() returned TRUE, otherwise returned value is undefined.
@@ -411,19 +413,23 @@ public:
     /// column of result set has index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     int    GetInt   (int col_ind) const;
+
     /// Get 64-bit integer value from column col_ind in current row.
     /// The leftmost column of result set has the index 0. Method should be
     /// executed only after Step() returned TRUE, otherwise returned value is
     /// undefined.
     Int8   GetInt8  (int col_ind) const;
+
     /// Get double value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     double GetDouble(int col_ind) const;
+
     /// Get text value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     string GetString(int col_ind) const;
+
     /// Read blob value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
@@ -444,6 +450,7 @@ public:
     /// statement in the same connection. If last executed statement was not
     /// insert then 0 is returned.
     Int8 GetLastInsertedRowid(void) const;
+
     /// Get number of rows changed during last insert, delete or update
     /// statement. Number does not include rows changed by triggers or by
     /// any other indirect means. If called when no insert, update or delete
@@ -478,11 +485,16 @@ class CSQLITE_StatementLock
 public:
     /// Bind activity control to the given statement
     CSQLITE_StatementLock(CSQLITE_Statement* stmt);
+
     ~CSQLITE_StatementLock(void);
 
-    /// Smart pointer's transformations
+    /// Smart pointer's transformation
     CSQLITE_Statement& operator*  (void);
+
+    /// Smart pointer's transformation
     CSQLITE_Statement* operator-> (void);
+
+    /// Smart pointer's transformation
     operator CSQLITE_Statement*   (void);
 
 private:
@@ -521,6 +533,7 @@ public:
                  CTempString         table,
                  CTempString         column,
                  Int8                rowid);
+
     /// Create object reading and writing blob
     /// Identified row with blob should exist in database, exception is
     /// thrown otherwise.
@@ -540,14 +553,18 @@ public:
                  CTempString         table,
                  CTempString         column,
                  Int8                rowid);
+
     ~CSQLITE_Blob(void);
 
     /// Set current position inside the blob to desired value
     void   ResetPosition(size_t position = 0);
+
     /// Get current position inside the blob
     size_t GetPosition  (void);
+
     /// Get size of the blob
     size_t GetSize(void);
+
     /// Read from blob at current position
     ///
     /// @param buffer
@@ -558,6 +575,7 @@ public:
     ///   Number of bytes read from blob. If current position is beyond end
     ///   of the blob then 0 is returned and buffer is unchanged.
     size_t Read   (void*       buffer, size_t size);
+
     /// Write to blob at current position
     ///
     /// @param data
@@ -619,40 +637,36 @@ private:
 };
 
 
-
-inline void
-CSQLITE_Global::Initialize(void)
+/// Exception thrown from all SQLite-related objects and functions
+class CSQLITE_Exception : public CException
 {
-    _VERIFY(sqlite3_enable_shared_cache(true)          == SQLITE_OK);
-    _VERIFY(sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK);
-    _VERIFY(sqlite3_initialize()                       == SQLITE_OK);
-    _VERIFY(sqlite3async_initialize(NULL, 0)           == SQLITE_OK);
-    _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_NEVER)
-                                                       == SQLITE_OK);
-}
-
-inline void
-CSQLITE_Global::SetCustomPageCache(sqlite3_pcache_methods* methods)
-{
-    if (sqlite3_config(SQLITE_CONFIG_PCACHE, methods) != SQLITE_OK) {
-        ERR_POST_XX(Sqlite_Objs, 6,
-                    "Custom page cache is not set because of an error");
-    }
-}
-
-inline void
-CSQLITE_Global::SetAsyncWritesFileLocking(bool lock_files)
-{
-    if (sqlite3async_control(SQLITEASYNC_LOCKFILES, int(lock_files))
-                                                                 != SQLITE_OK)
-    {
-        ERR_POST_XX(Sqlite_Objs, 7,
-                    "File locking for asynchronous writing mode is not set "
-                    "because of an error");
-    }
-}
+public:
+    enum EErrCode {
+        eUnknown,       ///< Unknown error
+        eWrongFlags,    ///< Incorrect set of flags in connection constructor
+        eDBOpen,        ///< Error during database opening
+        eStmtPrepare,   ///< Error preparing statement
+        eStmtFinalize,  ///< Error finalizing statement
+        eStmtBind,      ///< Error binding statement parameters
+        eStmtStep,      ///< Error stepping through the statement
+        eStmtReset,     ///< Error reseting statement
+        eBlobOpen,      ///< Error opening blob object
+        eBlobClose,     ///< Error closing blob object
+        eBlobRead,      ///< Error reading directly from blob
+        eBlobWrite,     ///< Error writing directly to blob
+        eConstraint,    ///< Constraint violation during statement execution
+        eDeadLock       ///< SQLite detected possible deadlock between
+        ///< different threads
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CSQLITE_Exception, CException);
+};
 
 
+
+//////////////////////////////////////////////////////////////////////////
+// Inline functions
+//////////////////////////////////////////////////////////////////////////
 
 inline
 CSQLITE_Statement::CSQLITE_Statement(CSQLITE_Connection* conn,
@@ -743,24 +757,6 @@ CSQLITE_Statement::GetChangedRowsCount(void) const
 }
 
 
-inline
-CSQLITE_HandleFactory::CSQLITE_HandleFactory(CSQLITE_Connection* conn)
-    : m_Conn(conn)
-{}
-
-
-inline void
-CSQLITE_Connection::x_CheckFlagsValidity(TOperationFlags flags,
-                                         EOperationFlags mask)
-{
-    TOperationFlags fls = flags & mask;
-    if (fls & (fls - 1)) {
-        NCBI_THROW(CSQLITE_Exception, eWrongFlags,
-                   "Incorrect flags in CSQLITE_Connection: 0x"
-                   + NStr::IntToString(flags, 0, 16));
-    }
-}
-
 inline const string&
 CSQLITE_Connection::GetFileName(void) const
 {
@@ -771,18 +767,6 @@ inline CSQLITE_Connection::TOperationFlags
 CSQLITE_Connection::GetFlags(void) const
 {
     return m_Flags;
-}
-
-inline void
-CSQLITE_Connection::SetFlags(TOperationFlags flags)
-{
-    if ((flags & eAllVacuum) != (m_Flags & eAllVacuum)) {
-        NCBI_THROW(CSQLITE_Exception, eWrongFlags,
-                   "Cannot change vacuuming flags after database creation");
-    }
-
-    m_Flags = flags;
-    m_HandlePool.Clear();
 }
 
 inline unsigned int
@@ -837,13 +821,6 @@ CSQLITE_Connection::ExecuteSql(CTempString sql)
 }
 
 inline void
-CSQLITE_Connection::x_ExecuteSql(sqlite3* handle, CTempString sql)
-{
-    CSQLITE_Statement stmt(handle, sql);
-    stmt.Execute();
-}
-
-inline void
 CSQLITE_Connection::Vacuum(size_t max_free_size)
 {
     AutoPtr<CSQLITE_Statement> stmt(CreateVacuumStmt(max_free_size));
@@ -876,44 +853,6 @@ CSQLITE_StatementLock::operator CSQLITE_Statement* (void)
     return m_Stmt;
 }
 
-
-inline void
-CSQLITE_Blob::x_Init(void)
-{
-    m_ConnHandle = NULL;
-    m_BlobHandle = NULL;
-    m_Size = 0;
-    m_Position = 0;
-}
-
-inline
-CSQLITE_Blob::CSQLITE_Blob(CSQLITE_Connection* conn,
-                           CTempString         table,
-                           CTempString         column,
-                           Int8                rowid)
-    : m_Conn(conn),
-      m_Database("main"),
-      m_Table(table),
-      m_Column(column),
-      m_Rowid(rowid)
-{
-    x_Init();
-}
-
-inline
-CSQLITE_Blob::CSQLITE_Blob(CSQLITE_Connection* conn,
-                           CTempString         db_name,
-                           CTempString         table,
-                           CTempString         column,
-                           Int8                rowid)
-    : m_Conn(conn),
-      m_Database(db_name),
-      m_Table(table),
-      m_Column(column),
-      m_Rowid(rowid)
-{
-    x_Init();
-}
 
 inline
 CSQLITE_Blob::~CSQLITE_Blob(void)
