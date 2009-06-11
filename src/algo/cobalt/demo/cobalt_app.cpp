@@ -397,10 +397,10 @@ int CMultiApplication::Run(void)
         if (args["alph"].AsString() == "regular") {
             alph = CMultiAligner::TKMethods::eRegular;
         }
-        else if (args["comp_alph"].AsString() == "se-v10") {
+        else if (args["alph"].AsString() == "se-v10") {
             alph = CMultiAligner::TKMethods::eSE_V10;
         } 
-        else if (args["comp_alph"].AsString() == "se-b15") {
+        else if (args["alph"].AsString() == "se-b15") {
             alph = CMultiAligner::TKMethods::eSE_B15;
         }
     }
