@@ -1529,13 +1529,12 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
 CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 {
     TBioseqHandles ret;
-    size_t count = ids.size();
-    ret.reserve(count);
-    if ( count > 200 ) {
+    if ( ids.size() > 200 ) {
         // split batch into smaller pieces to avoid problems with GC
+        ret.reserve(ids.size());
         TIds ids1;
-        for ( size_t pos = 0; pos < count; ) {
-            size_t cnt = count - pos;
+        for ( size_t pos = 0; pos < ids.size(); ) {
+            size_t cnt = ids.size() - pos;
             if ( cnt > 150 ) cnt = 100;
             ids1.assign(ids.begin()+pos, ids.begin()+pos+cnt);
             TBioseqHandles ret1 = GetBioseqHandles(ids1);
@@ -1544,33 +1543,24 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
         }
         return ret;
     }
-    ret.resize(count);
-    TConfReadLockGuard rguard(m_ConfLock);
     // Keep locks to prevent cleanup of the loaded TSEs.
     typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
     TSeqMatchMap match_map;
-    for ( size_t i = 0; i < count; ++i ) {
-        ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Resolved);
-        if ( !ret[i] ) {
-            match_map[ids[i]];
-        }
-    }
-    if ( match_map.empty() ) {
-        return ret;
+    ITERATE(TIds, id, ids) {
+        match_map[*id];
     }
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         it->GetBlobs(match_map);
     }
-    for ( size_t i = 0; i < count; ++i ) {
-        if ( ret[i] ) {
-            continue;
-        }
-        TSeqMatchMap::iterator match = match_map.find(ids[i]);
+    ITERATE(TIds, id, ids) {
+        TSeqMatchMap::iterator match = match_map.find(*id);
         if (match != match_map.end()  &&  match->second) {
-            ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Loaded);
+            ret.push_back(GetBioseqHandle(match->first,
+                CScope::eGetBioseq_Loaded));
         }
         else {
-            TSeq_idMapValue& id_info = x_GetSeq_id_Info(ids[i]);
+            TConfReadLockGuard rguard(m_ConfLock);
+            TSeq_idMapValue& id_info = x_GetSeq_id_Info(*id);
             CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool);
             if ( init ) {
                 _ASSERT(!id_info.second.m_Bioseq_Info);
@@ -1578,9 +1568,11 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
                     CBioseq_Handle::fState_no_data |
                     CBioseq_Handle::fState_not_found));
             }
+            CBioseq_Handle handle;
+            handle.m_Handle_Seq_id = *id;
             CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
-            ret[i].m_Handle_Seq_id = ids[i];
-            ret[i].m_Info.Reset(info);
+            handle.m_Info.Reset(info);
+            ret.push_back(handle);
         }
     }
     return ret;

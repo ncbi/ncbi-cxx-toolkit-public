@@ -154,9 +154,9 @@ CInitMutexPool& CTSE_Split_Info::GetMutexPool(void)
 }
 
 
-CDataLoader& CTSE_Split_Info::GetDataLoader(void) const
+CDataLoader& CTSE_Split_Info::GetDataLoader(void)
 {
-    return m_DataLoader.GetNCObject();
+    return *m_DataLoader;
 }
 
 

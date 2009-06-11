@@ -90,7 +90,7 @@ public:
     TSplitVersion GetSplitVersion(void) const;
     void SetSplitVersion(TSplitVersion version);
     CInitMutexPool& GetMutexPool(void);
-    CDataLoader& GetDataLoader(void) const;
+    CDataLoader& GetDataLoader(void);
 
     // TSE connection
     void x_DSAttach(CDataSource& ds);

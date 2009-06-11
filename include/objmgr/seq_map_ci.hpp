@@ -100,7 +100,6 @@ private:
     bool               m_MinusStrand;
 
     friend class CSeqMap_CI;
-    friend class CSeqMap;
 };
 
 
@@ -193,7 +192,6 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
         }
 
 private:
-    friend class CSeqMap;
     friend class CSeqMap_CI;
 
     bool x_HasLimitTSE(void) const

@@ -74,9 +74,7 @@ CSeqVector_CI::CSeqVector_CI(void)
       m_CacheEnd(0),
       m_BackupPos(0),
       m_BackupData(0),
-      m_BackupEnd(0),
-      m_ScannedStart(0),
-      m_ScannedEnd(0)
+      m_BackupEnd(0)
 {
 }
 
@@ -98,9 +96,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
       m_BackupPos(0),
       m_BackupData(0),
       m_BackupEnd(0),
-      m_Randomizer(sv_it.m_Randomizer),
-      m_ScannedStart(0),
-      m_ScannedEnd(0)
+      m_Randomizer(sv_it.m_Randomizer)
 {
     try {
         *this = sv_it;
@@ -126,9 +122,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
       m_BackupPos(0),
       m_BackupData(0),
       m_BackupEnd(0),
-      m_Randomizer(seq_vector.m_Randomizer),
-      m_ScannedStart(0),
-      m_ScannedEnd(0)
+      m_Randomizer(seq_vector.m_Randomizer)
 {
     try {
         x_SetPos(pos);
@@ -155,9 +149,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
       m_BackupPos(0),
       m_BackupData(0),
       m_BackupEnd(0),
-      m_Randomizer(seq_vector.m_Randomizer),
-      m_ScannedStart(0),
-      m_ScannedEnd(0)
+      m_Randomizer(seq_vector.m_Randomizer)
 {
     try {
         x_SetPos(pos);
@@ -184,9 +176,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, ENa_strand strand,
       m_BackupPos(0),
       m_BackupData(0),
       m_BackupEnd(0),
-      m_Randomizer(seq_vector.m_Randomizer),
-      m_ScannedStart(0),
-      m_ScannedEnd(0)
+      m_Randomizer(seq_vector.m_Randomizer)
 {
     try {
         x_SetPos(pos);
@@ -214,7 +204,6 @@ void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
     m_Coding = seq_vector.m_Coding;
     m_CachePos = seq_vector.size();
     m_Randomizer = seq_vector.m_Randomizer;
-    m_ScannedStart = m_ScannedEnd = 0;
 }
 
 
@@ -225,74 +214,12 @@ TSeqPos CSeqVector_CI::x_GetSize(void) const
 }
 
 
-void CSeqVector_CI::x_CheckForward(void)
-{
-    TSeqPos scanned = m_ScannedEnd - m_ScannedStart;
-    TSeqPos more = x_GetSize() - m_ScannedEnd;
-    TSeqPos check = min(scanned, more);
-    if ( check > 0 ) {
-        SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
-        sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
-        sel.SetRange(m_ScannedEnd, check);
-        if ( m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
-            m_ScannedEnd += check;
-        }
-    }
-}
-
-
-void CSeqVector_CI::x_CheckBackward(void)
-{
-    TSeqPos scanned = m_ScannedEnd - m_ScannedStart;
-    TSeqPos more = m_ScannedStart;
-    TSeqPos check = min(scanned, more);
-    if ( check > 0 ) {
-        SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
-        sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
-        sel.SetRange(m_ScannedStart-check, check);
-        if ( m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
-            m_ScannedStart -= check;
-        }
-    }
-}
-
-
 inline
 void CSeqVector_CI::x_InitSeg(TSeqPos pos)
 {
     SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
     sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
-    if ( pos == m_ScannedEnd ) {
-        x_CheckForward();
-    }
-    else if ( pos < m_ScannedStart || pos > m_ScannedEnd ) {
-        m_ScannedStart = m_ScannedEnd = pos;
-    }
     m_Seg = CSeqMap_CI(m_SeqMap, m_Scope.GetScopeOrNull(), sel, pos);
-    m_ScannedStart = min(m_ScannedStart, m_Seg.GetPosition());
-    m_ScannedEnd = max(m_ScannedEnd, m_Seg.GetEndPosition());
-}
-
-
-inline
-void CSeqVector_CI::x_IncSeg(void)
-{
-    if ( m_Seg.GetEndPosition() == m_ScannedEnd ) {
-        x_CheckForward();
-    }
-    ++m_Seg;
-    m_ScannedEnd = max(m_ScannedEnd, m_Seg.GetEndPosition());
-}
-
-
-inline
-void CSeqVector_CI::x_DecSeg(void)
-{
-    if ( m_Seg.GetPosition() == m_ScannedStart ) {
-        x_CheckBackward();
-    }
-    --m_Seg;
-    m_ScannedStart = min(m_ScannedStart, m_Seg.GetPosition());
 }
 
 
@@ -404,8 +331,6 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
     m_Seg = sv_it.m_Seg;
     m_CachePos = sv_it.x_CachePos();
     m_Randomizer = sv_it.m_Randomizer;
-    m_ScannedStart = sv_it.m_ScannedStart;
-    m_ScannedEnd = sv_it.m_ScannedEnd;
     // copy cache if any
     size_t cache_size = sv_it.x_CacheSize();
     if ( cache_size ) {
@@ -678,7 +603,7 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
         // segment is ahead
         do {
             _ASSERT(m_Seg || m_Seg.GetPosition() == x_GetSize());
-            x_DecSeg();
+            --m_Seg;
         } while ( m_Seg.GetLength() == 0 ); // skip zero length segments
         _ASSERT(m_Seg);
         if ( m_Seg.GetPosition() > pos ) {
@@ -690,7 +615,7 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
         // segment is behind
         do {
             _ASSERT(m_Seg);
-            x_IncSeg();
+            ++m_Seg;
         } while ( m_Seg.GetLength() == 0 ); // skip zero length segments
         _ASSERT(m_Seg);
         if ( m_Seg.GetEndPosition() <= pos ) {
@@ -705,41 +630,25 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
 void CSeqVector_CI::GetSeqData(string& buffer, TSeqPos count)
 {
     buffer.erase();
-    TSeqPos pos = GetPos();
-    _ASSERT(pos <= x_GetSize());
-    count = min(count, x_GetSize() - pos);
-    if ( !count ) {
-        return;
+    count = min(count, x_GetSize() - GetPos());
+    if ( count ) {
+        buffer.reserve(count);
+        do {
+            TCache_I cache = m_Cache;
+            TCache_I cache_end = m_CacheEnd;
+            TSeqPos chunk_count = min(count, TSeqPos(cache_end - cache));
+            _ASSERT(chunk_count > 0);
+            TCache_I chunk_end = cache + chunk_count;
+            buffer.append(cache, chunk_end);
+            if ( chunk_end == cache_end ) {
+                x_NextCacheSeg();
+            }
+            else {
+                m_Cache = chunk_end;
+            }
+            count -= chunk_count;
+        } while ( count );
     }
-
-    if ( m_TSE ) {
-        SSeqMapSelector sel;
-        sel.SetRange(pos, count).SetStrand(m_Strand).SetLinkUsedTSE(m_TSE)
-            .SetResolveCount(size_t(-1));
-        if ( !m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
-            NCBI_THROW_FMT(CSeqVectorException, eDataError,
-                           "CSeqVector_CI::GetSeqData: "
-                           "cannot get seq-data in range: "
-                           <<pos<<"-"<<pos+count);
-        }
-    }
-    
-    buffer.reserve(count);
-    do {
-        TCache_I cache = m_Cache;
-        TCache_I cache_end = m_CacheEnd;
-        TSeqPos chunk_count = min(count, TSeqPos(cache_end - cache));
-        _ASSERT(chunk_count > 0);
-        TCache_I chunk_end = cache + chunk_count;
-        buffer.append(cache, chunk_end);
-        if ( chunk_end == cache_end ) {
-            x_NextCacheSeg();
-        }
-        else {
-            m_Cache = chunk_end;
-        }
-        count -= chunk_count;
-    } while ( count );
 }
 
 
@@ -759,7 +668,7 @@ void CSeqVector_CI::x_NextCacheSeg()
             m_CachePos = pos;
             return;
         }
-        x_IncSeg();
+        ++m_Seg;
     }
     _ASSERT(m_Seg);
     // Try to re-use backup cache
@@ -795,7 +704,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
     else {
         while ( m_Seg.GetPosition() > pos ) {
             _ASSERT(m_Seg || m_Seg.GetPosition() == x_GetSize());
-            x_DecSeg();
+            --m_Seg;
         }
     }
     _ASSERT(m_Seg);

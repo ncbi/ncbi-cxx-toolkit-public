@@ -268,7 +268,6 @@ void CTSE_Chunk_Info::SetLoaded(CObject* obj)
         obj = new CObject;
     }
     m_LoadLock.Reset(obj);
-    x_DisableAnnotIndexWhenLoaded();
 }
 
 
