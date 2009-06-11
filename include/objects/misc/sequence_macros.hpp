@@ -622,6 +622,7 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
 // "XXX_CHOICE_IS"
 
 
+///
 /// CSeq_submit macros
 
 /// SEQSUBMIT_CHOICE macros
@@ -711,6 +712,7 @@ ADD_ITEM (SEQANNOT_ON_SEQSUBMIT, Var, Ref)
 LIST_ERASE_ITEM (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
 
 
+///
 /// CSeq_entry macros
 
 /// SEQENTRY_CHOICE macros
@@ -829,6 +831,7 @@ LIST_ERASE_ITEM (SEQANNOT_ON_SEQENTRY, Itr, Var)
 #define ERASE_ANNOT_ON_SEQENTRY ERASE_SEQANNOT_ON_SEQENTRY
 
 
+///
 /// CBioseq macros
 
 /// SEQDESC_ON_BIOSEQ macros
@@ -974,6 +977,7 @@ IS_UNIQUE (SEQID_ON_BIOSEQ, Var, Func)
 DO_UNIQUE (SEQID_ON_BIOSEQ, Var, Func)
 
 
+///
 /// CSeq_id macros
 
 /// SEQID_CHOICE macros
@@ -992,6 +996,7 @@ CHOICE_IS (SEQID_CHOICE, Var, Chs)
 SWITCH_ON (SEQID_CHOICE, Var)
 
 
+///
 /// CBioseq_set macros
 
 /// SEQDESC_ON_SEQSET macros
@@ -1117,6 +1122,7 @@ ADD_ITEM (SEQENTRY_ON_SEQSET, Var, Ref)
 LIST_ERASE_ITEM (SEQENTRY_ON_SEQSET, Itr, Var)
 
 
+///
 /// CSeq_annot macros
 
 /// SEQFEAT_ON_SEQANNOT macros
@@ -1316,6 +1322,7 @@ LIST_ERASE_ITEM (ANNOTDESC_ON_SEQANNOT, Itr, Var)
 #define ERASE_ANNOTDESC_ON_ANNOT ERASE_ANNOTDESC_ON_SEQANNOT
 
 
+///
 /// CAnnotdesc macros
 
 /// ANNOTDESC_CHOICE macros
@@ -1334,6 +1341,7 @@ CHOICE_IS (ANNOTDESC_CHOICE, Var, Chs)
 SWITCH_ON (ANNOTDESC_CHOICE, Var)
 
 
+///
 /// CSeq_descr macros
 
 /// SEQDESC_ON_SEQDESCR macros
@@ -1381,6 +1389,7 @@ LIST_ERASE_ITEM (SEQDESC_ON_SEQDESCR, Itr, Var)
 #define ADD_DESCRIPTOR_TO_DESCR ADD_SEQDESC_TO_SEQDESCR
 
 
+///
 /// CSeqdesc macros
 
 /// SEQDESC_CHOICE macros
@@ -1405,6 +1414,7 @@ SWITCH_ON (SEQDESC_CHOICE, Var)
 #define SWITCH_ON_DESCRIPTOR_CHOICE SWITCH_ON_SEQDESC_CHOICE
 
 
+///
 /// CMolInfo macros
 
 /// MOLINFO_BIOMOL macros
@@ -1455,6 +1465,7 @@ CHOICE_IS (MOLINFO_COMPLETENESS, Var, Chs)
 SWITCH_ON (MOLINFO_COMPLETENESS, Var)
 
 
+///
 /// CBioSource macros
 
 /// BIOSOURCE_GENOME macros
@@ -1615,6 +1626,7 @@ IS_UNIQUE (ORGMOD_ON_BIOSOURCE, Var, Func)
 DO_UNIQUE (ORGMOD_ON_BIOSOURCE, Var, Func)
 
 
+///
 /// COrg_ref macros
 
 /// ORGMOD_ON_ORGREF macros
@@ -1779,6 +1791,7 @@ EDIT_EACH (SYN_ON_ORGREF, Itr, Var)
 LIST_ERASE_ITEM (SYN_ON_ORGREF, Itr, Var)
 
 
+///
 /// COrgName macros
 
 /// ORGNAME_CHOICE macros
@@ -1851,6 +1864,7 @@ IS_UNIQUE (ORGMOD_ON_ORGNAME, Var, Func)
 DO_UNIQUE (ORGMOD_ON_ORGNAME, Var, Func)
 
 
+///
 /// CSubSource macros
 
 /// SUBSOURCE_CHOICE macros
@@ -1869,6 +1883,7 @@ CHOICE_IS (SUBSOURCE_CHOICE, Var, Chs)
 SWITCH_ON (SUBSOURCE_CHOICE, Var)
 
 
+///
 /// COrgMod macros
 
 /// ORGMOD_CHOICE macros
@@ -1886,7 +1901,12 @@ CHOICE_IS (ORGMOD_CHOICE, Var, Chs)
 #define SWITCH_ON_ORGMOD_CHOICE(Var) \
 SWITCH_ON (ORGMOD_CHOICE, Var)
 
+
+///
 /// CPubequiv macros
+
+/// PUB_ON_PUBEQUIV macros
+
 #define PUB_ON_PUBEQUIV_Type      CPub_equiv::Tdata
 #define PUB_ON_PUBEQUIV_Test(Var) (Var).IsSet()
 #define PUB_ON_PUBEQUIV_Get(Var)  (Var).Get()
@@ -1908,6 +1928,8 @@ ADD_ITEM (PUB_ON_PUBEQUIV, Var, Ref)
 #define ERASE_PUB_ON_PUBEQUIV(Itr, Var) \
 LIST_ERASE_ITEM (PUB_ON_PUBEQUIV, Itr, Var)
 
+
+///
 /// CPubdesc macros
 
 /// PUB_ON_PUBDESC macros
@@ -1948,6 +1970,7 @@ ADD_ITEM (PUB_ON_PUBDESC, Var, Ref)
 LIST_ERASE_ITEM (PUB_ON_PUBDESC, Itr, Var)
 
 
+///
 /// CPub macros
 
 /// AUTHOR_ON_PUB macros
@@ -1985,6 +2008,7 @@ ADD_ITEM (AUTHOR_ON_PUB, Var, Ref)
 LIST_ERASE_ITEM (AUTHOR_ON_PUB, Itr, Var)
 
 
+///
 /// CGB_block macros
 
 /// EXTRAACCN_ON_GENBANKBLOCK macros
@@ -2093,6 +2117,7 @@ IS_UNIQUE (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 DO_UNIQUE (KEYWORD_ON_GENBANKBLOCK, Var, Func)
 
 
+///
 /// CEMBL_block macros
 
 /// EXTRAACCN_ON_EMBLBLOCK macros
@@ -2201,6 +2226,7 @@ IS_UNIQUE (KEYWORD_ON_EMBLBLOCK, Var, Func)
 DO_UNIQUE (KEYWORD_ON_EMBLBLOCK, Var, Func)
 
 
+///
 /// CPDB_block macros
 
 /// COMPOUND_ON_PDBBLOCK macros
@@ -2269,6 +2295,7 @@ ADD_ITEM (SOURCE_ON_PDBBLOCK, Var, Ref)
 LIST_ERASE_ITEM (SOURCE_ON_PDBBLOCK, Itr, Var)
 
 
+///
 /// CSeq_feat macros
 
 /// SEQFEAT_CHOICE macros
@@ -2512,6 +2539,7 @@ DO_UNIQUE (DBXREF_ON_SEQFEAT, Var, Func)
 #define UNIQUE_DBXREF_ON_FEATURE UNIQUE_DBXREF_ON_SEQFEAT
 
 
+///
 /// CSeqFeatData macros
 
 /// SEQFEATDATA_CHOICE macros
@@ -2530,6 +2558,7 @@ CHOICE_IS (SEQFEATDATA_CHOICE, Var, Chs)
 SWITCH_ON (SEQFEATDATA_CHOICE, Var)
 
 
+///
 /// CSeqFeatXref macros
 
 /// SEQFEATXREF_CHOICE macros
@@ -2548,6 +2577,7 @@ CHOICE_IS (SEQFEATXREF_CHOICE, Var, Chs)
 SWITCH_ON (SEQFEATXREF_CHOICE, Var)
 
 
+///
 /// CGene_ref macros
 
 /// SYNONYM_ON_GENEREF macros
@@ -2696,6 +2726,7 @@ DO_UNIQUE (DBXREF_ON_GENEREF, Var, Func)
 #define UNIQUE_DBXREF_ON_GENE UNIQUE_DBXREF_ON_GENEREF
 
 
+///
 /// CCdregion macros
 
 /// CODEBREAK_ON_CDREGION macros
@@ -2751,6 +2782,7 @@ IS_UNIQUE (CODEBREAK_ON_CDREGION, Var, Func)
 DO_UNIQUE (CODEBREAK_ON_CDREGION, Var, Func)
 
 
+///
 /// CProt_ref macros
 
 /// NAME_ON_PROTREF macros
@@ -3045,6 +3077,7 @@ DO_UNIQUE (DBXREF_ON_PROTREF, Var, Func)
 #define UNIQUE_DBXREF_ON_PROT UNIQUE_DBXREF_ON_PROTREF
 
 
+///
 /// list <string> macros
 
 /// STRING_IN_LIST macros
@@ -3100,6 +3133,7 @@ IS_UNIQUE (STRING_IN_LIST, Var, Func)
 DO_UNIQUE (STRING_IN_LIST, Var, Func)
 
 
+///
 /// <string> macros
 
 /// CHAR_IN_STRING macros
@@ -3156,6 +3190,7 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 
 
+///
 /// @}
 
 END_SCOPE(objects)
