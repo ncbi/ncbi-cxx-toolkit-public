@@ -64,7 +64,7 @@ BEGIN_SCOPE(objects)
 
 /// CSeq_submit definitions
 
-#define NCBI_SEQSUBMIT(Type) CSeq_submit::e_##Type
+#define NCBI_SEQSUBMIT(Type) CSeq_submit::TData::e_##Type
 typedef CSeq_submit::TData::E_Choice TSEQSUBMIT_CHOICE;
 
 //   Entrys     Annots
@@ -627,8 +627,9 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
 
 /// SEQSUBMIT_CHOICE macros
 
-#define SEQSUBMIT_CHOICE_Test(Var) (Var).Which() != CSeq_submit::e_not_set
-#define SEQSUBMIT_CHOICE_Chs(Var)  (Var).Which()
+#define SEQSUBMIT_CHOICE_Test(Var) ((Var).IsSetData() && \
+                                    (Var).GetData().Which() != CSeq_submit::TData::e_not_set)
+#define SEQSUBMIT_CHOICE_Chs(Var)  (Var).GetData().Which()
 
 /// SEQSUBMIT_CHOICE_IS
 
