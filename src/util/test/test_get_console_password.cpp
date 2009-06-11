@@ -33,18 +33,46 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
+
 #include <util/util_misc.hpp>
+
 
 USING_NCBI_SCOPE;
 
-int main(int argc, char** argv)
-{
-    cout << "g_GetPasswordFromConsole(...) function test." << endl;
 
-    string      userInput = g_GetPasswordFromConsole("Give me your word: ");
+class CGetPasswordApplication : public CNcbiApplication
+{
+private:
+    virtual int Run(void);
+    virtual void Init(void);
+};
+
+
+int CGetPasswordApplication::Run(void)
+{
+    string userInput = g_GetPasswordFromConsole("Type your password: ");
     cout << endl << "User input: '" << userInput << "'" << endl;
 
     return 0;
 }
 
+
+void CGetPasswordApplication::Init(void)
+{
+    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
+
+    auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    args->SetUsageContext(GetArguments().GetProgramBasename(),
+                          "g_GetPasswordFromConsole(...) function test");
+    SetupArgDescriptions(args.release());
+}
+
+
+int main(int argc, char* argv[])
+{
+    // Do not show warning about inaccessible configuration file
+    SetDiagFilter(eDiagFilter_Post, "!(106.11)");
+
+    return CGetPasswordApplication().AppMain(argc, argv);
+}

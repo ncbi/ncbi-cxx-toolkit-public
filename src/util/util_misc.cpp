@@ -30,12 +30,14 @@
 #include <ncbi_pch.hpp>
 #include <util/util_misc.hpp>
 
-#ifdef NCBI_OS_UNIX
-    #include <termios.h>
-    #include <unistd.h>
-    #include <corelib/ncbistre.hpp>
+#if defined(NCBI_OS_UNIX)
+#  include <termios.h>
+#  include <unistd.h>
+#  include <corelib/ncbistre.hpp>
+#elif defined(NCBI_OS_MSWIN)
+#  include <conio.h>
 #else
-    #include <conio.h>
+#  error  "Unsuported platform"
 #endif
 
 
@@ -54,71 +56,74 @@ const char* CGetPasswordFromConsoleException::GetErrCodeString(void) const
 }
 
 
-string NCBI_XNCBI_EXPORT g_GetPasswordFromConsole(const string& prompt)
+string g_GetPasswordFromConsole(const string& prompt)
 {
-#ifdef NCBI_OS_UNIX
+    string password;
+
+#if defined(NCBI_OS_UNIX)
     // UNIX implementation
-    struct termios      old_attributes;
 
-    if (tcgetattr(0, &old_attributes) != 0)
-        NCBI_THROW(CGetPasswordFromConsoleException, eGetTerminalAttrError,
-                   "g_GetPasswordFromConsole(): cannot get terminal attributes");
+    struct termios old_attributes;
 
-
-    struct termios      new_attributes = old_attributes;
-    new_attributes.c_lflag &= ~ECHO;
-
-    if (tcsetattr(0, TCSADRAIN, &new_attributes) != 0)
-        NCBI_THROW(CGetPasswordFromConsoleException, eSetTerminalAttrError,
-                   "g_GetPasswordFromConsole(): cannot set terminal attributes");
-
-    if (!prompt.empty())
-        NcbiCout << prompt << NcbiFlush;
-
-    string              password;
-    if (!NcbiGetline(NcbiCin, password, '\n')) {
-        tcsetattr(0, TCSADRAIN, &old_attributes);
-        NcbiCin.clear();
-        NCBI_THROW(CGetPasswordFromConsoleException, eGetLineError,
-                   "g_GetPasswordFromConsole(): cannot get line from terminal");
+    if (tcgetattr(0, &old_attributes) != 0) {
+        NCBI_THROW
+            (CGetPasswordFromConsoleException, eGetTerminalAttrError,
+             "g_GetPasswordFromConsole(): cannot get terminal attributes");
     }
 
-    // Restore the terminal attributes
+
+    struct termios new_attributes = old_attributes;
+    new_attributes.c_lflag &= ~ECHO;
+
+    if (tcsetattr(0, TCSADRAIN, &new_attributes) != 0) {
+        NCBI_THROW
+            (CGetPasswordFromConsoleException, eSetTerminalAttrError,
+             "g_GetPasswordFromConsole(): cannot set terminal attributes");
+    }
+
+    if ( !prompt.empty() )
+        NcbiCout << prompt << NcbiFlush;
+
+    if ( !NcbiGetline(NcbiCin, password, '\n') ) {
+        tcsetattr(0, TCSADRAIN, &old_attributes);
+        NcbiCin.clear();
+        NCBI_THROW
+            (CGetPasswordFromConsoleException, eGetLineError,
+             "g_GetPasswordFromConsole(): cannot get line from terminal");
+    }
+
+    // Restore terminal attributes
     tcsetattr(0, TCSADRAIN, &old_attributes);
 
-    return password;
-
-#else
+#elif defined(NCBI_OS_MSWIN)
     // Windows implementation
 
-    for (size_t  index = 0; index < prompt.size(); ++index)
+    for (size_t index = 0;  index < prompt.size();  ++index) {
         _putch(prompt[index]);
+    }
 
-    string              password;
-    char                single_character;
-
-    for ( ; ; ) {
-        single_character = _getch();
-        if (single_character == '\r' || single_character == '\n')
+    for (;;) {
+        char ch;
+        ch = _getch();
+        if (ch == '\r'  ||  ch == '\n')
             break;
-        if (single_character == '\003')
+        if (ch == '\003')
             NCBI_THROW(CGetPasswordFromConsoleException, eKeyboardInterrupt,
                        "g_GetPasswordFromConsole(): keyboard interrupt");
-        if (single_character == '\b') {
-            if (!password.empty()) {
-                password.resize(password.size()-1);
+        if (ch == '\b') {
+            if ( !password.empty() ) {
+                password.resize(password.size() - 1);
             }
         }
         else
-            password.append(1, single_character);
+            password.append(1, ch);
     }
 
     _putch('\r');
     _putch('\n');
+#endif
 
     return password;
-
-#endif // NCBI_OS_UNIX
 }
 
 
