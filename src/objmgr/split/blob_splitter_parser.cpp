@@ -562,12 +562,19 @@ bool CBlobSplitterImpl::CopySequence(CPlace_SplitInfo& place_info,
                 if ( src_lit.IsSetFuzz() )
                     dst_lit.SetFuzz(const_cast<CInt_fuzz&>(src_lit.GetFuzz()));
                 if ( src_lit.IsSetSeq_data() ) {
-                    CSeq_data_SplitInfo data;
-                    CRange<TSeqPos> range;
-                    range.SetFrom(pos).SetLength(length);
-                    data.SetSeq_data(place_info.m_PlaceId, range, seq_length,
-                                     src_lit.GetSeq_data(), m_Params);
-                    info.Add(data);
+                    const CSeq_data& src_data = src_lit.GetSeq_data();
+                    if ( src_data.IsGap() ) {
+                        dst_lit.SetSeq_data(const_cast<CSeq_data&>(src_data));
+                    }
+                    else {
+                        CSeq_data_SplitInfo data;
+                        CRange<TSeqPos> range;
+                        range.SetFrom(pos).SetLength(length);
+                        data.SetSeq_data(place_info.m_PlaceId,
+                                         range, seq_length,
+                                         src_data, m_Params);
+                        info.Add(data);
+                    }
                 }
                 break;
             }}
