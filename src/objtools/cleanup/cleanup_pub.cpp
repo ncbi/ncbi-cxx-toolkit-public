@@ -361,6 +361,29 @@ void CCleanup_imp::BasicCleanup (CImprint& imp)
     if (imp.IsSetDate()) {
         BasicCleanup (imp.SetDate());
     }
+
+    if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_aheadofprint
+        && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
+        if (!imp.IsSetVolume() || NStr::IsBlank (imp.GetVolume())
+            || !imp.IsSetPages() || NStr::IsBlank (imp.GetPages())) {
+            imp.SetPrepub (CImprint::ePrepub_in_press);
+            ChangeMade (CCleanupChange::eChangePublication);
+        }
+    }
+    if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_aheadofprint
+        && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
+        if (imp.IsSetVolume() && !NStr::IsBlank (imp.GetVolume())
+            && imp.IsSetPages() && !NStr::IsBlank (imp.GetPages())) {
+            imp.ResetPrepub();
+            ChangeMade (CCleanupChange::eChangePublication);
+        }
+    }
+
+    if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_epublish
+        && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
+        imp.ResetPrepub();
+    }
+
 }
 
 
