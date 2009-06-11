@@ -62,6 +62,14 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
+/// CSeq_submit definitions
+
+#define NCBI_SEQSUBMIT(Type) CSeq_submit::e_##Type
+typedef CSeq_submit::TData::E_Choice TSEQSUBMIT_CHOICE;
+
+//   Entrys     Annots
+
+
 /// CSeq_entry definitions
 
 #define NCBI_SEQENTRY(Type) CSeq_entry::e_##Type
@@ -616,8 +624,36 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
 
 /// CSeq_submit macros
 
+/// SEQSUBMIT_CHOICE macros
+
+#define SEQSUBMIT_CHOICE_Test(Var) (Var).Which() != CSeq_submit::e_not_set
+#define SEQSUBMIT_CHOICE_Chs(Var)  (Var).Which()
+
+/// SEQSUBMIT_CHOICE_IS
+
+#define SEQSUBMIT_CHOICE_IS(Var, Chs) \
+CHOICE_IS (SEQSUBMIT_CHOICE, Var, Chs)
+
+/// SEQSUBMIT_IS_ENTRYS
+
+#define SEQSUBMIT_IS_ENTRYS(Var) \
+SEQSUBMIT_CHOICE_IS (Var, NCBI_SEQSUBMIT(Entrys))
+
+/// SEQSUBMIT_IS_ANNOTS
+
+#define SEQSUBMIT_IS_ANNOTS(Var) \
+SEQSUBMIT_CHOICE_IS (Var, NCBI_SEQSUBMIT(Annots))
+
+/// SWITCH_ON_SEQSUBMIT_CHOICE
+
+#define SWITCH_ON_SEQSUBMIT_CHOICE(Var) \
+SWITCH_ON (SEQSUBMIT_CHOICE, Var)
+
+
+/// SEQENTRY_ON_SEQSUBMIT macros
+
 #define SEQENTRY_ON_SEQSUBMIT_Type      CSeq_submit::TData::TEntrys
-#define SEQENTRY_ON_SEQSUBMIT_Test(Var) (Var).IsEntrys()
+#define SEQENTRY_ON_SEQSUBMIT_Test(Var) ((Var).IsSetData() && (Var).GetData().IsEntrys())
 #define SEQENTRY_ON_SEQSUBMIT_Get(Var)  (Var).GetData().GetEntrys()
 #define SEQENTRY_ON_SEQSUBMIT_Set(Var)  (Var).SetData().SetEntrys()
 
@@ -640,6 +676,39 @@ ADD_ITEM (SEQENTRY_ON_SEQSUBMIT, Var, Ref)
 
 #define ERASE_SEQENTRY_ON_SEQSUBMIT(Itr, Var) \
 LIST_ERASE_ITEM (SEQENTRY_ON_SEQSUBMIT, Itr, Var)
+
+
+/// SEQANNOT_ON_SEQSUBMIT macros
+
+#define SEQANNOT_ON_SEQSUBMIT_Type      CSeq_submit::TData::TAnnots
+#define SEQANNOT_ON_SEQSUBMIT_Test(Var) ((Var).IsSetData() && (Var).GetData().IsAnnots())
+#define SEQANNOT_ON_SEQSUBMIT_Get(Var)  (Var).GetData().GetAnnots()
+#define SEQANNOT_ON_SEQSUBMIT_Set(Var)  (Var).SetData().SetAnnots()
+
+/// SEQSUBMIT_HAS_SEQANNOT
+
+#define SEQSUBMIT_HAS_SEQANNOT(Var) \
+ITEM_HAS (SEQANNOT_ON_SEQSUBMIT, Var)
+
+/// FOR_EACH_SEQANNOT_ON_SEQSUBMIT
+/// EDIT_EACH_SEQANNOT_ON_SEQSUBMIT
+// CBioseq_set& as input, dereference with [const] CSeq_annot& annot = **itr;
+
+#define FOR_EACH_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
+FOR_EACH (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
+
+#define EDIT_EACH_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
+EDIT_EACH (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
+
+/// ADD_SEQANNOT_TO_SEQSUBMIT
+
+#define ADD_SEQANNOT_TO_SEQSUBMIT(Var, Ref) \
+ADD_ITEM (SEQANNOT_ON_SEQSUBMIT, Var, Ref)
+
+/// ERASE_SEQANNOT_ON_SEQSUBMIT
+
+#define ERASE_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
+LIST_ERASE_ITEM (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
 
 
 /// CSeq_entry macros
@@ -1013,39 +1082,6 @@ LIST_ERASE_ITEM (SEQANNOT_ON_SEQSET, Itr, Var)
 #define EDIT_EACH_ANNOT_ON_SEQSET EDIT_EACH_SEQANNOT_ON_SEQSET
 #define ADD_ANNOT_TO_SEQSET ADD_SEQANNOT_TO_SEQSET
 #define ERASE_ANNOT_ON_SEQSET ERASE_SEQANNOT_ON_SEQSET
-
-
-/// SEQANNOT_ON_SEQSUBMIT macros
-
-#define SEQANNOT_ON_SEQSUBMIT_Type      CSeq_submit::TData::TAnnots
-#define SEQANNOT_ON_SEQSUBMIT_Test(Var) ((Var).IsSetData() && (Var).GetData().IsAnnots())
-#define SEQANNOT_ON_SEQSUBMIT_Get(Var)  (Var).GetData().GetAnnots()
-#define SEQANNOT_ON_SEQSUBMIT_Set(Var)  (Var).SetData().SetAnnots()
-
-/// SEQSUBMIT_HAS_SEQANNOT
-
-#define SEQSUBMIT_HAS_SEQANNOT(Var) \
-ITEM_HAS (SEQANNOT_ON_SEQSUBMIT, Var)
-
-/// FOR_EACH_SEQANNOT_ON_SEQSUBMIT
-/// EDIT_EACH_SEQANNOT_ON_SEQSUBMIT
-// CBioseq_set& as input, dereference with [const] CSeq_annot& annot = **itr;
-
-#define FOR_EACH_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
-FOR_EACH (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
-
-#define EDIT_EACH_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
-EDIT_EACH (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
-
-/// ADD_SEQANNOT_TO_SEQSUBMIT
-
-#define ADD_SEQANNOT_TO_SEQSUBMIT(Var, Ref) \
-ADD_ITEM (SEQANNOT_ON_SEQSUBMIT, Var, Ref)
-
-/// ERASE_SEQANNOT_ON_SEQSUBMIT
-
-#define ERASE_SEQANNOT_ON_SEQSUBMIT(Itr, Var) \
-LIST_ERASE_ITEM (SEQANNOT_ON_SEQSUBMIT, Itr, Var)
 
 
 /// SEQENTRY_ON_SEQSET macros
