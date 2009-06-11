@@ -71,13 +71,16 @@ private:
     void ConvertModSetting(CRef<CSearch_summary> sSum, CRef<CMSModSpecSet> Modset, int modnum, bool fixed);
     void ConvertScanID(CRef<CSpectrum_query> sQuery, string SpecID, int query, int charge);
     string GetProteinName(CRef<CMSPepHit> pHit);
-    
+    void ConvertMSHitSet(CRef<CMSHitSet> pHitSet, CMsms_run_summary::TSpectrum_query& sQueries, CRef<CMSModSpecSet> Modset, set<int>& variableMods);
+
     typedef pair<char, double> TAminoAcidMassPair;
     typedef map<char, double> TAminoAcidMassMap;
     
     TAminoAcidMassMap m_aaMassMap;
     set<char> m_staticModSet;
-    
+
+    float m_scale;
+    int m_index;
 };
 
 

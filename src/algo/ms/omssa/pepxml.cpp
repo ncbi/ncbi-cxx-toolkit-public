@@ -262,13 +262,128 @@ string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
     return pHit->GetDefline();
 }
 
-//CSearch_summary::C_Attlist::EAttlist_precursor_mass_type CPepXML::ConvertSearchType(MSSearchType::EMSSearchType val) {}
+
+void CPepXML::ConvertMSHitSet(CRef<CMSHitSet> pHitSet, 
+                              CMsms_run_summary::TSpectrum_query& sQueries, 
+                              CRef<CMSModSpecSet> Modset, 
+                              set<int>& variableMods)
+{
+    if (pHitSet->GetHits().empty())
+        return;
+
+    CMSHitSet::THits::const_iterator iHit;
+    set<int> charges;
+    
+    // First, find all possible charge states
+    for(iHit = pHitSet->GetHits().begin(); iHit != pHitSet->GetHits().end(); iHit++) {
+        charges.insert((*iHit)->GetCharge());
+    }
+
+
+    ITERATE(set<int>, iCharge, charges) {
+        iHit = pHitSet->GetHits().begin();
+        int charge = (*iHit)->GetCharge();
+
+        // advance to the first instance with a matching charge
+        while ( charge != *iCharge ) {
+            iHit++;
+            charge = (*iHit)->GetCharge();
+        }
+        
+        CRef<CSpectrum_query> sQuery(new CSpectrum_query);
+        string spectrumID;
+        if(!(pHitSet->GetIds().empty())) {
+            spectrumID = *(pHitSet->GetIds().begin());
+        }
+        //string query = NStr::IntToString(pHitSet->GetNumber());
+        
+        ConvertScanID(sQuery, spectrumID, pHitSet->GetNumber(), charge);
+        
+        //double neutral_precursor_mass = ((*iHit)->GetMass()/m_scale)/charge - (charge * PROTON_MASS);
+        double neutral_precursor_mass = (*iHit)->GetMass()/m_scale;
+        sQuery->SetAttlist().SetPrecursor_neutral_mass(neutral_precursor_mass);
+        sQuery->SetAttlist().SetAssumed_charge(charge);
+        sQuery->SetAttlist().SetIndex(m_index++);
+        
+        // Only one search_result per query (for now)
+        CRef<CSearch_result> sResult(new CSearch_result);
+        
+        CMSHits::TPephits::const_iterator iPephit;
+        int hitRank = 1;
+        //double prevEValue = (*iHit)->GetEvalue();
+        for( ; iHit != pHitSet->GetHits().end(); iHit++) {
+            // skip this hit if it is not the right charge
+            charge = (*iHit)->GetCharge();
+            if ( charge != *iCharge ) {
+                continue;  
+            }
+            
+            // First protein is associated with search_hit, the rest go into alternative_proteins
+            iPephit = (*iHit)->GetPephits().begin();
+            // Each set of MSHits is a search_hit
+            CRef<CSearch_hit> sHit(new CSearch_hit);
+            //if (prevEValue < (*iHit)->GetEvalue()) hitRank++; // This sets those hits with the same score to have the same rank 
+            sHit->SetAttlist().SetHit_rank(hitRank);
+            hitRank++; // Arbitrarily advances the rank, ever if the scores are the same
+            sHit->SetAttlist().SetPeptide((*iHit)->GetPepstring());
+            if((*iHit)->CanGetPepstart())
+                sHit->SetAttlist().SetPeptide_prev_aa((*iHit)->GetPepstart());
+            if((*iHit)->CanGetPepstop())
+                sHit->SetAttlist().SetPeptide_next_aa((*iHit)->GetPepstop());
+            
+            sHit->SetAttlist().SetProtein(GetProteinName(*iPephit));
+        
+            sHit->SetAttlist().SetNum_tot_proteins((*iHit)->GetPephits().size());
+            sHit->SetAttlist().SetNum_matched_ions((*iHit)->GetMzhits().size());
+            int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
+            sHit->SetAttlist().SetTot_num_ions(tot_num_ions);
+            sHit->SetAttlist().SetCalc_neutral_pep_mass((*iHit)->GetTheomass()/m_scale);
+            sHit->SetAttlist().SetMassdiff(ConvertDouble(neutral_precursor_mass - ((*iHit)->GetTheomass())/m_scale));
+            //sHit->SetSearch_hit().SetAttlist().SetNum_tol_term("42"); //skip
+            //sHit->SetSearch_hit().SetAttlist().SetNum_missed_cleavages("42"); //skip
+            sHit->SetAttlist().SetIs_rejected(CSearch_hit::C_Attlist::eAttlist_is_rejected_0);
+            sHit->SetAttlist().SetProtein_descr((*iPephit)->GetDefline());
+            //sHit->SetSearch_hit().SetAttlist().SetCalc_pI("42"); //skip
+            //sHit->SetSearch_hit().SetAttlist().SetProtein_mw("42"); //skip
+            CRef<CSearch_score> pValue(new CSearch_score);
+            pValue->SetAttlist().SetName("pvalue");
+            pValue->SetAttlist().SetValue(ConvertDouble((*iHit)->GetPvalue()));
+            CRef<CSearch_score> eValue(new CSearch_score);
+            eValue->SetAttlist().SetName("expect");
+            eValue->SetAttlist().SetValue(ConvertDouble((*iHit)->GetEvalue()));
+            sHit->SetSearch_score().push_back(pValue);
+            sHit->SetSearch_score().push_back(eValue);
+            if ((*iHit)->CanGetScores()) {
+                ITERATE(CMSHits::TScores, iScore, (*iHit)->GetScores()) {
+                    CRef<CSearch_score> score(new CSearch_score);
+                    score->SetAttlist().SetName((*iScore)->GetName());
+                    score->SetAttlist().SetValue(ConvertDouble((*iScore)->GetValue()));
+                    sHit->SetSearch_score().push_back(score);
+                }
+            }
+            // Generate alternative_proteins
+            for (iPephit++ ; iPephit != (*iHit)->GetPephits().end(); iPephit++) {
+                CRef<CAlternative_protein> altPro(new CAlternative_protein);
+                altPro->SetAttlist().SetProtein(GetProteinName(*iPephit));
+                altPro->SetAttlist().SetProtein_descr((*iPephit)->GetDefline());
+                //altPro->SetAlternative_protein().SetAttlist().SetNum_tol_term(); //skip
+                //altPro->SetAlternative_protein().SetAttlist().SetProtein_mw();  //skip
+                sHit->SetAlternative_protein().push_back(altPro);
+            }
+            CRef<CModification_info> modInfo = ConvertModifications(*iHit, Modset, variableMods);
+            if (modInfo) sHit->SetModification_info(*modInfo);
+        
+            sResult->SetSearch_hit().push_back(sHit);
+        }
+        sQuery->SetSearch_result().push_back(sResult);
+        sQueries.push_back(sQuery);
+    }
+}
+
 
 void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, string basename, string newname) {
 
-    float scale = static_cast<float>(inOMSSA.GetRequest().front()->GetSettings().GetScale());
-
-    CTime datetime(CTime::eCurrent);
+    m_scale = static_cast<float>(inOMSSA.GetRequest().front()->GetSettings().GetScale());
 
     // set up m_aaMassMap for modifications
     for (int modchar=0; modchar < 29; modchar++) {
@@ -277,6 +392,8 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
         m_aaMassMap.insert(TAminoAcidMassPair(aa, aaMass));
     }
 
+
+    CTime datetime(CTime::eCurrent);
     datetime.SetFormat("Y-M-DTh:m:s");
     this->SetAttlist().SetDate(datetime.AsString());
     this->SetAttlist().SetSummary_xml(newname);
@@ -394,99 +511,11 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     
     // Now for the Spectrum Queries
     CMSResponse::THitsets::const_iterator iHits;
-    int index = 1;
+    m_index = 1;
     for (iHits = inOMSSA.GetResponse().front()->GetHitsets().begin(); 
          iHits != inOMSSA.GetResponse().front()->GetHitsets().end(); iHits++) {
-        CRef< CMSHitSet > HitSet =  *iHits;
-        if (!HitSet->GetHits().empty()) {
-            CMSHitSet::THits::const_iterator iHit;
-            iHit = HitSet->GetHits().begin();
-            CRef<CSpectrum_query> sQuery(new CSpectrum_query);
-            string spectrumID;
-            if(!(HitSet->GetIds().empty())) {
-                spectrumID = *(HitSet->GetIds().begin());
-            }
-            //string query = NStr::IntToString(HitSet->GetNumber());
-
-            int charge = (*iHit)->GetCharge();
-            ConvertScanID(sQuery, spectrumID, HitSet->GetNumber(), charge);
-            //sQuery->SetAttlist().SetSpectrum(spectrumID);
-            //sQuery->SetAttlist().SetStart_scan(ParseScan(spectrumID, 1, query));
-            //sQuery->SetAttlist().SetEnd_scan(ParseScan(spectrumID, 2, query));
-
-            //double neutral_precursor_mass = ((*iHit)->GetMass()/scale)/charge - (charge * PROTON_MASS);
-            double neutral_precursor_mass = (*iHit)->GetMass()/scale;
-            sQuery->SetAttlist().SetPrecursor_neutral_mass(neutral_precursor_mass);
-            sQuery->SetAttlist().SetAssumed_charge(charge);
-            sQuery->SetAttlist().SetIndex(index++);
-
-            // Only one search_result per query (for now)
-            CRef<CSearch_result> sResult(new CSearch_result);
-
-            CMSHits::TPephits::const_iterator iPephit;
-            int hitRank = 1;
-            //double prevEValue = (*iHit)->GetEvalue();
-            for( ; iHit != HitSet->GetHits().end(); iHit++) {
-                // First protein is associated with search_hit, the rest go into alternative_proteins
-                iPephit = (*iHit)->GetPephits().begin();
-                // Each set of MSHits is a search_hit
-                CRef<CSearch_hit> sHit(new CSearch_hit);
-                //if (prevEValue < (*iHit)->GetEvalue()) hitRank++; // This sets those hits with the same score to have the same rank 
-                sHit->SetAttlist().SetHit_rank(hitRank);
-                hitRank++; // Arbitrarily advances the rank, ever if the scores are the same
-                sHit->SetAttlist().SetPeptide((*iHit)->GetPepstring());
-                if((*iHit)->CanGetPepstart())
-                    sHit->SetAttlist().SetPeptide_prev_aa((*iHit)->GetPepstart());
-                if((*iHit)->CanGetPepstop())
-                    sHit->SetAttlist().SetPeptide_next_aa((*iHit)->GetPepstop());
-
-                sHit->SetAttlist().SetProtein(GetProteinName(*iPephit));
-
-                sHit->SetAttlist().SetNum_tot_proteins((*iHit)->GetPephits().size());
-                sHit->SetAttlist().SetNum_matched_ions((*iHit)->GetMzhits().size());
-                int tot_num_ions = ((*iHit)->GetPepstring().length()-1) * 2;
-                sHit->SetAttlist().SetTot_num_ions(tot_num_ions);
-                sHit->SetAttlist().SetCalc_neutral_pep_mass((*iHit)->GetTheomass()/scale);
-                sHit->SetAttlist().SetMassdiff(ConvertDouble(neutral_precursor_mass - ((*iHit)->GetTheomass())/scale));
-                //sHit->SetSearch_hit().SetAttlist().SetNum_tol_term("42"); //skip
-                //sHit->SetSearch_hit().SetAttlist().SetNum_missed_cleavages("42"); //skip
-                sHit->SetAttlist().SetIs_rejected(CSearch_hit::C_Attlist::eAttlist_is_rejected_0);
-                sHit->SetAttlist().SetProtein_descr((*iPephit)->GetDefline());
-                //sHit->SetSearch_hit().SetAttlist().SetCalc_pI("42"); //skip
-                //sHit->SetSearch_hit().SetAttlist().SetProtein_mw("42"); //skip
-                CRef<CSearch_score> pValue(new CSearch_score);
-                pValue->SetAttlist().SetName("pvalue");
-                pValue->SetAttlist().SetValue(ConvertDouble((*iHit)->GetPvalue()));
-                CRef<CSearch_score> eValue(new CSearch_score);
-                eValue->SetAttlist().SetName("expect");
-                eValue->SetAttlist().SetValue(ConvertDouble((*iHit)->GetEvalue()));
-                sHit->SetSearch_score().push_back(pValue);
-                sHit->SetSearch_score().push_back(eValue);
-                if ((*iHit)->CanGetScores()) {
-                    ITERATE(CMSHits::TScores, iScore, (*iHit)->GetScores()) {
-                        CRef<CSearch_score> score(new CSearch_score);
-                        score->SetAttlist().SetName((*iScore)->GetName());
-                        score->SetAttlist().SetValue(ConvertDouble((*iScore)->GetValue()));
-                        sHit->SetSearch_score().push_back(score);
-                    }
-                }
-                // Generate alternative_proteins
-                for (iPephit++ ; iPephit != (*iHit)->GetPephits().end(); iPephit++) {
-                    CRef<CAlternative_protein> altPro(new CAlternative_protein);
-                    altPro->SetAttlist().SetProtein(GetProteinName(*iPephit));
-	                altPro->SetAttlist().SetProtein_descr((*iPephit)->GetDefline());
-	                //altPro->SetAlternative_protein().SetAttlist().SetNum_tol_term(); //skip
-	                //altPro->SetAlternative_protein().SetAttlist().SetProtein_mw();  //skip
-                    sHit->SetAlternative_protein().push_back(altPro);
-                }
-                CRef<CModification_info> modInfo = ConvertModifications(*iHit, Modset, variableMods);
-                if (modInfo) sHit->SetModification_info(*modInfo);
-                
-                sResult->SetSearch_hit().push_back(sHit);
-            }
-            sQuery->SetSearch_result().push_back(sResult);
-            rSum->SetSpectrum_query().push_back(sQuery);
-        }
+        //CRef< CMSHitSet > HitSet =  *iHits;
+        ConvertMSHitSet(*iHits, rSum->SetSpectrum_query(), Modset, variableMods);
     }
     
     ITERATE(set<int>, iVMod, variableMods) {
@@ -497,7 +526,6 @@ void CPepXML::ConvertFromOMSSA(CMSSearch& inOMSSA, CRef <CMSModSpecSet> Modset, 
     this->SetMsms_run_summary().push_back(rSum);
 
 }
-
 
 END_SCOPE(omssa)
 END_SCOPE(objects)

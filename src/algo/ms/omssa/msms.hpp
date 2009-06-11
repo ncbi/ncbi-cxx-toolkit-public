@@ -784,7 +784,7 @@ void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
                           CRef <CMSModSpecSet> &Modset)
 {
     // iterator thru mods VariableMods.GetAAMods(ModType)
-    int iMods;
+    size_t iMods;
     int iChar;
 
     for (iMods = 0;
@@ -813,7 +813,7 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
                                    CRef <CMSModSpecSet> &Modset)
 {
     // iterator thru mods
-    int iMods;
+    size_t iMods;
 
     for (iMods = 0;
         iMods <  VariableMods.GetAAMods(ModType).size(); ++iMods) {
