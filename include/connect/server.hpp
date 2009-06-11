@@ -34,6 +34,7 @@
 /// Framework to create multithreaded network servers with thread-per-request
 /// scheduling.
 
+#include <util/thread_pool.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -112,6 +113,9 @@ public:
     /// Enter the main loop
     void Run(void);
 
+    /// Submit request to be executed by the server thread pool
+    void SubmitRequest(const CRef<CStdRequest>& request);
+
     /// Mark connection as deferred for processing, i.e. do not poll on it
     /// and wait when IsReadyToProcess() will return true.
     void DeferConnectionProcessing(IServer_ConnectionBase* conn);
@@ -142,13 +146,14 @@ protected:
     virtual bool ShutdownRequested(void) { return false; }
 
 private:
-    void CreateRequest(CStdPoolOfThreads& threadPool,
-                       IServer_ConnectionBase* conn_base,
-                       EServIO_Event event, const STimeout* timeout,
+    void CreateRequest(IServer_ConnectionBase* conn_base,
+                       EServIO_Event event,
+                       const STimeout* timeout,
                        int request_id);
 
-    SServer_Parameters*      m_Parameters;
-    CServer_ConnectionPool*  m_ConnectionPool;
+    auto_ptr<CStdPoolOfThreads> m_ThreadPool;
+    SServer_Parameters*         m_Parameters;
+    CServer_ConnectionPool*     m_ConnectionPool;
 };
 
 

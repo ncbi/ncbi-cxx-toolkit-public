@@ -227,8 +227,10 @@ void CServerConnectionRequest::Process(void)
 #ifdef _DEBUG
         SetDiagRequestId(m_RequestId);
 #endif
+//        LOG_POST(Warning << "Request " << m_RequestId << " started");
         _TRACE("Begin I/O request");
         m_Connection->OnSocketEvent(m_Event);
+//        LOG_POST(Warning << "Request " << m_RequestId << " finished");
         _TRACE("End I/O request");
     } STD_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
     // Return socket to poll vector
@@ -363,18 +365,6 @@ void CServer::StartListening(void)
 }
 
 
-void CServer::DeferConnectionProcessing(IServer_ConnectionBase* conn)
-{
-    m_ConnectionPool->SetConnType(conn, CServer_ConnectionPool::ePreDeferredSocket);
-}
-
-
-void CServer::DeferConnectionProcessing(CSocket* sock)
-{
-    DeferConnectionProcessing(dynamic_cast<IServer_ConnectionBase*>(sock));
-}
-
-
 static inline bool operator <(const STimeout& to1, const STimeout& to2)
 {
     return to1.sec != to2.sec ? to1.sec < to2.sec : to1.usec < to2.usec;
@@ -385,11 +375,11 @@ void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
 
-    CStdPoolOfThreads threadPool(m_Parameters->max_threads,
-                                 kMax_UInt,
-                                 m_Parameters->spawn_threshold);
+    m_ThreadPool.reset(new CStdPoolOfThreads(m_Parameters->max_threads,
+                                             kMax_UInt,
+                                             m_Parameters->spawn_threshold));
     try {
-        threadPool.Spawn(m_Parameters->init_threads);
+        m_ThreadPool->Spawn(m_Parameters->init_threads);
 
         Init();
 
@@ -408,7 +398,7 @@ void CServer::Run(void)
 
             ITERATE(TConnsList, it, revived_conns) {
                 ++request_id;
-                CreateRequest(threadPool, *it,
+                CreateRequest(*it,
                               IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
                               m_Parameters->idle_timeout, request_id);
             }
@@ -442,7 +432,7 @@ void CServer::Run(void)
                     ITERATE (vector<IServer_ConnectionBase*>, it,
                              timer_requests) {
                         ++request_id;
-                        CreateRequest(threadPool, *it, (EServIO_Event) -1,
+                        CreateRequest(*it, (EServIO_Event) -1,
                                       timeout, request_id);
                     }
                 }
@@ -455,7 +445,7 @@ void CServer::Run(void)
                 TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
                 _ASSERT(conn_base);
                 ++request_id;
-                CreateRequest(threadPool, conn_base,
+                CreateRequest(conn_base,
                               IOEventToServIOEvent(it->m_REvent),
                               m_Parameters->idle_timeout, request_id);
             }
@@ -463,19 +453,37 @@ void CServer::Run(void)
     } catch (...) {
         // Avoid collateral damage from destroying the thread pool
         // while worker threads are active (or, worse, initializing).
-        threadPool.KillAllThreads(true);
+        m_ThreadPool->KillAllThreads(true);
         throw;
     }
 
     // We need to kill all processing threads first, so that there
     // is no request with already destroyed connection left.
-    threadPool.KillAllThreads(true);
+    m_ThreadPool->KillAllThreads(true);
     Exit();
     // We stop listening only here to provide port lock until application
     // cleaned up after execution.
     m_ConnectionPool->StopListening();
     // Here we finally free to erase connection pool.
     m_ConnectionPool->Erase();
+}
+
+
+void CServer::SubmitRequest(const CRef<CStdRequest>& request)
+{
+    m_ThreadPool->AcceptRequest(request);
+}
+
+
+void CServer::DeferConnectionProcessing(IServer_ConnectionBase* conn)
+{
+    m_ConnectionPool->SetConnType(conn, CServer_ConnectionPool::ePreDeferredSocket);
+}
+
+
+void CServer::DeferConnectionProcessing(CSocket* sock)
+{
+    DeferConnectionProcessing(dynamic_cast<IServer_ConnectionBase*>(sock));
 }
 
 
@@ -489,10 +497,10 @@ void CServer::Exit()
 }
 
 
-void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
-    IServer_ConnectionBase* conn_base,
-    EServIO_Event event, const STimeout* timeout,
-    int request_id)
+void CServer::CreateRequest(IServer_ConnectionBase* conn_base,
+                            EServIO_Event event,
+                            const STimeout* timeout,
+                            int request_id)
 {
 #ifdef _DEBUG
     SetDiagRequestId(request_id);
@@ -502,8 +510,12 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
 
     if (request) {
         try {
-            threadPool.AcceptRequest(request);
+            m_ThreadPool->AcceptRequest(request);
             _TRACE("Request " << NStr::IntToString(event) << " inserted");
+// Debug
+//            LOG_POST(Warning << "Request " << request_id
+//                             << " accepted, queue size: "
+//                             << m_ThreadPool->GetQueueSize());
         } catch (CBlockingQueueException&) {
             // The size of thread pool queue is set to kMax_UInt, so
             // this is impossible event, but we handle it gently
