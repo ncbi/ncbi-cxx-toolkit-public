@@ -996,7 +996,6 @@ case "$host_os:$compiler" in
    elif test -f /sw/include/dlfcn.h; then
       CPPFLAGS="-I/sw/include $CPPFLAGS"
       LDFLAGS="-L/sw/lib $LDFLAGS"
-      test -f /sw/lib/libdb-4.1.dylib  &&  BERKELEYDB_PATH="/sw"
    else
       AC_MSG_WARN([No dlfcn.h in /usr/include or /sw/include.])
    fi
@@ -3736,7 +3735,11 @@ AC_SUBST(ftds64)
 
 ## MySQL
 if test "$with_mysql" != "no" ; then
-   : ${MYSQL_BINPATH=${MYSQL_PATH-/netopt/mysql/current}/bin}
+   case "$with_mysql" in
+      yes | "" ) : ${MYSQL_PATH=/netopt/mysql/current} ;;
+      *        ) MYSQL_PATH=$with_mysql ;;
+   esac
+   : ${MYSQL_BINPATH=$MYSQL_PATH/bin}
    AC_PATH_PROG(mysql_config, mysql_config, [], [$MYSQL_BINPATH:$PATH])
    if test -n "$mysql_config" ; then
       : ${MYSQL_BINPATH=`dirname $mysql_config`}
@@ -3995,13 +3998,10 @@ fi
 
 ## CPPUNIT
 if test "$with_cppunit" != "no" ; then
-   if test -z "$CPPUNIT_PATH"; then
-      if test -d "$with_cppunit"; then
-         CPPUNIT_PATH=$with_cppunit
-      else
-         CPPUNIT_PATH="$NCBI/cppunit"
-      fi
-   fi
+   case "$with_cppunit" in
+      yes | "" ) : ${CPPUNIT_PATH=$NCBI/cppunit} ;;
+      *        ) CPPUNIT_PATH=$with_cppunit ;;
+   esac
    if test -d "$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}/lib" \
         -a -z "$CPPUNIT_ARCH_PATH"; then
       CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}"
@@ -4520,13 +4520,10 @@ LDFLAGS=$orig_LDFLAGS
 
 ## FLTK
 if test "$with_fltk" != "no"; then
-   if test -z "$FLTK_PATH"; then
-      if test -d "$with_fltk"; then
-         FLTK_PATH=$with_fltk
-      else
-         FLTK_PATH="$NCBI/fltk"
-      fi
-   fi
+   case "$with_fltk" in
+      yes | "" ) : ${FLTK_PATH=$NCBI/fltk} ;;
+      *        ) FLTK_PATH=$with_fltk ;;
+   esac
    if test -d "$FLTK_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$FLTK_ARCH_PATH"; then
       FLTK_ARCH_PATH="$FLTK_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
@@ -4600,13 +4597,10 @@ fi
 
 ## wxWindows
 if test "$with_wxwin" != "no" ; then
-   if test -z "$WXWIN_PATH"; then
-      if test -d "$with_wxwin"; then
-         WXWIN_PATH=$with_wxwin
-      else
-         WXWIN_PATH="$NCBI/wxwin"
-      fi
-   fi
+   case "$with_wxwin" in
+      yes | "" ) : ${WXWIN_PATH=$NCBI/wxwin} ;;
+      *        ) WXWIN_PATH=$with_wxwin ;;
+   esac
    if test -d "$WXWIN_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$WXWIN_ARCH_PATH"; then
       WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
@@ -4677,13 +4671,10 @@ fi
 
 ## wxWidgets
 if test "$with_wxwidgets" != "no" ; then
-   if test -z "$WXWIDGETS_PATH"; then
-      if test -d "$with_wxwidgets"; then
-         WXWIDGETS_PATH=$with_wxwidgets
-      else
-         WXWIDGETS_PATH="$NCBI/wxwidgets"
-      fi
-   fi
+   case "$with_wxwidgets" in
+      yes | "" ) : ${WXWIDGETS_PATH=$NCBI/wxwidgets} ;;
+      *        ) WXWIDGETS_PATH=$with_wxwidgets ;;
+   esac
    if test -d "$WXWIDGETS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$WXWIDGETS_ARCH_PATH"; then
       WXWIDGETS_ARCH_PATH="$WXWIDGETS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
@@ -5078,13 +5069,10 @@ if test -z "$ICU_PATH"  &&  icu-config --version >/dev/null 2>&1; then
 fi
 
 if test "$with_icu" != "no" ; then
-   if test -z "$ICU_PATH"; then
-      if test -d "$with_icu"; then
-         ICU_PATH=$with_icu
-      else
-         ICU_PATH="$NCBI/icu"
-      fi
-   fi
+   case "$with_icu" in
+      yes | "" ) : ${ICU_PATH=$NCBI/icu} ;;
+      *        ) ICU_PATH=$with_icu ;;
+   esac
    if test -d "$ICU_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}/lib" \
         -a -z "$ICU_ARCH_PATH"; then
       ICU_ARCH_PATH="$ICU_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
@@ -5419,13 +5407,10 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ### Sun Grid Engine
-if test -z "${SGE_PATH+set}"; then
-   case "$with_sge" in
-      yes | no ) ;;
-      '' ) SGE_PATH=/netopt/sge ;;
-      *  ) SGE_PATH=$with_sge   ;;
-   esac
-fi
+case "$with_sge" in
+   yes | "" ) : ${SGE_PATH=/netopt/sge} ;;
+   *        ) SGE_PATH=$with_sge ;;
+esac
 if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
    case "$host:$NCBI_PLATFORM_BITS" in
       i?86-*-darwin*      ) SGE_LIBPATH=$SGE_PATH/lib/darwin-x86  ;;
