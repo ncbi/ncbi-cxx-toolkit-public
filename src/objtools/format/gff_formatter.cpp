@@ -66,7 +66,7 @@ void CGFFFormatter::Start(IFlatTextOStream& text_os)
 {
     list<string> l;
     l.push_back("##gff-version 2");
-    l.push_back("##source-version NCBI C++ formatter 0.2");
+    l.push_back("##source-version NCBI C++ formatter 0.3");
     l.push_back("##date " + CurrentTime().AsString("Y-M-D"));
     text_os.AddParagraph(l);
 }
@@ -307,7 +307,11 @@ string CGFFFormatter::x_FormatAttr(const string& name, const string& value)
     value1.erase();
     ITERATE (string, c, value2) {
         switch (*c) {
-        case ' ':  value1 += "\\x20"; break;
+        // Spaces allowed in the attribute column, if value is quoted,
+        // which this function is already doing. Thus, avoid ugly \x20.
+        // @see GTF specs v 1, 2, 2.1, 2.2
+        // @see GFF version 1 and version 2
+        // case ' ':  value1 += "\\x20"; break;
         case '\"': value1 += "x22";   break; // already backslashed
         case '#':  value1 += "\\x23"; break;
         default:   value1 += *c;

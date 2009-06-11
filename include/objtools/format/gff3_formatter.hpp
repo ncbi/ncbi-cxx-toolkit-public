@@ -71,7 +71,48 @@ protected:
 private:
     unsigned int m_CurrentId;
 
-    static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os, const string& s);
+    /// Encodes according to GFF3's URL-like encoding rules.
+    ///
+    /// There are some 4 different subtly different encoding rules in GFF3:
+    ///
+    /// 1) General rules, which allow all characters except:
+    ///       tab newline carriage-return control  ; = % & , . " \
+    ///
+    ///    Note that the above is specified in 3 parts, confusingly.
+    ///    "The following characters must be escaped" in one paragraph,
+    ///    "The following characters have reserved meanings and
+    ///    must be escaped" in a second paragraph, then a third
+    ///    paragraph gives a few more that "are explicitly forbidden".
+    ///
+    /// 2) Seqid rules, which are more restrictive and apply only
+    ///    to the first column, allowing only:
+    ///       a-z A-Z 0-9 . : ^ * $ @ ! + _ ? - |
+    ///
+    /// 3) The attribute rules, which effectively clarify the general rule's
+    ///    second paragraph about reserved meanings, but give a
+    ///    reduced list:
+    ///       , = ;
+    ///
+    ///    Also, spaces are exlictly allowed, unescaped.
+    ///
+    /// 4) The Target tag rules, which are quite simply that spaces
+    ///    must be escaped with %09 (and not with +).
+    ///
+    /// Wow! We'll forget about the more lax vs strict distinction
+    /// since stict should be compativle with lax, and concentrate
+    /// on the 3 different ways that spaces are represented.
+    ///
+    /// I general, we'll prefer "+", but recommend " " be used for
+    /// the last column, attributes, but beweare the special exception
+    /// in rule 4 requiring "%09" for Target. 
+    ///
+    /// @param os the destination stream
+    /// @param s the string to be encoded
+    /// @param space the representation of spaces, which should be
+    ///        one of "+" (default), " ", or "%09".
+    static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os,
+                                         const string& s,
+                                         char* space = "+");
 
     /// Formats any pairwise alignment into GFF3 format with CIGAR notation.
     ///

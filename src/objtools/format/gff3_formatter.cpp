@@ -298,8 +298,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         return;
     }
 
-    TSeqPos ref_width = (ref_row < ds.GetWidths().size()) ?
-                                ds.GetWidths()[ref_row] : 1;
+    TSeqPos ref_width =
+            (static_cast<size_t>(ref_row) < ds.GetWidths().size()) ?
+                        ds.GetWidths()[ref_row] : 1;
 #ifdef GFF3_USE_ANCHOR_BUG
     alnmap.SetAnchor(ref_row);
     TSeqPos ref_start = alnmap.GetSeqStart(ref_row);
@@ -314,8 +315,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         CNcbiOstrstream cigar;
         char            last_type = 0;
         TSeqPos         last_count = 0;
-        TSeqPos         tgt_width = (tgt_row < ds.GetWidths().size()) ?
-                                        ds.GetWidths()[tgt_row] : 1;
+        TSeqPos         tgt_width =
+                (static_cast<size_t>(tgt_row) < ds.GetWidths().size()) ?
+                                    ds.GetWidths()[tgt_row] : 1;
         int             tgt_sign = alnmap.StrandSign(tgt_row);
         TRange          ref_range, tgt_range;
         bool            trivial = true;
@@ -542,25 +544,37 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 last_frameshift = frameshift;
             }
         }
-        // We can't use x_FormatAttr because we seem to need literal
-        // pluses, which we otherwise avoid due to ambiguity. :-/
+        // We can't use x_FormatAttr because we seem to need a mix
+        // of literal pluses, which we otherwise avoid due to ambiguity,
+        // as well as two kinds of escapes for spaces, one with pluses,
+        // and one with %09. Really. Read the GFF3 specs. :-/
         CNcbiOstrstream attrs;
         const CSeq_id& tgt_id = s_GetTargetId(alnmap.GetSeqId(tgt_row), scope);
         if ( config.GffGenerateIdTags() ) {
             attrs << "ID=" << m_CurrentId << ";";
         }
         attrs << "Target=";
-        x_AppendEncoded(attrs, tgt_id.GetSeqIdString(true));
-        attrs << '+' << (tgt_range.GetFrom() + 1) << '+'
+        // GFF3 specs require %09 escape for spaces in the Target,
+        // not + or any other!
+        x_AppendEncoded(attrs, tgt_id.GetSeqIdString(true), "%09");
+        // We are allowed spaces here, so we'll make use of them.
+        // It's more pleasing to the eye.
+        attrs << ' ' << (tgt_range.GetFrom() + 1) << ' '
               << (tgt_range.GetTo() + 1);
 
         ///
         /// HACK HACK HACK
         /// optional strand on the end
         if (tgt_sign == 1) {
-            attrs << "+%2B";
+            // Now, isn't + the escape for space? Despite examples from
+            // the GFF3 specs, we avoid the ambiguity of "++" with first
+            // plus being space and second plus being plus. Mercy!
+            attrs << " %2B";
         } else {
-            attrs << "+%2D";
+            // But a minus is unambiguous. So, the only question is,
+            // do we escape the space? Hmmm... "+-" looks confusing,
+            // and "+%2D" is just ugly.
+            attrs << " -";
         }
 
         if ( !trivial  ||  last_type != 'M' ) {
@@ -580,7 +594,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             ITERATE (CDense_seg::TScores, score_it, aln.GetAlign().GetScore()) {
                 const CScore& score = **score_it;
                 if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
-                    attrs << ';'  << score.GetId().GetStr() << '=';
+                    attrs << ';';
+                    // Not one of the special cases of escaping, so space ok.
+                    x_AppendEncoded(attrs, score.GetId().GetStr(), " ");
+                    attrs << '=';
                     if (score.GetValue().IsInt()) {
                         attrs << score.GetValue().GetInt();
                     } else {
@@ -596,7 +613,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             ITERATE (CDense_seg::TScores, score_it, ds.GetScores()) {
                 const CScore& score = **score_it;
                 if (score.IsSetId()  &&  score.GetId().IsStr()  &&  score.IsSetValue()) {
-                    attrs << ';'  << score.GetId().GetStr() << '=';
+                    attrs << ';';
+                    // Not one of the special cases of escaping, so space ok.
+                    x_AppendEncoded(attrs, score.GetId().GetStr(), " ");
+                    attrs << '=';
                     if (score.GetValue().IsInt()) {
                         attrs << score.GetValue().GetInt();
                     } else {
@@ -652,10 +672,11 @@ void CGFF3_Formatter::x_AddGeneID(list<string>& attr_list,
 
 
 CNcbiOstream& CGFF3_Formatter::x_AppendEncoded(CNcbiOstream& os,
-                                               const string& s)
+                                               const string& s,
+                                               char* space)
 {
     // Encode space as %20 rather than +, whose status is ambiguous.
-    // Officially, [a-zA-Z0-9.:^*$@!+_?-] are okay, but we punt [*+?]
+    // Officially, [a-zA-Z0-9.:^*$@!+_?-|] are okay, but we punt [*+?]
     // to be extra safe.
     static const char s_Table[256][4] = {
         "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
@@ -689,10 +710,14 @@ CNcbiOstream& CGFF3_Formatter::x_AppendEncoded(CNcbiOstream& os,
         "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
         "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
         "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
+        "%F8", "%F9", "%FA", "%FB", "|", "%FD", "%FE", "%FF"
     };
     for (SIZE_TYPE i = 0;  i < s.size();  ++i) {
-        os << s_Table[static_cast<unsigned char>(s[i])];
+        if (s[i] == ' ') {
+            os << space;
+        } else {
+            os << s_Table[static_cast<unsigned char>(s[i])];
+        }
     }
     return os;
 }
