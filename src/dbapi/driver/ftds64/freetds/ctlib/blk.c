@@ -754,7 +754,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 #endif
             /* This is not NULL */
 
-            if (buffer == NULL || *buffer == 0 || buflen == 0) {
+            if (buffer == NULL /*|| *buffer == 0 || buflen == 0*/) {
                 return CS_FAIL;
             }
 
@@ -808,7 +808,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
         buflen = MIN(buflen, (CS_INT)bindcol->column_bindlen - blkdesc->text_sent);
 
-        if (buflen) {
+        /*if (buflen) {*/
             tds_put_n(tds, buffer, buflen);
 
             blkdesc->text_sent += buflen;
@@ -819,7 +819,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
                 if (rc == CS_SUCCEED)
                     rc = CS_END_DATA;
             }
-        }
+        /*}*/
     }  /* IS_TDS7_PLUS */
     else {
         /* handle any text/image data */
@@ -840,7 +840,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
             buflen = MIN(buflen, (CS_INT)bindcol->column_bindlen - blkdesc->text_sent);
 
-            if (buflen) {
+            /*if (buflen) {*/
                 tds_put_n(tds, buffer, buflen);
 
                 blkdesc->text_sent += buflen;
@@ -852,7 +852,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
                     if (rc == CS_SUCCEED)
                         rc = CS_END_DATA;
                 }
-            }
+            /*}*/
         }
         else {
             assert(0);
