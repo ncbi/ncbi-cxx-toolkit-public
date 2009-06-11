@@ -23,11 +23,11 @@
  */
 
 
-#ifndef BOOST_TEST_FLOATING_POINT_COMPARISON_HPP_071894GER
-#define BOOST_TEST_FLOATING_POINT_COMPARISON_HPP_071894GER
+#ifndef NCBI_BOOST_TEST_FLOATING_POINT_COMPARISON_HPP_071894GER
+#define NCBI_BOOST_TEST_FLOATING_POINT_COMPARISON_HPP_071894GER
 
 #ifndef FLOATING_POINT__HPP
-    #error Do not include this header directly. Use <util/floating_point.hpp> instead.
+#  error Do not include this header directly. Use <util/floating_point.hpp> instead.
 #endif
 
 
@@ -265,4 +265,4 @@ check_is_small_t check_is_small;
 //____________________________________________________________________________//
 
 
-#endif // BOOST_FLOATING_POINT_COMAPARISON_HPP_071894GER
+#endif // NCBI_BOOST_FLOATING_POINT_COMAPARISON_HPP_071894GER
