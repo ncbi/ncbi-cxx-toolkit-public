@@ -45,6 +45,7 @@
 #include <objects/seqres/seqres__.hpp>
 #include <objects/biblio/biblio__.hpp>
 #include <objects/pub/pub__.hpp>
+#include <serial/iterator.hpp>
 
 
 BEGIN_NCBI_SCOPE
