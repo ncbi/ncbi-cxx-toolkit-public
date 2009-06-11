@@ -6,6 +6,9 @@
 
 APP = test_floating_point_comparison
 SRC = test_floating_point_comparison
-LIB = xutil xncbi
+LIB = xutil test_boost xncbi
+REQUIRES = Boost.Test.Included
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 CHECK_CMD =

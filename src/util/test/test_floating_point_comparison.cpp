@@ -31,138 +31,161 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
+#include <corelib/test_boost.hpp>
+#include <ncbiconf.h>
+
 #include <util/floating_point.hpp>
+
 
 USING_NCBI_SCOPE;
 
-int main(int argc, char** argv)
+
+BOOST_AUTO_TEST_CASE( FPComparison01 )
 {
-    int         ret = 0;
+    double lhs = 1.111e-10;
+    double rhs = 1.112e-10;
+    double fraction = 0.0008999;
 
-    /*
-     * Double tests
-     */
-
-    double      v1df = 1.111e-10;
-    double      v2df = 1.112e-10;
-    double      fraction_d = 0.0008999;
-
-    if (g_FloatingPoint_Compare(v1df, eFP_EqualTo, v2df,
-                                eFP_WithFraction, fraction_d)) {
-        ret++;
-        cerr << "Fraction comparison (double) failed. "
-                "Expected: false. Received: true." << endl;
+    if (g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                eFP_WithFraction, fraction)) {
+        BOOST_FAIL( "Fraction comparison (double) failed. "
+                    "Expected: false. Received: true." );
     }
+    return;
+}
 
 
-    double      v1dp = 1.23456e-10;
-    double      v2dp = 1.23457e-10;
-    double      percent_d = 0.0001;
+BOOST_AUTO_TEST_CASE( FPComparison02 )
+{
+    double lhs = 1.23456e-10;
+    double rhs = 1.23457e-10;
+    double percent = 0.0001;
 
-    if (g_FloatingPoint_Compare(v1dp, eFP_EqualTo, v2dp,
-                                eFP_WithPercent, percent_d)) {
-        ret++;
-        cerr << "Percent comparison (double) failed. "
-                "Expected: false. Received: true." << endl;
+    if (g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                eFP_WithPercent, percent)) {
+        BOOST_FAIL( "Percent comparison (double) failed. "
+                    "Expected: false. Received: true." );
     }
+    return;
+}
 
 
-    v1df = 1.111e-10;
-    v2df = 1.112e-10;
-    fraction_d = 0.009;
+BOOST_AUTO_TEST_CASE( FPComparison03 )
+{
+    double lhs = 1.111e-10;
+    double rhs = 1.112e-10;
+    double fraction = 0.009;
 
-    if (!g_FloatingPoint_Compare(v1df, eFP_EqualTo, v2df,
-                                 eFP_WithFraction, fraction_d)) {
-        ret++;
-        cerr << "Fraction comparison (double) failed. "
-                "Expected: true. Received: false." << endl;
+    if (!g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                 eFP_WithFraction, fraction)) {
+        BOOST_FAIL( "Fraction comparison (double) failed. "
+                    "Expected: true. Received: false." );
     }
+    return;
+}
 
-    v1dp = 1.23456e-10;
-    v2dp = 1.23457e-10;
-    percent_d = 0.001;
 
-    if (!g_FloatingPoint_Compare(v1dp, eFP_EqualTo, v2dp,
-                                 eFP_WithPercent, percent_d)) {
-        ret++;
-        cerr << "Percent comparison (double) failed. "
-                "Expected: true. Received: false." << endl;
+BOOST_AUTO_TEST_CASE( FPComparison04 )
+{
+    double lhs = 1.23456e-10;
+    double rhs = 1.23457e-10;
+    double percent = 0.001;
+
+    if (!g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                 eFP_WithPercent, percent)) {
+        BOOST_FAIL( "Percent comparison (double) failed. "
+                    "Expected: true. Received: false." );
     }
+    return;
+}
 
-    /*
-     * float tests
-     */
-    float       v1ff = 1.111e-10F;
-    float       v2ff = 1.112e-10F;
-    float       fraction_f = 0.0008999F;
 
-    if (g_FloatingPoint_Compare(v1ff, eFP_EqualTo, v2ff,
-                                eFP_WithFraction, fraction_f)) {
-        ret++;
-        cerr << "Fraction comparison (float) failed. "
-                "Expected: false. Received: true." << endl;
+BOOST_AUTO_TEST_CASE( FPComparison05 )
+{
+    float lhs = 1.111e-10F;
+    float rhs = 1.112e-10F;
+    float fraction = 0.0008999F;
+
+    if (g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                eFP_WithFraction, fraction)) {
+        BOOST_FAIL( "Fraction comparison (float) failed. "
+                    "Expected: false. Received: true." );
     }
+    return;
+}
 
 
-    float       v1fp = 1.23456e-10F;
-    float       v2fp = 1.23457e-10F;
-    float       percent_f = 0.0001F;
+BOOST_AUTO_TEST_CASE( FPComparison06 )
+{
+    float lhs = 1.23456e-10F;
+    float rhs = 1.23457e-10F;
+    float percent = 0.0001F;
 
-    if (g_FloatingPoint_Compare(v1fp, eFP_EqualTo, v2fp,
-                                eFP_WithPercent, percent_f)) {
-        ret++;
-        cerr << "Percent comparison (float) failed. "
-                "Expected: false. Received: true." << endl;
+    if (g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                eFP_WithPercent, percent)) {
+        BOOST_FAIL( "Percent comparison (float) failed. "
+                    "Expected: false. Received: true." );
     }
+    return;
+}
 
 
-    v1ff = 1.111e-10F;
-    v2ff = 1.112e-10F;
-    fraction_f = 0.009F;
+BOOST_AUTO_TEST_CASE( FPComparison07 )
+{
+    float lhs = 1.111e-10F;
+    float rhs = 1.112e-10F;
+    float fraction = 0.009F;
 
-    if (!g_FloatingPoint_Compare(v1ff, eFP_EqualTo, v2ff,
-                                 eFP_WithFraction, fraction_f)) {
-        ret++;
-        cerr << "Fraction comparison (float) failed. "
-                "Expected: true. Received: false." << endl;
+    if (!g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                 eFP_WithFraction, fraction)) {
+        BOOST_FAIL( "Fraction comparison (float) failed. "
+                    "Expected: true. Received: false." );
     }
+    return;
+}
 
-    v1fp = 1.23456e-10F;
-    v2fp = 1.23457e-10F;
-    percent_f = 0.001F;
 
-    if (!g_FloatingPoint_Compare(v1fp, eFP_EqualTo, v2fp,
-                                 eFP_WithFraction, percent_f)) {
-        ret++;
-        cerr << "Percent comparison (float) failed. "
-                "Expected: true. Received: false." << endl;
+BOOST_AUTO_TEST_CASE( FPComparison08 )
+{
+    float lhs = 1.23456e-10F;
+    float rhs = 1.23457e-10F;
+    float percent = 0.001F;
+
+    if (!g_FloatingPoint_Compare(lhs, eFP_EqualTo, rhs,
+                                 eFP_WithFraction, percent)) {
+        BOOST_FAIL( "Percent comparison (float) failed. "
+                    "Expected: true. Received: false." );
     }
-
-    /*
-     * Mixing types for arguments is not allowed (not compiled)
-     */
+    return;
+}
 
 
-    v1dp = 1.23456e-10;
-    v2dp = 1.23457e-10;
-    percent_d = 0.0001;
+BOOST_AUTO_TEST_CASE( FPComparison09 )
+{
+    double lhs = 1.23456e-10;
+    double rhs = 1.23457e-10;
+    double percent = 0.0001;
 
-    if (!g_FloatingPoint_Compare(v1dp, eFP_LessThan, v2dp,
-                                 eFP_WithPercent, percent_d)) {
-        ret++;
-        cerr << "Percent less double failed. "
-                "Expected: false. Received: true." << endl;
+    if (!g_FloatingPoint_Compare(lhs, eFP_LessThan, rhs,
+                                 eFP_WithPercent, percent)) {
+        BOOST_FAIL( "Percent less double failed. "
+                    "Expected: false. Received: true." );
     }
+    return;
+}
 
-    if (!g_FloatingPoint_Compare(v2dp, eFP_GreaterThan, v1dp,
-                                 eFP_WithPercent, percent_d)) {
-        ret++;
-        cerr << "Percent greter double failed. "
-                "Expected: false. Received: true." << endl;
+
+BOOST_AUTO_TEST_CASE( FPComparison10 )
+{
+    double lhs = 1.23457e-10;
+    double rhs = 1.23456e-10;
+    double percent = 0.0001;
+
+    if (!g_FloatingPoint_Compare(lhs, eFP_GreaterThan, rhs,
+                                 eFP_WithPercent, percent)) {
+        BOOST_FAIL( "Percent greater double failed. "
+                    "Expected: false. Received: true." );
     }
-
-
-    return ret;
+    return;
 }
 
