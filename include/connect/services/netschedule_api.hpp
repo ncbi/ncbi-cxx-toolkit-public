@@ -634,7 +634,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         const string& qname,
         const string& qclass,
         const string& comment = kEmptyStr,
-        ECreateQueueFlags flags = eIgnoreDuplicateName) const;
+        ECreateQueueFlags flags = eErrorOnDublicateName) const;
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method
