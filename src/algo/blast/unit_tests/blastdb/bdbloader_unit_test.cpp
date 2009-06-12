@@ -236,7 +236,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     const string kAccession("NC_000001");
     CRef<CSeq_id> id(new CSeq_id(kAccession));
     // retrieves this range in the sequence
-    const TSeqRange kRange(100, 500); 
+    const TSeqRange kRange(15100, 15500); 
     CRef<CSeq_loc> sl(new CSeq_loc(*id, kRange.GetFrom(), kRange.GetTo()));
 
     const string db("nucl_dbs");
@@ -247,7 +247,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
 
-    const TSeqPos kLength(247249719);
+    const TSeqPos kLength(249250621);
     TSeqPos len = sequence::GetLength(*id, scope);
     BOOST_REQUIRE_EQUAL(kLength, len);
     len = sequence::GetLength(*sl, scope);
@@ -276,7 +276,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     // Obtained with the following command:
     // blastdbcmd -db nucl_dbs -entry NC_000001 -range 100-500 -outfmt %s
     char seq_data[] = 
-"CCTAACCCAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCTAACCCTAACCCTAACCCTAACCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCTAACCCTAAACCCTAAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCTAACCCCTAACCCTAACCCTAACCCTACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCCTAACCCTAACCCTAACCCTAACCCTCGCGGTACCCTCAGCCGGCCCGCCCGCCCGGG";
+        "GTCCCCACCCCCATGACACTCCCCAGCCCTCCAAGGCCACTGTGTTTCCCAGTTAGCTCAGAGCCTCAGTCGATCCCTGACCCAGCACCGGGCACTGATGAGACAGCGGCTGTTTGAGGAGCCACCTCCCAGCCACCTCGGGGCCAGGGCCAGGGTGTGCAGCACCACTGTACAATGGGGAAACTGGCCCAGAGAGGTGAGGCAGCTTGCCTGGGGTCACAGAGCAAGGCAAAAGCAGCGCTGGGTACAAGCTCAAAACCATAGTGCCCAGGGCACTGCCGCTGCAGGCGCAGGCATCGCATCACACCAGTGTCTGCGTTCACAGCAGGCATCATCAGTAGCCTCCAGAGGCCTCAGGTCCAGTCTCTAAAAATATCTCAGGAGGCTGCAGTGGCTGACC";
     BOOST_REQUIRE_EQUAL(sizeof(seq_data)/sizeof(seq_data[0]),
                         buffer.size()+1);
     for (size_t i = 0; i <= buffer.size(); i++) {
@@ -314,7 +314,7 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
     scope->AddDefaults();
     CRef<CSeq_id> id(new CSeq_id(kAccession));
     TSeqPos len = sequence::GetLength(*id, scope);
-    const TSeqPos kLength(247249719);
+    const TSeqPos kLength(249250621);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*id);
