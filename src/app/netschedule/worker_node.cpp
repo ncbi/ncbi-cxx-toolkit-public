@@ -315,8 +315,10 @@ void CQueueWorkerNodeList::SetId(
 
     worker_node->m_Id = node_id;
 
-    if (!node_id.empty())
+    if (!node_id.empty()) {
         m_WorkerNodeById.insert(worker_node);
+        worker_node->m_NewStyle = true;
+    }
 }
 
 void CQueueWorkerNodeList::ClearNode(CWorkerNode* worker_node, TJobList& jobs)
