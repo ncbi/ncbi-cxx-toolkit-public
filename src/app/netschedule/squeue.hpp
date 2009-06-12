@@ -44,6 +44,7 @@
 #include "ns_types.hpp"
 #include "ns_util.hpp"
 #include "ns_db.hpp"
+#include "background_host.hpp"
 #include "job.hpp"
 #include "worker_node.hpp"
 #include "job_status.hpp"
@@ -89,7 +90,9 @@ public:
     ~CQueueDbBlockArray();
     void Init(CBDB_Env& env, const string& path, unsigned count);
     void Close();
-    // Allocate a block from array. Negative means no more free blocks
+    // Allocate a block from array.
+    // @return
+    //     Position of allocated block, negative if no more free blocks
     int  Allocate();
     // Return block at position 'pos' to the array
     // Can not be used due to possible deadlock, see comment in
@@ -198,27 +201,28 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 public:
     CJobStatusTracker            status_tracker;    ///< status FSA
 
-public:
+private:
     // Timeline object to control job execution timeout
-    CJobTimeLine*                run_time_line;
-    CRWLock                      rtl_lock;      ///< run_time_line locker
+    CJobTimeLine*                m_RunTimeLine;
+    CRWLock                      m_RunTimeLineLock;
 
     // Datagram notification socket
     // (used to notify worker nodes and waiting clients)
-    CDatagramSocket              udp_socket;    ///< UDP notification socket
-    CFastMutex                   us_lock;       ///< UDP socket lock
+    CDatagramSocket              m_UdpSocket;     ///< UDP notification socket
+    CFastMutex                   m_UdpSocketLock;
 
     /// Queue monitor
     CServer_Monitor              m_Monitor;
 
     /// Should we delete db upon close?
-    bool                         delete_database;
-    vector<string>               files; ///< list of files (paths) for queue
+    bool                         m_DeleteDatabase;
 
 public:
     // Constructor/destructor
-    SLockedQueue(const string& queue_name,
-        const string& qclass_name, TQueueKind queue_kind);
+    SLockedQueue(CRequestExecutor& executor,
+                 const string&     queue_name,
+                 const string&     qclass_name,
+                 TQueueKind        queue_kind);
     ~SLockedQueue();
 
     void Attach(SQueueDbBlock* block);
@@ -290,6 +294,10 @@ public:
     void ClearAffinityIdx();
 
     void Notify(unsigned addr, unsigned short port, unsigned job_id);
+
+    void MarkForDeletion() {
+        m_DeleteDatabase = true;
+    }
 
     // Optimize bitvectors
     void OptimizeMem();
@@ -416,6 +424,13 @@ public:
     ///    Number of deleted jobs
     unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
 
+    void TimeLineMove(unsigned job_id, time_t old_time, time_t new_time);
+    // void x_AddToTimeLine(unsigned job_id, time_t curr);
+    void TimeLineRemove(unsigned job_id);
+    void TimeLineExchange(unsigned remove_job_id,
+                          unsigned add_job_id,
+                          time_t   timeout);
+
     unsigned DeleteBatch(unsigned batch_size);
 
     CBDB_FileCursor& GetRunsCursor();
@@ -482,6 +497,8 @@ private:
     friend class CQueueGuard;
     friend class CQueueJSGuard;
     friend class CJob;
+
+    CRequestExecutor&            m_Executor;
 
     string                       m_QueueName;
     string                       m_QueueClass;      ///< Parameter class

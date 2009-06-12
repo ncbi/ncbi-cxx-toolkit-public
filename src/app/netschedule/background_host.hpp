@@ -34,6 +34,8 @@
  *
  */
 
+#include <util/thread_pool.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CBackgroundHost
@@ -47,6 +49,14 @@ public:
     virtual ~CBackgroundHost() {}
     virtual void ReportError(ESeverity severity, const string& what) = 0;
     virtual bool ShouldRun() = 0;
+};
+
+
+class CRequestExecutor // better name, please
+{
+public:
+    virtual ~CRequestExecutor() {}
+    virtual void SubmitRequest(const CRef<CStdRequest>& request) = 0;
 };
 
 

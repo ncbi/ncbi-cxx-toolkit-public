@@ -485,12 +485,26 @@ private:
 class CNetScheduleBackgroundHost : public CBackgroundHost
 {
 public:
-    CNetScheduleBackgroundHost(CNetScheduleServer* server) :
-      m_Server(server)
+    CNetScheduleBackgroundHost(CNetScheduleServer* server)
+        : m_Server(server)
     {}
     virtual void ReportError(ESeverity severity,
         const string& what);
     virtual bool ShouldRun();
+private:
+    CNetScheduleServer* m_Server;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+/// Executor for long-standing requests
+class CNetScheduleRequestExecutor : public CRequestExecutor
+{
+public:
+    CNetScheduleRequestExecutor(CNetScheduleServer* server)
+        : m_Server(server)
+    {}
+    virtual void SubmitRequest(const CRef<CStdRequest>& request);
 private:
     CNetScheduleServer* m_Server;
 };
@@ -655,7 +669,7 @@ public:
     }
 
     //////////////////////////////////////////////////////////////////
-    /// For Handlers
+    /// Service for Handlers
     /// TRUE if logging is ON
     bool IsLog() const { return m_LogFlag.Get() != 0; }
     void SetLogging(bool flag) {
@@ -700,6 +714,7 @@ public:
     }
 
     CBackgroundHost& GetBackgroundHost() { return m_BackgroundHost; }
+    CRequestExecutor& GetRequestExecutor() { return m_RequestExecutor; }
 
 protected:
     virtual void Exit();
@@ -709,7 +724,8 @@ private:
 
 private:
     /// API for background threads
-    CNetScheduleBackgroundHost m_BackgroundHost;
+    CNetScheduleBackgroundHost  m_BackgroundHost;
+    CNetScheduleRequestExecutor m_RequestExecutor;
     /// Host name where server runs
     string                  m_Host;
     unsigned                m_Port;
@@ -785,6 +801,16 @@ bool CNetScheduleBackgroundHost::ShouldRun()
 {
     return true;
 }
+
+
+//////////////////////////////////////////////////////////////////////////
+// CNetScheduleRequestExecutor implementation
+void
+CNetScheduleRequestExecutor::SubmitRequest(const CRef<CStdRequest>& request)
+{
+    m_Server->SubmitRequest(request);
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -2756,6 +2782,7 @@ void CNetScheduleHandler::x_MakeGetAnswer(const CJob& job)
 // CNetScheduleServer implementation
 CNetScheduleServer::CNetScheduleServer()
 :   m_BackgroundHost(this),
+    m_RequestExecutor(this),
     m_Port(0),
     m_HostNetAddr(0),
     m_Shutdown(false),
@@ -2944,7 +2971,8 @@ int CNetScheduleDApp::Run(void)
         bdb_params.max_trans = params.max_threads * 2;
 
         auto_ptr<CQueueDataBase> qdb(
-            new CQueueDataBase(server->GetBackgroundHost()));
+            new CQueueDataBase(server->GetBackgroundHost(),
+                               server->GetRequestExecutor()));
 
         NcbiCout << "Mounting database at " << bdb_params.db_path << NcbiEndl;
         LOG_POST(Info << "Mounting database at " << bdb_params.db_path);

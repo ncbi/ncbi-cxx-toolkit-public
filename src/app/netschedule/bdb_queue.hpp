@@ -314,12 +314,6 @@ private:
 
     const CRef<SLockedQueue> x_GetLQueue(void) const;
 
-    void x_AddToTimeLine(unsigned job_id, time_t curr);
-    void x_RemoveFromTimeLine(unsigned job_id);
-    void x_TimeLineExchange(unsigned remove_job_id,
-                            unsigned add_job_id,
-                            time_t   curr);
-
 private:
     CQueue(const CQueue&);
     CQueue& operator=(const CQueue&);
@@ -514,14 +508,14 @@ struct SNSDBEnvironmentParams
 class CQueueDataBase
 {
 public:
-    CQueueDataBase(CBackgroundHost& host);
+    CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor);
     ~CQueueDataBase();
 
     /// @param params
     ///    Parameters of DB environment
     /// @param reinit
     ///    Whether to clean out database
-    /// @returns whether it was successful
+    /// @return whether it was successful
     bool Open(const SNSDBEnvironmentParams& params, bool reinit);
 
     // Read queue information from registry and configure queues
@@ -608,6 +602,7 @@ private:
     void x_CleanParamMap(void);
 
     CBackgroundHost&                m_Host;
+    CRequestExecutor&               m_Executor;
     CBDB_Env*                       m_Env;
     string                          m_Path;
     string                          m_Name;

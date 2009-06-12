@@ -244,8 +244,9 @@ string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation
 
-CQueueDataBase::CQueueDataBase(CBackgroundHost& host)
+CQueueDataBase::CQueueDataBase(CBackgroundHost& host, CRequestExecutor& executor)
 : m_Host(host),
+  m_Executor(executor),
   m_Env(0),
   m_QueueCollection(*this),
   m_StopPurge(false),
@@ -574,7 +575,7 @@ void CQueueDataBase::MountQueue(const string& qname,
 {
     _ASSERT(m_Env);
 
-    auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass, kind));
+    auto_ptr<SLockedQueue> q(new SLockedQueue(m_Executor, qname, qclass, kind));
     q->Attach(queue_db_block);
     q->SetParameters(params);
 
@@ -638,7 +639,7 @@ void CQueueDataBase::DeleteQueue(const string& qname)
     }
     // Signal queue to wipe out database files.
     CRef<SLockedQueue> queue(m_QueueCollection.GetQueue(qname));
-    queue->delete_database = true;
+    queue->MarkForDeletion();
     // Remove it from collection
     if (!m_QueueCollection.RemoveQueue(qname)) {
         string msg = "Job queue not found: ";
@@ -1951,7 +1952,7 @@ void CQueue::Cancel(unsigned job_id)
     trans.Commit();
     js_guard.Commit();
 
-    x_RemoveFromTimeLine(job_id);
+    q->TimeLineRemove(job_id);
 }
 
 
@@ -1960,7 +1961,7 @@ void CQueue::DropJob(unsigned job_id)
     CRef<SLockedQueue> q(x_GetLQueue());
 
     q->Erase(job_id);
-    x_RemoveFromTimeLine(job_id);
+    q->TimeLineRemove(job_id);
 
     if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
@@ -2224,7 +2225,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
 //        LOG_POST(Warning << "Added affinity: " << sw.Elapsed() * 1000 << "ms");
     }
 
-    x_TimeLineExchange(done_job_id, pending_job_id, curr);
+    q->TimeLineExchange(done_job_id, pending_job_id, curr + run_timeout);
 
     if (done_rec_updated  &&  job.ShouldNotify(curr)) {
         q->Notify(job.GetSubmAddr(), job.GetSubmPort(), done_job_id);
@@ -2361,10 +2362,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
 
     exp_time = x_ComputeExpirationTime(time_start, run_timeout);
 
-    {{
-        CWriteLockGuard guard(q->rtl_lock);
-        q->run_time_line->MoveObject(exp_time, curr + tm, job_id);
-    }}
+    q->TimeLineMove(job_id, exp_time, curr + tm);
 
     if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
@@ -2431,7 +2429,7 @@ void CQueue::ReturnJob(unsigned job_id)
     trans.Commit();
     js_guard.Commit();
     q->RemoveJobFromWorkerNode(job, eNSCReturned);
-    x_RemoveFromTimeLine(job_id);
+    q->TimeLineRemove(job_id);
 
     if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
@@ -2616,70 +2614,6 @@ void CQueue::Truncate(void)
     q->Clear();
     // Next call updates 'm_BecameEmpty' timestamp
     q->IsExpired(); // locks SLockedQueue lock
-}
-
-
-void CQueue::x_AddToTimeLine(unsigned job_id, time_t curr)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
-    if (job_id && q->run_time_line) {
-        CJobTimeLine& tl = *q->run_time_line;
-
-        CWriteLockGuard guard(q->rtl_lock);
-        tl.AddObject(curr + queue_run_timeout, job_id);
-    }
-}
-
-
-void CQueue::x_RemoveFromTimeLine(unsigned job_id)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    if (q->run_time_line) {
-        CWriteLockGuard guard(q->rtl_lock);
-        q->run_time_line->RemoveObject(job_id);
-    }
-
-    if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " CQueue::RemoveFromTimeLine: job id=";
-        msg += NStr::IntToString(job_id);
-        MonitorPost(msg);
-    }
-}
-
-
-void
-CQueue::x_TimeLineExchange(unsigned remove_job_id,
-                           unsigned add_job_id,
-                           time_t   curr)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
-    if (!q->run_time_line) return;
-
-    CJobTimeLine& tl = *q->run_time_line;
-    CWriteLockGuard guard(q->rtl_lock);
-    if (remove_job_id)
-        tl.RemoveObject(remove_job_id);
-    if (add_job_id)
-        tl.AddObject(curr + queue_run_timeout, add_job_id);
-
-    if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " CQueue::TimeLineExchange:";
-        if (remove_job_id) {
-            msg += " job removed=";
-            msg += NStr::IntToString(remove_job_id);
-        }
-        if (add_job_id) {
-            msg += " job added=";
-            msg += NStr::IntToString(add_job_id);
-        }
-        MonitorPost(msg);
-    }
 }
 
 

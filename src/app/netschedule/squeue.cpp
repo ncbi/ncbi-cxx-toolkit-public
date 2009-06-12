@@ -31,7 +31,7 @@
 #include <ncbi_pch.hpp>
 
 #include "squeue.hpp"
-
+#include "background_host.hpp"
 #include "ns_util.hpp"
 
 #include <bdb/bdb_trans.hpp>
@@ -121,7 +121,6 @@ void SQueueDbBlock::Truncate()
     CBDB_Env& env = *job_db.GetEnv();
     env.ForceTransactionCheckpoint();
     env.CleanLog();
-
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -170,17 +169,6 @@ int CQueueDbBlockArray::Allocate()
     }
     return -1;
 }
-
-
-// Obsoleted, see comment in .hpp file and in CQueueDataBase::DeleteQueue
-/*
-void CQueueDbBlockArray::Free(int pos)
-{
-    if (pos < 0 || unsigned(pos) >= m_Count) return;
-    m_Array[pos].ResetTransaction();
-    m_Array[pos].allocated = false;
-}
-*/
 
 
 SQueueDbBlock* CQueueDbBlockArray::Get(int pos)
@@ -271,12 +259,14 @@ CQueueEnumCursor::CQueueEnumCursor(SLockedQueue* queue)
 //////////////////////////////////////////////////////////////////////////
 // SLockedQueue
 
-SLockedQueue::SLockedQueue(const string& queue_name,
-                           const string& qclass_name,
-                           TQueueKind queue_kind)
+SLockedQueue::SLockedQueue(CRequestExecutor& executor,
+                           const string&     queue_name,
+                           const string&     qclass_name,
+                           TQueueKind        queue_kind)
   :
-    run_time_line(NULL),
-    delete_database(false),
+    m_RunTimeLine(NULL),
+    m_DeleteDatabase(false),
+    m_Executor(executor),
     m_QueueName(queue_name),
     m_QueueClass(qclass_name),
     m_Kind(queue_kind),
@@ -316,7 +306,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
 
 SLockedQueue::~SLockedQueue()
 {
-    delete run_time_line;
+    delete m_RunTimeLine;
     Detach();
     m_StatThread->RequestStop();
     m_StatThread->Join(NULL);
@@ -331,18 +321,48 @@ void SLockedQueue::Attach(SQueueDbBlock* block)
                           &m_QueueDbBlock->aff_dict_token_idx);
 }
 
+class CTruncateRequest : public CStdRequest
+{
+public:
+    CTruncateRequest(SQueueDbBlock* qdbblock)
+        : m_QueueDbBlock(qdbblock)
+    {}
+    virtual void Process() {
+        // See SLockedQueue::Detach why we can do this without locking.
+        CStopWatch sw(CStopWatch::eStart);
+        m_QueueDbBlock->Truncate();
+        m_QueueDbBlock->allocated = false;
+        LOG_POST(Info << "Clean up of db block "
+                      << m_QueueDbBlock->pos
+                      << " complete, "
+                      << sw.Elapsed()
+                      << " elapsed");
+    }
+private:
+    SQueueDbBlock* m_QueueDbBlock;
+
+};
+
 
 void SLockedQueue::Detach()
 {
+    // We are here have synchronized access to m_QueueDbBlock without mutex
+    // because we are here only when the last reference to SLockedQueue is
+    // destroyed. So as long m_QueueDbBlock->allocated is true it cannot
+    // be allocated again and thus cannot be accessed as well.
+    // As soon as we're done with detaching (here) or truncating (in separate
+    // request, submitted for execution to the server thread pool), we can
+    // set m_QueueDbBlock->allocated to false. Boolean write is atomic by
+    // definition and test-and-set is executed from synchronized code in
+    // CQueueDbBlockArray::Allocate.
     m_AffinityDict.Detach();
     if (!m_QueueDbBlock) return;
-    if (delete_database)
-        m_QueueDbBlock->Truncate();
-    delete_database = false;
-    // We can do this here unprotected by mutex, because only other place
-    // accessing 'allocated' flag simultaneously is in
-    // CQueueDbBlockArray::Allocate and it check if it's false first.
-    m_QueueDbBlock->allocated = false;
+    if (m_DeleteDatabase) {
+        CRef<CStdRequest> request(new CTruncateRequest(m_QueueDbBlock));
+        m_Executor.SubmitRequest(request);
+        m_DeleteDatabase = false;
+    } else 
+        m_QueueDbBlock->allocated = false;
     m_QueueDbBlock = 0;
 }
 
@@ -356,9 +376,9 @@ void SLockedQueue::SetParameters(const SQueueParameters& params)
     m_DeleteDone = params.delete_done;
 
     m_RunTimeout = params.run_timeout;
-    if (params.run_timeout && !run_time_line) {
+    if (params.run_timeout && !m_RunTimeLine) {
         // One time only. Precision can not be reset.
-        run_time_line =
+        m_RunTimeLine =
             new CJobTimeLine(params.run_timeout_precision, 0);
         m_RunTimeoutPrecision = params.run_timeout_precision;
     }
@@ -432,11 +452,11 @@ unsigned SLockedQueue::LoadStatusMatrix()
         }
         if ((status == CNetScheduleAPI::eRunning ||
              status == CNetScheduleAPI::eReading) &&
-            run_time_line) {
+            m_RunTimeLine) {
             // Add object to the first available slot;
             // it is going to be rescheduled or dropped
             // in the background control thread
-            run_time_line->AddObject(run_time_line->GetHead(), job_id);
+            m_RunTimeLine->AddObject(m_RunTimeLine->GetHead(), job_id);
         }
         if (status == CNetScheduleAPI::eRunning)
             running_jobs.set(job_id);
@@ -527,8 +547,8 @@ SLockedQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
 void SLockedQueue::SetPort(unsigned short port)
 {
     if (port) {
-        udp_socket.SetReuseAddress(eOn);
-        udp_socket.Bind(port);
+        m_UdpSocket.SetReuseAddress(eOn);
+        m_UdpSocket.Bind(port);
     }
 }
 
@@ -625,11 +645,11 @@ void SLockedQueue::ReadJobs(unsigned peer_addr,
             job.SetReadGroup(group_id);
 
             job.Flush(this);
-            if (exp_time && run_time_line) {
+            if (exp_time && m_RunTimeLine) {
                 // TODO: Optimize locking of rtl lock for every object
                 // hoist it out of the loop
-                CWriteLockGuard rtl_guard(rtl_lock);
-                run_time_line->AddObject(exp_time, job_id);
+                CWriteLockGuard rtl_guard(m_RunTimeLineLock);
+                m_RunTimeLine->AddObject(exp_time, job_id);
             }
         }
     }}
@@ -705,13 +725,13 @@ void SLockedQueue::x_ChangeGroupStatus(unsigned            group_id,
             job.SetStatus(status);
 
             job.Flush(this);
-            if (run_time_line) {
+            if (m_RunTimeLine) {
                 // TODO: Optimize locking of rtl lock for every object
                 // hoist it out of the loop
-                CWriteLockGuard rtl_guard(rtl_lock);
+                CWriteLockGuard rtl_guard(m_RunTimeLineLock);
                 // TODO: Ineffective, better learn expiration time from
                 // object, then remove it with another method
-                run_time_line->RemoveObject(job_id);
+                m_RunTimeLine->RemoveObject(job_id);
             }
         }
     }}
@@ -775,10 +795,10 @@ void SLockedQueue::Clear()
     TNSBitVector bv;
 
     {{
-        CWriteLockGuard rtl_guard(rtl_lock);
-        // TODO: interdependency btw status_tracker.lock and rtl_lock
+        CWriteLockGuard rtl_guard(m_RunTimeLineLock);
+        // TODO: interdependency btw status_tracker.lock and m_RunTimeLineLock
         status_tracker.ClearAll(&bv);
-        run_time_line->ReInit(0);
+        m_RunTimeLine->ReInit(0);
     }}
 
     Erase(bv);
@@ -936,9 +956,9 @@ void SLockedQueue::Notify(unsigned addr, unsigned short port, unsigned job_id)
     char msg[1024];
     sprintf(msg, "JNTF %u", job_id);
 
-    CFastMutexGuard guard(us_lock);
+    CFastMutexGuard guard(m_UdpSocketLock);
 
-    udp_socket.Send(msg, strlen(msg)+1,
+    m_UdpSocket.Send(msg, strlen(msg)+1,
                     CSocketAPI::ntoa(addr), port);
 }
 
@@ -1319,9 +1339,9 @@ bool SLockedQueue::FailJob(CWorkerNode*  worker_node,
     trans.Commit();
     js_guard.Commit();
 
-    if (run_time_line) {
-        CWriteLockGuard guard(rtl_lock);
-        run_time_line->RemoveObject(job_id);
+    if (m_RunTimeLine) {
+        CWriteLockGuard guard(m_RunTimeLineLock);
+        m_RunTimeLine->RemoveObject(job_id);
     }
 
     if (!rescheduled  &&  job.ShouldNotify(curr)) {
@@ -1409,9 +1429,9 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
             unsigned host = it->first;
             unsigned short port = it->second;
             {{
-                CFastMutexGuard guard(us_lock);
+                CFastMutexGuard guard(m_UdpSocketLock);
                 //EIO_Status status =
-                    udp_socket.Send(msg, msg_len,
+                    m_UdpSocket.Send(msg, msg_len,
                                        CSocketAPI::ntoa(host), port);
             }}
             // periodically check if we have no more jobs left
@@ -1646,14 +1666,14 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
 
 void SLockedQueue::CheckExecutionTimeout()
 {
-    if (!run_time_line)
+    if (!m_RunTimeLine)
         return;
     unsigned queue_run_timeout = CQueueParamAccessor(*this).GetRunTimeout();
     time_t curr = time(0);
     TNSBitVector bv;
     {{
-        CReadLockGuard guard(rtl_lock);
-        run_time_line->ExtractObjects(curr, &bv);
+        CReadLockGuard guard(m_RunTimeLineLock);
+        m_RunTimeLine->ExtractObjects(curr, &bv);
     }}
     TNSBitVector::enumerator en(bv.first());
     for ( ;en.valid(); ++en) {
@@ -1714,8 +1734,8 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
         exp_time = run_timeout ? time_start + run_timeout : 0;
         if (curr_time < exp_time) {
            // we need to register job in timeline
-            CWriteLockGuard guard(rtl_lock);
-            run_time_line->AddObject(exp_time, job_id);
+            CWriteLockGuard guard(m_RunTimeLineLock);
+            m_RunTimeLine->AddObject(exp_time, job_id);
             return;
         }
 
@@ -1874,6 +1894,76 @@ SLockedQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
     if (del_count)
         Erase(job_ids);
     return del_count;
+}
+
+
+void
+SLockedQueue::TimeLineMove(unsigned job_id, time_t old_time, time_t new_time)
+{
+    CWriteLockGuard guard(m_RunTimeLineLock);
+    m_RunTimeLine->MoveObject(old_time, new_time, job_id);
+}
+
+
+/*
+void SLockedQueue::x_AddToTimeLine(unsigned job_id, time_t curr)
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
+    if (job_id && q->run_time_line) {
+        CJobTimeLine& tl = *q->run_time_line;
+
+        CWriteLockGuard guard(q->rtl_lock);
+        tl.AddObject(curr + queue_run_timeout, job_id);
+    }
+}
+*/
+
+
+void SLockedQueue::TimeLineRemove(unsigned job_id)
+{
+    if (!m_RunTimeLine) return;
+
+    CWriteLockGuard guard(m_RunTimeLineLock);
+    m_RunTimeLine->RemoveObject(job_id);
+
+    if (IsMonitoring()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::RemoveFromTimeLine: job id=";
+        msg += NStr::IntToString(job_id);
+        MonitorPost(msg);
+    }
+}
+
+
+void
+SLockedQueue::TimeLineExchange(unsigned remove_job_id,
+                               unsigned add_job_id,
+                               time_t   timeout)
+{
+    if (!m_RunTimeLine) return;
+
+    CWriteLockGuard guard(m_RunTimeLineLock);
+    if (remove_job_id)
+        m_RunTimeLine->RemoveObject(remove_job_id);
+    if (add_job_id)
+        m_RunTimeLine->AddObject(timeout, add_job_id);
+
+    if (IsMonitoring()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::TimeLineExchange:";
+        if (remove_job_id) {
+            msg += " job removed=";
+            msg += NStr::IntToString(remove_job_id);
+        }
+        if (add_job_id) {
+            msg += " job added=";
+            msg += NStr::IntToString(add_job_id);
+        }
+        MonitorPost(msg);
+    }
 }
 
 
