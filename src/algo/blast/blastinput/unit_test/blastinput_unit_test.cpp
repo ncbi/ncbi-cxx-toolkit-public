@@ -832,7 +832,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(247249719);
+    const TSeqPos length(249250621);
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
@@ -840,8 +840,6 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     const string accession("NC_000001");
     BOOST_REQUIRE_EQUAL(accession,
                 ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
-    const int version(9);
-    BOOST_REQUIRE_EQUAL(version, ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
 
     BOOST_REQUIRE(!ssl.mask);
 
@@ -862,9 +860,9 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
 {
     CNcbiIfstream infile("data/accession.txt");
     const bool is_protein(false);
-    const int kGi = 89161185;
+    const int kGi = 224589800;
     const TSeqPos kStart = 0;
-    const TSeqPos kStop(247249718);
+    const TSeqPos kStop(249250620);
     SDataLoaderConfig dlconfig("chromosome", is_protein);
     dlconfig.OptimizeForWholeLargeSequenceRetrieval(true);
 
@@ -956,9 +954,6 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
     const string accession("NC_000001");
     BOOST_REQUIRE_EQUAL(accession,
                 ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
-    const int version(9);
-    BOOST_REQUIRE_EQUAL(version, ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
-
     BOOST_REQUIRE(!ssl.mask);
 
     /// Validate the data that would be retrieved by blast.cgi
@@ -971,7 +966,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
     BOOST_REQUIRE_EQUAL(accession, b.GetId().front()->GetOther().GetAccession());
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
-    const TSeqPos length(247249719);
+    const TSeqPos length(249250621);
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
 }
 #ifdef _DEBUG
@@ -991,7 +986,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<string, long> > accession_lengths;
-    accession_lengths.push_back(make_pair(string("NC_000001.9"), 247249719L));
+    accession_lengths.push_back(make_pair(string("NC_000001"), 249250621L));
     accession_lengths.push_back(make_pair(string("NC_000010.9"), 135374737L));
     accession_lengths.push_back(make_pair(string("NC_000011.8"), 134452384L));
     accession_lengths.push_back(make_pair(string("NC_000012.10"), 132349534L));
@@ -1021,7 +1016,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
         string accession;
         int version;
         switch (i) {
-        case 0: accession.assign("NC_000001"); version = 9; break;
+        case 0: accession.assign("NC_000001"); version = 0; break;
         case 1: accession.assign("NC_000010"); version = 9; break;
         case 2: accession.assign("NC_000011"); version = 8; break;
         case 3: accession.assign("NC_000012"); version = 10; break;
@@ -1030,8 +1025,10 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
 
         BOOST_REQUIRE_EQUAL(accession,
                     ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
+        if (version != 0) {
         BOOST_REQUIRE_EQUAL(version, 
                     ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
+        }
         BOOST_REQUIRE(!ssl.mask);
 
     }
@@ -1378,7 +1375,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
     gi_accessions.push_back(make_pair(string("89161215"), 111583154L));
     gi_accessions.push_back(make_pair(string("89161217"), 155407050L));
     gi_accessions.push_back(make_pair(string("89161219"), 11133097L));
-    gi_accessions.push_back(make_pair(string("NC_000001.9"), 247249719L));
+    gi_accessions.push_back(make_pair(string("NC_000001"), 249250621L));
     gi_accessions.push_back(make_pair(string("NC_000010.9"), 135374737L));
     gi_accessions.push_back(make_pair(string("gnl|ti|12345"), 657L));
     gi_accessions.push_back(make_pair(string("NC_000011.8"), 134452384L));
@@ -1427,7 +1424,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
             int version;
 
             switch (i) {
-            case 3: accession.assign("NC_000001"); version = 9; break;
+            case 3: accession.assign("NC_000001"); version = 0; break;
             case 4: accession.assign("NC_000010"); version = 9; break;
             case 6: accession.assign("NC_000011"); version = 8; break;
             case 7: accession.assign("NC_000012"); version = 10; break;
@@ -1436,8 +1433,10 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
 
             BOOST_REQUIRE_EQUAL(accession,
                         ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
+            if (version != 0) {
             BOOST_REQUIRE_EQUAL(version, 
                         ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
+        }
         }
         BOOST_REQUIRE(!ssl.mask);
 
@@ -1489,7 +1488,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(247249719);
+    const TSeqPos length(249250621);
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
@@ -1498,8 +1497,6 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
     const string accession("NC_000001");
     BOOST_REQUIRE_EQUAL(accession,
                 ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
-    const int version(9);
-    BOOST_REQUIRE_EQUAL(version, ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
 
     BOOST_REQUIRE(!ssl.mask);
 
