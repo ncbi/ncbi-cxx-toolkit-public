@@ -72,7 +72,7 @@ if test $# -eq 2  -a  $x_action = "init"; then
    for d in $script_dirs; do
        script_list=`find $x_root_dir/$d -name '*.sh'`
        for s in $script_list; do
-           echo $s | grep 'check_make_cfg.sh' > /dev/null 2>&1  &&  continue
+           echo $s | grep 'check_make_' > /dev/null 2>&1  &&  continue
            grep '^#! */bin/sh' $s > /dev/null 2>&1
            if test $? -eq 0; then
               cp -fp $s $tmp   ||  exit 2
