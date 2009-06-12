@@ -622,7 +622,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     enum ECreateQueueFlags {
         eIgnoreDuplicateName = 0,
-        eErrorOnDublicateName
+        eErrorOnDuplicateName
     };
 
     /// Create queue of given queue class
@@ -633,8 +633,20 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void CreateQueue(
         const string& qname,
         const string& qclass,
-        const string& comment = kEmptyStr,
-        ECreateQueueFlags flags = eErrorOnDublicateName) const;
+        const string& comment = kEmptyStr) const;
+
+    /// Create queue of given queue class
+    /// @param qname
+    ///    Name of the queue to create
+    /// @param qclass
+    ///    Parameter set described in config file in qclass_* section
+    /// @deprecated The flags parameter was a mistake.
+    NCBI_DEPRECATED
+    void CreateQueue(
+        const string& qname,
+        const string& qclass,
+        const string& comment,
+        ECreateQueueFlags flags) const;
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method

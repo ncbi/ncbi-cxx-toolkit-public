@@ -74,7 +74,7 @@ void CNetScheduleAdmin::ReloadServerConfig() const
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
-                                    const string& comment, ECreateQueueFlags flags) const
+                                    const string& comment) const
 {
     string param = "QCRE " + qname;
     param += ' ';
@@ -88,14 +88,21 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
 
     for (CNetServerGroupIterator it =
             m_Impl->m_API->m_Service.DiscoverServers().Iterate(); it; ++it) {
-        try {
-            (*it).Connect().Exec(param);
-        }
-        catch (CNetScheduleException& ex) {
-            if (flags != eIgnoreDuplicateName &&
-                    ex.GetErrCode() == CNetScheduleException::eDuplicateName)
-                throw;
-        }
+        (*it).Connect().Exec(param);
+    }
+}
+
+
+void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
+                                    const string& comment, ECreateQueueFlags flags) const
+{
+    try {
+        CreateQueue(qname, qclass, comment);
+    }
+    catch (CNetScheduleException& ex) {
+        if (flags != eIgnoreDuplicateName &&
+                ex.GetErrCode() == CNetScheduleException::eDuplicateName)
+            throw;
     }
 }
 
