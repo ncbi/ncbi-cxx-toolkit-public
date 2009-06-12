@@ -6,6 +6,7 @@ cgi
 check
 connect
 corelib
+db
 dbapi
 gui
 html

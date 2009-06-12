@@ -6,6 +6,7 @@ cgi
 connect
 corelib
 ctools
+db
 dbapi
 gui
 html
