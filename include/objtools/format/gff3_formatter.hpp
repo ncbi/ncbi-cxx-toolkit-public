@@ -76,7 +76,7 @@ private:
     /// There are some 4 different subtly different encoding rules in GFF3:
     ///
     /// 1) General rules, which allow all characters except:
-    ///       tab newline carriage-return control  ; = % & , . " \
+    ///       tab newline carriage-return control  ; = % & , . \ "
     ///
     ///    Note that the above is specified in 3 parts, confusingly.
     ///    "The following characters must be escaped" in one paragraph,
