@@ -1307,7 +1307,15 @@ void CNetScheduleHandler::ProcessSubmit()
     job.SetSubmPort(m_JobReq.port);
     job.SetSubmTimeout(m_JobReq.timeout);
     job.SetProgressMsg(m_JobReq.param1);
-    job.SetClientIP(m_JobReq.param3);
+    // Never leave Client IP empty, if we're not provided with a real one,
+    // use peer address as a last resort. See also ProcessSubmitBatch.
+    if (!m_JobReq.param3.empty())
+        job.SetClientIP(m_JobReq.param3);
+    else {
+        string s_ip;
+        NS_FormatIPAddress(m_PeerAddr, s_ip);
+        job.SetClientIP(s_ip);
+    }
     job.SetClientSID(m_JobReq.param2);
 
     unsigned job_id = m_Queue->Submit(job);
@@ -1336,7 +1344,10 @@ void CNetScheduleHandler::ProcessSubmitBatch()
 {
     m_BatchSubmPort    = m_JobReq.port;
     m_BatchSubmTimeout = m_JobReq.timeout;
-    m_BatchClientIP    = m_JobReq.param3;
+    if (!m_JobReq.param3.empty())
+        m_BatchClientIP = m_JobReq.param3;
+    else
+        NS_FormatIPAddress(m_PeerAddr, m_BatchClientIP);
     m_BatchClientSID   = m_JobReq.param2;
     WriteOK("Batch submit ready");
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchHeader;
