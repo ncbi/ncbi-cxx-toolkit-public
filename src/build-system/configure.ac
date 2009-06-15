@@ -181,9 +181,9 @@ AC_ARG_WITH(bz2,
 AC_ARG_WITH(bz2b,
    [ --without-bz2           use internal copy of bzlib])
 AC_ARG_WITH(lzo,
-   [ --with-lzo=DIR          use LZO 1.x installation in DIR])
+   [ --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)])
 AC_ARG_WITH(lzo_,
-   [ --without-lzo           do not use LZO 1.x])
+   [ --without-lzo           do not use LZO])
 AC_ARG_WITH(lzo2,
    [ --with-lzo2=DIR         use LZO 2.x installation in DIR])
 AC_ARG_WITH(lzo2_,
@@ -3280,27 +3280,15 @@ if test -z "$BZ2_LIBS"; then
    NCBI_PACKAGE(LocalBZ2)
 fi
 
-: ${LZO2_PATH=$NCBI/lzo2}
-if test -d "$LZO2_PATH"; then
-   NCBI_FIX_DIR(LZO2_PATH)
+: ${with_lzo=$with_lzo2}
+: ${LZO_PATH=$LZO2_PATH}
+: ${LZO_PATH=$NCBI/lzo2}
+if test -d "$LZO_PATH"; then
+   NCBI_FIX_DIR(LZO_PATH)
 fi
-NCBI_CHECK_THIRD_PARTY_LIB(lzo2,
+NCBI_CHECK_THIRD_PARTY_LIB_EX(lzo, LZO, lzo2,
  [[AC_LANG_PROGRAM([#include <lzo/lzo1x.h>],
       [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
-if test "$with_lzo2" = "no"; then
-   : ${LZO_PATH=$NCBI/lzo1}
-   if test -d "$LZO_PATH"; then
-      NCBI_FIX_DIR(LZO_PATH)
-   fi
-   NCBI_CHECK_THIRD_PARTY_LIB(lzo,
-    [[AC_LANG_PROGRAM([#include <lzo1x.h>],
-         [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
-else
-   NCBI_PACKAGE(LZO)
-   AC_DEFINE(HAVE_LIBLZO, 1)
-   LZO_INCLUDE=$LZO2_INCLUDE
-   LZO_LIBS=$LZO2_LIBS
-fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`

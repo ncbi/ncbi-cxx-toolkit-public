@@ -62,7 +62,7 @@ esac
 
 case "$ncbi_platform" in
     FreeBSD32 ) ;;
-    * ) : ${LZO2_PATH=$NCBI/lzo-2.02} ;;
+    * ) : ${LZO_PATH=$NCBI/lzo-2.02} ;;
 esac
 
 case "$ncbi_platform" in
