@@ -69,7 +69,8 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(eSerial_Json, out, deleteOut),
     m_BlockStart(false),
     m_ExpectValue(false),
-    m_StringEncoding(eEncoding_Unknown)
+    m_StringEncoding(eEncoding_Unknown),
+    m_BinaryFormat(eDefault)
 {
 }
 
@@ -85,6 +86,16 @@ void CObjectOStreamJson::SetDefaultStringEncoding(EEncoding enc)
 EEncoding CObjectOStreamJson::GetDefaultStringEncoding(void) const
 {
     return m_StringEncoding;
+}
+
+CObjectOStreamJson::EBinaryDataFormat
+CObjectOStreamJson::GetBinaryDataFormat(void) const
+{
+    return m_BinaryFormat;
+}
+void CObjectOStreamJson::SetBinaryDataFormat(CObjectOStreamJson::EBinaryDataFormat fmt)
+{
+    m_BinaryFormat = fmt;
 }
 
 string CObjectOStreamJson::GetPosition(void) const
@@ -248,9 +259,45 @@ void CObjectOStreamJson::CopyAnyContentObject(CObjectIStream& in)
 }
 
 
-void CObjectOStreamJson::WriteBitString(const CBitString& /*obj*/)
+void CObjectOStreamJson::WriteBitString(const CBitString& obj)
 {
-    ThrowError(fNotImplemented, "Not Implemented");
+    m_Output.PutChar('\"');
+#if BITSTRING_AS_VECTOR
+    static const char ToHex[] = "0123456789ABCDEF";
+    Uint1 data, mask;
+    bool done = false;
+    for ( CBitString::const_iterator i = obj.begin(); !done; ) {
+        for (data=0, mask=0x8; !done && mask!=0; mask >>= 1) {
+            if (*i) {
+                data |= mask;
+            }
+            done = (++i == obj.end());
+        }
+        m_Output.PutChar(ToHex[data]);
+    }
+#else
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        bm::word_t* tmp_block = obj.allocate_tempblock();
+        CBitString::statistics st;
+        obj.calc_stat(&st);
+        char* buf = (char*)malloc(st.max_serialize_mem);
+        unsigned int len = bm::serialize(obj, (unsigned char*)buf, tmp_block);
+        WriteBytes(buf,len);
+        free(buf);
+        free(tmp_block);
+    } else {
+        CBitString::size_type i=0;
+        CBitString::size_type ilast = obj.size();
+        CBitString::enumerator e = obj.first();
+        for (; i < ilast; ++i) {
+            m_Output.PutChar( (i == *e) ? '1' : '0');
+            if (i == *e) {
+                ++e;
+            }
+        }
+    }
+#endif
+    m_Output.PutString("B\"");
 }
 
 void CObjectOStreamJson::CopyBitString(CObjectIStream& /*in*/)
@@ -400,10 +447,129 @@ void CObjectOStreamJson::EndChoiceVariant(void)
 }
 
 
-void CObjectOStreamJson::WriteBytes(const ByteBlock& /*block*/,
-                        const char* /*bytes*/, size_t /*length*/)
+static const char* const HEX = "0123456789ABCDEF";
+
+void CObjectOStreamJson::BeginBytes(const ByteBlock& )
 {
-    ThrowError(fNotImplemented, "Not Implemented");
+    if (m_BinaryFormat == eArray_Bool ||
+        m_BinaryFormat == eArray_01 ||
+        m_BinaryFormat == eArray_Uint) {
+        m_Output.PutChar('[');
+    } else {
+        m_Output.PutChar('\"');
+    }
+}
+
+void CObjectOStreamJson::WriteBytes(const ByteBlock& block,
+                        const char* bytes, size_t length)
+{
+    if (m_BinaryFormat != CObjectOStreamJson::eDefault) {
+        WriteCustomBytes(bytes,length);
+        return;
+    }
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        WriteBase64Bytes(bytes,length);
+        return;
+    }
+    WriteBytes(bytes,length);
+}
+
+void CObjectOStreamJson::EndBytes(const ByteBlock& )
+{
+    if (m_BinaryFormat == eArray_Bool ||
+        m_BinaryFormat == eArray_01 ||
+        m_BinaryFormat == eArray_Uint) {
+        m_Output.BackChar(',');
+        m_Output.PutEol();
+        m_Output.PutChar(']');
+    } else {
+        if (m_BinaryFormat == eString_01B) {
+           m_Output.PutChar('B');
+        }
+        m_Output.PutChar('\"');
+    }
+}
+
+void CObjectOStreamJson::WriteBase64Bytes(const char* bytes, size_t length)
+{
+    const size_t chunk_in  = 57;
+    const size_t chunk_out = 80;
+    if (length > chunk_in) {
+        m_Output.PutEol(false);
+    }
+    char dst_buf[chunk_out];
+    size_t bytes_left = length;
+    size_t  src_read=0, dst_written=0, line_len=0;
+    while (bytes_left > 0 && bytes_left <= length) {
+        BASE64_Encode(bytes,  min(bytes_left,chunk_in),  &src_read,
+                        dst_buf, chunk_out, &dst_written, &line_len);
+        m_Output.PutString(dst_buf,dst_written);
+        bytes_left -= src_read;
+        bytes += src_read;
+        if (bytes_left > 0) {
+            m_Output.PutEol(false);
+        }
+    }
+    if (length > chunk_in) {
+        m_Output.PutEol(false);
+    }
+}
+
+void CObjectOStreamJson::WriteBytes(const char* bytes, size_t length)
+{
+    while ( length-- > 0 ) {
+        char c = *bytes++;
+        m_Output.PutChar(HEX[(c >> 4) & 0xf]);
+        m_Output.PutChar(HEX[c & 0xf]);
+    }
+}
+
+void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
+{
+    if (m_BinaryFormat == eString_Base64) {
+        WriteBase64Bytes(bytes, length);
+        return;
+    } else if (m_BinaryFormat == eString_Hex) {
+        WriteBytes(bytes, length);
+        return;
+    }
+    if (m_BinaryFormat != eString_Hex &&
+        m_BinaryFormat != eString_01 && 
+        m_BinaryFormat != eString_01B) {
+        m_Output.PutEol(false);
+    }
+    while ( length-- > 0 ) {
+        Uint1 c = *bytes++;
+        Uint1 mask=0x80;
+        switch (m_BinaryFormat) {
+        case eArray_Bool:
+            for (; mask!=0; mask >>= 1) {
+                m_Output.WrapAt(78, false);
+                m_Output.PutString( (mask & c) ? "true" : "false");
+                m_Output.PutChar(',');
+            }
+            break;
+        case eArray_01:
+            for (; mask!=0; mask >>= 1) {
+                m_Output.WrapAt(78, false);
+                m_Output.PutChar( (mask & c) ? '1' : '0');
+                m_Output.PutChar(',');
+            }
+            break;
+        default:
+        case eArray_Uint:
+            m_Output.WrapAt(78, false);
+            m_Output.PutString( NStr::UIntToString(c));
+            m_Output.PutChar(',');
+            break;
+        case eString_01:
+        case eString_01B:
+            for (; mask!=0; mask >>= 1) {
+                m_Output.PutChar( (mask & c) ? '1' : '0');
+            }
+            break;
+        }
+    }
 }
 
 void CObjectOStreamJson::WriteChars(const CharBlock& /*block*/,
@@ -449,8 +615,8 @@ void CObjectOStreamJson::WriteEscapedChar(char c, EEncoding enc_in)
             Uint1 ch = c;
             unsigned hi = ch >> 4;
             unsigned lo = ch & 0xF;
-            m_Output.PutChar("0123456789ABCDEF"[hi]);
-            m_Output.PutChar("0123456789ABCDEF"[lo]);
+            m_Output.PutChar(HEX[hi]);
+            m_Output.PutChar(HEX[lo]);
         } else {
             m_Output.PutChar(c);
         }

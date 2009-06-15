@@ -78,6 +78,29 @@ public:
     ///   Encoding
     EEncoding GetDefaultStringEncoding(void) const;
 
+    /// formatting of binary data ('OCTET STRING', 'hexBinary', 'base64Binary')
+    enum EBinaryDataFormat {
+        eDefault,       ///< default
+        eArray_Bool,    ///< array of 'true' and 'false'
+        eArray_01,      ///< array of 1 and 0
+        eArray_Uint,    ///< array of unsigned integers
+        eString_Hex,    ///< HEX string
+        eString_01,     ///< string of 0 and 1
+        eString_01B,    ///< string of 0 and 1, plus 'B' at the end
+        eString_Base64  ///< Base64Binary string
+    };
+    /// Get formatting of binary data
+    ///
+    /// @return
+    ///   Formatting type
+    EBinaryDataFormat GetBinaryDataFormat(void) const;
+    
+    /// Set formatting of binary data
+    ///
+    /// @param fmt
+    ///   Formatting type
+    void SetBinaryDataFormat(EBinaryDataFormat fmt);
+
     /// Get current stream position as string.
     /// Useful for diagnostic and information messages.
     ///
@@ -151,8 +174,11 @@ protected:
                                     const CMemberId& id);
     virtual void EndChoiceVariant(void);
 
+    virtual void BeginBytes(const ByteBlock& block);
     virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
+    virtual void EndBytes(const ByteBlock& block);
+
     virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length);
 
@@ -160,6 +186,10 @@ protected:
     virtual void WriteSeparator(void);
 
 private:
+    void WriteBase64Bytes(const char* bytes, size_t length);
+    void WriteBytes(const char* bytes, size_t length);
+    void WriteCustomBytes(const char* bytes, size_t length);
+
     void WriteMemberId(const CMemberId& id);
     void WriteSkippedMember(void);
     void WriteEscapedChar(char c, EEncoding enc_in);
@@ -181,6 +211,7 @@ private:
     bool m_ExpectValue;
     string m_SkippedMemberId;
     EEncoding m_StringEncoding;
+    EBinaryDataFormat m_BinaryFormat;
 };
 
 
