@@ -218,16 +218,13 @@ CNetServProtoParserBase::ParseCommand(CTempString          command,
     ParseArguments(s, argsDescr, params);
 }
 
-inline void s_SafeSetDefault(map<string, string>*    params,
-                             const SNSProtoArgument* arg_descr)
+inline void
+s_SetDefaultValue(map<string, string>*    params,
+                  const SNSProtoArgument* arg_descr)
 {
-    string& str = (*params)[arg_descr->key];
     const char* from = arg_descr->dflt;
     if (from) {
-        str = from;
-    }
-    else {
-        str.clear();
+        (*params)[arg_descr->key] = from;
     }
 }
 
@@ -278,20 +275,23 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
             }
 
             // Can skip optional arguments
-            if ((arg_descr->flags & fNSPA_Optional) == 0) {
+            if (!(arg_descr->flags & fNSPA_Optional)) {
                 break;
             }
             do {
-                if (arg_descr->dflt) {
-                    s_SafeSetDefault(params, arg_descr);
-                }
+                s_SetDefaultValue(params, arg_descr);
                 ++arg_descr;
             }
             while (arg_descr->flags != eNSPA_None
                    &&  arg_descr[-1].flags & fNSPA_Chain);
         }
 
-        if (arg_descr->flags == eNSPA_None  ||  !matched) {
+        if (arg_descr->flags & fNSPA_Obsolete) {
+            NCBI_THROW(CNSProtoParserException, eWrongArgument,
+                       "Argument " + string(arg_descr->key) + " is obsolete."
+                       " It cannot be used in command now.");
+        }
+        else if (arg_descr->flags == eNSPA_None  ||  !matched) {
             break;
         }
 
@@ -303,9 +303,7 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
                &&  arg_descr->flags & fNSPA_Or)
         {
             ++arg_descr;
-            if (arg_descr->dflt) {
-                s_SafeSetDefault(params, arg_descr);
-            }
+            s_SetDefaultValue(params, arg_descr);
         }
         ++arg_descr;
     }
@@ -313,7 +311,7 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
     while (arg_descr->flags != eNSPA_None
            &&  arg_descr->flags & fNSPA_Optional)
     {
-        s_SafeSetDefault(params, arg_descr);
+        s_SetDefaultValue(params, arg_descr);
         ++arg_descr;
     }
 

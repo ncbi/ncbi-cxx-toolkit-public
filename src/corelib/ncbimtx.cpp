@@ -36,11 +36,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/obj_pool.hpp>
 #include "ncbidbg_p.hpp"
 #include <stdio.h>
 #include <algorithm>
 #ifdef NCBI_POSIX_THREADS
 #  include <sys/time.h> // for gettimeofday()
+#  include <sched.h>    // for sched_yield()
 #endif
 
 #if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
@@ -1279,30 +1281,146 @@ void CSemaphore::Post(unsigned int count)
 }
 
 
+// Made not inline because of platform-dependent behavior
+void
+CFastRWLock::WriteLock(void)
+{
+    m_WriteLock.Lock();
+    m_LockCount.Add(kWriteLockValue);
+    while (m_LockCount.Get() != kWriteLockValue) {
+#if   defined(NCBI_POSIX_THREADS)
+        sched_yield();
+#elif defined(NCBI_WIN32_THREADS)
+        Sleep(0);
+#else
+        _ASSERT(0);
+#endif
+    }
+}
+
+
+
+IRWLockHolder_Listener::~IRWLockHolder_Listener(void)
+{}
 
 IRWLockHolder_Factory::~IRWLockHolder_Factory(void)
 {}
 
 
-class CRWLockHolder_BaseFactory : public IRWLockHolder_Factory
+CRWLockHolder::~CRWLockHolder(void)
+{
+    if (m_Lock) {
+        ReleaseLock();
+    }
+}
+
+void
+CRWLockHolder::DeleteThis(void) const 
+{
+    m_Factory->DeleteHolder(const_cast<CRWLockHolder*>(this));
+}
+
+void
+CRWLockHolder::x_OnLockAcquired(void)
+{
+    TListenersList listeners;
+
+    {{
+        CFastMutexGuard guard(m_ObjMutex);
+
+        listeners = m_Listeners;
+    }}
+
+    NON_CONST_ITERATE(TListenersList, it, listeners) {
+        TRWLockHolder_ListenerRef lstn(it->Lock());
+        if (lstn.NotNull()) {
+            lstn->OnLockAcquired(this);
+        }
+    }
+}
+
+void
+CRWLockHolder::x_OnLockReleased(void)
+{
+    TListenersList listeners;
+
+    {{
+        CFastMutexGuard guard(m_ObjMutex);
+
+        listeners = m_Listeners;
+    }}
+
+    NON_CONST_ITERATE(TListenersList, it, listeners) {
+        TRWLockHolder_ListenerRef lstn(it->Lock());
+        if (lstn.NotNull()) {
+            lstn->OnLockReleased(this);
+        }
+    }
+}
+
+
+/// Default implementation of IRWLockHolder_Factory.
+/// Essentially pool of CRWLockHolder objects.
+class CRWLockHolder_Pool : public IRWLockHolder_Factory
 {
 public:
-    virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
-                                            ERWLockType      typ)
-    {
-        return new CRWLockHolder(lock, typ);
-    }
+    CRWLockHolder_Pool(void);
+    virtual ~CRWLockHolder_Pool(void);
+
+    /// Obtain new CRWLockHolder object for given CYieldingRWLock and
+    /// necessary lock type.
+    virtual CRWLockHolder* CreateHolder(CYieldingRWLock* lock,
+                                        ERWLockType      typ);
+
+    /// Free unnecessary (and unreferenced by anybody) CRWLockHolder object
+    virtual void DeleteHolder(CRWLockHolder* holder);
+
+private:
+    typedef CObjFactory_NewParam<CRWLockHolder,
+                                 CRWLockHolder_Pool*>    THolderPoolFactory;
+    typedef CObjPool<CRWLockHolder, THolderPoolFactory>  THolderPool;
+
+    /// Implementation of CRWLockHolder objects pool
+    THolderPool  m_Pool;
 };
 
 
-CYieldingRWLock::CYieldingRWLock(IRWLockHolder_Factory* hld_factory/*= NULL*/)
-    : m_HldFactory(hld_factory)
-{
-    if (!m_HldFactory) {
-        static CRWLockHolder_BaseFactory factory;
-        m_HldFactory = &factory;
-    }
+inline
+CRWLockHolder_Pool::CRWLockHolder_Pool(void)
+    : m_Pool(THolderPoolFactory(this))
+{}
 
+CRWLockHolder_Pool::~CRWLockHolder_Pool(void)
+{}
+
+CRWLockHolder*
+CRWLockHolder_Pool::CreateHolder(CYieldingRWLock* lock, ERWLockType typ)
+{
+    CRWLockHolder* holder = m_Pool.Get();
+    holder->Init(lock, typ);
+    return holder;
+}
+
+void
+CRWLockHolder_Pool::DeleteHolder(CRWLockHolder* holder)
+{
+    _ASSERT(!holder->Referenced());
+
+    holder->Reset();
+    m_Pool.Return(holder);
+}
+
+
+/// Default CRWLockHolder pool used in CYieldingRWLock
+static CSafeStaticPtr<CRWLockHolder_Pool> s_RWHolderPool;
+
+
+CYieldingRWLock::CYieldingRWLock(IRWLockHolder_Factory* factory /* = NULL */)
+    : m_Factory(factory)
+{
+    if (!m_Factory) {
+        m_Factory = &s_RWHolderPool.Get();
+    }
     m_Locks[eReadLock] = m_Locks[eWriteLock] = 0;
 }
 
@@ -1329,10 +1447,11 @@ CYieldingRWLock::~CYieldingRWLock(void)
 #undef RWLockFatal
 }
 
-TRWLockHolderRef CYieldingRWLock::AcquireLock(ERWLockType lock_type)
+TRWLockHolderRef
+CYieldingRWLock::AcquireLock(ERWLockType lock_type)
 {
     int other_type = 1 - lock_type;
-    TRWLockHolderRef holder(m_HldFactory->CreateLockHolder(this, lock_type));
+    TRWLockHolderRef holder(m_Factory->CreateHolder(this, lock_type));
 
     {{
         CFastMutexGuard guard(m_ObjMutex);
@@ -1348,11 +1467,12 @@ TRWLockHolderRef CYieldingRWLock::AcquireLock(ERWLockType lock_type)
         holder->m_LockAcquired = true;
     }}
 
-    holder->OnLockAcquired();
+    holder->x_OnLockAcquired();
     return holder;
 }
 
-void CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
+void
+CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
 {
     THoldersList next_holders;
     bool save_acquired;
@@ -1392,34 +1512,12 @@ void CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
     }}
 
     if (save_acquired) {
-        holder->OnLockReleased();
+        holder->x_OnLockReleased();
     }
     NON_CONST_ITERATE(THoldersList, it, next_holders) {
-        (*it)->OnLockAcquired();
+        (*it)->x_OnLockAcquired();
     }
 }
-
-
-CRWLockHolder::CRWLockHolder(CYieldingRWLock* lock, ERWLockType typ)
-    : m_Lock(lock),
-      m_Type(typ),
-      m_LockAcquired(false)
-{
-    _ASSERT(lock);
-}
-
-CRWLockHolder::~CRWLockHolder(void)
-{
-    if (m_LockAcquired) {
-        ReleaseLock();
-    }
-}
-
-void CRWLockHolder::OnLockAcquired(void)
-{}
-
-void CRWLockHolder::OnLockReleased(void)
-{}
 
 
 END_NCBI_SCOPE

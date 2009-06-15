@@ -45,25 +45,29 @@ BEGIN_NCBI_SCOPE
 
 
 enum ENSProtoArgFlags {
-    fNSPA_Required  = 1 << 0, // argument must be present
-    fNSPA_Optional  = 1 << 1, // the argument may be omited
-    fNSPA_Chain     = 1 << 2, // if the argument is absent, whole
-                              // chain is ignored
-    fNSPA_Or        = 1 << 3, // This argument is ORed to next a|b
-                              // as opposed to default sequence a b
-    fNSPA_Match     = 1 << 4, // This argument is exact match with "key" field
-                              // and uses "dflt" field as value
-                              // as opposed to default using the arg as value
-    fNSPA_Clear     = 1 << 5, // do not match this arg, just set to default
-    fNSPA_ICPrefix  = 1 << 6, // special value for IC prefix that precedes
-                              // command itself
+    fNSPA_Required  = 1 << 0, ///< argument must be present
+    fNSPA_Optional  = 1 << 1, ///< the argument may be omited
+    fNSPA_Chain     = 1 << 2, ///< if the argument is absent, whole
+                              ///< chain is ignored
+    fNSPA_Or        = 1 << 3, ///< This argument is ORed to next a|b
+                              ///< as opposed to default sequence a b
+    fNSPA_Match     = 1 << 4, ///< This argument is exact match with "key"
+                              ///< field and uses "dflt" field as value as
+                              ///< opposed to default using the arg as value
+    fNSPA_Clear     = 1 << 5, ///< do not match this arg, just set to default
+    fNSPA_ICPrefix  = 1 << 6, ///< special value for IC prefix that precedes
+                              ///< command itself
+    fNSPA_Obsolete  = 1 << 7, ///< argument is now obsolete and using it
+                              ///< causes parser error
+
     // Typical values
-    eNSPA_None      = 0,      // end of arg list, intentionally set to 0
+    eNSPA_None      = 0,      ///< end of arg list, intentionally set to 0
     eNSPA_Required  = fNSPA_Required,
     eNSPA_Optional  = fNSPA_Optional,
     eNSPA_ICPrefix  = fNSPA_Required | fNSPA_ICPrefix,
     eNSPA_Optchain  = fNSPA_Optional | fNSPA_Chain,
-    eNSPA_ClearOnly = fNSPA_Optional | fNSPA_Clear
+    eNSPA_ClearOnly = fNSPA_Optional | fNSPA_Clear,
+    eNSPA_Obsolete  = fNSPA_Optional | fNSPA_Obsolete
 };
 typedef unsigned int TNSProtoArgFlags;
 
@@ -120,6 +124,7 @@ public:
         eWrongCommand,
         eBadToken,
         eArgumentsMissing,
+        eWrongArgument,
         eWrongMap,
         eWrongParams
     };

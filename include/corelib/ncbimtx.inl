@@ -282,7 +282,75 @@ bool CMutex::TryLock(void)
 
 
 inline
-CYieldingRWLock* CRWLockHolder::GetRWLock(void)
+CFastRWLock::CFastRWLock(void)
+{
+    m_LockCount.Set(0);
+}
+
+inline
+CFastRWLock::~CFastRWLock(void)
+{
+    _ASSERT(m_LockCount.Get() == 0);
+}
+
+inline void
+CFastRWLock::ReadLock(void)
+{
+    while (m_LockCount.Add(1) > kWriteLockValue) {
+        m_LockCount.Add(-1);
+        m_WriteLock.Lock();
+        m_WriteLock.Unlock();
+    }
+}
+
+inline void
+CFastRWLock::ReadUnlock(void)
+{
+    m_LockCount.Add(-1);
+}
+
+inline void
+CFastRWLock::WriteUnlock(void)
+{
+    m_LockCount.Add(-kWriteLockValue);
+    m_WriteLock.Unlock();
+}
+
+
+inline void
+CRWLockHolder::Init(CYieldingRWLock* lock, ERWLockType typ)
+{
+    _ASSERT(lock);
+
+    m_Lock = lock;
+    m_Type = typ;
+}
+
+inline void
+CRWLockHolder::Reset(void)
+{
+    m_Lock = NULL;
+    m_LockAcquired = false;
+    m_Listeners.clear();
+}
+
+inline
+CRWLockHolder::CRWLockHolder(IRWLockHolder_Factory* factory)
+    : m_Factory(factory)
+{
+    _ASSERT(factory);
+
+    Reset();
+}
+
+inline
+IRWLockHolder_Factory* CRWLockHolder::GetFactory(void) const
+{
+    return m_Factory;
+}
+
+inline
+CYieldingRWLock* CRWLockHolder::GetRWLock(void) const
 {
     return m_Lock;
 }
@@ -302,15 +370,31 @@ bool CRWLockHolder::IsLockAcquired(void) const
 inline
 void CRWLockHolder::ReleaseLock(void)
 {
+    _ASSERT(m_Lock);
+
     m_Lock->x_ReleaseLock(this);
 }
 
 inline
-void CYieldingRWLock::SetLockHolderFactory(IRWLockHolder_Factory* hld_factory)
+void CRWLockHolder::AddListener(IRWLockHolder_Listener* listener)
 {
-    _ASSERT(hld_factory);
-    m_HldFactory = hld_factory;
+    _ASSERT(m_Lock);
+
+    CFastMutexGuard guard(m_ObjMutex);
+
+    m_Listeners.push_back(TRWLockHolder_ListenerWeakRef(listener));
 }
+
+inline
+void CRWLockHolder::RemoveListener(IRWLockHolder_Listener* listener)
+{
+    _ASSERT(m_Lock);
+
+    CFastMutexGuard guard(m_ObjMutex);
+
+    m_Listeners.remove(TRWLockHolder_ListenerWeakRef(listener));
+}
+
 
 inline
 TRWLockHolderRef CYieldingRWLock::AcquireReadLock(void)

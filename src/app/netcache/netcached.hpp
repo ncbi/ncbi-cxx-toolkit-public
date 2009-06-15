@@ -32,362 +32,348 @@
  *
  */
 
-#include "smng_thread.hpp"
-
 #include <connect/services/netcache_api_expt.hpp>
 
 #include <connect/server.hpp>
 #include <connect/server_monitor.hpp>
 
-#include <util/cache/icache_clean_thread.hpp>
-#include <bdb/bdb_blobcache.hpp>
-
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_config.hpp>
+
+#include "smng_thread.hpp"
+#include "nc_storage.hpp"
+#include "nc_utils.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
-/// @internal
-///
-class CCounterGuard
-{
-public:
-    CCounterGuard(CAtomicCounter& counter) :
-        m_Counter(counter)
-    {
-        m_Counter.Add(1);
-    }
-    ~CCounterGuard() {
-        m_Counter.Add(-1);
-    }
-private:
-    CAtomicCounter& m_Counter;
-};
+
+class CNetCacheDApp;
+class CNCMessageHandler;
 
 
-struct STraceEvent
-{
-    STraceEvent(double t, const char*m) :
-        time_mark(t), message(m)
-    { }
-    double time_mark;
-    string message;
-};
-
-/// @internal
-///
-/// Netcache server side request statistics
-///
-struct SNetCache_RequestStat
-{
-    CTime        conn_time;    ///< connection incoming time
-    CTime        req_time;     ///< request incoming time
-    CTime        max_exec_time;///< maximum allowed time for request execution
-    unsigned     req_code;     ///< 'P' put, 'G' get
-    SBDB_CacheUnitStatistics::EErrGetPut op_code; /// error opcode for BDB
-    CStopWatch   elapsed_watch; /// watch for request elapsed time
-    double       elapsed;      ///< total time in seconds to process request
-    double       comm_elapsed; ///< time spent reading/sending data
-    double       lock_elapsed; ///< time to wait until blob is unlocked
-    double       db_elapsed;   ///< time to store/retrieve data
-    unsigned     db_accesses;  ///< number of db hits
-    size_t       blob_size;    ///< BLOB size
-    string       peer_address; ///< Client's IP address
-    unsigned     io_blocks;    ///< Number of IO blocks translated
-    // fields from NetCache_RequestInfo
-    string request; ///< saved request
-    string type;    ///< NC or IC
-    string blob_id; ///< NC blob id or IC synthetic id
-    string details; ///< readable cache id, blob id etc.
-#ifdef _DEBUG
-    vector<STraceEvent> events;
-    void AddEvent(const char* m) {
-        double t = elapsed_watch.Elapsed();
-        events.push_back(STraceEvent(t, m));
-    }
-#else
-    void AddEvent(const char*) {}
-#endif
-
-    void InitSession(const CTime& t, const string& pa) {
-        conn_time = t;
-        peer_address = pa;
-        // get only host name
-        string::size_type offs = peer_address.find_first_of(":");
-        if (offs != string::npos) {
-            peer_address.erase(offs, peer_address.length());
-        }
-    }
-    void InitRequest() {
-        elapsed_watch.Restart();
-        req_time.SetCurrent();
-        max_exec_time = req_time;
-#ifdef _DEBUG
-        events.clear();
-#endif
-        req_code = '?';
-        elapsed = 0;
-        blob_size = 0;
-        comm_elapsed = 0;
-        lock_elapsed = 0;
-        db_elapsed = 0;
-        db_accesses = 0;
-        io_blocks = 0;
-
-        type = "Unknown";
-        blob_id.clear();
-        details.clear();
-    }
-    void EndRequest() {
-        elapsed_watch.Stop();
-        elapsed = elapsed_watch.Elapsed();
-    }
-};
-
-
-/// @internal
-///
-/// Guard to record elapsed times in the presence of exceptions
-class CTimeGuard {
-public:
-    CTimeGuard(double& elapsed, CStopWatch::EStart state = CStopWatch::eStart) :
-        m_StopWatch(state), m_State(state), m_Elapsed(&elapsed), m_Stat(0)
-    { }
-    CTimeGuard(double& elapsed, SNetCache_RequestStat* stat,
-        CStopWatch::EStart state = CStopWatch::eStart) :
-        m_StopWatch(state), m_State(state), m_Elapsed(&elapsed), m_Stat(0) // DEBUG: turn off detailed stat
-    {
-        if (m_Stat)
-            m_Stat->AddEvent("Start");
-    }
-    ~CTimeGuard() {
-        Release();
-    }
-    void Start() {
-        m_StopWatch.Start();
-        m_State = CStopWatch::eStart;
-    }
-    void Stop() {
-        m_StopWatch.Stop();
-        if (m_State == CStopWatch::eStart) {
-            if (m_Stat)
-                m_Stat->AddEvent("Stop");
-        }
-        m_State = CStopWatch::eStop;
-    }
-    void Release() {
-        if (!m_Elapsed) return;
-        Stop();
-        *m_Elapsed += m_StopWatch.Elapsed();
-        m_Elapsed = NULL;
-    }
-private:
-    CStopWatch m_StopWatch;
-    CStopWatch::EStart m_State;
-    double*    m_Elapsed;
-    SNetCache_RequestStat*  m_Stat;
-};
-
-
-class CBDB_Cache;
-class CBlobIdLocker;
-
-///
-class CBlobIdLockHolder_Factory : public IRWLockHolder_Factory
-{
-public:
-    CBlobIdLockHolder_Factory(CBlobIdLocker* locker);
-
-    virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
-                                            ERWLockType      typ);
-
-private:
-    CBlobIdLocker* m_Locker;
-};
-
-/// Pool of CYieldingRWLocks to lock blob ids for reading/writing
-class CBlobIdLocker
-{
-public:
-    CBlobIdLocker(void);
-    ~CBlobIdLocker(void);
-
-    TRWLockHolderRef AcquireLock(unsigned int id, ERWLockType lock_type);
-    void OnLockReleased(CYieldingRWLock* lock);
-
-private:
-    typedef map<unsigned int, CYieldingRWLock*>  TId2LocksMap;
-    typedef deque<CYieldingRWLock*>              TLocksList;
-
-    CBlobIdLockHolder_Factory m_HldrFactory;
-    CFastMutex                m_ObjMutex;
-    TId2LocksMap              m_IdLocks;
-    TLocksList                m_FreeLocks;
-};
-
-/// Netcache threaded server 
-///
-/// @internal
+/// Netcache server 
 class CNetCacheServer : public CServer
 {
 public:
-    /// Named local cache instances
-    typedef map<string, ICache*>   TLocalCacheMap;
-    typedef CPluginManager<ICache> TCachePM;
-
-public:
-    CNetCacheServer(unsigned int     port,
-                    bool             use_hostname,
-                    CBDB_Cache*      cache,
-                    unsigned         network_timeout,
-                    bool             is_log,
-                    const IRegistry& reg);
-
+    /// Create server
+    ///
+    /// @param do_reinit
+    ///   TRUE if reinitialization should be forced (was requested in command
+    ///   line)
+    CNetCacheServer(bool do_reinit);
     virtual ~CNetCacheServer();
 
-    /// Take request code from the socket and process the request
-    virtual bool ShutdownRequested(void) { return m_Shutdown; }
-
-    int GetSignalCode() { return m_Signal; }
-        
-    void SetShutdownFlag(int sig=0);
+    /// Check if server was asked to stop
+    virtual bool ShutdownRequested(void);
+    /// Get signal number by which server was asked to stop
+    int GetSignalCode(void) const;
+    /// Ask server to stop after receiving given signal
+    void RequestShutdown(int signal = 0);
     
-    void SetBufferSize(unsigned buf_size);
-    /// Mount local cache instances
-    void MountICache(CConfig& conf, 
-                     CPluginManager<ICache>& pm_cache);
-
-    // Session management control
-    void StartSessionManagement(unsigned session_shutdown_timeout);
-    void StopSessionManagement();
-
-    // Session management
-    bool IsManagingSessions();
-    /// @returns true if session has been registered,
-    ///          false if session management cannot do it (shutdown)
-    bool RegisterSession(const string& host, unsigned pid);
-    void UnRegisterSession(const string& host, unsigned pid);
-
-    void SetMonitorSocket(CSocket& socket);
-    bool IsMonitoring();
-    void MonitorPost(const string& msg);
-
-    /// Get server-monitor class
-    CServer_Monitor& GetMonitor() { return m_Monitor; }
-
+    // Check if session management turned on
+    bool IsManagingSessions(void) const;
+    /// Register new session
     ///
-    CAtomicCounter& GetRequestCounter() { return m_PendingRequests; }
+    /// @return
+    ///   TRUE if session has been registered,
+    ///   FALSE if session management cannot do it (shutdown)
+    bool RegisterSession  (const string& host, unsigned int pid);
+    /// Unregister session
+    void UnregisterSession(const string& host, unsigned int pid);
 
-    ///////////////////////////////////////////////////////////////////
-    // Service for handlers
+    /// Get monitor for the server
+    CServer_Monitor* GetServerMonitor(void);
+    /// Get storage for the given cache name.
+    /// If cache name is empty then it should be main storage for NetCache,
+    /// otherwise it's storage for ICache implementation
+    CNCBlobStorage* GetBlobStorage(const string& cache_name);
+    /// Get next blob id to incorporate it into generated blob key
+    int GetNextBlobId(void);
+    /// Get configuration registry for the server
+    const IRegistry& GetRegistry(void);
+    /// Get server host
+    const string& GetHost(void) const;
+    /// Get server port
+    unsigned int GetPort(void) const;
+    /// Get inactivity timeout for each connection
+    unsigned GetInactivityTimeout(void) const;
+    /// Get timeout for each executed command
+    unsigned GetCmdTimeout(void) const;
+    /// Create CTime object in fast way (via CFastTime)
+    CTime GetFastTime(void);
+
+    // Statistics methods
+
+    /// Add finished command to statistics
     ///
+    /// @param cmd_span
+    ///   Time command was executed
+    /// @param state_spans
+    ///   Array of times spent in each handler state during command execution
+    void AddFinishedCmd(double cmd_span, const vector<double>& state_spans);
+    /// Add closed connection to statistics
+    ///
+    /// @param conn_span
+    ///   Time which connection stayed opened
+    void AddClosedConnection(double conn_span);
+    /// Add opened connection to statistics
+    void AddOpenedConnection(void);
+    /// Remove opened connection from statistics (after OnOverflow was called)
+    void RemoveOpenedConnection(void);
+    /// Add to statistics connection that will be closed because of maximum
+    /// number of connections exceeded.
+    void AddOverflowConnection(void);
+    /// Add to statistics command terminated because of timeout
+    void AddTimedOutCommand(void);
 
-    TRWLockHolderRef AcquireReadIdLock(unsigned int id)
-    {
-        return m_IdLocker.AcquireLock(id, eReadLock);
-    }
-
-    TRWLockHolderRef AcquireWriteIdLock(unsigned int id)
-    {
-        return m_IdLocker.AcquireLock(id, eWriteLock);
-    }
-
-    ICache* GetLocalCache(const string& cache_name);
-    unsigned GetTimeout();
-
-    /// Register protocol error (statistics)
-    void RegisterProtocolErr(SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&     auth);
-    void RegisterInternalErr(SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&     auth);
-    void RegisterNoBlobErr(SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&     auth);
-    /// Register exception error (statistics)
-    void RegisterException(SBDB_CacheUnitStatistics::EErrGetPut op,
-                             const string&             auth,
-                             const CNetServiceException& ex);
-
-    /// Register exception error (statistics)
-    void RegisterException(SBDB_CacheUnitStatistics::EErrGetPut op,
-                             const string&             auth,
-                             const CNetCacheException& ex);
-
-
-    const IRegistry& GetRegistry();
-
-    CBDB_Cache* GetCache();
-
-    const string& GetHost();
-    unsigned GetPort();
-
-    unsigned GetInactivityTimeout(void);
-
-    unsigned GetRequestTimeout(void)
-    {
-        return m_RequestTimeout;
-    }
-    void SetRequestTimeout(unsigned timeout)
-    {
-        m_RequestTimeout = timeout;
-    }
-
-    CFastLocalTime& GetTimer();
-
-    enum ELogLevel {
-        kLogLevelDisable = -1,
-        kLogLevelBase    = 0,
-        kLogLevelOp      = 1,
-        kLogLevelRequest = 512,
-        kLogLevelMax     = 1024
-    };
-    void SetLogLevel(int level);
-    int GetLogLevel() const;
+    /// Print full server statistics into stream
+    void PrintServerStats(CNcbiIostream* ios);
 
 private:
-    /// Read the registry for icache_XXXX entries
-    void x_GetICacheNames(TLocalCacheMap* cache_map);
+    /// Read integer configuration value from server's registry
+    int    x_RegReadInt   (const IRegistry& reg,
+                           const char*      value_name,
+                           int              def_value);
+    /// Read boolean configuration value from server's registry
+    bool   x_RegReadBool  (const IRegistry& reg,
+                           const char*      value_name,
+                           bool             def_value);
+    /// Read string configuration value from server's registry
+    string x_RegReadString(const IRegistry& reg,
+                           const char*      value_name,
+                           const string&    def_value);
 
-private:
-    /// Host name and port where server runs
-    string           m_Host;
-    unsigned         m_Port;
+    /// Create all blob storage instances
+    ///
+    /// @param reg
+    ///   Registry to read configuration for storages
+    /// @param do_reinit
+    ///   Flag if all storages should be forced to reinitialize
+    void x_CreateStorages(const IRegistry& reg, bool do_reinit);
 
-    CBlobIdLocker    m_IdLocker;
-    CBDB_Cache*      m_Cache;
-    /// Flags that server received a shutdown request
-    volatile bool    m_Shutdown; 
-    /// Matches signal, if server got one
-    int              m_Signal;
-    /// Time to wait for the client (seconds)
-    unsigned         m_InactivityTimeout;
-    /// Maximum time each request can work
-    unsigned         m_RequestTimeout;
-    /// Logging level
-    int              m_EffectiveLogLevel;
-    int              m_ConfigLogLevel;
+    /// Start session management thread
+    void x_StartSessionManagement(unsigned int shutdown_timeout);
+    /// Stop session management thread
+    void x_StopSessionManagement (void);
 
-    /// Accept timeout for threaded server
-    STimeout         m_ThrdSrvAcceptTimeout;
+    /// Print full server statistics into stream or diagnostics
+    void x_PrintServerStats(CPrintTextProxy& proxy);
+
+
+    typedef map<string, AutoPtr<CNCBlobStorage> >   TStorageMap;
+
+
+    /// Host name where server runs
+    string                         m_Host;
+    /// Port where server runs
+    unsigned                       m_Port;
+    // Some variable that should be here because of CServer requirements
+    STimeout                       m_ServerAcceptTimeout;
+    /// Flag that server received a shutdown request
+    bool                           m_Shutdown;
+    /// Signal which caused the shutdown request
+    int                            m_Signal;
+    /// Time to wait for the client on the connection (seconds)
+    unsigned                       m_InactivityTimeout;
+    /// Maximum time span which each command can work in
+    unsigned                       m_CmdTimeout;
     /// Quick local timer
-    CFastLocalTime   m_LocalTimer;
-    /// Configuration
-    const IRegistry& m_Reg;
+    CFastLocalTime                 m_FastTime;
+    /// Map of strings to blob storages
+    TStorageMap                    m_StorageMap;
+    /// Counter for blob id
+    CAtomicCounter                 m_BlobIdCounter;
+    /// Session management thread
+    CRef<CSessionManagementThread> m_SessionMngThread;
+    /// Server monitor
+    CServer_Monitor                m_Monitor;
 
-    /// Map of local ICache instances
-    TLocalCacheMap   m_LocalCacheMap;
-    CFastMutex       m_LocalCacheMap_Lock;
-
-    /// Session management
-    CRef<CSessionManagementThread>
-                     m_SessionMngThread;
-
-    /// Monitor
-    CServer_Monitor  m_Monitor;
-
-    /// Pending requests
-    CAtomicCounter   m_PendingRequests;
+    /// Mutex for working with statistics
+    CFastMutex                     m_StatsMutex;
+    /// Maximum time connection was opened
+    double                         m_MaxConnSpan;
+    /// Number of connections closed
+    Uint8                          m_ClosedConns;
+    /// Number of connections opened
+    Uint8                          m_OpenedConns;
+    /// Number of connections closed because of maximum number of opened
+    /// connections limit.
+    Uint8                          m_OverflowConns;
+    /// Sum of times all connections stayed opened
+    double                         m_ConnsSpansSum;
+    /// Maximum time one command was executed
+    double                         m_MaxCmdSpan;
+    /// Total number of executed commands
+    Uint8                          m_CntCmds;
+    /// Sum of times all commands were executed
+    double                         m_CmdsSpansSum;
+    /// Sums of times handlers spent in every state
+    vector<double>                 m_StatesSpansSums;
+    /// Number of commands terminated because of command timeout
+    Uint8                          m_TimedOutCmds;
 };
 
 
+/// NetCache daemon application
+class CNetCacheDApp : public CNcbiApplication
+{
+protected:
+    virtual void Init(void);
+    virtual int  Run (void);
+};
+
+
+
+inline bool
+CNetCacheServer::ShutdownRequested(void)
+{
+    return m_Shutdown;
+}
+
+inline int
+CNetCacheServer::GetSignalCode(void) const
+{
+    return m_Signal;
+}
+
+inline int
+CNetCacheServer::GetNextBlobId(void)
+{
+    return int(m_BlobIdCounter.Add(1));
+}
+
+inline unsigned int
+CNetCacheServer::GetCmdTimeout(void) const
+{
+    return m_CmdTimeout;
+}
+
+inline void
+CNetCacheServer::RequestShutdown(int sig)
+{
+    if (!m_Shutdown) {
+        m_Shutdown = true;
+        m_Signal = sig;
+    }
+}
+
+inline bool
+CNetCacheServer::IsManagingSessions(void) const
+{
+    return !m_SessionMngThread.Empty();
+}
+
+inline bool
+CNetCacheServer::RegisterSession(const string& host, unsigned int pid)
+{
+    if (m_SessionMngThread.Empty())
+        return false;
+
+    return m_SessionMngThread->RegisterSession(host, pid);
+}
+
+inline void
+CNetCacheServer::UnregisterSession(const string& host, unsigned int pid)
+{
+    if (m_SessionMngThread.Empty())
+        return;
+
+    m_SessionMngThread->UnregisterSession(host, pid);
+}
+
+inline CServer_Monitor*
+CNetCacheServer::GetServerMonitor(void)
+{
+    return &m_Monitor;
+}
+
+inline const IRegistry&
+CNetCacheServer::GetRegistry(void)
+{
+    return CNcbiApplication::Instance()->GetConfig();
+}
+
+inline const string&
+CNetCacheServer::GetHost(void) const
+{
+    return m_Host;
+}
+
+inline unsigned int
+CNetCacheServer::GetPort(void) const
+{
+    return m_Port;
+}
+
+inline unsigned int
+CNetCacheServer::GetInactivityTimeout(void) const
+{
+    return m_InactivityTimeout;
+}
+
+inline CTime
+CNetCacheServer::GetFastTime(void)
+{
+    return m_FastTime.GetLocalTime();
+}
+
+inline CNCBlobStorage*
+CNetCacheServer::GetBlobStorage(const string& cache_name)
+{
+    TStorageMap::iterator it = m_StorageMap.find(cache_name);
+    if (it == m_StorageMap.end()) {
+        return NULL;
+    }
+    return it->second.get();
+}
+
+inline void
+CNetCacheServer::AddClosedConnection(double conn_span)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+
+    ++m_ClosedConns;
+    m_ConnsSpansSum += conn_span;
+    m_MaxConnSpan = max(m_MaxConnSpan, conn_span);
+}
+
+inline void
+CNetCacheServer::AddOpenedConnection(void)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+    ++m_OpenedConns;
+}
+
+inline void
+CNetCacheServer::RemoveOpenedConnection(void)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+    --m_OpenedConns;
+}
+
+inline void
+CNetCacheServer::AddOverflowConnection(void)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+    ++m_OverflowConns;
+}
+
+inline void
+CNetCacheServer::AddTimedOutCommand(void)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+    ++m_TimedOutCmds;
+}
+
+inline void
+CNetCacheServer::PrintServerStats(CNcbiIostream* ios)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+    CPrintTextProxy proxy(CPrintTextProxy::ePrintStream, ios);
+
+    x_PrintServerStats(proxy);
+}
 
 END_NCBI_SCOPE
 

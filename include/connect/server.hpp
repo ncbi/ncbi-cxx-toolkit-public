@@ -62,7 +62,7 @@ enum EServIO_Event {
     eServIO_Open        = 0x0,
     eServIO_Read        = 0x1,
     eServIO_Write       = 0x2,
-    eServIO_ReadWrite   = 0x3, /**< eIO_Read | eIO_Write                           */
+    eServIO_ReadWrite   = 0x3, /**< eIO_Read | eIO_Write */
     eServIO_ClientClose = 0x4,
     eServIO_OurClose    = 0x8
 };
@@ -120,6 +120,14 @@ public:
     /// and wait when IsReadyToProcess() will return true.
     void DeferConnectionProcessing(IServer_ConnectionBase* conn);
     void DeferConnectionProcessing(CSocket* sock);
+
+    /// Close connection. Method should be called only when closing is
+    /// initiated by server itself, because it will generate then event
+    /// eServIO_OurClose.
+    ///
+    /// @sa EServIO_Event
+    void CloseConnection(IServer_ConnectionBase* conn);
+    void CloseConnection(CSocket* sock);
 
 protected:
     /// Initialize the server

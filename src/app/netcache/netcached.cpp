@@ -43,16 +43,14 @@
 
 #include <util/thread_nonstop.hpp>
 
-#include <bdb/bdb_blobcache.hpp>
-
 #if defined(NCBI_OS_UNIX)
 # include <signal.h>
 #endif
 
 #include "message_handler.hpp"
-
 #include "netcached.hpp"
 #include "netcache_version.hpp"
+#include "nc_memory.hpp"
 
 #define NETCACHED_HUMAN_VERSION \
     "NCBI NetCache server Version " NETCACHED_VERSION \
@@ -66,193 +64,173 @@
 
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE;
 
-//const unsigned int kNetCacheBufSize = 64 * 1024;
-const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
-
-/// General purpose NetCache Mutex
-//DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
-
-/// Mutex to guard vector of busy IDs
-//DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
+NCBI_DEFINE_ERRCODE_X(NetCache, 2004,  14);
+#define NCBI_USE_ERRCODE_X  NetCache
 
 
-//////////////////////////////////////////////////////////////////////////
-/// CNetCacheConnectionFactory::
-class CNetCacheConnectionFactory : public IServer_ConnectionFactory
+static const char* kNCReg_ServerSection      = "server";
+static const char* kNCReg_DefCacheSection    = "bdb";
+static const char* kNCReg_CacheSectionPrefix = "icache";
+static const char* kNCReg_Daemon             = "daemon";
+static const char* kNCReg_Port               = "port";
+static const char* kNCReg_NetworkTimeout     = "network_timeout";
+static const char* kNCReg_CommandTimeout     = "request_timeout";
+static const char* kNCReg_UseHostname        = "use_hostname";
+static const char* kNCReg_MaxConnections     = "max_connections";
+static const char* kNCReg_MaxThreads         = "max_threads";
+static const char* kNCReg_InitThreads        = "init_threads";
+static const char* kNCReg_DropBadDB          = "drop_db";
+static const char* kNCReg_ManageSessions     = "session_mng";
+static const char* kNCReg_SessMngTimeout     = "session_shutdown_timeout";
+static const char* kNCReg_MemLimit           = "memory_limit";
+
+
+static CNetCacheServer* s_NetcacheServer     = NULL;
+
+
+extern "C"
+void NCSignalHandler(int sig)
 {
-public:
-    CNetCacheConnectionFactory(CNetCacheServer* server) :
-        m_Server(server)
-    {
+    if (s_NetcacheServer) {
+        s_NetcacheServer->RequestShutdown(sig);
     }
-    IServer_ConnectionHandler* Create(void)
-    {
-        return new CNetCache_MessageHandler(m_Server);
-    }
-private:
-    CNetCacheServer* m_Server;
-};
-
-
-
-///
-class CBlobIdLockHolder : public CRWLockHolder
-{
-public:
-    CBlobIdLockHolder(CBlobIdLocker*   locker,
-                      CYieldingRWLock* lock,
-                      ERWLockType      typ);
-    virtual ~CBlobIdLockHolder(void);
-
-protected:
-    virtual void OnLockReleased(void);
-
-private:
-    CBlobIdLocker* m_Locker;
-};
-
-///
-class CBlobIdRWLock : public CYieldingRWLock
-{
-public:
-    CBlobIdRWLock(IRWLockHolder_Factory* factory);
-
-    unsigned int GetId(void);
-    void SetId(unsigned int id);
-
-private:
-    unsigned int m_Id;
-};
-
-
-inline
-CBlobIdLockHolder::CBlobIdLockHolder(CBlobIdLocker*   locker,
-                                     CYieldingRWLock* lock,
-                                     ERWLockType      typ)
-    : CRWLockHolder(lock, typ),
-      m_Locker(locker)
-{}
-
-CBlobIdLockHolder::~CBlobIdLockHolder(void)
-{}
-
-void
-CBlobIdLockHolder::OnLockReleased(void)
-{
-    m_Locker->OnLockReleased(GetRWLock());
 }
 
 
-inline
-CBlobIdLockHolder_Factory::CBlobIdLockHolder_Factory(CBlobIdLocker* locker)
-    : m_Locker(locker)
-{}
-
-CRWLockHolder*
-CBlobIdLockHolder_Factory::CreateLockHolder(CYieldingRWLock* lock,
-                                            ERWLockType      typ)
+inline int
+CNetCacheServer::x_RegReadInt(const IRegistry& reg,
+                              const char*      value_name,
+                              int              def_value)
 {
-    return new CBlobIdLockHolder(m_Locker, lock, typ);
+    return reg.GetInt(kNCReg_ServerSection, value_name, def_value,
+                      0, IRegistry::eErrPost);
 }
 
-
-inline
-CBlobIdRWLock::CBlobIdRWLock(IRWLockHolder_Factory* factory)
-    : CYieldingRWLock(factory),
-      m_Id(0)
-{}
-
-inline unsigned int
-CBlobIdRWLock::GetId(void)
+inline bool
+CNetCacheServer::x_RegReadBool(const IRegistry& reg,
+                               const char*      value_name,
+                               bool             def_value)
 {
-    return m_Id;
+    return reg.GetBool(kNCReg_ServerSection, value_name, def_value,
+                       0, IRegistry::eErrPost);
+}
+
+inline string
+CNetCacheServer::x_RegReadString(const IRegistry& reg,
+                                 const char*      value_name,
+                                 const string&    def_value)
+{
+    return reg.GetString(kNCReg_ServerSection, value_name, def_value);
 }
 
 inline void
-CBlobIdRWLock::SetId(unsigned int id)
+CNetCacheServer::x_CreateStorages(const IRegistry& reg, bool do_reinit)
 {
-    m_Id = id;
-}
-
-
-CBlobIdLocker::CBlobIdLocker(void)
-    : m_HldrFactory(this)
-{}
-
-CBlobIdLocker::~CBlobIdLocker(void)
-{
-    CFastMutexGuard guard(m_ObjMutex);
-
-    ITERATE(TId2LocksMap, it, m_IdLocks) {
-        delete it->second;
+    CNCBlobStorage::EReinitMode reinit = CNCBlobStorage::eNoReinit;
+    if (do_reinit) {
+        reinit = CNCBlobStorage::eForceReinit;
     }
-    ITERATE(TLocksList, it, m_FreeLocks) {
-        delete *it;
+    else if (x_RegReadBool(reg, kNCReg_DropBadDB, false)) {
+        reinit = CNCBlobStorage::eReinitBad;
     }
-}
 
-TRWLockHolderRef
-CBlobIdLocker::AcquireLock(unsigned int id,
-                           ERWLockType  lock_type)
-{
-    CFastMutexGuard guard(m_ObjMutex);
-    CBlobIdRWLock* rwlock = NULL;
+    CNCBlobStorage* storage = new CNCBlobStorage(reg, kNCReg_DefCacheSection,
+                                                 reinit);
+    storage->SetMonitor(&m_Monitor);
+    m_StorageMap[""] = storage;
 
-    TId2LocksMap::iterator it = m_IdLocks.find(id);
-    if (it == m_IdLocks.end()) {
-        if (m_FreeLocks.empty()) {
-            rwlock = new CBlobIdRWLock(&m_HldrFactory);
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+
+    ITERATE(list<string>, it, sections) {
+        const string& section_name = *it;
+        string tmp, cache_name;
+
+        NStr::SplitInTwo(section_name, "_", tmp, cache_name);
+        if (NStr::CompareNocase(tmp, kNCReg_CacheSectionPrefix) != 0) {
+            continue;
         }
-        else {
-            rwlock = static_cast<CBlobIdRWLock*>(m_FreeLocks.back());
-            m_FreeLocks.pop_back();
+        NStr::ToLower(cache_name);
+
+        CNCBlobStorage* storage = new CNCBlobStorage(reg, section_name,
+                                                     reinit);
+        storage->SetMonitor(&m_Monitor);
+        m_StorageMap[cache_name] = storage;
+    }
+}
+
+inline void
+CNetCacheServer::x_StartSessionManagement(unsigned int shutdown_timeout)
+{
+    LOG_POST_X(5, Info << "Starting session management thread. timeout="
+                       << shutdown_timeout);
+    m_SessionMngThread.Reset(
+                new CSessionManagementThread(*this, shutdown_timeout, 10, 2));
+    m_SessionMngThread->Run();
+}
+
+inline void
+CNetCacheServer::x_StopSessionManagement(void)
+{
+    if (!m_SessionMngThread.Empty()) {
+        LOG_POST_X(6, Info << "Stopping session management thread...");
+        m_SessionMngThread->RequestStop();
+        m_SessionMngThread->Join();
+        LOG_POST_X(7, Info << "Stopped.");
+    }
+}
+
+CNetCacheServer::CNetCacheServer(bool do_reinit)
+    : m_Shutdown(false),
+      m_Signal(0),
+      m_MaxConnSpan(0),
+      m_ClosedConns(0),
+      m_OpenedConns(0),
+      m_OverflowConns(0),
+      m_ConnsSpansSum(0),
+      m_MaxCmdSpan(0),
+      m_CntCmds(0),
+      m_CmdsSpansSum(0),
+      m_TimedOutCmds(0)
+{
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+
+#if defined(NCBI_OS_UNIX)
+    bool is_daemon = x_RegReadBool(reg, kNCReg_Daemon, false);
+    if (is_daemon) {
+        LOG_POST_X(1, "Entering UNIX daemon mode...");
+        // Here's workaround for SQLite3 bug: if stdin is closed in forked
+        // process then 0 file descriptor is returned to SQLite after open().
+        // But there's assert there which prevents fd to be equal to 0. So
+        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
+        // just in case somebody will try to write to them.
+        bool is_good = CProcess::Daemonize(kEmptyCStr,
+                               CProcess::fDontChroot | CProcess::fKeepStdin
+                                                     | CProcess::fKeepStdout);
+        if (!is_good) {
+            NCBI_THROW(CCoreException, eCore, "Error during daemonization");
         }
-        m_IdLocks[id] = rwlock;
-        rwlock->SetId(id);
-    }
-    else {
-        rwlock = static_cast<CBlobIdRWLock*>(it->second);
     }
 
-    return rwlock->AcquireLock(lock_type);
-}
+    // attempt to get server gracefully shutdown on signal
+    signal(SIGINT,  NCSignalHandler);
+    signal(SIGTERM, NCSignalHandler);
+#endif
 
-void
-CBlobIdLocker::OnLockReleased(CYieldingRWLock* lock)
-{
-    CFastMutexGuard guard(m_ObjMutex);
-
-    if (lock->IsLocked())
-        return;
-
-    if (m_IdLocks.erase(static_cast<CBlobIdRWLock*>(lock)->GetId()) > 0) {
-        m_FreeLocks.push_back(lock);
+    m_Port              = x_RegReadInt(reg, kNCReg_Port,           9000);
+    m_CmdTimeout        = x_RegReadInt(reg, kNCReg_CommandTimeout, 600);
+    m_InactivityTimeout = x_RegReadInt(reg, kNCReg_NetworkTimeout, 10);
+    if (m_InactivityTimeout <= 0) {
+        ERR_POST_X(2, Warning << "INI file sets network timeout to 0 or less."
+                                 " Assuming 10 seconds.");
+        m_InactivityTimeout =  10;
+    } else {
+        LOG_POST_X(3, "Network IO timeout " << m_InactivityTimeout);
     }
-}
 
-
-
-static CNetCacheServer* s_netcache_server = 0;
-
-
-/// @internal
-CNetCacheServer::CNetCacheServer(unsigned int     port,
-                                 bool             use_hostname,
-                                 CBDB_Cache*      cache,
-                                 unsigned         network_timeout,
-                                 bool             is_log,
-                                 const IRegistry& reg)
-:   m_Port(port),
-    m_Cache(cache),
-    m_Shutdown(false),
-    m_Signal(0),
-    m_InactivityTimeout(network_timeout),
-    m_EffectiveLogLevel(is_log ? kLogLevelBase : kLogLevelDisable),
-    m_ConfigLogLevel(is_log ? kLogLevelBase : kLogLevelDisable),
-    m_Reg(reg)
-{
+    bool use_hostname = x_RegReadBool(reg, kNCReg_UseHostname, false);
     if (use_hostname) {
         char hostname[256];
         if (SOCK_gethostname(hostname, sizeof(hostname)) == 0) {
@@ -268,362 +246,120 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
         m_Host = ipaddr;
     }
 
-    s_netcache_server = this;
-    m_PendingRequests.Set(0);
+    SServer_Parameters params;
+    params.max_connections = x_RegReadInt(reg, kNCReg_MaxConnections, 100);
+    params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     25);
+    params.init_threads    = x_RegReadInt(reg, kNCReg_InitThreads,    10);
+    if (params.init_threads > params.max_threads) {
+        params.init_threads = params.max_threads;
+    }
+    // Accept timeout
+    m_ServerAcceptTimeout.sec = 1;
+    m_ServerAcceptTimeout.usec = 0;
+    params.accept_timeout = &m_ServerAcceptTimeout;
+
+    SetParameters(params);
+    AddListener(new CNCMsgHndlFactory_Proxy(this), m_Port);
+
+    CNCDBCacheManager::Initialize();
+    try {
+        CNCDBCacheManager::SetMaxSize(size_t(NStr::StringToUInt8_DataSize(
+                              x_RegReadString(reg, kNCReg_MemLimit, "1Gb"))));
+    }
+    catch (CStringException& ex) {
+        ERR_POST_X(14, "Error in " << kNCReg_MemLimit << " parameter: " << ex);
+    }
+
+    CSQLITE_Global::Initialize();
+    x_CreateStorages(reg, do_reinit);
+
+    // Start session management
+    bool session_mng = x_RegReadBool(reg, kNCReg_ManageSessions, false);
+    if (session_mng) {
+        x_StartSessionManagement(x_RegReadInt(reg, kNCReg_SessMngTimeout, 60));
+    }
+
+    _ASSERT(s_NetcacheServer == NULL);
+    s_NetcacheServer = this;
+    m_BlobIdCounter.Set(0);
 }
 
 CNetCacheServer::~CNetCacheServer()
 {
-    try {
-        NON_CONST_ITERATE(TLocalCacheMap, it, m_LocalCacheMap) {
-            ICache *ic = it->second;
-            delete ic; it->second = 0;
-        }
-        StopSessionManagement();
-    } catch (...) {
-        ERR_POST("Exception in ~CNetCacheServer()");
-        _ASSERT(0);
+    {{
+        CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
+        LOG_POST_X(13, "NetCache server is stopping. Usage statistics:");
+        x_PrintServerStats(proxy);
+    }}
+    x_StopSessionManagement();
+}
+
+void
+CNetCacheServer::AddFinishedCmd(double                cmd_span,
+                                const vector<double>& state_spans)
+{
+    CFastMutexGuard guard(m_StatsMutex);
+
+    ++m_CntCmds;
+    m_CmdsSpansSum += cmd_span;
+    m_MaxCmdSpan = max(m_MaxCmdSpan, cmd_span);
+
+    if (m_StatesSpansSums.size() < state_spans.size()) {
+        m_StatesSpansSums.resize(state_spans.size(), 0);
+    }
+    for (size_t i = 0; i < state_spans.size(); ++i) {
+        m_StatesSpansSums[i] += state_spans[i];
+    }
+}
+
+void
+CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
+{
+    SServer_Parameters params;
+    GetParameters(&params);
+
+    proxy << "Current number of threads         - "
+                                       << CThread::GetThreadsCount() << endl
+          << "Initial number of threads         - "
+                                       << params.init_threads << endl
+          << "Maximum number of threads         - "
+                                       << params.max_threads << endl
+          << "Maximum number of connections     - "
+                                       << params.max_connections << endl
+          << "Number of connections opened      - " << m_OpenedConns << endl
+          << "Number of connections closed      - " << m_ClosedConns << endl
+          << "Number of connections overflowed  - " << m_OverflowConns << endl
+          << "Maximum time connection was alive - " << m_MaxConnSpan << endl
+          << "Average time connection was alive - "
+                            << m_ConnsSpansSum / double(m_ClosedConns) << endl
+          << endl
+          << "Number of commands received       - " << m_CntCmds << endl
+          << "Number of commands timed out      - " << m_TimedOutCmds << endl
+          << "Command execution timeout         - " << m_CmdTimeout << endl
+          << "Maximum time command executed     - " << m_MaxCmdSpan << endl
+          << "Average time command executed     - "
+                            << m_CmdsSpansSum  / double(m_CntCmds) << endl
+          << "Total times of handlers' states:" << endl;
+    for (size_t i = 0; i < m_StatesSpansSums.size(); ++i) {
+        proxy << CNCMessageHandler::GetStateName(int(i)) << " - "
+                            << m_StatesSpansSums[i] << endl;
+    }
+    proxy << "Average times of handlers' states:" << endl;
+    for (size_t i = 0; i < m_StatesSpansSums.size(); ++i) {
+        proxy << CNCMessageHandler::GetStateName(int(i)) << " - "
+                        << m_StatesSpansSums[i] / double(m_CntCmds) << endl;
+    }
+
+    ITERATE(TStorageMap, it, m_StorageMap) {
+        proxy << endl;
+        it->second->PrintStat(proxy);
     }
 }
 
 
-void CNetCacheServer::SetShutdownFlag(int sig) {
-    if (!m_Shutdown) {
-        m_Shutdown = true;
-        m_Signal = sig;
-    }
-}
 
-
-void CNetCacheServer::StartSessionManagement(
-                                unsigned session_shutdown_timeout)
-{
-    LOG_POST(Info << "Starting session management thread. timeout="
-                  << session_shutdown_timeout);
-    m_SessionMngThread.Reset(
-        new CSessionManagementThread(*this,
-                            session_shutdown_timeout, 10, 2));
-    m_SessionMngThread->Run();
-}
-
-void CNetCacheServer::StopSessionManagement()
-{
-# ifdef NCBI_THREADS
-    if (!m_SessionMngThread.Empty()) {
-        LOG_POST(Info << "Stopping session management thread...");
-        m_SessionMngThread->RequestStop();
-        m_SessionMngThread->Join();
-        LOG_POST(Info << "Stopped.");
-    }
-# endif
-}
-
-
-bool CNetCacheServer::IsManagingSessions()
-{
-    return !m_SessionMngThread.Empty();
-}
-
-
-bool CNetCacheServer::RegisterSession(const string& host, unsigned pid)
-{
-    if (m_SessionMngThread.Empty()) return false;
-    return m_SessionMngThread->RegisterSession(host, pid);
-}
-
-
-void CNetCacheServer::UnRegisterSession(const string& host, unsigned pid)
-{
-    if (m_SessionMngThread.Empty()) return;
-    m_SessionMngThread->UnRegisterSession(host, pid);
-}
-
-
-void CNetCacheServer::SetMonitorSocket(CSocket& socket)
-{
-    m_Monitor.SetSocket(socket);
-}
-
-
-bool CNetCacheServer::IsMonitoring()
-{
-    return m_Monitor.IsMonitorActive();
-}
-
-
-void CNetCacheServer::MonitorPost(const string& msg)
-{
-    m_Monitor.SendString(msg+'\n');
-}
-
-
-void CNetCacheServer::SetBufferSize(unsigned buf_size)
-{
-}
-
-
-void CNetCacheServer::MountICache(CConfig&                conf,
-                                  CPluginManager<ICache>& pm_cache)
-{
-    CFastMutexGuard guard(m_LocalCacheMap_Lock);
-
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    x_GetICacheNames(&m_LocalCacheMap);
-    NON_CONST_ITERATE(TLocalCacheMap, it, m_LocalCacheMap) {
-        const string& cache_name = it->first;
-        if (it->second != 0) {
-            continue;  // already created
-        }
-        string section_name("icache_");
-        section_name.append(cache_name);
-
-        const TPluginManagerParamTree* bdb_tree =
-            param_tree->FindSubNode(section_name);
-        if (!bdb_tree) {
-            ERR_POST("Configuration error. Cannot find registry section "
-                     << section_name);
-            continue;
-        }
-
-        ICache* ic;
-        try {
-            ic = pm_cache.CreateInstance(
-                                kBDBCacheDriverName,
-                                TCachePM::GetDefaultDrvVers(),
-                                bdb_tree);
-
-            it->second = ic;
-            LOG_POST("Local cache mounted: " << cache_name);
-            CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(ic);
-            if (bdb_cache) {
-                bdb_cache->SetMonitor(&m_Monitor);
-            }
-
-        }
-        catch (exception& ex)
-        {
-            ERR_POST("Error mounting local cache:" << cache_name <<
-                     ": " << ex.what()
-                    );
-            throw;
-        }
-
-    } // ITERATE
-}
-
-ICache* CNetCacheServer::GetLocalCache(const string& cache_name)
-{
-    CFastMutexGuard guard(m_LocalCacheMap_Lock);
-
-    TLocalCacheMap::iterator it = m_LocalCacheMap.find(cache_name);
-    if (it == m_LocalCacheMap.end()) {
-        return 0;
-    }
-    return it->second;
-}
-
-
-unsigned CNetCacheServer::GetTimeout()
-{
-    return m_InactivityTimeout;
-}
-
-
-const IRegistry& CNetCacheServer::GetRegistry()
-{
-    return m_Reg;
-}
-
-
-CBDB_Cache* CNetCacheServer::GetCache()
-{
-    return m_Cache;
-}
-
-
-const string& CNetCacheServer::GetHost()
-{
-    return m_Host;
-}
-
-
-unsigned CNetCacheServer::GetPort()
-{
-    return m_Port;
-}
-
-
-unsigned CNetCacheServer::GetInactivityTimeout(void)
-{
-    return m_InactivityTimeout;
-}
-
-
-CFastLocalTime& CNetCacheServer::GetTimer()
-{
-    return m_LocalTimer;
-}
-
-
-void CNetCacheServer::SetLogLevel(int level)
-{
-    if (level == kLogLevelBase) {
-        m_EffectiveLogLevel = m_ConfigLogLevel;
-    } else {
-        m_EffectiveLogLevel = level;
-    }
-}
-
-
-int CNetCacheServer::GetLogLevel() const
-{
-    return m_EffectiveLogLevel;
-}
-
-
-void CNetCacheServer::RegisterProtocolErr(
-                               SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&     auth)
-{
-    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
-    if (!bdb_cache) {
-        return;
-    }
-    bdb_cache->RegisterProtocolError(op, auth);
-}
-
-
-void CNetCacheServer::RegisterInternalErr(
-                               SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&     auth)
-{
-    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
-    if (!bdb_cache) {
-        return;
-    }
-    bdb_cache->RegisterInternalError(op, auth);
-}
-
-
-void CNetCacheServer::RegisterNoBlobErr(
-                               SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&     auth)
-{
-    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
-    if (!bdb_cache) {
-        return;
-    }
-    bdb_cache->RegisterNoBlobError(op, auth);
-}
-
-
-void CNetCacheServer::RegisterException(
-                               SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&             auth,
-                               const CNetServiceException& ex)
-{
-    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
-    if (!bdb_cache) {
-        return;
-    }
-    switch (ex.GetErrCode()) {
-    case CNetServiceException::eTimeout:
-    case CNetServiceException::eCommunicationError:
-        bdb_cache->RegisterCommError(op, auth);
-        break;
-    default:
-        ERR_POST("Unknown err code in CNetCacheServer::RegisterException");
-        bdb_cache->RegisterInternalError(op, auth);
-        break;
-    } // switch
-}
-
-
-void CNetCacheServer::RegisterException(
-                               SBDB_CacheUnitStatistics::EErrGetPut op,
-                               const string&             auth,
-                               const CNetCacheException& ex)
-{
-    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
-    if (!bdb_cache) {
-        return;
-    }
-
-    switch (ex.GetErrCode()) {
-    case CNetCacheException::eAuthenticationError:
-    case CNetCacheException::eKeyFormatError:
-        bdb_cache->RegisterProtocolError(op, auth);
-        break;
-    case CNetCacheException::eServerError:
-        bdb_cache->RegisterInternalError(op, auth);
-        break;
-    default:
-        ERR_POST("Unknown err code in CNetCacheServer::RegisterException");
-        bdb_cache->RegisterInternalError(op, auth);
-        break;
-    } // switch
-}
-
-
-/// Read the registry for icache_XXXX entries
-void CNetCacheServer::x_GetICacheNames(TLocalCacheMap* cache_map)
-{
-    string cache_name;
-    list<string> sections;
-    m_Reg.EnumerateSections(&sections);
-
-    string tmp;
-    ITERATE(list<string>, it, sections) {
-        const string& sname = *it;
-        NStr::SplitInTwo(sname, "_", tmp, cache_name);
-        if (NStr::CompareNocase(tmp, "icache") != 0) {
-            continue;
-        }
-
-        NStr::ToLower(cache_name);
-        (*cache_map)[cache_name] = 0;
-
-    } // ITERATE
-}
-
-
-///////////////////////////////////////////////////////////////////////
-
-/// @internal
-extern "C"
-void Threaded_Server_SignalHandler(int sig)
-{
-    if (s_netcache_server &&
-        (!s_netcache_server->ShutdownRequested()) ) {
-        s_netcache_server->SetShutdownFlag(sig);
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////
-
-
-/// NetCache daemon application
-///
-/// @internal
-///
-class CNetCacheDApp : public CNcbiApplication
-{
-public:
-    void Init(void);
-    int Run(void);
-protected:
-    void StopSessionMngThread();
-
-private:
-    CRef<CCacheCleanerThread>  m_PurgeThread;
-
-    // Need to keep instance because of STimeout requirements
-    STimeout m_ServerAcceptTimeout;
-};
-
-
-void CNetCacheDApp::Init(void)
+void
+CNetCacheDApp::Init(void)
 {
     SetDiagPostFlag(eDPF_DateTime);
 
@@ -642,238 +378,38 @@ void CNetCacheDApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-
-int CNetCacheDApp::Run(void)
+int
+CNetCacheDApp::Run(void)
 {
-    CBDB_Cache* bdb_cache = 0;
     CArgs args = GetArgs();
 
     if (args["version-full"]) {
         printf(NETCACHED_FULL_VERSION "\n");
         return 0;
     }
+    LOG_POST_X(8, NETCACHED_FULL_VERSION);
 
-    LOG_POST(NETCACHED_FULL_VERSION);
+    {{
+        AutoPtr<CNetCacheServer> server(new CNetCacheServer(args["reinit"]));
 
-    try {
-        const CNcbiRegistry& reg = GetConfig();
-
-        CConfig conf(reg);
-
-#if defined(NCBI_OS_UNIX)
-        bool is_daemon =
-            reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
-        if (is_daemon) {
-            LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
-            if (!daemon) {
-                return 0;
-            }
-        }
-
-        // attempt to get server gracefully shutdown on signal
-        signal(SIGINT, Threaded_Server_SignalHandler);
-        signal(SIGTERM, Threaded_Server_SignalHandler);
-#endif
-        int port =
-            reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
-        bool is_port_free = true;
-
-        // try server port to check if it is busy
-        {{
-        CListeningSocket lsock(port);
-        if (lsock.GetStatus() != eIO_Success) {
-            is_port_free = false;
-        }
-        }}
-
-        if (!is_port_free) {
-            ERR_POST("Startup problem: listening port is busy. Port="
-                     << NStr::IntToString(port));
-            return 1;
-        }
-
-        // Mount BDB Cache
-
-        const CConfig::TParamTree* param_tree = conf.GetTree();
-        const TPluginManagerParamTree* bdb_tree =
-            param_tree->FindSubNode(kBDBCacheDriverName);
-
-
-        auto_ptr<ICache> cache;
-
-        CPluginManager<ICache> pm_cache;
-        pm_cache.RegisterWithEntryPoint(NCBI_EntryPoint_xcache_bdb);
-
-        if (bdb_tree) {
-
-            CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
-            const string& db_path =
-                bdb_conf.GetString("netcached", "path",
-                                    CConfig::eErr_Throw, kEmptyStr);
-            bool reinit =
-            reg.GetBool("server", "reinit", false, 0, CNcbiRegistry::eReturn);
-
-            if (args["reinit"] || reinit) {  // Drop the database directory
-                LOG_POST("Removing BDB database directory " << db_path);
-                CDir dir(db_path);
-                dir.Remove();
-            }
-
-
-            LOG_POST("Initializing BDB cache");
-            ICache* ic;
-
-            try {
-                ic =
-                    pm_cache.CreateInstance(
-                        kBDBCacheDriverName,
-                        CNetCacheServer::TCachePM::GetDefaultDrvVers(),
-                        bdb_tree);
-            }
-            catch (CBDB_Exception& ex)
-            {
-                bool drop_db = reg.GetBool("server", "drop_db",
-                                           true, 0, CNcbiRegistry::eReturn);
-                if (drop_db) {
-                    ERR_POST("Error initializing BDB ICache interface: "
-                             << ex.what());
-                    LOG_POST("Database directory will be dropped.");
-
-                    CDir dir(db_path);
-                    dir.Remove();
-
-                    ic =
-                      pm_cache.CreateInstance(
-                        kBDBCacheDriverName,
-                        CNetCacheServer::TCachePM::GetDefaultDrvVers(),
-                        bdb_tree);
-
-                } else {
-                    throw;
-                }
-            }
-
-            bdb_cache = dynamic_cast<CBDB_Cache*>(ic);
-            cache.reset(ic);
-
-
-        } else {
-            ERR_POST("Configuration error. Cannot init storage. Driver name:"
-                     << kBDBCacheDriverName);
-            return 1;
-        }
-
-        // cache storage media has been created
-
-        if (!cache->IsOpen()) {
-            ERR_POST("Configuration error. Cache not open.");
-            return 1;
-        }
-
-        // start server
-
-        unsigned network_timeout =
-            reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
-        if (network_timeout == 0) {
-            ERR_POST(Warning <<
-                "INI file sets 0 sec. network timeout. Assume 10 seconds.");
-            network_timeout =  10;
-        } else {
-            LOG_POST("Network IO timeout " << network_timeout);
-        }
-        unsigned request_timeout =
-            reg.GetInt("server", "request_timeout", 600, 0, CNcbiRegistry::eReturn);
-        bool use_hostname =
-            reg.GetBool("server", "use_hostname", false, 0, CNcbiRegistry::eReturn);
-        bool is_log =
-            reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
-        unsigned buf_size =
-            reg.GetInt("server", "buf_size", 64 * 1024, 0, CNcbiRegistry::eReturn);
-
-        SServer_Parameters params;
-        params.max_connections =
-            reg.GetInt("server", "max_connections", 100, 0, CNcbiRegistry::eReturn);
-        params.max_threads =
-            reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
-        params.init_threads =
-            reg.GetInt("server", "init_threads", 10, 0, CNcbiRegistry::eReturn);
-        if (params.init_threads > params.max_threads)
-            params.init_threads = params.max_threads;
-
-        // Accept timeout
-        m_ServerAcceptTimeout.sec = 1;
-        m_ServerAcceptTimeout.usec = 0;
-        params.accept_timeout = &m_ServerAcceptTimeout;
-
-
-        auto_ptr<CNetCacheServer> server(
-            new CNetCacheServer(port,
-                                use_hostname,
-                                bdb_cache,
-                                network_timeout,
-                                is_log,
-                                reg));
-        server->SetParameters(params);
-
-        server->AddListener(
-            new CNetCacheConnectionFactory(&*server),
-            port);
-
-        server->SetBufferSize(buf_size);
-
-        if (bdb_cache) {
-            bdb_cache->SetMonitor(&server->GetMonitor());
-        }
-
-        server->SetRequestTimeout(request_timeout);
-
-        // create ICache instances
-
-        server->MountICache(conf, pm_cache);
-
-        // Start session management
-
-        {{
-            bool session_mng =
-                reg.GetBool("server", "session_mng",
-                            false, 0, IRegistry::eReturn);
-            if (session_mng) {
-                unsigned session_shutdown_timeout =
-                    reg.GetInt("server", "session_shutdown_timeout",
-                               60, 0, IRegistry::eReturn);
-
-                server->StartSessionManagement(session_shutdown_timeout);
-            }
-        }}
-
-        //NcbiCerr << "Running server on port " << port << NcbiEndl;
-        LOG_POST("Running server on port " << port);
+        LOG_POST_X(9, "Running server on port " << server->GetPort());
         server->Run();
 
         if (server->GetSignalCode()) {
-            LOG_POST("Server got " << server->GetSignalCode() <<
-                     " signal.");
+            LOG_POST_X(10,
+                       "Server got " << server->GetSignalCode() << " signal.");
         }
-        LOG_POST(Info << "Server stopped. Closing storage.");
-        // This place is suspicious. We already keep pointer to the cache in
-        // 'cache' auto_ptr. So we call Close on this cache at least twice.
-        // Close() is protected by double-call check, but insufficiently.
-        bdb_cache->Close();
-    }
-    catch (CBDB_ErrnoException& ex)
-    {
-        ERR_POST("Error: DBD errno exception:" << ex);
-        return 1;
-    }
-    catch (CBDB_LibException& ex)
-    {
-        ERR_POST("Error: DBD library exception:" << ex);
-        return 1;
-    }
+        LOG_POST_X(12, "Server stopped.");
+    }}
+    CSQLITE_Global::Finalize();
 
     return 0;
 }
+
+END_NCBI_SCOPE;
+
+
+USING_NCBI_SCOPE;
 
 
 int main(int argc, const char* argv[])

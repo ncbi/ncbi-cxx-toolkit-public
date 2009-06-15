@@ -72,7 +72,8 @@ public:
         eActiveSocket,
         eListener,
         ePreDeferredSocket,
-        eDeferredSocket
+        eDeferredSocket,
+        eClosedSocket
     };
 
     void SetMaxConnections(unsigned max_connections) {
@@ -85,6 +86,9 @@ public:
     /// pulling eActiveSocket's from poll vector
     /// Resets the expiration time as a bonus.
     void SetConnType(TConnBase* conn, EConnType type);
+
+    /// Close connection as if it was initiated by server (not by client).
+    void CloseConnection(TConnBase* conn);
 
     /// Clean up inactive connections which are no longer open or
     /// which have been idle for too long.

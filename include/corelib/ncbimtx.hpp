@@ -944,14 +944,162 @@ private:
 };
 
 
+class CFastRWLock;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SSimpleReadUnlock --
+///
+/// Release a read lock
+
+template <class Class>
+struct SSimpleReadUnlock
+{
+    void operator()(Class& inst) const
+    {
+        inst.ReadUnlock();
+    }
+};
+
+typedef CGuard< CFastRWLock,
+                SSimpleReadLock  <CFastRWLock>,
+                SSimpleReadUnlock<CFastRWLock> >  CFastReadGuard;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SSimpleWriteUnlock --
+///
+/// Release a write lock
+
+template <class Class>
+struct SSimpleWriteUnlock
+{
+    void operator()(Class& inst) const
+    {
+        inst.WriteUnlock();
+    }
+};
+
+typedef CGuard< CFastRWLock,
+                SSimpleWriteLock  <CFastRWLock>,
+                SSimpleWriteUnlock<CFastRWLock> > CFastWriteGuard;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFastRWLock --
+///
+/// Fast implementation of Read/Write lock.
+///
+/// Allows multiple readers or single writer. Behaves similar to CRWLock
+/// though with some assumptions and limitations:
+/// - Does not try to detect recursive locks, actually any attempt to lock
+///   recursively will end up in undefined behavior (the only exception is
+///   read-after-read lock - this is ok).
+/// - Does not remember when and where it was actually locked, so that it will
+///   not be able to recover after call to ReadUnlock() or WriteUnlock() if it
+///   was not preceded by call to corresponding Lock() method. So the best way
+///   to use it is just via CFastReadGuard and CFastWriteGuard.
+/// - Assumes that read lock is always held for a very small amount of time,
+///   though write lock can be held as long as you want. Failure to comply
+///   with this assumption will result in heavy CPU usage when trying to
+///   acquire write lock while long read lock is held.
+/// - Assumes that write lock is taken pretty rarely so that there is no
+///   possibility of their overlapping (actually it easily resolves
+///   overlapping though with possibility of readers starvation).
+/// - As a consequence of previous assumption assumes that writer
+///   "favoredness" (see fFavorWriters in CRWLock) is always needed.
+/// - Assumes that there will not be too much simultaneous read locks
+///   acquired, at least not more than 1048576.
+///
+/// All these assumptions and limitations allowed to make extremely
+/// lightweight implementation of RWLock where the most common operation -
+/// read lock and unlock - is performed very quickly without blocking each
+/// other.
+
+class NCBI_XNCBI_EXPORT CFastRWLock
+{
+public:
+    typedef CFastReadGuard  TReadLockGuard;
+    typedef CFastWriteGuard TWriteLockGuard;
+
+    CFastRWLock(void);
+    ~CFastRWLock(void);
+
+    /// Acquire read lock
+    void ReadLock(void);
+    /// Release read lock
+    void ReadUnlock(void);
+
+    /// Acquire write lock
+    void WriteLock(void);
+    /// Release write lock
+    void WriteUnlock(void);
+
+private:
+    CFastRWLock(const CFastRWLock&);
+    CFastRWLock& operator= (const CFastRWLock&);
+
+    enum {
+        /// Number in lock count showing that write lock is acquired.
+        kWriteLockValue = 0x100000
+    };
+
+    /// Number of read locks acquired or value of kWriteLockValue if write
+    /// lock was acquired
+    CAtomicCounter  m_LockCount;
+    /// Mutex implementing write lock
+    CFastMutex      m_WriteLock;
+};
+
+
 
 class CYieldingRWLock;
+class CRWLockHolder;
 
-/// Type of locking provided by RWLock
+/// Type of locking provided by CYieldingRWLock
 enum ERWLockType
 {
     eReadLock  = 0,
     eWriteLock = 1
+};
+
+
+/// Interface for receiving messages about state changes in CRWLockHolder.
+/// Implementations of this interface should inherit from CObjectEx to allow
+/// to take smart references on them.
+class NCBI_XNCBI_EXPORT IRWLockHolder_Listener
+{
+public:
+    virtual ~IRWLockHolder_Listener(void);
+
+    /// Callback called when lock represented by CRWLockHolder is acquired
+    virtual void OnLockAcquired(CRWLockHolder* holder) = 0;
+
+    /// Callback called when lock represented by CRWLockHolder is released
+    virtual void OnLockReleased(CRWLockHolder* holder) = 0;
+};
+
+/// Types of smart references to IRWLockHolder_Listener
+typedef CIRef<IRWLockHolder_Listener>      TRWLockHolder_ListenerRef;
+typedef CWeakIRef<IRWLockHolder_Listener>  TRWLockHolder_ListenerWeakRef;
+
+
+/// Interface for factory creating CRWLockHolder objects.
+/// Default interface implementation supports pooling of CRWLockHolder objects
+/// to avoid extensive use of new/delete
+class NCBI_XNCBI_EXPORT IRWLockHolder_Factory
+{
+public:
+    virtual ~IRWLockHolder_Factory(void);
+
+    /// Obtain new CRWLockHolder object for given CYieldingRWLock and
+    /// necessary lock type.
+    virtual CRWLockHolder* CreateHolder(CYieldingRWLock* lock,
+                                        ERWLockType      typ) = 0;
+
+    /// Free unnecessary (and unreferenced by anybody) CRWLockHolder object
+    virtual void DeleteHolder(CRWLockHolder* holder) = 0;
 };
 
 /// Holder of the lock inside CYieldingRWLock.
@@ -965,55 +1113,73 @@ class NCBI_XNCBI_EXPORT CRWLockHolder : public CObject
     friend class CYieldingRWLock;
 
 public:
-    /// Constructor is for use only inside IRWLockHolder_Factory
-    ///
-    /// @param lock
-    ///   The lock object that is locked by this holder
-    /// @param typ
-    ///   Type of lock held
-    CRWLockHolder(CYieldingRWLock* lock, ERWLockType typ);
+    /// Create lock holder bound to given object factory
+    CRWLockHolder(IRWLockHolder_Factory* factory);
+
     virtual ~CRWLockHolder(void);
 
+    /// Get factory which this object was created from
+    IRWLockHolder_Factory* GetFactory(void) const;
+
     /// Get lock object that is locked by this holder
-    CYieldingRWLock* GetRWLock(void);
+    CYieldingRWLock* GetRWLock(void) const;
 
     /// Get type of lock held
     ERWLockType GetLockType(void) const;
 
-    /// Check if lock requested is already granted or not
+    /// Check if lock requested is already granted
     bool IsLockAcquired(void) const;
 
     /// Release the lock held or cancel request for the lock
     void ReleaseLock(void);
 
-protected:
+    /// Add object keeping track of holder state changes
+    void AddListener(IRWLockHolder_Listener* listener);
+
+    /// Remove object keeping track of holder state changes
+    void RemoveListener(IRWLockHolder_Listener* listener);
+
+public:
+    /// Initialize holder for given CYieldingRWLock and necessary lock type.
+    /// Method is for use only inside IRWLockHolder_Factory implementation
+    void Init(CYieldingRWLock* lock, ERWLockType typ);
+
+    /// Reset holder to be able to use it later (after calling Init() )
+    void Reset(void);
+
+private:
+    CRWLockHolder(const CRWLockHolder&);
+    CRWLockHolder& operator= (const CRWLockHolder&);
+
     /// Callback called at the moment when lock is granted
-    virtual void OnLockAcquired(void);
+    void x_OnLockAcquired(void);
     /// Callback called at the moment when lock is released. Method is not
     /// called if request for lock was canceled before it was actually
     /// granted.
-    virtual void OnLockReleased(void);
+    void x_OnLockReleased(void);
+    /// "Delete" this holder after last reference was removed.
+    /// Actually deletes using factory's DeleteHolder().
+    virtual void DeleteThis(void) const;
 
-private:
-    CYieldingRWLock* m_Lock;
-    ERWLockType      m_Type;
-    bool             m_LockAcquired;
+
+    typedef list<TRWLockHolder_ListenerWeakRef> TListenersList;
+
+    /// Factory created the holder
+    IRWLockHolder_Factory* m_Factory;
+    /// Lock object the holder is assigned to
+    CYieldingRWLock*       m_Lock;
+    /// Type of lock held
+    ERWLockType            m_Type;
+    /// Flag if lock was acquired
+    bool                   m_LockAcquired;
+    /// Mutex for operating listeners
+    CFastMutex             m_ObjMutex;
+    /// List of holder listeners
+    TListenersList         m_Listeners;
 };
 
 /// Type that should be always used to store pointers to CRWLockHolder
 typedef CRef<CRWLockHolder> TRWLockHolderRef;
-
-
-/// Interface for factory creating lock holders for CYieldingRWLock.
-class NCBI_XNCBI_EXPORT IRWLockHolder_Factory
-{
-public:
-    virtual ~IRWLockHolder_Factory(void);
-
-    /// Method to be called only inside CYieldingRWLock
-    virtual CRWLockHolder* CreateLockHolder(CYieldingRWLock* lock,
-                                            ERWLockType      typ) = 0;
-};
 
 
 /// Read/write lock without blocking calls.
@@ -1026,20 +1192,21 @@ public:
 /// is some writer waiting for access and no new writers are granted access if
 /// there is some readers waiting for access (while another writer is
 /// working).
-/// Can be customizable by instance of IRWLockHolder_Factory to create objects
-/// that will perform there own actions when lock is acquired or released.
+/// Can be customizable by instance of IRWLockHolder_Factory to adopt custom
+/// memory management for CRWLockHolder objects.
 class NCBI_XNCBI_EXPORT CYieldingRWLock
 {
     friend class CRWLockHolder;
 
 public:
-    /// By default (if hld_factory == NULL) instances of CRWLockHolder will be
-    /// created to hold the lock.
-    CYieldingRWLock(IRWLockHolder_Factory* hld_factory = NULL);
-    ~CYieldingRWLock(void);
+    /// Create read/write lock with custom holders factory.
+    /// By default (if factory == NULL) pooling of CRWLockHolder will be used.
+    CYieldingRWLock(IRWLockHolder_Factory* factory = NULL);
 
-    /// Set factory to create lock holders
-    void SetLockHolderFactory(IRWLockHolder_Factory* hld_factory);
+    /// It is fatal error to destroy the object while some locks are pending.
+    /// Thus this object should be destroyed only after calls to ReleaseLock()
+    /// for all CRWLockHolder objects.
+    ~CYieldingRWLock(void);
 
     /// Read lock.
     /// Method returns immediately no matter if lock is granted or not. If
@@ -1064,9 +1231,13 @@ public:
 private:
     typedef deque<TRWLockHolderRef>  THoldersList;
 
+    /// Main implementation releasing lock
     void x_ReleaseLock(CRWLockHolder* holder);
 
-    IRWLockHolder_Factory* m_HldFactory;
+
+    /// Factory creating CRWLockHolder objects
+    IRWLockHolder_Factory* m_Factory;
+    /// Main locking mutex for object operations
     CFastMutex             m_ObjMutex;
     /// Number of locks granted on this object by type
     int                    m_Locks[2];

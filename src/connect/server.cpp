@@ -365,6 +365,18 @@ void CServer::StartListening(void)
 }
 
 
+void CServer::CloseConnection(IServer_ConnectionBase* conn)
+{
+    m_ConnectionPool->CloseConnection(conn);
+}
+
+
+void CServer::CloseConnection(CSocket* sock)
+{
+    CloseConnection(dynamic_cast<IServer_ConnectionBase*>(sock));
+}
+
+
 static inline bool operator <(const STimeout& to1, const STimeout& to2)
 {
     return to1.sec != to2.sec ? to1.sec < to2.sec : to1.usec < to2.usec;

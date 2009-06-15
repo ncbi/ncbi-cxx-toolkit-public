@@ -64,7 +64,7 @@ void CSessionManagementThread::DoJob(void)
                                         m_InactivityShutdownDelay) {
                 LOG_POST(
                   "Session inactivity timeout expired, shutting down.");
-                m_NC_Server.SetShutdownFlag();
+                m_NC_Server.RequestShutdown();
                 m_ShutdownFlag = true;
                 return;
             }
@@ -95,7 +95,7 @@ bool CSessionManagementThread::RegisterSession(const string& host,
     return true;
 }
 
-void CSessionManagementThread::UnRegisterSession(const string& host, 
+void CSessionManagementThread::UnregisterSession(const string& host, 
                                                unsigned      pid)
 {
     CFastMutexGuard mg(m_Lock);

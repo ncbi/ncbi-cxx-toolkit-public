@@ -3,11 +3,13 @@
 #################################
 
 APP = netcached
-SRC = netcached message_handler smng_thread
+SRC = netcached message_handler smng_thread \
+      nc_storage nc_storage_blob nc_db_files nc_db_stat nc_memory
 
-REQUIRES = MT bdb
+REQUIRES = MT SQLITE3
 
 
-LIB = ncbi_xcache_bdb$(STATIC) $(BDB_LIB) $(COMPRESS_LIBS) xconnserv xthrserv \
-      xconnect xutil xncbi
-LIBS = $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB = xconnserv xthrserv xconnect xutil xncbi sqlitewrapp
+LIBS = $(SQLITE3_STATIC_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+CPPFLAGS = $(SQLITE3_INCLUDE) $(ORIG_CPPFLAGS)

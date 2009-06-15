@@ -65,7 +65,7 @@ public:
     /// @returns true if session has been registered,
     ///          false if session management cannot do it (shutdown)
     bool RegisterSession(const string& host, unsigned pid);
-    void UnRegisterSession(const string& host, unsigned pid);
+    void UnregisterSession(const string& host, unsigned pid);
 
 private:
     CSessionManagementThread(const CSessionManagementThread&);

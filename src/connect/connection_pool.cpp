@@ -52,8 +52,7 @@ void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
     if (socket) {
         timeout = socket->GetTimeout(eIO_ReadWrite);
     }
-    if (type == eInactiveSocket  &&  timeout != kDefaultTimeout
-        &&  timeout != kInfiniteTimeout) {
+    if (timeout != kDefaultTimeout  &&  timeout != kInfiniteTimeout) {
         expiration.SetCurrent();
         expiration.AddSecond(timeout->sec);
         expiration.AddNanoSecond(timeout->usec * 1000);
@@ -111,8 +110,13 @@ void CServer_ConnectionPool::Erase(void)
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
     NON_CONST_ITERATE(TData, it, data) {
-         it->first->OnTimeout();
-         delete it->first;
+        CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
+        if (conn)
+            conn->OnSocketEvent(eServIO_OurClose);
+        else
+            it->first->OnTimeout();
+
+        delete it->first;
     }
     data.clear();
 }
@@ -144,7 +148,8 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
     TData::iterator it = data.find(conn);
     if (it == data.end()) {
         _TRACE("SetConnType called on unknown connection.");
-    } else {
+    }
+    else if (it->second.type != eClosedSocket) {
         if (it->second.type == ePreDeferredSocket
             &&  type == eInactiveSocket)
         {
@@ -171,6 +176,23 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
 }
 
 
+void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
+{
+    CMutexGuard guard(m_Mutex);
+    TData& data = const_cast<TData&>(m_Data);
+    TData::iterator it = data.find(conn);
+    if (it == data.end()) {
+        _TRACE("CloseConnection called on unknown connection.");
+    }
+    else {
+        _TRACE("Voluntarily closing connection " << conn);
+        dynamic_cast<CServer_Connection*>(conn)
+                                            ->OnSocketEvent(eServIO_OurClose);
+        it->second.type = eClosedSocket;
+    }
+}
+
+
 void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conns)
 {
     CTime now(CTime::eCurrent, CTime::eGmt);
@@ -190,13 +212,17 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
             continue;
         }
         CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
-        if (!it->first->IsOpen() || info.expiration <= now) {
+        if (info.type == eClosedSocket) {
+            to_delete.push_back(it->first);
+        }
+        else if (!it->first->IsOpen() || info.expiration <= now) {
             if (info.expiration <= now) {
                 _TRACE("Timeout on " << dynamic_cast<TConnBase *>(it->first));
                 it->first->OnTimeout();
                 conn->OnSocketEvent(eServIO_OurClose);
             } else {
                 _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
+                conn->OnSocketEvent(eServIO_ClientClose);
             }
             to_delete.push_back(it->first);
         }
