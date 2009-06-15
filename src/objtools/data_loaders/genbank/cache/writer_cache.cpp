@@ -208,8 +208,12 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
     if ( ids->IsLoadedGi() ) {
         CStoreBuffer str;
         str.StoreInt4(ids->GetGi());
-        m_IdCache->Store(seq_id, 0, GetGiSubkey(),
-                         str.data(), str.size());
+        try {
+            m_IdCache->Store(seq_id, 0, GetGiSubkey(),
+                             str.data(), str.size());
+        }
+        catch ( ... ) { // ignored
+        }
     }
 }
 
@@ -237,8 +241,12 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
     if ( ids->IsLoadedGi() ) {
         CStoreBuffer str;
         str.StoreInt4(ids->GetGi());
-        m_IdCache->Store(GetIdKey(seq_id), 0, GetGiSubkey(),
-                         str.data(), str.size());
+        try {
+            m_IdCache->Store(GetIdKey(seq_id), 0, GetGiSubkey(),
+                             str.data(), str.size());
+        }
+        catch ( ... ) { // ignored
+        }
     }
 }
 
@@ -254,8 +262,12 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
     if ( ids->IsLoadedAccVer() ) {
         CSeq_id_Handle acc = ids->GetAccVer();
         const string& str = acc.AsString();
-        m_IdCache->Store(GetIdKey(seq_id), 0, GetAccVerSubkey(),
-                         str.data(), str.size());
+        try {
+            m_IdCache->Store(GetIdKey(seq_id), 0, GetAccVerSubkey(),
+                             str.data(), str.size());
+        }
+        catch ( ... ) { // ignored
+        }
     }
 }
 
@@ -270,8 +282,12 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedLabel() ) {
         const string& str = ids->GetLabel();
-        m_IdCache->Store(GetIdKey(seq_id), 0, GetLabelSubkey(),
-                         str.data(), str.size());
+        try {
+            m_IdCache->Store(GetIdKey(seq_id), 0, GetLabelSubkey(),
+                             str.data(), str.size());
+        }
+        catch ( ... ) { // ignored
+        }
     }
 }
 
@@ -342,8 +358,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
         try {
             m_BlobCache->Remove(key, 0, GetSeq_idsSubkey());
         }
-        catch ( exception& /*exc*/ ) {
-            // ignored
+        catch ( ... ) { // ignored
         }
         // ignore cache write error - it doesn't affect application
     }
@@ -384,7 +399,11 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     if ( !true_subkey.empty() ) {
         str.StoreString(true_subkey);
     }
-    m_IdCache->Store(GetIdKey(seq_id), 0, subkey, str.data(), str.size());
+    try {
+        m_IdCache->Store(GetIdKey(seq_id), 0, subkey, str.data(), str.size());
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -398,8 +417,12 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
 
     CStoreBuffer str;
     str.StoreInt4(version);
-    m_IdCache->Store(GetBlobKey(blob_id), 0, GetBlobVersionSubkey(),
-                     str.data(), str.size());
+    try {
+        m_IdCache->Store(GetBlobKey(blob_id), 0, GetBlobVersionSubkey(),
+                         str.data(), str.size());
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -440,8 +463,6 @@ public:
             *m_Stream << flush;
             if ( !*m_Stream ) {
                 Abort();
-                NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "cannot write into cache");
             }
             m_Stream.reset();
             m_Writer.reset();
@@ -456,7 +477,11 @@ public:
 
     void Remove(void)
         {
-            m_Cache->Remove(m_Key, m_Version, m_Subkey);
+            try {
+                m_Cache->Remove(m_Key, m_Version, m_Subkey);
+            }
+            catch (...) { // ignored
+            }
         }
 
 private:
@@ -492,7 +517,7 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
         WriteProcessorTag(**stream, processor);
         return stream;
     }
-    catch ( ... ) {
+    catch ( ... ) { // ignored
         return null;
     }
 }

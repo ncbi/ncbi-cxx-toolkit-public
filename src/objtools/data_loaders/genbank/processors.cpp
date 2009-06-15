@@ -672,8 +672,12 @@ void CProcessor_ID1::SaveBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    CWriter::WriteBytes(**stream, byte_source);
-    stream->Close();
+    try {
+        CWriter::WriteBytes(**stream, byte_source);
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -689,11 +693,15 @@ void CProcessor_ID1::SaveBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    {{
-        CObjectOStreamAsnBinary obj_stream(**stream);
-        obj_stream << reply;
-    }}
-    stream->Close();
+    try {
+        {{
+            CObjectOStreamAsnBinary obj_stream(**stream);
+            obj_stream << reply;
+        }}
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1104,9 +1112,13 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    WriteBlobState(**stream, blob.GetBlobState());
-    CWriter::WriteBytes(**stream, reader);
-    stream->Close();
+    try {
+        WriteBlobState(**stream, blob.GetBlobState());
+        CWriter::WriteBytes(**stream, reader);
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1123,9 +1135,13 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    WriteBlobState(**stream, blob.GetBlobState());
-    CWriter::WriteBytes(**stream, data);
-    stream->Close();
+    try {
+        WriteBlobState(**stream, blob.GetBlobState());
+        CWriter::WriteBytes(**stream, data);
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1142,13 +1158,17 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    {{
-        CObjectOStreamAsnBinary obj_stream(**stream);
-        obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
-        WriteBlobState(obj_stream, blob.GetBlobState());
-        obj_stream << seq_entry;
-    }}
-    stream->Close();
+    try {
+        {{
+            CObjectOStreamAsnBinary obj_stream(**stream);
+            obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
+            WriteBlobState(obj_stream, blob.GetBlobState());
+            obj_stream << seq_entry;
+        }}
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1164,8 +1184,12 @@ void CProcessor_St_SE::SaveNoBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    WriteBlobState(**stream, blob_state);
-    stream->Close();
+    try {
+        WriteBlobState(**stream, blob_state);
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1251,9 +1275,14 @@ void CProcessor_St_SE_SNPT::SaveSNPBlob(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    WriteBlobState(**stream, blob.GetBlobState());
-    CSeq_annot_SNP_Info_Reader::Write(**stream, ConstBegin(seq_entry), set_info);
-    stream->Close();
+    try {
+        WriteBlobState(**stream, blob.GetBlobState());
+        CSeq_annot_SNP_Info_Reader::Write(**stream,
+                                          ConstBegin(seq_entry), set_info);
+        stream->Close();
+    }
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1491,14 +1520,18 @@ void CProcessor_ID2::SaveData(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    if ( s_CacheRecompress() ) {
-        x_FixCompression(const_cast<CID2_Reply_Data&>(data));
+    try {
+        if ( s_CacheRecompress() ) {
+            x_FixCompression(const_cast<CID2_Reply_Data&>(data));
+        }
+        {{
+            CObjectOStreamAsnBinary obj_stream(**stream);
+            SaveData(obj_stream, blob_state, data);
+        }}
+        stream->Close();
     }
-    {{
-        CObjectOStreamAsnBinary obj_stream(**stream);
-        SaveData(obj_stream, blob_state, data);
-    }}
-    stream->Close();
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1728,15 +1761,20 @@ void CProcessor_ID2AndSkel::SaveDataAndSkel(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
-    if ( s_CacheRecompress() ) {
-        x_FixCompression(const_cast<CID2_Reply_Data&>(split));
-        x_FixCompression(const_cast<CID2_Reply_Data&>(skel));
+    try {
+        if ( s_CacheRecompress() ) {
+            x_FixCompression(const_cast<CID2_Reply_Data&>(split));
+            x_FixCompression(const_cast<CID2_Reply_Data&>(skel));
+        }
+        {{
+            CObjectOStreamAsnBinary obj_stream(**stream);
+            SaveDataAndSkel(obj_stream, blob_state, split_version,
+                            split, skel);
+        }}
+        stream->Close();
     }
-    {{
-        CObjectOStreamAsnBinary obj_stream(**stream);
-        SaveDataAndSkel(obj_stream, blob_state, split_version, split, skel);
-    }}
-    stream->Close();
+    catch ( ... ) { // ignored
+    }
 }
 
 
@@ -1928,7 +1966,11 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         CRef<CWriter::CBlobStream> stream =
             (OpenStream(writer, result, blob_id, chunk_id, this));
         if ( stream ) {
-            stream->Close();
+            try {
+                stream->Close();
+            }
+            catch ( ... ) { // ignored
+            }
         }
     }
 }
