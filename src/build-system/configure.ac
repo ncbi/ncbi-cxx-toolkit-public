@@ -184,10 +184,6 @@ AC_ARG_WITH(lzo,
    [ --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)])
 AC_ARG_WITH(lzo_,
    [ --without-lzo           do not use LZO])
-AC_ARG_WITH(lzo2,
-   [ --with-lzo2=DIR         use LZO 2.x installation in DIR])
-AC_ARG_WITH(lzo2_,
-   [ --without-lzo2          do not use LZO 2.x])
 AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
@@ -387,7 +383,7 @@ deactivation makefile-auto-update projects flat-makefile check ncbi-public \
 strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge gif jpeg tiff png xpm \
@@ -429,7 +425,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [[A-Z]*=*] \
-      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-lzo2=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
@@ -3280,8 +3276,6 @@ if test -z "$BZ2_LIBS"; then
    NCBI_PACKAGE(LocalBZ2)
 fi
 
-: ${with_lzo=$with_lzo2}
-: ${LZO_PATH=$LZO2_PATH}
 : ${LZO_PATH=$NCBI/lzo2}
 if test -d "$LZO_PATH"; then
    NCBI_FIX_DIR(LZO_PATH)

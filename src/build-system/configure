@@ -917,8 +917,6 @@ Optional Packages:
  --without-bz2           use internal copy of bzlib
  --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)
  --without-lzo           do not use LZO
- --with-lzo2=DIR         use LZO 2.x installation in DIR
- --without-lzo2          do not use LZO 2.x
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
  --with-gnutls=DIR       use GNUTLS installation in DIR
@@ -1824,18 +1822,6 @@ if test "${with_lzo_+set}" = set; then
 
 fi;
 
-# Check whether --with-lzo2 or --without-lzo2 was given.
-if test "${with_lzo2+set}" = set; then
-  withval="$with_lzo2"
-
-fi;
-
-# Check whether --with-lzo2_ or --without-lzo2_ was given.
-if test "${with_lzo2_+set}" = set; then
-  withval="$with_lzo2_"
-
-fi;
-
 # Check whether --with-pcre or --without-pcre was given.
 if test "${with_pcre+set}" = set; then
   withval="$with_pcre"
@@ -2402,7 +2388,7 @@ deactivation makefile-auto-update projects flat-makefile check ncbi-public \
 strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge gif jpeg tiff png xpm \
@@ -2444,7 +2430,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [A-Z]*=* \
-      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-lzo2=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
@@ -19911,8 +19897,6 @@ _ACEOF
              WithPackages="$WithPackages${WithPackagesSep}LocalBZ2"; WithPackagesSep=" "
 fi
 
-: ${with_lzo=$with_lzo2}
-: ${LZO_PATH=$LZO2_PATH}
 : ${LZO_PATH=$NCBI/lzo2}
 if test -d "$LZO_PATH"; then
    ncbi_fix_dir_tmp=`if cd $LZO_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
