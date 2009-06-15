@@ -73,7 +73,7 @@ property xutil : {name:"xutil", path:"util"}
 property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp", "bdb_result_store.cpp"}}
 property xcache_bdb : {name:"xcache_bdb", path:"bdb", inc:{"bdb_blobcache.cpp"}}
 property xcache_netcache : {name:"xcache_netcache", path:"connect:services"}
-property regexp : {name:"regexp", path:"util:regexp"}
+property regexp : {name:"regexp", path:"util:regexp", exc:{"dftables.c", "pcredemo.c", "pcregrep.c", "pcretest.c"}}
 property xregexp : {name:"xregexp", path:"util:xregexp"}
 property ximage : {name:"ximage", path:"util:image"}
 property xcompress : {name:"xcompress", path:"util:compress"}
