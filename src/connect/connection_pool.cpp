@@ -201,11 +201,11 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
     TData& data = const_cast<TData&>(m_Data);
     if (data.empty())
         return;
-    int n_connections = 0;
+    //int n_connections = 0;
     list<TConnBase*> to_delete;
     NON_CONST_ITERATE(TData, it, data) {
         SPerConnInfo& info = it->second;
-        if (info.type != eListener) ++n_connections;
+        //if (info.type != eListener) ++n_connections;
         if (info.type == eActiveSocket  ||  info.type == eListener
             ||  info.type == ePreDeferredSocket)
         {
@@ -224,6 +224,7 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
                 _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
                 conn->OnSocketEvent(eServIO_ClientClose);
             }
+            conn->Abort();
             to_delete.push_back(it->first);
         }
         else if (info.type == eDeferredSocket
@@ -233,11 +234,11 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
             revived_conns.push_back(it->first);
         }
     }
-    int n_cleaned = 0;
+    //int n_cleaned = 0;
     ITERATE(list<TConnBase*>, it, to_delete) {
         data.erase(*it);
         delete *it;
-        ++n_cleaned;
+        //++n_cleaned;
     }
     // DEBUG if (n_cleaned)
     //  printf("Cleaned %d connections out of %d\n", n_cleaned, n_connections);
