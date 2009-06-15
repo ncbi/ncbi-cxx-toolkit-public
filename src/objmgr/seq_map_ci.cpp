@@ -56,7 +56,8 @@ SSeqMapSelector::SSeqMapSelector(void)
       m_MinusStrand(false),
       m_LinkUsedTSE(true),
       m_MaxResolveCount(0),
-      m_Flags(CSeqMap::fDefaultFlags)
+      m_Flags(CSeqMap::fDefaultFlags),
+      m_UsedTSEs(0)
 {
 }
 
@@ -67,7 +68,8 @@ SSeqMapSelector::SSeqMapSelector(TFlags flags, size_t resolve_count)
       m_MinusStrand(false),
       m_LinkUsedTSE(true),
       m_MaxResolveCount(resolve_count),
-      m_Flags(flags)
+      m_Flags(flags),
+      m_UsedTSEs(0)
 {
 }
 
@@ -83,6 +85,14 @@ const CTSE_Handle& SSeqMapSelector::x_GetLimitTSE(CScope* /* scope */) const
 {
     _ASSERT(m_LimitTSE);
     return m_LimitTSE;
+}
+
+
+void SSeqMapSelector::AddUsedTSE(const CTSE_Handle& tse) const
+{
+    if ( m_UsedTSEs ) {
+        m_UsedTSEs->push_back(tse);
+    }
 }
 
 
@@ -390,7 +400,9 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
             }
         }
         if ( info.m_TSE ) {
-            info.m_TSE.AddUsedTSE(bh.GetTSE_Handle());
+            if ( !info.m_TSE.AddUsedTSE(bh.GetTSE_Handle()) ) {
+                m_Selector.AddUsedTSE(bh.GetTSE_Handle());
+            }
         }
         x_Push(ConstRef(&bh.GetSeqMap()), bh.GetTSE_Handle(),
                GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);

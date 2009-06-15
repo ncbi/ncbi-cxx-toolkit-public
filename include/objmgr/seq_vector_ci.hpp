@@ -118,6 +118,8 @@ public:
     bool operator>=(const CSeqVector_CI& iter) const;
     bool operator<=(const CSeqVector_CI& iter) const;
 
+    /// Check if the sequence can be obtained for the interval [start, stop)
+    bool CanGetRange(TSeqPos start, TSeqPos stop);
     /// Fill the buffer string with the sequence data for the interval
     /// [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer);
@@ -231,6 +233,10 @@ private:
     void x_FillCache(TSeqPos start, TSeqPos count);
     void x_UpdateSeg(TSeqPos pos);
     void x_InitSeg(TSeqPos pos);
+    void x_IncSeg(void);
+    void x_DecSeg(void);
+    void x_CheckForward(void);
+    void x_CheckBackward(void);
     void x_InitRandomizer(CRandom& random_gen);
 
     void x_NextCacheSeg(void);
@@ -259,6 +265,7 @@ private:
     CHeapScope               m_Scope;
     CConstRef<CSeqMap>       m_SeqMap;
     CTSE_Handle              m_TSE;
+    vector<CTSE_Handle>      m_UsedTSEs;
     ENa_strand               m_Strand;
     TCoding                  m_Coding;
     ECaseConversion          m_CaseConversion;
@@ -274,7 +281,10 @@ private:
     TSeqPos                  m_BackupPos;
     TCacheData               m_BackupData;
     TCache_I                 m_BackupEnd;
+    // optional ambiguities randomizer
     CRef<INcbi2naRandomizer> m_Randomizer;
+    // scanned range
+    TSeqPos                  m_ScannedStart, m_ScannedEnd;
 };
 
 

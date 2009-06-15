@@ -200,6 +200,19 @@ private:
     CConstRef<CBlobId>  m_Id;
 };
 
+
+inline CNcbiOstream& operator<<(CNcbiOstream& out, const CBlobId& id)
+{
+    return out << id.ToString();
+}
+
+
+inline CNcbiOstream& operator<<(CNcbiOstream& out, const CBlobIdKey& id)
+{
+    return out << *id;
+}
+
+
 /* @} */
 
 END_SCOPE(objects)

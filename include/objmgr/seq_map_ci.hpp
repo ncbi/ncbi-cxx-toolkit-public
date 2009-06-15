@@ -100,6 +100,7 @@ private:
     bool               m_MinusStrand;
 
     friend class CSeqMap_CI;
+    friend class CSeqMap;
 };
 
 
@@ -160,6 +161,12 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             m_TopTSE = top_tse;
             return *this;
         }
+    SSeqMapSelector& SetLinkUsedTSE(vector<CTSE_Handle>& used_tses)
+        {
+            m_LinkUsedTSE = true;
+            m_UsedTSEs = &used_tses;
+            return *this;
+        }
 
     /// Limit TSE to resolve references
     SSeqMapSelector& SetLimitTSE(const CSeq_entry_Handle& tse);
@@ -191,7 +198,10 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             _ASSERT(CanResolve());
         }
 
+    void AddUsedTSE(const CTSE_Handle& tse) const;
+
 private:
+    friend class CSeqMap;
     friend class CSeqMap_CI;
 
     bool x_HasLimitTSE(void) const
@@ -215,6 +225,8 @@ private:
     CTSE_Handle         m_LimitTSE;
     // return all intermediate resolved sequences
     TFlags              m_Flags;
+    // keep all used TSEs which can not be linked
+    vector<CTSE_Handle>* m_UsedTSEs;
 };
 
 

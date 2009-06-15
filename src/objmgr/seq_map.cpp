@@ -39,6 +39,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -396,6 +397,23 @@ void CSeqMap::x_LoadObject(const CSegment& seg) const
 }
 
 
+CRef<CTSE_Chunk_Info> CSeqMap::x_GetChunkToLoad(const CSegment& seg) const
+{
+    _ASSERT(seg.m_Position != kInvalidSeqPos);
+    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+        const CObject* obj = seg.m_RefObject.GetPointer();
+        if ( obj && seg.m_ObjType == eSeqChunk ) {
+            const CTSE_Chunk_Info* chunk =
+                dynamic_cast<const CTSE_Chunk_Info*>(obj);
+            if ( chunk->NotLoaded() ) {
+                return Ref(const_cast<CTSE_Chunk_Info*>(chunk));
+            }
+        }
+    }
+    return null;
+}
+
+
 const CObject* CSeqMap::x_GetObject(const CSegment& seg) const
 {
     if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
@@ -479,6 +497,10 @@ void CSeqMap::x_SetSeq_data(size_t index, CSeq_data& data)
     if ( seg.m_SegType != eSeqData ) {
         NCBI_THROW(CSeqMapException, eSegmentTypeError,
                    "Invalid segment type");
+    }
+    if ( data.IsGap() ) {
+        ERR_POST("CSeqMap: gap Seq-data was split as real data");
+        seg.m_SegType = eSeqGap;
     }
     x_SetObject(seg, data);
 }
@@ -808,11 +830,112 @@ bool CSeqMap::CanResolveRange(CScope* scope,
 }
 
 
+namespace {
+    struct PByLoader {
+        static CDataLoader* Get(const CRef<CTSE_Chunk_Info>& c) {
+            return &c->GetSplitInfo().GetDataLoader();
+        }
+        bool operator()(const CRef<CTSE_Chunk_Info>& c1,
+                        const CRef<CTSE_Chunk_Info>& c2) const {
+            const CTSE_Split_Info* s1 = &c1->GetSplitInfo();
+            const CTSE_Split_Info* s2 = &c2->GetSplitInfo();
+            CDataLoader* l1 = &s1->GetDataLoader();
+            CDataLoader* l2 = &s2->GetDataLoader();
+            if ( l1 != l2 ) {
+                return l1 < l2;
+            }
+            if ( s1 != s2 ) {
+                return s1 < s2;
+            }
+            return c1->GetChunkId() < c2->GetChunkId();
+        }
+    };
+}
+
+
 bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
 {
     try {
-        for(CSeqMap_CI seg(CConstRef<CSeqMap>(this), scope, sel); seg; ++seg) {
-            // do nothing, just scan
+        if ( scope && sel.m_LinkUsedTSE && sel.m_TopTSE &&
+             !sel.x_HasLimitTSE() ) {
+            // Faster BFS search with batch load requests.
+            // We will do it only if loaded data will be locked in scope.
+            // That's why we verify that scope exists, and start TSE is set.
+            bool deeper = true;
+            size_t next_depth = 0;
+            vector<CTSE_Handle> all_tse;
+            vector<CTSE_Handle> parent_tse;
+            vector<CSeq_id_Handle> next_ids;
+            CDataLoader::TChunkSet load_chunks, other_chunks;
+            SSeqMapSelector next_sel(sel);
+            while ( deeper ) {
+                deeper = false;
+                if ( next_depth > sel.m_MaxResolveCount ) {
+                    break;
+                }
+                next_sel.SetResolveCount(next_depth);
+                next_sel.SetFlags(fFindAnyLeaf);
+                parent_tse.clear();
+                next_ids.clear();
+                load_chunks.clear();
+                for(CSeqMap_CI it(ConstRef(this), scope, next_sel); it; ++it) {
+                    if ( it.GetType() == eSeqRef ) {
+                        parent_tse.push_back(it.x_GetSegmentInfo().m_TSE);
+                        _ASSERT(parent_tse.back());
+                        next_ids.push_back(it.GetRefSeqid());
+                        _ASSERT(next_ids.back());
+                    }
+                    else {
+                        CRef<CTSE_Chunk_Info> chunk = it.x_GetSeqMap()
+                            .x_GetChunkToLoad(it.x_GetSegment());
+                        if ( chunk ) {
+                            load_chunks.push_back(chunk);
+                        }
+                    }
+                }
+                if ( !load_chunks.empty() ) {
+                    sort(load_chunks.begin(), load_chunks.end(), PByLoader());
+                    load_chunks.erase(unique(load_chunks.begin(),
+                                             load_chunks.end()),
+                                      load_chunks.end());
+                    CDataLoader* first_loader = PByLoader::Get(load_chunks[0]);
+                    CDataLoader* last_loader;
+                    while ( (last_loader=PByLoader::Get(load_chunks.back())) !=
+                            first_loader ){
+                        other_chunks.clear();
+                        while ( PByLoader::Get(load_chunks.back()) ==
+                                last_loader ) {
+                            other_chunks.push_back(load_chunks.back());
+                            load_chunks.pop_back();
+                        }
+                        last_loader->GetChunks(other_chunks);
+                    }
+                    first_loader->GetChunks(load_chunks);
+                }
+                if ( !next_ids.empty() ) {
+                    deeper = true;
+                    vector<CBioseq_Handle> seqs =
+                        scope->GetBioseqHandles(next_ids);
+                    _ASSERT(seqs.size() == parent_tse.size());
+                    for ( size_t i = 0; i < seqs.size(); ++i ) {
+                        if ( !seqs[i] ) {
+                            return false;
+                        }
+                        const CTSE_Handle& tse = seqs[i].GetTSE_Handle();
+                        all_tse.push_back(tse);
+                        if ( !parent_tse[i].AddUsedTSE(tse) ) {
+                            sel.AddUsedTSE(tse);
+                        }
+                    }
+                }
+                ++next_depth;
+            }
+            return true;
+        }
+        else {
+            for(CSeqMap_CI it(ConstRef(this), scope, sel); it; ++it) {
+                // do nothing, just scan
+            }
         }
     }
     catch (exception) {

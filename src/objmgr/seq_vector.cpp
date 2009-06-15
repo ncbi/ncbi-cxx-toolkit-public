@@ -267,10 +267,7 @@ CSeqVector_CI* CSeqVector::x_CreateIterator(TSeqPos pos) const
 
 bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
 {
-    SSeqMapSelector sel;
-    sel.SetRange(from, to-from).SetStrand(m_Strand).SetLinkUsedTSE(m_TSE)
-        .SetResolveCount(size_t(-1));
-    return m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel);
+    return x_CreateIterator(from)->CanGetRange(from, to);
 }
 
 
@@ -282,6 +279,13 @@ void CSeqVector::GetPackedSeqData(string& dst_str,
     src_end = min(src_end, size());
     if ( src_pos >= src_end ) {
         return;
+    }
+
+    if ( m_TSE && !CanGetRange(src_pos, src_end) ) { 
+        NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                       "CSeqVector::GetPackedSeqData: "
+                       "cannot get seq-data in range: "
+                       <<src_pos<<"-"<<src_end);
     }
 
     TCoding dst_coding = GetCoding();

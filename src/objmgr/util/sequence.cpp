@@ -2442,9 +2442,12 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
 void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                                   const CSeq_loc* location)
 {
+    vector<CTSE_Handle> used_tses;
     if ( !(m_Flags & fAssembleParts)  &&  !handle.IsSetInst_Seq_data() ) {
         SSeqMapSelector sel(CSeqMap::fFindInnerRef, (size_t)-1);
-        if ( !handle.GetSeqMap().CanResolveRange(NULL, sel) ) {
+        sel.SetLinkUsedTSE(handle.GetTSE_Handle());
+        sel.SetLinkUsedTSE(used_tses);
+        if ( !handle.GetSeqMap().CanResolveRange(&handle.GetScope(), sel) ) {
             return;
         }
     }

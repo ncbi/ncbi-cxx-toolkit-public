@@ -357,7 +357,7 @@ static void s_GetRnaRefLabel
         }
         
         break;
-    }}       
+    }}
 }
 
 
@@ -765,6 +765,51 @@ bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
     GetLabel(f1, &l1, eBoth, scope);
     GetLabel(f2, &l2, eBoth, scope);
     return l1 < l2;
+}
+
+
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CBioseq_Handle& master_seq,
+                        const CRange<TSeqPos>& range)
+{
+    NCBI_THROW(CObjmgrUtilException, eNotImplemented,
+               "MapSeq_feat: not implemented");
+}
+
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CSeq_id_Handle& master_id,
+                        const CRange<TSeqPos>& range)
+{
+    CBioseq_Handle master_seq = feat.GetScope().GetBioseqHandle(master_id);
+    if ( !master_seq ) {
+        NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                   "MapSeq_feat: master sequence not found");
+    }
+    return MapSeq_feat(feat, master_seq, range);
+}
+
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CBioseq_Handle& master_seq)
+{
+    NCBI_THROW(CObjmgrUtilException, eNotImplemented,
+               "MapSeq_feat: not implemented");
+}
+
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CSeq_id_Handle& master_id)
+{
+    CBioseq_Handle master_seq = feat.GetScope().GetBioseqHandle(master_id);
+    if ( !master_seq ) {
+        NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                   "MapSeq_feat: master sequence not found");
+    }
+    return MapSeq_feat(feat, master_seq);
 }
 
 

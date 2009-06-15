@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/mapped_feat.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -102,6 +103,22 @@ class NCBI_XOBJUTIL_EXPORT CFeatComparatorByLabel : public CObject,
                       const CSeq_feat& f2,
                       CScope* scope);
 };
+
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CBioseq_Handle& master_seq,
+                        const CRange<TSeqPos>& range);
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CSeq_id_Handle& master_id,
+                        const CRange<TSeqPos>& range);
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CBioseq_Handle& master_seq);
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
+                        const CSeq_id_Handle& master_id);
 
 
 /* @} */
