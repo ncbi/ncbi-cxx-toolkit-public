@@ -109,6 +109,7 @@ class NCBI_SEQFEAT_EXPORT CCountries
 {
 public:
     static bool IsValid(const string& country);
+    static bool IsValid(const string& country, bool& is_miscapitalized);
     static bool WasValid(const string& country);
 
 private:
