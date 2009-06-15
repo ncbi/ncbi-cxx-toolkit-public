@@ -425,7 +425,7 @@ public:
     unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
 
     void TimeLineMove(unsigned job_id, time_t old_time, time_t new_time);
-    // void x_AddToTimeLine(unsigned job_id, time_t curr);
+    void TimeLineAdd(unsigned job_id, time_t timeout);
     void TimeLineRemove(unsigned job_id);
     void TimeLineExchange(unsigned remove_job_id,
                           unsigned add_job_id,
@@ -528,11 +528,6 @@ private:
     // affinity dictionary does not need a mutex, because
     // CAffinityDict is a syncronized class itself (mutex included)
     CAffinityDict                m_AffinityDict;    ///< Affinity tokens
-
-    /*
-    CWorkerNodeAffinity          m_AffinityMap;     ///< Affinity map
-    CFastMutex                   m_AffinityMapLock; ///< m_AffinityMap lock
-    */
 
     // Tags
     //    STagDB                       m_TagDB;

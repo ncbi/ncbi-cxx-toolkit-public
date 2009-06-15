@@ -1905,19 +1905,12 @@ SLockedQueue::TimeLineMove(unsigned job_id, time_t old_time, time_t new_time)
 }
 
 
-/*
-void SLockedQueue::x_AddToTimeLine(unsigned job_id, time_t curr)
+void SLockedQueue::TimeLineAdd(unsigned job_id, time_t timeout)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
-    if (job_id && q->run_time_line) {
-        CJobTimeLine& tl = *q->run_time_line;
-
-        CWriteLockGuard guard(q->rtl_lock);
-        tl.AddObject(curr + queue_run_timeout, job_id);
-    }
+    if (!job_id  ||  !m_RunTimeLine) return;
+    CWriteLockGuard guard(m_RunTimeLineLock);
+    m_RunTimeLine->AddObject(timeout, job_id);
 }
-*/
 
 
 void SLockedQueue::TimeLineRemove(unsigned job_id)
