@@ -190,7 +190,7 @@ CNCDBCache::CNCDBCache(size_t page_size, bool purgeable)
       m_Purgable(purgeable),
       m_CacheSize(0),
       m_MaxKey(0),
-      m_PagesHash(kNC_DefDBCacheHashSize, NULL)
+      m_PagesHash(kNC_DefDBCacheHashSize, static_cast<SNCDBMemoryPage*>(NULL))
 {}
 
 inline void
@@ -207,7 +207,7 @@ CNCDBCache::SuggestSize(int num_pages)
 
     CFastMutexGuard guard(s_CacheMutex);
 
-    TPagesHash new_hash(num_pages, NULL);
+    TPagesHash new_hash(num_pages, static_cast<SNCDBMemoryPage*>(NULL));
     ITERATE(TPagesHash, it, m_PagesHash) {
         SNCDBMemoryPage* page = *it;
         while (page) {

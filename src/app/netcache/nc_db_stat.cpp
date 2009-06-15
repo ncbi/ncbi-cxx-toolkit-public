@@ -74,7 +74,7 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
           << "Total size of data read        - " << m_ReadSize << endl
           << "Time spent reading database    - " << m_ReadTime << endl
           << "Number of blobs read by size:" << endl;
-    size_t sz = kMinSizeInChart;
+    Uint8 sz = kMinSizeInChart;
     for (size_t i = 0; i < m_ReadBySize.size(); ++i, sz <<= 1) {
         proxy << sz << " - " << m_ReadBySize[i] << endl;
     }
