@@ -72,12 +72,16 @@ protected:
     /// @param scope CScope object to use in SSeqLoc returned [in]
     /// @throws CObjReaderParseException if input file is empty or the end of
     /// file is reached unexpectedly
+    /// @note all masks are returned in either the plus strand (for
+    /// nucleotides) or unknown (for proteins)
     virtual SSeqLoc GetNextSSeqLoc(CScope& scope);
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
     /// @param scope CScope object to use in CBlastSearchQuery returned [in]
     /// @throws CObjReaderParseException if input file is empty of the end of
     /// file is reached unexpectedly
+    /// @note all masks are returned in either both strands (for
+    /// nucleotides) or unknown (for proteins)
     virtual CRef<CBlastSearchQuery> GetNextSequence(CScope& scope);
 
     /// Signal whether there are any unread sequences left

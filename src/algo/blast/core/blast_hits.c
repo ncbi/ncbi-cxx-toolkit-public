@@ -2297,6 +2297,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
       for (index1 = 0; index1 < combined_hsp_list->hspcnt; index1++) {
          hsp1 = combined_hsp_list->hsp_array[index1];
          offset_idx = hsp1->context % contexts_per_query;
+         if (split_offsets[offset_idx] < 0) continue;
          if ((hsp1->query.frame >= 0 && hsp1->query.end > 
                          split_offsets[offset_idx]) ||
              (hsp1->query.frame < 0 && hsp1->query.offset < 
@@ -2311,6 +2312,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
       for (index2 = 0; index2 < hsp_list->hspcnt; index2++) {
          hsp2 = hsp_list->hsp_array[index2];
          offset_idx = hsp2->context % contexts_per_query;
+         if (split_offsets[offset_idx] < 0) continue;
          if ((hsp2->query.frame < 0 && hsp2->query.end > 
                          split_offsets[offset_idx]) ||
              (hsp2->query.frame >= 0 && hsp2->query.offset < 

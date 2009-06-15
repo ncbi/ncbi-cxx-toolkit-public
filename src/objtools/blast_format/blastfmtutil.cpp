@@ -613,82 +613,17 @@ void CBlastFormatUtil::PrintPhiInfo(int num_patterns,
     out << "pattern probability=" << prob << "\n";
 
 }
-                                    
-
-/// Efficiently decode a Blast-def-line-set from binary ASN.1.
-/// @param oss Octet string sequence of binary ASN.1 data.
-/// @param bdls Blast def line set decoded from oss.
-static void
-s_OssToDefline(const CUser_field::TData::TOss & oss,
-               CBlast_def_line_set            & bdls)
-{
-    typedef const CUser_field::TData::TOss TOss;
-    
-    const char * data = NULL;
-    size_t size = 0;
-    string temp;
-    
-    if (oss.size() == 1) {
-        // In the single-element case, no copies are needed.
-        
-        const vector<char> & v = *oss.front();
-        data = & v[0];
-        size = v.size();
-    } else {
-        // Determine the octet string length and do one allocation.
-        
-        ITERATE (TOss, iter1, oss) {
-            size += (**iter1).size();
-        }
-        
-        temp.reserve(size);
-        
-        ITERATE (TOss, iter3, oss) {
-            // 23.2.4[1] "The elements of a vector are stored contiguously".
-            temp.append(& (**iter3)[0], (*iter3)->size());
-        }
-        
-        data = & temp[0];
-    }
-    
-    CObjectIStreamAsnBinary inpstr(data, size);
-    inpstr >> bdls;
-}
 
 CRef<CBlast_def_line_set> 
 CBlastFormatUtil::GetBlastDefline (const CBioseq_Handle& handle) 
 {
-    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
-    
-    if(handle.IsSetDescr()){
-        const CSeq_descr& desc = handle.GetDescr();
-        const list< CRef< CSeqdesc > >& descList = desc.Get();
-        for (list<CRef< CSeqdesc > >::const_iterator iter = descList.begin();
-             iter != descList.end(); iter++){
-            
-            if((*iter)->IsUser()){
-                const CUser_object& uobj = (*iter)->GetUser();
-                const CObject_id& uobjid = uobj.GetType();
-                if(uobjid.IsStr()){
-                    
-                    const string& label = uobjid.GetStr();
-                    if (label == kAsnDeflineObjLabel){
-                        const vector< CRef< CUser_field > >& usf = 
-                            uobj.GetData();
-                        
-                        if(usf.front()->GetData().IsOss()){
-                            //only one user field
-                            typedef const CUser_field::TData::TOss TOss;
-                            const TOss& oss = usf.front()->GetData().GetOss();
-                            
-                            s_OssToDefline(oss, *bdls);
-                        }
-                    }
-                }
-            }
-        }
+    CRef<CBlast_def_line_set> retval =
+        CSeqDB::ExtractBlastDefline(*handle.GetBioseqCore());
+    if (retval.NotEmpty()) {
+        return retval;
     }
-    return bdls;
+    retval.Reset(new CBlast_def_line_set);
+    return retval;
 }
 
 ///Get linkout membership

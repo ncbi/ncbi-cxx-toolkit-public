@@ -3803,6 +3803,21 @@ BOOST_AUTO_TEST_CASE(RestartWithVolumes)
 {
 	CSeqDB db("data/restart", CSeqDB::eProtein);
 }
+ 
+BOOST_AUTO_TEST_CASE(ExtractBlastDefline)
+{
+    CSeqDB db("nt", CSeqDB::eNucleotide);
+    int oid;
+    BOOST_REQUIRE(db.GiToOid(555, oid));
+    CRef<CBioseq> bs = db.GetBioseq(oid);
+    CRef<CBlast_def_line_set> deflines = CSeqDB::ExtractBlastDefline(*bs);
+    BOOST_REQUIRE(deflines.NotEmpty());
+
+    // simulate this bioseq having come from the Genbank data loader
+    bs->ResetDescr();
+    deflines = CSeqDB::ExtractBlastDefline(*bs);
+    BOOST_REQUIRE(deflines.Empty());
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

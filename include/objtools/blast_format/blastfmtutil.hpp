@@ -438,7 +438,8 @@ public:
 
     ///Get blast defline
     ///@param handle: bioseq handle to extract blast defline from
-    ///
+    ///@note this returns a non-empty CRef even for Bioseqs returned by the
+    /// genbank data loader
     static CRef<CBlast_def_line_set> 
     GetBlastDefline (const CBioseq_Handle& handle);
 

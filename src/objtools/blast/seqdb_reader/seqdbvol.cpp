@@ -1176,14 +1176,81 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
     
     return taxonomy;
 }
+                                    
+/// Efficiently decode a Blast-def-line-set from binary ASN.1.
+/// @param oss Octet string sequence of binary ASN.1 data.
+/// @param bdls Blast def line set decoded from oss.
+static CRef<CBlast_def_line_set>
+s_OssToDefline(const CUser_field::TData::TOss & oss)
+{
+    typedef const CUser_field::TData::TOss TOss;
+    
+    const char * data = NULL;
+    size_t size = 0;
+    string temp;
+    
+    if (oss.size() == 1) {
+        // In the single-element case, no copies are needed.
+        
+        const vector<char> & v = *oss.front();
+        data = & v[0];
+        size = v.size();
+    } else {
+        // Determine the octet string length and do one allocation.
+        
+        ITERATE (TOss, iter1, oss) {
+            size += (**iter1).size();
+        }
+        
+        temp.reserve(size);
+        
+        ITERATE (TOss, iter3, oss) {
+            // 23.2.4[1] "The elements of a vector are stored contiguously".
+            temp.append(& (**iter3)[0], (*iter3)->size());
+        }
+        
+        data = & temp[0];
+    }
+    
+    CObjectIStreamAsnBinary inpstr(data, size);
+    CRef<CBlast_def_line_set> retval(new CBlast_def_line_set);
+    inpstr >> *retval;
+    return retval;
+}
+
+CRef<CBlast_def_line_set> 
+CSeqDB::ExtractBlastDefline(const CBioseq & bioseq)
+{
+    CRef<CBlast_def_line_set> failure;
+    if ( !bioseq.IsSetDescr() ) {
+        return failure;
+    }
+
+    const CSeq_descr::Tdata& descList = bioseq.GetDescr().Get();
+    ITERATE(CSeq_descr::Tdata, iter, descList) {
+        if ( !(*iter)->IsUser() ) {
+            continue;
+        }
+
+        const CUser_object& uobj = (*iter)->GetUser();
+        const CObject_id& uobjid = uobj.GetType();
+        if (uobjid.IsStr() && uobjid.GetStr() == kAsnDeflineObjLabel) {
+            const vector< CRef< CUser_field > >& usf = uobj.GetData();
+            _ASSERT( !usf.empty() );
+            _ASSERT(usf.front()->CanGetData());
+            if (usf.front()->GetData().IsOss()) { //only one user field
+                return s_OssToDefline(usf.front()->GetData().GetOss());
+            }
+        }
+    }
+    return failure;
+}
 
 CRef<CSeqdesc>
 CSeqDBVol::x_GetAsnDefline(int                    oid,
                            const CSeqDBFiltInfo & filt_info,
                            CSeqDBLockHold       & locked) const
 {
-    const char * ASN1_DEFLINE_LABEL = "ASN1_BlastDefLine";
-    
     CRef<CSeqdesc> asndef;
     
     vector<char> hdr_data;
@@ -1196,13 +1263,13 @@ CSeqDBVol::x_GetAsnDefline(int                    oid,
         CRef<CUser_object> uobj(new CUser_object);
         
         CRef<CObject_id> uo_oi(new CObject_id);
-        uo_oi->SetStr(ASN1_DEFLINE_LABEL);
+        uo_oi->SetStr(kAsnDeflineObjLabel);
         uobj->SetType(*uo_oi);
         
         CRef<CUser_field> uf(new CUser_field);
         
         CRef<CObject_id> uf_oi(new CObject_id);
-        uf_oi->SetStr(ASN1_DEFLINE_LABEL);
+        uf_oi->SetStr(kAsnDeflineObjLabel);
         uf->SetLabel(*uf_oi);
         
         vector< vector<char>* > & strs = uf->SetData().SetOss();
@@ -1273,11 +1340,9 @@ CSeqDBVol::GetBioseq(int                    oid,
     }
     
     defline = defline_set->Get().front();
-    
     if (! defline->CanGetSeqid()) {
         return null_result;
     }
-    
     seqids = defline->GetSeqid();
     
     // Get length & sequence.

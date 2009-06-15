@@ -10,7 +10,5 @@ LIB = test_boost ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb blast_services xn
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = Boost.Test.Included
-
 CHECK_CMD = blast_dataloader_unit_test
 CHECK_AUTHORS = blastsoft

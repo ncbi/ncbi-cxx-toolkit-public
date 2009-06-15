@@ -188,19 +188,48 @@ public:
 
     double GetSegFilteringHicut() const;
     void SetSegFilteringHicut(double m);
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
+    /// Returns true if repeat filtering is on
     bool GetRepeatFiltering() const;
+    /// Turns on repeat filtering using the default repeat database, namely
+    /// kDefaultRepeatFilterDb 
+    /// @note Either SetRepeatFiltering or SetRepeatFilteringDB should be
+    /// called, if both are called, only the last one called will take effect
     void SetRepeatFiltering(bool val = true);
 
+    /// Returns the name of the repeat filtering database to use
     const char* GetRepeatFilteringDB() const;
+    /// Sets the repeat filtering database to use
+    /// @note Either SetRepeatFiltering or SetRepeatFilteringDB should be
+    /// called, if both are called, only the last one called will take effect
     void SetRepeatFilteringDB(const char* db);
 
+    /// Returns the tax id used for the windowmasker database to use, if set
+    /// via SetWindowMaskerTaxId (otherwise, returns 0)
     int GetWindowMaskerTaxId() const;
+
+    /// Sets the tax id to select an appropriate windowmasker database
+    /// Conversion algorithm from tax id to database name is specific to NCBI,
+    /// will not work outside NCBI.
+    /// @note this only runs on machines that have the WINDOW_MASKER_PATH
+    /// configuration value set and have the the correct endianness. If
+    /// windowmasker databases are not available, the filtering will fail
+    /// silently
     void SetWindowMaskerTaxId(int taxid);
 
+    /// Return the name of the windowmasker database to use
     const char* GetWindowMaskerDatabase() const;
+
+    /// Sets the windowmasker database to use. This must be the name of a
+    /// subdirectory of WINDOW_MASKER_PATH
+    /// @note this only runs on machines that have the WINDOW_MASKER_PATH
+    /// configuration value set and have the the correct endianness. If
+    /// windowmasker databases are not available, the filtering will fail
+    /// silently
     void SetWindowMaskerDatabase(const char* db);
 
+#ifndef SKIP_DOXYGEN_PROCESSING
     objects::ENa_strand GetStrandOption() const;
     void SetStrandOption(objects::ENa_strand s);
 

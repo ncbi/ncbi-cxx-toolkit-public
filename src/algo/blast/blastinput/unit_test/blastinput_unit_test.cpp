@@ -902,8 +902,22 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     BOOST_REQUIRE(b.IsNa());
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
-    BOOST_REQUIRE_EQUAL(kGi, b.GetId().front()->GetGi());
+    const string accession("NC_000001");
+    bool found_gi = false, found_accession = false;
+    ITERATE(CBioseq::TId, id, b.GetId()) {
+        if ((*id)->Which() == CSeq_id::e_Gi) {
+            BOOST_REQUIRE_EQUAL(kGi, (*id)->GetGi());
+            found_gi = true;
+        } else if ((*id)->Which() == CSeq_id::e_Other) {
+            CNcbiOstrstream os;
+            (*id)->GetOther().AsFastaString(os);
+            const string fasta_acc = CNcbiOstrstreamToString(os);
+            BOOST_REQUIRE(NStr::Find(fasta_acc, accession) != NPOS);
+            found_accession = true;
+        }
+    }
+    BOOST_REQUIRE(found_gi);
+    BOOST_REQUIRE(found_accession);
     // the BLAST database data loader will fetch this as a delta sequence
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_delta, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
@@ -1026,8 +1040,8 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
         BOOST_REQUIRE_EQUAL(accession,
                     ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
         if (version != 0) {
-        BOOST_REQUIRE_EQUAL(version, 
-                    ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
+            BOOST_REQUIRE_EQUAL(version, 
+                        ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
         }
         BOOST_REQUIRE(!ssl.mask);
 
@@ -1434,9 +1448,9 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
             BOOST_REQUIRE_EQUAL(accession,
                         ssl.seqloc->GetInt().GetId().GetOther().GetAccession());
             if (version != 0) {
-            BOOST_REQUIRE_EQUAL(version, 
+                BOOST_REQUIRE_EQUAL(version, 
                         ssl.seqloc->GetInt().GetId().GetOther().GetVersion());
-        }
+            }
         }
         BOOST_REQUIRE(!ssl.mask);
 
@@ -1607,8 +1621,21 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     BOOST_REQUIRE(b.IsNa());
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
-    BOOST_REQUIRE_EQUAL(555, b.GetId().front()->GetGi());
+    bool found_gi = false, found_accession = false;
+    ITERATE(CBioseq::TId, id, b.GetId()) {
+        if ((*id)->Which() == CSeq_id::e_Gi) {
+            BOOST_REQUIRE_EQUAL(555, (*id)->GetGi());
+            found_gi = true;
+        } else if ((*id)->Which() == CSeq_id::e_Embl) {
+            CNcbiOstrstream os;
+            (*id)->GetEmbl().AsFastaString(os);
+            const string fasta_acc = CNcbiOstrstreamToString(os);
+            BOOST_REQUIRE(NStr::Find(fasta_acc, accession) != NPOS);
+            found_accession = true;
+        }
+    }
+    BOOST_REQUIRE(found_gi);
+    BOOST_REQUIRE(found_accession);
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
@@ -1909,11 +1936,14 @@ BOOST_AUTO_TEST_CASE(NuclStrand)
     }
 }
 
-BOOST_AUTO_TEST_CASE(NuclLcaseMask)
+BOOST_AUTO_TEST_CASE(NuclLcaseMask_TSeqLocVector)
 {
     CNcbiIfstream infile("data/nt.cat");
     const bool is_protein(false);
     CBlastInputSourceConfig iconfig(is_protein);
+    BOOST_REQUIRE(iconfig.GetBelieveDeflines() == false);
+    BOOST_REQUIRE(iconfig.GetLowercaseMask() == false);
+    BOOST_REQUIRE_EQUAL(eNa_strand_both, iconfig.GetStrand());
     iconfig.SetLowercaseMask(true);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
@@ -1928,12 +1958,70 @@ BOOST_AUTO_TEST_CASE(NuclLcaseMask)
     BOOST_REQUIRE_EQUAL((size_t)2, masklocs.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)126, masklocs.front()->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)167, masklocs.front()->GetTo());
+    // any masks read from the file are expected to be in the plus strand
+    BOOST_REQUIRE(masklocs.front()->CanGetStrand());
+    BOOST_REQUIRE_EQUAL(eNa_strand_plus, masklocs.front()->GetStrand());
+
     BOOST_REQUIRE_EQUAL((TSeqPos)330, masklocs.back()->GetFrom());
     BOOST_REQUIRE_EQUAL((TSeqPos)356, masklocs.back()->GetTo());
+    // any masks read from the file are expected to be in the plus strand
+    BOOST_REQUIRE(masklocs.back()->CanGetStrand());
+    BOOST_REQUIRE_EQUAL(eNa_strand_plus, masklocs.back()->GetStrand());
 
     ssl = *++itr;
     BOOST_REQUIRE(ssl.mask);
     BOOST_REQUIRE(ssl.mask->IsNull());
+}
+
+BOOST_AUTO_TEST_CASE(NuclLcaseMask_BlastQueryVector)
+{
+    CNcbiIfstream infile("data/nt.cat");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetLowercaseMask(true);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+
+    CRef<blast::CBlastQueryVector> seqs = source->GetNextSeqBatch(scope);
+    BOOST_REQUIRE( !seqs->Empty() );
+    BOOST_REQUIRE_EQUAL((int)2, (int)seqs->size());
+    CRef<blast::CBlastSearchQuery> query = (*seqs)[0];
+    BOOST_REQUIRE( !query->GetMaskedRegions().empty());
+
+    CRef<CPacked_seqint> masks =
+        query->GetMaskedRegions().ConvertToCPacked_seqint();
+    CPacked_seqint::Tdata masklocs = masks->Get();
+    CPacked_seqint::Tdata::const_iterator itr = masks->Get().begin();
+    BOOST_REQUIRE_EQUAL((size_t)4, masklocs.size());
+
+    // Note that for this case, the masks even though are also read from the
+    // file (as the unit test above), these are returned for both strands.
+    BOOST_REQUIRE_EQUAL((TSeqPos)126, (*itr)->GetFrom());
+    BOOST_REQUIRE_EQUAL((TSeqPos)167, (*itr)->GetTo());
+    BOOST_REQUIRE((*itr)->CanGetStrand());
+    BOOST_REQUIRE_EQUAL(eNa_strand_plus, (*itr)->GetStrand());
+    ++itr;
+    BOOST_REQUIRE_EQUAL((TSeqPos)126, (*itr)->GetFrom());
+    BOOST_REQUIRE_EQUAL((TSeqPos)167, (*itr)->GetTo());
+    BOOST_REQUIRE((*itr)->CanGetStrand());
+    BOOST_REQUIRE_EQUAL(eNa_strand_minus, (*itr)->GetStrand());
+    ++itr;
+
+    BOOST_REQUIRE_EQUAL((TSeqPos)330, (*itr)->GetFrom());
+    BOOST_REQUIRE_EQUAL((TSeqPos)356, (*itr)->GetTo());
+    BOOST_REQUIRE((*itr)->CanGetStrand());
+    BOOST_REQUIRE_EQUAL(eNa_strand_plus, (*itr)->GetStrand());
+    ++itr;
+    BOOST_REQUIRE_EQUAL((TSeqPos)330, (*itr)->GetFrom());
+    BOOST_REQUIRE_EQUAL((TSeqPos)356, (*itr)->GetTo());
+    BOOST_REQUIRE((*itr)->CanGetStrand());
+    BOOST_REQUIRE_EQUAL(eNa_strand_minus, (*itr)->GetStrand());
+    ++itr;
+
+    BOOST_REQUIRE(itr == masks->Get().end());
+
+    query = (*seqs)[1];
+    BOOST_REQUIRE(query->GetMaskedRegions().empty());
 }
 
 BOOST_AUTO_TEST_CASE(MultiSeq)

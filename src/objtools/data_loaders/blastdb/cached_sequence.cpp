@@ -46,6 +46,36 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+static void
+s_ReplaceProvidedSeqIdsForRequestedSeqIds(const CSeq_id_Handle& idh, CBioseq&
+                                          bioseq)
+{
+    CRef<CBlast_def_line_set> deflines = CSeqDB::ExtractBlastDefline(bioseq);
+    _ASSERT(deflines.NotEmpty());
+
+    CRef<CBlast_def_line> target_defline;
+    NON_CONST_ITERATE(CBlast_def_line_set::Tdata, one_defline,
+                      deflines->Set()) {
+        if (! (*one_defline)->CanGetSeqid()) {
+            continue;
+        }
+        NON_CONST_ITERATE(CBlast_def_line::TSeqid, seqid, 
+                          (*one_defline)->SetSeqid()) {
+            if ((*seqid)->Match(*idh.GetSeqId())) {
+                target_defline = *one_defline;
+                break;
+            }
+        }
+        if (target_defline.NotEmpty()) {
+            break;
+        }
+    }
+
+    if (target_defline.NotEmpty()) {
+        bioseq.SetId() = target_defline->SetSeqid();
+    }
+}
+
 CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
                                  const CSeq_id_Handle&  idh,
                                  int oid,
@@ -59,7 +89,8 @@ CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
     m_Length = m_BlastDb.GetSeqLength(m_OID);
     
     CRef<CBioseq> bioseq(m_BlastDb.GetBioseqNoData(m_OID,
-                                                  idh.IsGi()? idh.GetGi(): 0));
+                                                  m_SIH.IsGi()? m_SIH.GetGi(): 0));
+    s_ReplaceProvidedSeqIdsForRequestedSeqIds(m_SIH, *bioseq);
     
     CConstRef<CSeq_id> first_id( bioseq->GetFirstId() );
     _ASSERT(first_id);
@@ -76,12 +107,37 @@ CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
     m_TSE->SetSeq(*bioseq);
 }
 
+static CBioseq::TId s_ExtractSeqIds(const CBioseq& bioseq)
+{
+    CBioseq::TId retval;
+
+    CRef<CBlast_def_line_set> blast_deflines =
+        CSeqDB::ExtractBlastDefline(bioseq);
+    if ( blast_deflines.Empty() ) {
+        return retval;
+    }
+    NON_CONST_ITERATE(CBlast_def_line_set::Tdata, one_defline,
+                      blast_deflines->Set()) {
+        if (! (*one_defline)->CanGetSeqid()) {
+            continue;
+        }
+        NON_CONST_ITERATE(CBlast_def_line::TSeqid, seqid, 
+                          (*one_defline)->SetSeqid()) {
+            retval.push_back(*seqid);
+        }
+    }
+    return retval;
+}
+
 void 
 CCachedSequence::RegisterIds(CBlastDbDataLoader::TIds & idmap)
 {
     _ASSERT(m_TSE->IsSeq());
     
-    CBioseq::TId & ids = m_TSE->SetSeq().SetId();
+    CBioseq::TId ids = s_ExtractSeqIds(m_TSE->SetSeq());
+    if (ids.empty()) {
+        ids = m_TSE->SetSeq().SetId();
+    }
     
     ITERATE(CBioseq::TId, seqid, ids) {
         idmap[CSeq_id_Handle::GetHandle(**seqid)] = m_OID;

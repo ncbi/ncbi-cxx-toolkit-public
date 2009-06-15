@@ -99,6 +99,8 @@ string x_Stringify(TOBJ & obj)
     return CNcbiOstrstreamToString(oss);
 }
 
+BOOST_AUTO_TEST_SUITE(remote_blast)
+
 BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
     const EBlastProgramType prog = eBlastTypeBlastn;
     CRef<CBlastOptionsHandle> oh(
@@ -1301,3 +1303,5 @@ BOOST_AUTO_TEST_CASE(ReadSearchStrategy_Invalid)
     BOOST_REQUIRE_THROW(search_strategy = ExtractBlast4Request(in),
                         CSerialException);
 }
+
+BOOST_AUTO_TEST_SUITE_END()

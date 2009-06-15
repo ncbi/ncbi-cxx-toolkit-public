@@ -147,6 +147,28 @@ public:
     const objects::CSeq_id& GetSeqId() const { return m_Interval->GetId(); }
     void SetInterval(objects::CSeq_interval* interval) 
     { m_Interval.Reset(interval); }
+    /// Convert the frame to a strand
+    objects::ENa_strand GetStrand() const {
+        objects::ENa_strand retval;
+        switch (GetFrame()) {
+        case eFramePlus1:
+        case eFramePlus2:
+        case eFramePlus3:
+            retval = objects::eNa_strand_plus;
+            break;
+        case eFrameMinus1:
+        case eFrameMinus2:
+        case eFrameMinus3:
+            retval = objects::eNa_strand_minus;
+            break;
+        case eFrameNotSet:
+            retval = objects::eNa_strand_unknown;
+            break;
+        default:
+            abort();
+        }
+        return retval;
+    }
     int GetFrame() const { return (int) m_Frame; }
     void SetFrame(int frame); // Throws exception on out-of-range input
     operator TSeqRange() const {
@@ -215,10 +237,10 @@ public:
 
     /// Converts this object to a CPacked_seqint (this is the convention used
     /// to encode masking locations in the network BLAST 4 protocol)
-    /// @param warnings optional argument in which warnings are returned 
-    /// [in|out]
-    CRef<objects::CPacked_seqint> 
-    ConvertToCPacked_seqint(vector<string>* warnings = NULL) const;
+    CRef<objects::CPacked_seqint> ConvertToCPacked_seqint() const;
+
+    /// Returns true if there are masks on the negative strand
+    bool HasNegativeStrandMasks() const;
 };
 
 /// TMaskedSubjRegions defined as synonym to TMaskedQueryRegions
@@ -404,21 +426,6 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastSeqLoc, BlastSeqLocFree);
 DECLARE_AUTO_CLASS_WRAPPER(SBlastProgress, SBlastProgressFree);
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
-
-/// Auxiliary type to embed a CConstRef<CSeq_id> in STL containers that require
-/// operator< to be defined
-struct SSeqIdKey {
-    /// Constructor
-    SSeqIdKey(const objects::CSeq_id& id) : m_Id(&id) {}
-    /// Operator< to comply with STL container requirements
-    bool operator<(const SSeqIdKey& other) const {
-        return *m_Id < *other.m_Id;
-    }
-    /// Retrieve the object contained in this structure
-    operator const objects::CSeq_id& () const { return *m_Id; }
-private:
-    CConstRef<objects::CSeq_id> m_Id;    ///< The wrapped object
-};
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

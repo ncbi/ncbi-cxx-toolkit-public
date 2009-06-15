@@ -26,8 +26,6 @@ LIBS = $(NETWORK_LIBS) \
         $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-REQUIRES = objects Boost.Test.Included
-
 CHECK_REQUIRES = MT
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini data

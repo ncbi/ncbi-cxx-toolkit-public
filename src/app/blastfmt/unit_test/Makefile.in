@@ -2,7 +2,7 @@
 
 APP_PROJ = blastfmt_unit_test
 
-REQUIRES = algo objects gui Boost.Test.Included FLTK MESA
+REQUIRES = algo objects gui PNG Boost.Test.Included FLTK MESA
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

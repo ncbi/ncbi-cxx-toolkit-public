@@ -565,8 +565,8 @@ CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
     }
 
     if( index_names_.empty() ) {
-        throw std::runtime_error(
-                "CIndexedDb: no index file specified" );
+        NCBI_THROW(CDbIndex_Exception, eBadOption, 
+                   "no index file specified or index not found.");
     }
 
     PreSearchFn = &IndexedDbPreSearch;

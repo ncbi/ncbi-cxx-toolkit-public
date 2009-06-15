@@ -144,6 +144,46 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData)
     }
 }
 
+// Motivated by JIRA WB-235
+BOOST_AUTO_TEST_CASE(RetrieveFromBlastDbOnly_TestSequenceDataWithAccession) 
+{
+    vector<string> accessions;
+    // note the order, this comes second in the BLAST DB
+    accessions.push_back("AAB42302");   
+    accessions.push_back("NP_001024503");
+
+    SDataLoaderConfig dlconfig(true, SDataLoaderConfig::eUseBlastDbDataLoader);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
+    CRef<CScope> scope = scope_source.NewScope();
+    BOOST_REQUIRE_EQUAL(string("BLASTDB_prot_dbsProtein"), 
+                        scope_source.GetBlastDbLoaderName());
+
+    ITERATE(vector<string>, acc, accessions) {
+    CSeq_loc seqloc;
+        CSeq_id id(*acc);
+    seqloc.SetWhole().Assign(id);
+
+    const char* seq ="\
+MADDSENFVLTVDIGTTTIRSVVYDSKCKERGSYQEKVNTIYTTRNDDEVLVEIEPEQLFLQFLRVIKKAYETLPPNAHV\
+DVGLCTQRNSIVLWNKRTLKEETRIICWNDKRANNKCHNLNNSFLLKALNLAGGFLHFVTRKNRFLAAQRLKFLGGMVSH\
+RLMVTIDRSEKLKLMKADGDLCYGSLETWLLMRSSKSNILCVEASNISPSGMFDPWIGAYNTLIMKIIGFPTDMLFPIVD\
+SNLKDMNKLPIIDSSHIGKEFTISSIIADQQAAMFGCGTWERGDVKITLGTGTFVNVHTGKVPYASMSGLYPLVGWRING\
+ETDFIAEGNAHDTAVILHWAQSIGLFNDVTETSDIALSVNDSNGVVFIPAFCGIQTPINDETACSGFMCIRPDTTKVHMV\
+RAILESIAFRVYQIYAAAESEVNINKNSPVRICGGVSNNNFICQCIADLLGRKVERMTDSDHVAARGVALLTGFSSGIWT\
+KEKLRELVTVEDIFTPNYESRKGLLKTFQTWKKAVDRCLGFYH";
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+        CNcbiOstrstream os;
+        os << "Failed on accession " << *acc;
+        const string msg = CNcbiOstrstreamToString(os);
+    for (size_t i = 0; i < sv.size(); i++) {
+            BOOST_REQUIRE_MESSAGE((char)seq[i] == (char)sv[i], msg);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData) 
 {
     CSeq_loc seqloc;

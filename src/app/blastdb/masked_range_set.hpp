@@ -44,39 +44,26 @@ USING_SCOPE(objects);
 // two containers, one with a Seq-loc key and one with an integer key.
 
 class CMaskedRangeSet : public IMaskDataSource {
-    struct SSeqIdKey {
-        SSeqIdKey(const CSeq_id & k)
-            : id(& k)
-        {
-        }
-        
-        CConstRef<CSeq_id> id;
-        
-        bool operator < (const SSeqIdKey & other) const
-        {
-            return *id < *other.id;
-        }
-    };
-    
 public:
     void Insert(int              algo_id,
-                const CSeq_id  & k,
+                const CSeq_id  & id,
                 const CSeq_loc & v)
     {
-        x_CombineLocs(x_Set(algo_id, k), v);
+        x_CombineLocs(x_Set(algo_id, CSeq_id_Handle::GetHandle(id)), v);
     }
     
     virtual CMaskedRangesVector &
     GetRanges(const list< CRef<CSeq_id> > & idlist);
     
 private:
-    void x_FindAndCombine(CConstRef<CSeq_loc> & L1, int algo_id, SSeqIdKey & key);
+    void x_FindAndCombine(CConstRef<CSeq_loc> & L1, int algo_id,
+                          CSeq_id_Handle& id);
     
     static void x_CombineLocs(CConstRef<CSeq_loc> & L1, const CSeq_loc & L2);
     
-    CConstRef<CSeq_loc> & x_Set(int algo_id, SSeqIdKey key);
+    CConstRef<CSeq_loc> & x_Set(int algo_id, CSeq_id_Handle id);
     
-    typedef map< SSeqIdKey, CConstRef<CSeq_loc> > TAlgoMap;
+    typedef map< CSeq_id_Handle, CConstRef<CSeq_loc> > TAlgoMap;
     
     CMaskedRangesVector m_Ranges;
     vector< TAlgoMap > m_Values;

@@ -444,22 +444,12 @@ MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc )
         return CRef<objects::CSeq_loc>();
     }
 
-    vector<string> warnings;
-    CRef<objects::CPacked_seqint> psi = sloc.ConvertToCPacked_seqint(&warnings);
+    CRef<objects::CPacked_seqint> psi = sloc.ConvertToCPacked_seqint();
     CRef<objects::CSeq_loc> retval;
     if (psi.NotEmpty()) {
         retval.Reset(new objects::CSeq_loc);
         retval->SetPacked_int(*psi);
     }
-
-    if ( !warnings.empty() ) {
-        string msg("Attempt to convert mask information in lossy direction.\n");
-        ITERATE(vector<string>, i, warnings) {
-            msg += *i + "\n";
-        }
-        NCBI_THROW(CBlastException, eNotSupported, msg);
-    }
-    
     return retval;
 }
 

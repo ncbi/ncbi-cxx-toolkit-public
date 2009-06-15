@@ -429,9 +429,15 @@ fprintf(stderr, "No hits to query %d\n", global_query);
           to do that we must know the offset within each context
           where the last chunk ended and the current chunk begins */
        for (j = 0; j < contexts_per_query; j++) {
+           split_points[j] = -1;
+       }
+
+       for (j = 0; j < contexts_per_query; j++) {
            Int4 local_context = i * contexts_per_query + j;
-           split_points[context_list[local_context] % contexts_per_query] = 
+           if (context_list[local_context] >= 0) {
+               split_points[context_list[local_context] % contexts_per_query] = 
                                 offset_list[local_context];
+           }
        }
 
 #if defined(_DEBUG_VERBOSE)

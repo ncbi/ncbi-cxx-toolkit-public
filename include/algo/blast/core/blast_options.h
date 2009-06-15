@@ -206,6 +206,9 @@ typedef struct SSegOptions {
     double hicut;
 } SSegOptions;
 
+/// Default value for repeats database filtering
+#define kDefaultRepeatFilterDb "humrep"
+
 /** Filtering options for organsim specific repeats filtering.   
     Currently this consist of only the db name but could be expanded
     in the future to include other types of filtering or other options.

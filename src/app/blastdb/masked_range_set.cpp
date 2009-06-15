@@ -49,8 +49,8 @@ CMaskedRangeSet::GetRanges(const list< CRef<CSeq_id> > & idlist)
         CConstRef<CSeq_loc> oid_ranges;
         
         ITERATE(list< CRef<CSeq_id> >, id_iter, idlist) {
-            SSeqIdKey key(**id_iter);
-            x_FindAndCombine(oid_ranges, algo_id, key);
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**id_iter);
+            x_FindAndCombine(oid_ranges, algo_id, idh);
         }
         
         if (oid_ranges.Empty()) {
@@ -70,12 +70,12 @@ CMaskedRangeSet::GetRanges(const list< CRef<CSeq_id> > & idlist)
 
 void CMaskedRangeSet::x_FindAndCombine(CConstRef<CSeq_loc> & L1,
                                        int                   algo_id,
-                                       SSeqIdKey           & key)
+                                       CSeq_id_Handle      & idh)
 {
     if ((int)m_Values.size() > algo_id) {
         const TAlgoMap & m = m_Values[algo_id];
         
-        TAlgoMap::const_iterator iter = m.find(key);
+        TAlgoMap::const_iterator iter = m.find(idh);
         
         if (iter != m.end()) {
             x_CombineLocs(L1, *iter->second);
@@ -93,7 +93,7 @@ void CMaskedRangeSet::x_CombineLocs(CConstRef<CSeq_loc> & L1,
     }
 }
 
-CConstRef<CSeq_loc> & CMaskedRangeSet::x_Set(int algo_id, SSeqIdKey key)
+CConstRef<CSeq_loc> & CMaskedRangeSet::x_Set(int algo_id, CSeq_id_Handle idh)
 {
     if ((int)m_Values.size() <= algo_id) {
         m_Values.resize(algo_id+1);
@@ -102,6 +102,6 @@ CConstRef<CSeq_loc> & CMaskedRangeSet::x_Set(int algo_id, SSeqIdKey key)
         m_Ranges.resize(m_Ranges.size()+1);
         m_Ranges[m_Ranges.size()-1].algorithm_id = algo_id;
     }
-    return m_Values[algo_id][key];
+    return m_Values[algo_id][idh];
 }
 

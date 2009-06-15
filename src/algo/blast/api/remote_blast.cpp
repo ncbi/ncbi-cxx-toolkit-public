@@ -967,6 +967,12 @@ s_CreateBlastMask(const CPacked_seqint& packed_int, EBlastProgramType program)
             (new CSeq_interval(const_cast<CSeq_id&>((*masked_region)->GetId()), 
                           (*masked_region)->GetFrom(), 
                           (*masked_region)->GetTo()));
+        if ((*masked_region)->CanGetStrand() && 
+            (*masked_region)->GetStrand() == eNa_strand_minus) {
+            // skip this as locations on the negative strand are not
+            // represented in the remote masking locations
+            continue;   
+        }
         seqloc->SetPacked_int().Set().push_back(seqint);
     }
     retval->SetLocations().push_back(seqloc);
@@ -994,9 +1000,15 @@ CRemoteBlast::ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
         if (query_masks->empty()) {
             continue;
         }
+        if (query_masks->HasNegativeStrandMasks() && warnings) {
+            string w("Ignoring masked locations on negative strand for query");
+            w += " '" + query_masks->front()->GetSeqId().AsFastaString();
+            w += "'";
+            warnings->push_back(w);
+        }
 
         CRef<CPacked_seqint> packed_int = 
-            query_masks->ConvertToCPacked_seqint(warnings);
+            query_masks->ConvertToCPacked_seqint();
         if (packed_int.Empty()) {
             continue;
         }

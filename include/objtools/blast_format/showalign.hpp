@@ -54,6 +54,21 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/// Auxiliary type to embed a CConstRef<CSeq_id> in STL containers that require
+/// operator< to be defined
+struct SSeqIdKey {
+    /// Constructor
+    SSeqIdKey(const objects::CSeq_id& id) : m_Id(&id) {}
+    /// Operator< to comply with STL container requirements
+    bool operator<(const SSeqIdKey& other) const {
+        return *m_Id < *other.m_Id;
+    }
+    /// Retrieve the object contained in this structure
+    operator const objects::CSeq_id& () const { return *m_Id; }
+private:
+    CConstRef<objects::CSeq_id> m_Id;    ///< The wrapped object
+};
+
 /**
  * Example:
  * @code
@@ -381,7 +396,7 @@ private:
     typedef list< CRef<SAlnSeqlocInfo> > TSAlnSeqlocInfoList;
 
     /// Definition of std::map of CSeq_ids to masks
-    typedef map< blast::SSeqIdKey, blast::TMaskedQueryRegions > TSubjectMaskMap;
+    typedef map< SSeqIdKey, blast::TMaskedQueryRegions > TSubjectMaskMap;
     /// Map of subject masks
     TSubjectMaskMap m_SubjectMasks;
 

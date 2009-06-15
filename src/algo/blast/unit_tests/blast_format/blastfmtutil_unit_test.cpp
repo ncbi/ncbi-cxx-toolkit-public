@@ -42,7 +42,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/blastdb/defline_extra.hpp>
@@ -54,18 +54,23 @@
 
 
 using namespace ncbi;
+using namespace ncbi::blast;
 using namespace ncbi::objects;
 
 // Maximum acceptable difference between values of double type
 double const kMaxDoubleDiff = 1e-13;
 
-struct CDestrSetNonDefault {
+struct DataLoaderRevoker {
 
-    CDestrSetNonDefault(CRef<CObjectManager> obj, string name)
+    DataLoaderRevoker(CRef<CObjectManager> obj, string name)
         : m_Obj(obj), m_Name(name)
     {}
+
+    DataLoaderRevoker(const string& name)
+        : m_Obj(CObjectManager::GetInstance()), m_Name(name)
+    {}
     
-    ~CDestrSetNonDefault()
+    ~DataLoaderRevoker()
     {
         // disable the C++ BLAST database data loader
         m_Obj->SetLoaderOptions(m_Name, CObjectManager::eNonDefault);
@@ -78,7 +83,29 @@ struct CDestrSetNonDefault {
 
 BOOST_AUTO_TEST_SUITE(blastfmtutil)
 
-BOOST_AUTO_TEST_CASE(GetBlastDefline)
+BOOST_AUTO_TEST_CASE(GetBlastDeflineFromGenbank)
+{
+    const int gi = 555;
+    const bool is_prot = false;
+    SDataLoaderConfig config(is_prot, SDataLoaderConfig::eUseGenbankDataLoader);
+
+    CBlastScopeSource ss(config);
+    CRef<CScope> scope = ss.NewScope();
+    DataLoaderRevoker revoker(CGBDataLoader::GetLoaderNameFromArgs());
+
+    CSeq_id id;
+    id.SetGi(gi);
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(id);
+    BOOST_REQUIRE(bh);
+
+    CRef<CBlast_def_line_set> defline =
+        CBlastFormatUtil::GetBlastDefline(bh);
+    BOOST_REQUIRE(defline.NotEmpty());
+    BOOST_REQUIRE(defline->Get().empty());
+}
+
+BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
 {
     CRef<CObjectManager> obj = CObjectManager::GetInstance();  
     CRef<CScope> scope;
@@ -88,14 +115,14 @@ BOOST_AUTO_TEST_CASE(GetBlastDefline)
     CBlastDbDataLoader::RegisterInObjectManager(*obj, 
                                                 kDbName,
                                                 kDbType, true,
-                                                CObjectManager::eDefault);
+                                                CObjectManager::eNonDefault);
     
     scope = new CScope(*obj);
     
     string name = 
         CBlastDbDataLoader::GetLoaderNameFromArgs(kDbName, kDbType);
     
-    CDestrSetNonDefault snd(obj, name);
+    DataLoaderRevoker revoker(obj, name);
     
     scope->AddDataLoader(name);
     int gi = sequence::GetGiForAccession("NM_001256", *scope);

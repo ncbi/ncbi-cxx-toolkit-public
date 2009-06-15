@@ -422,6 +422,11 @@ public:
     ///   A CBioseq object corresponding to the sequence, but without
     ///   sequence data.
     CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0) const;
+
+    /// Extract a Blast-def-line-set object from a Bioseq retrieved by CSeqDB
+    /// @param bioseq Bioseq retrieved from CSeqDB [in]
+    static CRef<CBlast_def_line_set> 
+    ExtractBlastDefline(const CBioseq & bioseq);
     
     /// Get a CBioseq for a sequence.
     ///

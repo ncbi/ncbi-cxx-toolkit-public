@@ -19,4 +19,3 @@ LIBS = $(OSMESA_LIBS) $(IMAGE_LIBS) \
 CHECK_CMD = blastfmt_unit_test
 CHECK_COPY = data
 CHECK_AUTHORS = blastsoft
-CHECK_REQUIRES = PNG Boost.Test.Included

@@ -59,6 +59,8 @@
 #include <algo/blast/api/local_blast.hpp>       // for CLocalBlast
 #include <algo/blast/api/local_db_adapter.hpp>  // for CLocalDbAdapter
 #include <algo/blast/api/objmgr_query_data.hpp> // for CObjMgr_QueryFactory
+#include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_fasta_input.hpp>
 
 #include <objtools/simple/simple_om.hpp>        // for CSimpleOM
 #include <objtools/readers/fasta.hpp>           // for CFastaReader
@@ -1284,6 +1286,70 @@ BOOST_AUTO_TEST_CASE(ProteinSelfHitWithMask) {
     BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
 }
 
+// Inspired by SB-285
+BOOST_AUTO_TEST_CASE(NucleotideMaskedLocation) {
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 83219349));
+    CRef<CSeq_loc> sl(new CSeq_loc());
+    sl->SetWhole(*id);
+    CRef<CSeq_loc> mask(new CSeq_loc(*id, 57, 484));
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    SSeqLoc query_seqloc(sl, scope, mask);
+
+    CRef<CSeq_id> sid(new CSeq_id(CSeq_id::e_Gi, 88954065));
+    CRef<CSeq_loc> ssl(new CSeq_loc(*sid, 9909580-100, 9909607+100));
+    SSeqLoc subj_seqloc(ssl, scope);
+
+    CBl2Seq bl2seq(query_seqloc, subj_seqloc, eMegablast);
+    TSeqAlignVector sav(bl2seq.Run());
+    BOOST_REQUIRE_EQUAL(0, sav[0]->Get().size());
+}
+
+// Inspired by SB-285
+BOOST_AUTO_TEST_CASE(NucleotideMaskedLocation_FromFile) {
+    CNcbiIfstream infile("data/masked.fsa");
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetLowercaseMask(true);
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(infile, iconfig));
+    CRef<CBlastInput> input(new CBlastInput(&*fasta_src));
+    //CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    //scope->AddDefaults();
+    CRef<CScope> scope = CBlastScopeSource(is_protein).NewScope();
+
+    CRef<blast::CBlastQueryVector> seqs = input->GetNextSeqBatch(*scope);
+    CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*seqs));
+
+    TSeqLocVector subj_vec;
+    CRef<CSeq_id> sid(new CSeq_id(CSeq_id::e_Gi, 88954065));
+    CRef<CSeq_loc> ssl(new CSeq_loc(*sid, 9909580-100, 9909607+100));
+    subj_vec.push_back(SSeqLoc(ssl, scope));
+    CRef<IQueryFactory> subj_qf(new CObjMgr_QueryFactory(subj_vec));
+    CRef<CBlastOptionsHandle>
+        opts_handle(CBlastOptionsFactory::Create(eBlastn));
+    CRef<CLocalDbAdapter> subjects(new CLocalDbAdapter(subj_qf,
+                                                       opts_handle));
+
+    size_t num_queries = seqs->Size();
+    size_t num_subjects = subj_vec.size();
+    BOOST_REQUIRE_EQUAL((size_t)1, num_queries);
+    BOOST_REQUIRE_EQUAL((size_t)1, num_subjects);
+
+    // BLAST by concatenating all queries
+    CLocalBlast blaster(queries, opts_handle, subjects);
+    CRef<CSearchResultSet> results = blaster.Run();
+    BOOST_REQUIRE(results->GetResultType() == eSequenceComparison);
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects),
+                        results->GetNumResults());
+    BOOST_REQUIRE_EQUAL((num_queries*num_subjects), results->size());
+    BOOST_REQUIRE_EQUAL(num_queries, results->GetNumQueries());
+    BOOST_REQUIRE_EQUAL(num_subjects,
+                        results->GetNumResults()/results->GetNumQueries());
+
+    CSearchResults& res = (*results)[0];
+    BOOST_REQUIRE(res.HasAlignments() == false);
+}
+
 // test for the case where the use of composition based
 // satistics should have deleted a hit but did not (used to crash)
 BOOST_AUTO_TEST_CASE(ProteinCompBasedStats) {
@@ -1634,6 +1700,174 @@ BOOST_AUTO_TEST_CASE(ProteinBlast2Seqs) {
     BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
     testBlastHitCounts(blaster, eBlastp_129295_7662354);
     testRawCutoffs(blaster, eBlastp, eBlastp_129295_7662354);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering_InvalidDB) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const string kRepeatDb("junk");
+    opts.SetRepeatFilteringDB(kRepeatDb.c_str());
+    bool is_repeat_filtering_on = opts.GetRepeatFiltering();
+    BOOST_REQUIRE(is_repeat_filtering_on);
+    string repeat_db(opts.GetRepeatFilteringDB() 
+                     ? opts.GetRepeatFilteringDB()
+                     : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kRepeatDb, repeat_db);
+
+    CBl2Seq blaster(*query, *query, opts);
+    try {
+        TSeqAlignVector sav(blaster.Run());
+        CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+        BOOST_REQUIRE(sar.NotEmpty());
+        BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+    } catch (const CBlastException& e) {
+        BOOST_REQUIRE(e.GetErrCode() == CBlastException::eSeqSrcInit);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    opts.SetRepeatFiltering(true);
+    string repeat_db(opts.GetRepeatFilteringDB() 
+                     ? opts.GetRepeatFilteringDB()
+                     : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(string(kDefaultRepeatFilterDb), repeat_db);
+    // it's harmless to set them both, but only the latter one will be used
+    const string kRepeatDb("repeat/repeat_9606");
+    opts.SetRepeatFilteringDB(kRepeatDb.c_str());
+    repeat_db.assign(opts.GetRepeatFilteringDB() 
+                     ? opts.GetRepeatFilteringDB()
+                     : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kRepeatDb, repeat_db);
+
+    bool is_repeat_filtering_on = opts.GetRepeatFiltering();
+    BOOST_REQUIRE(is_repeat_filtering_on);
+
+    CBl2Seq blaster(*query, *query, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Db) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const string kWindowMaskerDb("9606");
+    opts.SetWindowMaskerDatabase(kWindowMaskerDb.c_str());
+    string wmdb(opts.GetWindowMaskerDatabase()
+                ? opts.GetWindowMaskerDatabase() : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kWindowMaskerDb, wmdb);
+    BOOST_REQUIRE_EQUAL(0, opts.GetWindowMaskerTaxId());
+    CBl2Seq blaster(*query, *query, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Taxid) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    opts.SetWindowMaskerTaxId(9606);
+    CBl2Seq blaster(*query, *query, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidDb) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const string kWindowMaskerDb("Dummydb");
+    opts.SetWindowMaskerDatabase(kWindowMaskerDb.c_str());
+    string wmdb(opts.GetWindowMaskerDatabase()
+                ? opts.GetWindowMaskerDatabase() : kEmptyStr);
+    BOOST_REQUIRE_EQUAL(kWindowMaskerDb, wmdb);
+    CBl2Seq blaster(*query, *query, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() == 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidTaxid) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    const int kInvalidTaxId = -1;
+    opts.SetWindowMaskerTaxId(kInvalidTaxId);
+    BOOST_REQUIRE_EQUAL(kInvalidTaxId, opts.GetWindowMaskerTaxId());
+    CBl2Seq blaster(*query, *query, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    // find self hit, silently ignoring the failed filtering
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() == 1);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_DbAndTaxid) {
+    CSeq_id qid("gi|555");
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    // if both are set, the database name will be given preference
+    opts.SetWindowMaskerDatabase("9606");
+    opts.SetWindowMaskerTaxId(-1);
+    CBl2Seq blaster(*query, *query, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
+}
+
+// Bug report from Alex Astashyn
+BOOST_AUTO_TEST_CASE(Alex) {
+    CSeq_id qid("NG_007092.2");
+    TSeqRange qr(0, 2311633);
+    auto_ptr<SSeqLoc> query(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, qr, eNa_strand_plus));
+
+    CSeq_id sid("NT_007914.14");
+    TSeqRange sr(5233652, 9849919);
+    auto_ptr<SSeqLoc> subj(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, sr));
+
+    CBlastNucleotideOptionsHandle opts;
+    opts.SetTraditionalMegablastDefaults();
+    opts.SetRepeatFiltering(true);
+    CBl2Seq blaster(*query, *subj, opts);
+    TSeqAlignVector sav(blaster.Run());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_REQUIRE(sar.NotEmpty());
+    BOOST_REQUIRE(sar->GetSegs().GetDenseg().GetNumseg() >= 1);
 }
 
 BOOST_AUTO_TEST_CASE(NucleotideBlast2Seqs) {
@@ -2852,4 +3086,5 @@ BOOST_AUTO_TEST_CASE(QueryMaskIgnoredInMiniExtension) {
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
+
 BOOST_AUTO_TEST_SUITE_END()

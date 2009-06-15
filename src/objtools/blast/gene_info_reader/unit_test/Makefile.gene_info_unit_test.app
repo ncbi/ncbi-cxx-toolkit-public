@@ -11,8 +11,6 @@ LIB = test_boost gene_info xncbi
 
 LIBS = $(ORIG_LIBS)
 
-REQUIRES = Boost.Test.Included
-
 CHECK_CMD     = gene_info_unit_test
 CHECK_COPY    = data
 CHECK_AUTHORS = blastsoft

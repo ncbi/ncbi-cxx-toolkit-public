@@ -62,25 +62,12 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
             continue;
         }
 
-        /* if the range to scan is smaller than the word size, don't bother. */
-        if ( (range[2]-range[1]+1) < word_length ) {
-			range[1] = subject->seq_ranges[range[0]].right + word_length - lut_word_length;
-            range[3] = range[1] - word_length + lut_word_length;
-			range[2] = subject->length - word_length;
-			range[4] = range[2] + word_length;
-            continue;
-            }
- 
         break;
     } /* end for */
 
     if (range[1] + lut_word_length > subject->length) {
         return FALSE;
-		}
+    }
 			
-    if ( (range[2]-range[1]+1) < word_length ) {
-        return FALSE;
-		}
-
     return TRUE;
 }

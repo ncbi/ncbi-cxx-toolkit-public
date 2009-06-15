@@ -933,6 +933,7 @@ BOOST_AUTO_TEST_CASE(RestrictLowerCaseMask) {
     BOOST_REQUIRE(restricted_mask.empty());
 }
 
+// Inspired by JIRA SB-264
 BOOST_AUTO_TEST_CASE(BlastxLowerCaseMask) {
     vector<TSeqRange> masks;
     masks.push_back(TSeqRange(0, 75));
@@ -965,6 +966,64 @@ BOOST_AUTO_TEST_CASE(BlastxLowerCaseMask) {
         BOOST_REQUIRE(bqff[*fr] != NULL);
     }
     BOOST_REQUIRE(bqff.GetNumFrames() == NUM_FRAMES);
+}
+
+// Inspired by SB-285
+BOOST_AUTO_TEST_CASE(BlastnLowerCaseMask_SingleStrand) {
+    TSeqRange mask(TSeqRange(0, 75));
+
+    TMaskedQueryRegions mqr;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 1945388));
+    CRef<CSeq_interval> intv(new CSeq_interval(*id,
+                                               mask.GetFrom(),
+                                               mask.GetTo()));
+    CRef<CSeqLocInfo> sli(new CSeqLocInfo(intv, 
+                                          CSeqLocInfo::eFramePlus1));
+    mqr.push_back(sli);
+
+    CBlastQueryFilteredFrames bqff(eBlastTypeBlastn, mqr);
+    BOOST_REQUIRE(!bqff.Empty());
+    BOOST_REQUIRE(bqff.QueryHasMultipleFrames());
+    const set<CSeqLocInfo::ETranslationFrame>& frames = bqff.ListFrames();
+    const int kExpectedNumFrames = 2;
+    int frame_ctr = 0;
+    ITERATE(set<CSeqLocInfo::ETranslationFrame>, fr, frames) {
+        BOOST_REQUIRE(bqff[*fr] != NULL);
+        frame_ctr++;
+    }
+    BOOST_REQUIRE_EQUAL(kExpectedNumFrames, bqff.GetNumFrames());
+    BOOST_REQUIRE_EQUAL(1, frame_ctr); // NOTE!!
+    BOOST_REQUIRE_EQUAL(1, frames.size()); // NOTE!!
+}
+
+// Inspired by SB-285
+BOOST_AUTO_TEST_CASE(BlastnLowerCaseMask_BothStrands) {
+    TSeqRange mask(TSeqRange(0, 75));
+
+    TMaskedQueryRegions mqr;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 1945388));
+    CRef<CSeq_interval> intv(new CSeq_interval(*id,
+                                               mask.GetFrom(),
+                                               mask.GetTo()));
+    CRef<CSeqLocInfo> sli(new CSeqLocInfo(intv, 
+                                          CSeqLocInfo::eFramePlus1));
+    mqr.push_back(sli);
+    sli.Reset(new CSeqLocInfo(intv, CSeqLocInfo::eFrameMinus1));
+    mqr.push_back(sli);
+
+    CBlastQueryFilteredFrames bqff(eBlastTypeBlastn, mqr);
+    BOOST_REQUIRE(!bqff.Empty());
+    BOOST_REQUIRE(bqff.QueryHasMultipleFrames());
+    const set<CSeqLocInfo::ETranslationFrame>& frames = bqff.ListFrames();
+    const int kExpectedNumFrames = 2;
+    int frame_ctr = 0;
+    ITERATE(set<CSeqLocInfo::ETranslationFrame>, fr, frames) {
+        BOOST_REQUIRE(bqff[*fr] != NULL);
+        frame_ctr++;
+    }
+    BOOST_REQUIRE_EQUAL(kExpectedNumFrames, bqff.GetNumFrames());
+    BOOST_REQUIRE_EQUAL(kExpectedNumFrames, frame_ctr); // NOTE!!
+    BOOST_REQUIRE_EQUAL(kExpectedNumFrames, frames.size()); // NOTE!!
 }
 
 BOOST_AUTO_TEST_CASE(LowerCaseMask_PlusStrand) {

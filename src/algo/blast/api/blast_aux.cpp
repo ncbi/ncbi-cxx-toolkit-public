@@ -1038,33 +1038,35 @@ TMaskedQueryRegions::RestrictToSeqInt(const objects::CSeq_interval& location) co
 
 
 CRef<objects::CPacked_seqint> 
-TMaskedQueryRegions::ConvertToCPacked_seqint(vector<string>* warnings) const
+TMaskedQueryRegions::ConvertToCPacked_seqint() const
 {
-    // auxiliary to avoid adding the same warning if there are multiple
-    // masked locations on the negative strand for a single query
-    bool negative_strand_found = false;
-
     CRef<CPacked_seqint> retval(new CPacked_seqint);
+
     ITERATE(TMaskedQueryRegions, mask, *this) {
-        if ((*mask)->GetFrame() == CSeqLocInfo::eFramePlus1 ||
-            (*mask)->GetFrame() == CSeqLocInfo::eFrameNotSet) {
-            retval->AddInterval((*mask)->GetInterval());
-        } else {
-            if (warnings && !negative_strand_found) {
-                const CSeq_interval& seqint = (*mask)->GetInterval();
-                string warning("Ignoring masked locations on negative ");
-                warning += string("strand for query '");
-                warning += seqint.GetId().AsFastaString() + string("'");
-                warnings->push_back(warning);
-                negative_strand_found = true;
-            }
-        }
+        // this is done because the CSeqLocInfo doesn't guarantee that the
+        // strand and the frame are consistent, so we don't call
+        // CPacked_seqint::AddInterval(const CSeq_interval& itv);
+        retval->AddInterval((*mask)->GetSeqId(),
+                            (*mask)->GetInterval().GetFrom(),
+                            (*mask)->GetInterval().GetTo(),
+                            (*mask)->GetStrand());
     }
     if (retval->CanGet() && !retval->Get().empty()) {
         return retval;
     }
     retval.Reset();
     return retval;
+}
+
+bool 
+TMaskedQueryRegions::HasNegativeStrandMasks() const
+{
+    ITERATE(TMaskedQueryRegions, mask, *this) {
+        if ((*mask)->GetStrand() == eNa_strand_minus) {
+            return true;
+        }
+    }
+    return false;
 }
 
 CRef<objects::CBioseq_set>

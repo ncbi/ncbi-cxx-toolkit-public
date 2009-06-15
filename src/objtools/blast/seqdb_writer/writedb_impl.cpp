@@ -42,6 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
+#include <objects/blastdb/defline_extra.hpp>    // for kAsnDeflineObjLabel
 #include <serial/typeinfo.hpp>
 
 #include "writedb_impl.hpp"
@@ -227,7 +228,6 @@ void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
     // Getting the binary headers, when they exist, is probably faster
     // than building new deflines from the 'visible' CBioseq parts.
     
-    string binkey = "ASN1_BlastDefLine";
     vector< vector< char >* > bindata;
     
     ITERATE(list< CRef< CSeqdesc > >, iter, bioseq.GetDescr().Get()) {
@@ -235,7 +235,7 @@ void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
             const CUser_object & uo = (**iter).GetUser();
             const CObject_id & oi = uo.GetType();
             
-            if (oi.IsStr() && oi.GetStr() == binkey) {
+            if (oi.IsStr() && oi.GetStr() == kAsnDeflineObjLabel) {
                 if (uo.CanGetData()) {
                     const vector< CRef< CUser_field > > & D = uo.GetData();
                     
@@ -243,7 +243,7 @@ void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
                         D[0].NotEmpty() &&
                         D[0]->CanGetLabel() &&
                         D[0]->GetLabel().IsStr() &&
-                        D[0]->GetLabel().GetStr() == binkey &&
+                        D[0]->GetLabel().GetStr() == kAsnDeflineObjLabel &&
                         D[0]->CanGetData() &&
                         D[0]->GetData().IsOss()) {
                         

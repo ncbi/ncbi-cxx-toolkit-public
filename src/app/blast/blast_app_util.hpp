@@ -42,6 +42,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
+#include <algo/blast/dbindex/dbindex.hpp>           // for CDbIndex_Exception
 #include <objtools/blast_format/blastfmtutil.hpp>   // for CBlastFormatUtil
 
 BEGIN_NCBI_SCOPE
@@ -117,6 +118,14 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     }                                                                       \
     catch (const CSeqDBException& e) {                                      \
         cerr << "BLAST Database error: " << e.GetMsg() << endl;             \
+        exit_code = BLAST_DATABASE_ERROR;                                   \
+    }                                                                       \
+    catch (const blastdbindex::CDbIndex_Exception& e) {                     \
+        cerr << "Indexed BLAST database error: " << e.GetMsg() << endl;     \
+        exit_code = BLAST_DATABASE_ERROR;                                   \
+    }                                                                       \
+    catch (const CIndexedDbException& e) {                                  \
+        cerr << "Indexed BLAST database error: " << e.GetMsg() << endl;     \
         exit_code = BLAST_DATABASE_ERROR;                                   \
     }                                                                       \
     catch (const blast::CBlastException& e) {                               \

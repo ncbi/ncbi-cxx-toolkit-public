@@ -11,7 +11,6 @@ LIB_ = test_boost gene_info_writer gene_info xobjutil seqdb blastdb $(SOBJMGR_LI
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-REQUIRES = Boost.Test.Included
 
 CHECK_CMD  = gene_info_writer_unit_test
 CHECK_COPY = data

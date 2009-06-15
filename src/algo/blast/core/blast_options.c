@@ -133,7 +133,6 @@ SRepeatFilterOptions* SRepeatFilterOptionsFree(SRepeatFilterOptions* repeat_opti
 Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options)
 {
 
-    const char* kRepeatDB = "humrep";
     if (repeat_options == NULL)
         return 1;
 
@@ -141,7 +140,7 @@ Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options)
     if (*repeat_options == NULL)
         return BLASTERR_MEMORY;
 
-    (*repeat_options)->database = strdup(kRepeatDB);
+    (*repeat_options)->database = strdup(kDefaultRepeatFilterDb);
 
     return 0;
 }
