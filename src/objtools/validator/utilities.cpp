@@ -2268,7 +2268,7 @@ bool IsBioseqWithIdInSet (const CSeq_id& id, CBioseq_set_Handle set)
          ++b_ci) {
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(b_ci->GetCompleteBioseq())) {
             if (id.Compare(**id_it) == CSeq_id::e_YES) {
-                found = TRUE;
+                found = true;
                 break;
             }
         }
