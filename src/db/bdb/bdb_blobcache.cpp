@@ -120,28 +120,28 @@ class CBDB_CacheIReader : public IReader
 {
 public:
     CBDB_CacheIReader(CBDB_Cache&                bdb_cache,
-                      CNcbiIfstream*             overflow_file/*,
-                      CBDB_Cache::TBlobLock&     blob_lock*/)
+                      CNcbiIfstream*             overflow_file,
+                      CBDB_Cache::TBlobLock&     blob_lock)
     : m_Cache(bdb_cache),
       m_OverflowFile(overflow_file),
       m_RawBuffer(0),
-      m_BufferPtr(0)/*,
-      m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())*/
+      m_BufferPtr(0),
+      m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())
     {
-        //m_BlobLock.TakeFrom(blob_lock);
+        m_BlobLock.TakeFrom(blob_lock);
     }
 
     CBDB_CacheIReader(CBDB_Cache&                bdb_cache,
-                      CBDB_RawFile::TBuffer*     raw_buffer/*,
-                      CBDB_Cache::TBlobLock&     blob_lock*/)
+                      CBDB_RawFile::TBuffer*     raw_buffer,
+                      CBDB_Cache::TBlobLock&     blob_lock)
     : m_Cache(bdb_cache),
       m_OverflowFile(0),
       m_RawBuffer(raw_buffer),
       m_BufferPtr(raw_buffer->data()),
-      m_BufferSize(raw_buffer->size())/*,
-      m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())*/
+      m_BufferSize(raw_buffer->size()),
+      m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())
     {
-        //m_BlobLock.TakeFrom(blob_lock);
+        m_BlobLock.TakeFrom(blob_lock);
     }
 
     virtual ~CBDB_CacheIReader()
@@ -224,7 +224,7 @@ private:
     CBDB_RawFile::TBuffer*      m_RawBuffer;
     unsigned char*              m_BufferPtr;
     size_t                      m_BufferSize;
-    //CBDB_Cache::TBlobLock       m_BlobLock;
+    CBDB_Cache::TBlobLock       m_BlobLock;
 };
 
 /// Buffer resize strategy, to balance memory reallocs and heap
@@ -262,8 +262,8 @@ public:
                       SCache_AttrDB&             attr_db,
                       unsigned int               ttl,
                       time_t                     request_time,
-                      const string&              owner/*,
-                      CBDB_Cache::TBlobLock&     blob_lock*/)
+                      const string&              owner,
+                      CBDB_Cache::TBlobLock&     blob_lock)
     : m_Cache(bdb_cache),
       m_Path(path),
       m_BlobIdExt(blob_id_ext),
@@ -281,13 +281,13 @@ public:
       m_Overflow(0),
       m_BlobStore(0),
       m_BlobUpdate(0),
-      m_Owner(owner)/*,
-      m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())*/
+      m_Owner(owner),
+      m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())
     {
         //_TRACE("CBDB_CacheIWriter::CBDB_CacheIWriter point 1");
 //        m_Buffer = new unsigned char[m_Cache.GetOverflowLimit()];
         m_Buffer.reserve(4 * 1024);
-        //m_BlobLock.TakeFrom(blob_lock);
+        m_BlobLock.TakeFrom(blob_lock);
         //_TRACE("CBDB_CacheIWriter::CBDB_CacheIWriter point 2");
     }
 
@@ -309,8 +309,8 @@ public:
                                     m_Buffer.data(),
                                     m_Buffer.size(), // m_BytesInBuffer,
                                     m_TTL,
-                                    m_Owner/*,
-                                    false // do not lock blob*/
+                                    m_Owner,
+                                    false // do not lock blob
                                     );
                     //delete[] m_Buffer; m_Buffer = 0;
                 }
@@ -472,8 +472,8 @@ public:
                                 m_Buffer.data(),
                                 m_Buffer.size(), // m_BytesInBuffer,
                                 m_TTL,
-                                m_Owner/*,
-                                false // do not lock blob*/
+                                m_Owner,
+                                false // do not lock blob
                                 );
                 //m_BlobLock.Unlock();
                 //return eRW_Success;
@@ -527,7 +527,7 @@ public:
                 throw;
             }
         }
-        //m_BlobLock.Unlock();
+        m_BlobLock.Unlock();
         return eRW_Success;
     }
 private:
@@ -603,7 +603,7 @@ private:
     unsigned              m_BlobStore;
     unsigned              m_BlobUpdate;
     string                m_Owner;
-    //CBDB_Cache::TBlobLock m_BlobLock;
+    CBDB_Cache::TBlobLock m_BlobLock;
 };
 
 
@@ -815,10 +815,7 @@ void SBDB_CacheUnitStatistics::PrintStatistics(CNcbiOstream& out) const
                 hist_end = it;
             }
         }
-        SBDB_CacheUnitStatistics::TBlobSizeHistogram::const_iterator it =
-            hist.begin();
-
-        for (; it != hist.end(); ++it) {
+        ITERATE(SBDB_CacheUnitStatistics::TBlobSizeHistogram, it, hist) {
             out << it->first << "\t" << it->second << "\n";
             if (it == hist_end) {
                 break;
@@ -965,11 +962,7 @@ void SBDB_CacheUnitStatistics::ConvertToRegistry(IRWRegistry* reg,
                 hist_end = it;
             }
         }
-
-        SBDB_CacheUnitStatistics::TBlobSizeHistogram::const_iterator it =
-            hist.begin();
-
-        for (; it != hist.end(); ++it) {
+        ITERATE(SBDB_CacheUnitStatistics::TBlobSizeHistogram, it, hist) {
             string var_name = "size_";
             var_name += NStr::UIntToString(it->first);
 
@@ -1861,7 +1854,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
         }} // cursor
 
         if (ret != eBDB_Ok) { // record not found: re-registration
-            unsigned blob_id = GetNextBlobId(/*false *//*no locking*/);
+            unsigned blob_id = GetNextBlobId(false /*no locking*/);
             m_CacheAttrDB->key = key;
             m_CacheAttrDB->version = version;
             m_CacheAttrDB->subkey = subkey;
@@ -1937,8 +1930,8 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
                          const void*    data,
                          size_t         size,
                          unsigned int   time_to_live,
-                         const string&  owner/*,
-                         bool           do_blob_lock*/)
+                         const string&  owner,
+                         bool           do_blob_lock)
 {
     if (IsReadOnly()) {
         return;
@@ -1978,7 +1971,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
-    //TBlobLock blob_lock(m_LockVector, m_LockTimeout);
+    TBlobLock blob_lock(m_LockVector, m_LockTimeout);
 
     // ----------------------------------------------------
     // BLOB check-in, read attributes, lock the id
@@ -1988,14 +1981,14 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         BlobCheckIn(blob_id,
                     key, version, subkey,
                     eBlobCheckIn_Create,
-                    //blob_lock, do_blob_lock,
+                    blob_lock, do_blob_lock,
                     &coord[0], &coord[1],
                     &old_overflow);
     //_TRACE("CBDB_Cache::x_Store point 3");
     _ASSERT(check_res != EBlobCheckIn_NotFound);
-    //_ASSERT(blob_lock.GetId());
+    _ASSERT(blob_lock.GetId());
 
-    //blob_id = blob_lock.GetId();
+    blob_id = blob_lock.GetId();
 
     try {
 
@@ -2206,8 +2199,8 @@ void CBDB_Cache::Store(unsigned       blob_id_ext,
                        unsigned int   time_to_live,
                        const string&  owner)
 {
-    x_Store(blob_id_ext, key, version, subkey, data, size, time_to_live, owner/*,
-            true // do blob is locking*/
+    x_Store(blob_id_ext, key, version, subkey, data, size, time_to_live, owner,
+            true // do blob is locking
             );
 }
 
@@ -2220,8 +2213,8 @@ void CBDB_Cache::Store(const string&  key,
                        unsigned int   time_to_live,
                        const string&  owner)
 {
-    x_Store(0, key, version, subkey, data, size, time_to_live, owner/*,
-            true // do blob is locking*/
+    x_Store(0, key, version, subkey, data, size, time_to_live, owner,
+            true // do blob is locking
             );
 }
 
@@ -2237,7 +2230,7 @@ bool CBDB_Cache::GetSizeEx(const string&  key,
 
     blob_id = GetBlobId(key, version, subkey);
     if (!blob_id) return false;
-    //TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
+    TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
 
     {{
         CFastMutexGuard guard(m_DB_Lock);
@@ -2390,7 +2383,7 @@ bool CBDB_Cache::Read(const string& key,
 
     unsigned blob_id = GetBlobId(key, version, subkey);
     if (!blob_id) return false;
-    //TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
+    TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
 
 
     CBDB_Transaction trans(*m_Env,
@@ -2599,8 +2592,8 @@ bool CBDB_Cache::Read(const string& key,
 IReader* CBDB_Cache::x_CreateOverflowReader(const string&  key,
                                             int            version,
                                             const string&  subkey,
-                                            size_t&        file_length/*,
-                                            TBlobLock&     blob_lock*/)
+                                            size_t&        file_length,
+                                            TBlobLock&     blob_lock)
 {
     string path;
     s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
@@ -2613,7 +2606,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(const string&  key,
     CFile entry(path);
     file_length = (size_t) entry.GetLength();
 
-    return new CBDB_CacheIReader(*this, overflow_file.release()/*, blob_lock*/);
+    return new CBDB_CacheIReader(*this, overflow_file.release(), blob_lock);
 }
 
 
@@ -2630,7 +2623,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     unsigned blob_id = GetBlobId(key, version, subkey);
     if (!blob_id) return 0;
-    //TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
+    TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
 
 
     // TODO: unify read prolog code for all read functions
@@ -2695,7 +2688,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
         size_t bsize;
         auto_ptr<IReader> rd;
         rd.reset(
-            x_CreateOverflowReader(key, version, subkey, bsize/*, blob_lock*/));
+            x_CreateOverflowReader(key, version, subkey, bsize, blob_lock));
         return rd.release();
     }
 
@@ -2725,7 +2718,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     if (ret != eBDB_Ok) {
         return 0;
     }
-    return new CBDB_CacheIReader(*this, buffer.release()/*, blob_lock*/);
+    return new CBDB_CacheIReader(*this, buffer.release(), blob_lock);
 
 
 /*
@@ -2839,7 +2832,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
         //_TRACE("CBDB_Cache::GetBlobAccess return 1");
         return;
     }
-    //TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
+    TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
 
 
     // TODO: unify read prolog code for all read functions
@@ -2910,7 +2903,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     if (overflow) {
         blob_descr->reader.reset(
             x_CreateOverflowReader(key, version, subkey,
-                                   blob_descr->blob_size/*, blob_lock*/));
+                                   blob_descr->blob_size, blob_lock));
         if (blob_descr->reader.get()) {
             blob_descr->blob_found = true;
             return;
@@ -2974,7 +2967,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     blob_descr->blob_found = true;
     blob_descr->blob_size = buffer->size();
     blob_descr->reader.reset(
-        new CBDB_CacheIReader(*this, buffer.release()/*, blob_lock*/));
+        new CBDB_CacheIReader(*this, buffer.release(), blob_lock));
 
 
 /*
@@ -3128,7 +3121,7 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                                     unsigned int     time_to_live,
                                     const string&    owner)
 {
-    return GetWriteStream(0, key, version, subkey, //true /*lock id*/,
+    return GetWriteStream(0, key, version, subkey, true /*lock id*/,
                           time_to_live, owner);
 }
 
@@ -3137,7 +3130,7 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
                                     const string&    key,
                                     int              version,
                                     const string&    subkey,
-                                    //bool             do_id_lock,
+                                    bool             do_id_lock,
                                     unsigned int     time_to_live,
                                     const string&    owner)
 {
@@ -3165,7 +3158,7 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
     int tz_delta = m_LocalTimer.GetLocalTimezone();
 
 
-    //TBlobLock blob_lock(m_LockVector, m_LockTimeout);
+    TBlobLock blob_lock(m_LockVector, m_LockTimeout);
 
     // ----------------------------------------------------
     // BLOB check-in, read attributes, lock the id
@@ -3176,26 +3169,26 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
         BlobCheckIn(blob_id_ext,
                     key, version, subkey,
                     eBlobCheckIn_Create,
-                    //blob_lock, do_id_lock,
+                    blob_lock, do_id_lock,
                     &coord[0], &coord[1],
                     &overflow);
     //_TRACE("CBDB_Cache::GetWriteStream point 4");
     _ASSERT(check_res != EBlobCheckIn_NotFound);
-    //_ASSERT(blob_lock.GetId());
+    _ASSERT(blob_lock.GetId());
 
 
     return
         new CBDB_CacheIWriter(*this,
                               m_Path.c_str(),
-                              blob_id_ext/*blob_lock.GetId()*/,
+                              blob_lock.GetId(),
                               key,
                               version,
                               subkey,
                               *m_CacheAttrDB,
                               time_to_live,
                               curr - tz_delta,
-                              owner/*,
-                              blob_lock*/);
+                              owner,
+                              blob_lock);
 }
 
 
@@ -4135,7 +4128,7 @@ purge_start:
     else
     if ((m_PurgeCount % 50) == 0) {
         m_BLOB_SplitStore->FreeUnusedMem();
-        //m_LockVector.FreeUnusedMem();
+        m_LockVector.FreeUnusedMem();
     }
 
     unsigned time_in_purge = 0;
@@ -4568,7 +4561,7 @@ void CBDB_Cache::x_DropOverflow(const string&  file_path)
     }
 }
 
-unsigned CBDB_Cache::GetNextBlobId(/*bool lock_id*/)
+unsigned CBDB_Cache::GetNextBlobId(bool lock_id)
 {
     unsigned blob_id = m_BlobIdCounter.Add(1);
     if (blob_id >= kMax_UInt) {
@@ -4576,12 +4569,12 @@ unsigned CBDB_Cache::GetNextBlobId(/*bool lock_id*/)
         blob_id = m_BlobIdCounter.Add(1);
         m_GC_Deleted.clear();
     }
-    /*if (lock_id) {
+    if (lock_id) {
         bool locked = m_LockVector.TryLock(blob_id);
         if (!locked) {
             BDB_THROW(eInvalidOperation, "Cannot lock new BLOB ID");
         }
-    }*/
+    }
     return blob_id;
 }
 
@@ -4793,7 +4786,7 @@ void CBDB_Cache::x_DropBlob(const string&      key,
 
 bool CBDB_Cache::IsLocked(unsigned blob_id)
 {
-    return false;//m_LockVector.IsLocked(blob_id);
+    return m_LockVector.IsLocked(blob_id);
 }
 
 bool CBDB_Cache::IsLocked(const string&  key,
@@ -4807,13 +4800,13 @@ bool CBDB_Cache::IsLocked(const string&  key,
 
 
 CBDB_Cache::EBlobCheckinRes
-CBDB_Cache::BlobCheckIn(unsigned&        blob_id_ext,
+CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
                         const string&    key,
                         int              version,
                         const string&    subkey,
                         EBlobCheckinMode mode,
-                        /*TBlobLock&       blob_lock,
-                        bool             do_id_lock,*/
+                        TBlobLock&       blob_lock,
+                        bool             do_id_lock,
                         unsigned*        volume_id,
                         unsigned*        split_id,
                         unsigned*        overflow)
@@ -4845,12 +4838,11 @@ CBDB_Cache::BlobCheckIn(unsigned&        blob_id_ext,
 
         if (ret == eBDB_Ok) {
             _ASSERT(blob_id);
-            blob_id_ext = blob_id;
-            /*if (do_id_lock) {
+            if (do_id_lock) {
                 blob_lock.Lock(blob_id);
             } else {
                 blob_lock.SetId(blob_id);
-            }*/
+            }
             return eBlobCheckIn_Found;
         }
 
@@ -4858,15 +4850,11 @@ CBDB_Cache::BlobCheckIn(unsigned&        blob_id_ext,
 
         switch (mode) {
         case eBlobCheckIn:
-            if (ret == eBDB_NotFound) {
-                return EBlobCheckIn_NotFound;
-            }
             break;
         case eBlobCheckIn_Create:
             {
             if (blob_id_ext == 0) {
-                blob_id = GetNextBlobId(/*false*//*do not lock*/);
-                blob_id_ext = blob_id;
+                blob_id = GetNextBlobId(false/*do not lock*/);
             } else {
                 blob_id = blob_id_ext;
             }
@@ -4909,11 +4897,11 @@ CBDB_Cache::BlobCheckIn(unsigned&        blob_id_ext,
                     ret = m_CacheIdIDX->Insert();
                     if (ret == eBDB_Ok) {
                         trans.Commit();
-                        /*if (do_id_lock) {
+                        if (do_id_lock) {
                             blob_lock.Lock(blob_id);
                         } else {
                             blob_lock.SetId(blob_id);
-                        }*/
+                        }
                         return eBlobCheckIn_Created;
                     } else {
                         BDB_THROW(eInvalidOperation,

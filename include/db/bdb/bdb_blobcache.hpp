@@ -605,7 +605,7 @@ public:
                             const string&    key,
                             int              version,
                             const string&    subkey,
-                            //bool             do_id_lock,
+                            bool             do_id_lock,
                             unsigned int     time_to_live = 0,
                             const string&    owner = kEmptyStr);
 
@@ -663,7 +663,7 @@ public:
     /// @param lock_id
     ///     When true new id is immediately gets locked
     ///
-    unsigned GetNextBlobId(/*bool lock_id*/);
+    unsigned GetNextBlobId(bool lock_id);
 
     /// Check if BLOB is locked
     bool IsLocked(unsigned blob_id);
@@ -671,33 +671,6 @@ public:
     bool IsLocked(const string&  key,
                   int            version,
                   const string&  subkey);
-
-    /// BLOB check-in mode
-    ///
-    enum EBlobCheckinMode {
-        eBlobCheckIn,         ///< Check if record exists
-        eBlobCheckIn_Create   ///< If record does not exist - create
-    };
-
-    /// Result of BLOB check-in process
-    enum EBlobCheckinRes {
-        EBlobCheckIn_NotFound,  ///< BLOB does not exist
-        eBlobCheckIn_Found,     ///< Existing BLOB
-        eBlobCheckIn_Created    ///< BLOB record created
-    };
-
-    /// Check if BLOB exists, create registration record if necessary
-    ///
-    EBlobCheckinRes BlobCheckIn(unsigned&        blob_id_ext,
-                                const string&    key,
-                                int              version,
-                                const string&    subkey,
-                                EBlobCheckinMode mode,
-                                /*TBlobLock&       blob_lock,
-                                bool             do_id_lock,*/
-                                unsigned*        volume_id,
-                                unsigned*        split_id,
-                                unsigned*        overflow);
 
 protected:
     void KillBlob(const string&  key,
@@ -737,8 +710,8 @@ protected:
                  const void*    data,
                  size_t         size,
                  unsigned int   time_to_live,
-                 const string&  owner/*,
-                 bool           do_blob_lock*/);
+                 const string&  owner,
+                 bool           do_blob_lock);
 
 private:
     typedef bm::bvector<>                             TBitVector;
@@ -746,9 +719,8 @@ private:
     typedef CBDB_BlobSplitStore<TBitVector,
                                 CBDB_BlobDeMux_RoundRobin,
                                 CFastMutex>           TSplitStore;
-    // All locking is now responsibility of CBDB_Cache user
-    //typedef CLockVector<TBitVector>                   TLockVector;
-    //typedef CLockVectorGuard<TLockVector>             TBlobLock;
+    typedef CLockVector<TBitVector>                   TLockVector;
+    typedef CLockVectorGuard<TLockVector>             TBlobLock;
     typedef CTimeLine<TBitVector>                     TTimeLine;
 
 private:
@@ -834,8 +806,8 @@ private:
     IReader* x_CreateOverflowReader(const string&  key,
                                     int            version,
                                     const string&  subkey,
-                                    size_t&        file_length/*,
-                                    TBlobLock&     blob_lock*/);
+                                    size_t&        file_length,
+                                    TBlobLock&     blob_lock);
 
     /// update BLOB owners' statistics on BLOB delete
     void x_UpdateOwnerStatOnDelete(const string& owner, bool expl_delete);
@@ -854,6 +826,33 @@ private:
     /// Add BLOB to expiration timeline
     void AddToTimeLine(unsigned blob_id, time_t exp_time);
 
+
+    /// BLOB check-in mode
+    ///
+    enum EBlobCheckinMode {
+        eBlobCheckIn,         ///< Check if record exists
+        eBlobCheckIn_Create   ///< If record does not exist - create
+    };
+
+    /// Result of BLOB check-in process
+    enum EBlobCheckinRes {
+        EBlobCheckIn_NotFound,  ///< BLOB does not exist
+        eBlobCheckIn_Found,     ///< Existing BLOB
+        eBlobCheckIn_Created    ///< BLOB record created
+    };
+
+    /// Check if BLOB exists, create registration record if necessary
+    ///
+    EBlobCheckinRes BlobCheckIn(unsigned         blob_id_ext,
+                                const string&    key,
+                                int              version,
+                                const string&    subkey,
+                                EBlobCheckinMode mode,
+                                TBlobLock&       blob_lock,
+                                bool             do_id_lock,
+                                unsigned*        volume_id,
+                                unsigned*        split_id,
+                                unsigned*        overflow);
 
     /// Evaluate timeline BLOBs as deletion candidates
     ///
@@ -895,7 +894,7 @@ private:
 
     bool                    m_InitIfDirty;  ///< Delete DB if it wasn't closed clean
     bool                    m_JoinedEnv;    ///< Joined environment
-    //TLockVector             m_LockVector;   ///< BLOB lock vector
+    TLockVector             m_LockVector;   ///< BLOB lock vector
     unsigned                m_LockTimeout;  ///< Lock timeout (ms)
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     bool                    m_Closed;       ///< Double-close safeguard flag
