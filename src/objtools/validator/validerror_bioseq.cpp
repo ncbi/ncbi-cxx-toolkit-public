@@ -689,7 +689,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                     bool found = false;
                     FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
                         if (id.Compare(**id_it) == CSeq_id::e_YES) {
-                            found = TRUE;
+                            found = true;
                             break;
                         }
                     }
@@ -704,7 +704,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                             if (feat_parent && feat_parent.IsSetClass()
                                 && feat_parent.GetClass() == CBioseq_set::eClass_segset
                                 && IsBioseqWithIdInSet(id, feat_parent)) {
-                                found = TRUE;
+                                found = true;
                             }
                         }
                     }
