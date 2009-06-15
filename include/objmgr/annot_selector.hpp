@@ -624,6 +624,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Ignore strand when testing for range overlap
+    SAnnotSelector& SetIgnoreStrand(bool value = true)
+        {
+            m_IgnoreStrand = true;
+            return *this;
+        }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -663,6 +670,7 @@ protected:
     bool                  m_CollectSeq_annots;
     bool                  m_CollectTypes;
     bool                  m_CollectNames;
+    bool                  m_IgnoreStrand;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesBitset     m_AnnotTypesBitset;

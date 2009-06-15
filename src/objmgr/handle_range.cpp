@@ -217,6 +217,23 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 }
 
 
+bool CHandleRange::IntersectingWith_NoStrand(const CHandleRange& hr) const
+{
+    if ( !m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus) &&
+         !m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus) ) {
+        return false;
+    }
+    ITERATE(TRanges, it1, m_Ranges) {
+        ITERATE(TRanges, it2, hr.m_Ranges) {
+            if ( it1->first.IntersectingWith(it2->first) ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 {
     for ( TRanges::iterator it = m_Ranges.begin(); it != m_Ranges.end(); ) {

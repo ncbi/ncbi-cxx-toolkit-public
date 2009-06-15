@@ -1680,22 +1680,34 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
 {
     if ( m_Selector->m_OverlapType == SAnnotSelector::eOverlap_Intervals ) {
         if ( index.m_HandleRange ) {
-            if ( !hr.IntersectingWith(*index.m_HandleRange) ) {
-                return false;
+            if (m_Selector->m_IgnoreStrand) {
+                if ( !hr.IntersectingWith_NoStrand(*index.m_HandleRange) ) {
+                    return false;
+                }
+            }
+            else {
+                if ( !hr.IntersectingWith(*index.m_HandleRange) ) {
+                    return false;
+                }
             }
         }
         else {
             ENa_strand strand;
-            switch ( index.m_Flags & SAnnotObject_Index::fStrand_both ) {
-            case SAnnotObject_Index::fStrand_plus:
-                strand = eNa_strand_plus;
-                break;
-            case SAnnotObject_Index::fStrand_minus:
-                strand = eNa_strand_minus;
-                break;
-            default:
+            if (m_Selector->m_IgnoreStrand) {
                 strand = eNa_strand_unknown;
-                break;
+            }
+            else {
+                switch ( index.m_Flags & SAnnotObject_Index::fStrand_both ) {
+                case SAnnotObject_Index::fStrand_plus:
+                    strand = eNa_strand_plus;
+                    break;
+                case SAnnotObject_Index::fStrand_minus:
+                    strand = eNa_strand_minus;
+                    break;
+                default:
+                    strand = eNa_strand_unknown;
+                    break;
+                }
             }
             if ( !hr.IntersectingWith(range, strand) ) {
                 return false;
@@ -1703,7 +1715,8 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
         }
     }
     else {
-        if ( (hr.GetStrandsFlag() & index.m_Flags) == 0 ) {
+        if ( !m_Selector->m_IgnoreStrand  &&
+            (hr.GetStrandsFlag() & index.m_Flags) == 0 ) {
             return false; // different strands
         }
     }

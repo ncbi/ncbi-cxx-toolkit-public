@@ -104,6 +104,9 @@ public:
     // Check if the two sets of ranges do intersect
     bool IntersectingWith(const CHandleRange& hr) const;
 
+    // Check if the two sets of ranges do intersect ignoring strands
+    bool IntersectingWith_NoStrand(const CHandleRange& hr) const;
+
     // Check if the two sets of ranges do intersect
     bool IntersectingWith(const TRange& range,
                           ENa_strand strand = eNa_strand_unknown) const;
