@@ -70,8 +70,8 @@ property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "n
 --property cserial : {name:"cserial", path:"serial", inc:{"asntypes.cpp", "serialasn.cpp"}}
 property xser : {name:"xser", path:"serial", exc:{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"}}
 property xutil : {name:"xutil", path:"util"}
-property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp", "bdb_result_store.cpp"}}
-property xcache_bdb : {name:"xcache_bdb", path:"bdb", inc:{"bdb_blobcache.cpp"}}
+property bdb : {name:"bdb", path:"db:bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp", "bdb_result_store.cpp"}}
+property xcache_bdb : {name:"xcache_bdb", path:"db:bdb", inc:{"bdb_blobcache.cpp"}}
 property xcache_netcache : {name:"xcache_netcache", path:"connect:services"}
 property regexp : {name:"regexp", path:"util:regexp", exc:{"dftables.c", "pcredemo.c", "pcregrep.c", "pcretest.c"}}
 property xregexp : {name:"xregexp", path:"util:xregexp"}
