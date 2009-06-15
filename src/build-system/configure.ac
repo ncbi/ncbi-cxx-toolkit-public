@@ -5637,7 +5637,19 @@ fi
 
 ## `bdb' projects
 
-NCBI_CHECK_SUBTREE(bdb)
+dnl NCBI_CHECK_SUBTREE(bdb)
+if test "$with_bdb" = "no" ; then
+   NoConfProjects="$NoConfProjects bdb"
+fi
+
+if test ! -f ${real_srcdir}/src/db/bdb/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/db/bdb ; then
+   if test "${with_bdb-no}" != "no" ; then
+      AC_MSG_ERROR([--with-]bdb[:  ]BDB[ sources are missing])
+   fi
+   with_bdb="no"
+fi
+
 
 if test "$with_bdb" = "no" ; then
    bdb=
