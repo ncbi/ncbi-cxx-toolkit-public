@@ -108,6 +108,7 @@
 
 #include <algorithm>
 
+#include <serial/iterator.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 
@@ -146,6 +147,7 @@ CValidError_imp::CValidError_imp
       m_FarFetchMRNAproducts((options & CValidator::eVal_far_fetch_mrna_products) != 0),
       m_FarFetchCDSproducts((options & CValidator::eVal_far_fetch_cds_products) != 0),
       m_LocusTagGeneralMatch((options & CValidator::eVal_locus_tag_general_match) != 0),
+      m_DoRubiscoText((options & CValidator::eVal_do_rubisco_test) != 0),
       m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
       m_IsStandaloneAnnot(false),
       m_NoPubs(false),
@@ -168,6 +170,7 @@ CValidError_imp::CValidError_imp
       m_IsGB(false),
       m_FeatLocHasGI(false),
       m_ProductLocHasGI(false),
+      m_GeneHasLocusTag(false),
       m_PrgCallback(0),
       m_NumAlign(0),
       m_NumAnnot(0),
@@ -177,6 +180,7 @@ CValidError_imp::CValidError_imp
       m_NumDescr(0),
       m_NumFeat(0),
       m_NumGraph(0),
+      m_NumMisplacedFeatures(0),
       m_IsTbl2Asn(false)
 {
     if ( m_SourceQualTags.get() == 0 ) {
@@ -531,6 +535,71 @@ void CValidError_imp::PostErr
     entry.GetLabel(&desc, CSeq_entry::eContent);
 
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, GetAccessionFromObjects(&entry, NULL, *m_Scope));
+}
+
+
+void CValidError_imp::PostObjErr 
+(EDiagSev sv,
+ EErrType et,
+ const string&  msg,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
+    if (ctx == 0) {
+        PostErr (sv, et, msg, obj);
+    } else {
+        const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
+        if (desc == 0) {
+            PostErr (sv, et, msg, obj);
+        } else {
+            PostErr (sv, et, msg, *ctx, *desc);
+        }
+    }
+}
+
+
+static string s_GetDateErrorDescription (int flags)
+{
+    string reasons = "";
+
+    if (flags & eDateValid_empty_date) {
+        reasons += "EMPTY_DATE ";
+    }
+    if (flags & eDateValid_bad_str) {
+        reasons += "BAD_STR ";
+    }
+    if (flags & eDateValid_bad_year) {
+        reasons += "BAD_YEAR ";
+    }
+    if (flags & eDateValid_bad_month) {
+        reasons += "BAD_MONTH ";
+    }
+    if (flags & eDateValid_bad_day) {
+        reasons += "BAD_DAY ";
+    }
+    if (flags & eDateValid_bad_season) {
+        reasons += "BAD_SEASON ";
+    }
+    if (flags & eDateValid_bad_other) {
+        reasons += "BAD_OTHER ";
+    }
+    return reasons;
+}
+
+
+void CValidError_imp::PostBadDateError 
+(EDiagSev             sv,
+ const string&        msg,
+ int                  flags,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
+    string reasons = s_GetDateErrorDescription(flags);
+
+    NStr::TruncateSpacesInPlace (reasons);
+    reasons = msg + " - " + reasons;
+
+    PostObjErr (sv, eErr_GENERIC_BadDate, reasons, obj, ctx);
 }
 
 
@@ -933,6 +1002,20 @@ bool CValidError_imp::Validate
     ReportMissingPubs(*m_TSE, cs);
     ReportMissingBiosource(*m_TSE);
     ReportBioseqsWithNoMolinfo();
+
+    if (m_NumMisplacedFeatures > 1) {
+        PostErr (eDiag_Critical, eErr_SEQ_PKG_FeaturePackagingProblem, 
+                 "There are " + NStr::IntToString (m_NumMisplacedFeatures) + " mispackaged features in this record.",
+                 *(seh.GetCompleteSeq_entry()));
+    } else if (m_NumMisplacedFeatures == 1) {
+        PostErr (eDiag_Critical, eErr_SEQ_PKG_FeaturePackagingProblem,
+                 "There is 1 mispackaged feature in this record.",
+                 *(seh.GetCompleteSeq_entry()));
+    }
+
+    FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
+    FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
+
     return true;
 }
 
@@ -1000,6 +1083,8 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
     default:
         break;
     }
+    FindEmbeddedScript(*(sah.GetCompleteSeq_annot()));
+    FindCollidingSerialNumbers(*(sah.GetCompleteSeq_annot()));
 }
 
 
@@ -1014,7 +1099,8 @@ void CValidError_imp::SetProgressCallback
 
 void CValidError_imp::ValidatePubdesc
 (const CPubdesc& pubdesc,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     int uid = 0, pmid = 0, muid = 0;
     bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
@@ -1058,20 +1144,20 @@ void CValidError_imp::ValidatePubdesc
     }
 
     if ( conflicting_pmids ) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has conflicting pmids", obj);
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has conflicting pmids", obj, ctx);
     }
     if ( redundant_pmids ) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has redundant pmids", obj);
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has redundant pmids", obj), ctx;
     }
     if ( conflicting_muids ) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has conflicting muids", obj);
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has conflicting muids", obj, ctx);
     }
     if ( redundant_muids ) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has redundant muids", obj);
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+                "Publication has redundant muids", obj, ctx);
     }
 
     // second pass for remaining (non-uid) types
@@ -1080,16 +1166,16 @@ void CValidError_imp::ValidatePubdesc
 
         switch( pub.Which() ) {
         case CPub::e_Gen:
-            ValidatePubGen(pub.GetGen(), obj);
+            ValidatePubGen(pub.GetGen(), obj, ctx);
             break;
 
         case CPub::e_Sub:
-            ValidateCitSub(pub.GetSub(), obj);
+            ValidateCitSub(pub.GetSub(), obj, ctx);
             break;
 
         case CPub::e_Medline:
-            PostErr(eDiag_Error, eErr_GENERIC_MedlineEntryPub, 
-                "Publication is medline entry", obj);
+            PostObjErr(eDiag_Error, eErr_GENERIC_MedlineEntryPub, 
+                "Publication is medline entry", obj, ctx);
             break;
 
         /*
@@ -1107,15 +1193,15 @@ void CValidError_imp::ValidatePubdesc
         */
             
         case CPub::e_Article:
-            ValidatePubArticle(pub.GetArticle(), uid, obj);
+            ValidatePubArticle(pub.GetArticle(), uid, obj, ctx);
             if ( ! pubdesc.IsSetFig()  ||  IsBlankString(pubdesc.GetFig()) ) {
                 // ValidateArticleHasJournal(pub.GetArticle(), obj);
             }
             break;
 
         case CPub::e_Equiv:
-            PostErr(eDiag_Warning, eErr_GENERIC_UnnecessaryPubEquiv,
-                "Publication has unexpected internal Pub-equiv", obj);
+            PostObjErr(eDiag_Warning, eErr_GENERIC_UnnecessaryPubEquiv,
+                "Publication has unexpected internal Pub-equiv", obj, ctx);
             break;
 
         default:
@@ -1123,7 +1209,7 @@ void CValidError_imp::ValidatePubdesc
         }
     }
     if (pubdesc.IsSetPub()) {
-        ValidateAuthorsInPubequiv (pubdesc.GetPub(), obj);
+        ValidateAuthorsInPubequiv (pubdesc.GetPub(), obj, ctx);
     }
 
 }
@@ -1131,7 +1217,8 @@ void CValidError_imp::ValidatePubdesc
 
 void CValidError_imp::ValidatePubGen
 (const CCit_gen& gen,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     if ( gen.IsSetCit()  &&  !gen.GetCit().empty() ) {
         const string& cit = gen.GetCit();
@@ -1139,8 +1226,28 @@ void CValidError_imp::ValidatePubGen
              (NStr::CompareNocase(cit, 0, 11, "unpublished") != 0)        &&
              (NStr::CompareNocase(cit, 0, 18, "Online Publication") != 0) &&
              (NStr::CompareNocase(cit, 0, 26, "Published Only in DataBase") != 0) ) {
-            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-                "Unpublished citation text invalid", obj);
+            
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                "Unpublished citation text invalid", obj, ctx);
+        }
+
+        if (NStr::FindCase (cit, "Title=") != string::npos) {
+            PostObjErr(eDiag_Error, eErr_GENERIC_StructuredCitGenCit, 
+                    "Unpublished citation has embedded Title", obj, ctx);
+        }
+        if (NStr::FindCase (cit, "Journal=") != string::npos) {
+            PostObjErr(eDiag_Error, eErr_GENERIC_StructuredCitGenCit, 
+                    "Unpublished citation has embedded Journal", obj, ctx);
+        }
+
+    }
+    if (gen.IsSetSerial_number()) {
+        m_PubSerialNumbers.push_back(gen.GetSerial_number());
+    }
+    if (gen.IsSetDate()) {
+        int rval = CheckDate (gen.GetDate());
+        if (rval != eDateValid_valid) {
+            PostBadDateError (eDiag_Error, "Publication date has error", rval, obj, ctx);
         }
     }
 }
@@ -1148,13 +1255,14 @@ void CValidError_imp::ValidatePubGen
 
 void CValidError_imp::ValidateArticleHasJournal
 (const CCit_art& art,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     if ( art.GetFrom().IsJournal() ) {
         const CCit_jour& jour = art.GetFrom().GetJournal();
         if ( !HasTitle(jour.GetTitle()) ) {
-            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-                    "Journal title missing", obj);
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                    "Journal title missing", obj, ctx);
         }
         if ( jour.CanGetImp() ) {
             const CImprint& imp = jour.GetImp();
@@ -1166,17 +1274,18 @@ void CValidError_imp::ValidateArticleHasJournal
 void CValidError_imp::ValidatePubArticle
 (const CCit_art& art,
  int uid,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) { 
-        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-            "Publication has no title", obj);
+        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Publication has no title", obj, ctx);
     }
     
     if ( art.IsSetAuthors() ) { 
         if ( ! HasName(art.GetAuthors()) ) {
-            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-                "Article has no author names", obj);
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                "Article has no author names", obj, ctx);
         }
     }
     
@@ -1188,8 +1297,8 @@ void CValidError_imp::ValidatePubArticle
         bool in_press = false;
 
         if ( !HasTitle(jour.GetTitle()) ) {
-            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-            "Journal title missing", obj);
+            PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Journal title missing", obj, ctx);
         }
 
         if ( jour.CanGetImp() ) {
@@ -1210,24 +1319,52 @@ void CValidError_imp::ValidatePubArticle
                 EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
 
                 if ( no_vol  &&  no_pages ) {
-                    PostErr(sev, eErr_GENERIC_MissingPubInfo, 
-                        "Journal volume and pages missing", obj);
+                    PostObjErr(sev, eErr_GENERIC_MissingPubInfo, 
+                        "Journal volume and pages missing", obj, ctx);
                 } else if ( no_vol ) {
-                    PostErr(sev, eErr_GENERIC_MissingPubInfo,
-                        "Journal volume missing", obj);
+                    PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+                        "Journal volume missing", obj, ctx);
                 } else if ( no_pages ) {
-                    PostErr(sev, eErr_GENERIC_MissingPubInfo,
-                        "Journal pages missing", obj);
+                    PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+                        "Journal pages missing", obj, ctx);
                 }
                 
                 if ( !no_pages ) {
-                    x_ValidatePages(imp.GetPages(), obj);
+                    x_ValidatePages(imp.GetPages(), obj, ctx);
                 }
+                if (imp.IsSetDate()) {
+                    if (imp.GetDate().IsStr() && NStr::Equal (imp.GetDate().GetStr(), "?")) {
+                        PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+                                    "Publication date marked as '?'", obj, ctx);
+                    } else if (imp.GetDate().IsStd() 
+                               && (!imp.GetDate().GetStd().IsSetYear() || imp.GetDate().GetStd().GetYear() == 0)) {
+                        PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+                                    "Publication date missing", obj, ctx);
+                    } else {
+                        int rval = CheckDate (imp.GetDate());
+                        if (rval != eDateValid_valid) {
+                            PostBadDateError (eDiag_Error, "Publication date has error", rval, obj, ctx);
+                        }
+                    }
+                } else {
+                    PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+                                "Publication date missing", obj, ctx);
+                }
+            }
+            if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_aheadofprint
+                && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
+                PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                         "Ahead-of-print without in-press", obj, ctx);
+            }  
+            if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_epublish 
+                && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
+                PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                         "Electronic-only publication should not also be in-press", obj, ctx);
             }
         }
         if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA()) ) {
-            PostErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
-                "ISO journal title abbreviation missing", obj);
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                "ISO journal title abbreviation missing", obj, ctx);
         }
     }
 }
@@ -1266,7 +1403,8 @@ bool s_GetDigits(const string& pages, string& digits)
 
 void CValidError_imp::x_ValidatePages
 (const string& pages,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     static const string kRoman = "IVXLCDM";
 
@@ -1278,8 +1416,8 @@ void CValidError_imp::x_ValidatePages
     
     ITERATE (string, it, pages) {
         if (!isalnum((unsigned char)(*it))  &&  *it != '-') {
-            PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                "Page numbering contain bad characters", obj);
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering contain bad characters", obj, ctx);
             return;
         }
     }
@@ -1287,8 +1425,8 @@ void CValidError_imp::x_ValidatePages
     string start, stop;
     NStr::SplitInTwo(pages, "-", start, stop);
     if (start.empty()  ||  stop.empty()) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-            "Page numbering doesn't contain '-'", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering doesn't contain '-'", obj, ctx);
         return;
     }
 
@@ -1300,8 +1438,8 @@ void CValidError_imp::x_ValidatePages
     
     if ((isalpha((unsigned char) start[0])  &&  !isalpha((unsigned char) stop[0]))  ||
         (isdigit((unsigned char) start[0])  &&  !isdigit((unsigned char) stop[0]))) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-            "Inconsistent page numbering", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Inconsistent page numbering", obj, ctx);
         return;
     }
 
@@ -1310,39 +1448,39 @@ void CValidError_imp::x_ValidatePages
     size_t good = 0;
     try {
         if (!s_GetDigits(start, digits)) {
-            PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                "Page numbering stop start strange", obj);
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering stop start strange", obj, ctx);
         } else {
             beg = NStr::StringToInt(digits);
             ++good;
         }
         if (!s_GetDigits(stop, digits)) {
-            PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                "Page numbering stop looks strange", obj);
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering stop looks strange", obj, ctx);
         } else {
             end = NStr::StringToInt(digits);
             ++good;
         }
     } catch (CStringException&) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                "Page numbering looks strange", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering looks strange", obj, ctx);
         return;
     }
     if (good != 2) {
         return;
     }
     if (beg == 0  ||  end == 0) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-            "Page numbering has zero value", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering has zero value", obj, ctx);
     } else if (beg < 0  ||  end < 0) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-            "Page numbering has negative value", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering has negative value", obj, ctx);
     } else if (beg > end) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-            "Page numbering out of order", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering out of order", obj, ctx);
     } else if ( beg - end > 50 ) {
-        PostErr(sev, eErr_GENERIC_BadPageNumbering,
-            "Page numbering difference greater than 50", obj);
+        PostObjErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering difference greater than 50", obj, ctx);
     }
 }
 
@@ -1452,7 +1590,8 @@ bool CValidError_imp::HasName(const CAuth_list& authors)
 
 void CValidError_imp::ValidatePubHasAuthor
 (const CPubdesc& pubdesc,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     bool no_figs = ! pubdesc.IsSetFig()  ||  IsBlankString(pubdesc.GetFig());
     
@@ -1505,8 +1644,8 @@ void CValidError_imp::ValidatePubHasAuthor
     }
     
     if ( no_figs  &&  ! only_pmid  &&  no_patent_pub  &&  no_names ) {
-        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-                "Publication has no author names", obj);
+        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                "Publication has no author names", obj, ctx);
     }
     
 }
@@ -1519,14 +1658,9 @@ static bool s_BadCharsInAuthorName (string str, string& badauthor, bool allowcom
     }
 
 
-    size_t stp;
-    if (last) {
-        stp = NStr::Find (str, "St.");
-        if (stp != string::npos) {
-            stp += 2;  // point to the period
-        }
-    } else {
-        stp = string::npos;
+    size_t stp = string::npos;
+    if (last && NStr::StartsWith (str, "St.")) {
+        stp = 2;
     }
 
     size_t pos = 0;
@@ -1543,7 +1677,7 @@ static bool s_BadCharsInAuthorName (string str, string& badauthor, bool allowcom
             ptr++;
             pos++;
         } else {
-            badauthor = ptr;
+            badauthor = str;
             return true;
         }
     }
@@ -1585,19 +1719,24 @@ static bool s_BadCharsInAuthor (const CAuthor& author, string& badauthor, bool& 
 
 void CValidError_imp::ValidateAuthorList 
 (const CAuth_list::C_Names& names,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     EDiagSev sev = m_IsRefSeq ? eDiag_Warning : eDiag_Error;
 
     if (names.IsStd()) {
+        list<string> consortium_list;
+
         ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
             string badauthor = "";
             bool   last_is_bad = false;
             if (s_BadCharsInAuthor (**name, badauthor, last_is_bad)) {
                 if (last_is_bad) {
-                    PostErr (sev, eErr_SEQ_FEAT_BadCharInAuthorLastName, "Bad characters in author " + badauthor, obj);
+                    PostObjErr (sev, eErr_SEQ_FEAT_BadCharInAuthorLastName, 
+                                "Bad characters in author " + badauthor, obj, ctx);
                 } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, "Bad characters in author " + badauthor, obj);
+                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName,
+                                "Bad characters in author " + badauthor, obj, ctx);
                 }
             }
             if ( (*name)->GetName().IsName() ) {
@@ -1622,11 +1761,11 @@ void CValidError_imp::ValidateAuthorList
                       &&  (!nstd.IsSetFirst() || nstd.GetFirst().empty()))) {
                     CAuth_list::C_Names::TStd::const_iterator temp = name;
                     if ( ++temp == names.GetStd().end() ) {
-                        PostErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
-                            "Author list ends in et al.", obj);
+                        PostObjErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
+                            "Author list ends in et al.", obj, ctx);
                     } else {
-                        PostErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
-                            "Author list contains et al.", obj);
+                        PostObjErr(eDiag_Warning, eErr_GENERIC_AuthorListHasEtAl,
+                            "Author list contains et al.", obj, ctx);
                     }
                 }
                 // validate suffix, if set and nonempty
@@ -1643,9 +1782,28 @@ void CValidError_imp::ValidateAuthorList
                         }
                     }
                     if (!found) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAuthorSuffix, 
+                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadAuthorSuffix, 
                                  "Bad author suffix " + suffix,
-                                 obj);
+                                 obj, ctx);
+                    }
+                }
+            } else if ( (*name)->GetName().IsConsortium() ) {
+                const string& consortium = (*name)->GetName().GetConsortium();
+                if (NStr::IsBlank (consortium)) {
+                    PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, "Empty consortium", obj, ctx);
+                } else {
+                    bool found = false;
+                    ITERATE (list<string>, cons_str, consortium_list) {
+                        if (NStr::EqualNocase (consortium, *cons_str)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                                 "Duplicate consortium '" + consortium + "'", obj, ctx);
+                    } else {
+                        consortium_list.push_back(consortium);
                     }
                 }
             }
@@ -1657,17 +1815,20 @@ void CValidError_imp::ValidateAuthorList
                 if (NStr::IsBlank (badauthor)) {
                     badauthor = "?";
                 }
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, "Bad characters in author " + badauthor, obj);
+                PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, 
+                            "Bad characters in author " + badauthor, obj, ctx);
             }
         }           
     } else if (names.IsStr()) {
+
         ITERATE ( list< string >, str, names.GetStr()) {
             string badauthor = "";
             if (s_BadCharsInAuthorName (*str, badauthor, true, true, false)) {
                 if (NStr::IsBlank (badauthor)) {
                     badauthor = "?";
                 }
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, "Bad characters in author " + badauthor, obj);
+                PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, 
+                            "Bad characters in author " + badauthor, obj, ctx);
             }
         }           
     }
@@ -1676,7 +1837,8 @@ void CValidError_imp::ValidateAuthorList
 
 void CValidError_imp::ValidateAuthorsInPubequiv 
 (const CPub_equiv& pe,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry* ctx)
 {
     FOR_EACH_PUB_ON_PUBEQUIV (pub_iter, pe) {
         const CPub& pub = **pub_iter;
@@ -1705,7 +1867,7 @@ void CValidError_imp::ValidateAuthorsInPubequiv
             authors = &(pub.GetMan().GetCit().GetAuthors());
             break;
         case CPub::e_Equiv:
-            ValidateAuthorsInPubequiv (pub.GetEquiv(), obj);
+            ValidateAuthorsInPubequiv (pub.GetEquiv(), obj, ctx);
             break;
         default:
             break;
@@ -1716,7 +1878,7 @@ void CValidError_imp::ValidateAuthorsInPubequiv
         }
 
         const CAuth_list::C_Names& names = authors->GetNames();
-        ValidateAuthorList (names, obj);
+        ValidateAuthorList (names, obj, ctx);
     }
 }
 
@@ -1724,7 +1886,8 @@ void CValidError_imp::ValidateAuthorsInPubequiv
 void CValidError_imp::ValidateDbxref
 (const CDbtag& xref,
  const CSerialObject& obj,
- bool biosource)
+ bool biosource,
+ const CSeq_entry *ctx)
 {
     if ( !xref.CanGetDb() ) {
         return;
@@ -1738,8 +1901,8 @@ void CValidError_imp::ValidateDbxref
 
     if ( biosource ) {
         if ( !xref.IsApproved() || is_pid ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                "Illegal db_xref type " + db, obj);
+            PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                "Illegal db_xref type " + db, obj, ctx);
         }
     } else {  // Seq_feat
         const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(&obj);
@@ -1750,12 +1913,12 @@ void CValidError_imp::ValidateDbxref
             if ( !xref.IsApproved(refseq)  ||  (!is_cdregion  &&  is_pid) ) {
                 const char* legal = xref.IsApprovedNoCase(refseq);
                 if ( legal != 0 ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                    PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
                         "Illegal db_xref type " + db +
-                        ", legal capitalization is " + legal, obj);
+                        ", legal capitalization is " + legal, obj, ctx);
                 } else {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                        "Illegal db_xref type " + db, obj);
+                    PostObjErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                        "Illegal db_xref type " + db, obj, ctx);
                 }
             }
         }
@@ -1766,21 +1929,23 @@ void CValidError_imp::ValidateDbxref
 void CValidError_imp::ValidateDbxref
 (TDbtags& xref_list,
  const CSerialObject& obj,
- bool biosource)
+ bool biosource,
+ const CSeq_entry *ctx)
 {
     ITERATE( TDbtags, xref, xref_list) {
-        ValidateDbxref(**xref, obj, biosource);
+        ValidateDbxref(**xref, obj, biosource, ctx);
     }
 }
 
 
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     if ( !bsrc.CanGetOrg() ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-            "No organism has been applied to this Bioseq.", obj);
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+            "No organism has been applied to this Bioseq.", obj, ctx);
         return;
     }
 
@@ -1789,16 +1954,16 @@ void CValidError_imp::ValidateBioSource
 	// Organism must have a name.
 	if ( (!orgref.IsSetTaxname()  ||  orgref.GetTaxname().empty())  &&
          (!orgref.IsSetCommon()   ||  orgref.GetCommon().empty()) ) {
-		PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-            "No organism name has been applied to this Bioseq.", obj);
+		  PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+            "No organism name has been applied to this Bioseq.", obj, ctx);
 	}
 
 	// validate legal locations.
 	if ( bsrc.GetGenome() == CBioSource::eGenome_transposon  ||
 		 bsrc.GetGenome() == CBioSource::eGenome_insertion_seq ) {
-		PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceLocation,
+		  PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceLocation,
             "Transposon and insertion sequence are no longer legal locations.",
-            obj);
+            obj, ctx);
 	}
 
 	int chrom_count = 0;
@@ -1812,17 +1977,30 @@ void CValidError_imp::ValidateBioSource
         switch ( (**ssit).GetSubtype() ) {
             
         case CSubSource::eSubtype_country:
-            countryname = (**ssit).GetName();
-            if ( !CCountries::IsValid(countryname) ) {
-                if ( countryname.empty() ) {
-                    countryname = "?";
+            {
+                if (!NStr::IsBlank (countryname)) {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode, 
+                                "Multiple country names on BioSource", obj, ctx);
                 }
-                if ( CCountries::WasValid(countryname) ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
-                            "Replaced country name " + countryname, obj);
+                countryname = (**ssit).GetName();
+                bool is_miscapitalized = false;
+                if ( CCountries::IsValid(countryname, is_miscapitalized) ) {
+                    if (is_miscapitalized) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCapitalization, 
+                                    "Bad country capitalization [" + countryname + "]",
+                                    obj, ctx);
+                    }
                 } else {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
-                            "Bad country name " + countryname, obj);
+                    if ( countryname.empty() ) {
+                        countryname = "?";
+                    }
+                    if ( CCountries::WasValid(countryname) ) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
+                                "Replaced country name " + countryname, obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                                "Bad country name " + countryname, obj, ctx);
+                    }
                 }
             }
             break;
@@ -1840,18 +2018,18 @@ void CValidError_imp::ValidateBioSource
             
         case CSubSource::eSubtype_transposon_name:
         case CSubSource::eSubtype_insertion_seq_name:
-            PostErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
                 "Transposon name and insertion sequence name are no "
-                "longer legal qualifiers.", obj);
+                "longer legal qualifiers.", obj, ctx);
             break;
             
         case 0:
-            PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
-                "Unknown subsource subtype 0.", obj);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+                "Unknown subsource subtype 0.", obj, ctx);
             break;
             
         case CSubSource::eSubtype_other:
-            ValidateSourceQualTags((**ssit).GetName(), obj);
+            ValidateSourceQualTags((**ssit).GetName(), obj, ctx);
             break;
 
         case CSubSource::eSubtype_germline:
@@ -1867,39 +2045,39 @@ void CValidError_imp::ValidateBioSource
         }
     }
     if ( germline  &&  rearranged ) {
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
-            "Germline and rearranged should not both be present", obj);
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+            "Germline and rearranged should not both be present", obj, ctx);
     }
 	  if ( chrom_count > 1 ) {
 		    string msg = 
                 chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
                                  "Multiple identical chromosome qualifiers";
-		    PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
+		    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj, ctx);
 	  }
 
     if ( !orgref.IsSetOrgname()  ||
          !orgref.GetOrgname().IsSetLineage()  ||
          orgref.GetOrgname().GetLineage().empty() ) {
-		PostErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
-			     "No lineage for this BioSource.", obj);
+		PostObjErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
+			     "No lineage for this BioSource.", obj, ctx);
 	} else {
         const string& lineage = orgref.GetOrgname().GetLineage();
 		if ( bsrc.GetGenome() == CBioSource::eGenome_kinetoplast ) {
 			if ( lineage.find("Kinetoplastida") == string::npos ) {
-				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
-						 "Only Kinetoplastida have kinetoplasts", obj);
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
+						 "Only Kinetoplastida have kinetoplasts", obj, ctx);
 			}
 		} 
 		if ( bsrc.GetGenome() == CBioSource::eGenome_nucleomorph ) {
 			if ( lineage.find("Chlorarchniophyta") == string::npos  &&
 				lineage.find("Cryptophyta") == string::npos ) {
-				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
-                    "Only Chlorarchniophyta and Cryptophyta have nucleomorphs", obj);
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
+                    "Only Chlorarchniophyta and Cryptophyta have nucleomorphs", obj, ctx);
 			}
 		}
 	}
     if ( orgref.IsSetDb() ) {
-        ValidateDbxref(orgref.GetDb(), obj, true);
+        ValidateDbxref(orgref.GetDb(), obj, true, ctx);
     }
 
     if ( IsRequireTaxonID() ) {
@@ -1911,8 +2089,8 @@ void CValidError_imp::ValidateBioSource
             }
         }
         if ( !found ) {
-            PostErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
-                "BioSource is missing taxon ID", obj);
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
+                "BioSource is missing taxon ID", obj, ctx);
         }
     }
 
@@ -1927,18 +2105,18 @@ void CValidError_imp::ValidateBioSource
             int subtype = omd.GetSubtype();
             
             if ( (subtype == 0) || (subtype == 1) ) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-                        "Unknown orgmod subtype " + NStr::IntToString(subtype), obj);
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                        "Unknown orgmod subtype " + NStr::IntToString(subtype), obj, ctx);
             }
             if ( subtype == COrgMod::eSubtype_variety ) {
                 if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
                         "Orgmod variety should only be in plants or fungi", 
-                        obj);
+                        obj, ctx);
                 }
             }
             if ( subtype == COrgMod::eSubtype_other ) {
-                ValidateSourceQualTags( omd.GetSubname(), obj);
+                ValidateSourceQualTags( omd.GetSubname(), obj, ctx);
             }
         }
     }
@@ -2001,7 +2179,8 @@ static bool s_IsHtgInSep(const CSeq_entry& se)
 
 void CValidError_imp::ValidateCitSub
 (const CCit_sub& cs,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     bool has_name  = false,
          has_affil = false;
@@ -2033,6 +2212,17 @@ void CValidError_imp::ValidateCitSub
                          HAS_VALUE(Phone)    ||  HAS_VALUE(Postal_code) ) {
                         has_affil = true;
                     }
+                    if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
+                        PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+                                    "Submission citation affiliation has no country",
+                                    obj, ctx);
+                    } else if (NStr::EqualCase (std.GetCountry(), "USA")) {
+                        if (!std.IsSetSub() || NStr::IsBlank (std.GetSub())) {
+                            PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
+                                        "Submission citation affiliation has no state",
+                                        obj, ctx);
+                        }
+                    }
                 }}
 #undef HAS_VALUE
                 break;
@@ -2045,15 +2235,22 @@ void CValidError_imp::ValidateCitSub
     }
 
     if ( !has_name ) {
-        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-            "Submission citation has no author names", obj);
+        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Submission citation has no author names", obj, ctx);
     }
     if ( !has_affil ) {
         EDiagSev sev = 
             s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE()) ?
                 eDiag_Warning : eDiag_Error;
-        PostErr(sev, eErr_GENERIC_MissingPubInfo,
-            "Submission citation has no affiliation", obj);
+        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+            "Submission citation has no affiliation", obj, ctx);
+    }
+
+    if (cs.IsSetDate()) {
+        int rval = CheckDate (cs.GetDate());
+        if (rval != eDateValid_valid) {
+            PostBadDateError (eDiag_Error, "Submission citation date has error", rval, obj, ctx);
+        }
     }
 }
 
@@ -2580,6 +2777,58 @@ bool CValidError_imp::IsSequenceAvaliable(const CSeqVector& vec)
 // =============================================================================
 
 
+const char * script_tags[] = {"<script", "<object", "<applet", "<embed", "<form", "javascript:", "vbscript:", NULL};
+
+void CValidError_imp::FindEmbeddedScript (const CSerialObject& obj)
+{
+    bool found = false;
+    CStdTypeConstIterator<string> it(obj);
+
+    while (it && !found) {
+        for (int i = 0; script_tags[i] != NULL && !found; i++) {
+            if (NStr::FindNoCase (*it, script_tags[i]) != string::npos) {
+                found = true;
+            }
+        }
+        ++it;
+    }
+
+    if (found) {
+        PostErr (eDiag_Error, eErr_GENERIC_EmbeddedScript, "Script tag found in item", obj);
+    }
+}
+
+
+void CValidError_imp::FindCollidingSerialNumbers (const CSerialObject& obj)
+{
+    if (m_PubSerialNumbers.size() < 2) {
+        return;
+    }
+    sort (m_PubSerialNumbers.begin(), m_PubSerialNumbers.end());
+
+    vector<int>::iterator it1 = m_PubSerialNumbers.begin();
+    vector<int>::iterator it2 = it1;
+    ++it2;
+    while (it2 != m_PubSerialNumbers.end()) {
+        if (*it1 == *it2) {
+            PostErr (eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
+              "Multiple publications have serial number " + NStr::IntToString(*it1),
+              obj);
+            while (it2 != m_PubSerialNumbers.end() && *it2 == *it1) {
+                ++it2;
+            }
+            if (it2 != m_PubSerialNumbers.end()) {
+                it1 = it2;
+                ++it2;
+            }
+        } else {
+            it1 = it2;
+            ++it2;
+        }
+    }
+}
+
+
 bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
 {
     if ( SeqLocCheck(loc, m_Scope) == eSeqLocCheck_warning ) {
@@ -2730,13 +2979,20 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
         }
     }
 
-    // examine features for location gi and product gi
-    for (CFeat_CI feat_ci (seh); feat_ci && (!m_FeatLocHasGI || !m_ProductLocHasGI); ++feat_ci) {
+    // examine features for location gi, product gi, and locus tag
+    for (CFeat_CI feat_ci (seh); 
+         feat_ci && (!m_FeatLocHasGI || !m_ProductLocHasGI || !m_GeneHasLocusTag);
+         ++feat_ci) {
         if (s_SeqLocHasGI(feat_ci->GetLocation())) {
             m_FeatLocHasGI = true;
         }
         if (feat_ci->IsSetProduct() && s_SeqLocHasGI(feat_ci->GetProduct())) {
             m_ProductLocHasGI = true;
+        }
+        if (feat_ci->IsSetData() && feat_ci->GetData().IsGene() 
+            && feat_ci->GetData().GetGene().IsSetLocus_tag()
+            && !NStr::IsBlank (feat_ci->GetData().GetGene().GetLocus_tag())) {
+            m_GeneHasLocusTag = true;
         }
     }
     
@@ -2902,7 +3158,8 @@ void CValidError_imp::InitializeSourceQualTags()
 
 void CValidError_imp::ValidateSourceQualTags
 (const string& str,
- const CSerialObject& obj)
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
 {
     if ( str.empty() ) return;
 
@@ -2925,8 +3182,8 @@ void CValidError_imp::ValidateSourceQualTags
                 }
             }
             if ( okay ) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_StructuredSourceNote,
-                    "Source note has structured tag " + match, obj);
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StructuredSourceNote,
+                    "Source note has structured tag " + match, obj, ctx);
             }
         }
     }

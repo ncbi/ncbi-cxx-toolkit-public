@@ -241,7 +241,7 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope);
 bool IsBlankString(const string& str);
 bool IsBlankStringList(const list< string >& str_list);
 int GetGIForSeqId(const CSeq_id& id);
-list< CRef< CSeq_id > > GetSeqIdsForGI(int gi);
+CScope::TIds GetSeqIdsForGI(int gi);
 
 CSeqVector GetSequenceFromLoc(const CSeq_loc& loc, CScope& scope,
     CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac);
@@ -273,6 +273,22 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
 
 bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2);
 bool s_StringHasPMID (string str);
+bool HasBadCharacter (string str);
+bool EndsWithBadCharacter (string str);
+
+bool IsBioseqWithIdInSet (const CSeq_id& id, CBioseq_set_Handle set);
+
+typedef enum {
+  eDateValid_valid = 0x0,
+  eDateValid_bad_str = 0x01,
+  eDateValid_bad_year = 0x02,
+  eDateValid_bad_month = 0x04,
+  eDateValid_bad_day = 0x08,
+  eDateValid_bad_season = 0x10,
+  eDateValid_bad_other = 0x20 ,
+  eDateValid_empty_date = 0x40 } EDateValid;
+
+int CheckDate (const CDate& date, bool require_full_date = false);
 
 
 END_SCOPE(validator)

@@ -145,6 +145,12 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     case CBioseq_set::eClass_gen_prod_set:
         ValidateGenProdSet(seqset);
         break;
+    case CBioseq_set::eClass_conset:
+        if (!m_Imp.IsRefSeq()) {
+            PostErr (eDiag_Error, eErr_SEQ_PKG_ConSetProblem, 
+                     "Set class should not be conset", seqset);
+        }
+        break;
     /*
     case CBioseq_set::eClass_other:
         PostErr(eDiag_Critical, eErr_SEQ_PKG_GenomicProductPackagingProblem, 
@@ -157,6 +163,21 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
                 "No Bioseqs in this set", seqset);
         }
         break;
+    }
+
+    // if a feature is packaged on a set, the bioseqs in the locations should be in the set
+    CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle(seqset);
+    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
+        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
+            if ((*feat_it)->IsSetLocation()) {
+                for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
+                    if (!IsBioseqWithIdInSet(loc_it.GetSeq_id(), bssh)) {
+                        m_Imp.IncrementMisplacedFeatureCount();
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -287,6 +308,42 @@ void CValidError_bioseqset::ValidateNucProtSet
 }
 
 
+void CValidError_bioseqset::CheckForInconsistentBiomols (const CBioseq_set& seqset)
+{
+    if (!seqset.IsSetClass()) {
+        return;
+    }            
+    
+    CTypeConstIterator<CMolInfo> miit(ConstBegin(seqset));
+    const CMolInfo* mol_info = 0;
+    
+    for (; miit; ++miit) {
+        if (!miit->IsSetBiomol() || miit->GetBiomol() == CMolInfo::eBiomol_peptide) {
+            continue;
+        }
+        if (mol_info == 0) {
+            mol_info = &(*miit);
+        } else if (mol_info->GetBiomol() != miit->GetBiomol() ) {
+            if (seqset.GetClass() == CBioseq_set::eClass_segset) {
+                PostErr(eDiag_Error, eErr_SEQ_PKG_InconsistentMolInfoBiomols,
+                    "Segmented set contains inconsistent MolInfo biomols",
+                    seqset);
+            } else if (seqset.GetClass() == CBioseq_set::eClass_pop_set
+                       || seqset.GetClass() == CBioseq_set::eClass_eco_set
+                       || seqset.GetClass() == CBioseq_set::eClass_mut_set
+                       || seqset.GetClass() == CBioseq_set::eClass_phy_set
+                       || seqset.GetClass() == CBioseq_set::eClass_wgs_set) {
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentMolInfoBiomols,
+                    "Pop/phy/mut/eco set contains inconsistent MolInfo biomols",
+                    seqset);
+            }
+            break;
+        }
+    } // for
+
+}
+
+
 void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt)
 {
     if ( segcnt == 0 ) {
@@ -330,19 +387,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
         } // else if
     } // iterate
     
-    CTypeConstIterator<CMolInfo> miit(ConstBegin(seqset));
-    const CMolInfo* mol_info = 0;
-    
-    for (; miit; ++miit) {
-        if (mol_info == 0) {
-            mol_info = &(*miit);
-        } else if (mol_info->GetBiomol() != miit->GetBiomol() ) {
-            PostErr(eDiag_Error, eErr_SEQ_PKG_InconsistentMolInfoBiomols,
-                "Segmented set contains inconsistent MolInfo biomols",
-                seqset);
-            break;
-        }
-    } // for
+    CheckForInconsistentBiomols (seqset);
 }
 
 
@@ -449,11 +494,13 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
             *seqit);
         break;
     }
+    CheckForInconsistentBiomols (seqset);
 }
 
 
 void CValidError_bioseqset::ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset)
 {
+    CheckForInconsistentBiomols (seqset);
 }
 
 

@@ -1304,6 +1304,15 @@ that should be replaced or supplemented with more informative information.")),
    TErrTypStrs (eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
    TErrStrs ( "InconsistentGeneOntologyTermAndId",
 "The same GO term should apply to Gene Ontology (GO) term specifications with the same GO ID.")),
+   TErrTypStrs (eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
+   TErrStrs ( "MultiplyAnnotatedGenes",
+"Two gene features with the same name are annotated at the same location.")),
+   TErrTypStrs (eErr_SEQ_FEAT_ReplicatedGeneSequence,
+   TErrStrs ( "ReplicatedGeneSequence",
+"Two gene features with the same name are annotated at different locations, but the underlying sequence is identical.")),
+   TErrTypStrs (eErr_SEQ_FEAT_ShortIntron,
+   TErrStrs ( "ShortIntron",
+"Introns should be longer than 10 nt.")),
    TErrTypStrs ( eErr_SEQ_FEAT_SgmlPresentInText,
    TErrStrs( "SgmlPresentInText",
 "SGML markup is embedded in text.")),
@@ -1399,9 +1408,7 @@ same id type")),
     TErrTypStrs( eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
     TErrStrs( "SegsPresentStrandsMismatch",
 "Please contact the sequence database for further help with this error.")),
-    TErrTypStrs( eErr_SEQ_ALIGN_SegsInvalidDim,
-    TErrStrs( "SegsInvalidDim",
-"Please contact the sequence database for further help with this error.")),
+
 
 /* SEQ_GRAPH */
 
@@ -1465,6 +1472,10 @@ delta Bioseq location component.")),
    TErrTypStrs ( eErr_SEQ_GRAPH_GraphNScoreMany,
    TErrStrs( "GraphNScoreMany",
 "Quality score values for unknown bases should not be above 0.")),
+   TErrTypStrs ( eErr_SEQ_GRAPH_GraphLocInvalid,
+   TErrStrs( "GraphLocInvalid",
+"Location for quality score values extends beyond end of sequence.")),
+
 
 /* SEQ_ANNOT */
 

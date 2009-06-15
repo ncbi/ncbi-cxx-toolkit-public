@@ -417,6 +417,9 @@ enum EErrType {
     eErr_SEQ_FEAT_ProteinNameHasPMID,
     eErr_SEQ_FEAT_BadGeneOntologyFormat,
     eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
+    eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
+    eErr_SEQ_FEAT_ReplicatedGeneSequence,
+    eErr_SEQ_FEAT_ShortIntron,
     eErr_SEQ_FEAT_SgmlPresentInText,
     eErr_SEQ_FEAT_MissingLocation,
     eErr_SEQ_FEAT_MultipleBioseqs,
@@ -450,7 +453,6 @@ enum EErrType {
     eErr_SEQ_ALIGN_SegsPresentMismatch,
     eErr_SEQ_ALIGN_SegsPresentStartsMismatch,
     eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
-    eErr_SEQ_ALIGN_SegsInvalidDim,
     ERR_CODE_END(SEQ_ALIGN),
 
     ERR_CODE_BEGIN(SEQ_GRAPH) = 6000,
@@ -473,6 +475,7 @@ enum EErrType {
     eErr_SEQ_GRAPH_GraphBioseqId,
     eErr_SEQ_GRAPH_GraphACGTScoreMany,
     eErr_SEQ_GRAPH_GraphNScoreMany,
+    eErr_SEQ_GRAPH_GraphLocInvalid,
     ERR_CODE_END(SEQ_GRAPH),
 
     ERR_CODE_BEGIN(SEQ_ANNOT) = 7000,

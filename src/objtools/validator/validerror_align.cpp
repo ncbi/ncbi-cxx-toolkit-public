@@ -39,13 +39,22 @@
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+
+#include <objtools/alnmgr/aln_user_options.hpp>
+#include <objtools/alnmgr/aln_stats.hpp>
+#include <objtools/alnmgr/alnvec.hpp>
+#include <objtools/alnmgr/sparse_aln.hpp>
+#include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/aln_builders.hpp>
 
 #include <map>
 #include <vector>
 #include <algorithm>
 
 #include "validatorp.hpp"
+#include "utilities.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -71,6 +80,13 @@ CValidError_align::~CValidError_align(void)
 
 void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
 {
+    if (!align.IsSetSegs()) {
+        PostErr (eDiag_Error, eErr_SEQ_ALIGN_NullSegs, 
+                 "Segs: This alignment is missing all segments.  This is a non-correctable error -- look for serious formatting problems.",
+                 align);
+        return;
+    }
+                 
     const CSeq_align::TSegs& segs = align.GetSegs();
     CSeq_align::C_Segs::E_Choice segtype = segs.Which();
     switch ( segtype ) {
@@ -100,22 +116,160 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
     case CSeq_align::C_Segs::e_not_set:
     default:
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_Segtype,
-            "This alignment has undefined or unsupported Seq_align"
-            "segtype " + NStr::IntToString(segtype) + ".", align);
+                "Segs: This alignment has a undefined or unsupported Seqalign segtype "
+                + NStr::IntToString(segtype), align);
         break;
     }  // end of switch statement
+
+    x_ValidateAlignPercentIdentity (align, true);
+
 }
 
 
 // ================================  Private  ===============================
+
+static bool s_AmbiguousMatch (char a, char b)
+{
+    if (a == b) {
+        return true;
+    } else if (a == 'N' || b == 'N') {
+        return true;
+    }
+
+    // to do - other ambiguities
+
+    return false;
+}
+
+
+void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps)
+{
+    // Now calculate Percent Identity
+
+    TIdExtract id_extract;
+    TAlnIdMap aln_id_map(id_extract, 1);
+    aln_id_map.push_back (align);
+    TAlnStats aln_stats (aln_id_map);
+
+    // Create user options
+    CAlnUserOptions aln_user_options;
+    TAnchoredAlnVec anchored_alignments;
+
+    CreateAnchoredAlnVec (aln_stats, anchored_alignments, aln_user_options);
+
+    /// Build a single anchored aln
+    CAnchoredAln out_anchored_aln;
+
+    /// Optionally, create an id for the alignment pseudo sequence
+    /// (otherwise one would be created automatically)
+    CRef<CSeq_id> seq_id (new CSeq_id("lcl|PSEUDO ALNSEQ"));
+    CRef<CAlnSeqId> aln_seq_id(new CAlnSeqId(*seq_id));
+    TAlnSeqIdIRef pseudo_seqid(aln_seq_id);
+
+    BuildAln(anchored_alignments,
+             out_anchored_aln,
+             aln_user_options,
+             pseudo_seqid);
+
+    CSparseAln sparse_aln(out_anchored_aln, *m_Scope);
+
+    // check to see if alignment is TPA
+    bool is_tpa = false;
+    for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim() && !is_tpa;  ++row) {
+        const CSeq_id& id = sparse_aln.GetSeqId(row);
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (id);
+        if (bsh) {
+            CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
+            while (desc_ci && !is_tpa) {
+                if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
+                    && NStr::EqualNocase (desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
+                    is_tpa = true;
+                }
+                ++desc_ci;
+            }
+        }
+    }
+    if (is_tpa) {
+        return;
+    }            
+
+    vector <string> aln_rows;
+    vector <TSignedSeqPos> row_starts;
+    vector <TSignedSeqPos> row_stops;
+
+    for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
+        try {
+            string sequence;
+            sparse_aln.GetAlnSeqString
+                (row,
+                 sequence,
+                 sparse_aln.GetAlnRange());
+            aln_rows.push_back (sequence);
+            row_starts.push_back (sparse_aln.GetSeqAlnStart(row));
+            row_stops.push_back (sparse_aln.GetSeqAlnStop(row));
+        } catch (...) {
+            // if sequence is not in scope,
+            // the above is impossible
+        }
+    }
+
+    TSignedSeqPos col = 0;
+    TSignedSeqPos aln_len = sparse_aln.GetAlnRange().GetLength();
+    size_t num_match = 0;
+    while (col < aln_len) {
+        string column;
+        bool match = true;
+        for (size_t row = 0; row < aln_rows.size() && match; row++) {
+            if (row_starts[row] <= col && row_stops[row] >= col
+                && aln_rows[row].length() > col) {
+                string nt = aln_rows[row].substr(col, 1);
+                if (NStr::Equal (nt, "-")) {
+                    if (internal_gaps) {
+                        match = false;
+                    }
+                } else {                    
+                    column += aln_rows[row].substr(col, 1);
+                }
+            }
+        }
+        if (match) {
+            if (!NStr::IsBlank (column)) {
+                string::iterator it1 = column.begin();
+                string::iterator it2 = it1;
+                ++it2;
+                while (match && it2 != column.end()) {
+                    if (!s_AmbiguousMatch (*it1, *it2)) {
+                        match = false;
+                    }
+                    ++it2;
+                    if (it2 == column.end()) {
+                        ++it1;
+                        it2 = it1;
+                        ++it2;
+                    }
+                }
+            }
+            if (match) {
+                ++num_match;
+            }
+        }
+        col++;
+    }
+    if (col > 0) {
+        int pct_id = (num_match * 100) / col;
+        if (pct_id < 50) {
+            PostErr (eDiag_Warning, eErr_SEQ_ALIGN_PercentIdentity,
+                     "This alignment has a percent identity of " + NStr::IntToString (pct_id) + "%",
+                     align);
+        }
+    }
+}
 
 
 void CValidError_align::x_ValidateDenseg
 (const TDenseg& denseg,
  const CSeq_align& align)
 {
-    bool cont = true;
-
     // assert dim >= 2
     if ( !x_ValidateDim(denseg, align) ) {
         return;
@@ -126,13 +280,8 @@ void CValidError_align::x_ValidateDenseg
 
     // assert dim == Ids.size()
     if ( dim != denseg.GetIds().size() ) {
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
-                "Mismatch between specified dimension (" +
-                NStr::UIntToString(dim) + 
-                ") and number of Seq-ids (" + 
-                NStr::UIntToString(denseg.GetIds().size()) + ")",
-                align);
-        cont = false;
+        PostErr(eDiag_Error, eErr_SEQ_ALIGN_AlignDimSeqIdNotMatch,
+                "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment.  Look for possible formatting errors in the ids.", align);
     }
 
     // assert numseg == Lens.size()
@@ -143,7 +292,6 @@ void CValidError_align::x_ValidateDenseg
                 ") and number of Lens (" + 
                 NStr::UIntToString(denseg.GetLens().size()) + ")",
                 align);
-        cont = false;
     }
 
     // assert dim * numseg == Starts.size()
@@ -153,18 +301,15 @@ void CValidError_align::x_ValidateDenseg
                 NStr::UIntToString(denseg.GetStarts().size()) +
                 ") does not match the expected size of dim * numseg (" +
                 NStr::UIntToString(dim * numseg) + ")", align);
-        cont = false;
     } 
 
-    if( cont ) {
-        x_ValidateStrand(denseg, align);
-        x_ValidateFastaLike(denseg, align);
-        x_ValidateSegmentGap(denseg, align);
-        
-        if ( m_Imp.IsRemoteFetch() ) {
-            x_ValidateSeqId(align);
-            x_ValidateSeqLength(denseg, align);
-        }
+    x_ValidateStrand(denseg, align);
+    x_ValidateFastaLike(denseg, align);
+    x_ValidateSegmentGap(denseg, align);
+    
+    if ( m_Imp.IsRemoteFetch() ) {
+        x_ValidateSeqId(align);
+        x_ValidateSeqLength(denseg, align);
     }
 }
 
@@ -175,7 +320,6 @@ void CValidError_align::x_ValidatePacked
 (const TPacked& packed,
  const CSeq_align& align)
 {
-    bool cont = true;
 
     // assert dim >= 2
     if ( !x_ValidateDim(packed, align) ) {
@@ -187,13 +331,8 @@ void CValidError_align::x_ValidatePacked
     
     // assert dim == Ids.size()
     if ( dim != packed.GetIds().size() ) {
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
-            "Mismatch between specified dimension (" +
-            NStr::UIntToString(dim) + 
-            ") and number of Seq-ids (" + 
-            NStr::UIntToString(packed.GetIds().size()) + ")",
-            align);
-        cont = false;
+        PostErr(eDiag_Error, eErr_SEQ_ALIGN_AlignDimSeqIdNotMatch,
+                "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment.  Look for possible formatting errors in the ids.", align);
     }
     
     // assert numseg == Lens.size()
@@ -204,7 +343,6 @@ void CValidError_align::x_ValidatePacked
             ") and number of Lens (" + 
             NStr::UIntToString(packed.GetLens().size()) + ")",
             align);
-        cont = false;
     }
     
     // assert dim * numseg == Present.size()
@@ -214,7 +352,6 @@ void CValidError_align::x_ValidatePacked
                 NStr::UIntToString(packed.GetPresent().size()) +
                 ") does not match the expected size of dim * numseg (" +
                 NStr::UIntToString(dim * numseg) + ")", align);
-        cont = false;
     } else {
         // assert # of '1' bits in present == Starts.size()
         size_t bits = x_CountBits(packed.GetPresent());
@@ -224,7 +361,6 @@ void CValidError_align::x_ValidatePacked
                 NStr::UIntToString(packed.GetStarts().size()) + 
                 ") as specified by Present (" + NStr::UIntToString(bits) +
                 ")", align);
-            cont = false;
         }
 
         // assert # of '1' bits in present == Strands.size() (if exists)
@@ -235,20 +371,17 @@ void CValidError_align::x_ValidatePacked
                     NStr::UIntToString(packed.GetStrands().size()) +
                     ") as specified by Present (" +
                     NStr::UIntToString(bits) + ")", align);
-                cont = false;
             }
         }
     }
     
-    if( cont ) {
-        x_ValidateStrand(packed, align);
-        x_ValidateFastaLike(packed, align);
-        x_ValidateSegmentGap(packed, align);
-        
-        if ( m_Imp.IsRemoteFetch() ) {
-            x_ValidateSeqId(align);
-            x_ValidateSeqLength(packed, align);
-        }
+    x_ValidateStrand(packed, align);
+    x_ValidateFastaLike(packed, align);
+    x_ValidateSegmentGap(packed, align);
+    
+    if ( m_Imp.IsRemoteFetch() ) {
+        x_ValidateSeqId(align);
+        x_ValidateSeqLength(packed, align);
     }
 }
 
@@ -275,7 +408,6 @@ void CValidError_align::x_ValidateDendiag
 {
     size_t num_dendiag = 0;
     ITERATE( TDendiag, dendiag_iter, dendiags ) {
-        bool cont = true;
         ++num_dendiag;
 
         const CDense_diag& dendiag = **dendiag_iter;
@@ -286,15 +418,15 @@ void CValidError_align::x_ValidateDendiag
             continue;
         }
 
+        string label;
+        dendiag.GetIds()[0]->GetLabel (&label);
+
         // assert dim == Ids.size()
         if ( dim != dendiag.GetIds().size() ) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
-                "Mismatch between specified dimension (" +
-                NStr::UIntToString(dim) + 
-                ") and number of Seq-ids (" + 
-                NStr::UIntToString(dendiag.GetIds().size()) + ") in dendiag " +
-                NStr::UIntToString(num_dendiag), align);
-            cont = false;
+            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
+                    "SeqId: In segment " + NStr::IntToString (num_dendiag) 
+                    + ", there are more or fewer rows than there are seqids (context "
+                    + label + ").  Look for possible formatting errors in the ids.", align);
         }
 
         // assert dim == Starts.size()
@@ -305,7 +437,6 @@ void CValidError_align::x_ValidateDendiag
                 ") and number ofStarts (" + 
                 NStr::UIntToString(dendiag.GetStarts().size()) + 
                 ") in dendiag " + NStr::UIntToString(num_dendiag), align);
-            cont = false;
         } 
 
         // assert dim == Strands.size() (if exist)
@@ -317,17 +448,17 @@ void CValidError_align::x_ValidateDendiag
                     ") and number of Strands (" + 
                     NStr::UIntToString(dendiag.GetStrands().size()) + 
                     ") in dendiag " + NStr::UIntToString(num_dendiag), align);
-                cont = false;
             } 
         }
 
-        if ( cont ) {
-            if ( m_Imp.IsRemoteFetch() ) {
-                x_ValidateSeqId(align);
-                x_ValidateSeqLength(dendiag, num_dendiag, align);
-            }
+        if ( m_Imp.IsRemoteFetch() ) {
+            x_ValidateSeqLength(dendiag, num_dendiag, align);
         }
     }
+    if ( m_Imp.IsRemoteFetch() ) {
+        x_ValidateSeqId(align);
+    }
+    x_ValidateSegmentGap (dendiags, align);
 }
 
 
@@ -335,8 +466,6 @@ void CValidError_align::x_ValidateStd
 (const TStd& std_segs,
  const CSeq_align& align)
 {
-    bool cont = true;
-
     size_t num_stdseg = 0;
     ITERATE( TStd, stdseg_iter, std_segs) {
         ++num_stdseg;
@@ -346,20 +475,16 @@ void CValidError_align::x_ValidateStd
 
         // assert dim >= 2
         if ( !x_ValidateDim(stdseg, align, num_stdseg) ) {
-            cont = false;
-            continue;
         }
 
         // assert dim == Loc.size()
         if ( dim != stdseg.GetLoc().size() ) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
-                "Mismatch between specified dimension (" +
-                NStr::UIntToString(dim) + 
-                ") and number of Seq-locs (" + 
-                NStr::UIntToString(stdseg.GetLoc().size()) + ") in stdseg " +
-                NStr::UIntToString(num_stdseg), align);
-            cont = false;
-            continue;
+            string label;
+            stdseg.GetLoc()[0]->GetLabel(&label);
+            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
+                    "SeqId: In segment " + NStr::IntToString (num_stdseg) 
+                    + ", there are more or fewer rows than there are seqids (context "
+                    + label + ").  Look for possible formatting errors in the ids.", align);
         }
 
         // assert dim == Ids.size()
@@ -371,21 +496,17 @@ void CValidError_align::x_ValidateStd
                     ") and number of Seq-ids (" + 
                     NStr::UIntToString(stdseg.GetIds().size()) + ")",
                     align);
-                cont = false;
-                continue;
             }
         }
     }
 
-    if( cont ) {
-        x_ValidateStrand(std_segs, align);
-        x_ValidateFastaLike(std_segs, align);
-        x_ValidateSegmentGap(std_segs, align);
-        
-        if ( m_Imp.IsRemoteFetch() ) {
-            x_ValidateSeqId(align);
-            x_ValidateSeqLength(std_segs, align);
-        }
+    x_ValidateStrand(std_segs, align);
+    x_ValidateFastaLike(std_segs, align);
+    x_ValidateSegmentGap(std_segs, align);
+    
+    if ( m_Imp.IsRemoteFetch() ) {
+        x_ValidateSeqId(align);
+        x_ValidateSeqLength(std_segs, align);
     }
 }
 
@@ -396,26 +517,29 @@ bool CValidError_align::x_ValidateDim
  const CSeq_align& align,
  size_t part)
 {
-    if ( !obj.IsSetDim() ) {
-        string msg = "Dim not set";
-        if ( part > 0 ) {
-            msg += " Part " + NStr::UIntToString(part);
+    bool rval = false;
+
+    if ( !obj.IsSetDim() || obj.GetDim() == 0) {
+        if (part > 0) {
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegsDimOne,
+                     "Segs: Segment " + NStr::IntToString (part) + "has dimension zero", align);
+        } else {
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_AlignDimOne,
+                     "Dim: This alignment has dimension zero", align);
         }
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsInvalidDim, msg, align);
-        return false;
+    } else if (obj.GetDim() == 1) {
+        if (part > 0) {
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegsDimOne,
+                     "Segs: Segment " + NStr::IntToString (part) + "apparently has only one sequence.  Each portion of the alignment must have at least two sequences.", align);
+        } else {
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_AlignDimOne,
+                     "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.", align);
+        }
+    } else {
+        rval = true;
     }
 
-    size_t dim = obj.GetDim();        
-    if ( dim < 2 ) {
-        string msg = "Dimension (" + NStr::UIntToString(dim) + 
-            ") must be at least 2.";
-        if ( part > 0 ) {
-            msg += " Part " + NStr::UIntToString(part);
-        }
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsInvalidDim, msg, align);
-        return false;
-    }
-    return true;
+    return rval;
 }
 
 
@@ -464,7 +588,8 @@ void CValidError_align::x_ValidateStrand
                     denseg.GetIds()[id]->AsFastaString() +
                     " are inconsistent across the alignment. "
                     "The first inconsistent region is the " + 
-                    NStr::UIntToString(seg), align);
+                    NStr::UIntToString(seg + 1) + "(th) region, near sequence position "
+                    + NStr::IntToString(denseg.GetStarts()[id + (seg * dim)]), align);
                     break;
             }
         }
@@ -517,7 +642,7 @@ void CValidError_align::x_ValidateStrand
                     }
                     
                     PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
-                        "Strand for SeqId " + (*id_iter)->AsFastaString() +
+                        "The strand labels for SeqId " + (*id_iter)->AsFastaString() +
                         " are inconsistent across the alignment", align);
                 }
                 ++strand;
@@ -531,7 +656,9 @@ void CValidError_align::x_ValidateStrand
 (const TStd& std_segs,
  const CSeq_align& align)
 {
-    map< CConstRef<CSeq_id>, ENa_strand > strands;
+    map< string, ENa_strand > strands;
+    map< string, bool> reported;
+    int region = 1;
 
     ITERATE ( TStd, stdseg, std_segs ) {
         ITERATE ( CStd_seg::TLoc, loc_iter, (*stdseg)->GetLoc() ) {
@@ -542,6 +669,8 @@ void CValidError_align::x_ValidateStrand
                 continue;
             }
             CConstRef<CSeq_id> id(&GetId(loc, m_Scope));
+            string id_label = id->AsFastaString();
+
             ENa_strand strand = GetStrand(loc, m_Scope);
 
             if ( strand == eNa_strand_unknown  || 
@@ -549,18 +678,69 @@ void CValidError_align::x_ValidateStrand
                 continue;
             }
 
-            if ( strands[id] == eNa_strand_unknown  ||
-                 strands[id] == eNa_strand_other ) {
-                strands[id] = strand;
-            }
-
-            if ( strands[id] != strand ) {
+            if ( strands[id_label] == eNa_strand_unknown  ||
+                 strands[id_label] == eNa_strand_other ) {
+                strands[id_label] = strand;
+                reported[id_label] = false;
+            } else if (!reported[id_label]
+                && strands[id_label] != strand ) {
+                TSeqPos start = loc.GetStart(eExtreme_Positional);
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
-                    "Strands for SeqId " + id->AsFastaString() + 
-                    " are inconsistent across the alignment", align);
+                    "The strand labels for SeqId " + id_label + 
+                    " are inconsistent across the alignment.  The first inconsistent region is the "
+                    + NStr::IntToString (region) + "(th) region, near sequence position "
+                    + NStr::IntToString (start), align);
+                reported[id_label] = true;
             }
         }
+        region++;
     }
+}
+
+
+static int s_PercentBioseqMatch (CBioseq_Handle bsh1, CBioseq_Handle bsh2, CScope& scope)
+{
+    if (!bsh1 || !bsh2) {
+        return 0;
+    }
+
+    TSeqPos len1 = bsh1.GetBioseqLength();
+    TSeqPos len2 = bsh2.GetBioseqLength();
+
+    if (len1 == 0 || len2 == 0) {
+        return 0;
+    }
+
+    TSeqPos min_len = len1;
+    TSeqPos max_len = len2;
+    if (len1 > len2) {
+        min_len = len2;
+        max_len = len1;
+    }
+
+    CRef <CSeq_id> id1(new CSeq_id);
+    id1->Assign(*(bsh1.GetSeqId()));
+    CSeq_loc loc1(*id1, 0, min_len - 1, eNa_strand_plus);
+    string seq1 = GetSequenceStringFromLoc (loc1, scope);
+
+    CRef <CSeq_id> id2(new CSeq_id);
+    id2->Assign(*(bsh2.GetSeqId()));
+    CSeq_loc loc2(*id2, 0, min_len - 1, eNa_strand_plus);
+    string seq2 = GetSequenceStringFromLoc (loc2, scope);
+
+    TSeqPos match_count = 0;
+    string::iterator s1 = seq1.begin();
+    string::iterator s2 = seq2.begin();
+
+    while (s1 != seq1.end() && s2 != seq2.end()) {
+        if (*s1 == *s2) {
+            match_count++;
+        }
+        s1++;
+        s2++;
+    }
+
+    return match_count / max_len;
 }
 
 
@@ -602,7 +782,7 @@ void CValidError_align::x_ValidateFastaLike
                 break;
             } 
 
-            if ( seg == numseg - 1  &&  gap ) {
+            if ( seg == numseg - 1) {
                 // if no more positive start value are found after the initial
                 // -1 start value, it's fasta like
                 fasta_like.push_back(denseg.GetIds()[id]->AsFastaString());
@@ -611,22 +791,26 @@ void CValidError_align::x_ValidateFastaLike
     }
 
     if ( !fasta_like.empty() ) {
-        string fasta_like_ids;
-        bool first = true;
-        ITERATE( vector<string>, idstr, fasta_like ) {
-            if ( first ) {
-                first = false;
-            } else {
-                fasta_like_ids += ", ";
+        CDense_seg::TIds::const_iterator id_it = denseg.GetIds().begin();
+        string context;
+        (*id_it)->GetLabel(&context);
+        CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(**id_it);
+        bool is_fasta_like = false;
+        if (master_seq) {
+            ++id_it;
+            while (id_it != denseg.GetIds().end() && !is_fasta_like) {
+                CBioseq_Handle seq = m_Scope->GetBioseqHandle(**id_it);
+                if (s_PercentBioseqMatch (master_seq, seq, *m_Scope) < 50) {
+                    is_fasta_like = true;
+                }
+                ++id_it;
             }
-
-            fasta_like_ids += *idstr;
         }
-        fasta_like_ids += ".";
-
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
-            "This may be a fasta-like alignment for SeqIds: " + 
-            fasta_like_ids, align);
+        if (is_fasta_like) {
+            PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
+                    "Fasta: his may be a fasta-like alignment for SeqId: "
+                    + fasta_like.front() + " in the context of " + context, align);
+        }                    
     }
 
 }           
@@ -731,6 +915,7 @@ void CValidError_align::x_ValidateSegmentGap
     int numseg  = denseg.GetNumseg();
     int dim     = denseg.GetDim();
     const CDense_seg::TStarts& starts = denseg.GetStarts();
+    size_t align_pos = 1;
 
     for ( int seg = 0; seg < numseg; ++seg ) {
         bool seggap = true;
@@ -742,9 +927,18 @@ void CValidError_align::x_ValidateSegmentGap
         }
         if ( seggap ) {
             // no sequence is present in this segment
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                "Segment " + NStr::UIntToString(seg) + " contains only gaps.",
-                align);
+            string label = "Unknown";
+            if (denseg.IsSetIds() && denseg.GetIds().size() > 0) {
+                denseg.GetIds()[0]->GetLabel(&label);
+            }
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
+                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
+                     + NStr::IntToString(align_pos) + ") in the context of "
+                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
+                     align);
+        }
+        if (denseg.IsSetLens() && denseg.GetLens().size() > seg) {
+            align_pos += denseg.GetLens()[seg];
         }
     }
 }
@@ -760,6 +954,7 @@ void CValidError_align::x_ValidateSegmentGap
     size_t dim = packed.GetDim();
     const CPacked_seg::TPresent& present = packed.GetPresent();
 
+    size_t align_pos = 1;
     for ( size_t seg = 0; seg < numseg;  ++seg) {
         size_t id = 0;
         for ( ; id < dim; ++id ) {
@@ -770,9 +965,18 @@ void CValidError_align::x_ValidateSegmentGap
         }
         if ( id == dim ) {
             // no sequence is present in this segment
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                "Segment " + NStr::UIntToString(seg) + "contains only gaps.",
-                align);
+            string label = "Unknown";
+            if (packed.IsSetIds() && packed.GetIds().size() > 0) {
+                packed.GetIds()[0]->GetLabel(&label);
+            }
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
+                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
+                     + NStr::IntToString(align_pos) + ") in the context of "
+                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
+                     align);
+        }
+        if (packed.IsSetLens() && packed.GetLens().size() > seg) {
+            align_pos += packed.GetLens()[seg];
         }
     }       
 }
@@ -783,19 +987,54 @@ void CValidError_align::x_ValidateSegmentGap
  const CSeq_align& align)
 {
     size_t seg = 0;
+    size_t align_pos = 1;
     ITERATE ( TStd, stdseg, std_segs ) {
         bool gap = true;
+        size_t len = 0;
+        string label = "Unknown";
         ITERATE ( CStd_seg::TLoc, loc, (*stdseg)->GetLoc() ) {
             if ( !(*loc)->IsEmpty()  ||  !(*loc)->IsEmpty() ) {
                 gap = false;
                 break;
+            } else if (len == 0) {
+                len = GetLength (**loc, m_Scope);
+                (*loc)->GetId()->GetLabel(&label);
             }
         }
         if ( gap ) {
             // no sequence is present in this segment
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                "Segment " + NStr::UIntToString(seg) + "contains only gaps.",
-                align);
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
+                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
+                     + NStr::IntToString(align_pos) + ") in the context of "
+                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
+                     align);
+        }
+        align_pos += len;
+        ++seg;
+    }
+}
+
+
+void CValidError_align::x_ValidateSegmentGap
+(const TDendiag& dendiags,
+ const CSeq_align& align)
+{
+    size_t seg = 0;
+    TSeqPos align_pos = 1;
+    ITERATE( TDendiag, diag_seg, dendiags ) {
+        if (!(*diag_seg)->IsSetDim() || (*diag_seg)->GetDim() == 0) {
+            string label = "Unknown";
+            if ((*diag_seg)->IsSetIds() && (*diag_seg)->GetIds().size() > 0) {
+                (*diag_seg)->GetIds().front()->GetLabel(&label);
+            }
+            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
+                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
+                     + NStr::IntToString(align_pos) + ") in the context of "
+                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
+                     align);
+        }
+        if ((*diag_seg)->IsSetLen()) {
+            align_pos += (*diag_seg)->GetLen();
         }
         ++seg;
     }
@@ -893,25 +1132,22 @@ void CValidError_align::x_ValidateSeqLength
         TSeqPos bslen = GetLength(*(ids[id]), m_Scope);
         TSeqPos start = *starts_iter;
 
+        string label;
+        ids[id]->GetLabel(&label);
+
         // verify start
-        if ( start > bslen ) {
+        if ( start >= bslen ) {
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
-                    "Start (" + NStr::UIntToString(start) +
-                    ") exceeds bioseq length (" +
-                    NStr::UIntToString(bslen) +
-                    ") for seq-id " + ids[id]->AsFastaString() +
-                    "in dendiag " + NStr::UIntToString(dendiag_num),
+                    "Start: In sequence " + label + ", segment 1 (near sequence position " + NStr::IntToString (start)
+                    + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
                     align);
         }
         
         // verify length
         if ( start + len > bslen ) {
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
-                    "Start + length (" + NStr::UIntToString(start + len) +
-                    ") exceeds bioseq length (" +
-                    NStr::UIntToString(bslen) +
-                    ") for seq-id " + ids[id]->AsFastaString() +
-                    "in dendiag " + NStr::UIntToString(dendiag_num),
+                    "Start: In sequence " + label + ", segment 1 (near sequence position " + NStr::IntToString (start)
+                    + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
                     align);
         }
         ++starts_iter;
@@ -936,7 +1172,10 @@ void CValidError_align::x_ValidateSeqLength
         TSeqPos bslen = GetLength(*(ids[id]), m_Scope);
         minus = denseg.IsSetStrands()  &&
             denseg.GetStrands()[id] == eNa_strand_minus;
-        
+
+        string label;
+        ids[id]->GetLabel(&label);
+
         for ( int seg = 0; seg < numseg; ++seg ) {
             size_t curr_index = 
                 id + (minus ? numseg - seg - 1 : seg) * dim;
@@ -949,10 +1188,10 @@ void CValidError_align::x_ValidateSeqLength
             // verify that start plus segment does not exceed total bioseq len
             if ( starts[curr_index] + lens[lens_index] > bslen ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
-                    "Start + segment length (" + 
-                    NStr::UIntToString(starts[curr_index] + lens[lens_index]) +
-                    ") exceeds bioseq length (" +
-                    NStr::UIntToString(bslen) + ")", align);
+                        "Start: In sequence " + label + ", segment " 
+                        + NStr::IntToString (seg + 1) + " (near sequence position " + NStr::IntToString (starts[curr_index])
+                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        align);
             }
 
             // find the next segment that is present
@@ -975,10 +1214,10 @@ void CValidError_align::x_ValidateSeqLength
             if ( starts[curr_index] + (TSignedSeqPos)lens[lens_index] !=
                 starts[next_index] ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_DensegLenStart,
-                    "Start + segment length (" + 
-                    NStr::UIntToString(starts[curr_index] + lens[lens_index]) +
-                    ") exceeds next start (" +
-                    NStr::UIntToString(starts[next_index]) + ")", align);
+                        "Start/Length: There is a problem with sequence " + label + 
+                        ", in segment " + NStr::IntToString (curr_index + 1)
+                        + "(near sequence position " + NStr::IntToString (starts[curr_index])
+                        + "), context " + label + ": the segment is too long or short or the next segment has an incorrect start position", align);
             }
         }
     }
@@ -991,18 +1230,40 @@ void CValidError_align::x_ValidateSeqLength
 {
     static Uchar bits[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 
+    if (!packed.IsSetDim() || !packed.IsSetIds() || !packed.IsSetPresent() || !packed.IsSetNumseg()) {
+        return;
+    }
+
     size_t dim = packed.GetDim();
     size_t numseg = packed.GetNumseg();
-    //CPacked_seg::TStarts::const_iterator start =
-    //    packed.GetStarts().begin();
 
     const CPacked_seg::TPresent& present = packed.GetPresent();
+    CPacked_seg::TIds::const_iterator id_it = packed.GetIds().begin();
 
-    for ( size_t id = 0; id < dim; ++id ) {
-        for ( size_t seg = 0; seg < numseg; ++seg ) {
-            size_t i = id + seg * dim;
-            if ( (present[i / 8] & bits[i % 8]) ) {
-                // !!!
+    for ( size_t id = 0; id < dim && id_it != packed.GetIds().end(); ++id, ++id_it ) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (**id_it);
+        if (bsh) {
+            string label;
+            (*id_it)->GetLabel (&label);
+            TSeqPos seg_start = packed.GetStarts()[id];
+            if (seg_start >= bsh.GetBioseqLength()) {
+                PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
+                        "Start: In sequence " + label + ", segment 1 (near sequence position " + NStr::IntToString (seg_start)
+                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        align);
+            }
+            for ( size_t seg = 0; seg < numseg; ++seg ) {
+                size_t i = id + seg * dim;
+                if ( i/8 < present.size() && (present[i / 8] & bits[i % 8]) ) {
+                    seg_start += packed.GetLens()[seg];
+                    if (seg_start > bsh.GetBioseqLength()) {                    
+                        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
+                                "Start: In sequence " + label + ", segment " + NStr::IntToString (seg + 1)
+                                + " (near sequence position " + NStr::IntToString (seg_start)
+                                + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                                align);
+                    }
+                }
             }
         }
     }
@@ -1013,6 +1274,7 @@ void CValidError_align::x_ValidateSeqLength
 (const TStd& std_segs,
  const CSeq_align& align)
 {
+    int seg = 1;
     ITERATE( TStd, iter, std_segs ) {
         const CStd_seg& stdseg = **iter;
 
@@ -1033,29 +1295,35 @@ void CValidError_align::x_ValidateSeqLength
             TSeqPos bslen = GetLength(GetId(loc, m_Scope), m_Scope);
             string  bslen_str = NStr::UIntToString(bslen);
             string label;
-            loc.GetLabel(&label);
+            loc.GetId()->GetLabel(&label);
 
             if ( from > bslen - 1 ) { 
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
-                    "Loaction: " + label + ". From (" + 
-                    NStr::UIntToString(from) + 
-                    ") is more than bioseq length (" + bslen_str + ")", 
-                    align);
+                        "Start: In sequence " + label + ", segment " + NStr::IntToString (seg)
+                        + " (near sequence position " + NStr::IntToString(from)
+                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        align);
             }
 
             if ( to > bslen - 1 ) { 
+                
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_EndMorethanBiolen,
-                    "Loaction: " + label + ". To (" + NStr::UIntToString(to) +
-                    ") is more than bioseq length (" + bslen_str + ")", align);
+                        "Length: In sequence " + label + ", segment " + NStr::IntToString (seg)
+                        + " (near sequence position " + NStr::IntToString(to)
+                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        align);
             }
 
             if ( loclen > bslen ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_LenMorethanBiolen,
-                    "Loaction: " + label + ". Length (" + 
-                    NStr::UIntToString(loclen) + 
-                    ") is more than bioseq length (" + bslen_str + ")", align);
+                        "Length: In sequence " + label + ", segment " + NStr::IntToString (seg)
+                        + " (near sequence position " + NStr::IntToString(to)
+                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        align);
+
             }
         }
+        seg++;
     }
 }
 

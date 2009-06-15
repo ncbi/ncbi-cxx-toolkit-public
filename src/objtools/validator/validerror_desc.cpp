@@ -84,7 +84,7 @@ void CValidError_desc::ValidateSeqDesc
             break;
 
         case CSeqdesc::e_Pub:
-            m_Imp.ValidatePubdesc(desc.GetPub(), desc);
+            m_Imp.ValidatePubdesc(desc.GetPub(), desc, &ctx);
             break;
 
         case CSeqdesc::e_User:
@@ -92,7 +92,7 @@ void CValidError_desc::ValidateSeqDesc
             break;
 
         case CSeqdesc::e_Source:
-            m_Imp.ValidateBioSource (desc.GetSource(), desc);
+            m_Imp.ValidateBioSource (desc.GetSource(), desc, &ctx);
             break;
         
         case CSeqdesc::e_Molinfo:
@@ -106,12 +106,12 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Title:
             if (NStr::IsBlank (desc.GetTitle())) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
-                         "Title descriptor needs text", desc);
+                         "Title descriptor needs text", ctx, desc);
             } else {
                 string title = desc.GetTitle();
                 if (s_StringHasPMID (desc.GetTitle())) {
                     PostErr (eDiag_Warning, eErr_SEQ_DESCR_TitleHasPMID, 
-                             "Title descriptor has internal PMID", desc);
+                             "Title descriptor has internal PMID", ctx, desc);
                 }
                 NStr::TruncateSpacesInPlace (title);
                 if (NStr::EndsWith (title, "...")) {
@@ -120,7 +120,7 @@ void CValidError_desc::ValidateSeqDesc
                            || NStr::EndsWith (title, ";")
                            || NStr::EndsWith (title, ":")) {
                     PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation, 
-                             "Title descriptor ends in bad punctuation", desc);
+                             "Title descriptor ends in bad punctuation", ctx, desc);
                 }
             }
             break;
@@ -143,8 +143,20 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Embl:
             break;
         case CSeqdesc::e_Create_date:
+            {
+                int rval = CheckDate (desc.GetCreate_date());
+                if (rval != eDateValid_valid) {
+                    m_Imp.PostBadDateError (eDiag_Error, "Create date has error", rval, desc, &ctx);
+                }
+            }
             break;
         case CSeqdesc::e_Update_date:
+            {
+                int rval = CheckDate (desc.GetUpdate_date());
+                if (rval != eDateValid_valid) {
+                    m_Imp.PostBadDateError (eDiag_Error, "Update date has error", rval, desc, &ctx);
+                }
+            }
             break;
         case CSeqdesc::e_Prf:
             break;

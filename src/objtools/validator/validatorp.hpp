@@ -160,18 +160,20 @@ public:
         TGraph graph);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAlign align);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry entry);
+    void PostObjErr (EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void PostBadDateError (EDiagSev sv, const string& msg, int flags, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 
     // General use validation methods
-    void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
-    void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
+    void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
-        bool biosource = false);
+        bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
-        bool biosource = false);
-    void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj);
+        bool biosource = false, const CSeq_entry *ctx = 0);
+    void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
         
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
@@ -190,6 +192,7 @@ public:
     bool IsFarFetchMRNAproducts(void) const { return m_FarFetchMRNAproducts; }
     bool IsFarFetchCDSproducts(void)  const { return m_FarFetchCDSproducts; }
     bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
+    bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -218,7 +221,15 @@ public:
     inline bool IsGenbank(void) const { return m_IsGB; }
     inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
     inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }
+    inline bool DoesAnyGeneHaveLocusTag(void) const { return m_GeneHasLocusTag; }
     
+
+    // counting number of misplaced features
+    inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
+    inline void IncrementMisplacedFeatureCount (void) { m_NumMisplacedFeatures++; }
+    inline void AddToMisplacedFeatureCount (SIZE_TYPE num) { m_NumMisplacedFeatures += num; }
+
+
     const CSeq_entry& GetTSE(void) { return *m_TSE; }
     CSeq_entry_Handle GetTSEH(void) { return m_TSEH; }
 
@@ -253,19 +264,18 @@ private:
     void SetScope(const CSeq_entry& se);
 
     void InitializeSourceQualTags();
-    void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
+    void ValidateSourceQualTags(const string& str, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 
     bool IsMixedStrands(const CSeq_loc& loc);
 
-    void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
-    void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj);
-    void x_ValidatePages(const string& pages, const CSerialObject& obj);
-    void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj);
-    void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj);
-    void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj);
-    void ValidateArticleHasJournal(const CCit_art& art, const CSerialObject& obj);
-    
-    
+    void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void x_ValidatePages(const string& pages, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidateArticleHasJournal(const CCit_art& art, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+        
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
@@ -276,6 +286,8 @@ private:
     bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val);
     bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se);
 
+    void FindEmbeddedScript (const CSerialObject& obj);
+    void FindCollidingSerialNumbers (const CSerialObject& obj);
 
 
     CRef<CObjectManager>    m_ObjMgr;
@@ -300,6 +312,7 @@ private:
     bool m_FarFetchMRNAproducts; // Remote fetch mRNA products
     bool m_FarFetchCDSproducts;  // Remote fetch proteins
     bool m_LocusTagGeneralMatch;
+    bool m_DoRubiscoText;
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -327,6 +340,7 @@ private:
     bool m_IsGB;
     bool m_FeatLocHasGI;
     bool m_ProductLocHasGI;
+    bool m_GeneHasLocusTag;
 
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
@@ -337,6 +351,9 @@ private:
     vector< CConstRef<CBioseq> >    m_BioseqWithNoSource;
     // Bioseqs without MolInfo
     vector< CConstRef<CBioseq> >    m_BioseqWithNoMolinfo;
+
+    // list of publication serial numbers
+    vector< int > m_PubSerialNumbers;
 
     // legal dbxref database strings
     static const string legalDbXrefs[];
@@ -356,6 +373,8 @@ private:
     SIZE_TYPE   m_NumDescr;
     SIZE_TYPE   m_NumFeat;
     SIZE_TYPE   m_NumGraph;
+
+    SIZE_TYPE   m_NumMisplacedFeatures;
 
     bool m_IsTbl2Asn;
 };
@@ -428,6 +447,7 @@ private:
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
+    void CheckForInconsistentBiomols (const CBioseq_set& seqset);
 
     bool IsMrnaProductInGPS(const CBioseq& seq); 
     bool IsCDSProductInGPS(const CBioseq& seq); 
@@ -466,6 +486,7 @@ private:
     void ValidateNs(const CBioseq& seq);
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
+    void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateSeqFeatContext(const CBioseq& seq);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
@@ -492,13 +513,17 @@ private:
         const COrg_ref& org, const CBioseq& seq, const CSeqdesc& desc);
 
     void ValidateGraphsOnBioseq(const CBioseq& seq);
+    void ValidateGraphOrderOnBioseq (const CBioseq& seq, vector <CRef <CSeq_graph> > graph_list);
     void ValidateByteGraphOnBioseq(const CSeq_graph& graph, const CBioseq& seq);
-    void ValidateGraphOnDeltaBioseq(const CBioseq& seq, bool& validate_values);
-    void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq);
-    void ValidateMinValues(const CByte_graph& bg);
-    void ValidateMaxValues(const CByte_graph& bg);
+    void ValidateGraphOnDeltaBioseq(const CBioseq& seq);
+    bool ValidateGraphLocation (const CSeq_graph& graph);
+    void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq,
+        int& first_N, int& first_ACGT, size_t& num_bases, size_t& Ns_with_score, size_t& gaps_with_score,
+        size_t& ACGTs_without_score, size_t& vals_below_min, size_t& vals_above_max);
+    void ValidateMinValues(const CByte_graph& bg, const CSeq_graph& graph);
+    void ValidateMaxValues(const CByte_graph& bg, const CSeq_graph& graph);
     bool GetLitLength(const CDelta_seq& delta, TSeqPos& len);
-    bool IsSuportedGraphType(const CSeq_graph& graph) const;
+    bool IsSupportedGraphType(const CSeq_graph& graph) const;
     SIZE_TYPE GetSeqLen(const CBioseq& seq);
 
     void ValidateSecondaryAccConflict(const string& primary_acc,
@@ -576,6 +601,10 @@ public:
 
     EInferenceValidCode ValidateInferenceAccession (string accession, string separator, bool fetch_accession);
     EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
+
+    // functions expected to be used in Discrepancy Report
+    bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
+    bool IsIntronShort(const CSeq_feat& feat);
 
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
@@ -656,6 +685,8 @@ private:
 
     int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
 
+    void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
+
     // data
     size_t m_NumGenes;
     size_t m_NumGeneXrefs;
@@ -700,6 +731,7 @@ private:
     typedef CSeq_align::C_Segs::TStd        TStd;
     typedef CSeq_align::C_Segs::TDisc       TDisc;
 
+    void x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps);
     void x_ValidateDendiag(const TDendiag& dendiags, const CSeq_align& align);
     void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);
@@ -726,6 +758,7 @@ private:
     void x_ValidateSegmentGap(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateSegmentGap(const TPacked& packed, const CSeq_align& align);
     void x_ValidateSegmentGap(const TStd& std_segs, const CSeq_align& align);
+    void x_ValidateSegmentGap(const TDendiag& dendiags, const CSeq_align& align);
 
     // Validate SeqId in sequence alignment.
     void x_ValidateSeqId(const CSeq_align& align);

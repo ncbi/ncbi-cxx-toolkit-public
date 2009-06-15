@@ -47,6 +47,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/object_manager.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -1854,16 +1856,33 @@ bool IsBlankStringList(const list< string >& str_list)
 
 int GetGIForSeqId(const CSeq_id& id)
 {
-    return 0;
-    //return CID1Client().AskGetgi(id);
+    int gi = 0;
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+
+    try {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+        gi = scope->GetGi (idh);
+    } catch (...) {
+    }
+    return gi;
 }
 
 
 
-list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
+CScope::TIds GetSeqIdsForGI(int gi)
 {
-    return list< CRef< CSeq_id > >();
-    //return CID1Client().AskGetseqidsfromgi(gi);
+    CScope::TIds id_list;
+    CSeq_id tmp_id;
+    tmp_id.SetGi(gi);
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
+
+    try {
+        id_list = scope->GetIds(tmp_id);
+
+    } catch (...) {
+    }
+    return id_list;
 }
 
 
@@ -2014,6 +2033,24 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
             if (seq != NULL) {
                 return s_GetBioseqAcc(*seq, scope);
             }
+        } else if (obj->GetThisTypeInfo() == CSeq_annot::GetTypeInfo()) {
+            CSeq_annot_Handle ah = scope.GetSeq_annotHandle (dynamic_cast<const CSeq_annot&>(*obj));
+            if (ah) {
+                CSeq_entry_Handle seh = ah.GetParentEntry();
+                if (seh) {
+                    if (seh.IsSeq()) {
+                        return s_GetBioseqAcc(seh.GetSeq());
+                    } else if (seh.IsSet()) {
+                        CBioseq_set_Handle bsh = seh.GetSet();
+                        const CBioseq_set& bsst = *(bsh.GetCompleteBioseq_set());
+                        const CBioseq* seq = s_GetSeqFromSet(bsst, scope);
+                        if (seq != NULL) {
+                            return s_GetBioseqAcc(*seq, scope);
+                        }
+                    }
+                }
+            }
+
         } // TO DO: graph
     }
     return kEmptyStr;
@@ -2196,6 +2233,92 @@ bool s_StringHasPMID (string str)
     } else {
         return false;
     }
+}
+
+
+bool HasBadCharacter (string str)
+{
+    if (NStr::Find (str, "?") != string::npos
+        || NStr::Find (str, "!") != string::npos
+        || NStr::Find (str, "~") != string::npos) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool EndsWithBadCharacter (string str)
+{
+    if (NStr::EndsWith (str, "_") || NStr::EndsWith (str, ".") 
+        || NStr::EndsWith (str, ",") || NStr::EndsWith (str, ":")
+        || NStr::EndsWith (str, ";")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool IsBioseqWithIdInSet (const CSeq_id& id, CBioseq_set_Handle set)
+{
+    bool found = false;
+    for (CBioseq_CI b_ci (set);
+         b_ci && !found;
+         ++b_ci) {
+        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(b_ci->GetCompleteBioseq())) {
+            if (id.Compare(**id_it) == CSeq_id::e_YES) {
+                found = TRUE;
+                break;
+            }
+        }
+    }
+    return found;
+}
+
+
+int CheckDate (const CDate& date, bool require_full_date)
+{
+    int rval = eDateValid_valid;
+
+    if (date.IsStr()) {
+        if (NStr::IsBlank (date.GetStr()) || NStr::Equal (date.GetStr(), "?")) {
+            rval |= eDateValid_bad_str;
+        }
+    } else if (date.IsStd()) {
+        if (!date.GetStd().IsSetYear() || date.GetStd().GetYear() == 0) {
+            rval |= eDateValid_bad_year;
+        }
+        if (date.GetStd().IsSetMonth() && date.GetStd().GetMonth() > 12) {
+            rval |= eDateValid_bad_month;
+        }
+        if (date.GetStd().IsSetDay() && date.GetStd().GetDay() > 31) {
+            rval |= eDateValid_bad_day;
+        }
+        if (require_full_date) {
+            if (!date.GetStd().IsSetMonth() || date.GetStd().GetMonth() == 0) {
+                rval |= eDateValid_bad_month;
+            }
+            if (!date.GetStd().IsSetDay() || date.GetStd().GetDay() == 0) {
+                rval |= eDateValid_bad_day;
+            }
+        }
+        if (date.GetStd().IsSetSeason() && !NStr::IsBlank (date.GetStd().GetSeason())) {
+            const char * cp = date.GetStd().GetSeason().c_str();
+            while (*cp != 0) {
+                if (isalpha (*cp) || *cp == '-') {
+                    // these are the only acceptable characters
+                } else {
+                    rval |= eDateValid_bad_season;
+                    break;
+                }
+                ++cp;
+            }
+        }
+    } else {
+        rval |= eDateValid_bad_other;
+    }
+    return rval;
 }
 
 

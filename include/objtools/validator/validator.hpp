@@ -77,6 +77,7 @@ public:
         eVal_far_fetch_mrna_products = 0x400,
         eVal_far_fetch_cds_products  = 0x800,
         eVal_locus_tag_general_match = 0x1000,
+        eVal_do_rubisco_test         = 0x2000,
 
         // !!! For test purposes only {
         eVal_perf_bottlenecks  = 0x10000
