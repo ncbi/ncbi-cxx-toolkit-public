@@ -31,7 +31,7 @@
  *
  */
 
-#include <bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_db.hpp>

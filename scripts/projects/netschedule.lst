@@ -10,4 +10,5 @@ util/math$ update-only
 connect$
 connect/services$
 bdb$
+db/bdb$
 app/netschedule$

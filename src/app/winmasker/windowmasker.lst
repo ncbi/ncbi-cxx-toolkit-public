@@ -39,6 +39,7 @@ objtools
 dbapi$
 dbapi/driver$
 bdb$
+db/bdb$
 algo/blast
 -algo/blast/api/demo
 algo/dustmask

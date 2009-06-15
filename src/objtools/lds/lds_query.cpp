@@ -33,10 +33,10 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 
-#include <bdb/bdb_cursor.hpp>
-#include <bdb/bdb_util.hpp>
-#include <bdb/bdb_query.hpp>
-#include <bdb/bdb_query_parser.hpp>
+#include <db/bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_util.hpp>
+#include <db/bdb/bdb_query.hpp>
+#include <db/bdb/bdb_query_parser.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Object_id.hpp>
@@ -104,12 +104,12 @@ private:
 
 protected:
     const vector<string>&   m_SeqIds;    // Search criteria
-    CLDS_Set*               m_ResultSet; // Search result 
+    CLDS_Set*               m_ResultSet; // Search result
 };
 
 /// Functor used for scanning the Berkeley DB database.
 /// This functor is driven by the BDB_iterate_file algorithm,
-/// checks every object record to determine if it contains 
+/// checks every object record to determine if it contains
 /// objects(molecules) satisfying the the given set of ids.
 ///
 /// @internal
@@ -147,7 +147,7 @@ public:
         //
         ITERATE (vector<string>, it, m_SeqIds) {
             const string& s = *it;
-            if (s.empty()) { 
+            if (s.empty()) {
                 continue;
             }
             if (MatchSeqId(*seq_id_db, s)) {
@@ -165,14 +165,14 @@ public:
         }
 */
 
-        if (dbf.seq_ids.IsNull() || 
+        if (dbf.seq_ids.IsNull() ||
             dbf.seq_ids.IsEmpty()) {
             return;
         }
 
         string attr_seq_ids(dbf.seq_ids);
         vector<string> seq_id_arr;
-        
+
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
 
         ITERATE (vector<string>, it, seq_id_arr) {
@@ -223,7 +223,7 @@ public:
             return;
 
         const char* str_id = dbf.seq_id;
-        
+
         CRef<CSeq_id> seq_id_db;
         try {
             seq_id_db.Reset(new CSeq_id(str_id));
@@ -241,7 +241,7 @@ public:
     }
 };
 
-inline 
+inline
 string LDS_TypeMapSearch(const map<string, int>& type_map, int type)
 {
     typedef map<string, int> TName2Id;
@@ -315,7 +315,7 @@ bool CLDS_Query::FindFile(const string& path)
     return false;
 }
 
-void CLDS_Query::FindSequence(const string&   seqid, 
+void CLDS_Query::FindSequence(const string&   seqid,
                               CLDS_Set*       obj_ids,
                               CLDS_Set*       cand_ids,
                               CSeq_id*        tmp_seqid,
@@ -348,7 +348,7 @@ CLDS_Query::CSequenceFinder::~CSequenceFinder()
 }
 
 
-void CLDS_Query::CSequenceFinder::Find(const string&   seqid, 
+void CLDS_Query::CSequenceFinder::Find(const string&   seqid,
                                        CLDS_Set*       obj_ids)
 {
     m_CandidateSet.clear();
@@ -357,7 +357,7 @@ void CLDS_Query::CSequenceFinder::Find(const string&   seqid,
     if (m_CandidateSet.any()) {
         vector<string> seqids(1);
         seqids.push_back(seqid);
-        
+
         FindInCandidates(seqids, obj_ids);
     }
 }
@@ -372,12 +372,12 @@ void CLDS_Query::CSequenceFinder::Screen(const string&  seqid)
 
 void CLDS_Query::CSequenceFinder::Screen(const SLDS_SeqIdBase& sbase)
 {
-    m_Query.ScreenSequence(sbase, &m_CandidateSet, 
+    m_Query.ScreenSequence(sbase, &m_CandidateSet,
                            m_CurInt_idx, m_CurTxt_idx);
 }
 
 void CLDS_Query::CSequenceFinder::FindInCandidates(
-                                        const vector<string>& seqids, 
+                                        const vector<string>& seqids,
                                         CLDS_Set*             obj_ids)
 {
     if (m_CandidateSet.any()) {
@@ -390,11 +390,11 @@ void CLDS_Query::CSequenceFinder::FindInCandidates(
     }
 }
 
-void CLDS_Query::CSequenceFinder::FindInCandidates(const string& seqid, 
+void CLDS_Query::CSequenceFinder::FindInCandidates(const string& seqid,
                                                    CLDS_Set*     obj_ids)
 {
     if (m_CandidateSet.any()) {
-        vector<string> seqids(1); // ugly and slow... 
+        vector<string> seqids(1); // ugly and slow...
         seqids.push_back(seqid);
 
         FindInCandidates(seqids, obj_ids);
@@ -402,7 +402,7 @@ void CLDS_Query::CSequenceFinder::FindInCandidates(const string& seqid,
 }
 
 
-void CLDS_Query::FindSequences(const vector<string>& seqids, 
+void CLDS_Query::FindSequences(const vector<string>& seqids,
                                CLDS_Set*             obj_ids)
 {
     CSequenceFinder sfinder(*this);
@@ -432,11 +432,11 @@ void CLDS_Query::FindSequences(const string& query_str, CLDS_Set* obj_ids)
         return; // ignore errors
     }
 
-    scanner.Scan(query); 
+    scanner.Scan(query);
 }
 
 
-void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase& sbase, 
+void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase& sbase,
                                 CLDS_Set*             obj_ids)
 {
     CBDB_FileCursor cur_int_idx(m_db.obj_seqid_int_idx);
@@ -477,16 +477,16 @@ void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase&    sbase,
     }
 }
 
-CLDS_Query::SObjectDescr 
+CLDS_Query::SObjectDescr
 CLDS_Query::GetObjectDescr(int  id,
                            bool trace_to_top)
-{ 
-    return GetObjectDescr(m_DataBase.GetObjTypeMap(), id, trace_to_top); 
+{
+    return GetObjectDescr(m_DataBase.GetObjTypeMap(), id, trace_to_top);
 }
 
 
-CLDS_Query::SObjectDescr 
-CLDS_Query::GetObjectDescr(const map<string, int>& type_map, 
+CLDS_Query::SObjectDescr
+CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
                            int id,
                            bool trace_to_top)
 {
@@ -497,7 +497,7 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
     m_db.object_db.object_id = id;
     if (m_db.object_db.Fetch() == eBDB_Ok) {
         int tse_id = m_db.object_db.TSE_object_id;
-        
+
         if (tse_id && trace_to_top) {
             // If non-top level entry, call recursively redirected to
             // the top level object
@@ -514,7 +514,7 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
     m_db.annot_db.annot_id = id;
     if (m_db.annot_db.Fetch() == eBDB_Ok) {
         int top_level_id = m_db.annot_db.TSE_object_id;
-        
+
         if (top_level_id && trace_to_top) {
             // If non-top level entry, call recursively redirected to
             // the top level object
@@ -529,8 +529,8 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
     return descr;
 }
 
-CLDS_Query::SObjectDescr 
-CLDS_Query::GetTopSeqEntry(const map<string, int>& type_map, 
+CLDS_Query::SObjectDescr
+CLDS_Query::GetTopSeqEntry(const map<string, int>& type_map,
                            int id)
 {
     SObjectDescr descr;
@@ -554,7 +554,7 @@ CLDS_Query::GetTopSeqEntry(const map<string, int>& type_map,
         }
     }
 
-    if (parent_id == 0) { // top level         
+    if (parent_id == 0) { // top level
         x_FillDescrObj(&descr, type_map);
         return descr;
     }
@@ -586,28 +586,28 @@ CLDS_Query::GetTopSeqEntry(const map<string, int>& type_map,
                 // the next parent
                 parent_id = m_db.annot_db.parent_object_id;
             } else {
-                LDS_THROW(eRecordNotFound, 
+                LDS_THROW(eRecordNotFound,
                           "Local database cannot trace parent object.");
             }
         }
     } // while
 
-    return GetObjectDescr(type_map, 
-                          candidate_id ? candidate_id : tse_id, 
+    return GetObjectDescr(type_map,
+                          candidate_id ? candidate_id : tse_id,
                           false /*dont trace to top*/);
 
 }
 
 
-void 
-CLDS_Query::ReportDuplicateObjectSeqId(const string& seqid, 
+void
+CLDS_Query::ReportDuplicateObjectSeqId(const string& seqid,
                                        int           old_rec_id,
                                        int           new_rec_id)
 {
     SObjectDescr old_rec = GetObjectDescr(old_rec_id);
     SObjectDescr new_rec = GetObjectDescr(new_rec_id);
 
-    string err_msg = 
+    string err_msg =
         "Duplicate sequence id '" + seqid + "'.";
     err_msg.append(" Conflicting files: " + old_rec.file_name);
     err_msg.append("  " + new_rec.file_name);

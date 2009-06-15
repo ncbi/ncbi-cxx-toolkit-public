@@ -92,7 +92,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 
 // cache
-#include <bdb/bdb_blobcache.hpp>
+#include <db/bdb/bdb_blobcache.hpp>
 
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/id2_compress.hpp>
@@ -137,7 +137,7 @@ public:
             }
             return *m_Stream;
         }
-    
+
     operator CNcbiOstream&(void)
         {
             return Start();
@@ -161,7 +161,7 @@ public:
                 m_Stream << t;
                 return *this;
             }
-        
+
     private:
         CNcbiOstream& m_Stream;
     };
@@ -274,7 +274,7 @@ int CSplitCacheApp::Run(void)
     SetDiagPostLevel(eDiag_Info);
 
     SetupCache();
-    
+
     Process();
 
     if ( GetArgs()["test"] ) {
@@ -289,7 +289,7 @@ void CSplitCacheApp::SetupCache(void)
 {
     const CArgs& args = GetArgs();
     const CNcbiRegistry& reg = GetConfig();
-    
+
     string cache_dir;
     {{ // set cache directory
         if ( args["cache_dir"] ) {
@@ -317,18 +317,18 @@ void CSplitCacheApp::SetupCache(void)
     {{ // blob cache
         CBDB_Cache* cache;
         m_Cache.reset(cache = new CBDB_Cache());
-        
+
         int blob_age = reg.GetInt("LOCAL_CACHE", "Age", kDefaultCacheBlobAge,
                                   0, CNcbiRegistry::eErrPost);
 
         // Cache cleaning
         // Objects age should be assigned in days, negative value
         // means cleaning is disabled
-            
+
         if ( blob_age <= 0 ) {
             blob_age = kDefaultCacheBlobAge;
         }
-        
+
         ICache::TTimeStampFlags flags =
             ICache::fTimeStampOnRead |
             ICache::fExpireLeastFrequentlyUsed |
@@ -352,10 +352,10 @@ void CSplitCacheApp::SetupCache(void)
     {{ // set cache id age
         CBDB_Cache* cache;
         m_IdCache.reset(cache = new CBDB_Cache());
-        
+
         int id_age = reg.GetInt("LOCAL_CACHE", "IdAge", kDefaultCacheIdAge,
                                 0, CNcbiRegistry::eErrPost);
-        
+
         if ( id_age <= 0 ) {
             id_age = kDefaultCacheIdAge;
         }
@@ -367,7 +367,7 @@ void CSplitCacheApp::SetupCache(void)
         cache->SetTimeStampPolicy(flags, id_age*24*60*60);
         cache->SetVersionRetention(ICache::eKeepAll);
         cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
-        
+
         cache->Open(cache_dir.c_str(), "ids");
     }}
 

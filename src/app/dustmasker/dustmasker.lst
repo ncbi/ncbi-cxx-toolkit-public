@@ -39,5 +39,6 @@ objtools
 dbapi$
 dbapi/driver$
 bdb$
+db/bdb$
 algo/dustmask
 app/dustmasker

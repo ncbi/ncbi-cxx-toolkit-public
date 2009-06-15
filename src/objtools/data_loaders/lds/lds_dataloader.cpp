@@ -41,7 +41,7 @@
 
 #include <objects/general/Object_id.hpp>
 
-#include <bdb/bdb_util.hpp>
+#include <db/bdb/bdb_util.hpp>
 
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -126,18 +126,18 @@ public:
             return;
         }
 
-        if (m_db.object_attr_db.seq_ids.IsNull() || 
+        if (m_db.object_attr_db.seq_ids.IsNull() ||
             m_db.object_attr_db.seq_ids.IsEmpty()) {
             return;
         }
 */
-        if (dbf.seq_ids.IsNull() || 
+        if (dbf.seq_ids.IsNull() ||
             dbf.seq_ids.IsEmpty()) {
             return;
         }
         string attr_seq_ids((const char*)dbf.seq_ids);
         vector<string> seq_id_arr;
-        
+
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
 
         ITERATE (vector<string>, it, seq_id_arr) {
@@ -150,7 +150,7 @@ public:
             }
 
             {{
-            
+
             ITERATE (CHandleRangeMap, it2, m_HrMap) {
                 CSeq_id_Handle seq_id_hnd = it2->first;
                 CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
@@ -165,7 +165,7 @@ public:
                     return;
                 }
             } // ITERATE
-            
+
             }}
 
         } // ITERATE
@@ -178,7 +178,7 @@ public:
             const SCandidate& sc = *it;
             // check if we can extract seq-entry out of binary bioseq-set file
             //
-            //   (this trick has been added by kuznets (Jan-12-2005) to read 
+            //   (this trick has been added by kuznets (Jan-12-2005) to read
             //    molecules out of huge refseq files)
             if ( sc.tse_id ) {
                 CLDS_Query::SObjectDescr tse_descr =
@@ -226,7 +226,7 @@ protected:
     }
 
 private:
-    CLDS_Database*          m_LDS_db;      // Reference on the LDS database 
+    CLDS_Database*          m_LDS_db;      // Reference on the LDS database
     CLDS_Query&             m_LDS_query;   // Query object
     const CHandleRangeMap&  m_HrMap;       ///< Range map of seq ids to search
     TCandidates             m_Candidates;  ///< Search result (found objects)
@@ -298,7 +298,7 @@ public:
             return m_CacheSize;
         }
     void SetCacheSize(size_t size);
-    
+
     CRef<CIStream> GetStream(const string& name, CNcbiStreampos pos);
     void ReleaseStream(CRef<CIStream> stream);
 
@@ -310,7 +310,7 @@ protected:
         }
     void x_ReduceStreamCountTo(size_t count);
     void x_RemoveOldestStream(void);
-    
+
 private:
     typedef list<CRef<CIStream> > TStreamCache;
     typedef pair<string, CNcbiStreampos> TStreamMapKey;
@@ -427,7 +427,7 @@ CLDS_DataLoader::x_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
     if (!obj_descr.is_object || obj_descr.id <= 0) {
         return null;
     }
-    
+
     if ( obj_descr.pos ) {
         CRef<CLDS_IStreamCache> cache = x_GetIStreamCache();
         CRef<CLDS_IStreamCache::CIStream> stream =
@@ -437,7 +437,7 @@ CLDS_DataLoader::x_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
         return entry;
     }
     else {
-        CNcbiIfstream stream(obj_descr.file_name.c_str(), 
+        CNcbiIfstream stream(obj_descr.file_name.c_str(),
                              IOS_BASE::in | IOS_BASE::binary);
         return LDS_LoadTSE(obj_descr, stream);
     }
@@ -553,7 +553,7 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
     LDS_GUARD();
     //lds->Open();
     m_LDS_db = mgr.ReleaseDB();
-    
+
 }
 */
 CLDS_DataLoader::~CLDS_DataLoader()
@@ -568,7 +568,7 @@ void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
                                   const string&  dl_name)
 {
     LDS_GUARD();
-    
+
     if (m_LDS_db && m_OwnDatabase) {
         delete m_LDS_db;
     }
@@ -599,10 +599,10 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
             {{
                 LDS_GUARD();
-                
+
                 SLDS_TablesCollection& db = m_LDS_db->GetTables();
                 CLDS_Query lds_query(*m_LDS_db);
-                
+
                 // index screening
                 CLDS_Set       cand_set;
                 {{
@@ -624,9 +624,9 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
                             NStr::ToUpper(sbase.str_id);
                         }
 
-                        lds_query.ScreenSequence(sbase, 
-                                                 &cand_set, 
-                                                 cur_int_idx, 
+                        lds_query.ScreenSequence(sbase,
+                                                 &cand_set,
+                                                 cur_int_idx,
                                                  cur_txt_idx);
 
 
@@ -637,7 +637,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
                 if (cand_set.any()) {
                     CLDS_FindSeqIdFunc search_func(m_LDS_db, lds_query, hrmap);
-                    BDB_iterate_file(db.object_db, 
+                    BDB_iterate_file(db.object_db,
                                      cand_set.first(), cand_set.end(),
                                      search_func);
                     search_func.GetResult(result);
@@ -669,7 +669,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             }
 
             return locks;
-        } 
+        }
         catch (CBDB_ErrnoException& ex) {
             if ( !ex.IsRecovery() || ++db_recovery_count > 10) {
                 throw;
@@ -741,7 +741,7 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
         return CLDS_DataLoader::RegisterInObjectManager(om).GetLoader();
     }
     // Parse params, select constructor
-/*    
+/*
     const string& database_str =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_Database, false);
@@ -762,8 +762,8 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_RecurseSubDir, false, "true");
     bool recurse = NStr::StringToBool(recurse_str);
-    CLDS_Manager::ERecurse recurse_subdir = 
-        recurse ? 
+    CLDS_Manager::ERecurse recurse_subdir =
+        recurse ?
             CLDS_Manager::eRecurseSubDirs : CLDS_Manager::eDontRecurse;
 
     string control_sum_str =
@@ -771,9 +771,9 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
                  kCFParam_LDS_ControlSum, false, "true");
     bool csum = NStr::StringToBool(control_sum_str);
     CLDS_Manager::EComputeControlSum control_sum =
-       csum ? 
+       csum ?
          CLDS_Manager::eComputeControlSum : CLDS_Manager::eNoControlSum;
-              
+
 // commented out...
 // suspicious code, expected somebody will pass database as a stringified pointer
 // (code has a bug in casts which should always give NULL

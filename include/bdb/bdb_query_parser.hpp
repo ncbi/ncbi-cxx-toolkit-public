@@ -1,5 +1,3 @@
-#ifndef BDB___QUERY_PARSER__HPP
-#define BDB___QUERY_PARSER__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -24,39 +22,10 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- *
- * Author: Anatoliy Kuznetsov
- *
- * File Description:
- *	 Query parser.
- *
  */
 
-/// @file bdb_query_parser.hpp
-/// Query parser for BDB library.
+#ifdef __GNUC__
+#  warning "Header bdb/bdb_query_parser.hpp is deprecated. Use db/bdb/bdb_query_parser.hpp instead."
+#endif // __GNUC__
 
-
-#include <corelib/ncbistd.hpp>
-#include <bdb/bdb_query.hpp>
-
-BEGIN_NCBI_SCOPE
-
-/** @addtogroup BDB_Query
- *
- * @{
- */
-
-/// Parse query string, build the correct the query statement.
-///
-/// @param 
-///    query_str - source query string
-/// @param 
-///    query - query object owns the statement (query clause tree) after
-///    successful parsing.
-void NCBI_BDB_EXPORT BDB_ParseQuery(const char* query_str, CBDB_Query* query);
-
-/* @} */
-
-END_NCBI_SCOPE
-
-#endif
+#include <db/bdb/bdb_query_parser.hpp>

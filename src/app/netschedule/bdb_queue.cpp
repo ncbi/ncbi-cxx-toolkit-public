@@ -38,9 +38,9 @@
 #include <connect/ncbi_socket.hpp>
 
 #include <db.h>
-#include <bdb/bdb_trans.hpp>
-#include <bdb/bdb_cursor.hpp>
-#include <bdb/bdb_util.hpp>
+#include <db/bdb/bdb_trans.hpp>
+#include <db/bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_util.hpp>
 
 #include <util/qparse/query_parse.hpp>
 #include <util/qparse/query_exec.hpp>
@@ -719,7 +719,7 @@ void CQueueDataBase::Close()
                         "JS: '" <<
                         m_Name  << "' Unmounted. BDB ENV deleted.");
         } else {
-            LOG_POST(Warning << "JS: '" << m_Name 
+            LOG_POST(Warning << "JS: '" << m_Name
                                 << "' environment still in use.");
         }
     }
@@ -817,7 +817,7 @@ void CQueueDataBase::Purge(void)
     // This is done to spread massive job deletion in time
     // and thus smooth out peak loads
     // TODO: determine batch size based on load
-    unsigned n_jobs_to_delete = 1000; 
+    unsigned n_jobs_to_delete = 1000;
     unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
     global_del_rec += unc_del_rec;
 
@@ -1660,7 +1660,7 @@ void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
 }
 
 
-static void s_LogSubmit(SLockedQueue& q, 
+static void s_LogSubmit(SLockedQueue& q,
                         CJob& job,
                         SQueueDescription& qdesc)
 {
@@ -1697,7 +1697,7 @@ unsigned CQueue::Submit(CJob& job)
         log_job_state = qp.GetLogJobState();
         max_input_size = qp.GetMaxInputSize();
     }}
-    if (job.GetInput().size() > max_input_size) 
+    if (job.GetInput().size() > max_input_size)
         NCBI_THROW(CNetScheduleException, eDataTooLong,
            "Input is too long");
 
@@ -1825,7 +1825,7 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
         time_t now = time(0);
         int aux_inserts = 0;
         NON_CONST_ITERATE(vector<CJob>, it, batch) {
-            if (it->GetInput().size() > max_input_size) 
+            if (it->GetInput().size() > max_input_size)
                 NCBI_THROW(CNetScheduleException, eDataTooLong,
                 "Input is too long");
             unsigned cur_job_id = job_id_cnt++;
@@ -2199,7 +2199,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
                     }
                     SleepMilliSec(250);
                     continue;
-                } 
+                }
             } else if (ex.IsNoMem()) {
                 if (++dead_locks < k_max_dead_locks) {
                     if (IsMonitoring()) {
@@ -2325,7 +2325,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
 
         CJobRun* run = job.GetLastRun();
         if (!run) {
-            ERR_POST(Error << "No JobRun for running job " 
+            ERR_POST(Error << "No JobRun for running job "
                            << q->DecorateJobId(job_id));
             // Fix it
             run = &job.AppendRun();
@@ -2651,7 +2651,7 @@ void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 }
 
 
-time_t 
+time_t
 CQueue::x_ComputeExpirationTime(time_t time_run, time_t run_timeout) const
 {
     if (run_timeout == 0) return 0;

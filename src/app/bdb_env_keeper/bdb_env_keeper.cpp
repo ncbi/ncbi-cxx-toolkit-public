@@ -41,8 +41,8 @@
 #include <connect/ncbi_util.h>
 #include <connect/server.hpp>
 
-#include <bdb/bdb_util.hpp>
-#include <bdb/bdb_env.hpp>
+#include <db/bdb/bdb_util.hpp>
+#include <db/bdb/bdb_env.hpp>
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 class CBDBEnvKeeperServer : public CServer
 {
 public:
-    CBDBEnvKeeperServer() 
+    CBDBEnvKeeperServer()
         : m_ShutdownRequested(false)
     {}
     virtual bool ShutdownRequested(void) { return m_ShutdownRequested; }
@@ -86,7 +86,7 @@ class CBDBEnvKeeperConnectionHandler : public IServer_LineMessageHandler
 {
 public:
     CBDBEnvKeeperConnectionHandler(CBDBEnvKeeperServer* server) :
-        m_Server(server) 
+        m_Server(server)
     {
     }
     virtual void OnOpen(void);
@@ -104,7 +104,7 @@ void CBDBEnvKeeperConnectionHandler::OnOpen(void)
 }
 
 /// @internal
-static 
+static
 string s_ReadStrFromBUF(BUF buf)
 {
     size_t size = BUF_Size(buf);
@@ -124,7 +124,7 @@ void CBDBEnvKeeperConnectionHandler::OnMessage(BUF buf)
         string msg = BDB_ENV_KEEPER_FULL_VERSION;
         msg.append("\n");
         socket.Write(msg.c_str(), msg.length());
-    } else 
+    } else
     if (cmd == "SHUT" || cmd == "SHUTDOWN") {
         string msg = "Shutdown initiated.\n";
         socket.Write(msg.c_str(), msg.length() - 1);
@@ -195,7 +195,7 @@ int CBDBEnvKeeperApp::Run(void)
 #if defined(NCBI_OS_UNIX)
         // attempt to get server gracefully shutdown on signal
         signal( SIGINT,  Server_SignalHandler);
-        signal( SIGTERM, Server_SignalHandler);    
+        signal( SIGTERM, Server_SignalHandler);
 #endif
 
 
@@ -209,7 +209,7 @@ int CBDBEnvKeeperApp::Run(void)
             }
 
         }
-        
+
 #endif
 
 
@@ -217,12 +217,12 @@ int CBDBEnvKeeperApp::Run(void)
 
 //    const CArgs& args = GetArgs();
 
-    unsigned short port = 
+    unsigned short port =
         reg.GetInt("server", "port", 9200, 0, CNcbiRegistry::eReturn);
 
     SServer_Parameters params;
-    params.init_threads = 1; 
-    params.max_threads = 3; 
+    params.init_threads = 1;
+    params.max_threads = 3;
     params.accept_timeout = &kAcceptTimeout;
 
     CBDBEnvKeeperServer server;
@@ -242,10 +242,10 @@ int CBDBEnvKeeperApp::Run(void)
 
 
         if (env->CheckRemove()) {
-            LOG_POST(Info 
+            LOG_POST(Info
                 << "Environment has been unmounted and deleted.");
         } else {
-            LOG_POST(Warning 
+            LOG_POST(Warning
                 << "Environment still in use. Cannot delete it.");
         }
     }}

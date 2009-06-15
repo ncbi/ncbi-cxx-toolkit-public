@@ -6,7 +6,7 @@
 # Meta-makefile for db code
 #################################
 
-SUB_PROJ = sqlite
+SUB_PROJ = sqlite bdb
 
 
 srcdir = @srcdir@

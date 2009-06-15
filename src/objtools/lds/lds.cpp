@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_object.hpp>
@@ -49,7 +49,7 @@ BEGIN_SCOPE(objects)
 
 
 /* DEPRECATED */
-CLDS_Database::CLDS_Database(const string& db_dir_name, 
+CLDS_Database::CLDS_Database(const string& db_dir_name,
                              const string& db_name,
                              const string& alias)
 : m_LDS_DirName(db_dir_name)
@@ -90,7 +90,7 @@ void CLDS_Database::Create()
     {{
         m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
 
-        // Conditionally add LDS subdirectory name 
+        // Conditionally add LDS subdirectory name
         // TODO: make name check more robust
         if (m_LDS_DirName.find("LDS") == string::npos) {
             m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
@@ -102,7 +102,7 @@ void CLDS_Database::Create()
 
         if (!lds_dir.Exists()) {
             if (!lds_dir.Create()) {
-                LDS_THROW(eCannotCreateDir, 
+                LDS_THROW(eCannotCreateDir,
                           "Cannot create directory:"+m_LDS_DirName);
             }
         }
@@ -114,61 +114,61 @@ void CLDS_Database::Create()
     LOG_POST_X(3, Info << "Creating LDS table: " << "file");
 
     fname = m_LDS_DirName + "lds_file.db";
-    const char* c = fname.c_str(); 
+    const char* c = fname.c_str();
     m_db->file_db.Open(c,
                       "file",
                       CBDB_RawFile::eCreate);
 
     LOG_POST_X(4, Info << "Creating LDS table: " << "objecttype");
 
-    fname = m_LDS_DirName + "lds_objecttype.db"; 
+    fname = m_LDS_DirName + "lds_objecttype.db";
     m_db->object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eCreate);
     LOG_POST_X(5, Info << "Creating LDS table: " << "object");
 
-    fname = m_LDS_DirName + "lds_object.db"; 
+    fname = m_LDS_DirName + "lds_object.db";
     m_db->object_db.SetCacheSize(3 * (1024 * 1024));
     m_db->object_db.Open(fname.c_str(),
                     "object",
                     CBDB_RawFile::eCreate);
 /*
     LOG_POST_X(6, Info << "Creating LDS table: " << "objectattr");
-    fname = m_LDS_DirName + "lds_objectattr.db"; 
+    fname = m_LDS_DirName + "lds_objectattr.db";
     m_db.object_attr_db.Open(fname.c_str(),
                              "objectattr",
                              CBDB_RawFile::eCreate);
 */
     LOG_POST_X(7, Info << "Creating LDS table: " << "annotation");
-    fname = m_LDS_DirName + "lds_annotation.db"; 
+    fname = m_LDS_DirName + "lds_annotation.db";
     m_db->annot_db.Open(fname.c_str(),
                        "annotation",
                        CBDB_RawFile::eCreate);
 
     LOG_POST_X(8, Info << "Creating LDS table: " << "annot2obj");
-    fname = m_LDS_DirName + "lds_annot2obj.db"; 
+    fname = m_LDS_DirName + "lds_annot2obj.db";
     m_db->annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eCreate);
 
     LOG_POST_X(9, Info << "Creating LDS table: " << "seq_id_list");
-    fname = m_LDS_DirName + "lds_seq_id_list.db"; 
+    fname = m_LDS_DirName + "lds_seq_id_list.db";
     m_db->seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                           CBDB_RawFile::eCreate);
 
     LOG_POST_X(10, Info << "Creating LDS index: " << "obj_seqid_txt.idx");
-    fname = m_LDS_DirName + "obj_seqid_txt.idx"; 
-    m_db->obj_seqid_txt_idx.Open(fname.c_str(), 
+    fname = m_LDS_DirName + "obj_seqid_txt.idx";
+    m_db->obj_seqid_txt_idx.Open(fname.c_str(),
                                 CBDB_RawFile::eCreate);
 
     LOG_POST_X(11, Info << "Creating LDS index: " << "obj_seqid_int.idx");
-    fname = m_LDS_DirName + "obj_seqid_int.idx"; 
-    m_db->obj_seqid_int_idx.Open(fname.c_str(), 
+    fname = m_LDS_DirName + "obj_seqid_int.idx";
+    m_db->obj_seqid_int_idx.Open(fname.c_str(),
                                 CBDB_RawFile::eCreate);
 
     LOG_POST_X(12, Info << "Creating LDS index: " << "file_filename.idx");
-    fname = m_LDS_DirName + "file_filename.idx"; 
+    fname = m_LDS_DirName + "file_filename.idx";
     m_db->file_filename_idx.Open(fname.c_str(),
                                  CBDB_RawFile::eCreate);
 
@@ -183,7 +183,7 @@ void CLDS_Database::Sync()
 //    m_db.object_attr_db.Sync();
     m_db->object_db.Sync();
     m_db->object_type_db.Sync();
-    m_db->seq_id_list.Sync();  
+    m_db->seq_id_list.Sync();
 
     m_db->obj_seqid_txt_idx.Sync();
     m_db->obj_seqid_int_idx.Sync();
@@ -224,52 +224,52 @@ void CLDS_Database::Open(EOpenMode omode)
         m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
     }
 
-    fname = m_LDS_DirName + "lds_file.db"; 
+    fname = m_LDS_DirName + "lds_file.db";
     m_db->file_db.Open(fname.c_str(),
                       "file",
                       om);
 
-    fname = m_LDS_DirName + "lds_objecttype.db"; 
+    fname = m_LDS_DirName + "lds_objecttype.db";
     m_db->object_type_db.Open(fname.c_str(),
                              "objecttype",
                              om);
     LoadTypeMap();
 
-    fname = m_LDS_DirName + "lds_object.db"; 
+    fname = m_LDS_DirName + "lds_object.db";
     m_db->object_db.SetCacheSize(3 * (1024 * 1024));
     m_db->object_db.Open(fname.c_str(),
                          "object",
                          om);
 /*
-    fname = m_LDS_DirName + "lds_objectattr.db"; 
+    fname = m_LDS_DirName + "lds_objectattr.db";
     m_db.object_attr_db.Open(fname.c_str(),
                             "objectattr",
                             om);
 */
-    fname = m_LDS_DirName + "lds_annotation.db"; 
+    fname = m_LDS_DirName + "lds_annotation.db";
     m_db->annot_db.Open(fname.c_str(),
                        "annotation",
                        om);
 
-    fname = m_LDS_DirName + "lds_annot2obj.db"; 
+    fname = m_LDS_DirName + "lds_annot2obj.db";
     m_db->annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            om);
 
-    fname = m_LDS_DirName + "lds_seq_id_list.db"; 
+    fname = m_LDS_DirName + "lds_seq_id_list.db";
     m_db->seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                            om);
 
-    fname = m_LDS_DirName + "obj_seqid_txt.idx"; 
+    fname = m_LDS_DirName + "obj_seqid_txt.idx";
     m_db->obj_seqid_txt_idx.Open(fname.c_str(),
                                 om);
 
-    fname = m_LDS_DirName + "obj_seqid_int.idx"; 
+    fname = m_LDS_DirName + "obj_seqid_int.idx";
     m_db->obj_seqid_int_idx.Open(fname.c_str(),
                                  om);
 
-    fname = m_LDS_DirName + "file_filename.idx"; 
+    fname = m_LDS_DirName + "file_filename.idx";
     m_db->file_filename_idx.Open(fname.c_str(),
                                  om);
 
@@ -280,10 +280,10 @@ void CLDS_Database::LoadTypeMap()
     if (!m_ObjTypeMap.empty()) {
         m_ObjTypeMap.erase(m_ObjTypeMap.begin(), m_ObjTypeMap.end());
     }
-    CBDB_FileCursor cur(m_db->object_type_db); 
-    cur.SetCondition(CBDB_FileCursor::eFirst); 
-    while (cur.Fetch() == eBDB_Ok) { 
-        m_ObjTypeMap.insert(pair<string, int>(string(m_db->object_type_db.type_name), 
+    CBDB_FileCursor cur(m_db->object_type_db);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    while (cur.Fetch() == eBDB_Ok) {
+        m_ObjTypeMap.insert(pair<string, int>(string(m_db->object_type_db.type_name),
                                               m_db->object_type_db.object_type)
                            );
     }
@@ -291,8 +291,8 @@ void CLDS_Database::LoadTypeMap()
 
 /* DEPRECATED */
 CRef<CLDS_DataLoader> CLDS_Database::GetLoader()
-{ 
-    return m_Loader; 
+{
+    return m_Loader;
 }
 /* DEPRECATED */
 void CLDS_Database::SetLoader( CRef<CLDS_DataLoader> aLoader )
@@ -301,7 +301,7 @@ void CLDS_Database::SetLoader( CRef<CLDS_DataLoader> aLoader )
 }
 
 
-CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db) 
+CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db)
 {
     if (db) {
         m_DataBases.push_back(db);
@@ -309,12 +309,12 @@ CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db)
 }
 
 
-CLDS_DatabaseHolder::~CLDS_DatabaseHolder() 
-{ 
+CLDS_DatabaseHolder::~CLDS_DatabaseHolder()
+{
     ITERATE(vector<CLDS_Database*>, it, m_DataBases) {
         CLDS_Database* db = *it;
         delete db;
-    }   
+    }
 }
 
 CLDS_Database* CLDS_DatabaseHolder::GetDatabase(const string& alias)
@@ -327,7 +327,7 @@ CLDS_Database* CLDS_DatabaseHolder::GetDatabase(const string& alias)
         }
     }
     return 0;
-    
+
 }
 
 void CLDS_DatabaseHolder::EnumerateAliases(vector<string>* aliases)

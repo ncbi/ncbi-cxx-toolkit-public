@@ -34,7 +34,7 @@
 
 
 #include <db.h>
-#include <bdb/bdb_expt.hpp>
+#include <db/bdb/bdb_expt.hpp>
 
 #include "bdb_queue.hpp"
 #include "queue_clean_thread.hpp"
@@ -62,7 +62,7 @@ void CJobQueueCleanerThread::DoJob(void)
         }
 
         if (ex.IsDeadLock()) {
-            ERR_POST(Warning << 
+            ERR_POST(Warning <<
                 "BDB reported deadlock in cleaning thread. Ignored.");
             return;
         }
@@ -100,13 +100,13 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
     catch (CBDB_ErrnoException& ex)
     {
         if (ex.IsNoMem()) {
-            ERR_POST(Warning << 
+            ERR_POST(Warning <<
                 "BDB reported resource shortage in exe watch thread. Ignored.");
             return;
         }
 
         if (ex.IsDeadLock()) {
-            ERR_POST(Warning << 
+            ERR_POST(Warning <<
                 "BDB reported deadlock in exe watch thread. Ignored.");
             return;
         }

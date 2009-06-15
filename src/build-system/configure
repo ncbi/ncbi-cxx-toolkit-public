@@ -30052,8 +30052,8 @@ if test "$with_bdb" = "no" ; then
    NoConfProjects="$NoConfProjects bdb"
 fi
 
-if test ! -f ${real_srcdir}/src/bdb/Makefile.in  -o  \
-        ! -d ${real_srcdir}/include/bdb ; then
+if test ! -f ${real_srcdir}/src/db/bdb/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/db/bdb ; then
    if test "${with_bdb-no}" != "no" ; then
       { { echo "$as_me:$LINENO: error: --with-bdb:  BDB sources are missing" >&5
 echo "$as_me: error: --with-bdb:  BDB sources are missing" >&2;}

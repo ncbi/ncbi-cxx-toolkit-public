@@ -34,7 +34,7 @@
 #include "background_host.hpp"
 #include "ns_util.hpp"
 
-#include <bdb/bdb_trans.hpp>
+#include <db/bdb/bdb_trans.hpp>
 #include <util/bitset/bmalgo.h>
 
 BEGIN_NCBI_SCOPE
@@ -407,7 +407,7 @@ unsigned SLockedQueue::LoadStatusMatrix()
     EBDB_ErrCode err;
 
     static EVectorId all_ids[] = { eVIJob, eVITag, eVIAffinity };
-    TNSBitVector all_vects[] = 
+    TNSBitVector all_vects[] =
         { m_JobsToDelete, m_DeletedJobs, m_AffJobsToDelete };
     for (size_t i = 0; i < sizeof(all_ids) / sizeof(all_ids[0]); ++i) {
         m_DeletedJobsDB.id = all_ids[i];
@@ -691,7 +691,7 @@ void SLockedQueue::x_ChangeGroupStatus(unsigned            group_id,
 
     // TODO: Introduce read group guard here
     // CNetSchedule_ReadGroupGuard rg_guard(this, jobs);
-    
+
     // Switch state
     CNetSchedule_JSGroupGuard gr_guard(status_tracker,
                                        CNetScheduleAPI::eReading,
@@ -808,7 +808,7 @@ void SLockedQueue::Clear()
 void SLockedQueue::FlushDeletedVectors(EVectorId vid)
 {
     static EVectorId all_ids[] = { eVIJob, eVITag, eVIAffinity };
-    TNSBitVector all_vects[] = 
+    TNSBitVector all_vects[] =
         { m_JobsToDelete, m_DeletedJobs, m_AffJobsToDelete };
     for (size_t i = 0; i < sizeof(all_ids) / sizeof(all_ids[0]); ++i) {
         if (vid != eVIAll && vid != all_ids[i]) continue;
@@ -970,7 +970,7 @@ void SLockedQueue::OptimizeMem()
 
 
 void SLockedQueue::AddJobsToAffinity(CBDB_Transaction& trans,
-                                     unsigned aff_id, 
+                                     unsigned aff_id,
                                      unsigned job_id_from,
                                      unsigned job_id_to)
 
@@ -1071,7 +1071,7 @@ void SLockedQueue::AddJobsToAffinity(CBDB_Transaction& trans,
 }
 
 
-void 
+void
 SLockedQueue::GetJobsWithAffinities(const TNSBitVector& aff_id_set,
                                   TNSBitVector*       jobs)
 {
@@ -1178,7 +1178,7 @@ SLockedQueue::FindPendingJob(CWorkerNode* worker_node,
     // We just take the first available job in the queue, taking into account
     // blacklisted jobs as usual.
     if (!job_id)
-    	status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
+        status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
 
     return job_id;
 }
@@ -1221,7 +1221,7 @@ string SLockedQueue::GetAffinityList()
             continue;
         }
         SAffinityJobs aff_jobs;
-        
+
         aff_jobs.aff_token = m_AffinityDict.GetAffToken(aff_id);
         aff_jobs.job_count = bv_cnt;
         affinities[aff_id] = aff_jobs;
@@ -1251,7 +1251,7 @@ string SLockedQueue::GetAffinityList()
         ITERATE(list<TWorkerNodeRef>, node_it, it->second.nodes) {
             aff_list += ' ';
             aff_list += (*node_it)->GetId();
-        } 
+        }
     }
     return aff_list;
 }
@@ -1408,7 +1408,7 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
     // TODO: if affinity valency is full for this aff_id, notify only nodes
     // with this aff_id, otherwise notify all nodes in the hope that some
     // of them will pick up the task with this aff_id
-    
+
     int notify_timeout = CQueueParamAccessor(*this).GetNotifyTimeout();
 
     time_t curr = time(0);
@@ -1458,8 +1458,8 @@ void SLockedQueue::PrintWorkerNodeStat(CNcbiOstream& out,
 void SLockedQueue::UnRegisterNotificationListener(CWorkerNode* worker_node)
 {
     if (m_WorkerNodeList.UnRegisterNotificationListener(worker_node)) {
-    	// Clean affinity association only for old style worker nodes
-    	// New style nodes should explicitly call ClearWorkerNode
+        // Clean affinity association only for old style worker nodes
+        // New style nodes should explicitly call ClearWorkerNode
         ClearWorkerNode(worker_node, "URGC");
     }
 }
@@ -1790,7 +1790,7 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
 }
 
 
-unsigned 
+unsigned
 SLockedQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
 {
     unsigned queue_timeout, queue_run_timeout;

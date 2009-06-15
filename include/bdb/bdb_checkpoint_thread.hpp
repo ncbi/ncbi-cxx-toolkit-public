@@ -1,6 +1,3 @@
-#ifndef BDB__ENV_CHECKPOINT_THREAD__HPP
-#define BDB__ENV_CHECKPOINT_THREAD__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -25,62 +22,10 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- *
- * Authors:  Anatoliy Kuznetsov
- *
- * File Description: Transaction checkpoint / memptrickle thread
- *                   
- *
  */
 
-#include <util/thread_nonstop.hpp>
-#include <bdb/bdb_env.hpp>
+#ifdef __GNUC__
+#  warning "Header bdb/bdb_checkpoint_thread.hpp is deprecated. Use db/bdb/bdb_checkpoint_thread.hpp instead."
+#endif // __GNUC__
 
-BEGIN_NCBI_SCOPE
-
-class CBDB_Env;
-
-/** @addtogroup BDB
- *
- * @{
- */
-
-
-/// Transaction checkpoint / memptrickle thread
-/// 
-///
-class NCBI_BDB_EXPORT CBDB_CheckPointThread : public CThreadNonStop
-{
-public:
-    CBDB_CheckPointThread(CBDB_Env& env,
-                          int      memp_trickle,
-                          unsigned run_delay,
-                          unsigned stop_request_poll = 10);
-    ~CBDB_CheckPointThread();
-
-    virtual void DoJob(void);
-
-    void SetWorkFlag(CBDB_Env::TBackgroundFlags flags) { m_Flags = flags; }
-
-    /// Set maximum number of errors this thread tolerates
-    /// 0 - unlimited
-    ///
-    void SetMaxErrors(unsigned max_err);
-
-private:
-    CBDB_CheckPointThread(const CBDB_CheckPointThread&);
-    CBDB_CheckPointThread& operator=(const CBDB_CheckPointThread&);
-private:
-    CBDB_Env&                   m_Env;
-    CBDB_Env::TBackgroundFlags  m_Flags;
-    int                         m_MempTrickle;
-    unsigned                    m_ErrCnt;
-    unsigned                    m_MaxErrors;
-};
-
-/* @} */
-
-
-END_NCBI_SCOPE
-
-#endif
+#include <db/bdb/bdb_checkpoint_thread.hpp>

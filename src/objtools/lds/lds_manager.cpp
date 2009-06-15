@@ -25,7 +25,7 @@
  *
  * Author: Anatoliy Kuznetsov, Maxim Didenko
  *
- * File Description: 
+ * File Description:
  *
  */
 
@@ -36,7 +36,7 @@
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_object.hpp>
 #include <objtools/error_codes.hpp>
-#include <bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_cursor.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objtools_LDS_Mgr
@@ -53,7 +53,7 @@ CLDS_Manager::CLDS_Manager(const string& source_path, const string& db_path, con
     if (m_DbPath.empty())
         m_DbPath = m_SourcePath;
 }
-  
+
 
 CLDS_Manager::~CLDS_Manager()
 {
@@ -68,7 +68,7 @@ auto_ptr<CLDS_Database> CLDS_Manager::x_OpenDB(CLDS_Database::EOpenMode omode)
     } catch (...) {
         if (omode == CLDS_Database::eReadWrite)
             CLDS_Manager::sx_CreateDB(*lds);
-        else 
+        else
             throw;
     }
     return lds;
@@ -78,7 +78,7 @@ auto_ptr<CLDS_Database> CLDS_Manager::x_OpenDB(CLDS_Database::EOpenMode omode)
 /* static */
 void CLDS_Manager::sx_CreateDB(CLDS_Database& lds)
 {
-    lds.Create(); 
+    lds.Create();
 
     SLDS_TablesCollection& db = lds.GetTables();
 
@@ -89,9 +89,9 @@ void CLDS_Manager::sx_CreateDB(CLDS_Database& lds)
 
     CLDS_CoreObjectsReader  core_reader;
 
-    const CLDS_CoreObjectsReader::TCandidates& cand 
+    const CLDS_CoreObjectsReader::TCandidates& cand
                                 = core_reader.GetCandidates();
-    
+
     int id = 1;
     db.object_type_db.object_type = id;
     db.object_type_db.type_name = "FastaEntry";
@@ -135,7 +135,7 @@ void CLDS_Manager::Index(TFlags flags)
     CLDS_File aFile(*lds);
     bool recurse = (flags & fRecurseMask) == fRecurseSubDirs;
     bool control_sum = (flags & fControlSumMask) == fComputeControlSum;
-    
+
     aFile.SyncWithDir(m_SourcePath, &files_deleted, &files_updated,
                       recurse, control_sum);
 

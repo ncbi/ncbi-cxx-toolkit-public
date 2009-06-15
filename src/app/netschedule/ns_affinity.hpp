@@ -44,9 +44,9 @@
 #include "ns_types.hpp"
 #include "worker_node.hpp"
 
-#include <bdb/bdb_file.hpp>
-#include <bdb/bdb_env.hpp>
-#include <bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_file.hpp>
+#include <db/bdb/bdb_env.hpp>
+#include <db/bdb/bdb_cursor.hpp>
 
 #include <map>
 #include <vector>

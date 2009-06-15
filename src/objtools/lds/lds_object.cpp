@@ -41,8 +41,8 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <bdb/bdb_cursor.hpp>
-#include <bdb/bdb_util.hpp>
+#include <db/bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_util.hpp>
 
 #include <objtools/readers/fasta.hpp>
 
@@ -76,11 +76,11 @@ BEGIN_SCOPE(objects)
 class CLDS_FastaScanner : public IFastaEntryScan
 {
 public:
-    CLDS_FastaScanner(CLDS_Object& obj, 
-                      int          file_id, 
+    CLDS_FastaScanner(CLDS_Object& obj,
+                      int          file_id,
                       int          type_id);
 
-    virtual void EntryFound(CRef<CSeq_entry> se, 
+    virtual void EntryFound(CRef<CSeq_entry> se,
                             CNcbiStreampos   stream_position);
 private:
     CLDS_Object& m_Obj;
@@ -88,7 +88,7 @@ private:
     int          m_TypeId;
 };
 
-CLDS_FastaScanner::CLDS_FastaScanner(CLDS_Object& obj, 
+CLDS_FastaScanner::CLDS_FastaScanner(CLDS_Object& obj,
                                      int          file_id,
                                      int          type_id)
  : m_Obj(obj),
@@ -96,10 +96,10 @@ CLDS_FastaScanner::CLDS_FastaScanner(CLDS_Object& obj,
    m_TypeId(type_id)
 {}
 
-void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se, 
+void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
                                    CNcbiStreampos   stream_position)
 {
-    if (!se->IsSeq()) 
+    if (!se->IsSeq())
         return;
 
     SFastaFileMap::SFastaEntry  fasta_entry;
@@ -127,13 +127,13 @@ void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
         if (d.CanGet()) {
             const CSeq_descr_Base::Tdata& data = d.Get();
             if (!data.empty()) {
-                CSeq_descr_Base::Tdata::const_iterator it = 
+                CSeq_descr_Base::Tdata::const_iterator it =
                                                     data.begin();
                 if (it != data.end()) {
                     CRef<CSeqdesc> ref_desc = *it;
-                    ref_desc->GetLabel(&fasta_entry.description, 
+                    ref_desc->GetLabel(&fasta_entry.description,
                                         CSeqdesc::eContent);
-                }                                
+                }
             }
         }
     }
@@ -142,7 +142,7 @@ void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
 
     // concatenate all ids
     string seq_ids;
-    ITERATE(SFastaFileMap::SFastaEntry::TFastaSeqIds, 
+    ITERATE(SFastaFileMap::SFastaEntry::TFastaSeqIds,
             it_id, fasta_entry.all_seq_ids) {
         seq_ids.append(*it_id);
         seq_ids.append(" ");
@@ -154,7 +154,7 @@ void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
                      seq_ids,
                      fasta_entry.stream_offset,
                      m_TypeId);
-    
+
 }
 
 
@@ -172,7 +172,7 @@ void CLDS_Object::DeleteUpdateCascadeFiles(const CLDS_Set& files_deleted,
 }
 
 
-void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids, 
+void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
                                      CLDS_Set* objects_deleted,
                                      CLDS_Set* annotations_deleted)
 {
@@ -183,14 +183,14 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     //  Delete records from "object" table
     //
     {{
-    CBDB_FileCursor cur(m_db.object_db); 
-    cur.SetCondition(CBDB_FileCursor::eFirst); 
-    while (cur.Fetch() == eBDB_Ok) { 
+    CBDB_FileCursor cur(m_db.object_db);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    while (cur.Fetch() == eBDB_Ok) {
         int fid = m_db.object_db.file_id;
         if (fid && LDS_SetTest(file_ids, fid)) {
 /*
             int object_attr_id = m_db.object_db.object_attr_id;
-            
+
             if (object_attr_id) {  // delete dependent object attr
                 m_db.object_attr_db.object_attr_id = object_attr_id;
                 m_db.object_attr_db.Delete();
@@ -209,9 +209,9 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     // Delete "annot2obj"
     //
     {{
-    CBDB_FileCursor cur(m_db.annot2obj_db); 
-    cur.SetCondition(CBDB_FileCursor::eFirst); 
-    while (cur.Fetch() == eBDB_Ok) { 
+    CBDB_FileCursor cur(m_db.annot2obj_db);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    while (cur.Fetch() == eBDB_Ok) {
         int object_id = m_db.annot2obj_db.object_id;
         if (object_id && LDS_SetTest(*objects_deleted, object_id)) {
             m_db.annot2obj_db.Delete();
@@ -224,9 +224,9 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     // Delete "annotation"
     //
     {{
-    CBDB_FileCursor cur(m_db.annot_db); 
-    cur.SetCondition(CBDB_FileCursor::eFirst); 
-    while (cur.Fetch() == eBDB_Ok) { 
+    CBDB_FileCursor cur(m_db.annot_db);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    while (cur.Fetch() == eBDB_Ok) {
         int fid = m_db.object_db.file_id;
         if (fid && LDS_SetTest(file_ids, fid)) {
             int annot_id = m_db.annot_db.annot_id;
@@ -280,9 +280,9 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
 
         if (m_db.file_db.Fetch() == eBDB_Ok) {
             string fname(m_db.file_db.file_name);
-            CFormatGuess::EFormat format = 
+            CFormatGuess::EFormat format =
                 (CFormatGuess::EFormat)(int)m_db.file_db.format;
-    
+
             LOG_POST_X(1, Info << "<< Updating file >>: " << fname);
 
             UpdateFileObjects(fid, fname, format);
@@ -524,8 +524,8 @@ bool CLDS_Object::UpdateBinaryASNObject(CObjectIStream& in,
 {
     CNcbiStreampos start_pos = in.GetStreamPos();
     objects.Reset();
-    LOG_POST_X(4, Info 
-               << "Trying ASN.1 binary top level object:" 
+    LOG_POST_X(4, Info
+               << "Trying ASN.1 binary top level object:"
                << type.GetName() );
     CRef<CLDS_GBReleaseReadHook> hook;
     try {
@@ -539,13 +539,13 @@ bool CLDS_Object::UpdateBinaryASNObject(CObjectIStream& in,
         CStopWatch sw(CStopWatch::eStart);
         in.Read(object_info);
         if ( hook && hook->Separate() ) {
-            LOG_POST_X(5, Info 
+            LOG_POST_X(5, Info
                        << "Binary ASN.1 combined object found: "
                        << type.GetName()
                        << " in " << sw.Elapsed());
         }
         else {
-            LOG_POST_X(5, Info 
+            LOG_POST_X(5, Info
                        << "Binary ASN.1 top level object found: "
                        << type.GetName()
                        << " in " << sw.Elapsed());
@@ -616,7 +616,7 @@ int CLDS_Object::SaveObjects(CLDS_CoreObjectsReader& objects,
 }
 
 
-void CLDS_Object::UpdateBinaryASNObjects(int file_id, 
+void CLDS_Object::UpdateBinaryASNObjects(int file_id,
                                          const string& file_name)
 {
     vector<CObjectTypeInfo> types;
@@ -679,8 +679,8 @@ void CLDS_Object::UpdateBinaryASNObjects(int file_id,
 }
 
 
-void CLDS_Object::UpdateFileObjects(int file_id, 
-                                    const string& file_name, 
+void CLDS_Object::UpdateFileObjects(int file_id,
+                                    const string& file_name,
                                     CFormatGuess::EFormat format)
 {
     FindMaxObjRecId();
@@ -715,8 +715,8 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         CNcbiIfstream input(file_name.c_str(), IOS_BASE::binary);
 
         CLDS_FastaScanner fscan(*this, file_id, type_id);
-        ScanFastaFile(&fscan, 
-                      input, 
+        ScanFastaFile(&fscan,
+                      input,
                       CFastaReader::fAssumeNuc  |
                       CFastaReader::fAllSeqIds  |
                       CFastaReader::fOneSeq     |
@@ -758,7 +758,7 @@ int CLDS_Object::SaveObject(int file_id,
         CBDB_FieldStringBase::eTruncateOnOverflowLogError);
     m_db.object_db.seq_ids = seq_ids;
 
-    string ups = seq_id; 
+    string ups = seq_id;
     NStr::ToUpper(ups);
     m_db.object_db.primary_seqid = ups;
 
@@ -785,7 +785,7 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
     else {
         // Find the direct parent
         {{
-            CLDS_CoreObjectsReader::SObjectDetails* parent_obj_info 
+            CLDS_CoreObjectsReader::SObjectDetails* parent_obj_info
                 = objects->FindObjectInfo(obj_info->parent_offset);
             _ASSERT(parent_obj_info);
             parent_id = parent_obj_info->ext_id;
@@ -797,7 +797,7 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
 
         // Find the top level grand parent
         {{
-            CLDS_CoreObjectsReader::SObjectDetails* top_obj_info 
+            CLDS_CoreObjectsReader::SObjectDetails* top_obj_info
                 = objects->FindObjectInfo(obj_info->top_level_offset);
             _ASSERT(top_obj_info);
             top_level_id = top_obj_info->ext_id;
@@ -843,7 +843,7 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
         m_db.object_db.object_type = type_id;
         Int8 i8 = NcbiStreamposToInt8(obj_info->offset);
         m_db.object_db.file_pos = i8;
-//        m_db.object_db.object_attr_id = m_MaxObjRecId; 
+//        m_db.object_db.object_attr_id = m_MaxObjRecId;
         m_db.object_db.TSE_object_id = top_level_id;
         m_db.object_db.parent_object_id = parent_id;
         m_db.object_db.object_title = title;
@@ -919,7 +919,7 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
                             ITERATE (CDense_seg::TIds, it3, ids) {
                                 ref_seq_ids.insert((*it3)->AsFastaString());
                             } // ITERATE
-                        
+
                         }
                         break;
                         //case CSeq_align::C_Segs::e_Packed:
@@ -941,9 +941,9 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
             EBDB_ErrCode err = m_db.seq_id_list.Insert();
             BDB_CHECK(err, "LDS::seq_id_list");
         }
-        
+
         obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
-                
+
         m_db.annot_db.annot_id = m_MaxObjRecId;
         m_db.annot_db.file_id = objects->GetFileId();
         m_db.annot_db.annot_type = type_id;
@@ -952,13 +952,13 @@ int CLDS_Object::SaveObject(CLDS_CoreObjectsReader* objects,
         m_db.annot_db.TSE_object_id = top_level_id;
         m_db.annot_db.parent_object_id = parent_id;
 /*
-        LOG_POST_X(9, Info << "Saving annotation: " 
-                           << type_name 
-                           << " " 
+        LOG_POST_X(9, Info << "Saving annotation: "
+                           << type_name
+                           << " "
                            << id_str
-                           << " " 
+                           << " "
                            << (!top_level_id ? "Top Level. " : " ")
-                           << "offs=" 
+                           << "offs="
                            << obj_info->offset
                   );
 */
@@ -1093,7 +1093,7 @@ void CLDS_Object::GetBioseqInfo(const CLDS_CoreObjectsReader::SObjectDetails& /*
             // the last resort
             bioseq.GetLabel(object_title, CBioseq::eBoth);
         }
-            
+
     }
     else {  // non-OM controlled object
         bioseq.GetLabel(object_title, CBioseq::eBoth);
@@ -1178,7 +1178,7 @@ void CLDS_Object::GetAnnotInfo(const CLDS_CoreObjectsReader::SObjectDetails& obj
                             string str_id = (*it3)->AsFastaString();
                             ref_seq_ids.insert(NStr::ToUpper(str_id));
                         } // ITERATE
-                        
+
                     }
                     break;
                     //case CSeq_align::C_Segs::e_Packed:
@@ -1261,7 +1261,7 @@ static bool s_GetSequenceBase(const CPDB_seq_id& pdb_id,
 }
 
 
-void LDS_GetSequenceBase(const CSeq_id&   seq_id, 
+void LDS_GetSequenceBase(const CSeq_id&   seq_id,
                          SLDS_SeqIdBase*  seqid_base)
 {
     _ASSERT(seqid_base);
@@ -1355,7 +1355,7 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
 
     if (obj_id_txt) {
         if (obj_id_txt->CanGetAccession()) {
-            const CTextseq_id::TAccession& acc = 
+            const CTextseq_id::TAccession& acc =
                                 obj_id_txt->GetAccession();
             id_str = &acc;
         } else {
@@ -1373,15 +1373,15 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
         return;
     }
 
-    LOG_POST_X(11, Warning 
-               << "SeqId indexer: unsupported type " 
+    LOG_POST_X(11, Warning
+               << "SeqId indexer: unsupported type "
                << seq_id.AsFastaString());
 
     seqid_base->Init();
 
 }
 
-bool LDS_GetSequenceBase(const string&   seq_id_str, 
+bool LDS_GetSequenceBase(const string&   seq_id_str,
                          SLDS_SeqIdBase* seqid_base,
                          CSeq_id*        conv_seq_id)
 {
@@ -1466,7 +1466,7 @@ public:
 private:
     void x_AddToIdx(const string& seq_id_str, int rec_id)
     {
-        bool can_convert = 
+        bool can_convert =
             LDS_GetSequenceBase(seq_id_str, &m_SBase, &*m_SeqId);
         if (can_convert) {
             if (m_ControlDups) {
@@ -1481,7 +1481,7 @@ private:
                     if (dup_ids.any()) {
                         unsigned id = dup_ids.get_first();
                         m_Query->ReportDuplicateObjectSeqId(seq_id_str,
-                                                            id, 
+                                                            id,
                                                             rec_id);
                     }
                 }
@@ -1498,7 +1498,7 @@ private:
             m_coll.obj_seqid_int_idx.id = sbase.int_id;
             m_coll.obj_seqid_int_idx.row_id = rec_id;
             m_coll.obj_seqid_int_idx.Insert();
-        } 
+        }
         else if (!sbase.str_id.empty()) {
             _TRACE("str id: "<<sbase.str_id<<" -> "<<rec_id);
             m_coll.obj_seqid_txt_idx.id = sbase.str_id;
@@ -1536,7 +1536,7 @@ void CLDS_Object::BuildSeqIdIdx()
 }
 
 
-CLDS_Object::CLDS_Object(CLDS_Database& db, 
+CLDS_Object::CLDS_Object(CLDS_Database& db,
                          const map<string, int>& obj_map)
 : m_DataBase(db),
   m_db(db.GetTables()),

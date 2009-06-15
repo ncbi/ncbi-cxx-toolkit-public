@@ -36,7 +36,7 @@
 #include <util/checksum.hpp>
 #include <util/format_guess.hpp>
 
-#include <bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_set.hpp>
@@ -52,16 +52,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CLDS_File::CLDS_File(CLDS_Database& db)
-: m_DataBase(db), 
+: m_DataBase(db),
   m_db(db.GetTables()),
   m_FileDB(m_db.file_db),
   m_MaxRecId(0)
 {}
 
 
-void CLDS_File::SyncWithDir(const string& path, 
-                            CLDS_Set*     deleted, 
-                            CLDS_Set*     updated, 
+void CLDS_File::SyncWithDir(const string& path,
+                            CLDS_Set*     deleted,
+                            CLDS_Set*     updated,
                             bool          recurse_subdirs,
                             bool          compute_check_sum)
 {
@@ -76,9 +76,9 @@ void CLDS_File::SyncWithDir(const string& path,
     set<string> files;
 
     // Scan the directory, compare it against File table
-    
-    x_SyncWithDir(path, 
-                  deleted, 
+
+    x_SyncWithDir(path,
+                  deleted,
                   updated,
                   &files,
                   recurse_subdirs,
@@ -102,8 +102,8 @@ void CLDS_File::SyncWithDir(const string& path,
 }
 
 
-void CLDS_File::x_SyncWithDir(const string& path, 
-                              CLDS_Set*     deleted, 
+void CLDS_File::x_SyncWithDir(const string& path,
+                              CLDS_Set*     deleted,
                               CLDS_Set*     updated,
                               set<string>*  scanned_files,
                               bool          recurse_subdirs,
@@ -189,11 +189,11 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
         if (tm != m_FileDB.time_stamp || file_size != m_FileDB.file_size) {
             updated->set(m_FileDB.file_id);
-            UpdateEntry(m_FileDB.file_id, 
-                        entry, 
-                        0, 
-                        tm, 
-                        file_size, 
+            UpdateEntry(m_FileDB.file_id,
+                        entry,
+                        0,
+                        tm,
+                        file_size,
                         compute_check_sum);
         } else {
 
@@ -205,10 +205,10 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
                 if (crc != (Uint4)m_FileDB.CRC) {
                     updated->set(m_FileDB.file_id);
-                    UpdateEntry(m_FileDB.file_id, 
-                                entry, 
-                                crc, 
-                                tm, 
+                    UpdateEntry(m_FileDB.file_id,
+                                entry,
+                                crc,
+                                tm,
                                 file_size,
                                 compute_check_sum);
                 }
@@ -236,14 +236,14 @@ void CLDS_File::x_SyncWithDir(const string& path,
                 continue;
             }
             string entry = (*i)->GetPath();
-            
-            x_SyncWithDir(entry, 
-                          deleted, 
-                          updated, 
-                          scanned_files, 
+
+            x_SyncWithDir(entry,
+                          deleted,
+                          updated,
+                          scanned_files,
                           recurse_subdirs,
                           compute_check_sum);
-            
+
         }
     } // ITERATE
 
@@ -276,7 +276,7 @@ void CLDS_File::DeleteEntry(int file_id)
 }
 
 
-void CLDS_File::UpdateEntry(int    file_id, 
+void CLDS_File::UpdateEntry(int    file_id,
                             const  string& file_name,
                             Uint4  crc,
                             int    time_stamp,

@@ -32,7 +32,7 @@
 #include <corelib/ncbifile.hpp>
 
 #include <util/format_guess.hpp>
-#include <bdb/bdb_cursor.hpp>
+#include <db/bdb/bdb_cursor.hpp>
 
 #include <serial/objistr.hpp>
 
@@ -64,7 +64,7 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
     case CFormatGuess::eFasta:
     {{
         CStreamLineReader lr(in);
-        CFastaReader      fr(lr, 
+        CFastaReader      fr(lr,
                              CFastaReader::fAssumeNuc |
                              CFastaReader::fOneSeq    |
                              CFastaReader::fParseRawID);
@@ -74,11 +74,11 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
     {
-        auto_ptr<CObjectIStream> 
+        auto_ptr<CObjectIStream>
             is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Bioseq") {
             //
-            // If object is a bare Bioseq: read it and 
+            // If object is a bare Bioseq: read it and
             // construct a Seq_entry on it
             //
             CRef<CBioseq> bioseq(new CBioseq());
@@ -147,7 +147,7 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
     if (!obj_descr.is_object || obj_descr.id <= 0) {
         return CRef<CSeq_entry>();
     }
-    
+
     CNcbiIfstream in(obj_descr.file_name.c_str(), IOS_BASE::binary);
     if ( !in.is_open() ) {
         string msg = "Cannot open file:";
@@ -159,20 +159,20 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr)
 }
 
 
-CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database& lds_db, 
+CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database& lds_db,
                              int            object_id,
                              bool           trace_to_top)
 {
     const map<string, int>& type_map = lds_db.GetObjTypeMap();
 
     CLDS_Query query(lds_db);
-    CLDS_Query::SObjectDescr obj_descr = 
+    CLDS_Query::SObjectDescr obj_descr =
         query.GetObjectDescr(type_map, object_id, trace_to_top);
     return LDS_LoadTSE(obj_descr);
 }
 
 
-CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db, 
+CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
                                const CLDS_Query::SObjectDescr& obj_descr)
 {
     CNcbiIfstream in(obj_descr.file_name.c_str(), IOS_BASE::binary);
@@ -188,11 +188,11 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
     case CFormatGuess::eBinaryASN:
     {
         in.seekg(obj_descr.pos);
-        auto_ptr<CObjectIStream> 
+        auto_ptr<CObjectIStream>
             is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Seq-annot") {
             //
-            // If object is a bare Bioseq: read it and 
+            // If object is a bare Bioseq: read it and
             // construct a Seq_entry on it
             //
             CRef<CSeq_annot> annot(new CSeq_annot());
@@ -216,7 +216,7 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
             return annot;
         }
         else {
-            LDS_THROW(eInvalidDataType, 
+            LDS_THROW(eInvalidDataType,
                       "Non Seq-aanot compatible object type");
         }
         break;
@@ -224,7 +224,7 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
     default:
         LDS_THROW(eNotImplemented, "Invalid file format");
     }
-    
+
 }
 
 END_SCOPE(objects)

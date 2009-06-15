@@ -30,7 +30,7 @@
  * File Description:   Local data storage, database description.
  *
  */
-#include <bdb/bdb_file.hpp>
+#include <db/bdb/bdb_file.hpp>
 
 
 BEGIN_NCBI_SCOPE

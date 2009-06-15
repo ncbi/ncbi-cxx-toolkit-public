@@ -51,7 +51,7 @@
 #include <connect/services/netservice_protocol_parser.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
-#include <bdb/bdb_expt.hpp>
+#include <db/bdb/bdb_expt.hpp>
 
 #include "bdb_queue.hpp"
 #include "ns_types.hpp"
@@ -1311,7 +1311,7 @@ void CNetScheduleHandler::ProcessSubmit()
     job.SetClientSID(m_JobReq.param2);
 
     unsigned job_id = m_Queue->Submit(job);
-                        
+
     string str_job_id(CNetScheduleKey(job_id,
         m_Server->GetHost(), m_Server->GetPort()));
     WriteOK(str_job_id);
@@ -1838,7 +1838,7 @@ void CNetScheduleHandler::ProcessQuitSession(void)
 void CNetScheduleHandler::ProcessPutFailure()
 {
     m_Queue->x_GetLQueue()->FailJob(m_WorkerNode, m_JobReq.job_id,
-                     NStr::ParseEscapes(m_JobReq.err_msg), 
+                     NStr::ParseEscapes(m_JobReq.err_msg),
                      NStr::ParseEscapes(m_JobReq.output),
                      m_JobReq.job_return_code);
     WriteOK();
@@ -1848,7 +1848,7 @@ void CNetScheduleHandler::ProcessPutFailure()
 void CNetScheduleHandler::ProcessPut()
 {
     m_Queue->PutResult(m_WorkerNode,
-                       m_JobReq.job_id, m_JobReq.job_return_code, 
+                       m_JobReq.job_id, m_JobReq.job_return_code,
                        NStr::ParseEscapes(m_JobReq.output));
     WriteOK();
 }
@@ -3003,7 +3003,7 @@ int CNetScheduleDApp::Run(void)
         // Scan and mount queues
         unsigned min_run_timeout = qdb->Configure(reg);
 
-        LOG_POST(Info << "Running execution control every " 
+        LOG_POST(Info << "Running execution control every "
                       << min_run_timeout << " seconds");
         min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
 

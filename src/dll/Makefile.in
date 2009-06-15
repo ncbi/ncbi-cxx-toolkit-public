@@ -3,7 +3,7 @@
 SUB_PROJ =  \
     _ncbi \
     algo \
-    bdb \
+    db \
     connect \
     dbapi \
     gbench \
