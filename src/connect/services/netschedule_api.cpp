@@ -78,11 +78,11 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
-    unsigned short control_port)
+    const string& uid, unsigned short control_port)
 {
     m_WorkerNodeInitCmd = "INIT " + NStr::UIntToString(control_port);
     m_WorkerNodeInitCmd += ' ';
-    m_WorkerNodeInitCmd += GetDiagContext().GetStringUID();
+    m_WorkerNodeInitCmd += uid;
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(

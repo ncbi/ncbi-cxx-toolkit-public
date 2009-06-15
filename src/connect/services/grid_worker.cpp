@@ -424,7 +424,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
                                  IBlobStorageFactory&       storage_factory,
                                  INetScheduleClientFactory& client_factory,
                                  IWorkerNodeJobWatcher*     job_watcher,
-                                 IRebalanceStrategy*        rebalance_strategy)
+                                 IRebalanceStrategy*        rebalance_strategy,
+                                 unsigned short             control_port)
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
       m_JobWatcher(job_watcher),
@@ -439,6 +440,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
 {
     m_SharedNSClient = client_factory.CreateInstance();
     m_SharedNSClient.SetProgramVersion(m_JobFactory.GetJobVersion());
+    m_NSExecuter = m_SharedNSClient.GetExecuter(control_port);
 }
 
 

@@ -142,7 +142,8 @@ struct SNetScheduleAPIImpl : public CNetObject
             const string& program_version,
             const string& queue_name);
 
-        void MakeWorkerNodeInitCmd(unsigned short control_port);
+        void MakeWorkerNodeInitCmd(const string& uid,
+            unsigned short control_port);
 
     private:
         virtual void OnConnected(CNetServerConnection::TInstance conn);
@@ -265,17 +266,19 @@ struct SNetScheduleExecuterImpl : public CNetObject
     void x_RegUnregClient(const string& cmd) const;
 
     CNetScheduleAPI m_API;
+    string m_UID;
     unsigned short m_ControlPort;
 };
 
 inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
     CNetScheduleAPI::TInstance ns_api_impl, unsigned short control_port) :
     m_API(ns_api_impl),
+    m_UID(GetDiagContext().GetStringUID()),
     m_ControlPort(control_port)
 {
     CFastMutexGuard g(ns_api_impl->m_FastMutex);
 
-    ns_api_impl->m_Listener->MakeWorkerNodeInitCmd(control_port);
+    ns_api_impl->m_Listener->MakeWorkerNodeInitCmd(m_UID, control_port);
 }
 
 struct SNetScheduleAdminImpl : public CNetObject

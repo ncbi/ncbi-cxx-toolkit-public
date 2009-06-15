@@ -252,9 +252,8 @@ private:
 static STimeout kAcceptTimeout = {1,0};
 CWorkerNodeControlServer::CWorkerNodeControlServer(
     unsigned short start_port,
-    unsigned short end_port,
-    CGridWorkerNode& worker_node) :
-        m_WorkerNode(worker_node),
+    unsigned short end_port) :
+        m_WorkerNode(NULL),
         m_ShutdownRequested(false),
         m_Port(start_port)
 {

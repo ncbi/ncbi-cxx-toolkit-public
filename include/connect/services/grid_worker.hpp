@@ -496,15 +496,10 @@ public:
                     IBlobStorageFactory&        ns_storage_creator,
                     INetScheduleClientFactory&  ns_client_creator,
                     IWorkerNodeJobWatcher*      job_wather,
-                    IRebalanceStrategy*         rebalance_strategy);
+                    IRebalanceStrategy*         rebalance_strategy,
+                    unsigned short              control_port);
 
     virtual ~CGridWorkerNode();
-
-    /// Set a UDP port to listen to input jobs
-    ///
-    void SetListeningPort(unsigned short control_port)
-                      { m_ControlPort = control_port; }
-    unsigned short GetListeningPort() const { return m_ControlPort; }
 
     /// Set the maximum threads running simultaneously
     ///
@@ -581,6 +576,7 @@ private:
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
     CNetScheduleAPI m_SharedNSClient;
+    CNetScheduleExecuter m_NSExecuter;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned short               m_ControlPort;
@@ -658,7 +654,7 @@ inline CNetScheduleAPI CGridWorkerNode::GetNSClient() const
 
 inline CNetScheduleExecuter CGridWorkerNode::GetNSExecuter() const
 {
-    return GetNSClient().GetExecuter(m_ControlPort);
+    return m_NSExecuter;
 }
 
 inline bool CGridWorkerNode::IsExclusiveMode()

@@ -91,12 +91,14 @@ private:
 class CGridControlThread : public CThread
 {
 public:
-    CGridControlThread(unsigned int start_port, unsigned int end_port, CGridWorkerNode& wnode)
-        : m_Control(new CWorkerNodeControlServer(start_port, end_port, wnode)) {}
+    CGridControlThread(unsigned int start_port, unsigned int end_port)
+        : m_Control(new CWorkerNodeControlServer(start_port, end_port)) {}
 
     ~CGridControlThread() {}
 
     void Prepare() { m_Control->StartListening(); }
+    void SetWorkerNode(CGridWorkerNode* worker_node)
+        { m_Control->SetWorkerNode(worker_node); }
 
     unsigned short GetControlPort() { return m_Control->GetControlPort(); }
     void Stop() { if (m_Control.get()) m_Control->RequestShutdown(); }
@@ -491,9 +493,21 @@ int CGridWorkerApp_Impl::Run()
 #endif
 
     AttachJobWatcher(CGridGlobals::GetInstance().GetJobsWatcher());
+
+    CRef<CGridControlThread> control_thread(
+        new CGridControlThread(start_port, end_port));
+
+    control_thread->Prepare();
+
     m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(),
-        GetStorageFactory(), GetClientFactory(), m_JobWatchers.get(),
-        CreateSimpleRebalanceStrategy(conf, "server")));
+        GetStorageFactory(),
+        GetClientFactory(),
+        m_JobWatchers.get(),
+        CreateSimpleRebalanceStrategy(conf, "server"),
+        control_thread->GetControlPort()));
+
+    control_thread->SetWorkerNode(m_WorkerNode.get());
+
     m_WorkerNode->SetMaxThreads(max_threads);
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
@@ -522,12 +536,6 @@ int CGridWorkerApp_Impl::Run()
         m_IdleThread->Run();
         AttachJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
     }
-
-    {{
-    CRef<CGridControlThread> control_thread(new CGridControlThread(start_port, end_port, *m_WorkerNode));
-
-    control_thread->Prepare();
-    m_WorkerNode->SetListeningPort(control_thread->GetControlPort());
 
     control_thread->Run();
 
@@ -562,7 +570,6 @@ int CGridWorkerApp_Impl::Run()
         }
         m_IdleThread->Join();
     }
-    }}
 
     m_WorkerNode.reset(0);
 
