@@ -597,6 +597,8 @@ private:
                                 vector<CSequence>& alignment,
                                 vector<size_t>& constraints,
                                 TRange range1, TRange range2,
+                                int full_prof_len1, int full_prof_len2,
+                                bool left_margin,
                                 CNWAligner::TTranscript& t);
 
 

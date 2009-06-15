@@ -895,6 +895,8 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
                                      vector<CSequence>& alignment,
                                      vector<size_t>& constraints,
                                      TRange range1, TRange range2,
+                                     int full_prof_len1, int full_prof_len2,
+                                     bool left_margin,
                                      CNWAligner::TTranscript& t)
 {
         double **freq1_data;
@@ -932,18 +934,44 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
         // Perform dynamic programming global alignment
         m_Aligner.SetSequences((const double**)freq1_data, freq1_size, 
                                (const double**)freq2_data, freq2_size, kScale);
+
         m_Aligner.SetEndSpaceFree(false, false, false, false);
         m_Aligner.SetPattern(constraints);
 
-        // if there is a large length disparity between the two
-        // profiles, reduce or eliminate end gap penalties. Also 
-        // scale up the gap penalties to match those of the score matrix
         m_Aligner.SetWg(m_Options->GetGapOpenPenalty() * kScale);
         m_Aligner.SetStartWg(m_Options->GetEndGapOpenPenalty() * kScale);
         m_Aligner.SetEndWg(m_Options->GetEndGapOpenPenalty() * kScale);
         m_Aligner.SetWs(m_Options->GetGapExtendPenalty() * kScale);
         m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty() * kScale);
         m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty() * kScale);
+
+        // If there is a large disparity between lengths of the two full
+        // profiles reduce or eliminate end gap penalties. Also 
+        // scale up the gap penalties to match those of the score matrix
+        // Note that this function aligns left or right margin of the profiles,
+        // hence gaps penalties are reduced on one side only.
+         if (full_prof_len1 > 1.2 * full_prof_len2 ||
+             full_prof_len2 > 1.2 * full_prof_len1) {
+
+            if (left_margin) {
+                m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty()
+                                     * kScale / 2);
+            }
+            else {
+                m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty()
+                                   * kScale / 2);
+            }
+         }
+         if ((full_prof_len1 > 1.5 * full_prof_len2 ||
+              full_prof_len2 > 1.5 * full_prof_len1)) {
+
+            if (left_margin) {
+                m_Aligner.SetEndSpaceFree(true, false, true, false);
+            }
+            else {
+                m_Aligner.SetEndSpaceFree(false, true, false, true);
+            }
+        }
 
         // run the aligner, scale the penalties back down
         m_Aligner.Run();
@@ -1143,7 +1171,8 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
         vector<size_t> constr;
         CNWAligner::TTranscript t;
         x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
-                                       constr, seq1_range, seq2_range, t);
+                                       constr, seq1_range, seq2_range,
+                                       seq1_length, seq2_length, true, t);
         
         transcr.swap(t);
         transcr.reserve(transcr.size() + t.size());
@@ -1175,7 +1204,8 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
         vector<size_t> constr;
         CNWAligner::TTranscript t;
         x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
-                                       constr, seq1_range, seq2_range, t);
+                                       constr, seq1_range, seq2_range,
+                                       seq1_length, seq2_length, false, t);
 
         ITERATE(CNWAligner::TTranscript, it, t) {
             transcr.push_back(*it);
