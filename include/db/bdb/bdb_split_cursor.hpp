@@ -37,7 +37,7 @@
 #include <db/bdb/bdb_file.hpp>
 #include <db/bdb/bdb_cursor.hpp>
 #include <db/bdb/bdb_env.hpp>
-#include <db/bdb/error_codes.hpp>
+#include <db/error_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -144,7 +144,7 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::CBDB_SplitCursor(TSplitStore& store)
 
          std::sort(m_Files.begin(), m_Files.end(), SVolumeLess());
 
-         LOG_POST_XX(Bdb_Cursor, 2, Info <<
+         LOG_POST_XX(Db_Bdb_Cursor, 2, Info <<
                      "found " << m_Files.size() << " candidate files");
      }}
 }
@@ -250,7 +250,7 @@ CBDB_SplitCursor<BDB_SplitStore, BDB_Vol>::x_NextVolume()
         m_Volume->SetEnv(*m_Env);
     }
 
-    LOG_POST_XX(Bdb_Cursor, 1, Info
+    LOG_POST_XX(Db_Bdb_Cursor, 1, Info
                 << "CBDB_SplitCursor::x_NextVolume(): opening: " << path);
     m_Volume->Open(path, CBDB_RawFile::eReadOnly);
 

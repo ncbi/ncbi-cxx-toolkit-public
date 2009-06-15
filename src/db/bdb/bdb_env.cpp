@@ -36,7 +36,8 @@
 #include <db/bdb/bdb_env.hpp>
 #include <db/bdb/bdb_trans.hpp>
 #include <db/bdb/bdb_checkpoint_thread.hpp>
-#include <db/bdb/error_codes.hpp>
+
+#include <db/error_codes.hpp>
 
 #include <connect/server_monitor.hpp>
 
@@ -65,7 +66,7 @@
 #endif
 
 
-#define NCBI_USE_ERRCODE_X   Bdb_Env
+#define NCBI_USE_ERRCODE_X   Db_Bdb_Env
 
 
 BEGIN_NCBI_SCOPE

@@ -37,11 +37,13 @@
 
 #include <db/sqlite/sqlitewrapp.hpp>
 
+#include <db/error_codes.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
 
-#define NCBI_USE_ERRCODE_X  DB_SqliteWrapp
+#define NCBI_USE_ERRCODE_X  Db_Sqlite
 
 
 /// Default size of database pages (maximum allowed in SQLite)

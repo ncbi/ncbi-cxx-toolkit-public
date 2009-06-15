@@ -40,7 +40,8 @@
 
 #include <db/bdb/bdb_blob.hpp>
 #include <db/bdb/bdb_cursor.hpp>
-#include <db/bdb/error_codes.hpp>
+
+#include <db/error_codes.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/ncbi_bitset_util.hpp>
@@ -141,11 +142,11 @@ CBDB_RangeMap<TBV>::~CBDB_RangeMap()
     }
     catch (CException& ex)
     {
-        ERR_POST_XX(Bdb_RangeMap, 1, "Exception in ~CBDB_RangeMap()" << ex.GetMsg());
+        ERR_POST_XX(Db_Bdb_RangeMap, 1, "Exception in ~CBDB_RangeMap()" << ex.GetMsg());
     }
     catch (exception& ex)
     {
-        ERR_POST_XX(Bdb_RangeMap, 2, "Exception in ~CBDB_RangeMap()" << ex.what());
+        ERR_POST_XX(Db_Bdb_RangeMap, 2, "Exception in ~CBDB_RangeMap()" << ex.what());
     }
 
     delete m_FreeList;

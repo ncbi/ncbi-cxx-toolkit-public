@@ -42,15 +42,16 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(Bdb_Blob,       1001,  4);
-NCBI_DEFINE_ERRCODE_X(Bdb_RangeMap,   1002,  2);
-NCBI_DEFINE_ERRCODE_X(Bdb_Cursor,     1003,  2);
-NCBI_DEFINE_ERRCODE_X(Bdb_Checkpoint, 1004,  7);
-NCBI_DEFINE_ERRCODE_X(Bdb_Env,        1005,  9);
-NCBI_DEFINE_ERRCODE_X(Bdb_File,       1006,  5);
-NCBI_DEFINE_ERRCODE_X(Bdb_Util,       1007,  2);
-NCBI_DEFINE_ERRCODE_X(Bdb_Volumes,    1008,  2);
-NCBI_DEFINE_ERRCODE_X(Bdb_BlobCache,  1009,  31);
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_Blob,       1001,  4 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_RangeMap,   1002,  2 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_Cursor,     1003,  2 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_Checkpoint, 1004,  7 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_Env,        1005,  9 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_File,       1006,  5 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_Util,       1007,  2 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_Volumes,    1008,  2 );
+NCBI_DEFINE_ERRCODE_X(Db_Bdb_BlobCache,  1009,  31);
+NCBI_DEFINE_ERRCODE_X(Db_Sqlite,         1010,  7 );
 
 
 END_NCBI_SCOPE

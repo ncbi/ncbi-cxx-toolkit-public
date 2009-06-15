@@ -48,7 +48,8 @@
 #include <db/bdb/bdb_blobcache.hpp>
 #include <db/bdb/bdb_cursor.hpp>
 #include <db/bdb/bdb_trans.hpp>
-#include <db/bdb/error_codes.hpp>
+
+#include <db/error_codes.hpp>
 
 #include <util/cache/icache_cf.hpp>
 #include <util/cache/icache_clean_thread.hpp>
@@ -58,7 +59,7 @@
 #include <math.h>
 
 
-#define NCBI_USE_ERRCODE_X   Bdb_BlobCache
+#define NCBI_USE_ERRCODE_X   Db_Bdb_BlobCache
 
 
 BEGIN_NCBI_SCOPE

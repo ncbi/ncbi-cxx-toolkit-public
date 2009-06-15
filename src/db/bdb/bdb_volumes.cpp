@@ -35,10 +35,11 @@
 #include <db/bdb/bdb_volumes.hpp>
 #include <db/bdb/bdb_cursor.hpp>
 #include <db/bdb/bdb_trans.hpp>
-#include <db/bdb/error_codes.hpp>
+
+#include <db/error_codes.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   Bdb_Volumes
+#define NCBI_USE_ERRCODE_X   Db_Bdb_Volumes
 
 BEGIN_NCBI_SCOPE
 

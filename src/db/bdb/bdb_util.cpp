@@ -33,11 +33,11 @@
 #include <corelib/ncbifile.hpp>
 #include <db/bdb/bdb_util.hpp>
 #include <db/bdb/bdb_env.hpp>
-#include <db/bdb/error_codes.hpp>
+#include <db/error_codes.hpp>
 #include <util/strsearch.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   Bdb_Util
+#define NCBI_USE_ERRCODE_X   Db_Bdb_Util
 
 BEGIN_NCBI_SCOPE
 

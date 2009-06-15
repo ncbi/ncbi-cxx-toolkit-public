@@ -33,12 +33,13 @@
 
 #include <db/bdb/bdb_checkpoint_thread.hpp>
 #include <db/bdb/bdb_env.hpp>
-#include <db/bdb/error_codes.hpp>
+
+#include <db/error_codes.hpp>
 
 #include <connect/server_monitor.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   Bdb_Checkpoint
+#define NCBI_USE_ERRCODE_X   Db_Bdb_Checkpoint
 
 BEGIN_NCBI_SCOPE
 

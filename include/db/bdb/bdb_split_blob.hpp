@@ -48,7 +48,7 @@
 #include <db/bdb/bdb_bv_store.hpp>
 #include <db/bdb/bdb_cursor.hpp>
 #include <db/bdb/bdb_trans.hpp>
-#include <db/bdb/error_codes.hpp>
+#include <db/error_codes.hpp>
 
 #include <util/id_mux.hpp>
 
@@ -207,7 +207,7 @@ public:
                 Save(ostr);
             }
             catch (CException& e) {
-                LOG_POST_XX(Bdb_Blob, 2, Error << "CBDB_BlobDeMux::~CBDB_BlobDeMux(): "
+                LOG_POST_XX(Db_Bdb_Blob, 2, Error << "CBDB_BlobDeMux::~CBDB_BlobDeMux(): "
                             "error saving demultiplex data: " << e.what());
             }
         }
@@ -685,7 +685,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSplitStore()
         CloseVolumes();
     }
     catch (std::exception& e) {
-        LOG_POST_XX(Bdb_Blob, 3, Error
+        LOG_POST_XX(Db_Bdb_Blob, 3, Error
                     << "CBDB_BlobSplitStore<>::~CBDB_BlobSplitStore(): "
                     "error in CloseVolumes(): " << e.what());
     }
@@ -696,7 +696,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSplitStore()
         }
     }
     catch (std::exception& e) {
-        LOG_POST_XX(Bdb_Blob, 4, Error
+        LOG_POST_XX(Db_Bdb_Blob, 4, Error
                     << "CBDB_BlobSplitStore<>::~CBDB_BlobSplitStore(): "
                     "error in Save(): " << e.what());
     }

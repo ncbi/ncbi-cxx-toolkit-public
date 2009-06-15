@@ -55,8 +55,6 @@ class CSQLITE_Connection;
 class CSQLITE_Statement;
 class CSQLITE_Blob;
 
-NCBI_DEFINE_ERRCODE_X(DB_SqliteWrapp, 2001,  7);
-
 
 /// Utility class for some global-purpose functions tuning SQLite as a whole
 /// as opposed to tuning connection-by-connection.
