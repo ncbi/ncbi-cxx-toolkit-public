@@ -242,6 +242,9 @@ bool CSeqVector_CI::CanGetRange(TSeqPos start, TSeqPos stop)
             m_ScannedStart = min(m_ScannedStart, start);
             m_ScannedEnd = max(m_ScannedEnd, stop);
         }
+        return true;
+    } else {
+        return false;
     }
 }
 
