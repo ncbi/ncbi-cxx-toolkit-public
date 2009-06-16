@@ -222,7 +222,7 @@ public:
                           TNCChunkId           min_chunk_id);
 
     template <class TFile>
-    TFile* GetFile(TNCDBPartId part_id);
+    TFile* GetFile(TNCDBPartId part_id, TFile* /* unused */ = 0);
     void ReturnFile(TNCDBPartId part_id, CNCDB_MetaFile* file);
     void ReturnFile(TNCDBPartId part_id, CNCDB_DataFile* file);
     void ReturnLockHolder(CNCBlobLockHolder* holder);
@@ -412,7 +412,7 @@ inline
 CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage*      storage,
                                       const SNCDBPartInfo& part_info)
     : m_Storage(storage),
-      m_File(storage->GetFile<TFile>(part_info.part_id)),
+      m_File(storage->GetFile(part_info.part_id, m_File)),
       m_DBPartId(part_info.part_id)
 {}
 
@@ -421,7 +421,7 @@ inline
 CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage* storage,
                                       TNCDBPartId     part_id)
     : m_Storage(storage),
-      m_File(storage->GetFile<TFile>(part_id)),
+      m_File(storage->GetFile(part_id, m_File)),
       m_DBPartId(part_id)
 {}
 
@@ -596,7 +596,7 @@ CNCBlobStorage::x_FilesMap<CNCBlobStorage::TDataFilesMap>(void)
 
 template <class TFile>
 inline TFile*
-CNCBlobStorage::GetFile(TNCDBPartId part_id)
+CNCBlobStorage::GetFile(TNCDBPartId part_id, TFile*)
 {
     // This is the (unfortunately) necessary repeat from class declaration
     typedef CNCFileObjFactory<TFile>                          TFileFactory;
