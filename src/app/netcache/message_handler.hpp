@@ -471,22 +471,22 @@ private:
         struct {
             /// Port came as parameter to session management command
             unsigned int      m_SessionPort;
-        };
+        } sm;
         /// For PUT command
         struct {
             /// Version of the blob key to generate
             unsigned int      m_KeyVersion;
             /// Time-to-live value for the blob
             unsigned int      m_BlobTTL;
-        };
+        } p;
         /// For STOR and STRS commands
         struct {
             /// Time-to-live value for the blob
             unsigned int      m_StoreTimeout;
             /// Exact size of the blob sent by client
             size_t            m_StoreBlobSize;
-        };
-    };
+        } st;
+    } u;
 };
 
 

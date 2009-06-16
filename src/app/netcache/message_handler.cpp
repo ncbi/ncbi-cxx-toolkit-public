@@ -552,12 +552,12 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
                 m_BlobKey = val;
             }
             else if (key == "key_ver") {
-                m_KeyVersion = NStr::StringToUInt(val);
+                u.p.m_KeyVersion = NStr::StringToUInt(val);
             }
             break;
         case 'p':
             if (key == "port") {
-                m_SessionPort = NStr::StringToUInt(val);
+                u.sm.m_SessionPort = NStr::StringToUInt(val);
             }
             break;
         case 's':
@@ -571,15 +571,15 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
                 m_BlobSubkey = val;
             }
             else if (key == "size") {
-                m_StoreBlobSize = NStr::StringToUInt(val);
+                u.st.m_StoreBlobSize = NStr::StringToUInt(val);
             }
             else if (key == "s_ttl") {
-                m_StoreTimeout = NStr::StringToUInt(val);
+                u.st.m_StoreTimeout = NStr::StringToUInt(val);
             }
             break;
         case 't':
             if (key == "ttl") {
-                m_BlobTTL = NStr::StringToUInt(val);
+                u.p.m_BlobTTL = NStr::StringToUInt(val);
             }
             break;
         case 'v':
@@ -636,7 +636,7 @@ CNCMessageHandler::x_StartCommand(const SParsedCmd& cmd)
                                           m_Server->GetNextBlobId(),
                                           m_Server->GetHost(),
                                           m_Server->GetPort(),
-                                          m_KeyVersion);
+                                          u.p.m_KeyVersion);
         }
         m_BlobLock = m_Storage->GetBlobAccess(cmd_extra.blob_access,
                                               m_BlobKey,
@@ -756,12 +756,12 @@ inline void
 CNCMessageHandler::x_FinishReadingBlob(void)
 {
     if (x_IsFlagSet(fReadExactBlobSize)
-        &&  m_CurBlob->GetSize() != m_StoreBlobSize)
+        &&  m_CurBlob->GetSize() != u.st.m_StoreBlobSize)
     {
         m_DiagContext->SetRequestStatus(eStatus_CondFailed);
         NCBI_THROW(CNetServiceException, eProtocolError,
                    "Too few data for blob size "
-                   + NStr::UInt8ToString(m_StoreBlobSize) + " (received "
+                   + NStr::UInt8ToString(u.st.m_StoreBlobSize) + " (received "
                    + NStr::UInt8ToString(m_CurBlob->GetSize()) + " bytes)");
     }
 
@@ -804,7 +804,7 @@ inline bool
 CNCMessageHandler::x_ReadBlobChunkLength(void)
 {
     if (x_IsFlagSet(fReadExactBlobSize)
-        &&  m_CurBlob->GetSize() == m_StoreBlobSize)
+        &&  m_CurBlob->GetSize() == u.st.m_StoreBlobSize)
     {
         // Workaround for old STRS
         m_ChunkLen = 0xFFFFFFFF;
@@ -830,12 +830,12 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         x_FinishReadingBlob();
     }
     else if (x_IsFlagSet(fReadExactBlobSize)
-             &&  m_CurBlob->GetSize() + m_ChunkLen > m_StoreBlobSize)
+             &&  m_CurBlob->GetSize() + m_ChunkLen > u.st.m_StoreBlobSize)
     {
         m_DiagContext->SetRequestStatus(eStatus_CondFailed);
         NCBI_THROW(CNetServiceException, eProtocolError,
                    "Too much data for blob size "
-                   + NStr::UInt8ToString(m_StoreBlobSize) + " (received at least "
+                   + NStr::UInt8ToString(u.st.m_StoreBlobSize) + " (received at least "
                    + NStr::UInt8ToString(m_CurBlob->GetSize() + m_ChunkLen)
                    + " bytes)");
     }
@@ -1076,16 +1076,16 @@ CNCMessageHandler::x_DoSessionManagement(bool reg)
                                   "Server does not support sessions ");
     }
     else {
-        if (!m_SessionPort  ||  m_SessionHost.empty()) {
+        if (!u.sm.m_SessionPort  ||  m_SessionHost.empty()) {
             m_DiagContext->SetRequestStatus(eStatus_BadCmd);
             NCBI_THROW(CNSProtoParserException, eWrongParams,
                        "Invalid request for session management");
         }
 
         if (reg) {
-            m_Server->RegisterSession(m_SessionHost, m_SessionPort);
+            m_Server->RegisterSession(m_SessionHost, u.sm.m_SessionPort);
         } else {
-            m_Server->UnregisterSession(m_SessionHost, m_SessionPort);
+            m_Server->UnregisterSession(m_SessionHost, u.sm.m_SessionPort);
         }
         m_SockBuffer.WriteMessage("OK:", "");
     };
@@ -1156,7 +1156,7 @@ CNCMessageHandler::x_DoCmd_GetServerStats(void)
 bool
 CNCMessageHandler::x_DoCmd_Put2(void)
 {
-    m_BlobLock->SetBlobTTL(m_BlobTTL);
+    m_BlobLock->SetBlobTTL(u.p.m_BlobTTL);
     m_BlobLock->SetBlobOwner(m_ClientName);
 
     m_SockBuffer.WriteMessage("ID:", m_BlobKey);
@@ -1255,7 +1255,7 @@ CNCMessageHandler::x_DoCmd_IC_IsOpen(void)
 bool
 CNCMessageHandler::x_DoCmd_IC_Store(void)
 {
-    m_BlobLock->SetBlobTTL(m_StoreTimeout);
+    m_BlobLock->SetBlobTTL(u.st.m_StoreTimeout);
     m_BlobLock->SetBlobOwner(m_ClientName);
 
     m_SockBuffer.WriteMessage("OK:", "");
@@ -1268,10 +1268,10 @@ CNCMessageHandler::x_DoCmd_IC_StoreBlob(void)
 {
     m_SockBuffer.WriteMessage("OK:", "");
 
-    m_BlobLock->SetBlobTTL(m_StoreTimeout);
+    m_BlobLock->SetBlobTTL(u.st.m_StoreTimeout);
     m_BlobLock->SetBlobOwner(m_ClientName);
 
-    if (m_StoreBlobSize != 0) {
+    if (u.st.m_StoreBlobSize != 0) {
         x_SetFlag(fReadExactBlobSize);
         x_StartReadingBlob();
     }
