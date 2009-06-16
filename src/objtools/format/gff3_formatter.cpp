@@ -653,7 +653,8 @@ string CGFF3_Formatter::x_FormatAttr(const string& name, const string& value)
 {
     CNcbiOstrstream oss;
     oss << name << '=';
-    x_AppendEncoded(oss, value);
+    // Not one of the special cases of escaping, so space ok.
+    x_AppendEncoded(oss, value, " ");
     return CNcbiOstrstreamToString(oss);
 }
 
