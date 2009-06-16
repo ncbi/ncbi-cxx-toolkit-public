@@ -41,6 +41,10 @@
 // For emulation of CTransmissionReader
 #include <util/util_exception.hpp>
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
