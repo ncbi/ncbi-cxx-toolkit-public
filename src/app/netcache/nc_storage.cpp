@@ -349,7 +349,7 @@ CNCBlobStorage::x_MonitorPost(CTempString msg, bool do_trace /* = true */)
         LOG_POST(Trace << msg);
     }
     if (m_Monitor  &&  m_Monitor->IsMonitorActive()) {
-        string send_msg(CTime(CTime::eCurrent).AsString());
+        string send_msg((CTime(CTime::eCurrent).AsString()));
         send_msg += "\n\t";
         send_msg += msg;
         send_msg += "\n";
