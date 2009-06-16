@@ -232,7 +232,8 @@ function FillTreeStructure(oShell, oTree)
         "Makefile.mk.in",
         "Makefile.mk.in.msvc",
         "project_tree_builder.ini",
-        "project_tags.txt"
+        "project_tags.txt",
+        "ptb_version.txt"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/src/build-system", build_files, oTree.SrcBuildSystemBranch);
@@ -244,7 +245,8 @@ function FillTreeStructure(oShell, oTree)
         "project_tree_builder.ini",
         "lock_ptb_config.bat",
         "asn_prebuild.bat",
-        "ptb.bat"
+        "ptb.bat",
+	"msvcvars.bat"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/compilers/" + GetMsvcFolder(), compiler_files, oTree.CompilersBranch);
