@@ -3018,7 +3018,7 @@ private:
 /// All methods of this class except the destructor throw exceptions
 /// CFileErrnoException on errors.
 
-class CFileLock
+class NCBI_XNCBI_EXPORT CFileLock
 {
 public:
     /// Type of file lock.
