@@ -59,6 +59,21 @@ public:
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
 
+    /// Enzyme Commission number status
+    enum EECNumberStatus {
+        eEC_specific,  ///< Specifically identifies a valid classification.
+        eEC_ambiguous, ///< Valid wildcard for a broader family.
+        eEC_replaced,  ///< Obsolete synonym for some other EC number.
+        eEC_deleted,   ///< Withdrawn, with no (single?) replacement.
+        eEC_unknown    ///< Unrecognized; possibly malformed.
+    };
+
+    /// Determine an EC number's validity and specificity.
+    static EECNumberStatus GetECNumberStatus(const string& ecno);
+
+    /// Return a replaced EC number's replacement.
+    static const string& GetECNumberReplacement(const string& old_ecno);
+
 private:
     // Prohibit copy constructor and assignment operator
     CProt_ref(const CProt_ref& value);

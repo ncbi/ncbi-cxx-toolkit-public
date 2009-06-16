@@ -51,6 +51,7 @@ NCBI_DEFINE_ERRCODE_X(Objects_SeqLoc,      1307,  3);
 NCBI_DEFINE_ERRCODE_X(Objects_SeqAnnot,    1308,  1);
 NCBI_DEFINE_ERRCODE_X(Objects_Bioseq,      1309,  1);
 NCBI_DEFINE_ERRCODE_X(Objects_Omssa,       1310,  3);
+NCBI_DEFINE_ERRCODE_X(Objects_ProtRef,     1311,  2);
 
 
 END_NCBI_SCOPE
