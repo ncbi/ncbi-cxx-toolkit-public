@@ -743,7 +743,8 @@ CNCBlobStorage::ReadBlobId(SNCBlobIdentity* identity)
         TNCDBPartsList parts;
         x_CopyPartsList(&parts);
         bool do_check = false;
-        REVERSE_ITERATE(TNCDBPartsList, it, parts) {
+        REVERSE_ITERATE(TNCDBPartsList, it,
+                        static_cast<const TNCDBPartsList&>(parts)) {
             if (it->part_id == check_part_id) {
                 do_check = true;
             }
@@ -798,7 +799,8 @@ CNCBlobStorage::ReadBlobKey(SNCBlobIdentity* identity)
         TNCDBPartId part_id = 0;
         {{
             CFastReadGuard guard(m_DBPartsLock);
-            REVERSE_ITERATE(TNCDBPartsList, it, m_DBParts) {
+            REVERSE_ITERATE(TNCDBPartsList, it, 
+                            static_cast<const TNCDBPartsList&>(m_DBParts)) {
                 // Find the first part having minimum blob id less than
                 // requested.
                 if (it->min_blob_id <= identity->blob_id) {
@@ -874,7 +876,8 @@ CNCBlobStorage::IsBlobExists(CTempString key,
         TNCDBPartsList parts;
         x_CopyPartsList(&parts);
         bool do_check = false;
-        REVERSE_ITERATE(TNCDBPartsList, it, parts) {
+        REVERSE_ITERATE(TNCDBPartsList, it,
+                        static_cast<const TNCDBPartsList&>(parts)) {
             if (it->part_id == check_part_id) {
                 do_check = true;
             }
@@ -1076,7 +1079,8 @@ CNCBlobStorage::RunBackground(void)
     try {
         if (x_GetNotCachedPartId() != -1) {
             // Nobody else changes m_DBParts
-            REVERSE_ITERATE(TNCDBPartsList, part_it, m_DBParts) {
+            REVERSE_ITERATE(TNCDBPartsList, part_it,
+                            static_cast<const TNCDBPartsList&>(m_DBParts)) {
                 x_SetNotCachedPartId(part_it->part_id);
                 x_FillCacheFromDBPart(part_it->part_id);
             }
