@@ -265,12 +265,6 @@ CSeqVector_CI* CSeqVector::x_CreateIterator(TSeqPos pos) const
 }
 
 
-bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
-{
-    return x_CreateIterator(from)->CanGetRange(from, to);
-}
-
-
 void CSeqVector::GetPackedSeqData(string& dst_str,
                                   TSeqPos src_pos,
                                   TSeqPos src_end)

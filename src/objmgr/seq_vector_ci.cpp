@@ -230,22 +230,24 @@ static const TSeqPos kMaxPreloadBases = 10*1000*1000;
 
 bool CSeqVector_CI::CanGetRange(TSeqPos start, TSeqPos stop)
 {
+    if ( stop < start ) {
+        return false;
+    }
     SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
     sel.SetStrand(m_Strand).SetRange(start, stop-start);
     sel.SetLinkUsedTSE(m_TSE).SetLinkUsedTSE(m_UsedTSEs);
-    if ( m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
-        if ( start > m_ScannedEnd || stop < m_ScannedStart ) {
-            m_ScannedStart = start;
-            m_ScannedEnd = stop;
-        }
-        else {
-            m_ScannedStart = min(m_ScannedStart, start);
-            m_ScannedEnd = max(m_ScannedEnd, stop);
-        }
-        return true;
-    } else {
+    if ( !m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(), sel) ) {
         return false;
     }
+    if ( start > m_ScannedEnd || stop < m_ScannedStart ) {
+        m_ScannedStart = start;
+        m_ScannedEnd = stop;
+    }
+    else {
+        m_ScannedStart = min(m_ScannedStart, start);
+        m_ScannedEnd = max(m_ScannedEnd, stop);
+    }
+    return true;
 }
 
 
@@ -739,21 +741,23 @@ void CSeqVector_CI::GetSeqData(string& buffer, TSeqPos count)
     }
     
     buffer.reserve(count);
-    do {
+    for (;;) {
         TCache_I cache = m_Cache;
         TCache_I cache_end = m_CacheEnd;
         TSeqPos chunk_count = min(count, TSeqPos(cache_end - cache));
         _ASSERT(chunk_count > 0);
         TCache_I chunk_end = cache + chunk_count;
         buffer.append(cache, chunk_end);
+        if ( (count -= chunk_count) == 0 ) {
+            break;
+        }
         if ( chunk_end == cache_end ) {
             x_NextCacheSeg();
         }
         else {
             m_Cache = chunk_end;
         }
-        count -= chunk_count;
-    } while ( count );
+    }
 }
 
 
@@ -761,21 +765,33 @@ void CSeqVector_CI::x_NextCacheSeg()
 {
     _ASSERT(m_SeqMap);
     TSeqPos pos = x_CacheEndPos();
-    // save current cache in backup
-    _ASSERT(x_CacheSize());
-    x_SwapCache();
-    // update segment if needed
-    while ( m_Seg.GetEndPosition() <= pos ) {
-        if ( !m_Seg ) {
-            // end of sequence
-            _ASSERT(pos == x_GetSize());
+    TSeqPos size = x_GetSize();
+    if ( pos >= size ) {
+        if ( x_CachePos() < pos ) {
+            x_SwapCache();
             x_ResetCache();
             m_CachePos = pos;
             return;
         }
+        else {
+            // Can not go further
+            NCBI_THROW(CSeqVectorException, eOutOfRange,
+                       "Can not update cache: iterator beyond end");
+        }
+    }
+    // save current cache in backup
+    _ASSERT(x_CacheSize());
+    x_SwapCache();
+    // update segment if needed
+    while ( m_Seg && m_Seg.GetEndPosition() <= pos ) {
         x_IncSeg();
     }
-    _ASSERT(m_Seg);
+    if ( !m_Seg ) {
+        // end of sequence
+        NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                       "CSeqVector_CI: invalid sequence length: "
+                       <<pos<<" <> "<<size);
+    }
     // Try to re-use backup cache
     if ( pos < x_CacheEndPos() && pos >= x_CachePos() ) {
         m_Cache = m_CacheData + pos - x_CachePos();
@@ -800,6 +816,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
         NCBI_THROW(CSeqVectorException, eOutOfRange,
                    "Can not update cache: iterator beyond start");
     }
+    TSeqPos size = x_GetSize();
     // save current cache in backup
     x_SwapCache();
     // update segment if needed
@@ -807,12 +824,15 @@ void CSeqVector_CI::x_PrevCacheSeg()
         x_InitSeg(pos);
     }
     else {
-        while ( m_Seg.GetPosition() > pos ) {
-            _ASSERT(m_Seg || m_Seg.GetPosition() == x_GetSize());
+        while ( m_Seg && m_Seg.GetPosition() > pos ) {
             x_DecSeg();
         }
     }
-    _ASSERT(m_Seg);
+    if ( !m_Seg ) {
+        NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                       "CSeqVector_CI: invalid sequence length: "
+                       <<pos<<" <> "<<size);
+    }
     // Try to re-use backup cache
     if ( pos >= x_CachePos()  &&  pos < x_CacheEndPos() ) {
         m_Cache = m_CacheData + pos - x_CachePos();

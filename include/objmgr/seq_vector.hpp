@@ -100,6 +100,11 @@ public:
     /// true if sequence at 0-based position 'pos' has gap
     bool IsInGap(TSeqPos pos) const;
 
+    /// Check if the sequence data is available for the interval [start, stop).
+    bool CanGetRange(TSeqPos start, TSeqPos stop) const;
+    bool CanGetRange(const const_iterator& start,
+                     const const_iterator& stop) const;
+
     /// Fill the buffer string with the sequence data for the interval
     /// [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const;
@@ -134,10 +139,6 @@ public:
 
     /// Return gap symbol corresponding to the selected coding
     TResidue GetGapChar(ECaseConversion case_cvt = eCaseConversion_none) const;
-
-    bool CanGetRange(TSeqPos from, TSeqPos to) const;
-    bool CanGetRange(const const_iterator& from,
-                     const const_iterator& to) const;
 
     const_iterator begin(void) const;
     const_iterator end(void) const;
@@ -302,14 +303,6 @@ ENa_strand CSeqVector::GetStrand(void) const
 
 
 inline
-bool CSeqVector::CanGetRange(const const_iterator& from,
-                             const const_iterator& to) const
-{
-    return CanGetRange(from.GetPos(), to.GetPos());
-}
-
-
-inline
 CSeqVector::TMol CSeqVector::GetSequenceType(void) const
 {
     return m_Mol;
@@ -331,6 +324,21 @@ bool CSeqVector::IsNucleotide(void) const
 
 
 inline
+bool CSeqVector::CanGetRange(TSeqPos start, TSeqPos stop) const
+{
+    return x_GetIterator(start).CanGetRange(start, stop);
+}
+
+
+inline
+bool CSeqVector::CanGetRange(const const_iterator& start,
+                             const const_iterator& stop) const
+{
+    return CanGetRange(start.GetPos(), stop.GetPos());
+}
+
+
+inline
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
     x_GetIterator(start).GetSeqData(start, stop, buffer);
@@ -342,9 +350,7 @@ void CSeqVector::GetSeqData(const const_iterator& start,
                             const const_iterator& stop,
                             string& buffer) const
 {
-    x_GetIterator(start.GetPos()).GetSeqData(start.GetPos(),
-                                             stop.GetPos(),
-                                             buffer);
+    GetSeqData(start.GetPos(), stop.GetPos(), buffer);
 }
 
 

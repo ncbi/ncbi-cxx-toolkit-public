@@ -856,6 +856,23 @@ namespace {
 bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
 {
     try {
+        TSeqPos length = kInvalidSeqPos;
+        if ( scope ) {
+            length = GetLength(scope);
+        }
+        TSeqPos start = sel.m_Position;
+        if ( start >= length ) {
+            return false;
+        }
+        TSeqPos stop = length;
+        if ( sel.m_Length != kInvalidSeqPos ) {
+            stop = start + sel.m_Length;
+            if ( stop < start || stop > length ) {
+                return false;
+            }
+        }
+        TSeqPos found_length = 0;
+        
         if ( scope && sel.m_LinkUsedTSE && sel.m_TopTSE &&
              !sel.x_HasLimitTSE() ) {
             // Faster BFS search with batch load requests.
@@ -878,21 +895,31 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                 parent_tse.clear();
                 next_ids.clear();
                 load_chunks.clear();
-                for(CSeqMap_CI it(ConstRef(this), scope, next_sel); it; ++it) {
-                    if ( it.GetType() == eSeqRef ) {
-                        parent_tse.push_back(it.x_GetSegmentInfo().m_TSE);
-                        _ASSERT(parent_tse.back());
-                        next_ids.push_back(it.GetRefSeqid());
-                        _ASSERT(next_ids.back());
-                    }
-                    else {
-                        CRef<CTSE_Chunk_Info> chunk = it.x_GetSeqMap()
-                            .x_GetChunkToLoad(it.x_GetSegment());
-                        if ( chunk ) {
-                            load_chunks.push_back(chunk);
+                {{
+                    CSeqMap_CI it(ConstRef(this), scope, next_sel);
+                    for(; it; ++it) {
+                        if ( it.m_Selector.m_MaxResolveCount != 0 ) {
+                            continue;
+                        }
+                        if ( it.GetType() == eSeqRef ) {
+                            parent_tse.push_back(it.x_GetSegmentInfo().m_TSE);
+                            _ASSERT(parent_tse.back());
+                            next_ids.push_back(it.GetRefSeqid());
+                            _ASSERT(next_ids.back());
+                        }
+                        else {
+                            found_length += it.GetLength();
+                            CRef<CTSE_Chunk_Info> chunk = it.x_GetSeqMap()
+                                .x_GetChunkToLoad(it.x_GetSegment());
+                            if ( chunk ) {
+                                load_chunks.push_back(chunk);
+                            }
                         }
                     }
-                }
+                    if ( it.GetPosition() < stop ) {
+                        return false;
+                    }
+                }}
                 if ( !load_chunks.empty() ) {
                     sort(load_chunks.begin(), load_chunks.end(), PByLoader());
                     load_chunks.erase(unique(load_chunks.begin(),
@@ -930,18 +957,24 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                 }
                 ++next_depth;
             }
-            return true;
         }
         else {
-            for(CSeqMap_CI it(ConstRef(this), scope, sel); it; ++it) {
-                // do nothing, just scan
+            CSeqMap_CI it(ConstRef(this), scope, sel);
+            for(; it; ++it) {
+                found_length += it.GetLength();
+            }
+            if ( it.GetPosition() < stop ) {
+                return false;
             }
         }
+        if ( stop != kInvalidSeqPos && stop-start != found_length ) {
+            return false;
+        }
+        return true;
     }
-    catch (exception) {
+    catch (exception&) {
         return false;
     }
-    return true;
 }
 
 
