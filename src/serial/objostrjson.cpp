@@ -377,7 +377,7 @@ void CObjectOStreamJson::EndContainerElement(void)
 
 void CObjectOStreamJson::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
-    if (FetchFrameFromTop(1).GetNotag()) {
+    if (GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) {
         return;
     }
     StartBlock();
@@ -386,7 +386,7 @@ void CObjectOStreamJson::BeginClass(const CClassTypeInfo* /*classInfo*/)
 
 void CObjectOStreamJson::EndClass(void)
 {
-    if (FetchFrameFromTop(1).GetNotag()) {
+    if (GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) {
         return;
     }
     EndBlock();
@@ -413,7 +413,7 @@ void CObjectOStreamJson::EndClassMember(void)
 
 void CObjectOStreamJson::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
 {
-    if (FetchFrameFromTop(1).GetNotag()) {
+    if (GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) {
         return;
     }
     StartBlock();
@@ -421,7 +421,7 @@ void CObjectOStreamJson::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
 
 void CObjectOStreamJson::EndChoice(void)
 {
-    if (FetchFrameFromTop(1).GetNotag()) {
+    if (GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) {
         return;
     }
     EndBlock();
