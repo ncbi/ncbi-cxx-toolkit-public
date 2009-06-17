@@ -158,7 +158,7 @@ const char* SCacheInfo::GetLabelSubkey(void)
 
 const char* SCacheInfo::GetSeq_idsSubkey(void)
 {
-    return "ids";
+    return "ids4";
 }
 
 
@@ -507,8 +507,9 @@ bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
         }
         CRStream r_stream(reader.get());
         CObjectIStreamAsnBinary obj_stream(r_stream);
-        CSeq_id id;
-        while ( obj_stream.HaveMoreData() ) {
+        size_t count = static_cast<CObjectIStream&>(obj_stream).ReadUint4();
+        for ( size_t i = 0; i < count; ++i ) {
+            CSeq_id id;
             obj_stream >> id;
             seq_ids.push_back(CSeq_id_Handle::GetHandle(id));
         }

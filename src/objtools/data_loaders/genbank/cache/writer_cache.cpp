@@ -345,6 +345,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
         {{
             CWStream w_stream(writer.get());
             CObjectOStreamAsnBinary obj_stream(w_stream);
+            static_cast<CObjectOStream&>(obj_stream).WriteUint4(ids->size());
             ITERATE ( CLoadInfoSeq_ids, it, *ids ) {
                 obj_stream << *it->GetSeqId();
             }
