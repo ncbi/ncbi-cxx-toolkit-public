@@ -371,7 +371,8 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
             ret = x_GetId(scope.GetIds(idh), type);
         }
     }
-    catch (CException) {
+    catch (CException& e) {
+        ERR_POST(e);
         if ( (type & eGetId_ThrowOnError) != 0 ) {
             throw;
         }
