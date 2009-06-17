@@ -231,12 +231,19 @@ function FillTreeStructure(oShell, oTree)
     var build_files = new Array (
         "Makefile.mk.in",
         "Makefile.mk.in.msvc",
-        "project_tree_builder.ini",
         "project_tags.txt",
         "ptb_version.txt"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/src/build-system", build_files, oTree.SrcBuildSystemBranch);
+    var tmp = g_usefilecopy;
+    g_usefilecopy = false;
+    var build_files2 = new Array (
+        "project_tree_builder.ini"
+        );
+    GetFilesFromTree(oShell, oTree, oTask,
+        "/src/build-system", build_files2, oTree.SrcBuildSystemBranch);
+    g_usefilecopy = tmp;
 
     var compiler_files = new Array (
         "Makefile.*.msvc",
@@ -246,7 +253,7 @@ function FillTreeStructure(oShell, oTree)
         "lock_ptb_config.bat",
         "asn_prebuild.bat",
         "ptb.bat",
-	"msvcvars.bat"
+        "msvcvars.bat"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/compilers/" + GetMsvcFolder(), compiler_files, oTree.CompilersBranch);
