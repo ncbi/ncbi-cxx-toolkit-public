@@ -132,27 +132,17 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                             first_non_gapped_row_found = row1;
                         }
                         
-                        //create the match
-                        CRef<CAlnMixMatch> match(new CAlnMixMatch);
 
                         //add only pairs with the first_non_gapped_row_found
                         //still, calc the score to be added to the seqs' scores
-                        if (row1 == first_non_gapped_row_found) {
-                            m_Matches.push_back(match);
-                        }
+
+                        int score = 0;
 
                         CRef<CAlnMixSeq> aln_seq2 = ds_seq[row2];
 
 
-                        match->m_AlnSeq1 = aln_seq1;
-                        match->m_Start1 = start1;
-                        match->m_AlnSeq2 = aln_seq2;
-                        match->m_Start2 = start2;
-                        match->m_Len = len;
-                        match->m_DsIdx = m_DsCnt;
 
                         // determine the strand
-                        match->m_StrandsDiffer = false;
                         ENa_strand strand1 = eNa_strand_plus;
                         ENa_strand strand2 = eNa_strand_plus;
                         if (strands_exist) {
@@ -163,15 +153,6 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                             if (ds.GetStrands()[seg_off + row2] 
                                 == eNa_strand_minus) {
                                 strand2 = eNa_strand_minus;
-                            }
-
-                            if (strand1 == eNa_strand_minus  &&
-                                strand2 != eNa_strand_minus  ||
-                                strand1 != eNa_strand_minus  &&
-                                strand2 == eNa_strand_minus) {
-
-                                match->m_StrandsDiffer = true;
-
                             }
                         }
 
@@ -189,20 +170,20 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                                                    len * aln_seq2->m_Width,
                                                    strand2 != eNa_strand_minus);
 
-                            match->m_Score = x_CalculateScore(s1,
+                            score = x_CalculateScore(s1,
                                                               s2,
                                                               aln_seq1->m_IsAA,
                                                               aln_seq2->m_IsAA,
                                                               1,
                                                               1);
                         } else {
-                            match->m_Score = len;
+                            score = len;
                         }
-                        total_aln_score += match->m_Score;
+                        total_aln_score += score;
 
                         // add to the sequences' scores
-                        aln_seq1->m_Score += match->m_Score;
-                        aln_seq2->m_Score += match->m_Score;
+                        aln_seq1->m_Score += score;
+                        aln_seq2->m_Score += score;
 
                         // in case of fForceTranslation, 
                         // check if strands are not mixed by
@@ -224,9 +205,32 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                         
                         // add to the prevailing strand
                         aln_seq1->m_StrandScore += (strand1 == eNa_strand_minus ?
-                                                    - match->m_Score : match->m_Score);
+                                                    - score : score);
                         aln_seq2->m_StrandScore += (strand2 == eNa_strand_minus ?
-                                                    - match->m_Score : match->m_Score);
+                                                    - score : score);
+
+                        if (row1 == first_non_gapped_row_found) {
+                            CRef<CAlnMixMatch> match(new CAlnMixMatch);
+                            m_Matches.push_back(match);
+
+                            match->m_AlnSeq1 = aln_seq1;
+                            match->m_Start1 = start1;
+                            match->m_AlnSeq2 = aln_seq2;
+                            match->m_Start2 = start2;
+                            match->m_Len = len;
+                            match->m_DsIdx = m_DsCnt;
+                            match->m_StrandsDiffer = false;
+                            if (strands_exist) {
+                                if (strand1 == eNa_strand_minus  &&
+                                    strand2 != eNa_strand_minus  ||
+                                    strand1 != eNa_strand_minus  &&
+                                    strand2 == eNa_strand_minus) {
+                                    
+                                    match->m_StrandsDiffer = true;
+                                }
+                            }
+                            match->m_Score = score;
+                        }
 
                     }
                 }
