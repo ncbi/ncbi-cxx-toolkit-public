@@ -38,6 +38,10 @@
 
 BEGIN_NCBI_SCOPE
 
+// This interface allows the background thread to find out is it still needed
+// to run (with ShouldRun method) and report error in background thread to the
+// host, which can log it or process in another reasonable way
+// (method ReportError).
 class CBackgroundHost
 {
 public:
@@ -52,6 +56,10 @@ public:
 };
 
 
+// This interface allows its user to submit a (possibly) long-running job
+// to a thread pool, where it will be executed by one of worker threads.
+// It exists for irregular jobs, which do not justify their own thread and
+// do not produce user output.
 class CRequestExecutor // better name, please
 {
 public:

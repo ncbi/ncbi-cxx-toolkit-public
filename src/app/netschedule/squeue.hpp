@@ -91,9 +91,11 @@ public:
     void Init(CBDB_Env& env, const string& path, unsigned count);
     void Close();
     // Allocate a block from array.
-    // @return
-    //     Position of allocated block, negative if no more free blocks
+    // @return position of allocated block, negative if no more free blocks
     int  Allocate();
+    // Allocate a block at position
+    // @return true if block is successfully allocated
+    bool Allocate(int pos);
     // Return block at position 'pos' to the array
     // Can not be used due to possible deadlock, see comment in
     // CQueueDataBase::DeleteQueue

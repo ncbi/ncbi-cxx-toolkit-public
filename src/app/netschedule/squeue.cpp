@@ -171,6 +171,15 @@ int CQueueDbBlockArray::Allocate()
 }
 
 
+bool CQueueDbBlockArray::Allocate(int pos)
+{
+    if (pos < 0  || pos >= m_Count) return false;
+    if (m_Array[pos].allocated) return false;
+    m_Array[pos].allocated = true;
+    return true;
+}
+
+
 SQueueDbBlock* CQueueDbBlockArray::Get(int pos)
 {
     if (pos < 0 || unsigned(pos) >= m_Count) return 0;
