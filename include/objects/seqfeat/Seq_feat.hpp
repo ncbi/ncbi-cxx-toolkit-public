@@ -95,16 +95,38 @@ public:
     /// returned.
     const string& GetNamedQual(const string& qual_name) const;
 
-    /// Optional locations are used for features with locations
-    /// re-mapped to a master sequence
-    int CompareNonLocation(const CSeq_feat& f2,
-                           const CSeq_loc& loc1, const CSeq_loc& loc2) const;
-    int GetTypeSortingOrder(void) const;
-    static int GetTypeSortingOrder(CSeqFeatData::E_Choice type);
-
+    /// Compare relative order of this feature and feature f2,
+    /// ordering first by features' coordinates, by importance of their type,
+    /// by complexity of location, and by some other fields depending on
+    /// their types.
+    /// Return a value < 0 if this feature should come before f2.
+    /// Return a value > 0 if this feature should come after f2.
+    /// Return zero if the features are unordered.
+    /// Note, that zero value doesn't mean that the features are identical.
     int Compare(const CSeq_feat& f2) const;
     int Compare(const CSeq_feat& f2,
                 const CSeq_loc& mapped1, const CSeq_loc& mapped2) const;
+
+    /// Compare relative order of this feature and feature f2 similarily
+    /// to the Compare() method, assuming their locations are already
+    /// compared as unordered.
+    /// The features' locations are still needed because the order depends
+    /// also on complexity of location (mix or not, etc).
+    /// The features are assumed to have location as given in arguments:
+    /// loc1 - location of this feature, loc2 - location of feature f2.
+    /// This method is useful if features are mapped to a master sequence,
+    /// so their location are changed after mapping.
+    /// Return a value < 0 if this feature should come before f2.
+    /// Return a value > 0 if this feature should come after f2.
+    /// Return zero if the features are unordered.
+    /// Note, that zero value doesn't mean that the features are identical.
+    int CompareNonLocation(const CSeq_feat& f2,
+                           const CSeq_loc& loc1, const CSeq_loc& loc2) const;
+
+    /// Return relative importance order of features by their type.
+    /// These methods are used by Compare() and CompareNonLocation() methods.
+    int GetTypeSortingOrder(void) const;
+    static int GetTypeSortingOrder(CSeqFeatData::E_Choice type);
 
 private:
 
