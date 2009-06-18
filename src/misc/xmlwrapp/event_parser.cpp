@@ -77,18 +77,8 @@ using namespace xml::impl;
 //####################################################################
 namespace {
     const std::size_t const_buffer_size = 4096;
+}
 
-    extern "C" xmlEntityPtr cb_get_entity (void *, const xmlChar *name);
-    extern "C" void cb_start_element (void *parser, const xmlChar *tag, const xmlChar **props);
-    extern "C" void cb_end_element (void *parser, const xmlChar *tag);
-    extern "C" void cb_text (void *parser, const xmlChar *text, int length);
-    extern "C" void cb_pi (void *parser, const xmlChar *target, const xmlChar *data);
-    extern "C" void cb_comment (void *parser, const xmlChar *text);
-    extern "C" void cb_cdata (void *parser, const xmlChar *text, int length);
-    extern "C" void cb_warning (void *parser, const char *message, ...);
-    extern "C" void cb_error (void *parser, const char *message, ...);
-    extern "C" void cb_ignore (void*, const xmlChar*, int);
-} // end anonymous namespace
 //####################################################################
 struct xml::impl::epimpl {
 public:
@@ -114,6 +104,55 @@ private:
     epimpl (const epimpl&);
     epimpl& operator= (const epimpl&);
 };
+
+extern "C"
+{
+    //####################################################################
+    static void cb_start_element (void *parser, const xmlChar *tag, const xmlChar **props)
+    { static_cast<epimpl*>(parser)->event_start_element(tag, props); }
+    //####################################################################
+    static void cb_end_element (void *parser, const xmlChar *tag)
+    { static_cast<epimpl*>(parser)->event_end_element(tag); }
+    //####################################################################
+    static void cb_text (void *parser, const xmlChar *text, int length)
+    { static_cast<epimpl*>(parser)->event_text(text, length); }
+    //####################################################################
+    static void cb_pi (void *parser, const xmlChar *target, const xmlChar *data)
+    { static_cast<epimpl*>(parser)->event_pi(target, data); }
+    //####################################################################
+    static void cb_comment (void *parser, const xmlChar *text)
+    { static_cast<epimpl*>(parser)->event_comment(text); }
+    //####################################################################
+    static void cb_cdata (void *parser, const xmlChar *text, int length)
+    { static_cast<epimpl*>(parser)->event_cdata(text, length); }
+    //####################################################################
+    static void cb_warning (void *parser, const char *message, ...) {
+	std::string complete_message;
+
+	va_list ap;
+	va_start(ap, message);
+	printf2string(complete_message, message, ap);
+	va_end(ap);
+
+	static_cast<epimpl*>(parser)->event_warning(complete_message);
+    }
+    //####################################################################
+    static void cb_error (void *parser, const char *message, ...) { 
+	std::string complete_message;
+
+	va_list ap;
+	va_start(ap, message);
+	printf2string(complete_message, message, ap);
+	va_end(ap);
+
+	static_cast<epimpl*>(parser)->event_error(complete_message);
+    }
+    //####################################################################
+    static void cb_ignore (void*, const xmlChar*, int) {
+	return;
+    }
+} // extern "C"
+
 //####################################################################
 xml::event_parser::event_parser (void) {
     pimpl_ = new epimpl(*this);
@@ -130,6 +169,13 @@ bool xml::event_parser::parse_file (const char *filename) {
 //####################################################################
 bool xml::event_parser::parse_stream (std::istream &stream) {
     char buffer[const_buffer_size];
+
+    if (stream && (stream.eof() || stream.peek() == std::istream::traits_type::eof()))
+    {
+        pimpl_->parser_status_ = false;
+        pimpl_->last_error_message_ = "empty xml document";
+        return false;
+    }
 
     while (pimpl_->parser_status_ && (stream.read(buffer, const_buffer_size) || stream.gcount()))
 	pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount());
@@ -302,53 +348,3 @@ void epimpl::event_error (const std::string &message) {
     parser_status_ = false;
     xmlStopParser(parser_context_);
 }
-//####################################################################
-namespace {
-    //####################################################################
-    extern "C" xmlEntityPtr cb_get_entity (void *, const xmlChar *name)
-    { return xmlGetPredefinedEntity(name); }
-    //####################################################################
-    extern "C" void cb_start_element (void *parser, const xmlChar *tag, const xmlChar **props)
-    { static_cast<epimpl*>(parser)->event_start_element(tag, props); }
-    //####################################################################
-    extern "C" void cb_end_element (void *parser, const xmlChar *tag)
-    { static_cast<epimpl*>(parser)->event_end_element(tag); }
-    //####################################################################
-    extern "C" void cb_text (void *parser, const xmlChar *text, int length)
-    { static_cast<epimpl*>(parser)->event_text(text, length); }
-    //####################################################################
-    extern "C" void cb_pi (void *parser, const xmlChar *target, const xmlChar *data)
-    { static_cast<epimpl*>(parser)->event_pi(target, data); }
-    //####################################################################
-    extern "C" void cb_comment (void *parser, const xmlChar *text)
-    { static_cast<epimpl*>(parser)->event_comment(text); }
-    //####################################################################
-    extern "C" void cb_cdata (void *parser, const xmlChar *text, int length)
-    { static_cast<epimpl*>(parser)->event_cdata(text, length); }
-    //####################################################################
-    extern "C" void cb_warning (void *parser, const char *message, ...) {
-	std::string complete_message;
-
-	va_list ap;
-	va_start(ap, message);
-	printf2string(complete_message, message, ap);
-	va_end(ap);
-
-	static_cast<epimpl*>(parser)->event_warning(complete_message);
-    }
-    //####################################################################
-    extern "C" void cb_error (void *parser, const char *message, ...) { 
-	std::string complete_message;
-
-	va_list ap;
-	va_start(ap, message);
-	printf2string(complete_message, message, ap);
-	va_end(ap);
-
-	static_cast<epimpl*>(parser)->event_error(complete_message);
-    }
-    //####################################################################
-    extern "C" void cb_ignore (void*, const xmlChar*, int) {
-	return;
-    }
-} // end anonymous namespace
