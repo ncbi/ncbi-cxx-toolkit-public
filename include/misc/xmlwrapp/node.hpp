@@ -92,7 +92,7 @@ public:
     /// size type
     typedef std::size_t size_type;
 
-    typedef std::vector<xml::ns>  ns_list_type;  //< type for holding XML namespaces
+    typedef std::vector<xml::ns>  ns_list_type;  ///< type for holding XML namespaces
 
     /// enum for the different types of XML nodes
     enum node_type {
