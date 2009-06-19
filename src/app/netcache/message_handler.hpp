@@ -462,31 +462,16 @@ private:
     string                    m_BlobSubkey;
     /// Blob version in current command
     unsigned int              m_BlobVersion;
-
+    /// Version of the blob key to generate
+    unsigned int              m_KeyVersion;
+    /// Time-to-live value for the blob
+    unsigned int              m_BlobTTL;
     /// Host came as parameter to session management command
     string                    m_SessionHost;
-    /// Union of parameters used in different command
-    union {
-        /// For session management commands
-        struct {
-            /// Port came as parameter to session management command
-            unsigned int      m_SessionPort;
-        } sm;
-        /// For PUT command
-        struct {
-            /// Version of the blob key to generate
-            unsigned int      m_KeyVersion;
-            /// Time-to-live value for the blob
-            unsigned int      m_BlobTTL;
-        } p;
-        /// For STOR and STRS commands
-        struct {
-            /// Time-to-live value for the blob
-            unsigned int      m_StoreTimeout;
-            /// Exact size of the blob sent by client
-            size_t            m_StoreBlobSize;
-        } st;
-    } u;
+    /// Port came as parameter to session management command
+    unsigned int              m_SessionPort;
+    /// Exact size of the blob sent by client
+    size_t                    m_StoreBlobSize;
 };
 
 

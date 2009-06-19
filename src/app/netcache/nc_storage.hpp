@@ -26,9 +26,6 @@
  * ===========================================================================
  *
  * Authors:  Pavel Ivanov
- *
- * File Description: 
- *
  */
 
 #include <corelib/ncbimtx.hpp>
@@ -50,9 +47,6 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(NetCache_Storage, 2002,  14);
-
-
 /// Exception which is thrown from all CNCBlobStorage-related classes
 class CNCBlobStorageException : public CException
 {
@@ -62,12 +56,11 @@ public:
         eWrongFileName,   ///< Wrong file name given in storage settings
         eReadOnlyAccess,  ///< Operation is prohibited because of read-only
                           ///< access to the storage
-        eMalformedDB      ///< Data in database is in inconsistent state due
-                          ///< to NetCache crash
+        eCorruptedDB,     ///< Detected corruption of the database
+        eTooBigBlob       ///< Attempt to write blob larger than maximum blob
+                          ///< size
     };
-
     virtual const char* GetErrCodeString(void) const;
-
     NCBI_EXCEPTION_DEFAULT(CNCBlobStorageException, CException);
 };
 
@@ -75,38 +68,33 @@ public:
 class CNCBlobStorage;
 
 
+/// Scoped pointer to database file object. File object is acquired from
+/// storage's pool in constructors and is returned to the pool in destructor.
 template <class TFile>
 class CNCDB_FileLock
 {
 public:
+    /// Create scoped pointer to the file from database part with given id
+    /// for given storage.
+    CNCDB_FileLock(CNCBlobStorage* storage, TNCDBPartId          part_id);
+    /// Create scoped pointer to the file from given database part
+    /// for given storage (convenient analogue to avoid many dereferences
+    /// to obtain part_id).
     CNCDB_FileLock(CNCBlobStorage* storage, const SNCDBPartInfo& part_info);
-    CNCDB_FileLock(CNCBlobStorage* storage, TNCDBPartId part_id);
     ~CNCDB_FileLock(void);
 
-    operator TFile* (void) const;
-    TFile& operator* (void) const;
+    /// Smart pointer conversions
+    operator TFile*   (void) const;
+    TFile& operator*  (void) const;
     TFile* operator-> (void) const;
 
 private:
+    /// Storage this object is bound to
     CNCBlobStorage* m_Storage;
+    /// Database file object obtained from storage
     TFile*          m_File;
+    /// Database part id which this object was created for
     TNCDBPartId     m_DBPartId;
-};
-
-
-template <class TFile>
-class CNCFileObjFactory : public CObjFactory_New<TFile>
-{
-public:
-    CNCFileObjFactory(void);
-    CNCFileObjFactory(const string& file_name, CNCDB_Stat* stat);
-
-    TFile* CreateObject(void);
-    void Delete(TFile* file);
-
-private:
-    string      m_FileName;
-    CNCDB_Stat* m_Stat;
 };
 
 
@@ -149,13 +137,11 @@ public:
     int    GetMaxBlobTTL  (void) const;
     /// Get maximum blob size that is allowed in the storage
     size_t GetMaxBlobSize (void) const;
-    /// Get size of disk space to free up on each GC iteration
-    size_t GetDBShrinkStep(void) const;
 
     /// Print usage statistics for the storage
     void PrintStat(CPrintTextProxy& proxy);
 
-    /// Acquire access to the blob identified by key-subkey-version
+    /// Acquire access to the blob identified by key, subkey and version
     TNCBlobLockHolderRef GetBlobAccess(ENCBlobAccess access,
                                        const string& key,
                                        const string& subkey = kEmptyStr,
@@ -163,71 +149,133 @@ public:
     /// Acquire access to the blob identified by blob id
     TNCBlobLockHolderRef GetBlobAccess(ENCBlobAccess access,
                                        TNCBlobId     blob_id);
-
     /// Get ids of all blobs with given key
     void FillBlobIds(const string& key, TNCIdsList* id_list);
-
     /// Check if blob with given key and (optionally) subkey exists
-    /// in database
+    /// in database.
     bool IsBlobExists(CTempString key, CTempString subkey = kEmptyStr);
 
 public:
-    // Methods for internal use only
+    // For internal use only
 
-    TNCBlobLockHolderRef GetBlobAccess(ENCBlobAccess access,
-                                       TNCDBPartId   part_id,
-                                       TNCBlobId     blob_id,
-                                       bool          change_access_time);
-
-    /// Get object gathering storage statistics
+    /// Get object gathering database statistics
     CNCDB_Stat* GetStat(void);
-    TNCBlobsPool& GetBlobsPool(void);
-    TNCBlobBufferPool& GetBlobBufferPool(void);
+    /// Get blob object from the pool
+    CNCBlob* GetBlob(void);
+    /// Return blob object to the pool
+    void ReturnBlob(CNCBlob* blob);
 
-    /// Get next blob id (along with database part id) that can be used
-    /// for creating new blob
+    /// Get next blob coordinates that can be used for creating new blob.
     void GetNextBlobCoords(SNCBlobCoords* coords);
     /// Lock blob id, i.e. prevent access of others to blob with the same id
     TRWLockHolderRef LockBlobId(TNCBlobId blob_id, ENCBlobAccess access);
     /// Unlock blob id and free lock holder
     void UnlockBlobId(TNCBlobId blob_id, TRWLockHolderRef& rw_holder);
-    ///
-    bool ReadBlobId(SNCBlobIdentity* identity);
-    ///
-    bool CreateBlob(SNCBlobIdentity* identity);
-    ///
-    bool ReadBlobKey(SNCBlobIdentity* identity);
-    ///
-    bool ReadBlobInfo(SNCBlobInfo* info);
-    ///
-    void WriteBlobInfo(const SNCBlobInfo& info);
-    ///
-    void DeleteBlob(const SNCBlobCoords& coords);
 
+    /// Get coordinates of the blob by its key, subkey and version.
     ///
+    /// @return
+    ///   TRUE if blob exists and coordinates were successfully read.
+    ///   FALSE if blob doesn't exist.
+    bool ReadBlobCoords(SNCBlobIdentity* identity);
+    /// Create new blob with given identity, obtain blob coordinates if it
+    /// already exists.
+    ///
+    /// @return
+    ///   TRUE if blob was successfully created. FALSE if blob with these key,
+    ///   subkey and version already exists. Blob coordinates in identity
+    ///   structure will be filled in the latter case.
+    bool CreateBlob(SNCBlobIdentity* identity);
+    /// Get key, subkey and version for the blob with given id (inside
+    /// identity structure). Method should be called when blob has already
+    /// locked.
+    ///
+    /// @return
+    ///   TRUE if blob exists and key data was successfully read (database
+    ///   part id inside identity structure is filled with correct number in
+    ///   this case too). FALSE if blob doesn't exist.
+    bool ReadBlobKey(SNCBlobIdentity* identity);
+    /// Get meta information about blob with given coordinates.
+    void ReadBlobInfo(SNCBlobInfo* info);
+    /// Write meta information about blob into the database.
+    void WriteBlobInfo(const SNCBlobInfo& info);
+    /// Delete blob from database.
+    void DeleteBlob(const SNCBlobCoords& coords);
+    /// Get list of chunks ids
+    ///
+    /// @param coords
+    ///   Coordinates of the blob to get chunks ids for
+    /// @param id_list
+    ///   Pointer to the list receiving chunks ids
     void GetChunkIds(const SNCBlobCoords& coords, TNCIdsList* id_list);
+    /// Create new blob chunk
     ///
+    /// @param coords
+    ///   Coordinates of the blob to create new chunk for
+    /// @param data
+    ///   Data to populate to the new chunk
+    /// @return
+    ///   Chunk id for the newly created chunk
     TNCChunkId CreateNewChunk(const SNCBlobCoords& coords,
-                              const TNCBlobBuffer& buffer);
+                              const TNCBlobBuffer& data);
+    /// Write data into existing blob chunk
     ///
-    void WriteChunkValue(TNCDBPartId          part_id,
+    /// @param coords
+    ///   Coordinates of the blob to write chunk for
+    /// @param chunk_id
+    ///   Id of the chunk to write data to
+    /// @param data
+    ///   Data to write into the chunk
+    void WriteChunkValue(const SNCBlobCoords& coords,
                          TNCChunkId           chunk_id,
-                         const TNCBlobBuffer& buffer);
+                         const TNCBlobBuffer& data);
+    /// Read data from blob chunk
     ///
-    void ReadChunkValue(TNCDBPartId    part_id,
-                        TNCChunkId     chunk_id,
-                        TNCBlobBuffer* buffer);
+    /// @param coords
+    ///   Coordinates of the blob to read chunk for
+    /// @param chunk_id
+    ///   Id of the chunk to read
+    /// @param buffer
+    ///   Buffer to write data to
+    /// @return
+    ///   TRUE if data exists and was read successfully. FALSE if data doesn't
+    ///   exist in the database
+    bool ReadChunkValue(const SNCBlobCoords& coords,
+                        TNCChunkId           chunk_id,
+                        TNCBlobBuffer*       buffer);
+    /// Delete last chunks for blob
     ///
+    /// @param coords
+    ///   Coordinates of the blob to delete chunks for
+    /// @param min_chunk_id
+    ///   Minimum id of chunks to delete - all blob chunks with ids equal or
+    ///   greater than this will be deleted.
     void DeleteLastChunks(const SNCBlobCoords& coords,
                           TNCChunkId           min_chunk_id);
 
+    /// Get database file object from pool
+    ///
+    /// @param part_id
+    ///   Database part id of necessary file
+    /// @param file_ptr
+    ///   Pointer to variable where pointer to file object will be written to.
+    ///   This cannot be returned as method result because GCC 3.0.4 doesn't
+    ///   compile such method calls (without template parameter in arguments).
     template <class TFile>
-    TFile* GetFile(TNCDBPartId part_id, TFile* /* unused */ = 0);
-    void ReturnFile(TNCDBPartId part_id, CNCDB_MetaFile* file);
-    void ReturnFile(TNCDBPartId part_id, CNCDB_DataFile* file);
+    void GetFile   (TNCDBPartId part_id, TFile** file_ptr);
+    /// Return database file object to the pool
+    ///
+    /// @param part_id
+    ///   Database part id of the file
+    /// @param file
+    ///   Database file object to return
+    template <class TFile>
+    void ReturnFile(TNCDBPartId part_id, TFile*  file);
+    /// Return blob lock holder to the pool
     void ReturnLockHolder(CNCBlobLockHolder* holder);
 
-    /// Garbage collector code
+    /// Implementation of background thread. Mainly garbage collector plus
+    /// caching of database data at the beginning of the storage work.
     void RunBackground(void);
 
 private:
@@ -237,105 +285,235 @@ private:
 
     /// Storage operation flags that can be set via storage configuration
     enum EOperationFlags {
-        fReadOnly         = 0x1,
-        fChangeTimeOnRead = 0x2
+        fReadOnly         = 0x1,  ///< Storage is in read-only mode
+        fChangeTimeOnRead = 0x2   ///< Storage will change access time on
+                                  ///< every read of the blob
     };
+    /// Bit mask of EOperationFlags
     typedef int  TOperationFlags;
 
-    typedef set<SNCBlobIdentity, SNCBlobCompareKeys/*,
-                CNCSmallDataAllocator<SNCBlobIdentity>*/ >     TKeyIdMap;
-    typedef set<SNCBlobIdentity, SNCBlobCompareIds/*,
-                CNCSmallDataAllocator<SNCBlobIdentity>*/ >     TIdKeyMap;
-    typedef map<TNCBlobId, CYieldingRWLock* /*, less<TNCBlobId>,
-                CNCSmallDataAllocator<pair<const TNCBlobId,
-                                           CYieldingRWLock*> >*/ >
-                                                             TId2LocksMap;
-    typedef deque<CYieldingRWLock* /*,
-                  CNCSmallDataAllocator<CYieldingRWLock*>*/ >  TLocksList;
+    typedef set<SNCBlobIdentity, SNCBlobCompareKeys>  TKeyIdMap;
+    typedef set<SNCBlobIdentity, SNCBlobCompareIds>   TIdKeyMap;
 
-    typedef CNCDB_FileLock<CNCDB_MetaFile>                   TMetaFileLock;
-    typedef CNCFileObjFactory<CNCDB_MetaFile>                TMetaFileFactory;
-    typedef AutoPtr<CNCDB_MetaFile, TMetaFileFactory>        TMetaFilePtr;
-    typedef CObjPool<CNCDB_MetaFile, TMetaFileFactory>       TMetaFilePool;
-    typedef AutoPtr<TMetaFilePool>                           TMetaFilePoolPtr;
-    typedef map<TNCDBPartId, TMetaFilePoolPtr/*, less<TNCDBPartId>,
-                CNCSmallDataAllocator<pair<const TNCDBPartId,
-                                           TMetaFilePoolPtr> >*/ >
-                                                             TMetaFilesMap;
+    typedef map<TNCBlobId, CYieldingRWLock*>          TId2LocksMap;
+    typedef deque<CYieldingRWLock*>                   TLocksList;
 
-    typedef CNCDB_FileLock<CNCDB_DataFile>                   TDataFileLock;
-    typedef CNCFileObjFactory<CNCDB_DataFile>                TDataFileFactory;
-    typedef AutoPtr<CNCDB_DataFile, TDataFileFactory>        TDataFilePtr;
-    typedef CObjPool<CNCDB_DataFile, TDataFileFactory>       TDataFilePool;
-    typedef AutoPtr<TDataFilePool>                           TDataFilePoolPtr;
-    typedef map<TNCDBPartId, TDataFilePoolPtr/*, less<TNCDBPartId>,
-                CNCSmallDataAllocator<pair<const TNCDBPartId,
-                                           TDataFilePoolPtr> >*/ >
-                                                             TDataFilesMap;
+    typedef CNCDB_FileLock<CNCDB_MetaFile>            TMetaFileLock;
+    typedef CNCDB_FileLock<CNCDB_DataFile>            TDataFileLock;
+
+    typedef AutoPtr<CNCDBFilesPool>                   TFilesPoolPtr;
+    typedef map<TNCDBPartId, TFilesPoolPtr>           TFilesMap;
 
 
     /// Check if storage activity is monitored now
     bool x_IsMonitored(void) const;
     /// Post message to activity monitor and _TRACE it if necessary
     void x_MonitorPost(CTempString msg, bool do_trace = true);
+    /// Put message about exception into diagnostics and activity monitor
     ///
+    /// @param ex
+    ///   Exception object to report about
+    /// @param msg
+    ///   Additional message to prepend to exception's text
     void x_MonitorError(exception& ex, CTempString msg);
     /// Check if storage is writable, throw exception if it is in read-only
-    /// mode.
+    /// mode and access is not eRead.
     void x_CheckReadOnly(ENCBlobAccess access) const;
-    ///
+    /// Check if storage have been already stopped. Throw special exception in
+    /// this case.
     void x_CheckStopped(void);
-
 
     /// Read all storage parameters from registry
     void x_ReadStorageParams(const IRegistry& reg, CTempString section);
     /// Parse value of 'timestamp' parameter from registry
     void x_ParseTimestampParam(const string& timestamp);
+    /// Make name of the index file in the storage
     string x_GetIndexFileName(void);
+    /// Make name of file with meta-information in given database part
     string x_GetMetaFileName(TNCDBPartId part_id);
+    /// Make name of file with blobs' data in given database part
     string x_GetDataFileName(TNCDBPartId part_id);
+    /// Make sure that current storage database is used only with one instance
+    /// of NetCache. Lock specially named file exclusively and hold the lock
+    /// for all time while process is working. This file also is used for
+    /// determining if previous instance of NetCache was closed gracefully.
+    /// If another instance of NetCache using the database method will throw
+    /// an exception.
+    ///
+    /// @return
+    ///   TRUE if guard file existed and was unlocked meaning that previous
+    ///   instance of NetCache was terminated inappropriately. FALSE if file
+    ///   didn't exist so that this storage instance is a clean start.
     bool x_LockInstanceGuard(void);
+    /// Unlock and delete specially named file used to ensure only one
+    /// instance working with database.
+    /// Small race exists here now which cannot be resolved for Windows
+    /// without re-writing of the mechanism using low-level functions. Race
+    /// can appear like this: if another instance will start right when this
+    /// instance stops then other instance can be thinking that this instance
+    /// terminated incorrectly.
     void x_UnlockInstanceGuard(void);
+    /// Open and read index database file
+    ///
+    /// @param reinit_mode
+    ///   If some kind of reinit requested by this parameter and index file
+    ///   was opened with an error then it's deleted and created empty. In
+    ///   this case *reinit_mode variable is changed to avoid any later
+    ///   reinits.
     void x_OpenIndexDB(EReinitMode* reinit_mode);
+    /// Check if database need re-initialization depending on different
+    /// parameters and state of the guard file protecting from several
+    /// instances running on the same database.
+    ///
+    /// @param guard_existed
+    ///   Flag if guard file from previous NetCache run existed
+    /// @param reinit_mode
+    ///   Mode of reinitialization requested in configuration and command line
+    /// @param reinit_dirty
+    ///   Flag if database should be reinitialized if guard file existed
     void x_CheckDBInitialized(bool        guard_existed,
                               EReinitMode reinit_mode,
                               bool        reinit_dirty);
+    /// Check that all information about database parts contains non-zero
+    /// value of minimum blob id. If some value is zero then update it based
+    /// on information from previous database parts.
+    void x_CheckPartsMinBlobId(void);
+    /// Read value of last blob coordinates which will be used to generate ids
+    /// for inserted blobs.
     void x_ReadLastBlobCoords(void);
+
+    /// Acquire access to the blob identified by its coordinates
+    ///
+    /// @param access
+    ///   Type of access to blob required
+    /// @param part_id
+    ///   Id of the database part for blob
+    /// @param blob_id
+    ///   Id of the blob
+    /// @param change_access_time
+    ///   Flag if blob access time should change (meaningful only when eRead
+    ///   access is requested).
+    TNCBlobLockHolderRef x_GetBlobAccess(ENCBlobAccess access,
+                                         TNCDBPartId   part_id,
+                                         TNCBlobId     blob_id,
+                                         bool          change_access_time);
+
+    /// Release all id lock objects. Method to be called only from destructor.
     void x_FreeBlobIdLocks(void);
-    void x_InitFilePools(const SNCDBPartInfo& part_info);
-    void x_CreateNewDBStructure(const SNCDBPartInfo& part_info);
+
+    /// Initialize pool of database files for given database part
+    void x_InitFilesPool(const SNCDBPartInfo& part_info);
+    /// Create database structure for new database part
+    void x_CreateNewDBStructure(TNCDBPartId part_id);
+    /// Switch storage to use newly created database part as current, i.e.
+    /// add it to the list of all parts and make last blob coordinates
+    /// pointing to this part. Also value of minimum blob id in the part
+    /// information structure is set.
     void x_SwitchCurrentDBPart(SNCDBPartInfo* part_info);
+    /// Do set of procedures creating and initializing new database part and
+    /// switching storage to using new database part as current one.
     void x_CreateNewDBPart(void);
+
+    /// Get id of the database part which is now in process of filling the
+    /// cache. Cache is filled in the order of most recent part to most old
+    /// one. So that all parts after returned one will be already in cache.
+    /// Value of -1 means that all database is cached at the moment.
     TNCDBPartId x_GetNotCachedPartId(void);
+    /// Set id of the database part which is now will be in process of filling
+    /// the cache. Value of -1 means that caching process is completed.
     void x_SetNotCachedPartId(TNCDBPartId part_id);
+    /// Copy list of all database parts. Method should be used to avoid
+    /// holding of read lock over parts list for too long (requirement of
+    /// CFastRWLock).
     void x_CopyPartsList(TNCDBPartsList* parts_list);
-    bool x_ReadBlobIdFromCache(SNCBlobIdentity* identity);
-    void x_AddBlobKeyIdToCache(const SNCBlobIdentity& identity);
+    /// Read coordinates of the blob identified by key, subkey and version
+    /// from internal cache (without reading from database).
+    bool x_ReadBlobCoordsFromCache(SNCBlobIdentity* identity);
+    /// Create record about blob in the internal cache. If record was already
+    /// created then copy blob coordinates into given identity structure.
+    ///
+    /// @return
+    ///   TRUE if blob record was successfully added to the cache. FALSE if
+    ///   record have already existed at the moment of insert and thus new
+    ///   coordinates were written into the identity.
     bool x_CreateBlobInCache(SNCBlobIdentity* identity);
+    /// Read key, subkey and version of the blob identified by id from the
+    /// internal cache.
+    ///
+    /// @return
+    ///   TRUE if record about the blob was found and key data was written.
+    ///   FALSE if record doesn't exist in the cache.
     bool x_ReadBlobKeyFromCache(SNCBlobIdentity* identity);
+    /// Delete blob identified by its coordinates from the internal cache.
     void x_DeleteBlobFromCache(const SNCBlobCoords& coords);
-    void x_FillBlobIdsFromCache(TNCIdsList* id_list, const string& key);
+    /// Get list of blob ids with given key from internal cache. Method
+    /// call have any sense only when all caching process is finished.
+    void x_FillBlobIdsFromCache(const string& key, TNCIdsList* id_list);
+    /// Check if record about any blob with given key and subkey exists in
+    /// the internal cache.
     bool x_IsBlobExistsInCache(CTempString key, CTempString subkey);
+    /// Fill internal cache data with information from given database part.
     void x_FillCacheFromDBPart(TNCDBPartId part_id);
+
+    /// Delete expired blob from internal cache. Expiration time is checked
+    /// in database. Method assumes that it's called only from garbage
+    /// collector.
+    ///
+    /// @return
+    ///   TRUE if blob was successfully deleted or if database error occurred
+    ///   meaning that blob is inaccessible anyway. FALSE if other thread have
+    ///   locked the blob and so method was unable to delete it.
     bool x_GC_DeleteExpired(TNCDBPartId part_id, TNCBlobId blob_id);
+    /// Prepare pool of database files for given part to be deleted. Pointer
+    /// to pool is assigned to given variable and deleted from map of all
+    /// pools. Deleting from map is going under mutex but physical deleting of
+    /// pool and all of the file objects in it could be rather long. So mutex
+    /// is released before deleting takes place.
+    void x_GC_PrepFilesPoolToDelete(TNCDBPartId    part_id,
+                                    TFilesPoolPtr* pool_ptr);
+    /// Delete given database part from list of all parts, from index file and
+    /// from disk.
+    void x_GC_DeleteDBPart(TNCDBPartsList::iterator part_it);
+    /// Check if database file with meta-information about blobs contains any
+    /// existing blobs. Only blobs live at the dead_after moment or after that
+    /// are considered existing. If database error occurs during checking then
+    /// file is assumed empty - it's not accessible anyway.
+    ///
+    /// @param part_id
+    ///   Id of the database part checked
+    /// @param metafile
+    ///   Already acquired database file object to check
+    /// @param dead_after
+    ///   Moment in time for determining existence of blobs
+    /// @return
+    ///   TRUE if metafile is empty and can be deleted, FALSE otherwise
     bool x_GC_IsMetafileEmpty(TNCDBPartId          part_id,
                               const TMetaFileLock& metafile,
-                              int                  dead_time);
+                              int                  dead_after);
+    /// Clean database part deleting from internal cache all blobs from this
+    /// part which have expired before dead_before moment. If as a result
+    /// this part is not having any blobs it will be deleted.
+    ///
+    /// @return
+    ///   TRUE if database part was successfully cleaned and current minimum
+    ///   expiration time can be changed to dead_before moment. FALSE if some
+    ///   blobs were locked by other threads and they should be cleaned once
+    ///   more, thus changing minimum expiration time cannot be changed now.
+    ///
+    /// @sa m_LastDeadTime
     bool x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
                           int                      dead_before);
-    void x_GC_PrepFilePoolsToDelete(TNCDBPartId       part_id,
-                                    TMetaFilePoolPtr* meta_pool,
-                                    TDataFilePoolPtr* data_pool);
-    void x_GC_DeleteDBPart(TNCDBPartsList::iterator part_it);
+    /// Do the database parts rotation. If last and current database part were
+    /// created too long ago (more than m_DBRotatePeriod) then new database
+    /// part is created and becomes current. But only if current part contains
+    /// any information (even about "non-exiting" blobs) otherwise its
+    /// creation time is just changing giving a second life to the part.
     void x_GC_RotateDBParts(void);
-
-    template <class TFilesMap>
-    TFilesMap& x_FilesMap(void);
 
 
     /// Directory for all database files of the storage
     string             m_Path;
-    /// Name of the storage from configuration
+    /// Name of the storage
     string             m_Name;
     /// Default value of blob's time-to-live
     int                m_DefBlobTTL;
@@ -343,17 +521,18 @@ private:
     int                m_MaxBlobTTL;
     /// Maximum allowed blob size
     size_t             m_MaxBlobSize;
+    /// Time period while one database part is current before creating new
+    /// part and switching to it as current.
     int                m_DBRotatePeriod;
     /// Delay between GC activations
     int                m_GCRunDelay;
-    /// Number of blobs treated by GC in one batch
-    int                m_GCBatchSize;
+    /// Number of blobs treated by GC and by caching mechanism in one batch
+    int                m_BlobsBatchSize;
     /// Time in milliseconds GC will sleep between batches
     int                m_GCBatchSleep;
-    /// Maximum size of disk space that GC will shrink on each iteration
-    //size_t             m_DBShrinkStep;
 
-    /// Name of guard file showing that storage is in work now
+    /// Name of guard file excluding several instances to run on the same
+    /// database.
     string             m_GuardName;
     /// Lock for guard file representing this instance running.
     /// It will hold exclusive lock all the time while NetCache is
@@ -368,38 +547,61 @@ private:
     TOperationFlags    m_Flags;
     /// Flag if storage is stopped and in process of destroying
     bool               m_Stopped;
-    /// Semaphore allowing immediate stopping of GC thread
+    /// Semaphore allowing immediate stopping of background thread
     CSemaphore         m_StopTrigger;
-    /// Thread running GC
+    /// Background thread running GC and caching
     CRef<CThread>      m_BGThread;
 
+    /// Read-write lock to work with m_KeysCache
     CFastRWLock              m_KeysCacheLock;
+    /// Internal cache of blobs identification information sorted to be able
+    /// to search by key, subkey and version.
     TKeyIdMap                m_KeysCache;
+    /// Read-write lock to work with m_IdsCache
     CFastRWLock              m_IdsCacheLock;
+    /// Internal cache of blobs identification information sorted to be able
+    /// to search by blob id.
     TIdKeyMap                m_IdsCache;
+    /// Index database file
     AutoPtr<CNCDB_IndexFile> m_IndexDB;
+    /// Read-write lock to work with m_DBParts
     CFastRWLock              m_DBPartsLock;
+    /// List of all database parts in the storage
     TNCDBPartsList           m_DBParts;
+    /// Flag showing that information from all database parts is already
+    /// cached. Flag is used as optimization to avoid read lock on
+    /// m_NotCachedPartIdLock which is necessary to access m_NotCachedPartId
+    /// because it can be not atomic. This flag is false at the creation,
+    /// experiences only one change to true after caching process is done and
+    /// no harm will be caused if it will be read as FALSE when it's just
+    /// changed to TRUE. So this variable can be used concurrently without
+    /// mutexes.
     bool                     m_AllDBPartsCached;
+    /// Read-write lock to work with m_NotCachedPartId
     CFastRWLock              m_NotCachedPartIdLock;
+    /// Id of database part which is now in process of caching information
+    /// from.
     TNCDBPartId              m_NotCachedPartId;
-    // Assuming that reads and writes for int are atomic.
+    /// Minimum expiration time of all blobs remembered now by the storage. 
+    /// Variable is used with assumption that reads and writes for int are
+    /// always atomic.
     volatile int             m_LastDeadTime;
-    CFastRWLock              m_FileMapsMutex;
-    TMetaFilesMap            m_MetaFiles;
-    TDataFilesMap            m_DataFiles;
-
-    TNCBlobBufferPool        m_BuffersPool;
+    /// Read-write lock to work with m_DBFiles
+    CFastRWLock              m_DBFilesMutex;
+    /// Map containing database files pools sorted to be searchable by
+    /// database part id.
+    TFilesMap                m_DBFiles;
+    /// Pool of CNCBlobLockHolder objects
     TNCBlobLockObjPool       m_LockHoldersPool;
+    /// Pool of CNCBlob objects
     TNCBlobsPool             m_BlobsPool;
-
-    /// Mutex for changing blob id counter
-    CFastMutex         m_LastCoordsMutex;
+    /// Mutex to work with m_LastBlob
+    CFastMutex         m_LastBlobMutex;
+    /// Coordinates of the latest blob created by the storage
     SNCBlobCoords      m_LastBlob;
-
     /// Mutex for locking/unlocking blob ids
     CFastMutex         m_IdLockMutex;
-    /// Map blob ids to CYieldingRWLock objects
+    /// Map for CYieldingRWLock objects sorted to be searchable by blob id
     TId2LocksMap       m_IdLocks;
     /// CYieldingRWLock objects that are not used by anybody at the moment
     TLocksList         m_FreeLocks;
@@ -412,18 +614,20 @@ inline
 CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage*      storage,
                                       const SNCDBPartInfo& part_info)
     : m_Storage(storage),
-      m_File(storage->GetFile(part_info.part_id, m_File)),
       m_DBPartId(part_info.part_id)
-{}
+{
+    storage->GetFile(part_info.part_id, &m_File);
+}
 
 template <class TFile>
 inline
 CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage* storage,
                                       TNCDBPartId     part_id)
     : m_Storage(storage),
-      m_File(storage->GetFile(part_id, m_File)),
       m_DBPartId(part_id)
-{}
+{
+    storage->GetFile(part_id, &m_File);
+}
 
 template <class TFile>
 inline
@@ -454,36 +658,6 @@ CNCDB_FileLock<TFile>::operator-> (void) const
 }
 
 
-template <class TFile>
-inline
-CNCFileObjFactory<TFile>::CNCFileObjFactory(void)
-    : m_Stat(NULL)
-{}
-
-template <class TFile>
-inline
-CNCFileObjFactory<TFile>::CNCFileObjFactory(const string& file_name,
-                                            CNCDB_Stat* stat)
-    : m_FileName(file_name),
-      m_Stat(stat)
-{}
-
-template <class TFile>
-inline TFile*
-CNCFileObjFactory<TFile>::CreateObject(void)
-{
-    _ASSERT(!m_FileName.empty()  &&  m_Stat);
-    return new TFile(m_FileName, m_Stat);
-}
-
-template <class TFile>
-inline void
-CNCFileObjFactory<TFile>::Delete(TFile* file)
-{
-    DeleteObject(file);
-}
-
-
 
 inline void
 CNCBlobStorage::SetMonitor(CServer_Monitor* monitor)
@@ -504,16 +678,16 @@ CNCBlobStorage::GetStat(void)
     return &m_Stat;
 }
 
-inline TNCBlobsPool&
-CNCBlobStorage::GetBlobsPool(void)
+inline CNCBlob*
+CNCBlobStorage::GetBlob(void)
 {
-    return m_BlobsPool;
+    return m_BlobsPool.Get();
 }
 
-inline TNCBlobBufferPool&
-CNCBlobStorage::GetBlobBufferPool(void)
+inline void
+CNCBlobStorage::ReturnBlob(CNCBlob* blob)
 {
-    return m_BuffersPool;
+    m_BlobsPool.Return(blob);
 }
 
 inline void
@@ -528,7 +702,7 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
 inline void
 CNCBlobStorage::GetNextBlobCoords(SNCBlobCoords* coords)
 {
-    CFastMutexGuard guard(m_LastCoordsMutex);
+    CFastMutexGuard guard(m_LastBlobMutex);
 
     if (++m_LastBlob.blob_id <= 0)
         m_LastBlob.blob_id = 1;
@@ -580,70 +754,30 @@ CNCBlobStorage::x_CheckReadOnly(ENCBlobAccess access) const
     }
 }
 
-template <>
-inline CNCBlobStorage::TMetaFilesMap&
-CNCBlobStorage::x_FilesMap<CNCBlobStorage::TMetaFilesMap>(void)
+template <class TFile>
+inline void
+CNCBlobStorage::GetFile(TNCDBPartId part_id, TFile** file_ptr)
 {
-    return m_MetaFiles;
-}
-
-template <>
-inline CNCBlobStorage::TDataFilesMap&
-CNCBlobStorage::x_FilesMap<CNCBlobStorage::TDataFilesMap>(void)
-{
-    return m_DataFiles;
+    CNCDBFilesPool* pool = NULL;
+    {{
+        CFastReadGuard guard(m_DBFilesMutex);
+        pool = m_DBFiles[part_id].get();
+    }}
+    _ASSERT(pool);
+    pool->GetFile(file_ptr);
 }
 
 template <class TFile>
-inline TFile*
-CNCBlobStorage::GetFile(TNCDBPartId part_id, TFile*)
-{
-    // This is the (unfortunately) necessary repeat from class declaration
-    typedef CNCFileObjFactory<TFile>                          TFileFactory;
-    typedef CObjPool<TFile, TFileFactory>                     TFilePool;
-    typedef AutoPtr<TFilePool>                                TFilePoolPtr;
-    typedef map<TNCDBPartId, TFilePoolPtr/*, less<TNCDBPartId>,
-                CNCSmallDataAllocator<pair<const TNCDBPartId,
-                                           TFilePoolPtr> >*/ >  TFilesMap;
-
-    TFilesMap& files_map = x_FilesMap<TFilesMap>();
-    TFilePool* pool = NULL;
-    {{
-        CFastReadGuard guard(m_FileMapsMutex);
-        pool = files_map[part_id].get();
-    }}
-    _ASSERT(pool);
-    return pool->Get();
-}
-
 inline void
-CNCBlobStorage::ReturnFile(TNCDBPartId part_id, CNCDB_MetaFile* file)
+CNCBlobStorage::ReturnFile(TNCDBPartId part_id, TFile* file)
 {
-    TMetaFilePool* pool;
+    CNCDBFilesPool* pool;
     {{
-        CFastReadGuard guard(m_FileMapsMutex);
-        TMetaFilesMap::const_iterator it = m_MetaFiles.find(part_id);
-        _ASSERT(it != m_MetaFiles.end());
-        pool = it->second.get();
+        CFastReadGuard guard(m_DBFilesMutex);
+        pool = m_DBFiles[part_id].get();
     }}    
-
     _ASSERT(pool);
-    pool->Return(file);
-}
-
-inline void
-CNCBlobStorage::ReturnFile(TNCDBPartId part_id, CNCDB_DataFile* file)
-{
-    TDataFilePool* pool;
-    {{
-        CFastReadGuard guard(m_FileMapsMutex);
-        TDataFilesMap::const_iterator it = m_DataFiles.find(part_id);
-        _ASSERT(it != m_DataFiles.end());
-        pool = it->second.get();
-    }}    
-
-    _ASSERT(pool);
-    pool->Return(file);
+    pool->ReturnFile(file);
 }
 
 inline void
@@ -652,13 +786,13 @@ CNCBlobStorage::ReturnLockHolder(CNCBlobLockHolder* holder)
     m_LockHoldersPool.Return(holder);
 }
 
-inline bool
+inline void
 CNCBlobStorage::ReadBlobInfo(SNCBlobInfo* info)
 {
     _ASSERT(info->part_id != 0  &&  info->blob_id != 0);
 
     TMetaFileLock metafile(this, info->part_id);
-    return metafile->ReadBlobInfo(info);
+    metafile->ReadBlobInfo(info);
 }
 
 inline void
@@ -676,37 +810,37 @@ CNCBlobStorage::GetChunkIds(const SNCBlobCoords& coords, TNCIdsList* id_list)
 }
 
 inline void
-CNCBlobStorage::WriteChunkValue(TNCDBPartId          part_id,
+CNCBlobStorage::WriteChunkValue(const SNCBlobCoords& coords,
                                 TNCChunkId           chunk_id,
-                                const TNCBlobBuffer& buffer)
+                                const TNCBlobBuffer& data)
 {
-    TDataFileLock datafile(this, part_id);
-    datafile->WriteChunkValue(chunk_id, buffer);
+    TDataFileLock datafile(this, coords.part_id);
+    datafile->WriteChunkValue(chunk_id, data);
 }
 
 inline TNCChunkId
 CNCBlobStorage::CreateNewChunk(const SNCBlobCoords& coords,
-                               const TNCBlobBuffer& buffer)
+                               const TNCBlobBuffer& data)
 {
     TNCChunkId chunk_id;
     {{
         TDataFileLock datafile(this, coords.part_id);
-        chunk_id = datafile->CreateChunkValue(buffer);
+        chunk_id = datafile->CreateChunkValue(data);
     }}
     {{
         TMetaFileLock metafile(this, coords.part_id);
-        metafile->CreateChunkRow(coords.blob_id, chunk_id);
+        metafile->CreateChunk(coords.blob_id, chunk_id);
     }}
     return chunk_id;
 }
 
-inline void
-CNCBlobStorage::ReadChunkValue(TNCDBPartId    part_id,
-                               TNCChunkId     chunk_id,
-                               TNCBlobBuffer* buffer)
+inline bool
+CNCBlobStorage::ReadChunkValue(const SNCBlobCoords& coords,
+                               TNCChunkId           chunk_id,
+                               TNCBlobBuffer*       buffer)
 {
-    TDataFileLock datafile(this, part_id);
-    datafile->ReadChunkValue(chunk_id, buffer);
+    TDataFileLock datafile(this, coords.part_id);
+    return datafile->ReadChunkValue(chunk_id, buffer);
 }
 
 inline void
@@ -714,7 +848,7 @@ CNCBlobStorage::DeleteLastChunks(const SNCBlobCoords& coords,
                                  TNCChunkId           min_chunk_id)
 {
     TMetaFileLock metafile(this, coords.part_id);
-    metafile->DeleteLastChunkRows(coords.blob_id, min_chunk_id);
+    metafile->DeleteLastChunks(coords.blob_id, min_chunk_id);
 }
 
 inline TNCBlobLockHolderRef
@@ -731,10 +865,10 @@ CNCBlobStorage::GetBlobAccess(ENCBlobAccess access,
 }
 
 inline TNCBlobLockHolderRef
-CNCBlobStorage::GetBlobAccess(ENCBlobAccess access,
-                              TNCDBPartId   part_id,
-                              TNCBlobId     blob_id,
-                              bool          change_access_time)
+CNCBlobStorage::x_GetBlobAccess(ENCBlobAccess access,
+                                TNCDBPartId   part_id,
+                                TNCBlobId     blob_id,
+                                bool          change_access_time)
 {
     x_CheckReadOnly(access);
 
@@ -746,7 +880,7 @@ CNCBlobStorage::GetBlobAccess(ENCBlobAccess access,
 inline TNCBlobLockHolderRef
 CNCBlobStorage::GetBlobAccess(ENCBlobAccess access, TNCBlobId blob_id)
 {
-    return GetBlobAccess(access, 0, blob_id, IsChangeTimeOnRead());
+    return x_GetBlobAccess(access, 0, blob_id, IsChangeTimeOnRead());
 }
 
 END_NCBI_SCOPE

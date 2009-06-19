@@ -51,6 +51,7 @@
 #include "netcached.hpp"
 #include "netcache_version.hpp"
 #include "nc_memory.hpp"
+#include "error_codes.hpp"
 
 #define NETCACHED_HUMAN_VERSION \
     "NCBI NetCache server Version " NETCACHED_VERSION \
@@ -66,8 +67,7 @@
 
 BEGIN_NCBI_SCOPE;
 
-NCBI_DEFINE_ERRCODE_X(NetCache, 2004,  14);
-#define NCBI_USE_ERRCODE_X  NetCache
+#define NCBI_USE_ERRCODE_X  NetCache_Main
 
 
 static const char* kNCReg_ServerSection      = "server";

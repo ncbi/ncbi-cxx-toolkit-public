@@ -68,12 +68,10 @@ public:
     /// Method can be called only before SQLite is initialized with
     /// Initialize() method.
     static void SetCustomPageCache(sqlite3_pcache_methods* methods);
-
     /// Initialization of SQLite and tuning some default parameters.
     /// For these SQLite wrappers to work properly this method should be
     /// called before any work with other classes.
     static void Initialize(void);
-
     /// Setup the option for asynchronous file system to do the actual locking
     /// of database files on disk. If lock_files is TRUE then files will be
     /// actually locked on hard disk, if it is FALSE files will not be locked
@@ -81,11 +79,9 @@ public:
     /// writing flag set will be maintained only inside current process.
     /// Method should be called only when there's no connections opened.
     static void SetAsyncWritesFileLocking(bool lock_files);
-
     /// Launch background thread doing all asynchronous writes to databases.
     /// Method is no-op if background thread has already launched.
     static void RunAsyncWritesThread(void);
-
     /// Finish all SQLite operations. Method should be called at the end of
     /// application execution. After it has been called any further attempts
     /// to use wrapper classes will likely cause application crash.
@@ -210,6 +206,9 @@ public:
     ///       created. When old database is opened with some data in it
     ///       then vacuuming flags are no-op, flags used at creation are in
     ///       effect.
+    /// NOTE: Connection should be destroyed after all statements or blobs
+    ///       created on top of it. destroying statements after connection
+    ///       was destroyed will result in segmentation fault.
     ///
     /// @param file_name
     ///   File name of SQLite database. If it doesn't exist it will be

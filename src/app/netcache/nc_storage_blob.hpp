@@ -80,52 +80,60 @@ public:
     bool   IsFinalized(void) const;
 
 public:
+    // For internal use only
+
+    /// Create new blob object bound to the given NetCache storage.
+    /// Constructor does just physical creation. Before any use object should
+    /// be initialized by call to Init().
     CNCBlob(CNCBlobStorage* storage);
 
-    /// Constructor for use in CNCBlobRWLock only
+    /// Initialize the object for use with some actual blob data
     ///
-    /// @param conn
-    ///   Connection to do all database operations
-    /// @param blob_id
-    ///   Id of the blob to read/write
-    /// @param blob_size
-    ///   Size of the blob (read from meta-information about blob)
+    /// @param blob_info
+    ///   Meta-information about blob data. Object will use blob_id and
+    ///   part_id and will change size as necessary.
     /// @param can_write
     ///   TRUE - object can only write to the blob, FALSE - object can only
     ///   read from the blob
-    /// @param stat
-    ///   Object gathering NetCache storage statistics
     void Init(SNCBlobInfo*    blob_info,
               bool            can_write);
+    /// Reset object, i.e. it will no longer be used until next call to
+    /// Init() so that any temporary data can be released.
     void Reset(void);
 
 private:
     CNCBlob(const CNCBlob&);
     CNCBlob& operator=(const CNCBlob&);
 
-    /// Write current chunk data to database
+    /// Write data of the current blob chunk to database
     void x_FlushCurChunk(void);
+    /// Do common operations when detected database corruption (mark blob as
+    /// necessary to delete and throw exception).
+    void x_CorruptedDatabase(void);
 
 
-    /// Connection which this object will do all database operations in
+    /// Storage object which this object is bound to
     CNCBlobStorage*       m_Storage;
-    /// Id of blob this object reads/writes
+    /// Meta-information about blob currently working with
     SNCBlobInfo*          m_BlobInfo;
-    TNCBlobBufferGuard    m_Buffer;
-    /// Current position of reading/writing inside blob
+    /// Blob buffer used for temporary caching data written or read from blob
+    TNCBlobBuffer         m_Buffer;
+    /// Current position of reading/writing inside the whole blob
     size_t                m_Position;
-    /// Current position of reading/writing inside blob chunk
+    /// Current position of reading/writing inside blob's chunk
     size_t                m_ChunkPos;
     /// List of ids of all chunks blob consists of
     TNCIdsList            m_AllRowIds;
     /// "Pointer" to chunk id that will be read/written next
     TNCIdsList::iterator  m_NextRowIdIt;
-    /// Flag if object can just write or just read
+    /// TRUE - object can only write to the blob, FALSE - object can only
+    /// read from the blob
     bool                  m_CanWrite;
     /// Flag if Finalize() method was called
     bool                  m_Finalized;
 };
 
+/// Pool of CNCBlob objects
 typedef CObjFactory_NewParam<CNCBlob, CNCBlobStorage*>  TNCBlobsFactory;
 typedef CObjPool<CNCBlob, TNCBlobsFactory>              TNCBlobsPool;
 
@@ -161,51 +169,88 @@ public:
     /// Get version of the blob.
     /// Method can be called only after lock is acquired.
     int           GetBlobVersion   (void) const;
+    /// Get size of the blob.
+    /// Method can be called only after lock is acquired.
+    /// If blob doesn't exist then value is undefined.
     size_t        GetBlobSize      (void) const;
     /// Get owner of the blob.
     /// Method can be called only after lock is acquired.
+    /// If blob doesn't exist then value is undefined.
     const string& GetBlobOwner     (void) const;
     /// Get blob's timeout after last access before it will be deleted.
     /// Method can be called only after lock is acquired.
+    /// If blob doesn't exist then value is undefined.
     int           GetBlobTTL       (void) const;
-    /// Get last acess time to the blob.
+    /// Get last access time to the blob.
     /// Method can be called only after lock is acquired.
+    /// If blob doesn't exist then value is undefined.
     int           GetBlobAccessTime(void) const;
     /// Check if blob is already expired but not yet deleted by GC.
     /// Method can be called only after lock is acquired.
+    /// If blob doesn't exist then value is undefined.
     bool          IsBlobExpired    (void) const;
 
     /// Get object to read/write to the blob.
-    /// Method can be called only after lock is acquired.
+    /// Method can be called only after lock is acquired and if blob exists.
     CNCBlob*      GetBlob          (void) const;
 
     /// Set blob's timeout after last access before it will be deleted.
-    /// Method can be called only after lock is acquired.
+    /// Method can be called only after lock is acquired, if blob exists and
+    /// lock is acquired for eWrite or eCreate access.
     void SetBlobTTL(int ttl);
     /// Set owner of the blob.
-    /// Method can be called only after lock is acquired.
+    /// Method can be called only after lock is acquired, if blob exists and
+    /// lock is acquired for eWrite or eCreate access.
     void SetBlobOwner(const string& owner);
 
     /// Delete the blob.
-    /// Method can be called only after lock is acquired.
+    /// Method can be called only after lock is acquired and
+    /// lock is acquired for eWrite or eCreate access. If blob doesn't exist
+    /// or was already deleted by call to this method then method is no-op.
     void DeleteBlob(void);
 
-    /// Release blob lock
+    /// Release blob lock.
+    /// No other method can be called after call to this one.
     void ReleaseLock(void);
 
 public:
+    // For internal use only
+
+    /// Create holder of blob lock bound to the given NetCache storage.
+    /// Lock holder is yet not usable after construction until AcquireLock()
+    /// is called.
     CNCBlobLockHolder(CNCBlobStorage* storage);
-
-    CNCBlobStorage* GetStorage(void);
-
-    /// Acquire access lock for the blob identified by key-subkey-version
-    /// Constructor is for use internally in CNCBlobStorage only
+    /// Acquire lock for the blob identified by key, subkey and version.
+    /// If access is eRead and storage's IsChangeTimeOnRead() returns TRUE
+    /// then holder will change blob's access time when lock is released. If
+    /// access is eWrite or eCreate then blob will be automatically deleted
+    /// when lock is released if blob wasn't properly finalized.
+    ///
+    /// @param key
+    ///   Key of the blob
+    /// @param subkey
+    ///   Subkey of the blob
+    /// @param version
+    ///   Version of the blob
+    /// @param access
+    ///   Required access to the blob
     void AcquireLock(const string&   key,
                      const string&   subkey,
                      int             version,
                      ENCBlobAccess   access);
-    /// Acquire access lock for the blob identified by blob id
-    /// Constructor is for use internally in CNCBlobStorage only
+    /// Acquire lock for the blob identified by database part id and blob id.
+    /// If access is eWrite or eCreate then blob will be automatically deleted
+    /// when lock is released if blob wasn't properly finalized.
+    ///
+    /// @param part_id
+    ///   Database part id. If 0 then part id will be determined by blob id.
+    /// @param blob_id
+    ///   Id of the blob
+    /// @param access
+    ///   Required access to the blob
+    /// @param change_access_time
+    ///   Flag if holder should change blob access time when lock will be
+    ///   released.
     void AcquireLock(TNCDBPartId     part_id,
                      TNCBlobId       blob_id,
                      ENCBlobAccess   access,
@@ -221,12 +266,14 @@ private:
     /// Implementation of IRWLockHolder_Listener - get notified when lock
     /// is released
     virtual void OnLockReleased(CRWLockHolder* holder);
-    ///
+    /// Method derived from CObject and called when last reference to object
+    /// is released. Method implements part of logic for pooling of all
+    /// CNCBlobLockHolder objects inside storage.
     virtual void DeleteThis(void) const;
 
     /// Initialize object's variables and acquire lock.
-    /// Called only from constructors.
-    void x_InitLock(ENCBlobAccess access);
+    /// Called only from AcquireLock().
+    void x_InitLock(void);
     /// Utility procedure that should be executed after lock is considered
     /// valid (can happen in several places).
     void x_OnLockValidated(void);
@@ -239,7 +286,7 @@ private:
     ///   exists. FALSE if lock is invalid, i.e. mentioned above requirement
     ///   is not met
     bool x_ValidateLock(void);
-    /// Lock blob (with blob id m_BlobId) and validate it
+    /// Lock blob and validate acquired lock
     ///
     /// @return
     ///   TRUE if method is successful and there's no need to call it once
@@ -250,7 +297,7 @@ private:
     ///   OnLockAcquired().
     ///
     /// @sa x_ValidateLock, OnLockAcquired
-    bool x_LockAndValidate(ENCBlobAccess access);
+    bool x_LockAndValidate(void);
     /// Internal releasing of the lock
     /// Only pure releasing without obtaining mutex and statistics
     /// registration, thus it should execute from constructor or under
@@ -261,23 +308,29 @@ private:
     /// created by another thread. Method is called only if access mode is
     /// eCreate.
     void x_RetakeCreateLock(void);
-    /// Check if one can write to the blob, i.e. access mode is
-    /// eWrite or eCreate
-    bool x_IsBlobWritable(void) const;
-    void x_CheckBlobInfoRead(void) const;
+    /// Ensure that meta-information about blob was already read from
+    /// database. If information wasn't read yet then read it.
+    void x_EnsureBlobInfoRead(void) const;
 
 
     /// NetCache storage created the holder
     CNCBlobStorage*          m_Storage;
-    /// Full information about locked blob if it exists
+    /// Full meta-information about locked blob. If blob doesn't exist then
+    /// only part of identity information will be valid.
     mutable SNCBlobInfo      m_BlobInfo;
+    /// Type of access requested for the blob
+    ENCBlobAccess            m_BlobAccess;
+    /// Flag if blob meta-information should be written to database when lock
+    /// is released.
     bool                     m_SaveInfoOnRelease;
-    mutable bool             m_DeleteOnRelease;
+    /// Flag if blob should be deleted in database when lock is released if it
+    /// wasn't properly finalized.
+    mutable bool             m_DeleteNotFinalized;
     /// Object used to read/write to the blob
     mutable CNCBlob*         m_Blob;
     /// Holder of blob id lock
     TRWLockHolderRef         m_RWHolder;
-    /// Timer to calculate time while lock was waited for and while lock
+    /// Timer to measure time while lock was waited for and while lock
     /// persisted before releasing
     CStopWatch               m_LockTimer;
     /// Flag if the fact that lock is acquired is already known by the holder
@@ -291,11 +344,32 @@ private:
     mutable CFastMutex       m_LockAcqMutex;
 };
 
+/// Pool of CNCBlobLockHolder objects
 typedef CObjFactory_NewParam<CNCBlobLockHolder,
                              CNCBlobStorage*>            TNCBlobLockFactory;
 typedef CObjPool<CNCBlobLockHolder, TNCBlobLockFactory>  TNCBlobLockObjPool;
 /// Type that should be always used to store pointers to CNCBlobLockHolder
 typedef CRef<CNCBlobLockHolder> TNCBlobLockHolderRef;
+
+
+
+inline size_t
+CNCBlob::GetSize(void) const
+{
+    return m_BlobInfo->size;
+}
+
+inline size_t
+CNCBlob::GetPosition(void) const
+{
+    return m_Position;
+}
+
+inline bool
+CNCBlob::IsFinalized(void) const
+{
+    return m_Finalized;
+}
 
 
 
@@ -306,12 +380,6 @@ CNCBlobLockHolder::CNCBlobLockHolder(CNCBlobStorage* storage)
       m_LockKnown(false),
       m_LockValid(false)
 {}
-
-inline CNCBlobStorage*
-CNCBlobLockHolder::GetStorage(void)
-{
-    return m_Storage;
-}
 
 inline bool
 CNCBlobLockHolder::IsLockAcquired(void) const
@@ -325,12 +393,6 @@ CNCBlobLockHolder::IsBlobExists(void) const
     _ASSERT(IsLockAcquired());
 
     return m_BlobExists;
-}
-
-inline bool
-CNCBlobLockHolder::x_IsBlobWritable(void) const
-{
-    return m_RWHolder->GetLockType() == eWriteLock;
 }
 
 inline const string&
@@ -354,64 +416,45 @@ CNCBlobLockHolder::GetBlobVersion(void) const
 inline size_t
 CNCBlobLockHolder::GetBlobSize(void) const
 {
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     return m_BlobInfo.size;
 }
 
 inline const string&
 CNCBlobLockHolder::GetBlobOwner(void) const
 {
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     return m_BlobInfo.owner;
 }
 
 inline int
 CNCBlobLockHolder::GetBlobTTL(void) const
 {
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     return m_BlobInfo.ttl;
 }
 
 inline int
 CNCBlobLockHolder::GetBlobAccessTime(void) const
 {
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     return m_BlobInfo.access_time;
 }
 
 inline bool
 CNCBlobLockHolder::IsBlobExpired(void) const
 {
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     return m_BlobInfo.expired;
 }
 
 inline void
 CNCBlobLockHolder::SetBlobOwner(const string& owner)
 {
-    _ASSERT(IsLockAcquired()  &&  x_IsBlobWritable());
+    _ASSERT(IsLockAcquired()  &&  m_BlobAccess != eRead);
 
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     m_BlobInfo.owner = owner;
-}
-
-
-inline size_t
-CNCBlob::GetSize(void) const
-{
-    return m_BlobInfo->size;
-}
-
-inline size_t
-CNCBlob::GetPosition(void) const
-{
-    return m_Position;
-}
-
-inline bool
-CNCBlob::IsFinalized(void) const
-{
-    return m_Finalized;
 }
 
 END_NCBI_SCOPE

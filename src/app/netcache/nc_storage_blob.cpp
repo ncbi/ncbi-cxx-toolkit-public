@@ -24,15 +24,13 @@
  * ===========================================================================
  *
  * Authors:  Pavel Ivanov
- *
- * File Description: 
- *
  */
 
 #include <ncbi_pch.hpp>
 
 #include "nc_storage_blob.hpp"
 #include "nc_storage.hpp"
+#include "error_codes.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -41,31 +39,42 @@ BEGIN_NCBI_SCOPE
 #define NCBI_USE_ERRCODE_X  NetCache_Storage
 
 
+/// Maximum size of blob chunk stored in database. Experiments show that
+/// reading from blob in SQLite after this point is significantly slower than
+/// before that.
 static const size_t kNCMaxBlobChunkSize = 2000000;
 
 
 CNCBlob::CNCBlob(CNCBlobStorage* storage)
-    : m_Storage(storage),
-      m_Buffer(storage->GetBlobBufferPool())
-{}
+    : m_Storage(storage)
+{
+    m_Buffer.reserve(kNCMaxBlobChunkSize);
+}
 
 inline void
 CNCBlob::x_FlushCurChunk(void)
 {
     if (m_NextRowIdIt == m_AllRowIds.end()) {
-        TNCChunkId chunk_id = m_Storage->CreateNewChunk(*m_BlobInfo,
-                                                        *m_Buffer);
+        TNCChunkId chunk_id
+                        = m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
         m_AllRowIds.push_back(chunk_id);
         m_NextRowIdIt = m_AllRowIds.end();
     }
     else {
-        m_Storage->WriteChunkValue(m_BlobInfo->part_id,
-                                   *m_NextRowIdIt,
-                                   *m_Buffer);
+        m_Storage->WriteChunkValue(*m_BlobInfo, *m_NextRowIdIt, m_Buffer);
         ++m_NextRowIdIt;
     }
-    m_Storage->GetStat()->AddChunkWritten(m_Buffer->size());
-    m_Buffer->resize(0);
+    m_Storage->GetStat()->AddChunkWritten(m_Buffer.size());
+    m_Buffer.resize(0);
+}
+
+inline void
+CNCBlob::x_CorruptedDatabase(void)
+{
+    m_BlobInfo->corrupted = true;
+    NCBI_THROW(CNCBlobStorageException, eCorruptedDB,
+               "Database information about blob is corrupted. "
+               "Blob will be deleted");
 }
 
 void
@@ -75,16 +84,14 @@ CNCBlob::Init(SNCBlobInfo* blob_info, bool can_write)
     _ASSERT(blob_info->blob_id);
 
     m_BlobInfo = blob_info;
-    m_Position = 0;
-    m_ChunkPos = 0;
+    m_Position = m_ChunkPos = 0;
     m_CanWrite = can_write;
     m_Finalized = false;
 
     m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
     m_NextRowIdIt = m_AllRowIds.begin();
 
-    m_Buffer->resize(0);
-    m_Buffer->reserve(kNCMaxBlobChunkSize);
+    m_Buffer.resize(0);
 }
 
 void
@@ -113,24 +120,26 @@ CNCBlob::Read(void* buffer, size_t size)
 {
     _ASSERT(!m_CanWrite);
 
-    if (m_ChunkPos == m_Buffer->size()) {
-        m_Buffer->resize(0);
+    if (m_ChunkPos == m_Buffer.size()) {
+        m_Buffer.resize(0);
         m_ChunkPos = 0;
 
         if (m_NextRowIdIt == m_AllRowIds.end()) {
+            if (m_Position < m_BlobInfo->size)
+                x_CorruptedDatabase();
             return 0;
         }
-
-        m_Storage->ReadChunkValue(m_BlobInfo->part_id,
-                                  *m_NextRowIdIt,
-                                  m_Buffer);
+        if (!m_Storage->ReadChunkValue(*m_BlobInfo, *m_NextRowIdIt, &m_Buffer))
+            x_CorruptedDatabase();
         ++m_NextRowIdIt;
     }
 
-    size = min(size, m_Buffer->size() - m_ChunkPos);
-    memcpy(buffer, m_Buffer->data() + m_ChunkPos, size);
+    size = min(size, m_Buffer.size() - m_ChunkPos);
+    memcpy(buffer, m_Buffer.data() + m_ChunkPos, size);
     m_Position += size;
     m_ChunkPos += size;
+    if (m_Position > m_BlobInfo->size)
+        x_CorruptedDatabase();
     return size;
 }
 
@@ -140,11 +149,11 @@ CNCBlob::Write(const void* data, size_t size)
     _ASSERT(m_CanWrite  &&  !m_Finalized);
 
     while (size != 0) {
-        size_t write_size = min(size, kNCMaxBlobChunkSize - m_Buffer->size());
-        memcpy(m_Buffer->data() + m_Buffer->size(), data, write_size);
-        m_Buffer->resize(m_Buffer->size() + write_size);
+        size_t write_size = min(size, kNCMaxBlobChunkSize - m_Buffer.size());
+        memcpy(m_Buffer.data() + m_Buffer.size(), data, write_size);
+        m_Buffer.resize(m_Buffer.size() + write_size);
 
-        if (m_Buffer->size() == kNCMaxBlobChunkSize) {
+        if (m_Buffer.size() == kNCMaxBlobChunkSize) {
             x_FlushCurChunk();
         }
 
@@ -152,6 +161,15 @@ CNCBlob::Write(const void* data, size_t size)
         size -= write_size;
         m_Position += write_size;
         m_BlobInfo->size = max(m_BlobInfo->size, m_Position);
+        if (m_Storage->GetMaxBlobSize()
+            &&  m_BlobInfo->size > m_Storage->GetMaxBlobSize())
+        {
+            NCBI_THROW(CNCBlobStorageException, eTooBigBlob,
+                       "Attempt to write too big blob. Size="
+                       + NStr::UInt8ToString(m_BlobInfo->size)
+                       + " when maximum is "
+                       + NStr::UInt8ToString(m_Storage->GetMaxBlobSize()));
+        }
     }
 }
 
@@ -175,18 +193,13 @@ CNCBlob::Finalize(void)
 
 
 void
-CNCBlobLockHolder::x_CheckBlobInfoRead(void) const
+CNCBlobLockHolder::x_EnsureBlobInfoRead(void) const
 {
     _ASSERT(IsLockAcquired());
 
     // ttl will be equal to 0 if blob exists only when info was not read yet
     if (m_BlobInfo.ttl == 0  &&  m_BlobExists) {
-        if (!m_Storage->ReadBlobInfo(&m_BlobInfo)) {
-            m_DeleteOnRelease = true;
-            NCBI_THROW(CNCBlobStorageException, eMalformedDB,
-                "Blob data in database is malformed. "
-                "Blob will be deleted.");
-        }
+        m_Storage->ReadBlobInfo(&m_BlobInfo);
     }
 }
 
@@ -195,7 +208,7 @@ CNCBlobLockHolder::x_OnLockValidated(void)
 {
     m_LockValid = true;
     if (!m_BlobExists) {
-        m_SaveInfoOnRelease = m_DeleteOnRelease = false;
+        m_SaveInfoOnRelease = m_DeleteNotFinalized = false;
     }
 
     m_Storage->GetStat()->AddLockAcquired(m_LockTimer.Elapsed());
@@ -205,14 +218,11 @@ CNCBlobLockHolder::x_OnLockValidated(void)
 inline bool
 CNCBlobLockHolder::x_ValidateLock(void)
 {
-    bool key_empty = m_BlobInfo.key.empty();
     m_BlobExists = m_Storage->ReadBlobKey(&m_BlobInfo);
-    // If there's no need to create (i.e. key was empty)
-    // then we're valid anyway
-    if (key_empty  ||  m_BlobExists) {
+    // If there's no need to create then we're valid anyway
+    if (m_BlobExists  ||  m_BlobAccess != eCreate) {
         x_OnLockValidated();
     }
-
     return m_LockValid;
 }
 
@@ -221,7 +231,7 @@ CNCBlobLockHolder::x_ReleaseLock(void)
 {
     if (m_Blob) {
         m_Blob->Reset();
-        m_Storage->GetBlobsPool().Return(m_Blob);
+        m_Storage->ReturnBlob(m_Blob);
         m_Blob = NULL;
     }
     m_Storage->UnlockBlobId(m_BlobInfo.blob_id, m_RWHolder);
@@ -239,12 +249,13 @@ CNCBlobLockHolder::AcquireLock(TNCDBPartId   part_id,
     _ASSERT(access != eCreate);
 
     m_BlobInfo.Clear();
-    m_BlobInfo.part_id = part_id;
-    m_BlobInfo.blob_id = blob_id;
-    m_SaveInfoOnRelease = change_access_time;
-    m_DeleteOnRelease = access != eRead;
+    m_BlobInfo.part_id   = part_id;
+    m_BlobInfo.blob_id   = blob_id;
+    m_BlobAccess         = access;
+    m_SaveInfoOnRelease  = change_access_time;
+    m_DeleteNotFinalized = false;
 
-    x_InitLock(access);
+    x_InitLock();
 }
 
 void
@@ -256,18 +267,19 @@ CNCBlobLockHolder::AcquireLock(const string& key,
     _ASSERT(!key.empty());
 
     m_BlobInfo.Clear();
-    m_BlobInfo.key = key;
-    m_BlobInfo.subkey = subkey;
-    m_BlobInfo.version = version;
-    m_DeleteOnRelease = access != eRead;
-    m_SaveInfoOnRelease = m_DeleteOnRelease
-                          ||  m_Storage->IsChangeTimeOnRead();
+    m_BlobInfo.key       = key;
+    m_BlobInfo.subkey    = subkey;
+    m_BlobInfo.version   = version;
+    m_BlobAccess         = access;
+    m_DeleteNotFinalized = access == eCreate;
+    m_SaveInfoOnRelease  = access != eRead
+                           ||  m_Storage->IsChangeTimeOnRead();
 
-    x_InitLock(access);
+    x_InitLock();
 }
 
 void
-CNCBlobLockHolder::x_InitLock(ENCBlobAccess access)
+CNCBlobLockHolder::x_InitLock(void)
 {
     m_Blob = NULL;
     m_LockKnown = m_LockValid = m_BlobExists = false;
@@ -276,7 +288,7 @@ CNCBlobLockHolder::x_InitLock(ENCBlobAccess access)
     m_LockTimer.Start();
 
     try {
-        if (access == eCreate) {
+        if (m_BlobAccess == eCreate) {
             _ASSERT(m_BlobInfo.blob_id == 0);
 
             // Assume that in majority of cases "Create" means new blob, thus
@@ -288,7 +300,7 @@ CNCBlobLockHolder::x_InitLock(ENCBlobAccess access)
             x_RetakeCreateLock();
         }
         else if (m_BlobInfo.blob_id == 0
-                 &&  ! m_Storage->ReadBlobId(&m_BlobInfo))
+                 &&  !m_Storage->ReadBlobCoords(&m_BlobInfo))
         {
             // There's no such blob
             m_LockKnown = true;
@@ -296,7 +308,7 @@ CNCBlobLockHolder::x_InitLock(ENCBlobAccess access)
         }
         else {
             // Standard way of read/write locking
-            x_LockAndValidate(access);
+            x_LockAndValidate();
         }
     }
     catch (...) {
@@ -321,6 +333,8 @@ CNCBlobLockHolder::OnLockAcquired(CRWLockHolder* holder)
     }}
 
     if (!x_ValidateLock()) {
+        // Lock can be invalid here only in one case - blob should be created
+        // and yet doesn't exist in database.
         x_RetakeCreateLock();
     }
 }
@@ -339,18 +353,16 @@ CNCBlobLockHolder::x_RetakeCreateLock(void)
             x_OnLockValidated();
             return;
         }
-        if (x_LockAndValidate(eCreate)) {
+        if (x_LockAndValidate())
             return;
-        }
     }
 }
 
 bool
-CNCBlobLockHolder::x_LockAndValidate(ENCBlobAccess access)
+CNCBlobLockHolder::x_LockAndValidate(void)
 {
-    TRWLockHolderRef rw_holder(
-                          m_Storage->LockBlobId(m_BlobInfo.blob_id, access));
-
+    TRWLockHolderRef rw_holder(m_Storage->LockBlobId(m_BlobInfo.blob_id,
+                                                     m_BlobAccess));
     bool lock_known;
     {{
         CFastMutexGuard guard(m_LockAcqMutex);
@@ -360,7 +372,6 @@ CNCBlobLockHolder::x_LockAndValidate(ENCBlobAccess access)
         m_RWHolder = rw_holder;
         lock_known = m_LockKnown = rw_holder->IsLockAcquired();
     }}
-
     if (lock_known) {
         return x_ValidateLock();
     }
@@ -373,7 +384,9 @@ void
 CNCBlobLockHolder::ReleaseLock(void)
 {
     if (IsLockAcquired()) {
-        if (m_DeleteOnRelease  &&  (!m_Blob  ||  !m_Blob->IsFinalized())) {
+        if (m_DeleteNotFinalized  &&  (!m_Blob  ||  !m_Blob->IsFinalized())
+            ||  m_BlobInfo.corrupted)
+        {
             m_Storage->DeleteBlob(m_BlobInfo);
         }
         else if (m_SaveInfoOnRelease) {
@@ -381,7 +394,6 @@ CNCBlobLockHolder::ReleaseLock(void)
             _ASSERT(m_BlobInfo.ttl != 0);
             m_Storage->WriteBlobInfo(m_BlobInfo);
         }
-
         m_Storage->GetStat()->AddLockHeldTime(m_LockTimer.Elapsed());
     }
 
@@ -398,9 +410,10 @@ CNCBlobLockHolder::GetBlob(void) const
     CFastMutexGuard guard(m_LockAcqMutex);
 
     if (!m_Blob) {
-        x_CheckBlobInfoRead();
-        m_Blob = m_Storage->GetBlobsPool().Get();
-        m_Blob->Init(&m_BlobInfo, x_IsBlobWritable());
+        x_EnsureBlobInfoRead();
+        m_Blob = m_Storage->GetBlob();
+        m_DeleteNotFinalized = m_BlobAccess != eRead;
+        m_Blob->Init(&m_BlobInfo, m_DeleteNotFinalized);
     }
     return m_Blob;
 }
@@ -408,9 +421,9 @@ CNCBlobLockHolder::GetBlob(void) const
 void
 CNCBlobLockHolder::SetBlobTTL(int ttl)
 {
-    _ASSERT(IsLockAcquired()  &&  x_IsBlobWritable());
+    _ASSERT(IsLockAcquired()  &&  m_BlobAccess != eRead);
 
-    x_CheckBlobInfoRead();
+    x_EnsureBlobInfoRead();
     if (ttl == 0) {
         ttl = m_Storage->GetDefBlobTTL();
     }
@@ -426,13 +439,13 @@ CNCBlobLockHolder::DeleteBlob(void)
     _ASSERT(IsLockAcquired());
 
     if (IsBlobExists()) {
-        _ASSERT(m_RWHolder.NotNull()  &&  x_IsBlobWritable());
+        _ASSERT(m_RWHolder.NotNull()  &&  m_BlobAccess != eRead);
 
         m_Storage->DeleteBlob(m_BlobInfo);
         m_Storage->GetStat()->AddBlobDelete();
 
         m_BlobExists = false;
-        m_SaveInfoOnRelease = m_DeleteOnRelease = false;
+        m_SaveInfoOnRelease = m_DeleteNotFinalized = false;
     }
 }
 

@@ -24,9 +24,6 @@
  * ===========================================================================
  *
  * Authors:  Pavel Ivanov
- *
- * File Description: 
- *
  */
 
 #include <ncbi_pch.hpp>
@@ -36,6 +33,7 @@
 #include <corelib/request_ctx.hpp>
 
 #include "nc_storage.hpp"
+#include "error_codes.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -43,7 +41,9 @@ BEGIN_NCBI_SCOPE
 #define NCBI_USE_ERRCODE_X  NetCache_Storage
 
 
-static const int    kNCDefDBRotateFraction    = 10;
+/// Default part of default blob timeout to be used as period for database
+/// parts rotation.
+static const int   kNCDefDBRotateFraction     = 10;
 
 static const char* kNCStorage_DBFileExt       = ".db";
 static const char* kNCStorage_IndexFileSuffix = ".index";
@@ -62,22 +62,20 @@ static const char* kNCStorage_DropDirtyParam  = "drop_if_dirty";
 static const char* kNCStorage_MaxBlobParam    = "max_blob_size";
 static const char* kNCStorage_DBRotateParam   = "db_rotate_period";
 static const char* kNCStorage_GCDelayParam    = "purge_thread_delay";
-static const char* kNCStorage_GCBatchParam    = "purge_batch_size";
+static const char* kNCStorage_BlobsBatchParam = "purge_batch_size";
 static const char* kNCStorage_GCSleepParam    = "purge_batch_sleep";
-//static const char* kNCStorage_GCShrinkParam   = "purge_shrink_step";
 
 
 
 typedef void (CNCBlobStorage::*TGCMethod)(void);
 
-/// Thread running garbage collector and trash cleaner for the storage
+/// Thread running background tasks for the storage
 class CNCStorage_BGThread : public CThread
 {
 public:
     CNCStorage_BGThread(CNCBlobStorage* storage, TGCMethod method)
         : m_Storage(storage), m_Method(method)
     {}
-
     virtual ~CNCStorage_BGThread(void)
     {}
 
@@ -89,11 +87,16 @@ protected:
     }
 
 private:
+    /// Storage this thread is bound to
     CNCBlobStorage* m_Storage;
+    /// Method to run in the storage
     TGCMethod       m_Method;
 };
 
-///
+
+/// Special exception to terminate background thread when storage is
+/// destroying. Class intentionally made without inheritance from CException
+/// or std::exception.
 class CNCStorage_StoppedException
 {};
 
@@ -170,18 +173,15 @@ CNCBlobStorage::x_ReadStorageParams(const IRegistry& reg, CTempString section)
 
     x_ParseTimestampParam(reg.Get(section, kNCStorage_TimestampParam));
 
-    m_MaxBlobSize  = reg.GetInt(section, kNCStorage_MaxBlobParam,
-                                0, 0, IRegistry::eErrPost);
+    m_MaxBlobSize    = reg.GetInt(section, kNCStorage_MaxBlobParam,
+                                  0,   0, IRegistry::eErrPost);
 
-    m_GCRunDelay   = reg.GetInt(section, kNCStorage_GCDelayParam,
-                                30, 0, IRegistry::eErrPost);
-    m_GCBatchSize  = reg.GetInt(section, kNCStorage_GCBatchParam,
-                                500, 0, IRegistry::eErrPost);
-    m_GCBatchSleep = reg.GetInt(section, kNCStorage_GCSleepParam,
-                                0, 0, IRegistry::eErrPost);
-/*    m_DBShrinkStep = static_cast<size_t>(
-                     reg.GetInt(section, kNCStorage_GCShrinkParam,
-                                3276800, 0, IRegistry::eErrPost));*/
+    m_GCRunDelay     = reg.GetInt(section, kNCStorage_GCDelayParam,
+                                  30,  0, IRegistry::eErrPost);
+    m_BlobsBatchSize = reg.GetInt(section, kNCStorage_BlobsBatchParam,
+                                  500, 0, IRegistry::eErrPost);
+    m_GCBatchSleep   = reg.GetInt(section, kNCStorage_GCSleepParam,
+                                  0,   0, IRegistry::eErrPost);
 }
 
 inline string
@@ -313,27 +313,37 @@ CNCBlobStorage::x_CheckDBInitialized(bool        guard_existed,
 }
 
 inline void
+CNCBlobStorage::x_CheckPartsMinBlobId(void)
+{
+    TNCBlobId prev_min_id = 1;
+    NON_CONST_ITERATE(TNCDBPartsList, it, m_DBParts) {
+        if (it->min_blob_id == 0) {
+            if (it == m_DBParts.begin()) {
+                it->min_blob_id = 1;
+            }
+            else {
+                --it;
+                TMetaFileLock metafile(this, *it);
+                TNCBlobId min_id = metafile->GetLastBlobId();
+                ++it;
+                it->min_blob_id = (min_id == 0? prev_min_id: min_id) + 1;
+            }
+            m_IndexDB->SetDBPartMinBlobId(it->part_id, it->min_blob_id);
+        }
+        prev_min_id = it->min_blob_id;
+    }
+}
+
+inline void
 CNCBlobStorage::x_ReadLastBlobCoords(void)
 {
     SNCDBPartInfo& last_info = m_DBParts.back();
     m_LastBlob.part_id = last_info.part_id;
     TMetaFileLock last_meta(this, last_info);
     m_LastBlob.blob_id = last_meta->GetLastBlobId();
-
-    if (last_info.min_blob_id == 0) {
-        TNCBlobId min_id = 0;
-        for (TNCDBPartsList::reverse_iterator
-                it = ++m_DBParts.rbegin();
-                            min_id == 0 && it != m_DBParts.rend(); ++it)
-        {
-            TMetaFileLock pre_last(this, *it);
-            min_id = pre_last->GetLastBlobId();
-        }
-        ++min_id;
-        m_IndexDB->UpdateDBPartBlobId(m_LastBlob.part_id, min_id);
-        last_info.min_blob_id = min_id;
-    }
     if (m_LastBlob.blob_id == 0) {
+        // min_blob_id is guaranteed to be correctly set because of
+        // x_CheckPartsMinBlobId()
         m_LastBlob.blob_id = last_info.min_blob_id;
     }
 }
@@ -349,7 +359,9 @@ CNCBlobStorage::x_MonitorPost(CTempString msg, bool do_trace /* = true */)
         LOG_POST(Trace << msg);
     }
     if (m_Monitor  &&  m_Monitor->IsMonitorActive()) {
-        string send_msg((CTime(CTime::eCurrent).AsString()));
+        // We cannot make function-style initialization because GCC 3.0.4
+        // somehow doesn't understand it here.
+        string send_msg = CTime(CTime::eCurrent).AsString();
         send_msg += "\n\t";
         send_msg += msg;
         send_msg += "\n";
@@ -392,7 +404,6 @@ CNCBlobStorage::LockBlobId(TNCBlobId blob_id, ENCBlobAccess access)
     else {
         rwlock = it->second;
     }
-
     return rwlock->AcquireLock(access == eRead? eReadLock: eWriteLock);
 }
 
@@ -408,11 +419,13 @@ CNCBlobStorage::UnlockBlobId(TNCBlobId blob_id, TRWLockHolderRef& rw_holder)
     {{
         CFastMutexGuard guard(m_IdLockMutex);
 
+        // By second condition we avoid race when 2 threads are releasing lock
+        // simultaneously and both execute this code with unlocked rw_lock,
+        // but it should be added to m_FreeLocks only once.
         if (!rw_lock->IsLocked()  &&  m_IdLocks.erase(blob_id)) {
             m_FreeLocks.push_back(rw_lock);
         }
     }}
-
     rw_holder.Reset();
 }
 
@@ -432,36 +445,22 @@ CNCBlobStorage::x_FreeBlobIdLocks(void)
 }
 
 inline void
-CNCBlobStorage::x_InitFilePools(const SNCDBPartInfo& part_info)
+CNCBlobStorage::x_InitFilesPool(const SNCDBPartInfo& part_info)
 {
-    TMetaFilePoolPtr meta_pool(new TMetaFilePool(TMetaFileFactory(
-                                            part_info.meta_file, GetStat())));
-    TDataFilePoolPtr data_pool(new TDataFilePool(TDataFileFactory(
-                                            part_info.data_file, GetStat())));
-
-    CFastWriteGuard guard(m_FileMapsMutex);
-    m_MetaFiles[part_info.part_id] = meta_pool;
-    m_DataFiles[part_info.part_id] = data_pool;
+    TFilesPoolPtr pool(new CNCDBFilesPool(part_info.meta_file,
+                                          part_info.data_file,
+                                          GetStat()));
+    CFastWriteGuard guard(m_DBFilesMutex);
+    m_DBFiles[part_info.part_id] = pool;
 }
 
 inline void
-CNCBlobStorage::x_CreateNewDBStructure(const SNCDBPartInfo& part_info)
+CNCBlobStorage::x_CreateNewDBStructure(TNCDBPartId part_id)
 {
-    try {
-        TMetaFileLock metafile(this, part_info);
-        metafile->CreateDatabase();
-        TDataFileLock datafile(this, part_info);
-        datafile->CreateDatabase();
-    }
-    catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(11, "Creating new database part structure failed: " << ex);
-        {{
-            CFastWriteGuard maps_guard(m_FileMapsMutex);
-            m_MetaFiles.erase(part_info.part_id);
-            m_DataFiles.erase(part_info.part_id);
-        }}
-        throw;
-    }
+    TMetaFileLock metafile(this, part_id);
+    metafile->CreateDatabase();
+    TDataFileLock datafile(this, part_id);
+    datafile->CreateDatabase();
 }
 
 inline void
@@ -469,7 +468,7 @@ CNCBlobStorage::x_SwitchCurrentDBPart(SNCDBPartInfo* part_info)
 {
     CFastWriteGuard guard(m_DBPartsLock);
     {{
-        CFastMutexGuard id_guard(m_LastCoordsMutex);
+        CFastMutexGuard id_guard(m_LastBlobMutex);
         part_info->min_blob_id = ++m_LastBlob.blob_id;
         m_LastBlob.part_id = part_info->part_id;
     }}
@@ -501,13 +500,24 @@ CNCBlobStorage::x_CreateNewDBPart(void)
     part_info.meta_file = meta_name;
     part_info.data_file = data_name;
 
-    x_InitFilePools(part_info);
-    x_CreateNewDBStructure(part_info);
+    // After x_InitFilesPool() in case of exception pool will be left alive,
+    // but we intentionally will not clean it because it's not a big
+    // deal and cleaning just harm code clearness.
+    x_InitFilesPool(part_info);
+    x_CreateNewDBStructure(part_id);
     // No need of mutex on using index database because it is used only in one
     // background thread (after using in constructor).
-    m_IndexDB->CreateDBPartRow(&part_info);
+    m_IndexDB->CreateDBPart(&part_info);
     x_SwitchCurrentDBPart(&part_info);
-    m_IndexDB->UpdateDBPartBlobId(part_id, part_info.min_blob_id);
+    try {
+        m_IndexDB->SetDBPartMinBlobId(part_id, part_info.min_blob_id);
+    }
+    catch (CException& ex) {
+        ERR_POST_X(11, "Error updating blob id in index database: " << ex);
+        // Though index is not updated database parts are already switched
+        // and we can work further - we will be able to recover in case of
+        // restart.
+    }
 }
 
 inline TNCDBPartId
@@ -559,6 +569,7 @@ CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
     x_CheckDBInitialized(guard_existed, reinit_mode,
                          reg.GetBool(section, kNCStorage_DropDirtyParam,
                                      false, 0, IRegistry::eErrPost));
+    x_CheckPartsMinBlobId();
 
     m_LastDeadTime = int(time(NULL));
     if (m_DBParts.empty()) {
@@ -566,7 +577,7 @@ CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
     }
     else {
         ITERATE(TNCDBPartsList, it, m_DBParts) {
-            x_InitFilePools(*it);
+            x_InitFilesPool(*it);
         }
         x_ReadLastBlobCoords();
     }
@@ -600,7 +611,7 @@ CNCBlobStorage::x_CheckStopped(void)
 }
 
 inline bool
-CNCBlobStorage::x_ReadBlobIdFromCache(SNCBlobIdentity* identity)
+CNCBlobStorage::x_ReadBlobCoordsFromCache(SNCBlobIdentity* identity)
 {
     CFastReadGuard guard(m_KeysCacheLock);
     TKeyIdMap::const_iterator it = m_KeysCache.find(*identity);
@@ -609,20 +620,6 @@ CNCBlobStorage::x_ReadBlobIdFromCache(SNCBlobIdentity* identity)
         return true;
     }
     return false;
-}
-
-inline void
-CNCBlobStorage::x_AddBlobKeyIdToCache(const SNCBlobIdentity& identity)
-{
-    bool inserted = false;
-    {{
-        CFastWriteGuard guard(m_KeysCacheLock);
-        inserted = m_KeysCache.insert(identity).second;
-    }}
-    if (inserted) {
-        CFastWriteGuard guard(m_IdsCacheLock);
-        m_IdsCache.insert(identity);
-    }
 }
 
 inline bool
@@ -663,12 +660,10 @@ CNCBlobStorage::x_DeleteBlobFromCache(const SNCBlobCoords& coords)
     {{
         CFastWriteGuard guard(m_IdsCacheLock);
         TIdKeyMap::iterator it = m_IdsCache.find(identity);
-        if (it == m_IdsCache.end()) {
-            // This can happen if somebody else has already deleted this blob.
-            // But it should not ever occur because deleting is mutually
-            // exclusive by blob locking.
-            return;
-        }
+        // Blob will not be found if somebody else has already deleted it.
+        // But it should not ever occur because deleting is mutually
+        // exclusive by blob locking.
+        _ASSERT(it != m_IdsCache.end());
         identity = *it;
         m_IdsCache.erase(it);
     }}
@@ -679,7 +674,7 @@ CNCBlobStorage::x_DeleteBlobFromCache(const SNCBlobCoords& coords)
 }
 
 inline void
-CNCBlobStorage::x_FillBlobIdsFromCache(TNCIdsList* id_list, const string& key)
+CNCBlobStorage::x_FillBlobIdsFromCache(const string& key, TNCIdsList* id_list)
 {
     CFastReadGuard guard(m_KeysCacheLock);
 
@@ -712,23 +707,30 @@ CNCBlobStorage::x_FillCacheFromDBPart(TNCDBPartId part_id)
     int dead_after = const_cast<int&>(m_LastDeadTime);
     do {
         x_CheckStopped();
-        metafile->GetBlobIdsList(last_id, dead_after,
+        metafile->GetBlobIdsList(dead_after, last_id,
                                  numeric_limits<int>::max(),
-                                 m_GCBatchSize, &id_list);
+                                 m_BlobsBatchSize, &id_list);
         ITERATE(TNCIdsList, id_it, id_list) {
-            TNCBlobLockHolderRef blob_lock
-                               = GetBlobAccess(eRead, part_id, *id_it, false);
-            // On acquiring of the lock information will be automatically
-            // added to the cache. If lock is not acquired then somebody else
-            // has acquired it and so he has already added info to the cache.
-            blob_lock->ReleaseLock();
+            try {
+                TNCBlobLockHolderRef blob_lock
+                             = x_GetBlobAccess(eRead, part_id, *id_it, false);
+                // On acquiring of the lock information will be automatically
+                // added to the cache. If lock is not acquired then somebody
+                // else has acquired it and so he has already added info to
+                // the cache.
+                blob_lock->ReleaseLock();
+            }
+            catch (exception& ex) {
+                x_MonitorError(ex, "Error while caching blob with id="
+                                   + NStr::Int8ToString(*id_it));
+            }
         }
     }
     while (!id_list.empty());
 }
 
 bool
-CNCBlobStorage::ReadBlobId(SNCBlobIdentity* identity)
+CNCBlobStorage::ReadBlobCoords(SNCBlobIdentity* identity)
 {
     identity->blob_id = 0;
     // dead_time should be read before check_part_id to avoid races when
@@ -736,15 +738,16 @@ CNCBlobStorage::ReadBlobId(SNCBlobIdentity* identity)
     // don't know about it yet
     int dead_time = m_LastDeadTime;
     TNCDBPartId check_part_id = x_GetNotCachedPartId();
-    if (x_ReadBlobIdFromCache(identity))
+    if (x_ReadBlobCoordsFromCache(identity))
         return true;
 
     if (check_part_id != -1) {
         TNCDBPartsList parts;
         x_CopyPartsList(&parts);
         bool do_check = false;
-        REVERSE_ITERATE(TNCDBPartsList, it,
-                        static_cast<const TNCDBPartsList&>(parts)) {
+        // With REVERSE_ITERATE code should look more ugly to be compilable
+        // in WorkShop.
+        NON_CONST_REVERSE_ITERATE(TNCDBPartsList, it, parts) {
             if (it->part_id == check_part_id) {
                 do_check = true;
             }
@@ -773,7 +776,7 @@ CNCBlobStorage::CreateBlob(SNCBlobIdentity* identity)
         SNCBlobIdentity temp_ident(*identity);
         temp_ident.part_id = 0;
         temp_ident.blob_id = 0;
-        if (ReadBlobId(&temp_ident)) {
+        if (ReadBlobCoords(&temp_ident)) {
             identity->AssignCoords(temp_ident);
             return false;
         }
@@ -797,10 +800,14 @@ CNCBlobStorage::ReadBlobKey(SNCBlobIdentity* identity)
         return true;
     if (check_part_id != -1) {
         TNCDBPartId part_id = 0;
-        {{
+        if (identity->part_id != 0) {
+            part_id = identity->part_id;
+        }
+        else {
             CFastReadGuard guard(m_DBPartsLock);
-            REVERSE_ITERATE(TNCDBPartsList, it, 
-                            static_cast<const TNCDBPartsList&>(m_DBParts)) {
+            // With REVERSE_ITERATE code should look more ugly to be
+            // compilable in WorkShop.
+            NON_CONST_REVERSE_ITERATE(TNCDBPartsList, it, m_DBParts) {
                 // Find the first part having minimum blob id less than
                 // requested.
                 if (it->min_blob_id <= identity->blob_id) {
@@ -812,7 +819,7 @@ CNCBlobStorage::ReadBlobKey(SNCBlobIdentity* identity)
                     break;
                 }
             }
-        }}
+        }
         if (part_id != 0) {
             TMetaFileLock metafile(this, part_id);
             // NB: There is no race here for adding to cache because
@@ -820,7 +827,10 @@ CNCBlobStorage::ReadBlobKey(SNCBlobIdentity* identity)
             // method is called only when lock is already acquired.
             if (metafile->ReadBlobKey(identity, dead_time)) {
                 identity->part_id = part_id;
-                x_AddBlobKeyIdToCache(*identity);
+                // Even if this call found blob in cache it will not harm
+                // identity structure because blob will have the same
+                // coordinates
+                x_CreateBlobInCache(identity);
                 return true;
             }
         }
@@ -834,10 +844,8 @@ CNCBlobStorage::DeleteBlob(const SNCBlobCoords& coords)
     x_DeleteBlobFromCache(coords);
 
     TMetaFileLock metafile(this, coords.part_id);
-    //metafile->DeleteBlobKey(coords.blob_id);
-    //metafile->DeleteBlobInfo(coords.blob_id);
-
-    metafile->UpdateBlobDeadTime(coords.blob_id, m_LastDeadTime - 1);
+    // Just hide this blob from GC - pretend that it was already expired.
+    metafile->SetBlobDeadTime(coords.blob_id, m_LastDeadTime - 1);
 }
 
 void
@@ -849,7 +857,7 @@ CNCBlobStorage::FillBlobIds(const string& key, TNCIdsList* id_list)
     // don't know about it yet
     int dead_time = m_LastDeadTime;
     if (x_GetNotCachedPartId() == -1) {
-        x_FillBlobIdsFromCache(id_list, key);
+        x_FillBlobIdsFromCache(key, id_list);
     }
     else {
         TNCDBPartsList parts;
@@ -876,8 +884,9 @@ CNCBlobStorage::IsBlobExists(CTempString key,
         TNCDBPartsList parts;
         x_CopyPartsList(&parts);
         bool do_check = false;
-        REVERSE_ITERATE(TNCDBPartsList, it,
-                        static_cast<const TNCDBPartsList&>(parts)) {
+        // With REVERSE_ITERATE code should look more ugly to be compilable
+        // in WorkShop.
+        NON_CONST_REVERSE_ITERATE(TNCDBPartsList, it, parts) {
             if (it->part_id == check_part_id) {
                 do_check = true;
             }
@@ -896,13 +905,13 @@ CNCBlobStorage::x_GC_DeleteExpired(TNCDBPartId part_id, TNCBlobId blob_id)
 {
     try {
         TNCBlobLockHolderRef blob_lock
-                             = GetBlobAccess(eWrite, part_id, blob_id, false);
+                           = x_GetBlobAccess(eWrite, part_id, blob_id, false);
         if (blob_lock->IsLockAcquired()) {
             if (blob_lock->IsBlobExists()  &&  blob_lock->IsBlobExpired())
             {
                 if (x_IsMonitored()) {
                     CQuickStrStream msg;
-                    msg << "GC: deleting blob key='"
+                    msg << "BG: deleting blob key='"
                         << blob_lock->GetBlobKey() << "', subkey='"
                         << blob_lock->GetBlobSubkey() << "', version="
                         << blob_lock->GetBlobVersion();
@@ -915,13 +924,14 @@ CNCBlobStorage::x_GC_DeleteExpired(TNCDBPartId part_id, TNCBlobId blob_id)
             blob_lock->ReleaseLock();
         }
         else {
+            // Lock has not been acquired - we will need to try once more.
             return false;
         }
     }
     catch (exception& ex) {
         CQuickStrStream msg;
-        msg << "GC: Cannot delete expired blob "
-            << blob_id << " in part " << part_id;
+        msg << "BG: Cannot delete expired blob " << blob_id
+            << " in part " << part_id;
         x_MonitorError(ex, msg);
     }
     return true;
@@ -930,15 +940,15 @@ CNCBlobStorage::x_GC_DeleteExpired(TNCDBPartId part_id, TNCBlobId blob_id)
 inline bool
 CNCBlobStorage::x_GC_IsMetafileEmpty(TNCDBPartId          part_id,
                                      const TMetaFileLock& metafile,
-                                     int                  dead_time)
+                                     int                  dead_after)
 {
     bool is_empty = true;
     try {
-        is_empty = metafile->IsEmpty(dead_time);
+        is_empty = metafile->HasLiveBlobs(dead_after);
     }
     catch (exception& ex) {
         CQuickStrStream msg;
-        msg << "GC: Error accessing meta file " << part_id
+        msg << "BG: Error accessing meta file " << part_id
             << " - assuming it is empty";
         x_MonitorError(ex, msg);
         if (part_id == m_LastBlob.part_id) {
@@ -947,7 +957,7 @@ CNCBlobStorage::x_GC_IsMetafileEmpty(TNCDBPartId          part_id,
             }
             catch (exception&) {
                 // We already tried hard to keep working normally. At this
-                // point we can only re-init storage which maybe will be
+                // point we can only re-init storage which perhaps will be
                 // implemented later.
             }
         }
@@ -956,21 +966,15 @@ CNCBlobStorage::x_GC_IsMetafileEmpty(TNCDBPartId          part_id,
 }
 
 inline void
-CNCBlobStorage::x_GC_PrepFilePoolsToDelete(TNCDBPartId       part_id,
-                                           TMetaFilePoolPtr* meta_pool,
-                                           TDataFilePoolPtr* data_pool)
+CNCBlobStorage::x_GC_PrepFilesPoolToDelete(TNCDBPartId    part_id,
+                                           TFilesPoolPtr* pool_ptr)
 {
-    CFastWriteGuard guard(m_FileMapsMutex);
+    CFastWriteGuard guard(m_DBFilesMutex);
 
-    TMetaFilesMap::iterator meta_it = m_MetaFiles.find(part_id);
-    _ASSERT(meta_it != m_MetaFiles.end());
-    *meta_pool = meta_it->second;
-    m_MetaFiles.erase(meta_it);
-
-    TDataFilesMap::iterator data_it = m_DataFiles.find(part_id);
-    _ASSERT(data_it != m_DataFiles.end());
-    *data_pool = data_it->second;
-    m_DataFiles.erase(data_it);
+    TFilesMap::iterator it = m_DBFiles.find(part_id);
+    _ASSERT(it != m_DBFiles.end());
+    *pool_ptr = it->second;
+    m_DBFiles.erase(it);
 }
 
 inline void
@@ -982,25 +986,31 @@ CNCBlobStorage::x_GC_DeleteDBPart(TNCDBPartsList::iterator part_it)
         m_DBParts.erase(part_it);
     }}
     try {
-        m_IndexDB->DeleteDBPartRow(part_id);
+        m_IndexDB->DeleteDBPart(part_id);
     }
     catch (exception& ex) {
-        x_MonitorError(ex, "GC: Index database does not delete rows");
+        x_MonitorError(ex, "BG: Index database does not delete rows");
     }
 
-    TMetaFilePoolPtr meta_pool;
-    TDataFilePoolPtr data_pool;
-    x_GC_PrepFilePoolsToDelete(part_id, &meta_pool, &data_pool);
-    // Save exactly one connection of each type to delete
-    // database files.
-    TMetaFilePtr metafile(meta_pool->Get());
-    TDataFilePtr datafile(data_pool->Get());
-    // All the rest should be gone before deleting.
-    meta_pool.reset();
-    data_pool.reset();
-    // Now we can delete
-    metafile->DeleteDatabase();
-    datafile->DeleteDatabase();
+    TFilesPoolPtr pool;
+    x_GC_PrepFilesPoolToDelete(part_id, &pool);
+    try {
+        // Save exactly one connection of each type to delete
+        // database files.
+        TNCMetaFilePtr metafile(pool->GetMetaFile());
+        TNCDataFilePtr datafile(pool->GetDataFile());
+        // All the rest should be gone before deleting.
+        pool.reset();
+        // Now we can delete
+        metafile->DeleteDatabase();
+        datafile->DeleteDatabase();
+    }
+    catch (exception& ex) {
+        // Something really bad happening
+        CQuickStrStream msg;
+        msg << "BG: Database part " << part_id << " cannot be deleted";
+        x_MonitorError(ex, msg);
+    }
 }
 
 inline bool
@@ -1009,21 +1019,21 @@ CNCBlobStorage::x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
 {
     bool can_shift = true;
     bool can_delete = false;
-    {{
+    try {
         TMetaFileLock metafile(this, *part_it);
         TNCIdsList ids;
         int dead_after = const_cast<int&>(m_LastDeadTime);
         TNCBlobId last_id = 0;
         do {
             x_CheckStopped();
-            x_MonitorPost("GC: Starting next batch");
-            metafile->GetBlobIdsList(last_id, dead_after, dead_before,
-                                     m_GCBatchSize, &ids);
+            x_MonitorPost("BG: Starting next GC batch");
+            metafile->GetBlobIdsList(dead_after, last_id, dead_before,
+                                     m_BlobsBatchSize, &ids);
             ITERATE(TNCIdsList, id_it, ids) {
                 x_CheckStopped();
                 can_shift &= x_GC_DeleteExpired(part_it->part_id, *id_it);
             }
-            x_MonitorPost("GC: Batch processing is finished");
+            x_MonitorPost("BG: Batch processing is finished");
             m_StopTrigger.TryWait(m_GCBatchSleep / 1000,
                                   m_GCBatchSleep % 1000 * 1000000);
         }
@@ -1034,7 +1044,17 @@ CNCBlobStorage::x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
                          &&  x_GC_IsMetafileEmpty(part_it->part_id,
                                                   metafile, dead_before);
         }
-    }}
+    }
+    catch (exception& ex) {
+        CQuickStrStream msg;
+        msg << "BG: Error processing part " << part_it->part_id
+            << ". Part will be deleted";
+        x_MonitorError(ex, msg);
+        // TODO: maybe it will be better to exclude this part from storage
+        // but leave it physically to look later at what happened.
+        can_delete = can_shift = true;
+    }
+
     if (can_delete) {
         x_GC_DeleteDBPart(part_it);
     }
@@ -1048,22 +1068,22 @@ CNCBlobStorage::x_GC_RotateDBParts(void)
     if (int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
         return;
 
-    TDataFileLock datafile(this, last_part);
-    if (datafile->IsEmpty()) {
+    TMetaFileLock metafile(this, last_part);
+    if (metafile->HasAnyBlobs()) {
+        try {
+            x_CreateNewDBPart();
+        }
+        catch (exception& ex) {
+            x_MonitorError(ex, "BG: Unable to rotate database");
+        }
+    }
+    else {
         try {
             m_IndexDB->UpdateDBPartCreated(&last_part);
         }
         catch (exception& ex) {
             x_MonitorError(ex,
-                           "GC: Index database does not update date created");
-        }
-    }
-    else {
-        try {
-            x_CreateNewDBPart();
-        }
-        catch (exception& ex) {
-            x_MonitorError(ex, "GC: Unable to rotate database");
+                           "BG: Index database does not update date created");
         }
     }
 }
@@ -1078,16 +1098,27 @@ CNCBlobStorage::RunBackground(void)
 
     try {
         if (x_GetNotCachedPartId() != -1) {
-            // Nobody else changes m_DBParts
-            REVERSE_ITERATE(TNCDBPartsList, part_it,
-                            static_cast<const TNCDBPartsList&>(m_DBParts)) {
+            // Nobody else changes m_DBParts, so iterating right over it.
+            // With REVERSE_ITERATE code should look more ugly to be
+            // compilable in WorkShop.
+            NON_CONST_REVERSE_ITERATE(TNCDBPartsList, part_it, m_DBParts) {
                 x_SetNotCachedPartId(part_it->part_id);
-                x_FillCacheFromDBPart(part_it->part_id);
+                try {
+                    x_FillCacheFromDBPart(part_it->part_id);
+                }
+                catch (exception& ex) {
+                    // Try to recover from any database errors by just
+                    // ignoring it and trying to work further.
+                    CQuickStrStream msg;
+                    msg << "BG: Database part " << part_it->part_id
+                        << " was not cached";
+                    x_MonitorError(ex, msg);
+                }
             }
             x_SetNotCachedPartId(-1);
         }
         for (;;) {
-            x_MonitorPost("GC: Starting next cycle");
+            x_MonitorPost("BG: Starting next GC cycle");
 
             int next_dead = int(time(NULL));
             bool can_change = true;
@@ -1100,14 +1131,14 @@ CNCBlobStorage::RunBackground(void)
             x_CheckStopped();
             x_GC_RotateDBParts();
 
-            x_MonitorPost("GC: Work cycle ended");
+            x_MonitorPost("BG: GC cycle ended");
             m_StopTrigger.TryWait(m_GCRunDelay, 0);
         }
     }
     catch (CNCStorage_StoppedException&) {
         // Do nothing - we're already in place where we want to be
     }
-    x_MonitorPost("GC: background thread exits normally");
+    x_MonitorPost("BG: background thread exits normally");
 }
 
 END_NCBI_SCOPE

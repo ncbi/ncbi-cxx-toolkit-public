@@ -32,9 +32,16 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Utility class for tuning the database cache in NetCache
 class CNCDBCacheManager {
 public:
+    /// Initialize database cache and attach it to SQLite.
+    /// Method must be called before CSQLITE_Global::Initialize()
     static void Initialize(void);
+    /// Set maximum memory size that database cache can consume.
+    /// Limit is not hard, i.e. if SQLite will not be able to work inside this
+    /// limit then additional memory will be automatically consumed.
+    /// NB: Database cache memory is never returned to the system now.
     static void SetMaxSize(size_t mem_size);
 
 private:

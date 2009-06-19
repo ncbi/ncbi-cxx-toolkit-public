@@ -373,7 +373,8 @@ void CServer::CloseConnection(IServer_ConnectionBase* conn)
 
 void CServer::CloseConnection(CSocket* sock)
 {
-    CloseConnection(dynamic_cast<IServer_ConnectionBase*>(sock));
+    CloseConnection(static_cast<IServer_ConnectionBase*>(
+                    static_cast<CServer_Connection*>(sock)));
 }
 
 

@@ -46,10 +46,6 @@ typedef Int8                             TNCDBPartId;
 typedef list<Int8>                       TNCIdsList;
 /// Type of buffer used for reading/writing blobs
 typedef CSimpleBufferT<char>             TNCBlobBuffer;
-/// Pool of buffers for reading/writing blobs
-typedef CObjPool<TNCBlobBuffer>          TNCBlobBufferPool;
-/// Guard for automatic work with TNCBlobBufferPool
-typedef CObjPoolGuard<TNCBlobBufferPool> TNCBlobBufferGuard;
 
 
 /// Coordinates of blob inside NetCache database
@@ -108,6 +104,8 @@ struct SNCBlobInfo : public SNCBlobIdentity
     bool   expired;      ///< Flag if blob has already expired but was not
                          ///< deleted yet
     size_t size;         ///< Size of the blob
+    bool   corrupted;    ///< Special flag pointing that blob information is
+                         ///< corrupted in database and need to be deleted.
 
     SNCBlobInfo(void);
     /// Clear blob information
@@ -223,9 +221,8 @@ SNCBlobInfo::Clear(void)
 {
     SNCBlobIdentity::Clear();
     owner.clear();
-    ttl = 0;
-    access_time = 0;
-    expired = false;
+    ttl = access_time = 0;
+    expired = corrupted = false;
     size = 0;
 }
 
