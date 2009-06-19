@@ -166,6 +166,10 @@ public:
     ///
     void          SetJobOutput(const string& output) { m_Job.output = output; }
 
+    /// Set the return code of the job.
+    ///
+    void          SetJobRetCode(int ret_code) { m_Job.ret_code = ret_code; }
+
     /// Get a stream with input data for a job. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined
     /// using GetInputBlobSize. Will throw a CNetCacheStorageException
@@ -193,24 +197,26 @@ public:
     /// back to the client.
     ///
     /// This method should be called at the end of IWorkerNodeJob::Do
-    /// method. If this method or CommitJobWithFailure are not called
-    /// the job's result will NOT be sent
-    /// to the queue (job is returned back to the NetSchedule queue
-    /// and re-executed in a while)
+    /// method.
     ///
     void CommitJob() { m_JobCommitted = eDone; }
 
-    /// Confirm that a job is finished, but an error has happened during its
-    /// execution.
+    /// Confirm that a job is finished, but an error has happened
+    /// during its execution.
     ///
     /// This method should be called at the end of IWorkerNodeJob::Do
-    /// method. If this method or CommitJob are not called
-    /// the job's result will NOT be sent
-    /// to the queue (job is returned back to the NetSchedule queue
-    /// and re-executed in a while)
+    /// method.
     ///
     void CommitJobWithFailure(const string& err_msg)
     { m_JobCommitted = eFailure; m_Job.error_msg = err_msg; }
+
+    /// Schedule the job for return.
+    ///
+    /// This method should be called before exiting the IWorkerNodeJob::Do
+    /// method.  The job will be returned back to the NetSchedule queue
+    /// and re-executed after a while.
+    ///
+    void ReturnJob() { m_JobCommitted = eReturn; }
 
     /// Check if node application shutdown was requested.
     ///
@@ -283,6 +289,7 @@ public:
     enum ECommitStatus {
         eDone,
         eFailure,
+        eReturn,
         eNotCommitted
     };
 

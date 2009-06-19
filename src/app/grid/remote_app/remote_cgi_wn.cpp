@@ -234,9 +234,10 @@ public:
                 stat = " is done.";
             } else
                 if (m_Params.GetNonZeroExitAction() ==
-                        CRemoteAppParams::eReturnOnNonZeroExit)
+                        CRemoteAppParams::eReturnOnNonZeroExit) {
+                    context.ReturnJob();
                     stat = " has been returned.";
-                else {
+                } else {
                     context.CommitJobWithFailure(
                         "Exited with return code " + NStr::IntToString(ret));
                     stat = " failed.";

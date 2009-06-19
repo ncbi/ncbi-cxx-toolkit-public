@@ -62,8 +62,7 @@ public:
     void SetJobRunTimeout(unsigned time_to_run);
     void JobDelayExpiration(unsigned runtime_inc);
 
-    bool IsJobCommitted() const;
-    bool PutResult(int ret_code, CNetScheduleJob& new_job);
+    bool PutResult(CNetScheduleJob& new_job);
     void ReturnJob();
     void PutFailure(const string& msg);
     bool IsJobCanceled();

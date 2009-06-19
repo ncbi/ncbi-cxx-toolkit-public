@@ -86,16 +86,16 @@ public:
             if (!is.good()) {
                 ERR_POST( "Input stream error. Index : " << i );
 
-                // if something bad has happend throw an exception
+                // If anything bad happened, throw an exception
                 // and its message will be delivered to the client.
-                //
                 throw runtime_error("Worker node input stream error"); 
             }
             // Don't forget to check if shutdown has been requested
-            if (count % 1000 == 0) {
-                if (context.GetShutdownLevel() 
-                    != CNetScheduleAdmin::eNoShutdown)
-                    return 1;
+            if (count % 1000 == 0 && context.GetShutdownLevel() !=
+                    CNetScheduleAdmin::eNoShutdown) {
+                // Return the job for processing by other instances.
+                context.ReturnJob();
+                return 1;
             }
             double d;
             is >> d;
@@ -108,8 +108,10 @@ public:
         // without calling context.CommitJob()
         //
         for (int i = 0; i < m_Iters; ++i) {
-            if (context.GetShutdownLevel() 
-                == CNetScheduleAdmin::eShutdownImmediate) {
+            if (context.GetShutdownLevel() ==
+                    CNetScheduleAdmin::eShutdownImmediate) {
+                // Return the job for processing by other instances.
+                context.ReturnJob();
                 return 1;
             }
             context.PutProgressMessage("Iteration " + NStr::IntToString(i+1) +
@@ -156,7 +158,7 @@ private:
     int m_SleepSec;
 };
 
-// if an Idle task is needed then an implementaion of IWorkerNodeIdelTask
+// if an Idle task is needed then an implementation of IWorkerNodeIdelTask
 // should be created.
 class CSampleIdleTask : public IWorkerNodeIdleTask
 {

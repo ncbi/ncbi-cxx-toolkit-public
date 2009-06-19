@@ -344,10 +344,9 @@ static void s_RunJob(CGridThreadContext& thr_context)
         CNetScheduleJob new_job;
         try {
             CRef<IWorkerNodeJob> job(thr_context.GetJob());
-            int ret_code = 0;
             try {
                 request_state_guard.RequestStart();
-                ret_code = job->Do(job_context);
+                job_context.SetJobRetCode(job->Do(job_context));
                 request_state_guard.RequestStop();
             } catch (CGridWorkerNodeException& ex) {
                 if (ex.GetErrCode() !=
@@ -365,10 +364,27 @@ static void s_RunJob(CGridThreadContext& thr_context)
             unsigned try_count = 0;
             for (;;) {
                 try {
-                    if (thr_context.IsJobCommitted()) {
-                        more_jobs = thr_context.PutResult(ret_code,new_job);
-                    } else {
-                        thr_context.ReturnJob();
+                    switch (job_context.GetCommitStatus()) {
+                        case CWorkerNodeJobContext::eDone:
+                            more_jobs = thr_context.PutResult(new_job);
+                            break;
+
+                        case CWorkerNodeJobContext::eFailure:
+                            thr_context.PutFailure(kEmptyStr);
+                            more_jobs = false;
+                            break;
+
+                        case CWorkerNodeJobContext::eReturn:
+                            thr_context.ReturnJob();
+                            break;
+
+                        case CWorkerNodeJobContext::eNotCommitted:
+                            if (job_context.GetShutdownLevel() !=
+                                    CNetScheduleAdmin::eNoShutdown)
+                                thr_context.ReturnJob();
+                            else
+                                thr_context.PutFailure(
+                                    "Job was not explicitly committed");
                     }
                     break;
                 } catch (CNetServiceException& ex) {

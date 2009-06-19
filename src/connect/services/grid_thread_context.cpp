@@ -201,14 +201,9 @@ void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
 
 
 /// @internal
-bool CGridThreadContext::PutResult(int ret_code, CNetScheduleJob& new_job)
+bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
 {
     _ASSERT(m_JobContext);
-    m_JobContext->m_Job.ret_code = ret_code;
-    if ( m_JobContext->GetCommitStatus() != CWorkerNodeJobContext::eDone ) {
-        PutFailure(kEmptyStr);
-        return false;
-    }
     bool more_jobs = false;
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context ||
@@ -318,12 +313,6 @@ bool CGridThreadContext::IsJobCanceled()
     return false;
 }
 
-/// @internal
-bool CGridThreadContext::IsJobCommitted() const
-{
-    _ASSERT(m_JobContext);
-    return m_JobContext->IsJobCommitted();
-}
 /// @internal
 IWorkerNodeJob* CGridThreadContext::GetJob()
 {
