@@ -566,3 +566,11 @@ CopySources()
 
 CopySources ""
 test -n "$cleanup" && rm -rf "$tmp_app_checkout_dir"
+
+fmt <<EOF
+
+DONE
+
+To build this project, run make in $new_dir after editing its contents
+as desired.
+EOF
