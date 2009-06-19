@@ -360,6 +360,7 @@ private:
     void ProcessStatusSnapshot();
     void ProcessMonitor();
     void ProcessReloadConfig();
+    void ProcessActiveCount();
     void ProcessDump();
     void ProcessPrintQueue();
     void ProcessShutdown();
@@ -684,6 +685,9 @@ public:
     // Queue handling
     unsigned Configure(const IRegistry& reg) {
         return m_QueueDB->Configure(reg);
+    }
+    unsigned CountActiveJobs() {
+        return m_QueueDB->CountActiveJobs();
     }
     CQueue* OpenQueue(const string& name, unsigned peer_addr) {
         return m_QueueDB->OpenQueue(name, peer_addr);
@@ -1968,6 +1972,12 @@ void CNetScheduleHandler::ProcessReloadConfig()
 }
 
 
+void CNetScheduleHandler::ProcessActiveCount()
+{
+    WriteOK(NStr::UIntToString(m_Server->CountActiveJobs()));
+}
+
+
 void CNetScheduleHandler::x_StatisticsNew(const string& what,
                                           time_t curr)
 {
@@ -2595,6 +2605,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "DUMP",     &CNetScheduleHandler::ProcessDump, eNSCR_Queue,
         { { "job_key", eNSPT_Id, eNSPA_Optional } } },
     { "RECO",     &CNetScheduleHandler::ProcessReloadConfig, eNSCR_Any }, // ?? Admin
+    { "ACNT",     &CNetScheduleHandler::ProcessActiveCount, eNSCR_Any },
     { "QLST",     &CNetScheduleHandler::ProcessQList, eNSCR_Any },
     { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
         { { "port",         eNSPT_Int, eNSPA_Optional },

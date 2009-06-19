@@ -371,6 +371,12 @@ public:
     void AddJobsToAffinity(CBDB_Transaction& trans,
                            const vector<CJob>& batch);
 
+    /// Specified status is OR-ed with the target vector
+    void JobsWithStatus(TJobStatus    status,
+        TNSBitVector* bv) const;
+
+    TNSBitVector* ExecSelect(const string& query, list<string>& fields);
+
     /// Clear all jobs, still running for node.
     /// Fails all such jobs, called by external node watcher, can safely
     /// clean out node's record

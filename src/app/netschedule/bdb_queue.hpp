@@ -523,6 +523,9 @@ public:
     // returns minimum run timeout, necessary for watcher thread
     unsigned Configure(const IRegistry& reg);
 
+    // Count Pending and Running jobs in all queues
+    unsigned CountActiveJobs() const;
+
     CQueue* OpenQueue(const string& name, unsigned peer_addr);
 
     typedef SLockedQueue::TQueueKind TQueueKind;

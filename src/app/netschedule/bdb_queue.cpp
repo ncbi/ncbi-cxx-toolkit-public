@@ -42,9 +42,6 @@
 #include <db/bdb/bdb_cursor.hpp>
 #include <db/bdb/bdb_util.hpp>
 
-#include <util/qparse/query_parse.hpp>
-#include <util/qparse/query_exec.hpp>
-#include <util/qparse/query_exec_bv.hpp>
 #include <util/time_line.hpp>
 
 #include "bdb_queue.hpp"
@@ -606,6 +603,7 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
                                      << pos);
                 }
             }
+            qi.pos = pos;
         }
         trans.Commit();
         m_QueueDescriptionDB.Sync();
@@ -666,6 +664,20 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
 }
 
 
+unsigned CQueueDataBase::CountActiveJobs() const
+{
+    unsigned cnt = 0;
+    CFastMutexGuard guard(m_ConfigureLock);
+    ITERATE(CQueueCollection, it, m_QueueCollection) {
+        TNSBitVector bv;
+        (*it).JobsWithStatus(CNetScheduleAPI::ePending, &bv);
+        (*it).JobsWithStatus(CNetScheduleAPI::eRunning, &bv);
+        cnt += bv.count();
+    }
+    return cnt;
+}
+
+    
 CQueue* CQueueDataBase::OpenQueue(const string& name, unsigned peer_addr)
 {
     CRef<SLockedQueue> queue(m_QueueCollection.GetQueue(name));
@@ -1248,7 +1260,7 @@ CQueue::PrintJobDbStat(unsigned      job_id,
         out << "\n";
     } else {
         TNSBitVector bv;
-        q->status_tracker.StatusSnapshot(status, &bv);
+        q->JobsWithStatus(status, &bv);
 
         TNSBitVector::enumerator en(bv.first());
         for (;en.valid(); ++en) {
@@ -1380,7 +1392,7 @@ void CQueue::PrintQueue(CNcbiOstream& out,
     CRef<SLockedQueue> q(x_GetLQueue());
 
     TNSBitVector bv;
-    q->status_tracker.StatusSnapshot(job_status, &bv);
+    q->JobsWithStatus(job_status, &bv);
 
     CJob job;
     TNSBitVector::enumerator en(bv.first());
@@ -1394,175 +1406,10 @@ void CQueue::PrintQueue(CNcbiOstream& out,
 }
 
 
-// Functor for EQ
-class CQueryFunctionEQ : public CQueryFunction_BV_Base<TNSBitVector>
-{
-public:
-    CQueryFunctionEQ(CRef<SLockedQueue> queue) :
-      m_Queue(queue)
-    {}
-    typedef CQueryFunction_BV_Base<TNSBitVector> TParent;
-    typedef TParent::TBVContainer::TBuffer TBuffer;
-    typedef TParent::TBVContainer::TBitVector TBitVector;
-    virtual void Evaluate(CQueryParseTree::TNode& qnode);
-private:
-    void x_CheckArgs(const CQueryFunctionBase::TArgVector& args);
-    CRef<SLockedQueue> m_Queue;
-};
-
-void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
-{
-    //NcbiCout << "Key: " << key << " Value: " << val << NcbiEndl;
-    CQueryFunctionBase::TArgVector args;
-    this->MakeArgVector(qnode, args);
-    x_CheckArgs(args);
-    const string& key = args[0]->GetValue().GetStrValue();
-    const string& val = args[1]->GetValue().GetStrValue();
-    auto_ptr<TNSBitVector> bv;
-    auto_ptr<TBuffer> buf;
-    if (key == "status") {
-        // special case for status
-        CNetScheduleAPI::EJobStatus status =
-            CNetScheduleAPI::StringToStatus(val);
-        if (status == CNetScheduleAPI::eJobNotFound)
-            NCBI_THROW(CNetScheduleException,
-                eQuerySyntaxError, string("Unknown status: ") + val);
-        bv.reset(new TNSBitVector);
-        m_Queue->status_tracker.StatusSnapshot(status, bv.get());
-    } else if (key == "id") {
-        unsigned job_id = CNetScheduleKey(val).id;
-        bv.reset(new TNSBitVector);
-        bv->set(job_id);
-    } else {
-        if (val == "*") {
-            // wildcard
-            bv.reset(new TNSBitVector);
-            m_Queue->ReadTags(key, bv.get());
-        } else {
-            buf.reset(new TBuffer);
-            if (!m_Queue->ReadTag(key, val, buf.get())) {
-                // Signal empty set by setting empty bitvector
-                bv.reset(new TNSBitVector());
-                buf.reset(NULL);
-            }
-        }
-    }
-    if (qnode.GetValue().IsNot()) {
-        // Apply NOT here
-        if (bv.get()) {
-            bv->invert();
-        } else if (buf.get()) {
-            bv.reset(new TNSBitVector());
-            bm::operation_deserializer<TNSBitVector>::deserialize(*bv,
-                                                &((*buf.get())[0]),
-                                                0,
-                                                bm::set_ASSIGN);
-            bv.get()->invert();
-        }
-    }
-    if (bv.get())
-        this->MakeContainer(qnode)->SetBV(bv.release());
-    else if (buf.get())
-        this->MakeContainer(qnode)->SetBuffer(buf.release());
-}
-
-void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
-{
-    if (args.size() != 2 ||
-        (args[0]->GetValue().GetType() != CQueryParseNode::eIdentifier  &&
-         args[0]->GetValue().GetType() != CQueryParseNode::eString)) {
-        NCBI_THROW(CNetScheduleException,
-             eQuerySyntaxError, "Wrong arguments for '='");
-    }
-}
-
-
 TNSBitVector* CQueue::ExecSelect(const string& query, list<string>& fields)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    CQueryParseTree qtree;
-    try {
-        qtree.Parse(query.c_str());
-    } catch (CQueryParseException& ex) {
-        NCBI_THROW(CNetScheduleException, eQuerySyntaxError, ex.GetMsg());
-    }
-    CQueryParseTree::TNode* top = qtree.GetQueryTree();
-    if (!top)
-        NCBI_THROW(CNetScheduleException,
-            eQuerySyntaxError, "Query syntax error in parse");
-
-    if (top->GetValue().GetType() == CQueryParseNode::eSelect) {
-        // Find where clause here
-        typedef CQueryParseTree::TNode::TNodeList_I TNodeIterator;
-        for (TNodeIterator it = top->SubNodeBegin();
-             it != top->SubNodeEnd(); ++it) {
-            CQueryParseTree::TNode* node = *it;
-            CQueryParseNode::EType node_type = node->GetValue().GetType();
-            if (node_type == CQueryParseNode::eList) {
-                for (TNodeIterator it2 = node->SubNodeBegin();
-                     it2 != node->SubNodeEnd(); ++it2) {
-                    fields.push_back((*it2)->GetValue().GetStrValue());
-                }
-            }
-            if (node_type == CQueryParseNode::eWhere) {
-                TNodeIterator it2 = node->SubNodeBegin();
-                if (it2 == node->SubNodeEnd())
-                    NCBI_THROW(CNetScheduleException,
-                        eQuerySyntaxError,
-                        "Query syntax error in WHERE clause");
-                top = (*it2);
-                break;
-            }
-        }
-    }
-
-    // Execute 'select' phase.
-    CQueryExec qexec;
-    qexec.AddFunc(CQueryParseNode::eAnd,
-        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_AND));
-    qexec.AddFunc(CQueryParseNode::eOr,
-        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_OR));
-    qexec.AddFunc(CQueryParseNode::eSub,
-        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_SUB));
-    qexec.AddFunc(CQueryParseNode::eXor,
-        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_XOR));
-    qexec.AddFunc(CQueryParseNode::eIn,
-        new CQueryFunction_BV_In_Or<TNSBitVector>());
-    qexec.AddFunc(CQueryParseNode::eNot,
-        new CQueryFunction_BV_Not<TNSBitVector>());
-
-    qexec.AddFunc(CQueryParseNode::eEQ,
-        new CQueryFunctionEQ(q));
-
-    {{
-        CFastMutexGuard guard(q->GetTagLock());
-        q->SetTagDbTransaction(NULL);
-        qexec.Evaluate(qtree, *top);
-    }}
-
-    IQueryParseUserObject* uo = top->GetValue().GetUserObject();
-    if (!uo)
-        NCBI_THROW(CNetScheduleException,
-            eQuerySyntaxError, "Query syntax error in eval");
-    typedef CQueryEval_BV_Value<TNSBitVector> BV_UserObject;
-    BV_UserObject* result =
-        dynamic_cast<BV_UserObject*>(uo);
-    _ASSERT(result);
-    auto_ptr<TNSBitVector> bv(result->ReleaseBV());
-    if (!bv.get()) {
-        bv.reset(new TNSBitVector());
-        BV_UserObject::TBuffer *buf = result->ReleaseBuffer();
-        if (buf && buf->size()) {
-            bm::operation_deserializer<TNSBitVector>::deserialize(*bv,
-                                                &((*buf)[0]),
-                                                0,
-                                                bm::set_ASSIGN);
-        }
-    }
-    // Filter against deleted jobs
-    q->FilterJobs(*(bv.get()));
-
-    return bv.release();
+    return q->ExecSelect(query, fields);
 }
 
 
