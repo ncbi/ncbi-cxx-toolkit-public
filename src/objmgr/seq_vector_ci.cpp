@@ -741,16 +741,15 @@ void CSeqVector_CI::GetSeqData(string& buffer, TSeqPos count)
     }
     
     buffer.reserve(count);
-    for (;;) {
+    while ( count ) {
         TCache_I cache = m_Cache;
         TCache_I cache_end = m_CacheEnd;
         TSeqPos chunk_count = min(count, TSeqPos(cache_end - cache));
         _ASSERT(chunk_count > 0);
         TCache_I chunk_end = cache + chunk_count;
         buffer.append(cache, chunk_end);
-        if ( (count -= chunk_count) == 0 ) {
-            break;
-        }
+        count -= chunk_count;
+        //if ( count == 0 ) break;
         if ( chunk_end == cache_end ) {
             x_NextCacheSeg();
         }
