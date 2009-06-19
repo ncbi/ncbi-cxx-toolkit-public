@@ -595,6 +595,7 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
     list<string> depends_libs;
     SMakeProjectT::ConvertLibDependsMacro(depends, depends_libs);
 
+    const CMsvcSite& site = GetApp().GetSite();
     depends_ids->clear();
     ITERATE(list<string>, p, depends_libs) {
         string id = *p;
@@ -605,10 +606,16 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
             NStr::Split(def, LIST_SEPARATOR, resolved_def);
             ITERATE(list<string>, r, resolved_def) {
                 id = *r;
-                depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+                if (!site.IsLibWithChoice(id) ||
+                     site.GetChoiceForLib(id) == CMsvcSite::eLib) {
+                    depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+                }
             }
         } else {
-            depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+            if (!site.IsLibWithChoice(id) ||
+                 site.GetChoiceForLib(id) == CMsvcSite::eLib) {
+                depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+            }
         }
     }
     depends_ids->sort();
