@@ -4315,6 +4315,11 @@ else
    BOOST_THREAD_STATIC_LIBS=
 fi
 
+case "$with_boost:$ncbi_cv_lib_boost_test" in
+   :* | no:* | *:yes | *:included-only ) ;; # no problem
+   * ) AC_MSG_ERROR([Boost explicitly requested, but Boost.Test.Included unavailable.]) ;;
+esac
+
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then

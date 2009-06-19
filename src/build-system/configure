@@ -23480,6 +23480,13 @@ else
    BOOST_THREAD_STATIC_LIBS=
 fi
 
+case "$with_boost:$ncbi_cv_lib_boost_test" in
+   :* | no:* | *:yes | *:included-only ) ;; # no problem
+   * ) { { echo "$as_me:$LINENO: error: Boost explicitly requested, but Boost.Test.Included unavailable." >&5
+echo "$as_me: error: Boost explicitly requested, but Boost.Test.Included unavailable." >&2;}
+   { (exit 1); exit 1; }; } ;;
+esac
+
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
