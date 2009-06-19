@@ -1247,7 +1247,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         ;;
       WorkShop5[[89]]* )
         # Limit optimization to -xO2 (-O now maps to -xO3) due to compiler bugs.
-        subst='s/[[     ]]-x*O[[1-9]]*//g'
+        subst='s/[[ 	]]-x*O[[1-9]]*//g'
         CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
         CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
         LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
@@ -2263,25 +2263,25 @@ changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
       with_optimization=${with_optimization:="yes"}
-      CFLAGS=`  echo " $CFLAGS"   | sed 's/[    ]-g[0-9]*//g'`
-      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[    ]-g[0-9]*//g'`
-      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[    ]-g[0-9]*//g'`
+      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
+      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
+      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
    else
       with_optimization=${with_optimization:="no"}
-      if echo " $CFLAGS"   |grep -v >/dev/null '[   ]-g[0-9]*' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CFLAGS="$CFLAGS -g"     ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[   ]-g[0-9]*' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
       CPPFLAGS="-D_DEBUG $CPPFLAGS"
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[   ]-g[0-9]*' ;
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP="@:"
    fi
 
-   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[     ]-x*O[0-9]*//g'`
-   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[     ]-x*O[0-9]*//g'`
-   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[     ]-x*O[0-9]*//g'`
+   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-x*O[0-9]*//g'`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-x*O[0-9]*//g'`
+   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-x*O[0-9]*//g'`
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
@@ -2290,11 +2290,11 @@ if test "$compiler" != "MSVC" ; then
       FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
    else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[   ]-x*O[0-9]*' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[   ]-x*O[0-9]*' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[   ]-x*O[0-9]*' ; then
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
@@ -3817,7 +3817,7 @@ if test "$with_bdb" != "no" ; then
 ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
           ]])])
           eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d '  ' > conftest.sh
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
@@ -4073,7 +4073,7 @@ if test "$with_boost" != "no"; then
 ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           ]])])
           eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d '  ' > conftest.sh
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
