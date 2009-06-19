@@ -450,9 +450,52 @@ struct SQueueInfo
 {
     int    kind;
     int    pos;
-    bool   remove;
+    bool   remove; ///< if this queue has a conflict and should be removed?
     string qclass;
 };
+
+typedef map<string, SQueueInfo> TDbQueuesMap;
+
+// Add queue to interim map. If the queue with the same name is already
+// present, check for consistency.
+// @return true if queue was not there, or duplicate is consistent
+bool x_AddQueueToMap(TDbQueuesMap& db_queues_map,
+                     const string& qname,
+                     const string& qclass,
+                     int           kind,
+                     int           pos)
+{
+    bool res = true;
+    TDbQueuesMap::iterator it;
+    if ((it = db_queues_map.find(qname)) != db_queues_map.end()) {
+        // check that queue info matches
+        SQueueInfo& qi = it->second;
+        if (qi.qclass != qclass) {
+            LOG_POST(Warning << "Class mismatch for queue '"
+            << qname << "', expected '"
+            << qi.qclass << "', registered '"
+            << qclass << "'.");
+            res = false;
+        }
+        // Definite positions must match, if one of positions is indefinite,
+        // i.e. < 0, they are incomparable so it is not an error.
+        if (qi.pos != pos  &&  qi.pos >= 0  &&  pos >= 0) {
+            LOG_POST(Warning << "Position mismatch for queue '"
+                << qname << "', expected "
+                << qi.pos << ", registered "
+                << pos << ".");
+            res = false;
+        }
+    } else {
+        db_queues_map[qname] = SQueueInfo();
+        db_queues_map[qname].kind = kind;
+        // Mark queue for allocation
+        db_queues_map[qname].pos = pos;
+        db_queues_map[qname].remove = false;
+        db_queues_map[qname].qclass = qclass;
+    }
+    return res;
+}
 
 
 unsigned CQueueDataBase::Configure(const IRegistry& reg)
@@ -464,7 +507,6 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
     CFastMutexGuard guard(m_ConfigureLock);
 
     // Temporary storage for merging info from database and config file
-    typedef map<string, SQueueInfo> TDbQueuesMap;
     TDbQueuesMap db_queues_map;
 
     // Read in registered queues from database into db_queues_map
@@ -474,12 +516,11 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         cur.SetCondition(CBDB_FileCursor::eFirst);
 
         while (cur.Fetch() == eBDB_Ok) {
-            string qname(m_QueueDescriptionDB.queue);
-            db_queues_map[qname] = SQueueInfo();
-            db_queues_map[qname].kind = m_QueueDescriptionDB.kind;
-            db_queues_map[qname].pos = m_QueueDescriptionDB.pos;
-            db_queues_map[qname].remove = false;
-            db_queues_map[qname].qclass = m_QueueDescriptionDB.qclass;
+            x_AddQueueToMap(db_queues_map,
+                m_QueueDescriptionDB.queue,
+                m_QueueDescriptionDB.qclass,
+                m_QueueDescriptionDB.kind,
+                m_QueueDescriptionDB.pos);
         }
     }}
 
@@ -507,33 +548,20 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
             continue;
         }
 
+        // Register queue class
         SQueueParameters* params = new SQueueParameters;
         params->Read(reg, sname);
         m_QueueParamMap[qclass] = params;
         min_run_timeout =
             std::min(min_run_timeout, (unsigned)params->run_timeout_precision);
+
         // Compatibility with previous convention - create a queue for every
         // class, declared as queue_*
         if (!no_default_queues && NStr::CompareNocase(tmp, "queue") == 0) {
             // The queue name for this case is the same as class name
             string& qname = qclass;
-            TDbQueuesMap::iterator it;
-            if ((it = db_queues_map.find(qname)) != db_queues_map.end()) {
-                // check that queue info matches
-                SQueueInfo& qi = it->second;
-                if (qi.qclass  !=  qclass)
-                    LOG_POST(Warning << "Mismatch in config file for queue '"
-                                     << qname << "', expected class '"
-                                     << qi.qclass << "', config class '"
-                                     << qclass << "'. Fix config file.");
-            } else {
-                db_queues_map[qname] = SQueueInfo();
-                db_queues_map[qname].kind = SLockedQueue::eKindStatic;
-                // Mark queue for allocation
-                db_queues_map[qname].pos = -1;
-                db_queues_map[qname].remove = false;
-                db_queues_map[qname].qclass = qclass;
-            }
+            x_AddQueueToMap(db_queues_map, qname, qclass,
+                            SLockedQueue::eKindStatic, -1);
         }
     }
 
@@ -545,23 +573,8 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         if (!qclass.empty()  &&  
             m_QueueParamMap.find(qclass) != m_QueueParamMap.end())
         {
-            TDbQueuesMap::iterator it;
-            if ((it = db_queues_map.find(qname)) != db_queues_map.end()) {
-                // check that queue info matches
-                SQueueInfo& qi = it->second;
-                if (qi.qclass  !=  qclass)
-                    LOG_POST(Warning << "Mismatch in config file for queue '"
-                    << qname << "', expected class '"
-                    << qi.qclass << "', config class '"
-                    << qclass << "'. Fix config file.");
-            } else {
-                db_queues_map[qname] = SQueueInfo();
-                db_queues_map[qname].kind = SLockedQueue::eKindStatic;
-                // Mark queue for allocation
-                db_queues_map[qname].pos = -1;
-                db_queues_map[qname].remove = false;
-                db_queues_map[qname].qclass = qclass;
-            }
+            x_AddQueueToMap(db_queues_map, qname, qclass,
+                SLockedQueue::eKindStatic, -1);
         }
     }
 
@@ -569,25 +582,28 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         CNS_Transaction trans(*m_Env);
         m_QueueDescriptionDB.SetTransaction(&trans);
         // Allocate/deallocate queue db blocks according to merged info,
-        // merge this info back into database
-        ITERATE(TDbQueuesMap, it, db_queues_map) {
+        // merge this info back into database.
+        // NB! We don't actually remove conflicting queues from the database because
+        // corrective actions in config file can be taken. We just mask queues and do
+        // not attempt to load them.
+        NON_CONST_ITERATE(TDbQueuesMap, it, db_queues_map) {
             const string& qname = it->first;
-            const SQueueInfo& qi = it->second;
+            SQueueInfo& qi = it->second;
             int pos = qi.pos;
             bool qexists = m_QueueCollection.QueueExists(qname);
             if (pos < 0) {
                 pos = x_AllocateQueue(qname, qi.qclass, qi.kind, "");
                 if (pos < 0) {
+                    qi.remove = true;
                     LOG_POST(Warning << "Queue '" << qname
                         << "' can not be allocated: max_queues limit");
-                    continue;
                 }
             } else {
-                if (!qexists) {
-                    if (!m_QueueDbBlockArray.Allocate(pos))
-                        LOG_POST(Warning << "Queue '" << qname
-                                         << "' position conflict at block#"
-                                         << pos);
+                if (!qexists  &&  !m_QueueDbBlockArray.Allocate(pos)) {
+                    qi.remove = true;
+                    LOG_POST(Warning << "Queue '" << qname
+                                     << "' position conflict at block #"
+                                     << pos);
                 }
             }
         }
@@ -596,19 +612,28 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         m_QueueDescriptionDB.SetTransaction(NULL);
     }}
 
-    CBDB_FileCursor cur(m_QueueDescriptionDB);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-    while (cur.Fetch() == eBDB_Ok) {
-        string qname(m_QueueDescriptionDB.queue);
-        int kind = m_QueueDescriptionDB.kind;
-        unsigned pos = m_QueueDescriptionDB.pos;
-        string qclass(m_QueueDescriptionDB.qclass);
+//    CBDB_FileCursor cur(m_QueueDescriptionDB);
+//    cur.SetCondition(CBDB_FileCursor::eFirst);
+//    while (cur.Fetch() == eBDB_Ok) {
+//        string qname(m_QueueDescriptionDB.queue);
+//        int kind = m_QueueDescriptionDB.kind;
+//        unsigned pos = m_QueueDescriptionDB.pos;
+//        string qclass(m_QueueDescriptionDB.qclass);
+    ITERATE(TDbQueuesMap, it, db_queues_map) {
+        const string& qname = it->first;
+        const SQueueInfo& qi = it->second;
+        if (qi.remove) continue;
+        int kind = qi.kind;
+        int pos = qi.pos;
+        const string &qclass = qi.qclass;
+
         TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
         if (it == m_QueueParamMap.end()) {
-            LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
+            LOG_POST(Warning << "Can not find class " << qclass << " for queue " << qname);
+            // NB: I do not know how intelligently handle it, postpone it.
             // Mark queue as dynamic, so we can delete it
-            m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
-            cur.Update();
+//            m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
+//            cur.Update();
             continue;
         }
         const SQueueParameters& params = *(it->second);
