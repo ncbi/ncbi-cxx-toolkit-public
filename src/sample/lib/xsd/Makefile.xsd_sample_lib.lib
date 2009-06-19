@@ -1,0 +1,2 @@
+LIB = xsd_sample_lib
+SRC = xsd_sample_lib__ xsd_sample_lib___

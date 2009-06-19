@@ -33,9 +33,10 @@ SYNOPSIS:
 ARGUMENTS:
    <name>      -- name of the project (will be subst. to the makefile name)
    <type>      -- one of the following:
-     lib             to build a simple library
+     lib[/basic]     to build a simple library
      lib/asn         to build a library from an ASN.1 spec
      lib/dtd         to build a library from an XML DTD
+     lib/xsd         to build a library from an XML Schema
      app[/basic]     to build a simple application
      app/alnmgr      to build an application using the alignment manager
      app/asn         to build a library from ASN.1 spec, and sample application
@@ -88,11 +89,11 @@ CreateMakefile_Lib()
   lib_name="$5"
 
   case "$proj_type/$proj_subtype" in
-   lib/?* | app/asn)
-     src="${lib_name}__ ${lib_name}___"
+   lib/[^b]* | app/asn)
+     libsrc="${lib_name}__ ${lib_name}___"
      ;;
    *)
-     src=$lib_name
+     libsrc=$lib_name
      ;;
   esac
 
@@ -140,7 +141,7 @@ cat > `dirname $user_makefile`/Makefile.$lib_name.lib <<EOF
 
 ###  BASIC PROJECT SETTINGS
 LIB = $lib_name
-SRC = $src
+SRC = $libsrc
 # OBJ =
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
@@ -149,6 +150,9 @@ SRC = $src
 # CXXFLAGS = \$(FAST_CXXFLAGS)
 #
 # LIB_OR_DLL = dll
+
+###  Kludge around issues with potentially-absent .dep files
+\$(status_dir)/.%.dep:;
 EOF
 }
 
@@ -229,7 +233,7 @@ EOF
        }
        virtline = ""
      }      
-  }' < "$base" >> "$makefile_name"
+  }' < "$base" | sed -e "s/$old_proj_name/$proj_name/" >> "$makefile_name"
 
   cat >> "$makefile_name" <<EOF
 
@@ -238,6 +242,9 @@ EOF
 # CFLAGS   = \$(FAST_CFLAGS)
 # CXXFLAGS = \$(FAST_CXXFLAGS)
 # LDFLAGS  = \$(FAST_LDFLAGS)
+
+###  Kludge around issues with potentially-absent .dep files
+\$(status_dir)/.%.dep:;
 EOF
 }
 
@@ -300,11 +307,18 @@ EOF
           app/* )
               echo "APP_PROJ = $proj_name"
               ;;
+          lib/basic )
+              echo "LIB_PROJ = $proj_name"
+              echo "APP_PROJ = $proj_name_test"
+              ;;
           lib/asn )
               echo "ASN_PROJ = $proj_name"
               ;;
           lib/dtd )
               echo "DTD_PROJ = $proj_name"
+              ;;
+          lib/xsd )
+              echo "XSD_PROJ = $proj_name"
               ;;
           lib/* )
               echo "LIB_PROJ = $proj_name"
@@ -368,13 +382,18 @@ case "${proj_type}" in
     proj_subdir=basic
     proj_subtype=basic
     ;;
-  lib/asn | lib/dtd)
-    proj_subtype=`echo ${proj_type} | sed -e 's@^lib/@@'`
+  lib/*)
+    proj_subdir=`echo ${proj_type} | sed -e 's@^lib/@@; s/^asn$/asn_lib/'`
+    proj_subtype=$proj_subdir
     proj_type=lib
     extra_inc="-I../../include -I../../include/$proj_name"
+    stem='sample/lib'
     ;;
   lib)
-    proj_subtype=
+    proj_subdir=basic
+    proj_subtype=basic
+    extra_inc="-I../../include -I../../include/$proj_name"
+    stem='sample/lib'
     ;;
 esac
 
@@ -382,15 +401,15 @@ if test "$proj_name" != `basename $proj_name` ; then
   Usage "Invalid project name:  \"$proj_name\""
 fi
 
-if test -d "$src/app/sample/$proj_subdir"; then
+if test -d "$src/$proj_type/sample/$proj_subdir"; then
   # looking at a tree predating the April 14, 2009 rearrangements
-  stem='app/sample' # vs. sample/app
+  stem="$proj_type/sample" # vs. sample/app
 elif test ! -d "$src/$stem/$proj_subdir"; then
   svn co "$repository_url/trunk/c++/src/$stem/$proj_subdir" \
     "$tmp_app_checkout_dir/$stem/$proj_subdir"
   if test ! -d "$tmp_app_checkout_dir/$stem/$proj_subdir"; then
     rm -rf "$tmp_app_checkout_dir"
-    Usage "Unsupported application type ${proj_subdir}"
+    Usage "Unsupported project type $proj_type/$proj_subtype"
   fi
   src="`cd \"$tmp_app_checkout_dir\" && pwd`"
   cleanup='yes'
@@ -437,12 +456,15 @@ if test -f $makefile_name ; then
   esac
 fi
 
-old_proj_name=${proj_subtype}_sample
 
 case "$proj_type" in
   lib )
+    old_class_name=CSampleLibtestApplication
+    old_proj_name=${proj_subtype}_sample_lib
     CreateMakefile_Lib $makefile_name $proj_name '' "$proj_subtype" $proj_name ;;
   app )
+    old_class_name=CSample`Capitalize ${proj_subtype}`Application
+    old_proj_name=${proj_subtype}_sample
     CreateMakefile_App $makefile_name $proj_name $proj_subdir $proj_subtype $proj_name $old_proj_name ;;
   * )
     Usage "Invalid project type:  \"$proj_type\"" ;;
@@ -451,13 +473,6 @@ esac
 echo "Created a model makefile \"$makefile_name\"."
 def_makefile=`dirname $makefile_name`/Makefile
 
-if test "$proj_type" != "app"; then
-  CreateMakefile_Meta $def_makefile $proj_name
-  exit 0
-fi
-
-
-old_class_name=CSample`Capitalize ${proj_subtype}`Application
 new_class_name=C`Capitalize ${proj_name}`Application
 
 old_dir=${src}/$stem/${proj_subdir}
@@ -466,6 +481,13 @@ if test -d "${proj_name}"; then
 else
   new_dir=`pwd`
 fi
+
+if test ! -d "$old_dir"; then
+  echo "Warning: unable to locate sample code in $old_dir" >&2
+  CreateMakefile_Meta $def_makefile $proj_name
+  exit 0
+fi
+
 
 CopySources()
 {
