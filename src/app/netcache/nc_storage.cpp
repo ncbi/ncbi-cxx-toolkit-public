@@ -944,7 +944,7 @@ CNCBlobStorage::x_GC_IsMetafileEmpty(TNCDBPartId          part_id,
 {
     bool is_empty = true;
     try {
-        is_empty = metafile->HasLiveBlobs(dead_after);
+        is_empty = !metafile->HasLiveBlobs(dead_after);
     }
     catch (exception& ex) {
         CQuickStrStream msg;
