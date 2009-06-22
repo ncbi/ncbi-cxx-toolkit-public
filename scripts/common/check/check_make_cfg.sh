@@ -321,7 +321,14 @@ RunTest() {
    x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
 
    if \$is_db_load; then
-      test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+      case "$x_compiler" in
+         MSVC )
+            test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+            ;;        
+         XCODE ) 
+            $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
+            ;;
+      esac
       return 0
    fi
    
@@ -330,7 +337,14 @@ RunTest() {
       echo "\$x_wdir"      >> "\$x_test_rep"
       echo "\$x_run"       >> "\$x_test_rep"
       echo "\$x_real_name" >> "\$x_test_rep"
-      export NCBI_BOOST_REPORT_FILE="\$(cygpath -w "\$x_boost_rep")"
+      case "$x_compiler" in
+         MSVC )
+            export NCBI_BOOST_REPORT_FILE="\$(cygpath -w "\$x_boost_rep")"
+            ;;        
+         XCODE ) 
+            export NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
+            ;;
+      esac
    fi
 
    x_cmd="[\$build_tree/\$build_cfg/\$x_wdir]"
