@@ -1,0 +1,17 @@
+# $Id $
+
+# Build library "ncbi_xloader_sra"
+###############################
+
+LIB = ncbi_xloader_sra
+SRC = sraloader
+
+ASN_DEP = seqset
+
+LIBS = -Wl,-Bstatic -lncbi-sradb -lvdb -lklib -lkascii -lsraxf -lnucstrstr \
+        -lkxf -lkdb -lktrie -lkpt -lkcs -lktxt -lkcont -Wl,-Bdynamic \
+        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+SRA_TOP = $(HOME)/extra/internal/asm-trace
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(SRA_TOP)/itf
+LDFLAGS = $(ORIG_LDFLAGS) -L$(SRA_TOP)/bin/lib64 -L$(SRA_TOP)/bin/ilib64

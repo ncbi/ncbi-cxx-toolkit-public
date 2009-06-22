@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (ncbi_xloader_sra)
+##################################
+
+LIB_PROJ = ncbi_xloader_sra
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
