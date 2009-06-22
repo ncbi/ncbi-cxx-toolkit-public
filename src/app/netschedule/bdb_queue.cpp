@@ -625,8 +625,8 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         int pos = qi.pos;
         const string &qclass = qi.qclass;
 
-        TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
-        if (it == m_QueueParamMap.end()) {
+        TQueueParamMap::iterator it1 = m_QueueParamMap.find(qclass);
+        if (it1 == m_QueueParamMap.end()) {
             LOG_POST(Warning << "Can not find class " << qclass << " for queue " << qname);
             // NB: I do not know how intelligently handle it, postpone it.
             // Mark queue as dynamic, so we can delete it
@@ -634,7 +634,7 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
 //            cur.Update();
             continue;
         }
-        const SQueueParameters& params = *(it->second);
+        const SQueueParameters& params = *(it1->second);
         bool qexists = m_QueueCollection.QueueExists(qname);
         if (!qexists) {
             MountQueue(qname, qclass, kind, params, m_QueueDbBlockArray.Get(pos));
