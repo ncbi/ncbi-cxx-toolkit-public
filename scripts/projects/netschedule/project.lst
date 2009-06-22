@@ -9,7 +9,6 @@ util/cache$ update-only
 util/math$ update-only
 connect$
 connect/services$
-bdb$
 db/bdb$
 app$
 app/netschedule$
