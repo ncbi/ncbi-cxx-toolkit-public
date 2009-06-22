@@ -102,7 +102,6 @@ static bool s_StringIsJustQuotes(const string& str)
     return true;
 }
 
-
 static string s_GetGOText(const CUser_field& field, bool is_ftable)
 {
     const string* text_string = NULL,
@@ -637,6 +636,320 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
     }
 }
 
+static string s_GetSpecimenVoucherTag(
+    const string& strRawName,
+    const string& strBase,
+    const string& strInst )
+{
+    CNcbiOstrstream text;
+    
+    return CNcbiOstrstreamToString(text);
+}
+
+
+static string s_GetSpecimenVoucherText(
+    CBioseqContext& ctx,
+    const string& strRawName )
+{
+    const string strAtccBase( "http://www.atcc.org/SearchCatalogs/linkin?id=" );
+    const string strUamBase( "http://arctos.database.museum/SpecimenDetail.cfm?GUID=" );
+    
+    const string strMsbInst( "Museum of Southwestern Biology, University of New Mexico" );
+    const string strUamInst( "Museum of Alaska Museum of the North" );
+    const string strWnmuInst( "Western New Mexico Museum" );
+    const string strPsuInst( "Portland State University" );
+    const string strCrcmInst( "Charles R. Conner Museum, Washington State University" );
+    const string strDgrInst( "Division of Genomic Resources, University of New Mexico" );
+    const string strKwpInst( "Kenelm W. Philip Collection, Museum of Alaska Museum of the North" );
+    const string strMvzInst( "Museum of Vertebrate Zoology, University of California" );
+    const string strNbsbInst( "National Biomonitoring Specimen Bank, U.S. Geological Survey" );
+    
+    if ( ! ctx.Config().DoHTML() ) {
+        return strRawName;
+    }
+    
+    CNcbiOstrstream text;
+    
+    //  Base, institute, colon, id, none
+    if ( NStr::StartsWith( strRawName, "CRCM:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "CRCM:Bird" ) );
+        text << "CRCM:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strCrcmInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "DGR:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "DGR:Bird" ) );
+        text << "DGR:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strDgrInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "DGR:Ento" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "DGR:Ento" ) );
+        text << "DGR:Ento:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strDgrInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "DGR:Fish" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "DGR:Fish" ) );
+        text << "DGR:Fish:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strDgrInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "DGR:Herp" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "DGR:Herp" ) );
+        text << "DGR:Herp:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strDgrInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "DGR:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "DGR:Mamm" ) );
+        text << "DGR:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strDgrInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "KWP:Ento" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "KWP:Ento" ) );
+        text << "KWP:Ento:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strKwpInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MSB:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MSB:Mamm" ) );
+        text << "MSB:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMsbInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MSB:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MSB:Bird" ) );
+        text << "MSB:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMsbInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MSB:Para" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MSB:Para" ) );
+        text << "MSB:Para:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMsbInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Bird" ) );
+        text << "MVZ:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Egg" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Egg" ) );
+        text << "MVZ:Egg:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Herp" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Herp" ) );
+        text << "MVZ:Herp:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Hild" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Hild" ) );
+        text << "MVZ:Hild:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Img" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Img" ) );
+        text << "MVZ:Img:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Mamm" ) );
+        text << "MVZ:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZ:Page" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZ:Page" ) );
+        text << "MVZ:Page:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "MVZObs:Herp" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "MVZObs:Herp" ) );
+        text << "MVZObs:Herp:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strMvzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "NBSB:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "NBSB:Bird" ) );
+        text << "NBSB:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strNbsbInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "PSU:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "PSU:Mamm" ) );
+        text << "PSU:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strPsuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Bird" ) );
+        text << "UAM:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Bryo" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Bryo" ) );
+        text << "UAM:Bryo:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Crus" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Crus" ) );
+        text << "UAM:Crus:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Ento" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Ento" ) );
+        text << "UAM:Ento:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Fish" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Fish" ) );
+        text << "UAM:Fish:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Herb" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Herb" ) );
+        text << "UAM:Herb:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Herp" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Herp" ) );
+        text << "UAM:Herp:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Mamm" ) );
+        text << "UAM:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Moll" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Moll" ) );
+        text << "UAM:Moll:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "UAM:Paleo" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Paleo" ) );
+        text << "UAM:Paleo:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    else if ( NStr::StartsWith( strRawName, "UAMObs:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "UAM:Mamm" ) );
+        text << "UAM:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strUamInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "WNMU:Bird" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "WNMU:Bird" ) );
+        text << "WNMU:Bird:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strWnmuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "WNMU:Fish" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "WNMU:Fish" ) );
+        text << "WNMU:Fish:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strWnmuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "WNMU:Mamm" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "WNMU:Mamm" ) );
+        text << "WNMU:Mamm:<a ";
+        text << "href=\"" << strUamBase << strRawName << "\" title=\"" << strWnmuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    //  
+    
+    //  no pattern, just replicate
+    else {
+        text << strRawName;
+    }
+    return CNcbiOstrstreamToString(text);
+}
 
 void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
@@ -662,16 +975,16 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
                     AddPeriod(subname);
                 }
                 m_Suffix = &kEOL;
-                qual = x_AddFQ(q, "note", subname);
+                qual = x_AddFQ(q, "note", s_GetSpecimenVoucherText(ctx, subname));
             } else {
-                qual = x_AddFQ(q, "note", name + ": " + subname);
+                qual = x_AddFQ(q, "note", name + ": " + s_GetSpecimenVoucherText(ctx, subname));
             }
             if (add_period  &&  qual) {
                 qual->SetAddPeriod();
             }
         }
     } else {
-        x_AddFQ(q, name, subname);
+        x_AddFQ(q, name, s_GetSpecimenVoucherText(ctx, subname) );
     }
 }
 
