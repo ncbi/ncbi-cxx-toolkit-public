@@ -333,20 +333,20 @@ static BlastSeqLoc* s_SeqLocListInvert(const BlastSeqLoc* locations, Int4 length
      ASSERT(locations);
 
      start = 0;
-     stop = MAX( 0, locations->ssr->left);
+     stop = MAX( 0, locations->ssr->left-1);
 
      if (stop - start > 2)
         tail = BlastSeqLocNew(&retval, start, stop);
 
      while (locations)
      {
-         start = locations->ssr->right;
+         start = locations->ssr->right+1;
          locations = locations->next;
 
          if (locations)
-             stop = locations->ssr->left;
+             stop = locations->ssr->left-1;
          else
-             stop = length;
+             stop = length-1;
 
          if (stop - start > 2)
          {
@@ -407,7 +407,7 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
     if (locations && 
         lookup->word_length > lookup->lut_word_length && 
         s_HasMaskAtHashEnabled(query_options)) {
-       lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
+        lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
     }
 
     status = s_BlastSmallNaLookupFinalize(thin_backbone, lookup, query);
@@ -576,7 +576,7 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
     if (locations && 
         lookup->word_length > lookup->lut_word_length && 
         s_HasMaskAtHashEnabled(query_options)) {
-       lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
+        lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
     }
     s_BlastNaLookupFinalize(thin_backbone, lookup);
     sfree(thin_backbone);
@@ -971,7 +971,7 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    if (location && 
        mb_lt->word_length > mb_lt->lut_word_length && 
        s_HasMaskAtHashEnabled(query_options)) {
-      mb_lt->masked_locations = s_SeqLocListInvert(location, query->length);
+       mb_lt->masked_locations = s_SeqLocListInvert(location, query->length);
    }
 
    /* Allocate the PV array. To fit in the external cache of 

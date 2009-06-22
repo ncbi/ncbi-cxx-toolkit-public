@@ -122,9 +122,11 @@ public:
 /// @param bxmlout XML BLAST output object [in] [out]
 /// @param data Data structure containing all information necessary to
 ///             produce a BLAST XML report. 
+/// @param out_stream for incremental output [out]
 NCBI_XBLASTFORMAT_EXPORT
 void BlastXML_FormatReport(CBlastOutput& bxmlout, 
-                           const IBlastXMLReportData* data);
+                           const IBlastXMLReportData* data,
+			   CNcbiOstream *out_stream = NULL);
 
 /* @} */
 

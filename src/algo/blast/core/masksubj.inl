@@ -45,6 +45,7 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
                            Int4  lut_word_length,
                            Int4* range)
 {
+    Int4 start = range[1];
     /* for masked db, we use (length - word_length) instead */
     for (; range[0] < subject->num_seq_ranges; (range[0])++) {
         /* handle case where s_last is beyond a masked region */
@@ -65,9 +66,11 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
         break;
     } /* end for */
 
+    if (range[1] < start) range[1] = start;
+
     if (range[1] + lut_word_length > subject->length) {
         return FALSE;
     }
-			
+
     return TRUE;
 }

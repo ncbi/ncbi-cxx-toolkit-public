@@ -656,21 +656,21 @@ s_IsWordSeedMasked(BlastSeqLoc* locations,
 {
     Int4 q_end = q_off + word_length;
     while (locations) {
-       if (q_end >= locations->ssr->left && q_end < locations->ssr->right) {
+       if (q_end-1 >= locations->ssr->left && q_end-1 <= locations->ssr->right) {
           /* since we have exhausted left extension, this hit is hopeless */
           return TRUE;
        } 
-       if (q_off >= locations->ssr->left && q_off < locations->ssr->right) {
+       if (q_off >= locations->ssr->left && q_off <= locations->ssr->right) {
           /* determine the right boundary for extension*/
           if (locations->next) {
               max_ext = MIN (max_ext, locations->next->ssr->left - q_end);
           } 
-          if (locations->ssr->right - q_off > max_ext) {
+          if (locations->ssr->right+1 - q_off > max_ext) {
               /*  query range too short to contain a word  */
               return TRUE;
           }
           /* try to extend to the right */
-          max_ext = locations->ssr->right - q_off;
+          max_ext = locations->ssr->right+1 - q_off;
           if (s_BlastRightExtend(query, subject, q_end, s_end, NULL, max_ext) < max_ext) {
               return TRUE;
           }
