@@ -652,7 +652,16 @@ static string s_GetSpecimenVoucherText(
     const string& strRawName )
 {
     const string strAtccBase( "http://www.atcc.org/SearchCatalogs/linkin?id=" );
+    const string strCcmpBase( "http://ccmp.bigelow.org/SD/display.php?starin=CCMP" );
     const string strUamBase( "http://arctos.database.museum/SpecimenDetail.cfm?GUID=" );
+    const string strCcugBase( "http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=" );
+    const string strDsmzBase( "http://www.dsmz.de/microorganisms/search_no.php?q=" );
+    const string strFsuBase( "http://www.prz.uni-jena.de/data.php?fsu=" );
+    const string strPcmbBase( "http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=" );
+    const string strKuiBase( "http://collections.nhm.ku.edu/KU_Fish/detail.jsp?record=" );
+    const string strKuitBase( "http://collections.nhm.ku.edu/KU_Tissue/detail.jsp?record=" );
+    const string strBcrcBase( "http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrs_no=" );
+    const string strPccBase( "http://www.pasteur.fr/recherche/banque/PCC/docs/pcc" );
     
     const string strMsbInst( "Museum of Southwestern Biology, University of New Mexico" );
     const string strUamInst( "Museum of Alaska Museum of the North" );
@@ -663,6 +672,15 @@ static string s_GetSpecimenVoucherText(
     const string strKwpInst( "Kenelm W. Philip Collection, Museum of Alaska Museum of the North" );
     const string strMvzInst( "Museum of Vertebrate Zoology, University of California" );
     const string strNbsbInst( "National Biomonitoring Specimen Bank, U.S. Geological Survey" );
+    const string strAtccInst( "American Type Culture Collection" );
+    const string strCcmpInst( "Provasoli-Guillard National Center for Culture of Marine Phytoplankton" );
+    const string strCcugInst( "Culture Collection, University of Goteborg, Department of Clinical Bacteriology" );
+    const string strDsmzInst( "German Resource Center for Biological Material" );
+    const string strFsuInst( "Fungal Reference Center, University of Jena" );
+    const string strPcmbInst( "Pacific Center for Molecular Biodiversity" );
+    const string strKuInst( "University of Kansas, Museum of Natural History" );
+    const string strBcrcInst( "Bioresource Collection and Research Center" );
+    const string strPccInst( "Pasteur Culture Collection of Cyanobacteria" );
     
     if ( ! ctx.Config().DoHTML() ) {
         return strRawName;
@@ -942,8 +960,92 @@ static string s_GetSpecimenVoucherText(
         text << "</a>";
     }
     
-    //  
+    //  Base, none, none, id, none
+    else if ( NStr::StartsWith( strRawName, "ATCC" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "ATCC" ) );
+        text << "ATCC:<a ";
+        text << "href=\"" << strAtccBase << strId << "\" title=\"" << strAtccInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
     
+    else if ( NStr::StartsWith( strRawName, "CCPM" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "CCMP" ) );
+        text << "CCMP:<a ";
+        text << "href=\"" << strCcmpBase << strId << "\" title=\"" << strCcmpInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "CCUG" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "CCUG" ) );
+        text << "CCUG:<a ";
+        text << "href=\"" << strCcugBase << strId << "\" title=\"" << strCcugInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "DSM" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "DSM" ) );
+        text << "DSM:<a ";
+        text << "href=\"" << strDsmzBase << strId << "\" title=\"" << strDsmzInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "FSU<DEU>" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "FSU<DEU>" ) );
+        text << "FSU&ge;DEU&le;:<a ";
+        text << "href=\"" << strFsuBase << strId << "\" title=\"" << strFsuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+    
+    else if ( NStr::StartsWith( strRawName, "PCMB" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "PCMB" ) );
+        text << "PCMB:<a ";
+        text << "href=\"" << strPcmbBase << strId << "\" title=\"" << strPcmbInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "KU:I" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "KU:I" ) );
+        text << "KU:I:<a ";
+        text << "href=\"" << strKuiBase << strId << "\" title=\"" << strKuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    else if ( NStr::StartsWith( strRawName, "KU:IT" ) ) {
+        string strId = strRawName.substr( 1 + strlen( "KU:IT" ) );
+        text << "KU:IT:<a ";
+        text << "href=\"" << strKuitBase << strId << "\" title=\"" << strKuInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+
+    //base, none, prefix, postfix
+    else if ( NStr::StartsWith( strRawName, "BCRC" ) ) {
+        const string strPrefix( "" );
+        const string strPostfix( "&type_id=6&keyword=;;" ); 
+        string strId = strRawName.substr( 1 + strlen( "BCRC" ) );
+        text << "BCRC:<a ";
+        text << "href=\"" << strBcrcBase << strPrefix << strId << strPostfix << "\" title=\"" << strBcrcInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+        
+    else if ( NStr::StartsWith( strRawName, "PCC" ) ) {
+        const string strPrefix( "" );
+        const string strPostfix( ".htm" ); 
+        string strId = strRawName.substr( 1 + strlen( "PCC" ) );
+        text << "PCC:<a ";
+        text << "href=\"" << strPccBase << strPrefix << strId << strPostfix << "\" title=\"" << strPccInst << "\">";
+        text << strId;
+        text << "</a>";
+    }
+        
     //  no pattern, just replicate
     else {
         text << strRawName;
