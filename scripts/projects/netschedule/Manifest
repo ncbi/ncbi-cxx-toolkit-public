@@ -19,6 +19,8 @@ APP: test_netschedule_client+ test_netschedule_node+ test_netschedule_stress+ te
 APP: $srcdir/src/app/netschedule/test/ns.py $srcdir/src/app/netschedule/test/test_netschedule_bsub.py
 ETC: src/app/netschedule/netscheduled.ini
 
+DEFAULT_CONFIGURATIONS: Linux32:Bdb4520-Release Linux64:Bdb4520-Release Win32:Bdb4520-dll-ReleaseDLL Win64:Bdb4520-dll-ReleaseDLL
+
 # Each line describes a single configuration
 # The format is as follows:
 # <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
@@ -31,8 +33,8 @@ Linux32 : Bdb4520-Debug   : GCC.sh 3.4.2 --with-debug    --with-mt --with-flat-m
 Linux64 : Bdb4520-Release : GCC.sh 4.0.1 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64 : Bdb4520-Debug   : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 
-Win32   : Bdb4520-static-DebugDLL   : msvc710_prj  static  32  DebugDLL
-Win32   : Bdb4520-static-ReleaseDLL : msvc710_prj  static  32  ReleaseDLL
-Win32   : Bdb4520-dll-ReleaseDLL    : msvc710_prj  dll     32  ReleaseDLL
+Win32   : Bdb4520-static-DebugDLL   : msvc800_prj  static  32  DebugDLL
+Win32   : Bdb4520-static-ReleaseDLL : msvc800_prj  static  32  ReleaseDLL
+Win32   : Bdb4520-dll-ReleaseDLL    : msvc800_prj  dll     32  ReleaseDLL
 # Win64   : Bdb4520-static-ReleaseDLL : msvc800_prj  static  64  ReleaseDLL
 Win64   : Bdb4520-dll-ReleaseDLL    : msvc800_prj  dll     64  ReleaseDLL
