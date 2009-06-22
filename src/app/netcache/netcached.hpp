@@ -52,6 +52,82 @@ class CNetCacheDApp;
 class CNCMessageHandler;
 
 
+struct SConstCharCompare
+{
+    bool operator() (const char* left, const char* right);
+};
+
+
+class CNCServer_Stat
+{
+public:
+    CNCServer_Stat(void);
+
+    /// Add finished command
+    ///
+    /// @param cmd
+    ///   Command name - should be string constant living through all time
+    ///   application is running.
+    /// @param cmd_span
+    ///   Time command was executed
+    /// @param state_spans
+    ///   Array of times spent in each handler state during command execution
+    void AddFinishedCmd(const char*           cmd,
+                        double                cmd_span,
+                        const vector<double>& state_spans);
+    /// Add closed connection
+    ///
+    /// @param conn_span
+    ///   Time which connection stayed opened
+    void AddClosedConnection(double conn_span);
+    /// Add opened connection
+    void AddOpenedConnection(void);
+    /// Remove opened connection (after OnOverflow was called)
+    void RemoveOpenedConnection(void);
+    /// Add connection that will be closed because of maximum number of
+    /// connections exceeded.
+    void AddOverflowConnection(void);
+    /// Add command terminated because of timeout
+    void AddTimedOutCommand(void);
+
+    /// Print statistics
+    void Print(CPrintTextProxy& proxy);
+
+private:
+    typedef map<const char*, int, SConstCharCompare>     TCmdsCountsMap;
+    typedef map<const char*, double, SConstCharCompare>  TCmdsSpansMap;
+
+    /// Mutex for working with statistics
+    CFastMutex     m_ObjMutex;
+    /// Maximum time connection was opened
+    double         m_MaxConnSpan;
+    /// Number of connections closed
+    Uint8          m_ClosedConns;
+    /// Number of connections opened
+    Uint8          m_OpenedConns;
+    /// Number of connections closed because of maximum number of opened
+    /// connections limit.
+    Uint8          m_OverflowConns;
+    /// Sum of times all connections stayed opened
+    double         m_ConnsSpansSum;
+    /// Maximum time one command was executed
+    double         m_MaxCmdSpan;
+    /// Maximum time of each command type executed
+    TCmdsSpansMap  m_MaxCmdSpanByCmd;
+    /// Total number of executed commands
+    Uint8          m_CntCmds;
+    /// Number of each command type executed
+    TCmdsCountsMap m_CntCmdsByCmd;
+    /// Sum of times all commands were executed
+    double         m_CmdSpans;
+    /// Sum of times each type of command was executed
+    TCmdsSpansMap  m_CmdSpansByCmd;
+    /// Sums of times handlers spent in every state
+    vector<double> m_StatesSpansSums;
+    /// Number of commands terminated because of command timeout
+    Uint8          m_TimedOutCmds;
+};
+
 /// Netcache server 
 class CNetCacheServer : public CServer
 {
@@ -82,6 +158,8 @@ public:
     /// Unregister session
     void UnregisterSession(const string& host, unsigned int pid);
 
+    /// Get object gathering server statistics
+    CNCServer_Stat* GetStat(void);
     /// Get monitor for the server
     CServer_Monitor* GetServerMonitor(void);
     /// Get storage for the given cache name.
@@ -102,30 +180,6 @@ public:
     unsigned GetCmdTimeout(void) const;
     /// Create CTime object in fast way (via CFastTime)
     CTime GetFastTime(void);
-
-    // Statistics methods
-
-    /// Add finished command to statistics
-    ///
-    /// @param cmd_span
-    ///   Time command was executed
-    /// @param state_spans
-    ///   Array of times spent in each handler state during command execution
-    void AddFinishedCmd(double cmd_span, const vector<double>& state_spans);
-    /// Add closed connection to statistics
-    ///
-    /// @param conn_span
-    ///   Time which connection stayed opened
-    void AddClosedConnection(double conn_span);
-    /// Add opened connection to statistics
-    void AddOpenedConnection(void);
-    /// Remove opened connection from statistics (after OnOverflow was called)
-    void RemoveOpenedConnection(void);
-    /// Add to statistics connection that will be closed because of maximum
-    /// number of connections exceeded.
-    void AddOverflowConnection(void);
-    /// Add to statistics command terminated because of timeout
-    void AddTimedOutCommand(void);
 
     /// Print full server statistics into stream
     void PrintServerStats(CNcbiIostream* ios);
@@ -161,13 +215,15 @@ private:
     void x_PrintServerStats(CPrintTextProxy& proxy);
 
 
-    typedef map<string, AutoPtr<CNCBlobStorage> >   TStorageMap;
+    typedef map<string, AutoPtr<CNCBlobStorage> >     TStorageMap;
 
 
     /// Host name where server runs
     string                         m_Host;
     /// Port where server runs
     unsigned                       m_Port;
+    /// Time when this server instance was started
+    CTime                          m_StartTime;
     // Some variable that should be here because of CServer requirements
     STimeout                       m_ServerAcceptTimeout;
     /// Flag that server received a shutdown request
@@ -188,30 +244,8 @@ private:
     CRef<CSessionManagementThread> m_SessionMngThread;
     /// Server monitor
     CServer_Monitor                m_Monitor;
-
-    /// Mutex for working with statistics
-    CFastMutex                     m_StatsMutex;
-    /// Maximum time connection was opened
-    double                         m_MaxConnSpan;
-    /// Number of connections closed
-    Uint8                          m_ClosedConns;
-    /// Number of connections opened
-    Uint8                          m_OpenedConns;
-    /// Number of connections closed because of maximum number of opened
-    /// connections limit.
-    Uint8                          m_OverflowConns;
-    /// Sum of times all connections stayed opened
-    double                         m_ConnsSpansSum;
-    /// Maximum time one command was executed
-    double                         m_MaxCmdSpan;
-    /// Total number of executed commands
-    Uint8                          m_CntCmds;
-    /// Sum of times all commands were executed
-    double                         m_CmdsSpansSum;
-    /// Sums of times handlers spent in every state
-    vector<double>                 m_StatesSpansSums;
-    /// Number of commands terminated because of command timeout
-    Uint8                          m_TimedOutCmds;
+    /// Object gathering server statistics
+    CNCServer_Stat                 m_Stat;
 };
 
 
@@ -222,6 +256,52 @@ protected:
     virtual void Init(void);
     virtual int  Run (void);
 };
+
+
+
+inline bool
+SConstCharCompare::operator() (const char* left, const char* right)
+{
+    return NStr::strcmp(left, right) < 0;
+}
+
+
+inline void
+CNCServer_Stat::AddClosedConnection(double conn_span)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    ++m_ClosedConns;
+    m_ConnsSpansSum += conn_span;
+    m_MaxConnSpan = max(m_MaxConnSpan, conn_span);
+}
+
+inline void
+CNCServer_Stat::AddOpenedConnection(void)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    ++m_OpenedConns;
+}
+
+inline void
+CNCServer_Stat::RemoveOpenedConnection(void)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    --m_OpenedConns;
+}
+
+inline void
+CNCServer_Stat::AddOverflowConnection(void)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    ++m_OverflowConns;
+}
+
+inline void
+CNCServer_Stat::AddTimedOutCommand(void)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    ++m_TimedOutCmds;
+}
 
 
 
@@ -282,6 +362,12 @@ CNetCacheServer::UnregisterSession(const string& host, unsigned int pid)
     m_SessionMngThread->UnregisterSession(host, pid);
 }
 
+inline CNCServer_Stat*
+CNetCacheServer::GetStat(void)
+{
+    return &m_Stat;
+}
+
 inline CServer_Monitor*
 CNetCacheServer::GetServerMonitor(void)
 {
@@ -329,49 +415,9 @@ CNetCacheServer::GetBlobStorage(const string& cache_name)
 }
 
 inline void
-CNetCacheServer::AddClosedConnection(double conn_span)
-{
-    CFastMutexGuard guard(m_StatsMutex);
-
-    ++m_ClosedConns;
-    m_ConnsSpansSum += conn_span;
-    m_MaxConnSpan = max(m_MaxConnSpan, conn_span);
-}
-
-inline void
-CNetCacheServer::AddOpenedConnection(void)
-{
-    CFastMutexGuard guard(m_StatsMutex);
-    ++m_OpenedConns;
-}
-
-inline void
-CNetCacheServer::RemoveOpenedConnection(void)
-{
-    CFastMutexGuard guard(m_StatsMutex);
-    --m_OpenedConns;
-}
-
-inline void
-CNetCacheServer::AddOverflowConnection(void)
-{
-    CFastMutexGuard guard(m_StatsMutex);
-    ++m_OverflowConns;
-}
-
-inline void
-CNetCacheServer::AddTimedOutCommand(void)
-{
-    CFastMutexGuard guard(m_StatsMutex);
-    ++m_TimedOutCmds;
-}
-
-inline void
 CNetCacheServer::PrintServerStats(CNcbiIostream* ios)
 {
-    CFastMutexGuard guard(m_StatsMutex);
     CPrintTextProxy proxy(CPrintTextProxy::ePrintStream, ios);
-
     x_PrintServerStats(proxy);
 }
 

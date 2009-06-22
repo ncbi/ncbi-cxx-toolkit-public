@@ -64,7 +64,6 @@ CNCBlob::x_FlushCurChunk(void)
         m_Storage->WriteChunkValue(*m_BlobInfo, *m_NextRowIdIt, m_Buffer);
         ++m_NextRowIdIt;
     }
-    m_Storage->GetStat()->AddChunkWritten(m_Buffer.size());
     m_Buffer.resize(0);
 }
 
@@ -209,10 +208,9 @@ CNCBlobLockHolder::x_OnLockValidated(void)
     m_LockValid = true;
     if (!m_BlobExists) {
         m_SaveInfoOnRelease = m_DeleteNotFinalized = false;
+        m_Storage->GetStat()->AddNotExistBlobLock();
     }
-
     m_Storage->GetStat()->AddLockAcquired(m_LockTimer.Elapsed());
-    m_LockTimer.Start();
 }
 
 inline bool
@@ -394,7 +392,7 @@ CNCBlobLockHolder::ReleaseLock(void)
             _ASSERT(m_BlobInfo.ttl != 0);
             m_Storage->WriteBlobInfo(m_BlobInfo);
         }
-        m_Storage->GetStat()->AddLockHeldTime(m_LockTimer.Elapsed());
+        m_Storage->GetStat()->AddTotalLockTime(m_LockTimer.Elapsed());
     }
 
     CFastMutexGuard guard(m_LockAcqMutex);

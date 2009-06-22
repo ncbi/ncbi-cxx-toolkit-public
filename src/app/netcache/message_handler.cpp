@@ -54,31 +54,31 @@ BEGIN_NCBI_SCOPE
 
 /// Definition of all NetCache commands
 CNCMessageHandler::SCommandDef s_CommandMap[] = {
-    { "VERSION",  {&CNCMessageHandler::x_DoCmd_Version} },
-    { "PUT3",     {&CNCMessageHandler::x_DoCmd_Put3,         true, eCreate},
+    { "VERSION",  {&CNCMessageHandler::x_DoCmd_Version, "VERSION"} },
+    { "PUT3",     {&CNCMessageHandler::x_DoCmd_Put3, "PUT3",              true, eCreate},
         { { "ttl",     eNSPT_Int,  eNSPA_Optional, "0" },
           { "key",     eNSPT_NCID, eNSPA_Optional },
           { "key_ver", eNSPT_Int,  eNSPA_Optional, "1" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GET2",     {&CNCMessageHandler::x_DoCmd_Get,          true, eRead  },
+    { "GET2",     {&CNCMessageHandler::x_DoCmd_Get, "GET2",               true, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "NW",      eNSPT_Id,   eNSPA_Obsolete | fNSPA_Match },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "RMV2",     {&CNCMessageHandler::x_DoCmd_Remove2,      true, eWrite },
+    { "RMV2",     {&CNCMessageHandler::x_DoCmd_Remove2, "RMV2",           true, eWrite },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "HASB",     {&CNCMessageHandler::x_DoCmd_HasBlob},
+    { "HASB",     {&CNCMessageHandler::x_DoCmd_HasBlob, "HASB"},
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GSIZ",     {&CNCMessageHandler::x_DoCmd_GetSize,      true, eRead  },
+    { "GSIZ",     {&CNCMessageHandler::x_DoCmd_GetSize, "GetSIZe",        true, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "STOR",     {&CNCMessageHandler::x_DoCmd_IC_Store,     true, eCreate},
+    { "STOR",     {&CNCMessageHandler::x_DoCmd_IC_Store, "IC_STOR",       true, eCreate},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "s_ttl",   eNSPT_Int,  eNSPA_Required },
           { "key",     eNSPT_Str,  eNSPA_Required },
@@ -86,7 +86,7 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "STRS",     {&CNCMessageHandler::x_DoCmd_IC_StoreBlob, true, eCreate},
+    { "STRS",     {&CNCMessageHandler::x_DoCmd_IC_StoreBlob, "IC_STRS",   true, eCreate},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "s_ttl",   eNSPT_Int,  eNSPA_Required },
           { "size",    eNSPT_Int,  eNSPA_Required },
@@ -95,121 +95,121 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "READ",     {&CNCMessageHandler::x_DoCmd_Get,          true, eRead  },
+    { "READ",     {&CNCMessageHandler::x_DoCmd_Get, "IC_READ",            true, eRead  },
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "HASB",     {&CNCMessageHandler::x_DoCmd_HasBlob},
+    { "HASB",     {&CNCMessageHandler::x_DoCmd_HasBlob, "IC_HASB"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "REMO",     {&CNCMessageHandler::x_DoCmd_Remove2,      true, eWrite },
+    { "REMO",     {&CNCMessageHandler::x_DoCmd_Remove2, "IC_REMOve",      true, eWrite },
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GSIZ",     {&CNCMessageHandler::x_DoCmd_IC_GetSize,   true, eRead  },
+    { "GSIZ",     {&CNCMessageHandler::x_DoCmd_IC_GetSize, "IC_GetSIZe",  true, eRead  },
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "A?",       {&CNCMessageHandler::x_DoCmd_Alive} },
-    { "HEALTH",   {&CNCMessageHandler::x_DoCmd_Health} },
-    { "PUT2",     {&CNCMessageHandler::x_DoCmd_Put2,         true, eCreate},
+    { "A?",       {&CNCMessageHandler::x_DoCmd_Alive, "A?"} },
+    { "HEALTH",   {&CNCMessageHandler::x_DoCmd_Health, "HEALTH"} },
+    { "PUT2",     {&CNCMessageHandler::x_DoCmd_Put2, "PUT2",              true, eCreate},
         { { "ttl",     eNSPT_Int,  eNSPA_Optional, "0" },
           { "key",     eNSPT_NCID, eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GET",      {&CNCMessageHandler::x_DoCmd_Get,          true, eRead  },
+    { "GET",      {&CNCMessageHandler::x_DoCmd_Get, "GET",                true, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "NW",      eNSPT_Id,   eNSPA_Obsolete | fNSPA_Match },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "REMOVE",   {&CNCMessageHandler::x_DoCmd_Remove,       true, eWrite },
+    { "REMOVE",   {&CNCMessageHandler::x_DoCmd_Remove, "REMOVE",          true, eWrite },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GBOW",     {&CNCMessageHandler::x_DoCmd_GetOwner,     true, eRead  },
+    { "GBOW",     {&CNCMessageHandler::x_DoCmd_GetOwner, "GetBOWner",     true, eRead  },
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GBLW",     {&CNCMessageHandler::x_DoCmd_GetOwner,     true, eRead  },
+    { "GBLW",     {&CNCMessageHandler::x_DoCmd_GetOwner, "IC_GetBLoWner", true, eRead  },
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "REMK",     {&CNCMessageHandler::x_DoCmd_IC_PrepareRemoveKey},
+    { "REMK",     {&CNCMessageHandler::x_DoCmd_IC_PrepareRemoveKey, "IC_REMKey"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "SHUTDOWN", {&CNCMessageHandler::x_DoCmd_Shutdown},
+    { "SHUTDOWN", {&CNCMessageHandler::x_DoCmd_Shutdown, "SHUTDOWN"},
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "MONI",     {&CNCMessageHandler::x_DoCmd_Monitor},
+    { "MONI",     {&CNCMessageHandler::x_DoCmd_Monitor, "MONITOR"},
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GETSTAT",  {&CNCMessageHandler::x_DoCmd_GetServerStats},
+    { "GETSTAT",  {&CNCMessageHandler::x_DoCmd_GetServerStats, "GETSTAT"},
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GETCONF",  {&CNCMessageHandler::x_DoCmd_GetConfig},
+    { "GETCONF",  {&CNCMessageHandler::x_DoCmd_GetConfig, "GETCONF"},
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "ISLK",     {&CNCMessageHandler::x_DoCmd_IsLock},
+    { "ISLK",     {&CNCMessageHandler::x_DoCmd_IsLock, "ISLocKed"},
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GTOU",     {&CNCMessageHandler::x_DoCmd_IC_GetBlobsTTL},
+    { "GTOU",     {&CNCMessageHandler::x_DoCmd_IC_GetBlobsTTL, "IC_GetTimOUt"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "GACT",     {&CNCMessageHandler::x_DoCmd_IC_GetAccessTime, true, eRead},
+    { "GACT",     {&CNCMessageHandler::x_DoCmd_IC_GetAccessTime, "IC_GetACcTime", true, eRead},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "OK",       {&CNCMessageHandler::x_DoCmd_OK} },
-    { "SMR",      {&CNCMessageHandler::x_DoCmd_SessionReg},
+    { "OK",       {&CNCMessageHandler::x_DoCmd_OK, "OK"} },
+    { "SMR",      {&CNCMessageHandler::x_DoCmd_SessionReg, "SessManReg"},
         { { "host",    eNSPT_Id,   eNSPA_Required },
           { "port",    eNSPT_Int,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "SMU",      {&CNCMessageHandler::x_DoCmd_SessionUnreg},
+    { "SMU",      {&CNCMessageHandler::x_DoCmd_SessionUnreg, "SessManUnreg"},
         { { "host",    eNSPT_Id,   eNSPA_Required },
           { "port",    eNSPT_Int,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "ISOP",     {&CNCMessageHandler::x_DoCmd_IC_IsOpen},
+    { "ISOP",     {&CNCMessageHandler::x_DoCmd_IC_IsOpen, "ISOpen"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "LOG",      {&CNCMessageHandler::x_DoCmd_NotImplemented} },
-    { "STAT",     {&CNCMessageHandler::x_DoCmd_NotImplemented} },
-    { "DROPSTAT", {&CNCMessageHandler::x_DoCmd_NotImplemented} },
-    { "PUT",      {&CNCMessageHandler::x_DoCmd_NotImplemented} },
-    { "STSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented},
+    { "LOG",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
+    { "STAT",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
+    { "DROPSTAT", {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
+    { "PUT",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
+    { "STSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "GTSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented},
+    { "GTSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "SVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented},
+    { "SVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "GVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented},
+    { "GVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "PRG1",     {&CNCMessageHandler::x_DoCmd_NotImplemented},
+    { "PRG1",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
     { "EXIT",     {&CNCMessageHandler::x_DoCmd_Exit} },
     { NULL }
@@ -374,6 +374,7 @@ CBufferedSockReaderWriter::WriteMessage(CTempString prefix, CTempString msg)
 // CNCMessageHandler implementation
 CNCMessageHandler::CNCMessageHandler(CNetCacheServer* server)
     : m_Server(server),
+      m_Stat(server->GetStat()),
       m_Monitor(server->GetServerMonitor()),
       m_Socket(NULL),
       m_State(eSocketClosed),
@@ -400,7 +401,7 @@ CNCMessageHandler::OnOpen(void)
     x_SetState(ePreAuthenticated);
 
     x_MonitorPost("Connection is opened");
-    m_Server->AddOpenedConnection();
+    m_Stat->AddOpenedConnection();
 }
 
 void
@@ -420,7 +421,7 @@ CNCMessageHandler::OnTimer(void)
     CDiagnosticsGuard guard(this);
 
     LOG_POST("Command execution timed out. Closing connection.");
-    m_Server->AddTimedOutCommand();
+    m_Stat->AddTimedOutCommand();
     m_DiagContext->SetRequestStatus(eStatus_CmdTimeout);
     x_CloseConnection();
 }
@@ -430,7 +431,7 @@ CNCMessageHandler::OnOverflow(void)
 {
     // Max connection overflow
     ERR_POST("Max number of connections reached, closing connection");
-    m_Server->AddOverflowConnection();
+    m_Stat->AddOverflowConnection();
 }
 
 void
@@ -456,12 +457,12 @@ CNCMessageHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
     x_FinishCommand();
 
     if (x_GetState() == ePreAuthenticated) {
-        m_Server->RemoveOpenedConnection();
+        m_Stat->RemoveOpenedConnection();
     }
     else {
         double conn_span
                      = (m_Server->GetFastTime() - m_ConnTime).GetAsDouble();
-        m_Server->AddClosedConnection(conn_span);
+        m_Stat->AddClosedConnection(conn_span);
     }
 
     x_SetState(eSocketClosed);
@@ -607,6 +608,7 @@ CNCMessageHandler::x_StartCommand(const SParsedCmd& cmd)
 
     const SCommandExtra& cmd_extra = cmd.command->extra;
     m_CmdProcessor = cmd_extra.processor;
+    m_CurCmd       = cmd_extra.cmd_name;
 
     if (TLogRequests::GetDefault() == eLogAllReqs
         ||  TLogRequests::GetDefault() == eDoNotLogHasBlob
@@ -735,7 +737,7 @@ CNCMessageHandler::x_FinishCommand(void)
     x_UnsetFlag(fReadExactBlobSize);
 
     double cmd_span = (m_Server->GetFastTime() - m_CmdStartTime).GetAsDouble();
-    m_Server->AddFinishedCmd(cmd_span, m_StateSpanStats);
+    m_Stat->AddFinishedCmd(m_CurCmd, cmd_span, m_StateSpanStats);
 
     ResetDiagnostics();
 }

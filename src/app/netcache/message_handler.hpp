@@ -229,6 +229,8 @@ public:
     struct SCommandExtra {
         /// Which method will process the command
         TProcessor    processor;
+        /// Command name to present to user in statistics
+        const char*   cmd_name;
         /// Does command need to lock some blob
         bool          need_blob_lock;
         /// What access to the blob command should receive
@@ -412,6 +414,8 @@ private:
 
     /// NetCache server this handler created for
     CNetCacheServer*          m_Server;
+    /// Object gathering server statistics
+    CNCServer_Stat*           m_Stat;
     /// Monitor of the NetCache server
     CServer_Monitor*          m_Monitor;
     /// Socket handler attached to
@@ -422,6 +426,8 @@ private:
     CBufferedSockReaderWriter m_SockBuffer;
     /// NetCache protocol parser
     TProtoParser              m_Parser;
+    /// Name of currently executing command as it can presented in stats
+    const char*               m_CurCmd;
     /// Processor for the currently executed NetCache command
     TProcessor                m_CmdProcessor;
     /// Diagnostics context for the currently executed command
@@ -782,27 +788,28 @@ CNCMessageHandler::CDiagnosticsGuard::~CDiagnosticsGuard(void)
 
 
 inline
+CNCMsgHandler_Factory::CNCMsgHandler_Factory(CNetCacheServer* server)
+    : m_Pool(THandlerPoolFactory(server))
+{}
+
+inline CNCMsgHandler_Factory::THandlerPool&
+CNCMsgHandler_Factory::GetHandlerPool(void)
+{
+    return m_Pool;
+}
+
+
+inline
 CNCMsgHandler_Proxy::CNCMsgHandler_Proxy(CNCMsgHandler_Factory* factory)
     : m_Factory(factory),
       m_Handler(factory->GetHandlerPool())
 {}
 
 
-inline
-CNCMsgHandler_Factory::CNCMsgHandler_Factory(CNetCacheServer* server)
-    : m_Pool(THandlerPoolFactory(server))
-{}
-
 inline IServer_ConnectionHandler*
 CNCMsgHandler_Factory::Create(void)
 {
     return new CNCMsgHandler_Proxy(this);
-}
-
-inline CNCMsgHandler_Factory::THandlerPool&
-CNCMsgHandler_Factory::GetHandlerPool(void)
-{
-    return m_Pool;
 }
 
 

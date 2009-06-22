@@ -122,6 +122,15 @@ private:
 
 
 
+/// Utility function to safely do division even if divisor is 0
+template <class TLeft, class TRight>
+TLeft g_SafeDiv(TLeft left, TRight right)
+{
+    return right == 0? 0: left / right;
+}
+
+
+
 inline void
 CQuickStrStream::Clear(void)
 {

@@ -631,6 +631,7 @@ CNCBlobStorage::x_CreateBlobInCache(SNCBlobIdentity* identity)
                                               = m_KeysCache.insert(*identity);
         if (!ins_pair.second) {
             identity->AssignCoords(*ins_pair.first);
+            GetStat()->AddCreateHitExisting();
             return false;
         }
     }}
@@ -714,6 +715,10 @@ CNCBlobStorage::x_FillCacheFromDBPart(TNCDBPartId part_id)
             try {
                 TNCBlobLockHolderRef blob_lock
                              = x_GetBlobAccess(eRead, part_id, *id_it, false);
+                GetStat()->AddGCLockRequest();
+                if (blob_lock->IsLockAcquired()) {
+                    GetStat()->AddGCLockAcquired();
+                }
                 // On acquiring of the lock information will be automatically
                 // added to the cache. If lock is not acquired then somebody
                 // else has acquired it and so he has already added info to
@@ -778,6 +783,7 @@ CNCBlobStorage::CreateBlob(SNCBlobIdentity* identity)
         temp_ident.blob_id = 0;
         if (ReadBlobCoords(&temp_ident)) {
             identity->AssignCoords(temp_ident);
+            GetStat()->AddCreateHitExisting();
             return false;
         }
     }
@@ -873,6 +879,7 @@ bool
 CNCBlobStorage::IsBlobExists(CTempString key,
                              CTempString subkey /* = kEmptyStr */)
 {
+    GetStat()->AddExistenceCheck();
     // dead_time should be read before check_part_id to avoid races when
     // caching has already finished and dead_time is already changing but we
     // don't know about it yet
@@ -906,7 +913,9 @@ CNCBlobStorage::x_GC_DeleteExpired(TNCDBPartId part_id, TNCBlobId blob_id)
     try {
         TNCBlobLockHolderRef blob_lock
                            = x_GetBlobAccess(eWrite, part_id, blob_id, false);
+        GetStat()->AddGCLockRequest();
         if (blob_lock->IsLockAcquired()) {
+            GetStat()->AddGCLockAcquired();
             if (blob_lock->IsBlobExists()  &&  blob_lock->IsBlobExpired())
             {
                 if (x_IsMonitored()) {
@@ -917,6 +926,8 @@ CNCBlobStorage::x_GC_DeleteExpired(TNCDBPartId part_id, TNCBlobId blob_id)
                         << blob_lock->GetBlobVersion();
                     x_MonitorPost(msg);
                 }
+                // Let's avoid access to database file and will not call
+                // DeleteBlob() on lock holder.
                 //blob_lock->DeleteBlob();
                 SNCBlobCoords coords(part_id, blob_id);
                 x_DeleteBlobFromCache(coords);
