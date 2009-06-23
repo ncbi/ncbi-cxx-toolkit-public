@@ -124,7 +124,7 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
             break;
     }
     proxy << "Maximum time writing chunk - " << m_MaxChunkWriteTime << endl
-          << "Average time reading chunk - "
+          << "Average time writing chunk - "
                            << g_SafeDiv(m_WriteTime, m_WrittenChunks) << endl
           << "Chunks written by size:" << endl;
     sz = kMinSizeInChart;
