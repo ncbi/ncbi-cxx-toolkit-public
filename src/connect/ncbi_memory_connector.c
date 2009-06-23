@@ -161,7 +161,9 @@ static EIO_Status s_VT_Wait
  EIO_Event       event,
  const STimeout* timeout)
 {
-    return eIO_Success;
+    SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
+    return event == eIO_Read  &&  !BUF_Size(xxx->buf)
+        ? eIO_Closed : eIO_Success;
 }
 
 
@@ -170,7 +172,6 @@ static EIO_Status s_VT_Status
  EIO_Event dir)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-
     switch (dir) {
     case eIO_Read:
         return xxx->r_status;
