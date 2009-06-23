@@ -36,7 +36,7 @@
 #include <common/ncbi_package_ver.h>
 
 #define NETCACHED_VERSION NCBI_PACKAGE_VERSION
-#define NETCACHED_STORAGE_VERSION  "1.0.0"
+#define NETCACHED_STORAGE_VERSION  "2.0.0"
 #define NETCACHED_PROTOCOL_VERSION "1.0.0"
 
 #endif /* NETCACHE_VERSION__HPP */
