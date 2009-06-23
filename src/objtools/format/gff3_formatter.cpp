@@ -566,14 +566,27 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         /// HACK HACK HACK
         /// optional strand on the end
         if (tgt_sign == 1) {
-            // Now, isn't + the escape for space? Despite examples from
-            // the GFF3 specs, we avoid the ambiguity of "++" with first
-            // plus being space and second plus being plus. Mercy!
-            attrs << " %2B";
+            // By prior versions of GFF3 specs (current is 1.14),
+            // + had special meaning (as a space), wheras - didn't.
+            // That made + ambiguous. However, even if interpreted as
+            // a space, the strand default to positive, so it's not
+            // a problem.
+            //
+            // DETAILS:
+            // In older versions of the specs, they discussed URL encoding,
+            // specifically mentionned + as space. In subsequent versions,
+            // + was explicitly listed amongst the allowable characters
+            // for the Seqid column. I believe the issue arised from
+            // confusion between URL encoding (which only does % escaping)
+            // vs application/x-www-form-urlencoded which is similar,
+            // but adds things like + to represent spaces. 
+            attrs << " +";
         } else {
-            // But a minus is unambiguous. So, the only question is,
-            // do we escape the space? Hmmm... "+-" looks confusing,
-            // and "+%2D" is just ugly.
+            // A minus is unambiguous. So, the only question is,
+            // do we escape the space? Hmmm... "+-" looks strange (and
+            // likely wrong, given discussion above about confusion with
+            // URL Encoding in GFF3 specs), and things like "%09%2D"
+            // are totally ugly.
             attrs << " -";
         }
 

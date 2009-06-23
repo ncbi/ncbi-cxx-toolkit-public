@@ -102,9 +102,21 @@ private:
     /// since stict should be compativle with lax, and concentrate
     /// on the 3 different ways that spaces are represented.
     ///
-    /// I general, we'll prefer "+", but recommend " " be used for
+    /// By prior versions of GFF3 specs (current is 1.14),
+    /// + had special meaning (as a space). Those older versions
+    /// of the GFF3 spcs discussed URL encoding, specifically mentionned
+    /// + as space, and used such encoding in examples. In subsequent
+    /// versions, + was explicitly listed amongst the allowable characters
+    /// for the Seqid column. I believe the issue arised from
+    /// confusion between URL encoding (which only does % escaping)
+    /// versus application/x-www-form-urlencoded which is similar,
+    /// but adds things like + to represent spaces. 
+    ///
+    /// In general, we'll prefer "%09", but recommend " " be used for
     /// the last column, attributes, but beweare the special exception
-    /// in rule 4 requiring "%09" for Target. 
+    /// in rule 4 requiring "%09" for Target. If generating output for
+    /// older GFF3 parsers, we might get away with "+" as the escape
+    /// for a space, which reads better, but is now rather dangerous.
     ///
     /// @param os the destination stream
     /// @param s the string to be encoded
@@ -112,7 +124,7 @@ private:
     ///        one of "+" (default), " ", or "%09".
     static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os,
                                          const string& s,
-                                         char* space = "+");
+                                         char* space = "%09");
 
     /// Formats any pairwise alignment into GFF3 format with CIGAR notation.
     ///
