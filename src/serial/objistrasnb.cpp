@@ -902,6 +902,7 @@ void CObjectIStreamAsnBinary::EndClassMember(void)
 void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
                                               TObjectPtr classPtr)
 {
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
 
     ReadClassRandomContentsBegin(classType);
@@ -915,12 +916,14 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
     ReadClassRandomContentsEnd();
 
     EndClass();
+    END_OBJECT_FRAME();
 }
 
 void
 CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
                                              TObjectPtr classPtr)
 {
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     ReadClassSequentialContentsBegin(classType);
 
@@ -932,10 +935,12 @@ CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
 
     ReadClassSequentialContentsEnd(classPtr);
     EndClass();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
 {
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     SkipClassRandomContentsBegin(classType);
 
@@ -947,11 +952,13 @@ void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
 
     SkipClassRandomContentsEnd();
     EndClass();
+    END_OBJECT_FRAME();
 }
 
 void
 CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classType)
 {
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     SkipClassSequentialContentsBegin(classType);
 
@@ -963,6 +970,7 @@ CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classType)
 
     SkipClassSequentialContentsEnd();
     EndClass();
+    END_OBJECT_FRAME();
 }
 #endif
 
