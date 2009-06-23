@@ -82,6 +82,8 @@ AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
 AC_ARG_WITH(profiling,
    [ --with-profiling        build profiled versions of libs and apps])
+AC_ARG_WITH(tcheck,
+   [ --with-tcheck(=DIR)     build for Intel Thread Checker (in DIR)])
 AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
 AC_ARG_WITH(static,
@@ -376,7 +378,7 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static static-exe plugin-auto-load \
+debug optimization profiling tcheck dll static static-exe plugin-auto-load \
 bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile check ncbi-public \
@@ -421,7 +423,7 @@ for x_arg in "$@" ; do
       --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
       | --with-fake-root=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
-      | --with-universal=* \
+      | --with-universal=* | --with-tcheck=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [[A-Z]*=*] \
@@ -1855,6 +1857,7 @@ else
    prof_sfx=
 fi
 
+
 ### Should go before any test compiler runs
 AC_GNU_SOURCE
 
@@ -1868,6 +1871,30 @@ if test "${with_universal-no}" = "no"; then
    if test $NCBI_PLATFORM_BITS -eq 64; then
       bit64_sfx=64
    fi
+fi
+
+
+### Intel Thread Checker
+if test "${with_tcheck-no}" != "no" ; then
+   if test "${release_debug}${mt_sfx}" != "DebugMT" ; then
+      AC_MSG_WARN([--with-tcheck is most likely to be effective in DebugMT builds.])
+   fi
+   if test "$compiler" = "ICC"; then
+      case "$bit64_sfx" in
+        64) tcbin=bin/32e ;;
+        * ) tcbin=bin/32  ;;
+      esac
+      if "$with_tcheck" != yes; then
+         TCHECK_BIN=$with_tcheck/$tcbin
+      fi
+      AC_PATH_PROG(TCHECK_CL, tcheck_cl, [], $TCHECK_BIN:$PATH:/opt/intel/itt/$tcbin:/usr/local/intel/itt-3.1/tcheck/$tcbin)
+      if test -n "$TCHECK_CL"; then
+         CFLAGS="$CFLAGS -tcheck -O0"
+         CXXFLAGS="$CXXFLAGS -tcheck -O0"
+         LDFLAGS="$LDFLAGS -tcheck -O0 -L`dirname $TCHECK_CL`"
+      fi
+   fi
+   CPPFLAGS="$CPPFLAGS -DNCBI_TCHECK"
 fi
 
 
@@ -2273,7 +2300,11 @@ if test "$compiler" != "MSVC" ; then
          CFLAGS="$CFLAGS -g"     ; fi
       if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
-      CPPFLAGS="-D_DEBUG $CPPFLAGS"
+      if test "${with_tcheck=no}" = "no" ; then
+         CPPFLAGS="-D_DEBUG $CPPFLAGS"
+      else
+         CPPFLAGS="-DNDEBUG $CPPFLAGS"
+      fi
       if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP="@:"
@@ -2282,6 +2313,12 @@ if test "$compiler" != "MSVC" ; then
    NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-x*O[0-9]*//g'`
    NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-x*O[0-9]*//g'`
    NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-x*O[0-9]*//g'`
+   if test "${with_tcheck-no}" != "no"; then
+      # Suppress warnings when building with ICC.
+      NOPT_CFLAGS="$NOPT_CFLAGS -O0"
+      NOPT_CXXFLAGS="$NOPT_CXXFLAGS -O0"
+      NOPT_LDFLAGS="$NOPT_LDFLAGS -O0"
+   fi
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"

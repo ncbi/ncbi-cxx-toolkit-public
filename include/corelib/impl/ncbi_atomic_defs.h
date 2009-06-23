@@ -85,6 +85,13 @@ extern "C" {
 #  define NCBI_COUNTER_ASM_OK 1
 #endif
 
+#if defined(NCBI_TCHECK)
+#  if defined(NCBI_COMPILER_ICC)  &&  defined(__cplusplus)
+#    include <cstdlib> /* determine which GNU libstdc++, if any, is in use */
+#  endif
+#  define NCBI_SWAP_POINTERS_EXTERN 1
+#endif
+
 /**
  * Define platform specific atomic-operations macros/values.
  *
@@ -100,7 +107,7 @@ extern "C" {
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
-#elif defined(NCBI_COMPILER_GCC) && ((defined(__sparc) && !defined(__sparcv9))  ||  ((NCBI_COMPILER_VERSION < 300 || NCBI_COMPILER_VERSION >= 340)  &&  (defined(__i386) || defined(__sparc) || defined(__x86_64))))
+#elif defined(NCBI_COMPILER_GCC) && ((defined(__sparc) && !defined(__sparcv9))  ||  ((NCBI_COMPILER_VERSION < 300 || NCBI_COMPILER_VERSION >= 340)  &&  (defined(__i386) || defined(__sparc) || defined(__x86_64)))) && (!defined(NCBI_TCHECK) || (!defined(__GLIBCPP__) && !defined(__GLIBCXX__)))
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_USE_ASM 1
@@ -173,14 +180,14 @@ extern "C" {
 #  ifdef __cplusplus
 }
 #  endif
-#elif defined(NCBI_COMPILER_GCC)  &&  defined(__cplusplus)
-#  if NCBI_COMPILER_VERSION >= 420
+#elif (defined(NCBI_COMPILER_GCC) && defined(__cplusplus)) || defined(__GLIBCPP__) || defined(__GLIBCXX__)
+#  if (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 420) || (defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514)
 #    include <ext/atomicity.h>
 #  else
 #    include <bits/atomicity.h>
 #  endif
    typedef _Atomic_word TNCBIAtomicValue;
-#  if NCBI_COMPILER_VERSION >= 340
+#  if (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 340) || (defined(__GLIBCXX__) && __GLIBCXX__ >= 20040419)
 #    define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
 #  else
 #    define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
