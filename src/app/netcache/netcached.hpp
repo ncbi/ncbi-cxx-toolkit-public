@@ -54,7 +54,7 @@ class CNCMessageHandler;
 
 struct SConstCharCompare
 {
-    bool operator() (const char* left, const char* right);
+    bool operator() (const char* left, const char* right) const;
 };
 
 
@@ -260,7 +260,7 @@ protected:
 
 
 inline bool
-SConstCharCompare::operator() (const char* left, const char* right)
+SConstCharCompare::operator() (const char* left, const char* right) const
 {
     return NStr::strcmp(left, right) < 0;
 }
