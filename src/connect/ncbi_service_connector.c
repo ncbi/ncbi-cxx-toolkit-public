@@ -705,7 +705,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     for (;;) {
         int stateless;
 
-        if (uuu->net_info->firewall)
+        if (uuu->net_info->firewall  &&  strcasecmp(uuu->iter->name, "local"))
             info = 0;
         else if (!(info = s_GetNextInfo(uuu)))
             break;
