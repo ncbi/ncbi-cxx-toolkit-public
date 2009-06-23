@@ -459,7 +459,7 @@ typedef enum {
     fSOCK_ReadOnWrite       = 0x100,
     fSOCK_InterruptOnSignal = 0x200
 } ESOCK_Flags;
-typedef unsigned int TSOCK_Flags;
+typedef unsigned int TSOCK_Flags;  /** Bitwise "OR" of ESOCK_Flags */
 
 
 /******************************************************************************
