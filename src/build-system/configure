@@ -7156,7 +7156,7 @@ echo "$as_me: WARNING: --with-tcheck is most likely to be effective in DebugMT b
         64) tcbin=bin/32e ;;
         * ) tcbin=bin/32  ;;
       esac
-      if "$with_tcheck" != yes; then
+      if test "$with_tcheck" != yes; then
          TCHECK_BIN=$with_tcheck/$tcbin
       fi
       # Extract the first word of "tcheck_cl", so it can be a program name with args.

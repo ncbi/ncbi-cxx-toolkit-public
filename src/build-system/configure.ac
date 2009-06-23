@@ -1884,7 +1884,7 @@ if test "${with_tcheck-no}" != "no" ; then
         64) tcbin=bin/32e ;;
         * ) tcbin=bin/32  ;;
       esac
-      if "$with_tcheck" != yes; then
+      if test "$with_tcheck" != yes; then
          TCHECK_BIN=$with_tcheck/$tcbin
       fi
       AC_PATH_PROG(TCHECK_CL, tcheck_cl, [], $TCHECK_BIN:$PATH:/opt/intel/itt/$tcbin:/usr/local/intel/itt-3.1/tcheck/$tcbin)
