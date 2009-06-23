@@ -529,6 +529,7 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
 
     int index = 1;
     bool incremental_output = (bool)out_stream;
+    bool add_leading_eol = true;
     while (iter != alnset.Get().end()) {
         CRef<CHit> new_hit;
         // Retrieve the next set of results for a single subject sequence.
@@ -574,6 +575,7 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
 		    string::size_type  end_xml_pos = out_str.find_first_of("\n\r");
 		    out_str.erase(0,end_xml_pos+1);
 		}
+		if( add_leading_eol ) { *out_stream << "\n"; add_leading_eol = false;}
 		*out_stream << out_str ; 
 	    }
 
@@ -634,13 +636,12 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
     one_query_iter->SetStat(stat);
     if (messages.size() > 0 && !messages[index].empty())
        one_query_iter->SetMessage(messages[index]);
-    // have serialized CIteration split and output first portion before hits
-    string serial_xml_start, serial_xml_end;
-    if( incremental_output ) {
-    //bool add_dtd_reference = false, add_xml_version = false;	
-        bool split_res = s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
+       // have serialized CIteration split and output first portion before hits
+       string serial_xml_start, serial_xml_end;
+       if( incremental_output ) {
+       bool split_res = s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
 		serial_xml_start, serial_xml_end); 
-        *out_stream << serial_xml_start << "\n<Iteration_hits>\n"; // PART BEFORE HITS
+       *out_stream << serial_xml_start << "\n<Iteration_hits>"; // PART BEFORE HITS
     }
     
     // Only add hits if they exist.
