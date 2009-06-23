@@ -1617,6 +1617,7 @@ static const char* s_MIME_SubType[eMIME_Unknown+1] = {
     "plain",
     "xml",
     "xml+soap",
+    "octet-stream",
     "x-unknown"
 };
 

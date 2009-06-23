@@ -634,6 +634,7 @@ typedef enum {
     eMIME_Plain,         /* "plain"                                    */
     eMIME_Xml,           /* "xml"                                      */
     eMIME_XmlSoap,       /* "xml+soap"                                 */
+    eMIME_OctetStream,   /* "octet-stream"                             */
     /* eMIME_???,           "<subtype>" here go other NCBI subtypes    */
     eMIME_Unknown        /* "x-unknown"     (an arbitrary binary data) */
 } EMIME_SubType;
