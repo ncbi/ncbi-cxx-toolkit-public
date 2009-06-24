@@ -326,11 +326,9 @@ public:
     /// Create and prepare statement for given database connection.
     /// If sql is empty nothing is prepared in the constructor.
     CSQLITE_Statement(CSQLITE_Connection* conn, CTempString sql = kEmptyStr);
-
     /// Create and prepare statement for particular low-level connection.
     /// If sql is empty nothing is prepared in the constructor.
     CSQLITE_Statement(sqlite3* conn_handle, CTempString sql = kEmptyStr);
-
     ~CSQLITE_Statement();
 
     /// Change sql text for the object and prepare new statement
@@ -338,48 +336,47 @@ public:
 
     /// Bind integer value to parameter index.
     /// Parameters' numbers start from 1.
-    void Bind          (int index, int          val);
-
+    void Bind          (int index, int           val);
     /// Bind unsigned integer value to parameter index.
     /// Parameters' numbers start from 1.
-    void Bind          (int index, unsigned int val);
-
+    void Bind          (int index, unsigned int  val);
+    /// Bind integer value to parameter index.
+    /// Parameters' numbers start from 1.
+    void Bind          (int index, long          val);
+    /// Bind unsigned integer value to parameter index.
+    /// Parameters' numbers start from 1.
+    void Bind          (int index, unsigned long val);
+#if !NCBI_INT8_IS_LONG
     /// Bind 64-bit integer value to parameter index.
     /// Parameters' numbers start from 1.
-    void Bind          (int index, Int8         val);
-
+    void Bind          (int index, Int8          val);
     /// Bind unsigned 64-bit integer value to parameter index.
     /// Parameters' numbers start from 1.
-    void Bind          (int index, Uint8        val);
-
+    void Bind          (int index, Uint8         val);
+#endif
     /// Bind double value to parameter index.
     /// Parameters' numbers start from 1.
-    void Bind          (int index, double       val);
-
+    void Bind          (int index, double        val);
     /// Bind text value to parameter index.
     /// Parameters' numbers start from 1. Value of parameter is copied inside
     /// the method so it may disappear after call.
-    void Bind          (int index, CTempString  val);
-
+    void Bind          (int index, CTempString   val);
     /// Bind text value to parameter index.
     /// Parameters' numbers start from 1. Value of parameter is not copied,
     /// pointer is remembered instead. So given value should exist until
     /// statement is executed.
-    void Bind          (int index, const char*  data, size_t size);
-
+    void Bind          (int index, const char*   data, size_t size);
     /// Bind blob value to parameter index.
     /// Parameters' numbers start from 1. Value of parameter is not copied,
     /// pointer is remembered instead. So given value should exist until
     /// statement is executed.
-    void Bind          (int index, const void*  data, size_t size);
-
+    void Bind          (int index, const void*   data, size_t size);
     /// Bind blob value of given size containing only zeros to parameter
     /// index. Parameters' numbers start from 1.
-    void BindZeroedBlob(int index, size_t       size);
+    void BindZeroedBlob(int index, size_t        size);
 
     /// Execute statement without returning any result
     void Execute(void);
-
     /// Step through results of the statement.
     /// If statement wasn't executed yet it starts executing. If statement
     /// already returned some rows then it moves to the next row. Be aware
@@ -392,7 +389,6 @@ public:
     ///   FALSE if no more rows are available and thus statement finished
     ///   executing and released all locks held.
     bool Step(void);
-
     /// Reset the statement to release all locks and to be ready to execute
     /// again.
     void Reset(void);
@@ -400,7 +396,6 @@ public:
     /// Get number of columns in result set. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     int GetColumnsCount(void) const;
-
     /// Get name of column at index col_ind in result set. The leftmost column
     /// of result set has the index 0. Method should be executed only after
     /// Step() returned TRUE, otherwise returned value is undefined.
@@ -410,23 +405,19 @@ public:
     /// column of result set has index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     int    GetInt   (int col_ind) const;
-
     /// Get 64-bit integer value from column col_ind in current row.
     /// The leftmost column of result set has the index 0. Method should be
     /// executed only after Step() returned TRUE, otherwise returned value is
     /// undefined.
     Int8   GetInt8  (int col_ind) const;
-
     /// Get double value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     double GetDouble(int col_ind) const;
-
     /// Get text value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     string GetString(int col_ind) const;
-
     /// Read blob value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
@@ -447,7 +438,6 @@ public:
     /// statement in the same connection. If last executed statement was not
     /// insert then 0 is returned.
     Int8 GetLastInsertedRowid(void) const;
-
     /// Get number of rows changed during last insert, delete or update
     /// statement. Number does not include rows changed by triggers or by
     /// any other indirect means. If called when no insert, update or delete
@@ -700,15 +690,38 @@ CSQLITE_Statement::Execute(void)
 }
 
 inline void
-CSQLITE_Statement::Bind(int index, unsigned int val)
+CSQLITE_Statement::Bind(int index, Uint8 val)
+{
+    // SQLite doesn't understand unsigned types anyway
+    Bind(index, static_cast<Int8>(val));
+}
+
+#if !NCBI_INT8_IS_LONG
+
+inline void
+CSQLITE_Statement::Bind(int index, long val)
 {
     Bind(index, static_cast<Int8>(val));
 }
 
 inline void
-CSQLITE_Statement::Bind(int index, Uint8 val)
+CSQLITE_Statement::Bind(int index, unsigned long val)
 {
-    Bind(index, static_cast<Int8>(val));
+    Bind(index, static_cast<Uint8>(val));
+}
+
+#endif
+
+inline void
+CSQLITE_Statement::Bind(int index, int val)
+{
+    Bind(index, static_cast<long>(val));
+}
+
+inline void
+CSQLITE_Statement::Bind(int index, unsigned int val)
+{
+    Bind(index, static_cast<unsigned long>(val));
 }
 
 inline int

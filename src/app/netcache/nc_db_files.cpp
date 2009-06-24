@@ -524,7 +524,7 @@ CNCDB_File::WriteBlobInfo(const SNCBlobInfo& blob_info)
     stmt->Bind(3, cur_time + blob_info.ttl);
     stmt->Bind(4, blob_info.owner);
     stmt->Bind(5, blob_info.ttl);
-    stmt->Bind(6, static_cast<Uint8>(blob_info.size));
+    stmt->Bind(6, blob_info.size);
     stmt->Execute();
 }
 

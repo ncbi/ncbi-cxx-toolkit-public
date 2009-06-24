@@ -578,11 +578,6 @@ CSQLITE_Statement::x_Finalize(void)
 #define STMT_BIND3(sql_type, str_type, index, val1, val2, val3)           \
     STMT_BIND_IMPL(sql_type, str_type, index, val1 COMMA val2 COMMA val3)
 
-void
-CSQLITE_Statement::Bind(int index, int val)
-{
-    STMT_BIND(int, int, index, val);
-}
 
 void
 CSQLITE_Statement::Bind(int index, Int8 val)

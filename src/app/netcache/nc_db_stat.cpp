@@ -97,7 +97,7 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
           << "Time reading blob data  - "
           << int(g_SafeDiv(m_ReadTime, m_LocksTotalTime) * 100) << "%" << endl
           << "Blobs read by size:" << endl;
-    Uint8 sz = kMinSizeInChart;
+    size_t sz = kMinSizeInChart;
     for (size_t i = 0; i < m_ReadBySize.size(); ++i, sz <<= 1) {
         proxy << sz << " - " << m_ReadBySize[i] << endl;
         if (sz >= m_MaxBlobSize)

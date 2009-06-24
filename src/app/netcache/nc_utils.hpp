@@ -55,9 +55,13 @@ public:
     CQuickStrStream& operator<<(const char*            str);
     CQuickStrStream& operator<<(CTempString            str);
     CQuickStrStream& operator<<(int                    i);
-    CQuickStrStream& operator<<(Uint4                  ui);
+    CQuickStrStream& operator<<(unsigned int           ui);
+    CQuickStrStream& operator<<(long                   l);
+    CQuickStrStream& operator<<(unsigned long          ul);
+#if !NCBI_INT8_IS_LONG
     CQuickStrStream& operator<<(Int8                   i64);
     CQuickStrStream& operator<<(Uint8                  ui64);
+#endif
     CQuickStrStream& operator<<(double                 d);
     CQuickStrStream& operator<<(const CTime&           ctime);
     CQuickStrStream& operator<<(const CQuickStrStream& str);
@@ -173,11 +177,27 @@ CQuickStrStream::operator<<(int i)
 }
 
 inline CQuickStrStream&
-CQuickStrStream::operator<<(Uint4 ui)
+CQuickStrStream::operator<<(unsigned int ui)
 {
     m_Data += NStr::UIntToString(ui);
     return *this;
 }
+
+inline CQuickStrStream&
+CQuickStrStream::operator<<(long l)
+{
+    m_Data += NStr::Int8ToString(l);
+    return *this;
+}
+
+inline CQuickStrStream&
+CQuickStrStream::operator<<(unsigned long ul)
+{
+    m_Data += NStr::UInt8ToString(ul);
+    return *this;
+}
+
+#if !NCBI_INT8_IS_LONG
 
 inline CQuickStrStream&
 CQuickStrStream::operator<<(Int8 i64)
@@ -192,6 +212,8 @@ CQuickStrStream::operator<<(Uint8 ui64)
     m_Data += NStr::UInt8ToString(ui64);
     return *this;
 }
+
+#endif
 
 inline CQuickStrStream&
 CQuickStrStream::operator<<(double d)
