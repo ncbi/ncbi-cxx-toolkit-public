@@ -200,7 +200,7 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
             const CSeq_loc& curr_loc = *filler_locs[i];
             int fragment_size = curr_loc.GetInt().GetTo() -
                                 curr_loc.GetInt().GetFrom() + 1;
-            if (batch_size + fragment_size >= kBlastBatchSize)
+            if (batch_size + fragment_size >= kBlastBatchSize && batch_size > 0)
                 break;
 
             curr_batch.push_back(SSeqLoc(*filler_locs[i], *m_Scope));
