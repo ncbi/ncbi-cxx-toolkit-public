@@ -336,19 +336,19 @@ void CDense_seg::TrimEndGaps()
         /// we can trim the first i segments
         if (IsSetStrands()) {
             _ASSERT(static_cast<int>(GetStrands().size())
-                    > r.GetTo() * GetDim());
+                    >= r.GetTo() * GetDim());
             SetStrands().erase(SetStrands().begin() + r.GetFrom() * GetDim(),
                                SetStrands().begin() + r.GetTo()   * GetDim());
         }
         if (IsSetStarts()) {
             _ASSERT(static_cast<int>(GetStarts().size())
-                    > r.GetTo() * GetDim());
+                    >= r.GetTo() * GetDim());
             SetStarts().erase(SetStarts().begin() + r.GetFrom() * GetDim(),
                               SetStarts().begin() + r.GetTo()   * GetDim());
         }
         if (IsSetLens()) {
             _ASSERT(static_cast<int>(GetLens().size())
-                    > r.GetTo());
+                    >= r.GetTo());
             SetLens().erase(SetLens().begin() + r.GetFrom(),
                             SetLens().begin() + r.GetTo());
         }
@@ -477,6 +477,13 @@ void CDense_seg::Compact()
 
 void CDense_seg::RemovePureGapSegs()
 {
+    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
+    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
+    _ASSERT(!IsSetStrands()
+            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
+    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
+
+
     // consistency checks
     TDim dim = CheckNumRows();
     TNumseg numseg = CheckNumSegs();
