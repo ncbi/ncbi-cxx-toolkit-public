@@ -758,8 +758,51 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
                 continue;
             }
         }
+
+        // First try "restarting" the search using the blast DB
+        // path configuration.  This ensures always finding the local
+        // copy of a database even if the alias file resides on remote site.
         
-        // Join the "current" directory (location of this alias node)
+        CSeqDB_BasePath result;
+        CSeqDB_BasePath restart(m_DBList[i]);
+        
+        if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result, locked)) {
+            CSeqDB_Path new_alias( result, prot_nucl, 'a', 'l' );
+
+            if ( recurse.Exists(new_alias) ) {
+                NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Illegal configuration: DB alias files are mutually recursive.");
+            }
+        
+            CSeqDB_Path new_volume( result, prot_nucl, 'i', 'n' );
+            
+            if (m_Atlas.DoesFileExist(new_alias, locked)) {
+                x_AppendSubNode( result, prot_nucl, recurse, locked );
+            } else if (m_Atlas.DoesFileExist(new_volume, locked)) {
+                // normalize this_name
+                bool found = false;
+                string orig_name = result.GetBasePathS();
+                string normal_name = CDirEntry::NormalizePath(orig_name, eFollowLinks);
+                for (int i = 0; i < (int) m_VolNames.size(); i++) {
+                    if (m_VolNames[i].GetBasePathS() == normal_name) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    m_VolNames.push_back(CSeqDB_BasePath(normal_name));
+                }
+            }
+
+            continue;
+        }
+        
+//cout << "m_DBPath: " << m_DBPath.GetDirNameS() << endl;
+//cout << "m_DBList[i]: " << m_DBList[i].GetBasePathS() << endl;
+        
+        // Finally, join the "current" directory (location of this alias node)
         // to the path specified in the alias file.
         
         CSeqDB_BasePath base(m_DBPath, m_DBList[i]);
@@ -806,41 +849,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
 
             continue;
         }
-        
-        // If all that failed, "restart" the search using the blast DB
-        // path configuration.  This allows an alias file to reference
-        // a database like nr without specifying the full path.
-        
-        CSeqDB_BasePath result;
-        CSeqDB_BasePath restart(m_DBList[i]);
-        
-        if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result, locked)) {
-            CSeqDB_Path new_alias( result, prot_nucl, 'a', 'l' );
-            CSeqDB_Path new_volume( result, prot_nucl, 'i', 'n' );
-            
-            if (m_Atlas.DoesFileExist(new_alias, locked)) {
-                x_AppendSubNode( result, prot_nucl, recurse, locked );
-            } else if (m_Atlas.DoesFileExist(new_volume, locked)) {
 
-				// normalize this_name
-				bool found = false;
-				string orig_name = result.GetBasePathS();
-				string normal_name = CDirEntry::NormalizePath(orig_name, eFollowLinks);
-				for (int i = 0; i < (int) m_VolNames.size(); i++) {
-					if (m_VolNames[i].GetBasePathS() == normal_name) {
-						found = true;
-						break;
-					}
-				}
-
-				if (!found) {
-					m_VolNames.push_back(CSeqDB_BasePath(normal_name));
-				}
-            }
-            
-            continue;
-        }
-        
         ostringstream oss;
         oss << "Could not find volume or alias file ("
             << m_DBList[i].GetBasePathS() << ") referenced in alias file ("
