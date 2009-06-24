@@ -88,6 +88,25 @@ void CDense_diag::OffsetRow(TDim row,
 }
 
 
+ENa_strand CDense_diag::GetSeqStrand(TDim row) const
+{
+    if (row < 0  ||  row >= GetDim()) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CDense_diag::GetSeqStrand():"
+                   " Invalid row number");
+    }
+
+    if (!CanGetStrands()  ||  (int)GetStrands().size() <= row) {
+        NCBI_THROW(CSeqalignException, eInvalidInputData,
+                   "CDense_diag::GetSeqStrand():"
+                   " Strand doesn't exist for this row.");
+    }
+
+    return GetStrands()[row];
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

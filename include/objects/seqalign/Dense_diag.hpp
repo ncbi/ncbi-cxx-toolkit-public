@@ -63,13 +63,14 @@ public:
     ~CDense_diag(void);
 
     /// Validators
-    TDim    CheckNumRows(void)                   const;
-    void    Validate    ()                       const;
+    TDim    CheckNumRows(void) const;
+    void    Validate    ()     const;
 
     /// GetSeqRange
-    CRange<TSeqPos> GetSeqRange(TDim row) const;
-    TSeqPos         GetSeqStart(TDim row) const;
-    TSeqPos         GetSeqStop (TDim row) const;
+    CRange<TSeqPos> GetSeqRange (TDim row) const;
+    TSeqPos         GetSeqStart (TDim row) const;
+    TSeqPos         GetSeqStop  (TDim row) const;
+    ENa_strand      GetSeqStrand(TDim row) const;
 
     /// Offset row's coords
     void OffsetRow(TDim row, TSignedSeqPos offset);

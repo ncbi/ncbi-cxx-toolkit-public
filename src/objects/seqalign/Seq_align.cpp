@@ -246,6 +246,12 @@ ENa_strand CSeq_align::GetSeqStrand(TDim row) const
         return GetSegs().GetDenseg().GetSeqStrand(row);
     case C_Segs::e_Spliced:
         return GetSegs().GetSpliced().GetSeqStrand(row);
+    case C_Segs::e_Disc:
+        return GetSegs().GetDisc().Get().front()->GetSeqStrand(row);
+    case C_Segs::e_Std:
+        return GetSegs().GetStd().front()->GetLoc()[row]->GetStrand();
+    case C_Segs::e_Dendiag:
+        return GetSegs().GetDendiag().front()->GetSeqStrand(row);
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeqStrand() currently does not handle "
