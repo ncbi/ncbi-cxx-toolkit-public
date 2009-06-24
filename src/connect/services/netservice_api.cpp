@@ -284,8 +284,6 @@ SNetServerGroupImpl* SNetServiceImpl::CreateServerGroup(
 SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
     CNetService::EDiscoveryMode discovery_mode)
 {
-    CFastMutexGuard g(m_ServerGroupMutex);
-
     switch (m_ServiceType) {
     case SNetServiceImpl::eNotDefined:
         NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
@@ -481,6 +479,8 @@ void CNetService::SetPermanentConnection(ESwitch type)
 CNetServerGroup CNetService::DiscoverServers(
     CNetService::EDiscoveryMode discovery_mode)
 {
+    CFastMutexGuard g(m_Impl->m_ServerGroupMutex);
+
     return m_Impl->DiscoverServers(discovery_mode);
 }
 
