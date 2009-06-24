@@ -59,8 +59,7 @@ struct SNetServerGroupIteratorImpl : public CNetObject
 
 struct SNetServerGroupImpl : public CNetObject
 {
-    SNetServerGroupImpl(SNetServerGroupImpl** origin,
-        unsigned discovery_iteration);
+    SNetServerGroupImpl(unsigned discovery_iteration);
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
@@ -73,10 +72,6 @@ struct SNetServerGroupImpl : public CNetObject
     // A smart pointer to the NetService object
     // that contains this NetServerGroup.
     CNetService m_Service;
-
-    // A pointer to the SNetServiceImpl::m_ServerGroups array
-    // element where this server group object belongs.
-    SNetServerGroupImpl** m_Origin;
 
     unsigned m_DiscoveryIteration;
 };
@@ -154,10 +149,8 @@ struct SNetServiceImpl : public CNetObject
     } m_ServiceType;
 };
 
-inline SNetServerGroupImpl::SNetServerGroupImpl(SNetServerGroupImpl** origin,
-    unsigned discovery_iteration) :
-        m_Origin(origin),
-        m_DiscoveryIteration(discovery_iteration)
+inline SNetServerGroupImpl::SNetServerGroupImpl(unsigned discovery_iteration) :
+    m_DiscoveryIteration(discovery_iteration)
 {
 }
 

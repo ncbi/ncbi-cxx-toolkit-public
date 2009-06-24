@@ -57,13 +57,7 @@ void SNetServerGroupImpl::Delete()
     CFastMutexGuard g(m_Service->m_ServerGroupMutex);
 
     if (GetRefCount() == 0)
-        if (*m_Origin == this)
-            // This object still owns its position in the service object.
-            m_Service = NULL;
-        else
-            // This object has been replaced during a more recent
-            // discovery iteration, it must be deleted now.
-            delete this;
+        m_Service = NULL;
 }
 
 CNetServer CNetServerGroupIterator::GetServer()
@@ -73,13 +67,12 @@ CNetServer CNetServerGroupIterator::GetServer()
 
 bool CNetServerGroupIterator::Next()
 {
-    if (++m_Impl->m_Position == m_Impl->m_ServerGroup->m_Servers.end()) {
+    if (++m_Impl->m_Position != m_Impl->m_ServerGroup->m_Servers.end())
+        return true;
+
         m_Impl.Assign(NULL);
         return false;
     }
-
-    return true;
-}
 
 CNetServerGroupIterator CNetServerGroup::Iterate()
 {
@@ -114,9 +107,8 @@ SNetServiceImpl::SNetServiceImpl(
             // CFastMutexGuard g(m_ServerGroupMutex);
             SNetServerImpl* single_server = new SNetServerImplReal(host, port);
             m_Servers.insert(single_server);
-            (m_SignleServerGroup =
-                new SNetServerGroupImpl(&m_SignleServerGroup, 0))->
-                    m_Servers.push_back(single_server);
+            (m_SignleServerGroup = new SNetServerGroupImpl(0))->
+                m_Servers.push_back(single_server);
         } else {
             m_ServiceType = eLoadBalanced;
             memset(&m_ServerGroups, 0, sizeof(m_ServerGroups));
@@ -270,15 +262,12 @@ CNetServerConnection SNetServiceImpl::RequireStandAloneServerSpec()
 SNetServerGroupImpl* SNetServiceImpl::CreateServerGroup(
     CNetService::EDiscoveryMode discovery_mode)
 {
-    SNetServerGroupImpl** server_group_ptr = m_ServerGroups + discovery_mode;
+    SNetServerGroupImpl** server_group = m_ServerGroups + discovery_mode;
 
-    SNetServerGroupImpl* server_group =
-        new SNetServerGroupImpl(server_group_ptr, m_LatestDiscoveryIteration);
+    if (*server_group != NULL && (*server_group)->GetRefCount() == 0)
+        delete *server_group;
 
-    if (*server_group_ptr != NULL && (*server_group_ptr)->GetRefCount() == 0)
-        delete *server_group_ptr;
-
-    return *server_group_ptr = server_group;
+    return *server_group = new SNetServerGroupImpl(m_LatestDiscoveryIteration);
 }
 
 SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
