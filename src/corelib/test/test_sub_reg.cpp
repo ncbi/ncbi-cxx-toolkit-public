@@ -78,7 +78,8 @@ int CTestSubRegApp::Run()
 
     CNcbiRegistry& reg = GetConfig();
 
-    reg.Read(args["overrides"].AsInputFile());
+    // reg.Read(args["overrides"].AsInputFile());
+    LoadConfig(reg, &args["overrides"].AsString(), 0);
     reg.Read(args["defaults"].AsInputFile(), IRegistry::fNoOverride);
     reg.Write(args["out"].AsOutputFile(),
               IRegistry::fCoreLayers | IRegistry::fCountCleared);

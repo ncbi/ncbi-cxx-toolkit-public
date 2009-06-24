@@ -338,9 +338,12 @@ public:
     ///   the new one. If "fTransient" flag is set, then store the newly
     ///   retrieved parameters as transient;  otherwise, store them as
     ///   persistent.
+    /// @return
+    ///   A pointer to a newly created subregistry, if any, directly
+    ///   containing the entries loaded from is.
     /// @sa
     ///   Write()
-    void Read(CNcbiIstream& is, TFlags flags = 0);
+    IRWRegistry* Read(CNcbiIstream& is, TFlags flags = 0);
 
     /// Set the configuration parameter value.
     ///
@@ -409,7 +412,7 @@ protected:
 
     /// Most implementations should not override this, but
     /// CNcbiRegistry must, to handle some special cases properly.
-    virtual void x_Read(CNcbiIstream& is, TFlags flags);
+    virtual IRWRegistry* x_Read(CNcbiIstream& is, TFlags flags);
 
     // for use by implementations
     static bool MaybeSet(string& target, const string& value, TFlags flags);
@@ -686,7 +689,7 @@ protected:
                const string& comment);
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
-    void x_Read(CNcbiIstream& is, TFlags flags);
+    IRWRegistry* x_Read(CNcbiIstream& is, TFlags flags);
 
     /// Add an internal high-priority subregistry.
     void x_Add(const IRegistry& reg,
@@ -771,7 +774,7 @@ public:
 
 protected:
     void x_Clear(TFlags flags);
-    void x_Read(CNcbiIstream& is, TFlags flags);
+    IRWRegistry* x_Read(CNcbiIstream& is, TFlags flags);
 
 private:
     void x_Init(void);

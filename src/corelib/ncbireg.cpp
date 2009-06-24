@@ -508,16 +508,16 @@ void IRWRegistry::Clear(TFlags flags)
 }
 
 
-void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
+IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::Read", flags,
                  fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
                  | fWithNcbirc | fJustCore | fCountCleared);
-    x_Read(is, flags);
+    return x_Read(is, flags);
 }
 
 
-void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
 {
     // Whether to consider this read to be (unconditionally) non-modifying
     TFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
@@ -683,6 +683,8 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     if ( non_modifying ) {
         SetModifiedFlag(false, impact);
     }
+
+    return NULL;
 }
 
 
@@ -1416,7 +1418,7 @@ void CNcbiRegistry::x_Clear(TFlags flags) // XXX - should this do more?
 }
 
 
-void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
 {
     // Normally, all settings should go to the main portion.  However,
     // loading an initial configuration file should instead go to the
@@ -1425,16 +1427,18 @@ void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
         m_FileRegistry->Read(is, flags);
         LoadBaseRegistries(flags);
         IncludeNcbircIfAllowed(flags);
+        return NULL;
     } else if ((flags & fNoOverride) == 0) { // ensure proper layering
         CRef<CCompoundRWRegistry> crwreg(new CCompoundRWRegistry);
         crwreg->Read(is, flags);
         ++m_RuntimeOverrideCount;
         x_Add(*crwreg, ePriority_RuntimeOverrides + m_RuntimeOverrideCount,
               sm_OverrideRegName + NStr::IntToString(m_RuntimeOverrideCount));
+        return crwreg.GetPointer();
     } else {
         // This will only affect the main registry, but still needs to
         // go through CCompoundRWRegistry::x_Set.
-        CCompoundRWRegistry::x_Read(is, flags);
+        return CCompoundRWRegistry::x_Read(is, flags);
     }
 }
 
@@ -1717,7 +1721,7 @@ bool CCompoundRWRegistry::x_SetComment(const string& comment,
 }
 
 
-void CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags)
+IRWRegistry* CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags)
 {
     TFlags lbr_flags = flags;
     if ((flags & fNoOverride) == 0  &&  !Empty(fPersistent) ) {
@@ -1727,6 +1731,7 @@ void CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags)
     }
     IRWRegistry::x_Read(in, flags);
     LoadBaseRegistries(lbr_flags);
+    return NULL;
 }
 
 

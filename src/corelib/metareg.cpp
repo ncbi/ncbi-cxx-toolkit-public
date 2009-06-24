@@ -75,12 +75,13 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
         _TRACE("Unable to (re)open registry file " << actual_name);
         return false;
     }
+    IRWRegistry* dest = NULL;
     if (registry) {
         CRegistryWriteGuard REG_GUARD(*registry);
         TRegFlags rflags = IRWRegistry::AssessImpact(reg_flags,
                                                      IRWRegistry::eRead);
         if ((reload_flags & fKeepContents)  ||  registry->Empty(rflags)) {
-            registry->Read(ifs, reg_flags | IRegistry::fJustCore);
+            dest = registry->Read(ifs, reg_flags | IRegistry::fJustCore);
         } else {
             // Go through a temporary so errors (exceptions) won't
             // cause *registry to be incomplete.
@@ -91,17 +92,22 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
             str.seekg(0);
             bool was_modified = registry->Modified(rflags);
             registry->Clear(rflags);
-            registry->Read(str, reg_flags | IRegistry::fJustCore);
+            dest = registry->Read(str, reg_flags | IRegistry::fJustCore);
             if ( !was_modified ) {
                 registry->SetModifiedFlag(false, rflags);
             }
+        }
+
+        if (dest) {
+            dest->WriteLock();
+        } else {
+            dest = registry.GetPointer();
         }
     } else {
         registry.Reset(new CNcbiRegistry(ifs, reg_flags));
     }
 
-    CCompoundRWRegistry* crwreg
-        = dynamic_cast<CCompoundRWRegistry*>(registry.GetPointer());
+    CCompoundRWRegistry* crwreg = dynamic_cast<CCompoundRWRegistry*>(dest);
     if (crwreg) {
         crwreg->LoadBaseRegistries(reg_flags, reload_flags);
     }
