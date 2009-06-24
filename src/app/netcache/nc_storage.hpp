@@ -169,7 +169,8 @@ public:
     void GetNextBlobCoords(SNCBlobCoords* coords);
     /// Lock blob id, i.e. prevent access of others to blob with the same id
     TRWLockHolderRef LockBlobId(TNCBlobId blob_id, ENCBlobAccess access);
-    /// Unlock blob id and free lock holder
+    /// Unlock blob id and free lock holder. If lock holder is null then do
+    /// nothing.
     void UnlockBlobId(TNCBlobId blob_id, TRWLockHolderRef& rw_holder);
 
     /// Get coordinates of the blob by its key, subkey and version.
@@ -183,9 +184,10 @@ public:
     ///
     /// @return
     ///   TRUE if blob was successfully created. FALSE if blob with these key,
-    ///   subkey and version already exists. Blob coordinates in identity
-    ///   structure will be filled in the latter case.
-    bool CreateBlob(SNCBlobIdentity* identity);
+    ///   subkey and version already exists. Blob coordinates will be returned
+    ///   in new_coords in the latter case.
+    bool CreateBlob(const SNCBlobIdentity& identity,
+                    SNCBlobCoords*         new_coords);
     /// Get key, subkey and version for the blob with given id (inside
     /// identity structure). Method should be called when blob has already
     /// locked.
@@ -430,13 +432,14 @@ private:
     /// from internal cache (without reading from database).
     bool x_ReadBlobCoordsFromCache(SNCBlobIdentity* identity);
     /// Create record about blob in the internal cache. If record was already
-    /// created then copy blob coordinates into given identity structure.
+    /// created then copy blob coordinates into given coordinates structure.
     ///
     /// @return
     ///   TRUE if blob record was successfully added to the cache. FALSE if
     ///   record have already existed at the moment of insert and thus new
-    ///   coordinates were written into the identity.
-    bool x_CreateBlobInCache(SNCBlobIdentity* identity);
+    ///   coordinates were written into the new_coords.
+    bool x_CreateBlobInCache(const SNCBlobIdentity& identity,
+                             SNCBlobCoords*         new_coords);
     /// Read key, subkey and version of the blob identified by id from the
     /// internal cache.
     ///
@@ -693,8 +696,8 @@ CNCBlobStorage::ReturnBlob(CNCBlob* blob)
 inline void
 CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
 {
-    proxy << "Usage statistics for storage "
-                                 << m_Name << " at " << m_Path << ":" << endl
+    proxy << "Usage statistics for storage '"
+                                 << m_Name << "' at " << m_Path << ":" << endl
           << endl;
     m_Stat.Print(proxy);
 }

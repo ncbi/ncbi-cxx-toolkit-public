@@ -286,7 +286,9 @@ private:
     ///   exists. FALSE if lock is invalid, i.e. mentioned above requirement
     ///   is not met
     bool x_ValidateLock(void);
-    /// Lock blob and validate acquired lock
+    /// Lock blob with given coordinates and validate acquired lock. If
+    /// another lock was already acquired at the moment then it's
+    /// automatically released.
     ///
     /// @return
     ///   TRUE if method is successful and there's no need to call it once
@@ -297,7 +299,7 @@ private:
     ///   OnLockAcquired().
     ///
     /// @sa x_ValidateLock, OnLockAcquired
-    bool x_LockAndValidate(void);
+    bool x_LockAndValidate(const SNCBlobCoords& coords);
     /// Internal releasing of the lock
     /// Only pure releasing without obtaining mutex and statistics
     /// registration, thus it should execute from constructor or under

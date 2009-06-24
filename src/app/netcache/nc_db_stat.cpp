@@ -75,21 +75,26 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
 {
     CFastMutexGuard guard(m_ObjMutex);
 
-    proxy << "Locks requested            - " << m_LockRequests << endl
-          << "Locks acquired             - " << m_LocksAcquired << endl
-          << "Locks on non-existing      - " << m_NotExistLocks << endl
-          << "GC locks requested         - " << m_GCLockRequests << endl
-          << "GC locks acquired          - " << m_GCLocksAcquired << endl
-          << "Time waiting for locks     - "
+    proxy << "Locks requested        - " << m_LockRequests << endl
+          << "Locks acquired         - " << m_LocksAcquired << endl
+          << "Locks on non-existing  - " << m_NotExistLocks << endl
+          << "GC locks requested     - " << m_GCLockRequests << endl
+          << "GC locks acquired      - " << m_GCLocksAcquired << endl
+          << "Time waiting for locks - "
           << int(g_SafeDiv(m_LocksWaitedTime, m_LocksTotalTime) * 100) << "%" << endl
-          << "Time of database I/O       - "
+          << "Time of database I/O   - "
           << int(g_SafeDiv(m_TotalDbTime, m_LocksTotalTime) * 100) << "%" << endl
           << endl
-          << "Blobs read                 - " << m_ReadBlobs << endl
-          << "Blob chunks read           - " << m_ReadChunks << endl
-          << "Unfinished blob reads      - " << m_StoppedReads << endl
-          << "Total size of data read    - " << m_ReadSize << endl
-          << "Time reading blob data     - "
+          << "Blobs deleted by user - " << m_DeletedBlobs << endl
+          << "Blobs truncated       - " << m_TruncatedBlobs << endl
+          << "Creates over existing - " << m_CreateExists << endl
+          << "Checks for existence  - " << m_ExistChecks << endl
+          << endl
+          << "Blobs read              - " << m_ReadBlobs << endl
+          << "Blob chunks read        - " << m_ReadChunks << endl
+          << "Unfinished blob reads   - " << m_StoppedReads << endl
+          << "Total size of data read - " << m_ReadSize << endl
+          << "Time reading blob data  - "
           << int(g_SafeDiv(m_ReadTime, m_LocksTotalTime) * 100) << "%" << endl
           << "Blobs read by size:" << endl;
     Uint8 sz = kMinSizeInChart;
@@ -134,12 +139,6 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
               << m_MaxChunkWTimeBySize[i] << " (max time), "
               << g_SafeDiv(m_ChunkWTimeBySize[i], m_WrittenChunksBySize[i]) << " (avg time)" << endl;
     }
-    proxy << endl
-          << "Blobs deleted by user - " << m_DeletedBlobs << endl
-          << "Blobs truncated       - " << m_TruncatedBlobs << endl
-          << "Creates over existing - " << m_CreateExists << endl
-          << "Checks for existence  - " << m_ExistChecks << endl
-          ;
 }
 
 END_NCBI_SCOPE

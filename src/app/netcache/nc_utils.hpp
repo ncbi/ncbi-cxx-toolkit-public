@@ -35,6 +35,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -50,24 +51,30 @@ public:
     void Clear(void);
 
     /// Streaming operator for all supported data types
-    CQuickStrStream& operator<<(const string& str);
-    CQuickStrStream& operator<<(const char*   str);
-    CQuickStrStream& operator<<(CTempString   str);
-    CQuickStrStream& operator<<(int           i);
-    CQuickStrStream& operator<<(Uint4         ui);
-    CQuickStrStream& operator<<(Int8          i64);
-    CQuickStrStream& operator<<(Uint8         ui64);
-    CQuickStrStream& operator<<(double        d);
+    CQuickStrStream& operator<<(const string&          str);
+    CQuickStrStream& operator<<(const char*            str);
+    CQuickStrStream& operator<<(CTempString            str);
+    CQuickStrStream& operator<<(int                    i);
+    CQuickStrStream& operator<<(Uint4                  ui);
+    CQuickStrStream& operator<<(Int8                   i64);
+    CQuickStrStream& operator<<(Uint8                  ui64);
+    CQuickStrStream& operator<<(double                 d);
+    CQuickStrStream& operator<<(const CTime&           ctime);
+    CQuickStrStream& operator<<(const CQuickStrStream& str);
 
     /// Automatic conversion to string
-    operator string(void);
+    operator string(void) const;
     /// Automatic conversion to CTempString
-    operator CTempString(void);
+    operator CTempString(void) const;
 
 private:
     /// Accumulated data
     string m_Data;
 };
+
+/// Additional overloaded operator to allow automatic transformation of
+/// CQuickStrStream to string when outputting to any standard stream.
+CNcbiOstream& operator<<(CNcbiOstream& stream, const CQuickStrStream& str);
 
 
 /// Stream-like class to help unify printing some text messages to diagnostics
@@ -193,16 +200,38 @@ CQuickStrStream::operator<<(double d)
     return *this;
 }
 
+inline CQuickStrStream&
+CQuickStrStream::operator<<(const CTime& ctime)
+{
+    m_Data += ctime.AsString();
+    return *this;
+}
+
+inline CQuickStrStream&
+CQuickStrStream::operator<<(const CQuickStrStream& str)
+{
+    m_Data += str.m_Data;
+    return *this;
+}
+
 inline
-CQuickStrStream::operator string(void)
+CQuickStrStream::operator string(void) const
 {
     return m_Data;
 }
 
 inline
-CQuickStrStream::operator CTempString(void)
+CQuickStrStream::operator CTempString(void) const
 {
     return m_Data;
+}
+
+
+inline CNcbiOstream&
+operator<<(CNcbiOstream& stream, const CQuickStrStream& str)
+{
+    stream << string(str);
+    return stream;
 }
 
 

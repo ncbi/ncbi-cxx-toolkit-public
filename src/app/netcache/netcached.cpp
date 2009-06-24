@@ -147,18 +147,21 @@ CNCServer_Stat::Print(CPrintTextProxy& proxy)
           << "Average time connection was alive - "
                           << g_SafeDiv(m_ConnsSpansSum, m_ClosedConns) << endl
           << endl
-          << "Number of commands received       - " << m_CntCmds << endl
-          << "Number of commands timed out      - " << m_TimedOutCmds << endl
-          << "Maximum time command executed     - " << m_MaxCmdSpan << endl
-          << "Average time command executed     - "
+          << "Number of commands received   - " << m_CntCmds << endl
+          << "Number of commands timed out  - " << m_TimedOutCmds << endl
+          << "Maximum time command executed - " << m_MaxCmdSpan << endl
+          << "Average time command executed - "
                           << g_SafeDiv(m_CmdSpans, m_CntCmds) << endl
           << "Commands by type:" << endl;
     TCmdsCountsMap::iterator it_cnt  = m_CntCmdsByCmd   .begin();
     TCmdsSpansMap::iterator  it_span = m_CmdSpansByCmd  .begin();
     TCmdsSpansMap::iterator  it_max  = m_MaxCmdSpanByCmd.begin();
     for (; it_cnt != m_CntCmdsByCmd.end(); ++it_cnt, ++it_span, ++it_max) {
-        _ASSERT(SConstCharCompare()(it_cnt->first, it_span->first));
-        _ASSERT(SConstCharCompare()(it_cnt->first, it_max ->first));
+        _ASSERT(!SConstCharCompare()(it_cnt->first, it_span->first)
+                &&  !SConstCharCompare()(it_span->first, it_cnt->first));
+        _ASSERT(!SConstCharCompare()(it_cnt->first, it_max->first)
+                &&  !SConstCharCompare()(it_max->first, it_cnt->first));
+
         proxy << it_cnt->first << " - " << it_cnt->second << " (cnt), "
               << g_SafeDiv(it_span->second, it_cnt->second) << " (avg time), "
               << it_max->second << " (max time)" << endl;
@@ -430,10 +433,9 @@ CNetCacheDApp::Run(void)
         server->Run();
 
         if (server->GetSignalCode()) {
-            LOG_POST_X(10,
-                       "Server got " << server->GetSignalCode() << " signal.");
+            LOG_POST_X(10, "Server got "
+                           << server->GetSignalCode() << " signal.");
         }
-        LOG_POST_X(12, "Server stopped.");
     }}
     CSQLITE_Global::Finalize();
 

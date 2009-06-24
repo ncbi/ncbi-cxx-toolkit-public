@@ -703,16 +703,12 @@ CNCMessageHandler::x_FinishCommand(void)
     }
 
     if (x_IsMonitored()) {
-        string msg("Command finished");
+        CQuickStrStream msg;
+        msg << "Command finished";
         if (m_CurBlob) {
-            msg += " for blob '";
-            msg += m_BlobKey;
-            msg += "', '";
-            msg += m_BlobSubkey;
-            msg += "', ";
-            msg += NStr::UIntToString(m_BlobVersion);
-            msg += ", size=";
-            msg += NStr::UInt8ToString(m_CurBlob->GetSize());
+            msg << " for blob '" << m_BlobKey << "', '" << m_BlobSubkey
+                << "', " << m_BlobVersion << ", size="
+                << m_CurBlob->GetSize();
         }
         x_MonitorPost(msg);
     }
@@ -767,7 +763,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
 
     m_CurBlob->Finalize();
-
     x_SetState(eReadyForCommand);
 }
 
@@ -909,23 +904,16 @@ CNCMessageHandler::x_MonitorPost(const string& msg, bool do_trace /*= true*/)
         return;
     }
 
-    string trace_msg(m_ClientName);
-    trace_msg += " ";
-    trace_msg += m_ClientAddress;
-    trace_msg += " (from ";
-    trace_msg += m_ConnTime.AsString();
-    trace_msg += ")\n\t";
-    trace_msg += msg;
-    trace_msg += "\n";
+    CQuickStrStream trace_msg;
+    trace_msg << m_ClientName << " " << m_ClientAddress << " (from "
+              << m_ConnTime << ")\n\t" << msg << "\n";
 
     if (do_trace) {
         LOG_POST(Trace << trace_msg);
     }
     if (m_Monitor  &&  m_Monitor->IsMonitorActive()) {
-        string send_msg(m_Server->GetFastTime().AsString());
-        send_msg += "\n\t";
-        send_msg += trace_msg;
-
+        CQuickStrStream send_msg;
+        send_msg << m_Server->GetFastTime() << "\n\t" << trace_msg;
         m_Monitor->SendString(send_msg);
     }
 }

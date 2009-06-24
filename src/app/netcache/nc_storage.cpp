@@ -388,23 +388,26 @@ TRWLockHolderRef
 CNCBlobStorage::LockBlobId(TNCBlobId blob_id, ENCBlobAccess access)
 {
     CFastMutexGuard guard(m_IdLockMutex);
-    CYieldingRWLock* rwlock = NULL;
+    CYieldingRWLock* rw_lock = NULL;
 
     TId2LocksMap::iterator it = m_IdLocks.find(blob_id);
     if (it == m_IdLocks.end()) {
         if (m_FreeLocks.empty()) {
-            rwlock = new CYieldingRWLock();
+            rw_lock = new CYieldingRWLock();
         }
         else {
-            rwlock = m_FreeLocks.back();
+            rw_lock = m_FreeLocks.back();
             m_FreeLocks.pop_back();
         }
-        m_IdLocks[blob_id] = rwlock;
+        m_IdLocks[blob_id] = rw_lock;
     }
     else {
-        rwlock = it->second;
+        rw_lock = it->second;
     }
-    return rwlock->AcquireLock(access == eRead? eReadLock: eWriteLock);
+    // Acquiring cannot be carried out of mutex because it would be race with
+    // unlocking - after getting here from map and before locking it can be
+    // deleted from map in UnlockBlobId().
+    return rw_lock->AcquireLock(access == eRead? eReadLock: eWriteLock);
 }
 
 void
@@ -623,21 +626,22 @@ CNCBlobStorage::x_ReadBlobCoordsFromCache(SNCBlobIdentity* identity)
 }
 
 inline bool
-CNCBlobStorage::x_CreateBlobInCache(SNCBlobIdentity* identity)
+CNCBlobStorage::x_CreateBlobInCache(const SNCBlobIdentity& identity,
+                                    SNCBlobCoords*         new_coords)
 {
     {{
         CFastWriteGuard guard(m_KeysCacheLock);
         pair<TKeyIdMap::iterator, bool> ins_pair
-                                              = m_KeysCache.insert(*identity);
+                                              = m_KeysCache.insert(identity);
         if (!ins_pair.second) {
-            identity->AssignCoords(*ins_pair.first);
+            new_coords->AssignCoords(*ins_pair.first);
             GetStat()->AddCreateHitExisting();
             return false;
         }
     }}
     {{
         CFastWriteGuard guard(m_IdsCacheLock);
-        m_IdsCache.insert(*identity);
+        m_IdsCache.insert(identity);
     }}
     return true;
 }
@@ -773,24 +777,25 @@ CNCBlobStorage::ReadBlobCoords(SNCBlobIdentity* identity)
 }
 
 bool
-CNCBlobStorage::CreateBlob(SNCBlobIdentity* identity)
+CNCBlobStorage::CreateBlob(const SNCBlobIdentity& identity,
+                           SNCBlobCoords*         new_coords)
 {
     if (x_GetNotCachedPartId() != -1) {
         // In case if some databases were not cached we need first to check if
         // there is such key in some not cached databases.
-        SNCBlobIdentity temp_ident(*identity);
+        SNCBlobIdentity temp_ident(identity);
         temp_ident.part_id = 0;
         temp_ident.blob_id = 0;
         if (ReadBlobCoords(&temp_ident)) {
-            identity->AssignCoords(temp_ident);
+            new_coords->AssignCoords(temp_ident);
             GetStat()->AddCreateHitExisting();
             return false;
         }
     }
-    if (!x_CreateBlobInCache(identity))
+    if (!x_CreateBlobInCache(identity, new_coords))
         return false;
-    TMetaFileLock metafile(this, identity->part_id);
-    metafile->CreateBlobKey(*identity);
+    TMetaFileLock metafile(this, identity.part_id);
+    metafile->CreateBlobKey(identity);
     return true;
 }
 
@@ -828,15 +833,17 @@ CNCBlobStorage::ReadBlobKey(SNCBlobIdentity* identity)
         }
         if (part_id != 0) {
             TMetaFileLock metafile(this, part_id);
-            // NB: There is no race here for adding to cache because
-            // GC deletes blobs only after obtaining lock on them and this
-            // method is called only when lock is already acquired.
             if (metafile->ReadBlobKey(identity, dead_time)) {
                 identity->part_id = part_id;
-                // Even if this call found blob in cache it will not harm
-                // identity structure because blob will have the same
-                // coordinates
-                x_CreateBlobInCache(identity);
+                // NB: There is no race here for adding to cache because
+                // GC deletes blobs only after obtaining lock on them and this
+                // method is called only when lock is already acquired. Also
+                // there's no race with background adding to cache because it
+                // will be just repeating of the same work without any harm.
+                // So even if call to x_CreateBlobInCache() found blob in
+                // cache it will not harm identity structure because blob will
+                // have the same coordinates.
+                x_CreateBlobInCache(*identity, identity);
                 return true;
             }
         }

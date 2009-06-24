@@ -601,7 +601,7 @@ CNCDB_File::CreateChunkValue(const TNCBlobBuffer& data)
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateChunkData));
     CNCStatTimer timer(GetStat(), CNCDB_Stat::eDbWrite);
 
-    stmt->Bind(1, data.data(), data.size());
+    stmt->Bind(1, static_cast<const void*>(data.data()), data.size());
     stmt->Execute();
 
     GetStat()->AddChunkWritten(data.size(), timer.GetElapsed());
@@ -616,7 +616,7 @@ CNCDB_File::WriteChunkValue(TNCChunkId           chunk_id,
     CNCStatTimer timer(GetStat(), CNCDB_Stat::eDbWrite);
 
     stmt->Bind(1, chunk_id);
-    stmt->Bind(2, data.data(), data.size());
+    stmt->Bind(2, static_cast<const void*>(data.data()), data.size());
     stmt->Execute();
 
     GetStat()->AddChunkWritten(data.size(), timer.GetElapsed());

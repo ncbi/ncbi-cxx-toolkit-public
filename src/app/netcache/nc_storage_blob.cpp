@@ -86,6 +86,13 @@ CNCBlob::Init(SNCBlobInfo* blob_info, bool can_write)
     m_Position = m_ChunkPos = 0;
     m_CanWrite = can_write;
     m_Finalized = false;
+    if (can_write) {
+        // If we will just write to the blob then it should be "truncated" as
+        // if there were nothing there. At the finalization it will be
+        // actually truncated anyway or even deleted if it's not finalized, so
+        // nobody needs information about what size it was.
+        m_BlobInfo->size = 0;
+    }
 
     m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
     m_NextRowIdIt = m_AllRowIds.begin();
@@ -306,7 +313,7 @@ CNCBlobLockHolder::x_InitLock(void)
         }
         else {
             // Standard way of read/write locking
-            x_LockAndValidate();
+            x_LockAndValidate(m_BlobInfo);
         }
     }
     catch (...) {
@@ -345,27 +352,29 @@ void
 CNCBlobLockHolder::x_RetakeCreateLock(void)
 {
     for (;;) {
-        if (m_Storage->CreateBlob(&m_BlobInfo)) {
+        SNCBlobCoords new_coords;
+        if (m_Storage->CreateBlob(m_BlobInfo, &new_coords)) {
             m_LockKnown = m_BlobExists = true;
             m_BlobInfo.ttl = m_Storage->GetDefBlobTTL();
             x_OnLockValidated();
             return;
         }
-        if (x_LockAndValidate())
+        if (x_LockAndValidate(new_coords))
             return;
     }
 }
 
 bool
-CNCBlobLockHolder::x_LockAndValidate(void)
+CNCBlobLockHolder::x_LockAndValidate(const SNCBlobCoords& coords)
 {
-    TRWLockHolderRef rw_holder(m_Storage->LockBlobId(m_BlobInfo.blob_id,
+    TRWLockHolderRef rw_holder(m_Storage->LockBlobId(coords.blob_id,
                                                      m_BlobAccess));
     bool lock_known;
     {{
         CFastMutexGuard guard(m_LockAcqMutex);
 
         x_ReleaseLock();
+        m_BlobInfo.AssignCoords(coords);
         rw_holder->AddListener(this);
         m_RWHolder = rw_holder;
         lock_known = m_LockKnown = rw_holder->IsLockAcquired();
