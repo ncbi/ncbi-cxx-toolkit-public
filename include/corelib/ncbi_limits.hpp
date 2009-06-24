@@ -139,7 +139,7 @@ NCBI_NUMERIC_LIMITS          (signed   long long,  LongLong);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned long long, ULongLong);
 #  endif
 
-#  if defined(NCBI_USE_INT64)
+#  if defined(NCBI_INT8_IS_INT64)
 NCBI_NUMERIC_LIMITS          (signed   __int64,  Int64);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned __int64, UInt64);
 #  endif
@@ -201,7 +201,7 @@ NCBI_GET_NUMERIC_LIMITS(signed   long long)
 NCBI_GET_NUMERIC_LIMITS(unsigned long long)
 #  endif
 
-#  if defined(NCBI_USE_INT64)
+#  if defined(NCBI_INT8_IS_INT64)
 NCBI_GET_NUMERIC_LIMITS(signed   __int64)
 NCBI_GET_NUMERIC_LIMITS(unsigned __int64)
 #  endif

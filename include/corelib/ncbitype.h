@@ -91,45 +91,49 @@ typedef unsigned int   Uint4;   /**< Alias for unsigned int */
  */
 
 #if   (SIZEOF_LONG == 8)
-#  define INT8_TYPE long
+#  define NCBI_INT8_TYPE         long
+#  define NCBI_INT8_IS_LONG      1
 #elif (SIZEOF_LONG_LONG == 8)
-#  define INT8_TYPE long long
+#  define NCBI_INT8_TYPE         long long
+#  define NCBI_INT8_IS_LONG_LONG 1
 #elif (SIZEOF___INT64 == 8)
-#  define NCBI_USE_INT64 1
-#  define INT8_TYPE __int64
+#  define NCBI_INT8_TYPE         __int64
+#  define NCBI_INT8_IS_INT64     1
+/** @deprecated  Use NCBI_INT8_IS_INT64 instead */
+#  define NCBI_USE_INT64         1
 #else
 #  error "This platform does not support 8-byte integer"
 #endif
 
 /** Signed 8 byte sized integer */
-typedef signed   INT8_TYPE Int8;    
+typedef signed   NCBI_INT8_TYPE Int8;    
 
 /** Unsigned 8 byte sized integer */
-typedef unsigned INT8_TYPE Uint8;
+typedef unsigned NCBI_INT8_TYPE Uint8;
 
 
 /* BigScalar
  */
 
-#define BIG_TYPE INT8_TYPE
-#define BIG_SIZE 8
-#if (SIZEOF_LONG_DOUBLE > BIG_SIZE)
-#  undef  BIG_TYPE
-#  undef  BIG_SIZE
-#  define BIG_TYPE long double 
-#  define BIG_SIZE SIZEOF_LONG_DOUBLE
+#define NCBI_BIG_TYPE NCBI_INT8_TYPE
+#define SIZEOF_NCBI_BIG 8
+#if (SIZEOF_LONG_DOUBLE > SIZEOF_NCBI_BIG)
+#  undef  NCBI_BIG_TYPE
+#  undef  SIZEOF_NCBI_BIG
+#  define NCBI_BIG_TYPE   long double 
+#  define SIZEOF_NCBI_BIG SIZEOF_LONG_DOUBLE
 #endif
-#if (SIZEOF_DOUBLE > BIG_SIZE)
-#  undef  BIG_TYPE
-#  undef  BIG_SIZE
-#  define BIG_TYPE double
-#  define BIG_SIZE SIZEOF_DOUBLE
+#if (SIZEOF_DOUBLE > SIZEOF_NCBI_BIG)
+#  undef  NCBI_BIG_TYPE
+#  undef  SIZEOF_NCBI_BIG
+#  define NCBI_BIG_TYPE   double
+#  define SIZEOF_NCBI_BIG SIZEOF_DOUBLE
 #endif
-#if (SIZEOF_VOIDP > BIG_SIZE)
-#  undef  BIG_TYPE
-#  undef  BIG_SIZE
-#  define BIG_TYPE void*
-#  define BIG_SIZE SIZEOF_VOIDP
+#if (SIZEOF_VOIDP > SIZEOF_NCBI_BIG)
+#  undef  NCBI_BIG_TYPE
+#  undef  SIZEOF_NCBI_BIG
+#  define NCBI_BIG_TYPE   void*
+#  define SIZEOF_NCBI_BIG SIZEOF_VOIDP
 #endif
 
 /**
@@ -138,7 +142,7 @@ typedef unsigned INT8_TYPE Uint8;
  * This is platform dependent. It could be an Int8, long double, double
  * or void*.
  */
-typedef BIG_TYPE Ncbi_BigScalar;
+typedef NCBI_BIG_TYPE Ncbi_BigScalar;
 
 
 #ifndef HAVE_INTPTR_T
@@ -187,9 +191,9 @@ typedef unsigned long long uintptr_t;
 /* Undef auxiliaries
  */
 
-#undef BIG_SIZE
-#undef BIG_TYPE
-#undef INT8_TYPE
+#undef SIZEOF_NCBI_BIG
+#undef NCBI_BIG_TYPE
+#undef NCBI_INT8_TYPE
 
 
 #endif  /* CORELIB___NCBITYPE__H */

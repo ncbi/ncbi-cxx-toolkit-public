@@ -83,7 +83,7 @@
 #  define NCBI_MIN_I8  0x8000000000000000LL
 #  define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFLL
 #  define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFULL
-#elif defined(NCBI_USE_INT64)
+#elif defined(NCBI_INT8_IS_INT64)
 #  define NCBI_MIN_I8  0x8000000000000000i64
 #  define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFi64
 #  define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFui64
@@ -130,7 +130,7 @@ const signed   long long  kMax_LongLong   = 0x7FFFFFFFLL;
 const unsigned long long  kMax_ULongLong  = 0xFFFFFFFFULL;
 #  endif
 
-#  if defined(NCBI_USE_INT64)
+#  if defined(NCBI_INT8_IS_INT64)
 const signed   __int64 kMin_Int64  = NCBI_MIN_I8;
 const signed   __int64 kMax_Int64  = NCBI_MAX_I8;
 const unsigned __int64 kMax_UInt64 = NCBI_MAX_UI8;
