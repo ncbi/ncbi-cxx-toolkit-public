@@ -753,15 +753,21 @@ void SLockedQueue::x_ChangeGroupStatus(unsigned            group_id,
 }
 
 
-void SLockedQueue::ConfirmJobs(unsigned read_id, TNSBitVector& bv_jobs)
+void SLockedQueue::ConfirmJobs(unsigned read_id, TNSBitVector& jobs)
 {
-    x_ChangeGroupStatus(read_id, bv_jobs, CNetScheduleAPI::eConfirmed);
+    x_ChangeGroupStatus(read_id, jobs, CNetScheduleAPI::eConfirmed);
 }
 
 
-void SLockedQueue::FailReadingJobs(unsigned read_id, TNSBitVector& bv_jobs)
+void SLockedQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
 {
-    x_ChangeGroupStatus(read_id, bv_jobs, CNetScheduleAPI::eReadFailed);
+    x_ChangeGroupStatus(read_id, jobs, CNetScheduleAPI::eReadFailed);
+}
+
+
+void SLockedQueue::ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs)
+{
+    x_ChangeGroupStatus(read_id, jobs, CNetScheduleAPI::eDone);
 }
 
 

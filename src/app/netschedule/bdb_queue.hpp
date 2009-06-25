@@ -188,8 +188,12 @@ public:
                   unsigned& read_id, TNSBitVector& jobs);
     /// Confirm reading of these jobs
     void ConfirmJobs(unsigned read_id, TNSBitVector& jobs);
-    /// Fail (negative acknoledge) reading of these jobs
+    /// Fail (negative acknowledge) reading of these jobs
     void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
+    /// Return jobs to unread state without reservation
+    void ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs);
+    //
+
     /// Get affinity preference list
     string GetAffinityList();
 

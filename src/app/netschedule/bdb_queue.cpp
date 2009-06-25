@@ -1949,6 +1949,13 @@ void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
 }
 
 
+void CQueue::ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs)
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    q->ReturnReadingJobs(read_id, jobs);
+}
+
+
 string CQueue::GetAffinityList()
 {
     CRef<SLockedQueue> q(x_GetLQueue());

@@ -380,6 +380,7 @@ private:
     void ProcessReading();
     void ProcessConfirm();
     void ProcessReadFailed();
+    void ProcessReadRollback();
     void ProcessGetAffinityList();
     void ProcessInitWorkerNode();
     void ProcessClearWorkerNode();
@@ -2486,6 +2487,14 @@ void CNetScheduleHandler::ProcessReadFailed()
 }
 
 
+void CNetScheduleHandler::ProcessReadRollback()
+{
+    TNSBitVector jobs = NS_DecodeBitVector(m_JobReq.output);
+    m_Queue->ReturnReadingJobs(m_JobReq.count, jobs);
+    WriteOK();
+}
+
+
 void CNetScheduleHandler::ProcessGetAffinityList()
 {
     WriteOK(m_Queue->GetAffinityList());
@@ -2669,6 +2678,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "count",   eNSPT_Int, eNSPA_Required },
           { "output",  eNSPT_Str, eNSPA_Required },
           { "err_msg", eNSPT_Str, eNSPA_Optional } } },
+    // RDRB group : int jobs : str
+    { "RDRB",     &CNetScheduleHandler::ProcessReadRollback, eNSCR_Submitter,
+        { { "count",   eNSPT_Int, eNSPA_Required },
+          { "output",  eNSPT_Str, eNSPA_Required } } },
     // AFLS
     { "AFLS",     &CNetScheduleHandler::ProcessGetAffinityList, eNSCR_Worker },
     // INIT port : uint id : string

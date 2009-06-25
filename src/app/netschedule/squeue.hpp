@@ -270,11 +270,13 @@ public:
     /// Request done jobs for reading with timeout
     void ReadJobs(unsigned peer_addr,
                   unsigned count, unsigned timeout,
-                  unsigned& read_id, TNSBitVector& bv_jobs);
+                  unsigned& read_id, TNSBitVector& jobs);
     /// Confirm reading of these jobs
-    void ConfirmJobs(unsigned read_id, TNSBitVector& bv_jobs);
+    void ConfirmJobs(unsigned read_id, TNSBitVector& jobs);
     /// Fail (negative acknowledge) reading of these jobs
-    void FailReadingJobs(unsigned read_id, TNSBitVector& bv_jobs);
+    void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
+    /// Return jobs to unread state without reservation
+    void ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs);
 
 
     /// Erase job from all structures, request delayed db deletion
