@@ -158,8 +158,14 @@ public:
     /// Faster way to create a handle for a gi.
     static NCBI_SEQ_EXPORT CSeq_id_Handle GetGiHandle(int gi);
 
+    /// Faster way to create a handle for a gi.
+    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(int gi);
+
     /// Normal way of getting a handle, works for any seq-id.
     static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(const CSeq_id& id);
+
+    /// Construct CSeq_id from string representation and return handle for it.
+    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(const string& str_id);
 
     bool operator== (const CSeq_id_Handle& handle) const
         {

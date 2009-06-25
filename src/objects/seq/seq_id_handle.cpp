@@ -154,8 +154,21 @@ CSeq_id_Handle CSeq_id_Handle::GetGiHandle(int gi)
 }
 
 
+CSeq_id_Handle CSeq_id_Handle::GetHandle(int gi)
+{
+    return CSeq_id_Mapper::GetInstance()->GetGiHandle(gi);
+}
+
+
 CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
 {
+    return CSeq_id_Mapper::GetInstance()->GetHandle(id);
+}
+
+
+CSeq_id_Handle CSeq_id_Handle::GetHandle(const string& str_id)
+{
+    CSeq_id id(str_id);
     return CSeq_id_Mapper::GetInstance()->GetHandle(id);
 }
 
