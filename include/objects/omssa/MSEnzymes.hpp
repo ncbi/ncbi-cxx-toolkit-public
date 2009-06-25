@@ -73,7 +73,8 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
     "No Enzyme",
     "Chymotrypsin, no P rule",
     "Asp-N (DE)",
-    "Glu-C (DE)"
+    "Glu-C (DE)",
+    "Lys-N (K)"
 };
 
 END_objects_SCOPE // namespace ncbi::objects::

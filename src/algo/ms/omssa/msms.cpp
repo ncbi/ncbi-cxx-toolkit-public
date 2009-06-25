@@ -492,6 +492,16 @@ CGluCDE::CGluCDE(void)
 }
 
 
+CLysN::CLysN(void)
+{
+    CleaveAt = "\x0a";
+    CleaveOffset = "\x01";
+    CheckProline = false;
+    kCleave = 1;
+    TopDown = false;
+    NonSpecific = false;
+}
+
 ///
 /// Simple minded factory to return back object for enzyme
 ///
@@ -562,6 +572,9 @@ CRef <CCleave>  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
         break;
     case eMSEnzymes_gluc_de:
         return CRef <CCleave> (new CGluCDE);
+        break;
+    case eMSEnzymes_lysn:
+        return CRef <CCleave> (new CLysN);
         break;
     default:
         return null;

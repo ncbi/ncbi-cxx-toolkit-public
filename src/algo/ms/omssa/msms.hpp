@@ -1068,6 +1068,19 @@ public:
 };
 
 
+
+/**
+ * eMSEnzymes_lysn
+ * Cuts N term of lysine
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CLysN: public CCleave {
+public:
+    CLysN(void);
+};
+
+
 ///
 /// factory to return back object for enzyme
 ///
