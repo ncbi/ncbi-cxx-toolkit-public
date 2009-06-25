@@ -4203,7 +4203,7 @@ else
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.9" ;;
         *Sun*C*5\.10* )
-          compiler="WorkShop59" # share some setup for now
+          compiler="WorkShop510"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.10" ;;
       esac ;;
@@ -4786,7 +4786,7 @@ elif test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
       ;;
-    *solaris*:WorkShop59 )
+    *solaris*:WorkShop59 | *solaris*:WorkShop51? )
       ARCH_CFLAGS="-m64"
       LIBS="-lCstd -lCrun $LIBS -lc"
       ;;
