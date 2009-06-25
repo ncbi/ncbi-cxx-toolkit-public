@@ -10,7 +10,7 @@
 
 
 ## Compiler location and attributes
-WS_BIN="/netopt/studio12u1/SUNWspro/bin"
+WS_BIN="/netopt/studio12u1/prod/bin"
 export WS_BIN
 
 ## Configure using generic script "WorkShop.sh"
