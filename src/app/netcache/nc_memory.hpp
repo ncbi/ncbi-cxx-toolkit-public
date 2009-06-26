@@ -43,6 +43,13 @@ public:
     /// limit then additional memory will be automatically consumed.
     /// NB: Database cache memory is never returned to the system now.
     static void SetMaxSize(size_t mem_size);
+    /// Get maximum memory size that database cache can use.
+    static size_t GetMaxSize(void);
+    /// Get current memory size used by database cache
+    static size_t GetCurrentSize(void);
+    /// Get cache hit ratio - which part of all cache pages requests already
+    /// existed in memory.
+    static double GetHitRatio(void);
 
 private:
     CNCDBCacheManager(void);

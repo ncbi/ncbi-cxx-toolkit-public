@@ -178,14 +178,15 @@ static SNCDBCachePage* s_LRUHead = NULL;
 /// LRU-list.
 static SNCDBCachePage* s_LRUTail = NULL;
 /// Total amount of memory used by cache pages
-static size_t s_MemUsed  = 0;
-/// Total amount of memory used by cache pages along with pages'
-/// meta-information.
-static size_t s_RealMemUsed  = 0;
+static size_t s_MemUsed = 0;
 /// Soft limit on size of memory consumed by database cache
 static size_t s_MemLimit = kNC_DefDBCacheSize;
 /// Global mutex for database cache operation
 static CFastMutex s_CacheMutex;
+/// Total number of pages requested from database cache
+static Uint8 s_PagesRequested = 0;
+/// Total number of pages requested that already existed in cache
+static Uint8 s_PagesHit       = 0;
 
 
 
@@ -263,7 +264,6 @@ s_CreatePage(CNCDBCache* pcache)
     page->next_hash = page->prev_lru = page->next_lru = NULL;
     page->size = size;
     s_MemUsed += size;
-    s_RealMemUsed += size + sizeof(SNCDBCachePage);
 
     return page;
 }
@@ -273,7 +273,6 @@ static inline void
 s_DeletePage(SNCDBCachePage* page)
 {
     s_MemUsed -= page->size;
-    s_RealMemUsed -= page->size + sizeof(SNCDBCachePage);
     delete page;
 }
 
@@ -423,9 +422,13 @@ CNCDBCache::GetPage(unsigned int key, EPageCreate create_flag)
 {
     CFastMutexGuard guard(s_CacheMutex);
 
+    ++s_PagesRequested;
     SNCDBCachePage* page = x_GetFromHash(key);
 
-    if (!page) {
+    if (page) {
+        ++s_PagesHit;
+    }
+    else {
         if (create_flag == eDoNotCreate) {
             return NULL;
         }
@@ -605,16 +608,37 @@ static sqlite3_pcache_methods s_NCDBCacheMethods = {
 
 
 void
+CNCDBCacheManager::Initialize(void)
+{
+    CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
+}
+
+void
 CNCDBCacheManager::SetMaxSize(size_t mem_size)
 {
     CFastMutexGuard guard(s_CacheMutex);
     s_MemLimit = mem_size;
 }
 
-void
-CNCDBCacheManager::Initialize(void)
+size_t
+CNCDBCacheManager::GetMaxSize(void)
 {
-    CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
+    CFastMutexGuard guard(s_CacheMutex);
+    return s_MemLimit;
+}
+
+size_t
+CNCDBCacheManager::GetCurrentSize(void)
+{
+    CFastMutexGuard guard(s_CacheMutex);
+    return s_MemUsed;
+}
+
+double
+CNCDBCacheManager::GetHitRatio(void)
+{
+    CFastMutexGuard guard(s_CacheMutex);
+    return double(s_PagesHit) / s_PagesRequested;
 }
 
 

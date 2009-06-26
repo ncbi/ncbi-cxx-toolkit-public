@@ -944,7 +944,7 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
           << "List of database parts:" << endl;
     NON_CONST_ITERATE(TNCDBPartsList, it, parts) {
         proxy << it->part_id << " - "
-              << CTime(time_t(it->create_time)) << " created, "
+              << CTime(time_t(it->create_time)).ToLocalTime() << " created, "
               << it->min_blob_id << " blob id" << endl;
     }
     proxy << endl;

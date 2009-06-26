@@ -374,15 +374,21 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
     GetParameters(&params);
 
     proxy << "Server started at " << m_StartTime << endl
-          << "Current number of threads     - "
-                                       << CThread::GetThreadsCount() << endl
-          << "Initial number of threads     - "
-                                       << params.init_threads << endl
-          << "Maximum number of threads     - "
-                                       << params.max_threads << endl
-          << "Maximum number of connections - "
-                                       << params.max_connections << endl
-          << "Command execution timeout     - " << m_CmdTimeout << endl
+          << "Current # of threads      - "
+                        << CThread::GetThreadsCount() << endl
+          << "Initial # of threads      - "
+                        << params.init_threads << endl
+          << "Maximum # of threads      - "
+                        << params.max_threads << endl
+          << "Maximum # of connections  - "
+                        << params.max_connections << endl
+          << "Command execution timeout - " << m_CmdTimeout << endl
+          << "DB cache size limit       - "
+                        << CNCDBCacheManager::GetMaxSize() << endl
+          << "DB cache usage            - "
+                        << CNCDBCacheManager::GetCurrentSize() << " bytes, "
+                        << int(CNCDBCacheManager::GetHitRatio() * 100)
+                                                            << "% hit" << endl
           << endl;
 
     m_Stat.Print(proxy);
