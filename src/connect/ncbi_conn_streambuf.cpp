@@ -346,6 +346,8 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CConn_Streambuf::showmanyc(void)
 {
+    static const STimeout kZeroTmo = {0, 0};
+
     if ( !m_Conn )
         return -1;
 
@@ -355,30 +357,52 @@ streamsize CConn_Streambuf::showmanyc(void)
 
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
-    static const STimeout kZero = {0, 0};
+    const STimeout* tmo;
     const STimeout* timeout = CONN_GetTimeout(m_Conn, eIO_Read);
     if (timeout == kDefaultTimeout) {
         // HACK * HACK * HACK
-        timeout = ((SMetaConnector*) m_Conn)->default_timeout;
+        tmo = ((SMetaConnector*) m_Conn)->default_timeout;
+    } else
+        tmo = timeout;
+
+    size_t x_read;
+    EIO_Status status;
+    if (m_BufSize > 1) {
+        if (!tmo)
+            _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &kZeroTmo)==eIO_Success);
+        status = CONN_Read(m_Conn, m_ReadBuf + 1, m_BufSize - 1,
+                           &x_read, eIO_ReadPlain);
+        if (!tmo)
+            _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout)  ==eIO_Success);
+        _ASSERT(x_read > 0  ||  status != eIO_Success);
+    } else {
+        x_read = 0;
+        status = CONN_Wait(m_Conn, eIO_Read, tmo ? tmo : &kZeroTmo);
     }
 
-    for (int n = timeout  &&  !(timeout->sec | timeout->usec);  n < 2;  n++) {
-        const STimeout* tmo = n ? timeout : &kZero;
-        switch (CONN_Wait(m_Conn, eIO_Read, tmo)) {
+    if (!x_read) {
+        switch (status) {
         case eIO_Success:
-            return  1;      // can read at least 1 byte
+            _ASSERT(m_BufSize <= 1);
+            return  1;  // can read at least 1 byte
         case eIO_Timeout:
-            if (!n)
-                continue;
+            if (!tmo  ||  !(tmo->sec | tmo->usec))
+                break;
             /*FALLTHRU*/
         case eIO_Closed:
-            return -1;      // EOF
+            return -1;  // EOF
         default:
-            return  0;      // no data available immediately
+            break;
         }
+        return      0;  // no data available immediately
     }
-    /*NOTREACHED*/
-    return 0;
+
+    _ASSERT(m_BufSize > 1);
+    if (gptr())
+        m_ReadBuf[0] = gptr()[-1];
+    setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1 + x_read);
+    x_GPos += x_read;
+    return x_read;
 }
 
 
