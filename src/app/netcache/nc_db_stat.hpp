@@ -39,12 +39,42 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Object accumulating statistics for NetCache storage
-class CNCDB_Stat
+template <class T>
+class CNCDBStatFigure
 {
 public:
-    CNCDB_Stat(void);
+    CNCDBStatFigure(void);
 
+    void  AddValue      (T value);
+
+    Uint8 GetCount  (void) const;
+    T     GetSum    (void) const;
+    T     GetMaximum(void) const;
+    T     GetAverage(void) const;
+
+private:
+    T      m_ValuesSum;
+    Uint8  m_ValuesCount;
+    T      m_ValuesMax;
+};
+
+
+/// Object accumulating statistics for NetCache storage
+class CNCDBStat
+{
+public:
+    /// Constructor. It's assumed that different CNCDBStat objects are not
+    /// constructed concurrently.
+    CNCDBStat(void);
+
+    /// Add measurement for number of database parts and difference between
+    /// highest and lowest ids of database parts.
+    void AddNumberOfDBParts  (size_t num_parts, Int8 ids_span);
+    /// Add measurement for the single database part files sizes.
+    void AddDBPartSizes      (Int8 meta_size, Int8 data_size);
+    /// Add measurement for the total database size (separately for meta files
+    /// part and for data files part).
+    void AddTotalDBSize      (Int8 meta_size, Int8 data_size);
     /// Add incoming request for blob locking
     void AddLockRequest      (void);
     /// Add granted blob lock
@@ -78,100 +108,110 @@ public:
     /// Add check for blob existence
     void AddExistenceCheck   (void);
 
-    /// Type of time metrics supported by statistics
-    enum ETimeMetric {
-        eDbRead,    ///< Time spent reading blob data from database
-        eDbWrite,   ///< Time spent writing blob data to database
-        eDbOther    ///< Time spent in all other database operations (mostly
-                    ///< select statements or access time updates)
-    };
-    /// Add value for given time metric (value in seconds)
-    void AddTimeMetric       (ETimeMetric metric, double add_time);
-
     /// Print statistics to the given proxy object
     void Print(CPrintTextProxy& proxy);
+
+public:
+    // For internal use only
+
+    /// Type of time metrics supported by statistics
+    enum ETimeMetric {
+        eDbChunkRead,   ///< Time spent reading blob data from database
+        eDbChunkWrite,  ///< Time spent writing blob data to database
+        eDbInfoRead,    ///< Time spent reading meta-info from database
+        eDbInfoWrite,   ///< Time spent writing meta-info to database
+        eDbOther        ///< Time spent in all other database operations
+                        ///< (mostly select statements)
+    };
+    /// Add value for given time metric (value in seconds)
+    void AddTimeMetric(ETimeMetric metric, double add_time);
 
 private:
     enum {
         kMinSizeInChart = 32  ///< Minimum blob size that will be counted for
                               ///< the statistics chart showing distribution
-                              ///< of blobs sizes.
+                              ///< of blobs sizes. Should be a power of 2.
     };
 
-    /// Get reference to the chart element for given size
-    template <class T>
-    T& x_GetSizeElem(vector<T>& chart, size_t size);
+    /// Get index of chart element for given size
+    int x_GetSizeIndex(size_t size);
+    /// Calculate percentage for given time out of total time spent in locks
+    int x_CalcTimePercent(double time);
 
 
     /// Main locking mutex for object
     CFastMutex     m_ObjMutex;
 
+    /// Number of database parts
+    CNCDBStatFigure<Uint8>            m_NumOfDBParts;
+    /// Difference between the highest and lowest database part ids
+    CNCDBStatFigure<Int8>             m_DBPartsIdsSpan;
+    /// Size of individual meta file in database part
+    CNCDBStatFigure<Int8>             m_MetaFileSize;
+    /// Size of individual data file in database part
+    CNCDBStatFigure<Int8>             m_DataFileSize;
+    /// Total size of all meta files in database
+    CNCDBStatFigure<Int8>             m_TotalMetaSize;
+    /// Total size of all data files in database
+    CNCDBStatFigure<Int8>             m_TotalDataSize;
+    /// Total size of database
+    CNCDBStatFigure<Int8>             m_TotalDBSize;
     /// Number of requests to lock blob
-    Uint8          m_LockRequests;
+    Uint8                             m_LockRequests;
     /// Number of blob locks acquired
-    Uint8          m_LocksAcquired;
+    Uint8                             m_LocksAcquired;
     /// Number of locks acquired for not existing blob
-    Uint8          m_NotExistLocks;
+    Uint8                             m_NotExistLocks;
     /// Number of requests to lock blob made by GC
-    Uint8          m_GCLockRequests;
+    Uint8                             m_GCLockRequests;
     /// Number of blob locks acquired by GC
-    Uint8          m_GCLocksAcquired;
+    Uint8                             m_GCLocksAcquired;
     /// Total time between blob lock request and release
-    double         m_LocksTotalTime;
+    double                            m_LocksTotalTime;
     /// Time while blob lock was waited to acquire
-    double         m_LocksWaitedTime;
+    double                            m_LocksWaitedTime;
     /// Maximum size of blob operated at any moment by storage
-    size_t         m_MaxBlobSize;
+    size_t                            m_MaxBlobSize;
+    /// Maximum size of blob chunk operated at any moment by storage
+    size_t                            m_MaxChunkSize;
     /// Number of blobs read from database
-    Uint8          m_ReadBlobs;
-    /// Number of blobs with reading aborted before blob is finished
-    Uint8          m_StoppedReads;
-    /// Distribution of number of blobs read by their size interval
-    vector<Uint8>  m_ReadBySize;
+    Uint8                             m_ReadBlobs;
     /// Total size of data read from database (sum of sizes of all chunks)
-    Uint8          m_ReadSize;
-    /// Total time spent to read blob chunks
-    double         m_ReadTime;
-    /// Maximum time spent to read one chunk
-    double         m_MaxChunkReadTime;
-    /// Number of blob chunks read from database
-    Uint8          m_ReadChunks;
-    /// Number of blob chunks read depending on chunk size
-    vector<int>    m_ReadChunksBySize;
+    Uint8                             m_ReadSize;
+    /// Number of blobs with reading aborted before blob is finished
+    Uint8                             m_StoppedReads;
+    /// Distribution of number of blobs read by their size interval
+    vector<Uint8>                     m_ReadBySize;
+    /// Time spent reading one piece of meta-information about blob
+    CNCDBStatFigure<double>           m_InfoReadTime;
+    /// Time spent reading one blob chunk
+    CNCDBStatFigure<double>           m_ChunkReadTime;
     /// Distribution of time spent reading chunks by their size interval
-    vector<double> m_ChunkRTimeBySize;
-    /// Maximum time spent reading chunks split by their size interval
-    vector<double> m_MaxChunkRTimeBySize;
+    vector< CNCDBStatFigure<double> > m_ChunkRTimeBySize;
     /// Number of blobs written to database
-    Uint8          m_WrittenBlobs;
-    /// Number of blobs with writing aborted before blob is finalized
-    Uint8          m_StoppedWrites;
-    /// Distribution of number of blobs written by there size interval
-    vector<Uint8>  m_WrittenBySize;
+    Uint8                             m_WrittenBlobs;
     /// Total size of data written to database (sum of sizes of all chunks)
-    Uint8          m_WrittenSize;
-    /// Total time spent to write blob chunks
-    double         m_WriteTime;
-    /// Maximum time spent to write one chunk
-    double         m_MaxChunkWriteTime;
-    /// Number of blob chunks written to database
-    Uint8          m_WrittenChunks;
-    /// Number of blob chunks written depending on chunk size
-    vector<int>    m_WrittenChunksBySize;
+    Uint8                             m_WrittenSize;
+    /// Number of blobs with writing aborted before blob is finalized
+    Uint8                             m_StoppedWrites;
+    /// Distribution of number of blobs written by there size interval
+    vector<Uint8>                     m_WrittenBySize;
+    /// Time spent writing one piece of meta-information about blob
+    CNCDBStatFigure<double>           m_InfoWriteTime;
+    /// Time spent writing one blob chunk
+    CNCDBStatFigure<double>           m_ChunkWriteTime;
     /// Distribution of time spent writing chunks by their size interval
-    vector<double> m_ChunkWTimeBySize;
-    /// Maximum time spent writing chunks split by their size interval
-    vector<double> m_MaxChunkWTimeBySize;
+    vector< CNCDBStatFigure<double> > m_ChunkWTimeBySize;
     /// Number of blobs deleted from database
-    Uint8          m_DeletedBlobs;
+    Uint8                             m_DeletedBlobs;
     /// Total time spent on all database operations
-    double         m_TotalDbTime;
+    double                            m_TotalDbTime;
     /// Number of blobs truncated down to lower size
-    Uint8          m_TruncatedBlobs;
+    Uint8                             m_TruncatedBlobs;
     /// Number of create requests that have met already existing blob
-    Uint8          m_CreateExists;
+    Uint8                             m_CreateExists;
     /// Number of checks for blob existence
-    Uint8          m_ExistChecks;
+    Uint8                             m_ExistChecks;
 };
 
 
@@ -184,32 +224,106 @@ class CNCStatTimer
 public:
     /// Create timer for given object gathering statistics and for given time
     /// metric.
-    CNCStatTimer(CNCDB_Stat* stat, CNCDB_Stat::ETimeMetric metric);
+    CNCStatTimer(CNCDBStat* stat, CNCDBStat::ETimeMetric metric);
     ~CNCStatTimer(void);
 
-    /// Get time elapsed since object creation
-    double GetElapsed(void);
+    /// Set size of chunk read/written
+    void SetChunkSize(size_t size);
 
 private:
     /// Object gathering statistics
-    CNCDB_Stat*             m_Stat;
+    CNCDBStat*             m_Stat;
     /// Metric to measure by this object
-    CNCDB_Stat::ETimeMetric m_Metric;
+    CNCDBStat::ETimeMetric m_Metric;
+    /// Chunk size in case if metrics is about reading/writing chunk
+    size_t                 m_ChunkSize;
     /// Timer ticking
-    CStopWatch              m_Timer;
+    CStopWatch             m_Timer;
 };
 
 
 
+template <class T>
+inline
+CNCDBStatFigure<T>::CNCDBStatFigure(void)
+    : m_ValuesSum(0),
+      m_ValuesCount(0),
+      m_ValuesMax(0)
+{}
+
+template <class T>
 inline void
-CNCDB_Stat::AddLockRequest(void)
+CNCDBStatFigure<T>::AddValue(T value)
+{
+    m_ValuesSum += value;
+    ++m_ValuesCount;
+    m_ValuesMax = max(m_ValuesMax, value);
+}
+
+template <class T>
+inline Uint8
+CNCDBStatFigure<T>::GetCount(void) const
+{
+    return m_ValuesCount;
+}
+
+template <class T>
+inline T
+CNCDBStatFigure<T>::GetSum(void) const
+{
+    return m_ValuesSum;
+}
+
+template <class T>
+inline T
+CNCDBStatFigure<T>::GetMaximum(void) const
+{
+    return m_ValuesMax;
+}
+
+template <class T>
+inline T
+CNCDBStatFigure<T>::GetAverage(void) const
+{
+    return m_ValuesCount == 0? 0: T(m_ValuesSum / m_ValuesCount);
+}
+
+
+
+inline void
+CNCDBStat::AddNumberOfDBParts(size_t num_parts, Int8 ids_span)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    m_NumOfDBParts.AddValue(Uint8(num_parts));
+    m_DBPartsIdsSpan.AddValue(ids_span);
+}
+
+inline void
+CNCDBStat::AddDBPartSizes(Int8 meta_size, Int8 data_size)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    m_MetaFileSize.AddValue(meta_size);
+    m_DataFileSize.AddValue(data_size);
+}
+
+inline void
+CNCDBStat::AddTotalDBSize(Int8 meta_size, Int8 data_size)
+{
+    CFastMutexGuard guard(m_ObjMutex);
+    m_TotalMetaSize.AddValue(meta_size);
+    m_TotalDataSize.AddValue(data_size);
+    m_TotalDBSize.AddValue(meta_size + data_size);
+}
+
+inline void
+CNCDBStat::AddLockRequest(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_LockRequests;
 }
 
 inline void
-CNCDB_Stat::AddLockAcquired(double lock_waited_time)
+CNCDBStat::AddLockAcquired(double lock_waited_time)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_LocksAcquired;
@@ -217,144 +331,131 @@ CNCDB_Stat::AddLockAcquired(double lock_waited_time)
 }
 
 inline void
-CNCDB_Stat::AddNotExistBlobLock(void)
+CNCDBStat::AddNotExistBlobLock(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_NotExistLocks;
 }
 
 inline void
-CNCDB_Stat::AddGCLockRequest(void)
+CNCDBStat::AddGCLockRequest(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_GCLockRequests;
 }
 
 inline void
-CNCDB_Stat::AddGCLockAcquired(void)
+CNCDBStat::AddGCLockAcquired(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_GCLocksAcquired;
 }
 
 inline void
-CNCDB_Stat::AddTotalLockTime(double add_time)
+CNCDBStat::AddTotalLockTime(double add_time)
 {
     CFastMutexGuard guard(m_ObjMutex);
     m_LocksTotalTime += add_time;
 }
 
-template <class T>
-inline T&
-CNCDB_Stat::x_GetSizeElem(vector<T>& chart, size_t size)
-{
-    size_t ind = 0;
-    while (size >= kMinSizeInChart) {
-        size >>= 1;
-        ++ind;
-    }
-    return chart[ind];
-}
-
 inline void
-CNCDB_Stat::AddBlobRead(size_t size)
+CNCDBStat::AddBlobRead(size_t size)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_ReadBlobs;
-    ++x_GetSizeElem(m_ReadBySize, size);
+    ++m_ReadBySize[x_GetSizeIndex(size)];
     m_MaxBlobSize = max(m_MaxBlobSize, size);
 }
 
 inline void
-CNCDB_Stat::AddChunkRead(size_t size, double add_time)
+CNCDBStat::AddChunkRead(size_t size, double add_time)
 {
     CFastMutexGuard guard(m_ObjMutex);
-    ++m_ReadChunks;
-    ++x_GetSizeElem(m_ReadChunksBySize, size);
     m_ReadSize += size;
-    x_GetSizeElem(m_ChunkRTimeBySize, size) += add_time;
-    m_MaxChunkReadTime  = max(m_MaxChunkReadTime, add_time);
-    double& max_by_size = x_GetSizeElem(m_MaxChunkRTimeBySize, size);
-    max_by_size         = max(max_by_size, add_time);
+    m_ChunkReadTime.AddValue(add_time);
+    m_ChunkRTimeBySize[x_GetSizeIndex(size)].AddValue(add_time);
+    m_MaxChunkSize = max(m_MaxChunkSize, size);
 }
 
 inline void
-CNCDB_Stat::AddStoppedRead(void)
+CNCDBStat::AddStoppedRead(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
+    ++m_ReadBlobs;
     ++m_StoppedReads;
 }
 
 inline void
-CNCDB_Stat::AddBlobWritten(size_t size)
+CNCDBStat::AddBlobWritten(size_t size)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_WrittenBlobs;
-    ++x_GetSizeElem(m_WrittenBySize, size);
+    ++m_WrittenBySize[x_GetSizeIndex(size)];
     m_MaxBlobSize = max(m_MaxBlobSize, size);
 }
 
 inline void
-CNCDB_Stat::AddChunkWritten(size_t size, double add_time)
+CNCDBStat::AddChunkWritten(size_t size, double add_time)
 {
     CFastMutexGuard guard(m_ObjMutex);
-    ++m_WrittenChunks;
-    ++x_GetSizeElem(m_WrittenChunksBySize, size);
     m_WrittenSize += size;
-    x_GetSizeElem(m_ChunkWTimeBySize, size) += add_time;
-    m_MaxChunkWriteTime = max(m_MaxChunkWriteTime, add_time);
-    double& max_by_size = x_GetSizeElem(m_MaxChunkWTimeBySize, size);
-    max_by_size         = max(max_by_size, add_time);
+    m_ChunkWriteTime.AddValue(add_time);
+    m_ChunkWTimeBySize[x_GetSizeIndex(size)].AddValue(add_time);
+    m_MaxChunkSize = max(m_MaxChunkSize, size);
 }
 
 inline void
-CNCDB_Stat::AddStoppedWrite(void)
+CNCDBStat::AddStoppedWrite(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
+    ++m_WrittenBlobs;
     ++m_StoppedWrites;
 }
 
 inline void
-CNCDB_Stat::AddBlobDelete(void)
+CNCDBStat::AddBlobDelete(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_DeletedBlobs;
 }
 
 inline void
-CNCDB_Stat::AddBlobTruncate(void)
+CNCDBStat::AddBlobTruncate(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_TruncatedBlobs;
 }
 
 inline void
-CNCDB_Stat::AddCreateHitExisting(void)
+CNCDBStat::AddCreateHitExisting(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_CreateExists;
 }
 
 inline void
-CNCDB_Stat::AddExistenceCheck(void)
+CNCDBStat::AddExistenceCheck(void)
 {
     CFastMutexGuard guard(m_ObjMutex);
     ++m_ExistChecks;
 }
 
 inline void
-CNCDB_Stat::AddTimeMetric(ETimeMetric metric, double add_time)
+CNCDBStat::AddTimeMetric(ETimeMetric metric, double add_time)
 {
     CFastMutexGuard guard(m_ObjMutex);
     switch (metric) {
-    case eDbRead:
-        m_ReadTime    += add_time;
+    case eDbInfoRead:
+        m_InfoReadTime.AddValue(add_time);
         m_TotalDbTime += add_time;
         break;
-    case eDbWrite:
-        m_WriteTime   += add_time;
+    case eDbInfoWrite:
+        m_InfoWriteTime.AddValue(add_time);
         m_TotalDbTime += add_time;
         break;
+    case eDbChunkRead:
+    case eDbChunkWrite:
+        // Here we will be if reading/writing of chunk has failed
     case eDbOther:
         m_TotalDbTime += add_time;
         break;
@@ -366,10 +467,11 @@ CNCDB_Stat::AddTimeMetric(ETimeMetric metric, double add_time)
 
 
 inline
-CNCStatTimer::CNCStatTimer(CNCDB_Stat*             stat,
-                           CNCDB_Stat::ETimeMetric metric)
+CNCStatTimer::CNCStatTimer(CNCDBStat*             stat,
+                           CNCDBStat::ETimeMetric metric)
     : m_Stat(stat),
       m_Metric(metric),
+      m_ChunkSize(0),
       m_Timer(CStopWatch::eStart)
 {
     _ASSERT(stat);
@@ -378,13 +480,24 @@ CNCStatTimer::CNCStatTimer(CNCDB_Stat*             stat,
 inline
 CNCStatTimer::~CNCStatTimer(void)
 {
-    m_Stat->AddTimeMetric(m_Metric, m_Timer.Elapsed());
+    if (m_ChunkSize != 0) {
+        if (m_Metric == CNCDBStat::eDbChunkRead)
+            m_Stat->AddChunkRead(m_ChunkSize, m_Timer.Elapsed());
+        else
+            m_Stat->AddChunkWritten(m_ChunkSize, m_Timer.Elapsed());
+    }
+    else {
+        m_Stat->AddTimeMetric(m_Metric, m_Timer.Elapsed());
+    }
 }
 
-inline double
-CNCStatTimer::GetElapsed(void)
+inline void
+CNCStatTimer::SetChunkSize(size_t size)
 {
-    return m_Timer.Elapsed();
+    _ASSERT(m_Metric == CNCDBStat::eDbChunkWrite
+            ||  m_Metric == CNCDBStat::eDbChunkRead);
+
+    m_ChunkSize = size;
 }
 
 END_NCBI_SCOPE

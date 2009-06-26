@@ -256,7 +256,7 @@ CNCBlobStorage::x_OpenIndexDB(EReinitMode* reinit_mode)
     for (;;) {
         string index_name = x_GetIndexFileName();
         try {
-            m_IndexDB = new CNCDB_IndexFile(index_name, GetStat());
+            m_IndexDB = new CNCDBIndexFile(index_name, GetStat());
             m_IndexDB->CreateDatabase();
             m_IndexDB->GetAllDBParts(&m_DBParts);
             break;
@@ -422,11 +422,21 @@ CNCBlobStorage::UnlockBlobId(TNCBlobId blob_id, TRWLockHolderRef& rw_holder)
     {{
         CFastMutexGuard guard(m_IdLockMutex);
 
-        // By second condition we avoid race when 2 threads are releasing lock
-        // simultaneously and both execute this code with unlocked rw_lock,
-        // but it should be added to m_FreeLocks only once.
-        if (!rw_lock->IsLocked()  &&  m_IdLocks.erase(blob_id)) {
-            m_FreeLocks.push_back(rw_lock);
+        if (!rw_lock->IsLocked()) {
+            // By this check we avoid race when several threads are releasing
+            // lock simultaneously and both execute this code with unlocked
+            // rw_lock, but it should be added to m_FreeLocks only once. And
+            // there's even more tough scenario when 2 threads release lock,
+            // 1st removes it from map, but before 2nd comes here 3rd thread
+            // acquires lock on the same blob_id again thus adding to map
+            // another lock which could be accidentally deleted by 2nd thread.
+            // So here we must thoroughly check that we're deleting what we do
+            // really want to delete.
+            TId2LocksMap::iterator it = m_IdLocks.find(blob_id);
+            if (it != m_IdLocks.end()  &&  it->second == rw_lock) {
+                m_IdLocks.erase(it);
+                m_FreeLocks.push_back(rw_lock);
+            }
         }
     }}
     rw_holder.Reset();
@@ -550,6 +560,7 @@ CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
       m_Stopped(false),
       m_StopTrigger(0, 100),
       m_AllDBPartsCached(false),
+      m_CurDBSize(0),
       m_LockHoldersPool(TNCBlobLockFactory(this)),
       m_BlobsPool(TNCBlobsFactory(this))
 {
@@ -721,6 +732,9 @@ CNCBlobStorage::x_FillCacheFromDBPart(TNCDBPartId part_id)
                              = x_GetBlobAccess(eRead, part_id, *id_it, false);
                 GetStat()->AddGCLockRequest();
                 if (blob_lock->IsLockAcquired()) {
+                    // There's non-zero possibility of race here as a result
+                    // of which statistics will not be completely accurate but
+                    // it's not a big deal for us.
                     GetStat()->AddGCLockAcquired();
                 }
                 // On acquiring of the lock information will be automatically
@@ -912,6 +926,29 @@ CNCBlobStorage::IsBlobExists(CTempString key,
         }
     }
     return false;
+}
+
+void
+CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
+{
+    TNCDBPartsList parts;
+    x_CopyPartsList(&parts);
+
+    proxy << "Usage statistics for storage '"
+                    << m_Name << "' at " << m_Path << ":" << endl
+          << endl
+          << "Currently in database - "
+                    << parts.size() << " parts with "
+                    << m_CurDBSize << " bytes (diff for ids "
+                    << parts.back().part_id - parts.front().part_id << ")" << endl
+          << "List of database parts:" << endl;
+    NON_CONST_ITERATE(TNCDBPartsList, it, parts) {
+        proxy << it->part_id << " - "
+              << CTime(time_t(it->create_time)) << " created, "
+              << it->min_blob_id << " blob id" << endl;
+    }
+    proxy << endl;
+    m_Stat.Print(proxy);
 }
 
 inline bool
@@ -1106,6 +1143,28 @@ CNCBlobStorage::x_GC_RotateDBParts(void)
     }
 }
 
+inline void
+CNCBlobStorage::x_GC_CollectPartsStatistics(void)
+{
+    // Nobody else changes m_DBParts, so working with it right away without
+    // any mutexes.
+    GetStat()->AddNumberOfDBParts(m_DBParts.size(),
+                        m_DBParts.back().part_id - m_DBParts.front().part_id);
+
+    Int8 total_meta = 0, total_data = 0;
+    // With ITERATE code should look more ugly to be
+    // compilable in WorkShop.
+    NON_CONST_ITERATE(TNCDBPartsList, it, m_DBParts) {
+        Int8 meta_size = CFile(it->meta_file).GetLength();
+        Int8 data_size = CFile(it->data_file).GetLength();
+        total_meta += meta_size;
+        total_data += data_size;
+        GetStat()->AddDBPartSizes(meta_size, data_size);
+    }
+    GetStat()->AddTotalDBSize(total_meta, total_data);
+    m_CurDBSize = total_meta + total_data;
+}
+
 void
 CNCBlobStorage::RunBackground(void)
 {
@@ -1137,6 +1196,7 @@ CNCBlobStorage::RunBackground(void)
         }
         for (;;) {
             x_MonitorPost("BG: Starting next GC cycle");
+            x_GC_CollectPartsStatistics();
 
             int next_dead = int(time(NULL));
             bool can_change = true;

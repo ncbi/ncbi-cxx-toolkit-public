@@ -34,7 +34,13 @@
 BEGIN_NCBI_SCOPE
 
 
-CNCDB_Stat::CNCDB_Stat(void)
+/// Initial shift of size value that should be done in
+/// CNCDBStat::x_GetSizeIndex() to respect kMinSizeInChart properly.
+/// Variable is initialized in CNCDBStat constructor.
+static int s_MinChartSizeShift = 0;
+
+
+CNCDBStat::CNCDBStat(void)
     : m_LockRequests(0),
       m_LocksAcquired(0),
       m_NotExistLocks(0),
@@ -43,59 +49,122 @@ CNCDB_Stat::CNCDB_Stat(void)
       m_LocksTotalTime(0),
       m_LocksWaitedTime(0),
       m_MaxBlobSize(0),
+      m_MaxChunkSize(0),
       m_ReadBlobs(0),
+      m_ReadSize(0),
       m_StoppedReads(0),
       m_ReadBySize(40, 0),
-      m_ReadSize(0),
-      m_ReadTime(0),
-      m_MaxChunkReadTime(0),
-      m_ReadChunks(0),
-      m_ReadChunksBySize(17, 0),
-      m_ChunkRTimeBySize(17, 0),
-      m_MaxChunkRTimeBySize(17, 0),
+      m_ChunkRTimeBySize(40),
       m_WrittenBlobs(0),
+      m_WrittenSize(0),
       m_StoppedWrites(0),
       m_WrittenBySize(40, 0),
-      m_WrittenSize(0),
-      m_WriteTime(0),
-      m_MaxChunkWriteTime(0),
-      m_WrittenChunks(0),
-      m_WrittenChunksBySize(17, 0),
-      m_ChunkWTimeBySize(17, 0),
-      m_MaxChunkWTimeBySize(17, 0),
+      m_ChunkWTimeBySize(40),
       m_DeletedBlobs(0),
       m_TotalDbTime(0),
       m_TruncatedBlobs(0),
       m_CreateExists(0),
       m_ExistChecks(0)
-{}
+{
+    // No concurrent construction -> no race
+    if (s_MinChartSizeShift == 0) {
+        s_MinChartSizeShift = x_GetSizeIndex(kMinSizeInChart) - 1;
+    }
+}
+
+int
+CNCDBStat::x_GetSizeIndex(size_t size)
+{
+    if (size == 0)
+        return 0;
+    --size;
+    size >>= s_MinChartSizeShift;
+    if (size == 0)
+        return 0;
+
+    int index = 1;
+    if (size > 0xFFFFFFFF) {
+        size >>= 32;
+        index += 32;
+    }
+    if (size > 0xFFFF) {
+        size >>= 16;
+        index += 16;
+    }
+    if (size > 0xFF) {
+        size >>= 8;
+        index += 8;
+    }
+    if (size > 0xF) {
+        size >>= 4;
+        index += 4;
+    }
+    if (size > 0x3) {
+        size >>= 2;
+        index += 2;
+    }
+    if (size > 0x1)
+        ++index;
+    return index;
+}
+
+inline int
+CNCDBStat::x_CalcTimePercent(double time)
+{
+    return m_LocksTotalTime == 0? 0: int(time / m_LocksTotalTime * 100);
+}
 
 void
-CNCDB_Stat::Print(CPrintTextProxy& proxy)
+CNCDBStat::Print(CPrintTextProxy& proxy)
 {
     CFastMutexGuard guard(m_ObjMutex);
 
-    proxy << "Locks requested        - " << m_LockRequests << endl
-          << "Locks acquired         - " << m_LocksAcquired << endl
+    proxy << "Database size        - "
+                        << m_TotalDBSize.GetAverage() << " avg ("
+                        << m_TotalDataSize.GetAverage() << " data, "
+                        << m_TotalMetaSize.GetAverage() << " meta), "
+                        << m_TotalDBSize.GetMaximum() << " max ("
+                        << m_TotalDataSize.GetMaximum() << " data, "
+                        << m_TotalMetaSize.GetMaximum() << " meta)" << endl
+          << "DB files size        - "
+                        << m_DataFileSize.GetAverage() << " avg data, "
+                        << m_MetaFileSize.GetAverage() << " avg meta, "
+                        << m_DataFileSize.GetMaximum() << " max data, "
+                        << m_MetaFileSize.GetMaximum() << " max meta" << endl
+          << "Number of db parts   - "
+                        << m_NumOfDBParts.GetAverage() << " avg, "
+                        << m_NumOfDBParts.GetMaximum() << " max" << endl
+          << "Parts ids difference - "
+                        << m_DBPartsIdsSpan.GetAverage() << " avg, "
+                        << m_DBPartsIdsSpan.GetMaximum() << " max" << endl
+          << endl
+          << "Locks                  - "
+                               << m_LockRequests << " requested ("
+                               << m_GCLockRequests << " GC), "
+                               << m_LocksAcquired << " acquired ("
+                               << m_GCLocksAcquired << " GC)" << endl
           << "Locks on non-existing  - " << m_NotExistLocks << endl
-          << "GC locks requested     - " << m_GCLockRequests << endl
-          << "GC locks acquired      - " << m_GCLocksAcquired << endl
           << "Time waiting for locks - "
-          << int(g_SafeDiv(m_LocksWaitedTime, m_LocksTotalTime) * 100) << "%" << endl
+                << x_CalcTimePercent(m_LocksWaitedTime) << "%" << endl
           << "Time of database I/O   - "
-          << int(g_SafeDiv(m_TotalDbTime, m_LocksTotalTime) * 100) << "%" << endl
+                << x_CalcTimePercent(m_TotalDbTime) << "%" << endl
           << endl
           << "Blobs deleted by user - " << m_DeletedBlobs << endl
           << "Blobs truncated       - " << m_TruncatedBlobs << endl
           << "Creates over existing - " << m_CreateExists << endl
           << "Checks for existence  - " << m_ExistChecks << endl
           << endl
-          << "Blobs read              - " << m_ReadBlobs << endl
-          << "Blob chunks read        - " << m_ReadChunks << endl
-          << "Unfinished blob reads   - " << m_StoppedReads << endl
-          << "Total size of data read - " << m_ReadSize << endl
-          << "Time reading blob data  - "
-          << int(g_SafeDiv(m_ReadTime, m_LocksTotalTime) * 100) << "%" << endl
+          << "Read data    - " << m_ReadBlobs << " blobs ("
+                            << m_StoppedReads << " unfinished) of "
+                            << m_ChunkReadTime.GetCount() << " chunks of "
+                            << m_ReadSize << " bytes" << endl
+          << "Time reading - "
+                << x_CalcTimePercent(m_InfoReadTime.GetSum()) << "% for meta ("
+                << m_InfoReadTime.GetAverage() << " avg, "
+                << m_InfoReadTime.GetMaximum() << " max), "
+                << x_CalcTimePercent(m_ChunkReadTime.GetSum()) << "% for data ("
+                << m_ChunkReadTime.GetAverage() << " avg, "
+                << m_ChunkReadTime.GetMaximum() << " max)" << endl
           << "Blobs read by size:" << endl;
     size_t sz = kMinSizeInChart;
     for (size_t i = 0; i < m_ReadBySize.size(); ++i, sz <<= 1) {
@@ -103,24 +172,28 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
         if (sz >= m_MaxBlobSize)
             break;
     }
-    proxy << "Maximum time reading chunk - " << m_MaxChunkReadTime << endl
-          << "Average time reading chunk - "
-                               << g_SafeDiv(m_ReadTime, m_ReadChunks) << endl
-          << "Chunks read by size:" << endl;
+    proxy << "Chunks read by size:" << endl;
     sz = kMinSizeInChart;
     for (size_t i = 0; i < m_ChunkRTimeBySize.size(); ++i, sz <<= 1) {
-        proxy << sz << " - " << m_ReadChunksBySize[i] << " (cnt), "
-              << int(g_SafeDiv(m_ChunkRTimeBySize[i], m_LocksTotalTime) * 100) << "% (total time), "
-              << m_MaxChunkRTimeBySize[i] << " (max time), "
-              << g_SafeDiv(m_ChunkRTimeBySize[i], m_ReadChunksBySize[i]) << " (avg time)" << endl;
+        proxy << sz << " - " << m_ChunkRTimeBySize[i].GetCount() << " cnt, "
+              << x_CalcTimePercent(m_ChunkRTimeBySize[i].GetSum()) << "% total time, "
+              << m_ChunkRTimeBySize[i].GetAverage() << " avg time, "
+              << m_ChunkRTimeBySize[i].GetMaximum() << " max time" << endl;
+        if (sz >= m_MaxChunkSize)
+            break;
     }
     proxy << endl
-          << "Blobs written              - " << m_WrittenBlobs << endl
-          << "Blob chunks written        - " << m_WrittenChunks << endl
-          << "Unfinished blob writes     - " << m_StoppedWrites << endl
-          << "Total size of data written - " << m_WrittenSize << endl
-          << "Time writing blob data     - "
-          << int(g_SafeDiv(m_WriteTime, m_LocksTotalTime) * 100) << "%" << endl
+          << "Written data - " << m_WrittenBlobs << " blobs ("
+                            << m_StoppedWrites << " unfinished) of "
+                            << m_ChunkWriteTime.GetCount() << " chunks of "
+                            << m_WrittenSize << " bytes" << endl
+          << "Time writing - "
+                << x_CalcTimePercent(m_InfoWriteTime.GetSum()) << "% for meta ("
+                << m_InfoWriteTime.GetAverage() << " avg, "
+                << m_InfoWriteTime.GetMaximum() << " max), "
+                << x_CalcTimePercent(m_ChunkWriteTime.GetSum()) << "% for data ("
+                << m_ChunkWriteTime.GetAverage() << " avg, "
+                << m_ChunkWriteTime.GetMaximum() << " max)" << endl
           << "Blobs written by size:" << endl;
     sz = kMinSizeInChart;
     for (size_t i = 0; i < m_WrittenBySize.size(); ++i, sz <<= 1) {
@@ -128,16 +201,15 @@ CNCDB_Stat::Print(CPrintTextProxy& proxy)
         if (sz >= m_MaxBlobSize)
             break;
     }
-    proxy << "Maximum time writing chunk - " << m_MaxChunkWriteTime << endl
-          << "Average time writing chunk - "
-                           << g_SafeDiv(m_WriteTime, m_WrittenChunks) << endl
-          << "Chunks written by size:" << endl;
+    proxy << "Chunks written by size:" << endl;
     sz = kMinSizeInChart;
     for (size_t i = 0; i < m_ChunkWTimeBySize.size(); ++i, sz <<= 1) {
-        proxy << sz << " - " << m_WrittenChunksBySize[i] << " (cnt), "
-              << int(g_SafeDiv(m_ChunkWTimeBySize[i], m_LocksTotalTime) * 100) << "% (total time), "
-              << m_MaxChunkWTimeBySize[i] << " (max time), "
-              << g_SafeDiv(m_ChunkWTimeBySize[i], m_WrittenChunksBySize[i]) << " (avg time)" << endl;
+        proxy << sz << " - " << m_ChunkWTimeBySize[i].GetCount() << " cnt, "
+              << x_CalcTimePercent(m_ChunkWTimeBySize[i].GetSum()) << "% total time, "
+              << m_ChunkWTimeBySize[i].GetAverage() << " avg time, "
+              << m_ChunkWTimeBySize[i].GetMaximum() << " max time" << endl;
+        if (sz >= m_MaxChunkSize)
+            break;
     }
 }
 

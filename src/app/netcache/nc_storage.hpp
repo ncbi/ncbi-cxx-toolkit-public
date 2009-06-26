@@ -71,17 +71,17 @@ class CNCBlobStorage;
 /// Scoped pointer to database file object. File object is acquired from
 /// storage's pool in constructors and is returned to the pool in destructor.
 template <class TFile>
-class CNCDB_FileLock
+class CNCDBFileLock
 {
 public:
     /// Create scoped pointer to the file from database part with given id
     /// for given storage.
-    CNCDB_FileLock(CNCBlobStorage* storage, TNCDBPartId          part_id);
+    CNCDBFileLock(CNCBlobStorage* storage, TNCDBPartId          part_id);
     /// Create scoped pointer to the file from given database part
     /// for given storage (convenient analogue to avoid many dereferences
     /// to obtain part_id).
-    CNCDB_FileLock(CNCBlobStorage* storage, const SNCDBPartInfo& part_info);
-    ~CNCDB_FileLock(void);
+    CNCDBFileLock(CNCBlobStorage* storage, const SNCDBPartInfo& part_info);
+    ~CNCDBFileLock(void);
 
     /// Smart pointer conversions
     operator TFile*   (void) const;
@@ -159,7 +159,7 @@ public:
     // For internal use only
 
     /// Get object gathering database statistics
-    CNCDB_Stat* GetStat(void);
+    CNCDBStat* GetStat(void);
     /// Get blob object from the pool
     CNCBlob* GetBlob(void);
     /// Return blob object to the pool
@@ -300,8 +300,8 @@ private:
     typedef map<TNCBlobId, CYieldingRWLock*>          TId2LocksMap;
     typedef deque<CYieldingRWLock*>                   TLocksList;
 
-    typedef CNCDB_FileLock<CNCDB_MetaFile>            TMetaFileLock;
-    typedef CNCDB_FileLock<CNCDB_DataFile>            TDataFileLock;
+    typedef CNCDBFileLock<CNCDBMetaFile>              TMetaFileLock;
+    typedef CNCDBFileLock<CNCDBDataFile>              TDataFileLock;
 
     typedef AutoPtr<CNCDBFilesPool>                   TFilesPoolPtr;
     typedef map<TNCDBPartId, TFilesPoolPtr>           TFilesMap;
@@ -512,6 +512,8 @@ private:
     /// any information (even about "non-exiting" blobs) otherwise its
     /// creation time is just changing giving a second life to the part.
     void x_GC_RotateDBParts(void);
+    /// Collect statistics about number of parts, database files sizes etc.
+    void x_GC_CollectPartsStatistics(void);
 
 
     /// Directory for all database files of the storage
@@ -545,7 +547,7 @@ private:
     /// Object monitoring activity on the storage
     CServer_Monitor*   m_Monitor;
     /// Object gathering statistics for the storage
-    CNCDB_Stat         m_Stat;
+    CNCDBStat          m_Stat;
     /// Operation flags read from configuration
     TOperationFlags    m_Flags;
     /// Flag if storage is stopped and in process of destroying
@@ -566,7 +568,7 @@ private:
     /// to search by blob id.
     TIdKeyMap                m_IdsCache;
     /// Index database file
-    AutoPtr<CNCDB_IndexFile> m_IndexDB;
+    AutoPtr<CNCDBIndexFile>  m_IndexDB;
     /// Read-write lock to work with m_DBParts
     CFastRWLock              m_DBPartsLock;
     /// List of all database parts in the storage
@@ -594,28 +596,30 @@ private:
     /// Map containing database files pools sorted to be searchable by
     /// database part id.
     TFilesMap                m_DBFiles;
+    /// Current size of storage database. Kept here for printing statistics.
+    Int8                     m_CurDBSize;
     /// Pool of CNCBlobLockHolder objects
     TNCBlobLockObjPool       m_LockHoldersPool;
     /// Pool of CNCBlob objects
     TNCBlobsPool             m_BlobsPool;
     /// Mutex to work with m_LastBlob
-    CFastMutex         m_LastBlobMutex;
+    CFastMutex               m_LastBlobMutex;
     /// Coordinates of the latest blob created by the storage
-    SNCBlobCoords      m_LastBlob;
+    SNCBlobCoords            m_LastBlob;
     /// Mutex for locking/unlocking blob ids
-    CFastMutex         m_IdLockMutex;
+    CFastMutex               m_IdLockMutex;
     /// Map for CYieldingRWLock objects sorted to be searchable by blob id
-    TId2LocksMap       m_IdLocks;
+    TId2LocksMap             m_IdLocks;
     /// CYieldingRWLock objects that are not used by anybody at the moment
-    TLocksList         m_FreeLocks;
+    TLocksList               m_FreeLocks;
 };
 
 
 
 template <class TFile>
 inline
-CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage*      storage,
-                                      const SNCDBPartInfo& part_info)
+CNCDBFileLock<TFile>::CNCDBFileLock(CNCBlobStorage*      storage,
+                                    const SNCDBPartInfo& part_info)
     : m_Storage(storage),
       m_DBPartId(part_info.part_id)
 {
@@ -624,8 +628,8 @@ CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage*      storage,
 
 template <class TFile>
 inline
-CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage* storage,
-                                      TNCDBPartId     part_id)
+CNCDBFileLock<TFile>::CNCDBFileLock(CNCBlobStorage* storage,
+                                    TNCDBPartId     part_id)
     : m_Storage(storage),
       m_DBPartId(part_id)
 {
@@ -634,28 +638,28 @@ CNCDB_FileLock<TFile>::CNCDB_FileLock(CNCBlobStorage* storage,
 
 template <class TFile>
 inline
-CNCDB_FileLock<TFile>::~CNCDB_FileLock(void)
+CNCDBFileLock<TFile>::~CNCDBFileLock(void)
 {
     m_Storage->ReturnFile(m_DBPartId, m_File);
 }
 
 template <class TFile>
 inline
-CNCDB_FileLock<TFile>::operator TFile* (void) const
+CNCDBFileLock<TFile>::operator TFile* (void) const
 {
     return m_File;
 }
 
 template <class TFile>
 inline TFile&
-CNCDB_FileLock<TFile>::operator* (void) const
+CNCDBFileLock<TFile>::operator* (void) const
 {
     return *m_File;
 }
 
 template <class TFile>
 inline TFile*
-CNCDB_FileLock<TFile>::operator-> (void) const
+CNCDBFileLock<TFile>::operator-> (void) const
 {
     return m_File;
 }
@@ -675,7 +679,7 @@ CNCBlobStorage::x_IsMonitored(void) const
            ||  m_Monitor  &&  m_Monitor->IsMonitorActive();
 }
 
-inline CNCDB_Stat*
+inline CNCDBStat*
 CNCBlobStorage::GetStat(void)
 {
     return &m_Stat;
@@ -694,22 +698,13 @@ CNCBlobStorage::ReturnBlob(CNCBlob* blob)
 }
 
 inline void
-CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
-{
-    proxy << "Usage statistics for storage '"
-                                 << m_Name << "' at " << m_Path << ":" << endl
-          << endl;
-    m_Stat.Print(proxy);
-}
-
-inline void
 CNCBlobStorage::GetNextBlobCoords(SNCBlobCoords* coords)
 {
     CFastMutexGuard guard(m_LastBlobMutex);
 
     if (++m_LastBlob.blob_id <= 0)
         m_LastBlob.blob_id = 1;
-    *coords = m_LastBlob;
+    coords->AssignCoords(m_LastBlob);
 }
 
 inline bool
@@ -741,13 +736,7 @@ CNCBlobStorage::GetMaxBlobSize(void) const
 {
     return m_MaxBlobSize;
 }
-/*
-inline size_t
-CNCBlobStorage::GetDBShrinkStep(void) const
-{
-    return m_DBShrinkStep;
-}
-*/
+
 inline void
 CNCBlobStorage::x_CheckReadOnly(ENCBlobAccess access) const
 {

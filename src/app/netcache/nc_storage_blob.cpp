@@ -54,6 +54,12 @@ CNCBlob::CNCBlob(CNCBlobStorage* storage)
 inline void
 CNCBlob::x_FlushCurChunk(void)
 {
+    if (m_Buffer.size() == 0) {
+        // Never save blob chunks of size 0 which can happen if blob has size
+        // 0 or blob has size exactly divisible by chunk size.
+        return;
+    }
+
     if (m_NextRowIdIt == m_AllRowIds.end()) {
         TNCChunkId chunk_id
                         = m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);

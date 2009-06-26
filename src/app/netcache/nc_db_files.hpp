@@ -37,10 +37,10 @@
 BEGIN_NCBI_SCOPE
 
 
-class CNCDB_Stat;
+class CNCDBStat;
 
 
-/// Statement types used in CNCDB_File
+/// Statement types used in CNCDBFile
 enum ENCStmtType
 {
     eStmt_CreateDBPart,      ///< Create new database part
@@ -71,8 +71,8 @@ enum ENCStmtType
 /// Used for centralization of all only-database-related code. Actual using
 /// of all methods can be only via derivative classes.
 ///
-/// @sa CNCDB_IndexFile, CNCDB_MetaFile, CNCDB_DataFile
-class CNCDB_File : public CSQLITE_Connection
+/// @sa CNCDBIndexFile, CNCDBMetaFile, CNCDBDataFile
+class CNCDBFile : public CSQLITE_Connection
 {
 public:
     /// Delete the database file along with its journal file.
@@ -90,13 +90,13 @@ protected:
     ///   fSyncOff, fTempToMemory, fWritesSync)
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDB_File(CTempString     file_name,
-               TOperationFlags flags,
-               CNCDB_Stat*     stat);
-    ~CNCDB_File(void);
+    CNCDBFile(CTempString     file_name,
+              TOperationFlags flags,
+              CNCDBStat*      stat);
+    ~CNCDBFile(void);
 
     /// Get object gathering database statistics
-    CNCDB_Stat* GetStat(void) const;
+    CNCDBStat* GetStat(void) const;
 
     /// Create entire database structure for Index file
     void CreateIndexDatabase(void);
@@ -224,8 +224,8 @@ protected:
     bool ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer);
 
 private:
-    CNCDB_File(const CNCDB_File&);
-    CNCDB_File& operator= (const CNCDB_File&);
+    CNCDBFile(const CNCDBFile&);
+    CNCDBFile& operator= (const CNCDBFile&);
 
     /// Create or get if already was created statement of given type.
     /// All created and prepared statements will be cached and re-used over
@@ -239,13 +239,13 @@ private:
     /// Map associating statement types to prepared statements
     TStmtMap     m_Stmts;
     /// Object for gathering database statistics
-    CNCDB_Stat*  m_Stat;
+    CNCDBStat*  m_Stat;
 };
 
 
 /// Connection to index database in NetCache storage. Database contains
 /// information about storage parts containing actual blobs data.
-class CNCDB_IndexFile : public CNCDB_File
+class CNCDBIndexFile : public CNCDBFile
 {
 public:
     /// Create connection to index database file
@@ -254,7 +254,7 @@ public:
     ///   Name of the database file
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDB_IndexFile(const string& file_name, CNCDB_Stat* stat);
+    CNCDBIndexFile(const string& file_name, CNCDBStat* stat);
 
     /// Create entire database
     void CreateDatabase(void);
@@ -277,7 +277,7 @@ public:
 
 /// Connection to the database file in NetCache storage containing all
 /// meta-information about blobs and their chunks.
-class CNCDB_MetaFile : public CNCDB_File
+class CNCDBMetaFile : public CNCDBFile
 {
 public:
     /// Create connection to database file with blobs' meta-information
@@ -286,7 +286,7 @@ public:
     ///   Name of the database file
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDB_MetaFile(const string& file_name, CNCDB_Stat* stat);
+    CNCDBMetaFile(const string& file_name, CNCDBStat* stat);
 
     /// Create entire database
     void CreateDatabase(void);
@@ -363,7 +363,7 @@ public:
 
 /// Connection to the database file in NetCache storage containing all
 /// actual blobs data.
-class CNCDB_DataFile : public CNCDB_File
+class CNCDBDataFile : public CNCDBFile
 {
 public:
     /// Create connection to database file with blobs' data
@@ -372,7 +372,7 @@ public:
     ///   Name of the database file
     /// @param stat
     ///   Object for gathering database statistics
-    CNCDB_DataFile(const string& file_name, CNCDB_Stat* stat);
+    CNCDBDataFile(const string& file_name, CNCDBStat* stat);
 
     /// Create entire database
     void CreateDatabase(void);
@@ -407,16 +407,16 @@ public:
 /// @param TFile
 ///   Type of file connection to create by this factory.
 template <class TFile>
-class CNCFileObjFactory : public CObjFactory_New<TFile>
+class CNCDBFileObjFactory : public CObjFactory_New<TFile>
 {
 public:
     /// Empty constructor for convenience - factory created in such way can
     /// only delete objects and cannot create them.
-    CNCFileObjFactory(void);
+    CNCDBFileObjFactory(void);
     /// Full-featured constructor - factory created in such way can both
     /// create and delete objects. Both parameters are passed unchanged to
     /// file connection constructor.
-    CNCFileObjFactory(const string& file_name, CNCDB_Stat* stat);
+    CNCDBFileObjFactory(const string& file_name, CNCDBStat* stat);
 
     /// Create new object.
     /// Part of ObjFactory interface for CObjPool.
@@ -429,20 +429,20 @@ public:
 
 private:
     /// Name of the database file all objects will connect to
-    string      m_FileName;
+    string     m_FileName;
     /// Object for gathering database statistics
-    CNCDB_Stat* m_Stat;
+    CNCDBStat* m_Stat;
 };
 
 /// Factories for database files with meta-information and with actual data
-typedef CNCFileObjFactory<CNCDB_MetaFile>             TNCMetaFileFactory;
-typedef CNCFileObjFactory<CNCDB_DataFile>             TNCDataFileFactory;
+typedef CNCDBFileObjFactory<CNCDBMetaFile>           TNCMetaFileFactory;
+typedef CNCDBFileObjFactory<CNCDBDataFile>           TNCDataFileFactory;
 /// Smart pointers to database file connections
-typedef AutoPtr<CNCDB_MetaFile, TNCMetaFileFactory>   TNCMetaFilePtr;
-typedef AutoPtr<CNCDB_DataFile, TNCDataFileFactory>   TNCDataFilePtr;
+typedef AutoPtr<CNCDBMetaFile, TNCMetaFileFactory>   TNCMetaFilePtr;
+typedef AutoPtr<CNCDBDataFile, TNCDataFileFactory>   TNCDataFilePtr;
 /// Pools of database files connections
-typedef CObjPool<CNCDB_MetaFile, TNCMetaFileFactory>  TNCMetaFilePool;
-typedef CObjPool<CNCDB_DataFile, TNCDataFileFactory>  TNCDataFilePool;
+typedef CObjPool<CNCDBMetaFile, TNCMetaFileFactory>  TNCMetaFilePool;
+typedef CObjPool<CNCDBDataFile, TNCDataFileFactory>  TNCDataFilePool;
 
 
 /// Central pool of connections to database files belonging to one database
@@ -461,20 +461,20 @@ public:
     ///   Object for gathering database statistics
     CNCDBFilesPool(const string& meta_name,
                    const string& data_name,
-                   CNCDB_Stat*   stat);
+                   CNCDBStat*    stat);
 
     /// Get file of necessary type from pool.
     /// Method cannot be made as simple template because GCC 3.0.4 refuses to
     /// compile calls to such template method.
-    void GetFile   (CNCDB_MetaFile** file_ptr);
-    void GetFile   (CNCDB_DataFile** file_ptr);
+    void GetFile   (CNCDBMetaFile** file_ptr);
+    void GetFile   (CNCDBDataFile** file_ptr);
     /// Get meta file from pool
-    CNCDB_MetaFile* GetMetaFile(void);
+    CNCDBMetaFile* GetMetaFile(void);
     /// Get data file from pool
-    CNCDB_DataFile* GetDataFile(void);
+    CNCDBDataFile* GetDataFile(void);
     /// Return file to the pool
-    void ReturnFile(CNCDB_MetaFile*  file);
-    void ReturnFile(CNCDB_DataFile*  file);
+    void ReturnFile(CNCDBMetaFile*  file);
+    void ReturnFile(CNCDBDataFile*  file);
 
 private:
     CNCDBFilesPool(const CNCDBFilesPool&);
@@ -489,9 +489,9 @@ private:
 
 
 inline
-CNCDB_File::CNCDB_File(CTempString     file_name,
-                       TOperationFlags flags,
-                       CNCDB_Stat*     stat)
+CNCDBFile::CNCDBFile(CTempString     file_name,
+                     TOperationFlags flags,
+                     CNCDBStat*      stat)
     : CSQLITE_Connection(file_name,
                          flags | fExternalMT   | fSyncOff
                                | fTempToMemory | fWritesSync),
@@ -502,19 +502,19 @@ CNCDB_File::CNCDB_File(CTempString     file_name,
 }
 
 inline
-CNCDB_File::~CNCDB_File(void)
+CNCDBFile::~CNCDBFile(void)
 {
     m_Stmts.clear();
 }
 
-inline CNCDB_Stat*
-CNCDB_File::GetStat(void) const
+inline CNCDBStat*
+CNCDBFile::GetStat(void) const
 {
     return m_Stat;
 }
 
 inline void
-CNCDB_File::DeleteDatabase(void)
+CNCDBFile::DeleteDatabase(void)
 {
     m_Stmts.clear();
     CSQLITE_Connection::DeleteDatabase();
@@ -522,117 +522,117 @@ CNCDB_File::DeleteDatabase(void)
 
 
 inline
-CNCDB_IndexFile::CNCDB_IndexFile(const string& file_name, CNCDB_Stat* stat)
-    : CNCDB_File(file_name, fJournalDelete | fVacuumOn, stat)
+CNCDBIndexFile::CNCDBIndexFile(const string& file_name, CNCDBStat* stat)
+    : CNCDBFile(file_name, fJournalDelete | fVacuumOn, stat)
 {}
 
 inline void
-CNCDB_IndexFile::CreateDatabase(void)
+CNCDBIndexFile::CreateDatabase(void)
 {
     CreateIndexDatabase();
 }
 
 inline void
-CNCDB_IndexFile::CreateDBPart(SNCDBPartInfo* part_info)
+CNCDBIndexFile::CreateDBPart(SNCDBPartInfo* part_info)
 {
-    CNCDB_File::CreateDBPart(part_info);
+    CNCDBFile::CreateDBPart(part_info);
 }
 
 inline void
-CNCDB_IndexFile::SetDBPartMinBlobId(TNCDBPartId part_id, TNCBlobId blob_id)
+CNCDBIndexFile::SetDBPartMinBlobId(TNCDBPartId part_id, TNCBlobId blob_id)
 {
-    CNCDB_File::SetDBPartMinBlobId(part_id, blob_id);
+    CNCDBFile::SetDBPartMinBlobId(part_id, blob_id);
 }
 
 inline void
-CNCDB_IndexFile::UpdateDBPartCreated(SNCDBPartInfo* part_info)
+CNCDBIndexFile::UpdateDBPartCreated(SNCDBPartInfo* part_info)
 {
-    CNCDB_File::UpdateDBPartCreated(part_info);
+    CNCDBFile::UpdateDBPartCreated(part_info);
 }
 
 inline void
-CNCDB_IndexFile::DeleteDBPart(TNCDBPartId part_id)
+CNCDBIndexFile::DeleteDBPart(TNCDBPartId part_id)
 {
-    CNCDB_File::DeleteDBPart(part_id);
+    CNCDBFile::DeleteDBPart(part_id);
 }
 
 inline void
-CNCDB_IndexFile::GetAllDBParts(TNCDBPartsList* parts_list)
+CNCDBIndexFile::GetAllDBParts(TNCDBPartsList* parts_list)
 {
-    CNCDB_File::GetAllDBParts(parts_list);
+    CNCDBFile::GetAllDBParts(parts_list);
 }
 
 inline void
-CNCDB_IndexFile::DeleteAllDBParts(void)
+CNCDBIndexFile::DeleteAllDBParts(void)
 {
-    CNCDB_File::DeleteAllDBParts();
+    CNCDBFile::DeleteAllDBParts();
 }
 
 
 inline
-CNCDB_MetaFile::CNCDB_MetaFile(const string& file_name, CNCDB_Stat* stat)
-    : CNCDB_File(file_name, fJournalPersist | fVacuumManual, stat)
+CNCDBMetaFile::CNCDBMetaFile(const string& file_name, CNCDBStat* stat)
+    : CNCDBFile(file_name, fJournalPersist | fVacuumManual, stat)
 {}
 
 inline void
-CNCDB_MetaFile::CreateDatabase(void)
+CNCDBMetaFile::CreateDatabase(void)
 {
     CreateMetaDatabase();
 }
 
 inline TNCBlobId
-CNCDB_MetaFile::GetLastBlobId(void)
+CNCDBMetaFile::GetLastBlobId(void)
 {
-    return CNCDB_File::GetLastBlobId();
+    return CNCDBFile::GetLastBlobId();
 }
 
 inline bool
-CNCDB_MetaFile::ReadBlobId(SNCBlobIdentity* identity, int dead_after)
+CNCDBMetaFile::ReadBlobId(SNCBlobIdentity* identity, int dead_after)
 {
-    return CNCDB_File::ReadBlobId(identity, dead_after);
+    return CNCDBFile::ReadBlobId(identity, dead_after);
 }
 
 inline void
-CNCDB_MetaFile::FillBlobIds(const string& key,
-                            int           dead_after,
-                            TNCIdsList*   id_list)
+CNCDBMetaFile::FillBlobIds(const string& key,
+                           int           dead_after,
+                           TNCIdsList*   id_list)
 {
-    CNCDB_File::FillBlobIds(key, dead_after, id_list);
+    CNCDBFile::FillBlobIds(key, dead_after, id_list);
 }
 
 inline bool
-CNCDB_MetaFile::IsBlobExists(const string& key,
-                             const string& subkey,
-                             int           dead_after)
+CNCDBMetaFile::IsBlobExists(const string& key,
+                            const string& subkey,
+                            int           dead_after)
 {
-    return CNCDB_File::IsBlobExists(key, subkey, dead_after);
+    return CNCDBFile::IsBlobExists(key, subkey, dead_after);
 }
 
 inline void
-CNCDB_MetaFile::CreateBlobKey(const SNCBlobIdentity& identity)
+CNCDBMetaFile::CreateBlobKey(const SNCBlobIdentity& identity)
 {
-    CNCDB_File::CreateBlobKey(identity);
+    CNCDBFile::CreateBlobKey(identity);
 }
 
 inline bool
-CNCDB_MetaFile::ReadBlobKey(SNCBlobIdentity* identity, int dead_after)
+CNCDBMetaFile::ReadBlobKey(SNCBlobIdentity* identity, int dead_after)
 {
-    return CNCDB_File::ReadBlobKey(identity, dead_after);
+    return CNCDBFile::ReadBlobKey(identity, dead_after);
 }
 
 inline void
-CNCDB_MetaFile::GetBlobIdsList(int&        dead_after,
-                               TNCBlobId&  id_after,
-                               int         dead_before,
-                               int         max_count,
-                               TNCIdsList* id_list)
+CNCDBMetaFile::GetBlobIdsList(int&        dead_after,
+                              TNCBlobId&  id_after,
+                              int         dead_before,
+                              int         max_count,
+                              TNCIdsList* id_list)
 {
-    CNCDB_File::GetBlobIdsList(dead_after, id_after, dead_before,
+    CNCDBFile::GetBlobIdsList(dead_after, id_after, dead_before,
                                max_count, id_list);
 }
 
 inline bool
-CNCDB_MetaFile::HasLiveBlobs(int dead_after)
+CNCDBMetaFile::HasLiveBlobs(int dead_after)
 {
     TNCBlobId id_after = 0;
     TNCIdsList id_list;
@@ -642,7 +642,7 @@ CNCDB_MetaFile::HasLiveBlobs(int dead_after)
 }
 
 inline bool
-CNCDB_MetaFile::HasAnyBlobs(void)
+CNCDBMetaFile::HasAnyBlobs(void)
 {
     int dead_after = 0;
     TNCBlobId id_after = 0;
@@ -653,92 +653,92 @@ CNCDB_MetaFile::HasAnyBlobs(void)
 }
 
 inline void
-CNCDB_MetaFile::WriteBlobInfo(const SNCBlobInfo& blob_info)
+CNCDBMetaFile::WriteBlobInfo(const SNCBlobInfo& blob_info)
 {
-    CNCDB_File::WriteBlobInfo(blob_info);
+    CNCDBFile::WriteBlobInfo(blob_info);
 }
 
 inline void
-CNCDB_MetaFile::SetBlobDeadTime(TNCBlobId blob_id, int dead_time)
+CNCDBMetaFile::SetBlobDeadTime(TNCBlobId blob_id, int dead_time)
 {
-    CNCDB_File::SetBlobDeadTime(blob_id, dead_time);
+    CNCDBFile::SetBlobDeadTime(blob_id, dead_time);
 }
 
 inline void
-CNCDB_MetaFile::ReadBlobInfo(SNCBlobInfo* blob_info)
+CNCDBMetaFile::ReadBlobInfo(SNCBlobInfo* blob_info)
 {
-    CNCDB_File::ReadBlobInfo(blob_info);
+    CNCDBFile::ReadBlobInfo(blob_info);
 }
 
 inline void
-CNCDB_MetaFile::GetChunkIds(TNCBlobId blob_id, TNCIdsList* id_list)
+CNCDBMetaFile::GetChunkIds(TNCBlobId blob_id, TNCIdsList* id_list)
 {
-    CNCDB_File::GetChunkIds(blob_id, id_list);
+    CNCDBFile::GetChunkIds(blob_id, id_list);
 }
 
 inline void
-CNCDB_MetaFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
+CNCDBMetaFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
 {
-    CNCDB_File::CreateChunk(blob_id, chunk_id);
+    CNCDBFile::CreateChunk(blob_id, chunk_id);
 }
 
 inline void
-CNCDB_MetaFile::DeleteLastChunks(TNCBlobId  blob_id,
-                                    TNCChunkId min_chunk_id)
+CNCDBMetaFile::DeleteLastChunks(TNCBlobId  blob_id,
+                                TNCChunkId min_chunk_id)
 {
-    CNCDB_File::DeleteLastChunks(blob_id, min_chunk_id);
+    CNCDBFile::DeleteLastChunks(blob_id, min_chunk_id);
 }
 
 
 inline
-CNCDB_DataFile::CNCDB_DataFile(const string& file_name, CNCDB_Stat* stat)
-    : CNCDB_File(file_name, fJournalPersist | fVacuumManual, stat)
+CNCDBDataFile::CNCDBDataFile(const string& file_name, CNCDBStat* stat)
+    : CNCDBFile(file_name, fJournalPersist | fVacuumManual, stat)
 {}
 
 inline void
-CNCDB_DataFile::CreateDatabase(void)
+CNCDBDataFile::CreateDatabase(void)
 {
     CreateDataDatabase();
 }
 
 inline TNCChunkId
-CNCDB_DataFile::CreateChunkValue(const TNCBlobBuffer& data)
+CNCDBDataFile::CreateChunkValue(const TNCBlobBuffer& data)
 {
-    return CNCDB_File::CreateChunkValue(data);
+    return CNCDBFile::CreateChunkValue(data);
 }
 
 inline void
-CNCDB_DataFile::WriteChunkValue(TNCChunkId           chunk_id,
-                                const TNCBlobBuffer& data)
+CNCDBDataFile::WriteChunkValue(TNCChunkId           chunk_id,
+                               const TNCBlobBuffer& data)
 {
-    CNCDB_File::WriteChunkValue(chunk_id, data);
+    CNCDBFile::WriteChunkValue(chunk_id, data);
 }
 
 inline bool
-CNCDB_DataFile::ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer)
+CNCDBDataFile::ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer)
 {
-    return CNCDB_File::ReadChunkValue(chunk_id, buffer);
+    return CNCDBFile::ReadChunkValue(chunk_id, buffer);
 }
 
 
 
 template <class TFile>
 inline
-CNCFileObjFactory<TFile>::CNCFileObjFactory(void)
+CNCDBFileObjFactory<TFile>::CNCDBFileObjFactory(void)
     : m_Stat(NULL)
 {}
 
 template <class TFile>
 inline
-CNCFileObjFactory<TFile>::CNCFileObjFactory(const string& file_name,
-                                            CNCDB_Stat* stat)
+CNCDBFileObjFactory<TFile>::CNCDBFileObjFactory(const string& file_name,
+                                                CNCDBStat*    stat)
     : m_FileName(file_name),
       m_Stat(stat)
 {}
 
 template <class TFile>
 inline TFile*
-CNCFileObjFactory<TFile>::CreateObject(void)
+CNCDBFileObjFactory<TFile>::CreateObject(void)
 {
     _ASSERT(!m_FileName.empty()  &&  m_Stat);
     return new TFile(m_FileName, m_Stat);
@@ -746,7 +746,7 @@ CNCFileObjFactory<TFile>::CreateObject(void)
 
 template <class TFile>
 inline void
-CNCFileObjFactory<TFile>::Delete(TFile* file)
+CNCDBFileObjFactory<TFile>::Delete(TFile* file)
 {
     DeleteObject(file);
 }
@@ -756,43 +756,43 @@ CNCFileObjFactory<TFile>::Delete(TFile* file)
 inline
 CNCDBFilesPool::CNCDBFilesPool(const string& meta_name,
                                const string& data_name,
-                               CNCDB_Stat*   stat)
+                               CNCDBStat*    stat)
     : m_MetaPool(TNCMetaFileFactory(meta_name, stat)),
       m_DataPool(TNCDataFileFactory(data_name, stat))
 {}
 
-inline CNCDB_MetaFile*
+inline CNCDBMetaFile*
 CNCDBFilesPool::GetMetaFile(void)
 {
     return m_MetaPool.Get();
 }
 
-inline CNCDB_DataFile*
+inline CNCDBDataFile*
 CNCDBFilesPool::GetDataFile(void)
 {
     return m_DataPool.Get();
 }
 
 inline void
-CNCDBFilesPool::GetFile(CNCDB_MetaFile** file_ptr)
+CNCDBFilesPool::GetFile(CNCDBMetaFile** file_ptr)
 {
     *file_ptr = GetMetaFile();
 }
 
 inline void
-CNCDBFilesPool::GetFile(CNCDB_DataFile** file_ptr)
+CNCDBFilesPool::GetFile(CNCDBDataFile** file_ptr)
 {
     *file_ptr = GetDataFile();
 }
 
 inline void
-CNCDBFilesPool::ReturnFile(CNCDB_MetaFile* file)
+CNCDBFilesPool::ReturnFile(CNCDBMetaFile* file)
 {
     m_MetaPool.Return(file);
 }
 
 inline void
-CNCDBFilesPool::ReturnFile(CNCDB_DataFile* file)
+CNCDBFilesPool::ReturnFile(CNCDBDataFile* file)
 {
     m_DataPool.Return(file);
 }

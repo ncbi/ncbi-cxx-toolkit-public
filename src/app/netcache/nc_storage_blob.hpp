@@ -39,7 +39,6 @@ BEGIN_NCBI_SCOPE
 
 
 class CNCBlobStorage;
-class CNCDB_Stat;
 
 
 /// Object for reading or writing to NetCache blob.
