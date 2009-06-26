@@ -36,10 +36,8 @@ touch $timestamp_file
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
-# Run command; enforce a minimum effective run time to avoid races,
-# since not all shells support waiting for children that have already
-# terminated even though POSIX requires them to.
-(sleep 1 ;  exec "$@") &
+# Run command.
+"$@" &
 pid=$!
 trap 'kill $pid' 1 2 15
 

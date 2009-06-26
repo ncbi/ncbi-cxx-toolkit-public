@@ -39,16 +39,14 @@ tmp=./$2.stdin.$$
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
-# Run command; enforce a minimum effective run time to avoid races,
-# since not all shells support waiting for children that have already
-# terminated even though POSIX requires them to.
+# Run command.
 if [ "X$1" = "X-stdin" ]; then
   trap 'rm -f $tmp' 1 2 15
   cat - > $tmp
   shift
-  (sleep 1 ;  exec $NCBI_CHECK_TOOL "$@" < $tmp) &
+  $NCBI_CHECK_TOOL "$@" < $tmp &
 else
-  (sleep 1 ;  exec $NCBI_CHECK_TOOL "$@") &
+  $NCBI_CHECK_TOOL "$@" &
 fi
 pid=$!
 trap 'kill $pid; rm -f $tmp' 1 2 15
