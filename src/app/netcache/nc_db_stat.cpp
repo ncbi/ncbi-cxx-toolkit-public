@@ -137,8 +137,8 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
           << "Parts ids difference - "
                         << m_DBPartsIdsSpan.GetAverage() << " avg, "
                         << m_DBPartsIdsSpan.GetMaximum() << " max" << endl
-          << endl
-          << "Locks                  - "
+          << endl;
+    proxy << "Locks                  - "
                                << m_LockRequests << " requested ("
                                << m_GCLockRequests << " GC), "
                                << m_LocksAcquired << " acquired ("
@@ -153,8 +153,8 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
           << "Blobs truncated       - " << m_TruncatedBlobs << endl
           << "Creates over existing - " << m_CreateExists << endl
           << "Checks for existence  - " << m_ExistChecks << endl
-          << endl
-          << "Read data    - " << m_ReadBlobs << " blobs ("
+          << endl;
+    proxy << "Read data    - " << m_ReadBlobs << " blobs ("
                             << m_StoppedReads << " unfinished) of "
                             << m_ChunkReadTime.GetCount() << " chunks of "
                             << m_ReadSize << " bytes" << endl
