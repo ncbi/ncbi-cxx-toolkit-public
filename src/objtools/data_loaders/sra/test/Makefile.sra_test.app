@@ -1,16 +1,20 @@
-# $Id $
+#################################
+# $Id$
+# Author:  Frank Ludwig
+#################################
 
-# Build library "ncbi_xloader_sra"
-###############################
+# Build application "speedtest"
+#################################
 
-LIB = ncbi_xloader_sra
-SRC = sraloader
+APP = sra_test
+SRC = sra_test
 
-ASN_DEP = seqset
-
+LIB = $(SOBJMGR_LDEP)
 LIBS = -Wl,-Bstatic -lncbi-sradb -lvdb -lklib -lkascii -lsraxf -lnucstrstr \
         -lkxf -lkdb -lktrie -lkpt -lkcs -lktxt -lkcont -Wl,-Bdynamic \
         $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = objects
 
 SRA_TOP = $(HOME)/extra/internal/asm-trace
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(SRA_TOP)/itf
