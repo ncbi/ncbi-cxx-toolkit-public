@@ -378,7 +378,7 @@ BEGIN_NCBI_SCOPE
 /// function is equivalent to setting GLOBAL = true in ini file.
 /// Globally disabled tests are shown as DIS by check scripts
 /// (called via make check).
-/// Function should be called inly from NCBITEST_AUTO_INIT() or
+/// Function should be called only from NCBITEST_AUTO_INIT() or
 /// NCBITEST_INIT_TREE() functions.
 ///
 /// @sa NCBITEST_AUTO_INIT, NCBITEST_INIT_TREE
@@ -389,7 +389,7 @@ void NcbiTestSetGlobalDisabled(void);
 /// Skip execution of all tests in current configuration.
 /// Globally skipped tests are shown as SKP by check scripts
 /// (called via make check).
-/// Function should be called inly from NCBITEST_AUTO_INIT() or
+/// Function should be called only from NCBITEST_AUTO_INIT() or
 /// NCBITEST_INIT_TREE() functions.
 ///
 /// @sa NCBITEST_AUTO_INIT, NCBITEST_INIT_TREE
