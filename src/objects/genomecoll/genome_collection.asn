@@ -12,10 +12,13 @@
 NCBI-GenomeCollection DEFINITIONS ::=
 BEGIN
 
-IMPORTS Dbtag FROM NCBI-General
+IMPORTS Dbtag, Date FROM NCBI-General
         MolInfo, Seqdesc, Seq-descr, Delta-ext FROM NCBI-Sequence
         Seq-id FROM NCBI-Seqloc
         BioSource FROM NCBI-BioSource;
+
+EXPORTS GC-Assembly, GC-Genome, GC-Project, GC-GenomicPart, GC-Replicon,
+        GC-Sequence, GC-SequenceStats, GC-Scaf-stats;
 
 GC-Genome ::= SEQUENCE
 {
@@ -40,7 +43,6 @@ GC-Genome ::= SEQUENCE
     -- this preserves the expected display order
     parts SET OF GC-GenomicPart
     
-
 }
 
 GC-Project ::= SEQUENCE {
@@ -68,20 +70,25 @@ GC-Assembly ::= SEQUENCE
     -- Names of the assembly
     name VisibleString OPTIONAL,
     submitter-name VisibleString OPTIONAL,
+    display-name VisibleString OPTIONAL,
+    filesave-name VisibleString OPTIONAL,
+
+    -- Submitter release date
+    submitter-date Date OPTIONAL,
 
     -- Various attributes assigned at this level:
     -- biosrc, comments, publications...
     descr Seq-descr OPTIONAL , 
 
-    -- flag: is this assembly partial?
-    -- **NOTE: not set = not known!!
-    partial BOOLEAN OPTIONAL,
-
     -- flag: is it reference assembly?
     --  ** NOTE: not set = not known!
     reference BOOLEAN OPTIONAL,
 
-    -- level of coverage for this assembly
+    -- flag: is this assembly partial?
+    -- **NOTE: not set = not known!!
+    partial BOOLEAN OPTIONAL,
+
+     -- level of coverage for this assembly
     -- **NOTE: not set = not known!!
     coverage REAL OPTIONAL,
 
@@ -95,11 +102,23 @@ GC-Assembly ::= SEQUENCE
     -- in case we want all components, without their structure as scaffolds
     bits SET OF GC-Sequence OPTIONAL,
 
-     -- statistics
-    -- "stats" field holds stats for all chromosomes combined: ordered/unordered scaffolds
+    -- Assembly Units of this assembly: Alt-loci or other sub-assemblies
+    assembly-units SET OF GC-Assembly OPTIONAL,
+
+    -- statistics
+    -- "stats" field holds stats for all chromosomes combined:
+    --     ordered/unordered scaffolds
+
     -- "unplaced-stats" holds stats for ChrUn which is omitted from "stats"
     stats GC-SequenceStats OPTIONAL,
     unplaced-stats GC-Scaf-stats OPTIONAL
+    
+    -- Tracks of compound assembly
+    -- Compound assemblies will have a set of tracks.
+    -- Current design leaves open if one primary track is the reported as "the"
+    -- assembly or all tracks are equally reported below the assembly level.
+    -- tracks SET OF GC-Assembly OPTIONAL
+
 }
 
 GC-Replicon ::= SEQUENCE
@@ -165,43 +184,50 @@ GC-Sequence ::= SEQUENCE {
 -- Stats of complex objects
 -- Used at assembly and chromosome levels
 GC-SequenceStats ::= SEQUENCE {
-  all-scaf GC-Scaf-stats,
-  ordered-scaf GC-Scaf-stats,
-  unordered-scaf GC-Scaf-stats
+    all-scaf        GC-Scaf-stats,
+    ordered-scaf    GC-Scaf-stats,
+    unordered-scaf  GC-Scaf-stats
 }
 
 -- Scaf-stats
 -- All stats for one type of data
 -- Can be at any level. Even a single scaffold might have stats.
 GC-Scaf-stats ::= SEQUENCE {
-  replicon-count INTEGER OPTIONAL, -- How many chromosomes
-        --(needed to report #chromsomes w/ ordered/unordered scaffolds)
-  scaffold-count INTEGER OPTIONAL, -- How many scaffolds
-  component-count INTEGER OPTIONAL, -- How many components
-  component-span-count INTEGER OPTIONAL, -- How many placements of components
-  length SEQUENCE {
-    total-length INTEGER,
-    ungapped-length INTEGER,
-    min-gapped-scaf-length INTEGER, 
-    max-gapped-scaf-length INTEGER, 
-    min-ungapped-scaf-length INTEGER,
-    max-ungapped-scaf-length INTEGER
-  },
-  composition SEQUENCE {
-    active-finishing-bases INTEGER,
-    draft-bases INTEGER,
-    finished-bases INTEGER,
-    whole-genome-finishing-bases INTEGER,
-    other-sequences INTEGER,
-    pre-draft INTEGER,
-    wgs-bases INTEGER,
-    estimated-bases-in-gaps INTEGER
-  } OPTIONAL,
-  n50 INTEGER OPTIONAL,
-  gap-closure SEQUENCE {
-    spanned-gaps INTEGER,
-    unspanned-gaps INTEGER
-  } OPTIONAL
+    -- How many chromosomes
+    --(needed to report #chromsomes w/ ordered/unordered scaffolds)
+    replicon-count INTEGER OPTIONAL,
+
+    -- How many scaffolds
+    scaffold-count INTEGER OPTIONAL,
+    -- How many components
+    component-count INTEGER OPTIONAL,
+    -- How many placements of components
+    component-span-count INTEGER OPTIONAL,
+
+    length SEQUENCE {
+        total-length INTEGER,
+        ungapped-length INTEGER,
+        min-gapped-scaf-length INTEGER, 
+        max-gapped-scaf-length INTEGER, 
+        min-ungapped-scaf-length INTEGER,
+        max-ungapped-scaf-length INTEGER
+    },
+    composition SEQUENCE {
+        active-finishing-bases INTEGER,
+        draft-bases INTEGER,
+        finished-bases INTEGER,
+        whole-genome-finishing-bases INTEGER,
+        other-sequences INTEGER,
+        pre-draft INTEGER,
+        wgs-bases INTEGER,
+        bases-in-spanned-gaps INTEGER,
+        bases-in-unspanned-gaps INTEGER    
+    } OPTIONAL,
+    n50 INTEGER OPTIONAL,
+    gap-closure SEQUENCE {
+        spanned-gaps INTEGER,
+        unspanned-gaps INTEGER
+    } OPTIONAL
 }
 
 

@@ -1,2 +1,2 @@
-LIB = genome_collection
+LIB = genome_collection_int
 SRC = genome_collection__ genome_collection___

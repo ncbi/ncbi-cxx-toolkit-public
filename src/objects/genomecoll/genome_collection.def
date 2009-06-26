@@ -15,7 +15,8 @@ composition.whole-genome-finishing-bases._type = Uint8
 composition.other-sequences._type = Uint8
 composition.pre-draft._type = Uint8
 composition.wgs-bases._type = Uint8
-composition.estimated-bases-in-gaps._type = Uint8
+composition.bases-in-spanned_gaps._type = Uint8
+composition.bases-in-unspanned_gaps._type = Uint8
 n50._type = Uint8
 
 
