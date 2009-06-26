@@ -1247,7 +1247,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
            DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
         fi
         ;;
-      WorkShop5[[89]]* )
+      WorkShop5[[89]]* | WorkShop510 )
         # Limit optimization to -xO2 (-O now maps to -xO3) due to compiler bugs.
         subst='s/[[ 	]]-x*O[[1-9]]*//g'
         CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
