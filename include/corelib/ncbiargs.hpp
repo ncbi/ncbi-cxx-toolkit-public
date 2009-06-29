@@ -1067,6 +1067,13 @@ public:
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 protected:
+#ifdef NCBI_COMPILER_ICC
+// In the absence of the following constructor,
+// ICC fills the object memory with zeros,
+// erasing flags set by CObject::operator new
+    CArgAllow(void) {}
+#endif
+
     /// Protected destructor.
     ///
     /// Prohibit from the allocation on stack or in the static data segment,
