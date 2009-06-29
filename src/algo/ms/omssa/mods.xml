@@ -2633,4 +2633,55 @@
     <MSModSpec_unimod>43</MSModSpec_unimod>
     <MSModSpec_psi-ms>HexNAc</MSModSpec_psi-ms>
   </MSModSpec>
+    <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod186">186</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>palmitoleyl of S</MSModSpec_name>
+    <MSModSpec_monomass>236.214016</MSModSpec_monomass>
+    <MSModSpec_averagemass>236.3929</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>S</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>431</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Palmitoleyl</MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod187">187</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>palmitoleyl of C</MSModSpec_name>
+    <MSModSpec_monomass>236.214016</MSModSpec_monomass>
+    <MSModSpec_averagemass>236.3929</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>C</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>431</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Palmitoleyl</MSModSpec_psi-ms>
+  </MSModSpec>
+<MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod188">188</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>palmitoleyl of T</MSModSpec_name>
+    <MSModSpec_monomass>236.214016</MSModSpec_monomass>
+    <MSModSpec_averagemass>236.3929</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>T</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>431</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Palmitoleyl</MSModSpec_psi-ms>
+  </MSModSpec>
 </MSModSpecSet>
