@@ -191,7 +191,7 @@ const string CInterProcessLock::GenerateUniqueName()
 
 #if defined(NCBI_OS_UNIX)
     name = CFile::GetTmpName();
-    if (!name.empty) {
+    if (!name.empty()) {
         return name;
     }
 #elif defined(NCBI_OS_MSWIN)
