@@ -452,6 +452,13 @@ public:
     /// Send string to monitor
     void MonitorPost(const string& msg);
 
+    void PrintJobStatusMatrix(CNcbiOstream& out);
+
+    unsigned CountStatus(TJobStatus) const;
+    void StatusStatistics(TJobStatus status,
+        TNSBitVector::statistics* st) const;
+
+
     // DB statistics
     unsigned CountRecs();
     void PrintStat(CNcbiOstream& out);

@@ -161,13 +161,6 @@ public:
                      TJobStatus expected_status
                          = CNetScheduleAPI::eJobNotFound);
 
-    TJobStatus GetStatus(unsigned job_id) const;
-
-    /// count status snapshot for affinity token
-    /// returns false if affinity token not found
-    bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                     const string&                         affinity_token);
-
     /// Prolong job expiration timeout
     /// @param tm
     ///    Time worker node needs to execute the job (in seconds)
@@ -181,22 +174,6 @@ public:
     /// Remove job from the queue
     void DropJob(unsigned job_id);
 
-    // Read-Confirm stage
-    /// Request done jobs for reading with timeout
-    void ReadJobs(unsigned peer_addr,
-                  unsigned count, unsigned timeout,
-                  unsigned& read_id, TNSBitVector& jobs);
-    /// Confirm reading of these jobs
-    void ConfirmJobs(unsigned read_id, TNSBitVector& jobs);
-    /// Fail (negative acknowledge) reading of these jobs
-    void FailReadingJobs(unsigned read_id, TNSBitVector& jobs);
-    /// Return jobs to unread state without reservation
-    void ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs);
-    //
-
-    /// Get affinity preference list
-    string GetAffinityList();
-
     /// Pass socket for monitor
     void SetMonitorSocket(CSocket& socket);
     /// Are we monitoring?
@@ -208,14 +185,6 @@ public:
     void NotifyListeners(bool unconditional=false,
                          unsigned aff_id=0);
 
-    unsigned CountStatus(TJobStatus) const;
-
-    void StatusStatistics(TJobStatus status,
-                          TNSBitVector::statistics* st) const;
-
-    /// Count database records
-    unsigned CountRecs() const;
-
     unsigned GetMaxInputSize() const;
     unsigned GetMaxOutputSize() const;
 
@@ -223,10 +192,6 @@ public:
     string GetParamName(unsigned n) const;
     string GetParamValue(unsigned n) const;
 
-    void PrintStat(CNcbiOstream& out);
-    void PrintWorkerNodeStat(CNcbiOstream& out,
-                             time_t curr,
-                             EWNodeFormat fmt = eWNF_Old) const;
     void PrintSubmHosts(CNcbiOstream& out) const;
     void PrintWNodeHosts(CNcbiOstream& out) const;
     void PrintQueue(CNcbiOstream& out,
@@ -234,7 +199,6 @@ public:
                     const string& host,
                     unsigned      port);
 
-    TNSBitVector* ExecSelect(const string& query, list<string>& fields);
     typedef vector<string>  TRecord;
     typedef vector<TRecord> TRecordSet;
     void PrepareFields(SFieldsDescription& field_descr,
@@ -256,8 +220,6 @@ public:
     /// Dump all job records
     void PrintAllJobDbStat(CNcbiOstream & out);
 
-    void PrintJobStatusMatrix(CNcbiOstream & out);
-
     // Access control
     bool IsDenyAccessViolations() const;
     bool IsLogAccessViolations() const;
@@ -269,16 +231,13 @@ public:
     bool IsWorkerAllowed() const;
 
 
-    typedef SLockedQueue::TStatEvent TStatEvent;
-    double GetAverage(TStatEvent);
-
     // BerkeleyDB-specific statistics
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
 
     // TODO Must be renamed to GetLQueue()
-    CRef<SLockedQueue> x_GetLQueue(void);
+    CRef<SLockedQueue> GetQueue(void);
 
 private:
     time_t x_ComputeExpirationTime(time_t time_run,
@@ -316,7 +275,7 @@ private:
                                 unsigned               job_id,
                                 CJob&                  job);
 
-    const CRef<SLockedQueue> x_GetLQueue(void) const;
+    const CRef<SLockedQueue> GetQueue(void) const;
 
 private:
     CQueue(const CQueue&);

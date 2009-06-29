@@ -2256,6 +2256,27 @@ void SLockedQueue::MonitorPost(const string& msg)
 }
 
 
+void SLockedQueue::PrintJobStatusMatrix(CNcbiOstream& out)
+{
+    status_tracker.PrintStatusMatrix(out);
+}
+
+
+unsigned
+SLockedQueue::CountStatus(TJobStatus st) const
+{
+    return status_tracker.CountStatus(st);
+}
+
+
+void
+SLockedQueue::StatusStatistics(TJobStatus status,
+                         TNSBitVector::statistics* st) const
+{
+    status_tracker.StatusStatistics(status, st);
+}
+
+
 unsigned SLockedQueue::CountRecs()
 {
     CQueueGuard guard(this);

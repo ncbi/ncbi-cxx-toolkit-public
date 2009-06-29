@@ -1095,44 +1095,37 @@ CQueue::CQueue(CQueueDataBase&    db,
 }
 
 
-unsigned CQueue::CountRecs() const
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->CountRecs();
-}
-
-
 unsigned CQueue::GetMaxInputSize() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetMaxInputSize();
 }
 
 
 unsigned CQueue::GetMaxOutputSize() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetMaxOutputSize();
 }
 
 
 unsigned CQueue::GetNumParams() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetNumParams();
 }
 
 
 string CQueue::GetParamName(unsigned n) const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetParamName(n);
 }
 
 
 string CQueue::GetParamValue(unsigned n) const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetParamValue(n);
 }
 
@@ -1243,7 +1236,7 @@ CQueue::PrintJobDbStat(unsigned      job_id,
                        CNcbiOstream& out,
                        TJobStatus    status)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
     CJob job;
@@ -1276,31 +1269,23 @@ CQueue::PrintJobDbStat(unsigned      job_id,
 }
 
 
-// TODO: Move to SLockedQueue
-void CQueue::PrintJobStatusMatrix(CNcbiOstream& out)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->status_tracker.PrintStatusMatrix(out);
-}
-
-
 bool CQueue::IsDenyAccessViolations() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetDenyAccessViolations();
 }
 
 
 bool CQueue::IsLogAccessViolations() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     return CQueueParamAccessor(*q).GetLogAccessViolations();
 }
 
 
 bool CQueue::IsVersionControl() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     CQueueParamAccessor qp(*q);
     return qp.GetProgramVersionList().IsConfigured();
 }
@@ -1308,7 +1293,7 @@ bool CQueue::IsVersionControl() const
 
 bool CQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     CQueueParamAccessor qp(*q);
     return qp.GetProgramVersionList().IsMatchingClient(cinfo);
 }
@@ -1316,7 +1301,7 @@ bool CQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
 
 bool CQueue::IsSubmitAllowed() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     CQueueParamAccessor qp(*q);
     return (m_ClientHostAddr == 0) ||
             qp.GetSubmHosts().IsAllowed(m_ClientHostAddr);
@@ -1325,17 +1310,10 @@ bool CQueue::IsSubmitAllowed() const
 
 bool CQueue::IsWorkerAllowed() const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     CQueueParamAccessor qp(*q);
     return (m_ClientHostAddr == 0) ||
             qp.GetWnodeHosts().IsAllowed(m_ClientHostAddr);
-}
-
-
-double CQueue::GetAverage(TStatEvent n_event)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->GetAverage(n_event);
 }
 
 
@@ -1359,7 +1337,7 @@ void CQueue::PrintMemStat(CNcbiOstream& out)
 
 void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
     CJob job;
@@ -1377,19 +1355,12 @@ void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
 }
 
 
-void CQueue::PrintStat(CNcbiOstream& out)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->PrintStat(out);
-}
-
-
 void CQueue::PrintQueue(CNcbiOstream& out,
                         TJobStatus    job_status,
                         const string& host,
                         unsigned      port)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     TNSBitVector bv;
     q->JobsWithStatus(job_status, &bv);
@@ -1403,13 +1374,6 @@ void CQueue::PrintQueue(CNcbiOstream& out,
         if (res == CJob::eJF_Ok)
             x_PrintShortJobStat(job, host, port, out);
     }
-}
-
-
-TNSBitVector* CQueue::ExecSelect(const string& query, list<string>& fields)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->ExecSelect(query, fields);
 }
 
 
@@ -1450,7 +1414,7 @@ static string FormatHostName(const string& val, SQueueDescription* qdesc)
 void CQueue::PrepareFields(SFieldsDescription& field_descr,
                            const list<string>& fields)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     field_descr.Init();
 
     // Verify the fields, and convert them into field numbers
@@ -1498,7 +1462,7 @@ void CQueue::ExecProject(TRecordSet&               record_set,
                          const TNSBitVector&       ids,
                          const SFieldsDescription& field_descr)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     int record_size = field_descr.field_nums.size();
     // Retrieve fields
@@ -1587,19 +1551,9 @@ bool CQueue::x_FillRecord(vector<string>& record,
 }
 
 
-void CQueue::PrintWorkerNodeStat(CNcbiOstream& out,
-                                 time_t curr,
-                                 EWNodeFormat fmt) const
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    q->PrintWorkerNodeStat(out, curr, fmt);
-}
-
-
 void CQueue::PrintSubmHosts(CNcbiOstream& out) const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     CQueueParamAccessor qp(*q);
     qp.GetSubmHosts().PrintHosts(out);
 }
@@ -1607,7 +1561,7 @@ void CQueue::PrintSubmHosts(CNcbiOstream& out) const
 
 void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     CQueueParamAccessor qp(*q);
     qp.GetWnodeHosts().PrintHosts(out);
 }
@@ -1641,7 +1595,7 @@ static void s_LogSubmit(SLockedQueue& q,
 
 unsigned CQueue::Submit(CJob& job)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     unsigned max_input_size;
     unsigned log_job_state;
@@ -1710,7 +1664,7 @@ unsigned CQueue::Submit(CJob& job)
 
 unsigned CQueue::SubmitBatch(vector<CJob>& batch)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     unsigned max_input_size;
     unsigned log_job_state;
     {{
@@ -1821,26 +1775,9 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
 }
 
 
-unsigned
-CQueue::CountStatus(TJobStatus st) const
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->status_tracker.CountStatus(st);
-}
-
-
-void
-CQueue::StatusStatistics(TJobStatus status,
-                         TNSBitVector::statistics* st) const
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->status_tracker.StatusStatistics(status, st);
-}
-
-
 void CQueue::ForceReschedule(unsigned job_id)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     CJob job;
     CNS_Transaction trans(q);
@@ -1864,7 +1801,7 @@ void CQueue::ForceReschedule(unsigned job_id)
 
 void CQueue::Cancel(unsigned job_id)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     CQueueJSGuard js_guard(q, job_id,
                            CNetScheduleAPI::eCanceled);
@@ -1911,7 +1848,7 @@ void CQueue::Cancel(unsigned job_id)
 
 void CQueue::DropJob(unsigned job_id)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     q->Erase(job_id);
     q->TimeLineRemove(job_id);
@@ -1923,43 +1860,6 @@ void CQueue::DropJob(unsigned job_id)
         msg += NStr::IntToString(job_id);
         MonitorPost(msg);
     }
-}
-
-
-void CQueue::ReadJobs(unsigned peer_addr,
-                      unsigned count, unsigned timeout,
-                      unsigned& read_id, TNSBitVector& jobs)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->ReadJobs(peer_addr, count, timeout, read_id, jobs);
-}
-
-
-void CQueue::ConfirmJobs(unsigned read_id, TNSBitVector& jobs)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->ConfirmJobs(read_id, jobs);
-}
-
-
-void CQueue::FailReadingJobs(unsigned read_id, TNSBitVector& jobs)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->FailReadingJobs(read_id, jobs);
-}
-
-
-void CQueue::ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    q->ReturnReadingJobs(read_id, jobs);
-}
-
-
-string CQueue::GetAffinityList()
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->GetAffinityList();
 }
 
 
@@ -1993,7 +1893,7 @@ CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
                                    const string&        output,
                                    CJob&                job)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     CJob::EJobFetchResult res = job.Fetch(q, job_id);
     if (res != CJob::eJF_Ok) {
@@ -2040,7 +1940,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
     _ASSERT(!done_job_id || output);
     _ASSERT(!new_job || (rec_ctx_f && aff_list));
 
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     bool delete_done;
     unsigned max_output_size;
     unsigned run_timeout;
@@ -2217,7 +2117,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
     // no such job found, report it as an exception with affinity preference.
     if (!pending_job_id && aff_list && aff_list->size()) {
         NCBI_THROW(CNetScheduleException, eNoJobsWithAffinity,
-                   GetAffinityList());
+                   q->GetAffinityList());
     }
 }
 
@@ -2225,7 +2125,7 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
 bool CQueue::PutProgressMessage(unsigned      job_id,
                                 const string& msg)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     CJob job;
     CNS_Transaction trans(q);
@@ -2257,7 +2157,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
                                 unsigned         job_id,
                                 time_t           tm)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
     if (tm <= 0) return;
@@ -2265,7 +2165,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
     time_t run_timeout = 0;
     time_t time_start = 0;
 
-    TJobStatus st = GetStatus(job_id);
+    TJobStatus st = q->GetJobStatus(job_id);
     if (st != CNetScheduleAPI::eRunning)
         return;
 
@@ -2350,7 +2250,7 @@ void CQueue::ReturnJob(unsigned job_id)
     // RegisterWorkerNodeVisit if unsuccessful
     if (!job_id) return;
 
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     CQueueJSGuard js_guard(q, job_id,
                            CNetScheduleAPI::ePending);
@@ -2407,7 +2307,7 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
                             unsigned          job_id,
                             CJob&             job)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     unsigned queue_timeout = CQueueParamAccessor(*q).GetTimeout();
 
     const unsigned kMaxGetAttempts = 100;
@@ -2502,7 +2402,7 @@ CQueue::GetJobDescr(unsigned   job_id,
                     string*    progress_msg,
                     TJobStatus expected_status)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
 
     for (unsigned i = 0; i < 3; ++i) {
         if (i) {
@@ -2552,25 +2452,9 @@ CQueue::GetJobDescr(unsigned   job_id,
 }
 
 
-TJobStatus CQueue::GetStatus(unsigned job_id) const
-{
-    const CRef<SLockedQueue> q(x_GetLQueue());
-    return q->GetJobStatus(job_id);
-}
-
-
-bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                         const string&                         affinity_token)
-{
-    _ASSERT(status_map);
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return q->CountStatus(status_map, affinity_token);
-}
-
-
 void CQueue::Truncate(void)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     q->Clear();
     // Next call updates 'm_BecameEmpty' timestamp
     q->IsExpired(); // locks SLockedQueue lock
@@ -2579,7 +2463,7 @@ void CQueue::Truncate(void)
 
 void CQueue::SetMonitorSocket(CSocket& socket)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     q->SetMonitorSocket(socket);
 }
 
@@ -2606,7 +2490,7 @@ void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
     if (m_Db.GetUdpPort() == 0)
         return;
 
-    CRef<SLockedQueue> q(x_GetLQueue());
+    CRef<SLockedQueue> q(GetQueue());
     q->NotifyListeners(unconditional, aff_id);
 }
 
@@ -2619,7 +2503,7 @@ CQueue::x_ComputeExpirationTime(time_t time_run, time_t run_timeout) const
 }
 
 
-CRef<SLockedQueue> CQueue::x_GetLQueue(void)
+CRef<SLockedQueue> CQueue::GetQueue(void)
 {
     CRef<SLockedQueue> ref(m_LQueue.Lock());
     if (ref != NULL) {
@@ -2630,7 +2514,7 @@ CRef<SLockedQueue> CQueue::x_GetLQueue(void)
 }
 
 
-const CRef<SLockedQueue> CQueue::x_GetLQueue(void) const
+const CRef<SLockedQueue> CQueue::GetQueue(void) const
 {
     const CRef<SLockedQueue> ref(m_LQueue.Lock());
     if (ref != NULL) {
