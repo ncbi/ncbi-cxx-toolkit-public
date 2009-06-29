@@ -402,13 +402,15 @@ RunTest()
 
         esac
     else
-        if test -n "\$NCBI_AUTOMATED_BUILD"; then
-            echo "\$signature" > "\$x_test_rep"
-            echo "\$x_work_dir_tail" >> "\$x_test_rep"
-            echo "\$x_run" >> "\$x_test_rep"
-            echo "\$x_real_name" >> "\$x_test_rep"
-            NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
-            export NCBI_BOOST_REPORT_FILE
+        if \$no_report_err; then
+           if test -n "\$NCBI_AUTOMATED_BUILD"; then
+               echo "\$signature" > "\$x_test_rep"
+               echo "\$x_work_dir_tail" >> "\$x_test_rep"
+               echo "\$x_run" >> "\$x_test_rep"
+               echo "\$x_real_name" >> "\$x_test_rep"
+               NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
+               export NCBI_BOOST_REPORT_FILE
+           fi
         fi
 
         # Check existence of the test's application directory
