@@ -128,7 +128,11 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
             // implicit ##FASTA
             x_ReadFastaSequences(in);
         } else {
-            line = *++in;
+            line = *++in;            
+            if ( x_IsLineUcscMetaInformation(line) ) {
+                // UCSC browser or track line. For now, we ignore those.
+                continue;
+            }
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
                 
@@ -1277,6 +1281,17 @@ const
     return (it == attrs.end() || it->front() == att_name) ? it : attrs.end();
 }
 
+
+bool
+CGFFReader::x_IsLineUcscMetaInformation(const TStr& line)
+{
+    // line comes before any features and starts with keyword "browser" or "track"
+    if (! m_DelayedRecords.empty() ) {
+        return false;
+    }
+    return (NStr::StartsWith(line, "browser ") || NStr::StartsWith(line, "track ") );
+}
+    
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

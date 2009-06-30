@@ -214,6 +214,8 @@ protected:
                                            const string& mol);
 
     virtual void            x_PlaceSeq(CBioseq& seq);
+    
+    virtual bool            x_IsLineUcscMetaInformation(const TStr&);
 
 private:
     typedef map<string, CRef<CSeq_id>, PNocase>    TSeqNameCache;
