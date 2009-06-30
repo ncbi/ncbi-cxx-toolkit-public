@@ -32,8 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 
 #include <klib/rc.h>
 #include <align/align-access.h>
@@ -357,14 +355,7 @@ public:
 
     CBamRefSeqIterator& operator++(void);
 
-    const CBamString& GetRefSeqId(void);
-    TSeqPos GetRefSeqPos(void);
-
-    const CBamString& GetShortSeqId(void);
-    const CBamString& GetShortSequence(void);
-
-    TSeqPos GetCIGARPos(void);
-    const CBamString& GetCIGAR(void);
+    const CBamString& GetRefSeqId(void) const;
 
 private:
     typedef rc_t (*TGetString)(const AlignAccessRefSeqEnumerator *self,
@@ -374,12 +365,13 @@ private:
     void x_InvalidateBuffers(void);
 
     void x_CheckValid(void) const;
-    bool x_CheckRC(CBamString& buf, rc_t rc, size_t size, const char* msg);
+    bool x_CheckRC(CBamString& buf,
+                   rc_t rc, size_t size, const char* msg) const;
     void x_GetString(CBamString& buf,
-                     const char* msg, TGetString func);
+                     const char* msg, TGetString func) const;
 
     rc_t m_LocateRC;
-    CBamString m_RefSeqId;
+    mutable CBamString m_RefSeqId;
 };
 
 
@@ -401,14 +393,16 @@ public:
 
     CBamAlignIterator& operator++(void);
 
-    const CBamString& GetRefSeqId(void);
-    TSeqPos GetRefSeqPos(void);
+    const CBamString& GetRefSeqId(void) const;
+    TSeqPos GetRefSeqPos(void) const;
 
-    const CBamString& GetShortSeqId(void);
-    const CBamString& GetShortSequence(void);
+    const CBamString& GetShortSeqId(void) const;
+    const CBamString& GetShortSequence(void) const;
 
-    TSeqPos GetCIGARPos(void);
-    const CBamString& GetCIGAR(void);
+    TSeqPos GetCIGARPos(void) const;
+    const CBamString& GetCIGAR(void) const;
+    TSeqPos GetCIGARRefSize(void) const;
+    TSeqPos GetCIGARShortSize(void) const;
 
 private:
     typedef rc_t (*TGetString)(const AlignAccessAlignmentEnumerator *self,
@@ -421,18 +415,20 @@ private:
     void x_InvalidateBuffers(void);
 
     void x_CheckValid(void) const;
-    bool x_CheckRC(CBamString& buf, rc_t rc, size_t size, const char* msg);
+    bool x_CheckRC(CBamString& buf,
+                   rc_t rc, size_t size, const char* msg) const;
     void x_GetString(CBamString& buf,
-                     const char* msg, TGetString func);
+                     const char* msg, TGetString func) const;
     void x_GetString(CBamString& buf, uint64_t& pos,
-                     const char* msg, TGetString2 func);
+                     const char* msg, TGetString2 func) const;
+    void x_GetCIGAR(void) const;
 
     rc_t m_LocateRC;
-    CBamString m_RefSeqId;
-    CBamString m_ShortSeqId;
-    CBamString m_ShortSequence;
-    uint64_t m_CIGARPos;
-    CBamString m_CIGAR;
+    mutable CBamString m_RefSeqId;
+    mutable CBamString m_ShortSeqId;
+    mutable CBamString m_ShortSequence;
+    mutable uint64_t m_CIGARPos;
+    mutable CBamString m_CIGAR;
 };
 
 
@@ -534,12 +530,16 @@ CBamRefSeqIterator& CBamRefSeqIterator::operator++(void)
 bool CBamRefSeqIterator::x_CheckRC(CBamString& buf,
                                   rc_t rc,
                                   size_t size,
-                                  const char* msg)
+                                  const char* msg) const
 {
     if ( rc == 0 ) {
         // no error, update size and finish
-        if ( size > 0 && buf[size-1] == '\0' ) {
+        if ( size > 0 ) {
             // omit trailing zero char
+            if ( buf[size-1] ) {
+                ERR_POST("No zero at the end: " << string(buf.data(), size-1));
+            }
+            _ASSERT(buf[size-1] == '\0');
             --size;
         }
         buf.x_resize(size);
@@ -559,7 +559,7 @@ bool CBamRefSeqIterator::x_CheckRC(CBamString& buf,
 
 
 void CBamRefSeqIterator::x_GetString(CBamString& buf,
-                                    const char* msg, TGetString func)
+                                    const char* msg, TGetString func) const
 {
     x_CheckValid();
     while ( buf.empty() ) {
@@ -572,7 +572,7 @@ void CBamRefSeqIterator::x_GetString(CBamString& buf,
 }
 
 
-const CBamString& CBamRefSeqIterator::GetRefSeqId(void)
+const CBamString& CBamRefSeqIterator::GetRefSeqId(void) const
 {
     x_GetString(m_RefSeqId, "RefSeqId",
                 AlignAccessRefSeqEnumeratorGetID);
@@ -594,7 +594,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                                      TSeqPos ref_pos)
 {
     m_LocateRC = AlignAccessDBWindowedAlignments(bam_db, x_InitPtr(),
-                                                 ref_id.c_str(), ref_pos, 0);
+                                                 ref_id.c_str(), ref_pos, 100);
     x_AllocBuffers();
 }
 
@@ -657,12 +657,16 @@ CBamAlignIterator& CBamAlignIterator::operator++(void)
 bool CBamAlignIterator::x_CheckRC(CBamString& buf,
                                   rc_t rc,
                                   size_t size,
-                                  const char* msg)
+                                  const char* msg) const
 {
     if ( rc == 0 ) {
         // no error, update size and finish
-        if ( size > 0 && buf[size-1] == '\0' ) {
+        if ( size > 0 ) {
             // omit trailing zero char
+            if ( buf[size-1] ) {
+                ERR_POST("No zero at the end: " << string(buf.data(), size-1));
+            }
+            _ASSERT(buf[size-1] == '\0');
             --size;
         }
         buf.x_resize(size);
@@ -682,7 +686,7 @@ bool CBamAlignIterator::x_CheckRC(CBamString& buf,
 
 
 void CBamAlignIterator::x_GetString(CBamString& buf,
-                                    const char* msg, TGetString func)
+                                    const char* msg, TGetString func) const
 {
     x_CheckValid();
     while ( buf.empty() ) {
@@ -696,7 +700,7 @@ void CBamAlignIterator::x_GetString(CBamString& buf,
 
 
 void CBamAlignIterator::x_GetString(CBamString& buf, uint64_t& pos,
-                                    const char* msg, TGetString2 func)
+                                    const char* msg, TGetString2 func) const
 {
     x_CheckValid();
     while ( buf.empty() ) {
@@ -709,7 +713,7 @@ void CBamAlignIterator::x_GetString(CBamString& buf, uint64_t& pos,
 }
 
 
-const CBamString& CBamAlignIterator::GetRefSeqId(void)
+const CBamString& CBamAlignIterator::GetRefSeqId(void) const
 {
     x_GetString(m_RefSeqId, "RefSeqId",
                 AlignAccessAlignmentEnumeratorGetRefSeqID);
@@ -717,7 +721,7 @@ const CBamString& CBamAlignIterator::GetRefSeqId(void)
 }
 
 
-TSeqPos CBamAlignIterator::GetRefSeqPos(void)
+TSeqPos CBamAlignIterator::GetRefSeqPos(void) const
 {
     x_CheckValid();
     uint64_t pos = 0;
@@ -729,7 +733,7 @@ TSeqPos CBamAlignIterator::GetRefSeqPos(void)
 }
 
 
-const CBamString& CBamAlignIterator::GetShortSeqId(void)
+const CBamString& CBamAlignIterator::GetShortSeqId(void) const
 {
     x_GetString(m_ShortSeqId, "ShortSeqId",
                 AlignAccessAlignmentEnumeratorGetShortSeqID);
@@ -737,8 +741,7 @@ const CBamString& CBamAlignIterator::GetShortSeqId(void)
 }
 
 
-
-const CBamString& CBamAlignIterator::GetShortSequence(void)
+const CBamString& CBamAlignIterator::GetShortSequence(void) const
 {
     x_GetString(m_ShortSequence, "ShortSequence",
                 AlignAccessAlignmentEnumeratorGetShortSequence);
@@ -746,22 +749,65 @@ const CBamString& CBamAlignIterator::GetShortSequence(void)
 }
 
 
-
-TSeqPos CBamAlignIterator::GetCIGARPos(void)
+void CBamAlignIterator::x_GetCIGAR(void) const
 {
     x_GetString(m_CIGAR, m_CIGARPos, "CIGAR",
                 AlignAccessAlignmentEnumeratorGetCIGAR);
+}
+
+
+TSeqPos CBamAlignIterator::GetCIGARPos(void) const
+{
+    x_GetCIGAR();
     return m_CIGARPos;
 }
 
 
-const CBamString& CBamAlignIterator::GetCIGAR(void)
+const CBamString& CBamAlignIterator::GetCIGAR(void) const
 {
-    x_GetString(m_CIGAR, m_CIGARPos, "CIGAR",
-                AlignAccessAlignmentEnumeratorGetCIGAR);
+    x_GetCIGAR();
     return m_CIGAR;
 }
 
+
+TSeqPos CBamAlignIterator::GetCIGARRefSize(void) const
+{
+    x_GetCIGAR();
+    TSeqPos ref_size = 0;
+    CNcbiIstrstream in(m_CIGAR.data(), m_CIGAR.size());
+    char type;
+    TSeqPos len;
+    while ( in >> type >> len ) {
+        switch ( type ) {
+        case 'D':
+        case 'M': ref_size += len; break;
+        case 'I': break;
+        default:
+            ERR_POST(Fatal << "Bad CIGAR char: " << type << " in " << m_CIGAR);
+        }
+    }
+    return ref_size;
+}
+
+
+TSeqPos CBamAlignIterator::GetCIGARShortSize(void) const
+{
+    x_GetCIGAR();
+    TSeqPos ref_size = 0;
+    CNcbiIstrstream in(m_CIGAR.data(), m_CIGAR.size());
+    char type;
+    TSeqPos len;
+    while ( in >> type >> len ) {
+        switch ( type ) {
+        case 'I':
+        case 'M': ref_size += len; break;
+        case 'D': break;
+        default:
+            ERR_POST(Fatal << "Bad CIGAR char: " << type << " in " << m_CIGAR);
+        }
+    }
+    return ref_size;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -784,11 +830,21 @@ void test(CBamMgr& mgr, const char* bam_name, const char* index_name)
                      << " at " << it.GetRefSeqPos()
                      << '\n';
             NcbiCout << "Seq: " << it.GetShortSeqId()
+                     << "[" << it.GetShortSequence().size() << "]"
                      << ": " << it.GetShortSequence() 
                      << '\n';
             NcbiCout << "CIGAR: " << it.GetCIGARPos()
                      << ": " << it.GetCIGAR()
                      << '\n';
+            if ( 0 && !it.GetCIGAR()[it.GetCIGAR().size()-1] ) {
+                NcbiCout << "Bad CIGAR: "
+                         << NStr::PrintableString(it.GetCIGAR())
+                         << NcbiEndl;
+                exit(1);
+            }
+            NcbiCout << "Align: " << it.GetCIGARRefSize()
+                     << " vs " << it.GetCIGARShortSize()
+                     << NcbiEndl;
             if ( ++count == 100000 ) break;
         }
         NcbiCout << "Loaded: " << count << " alignments." << NcbiEndl;
@@ -807,8 +863,8 @@ int CFetchAnnotsApp::Run(void)
 
     CBamMgr mgr;
     test(mgr, BAM_DIR BAM_FILE1, BAM_DIR BAM_FILE1 ".bai");
-    //test(mgr, BAM_DIR BAM_FILE2, BAM_DIR BAM_FILE2 ".bai");
-    //test(mgr, BAM_DIR BAM_FILE3, BAM_DIR BAM_FILE3 ".bai");
+    test(mgr, BAM_DIR BAM_FILE2, BAM_DIR BAM_FILE2 ".bai");
+    test(mgr, BAM_DIR BAM_FILE3, BAM_DIR BAM_FILE3 ".bai");
     NcbiCout << "Exiting" << NcbiEndl;
     return 0;
 }
