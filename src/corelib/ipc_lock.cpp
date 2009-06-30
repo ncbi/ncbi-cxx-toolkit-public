@@ -36,8 +36,8 @@
 #  include <errno.h>
 #  include <sys/types.h>
 #  include <sys/stat.h>
-#  include <fcntl.h>
 #  include <unistd.h>
+#  include <fcntl.h>
 #endif
 
 
@@ -105,8 +105,23 @@ void CInterProcessLock::Lock()
         NCBI_THROW(CInterProcessLockException, eCreateError,
                    string("Error creating lockfile ") + m_Name + ": " + strerror(errno));
     }
+
     // Try to acquire the lock
-    if (lockf(fd, F_TLOCK, 0) != 0) {
+
+#  if defined(F_TLOCK)
+    int res = lockf(fd, F_TLOCK, 0);
+#  elif defined(F_SETLK)
+    struct flock lockparam;
+    lockparam.l_type   = F_WRLCK;
+    lockparam.l_whence = SEEK_SET;
+    lockparam.l_start  = 0;
+    lockparam.l_len    = 0;  /* whole file */
+    int res = fcntl(fd, F_SETLK, &lockparam);
+#else
+#   error "No supported lock method.  Please port this code."
+#endif
+
+    if (res != 0) {
         int saved = errno;
         close(fd);
         s_ProcessLock.Unlock();
@@ -164,7 +179,20 @@ void CInterProcessLock::Unlock()
     // Unlocking on Unix is not an atomic operation :(
     // so delete lock file first, and only then remove lock itself.
     unlink(m_Name.c_str());
+
+#  if defined(F_TLOCK)
     lockf(m_Handle, F_ULOCK, 0);
+#  elif defined(F_SETLK)
+    struct flock lockparam;
+    lockparam.l_type   = F_UNLCK;
+    lockparam.l_whence = SEEK_SET;
+    lockparam.l_start  = 0;
+    lockparam.l_len    = 0;  /* whole file */
+    fcntl(m_Handle, F_SETLK, &lockparam);
+#else
+#   error "No supported lock method.  Please port this code."
+#endif
+
     close(m_Handle);
     s_ProcessLock.Unlock();
 #elif defined(NCBI_OS_MSWIN)
