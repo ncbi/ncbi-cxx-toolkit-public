@@ -125,6 +125,20 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str)
 }
 
 
+bool CSubSource::NeedsNoText(const TSubtype& subtype)
+{
+	if (subtype == eSubtype_germline
+		|| subtype == eSubtype_rearranged
+		|| subtype == eSubtype_transgenic
+		|| subtype == eSubtype_environmental_sample
+		|| subtype == eSubtype_metagenomic) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+
 // =============================================================================
 //                                 Country Names
 // =============================================================================

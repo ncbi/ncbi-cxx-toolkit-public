@@ -82,21 +82,6 @@ void CCleanup_imp::BasicCleanup (
 }
 
 
-static bool s_NoNameSubtype (
-    TSUBSOURCE_SUBTYPE val
-)
-
-{
-    if (val == NCBI_SUBSOURCE(germline)    ||
-        val == NCBI_SUBSOURCE(rearranged)  ||
-        val == NCBI_SUBSOURCE(transgenic)  ||
-        val == NCBI_SUBSOURCE(environmental_sample)  ||
-        val == NCBI_SUBSOURCE(metagenomic)) {
-        return true;
-    }
-    return false;
-}
-
 static CSubSource* s_StringToSubSource (
     const string& str
 )
@@ -117,7 +102,7 @@ static CSubSource* s_StringToSubSource (
         }
         NStr::TruncateSpacesInPlace(name);
         
-        if (s_NoNameSubtype(val) ) {
+		if (CSubSource::NeedsNoText(val) ) {
             if (NStr::IsBlank(name)) {
                 name = " ";
             }
@@ -211,7 +196,7 @@ static bool s_SubsourceEqual (
     TSUBSOURCE_SUBTYPE chs2 = sbs2.GetSubtype();
 
     if (chs1 != chs2) return false;
-    if (s_NoNameSubtype (chs2)) return true;
+	if (CSubSource::NeedsNoText (chs2)) return true;
 
     if (sbs1.IsSetName() && sbs2.IsSetName()) {
         if (NStr::CompareNocase (sbs1.GetName(), sbs2.GetName()) == 0) return true;
@@ -260,7 +245,7 @@ void CCleanup_imp::x_SubtypeCleanup (
         CSubSource& sbs = **it;
         if (sbs.IsSetName()) continue;
         TSUBSOURCE_SUBTYPE chs = sbs.GetSubtype();
-        if (s_NoNameSubtype (chs)) continue;
+		if (CSubSource::NeedsNoText (chs)) continue;
         ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
         ChangeMade (CCleanupChange::eCleanSubsource);
     }
@@ -295,7 +280,7 @@ void CCleanup_imp::x_SubtypeCleanup (
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
       CSubSource& ss = **it;
       TSUBSOURCE_SUBTYPE chs = ss.GetSubtype();
-      if (s_NoNameSubtype (chs)) {
+	  if (CSubSource::NeedsNoText (chs)) {
           ss.ResetName();
           ss.SetName("");
       } else if (chs == NCBI_SUBSOURCE(plastid_name)) {

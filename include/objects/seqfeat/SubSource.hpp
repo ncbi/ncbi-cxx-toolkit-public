@@ -67,6 +67,9 @@ public:
     // convert subtype from string to enum.
     static TSubtype GetSubtypeValue(const string& str);
 
+	// identify whether subsource value should be blank
+	static bool NeedsNoText (const TSubtype& subtype);
+
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);
