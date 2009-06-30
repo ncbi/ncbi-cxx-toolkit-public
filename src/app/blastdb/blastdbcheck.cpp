@@ -183,7 +183,7 @@ void CBlastDbCheckApplication::Init(void)
         ("full",
          "If true, test every sequence (warning: may be slow).");
     arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "stride");
-    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "samples");
+    arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "random");
     arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "ends");
     arg_desc->SetDependency("full", CArgDescriptions::eExcludes, "isam");
     
@@ -937,7 +937,7 @@ int CBlastDbCheckApplication::Run(void)
         //bool fork1 = !! args["fork"];
         
         int stride = args["stride"].AsInteger();
-        int samples = args["samples"].AsInteger();
+        int random_sample = args["random"].AsInteger();
         int end_amt = args["ends"].AsInteger();
         bool isam = args["isam"].AsString() == "T";
         
@@ -946,7 +946,7 @@ int CBlastDbCheckApplication::Run(void)
                 << "Using `full' mode: every OID will be tested." << endl;
             
             stride = 1;
-            samples = 0;
+            random_sample = 0;
             end_amt = 0;
         }
         
@@ -976,11 +976,11 @@ int CBlastDbCheckApplication::Run(void)
             tests->Add(new CStrideTest(output, stride, flags));
         }
         
-        if (samples) {
+        if (random_sample) {
             output.Log(e_Summary)
-                << "Testing " << samples << " randomly sampled OIDs." << endl;
+                << "Testing " << random_sample << " randomly sampled OIDs." << endl;
             
-            tests->Add(new CSampleTest(output, samples, flags));
+            tests->Add(new CSampleTest(output, random_sample, flags));
         }
         
         if (end_amt) {
