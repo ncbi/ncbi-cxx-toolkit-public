@@ -277,6 +277,7 @@ SLockedQueue::SLockedQueue(CRequestExecutor& executor,
                            TQueueKind        queue_kind)
   :
     m_RunTimeLine(NULL),
+    m_HasNotificationPort(false),
     m_DeleteDatabase(false),
     m_Executor(executor),
     m_QueueName(queue_name),
@@ -468,6 +469,9 @@ unsigned SLockedQueue::LoadStatusMatrix()
             // Add object to the first available slot;
             // it is going to be rescheduled or dropped
             // in the background control thread
+            // We can use time line without lock here because
+            // the queue is still in single-use mode while
+            // being loaded.
             m_RunTimeLine->AddObject(m_RunTimeLine->GetHead(), job_id);
         }
         if (status == CNetScheduleAPI::eRunning)
@@ -561,6 +565,7 @@ void SLockedQueue::SetPort(unsigned short port)
     if (port) {
         m_UdpSocket.SetReuseAddress(eOn);
         m_UdpSocket.Bind(port);
+        m_HasNotificationPort = true;
     }
 }
 
@@ -771,7 +776,7 @@ void SLockedQueue::ReturnReadingJobs(unsigned read_id, TNSBitVector& jobs)
 }
 
 
-void SLockedQueue::Erase(unsigned job_id)
+void SLockedQueue::EraseJob(unsigned job_id)
 {
     status_tracker.Erase(job_id);
 
@@ -790,6 +795,15 @@ void SLockedQueue::Erase(unsigned job_id)
 
         FlushDeletedVectors();
     }}
+    TimeLineRemove(job_id);
+    if (IsMonitoring()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " SLockedQueue::EraseJob() job id=";
+        msg += NStr::IntToString(job_id);
+        MonitorPost(msg);
+    }
+
 }
 
 
@@ -971,6 +985,7 @@ void SLockedQueue::ClearAffinityIdx()
 
 void SLockedQueue::Notify(unsigned addr, unsigned short port, unsigned job_id)
 {
+    if (!m_HasNotificationPort) return;
     char msg[1024];
     sprintf(msg, "JNTF %u", job_id);
 
@@ -1606,6 +1621,7 @@ void SLockedQueue::NotifyListeners(bool unconditional, unsigned aff_id)
     // TODO: if affinity valency is full for this aff_id, notify only nodes
     // with this aff_id, otherwise notify all nodes in the hope that some
     // of them will pick up the task with this aff_id
+    if (!m_HasNotificationPort) return;
 
     int notify_timeout = CQueueParamAccessor(*this).GetNotifyTimeout();
 
@@ -1931,9 +1947,8 @@ SLockedQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
 
         exp_time = run_timeout ? time_start + run_timeout : 0;
         if (curr_time < exp_time) {
-           // we need to register job in timeline
-            CWriteLockGuard guard(m_RunTimeLineLock);
-            m_RunTimeLine->AddObject(exp_time, job_id);
+            // we need to register job in time line
+            TimeLineAdd(job_id, exp_time);
             return;
         }
 
@@ -2105,7 +2120,7 @@ SLockedQueue::TimeLineMove(unsigned job_id, time_t old_time, time_t new_time)
 
 void SLockedQueue::TimeLineAdd(unsigned job_id, time_t timeout)
 {
-    if (!job_id  ||  !m_RunTimeLine) return;
+    if (!job_id  ||  !m_RunTimeLine  ||  !timeout) return;
     CWriteLockGuard guard(m_RunTimeLineLock);
     m_RunTimeLine->AddObject(timeout, job_id);
 }

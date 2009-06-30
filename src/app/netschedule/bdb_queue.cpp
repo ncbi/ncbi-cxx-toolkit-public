@@ -628,8 +628,9 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         TQueueParamMap::iterator it1 = m_QueueParamMap.find(qclass);
         if (it1 == m_QueueParamMap.end()) {
             LOG_POST(Warning << "Can not find class " << qclass << " for queue " << qname);
-            // NB: I do not know how intelligently handle it, postpone it.
-            // Mark queue as dynamic, so we can delete it
+            // NB: Class (defined in config file) does not exist anymore for the already
+            // loaded queue. I do not know how intelligently handle it, postpone it.
+            // ??? Mark queue as dynamic, so we can delete it
 //            m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
 //            cur.Update();
             continue;
@@ -637,6 +638,7 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         const SQueueParameters& params = *(it1->second);
         bool qexists = m_QueueCollection.QueueExists(qname);
         if (!qexists) {
+            _ASSERT(m_QueueDbBlockArray.Get(pos) != NULL);
             MountQueue(qname, qclass, kind, params, m_QueueDbBlockArray.Get(pos));
         } else {
             UpdateQueueParameters(qname, params);
@@ -1656,7 +1658,7 @@ unsigned CQueue::Submit(CJob& job)
         s_LogSubmit(*q, job, qdesc);
         CDiagContext::SetRequestContext(0);
     }
-    if (was_empty) NotifyListeners(true, affinity_id);
+    if (was_empty) q->NotifyListeners(true, affinity_id);
 
     return job_id;
 }
@@ -1769,7 +1771,7 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
     // This case is a bit complicated. If whole batch has the same
     // affinity, we include it in notification broadcast.
     // If not, or it has no affinity at all - 0.
-    if (was_empty) NotifyListeners(true, batch_aff_id);
+    if (was_empty) q->NotifyListeners(true, batch_aff_id);
 
     return job_id;
 }
@@ -1843,23 +1845,6 @@ void CQueue::Cancel(unsigned job_id)
     js_guard.Commit();
 
     q->TimeLineRemove(job_id);
-}
-
-
-void CQueue::DropJob(unsigned job_id)
-{
-    CRef<SLockedQueue> q(GetQueue());
-
-    q->Erase(job_id);
-    q->TimeLineRemove(job_id);
-
-    if (IsMonitoring()) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " CQueue::DropJob() job id=";
-        msg += NStr::IntToString(job_id);
-        MonitorPost(msg);
-    }
 }
 
 
@@ -1980,9 +1965,9 @@ CQueue::PutResultGetJob(CWorkerNode* worker_node,
 
     // This is a HACK - if js_guard is not committed, it will rollback
     // to previous state, so it is safe to change status after the guard.
-    if (delete_done) {
-        q->Erase(done_job_id);
-    }
+//    if (delete_done) {
+//        q->Erase(done_job_id);
+//    }
     // TODO: implement transaction wrapper (a la js_guard above)
     // for FindPendingJob
     // TODO: move affinity assignment there as well
@@ -2482,16 +2467,6 @@ void CQueue::MonitorPost(const string& msg)
     CRef<SLockedQueue> q(m_LQueue.Lock());
     if (q == NULL) return;
     return q->MonitorPost(msg);
-}
-
-
-void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
-{
-    if (m_Db.GetUdpPort() == 0)
-        return;
-
-    CRef<SLockedQueue> q(GetQueue());
-    q->NotifyListeners(unconditional, aff_id);
 }
 
 

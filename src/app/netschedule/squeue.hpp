@@ -203,22 +203,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 public:
     CJobStatusTracker            status_tracker;    ///< status FSA
 
-private:
-    // Timeline object to control job execution timeout
-    CJobTimeLine*                m_RunTimeLine;
-    CRWLock                      m_RunTimeLineLock;
-
-    // Datagram notification socket
-    // (used to notify worker nodes and waiting clients)
-    CDatagramSocket              m_UdpSocket;     ///< UDP notification socket
-    CFastMutex                   m_UdpSocketLock;
-
-    /// Queue monitor
-    CServer_Monitor              m_Monitor;
-
-    /// Should we delete db upon close?
-    bool                         m_DeleteDatabase;
-
 public:
     // Constructor/destructor
     SLockedQueue(CRequestExecutor& executor,
@@ -280,7 +264,7 @@ public:
 
 
     /// Erase job from all structures, request delayed db deletion
-    void Erase(unsigned job_id);
+    void EraseJob(unsigned job_id);
 
     /// Erase jobs from all structures, request delayed db deletion
     void Erase(const TNSBitVector& job_ids);
@@ -485,8 +469,6 @@ public:
         eStatNumEvents
     };
     typedef unsigned TStatEvent;
-    CAtomicCounter m_EventCounter[eStatNumEvents];
-    unsigned m_Average[eStatNumEvents];
     void CountEvent(TStatEvent event, int num=1);
     double GetAverage(TStatEvent event);
 
@@ -515,6 +497,27 @@ private:
     friend class CQueueJSGuard;
     friend class CJob;
 
+    // Timeline object to control job execution timeout
+    CJobTimeLine*                m_RunTimeLine;
+    CRWLock                      m_RunTimeLineLock;
+
+    // Datagram notification socket
+    // (used to notify worker nodes and waiting clients)
+    bool                         m_HasNotificationPort;
+    CDatagramSocket              m_UdpSocket;     ///< UDP notification socket
+    CFastMutex                   m_UdpSocketLock;
+
+    /// Queue monitor
+    CServer_Monitor              m_Monitor;
+
+    /// Should we delete db upon close?
+    bool                         m_DeleteDatabase;
+
+    // Statistics
+    CAtomicCounter m_EventCounter[eStatNumEvents];
+    unsigned m_Average[eStatNumEvents];
+
+    // Background executor
     CRequestExecutor&            m_Executor;
 
     string                       m_QueueName;
@@ -551,17 +554,18 @@ private:
 #define m_TagDB m_QueueDbBlock->tag_db
     CFastMutex                   m_TagLock;
 
-    ///< When it became empty, guarded by 'lock'
+    ///< When the queue became empty, guarded by 'm_DbLock'
     time_t                       m_BecameEmpty;
 
     // List of active worker node listeners waiting for pending jobs
     CQueueWorkerNodeList         m_WorkerNodeList;
 
 
-    typedef map<unsigned, TNSBitVector> TGroupMap;
     /// Last valid id for queue
     CAtomicCounter               m_LastId;
 
+    // Read group support
+    typedef map<unsigned, TNSBitVector> TGroupMap;
     /// Last valid id for read group
     CAtomicCounter               m_GroupLastId;
     TGroupMap                    m_GroupMap;
@@ -582,13 +586,13 @@ private:
     TNSBitVector                 m_AffJobsToDelete;
     /// Is m_CurrAffId wrapped around 0?
     bool                         m_AffWrapped;
-    /// Current aff id to start cleaning from
+    /// Current affinity id to start cleaning from
     unsigned                     m_CurrAffId;
-    /// Last aff id cleaning started from
+    /// Last affinity id cleaning started from
     unsigned                     m_LastAffId;
 
-    // When modifying this, modify all places marked with PARAMETERS
     // Configurable queue parameters
+    // When modifying this, modify all places marked with PARAMETERS
     friend class CQueueParamAccessor;
     mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout

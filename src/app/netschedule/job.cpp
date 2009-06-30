@@ -582,7 +582,7 @@ CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue, unsigned id)
 bool CJob::Flush(SLockedQueue* queue)
 {
     if (m_Deleted) {
-        queue->Erase(m_Id);
+        queue->EraseJob(m_Id);
         return true;
     }
     if (!m_Dirty) return true;

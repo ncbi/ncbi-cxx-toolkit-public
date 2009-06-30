@@ -1611,7 +1611,7 @@ void CNetScheduleHandler::ProcessForceReschedule()
 
 void CNetScheduleHandler::ProcessDropJob()
 {
-    m_Queue->DropJob(m_JobReq.job_id);
+    m_Queue->GetQueue()->EraseJob(m_JobReq.job_id);
     WriteOK();
 }
 

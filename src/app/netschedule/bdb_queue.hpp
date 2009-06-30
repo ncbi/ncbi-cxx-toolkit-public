@@ -171,19 +171,12 @@ public:
     /// Remove all jobs
     void Truncate(void);
 
-    /// Remove job from the queue
-    void DropJob(unsigned job_id);
-
     /// Pass socket for monitor
     void SetMonitorSocket(CSocket& socket);
     /// Are we monitoring?
     bool IsMonitoring();
     /// Send string to monitor
     void MonitorPost(const string& msg);
-
-    /// UDP notification to all listeners
-    void NotifyListeners(bool unconditional=false,
-                         unsigned aff_id=0);
 
     unsigned GetMaxInputSize() const;
     unsigned GetMaxOutputSize() const;
