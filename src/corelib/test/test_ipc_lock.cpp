@@ -69,7 +69,7 @@ static void Test_SingleProcess()
         lock1.Lock();
         try {
             lock2.Lock();
-            _TROUBLE;
+            assert(0);
         }
         catch (CInterProcessLockException&) {}
         
@@ -89,7 +89,7 @@ static void Test_SingleProcess()
             CGuard<CInterProcessLock> GUARD(lock1);
             try {
                 lock2.Lock();
-                _TROUBLE;
+                assert(0);
             }
             catch (CInterProcessLockException&) {}
         }}
@@ -284,7 +284,7 @@ int CTestApplication::Run(void)
     }
     
     // Main tests
-    Test_SingleProcess();
+//    Test_SingleProcess();
     Test_MultiProcess();
     
     return 0;
