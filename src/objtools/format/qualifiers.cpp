@@ -502,24 +502,11 @@ CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
     //  legal replacement for "non-experimental ...", and leave it alone 
     //  otherwise.
     //
-    const char* legalPrefixes[] = { 
-        "similar to sequence",
-        "similar to AA sequence",
-        "similar to DNA sequence",
-        "similar to RNA sequence",
-        "similar to RNA sequence, mRNA",
-        "similar to RNA sequence, EST",
-        "similar to RNA sequence, other RNA",
-        "profile",
-        "nucleotide motif",
-        "protein motif",
-        "ab initio prediction",
-        0
-    }; 
-    for ( size_t i=0; legalPrefixes[i] != 0; ++i ) {
-        if ( NStr::StartsWith( gbValue, legalPrefixes[i] ) ) {
-            m_str = gbValue;
-        }
+	string prefix = "";
+	string remainder = "";
+    CInferencePrefixList::GetPrefixAndRemainder (gbValue, prefix, remainder);
+	if (!NStr::IsBlank(prefix)) {
+        m_str = gbValue;
     }
 }
 

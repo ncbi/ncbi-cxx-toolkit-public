@@ -698,24 +698,6 @@ typedef CStaticArraySet <const char*, PNocase_CStr> TSingleSet;
 DEFINE_STATIC_ARRAY_MAP(TSingleSet, sc_SingleKeys, single_key_list);
 
 
-static const char * const valid_inf_prefixes [] = {
-    "ab initio prediction",
-    "nucleotide motif",
-    "profile",
-    "protein motif",
-    "similar to AA sequence",
-    "similar to DNA sequence",
-    "similar to RNA sequence",
-    "similar to RNA sequence, EST",
-    "similar to RNA sequence, mRNA",
-    "similar to RNA sequence, other RNA",
-    "similar to sequence"
-};
-
-typedef CStaticArraySet <const char*, PNocase_CStr> TValidInfSet;
-DEFINE_STATIC_ARRAY_MAP(TValidInfSet, sc_InfPrefixes, valid_inf_prefixes);
-
-
 // constructor
 CFeature_table_reader_imp::CFeature_table_reader_imp(void)
 {
@@ -1384,17 +1366,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                 case eQual_inference:
                     {
-                        TValidInfSet::const_iterator s_iter
-                            = sc_InfPrefixes.lower_bound (val.c_str ());
-                        // In the (usual) case that lower_bound didn't find an
-                        // exact match, it actually returns the next *greater*
-                        // element.
-                        if (s_iter == sc_InfPrefixes.end ()
-                            ||  (s_iter != sc_InfPrefixes.begin ()
-                                 &&  NStr::CompareNocase (val, *s_iter))) {
-                            --s_iter;
-                        }
-                        if (NStr::StartsWith (val, *s_iter, NStr::eNocase)) {
+						string prefix = "", remainder = "";
+						CInferencePrefixList::GetPrefixAndRemainder (val, prefix, remainder);
+						if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix, NStr::eNocase)) {
                             x_AddGBQualToFeature (sfp, qual, val);
                             return true;
                         }
