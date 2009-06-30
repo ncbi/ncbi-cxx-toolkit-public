@@ -222,6 +222,55 @@ bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2) {
     return result;
 }
 
+string CCddBookRefToString(const CCdd_book_ref& bookRef)
+{
+    static map<CCdd_book_ref::ETextelement, string> elementStringMap;
+    if (elementStringMap.size() == 0) {
+        elementStringMap[CCdd_book_ref::eTextelement_unassigned] = "unassigned";
+        elementStringMap[CCdd_book_ref::eTextelement_section]    = "section";
+        elementStringMap[CCdd_book_ref::eTextelement_figgrp]     = "figgrp";
+        elementStringMap[CCdd_book_ref::eTextelement_table]      = "table";
+        elementStringMap[CCdd_book_ref::eTextelement_chapter]    = "chapter";
+        elementStringMap[CCdd_book_ref::eTextelement_biblist]    = "biblist";
+        elementStringMap[CCdd_book_ref::eTextelement_box]        = "box";
+        elementStringMap[CCdd_book_ref::eTextelement_glossary]   = "glossary";
+        elementStringMap[CCdd_book_ref::eTextelement_appendix]   = "appendix";
+        elementStringMap[CCdd_book_ref::eTextelement_other]      = "other";
+    }
+
+    string result;
+    string elementid, subelementid;
+    string bookname = bookRef.GetBookname();
+
+    if (!bookRef.IsSetElementid() && !bookRef.IsSetCelementid())
+        result = "unexpected book_ref format:  neither elementid nor celementid is set";
+
+    else if (bookRef.IsSetElementid() && bookRef.IsSetCelementid())
+        result = "unexpected book_ref format:  both elementid and celementid are set";
+
+    else if (bookRef.IsSetSubelementid() && bookRef.IsSetCsubelementid())
+        result = "unexpected book_ref format:  both subelementid and csubelementid are set";
+
+    else {
+        elementid = bookRef.IsSetElementid() ? NStr::IntToString(bookRef.GetElementid()) : bookRef.GetCelementid();
+        subelementid = (bookRef.IsSetSubelementid() || bookRef.IsSetCsubelementid()) ?
+                (bookRef.IsSetSubelementid() ? NStr::IntToString(bookRef.GetSubelementid()) : bookRef.GetCsubelementid()) : kEmptyStr;
+
+        char buf[2048];
+
+        //  Make sure don't have overflow; 15 > length of the longest string in elementStringMap + 1.
+        _ASSERT(bookname.length() + elementid.length() + subelementid.length() + 15 < 2048);
+
+        if (subelementid.size() > 0)
+            sprintf(buf, "%s.%s.%s#%s", bookname.c_str(), elementStringMap[bookRef.GetTextelement()].c_str(), elementid.c_str(), subelementid.c_str());
+        else
+            sprintf(buf, "%s.%s.%s", bookname.c_str(), elementStringMap[bookRef.GetTextelement()].c_str(), elementid.c_str());
+        result = string(buf);
+    }
+    
+    return result;
+}
+
 bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* errString) {
 //-------------------------------------------------------------------
 // copied from Paul.  see sequence_set.cpp

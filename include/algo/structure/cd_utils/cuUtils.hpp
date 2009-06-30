@@ -27,7 +27,7 @@
  *
  * File Description:
  *
- *       Various utility functions for CDTree
+ *       Various utility functions for working with CD objects
  *
  * ===========================================================================
  */
@@ -39,6 +39,7 @@
 #include <corelib/ncbiargs.hpp>   
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbistre.hpp>
+#include <objects/cdd/Cdd_book_ref.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 
 #define i2s(i)  NStr::IntToString(i)
@@ -66,6 +67,10 @@ NCBI_CDUTILS_EXPORT
 string CddIdString(const CCdd_id& id);
 NCBI_CDUTILS_EXPORT 
 bool   SameCDAccession(const CCdd_id& id1, const CCdd_id& id2);
+
+//  Uses format/code in MakeRID from Cn3D
+NCBI_CDUTILS_EXPORT
+string CCddBookRefToString(const CCdd_book_ref& bookRef);
 
 NCBI_CDUTILS_EXPORT 
 bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* errString);
