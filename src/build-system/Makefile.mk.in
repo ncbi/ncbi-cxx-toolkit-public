@@ -539,10 +539,10 @@ IMAGE_LIBS    = $(TIFF_LIBS) $(JPEG_LIBS) $(PNG_LIBS) $(GIF_LIBS) $(XPM_LIBS)
 FREETYPE_INCLUDE = @FREETYPE_INCLUDE@
 FREETYPE_LIBS    = @FREETYPE_LIBS@
 
-SRA_INCLUDE = -I$(includedir)/../src/internal/sra/api/inc \
-              -I$(includedir)/../src/internal/sra/api/itf \
-              -I$(top_srcdir)/src/internal/sra/api/inc \
-              -I$(top_srcdir)/src/internal/sra/api/itf
+SRA_INCLUDE = -I$(includedir)/../src/internal/sra/sdk/inc \
+              -I$(includedir)/../src/internal/sra/sdk/itf \
+              -I$(top_srcdir)/src/internal/sra/sdk/inc \
+              -I$(top_srcdir)/src/internal/sra/sdk/itf
 
 #################################
 # Useful sets of object libraries
