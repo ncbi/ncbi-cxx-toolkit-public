@@ -249,12 +249,34 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_se
                          "Qualifier other than replace has just quotation marks", feat);
             }
         } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-            if (!s_IsValidECNumberFormat((*it)->GetVal())) {
+			if (!(*it)->IsSetVal() || NStr::IsBlank((*it)->GetVal())) {
+				PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+			} else if (!s_IsValidECNumberFormat((*it)->GetVal())) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                         (*it)->GetVal() + " is not in proper EC_number format", feat);
-            }
-            /* TODO: Need to validate whether EC number is in list of accepted, determine if deleted */
-
+			} else {
+				string ec_number = (*it)->GetVal();
+			    CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+				switch (status) {
+					case CProt_ref::eEC_deleted:
+						PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+							     "EC_number " + ec_number + " was deleted",
+								 feat);
+					    break;
+					case CProt_ref::eEC_replaced:
+						PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+							     "EC_number " + ec_number + " was replaced",
+								 feat);
+						break;
+					case CProt_ref::eEC_unknown:
+						PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+							     ec_number + " is not a legal value for qualifier EC_number",
+								 feat);
+						break;
+					default:
+						break;
+				}
+			}
         } else if (NStr::EqualNocase ((*it)->GetQual(), "inference")) {
             /* TODO: Validate inference */
             string val = "";
@@ -1105,7 +1127,8 @@ static int s_GetStrictGenCode(const CBioSource& src)
                     break;
             }
         }
-    } catch (...) {
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
     }
     return gencode;
 }
@@ -1984,7 +2007,8 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                         }
                     }
                 }
-            } catch (...) {
+			} catch (CException &x1) {
+			} catch (std::exception &x2) {
                 // could get errors from CSeqVector
             }
         }
@@ -2291,11 +2315,34 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
     }
 
     FOR_EACH_ECNUMBER_ON_PROTREF (it, prot) {
-        if (!s_IsValidECNumberFormat(*it)) {
+		if (NStr::IsBlank (*it)) {
+		    PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+		} else if (!s_IsValidECNumberFormat(*it)) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                     (*it) + " is not in proper EC_number format", feat);
-        }
-        /* TODO: Need to validate whether EC number is in list of accepted, determine if deleted */
+		} else {
+			string ec_number = *it;
+		    CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+			switch (status) {
+				case CProt_ref::eEC_deleted:
+					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+						     "EC_number " + ec_number + " was deleted",
+							 feat);
+				    break;
+				case CProt_ref::eEC_replaced:
+					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+						     "EC_number " + ec_number + " was replaced",
+							 feat);
+					break;
+				case CProt_ref::eEC_unknown:
+					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+						     ec_number + " is not a legal value for qualifier EC_number",
+							 feat);
+					break;
+				default:
+					break;
+			}
+		}
     }
 }
 
@@ -2585,7 +2632,9 @@ const char* GetAAName(unsigned char aa, bool is_ascii)
                 (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
         }
         return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
-    } catch (...) {
+	} catch (CException &x1) {
+        return "OTHER";
+	} catch (std::exception &x2) {
         return "OTHER";
     }
 }
@@ -2776,7 +2825,8 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
             if (anticodon.length() > 3) {
                 anticodon = anticodon.substr(0, 3);
             }
-        } catch (...) {
+		} catch (CException &x1) {
+		} catch (std::exception &x2) {
         }
     }
 
@@ -2856,7 +2906,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
                              feat);
                     return;
                 }
-            } catch (...) {
+			} catch (CException &x1) {
+			} catch (std::exception &x2) {
             }
         }
     }
@@ -2906,7 +2957,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
             }
         }
 
-    } catch (...) {
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
     }
 
 }
@@ -3194,7 +3246,9 @@ static bool s_RptUnitIsBaseRange (string str, int& from, int& to)
     try {
         from = NStr::StringToInt (str.substr(0, pos));
         to = NStr::StringToInt (str.substr (pos + 2));
-    } catch (...) {
+	} catch (CException &x1) {
+        return false;
+	} catch (std::exception &x2) {
         return false;
     }
     if (from < 0 || to < 0) {
@@ -3404,10 +3458,94 @@ int CValidError_feat::x_SeqIdToGiNumber(
         CRef<CSeq_id> id(new CSeq_id(seq_id));
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
         gi = m_Scope->GetGi (idh);
-    } catch (...) {
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
     }
     return gi;
 };
+
+
+/*
+Return values are:
+ 0: no problem - Accession is in proper format
+-1: Accession did not start with a letter (or two letters)
+-2: Accession did not contain five numbers (or six numbers after 2 letters)
+-3: the original Accession number to be validated was NULL
+-4: the original Accession number is too long (>16)
+*/
+
+static int ValidateAccessionFormat (string accession) 
+{
+	if (NStr::IsBlank (accession)) {
+		return -3;
+	}
+	if (accession.length() >= 16) {
+		return -4;
+	}
+	if (accession.c_str()[0] < 'A' || accession.c_str()[0] > 'Z') {
+		return -1;
+	}
+
+	if (NStr::StartsWith(accession, "NZ_")) {
+		accession = accession.substr(3);
+	}
+
+	const char *cp = accession.c_str();
+	int num_alpha = 0;
+	int num_underscore = 0;
+	int num_digits = 0;
+
+	while (isalpha (*cp)) {
+		num_alpha++;
+	    cp++;
+	}
+	while (*cp == '_') {
+		num_underscore++;
+		cp++;
+	}
+	while (isdigit (*cp)) {
+		num_digits ++;
+		cp++;
+	}
+
+	if (*cp != 0 && *cp != ' ' && *cp != '.') {
+		return -2;
+	}
+
+	if (num_underscore > 1) {
+		return -2;
+	}
+
+	if (num_underscore == 0) {
+		if (num_alpha == 1 && num_digits == 5) return 0;
+		if (num_alpha == 2 && num_digits == 6) return 0;
+		if (num_alpha == 3 && num_digits == 5) return 0;
+		if (num_alpha == 4 && num_digits == 8) return 0;
+		if (num_alpha == 5 && num_digits == 7) return 0;
+	} else if (num_underscore == 1) {
+		if (num_alpha != 2 || (num_digits != 6 && num_digits != 8 && num_digits != 9)) return -2;
+		char first_char = accession.c_str()[0];
+		char second_char = accession.c_str()[1];
+		if (first_char == 'N' || first_char == 'X' || first_char == 'Z') {
+		  if (second_char == 'M' ||
+			  accession [1] == 'C' ||
+			  accession [1] == 'T' ||
+			  accession [1] == 'P' ||
+			  accession [1] == 'G' ||
+			  accession [1] == 'R' ||
+			  accession [1] == 'S' ||
+			  accession [1] == 'W' ||
+			  accession [1] == 'Z') {
+			return 0;
+		  }
+		}
+		if (accession [0] == 'A' || accession [0] == 'Y') {
+		  if (accession [1] == 'P') return 0;
+		}
+	  }
+
+  return -2;
+}
 
 
 CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, string separator, bool fetch_accession)
@@ -3432,40 +3570,50 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
             is_refseq = true;
         }
         if (is_insd || is_refseq) {
-            if (remainder.length() > 3 && remainder.c_str()[2] == '_') {
-                rsult = eInferenceValidCode_bad_accession_type;
+			if (remainder.length() > 3) {
+				if (remainder.c_str()[2] == '_') {
+					if (is_insd) {
+						rsult = eInferenceValidCode_bad_accession_type;
+					}
+				} else {
+					if (is_refseq) {
+						rsult = eInferenceValidCode_bad_accession_type;
+					}
+				}
             } 
-            pos = NStr::Find (remainder, ".");
-            if (pos == string::npos) {
-                if (CSeq_id::IdentifyAccession(remainder) == CSeq_id::e_error) {
-                    rsult = eInferenceValidCode_bad_accession;
-                } else {
-                    rsult = eInferenceValidCode_bad_accession_version;
+			string ver = "";
+			int acc_code = ValidateAccessionFormat (remainder);
+			if (acc_code == 0) {
+				//-5: missing version number
+				//-6: bad version number
+				size_t dot_pos = NStr::Find (remainder, ".");
+				if (dot_pos == string::npos || NStr::IsBlank(remainder.substr(dot_pos + 1))) {
+					acc_code = -5;
+				} else {
+					const char *cp = remainder.substr(dot_pos + 1).c_str();
+					while (*cp != 0 && isdigit (*cp)) {
+						++cp;
+					}
+					if (*cp != 0) {
+						acc_code = -6;
+					}
+				}
+			}
+
+			if (acc_code == -5 || acc_code == -6) {
+				rsult = eInferenceValidCode_bad_accession_version;
+			} else if (acc_code != 0) {
+				rsult = eInferenceValidCode_bad_accession;
+			} else if (fetch_accession) {
+                // Test to see if accession is public
+                const char* database_names[] = { "Nucleotide", "Protein" };
+                const int num_databases = sizeof( database_names ) / sizeof( const char* );
+                int gi_number = 0;
+                for ( int i=0; (gi_number == 0) && (i < num_databases); ++ i ) {
+                    gi_number = x_SeqIdToGiNumber( remainder, database_names[ i ] );
                 }
-            } else {
-                string acc = remainder.substr(0, pos);
-                string ver = remainder.substr(pos + 1);
-                if (CSeq_id::IdentifyAccession(remainder) == CSeq_id::e_error) {
-                    rsult = eInferenceValidCode_bad_accession;
-                } else {
-                    for (size_t i = 0; i < ver.length(); i++) {
-                        if (!isdigit (ver.c_str()[i])) {
-                            rsult = eInferenceValidCode_bad_accession_version;
-                            break;
-                        }
-                    }
-                    if (rsult == eInferenceValidCode_valid && fetch_accession) {
-                        // Test to see if accession is public
-                        const char* database_names[] = { "Nucleotide", "Protein" };
-                        const int num_databases = sizeof( database_names ) / sizeof( const char* );
-                        int gi_number = 0;
-                        for ( int i=0; (gi_number == 0) && (i < num_databases); ++ i ) {
-                            gi_number = x_SeqIdToGiNumber( remainder, database_names[ i ] );
-                        }
-                        if (gi_number == 0) {
-                            rsult = eInferenceValidCode_accession_version_not_public;
-                        }
-                    }
+                if (gi_number == 0) {
+                    rsult = eInferenceValidCode_accession_version_not_public;
                 }
             }
         }
@@ -3521,7 +3669,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
         } else if (NStr::Equal(prefix, "alignment")) {
             size_t pos = NStr::Find (remainder, ":", 0, string::npos, NStr::eLast);
             if (pos != string::npos) {
-                remainder = remainder.substr (pos);
+                remainder = remainder.substr (pos + 1);
                 vector<string> accessions;
                 NStr::Tokenize(remainder, ",", accessions);
                 for (size_t i = 0; i < accessions.size(); i++) {
@@ -3658,7 +3806,8 @@ void CValidError_feat::ValidateImpGbquals
                                              "/replace already matches underlying sequence (" + val + ")",
                                              feat);
                                 }
-                            } catch ( ... ) {
+							} catch (CException &x1) {
+							} catch (std::exception &x2) {
                             }
                         }
                     }
@@ -4070,7 +4219,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 }
             }
         }
-    } catch (...) {
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
     }
 
     if (!report_errors) {
@@ -5101,8 +5251,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                     }
                 }
             }
-            ReportCdTransErrors(feat, show_stop, got_stop, no_end, ragged,
-                report_errors, has_errors);
         }
     }
 
@@ -6152,54 +6300,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
                          "Feature crosses gap of unknown length", feat);
             }            
-        } catch (...) {
-        }
-    }
-}
-
-
-static void s_ProcessPub (const CPubdesc& pd, 
-                          vector<int>& pmids, vector<int>& muids, vector<int>& serials,
-                          vector<string>& published_labels, vector<string>& unpublished_labels)
-{
-    string label = "";
-    bool   is_published = false;
-    bool   need_label = false;
-    FOR_EACH_PUB_ON_PUBDESC (it, pd) {
-        if ((*it)->IsPmid()) {
-            pmids.push_back ((*it)->GetPmid());
-            is_published = true;
-        } else if ((*it)->IsMuid()) {
-            muids.push_back ((*it)->GetMuid());
-            is_published = true;
-        } else if ((*it)->IsGen()) {
-            if ((*it)->GetGen().IsSetCit() 
-                && NStr::StartsWith ((*it)->GetGen().GetCit(), "BackBone id_pub", NStr::eNocase)) {
-                need_label = true;
-            }
-            if ((*it)->GetGen().IsSetSerial_number()) {
-                serials.push_back ((*it)->GetGen().GetSerial_number());
-                if ((*it)->GetGen().IsSetCit() 
-                    || (*it)->GetGen().IsSetJournal()
-                    || (*it)->GetGen().IsSetDate()) {
-                    need_label = true;
-                }
-            } else {
-                need_label = true;
-            }
-        } else {
-            need_label = true;
-        }
-        if (need_label && NStr::IsBlank(label)) {
-            // create unique label
-            (*it)->GetLabel(&label, CPub::eContent, true);
-        }
-    }
-    if (!NStr::IsBlank(label)) {
-        if (is_published) {
-            published_labels.push_back(label);
-        } else {
-            unpublished_labels.push_back(label);
+		} catch (CException &x1) {
+		} catch (std::exception &x2) {
         }
     }
 }
@@ -6211,7 +6313,7 @@ static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
 {
     FOR_EACH_SEQDESC_ON_SEQENTRY (it, se) {
         if ((*it)->IsPub()) {
-            s_ProcessPub ((*it)->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+            GetPubdescLabels ((*it)->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
         }
     }
 
@@ -6236,7 +6338,7 @@ void CValidError_feat::ValidateCitations (const CSeq_entry_Handle& seh)
                 
     CFeat_CI feat (seh, SAnnotSelector(CSeqFeatData::e_Pub));
     while (feat) {
-        s_ProcessPub (feat->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+        GetPubdescLabels (feat->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
         ++feat;
     }
 

@@ -525,10 +525,6 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_BadKeyword,
    TErrStrs( "BadKeyword",
 "The keyword is not appropriate in this record.")),
-    TErrTypStrs( eErr_SEQ_DESCR_Obsolete,
-    TErrStrs( "Obsolete",
-"There is a source descriptor type that is no longer legal for use in GenBank \
-records.")),
 
 /* SEQ_GENERIC */
 
@@ -1389,6 +1385,12 @@ same id type")),
    TErrTypStrs ( eErr_SEQ_ALIGN_PercentIdentity,
    TErrStrs( "PercentIdentity",
 "An acceptable percent identity score is 75 percent or higher.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_ShortAln,
+   TErrStrs( "ShortAln",
+"Alignment is shorter than expected.")),
+   TErrTypStrs ( eErr_SEQ_ALIGN_UnexpectedAlignmentType ,
+   TErrStrs( "UnexpectedAlignmentType ",
+"Only DenseSeg alignments are expected.")),
 
     TErrTypStrs( eErr_SEQ_ALIGN_SegsDimMismatch,
     TErrStrs( "SegsDimMismatch",

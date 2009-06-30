@@ -48,6 +48,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/object_manager.hpp>
 
 #include <vector>
@@ -1862,7 +1863,8 @@ int GetGIForSeqId(const CSeq_id& id)
     try {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
         gi = scope->GetGi (idh);
-    } catch (...) {
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
     }
     return gi;
 }
@@ -1880,7 +1882,8 @@ CScope::TIds GetSeqIdsForGI(int gi)
     try {
         id_list = scope->GetIds(tmp_id);
 
-    } catch (...) {
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
     }
     return id_list;
 }
@@ -2321,6 +2324,73 @@ int CheckDate (const CDate& date, bool require_full_date)
     return rval;
 }
 
+
+bool IsBioseqTSA (const CBioseq& seq, CScope* scope) 
+{
+    if (!scope) {
+        return false;
+    }
+    bool is_tsa = false;
+    CBioseq_Handle bsh = scope->GetBioseqHandle(seq);
+    if (bsh) {
+        CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_Molinfo);
+        while (desc_ci && !is_tsa) {
+            if (desc_ci->GetMolinfo().IsSetTech() && desc_ci->GetMolinfo().GetTech() == CMolInfo::eTech_tsa) {
+                is_tsa = true;
+            }
+            ++desc_ci;
+        }
+    }
+    return is_tsa;
+}
+
+
+void GetPubdescLabels 
+(const CPubdesc& pd, 
+ vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+ vector<string>& published_labels, vector<string>& unpublished_labels)
+{
+    string label = "";
+    bool   is_published = false;
+    bool   need_label = false;
+    FOR_EACH_PUB_ON_PUBDESC (it, pd) {
+        if ((*it)->IsPmid()) {
+            pmids.push_back ((*it)->GetPmid());
+            is_published = true;
+        } else if ((*it)->IsMuid()) {
+            muids.push_back ((*it)->GetMuid());
+            is_published = true;
+        } else if ((*it)->IsGen()) {
+            if ((*it)->GetGen().IsSetCit() 
+                && NStr::StartsWith ((*it)->GetGen().GetCit(), "BackBone id_pub", NStr::eNocase)) {
+                need_label = true;
+            }
+            if ((*it)->GetGen().IsSetSerial_number()) {
+                serials.push_back ((*it)->GetGen().GetSerial_number());
+                if ((*it)->GetGen().IsSetCit() 
+                    || (*it)->GetGen().IsSetJournal()
+                    || (*it)->GetGen().IsSetDate()) {
+                    need_label = true;
+                }
+            } else {
+                need_label = true;
+            }
+        } else {
+            need_label = true;
+        }
+        if (need_label && NStr::IsBlank(label)) {
+            // create unique label
+            (*it)->GetLabel(&label, CPub::eContent, true);
+        }
+    }
+    if (!NStr::IsBlank(label)) {
+        if (is_published) {
+            published_labels.push_back(label);
+        } else {
+            unpublished_labels.push_back(label);
+        }
+    }
+}
 
 
 END_SCOPE(validator)

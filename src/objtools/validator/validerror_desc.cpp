@@ -71,11 +71,10 @@ void CValidError_desc::ValidateSeqDesc
 
     // switch on type, e.g., call ValidateBioSource, ValidatePubdesc, ...
     switch ( desc.Which() ) {
-
-        case CSeqdesc::e_Mol_type:
         case CSeqdesc::e_Modif:
+        case CSeqdesc::e_Mol_type:
         case CSeqdesc::e_Method:
-            PostErr(eDiag_Info, eErr_SEQ_DESCR_Obsolete,
+            PostErr(eDiag_Info, eErr_SEQ_DESCR_InvalidForType,
                 desc.SelectionName(desc.Which()) + " is obsolete", *m_Ctx, desc);
             break;
 

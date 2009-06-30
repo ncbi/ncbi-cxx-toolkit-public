@@ -121,7 +121,14 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         break;
     }  // end of switch statement
 
-    x_ValidateAlignPercentIdentity (align, true);
+	if (segtype != CSeq_align::C_Segs::e_Denseg) {
+		PostErr(eDiag_Error, eErr_SEQ_ALIGN_UnexpectedAlignmentType, "This is not a DenseSeg alignment.", align);
+	}
+	try {
+        x_ValidateAlignPercentIdentity (align, true);
+	} catch (CException &x1) {
+	} catch (std::exception &x2) {
+	}
 
 }
 
@@ -207,7 +214,8 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             aln_rows.push_back (sequence);
             row_starts.push_back (sparse_aln.GetSeqAlnStart(row));
             row_stops.push_back (sparse_aln.GetSeqAlnStop(row));
-        } catch (...) {
+		} catch (CException &x1) {
+		} catch (std::exception &x2) {
             // if sequence is not in scope,
             // the above is impossible
         }
@@ -376,7 +384,6 @@ void CValidError_align::x_ValidatePacked
     }
     
     x_ValidateStrand(packed, align);
-    x_ValidateFastaLike(packed, align);
     x_ValidateSegmentGap(packed, align);
     
     if ( m_Imp.IsRemoteFetch() ) {
@@ -501,7 +508,6 @@ void CValidError_align::x_ValidateStd
     }
 
     x_ValidateStrand(std_segs, align);
-    x_ValidateFastaLike(std_segs, align);
     x_ValidateSegmentGap(std_segs, align);
     
     if ( m_Imp.IsRemoteFetch() ) {
@@ -816,90 +822,6 @@ void CValidError_align::x_ValidateFastaLike
 }           
 
 
-void CValidError_align::x_ValidateFastaLike
-(const TPacked& packed,
- const CSeq_align& align)
-{
-    // check only global or partial type
-    if ( align.GetType() == CSeq_align::eType_global  ||
-         align.GetType() == CSeq_align::eType_partial ||
-         packed.GetDim() <= 2 ) {
-        return;
-    }
-
-    static Uchar bits[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-    
-    size_t dim = packed.GetDim();
-    size_t numseg = packed.GetNumseg();
-
-    CPacked_seg::TIds::const_iterator id_iter = packed.GetIds().begin();
-    const CPacked_seg::TPresent& present = packed.GetPresent();
-
-    for ( size_t id = 0; id < dim;  ++id, ++id_iter ) {
-        bool gap = false;
-        for ( size_t seg = 0; seg < numseg; ++ seg ) {
-            // if a segment is not present, set gap flag to true
-            size_t i = id + (dim * seg);
-            if ( !(present[i / 8] & bits[i % 8]) ) {
-                gap = true;
-            } else if ( gap ) {
-                // if a segment is found later, then it's not fasta like, 
-                // no need to check this sequence further.
-                break;
-            } 
-
-            if ( seg == numseg - 1  &&  gap ) {
-                // if no more segments are found for this sequence, 
-                // then it's  fasta like.
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
-                    "This may be a fasta-like alignment for SeqId: " + 
-                    (*id_iter)->AsFastaString(), align);
-            }
-        }
-    }
-}
-
-
-void CValidError_align::x_ValidateFastaLike
-(const TStd& std_segs,
- const CSeq_align& align)
-{
-    // check only global or partial type
-    if ( align.GetType() == CSeq_align::eType_global  ||
-         align.GetType() == CSeq_align::eType_partial ) {
-        return;
-    }
-    // suspected seq-ids
-    typedef map< CConstRef<CSeq_id>, bool > TIdGapMap;
-    TIdGapMap fasta_like;
-
-    ITERATE ( TStd, stdseg, std_segs ) {
-        ITERATE ( CStd_seg::TLoc, loc_iter, (*stdseg)->GetLoc() ) {
-            const CSeq_loc& loc = **loc_iter;
-            
-            if ( !IsOneBioseq(loc, m_Scope) ) {
-                // !!! should probably be an error
-                continue;
-            }
-            CConstRef<CSeq_id> id(&GetId(loc, m_Scope));
-            bool gap = loc.IsEmpty()  ||  loc.IsNull();
-            if ( gap  &&  fasta_like.find(id) == fasta_like.end() ) {
-                fasta_like[id] = true;
-            }
-            if ( !gap  &&  fasta_like.find(id) != fasta_like.end() ) {
-                fasta_like[id] = false;
-            }
-        }
-    }
-    
-    ITERATE ( TIdGapMap, iter, fasta_like ) {
-        if ( iter->second ) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_FastaLike,
-                "This may be a fasta-like alignment for SeqId: " + 
-                iter->first->AsFastaString(), align);
-        }
-    }
-}
 
 
 //===========================================================================

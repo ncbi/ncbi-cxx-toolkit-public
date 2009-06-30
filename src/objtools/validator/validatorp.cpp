@@ -148,6 +148,7 @@ CValidError_imp::CValidError_imp
       m_FarFetchCDSproducts((options & CValidator::eVal_far_fetch_cds_products) != 0),
       m_LocusTagGeneralMatch((options & CValidator::eVal_locus_tag_general_match) != 0),
       m_DoRubiscoText((options & CValidator::eVal_do_rubisco_test) != 0),
+      m_IndexerVersion((options & CValidator::eVal_indexer_version) != 0),
       m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
       m_IsStandaloneAnnot(false),
       m_NoPubs(false),
@@ -171,6 +172,7 @@ CValidError_imp::CValidError_imp
       m_FeatLocHasGI(false),
       m_ProductLocHasGI(false),
       m_GeneHasLocusTag(false),
+      m_ProteinHasGeneralID(false),
       m_PrgCallback(0),
       m_NumAlign(0),
       m_NumAnnot(0),
@@ -301,7 +303,8 @@ void CValidError_imp::PostErr
                 bc->GetLabel(&desc, CBioseq::eBoth);
                 desc += "]";
             }
-        } catch (...){
+		} catch (CException &x1) {
+		} catch (std::exception &x2) {
         };
     }
 
@@ -669,7 +672,7 @@ bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se)
 bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val)
 {
     if (se.IsSetDescr()) {
-        descr_val->ValidateSeqDescr (se.GetDescr());
+        descr_val->ValidateSeqDescr (se.GetDescr(), se);
     }
     if (se.Which() == CSeq_entry::e_Set) {
         FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
@@ -841,9 +844,13 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_bioseq bioseq_validator(*this);
+    bool has_nucleotide_sequence = false;
     for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); bi; ++bi) {
         const CBioseq& bs = *bi->GetCompleteBioseq();
 
+        if (bs.IsNa()) {
+            has_nucleotide_sequence = true;
+        }
         try {
             bioseq_validator.ValidateSeqIds(bs);
             bioseq_validator.ValidateInst(bs);
@@ -891,7 +898,12 @@ bool CValidError_imp::Validate
                 " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
         }
     }
-
+    if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
+        PostErr (eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID, 
+                 "INDEXER_ONLY - Protein bioseqs have general seq-id.",
+                 *(seh.GetCompleteSeq_entry()));
+    }
+        
     // Bioseq sets:
 
     if ( m_PrgCallback ) {
@@ -1001,7 +1013,6 @@ bool CValidError_imp::Validate
     
     ReportMissingPubs(*m_TSE, cs);
     ReportMissingBiosource(*m_TSE);
-    ReportBioseqsWithNoMolinfo();
 
     if (m_NumMisplacedFeatures > 1) {
         PostErr (eDiag_Critical, eErr_SEQ_PKG_FeaturePackagingProblem, 
@@ -1105,7 +1116,7 @@ void CValidError_imp::ValidatePubdesc
     int uid = 0, pmid = 0, muid = 0;
     bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
 
-    ValidatePubHasAuthor(pubdesc, obj);
+    ValidatePubHasAuthor(pubdesc, obj, ctx);
 
     // need to get uid (pmid or muid) in first pass for ValidatePubArticle
     FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
@@ -1145,19 +1156,19 @@ void CValidError_imp::ValidatePubdesc
 
     if ( conflicting_pmids ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has conflicting pmids", obj, ctx);
+                "Multiple conflicting pmids in a single publication", obj, ctx);
     }
     if ( redundant_pmids ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has redundant pmids", obj), ctx;
+                "Multiple redundant pmids in a single publication", obj, ctx);
     }
     if ( conflicting_muids ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has conflicting muids", obj, ctx);
+                "Multiple conflicting muids in a single publication", obj, ctx);
     }
     if ( redundant_muids ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
-                "Publication has redundant muids", obj, ctx);
+                "Multiple redundant muids in a single publication", obj, ctx);
     }
 
     // second pass for remaining (non-uid) types
@@ -2529,12 +2540,6 @@ void CValidError_imp::AddBioseqWithNoBiosource(const CBioseq& seq)
 }
 
 
-void CValidError_imp::AddBioseqWithNoMolinfo(const CBioseq& seq)
-{
-    m_BioseqWithNoMolinfo.push_back(CConstRef<CBioseq>(&seq));
-}
-
-
 void CValidError_imp::AddProtWithoutFullRef(const CBioseq_Handle& seq)
 {
     const CSeq_feat* cds = GetCDSForProduct(seq);
@@ -2614,36 +2619,6 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
         }
     }
 }
-
-
-void CValidError_imp::ReportBioseqsWithNoMolinfo(void)
-{
-    if ( m_BioseqWithNoMolinfo.empty() ) {
-        return;
-    }
-
-    size_t num = m_BioseqWithNoMolinfo.size();
-    
-    if ( num == 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoMolInfoFound, 
-            "No Mol-info applies to this Bioseq",
-            *(m_BioseqWithNoMolinfo[0]));
-    } else if ( num > 10 ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoMolInfoFound, 
-            NStr::IntToString(num) + " Bioseqs with no Mol-info " 
-            "applied to them (first reported)",
-            *(m_BioseqWithNoMolinfo[0]));
-    } else {
-        string msg;
-        for ( size_t i = 0; i < num; ++i ) {
-            msg = NStr::IntToString(i + 1) + " of " + 
-                NStr::IntToString(num) + 
-                " Bioseqs with no Mol-info applied to";
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_NoMolInfoFound, msg, 
-                *(m_BioseqWithNoMolinfo[i]));
-        }
-    }
-}   
 
 
 bool CValidError_imp::IsNucAcc(const string& acc)
@@ -2955,6 +2930,9 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     }
                     break;
                 case CSeq_id::e_General:
+                    if ((*bi).IsAa()) {
+                        m_ProteinHasGeneralID = true;
+                    }
                     break;
                 case CSeq_id::e_Gi:
                     m_IsGI = true;

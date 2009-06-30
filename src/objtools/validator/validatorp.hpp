@@ -193,6 +193,7 @@ public:
     bool IsFarFetchCDSproducts(void)  const { return m_FarFetchCDSproducts; }
     bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
     bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
+    bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -222,7 +223,7 @@ public:
     inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
     inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }
     inline bool DoesAnyGeneHaveLocusTag(void) const { return m_GeneHasLocusTag; }
-    
+    inline bool DoesAnyProteinHaveGeneralID(void) const { return m_ProteinHasGeneralID; }
 
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
@@ -237,11 +238,9 @@ public:
 
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
-    void AddBioseqWithNoMolinfo(const CBioseq& seq);
     void AddProtWithoutFullRef(const CBioseq_Handle& seq);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
-    void ReportBioseqsWithNoMolinfo(void);
 
     bool IsNucAcc(const string& acc);
     bool IsFarLocation(const CSeq_loc& loc);
@@ -313,6 +312,7 @@ private:
     bool m_FarFetchCDSproducts;  // Remote fetch proteins
     bool m_LocusTagGeneralMatch;
     bool m_DoRubiscoText;
+    bool m_IndexerVersion;
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -341,6 +341,7 @@ private:
     bool m_FeatLocHasGI;
     bool m_ProductLocHasGI;
     bool m_GeneHasLocusTag;
+    bool m_ProteinHasGeneralID;
 
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
@@ -349,8 +350,6 @@ private:
     vector< CConstRef<CBioseq> >    m_BioseqWithNoPubs;
     // Bioseqs without source (should be considered only if m_NoSource is false)
     vector< CConstRef<CBioseq> >    m_BioseqWithNoSource;
-    // Bioseqs without MolInfo
-    vector< CConstRef<CBioseq> >    m_BioseqWithNoMolinfo;
 
     // list of publication serial numbers
     vector< int > m_PubSerialNumbers;
@@ -478,12 +477,13 @@ private:
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
     void ValidateDelta(const CBioseq& seq);
+    void ValidateDeltaLoc(const CSeq_loc& loc, const CBioseq& seq, TSeqPos& len);
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);
     void ValidateSeqParts(const CBioseq& seq);
     void x_ValidateTitle(const CBioseq& seq);
     void x_ValidateBarcode(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
-    void ValidateNs(const CBioseq& seq);
+    void ValidateNsAndGaps(const CBioseq& seq);
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
@@ -503,7 +503,8 @@ private:
     void x_ValidateDupGenes(const CSeq_feat_Handle& g1, const CSeq_feat_Handle& g2);
 
     void ValidateSeqDescContext(const CBioseq& seq);
-    void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
+	void CValidError_bioseq::ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
+    void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,
         const CBioseq& seq, const CSeqdesc& desc);
@@ -511,6 +512,9 @@ private:
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateOrgContext(const CSeqdesc_CI& iter, const COrg_ref& this_org,
         const COrg_ref& org, const CBioseq& seq, const CSeqdesc& desc);
+    void ReportModifInconsistentError (int new_mod, int& old_mod, const CSeqdesc& desc, const CSeq_entry& ctx);
+    void ValidateModifDescriptors (const CBioseq& seq);
+    void ValidateMoltypeDescriptors (const CBioseq& seq);
 
     void ValidateGraphsOnBioseq(const CBioseq& seq);
     void ValidateGraphOrderOnBioseq (const CBioseq& seq, vector <CRef <CSeq_graph> > graph_list);
@@ -531,6 +535,7 @@ private:
     void ValidateIDSetAgainstDb(const CBioseq& seq);
     void x_ValidateSourceFeatures(const CBioseq_Handle& bsh);
     void x_ValidatePubFeatures(const CBioseq_Handle& bsh);
+	void x_ReportDuplicatePubLabels (const CBioseq& seq, vector<string>& labels);
     void x_ValidateMultiplePubs(const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
@@ -703,6 +708,7 @@ public:
 
     void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
+    void ResetModifCounters(void);
 private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
@@ -751,8 +757,6 @@ private:
     // Check if an alignment is FASTA-like. 
     // Alignment is FASTA-like if all gaps are at the end with dimensions > 2.
     void x_ValidateFastaLike(const TDenseg& denseg, const CSeq_align& align);
-    void x_ValidateFastaLike(const TPacked& packed, const CSeq_align& align);
-    void x_ValidateFastaLike(const TStd& std_segs, const CSeq_align& align);
 
     // Check if there is a gap for all sequences in a segment.
     void x_ValidateSegmentGap(const TDenseg& denseg, const CSeq_align& align);
@@ -820,7 +824,7 @@ public:
     CValidError_descr(CValidError_imp& imp);
     virtual ~CValidError_descr(void);
 
-    void ValidateSeqDescr(const CSeq_descr& descr);
+    void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
 private:
 };
 

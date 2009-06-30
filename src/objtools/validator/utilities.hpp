@@ -290,6 +290,12 @@ typedef enum {
 
 int CheckDate (const CDate& date, bool require_full_date = false);
 
+bool IsBioseqTSA (const CBioseq& seq, CScope* scope);
+
+void GetPubdescLabels 
+(const CPubdesc& pd, 
+ vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+ vector<string>& published_labels, vector<string>& unpublished_labels);
 
 END_SCOPE(validator)
 END_SCOPE(objects)

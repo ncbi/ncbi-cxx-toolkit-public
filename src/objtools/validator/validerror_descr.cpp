@@ -56,7 +56,7 @@ CValidError_descr::~CValidError_descr(void)
 }
 
 
-void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
+void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx)
 {
     size_t  num_sources = 0,
             num_titles = 0;
@@ -141,11 +141,11 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
 
     if ( num_sources > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleBioSources,
-            "Undesired multiple source descriptors (reporting last one)", *last_source);
+            "Undesired multiple source descriptors (reporting last one)", ctx, *last_source);
     }
     if ( num_titles > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTitles,
-            "Multiple Title blocks (reporting last one)", *last_title);
+            "Multiple Title blocks (reporting last one)", ctx, *last_title);
     }
 }
 

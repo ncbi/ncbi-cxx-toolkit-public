@@ -536,8 +536,9 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
                     try {
                         const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);
                         id_type = id.Which();
-                    }
-                    catch (...) {
+					} catch (CException &x1) {
+                        id_no_good = true;
+					} catch (std::exception &x2) {
                         id_no_good = true;
                     }
                     

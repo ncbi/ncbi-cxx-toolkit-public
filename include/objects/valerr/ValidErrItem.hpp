@@ -204,7 +204,6 @@ enum EErrType {
     eErr_SEQ_DESCR_UserObjectProblem,
     eErr_SEQ_DESCR_TitleHasPMID,
     eErr_SEQ_DESCR_BadKeyword,
-    eErr_SEQ_DESCR_Obsolete,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,
@@ -447,12 +446,15 @@ enum EErrType {
     eErr_SEQ_ALIGN_Segtype,
     eErr_SEQ_ALIGN_BlastAligns,
     eErr_SEQ_ALIGN_PercentIdentity,
+	eErr_SEQ_ALIGN_ShortAln,
+	eErr_SEQ_ALIGN_UnexpectedAlignmentType,
     eErr_SEQ_ALIGN_SegsDimMismatch,
     eErr_SEQ_ALIGN_SegsNumsegMismatch,
     eErr_SEQ_ALIGN_SegsStartsMismatch,
     eErr_SEQ_ALIGN_SegsPresentMismatch,
     eErr_SEQ_ALIGN_SegsPresentStartsMismatch,
     eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
+	
     ERR_CODE_END(SEQ_ALIGN),
 
     ERR_CODE_BEGIN(SEQ_GRAPH) = 6000,
