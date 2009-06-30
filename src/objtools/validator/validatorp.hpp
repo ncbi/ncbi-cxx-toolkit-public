@@ -166,6 +166,8 @@ public:
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+	void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
+	void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
@@ -503,7 +505,7 @@ private:
     void x_ValidateDupGenes(const CSeq_feat_Handle& g1, const CSeq_feat_Handle& g2);
 
     void ValidateSeqDescContext(const CBioseq& seq);
-	void CValidError_bioseq::ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
+	void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,

@@ -1977,8 +1977,39 @@ void CValidError_imp::ValidateBioSource
             obj, ctx);
 	}
 
+	if (IsIndexerVersion()
+		&& bsrc.IsSetGenome() 
+		&& bsrc.GetGenome() == CBioSource::eGenome_chromosome) {
+		PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ChromosomeLocation, 
+			       "INDEXER_ONLY - BioSource location is chromosome",
+				   obj, ctx);
+	}
+
+    bool isViral = false, isAnimal = false, isPlant = false, isBacteria = false, isArchaea = false, isFungal = false;
+	if (bsrc.IsSetLineage()) {
+		string lineage = bsrc.GetLineage();
+		if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase)) {
+            isViral = true;
+	    } else if (NStr::StartsWith(lineage, "Eukaryota; Metazoa; ", NStr::eNocase)) {
+			isAnimal = true;
+		} else if (NStr::StartsWith(lineage, "Eukaryota; Viridiplantae; Streptophyta; Embryophyta; ", NStr::eNocase)
+                   || NStr::StartsWith(lineage, "Eukaryota; Rhodophyta; ", NStr::eNocase)
+                   || NStr::StartsWith(lineage, "Eukaryota; stramenopiles; Phaeophyceae; ", NStr::eNocase)) {
+			isPlant = true;
+		} else if (NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase)) {
+			isBacteria = true;
+		} else if (NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) {
+			isArchaea = true;
+		} else if (NStr::StartsWith(lineage, "Eukaryota; Fungi; ", NStr::eNocase)) {
+			isFungal = true;
+		}
+	}
+
 	int chrom_count = 0;
 	bool chrom_conflict = false;
+	int country_count = 0, lat_lon_count = 0;
+	int fwd_primer_seq_count = 0, rev_primer_seq_count = 0;
+	int fwd_primer_name_count = 0, rev_primer_name_count = 0;
     const CSubSource *chromosome = 0;
 	string countryname;
     bool germline = false;
@@ -1989,6 +2020,7 @@ void CValidError_imp::ValidateBioSource
             
         case CSubSource::eSubtype_country:
             {
+				++country_count;
                 if (!NStr::IsBlank (countryname)) {
                     PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode, 
                                 "Multiple country names on BioSource", obj, ctx);
@@ -2015,6 +2047,16 @@ void CValidError_imp::ValidateBioSource
                 }
             }
             break;
+
+		case CSubSource::eSubtype_lat_lon:
+			{
+				++lat_lon_count;
+				if (lat_lon_count > 1) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonProblem, 
+						       "Multiple lat_lon on BioSource", obj, ctx);
+				}
+			}
+			break;
             
         case CSubSource::eSubtype_chromosome:
             ++chrom_count;
@@ -2026,8 +2068,24 @@ void CValidError_imp::ValidateBioSource
                 chromosome = ssit->GetPointer();
             }
             break;
+
+		case CSubSource::eSubtype_fwd_primer_name:
+			++fwd_primer_name_count;
+			break;
+
+		case CSubSource::eSubtype_rev_primer_name:
+			++rev_primer_name_count;
+			break;
             
-        case CSubSource::eSubtype_transposon_name:
+		case CSubSource::eSubtype_fwd_primer_seq:
+			++fwd_primer_seq_count;
+			break;
+
+		case CSubSource::eSubtype_rev_primer_seq:
+			++rev_primer_seq_count;
+			break;
+
+		case CSubSource::eSubtype_transposon_name:
         case CSubSource::eSubtype_insertion_seq_name:
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
                 "Transposon name and insertion sequence name are no "
@@ -2066,6 +2124,32 @@ void CValidError_imp::ValidateBioSource
 		    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj, ctx);
 	  }
 
+    if (country_count > 1) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+			       "Multiple country qualifiers present", obj, ctx);
+	}
+    if (lat_lon_count > 1) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+			       "Multiple lat_lon qualifiers present", obj, ctx);
+	}
+    if (fwd_primer_seq_count > 1) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+			       "Multiple fwd_primer_seq qualifiers present", obj, ctx);
+	}
+    if (rev_primer_seq_count > 1) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+			       "Multiple rev_primer_seq qualifiers present", obj, ctx);
+	}
+    if (fwd_primer_name_count > 1) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+			       "Multiple fwd_primer_name qualifiers present", obj, ctx);
+	}
+    if (rev_primer_name_count > 1) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+			       "Multiple rev_primer_name qualifiers present", obj, ctx);
+	}
+
+	// validates orgref in the context of lineage
     if ( !orgref.IsSetOrgname()  ||
          !orgref.GetOrgname().IsSetLineage()  ||
          orgref.GetOrgname().GetLineage().empty() ) {
@@ -2087,6 +2171,16 @@ void CValidError_imp::ValidateBioSource
 			}
 		}
 	}
+
+	ValidateOrgRef (orgref, obj, ctx);
+}
+
+
+void CValidError_imp::ValidateOrgRef
+(const COrg_ref&    orgref,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
     if ( orgref.IsSetDb() ) {
         ValidateDbxref(orgref.GetDb(), obj, true, ctx);
     }
@@ -2109,7 +2203,15 @@ void CValidError_imp::ValidateBioSource
         return;
     }
     const COrgName& orgname = orgref.GetOrgname();
+    ValidateOrgName(orgname, obj, ctx);
+}
 
+
+void CValidError_imp::ValidateOrgName
+(const COrgName&    orgname,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
     if ( orgname.IsSetMod() ) {
         FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
             const COrgMod& omd = **omd_itr;
