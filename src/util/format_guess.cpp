@@ -502,7 +502,7 @@ CFormatGuess::TestFormatGtf(
         }
         ++uGtfLineCount;
     }
-    return true;
+    return (uGtfLineCount != 0);
 }
 
 //  -----------------------------------------------------------------------------
