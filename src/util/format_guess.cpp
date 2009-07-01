@@ -478,6 +478,7 @@ CFormatGuess::TestFormatGtf(
         return false;
     }
 
+    unsigned int uGtfLineCount = 0;
     list<string>::iterator it = m_TestLines.begin();
     for ( ;  it != m_TestLines.end();  ++it) {
         if ( !it->empty()  &&  (*it)[0] != '#') {
@@ -486,9 +487,20 @@ CFormatGuess::TestFormatGtf(
     }
 
     for ( ;  it != m_TestLines.end();  ++it) {
+        //
+        //  Make sure to ignore any UCSC track and browser lines prior to the
+        //  start of data
+        //
+        if ( !uGtfLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGtfLineCount && NStr::StartsWith( *it, "track " ) ) {
+            continue;
+        }
         if ( ! IsLineGtf( *it ) ) {
             return false;
         }
+        ++uGtfLineCount;
     }
     return true;
 }
