@@ -84,6 +84,7 @@
 
 #include <util/static_set.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
+#include <util/sgml_entity.hpp>
 
 #include <algorithm>
 #include <string>
@@ -293,7 +294,11 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_se
                          + val + ")", feat);
             }
         }
-            
+		if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
+			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+				     "feature qualifier " + (*it)->GetVal() + " has SGML",
+					 feat);
+		}
     }
 
     if (feat.IsSetExt()) {
@@ -1308,6 +1313,27 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     if (gene.IsSetLocus()) {
         ValidateCharactersInField (gene.GetLocus(), "Gene locus", feat);
     }
+
+	// check for SGML
+	if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			     "gene locus " + gene.GetLocus() + " has SGML", feat);
+	}
+	if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			     "gene locus_tag " + gene.GetLocus_tag() + " has SGML", feat);
+	}
+	if (gene.IsSetDesc() && ContainsSgml(gene.GetDesc())) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			     "gene description " + gene.GetDesc() + " has SGML", feat);
+	}
+	FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
+		if (ContainsSgml(*it)) {
+			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					 "gene synonym " + gene.GetDesc() + " has SGML", feat);
+		}
+	}
+
 }
 
 
@@ -2286,7 +2312,18 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
         }
 
         ValidateCharactersInField (*it, "Protein name", feat);
+		if (ContainsSgml(*it)) {
+			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+				     "protein name " + *it + " has SGML",
+					 feat);
+		}
     }
+
+	if (prot.IsSetDesc() && ContainsSgml(prot.GetDesc())) {
+		PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			     "protein description " + prot.GetDesc() + " has SGML",
+				 feat);
+	}
 
     if (prot.IsSetDesc() && feat.IsSetComment() 
         && NStr::EqualCase(prot.GetDesc(), feat.GetComment())) {
@@ -2399,7 +2436,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         }
         
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
-            ValidateCharactersInField (rna.GetExt().GetName(), "mRNA name", feat);
+			const string& rna_name = rna.GetExt().GetName();
+            ValidateCharactersInField (rna_name, "mRNA name", feat);
+			if (ContainsSgml(rna_name)) {
+				PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					"mRNA name " + rna_name + " has SGML", feat);
+			}
         }
     }
 
@@ -2453,7 +2495,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 
     if (rna_type == CRNA_ref::eType_rRNA) {
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
-            ValidateCharactersInField (rna.GetExt().GetName(), "rRNA name", feat);
+			const string& rna_name = rna.GetExt().GetName();
+            ValidateCharactersInField (rna_name, "rRNA name", feat);
+			if (ContainsSgml(rna_name)) {
+				PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					"rRNA name " + rna_name + " has SGML", feat);
+			}
         }
     }        
 
@@ -6030,6 +6077,11 @@ void CValidError_feat::ValidateFeatComment
             "attach reference specific comments to the reference "
             "REMARK instead.", feat);
     }
+	if (ContainsSgml(comment)) {
+		PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+			     "feature comment " + comment + " has SGML",
+				 feat);
+	}
 }
 
 

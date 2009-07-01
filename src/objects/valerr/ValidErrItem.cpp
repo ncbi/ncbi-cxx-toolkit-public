@@ -570,6 +570,9 @@ data.")),
    TErrTypStrs ( eErr_GENERIC_PublicationInconsistency,
    TErrStrs( "PublicationInconsistency",
 "Some fields in the publication should not be present with other fields.")),
+   TErrTypStrs ( eErr_GENERIC_SgmlPresentInText,
+   TErrStrs( "SgmlPresentInText",
+"SGML markup is embedded in text.")),
 
 /* SEQ_PKG */
 

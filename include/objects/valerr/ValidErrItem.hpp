@@ -219,6 +219,7 @@ enum EErrType {
     eErr_GENERIC_CollidingSerialNumbers,
     eErr_GENERIC_EmbeddedScript,
     eErr_GENERIC_PublicationInconsistency,
+	eErr_GENERIC_SgmlPresentInText,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,

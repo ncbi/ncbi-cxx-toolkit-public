@@ -105,6 +105,7 @@
 #include <objects/biblio/Affil.hpp>
 
 #include <objtools/error_codes.hpp>
+#include <util/sgml_entity.hpp>
 
 #include <algorithm>
 
@@ -1900,10 +1901,25 @@ void CValidError_imp::ValidateDbxref
  bool biosource,
  const CSeq_entry *ctx)
 {
+	if (xref.IsSetTag() && xref.GetTag().IsStr()) {
+		if (ContainsSgml(xref.GetTag().GetStr())) {
+            PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+                "dbxref value" + xref.GetTag().GetStr() + " has SGML",
+				obj, ctx);
+		}
+	}
+
     if ( !xref.CanGetDb() ) {
         return;
     }
     const string& db = xref.GetDb();
+
+	if (ContainsSgml(db)) {
+        PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "dbxref database" + db + " has SGML",
+			obj, ctx);
+	}
+
     CDbtag::EDbtagType db_type = xref.GetType();
     bool is_pid = db_type == CDbtag::eDbtagType_PID   ||
                   db_type == CDbtag::eDbtagType_PIDd  ||
@@ -1946,6 +1962,40 @@ void CValidError_imp::ValidateDbxref
     ITERATE( TDbtags, xref, xref_list) {
         ValidateDbxref(**xref, obj, biosource, ctx);
     }
+}
+
+
+static bool s_UnbalancedParentheses (string str)
+{
+	if (NStr::IsBlank(str)) {
+		return false;
+	}
+
+    int par = 0, bkt = 0;
+	string::iterator it = str.begin();
+	while (it != str.end()) {
+		if (*it == '(') {
+            ++par;
+		} else if (*it == ')') {
+			--par;
+			if (par < 0) {
+				return true;
+			}
+		} else if (*it == '[') {
+			++bkt;
+		} else if (*it == ']') {
+			--bkt;
+			if (bkt < 0) {
+				return true;
+			}
+		}
+		++it;
+	}
+	if (par > 0 || bkt > 0) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 
@@ -2016,7 +2066,12 @@ void CValidError_imp::ValidateBioSource
     bool rearranged = false;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
-        switch ( (**ssit).GetSubtype() ) {
+		if (!(*ssit)->IsSetSubtype()) {
+			continue;
+		}
+
+		int subtype = (*ssit)->GetSubtype();
+        switch ( subtype ) {
             
         case CSubSource::eSubtype_country:
             {
@@ -2112,6 +2167,20 @@ void CValidError_imp::ValidateBioSource
         default:
             break;
         }
+
+		if (!CSubSource::NeedsNoText(subtype) && (*ssit)->IsSetName()) {
+            const string& subname = (*ssit)->GetName();
+			if (s_UnbalancedParentheses(subname)) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
+                           "Unbalanced parentheses in '" + subname + "'",
+						   obj, ctx);
+			}
+			if (ContainsSgml(subname)) {
+				PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					       "subsource " + subname + " has SGML", 
+						   obj, ctx);
+			}
+		}
     }
     if ( germline  &&  rearranged ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
@@ -2217,21 +2286,120 @@ void CValidError_imp::ValidateOrgName
             const COrgMod& omd = **omd_itr;
             int subtype = omd.GetSubtype();
             
-            if ( (subtype == 0) || (subtype == 1) ) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-                        "Unknown orgmod subtype " + NStr::IntToString(subtype), obj, ctx);
-            }
-            if ( subtype == COrgMod::eSubtype_variety ) {
-                if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
+			switch (subtype) {
+				case 0:
+				case 1:
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-                        "Orgmod variety should only be in plants or fungi", 
-                        obj, ctx);
-                }
+                               "Unknown orgmod subtype " + NStr::IntToString(subtype), obj, ctx);
+					break;
+				case COrgMod::eSubtype_variety:
+					if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
+						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+							"Orgmod variety should only be in plants or fungi", 
+							obj, ctx);
+					}
+					break;
+				case COrgMod::eSubtype_other:
+					ValidateSourceQualTags( omd.GetSubname(), obj, ctx);
+					break;
+				case COrgMod::eSubtype_culture_collection:
+					if (omd.IsSetSubname() && NStr::Find(omd.GetSubname(), ":") == string::npos) {
+						PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, 
+							       "Culture_collection should be structured, but is not",
+								   obj, ctx);
+					}
+					break;
+				default:
+					break;
             }
-            if ( subtype == COrgMod::eSubtype_other ) {
-                ValidateSourceQualTags( omd.GetSubname(), obj, ctx);
-            }
+			if ( omd.IsSetSubname()) {
+				const string& subname = omd.GetSubname();
+
+				if (s_UnbalancedParentheses(subname)) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
+							   "Unbalanced parentheses in '" + subname + "'",
+							   obj, ctx);
+				}
+				if (ContainsSgml(subname)) {
+					PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+							   "orgmod " + subname + " has SGML", 
+							   obj, ctx);
+				}
+			}
         }
+
+		// look for multiple source vouchers
+        FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
+			if(!(*omd_itr)->IsSetSubtype() || !(*omd_itr)->IsSetSubname()) {
+				continue;
+			}
+            const COrgMod& omd = **omd_itr;
+            int subtype = omd.GetSubtype();
+
+			if (subtype != COrgMod::eSubtype_specimen_voucher
+				&& subtype != COrgMod::eSubtype_bio_material
+				&& subtype != COrgMod::eSubtype_culture_collection) {
+				continue;
+			}
+
+			string inst1 = "", coll1 = "", id1 = "";
+			if (!COrgMod::ParseStructuredVoucher(omd.GetSubname(), inst1, coll1, id1)) {
+				if (NStr::IsBlank(inst1)) {
+					PostObjErr (eDiag_Error, eErr_SEQ_DESCR_BadInstitutionCode, 
+						        "Voucher is missing institution code", obj, ctx);
+				}
+				if (NStr::IsBlank (id1)) {
+					PostObjErr (eDiag_Error, eErr_SEQ_DESCR_BadVoucherID, 
+					               "Voucher is missing specific identifier", obj, ctx);
+			    }
+			    continue;
+		    }
+            if (NStr::EqualNocase(inst1, "personal")
+				|| NStr::EqualCase(coll1, "DNA")) {
+				continue;
+			}
+
+			COrgName::TMod::const_iterator it_next = omd_itr;
+			++it_next;
+			while (it_next != orgname.GetMod().end()) {
+				if (!(*it_next)->IsSetSubtype() || !(*it_next)->IsSetSubname()) {
+					++it_next;
+					continue;
+				}
+				int subtype_next = (*it_next)->GetSubtype();
+				if (subtype_next != COrgMod::eSubtype_specimen_voucher
+					&& subtype_next != COrgMod::eSubtype_bio_material
+					&& subtype_next != COrgMod::eSubtype_culture_collection) {
+					++it_next;
+					continue;
+				}
+			    string inst2 = "", coll2 = "", id2 = "";
+				if (!COrgMod::ParseStructuredVoucher((*it_next)->GetSubname(), inst2, coll2, id2)
+					|| NStr::IsBlank(inst2)
+					|| NStr::EqualNocase(inst2, "personal")
+					|| NStr::EqualCase(coll2, "DNA")
+					|| !NStr::EqualNocase (inst1, inst2)) {
+					++it_next;
+					continue;
+				}
+				// at this point, we have identified two vouchers 
+				// with the same institution codes
+				// that are not personal and not DNA collections
+				if (!NStr::IsBlank(coll1) && !NStr::IsBlank(coll2) 
+					&& NStr::EqualNocase(coll1, coll2)) {
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceVouchers, 
+						        "Multiple vouchers with same institution:collection",
+								obj, ctx);
+				} else {
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceVouchers, 
+						        "Multiple vouchers with same institution",
+								obj, ctx);
+				}
+                ++it_next;
+			}
+
+		}          
+
     }
 }
 
