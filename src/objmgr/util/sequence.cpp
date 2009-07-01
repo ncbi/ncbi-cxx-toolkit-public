@@ -2469,6 +2469,9 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
     } else {
         v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
+    if (v.IsProtein()) { // allow extensions
+        v.SetCoding(CSeq_data::e_Ncbieaa);
+    }
 
     TMSMap masking_state;
     x_GetMaskingStates(masking_state, handle.GetSeqId(), location, &scope);
@@ -2519,12 +2522,18 @@ void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location, bool no_
 
         if (is_raw) {
             CSeqVector vec(seq, NULL, CBioseq_Handle::eCoding_Iupac);
+            if (vec.IsProtein()) { // allow extensions
+                vec.SetCoding(CSeq_data::e_Ncbieaa);
+            }
             x_WriteSequence(vec, masking_state);
         } else {
             /// we require far-pointer resolution
             CScope scope(*CObjectManager::GetInstance());
             CBioseq_Handle bsh = scope.AddBioseq(seq);
             CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+            if (vec.IsProtein()) {
+                vec.SetCoding(CSeq_data::e_Ncbieaa);
+            }
             x_WriteSequence(vec, masking_state);
         }
     }
