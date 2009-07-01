@@ -32,8 +32,8 @@
  *
  */
 
-#include <corelib/ncbistl.hpp>
 #include "ns_types.hpp"
+#include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 

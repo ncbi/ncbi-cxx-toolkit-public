@@ -31,11 +31,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <util/bitset/bmalgo.h>
-
-#include <connect/ncbi_socket.hpp>
-
 #include "ns_util.hpp"
+#include <util/bitset/bmalgo.h>
+#include <connect/ncbi_socket.hpp>
 
 
 BEGIN_NCBI_SCOPE

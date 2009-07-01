@@ -200,8 +200,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
         eVIAffinity = 2
     };
     typedef int TQueueKind;
-public:
-    CJobStatusTracker            status_tracker;    ///< status FSA
 
 public:
     // Constructor/destructor
@@ -217,8 +215,27 @@ public:
 
     void x_ReadFieldInfo(void);
 
-    // Thread-safe parameter set
+    // Thread-safe parameter access
+    typedef list<pair<string, string> > TParameterList;
     void SetParameters(const SQueueParameters& params);
+    TParameterList GetParameters() const;
+    int GetTimeout() const;
+    int GetNotifyTimeout() const;
+    bool GetDeleteDone() const;
+    int GetRunTimeout() const;
+    int GetRunTimeoutPrecision() const;
+    unsigned GetFailedRetries() const;
+    time_t GetBlacklistTime() const;
+    time_t GetEmptyLifetime() const;
+    unsigned GetMaxInputSize() const;
+    unsigned GetMaxOutputSize() const;
+    bool GetDenyAccessViolations() const;
+    bool GetLogAccessViolations() const;
+    unsigned GetLogJobState() const;
+    bool IsVersionControl() const;
+    bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
+    bool IsSubmitAllowed(unsigned host) const;
+    bool IsWorkerAllowed(unsigned host) const;
 
     ////
     // Status matrix related
@@ -231,6 +248,30 @@ public:
     string DecorateJobId(unsigned job_id) {
         return m_QueueName + '/' + NStr::IntToString(job_id);
     }
+
+    // Submit job, return numeric job id
+    unsigned Submit(CJob& job);
+
+    /// Submit job batch
+    /// @return ID of the first job, second is first_id+1 etc.
+    unsigned SubmitBatch(vector<CJob>& batch);
+
+    void PutResultGetJob(
+        CWorkerNode*     worker_node,
+        // PutResult parameters
+        unsigned         done_job_id,
+        int              ret_code,
+        const string*    output,
+        // GetJob parameters
+        CRequestContextFactory* rec_ctx_f,
+        const list<string>* aff_list,
+        CJob*            new_job);
+
+    /// Cancel job execution (job stays in special Canceled state)
+    void Cancel(unsigned job_id);
+
+    /// Move job to pending ignoring its current status
+    void ForceReschedule(unsigned job_id);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
@@ -436,7 +477,9 @@ public:
     /// Send string to monitor
     void MonitorPost(const string& msg);
 
-    void PrintJobStatusMatrix(CNcbiOstream& out);
+    void PrintSubmHosts(CNcbiOstream& out) const;
+    void PrintWNodeHosts(CNcbiOstream& out) const;
+    void PrintJobStatusMatrix(CNcbiOstream& out) const;
 
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus status,
@@ -489,13 +532,37 @@ private:
     // Remove from group, and if group is empty delete it
     void x_RemoveFromReadGroup(unsigned group_id, unsigned job_id);
 
-    void FailJobs(const TJobList& jobs,
+    void x_FailJobs(const TJobList& jobs,
         CWorkerNode* worker_node, const string& err_msg);
+
+    /// @return TRUE if job record has been found and updated
+    bool x_UpdateDB_PutResultNoLock(
+        unsigned             job_id,
+        time_t               curr,
+        bool                 delete_done,
+        int                  ret_code,
+        const string&        output,
+        CJob&                job);
+
+    enum EGetJobUpdateStatus
+    {
+        eGetJobUpdate_Ok,
+        eGetJobUpdate_NotFound,
+        eGetJobUpdate_JobStopped,
+        eGetJobUpdate_JobFailed
+    };
+    EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
+        CWorkerNode*           worker_node,
+        time_t                 curr,
+        unsigned               job_id,
+        CJob&                  job);
 
 private:
     friend class CQueueGuard;
     friend class CQueueJSGuard;
     friend class CJob;
+
+    CJobStatusTracker            m_StatusTracker;    ///< status FSA
 
     // Timeline object to control job execution timeout
     CJobTimeLine*                m_RunTimeLine;
@@ -619,6 +686,90 @@ private:
     /// Host access list for job execution (workers)
     CNetSchedule_AccessList      m_WnodeHosts;
 };
+
+
+// Thread-safe parameter access. The majority of parameters are single word,
+// so if you need a single parameter, it is safe to use these methods, which
+// do not lock anything. In such cases, where the parameter is not single-word,
+// we lock m_ParamLock for reading. In cases where you need more than one
+// parameter, to provide consistency use CQueueParamAccessor, which is a smart
+// guard around the parameter block.
+inline int SLockedQueue::GetTimeout() const
+{
+    return m_Timeout;
+}
+inline int SLockedQueue::GetNotifyTimeout() const
+{
+    return m_NotifyTimeout;
+}
+inline bool SLockedQueue::GetDeleteDone() const
+{
+    return m_DeleteDone;
+}
+inline int SLockedQueue::GetRunTimeout()  const
+{
+    return m_RunTimeout;
+}
+inline int SLockedQueue::GetRunTimeoutPrecision() const
+{
+    return m_RunTimeoutPrecision;
+}
+inline unsigned SLockedQueue::GetFailedRetries() const
+{
+    return m_FailedRetries;
+}
+inline time_t SLockedQueue::GetBlacklistTime() const
+{
+    // On some platforms time_t is 64-bit disregarding of
+    // processor word size, so we need to lock parameters
+    CReadLockGuard guard(m_ParamLock);
+    return m_BlacklistTime;
+}
+inline time_t SLockedQueue::GetEmptyLifetime() const
+{
+    CReadLockGuard guard(m_ParamLock);
+    return m_EmptyLifetime;
+}
+inline unsigned SLockedQueue::GetMaxInputSize() const
+{
+    return m_MaxInputSize;
+}
+inline unsigned SLockedQueue::GetMaxOutputSize() const
+{
+    return m_MaxOutputSize;
+}
+inline bool SLockedQueue::GetDenyAccessViolations() const
+{
+    return m_DenyAccessViolations;
+}
+inline bool SLockedQueue::GetLogAccessViolations() const
+{
+    return m_LogAccessViolations;
+}
+inline unsigned SLockedQueue::GetLogJobState() const
+{
+    return m_LogJobState;
+}
+inline bool SLockedQueue::IsVersionControl() const
+{
+    CReadLockGuard guard(m_ParamLock);
+    return m_ProgramVersionList.IsConfigured();
+}
+inline bool SLockedQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
+{
+    CReadLockGuard guard(m_ParamLock);
+    return m_ProgramVersionList.IsMatchingClient(cinfo);
+}
+inline bool SLockedQueue::IsSubmitAllowed(unsigned host) const
+{
+    CReadLockGuard guard(m_ParamLock);
+    return host == 0  ||  m_SubmHosts.IsAllowed(host);
+}
+inline bool SLockedQueue::IsWorkerAllowed(unsigned host) const
+{
+    CReadLockGuard guard(m_ParamLock);
+    return host == 0  ||  m_WnodeHosts.IsAllowed(host);
+}
 
 
 class CQueueParamAccessor
@@ -792,7 +943,7 @@ public:
                   unsigned      job_id,
                   TJobStatus    status,
                   bool*         updated = 0)
-        : m_Guard(q->status_tracker, job_id, status, updated)
+        : m_Guard(q->m_StatusTracker, job_id, status, updated)
     {
     }
 

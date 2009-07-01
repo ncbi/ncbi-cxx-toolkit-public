@@ -46,6 +46,7 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include "ns_util.hpp"
+#include "ns_format.hpp"
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
@@ -55,16 +56,6 @@
 #include "worker_node.hpp"
 
 BEGIN_NCBI_SCOPE
-
-
-struct SQueueDescription
-{
-    const char*           host;
-    unsigned              port;
-    const char*           queue;
-    map<unsigned, string> host_name_cache;
-};
-
 
 struct SFieldsDescription
 {
@@ -107,42 +98,9 @@ class CQueue
 public:
     /// @param client_host_addr - 0 means internal use
     CQueue(CQueueDataBase&    db,
-           CRef<SLockedQueue> queue,
-           unsigned           client_host_addr);
-
-    unsigned Submit(CJob& job);
-
-    /// Submit job batch
-    /// @return
-    ///    ID of the first job, second is first_id+1 etc.
-    unsigned SubmitBatch(vector<CJob>& batch);
-
-    void Cancel(unsigned job_id);
-
-    /// Move job to pending ignoring its current status
-    void ForceReschedule(unsigned job_id);
+           CRef<SLockedQueue> queue);
 
     // Worker node-specific methods
-    void PutResult(CWorkerNode*     worker_node,
-                   unsigned         job_id,
-                   int              ret_code,
-                   const string&    output);
-
-    void GetJob(CWorkerNode*        worker_node,
-                CRequestContextFactory* rec_ctx_f,
-                const list<string>* aff_list,
-                CJob*               new_job);
-
-    void PutResultGetJob(CWorkerNode*     worker_node,
-                         // PutResult parameters
-                         unsigned         done_job_id,
-                         int              ret_code,
-                         const string*    output,
-                         // GetJob parameters
-                         CRequestContextFactory* rec_ctx_f,
-                         const list<string>* aff_list,
-                         CJob*            new_job);
-
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
 
@@ -178,15 +136,6 @@ public:
     /// Send string to monitor
     void MonitorPost(const string& msg);
 
-    unsigned GetMaxInputSize() const;
-    unsigned GetMaxOutputSize() const;
-
-    unsigned GetNumParams() const;
-    string GetParamName(unsigned n) const;
-    string GetParamValue(unsigned n) const;
-
-    void PrintSubmHosts(CNcbiOstream& out) const;
-    void PrintWNodeHosts(CNcbiOstream& out) const;
     void PrintQueue(CNcbiOstream& out,
                     TJobStatus    job_status,
                     const string& host,
@@ -213,23 +162,11 @@ public:
     /// Dump all job records
     void PrintAllJobDbStat(CNcbiOstream & out);
 
-    // Access control
-    bool IsDenyAccessViolations() const;
-    bool IsLogAccessViolations() const;
-    bool IsVersionControl() const;
-    bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
-    /// Check if client is a configured submitter
-    bool IsSubmitAllowed() const;
-    /// Check if client is a configured worker node
-    bool IsWorkerAllowed() const;
-
-
     // BerkeleyDB-specific statistics
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
 
-    // TODO Must be renamed to GetLQueue()
     CRef<SLockedQueue> GetQueue(void);
 
 private:
@@ -247,27 +184,6 @@ private:
                              CNcbiOstream& out,
                              const char*   fsp = "\t");
 
-    /// @return TRUE if job record has been found and updated
-    bool x_UpdateDB_PutResultNoLock(unsigned             job_id,
-                                    time_t               curr,
-                                    bool                 delete_done,
-                                    int                  ret_code,
-                                    const string&        output,
-                                    CJob&                job);
-
-    enum EGetJobUpdateStatus
-    {
-        eGetJobUpdate_Ok,
-        eGetJobUpdate_NotFound,
-        eGetJobUpdate_JobStopped,
-        eGetJobUpdate_JobFailed
-    };
-    EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
-                                CWorkerNode*           worker_node,
-                                time_t                 curr,
-                                unsigned               job_id,
-                                CJob&                  job);
-
     const CRef<SLockedQueue> GetQueue(void) const;
 
 private:
@@ -278,7 +194,6 @@ private:
     // Per queue data
     CQueueDataBase&    m_Db;      ///< Parent structure reference
     CWeakRefOrig<SLockedQueue> m_LQueue;
-    unsigned           m_ClientHostAddr;
 }; // CQueue
 
 
@@ -482,7 +397,7 @@ public:
     // Count Pending and Running jobs in all queues
     unsigned CountActiveJobs() const;
 
-    CQueue* OpenQueue(const string& name, unsigned peer_addr);
+    CQueue* OpenQueue(const string& name);
 
     typedef SLockedQueue::TQueueKind TQueueKind;
     void MountQueue(const string& qname,
