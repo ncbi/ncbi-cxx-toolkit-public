@@ -1285,6 +1285,24 @@ bool CCdCore::IsMaster3DOK() const
     return result;
 }
 
+bool CCdCore::HasStructure() const {
+//-------------------------------------------------------------------------
+// return true if any Bioseq in the CD has a PDB-type Seq-id
+//-------------------------------------------------------------------------
+    bool result = false;
+    list< CRef< CSeq_entry > >::const_iterator  it, itEnd;
+
+    if (IsSetSequences() && GetSequences().IsSet()) {
+        // look through each sequence in set for a structured sequence
+        itEnd = GetSequences().GetSet().GetSeq_set().end();
+        for (it = GetSequences().GetSet().GetSeq_set().begin(); !result && it != itEnd; ++it) {
+            result = HasSeqIdOfType(*it, CSeq_id::e_Pdb);
+        }
+    }
+    return result;
+}
+
+
 bool CCdCore::Has3DMaster() const {
 //-------------------------------------------------------------------------
 // confirm if this CD has a structure as its master

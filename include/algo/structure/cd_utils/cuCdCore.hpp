@@ -158,6 +158,7 @@ public:
 	void   ErasePendingRow(int row);
 
     /*  Methods for structures, structure alignments, MMDB identifiers  */
+    bool   HasStructure() const;  // true if there are any PDB seq-ids in seqlist
     bool   Has3DMaster() const;
  	int    Num3DAlignments() const;
  	bool   Has3DSuperpos(list<int>& MMDBId_vec) const;
