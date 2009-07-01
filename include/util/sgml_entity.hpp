@@ -49,6 +49,8 @@ void NCBI_XUTIL_EXPORT Sgml2Ascii(string& sgml);
 ///   string with SGML entities converted to ASCII
 string NCBI_XUTIL_EXPORT Sgml2Ascii(const string& sgml);
 
+bool NCBI_XUTIL_EXPORT ContainsSgml(const string& str);
+
 
 END_NCBI_SCOPE
 

@@ -135,4 +135,38 @@ string Sgml2Ascii(const string& sgml)
     return result;
 }
 
+
+//detecting SGML in string
+bool ContainsSgml(const string& str)
+{
+	bool found = false;
+	size_t pos = NStr::Find(str, "&");
+	while (pos != string::npos && !found) {
+  		size_t len = 0;
+		const char *end = str.c_str() + pos + 1;
+		while (*end != 0 && isalpha (*end)) {
+			len++;
+			end++;
+		}
+		if (*end == ';' && len > 1) {
+			string match = str.substr(pos + 1, len);
+
+			TSgmlAsciiMap::const_iterator it = sc_SgmlAsciiMap.begin();
+			while (it != sc_SgmlAsciiMap.end() && !found) {
+				if (NStr::StartsWith(match, it->first)) {
+					found = true;
+				}
+				++it;
+			}
+		}
+		if (*end == 0) {
+			pos = string::npos;
+		} else if (!found) {
+			pos = NStr::Find(str, "&", pos + len + 1);
+		}
+	}
+    return found;
+}
+
+
 END_NCBI_SCOPE
