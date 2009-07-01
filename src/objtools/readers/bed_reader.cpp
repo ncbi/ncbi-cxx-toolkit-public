@@ -56,6 +56,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
@@ -110,7 +111,7 @@ CBedReader::~CBedReader()
 
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
-CBedReader::ReadObject(
+CBedReader::ReadSeqAnnot(
     ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
@@ -149,13 +150,13 @@ CBedReader::ReadObject(
     
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
-CBedReader::ReadObject(
+CBedReader::ReadSeqAnnot(
     CNcbiIstream& in,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     CStreamLineReader lr( in );
-    return ReadObject( lr, pErrorContainer );
+    return ReadSeqAnnot( lr, pErrorContainer );
 };
                 
 //  ----------------------------------------------------------------------------

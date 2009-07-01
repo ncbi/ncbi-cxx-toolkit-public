@@ -70,12 +70,12 @@ public:
         CRef<CSeq_annot>& );
 
     virtual CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         ILineReader&,
         CErrorContainer* =0 );
                 
     CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         CNcbiIstream&,
         CErrorContainer* );
                 

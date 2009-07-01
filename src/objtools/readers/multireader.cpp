@@ -77,6 +77,8 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
@@ -113,24 +115,46 @@ CMultiReader::~CMultiReader()
 
 //  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
-CMultiReader::ReadObject(
+CMultiReader::ReadSeqAnnot(
     ILineReader& lr,
     CErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
     CReaderBase* pReader = CreateReader( lr );
-    return pReader->ReadObject( lr, pErrorContainer );
+    return pReader->ReadSeqAnnot( lr, pErrorContainer );
 };
 
 //  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
-CMultiReader::ReadObject(
+CMultiReader::ReadSeqAnnot(
     CNcbiIstream& in,
     CErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
     CReaderBase* pReader = CreateReader( in );
-    return pReader->ReadObject( in, pErrorContainer );
+    return pReader->ReadSeqAnnot( in, pErrorContainer );
+};
+
+//  ----------------------------------------------------------------------------
+CRef< CSeq_entry >
+CMultiReader::ReadSeqEntry(
+    ILineReader& lr,
+    CErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    CReaderBase* pReader = CreateReader( lr );
+    return pReader->ReadSeqEntry( lr, pErrorContainer );
+};
+
+//  ----------------------------------------------------------------------------
+CRef< CSeq_entry >
+CMultiReader::ReadSeqEntry(
+    CNcbiIstream& in,
+    CErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    CReaderBase* pReader = CreateReader( in );
+    return pReader->ReadSeqEntry( in, pErrorContainer );
 };
 
 //  ----------------------------------------------------------------------------
@@ -187,7 +211,10 @@ CMultiReader::CreateReader(
         
     case CFormatGuess::eWiggle:
         return new CWiggleReader();
-        
+    
+    case CFormatGuess::eGtf:
+        return new CGff3Reader();
+            
     default:
         NCBI_THROW2( CObjReaderParseException, eFormat,
             "File format not supported", 0 );

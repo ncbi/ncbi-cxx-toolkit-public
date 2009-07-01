@@ -87,12 +87,12 @@ public:
     typedef int TFlags;
 
     virtual CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         CNcbiIstream&,
         CErrorContainer* =0 );
                 
     virtual CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         ILineReader&,
         CErrorContainer* =0 );
                 

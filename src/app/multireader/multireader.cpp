@@ -47,6 +47,8 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+
 #include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_exception.hpp>
@@ -61,6 +63,19 @@ class CMultiReaderApp
 //  ============================================================================
      : public CNcbiApplication
 {
+protected:
+    void ProcessSeqEntry(
+        CFormatGuess::EFormat,
+        CNcbiIstream&,
+        CNcbiOstream&,
+        CErrorContainer& );
+        
+    void ProcessSeqAnnot(
+        CFormatGuess::EFormat,
+        CNcbiIstream&,
+        CNcbiOstream&,
+        CErrorContainer& );
+        
 private:
     virtual void Init(void);
     virtual int  Run(void);
@@ -144,20 +159,18 @@ CMultiReaderApp::Run(void)
     
     CMultiReader reader( fmt );
     CErrorContainer errors;
-    CRef< CSeq_annot > annot = reader.ReadObject( ip, &errors );
     
-    if ( ! args[ "ucsc-build" ].AsString().empty() ) {
-        CIdMapper* pMapper = CIdMapper::GetIdMapper( "builtin" );
-        pMapper->MapSeqAnnot( args[ "ucsc-build" ].AsString(), annot );
-        delete pMapper;
+    switch (fmt) {
+    
+    case CFormatGuess::eGtf:
+        ProcessSeqEntry( fmt, ip, op, errors );
+        break;
+    
+    default: 
+        ProcessSeqAnnot( fmt, ip, op, errors );
+        break;
     }
     
-    if ( annot ) {
-        op << MSerial_AsnText << *annot << endl;
-    }
-    else {
-        cerr << "No object found!" << endl;
-    }
     errors.Dump( cerr );
     return 0;
 }
@@ -170,10 +183,52 @@ void CMultiReaderApp::Exit(void)
 }
 
 //  ============================================================================
+void
+CMultiReaderApp::ProcessSeqEntry(
+    CFormatGuess::EFormat fmt,
+    CNcbiIstream& in,
+    CNcbiOstream& out,
+    CErrorContainer& errors )
+//  ============================================================================
+{
+    CMultiReader reader( fmt );
+    CRef< CSeq_entry > entry = reader.ReadSeqEntry( in, &errors );
+    if ( entry ) {
+        out << MSerial_AsnText << *entry << endl;
+    }
+}
+
+//  ============================================================================
+void
+CMultiReaderApp::ProcessSeqAnnot(
+    CFormatGuess::EFormat fmt,
+    CNcbiIstream& in,
+    CNcbiOstream& out,
+    CErrorContainer& errors )
+//  ============================================================================
+{
+    CMultiReader reader( fmt );
+    CRef< CSeq_annot > annot = reader.ReadSeqAnnot( in, &errors );
+
+    if ( ! GetArgs()[ "ucsc-build" ].AsString().empty() ) {
+        CIdMapper* pMapper = CIdMapper::GetIdMapper( "builtin" );
+        pMapper->MapSeqAnnot( GetArgs()[ "ucsc-build" ].AsString(), annot );
+        delete pMapper;
+    }
+    
+    if ( annot && annot->CanGetData() 
+         && (CSeq_annot::TData::e_not_set != annot->GetData().Which()) ) {
+        out << MSerial_AsnText << *annot << endl;
+    }
+    else {
+        cerr << "No seq-annot found!" << endl;
+    }
+}
+
+//  ============================================================================
 int main(int argc, const char* argv[])
 //  ============================================================================
 {
     // Execute main application function
     return CMultiReaderApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-

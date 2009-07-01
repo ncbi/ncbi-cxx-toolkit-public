@@ -39,6 +39,7 @@
 #include <corelib/stream_utils.hpp>
 
 #include <util/static_map.hpp>
+#include <util/line_reader.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
@@ -76,6 +77,7 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/gff_reader.hpp>
@@ -175,5 +177,31 @@ void CGff3Reader::Read(
 }
 
 
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_entry >
+CGff3Reader::ReadSeqEntry(
+    ILineReader& lr,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    string line;
+    int linecount = 0;
+    
+    CGFFReader reader;
+    CRef< CSeq_entry > entry = reader.Read( lr );
+    return entry;
+}
+    
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_entry >
+CGff3Reader::ReadSeqEntry(
+    CNcbiIstream& in,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CStreamLineReader lr( in );
+    return ReadSeqEntry( lr, pErrorContainer );
+};
+                
 END_objects_SCOPE
 END_NCBI_SCOPE

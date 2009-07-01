@@ -60,6 +60,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -141,7 +142,7 @@ CWiggleReader::~CWiggleReader()
 
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
-CWiggleReader::ReadObject(
+CWiggleReader::ReadSeqAnnot(
     ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
@@ -195,13 +196,13 @@ CWiggleReader::ReadObject(
     
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
-CWiggleReader::ReadObject(
+CWiggleReader::ReadSeqAnnot(
     CNcbiIstream& input,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
     CStreamLineReader lr( input );
-    return ReadObject( lr, pErrorContainer );
+    return ReadSeqAnnot( lr, pErrorContainer );
 };
                 
 //  ----------------------------------------------------------------------------

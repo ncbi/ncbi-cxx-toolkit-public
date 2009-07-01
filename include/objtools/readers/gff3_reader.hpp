@@ -73,6 +73,16 @@ public:
         CNcbiIstream&, 
         CRef<CSeq_entry>& );
 
+    CRef< CSeq_entry >
+    ReadSeqEntry(
+        ILineReader&,
+        CErrorContainer* =0 );
+        
+    CRef< CSeq_entry >
+    ReadSeqEntry(
+        CNcbiIstream&,
+        CErrorContainer* =0 );
+         
     //
     //  helpers:
     //

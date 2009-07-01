@@ -43,6 +43,7 @@
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 #include <objtools/readers/reader_exception.hpp>

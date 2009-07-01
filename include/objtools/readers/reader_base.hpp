@@ -93,14 +93,24 @@ public:
         CRef<CSeq_entry>& ) { return; };
 
     virtual CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         CNcbiIstream&,
         CErrorContainer* =0 ) { return CRef< CSeq_annot >(); };
                 
     virtual CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         ILineReader&,
         CErrorContainer* =0 ) { return CRef< CSeq_annot >(); };
+                
+    virtual CRef< CSeq_entry >
+    ReadSeqEntry(
+        CNcbiIstream&,
+        CErrorContainer* =0 ) { return CRef< CSeq_entry >(); };
+                
+    virtual CRef< CSeq_entry >
+    ReadSeqEntry(
+        ILineReader&,
+        CErrorContainer* =0 ) { return CRef< CSeq_entry >(); };
                 
     virtual void Dump(
         CNcbiOstream& ) { return; };
@@ -112,7 +122,7 @@ protected:
     static bool SplitLines( 
         const char* pcBuffer, 
         size_t uSize,
-        list< string>& lines );
+        list<string>& lines );
 
     void
     ProcessError(

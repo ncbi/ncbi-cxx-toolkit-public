@@ -58,19 +58,29 @@ public:
     CMultiReader(
         CFormatGuess::EFormat = CFormatGuess::eUnknown );
     
-    ~CMultiReader();
+    virtual ~CMultiReader();
 
 public:
     CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         ILineReader&,
         CErrorContainer* =0 );
         
     CRef< CSeq_annot >
-    ReadObject(
+    ReadSeqAnnot(
         CNcbiIstream&,
         CErrorContainer* =0 );
          
+    virtual CRef< CSeq_entry >
+    ReadSeqEntry(
+        CNcbiIstream&,
+        CErrorContainer* =0 );
+                
+    virtual CRef< CSeq_entry >
+    ReadSeqEntry(
+        ILineReader&,
+        CErrorContainer* =0 );
+                
     //
     //  Implementation:
     //
