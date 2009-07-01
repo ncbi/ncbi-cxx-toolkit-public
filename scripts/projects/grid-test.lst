@@ -19,9 +19,10 @@ bdb$
 db/bdb$
 db/sqlite
 app/netschedule
-sample/app/netschedule
-sample/app/netcache
 app/netcache
 app/grid
+sample/app/netschedule
+sample/app/netcache
+sample/app/cgi
 misc/third_party
 misc/third_party_static
