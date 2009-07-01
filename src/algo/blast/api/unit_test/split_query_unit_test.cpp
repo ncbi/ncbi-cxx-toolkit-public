@@ -322,7 +322,8 @@ public:
                 size_t correction = ref_ctx_off[i];
                 os.str("");
                 os << "Context correction in chunk " << chunk_num 
-                   << ", context " << i;
+                   << ", context " << i << " value now " << test_ctx_off[i]
+                   << " not " << correction;
                 BOOST_REQUIRE_MESSAGE(correction==test_ctx_off[i],os.str());
 
                 int absolute_context =
@@ -734,13 +735,13 @@ public:
                 CSeq_loc::TRange test_query_range = test_qloc->GetTotalRange();
 
                 os.str("");
-                os << "Starting offset for query " << j << " in chunk " << i;
+                os << "Starting offset for query " << j << " in chunk " << i << " is now " << test_query_range.GetFrom() << " and not " << ref_query_range.GetFrom();
                 BOOST_REQUIRE_MESSAGE(ref_query_range.GetFrom()==test_query_range.GetFrom(),os.str());
                 os.str("");
-                os << "Ending offset for query " << j << " in chunk " << i;
+                os << "Ending offset for query " << j << " in chunk " << i << " is now " << test_query_range.GetToOpen() << " and not " << ref_query_range.GetTo();
                 BOOST_REQUIRE_MESSAGE(ref_query_range.GetTo()==test_query_range.GetToOpen(),os.str());
                 os.str("");
-                os << "Strand for query " << j << " in chunk " << i;
+                os << "Strand for query " << j << " in chunk " << i << " is now " << test_qloc->GetStrand() << " and not " << ref_qloc->GetStrand();
                 BOOST_REQUIRE_MESSAGE(ref_qloc->GetStrand()==test_qloc->GetStrand(),os.str());
             }
         }
@@ -1031,7 +1032,8 @@ return; // FIXME
             for (size_t j = 0; j < data2test.size(); j++) {
                 os.str("");
                 os << "Context offset mismatch in chunk number " << i 
-                   << " entry number " << j;
+                   << " entry number " << j << " value now " << data2test[j]
+                   << " not " << contexts_offsets_per_chunk[i][j];
 // TLM cerr <<  "data2test " << data2test[j] << " ";
                  BOOST_REQUIRE_MESSAGE(contexts_offsets_per_chunk[i][j]==data2test[j],os.str());
             }
@@ -1895,6 +1897,32 @@ BOOST_AUTO_TEST_CASE(QuerySplitter_ValidateQueryFactoriesBlastn) {
 
     BOOST_REQUIRE(chunk_0.NotEmpty());
     BOOST_REQUIRE(chunk_1.NotEmpty());
+}
+
+BOOST_AUTO_TEST_CASE(CalculateNumberChunks)
+{
+    EBlastProgramType program = eBlastTypeBlastx;
+    size_t chunk_size = 10002;
+    Uint4 retval = SplitQuery_CalculateNumChunks(program, 
+                       &chunk_size, 10240000, 1);
+    BOOST_REQUIRE_EQUAL(1055, retval);
+
+    retval = SplitQuery_CalculateNumChunks(eBlastTypeBlastx,
+                       &chunk_size, chunk_size/2, 1);
+
+    BOOST_REQUIRE_EQUAL(1, retval);
+
+    retval = SplitQuery_CalculateNumChunks(program,
+                       &chunk_size, 
+                       3*chunk_size-2*SplitQuery_GetOverlapChunkSize(program), 1);
+
+    BOOST_REQUIRE_EQUAL(3, retval);
+
+    retval = SplitQuery_CalculateNumChunks(program,
+                       &chunk_size, 
+                       1+2*chunk_size+SplitQuery_GetOverlapChunkSize(program), 1);
+
+    BOOST_REQUIRE_EQUAL(2, retval);
 }
 
 BOOST_AUTO_TEST_CASE(InvalidChunkSizeBlastx)

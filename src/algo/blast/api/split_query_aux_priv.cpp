@@ -134,9 +134,10 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
     // TODO: need to model mem usage and when it's advantageous to split
     bool retval = true;
 
-    if ((concatenated_query_length <= chunk_size) ||
+    // if ((concatenated_query_length <= chunk_size+SplitQuery_GetOverlapChunkSize(program)) ||
+   //  if ((concatenated_query_length <= chunk_size) ||
         // do not split RPS-BLAST
-        Blast_SubjectIsPssm(program) ||
+    if (Blast_SubjectIsPssm(program) ||
         // the current implementation does NOT support splitting for multiple
         // blastx queries, loop over queries individually here...
         (program == eBlastTypeBlastx && num_queries > 1)) {
@@ -157,23 +158,26 @@ SplitQuery_CalculateNumChunks(EBlastProgramType program,
         _TRACE("Not splitting queries");
         return 1;
     }
+
     size_t target_chunk_size = *chunk_size;
-    const int kChunkOverflowFactor = 5; 
-    Uint4 num_chunks = 
-        (concatenated_query_length + target_chunk_size/kChunkOverflowFactor) 
-        / target_chunk_size;
-    // adjusted length to include one overlap for each chunk
-    Uint4 adjusted_concatenated_length = concatenated_query_length +
-        (num_chunks * SplitQuery_GetOverlapChunkSize(program));
-    // recalculate with adjustment.
-    num_chunks = 
-        (adjusted_concatenated_length + target_chunk_size/kChunkOverflowFactor)
-        / target_chunk_size;
-    *chunk_size = adjusted_concatenated_length / num_chunks;
+    Uint4 num_chunks = concatenated_query_length / (target_chunk_size - SplitQuery_GetOverlapChunkSize(program));
+    // Only one chunk, just return;
+    if (num_chunks <= 1)
+    {
+       *chunk_size = concatenated_query_length;
+       return 1;
+    }
+
+    // Takes into account num_chunks-1 overlaps "between" chunks.
+    // Also rounds up.
+    *chunk_size = 1 + (concatenated_query_length + SplitQuery_GetOverlapChunkSize(program)*(num_chunks-1))/ num_chunks;
 
     // For translated queries the chunk size should be divisible by CODON_LENGTH
     if (Blast_QueryIsTranslated(program)) {
-        *chunk_size -= (*chunk_size) % CODON_LENGTH;
+        size_t chunk_size_delta = ((*chunk_size) % CODON_LENGTH);
+        *chunk_size -= chunk_size_delta;
+        // Add one more if we have a lot of chunks, otherwise it goes on the end of the last one.
+        num_chunks += num_chunks*chunk_size_delta/(target_chunk_size - SplitQuery_GetOverlapChunkSize(program));
         _ASSERT((*chunk_size % CODON_LENGTH) == 0);
     }
 

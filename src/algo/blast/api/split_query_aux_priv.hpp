@@ -49,9 +49,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Determines if the input query sequence(s) should be split, whether because
-/// it makes sense to do so or whether because it is supported by the current
-/// implementation.
+/// Determines if the input query sequence(s) should be split because it 
+//// is supported by the current implementation.  The splitting decision 
+/// in this function is not based upon query length.  
 /// @param program BLAST program type [in]
 /// @param chunk_size size of each of the query chunks [in]
 /// @param concatenated_query_length length of the concatenated query [in]
@@ -76,6 +76,7 @@ size_t
 SplitQuery_GetChunkSize(EProgram program);
 
 /// Calculate the number of chunks that a query will be split into
+/// based upon query length, chunk_size and program.
 /// @param program BLAST program type [in]
 /// @param chunk_size size of each of the query chunks, may be adjusted [in|out]
 /// @param concatenated_query_length length of the concatenated query [in]
