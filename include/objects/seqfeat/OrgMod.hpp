@@ -67,6 +67,8 @@ public:
     static TSubtype GetSubtypeValue(const string& str);
     static string GetSubtypeName(TSubtype stype);
 
+	static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
+
 	private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);

@@ -77,6 +77,33 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype)
     }
 }
 
+
+bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id)
+{
+	if (NStr::IsBlank(str) || str.length() < 5) {
+		return false;
+	}
+
+	size_t pos = NStr::Find(str, ":");
+	if (pos == string::npos) {
+		return false;
+	}
+	inst = str.substr(0, pos);
+	id = str.substr(pos + 1);
+	coll = "";
+	pos = NStr::Find(id, ":");
+	if (pos != string::npos) {
+		coll = id.substr(0, pos);
+		id = id.substr(pos + 1);
+	}
+	if (NStr::IsBlank(inst) || NStr::IsBlank(id)) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
