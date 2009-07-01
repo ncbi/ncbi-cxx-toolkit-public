@@ -578,6 +578,13 @@ class CThreadPool_EmptyTask : public CThreadPool_Task
 public:
     /// Empty main method
     virtual EStatus Execute(void) { return eCompleted; }
+
+#ifdef NCBI_COMPILER_ICC
+    // In the absence of the following constructor,
+    // ICC fills the object memory with zeros,
+    // erasing flags set by CObject::operator new
+    CThreadPool_EmptyTask(void) {}
+#endif
 };
 
 
