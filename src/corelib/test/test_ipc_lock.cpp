@@ -55,9 +55,10 @@ static void Test_SingleProcess()
 {
     LOG_POST("==== Single-process test ====");
     
-    // Generate lock name automaticaly for lock1.
+    // Generate lock name for lock1 automaticaly.
     // Fixed names are usually more appropriate, but here we don't
     // want independent tests to step on each other....
+    
     CInterProcessLock lock1; 
     string lockname = lock1.GetName();
     LOG_POST("lock = " << lockname);
@@ -284,7 +285,7 @@ int CTestApplication::Run(void)
     }
     
     // Main tests
-//    Test_SingleProcess();
+    Test_SingleProcess();
     Test_MultiProcess();
     
     return 0;

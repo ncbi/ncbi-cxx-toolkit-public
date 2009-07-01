@@ -71,12 +71,10 @@ BEGIN_NCBI_SCOPE
 /// is enough to make sure that there is only one process that using some
 /// resource. 
 ///
-/// Please note that due cross-platform limitations, multiple 
-/// CInterProcessLock objects works not very well inside single process
-/// in the MT environment. Only one object can be locked at one time. 
-/// Please consider to use mutexes (corelib/ncbimtx.hpp) in this case.
+/// Only single lock with specified name can exists on the system. For UNIX
+/// systems this is true only if absolute path used as the lock name 
+/// (default lock name is always an absolute path).
 ///
-/// Only single lock with specified name can exists on the system.
 /// If the process terminates, normally or forcedly, all locks will be 
 /// removed automaticaly.On Unix, the lock file can be left on the
 /// filesystem, but the lock itself will be removed anyway and file
@@ -84,6 +82,8 @@ BEGIN_NCBI_SCOPE
 ///
 /// Please consider to use class CGuard<> for locking resources in
 /// an exception-safe manner.
+/// 
+/// Throw CInterProcessLockException on error or if the lock already exists.
 
 class NCBI_XNCBI_EXPORT CInterProcessLock
 {
@@ -93,24 +93,24 @@ public:
     /// Create locking object.
     /// For locking Lock() or TryLock() methods should be called.
     /// @name
-    ///   Name of the lock. 
-    ///   If name is empty string, GenerateUniqueName() will be used.
+    ///   Name of the lock. If name is empty string, GenerateUniqueName()
+    ///   method will be used to obtain new unique name.
     /// @note
     ///   The size of the name is limited to the allowed file path size on
     ///   current platform and is case sensitive. The name should not
     ///   contains backslash character, some OS does not support it.
     ///   So, it is better to avoid it at all. For compatibility of
-    //    cross-platform coding it is recommended to use Unix-style path
-    ///   for the name of the lock.
+    ///   cross-platform coding it is recommended to use Unix-style path
+    ///   syntax for the name of the lock.
     /// @note
     ///   UNIX: 
     ///     If directory name is specified, it should exists.
     ///     Please avoid using lock files on network filesystems (NFS),
-    ///     it can works there, but is implementation-dependent.
+    ///     it can works there, but is OS implementation-dependent.
     ///   MS-WINDOWS: 
     ///     The lock name can contains unexistent path. No any objects
-    ///     will be created on the filesystem.
-    /// @sa Lock, TryLock, GenerateUniqueName
+    ///     will be created on the filesystem at all.
+    /// @sa Lock, TryLock, GenerateUniqueName, GetName
     CInterProcessLock(const string& name = kEmptyStr);
 
     /// Destructor.
@@ -144,9 +144,9 @@ public:
     ///
     /// @return
     ///   Unique name, that can be used as lock name.
-    ///   Please note that obtained name can be used by other process
-    ///   between call of this function and its real usage in the current
-    ///   process.
+    ///   Please note that obtained name can be used at the same time
+    ///   by some other process/thread between call of this function and
+    ///   its real usage.
     static const string GenerateUniqueName();
 
 private:

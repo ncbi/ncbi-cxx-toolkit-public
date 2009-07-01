@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ipc_lock.hpp>
+#include <map>
 
 #if defined(NCBI_OS_UNIX)
 #  include <errno.h>
@@ -50,12 +51,21 @@ BEGIN_NCBI_SCOPE
     const TLockHandle kInvalidLockHandle = -1;
 #endif
 
+
 #if defined(NCBI_OS_UNIX)
     // UNIX implementation of CInterProcessLock works only with different
-    // processes. To allow it works inside one process we need protective
-    // mutex.
+    // processes. To allow it works inside one process we need some kind of
+    // protection. We use global list of all locks in the current process.
+    // This solution is not ideal in the case of relative path names :(
+
+    // List of all locks in the current process.
+    typedef map<string, int> TLocks;
+    static CSafeStaticPtr<TLocks> s_Locks;
+
+    // Protective mutex for save access to s_Locks in MT environment.
     DEFINE_STATIC_FAST_MUTEX(s_ProcessLock);
 #endif
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -87,13 +97,15 @@ void CInterProcessLock::Lock()
     }
 
 #if defined(NCBI_OS_UNIX)
+    CFastMutexGuard LOCK(s_ProcessLock);
 
-    bool plock = s_ProcessLock.TryLock();
-    if (!plock) {
-        NCBI_THROW(CInterProcessLockException, eCreateError,
-                   "Current process already use CInterProcessLock, multiple locks are not supported");
+    // Check that lock with current name not already locked in the current process.
+    TLocks::iterator it = s_Locks->find(m_Name);
+    if ( it != s_Locks->end() ) {
+        NCBI_THROW(CInterProcessLockException, eAlreadyExists,
+                   "The lock already exists");
     }
-    
+        
     // Open lock file
     mode_t perm = CDirEntry::MakeModeT(
         CDirEntry::fRead | CDirEntry::fWrite /* user */,
@@ -101,7 +113,6 @@ void CInterProcessLock::Lock()
         0, 0 /* other & special */);
     int fd = open(m_Name.c_str(), O_CREAT | O_RDWR, perm);
     if (fd == -1) {
-        s_ProcessLock.Unlock();
         NCBI_THROW(CInterProcessLockException, eCreateError,
                    string("Error creating lockfile ") + m_Name + ": " + strerror(errno));
     }
@@ -124,7 +135,6 @@ void CInterProcessLock::Lock()
     if (res != 0) {
         int saved = errno;
         close(fd);
-        s_ProcessLock.Unlock();
         errno = saved;
         if (errno == EAGAIN) {
             NCBI_THROW(CInterProcessLockException, eAlreadyExists,
@@ -135,6 +145,8 @@ void CInterProcessLock::Lock()
         }
     }
     m_Handle = fd;
+    (*s_Locks)[m_Name] = 1;
+
 
 #elif defined(NCBI_OS_MSWIN)
     HANDLE handle = ::CreateMutex(NULL, TRUE, m_Name.c_str());
@@ -175,11 +187,14 @@ void CInterProcessLock::Unlock()
     if (m_Handle == kInvalidLockHandle) {
         return;
     }
+
 #if defined(NCBI_OS_UNIX)
+    CFastMutexGuard LOCK(s_ProcessLock);
+    
     // Unlocking on Unix is not an atomic operation :(
     // so delete lock file first, and only then remove lock itself.
     unlink(m_Name.c_str());
-
+    
 #  if defined(F_TLOCK)
     lockf(m_Handle, F_ULOCK, 0);
 #  elif defined(F_SETLK)
@@ -192,9 +207,9 @@ void CInterProcessLock::Unlock()
 #else
 #   error "No supported lock method.  Please port this code."
 #endif
-
     close(m_Handle);
-    s_ProcessLock.Unlock();
+    s_Locks->erase(m_Name);
+    
 #elif defined(NCBI_OS_MSWIN)
     ::CloseHandle(m_Handle);
 #endif
