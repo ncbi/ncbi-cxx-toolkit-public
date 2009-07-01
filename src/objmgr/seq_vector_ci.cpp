@@ -698,11 +698,9 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
     else if ( m_Seg.GetPosition() > pos ) {
         // segment is ahead
         do {
-            _ASSERT(m_Seg || m_Seg.GetPosition() == x_GetSize());
             x_DecSeg();
-        } while ( m_Seg.GetLength() == 0 ); // skip zero length segments
-        _ASSERT(m_Seg);
-        if ( m_Seg.GetPosition() > pos ) {
+        } while ( m_Seg && m_Seg.GetLength() == 0 ); // skip 0 length segments
+        if ( !m_Seg || m_Seg.GetPosition() > pos ) {
             // too far
             x_InitSeg(pos);
         }
@@ -710,16 +708,18 @@ void CSeqVector_CI::x_UpdateSeg(TSeqPos pos)
     else if ( m_Seg.GetEndPosition() <= pos ) {
         // segment is behind
         do {
-            _ASSERT(m_Seg);
             x_IncSeg();
-        } while ( m_Seg.GetLength() == 0 ); // skip zero length segments
-        _ASSERT(m_Seg);
-        if ( m_Seg.GetEndPosition() <= pos ) {
+        } while ( m_Seg && m_Seg.GetLength() == 0 ); // skip 0 length segments
+        if ( !m_Seg || m_Seg.GetEndPosition() <= pos ) {
             // too far
             x_InitSeg(pos);
         }
     }
-    _ASSERT(pos >= m_Seg.GetPosition() && pos < m_Seg.GetEndPosition());
+    if ( !m_Seg || pos<m_Seg.GetPosition() || pos>=m_Seg.GetEndPosition() ) {
+        NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                       "CSeqVector_CI: cannot locate segment at "<<pos);
+    }
+    _ASSERT(m_Seg && pos>=m_Seg.GetPosition() && pos<m_Seg.GetEndPosition());
 }
 
 
