@@ -1785,8 +1785,8 @@ BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
 {
         
     vector<string> dbs;
-    dbs.push_back("Microbial/83331");
-    dbs.push_back("Microbial/83332");
+    dbs.push_back("Test/Giardia.01");
+    dbs.push_back("Test/baylor_wgs_contigs.01");
     dbs.push_back(dbs[0] + " " + dbs[1]);
     
     vector< vector<int> >    gis(dbs.size());
