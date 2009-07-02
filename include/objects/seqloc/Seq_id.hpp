@@ -191,6 +191,7 @@ public:
         eAcc_genomic_rgn   = 134 << 8, // incomplete genomic region
         eAcc_wgs_intermed  = 135 << 8, // WGS intermediate assembly
         eAcc_sts           = 136 << 8, // sequence tagged site
+        eAcc_mga           = 137 << 8, // Mass sequence for Genome Annotation
         eAcc_division_mask = 0xff00,
 
         // Actual return values with EXAMPLE prefixes (to be followed
@@ -237,6 +238,7 @@ public:
         eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot, // EAA
         eAcc_gb_gss         = e_Genbank | eAcc_gss        | fAcc_nuc,  // B
         eAcc_gb_sts         = e_Genbank | eAcc_sts        | fAcc_nuc,  // G
+        eAcc_gb_mga         = e_Genbank | eAcc_mga        | fAcc_nuc,  // unused
 
         eAcc_embl_prot      = e_Embl | eAcc_other      | fAcc_prot, // CAA
         eAcc_embl_other_nuc = e_Embl | eAcc_other      | fAcc_nuc,  // AL
@@ -250,6 +252,7 @@ public:
         eAcc_embl_con       = e_Embl | eAcc_con        | fAcc_nuc,  // AN
         eAcc_embl_wgs_nuc   = e_Embl | eAcc_wgs        | fAcc_nuc,  // CAAA
         eAcc_embl_wgs_prot  = e_Embl | eAcc_wgs        | fAcc_prot, // unused
+        eAcc_embl_mga       = e_Embl | eAcc_mga        | fAcc_nuc,  // unused
 
         eAcc_pir       = e_Pir       | eAcc_other | fAcc_prot,
         eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot, // P
@@ -287,6 +290,7 @@ public:
         eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,  // BAAA
         eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot, // GAA
         eAcc_ddbj_gss       = e_Ddbj | eAcc_gss        | fAcc_nuc,  // DE
+        eAcc_ddbj_mga       = e_Ddbj | eAcc_mga        | fAcc_nuc,  // AAAAA
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
         eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!

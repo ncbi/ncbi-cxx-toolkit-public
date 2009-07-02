@@ -32,6 +32,10 @@ version  1 # of file format
 4+9   D???  gb_tpa_wgs_nuc
 4+10  D???  gb_tpa_wgs_nuc
 
+# Mass sequence Genome for Annotation
+5+7   A???? ddbj_other_nuc
+5+7   A???? ddbj_mga
+
 # Named annotation track (new as of September 2008)
 3+9  AT_  local # fallback to placate older clients
 3+9  AT_  named_annot_track
