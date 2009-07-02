@@ -128,6 +128,9 @@ public:
     bool m_ConfirmCfg;
     bool m_AllDllBuild;
 
+    string m_CustomConfFile;
+    CSimpleMakeFileContents m_CustomConfiguration;
+
 public:
 
     void AddCustomMetaData(const string& file);

@@ -86,6 +86,7 @@ public:
         return m_Type;
     }
 
+    void Save(const string& filename) const;
     /// Debug dump
     void Dump(CNcbiOfstream& ostr) const;
 

@@ -176,6 +176,13 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
     return true;
 }
 
+void CSimpleMakeFileContents::Save(const string& filename) const
+{
+    CNcbiOfstream ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+    if (ofs.is_open()) {
+        Dump(ofs);
+    }
+}
 
 void CSimpleMakeFileContents::Dump(CNcbiOfstream& ostr) const
 {

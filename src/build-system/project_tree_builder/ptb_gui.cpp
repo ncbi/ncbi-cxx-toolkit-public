@@ -49,13 +49,13 @@ INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 void CenterWindow(HWND hWnd)
 {
     RECT rcWnd;
-	::GetWindowRect(hWnd, &rcWnd);
+	GetWindowRect(hWnd, &rcWnd);
     MONITORINFO mi;
     mi.cbSize = sizeof(mi);
 	GetMonitorInfo( MonitorFromWindow( hWnd, MONITOR_DEFAULTTOPRIMARY), &mi);
 	int xLeft = (mi.rcMonitor.left + mi.rcMonitor.right  - rcWnd.right  + rcWnd.left)/2;
 	int yTop  = (mi.rcMonitor.top  + mi.rcMonitor.bottom - rcWnd.bottom + rcWnd.top )/2;
-	::SetWindowPos(hWnd, NULL, xLeft, yTop, -1, -1,
+	SetWindowPos(hWnd, NULL, xLeft, yTop, -1, -1,
 		SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
@@ -70,6 +70,11 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
         GetDlgItemText( hDlg,IDC_EDIT_EXTROOT, szBuf, sizeof(szBuf)); pApp->m_BuildRoot = szBuf;
         GetDlgItemText( hDlg,IDC_EDIT_PROJTAG, szBuf, sizeof(szBuf)); pApp->m_ProjTags  = szBuf;
 
+        GetDlgItemText( hDlg,IDC_EDIT_3PARTY, szBuf, sizeof(szBuf));
+        pApp->m_CustomConfiguration.AddDefinition("ThirdPartyBasePath", szBuf);
+        GetDlgItemText( hDlg,IDC_EDIT_CNCBI,  szBuf, sizeof(szBuf));
+        pApp->m_CustomConfiguration.AddDefinition("ThirdParty_C_ncbi", szBuf);
+
         pApp->m_Dll            = IsDlgButtonChecked(hDlg,IDC_CHECK_DLL)   == BST_CHECKED;
         pApp->m_BuildPtb       = IsDlgButtonChecked(hDlg,IDC_CHECK_NOPTB) != BST_CHECKED;
         pApp->m_AddMissingLibs = IsDlgButtonChecked(hDlg,IDC_CHECK_EXT)   == BST_CHECKED;
@@ -83,6 +88,15 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
         SetDlgItemText( hDlg,IDC_EDIT_SLN,     pApp->m_Solution.c_str());
         SetDlgItemText( hDlg,IDC_EDIT_EXTROOT, pApp->m_BuildRoot.c_str());
         SetDlgItemText( hDlg,IDC_EDIT_PROJTAG, pApp->m_ProjTags.c_str());
+
+        SetDlgItemText( hDlg,IDC_EDIT_PTBINI2, pApp->m_CustomConfFile.c_str());
+        string v;
+        if (pApp->m_CustomConfiguration.GetValue("ThirdPartyBasePath", v)) {
+            SetDlgItemText( hDlg,IDC_EDIT_3PARTY, v.c_str());
+        }
+        if (pApp->m_CustomConfiguration.GetValue("ThirdParty_C_ncbi", v)) {
+            SetDlgItemText( hDlg,IDC_EDIT_CNCBI, v.c_str());
+        }
 
         CheckDlgButton( hDlg,IDC_CHECK_DLL,    pApp->m_Dll);
         CheckDlgButton( hDlg,IDC_CHECK_NOPTB, !pApp->m_BuildPtb);
@@ -117,6 +131,9 @@ INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
             break;
         }
         break;
+    case WM_NCHITTEST:
+        SetWindowLong(hDlg, DWL_MSGRESULT, HTCAPTION);
+        return TRUE;
     default:
         break;
     }
@@ -128,10 +145,16 @@ INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 bool  CProjBulderApp::ConfirmConfiguration(void)
 {
 #if defined(NCBI_OS_MSWIN)
-    return ( DialogBoxParam( GetModuleHandle(NULL),
+    bool result = ( DialogBoxParam( GetModuleHandle(NULL),
                              MAKEINTRESOURCE(IDD_PTB_GUI_DIALOG),
                              NULL, PtbConfigDialog,
                              (LPARAM)(LPVOID)this) == IDOK);
+    if (result) {
+        m_CustomConfiguration.AddDefinition("__TweakVTuneR", m_TweakVTuneR ? "yes" : "no");
+        m_CustomConfiguration.AddDefinition("__TweakVTuneD", m_TweakVTuneD ? "yes" : "no");
+        m_CustomConfiguration.Save(m_CustomConfFile);
+    }
+    return result;
 #else
     return true;
 #endif

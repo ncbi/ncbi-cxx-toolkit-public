@@ -1282,6 +1282,28 @@ void CProjBulderApp::ParseArguments(void)
     if (m_ProjTags.empty()) {
         m_ProjTags = "*";
     }
+    
+    string tmp(GetConfig().Get("ProjectTree", "CustomConfiguration"));
+    if (!tmp.empty()) {
+        m_CustomConfFile = CDirEntry::ConcatPath( CDirEntry(m_Solution).GetDir(), tmp);
+    }
+    if (CFile(m_CustomConfFile).Exists()) {
+        m_CustomConfiguration.LoadFrom(m_CustomConfFile,&m_CustomConfiguration);
+        string v;
+        if (m_CustomConfiguration.GetValue("__TweakVTuneR", v)) {
+            m_TweakVTuneR = NStr::StringToBool(v);
+        }
+        if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
+            m_TweakVTuneD = NStr::StringToBool(v);
+        }
+    } else {
+        int j;
+        string entry[] = {"ThirdPartyBasePath","ThirdParty_C_ncbi",""};
+        for (j=0; !entry[j].empty(); ++j) {
+            m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
+            m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
+        }
+    }
     m_ConfirmCfg = false;
 #if defined(NCBI_COMPILER_MSVC)
     m_ConfirmCfg =   (bool)args["cfg"];

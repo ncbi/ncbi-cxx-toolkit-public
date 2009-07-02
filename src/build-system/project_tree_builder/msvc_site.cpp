@@ -236,9 +236,11 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
             if (macro == "incdir") {
                 definition = GetApp().m_IncDir;
             } else if (macro == "rootdir") {
-               definition = GetApp().GetProjectTreeInfo().m_Root;
+                definition = GetApp().GetProjectTreeInfo().m_Root;
             } else {
-                definition = x_GetConfigureEntry(macro);
+                if (!GetApp().m_CustomConfiguration.GetValue(macro,definition)) {
+                    definition = x_GetConfigureEntry(macro);
+                }
             }
             if (definition.empty() && preserve_unresolved) {
                 // preserve unresolved macros
@@ -593,6 +595,15 @@ bool CMsvcSite::x_DirExists(const string& dir_name)
             (TDirectoryExistenceMap::value_type(dir_name, exists)).first;
     }
     return it->second;
+}
+
+string CMsvcSite::GetConfigureEntry(const string& entry) const
+{
+    return ProcessMacros(x_GetConfigureEntry(entry));
+}
+string CMsvcSite::GetDefinesEntry(const string& entry) const
+{
+    return ProcessMacros(x_GetDefinesEntry(entry));
 }
 
 string CMsvcSite::x_GetConfigureEntry(const string& entry) const

@@ -179,6 +179,9 @@ public:
 
     static string ToOSPath(const string& path);
 
+    string GetConfigureEntry(const string& entry) const;
+    string GetDefinesEntry(const string& entry) const;
+
 private:
     CPtbRegistry m_Registry;
     CSimpleMakeFileContents m_UnixMakeDef;

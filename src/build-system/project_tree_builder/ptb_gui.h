@@ -17,3 +17,12 @@
 #define IDC_STATIC_FRAME               1015
 #define IDC_CHECK_VTUNER               1016
 #define IDC_CHECK_VTUNED               1017
+#define IDC_STATIC_PTBINI2             1018
+#define IDC_EDIT_PTBINI2               1019
+#define IDC_STATIC_3PARTY              1020
+#define IDC_EDIT_3PARTY                1021
+#define IDC_STATIC_CNCBI               1022
+#define IDC_EDIT_CNCBI                 1023
+#define IDC_STATIC_FRAME2              1024
+#define IDC_STATIC_FRAME3              1025
+#define IDC_STATIC_VTUNE               1026
