@@ -133,6 +133,10 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
                 // UCSC browser or track line. For now, we ignore those.
                 continue;
             }
+            if ( line.empty() ) {
+                // too commonly used for file formatting to even warn about
+                continue;
+            }
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
                 
@@ -302,7 +306,7 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
                         ENa_strand strand = feat.GetLocation().GetStrand();
                         const CSeq_id* id = feat.GetLocation().GetId();
                         if ( !id ) {
-                            LOG_POST_X(1, Error << "No consistent ID found; gene feature skipped");
+                            x_Error("No consistent ID found; gene feature skipped");
                             continue;
                         }
 
@@ -355,6 +359,16 @@ void CGFFReader::x_Warn(const string& message, unsigned int line)
 }
 
 
+void CGFFReader::x_Error(const string& message, unsigned int line)
+{
+    if (line) {
+        ERR_POST_X(1, Error << message << " [GFF input, line " << line << ']');
+    } else {
+        ERR_POST_X(1, Error << message << " [GFF input]");
+    }
+}
+
+
 void CGFFReader::x_Reset(void)
 {
     m_TSE.Reset(new CSeq_entry);
@@ -399,7 +413,7 @@ void CGFFReader::x_ParseDateComment(const TStr& date)
                                          CDate::ePrecision_day);
         m_TSE->SetSet().SetDescr().Set().push_back(desc);
     } catch (exception& e) {
-        x_Warn(string("Bad ISO date: ") + e.what(), x_GetLineNumber());
+        x_Error(string("Bad ISO date: ") + e.what(), x_GetLineNumber());
     }
 }
 
@@ -451,7 +465,7 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
         v.clear();
         TTokenizer::Do(line, " \t", v, TTokenizer::eMergeDelims, pos_container);
         if (v.size() < 8) {
-            x_Warn("Skipping line due to insufficient fields",
+            x_Error("Skipping line due to insufficient fields",
                    x_GetLineNumber());
             return null;
         } else if (m_Version < 3) {
@@ -475,13 +489,13 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
     try {
         from = NStr::StringToUInt(v[3]) - 1;
     } catch (std::exception& e) {
-        x_Warn(string("Bad FROM position: ") + e.what(), x_GetLineNumber());
+        x_Error(string("Bad FROM position: ") + e.what(), x_GetLineNumber());
     }
 
     try {
         to = NStr::StringToUInt(v[4]) - 1;
     } catch (std::exception& e) {
-        x_Warn(string("Bad TO position: ") + e.what(), x_GetLineNumber());
+        x_Error(string("Bad TO position: ") + e.what(), x_GetLineNumber());
     }
 
     record->score = v[5];
@@ -1285,10 +1299,7 @@ const
 bool
 CGFFReader::x_IsLineUcscMetaInformation(const TStr& line)
 {
-    // line comes before any features and starts with keyword "browser" or "track"
-    if (! m_DelayedRecords.empty() ) {
-        return false;
-    }
+    // line starts with keyword "browser" or "track"
     return (NStr::StartsWith(line, "browser ") || NStr::StartsWith(line, "track ") );
 }
     

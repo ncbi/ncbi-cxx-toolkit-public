@@ -159,6 +159,9 @@ protected:
     virtual void            x_Warn(const string& message,
                                    unsigned int line = 0);
 
+    virtual void            x_Error(const string& message,
+                                   unsigned int line = 0);
+
     /// Reset all state, since we're between streams.
     virtual void            x_Reset(void);
 
