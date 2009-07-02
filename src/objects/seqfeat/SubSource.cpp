@@ -125,6 +125,18 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str)
 }
 
 
+string CSubSource::GetSubtypeName(CSubSource::TSubtype stype)
+{
+    if (stype == CSubSource::eSubtype_other) {
+        return "note";
+    } else {
+        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+    }
+}
+
+
+
+
 bool CSubSource::NeedsNoText(const TSubtype& subtype)
 {
 	if (subtype == eSubtype_germline

@@ -67,6 +67,9 @@ public:
     // convert subtype from string to enum.
     static TSubtype GetSubtypeValue(const string& str);
 
+	// get name for subsource
+    static string GetSubtypeName(CSubSource::TSubtype stype);
+
 	// identify whether subsource value should be blank
 	static bool NeedsNoText (const TSubtype& subtype);
 
