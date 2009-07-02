@@ -172,6 +172,7 @@ public:
         eAcc_backbone      =   8 << 8, // from journal scanning
         eAcc_tsa           =   9 << 8, // transcriptome shotgun assembly
         eAcc_segset        =  10 << 8, // seg-set header; might not be genomic
+        eAcc_gss           =  11 << 8, // genome survey sequence (may be mRNA)
         eAcc_ambig         = 112 << 8, // multiply assigned (!)
         eAcc_ambig_g       = 113 << 8, // assigned in GenBank
         eAcc_ambig_e       = 114 << 8, // assigned in EMBL
@@ -186,7 +187,7 @@ public:
         eAcc_htgs          = 129 << 8, // high-throughput genome sequence
         eAcc_con           = 130 << 8, // intermediate genomic assembly; contig
         eAcc_wgs           = 131 << 8, // whole-genome shotgun collection
-        eAcc_gss           = 132 << 8, // genome survey sequence
+        // 132 was GSS, which isn't necessarily genomic after all. :-/
         eAcc_chromosome    = 133 << 8, // whole chromosome
         eAcc_genomic_rgn   = 134 << 8, // incomplete genomic region
         eAcc_wgs_intermed  = 135 << 8, // WGS intermediate assembly
@@ -231,12 +232,12 @@ public:
         eAcc_gb_tsa_nuc     = e_Genbank | eAcc_tsa        | fAcc_nuc,  // EZ
         eAcc_gb_tsa_prot    = e_Genbank | eAcc_tsa        | fAcc_prot,
         eAcc_gb_segset      = e_Genbank | eAcc_segset  /* | fAcc_nuc */, // AH
+        eAcc_gb_gss         = e_Genbank | eAcc_gss        | fAcc_nuc,  // B
         eAcc_gb_genome      = e_Genbank | eAcc_genome     | fAcc_nuc,  // AE
         eAcc_gb_htgs        = e_Genbank | eAcc_htgs       | fAcc_nuc,  // AC
         eAcc_gb_con         = e_Genbank | eAcc_con        | fAcc_nuc,  // CH
         eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,  // AAAA
         eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot, // EAA
-        eAcc_gb_gss         = e_Genbank | eAcc_gss        | fAcc_nuc,  // B
         eAcc_gb_sts         = e_Genbank | eAcc_sts        | fAcc_nuc,  // G
         eAcc_gb_mga         = e_Genbank | eAcc_mga        | fAcc_nuc,  // unused
 
@@ -284,12 +285,12 @@ public:
         eAcc_ddbj_mrna      = e_Ddbj | eAcc_mrna       | fAcc_nuc,  // AK
         eAcc_ddbj_tsa_nuc   = e_Ddbj | eAcc_tsa        | fAcc_nuc,
         eAcc_ddbj_tsa_prot  = e_Ddbj | eAcc_tsa        | fAcc_prot,
+        eAcc_ddbj_gss       = e_Ddbj | eAcc_gss        | fAcc_nuc,  // DE
         eAcc_ddbj_genome    = e_Ddbj | eAcc_genome     | fAcc_nuc,  // AP
         eAcc_ddbj_htgs      = e_Ddbj | eAcc_htgs       | fAcc_nuc,
         eAcc_ddbj_con       = e_Ddbj | eAcc_con        | fAcc_nuc,  // BA
         eAcc_ddbj_wgs_nuc   = e_Ddbj | eAcc_wgs        | fAcc_nuc,  // BAAA
         eAcc_ddbj_wgs_prot  = e_Ddbj | eAcc_wgs        | fAcc_prot, // GAA
-        eAcc_ddbj_gss       = e_Ddbj | eAcc_gss        | fAcc_nuc,  // DE
         eAcc_ddbj_mga       = e_Ddbj | eAcc_mga        | fAcc_nuc,  // AAAAA
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
