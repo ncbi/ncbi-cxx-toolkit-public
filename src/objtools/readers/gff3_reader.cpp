@@ -80,7 +80,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/gff_reader.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -97,7 +97,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CGff3Reader::CGff3Reader(
     int iFlags ):
 //  ----------------------------------------------------------------------------
-    m_iReaderFlags( iFlags )
+    m_iReaderFlags( iFlags ),
+    m_pErrors( 0 )
 {
 }
 
@@ -169,11 +170,11 @@ bool CGff3Reader::VerifyLine(
 //  ----------------------------------------------------------------------------
 void CGff3Reader::Read( 
     CNcbiIstream& input, 
-    CRef<CSeq_entry>& annot )
+    CRef<CSeq_entry>& entry )
 //  ----------------------------------------------------------------------------
 {
     CGFFReader reader;
-    annot.Reset( reader.Read( input, m_iReaderFlags ) );
+    entry.Reset( reader.Read( input, m_iReaderFlags ) );
 }
 
 
@@ -187,8 +188,9 @@ CGff3Reader::ReadSeqEntry(
     string line;
     int linecount = 0;
     
-    CGFFReader reader;
-    CRef< CSeq_entry > entry = reader.Read( lr );
+    m_pErrors = pErrorContainer;
+    CRef< CSeq_entry > entry = CGFFReader::Read( lr );
+    m_pErrors = 0;
     return entry;
 }
     
@@ -203,5 +205,35 @@ CGff3Reader::ReadSeqEntry(
     return ReadSeqEntry( lr, pErrorContainer );
 };
                 
+//  ----------------------------------------------------------------------------                
+void 
+CGff3Reader::x_Warn(
+    const string& message,
+    unsigned int line )
+//  ----------------------------------------------------------------------------                
+{
+    if ( !m_pErrors ) {
+        return CGFFReader::x_Warn( message, line );
+    }
+    CObjReaderLineException err( eDiag_Warning, line, message );
+    CReaderBase::m_uLineNumber = line;
+    ProcessError( err, m_pErrors );
+}
+
+//  ----------------------------------------------------------------------------                
+void 
+CGff3Reader::x_Error(
+    const string& message,
+    unsigned int line )
+//  ----------------------------------------------------------------------------                
+{
+    if ( !m_pErrors ) {
+        return CGFFReader::x_Error( message, line );
+    }
+    CObjReaderLineException err( eDiag_Error, line, message );
+    CReaderBase::m_uLineNumber = line;
+    ProcessError( err, m_pErrors );
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

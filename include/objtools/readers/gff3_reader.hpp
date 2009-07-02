@@ -34,9 +34,10 @@
 #define OBJTOOLS_READERS___GFF3_READER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/reader_base.hpp>
-
 #include <objects/seqset/Seq_entry.hpp>
+
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/gff_reader.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -48,7 +49,7 @@ class CGFFReader;
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff3Reader
 //  ----------------------------------------------------------------------------
-    : public CReaderBase
+    : protected CGFFReader, public CReaderBase
 {
     //
     //  object management:
@@ -90,11 +91,18 @@ protected:
     static bool VerifyLine(
         const std::string& );
     
+    virtual void x_Warn(const string& message,
+        unsigned int line = 0);
+
+    virtual void x_Error(const string& message,
+        unsigned int line = 0);
+
     //
     //  data:
     //
 protected:
     int m_iReaderFlags;
+    CErrorContainer* m_pErrors;
 };
 
 END_SCOPE(objects)

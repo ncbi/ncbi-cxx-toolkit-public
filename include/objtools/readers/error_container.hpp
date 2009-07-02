@@ -56,7 +56,7 @@ public:
     unsigned int
     Line() const { return m_uLine; };
     
-    const std::string&
+    std::string
     Message() const { return m_strMessage; };
     
     std::string
@@ -81,10 +81,10 @@ public:
     void Dump( 
         std::ostream& out )
     {
-        char pcBuffer[ 80 ];
-        sprintf( pcBuffer, "%6.6d: %12s: %56s", Line(), SeverityStr().c_str(),
-            Message().c_str() );
-        out << pcBuffer;
+        out << "            " << SeverityStr() << ":" << endl;
+        out << "Line:       " << Line() << endl;
+        out << "Message:    " << Message() << endl;
+        out << endl;
     };
         
 protected:
