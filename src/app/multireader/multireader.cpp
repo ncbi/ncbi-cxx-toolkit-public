@@ -63,23 +63,35 @@ class CMultiReaderApp
 //  ============================================================================
      : public CNcbiApplication
 {
+public:
+    CMultiReaderApp(): m_pErrors( 0 ) {};
+    
 protected:
-    void ProcessSeqEntry(
-        CFormatGuess::EFormat,
-        CNcbiIstream&,
-        CNcbiOstream&,
-        CErrorContainer& );
+    void AppInitialize();
+    
+    void ReadObject(
+        CRef<CSerialObject>& );
         
-    void ProcessSeqAnnot(
-        CFormatGuess::EFormat,
-        CNcbiIstream&,
-        CNcbiOstream&,
-        CErrorContainer& );
+    void MapObject(
+        CRef<CSerialObject> );
         
+    void DumpObject(
+        CRef<CSerialObject> );
+        
+    void DumpErrors(
+        CNcbiOstream& );
+            
 private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
+    
+    CFormatGuess::EFormat m_uFormat;
+    CNcbiIstream* m_pInput;
+    CNcbiOstream* m_pOutput;
+    CErrorContainer* m_pErrors;
+    string m_strBuild;
+    bool m_bCheckOnly;
 };
 
 //  ============================================================================
@@ -95,37 +107,50 @@ void CMultiReaderApp::Init(void)
     //
     //  shared flags and parameters:
     //        
-    arg_desc->AddKey
-        ("i", "InputFile",
-         "Input File Name",
-         CArgDescriptions::eInputFile);
-
-    arg_desc->AddDefaultKey
-        ("o", "OutputFile",
-         "Output File Name",
-         CArgDescriptions::eOutputFile, "-"); 
+    arg_desc->AddKey(
+        "input", 
+        "InputFile",
+        "Input filename",
+        CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey(
-        "g", "Flags",
-        "Processing Bit Flags",
+        "output", 
+        "OutputFile",
+        "Output filename",
+        CArgDescriptions::eOutputFile, "-"); 
+
+    arg_desc->AddDefaultKey(
+        "flags", 
+        "Flags",
+        "Processing bit flags",
         CArgDescriptions::eInteger, "0" );
 
-    arg_desc->AddDefaultKey
-        ("f", "Format",
-         "Input File Format",
-         CArgDescriptions::eString, "guess");
-    arg_desc->SetConstraint
-        ("f", &(*new CArgAllow_Strings, 
-            "bed", 
-            "microarray", "bed15", 
-            "wig", "wiggle",
-            "gff",
-            "guess"));
-
     arg_desc->AddDefaultKey(
-        "ucsc-build", "UCSC_build_number",
+        "format", 
+        "Format",
+        "Input file format",
+        CArgDescriptions::eString, 
+        "guess");
+    arg_desc->SetConstraint(
+        "format", 
+        &(*new CArgAllow_Strings, "bed", "microarray", "bed15", "wig", "wiggle", "gff", "guess") );
+
+    arg_desc->AddFlag(
+        "checkonly",
+        "check for errors only",
+        true );
+        
+    arg_desc->AddFlag(
+        "noerrors",
+        "suppress error display",
+        true );
+        
+    arg_desc->AddDefaultKey(
+        "build", 
+        "UCSC_build_number",
         "UCSC build number",
-        CArgDescriptions::eString, "" );
+        CArgDescriptions::eString, 
+        "" );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -134,44 +159,16 @@ void CMultiReaderApp::Init(void)
 int 
 CMultiReaderApp::Run(void)
 //  ============================================================================
-{
-    //
-    //  Setup:
-    //
-    const CArgs& args = GetArgs();
-    CNcbiIstream& ip = args["i"].AsInputFile();
-    CNcbiOstream& op = args["o"].AsOutputFile();
-
-    CFormatGuess::EFormat fmt = CFormatGuess::eUnknown;
-    string format = args["f"].AsString();
-    if ( NStr::StartsWith( GetProgramDisplayName(), "wig" ) || format == "wig" ) {
-        fmt = CFormatGuess::eWiggle;
-    }
-    if ( NStr::StartsWith( GetProgramDisplayName(), "bed" ) || format == "bed" ) {
-        fmt = CFormatGuess::eBed;
-    }
-    if ( NStr::StartsWith( GetProgramDisplayName(), "b15" ) || format == "b15" ) {
-        fmt = CFormatGuess::eBed15;
-    }
-    if ( fmt == CFormatGuess::eUnknown ) {
-        fmt = CFormatGuess::Format( ip );
-    }
+{   
+    AppInitialize();
     
-    CMultiReader reader( fmt );
-    CErrorContainer errors;
+    CRef< CSerialObject> object;
     
-    switch (fmt) {
+    ReadObject( object );
+    MapObject( object );
+    DumpObject( object );       
+    DumpErrors( cerr );
     
-    case CFormatGuess::eGtf:
-        ProcessSeqEntry( fmt, ip, op, errors );
-        break;
-    
-    default: 
-        ProcessSeqAnnot( fmt, ip, op, errors );
-        break;
-    }
-    
-    errors.Dump( cerr );
     return 0;
 }
 
@@ -179,49 +176,101 @@ CMultiReaderApp::Run(void)
 void CMultiReaderApp::Exit(void)
 //  ============================================================================
 {
+    delete m_pErrors;
+    
     SetDiagStream(0);
 }
 
 //  ============================================================================
-void
-CMultiReaderApp::ProcessSeqEntry(
-    CFormatGuess::EFormat fmt,
-    CNcbiIstream& in,
-    CNcbiOstream& out,
-    CErrorContainer& errors )
+void CMultiReaderApp::AppInitialize()
 //  ============================================================================
 {
-    CMultiReader reader( fmt );
-    CRef< CSeq_entry > entry = reader.ReadSeqEntry( in, &errors );
-    if ( entry ) {
-        out << MSerial_AsnText << *entry << endl;
+    const string& strProgramName = GetProgramDisplayName();
+    const CArgs& args = GetArgs();
+    
+    m_uFormat = CFormatGuess::eUnknown;    
+    m_pInput = &args["input"].AsInputFile();
+    m_pOutput = &args["output"].AsOutputFile();
+    m_pErrors = 0;
+    m_bCheckOnly = args["checkonly"];
+
+    string format = args["format"].AsString();
+    if ( NStr::StartsWith( strProgramName, "wig" ) || format == "wig" ||
+        format == "wiggle" ) {
+        m_uFormat = CFormatGuess::eWiggle;
+    }
+    if ( NStr::StartsWith( strProgramName, "bed" ) || format == "bed" ) {
+        m_uFormat = CFormatGuess::eBed;
+    }
+    if ( NStr::StartsWith( strProgramName, "b15" ) || format == "bed15" ||
+        format == "microarray" ) {
+        m_uFormat = CFormatGuess::eBed15;
+    }
+    if ( NStr::StartsWith( strProgramName, "gff" ) || format == "gff" ) {
+        m_uFormat = CFormatGuess::eGtf;
+    }
+    if ( m_uFormat == CFormatGuess::eUnknown ) {
+        m_uFormat = CFormatGuess::Format( *m_pInput );
+    }
+    
+    if ( ! args["noerrors"] ) {
+        m_pErrors = new CErrorContainer;
+    }
+    
+    m_strBuild = args["build"].AsString();        
+}
+
+//  ============================================================================
+void CMultiReaderApp::ReadObject(
+    CRef<CSerialObject>& object )
+//  ============================================================================
+{
+    CMultiReader reader( m_uFormat );
+    
+    switch (m_uFormat) {    
+    case CFormatGuess::eGtf: {
+        object = reader.ReadSeqEntry( *m_pInput, m_pErrors );
+        break;
+    }    
+    default:
+        object = reader.ReadSeqAnnot( *m_pInput, m_pErrors );
+        break;
     }
 }
 
 //  ============================================================================
-void
-CMultiReaderApp::ProcessSeqAnnot(
-    CFormatGuess::EFormat fmt,
-    CNcbiIstream& in,
-    CNcbiOstream& out,
-    CErrorContainer& errors )
+void CMultiReaderApp::MapObject(
+    CRef<CSerialObject> object )
 //  ============================================================================
 {
-    CMultiReader reader( fmt );
-    CRef< CSeq_annot > annot = reader.ReadSeqAnnot( in, &errors );
-
-    if ( ! GetArgs()[ "ucsc-build" ].AsString().empty() ) {
+    if ( !object ) {
+        return;
+    }
+    if ( ! m_strBuild.empty() ) {
         CIdMapper* pMapper = CIdMapper::GetIdMapper( "builtin" );
-        pMapper->MapSeqAnnot( GetArgs()[ "ucsc-build" ].AsString(), annot );
+        pMapper->MapObject( m_strBuild, object );
         delete pMapper;
     }
+}
     
-    if ( annot && annot->CanGetData() 
-         && (CSeq_annot::TData::e_not_set != annot->GetData().Which()) ) {
-        out << MSerial_AsnText << *annot << endl;
+//  ============================================================================
+void CMultiReaderApp::DumpObject(
+    CRef<CSerialObject> object )
+//  ============================================================================
+{
+    if ( m_bCheckOnly || !object ) {
+        return;
     }
-    else {
-        cerr << "No seq-annot found!" << endl;
+    *m_pOutput << MSerial_AsnText << *object << endl;
+}
+
+//  ============================================================================
+void CMultiReaderApp::DumpErrors(
+    CNcbiOstream& out )
+//  ============================================================================
+{
+    if ( m_pErrors ) {
+        m_pErrors->Dump( out );
     }
 }
 

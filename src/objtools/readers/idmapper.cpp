@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <serial/iterator.hpp>
 
 // Objects includes
 #include <objects/general/Object_id.hpp>
@@ -40,6 +41,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
@@ -105,6 +107,26 @@ CIdMapper::MapID(
 
 //  ============================================================================
 void
+CIdMapper::MapId(
+    const string& strBuild,
+    CSeq_id& id )
+//  ============================================================================
+{
+    if ( id.Which() != CSeq_id::e_Local ) {
+        return;
+    }
+    const CSeq_id::TLocal& locid = id.GetLocal();
+    if ( ! locid.IsStr() ) {
+        return;
+    }
+    unsigned int iDummy( 0 );
+    CSeq_id_Handle mapped_handle = MapID( 
+        UcscID::Label( strBuild, locid.GetStr() ), iDummy );
+    id.SetGi( mapped_handle.GetGi() );
+}
+
+//  ============================================================================
+void
 CIdMapper::MapLocation(
     const string& strBuild,
     CSeq_loc& location )
@@ -128,15 +150,46 @@ CIdMapper::MapLocation(
 
 //  ============================================================================
 void
-CIdMapper::MapSeqAnnot(
+CIdMapper::MapObject(
     const string& strBuild,
-    CRef<CSeq_annot>& annot )
+    CRef<CSerialObject>& object )
 //  ============================================================================
 {
-    if ( ! annot->CanGetData() ) {
+//    CTypeIterator< CSeq_loc > locit( *object );
+//    for ( /*0*/; locit; ++locit ) {
+//        MapLocation( strBuild, *locit );
+//    }
+    CTypeIterator< CSeq_id > idit( *object );
+    for ( /*0*/; idit; ++idit ) {
+        MapId( strBuild, *idit );
+    }
+}
+
+//  ============================================================================
+void
+CIdMapper::MapSeqEntry(
+    const string& strBuild,
+    CSeq_entry& entry )
+//  ============================================================================
+{
+    CTypeIterator< CSeq_loc > locit( entry );
+    for ( /*0*/; locit; ++locit ) {
+        CSeq_loc& loc = *locit;
+        MapLocation( strBuild, loc );
+    }
+}
+
+//  ============================================================================
+void
+CIdMapper::MapSeqAnnot(
+    const string& strBuild,
+    CSeq_annot& annot )
+//  ============================================================================
+{
+    if ( ! annot.CanGetData() ) {
         return;
     }
-    CSeq_annot::TData& data = annot->SetData();
+    CSeq_annot::TData& data = annot.SetData();
     switch( data.Which() ) {
     
     case CSeq_annot::C_Data::e_Graph: {

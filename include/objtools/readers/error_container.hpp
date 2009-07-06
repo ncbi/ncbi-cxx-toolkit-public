@@ -157,7 +157,7 @@ public:
         std::ostream& out )
     {
         if ( m_Errors.size() ) {
-            out << "ErrorContainer with " << m_Errors.size() << "errors:" << endl;
+//            out << "ErrorContainer with " << m_Errors.size() << "errors:" << endl;
             std::vector<CLineError>::iterator it;
             for ( it= m_Errors.begin(); it != m_Errors.end(); ++it ) {
                 it->Dump( out );
@@ -165,7 +165,7 @@ public:
             }
         }
         else {
-            out << "ErrorContainer with no errors." << endl;
+            out << "(( no errors ))" << endl;
         }
     };
             

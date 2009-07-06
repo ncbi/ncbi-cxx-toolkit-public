@@ -59,9 +59,19 @@ public:
         unsigned int& );
 
     virtual void
+    MapObject(
+        const std::string&,
+        CRef<CSerialObject>& );
+        
+    virtual void
     MapSeqAnnot(
         const std::string&, 
-        CRef<CSeq_annot>& );
+        CSeq_annot& );
+                
+    virtual void
+    MapSeqEntry(
+        const std::string&, 
+        CSeq_entry& );
                 
     virtual void Dump(
         CNcbiOstream&,
@@ -72,6 +82,11 @@ protected:
     MapLocation(
         const std::string&,
         CSeq_loc& );
+        
+    virtual void
+    MapId(
+        const std::string&,
+        CSeq_id& );
         
     CIdMapper() {};
 };
