@@ -117,6 +117,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 // Based on boost's BOOST_CURRENT_FUNCTION
 
 #ifndef NDEBUG
+#  undef  NCBI_SHOW_FUNCTION_NAME
 #  define NCBI_SHOW_FUNCTION_NAME
 #endif
 
