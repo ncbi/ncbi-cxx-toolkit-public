@@ -2369,6 +2369,19 @@ CDiagHandler* CreateDefaultDiagHandler(void)
 }
 
 
+// Note: Intel Thread Checker detects a memory leak at the line:
+//       m_Stream(new CNcbiOstrstream) below
+//       This is not a fault of the toolkit code as soon as a code like:
+//       int main() {
+//           ostrstream *  s = new ostrstream;
+//           delete s;
+//           return 0;
+//       }
+//       will also report memory leaks.
+// Test environment:
+// - Intel Thread Checker for Linux 3.1
+// - gcc 4.0.1, gcc 4.1.2, icc 10.1
+// - Linux64
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
