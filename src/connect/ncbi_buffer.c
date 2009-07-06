@@ -58,9 +58,10 @@ typedef struct SBufChunkTag {
 /* Buffer
  */
 typedef struct BUF_tag {
-    size_t     chunk_size; /* this is actually a chunk size unit */
+    size_t     chunk_size; /* this is actually a chunk size unit             */
     SBufChunk* list;
     SBufChunk* last;
+    size_t     size;       /* total buffer size; m.b.consistent at all times */
 } BUF_struct;
 
 
@@ -69,10 +70,10 @@ extern size_t BUF_SetChunkSize(BUF* pBuf, size_t chunk_size)
 {
     /* create buffer internals, if not created yet */
     if ( !*pBuf ) {
-        *pBuf = (BUF_struct*) malloc(sizeof(BUF_struct));
-        if ( !*pBuf )
+        if ( !(*pBuf = (BUF_struct*) malloc(sizeof(BUF_struct))) )
             return 0;
         (*pBuf)->list = (*pBuf)->last = 0;
+        (*pBuf)->size = 0;
     }
 
     /* and set the min. mem. chunk size */
@@ -83,16 +84,22 @@ extern size_t BUF_SetChunkSize(BUF* pBuf, size_t chunk_size)
 
 extern size_t BUF_Size(BUF buf)
 {
+#if defined(_DEBUG)  &&  !defined(NDEBUG)  
     size_t     size;
     SBufChunk* pChunk;
-    if ( !buf )
+    if (!buf  ||  !buf->list)
         return 0;
 
     for (size = 0, pChunk = buf->list;  pChunk;  pChunk = pChunk->next) {
+        /* NB: no empty blocks allowed within the list */
         assert(pChunk->size > pChunk->n_skip);
         size += pChunk->size - pChunk->n_skip;
     }
+    assert(size == buf->size);
     return size;
+#else
+    return buf ? buf->size : 0;
+#endif /*_DEBUG && !NDEBUG*/
 }
 
 
@@ -107,7 +114,7 @@ static SBufChunk* s_AllocChunk(size_t size, size_t chunk_size)
     if ( !pChunk )
         return 0;
 
-    pChunk->next       = 0;
+    /* leave pChunk->next uninited */
     pChunk->size       = 0;
     pChunk->alloc_size = alloc_size;
     pChunk->n_skip     = 0;
@@ -126,20 +133,21 @@ extern int/*bool*/ BUF_Append(BUF* pBuf, const void* data, size_t size)
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
         return 0/*false*/;
 
-    pChunk = s_AllocChunk(0, (*pBuf)->chunk_size);
-    if ( !pChunk )
+    if ( !(pChunk = s_AllocChunk(0, (*pBuf)->chunk_size)) )
         return 0/*false*/;
 
     assert( !pChunk->data );
     pChunk->alloc_size = size;
     pChunk->size       = size;
     pChunk->data       = (char*) data;
+    pChunk->next       = 0;
 
     if ( (*pBuf)->last )
         (*pBuf)->last->next = pChunk;
     else
-        (*pBuf)->list = pChunk;
-    (*pBuf)->last = pChunk;
+        (*pBuf)->list       = pChunk;
+    (*pBuf)->last  = pChunk;
+    (*pBuf)->size += size;
     return 1/*true*/;
 }
 
@@ -154,18 +162,17 @@ extern int/*bool*/ BUF_Prepend(BUF* pBuf, const void* data, size_t size)
     if (!*pBuf  &&  !BUF_SetChunkSize(pBuf, 0))
         return 0/*false*/;
 
-    pChunk = s_AllocChunk(0, (*pBuf)->chunk_size);
-    if ( !pChunk )
+    if ( !(pChunk = s_AllocChunk(0, (*pBuf)->chunk_size)) )
         return 0/*false*/;
 
     assert( !pChunk->data );
     pChunk->alloc_size = size;
     pChunk->size       = size;
     pChunk->data       = (char*) data;
+    pChunk->next       = (*pBuf)->list;
 
-    if ( (*pBuf)->list )
-        pChunk->next = (*pBuf)->list;
-    (*pBuf)->list = pChunk;
+    (*pBuf)->list  = pChunk;
+    (*pBuf)->size += size;
     return 1/*true*/;
 }
 
@@ -184,31 +191,31 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
     pTail = (*pBuf)->last;
 
     /* write to an unfilled space of the last allocated chunk, if any */
-    if (pTail  &&  pTail->size != pTail->alloc_size) {
+    if (pTail  &&  pTail->alloc_size > pTail->size) {
         size_t n_avail = pTail->alloc_size - pTail->size;
-        size_t n_write = (size <= n_avail) ? size : n_avail;
-        assert(pTail->size < pTail->alloc_size);
+        size_t n_write = n_avail < size ? n_avail : size;
         memcpy(pTail->data + pTail->size, data, n_write);
-        pTail->size += n_write;
-        size -= n_write;
+        pTail->size   += n_write;
+        (*pBuf)->size += n_write;
+        size          -= n_write;
         data = (char*) data + n_write;
     }
 
     /* allocate and write to the new chunk, if necessary */
     if ( size ) {
-        pChunk = s_AllocChunk(size, (*pBuf)->chunk_size);
-        if ( !pChunk )
+        if ( !(pChunk = s_AllocChunk(size, (*pBuf)->chunk_size)) )
             return 0/*false*/;
-        pChunk->n_skip = 0;
-        pChunk->size   = size;
         memcpy(pChunk->data, data, size);
+        pChunk->size = size;
+        pChunk->next = 0;
 
         /* add the new chunk to the list */
         if ( pTail )
-            pTail->next = pChunk;
+            pTail->next   = pChunk;
         else
             (*pBuf)->list = pChunk;
-        (*pBuf)->last = pChunk;
+        (*pBuf)->last  = pChunk;
+        (*pBuf)->size += size;
     }
     return 1/*true*/;
 }
@@ -227,22 +234,21 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
     pChunk = (*pBuf)->list;
 
     /* allocate and link a new chunk to the beginning of the chunk list */
-    if (!pChunk  ||  size > pChunk->n_skip) {
-        pChunk = s_AllocChunk(size, (*pBuf)->chunk_size);
-        if ( !pChunk )
+    if (!pChunk  ||  pChunk->n_skip < size) {
+        if ( !(pChunk = s_AllocChunk(size, (*pBuf)->chunk_size)) )
             return 0/*false*/;
         pChunk->n_skip = pChunk->size = pChunk->alloc_size;
-        pChunk->next  = (*pBuf)->list;
-        (*pBuf)->list = pChunk;
-        if ( !(*pBuf)->last ) {
+        pChunk->next   = (*pBuf)->list;
+        (*pBuf)->list  = pChunk;
+        if ( !(*pBuf)->last )
             (*pBuf)->last = pChunk;
-        }
     }
 
     /* write data */
     assert(pChunk->n_skip >= size);
     pChunk->n_skip -= size;
     memcpy(pChunk->data + pChunk->n_skip, data, size);
+    (*pBuf)->size  += size;
     return 1/*true*/;
 }
 
@@ -255,8 +261,7 @@ extern size_t BUF_Peek(BUF buf, void* data, size_t size)
 
 extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
 {
-    size_t     n_todo = size;
-    size_t     n_extra_skip = 0;
+    size_t     n_todo;
     SBufChunk* pChunk;
 
     if (!size  ||  !buf  ||  !buf->list)
@@ -264,39 +269,37 @@ extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
 
     /* special treatment for NULL data buffer */
     if ( !data ) {
-        size_t buf_size = BUF_Size(buf);
-        if (buf_size <= pos)
+        if (buf->size <= pos)
             return 0;
-        buf_size -= pos;
-        return buf_size < size ? buf_size : size;
+        n_todo = buf->size - pos;
+        return n_todo < size ? n_todo : size;
     }
 
     /* skip "pos" bytes */
     for (pChunk = buf->list;  pChunk;  pChunk = pChunk->next) {
         size_t chunk_size = pChunk->size - pChunk->n_skip;
         assert(pChunk->size > pChunk->n_skip);
-        if (chunk_size > pos) {
-            n_extra_skip = pos;
+        if (chunk_size > pos)
             break;
-        }
         pos -= chunk_size;
     }
 
     /* copy the peeked data to "data" */
-    for ( ;  n_todo  &&  pChunk;  pChunk = pChunk->next, n_extra_skip = 0) {
-        size_t n_skip = pChunk->n_skip + n_extra_skip;
+    for (n_todo = size;  n_todo  &&  pChunk;  pChunk = pChunk->next, pos = 0) {
+        size_t n_skip = pChunk->n_skip + pos;
         size_t n_copy = pChunk->size - n_skip;
         assert(pChunk->size > n_skip);
         if (n_copy > n_todo)
             n_copy = n_todo;
 
+ 
         memcpy(data, (char*) pChunk->data + n_skip, n_copy);
         data = (char*) data + n_copy;
         n_todo -= n_copy;
     }
 
     assert(size >= n_todo);
-    return (size - n_todo);
+    return size - n_todo;
 }
 
 
@@ -306,8 +309,7 @@ extern size_t BUF_PeekAtCB(BUF buf,
                            void* data,
                            size_t size)
 {
-    size_t     n_todo = size;
-    size_t     n_extra_skip = 0;
+    size_t     n_todo;
     SBufChunk* pChunk;
 
     if (!size  ||  !buf  ||  !buf->list)
@@ -315,27 +317,24 @@ extern size_t BUF_PeekAtCB(BUF buf,
 
     /* special treatment for NULL callback */
     if ( !callback ) {
-        size_t buf_size = BUF_Size(buf);
-        if (buf_size <= pos)
+        if (buf->size <= pos)
             return 0;
-        buf_size -= pos;
-        return buf_size < size ? buf_size : size;
+        n_todo = buf->size - pos;
+        return n_todo < size ? n_todo : size;
     }
 
     /* skip "pos" bytes */
     for (pChunk = buf->list;  pChunk;  pChunk = pChunk->next) {
         size_t chunk_size = pChunk->size - pChunk->n_skip;
         assert(pChunk->size > pChunk->n_skip);
-        if (chunk_size > pos) {
-            n_extra_skip = pos;
+        if (chunk_size > pos)
             break;
-        }
         pos -= chunk_size;
     }
 
     /* process the peeked data */
-    for ( ;  n_todo  &&  pChunk;  pChunk = pChunk->next, n_extra_skip = 0) {
-        size_t n_skip = pChunk->n_skip + n_extra_skip;
+    for (n_todo = size;  n_todo  &&  pChunk;  pChunk = pChunk->next, pos = 0) {
+        size_t n_skip = pChunk->n_skip + pos;
         size_t n_copy = pChunk->size - n_skip;
         assert(pChunk->size > n_skip);
         if (n_copy > n_todo)
@@ -346,40 +345,45 @@ extern size_t BUF_PeekAtCB(BUF buf,
     }
 
     assert(size >= n_todo);
-    return (size - n_todo);
+    return size - n_todo;
 }
 
 
 extern size_t BUF_Read(BUF buf, void* data, size_t size)
 {
     size_t n_todo;
-    if (!buf  ||  !size)
-        return 0;
 
     /* peek to the callers data buffer, if non-NULL */
     if ( data )
         size = BUF_PeekAt(buf, 0, data, size);
+    else if (!buf ||  !buf->list)
+        return 0;
+
+    if (!size)
+        return 0;
 
     /* remove the read data from the buffer */ 
     n_todo = size;
-    while (n_todo  &&  buf->list) {
+    do {
         SBufChunk* pHead = buf->list;
         size_t     n_avail = pHead->size - pHead->n_skip;
-        if (n_todo >= n_avail) { /* discard the whole chunk */
-            buf->list = pHead->next;
-            if ( !buf->list ) {
-                buf->last = 0;
-            }
-            free(pHead);
-            n_todo -= n_avail;
-        } else { /* discard some of the chunk data */
+        if (n_todo < n_avail) {
+            /* discard some of the chunk data */
             pHead->n_skip += n_todo;
+            buf->size     -= n_todo;
             n_todo = 0;
+            break;
         }
-    }
+        /* discard the whole chunk */
+        if ( !(buf->list = pHead->next) )
+            buf->last = 0;
+        free(pHead);
+        buf->size -= n_avail;
+        n_todo    -= n_avail;
+    } while (n_todo  &&  buf->list);
 
     assert(size >= n_todo);
-    return (size - n_todo);
+    return size - n_todo;
 }
 
 
@@ -389,11 +393,12 @@ extern void BUF_Erase(BUF buf)
         return;
 
     while ( buf->list ) {
-        SBufChunk* pChunk = buf->list;
-        buf->list = pChunk->next;
-        free(pChunk);
+        SBufChunk* pHead = buf->list;
+        buf->list = pHead->next;
+        free(pHead);
     }
     buf->last = 0;
+    buf->size = 0;
 }
 
 
