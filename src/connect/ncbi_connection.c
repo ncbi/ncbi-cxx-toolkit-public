@@ -48,7 +48,7 @@
  */
 #define CONN_LOG_EX(subcode, level, message, status)                \
   CORE_LOGF_X(subcode, level,                                       \
-              ("%s (connector \"%s\", status \"%s\")", message,     \
+              ("%s (%s connector: %s)", message,                    \
                conn->meta.get_type                                  \
                ? conn->meta.get_type(conn->meta.c_get_type)         \
                : "Unknown", IO_StatusStr(status)))
@@ -388,15 +388,24 @@ extern EIO_Status CONN_Wait
         : eIO_NotSupported;
 
     if (status != eIO_Success) {
-        if (status != eIO_Timeout) {
-            CONN_LOG(14, eLOG_Error, event == eIO_Read
-                     ? "[CONN_Wait]  Error waiting on read"
-                     : "[CONN_Wait]  Error waiting on write");
-        } else if (!timeout  ||  (timeout->sec | timeout->usec)) {
-            CONN_LOG(15, eLOG_Warning, event == eIO_Read
-                     ? "[CONN_Wait]  Read timed out"
-                     : "[CONN_Wait]  Write timed out");
+        ELOG_Level level;
+        switch (status) {
+        case eIO_Closed:
+            level = event == eIO_Read ? eLOG_Trace : eLOG_Error;
+            break;
+        case eIO_Timeout:
+            level = timeout ? eLOG_Trace : eLOG_Warning;
+            break;
+        case eIO_Interrupt:
+            level = eLOG_Warning;
+            break;
+        default:
+            level = eLOG_Error;
+            break;
         }
+        CONN_LOG(14, level, event == eIO_Read
+                 ? "[CONN_Wait]  Read event failed"
+                 : "[CONN_Wait]  Write event failed");
     }
     return status;
 }
@@ -741,7 +750,7 @@ extern EIO_Status CONN_ReadLine
             len++;
         }
         if (i < x_read  &&  !BUF_PushBack(&conn->buf, x_buf + i, x_read - i)) {
-            CONN_LOG_EX(33, eLOG_Error,
+            CONN_LOG_EX(15, eLOG_Error,
                         "[CONN_ReadLine]  Cannot push extra data back",
                         eIO_Unknown);
         }
