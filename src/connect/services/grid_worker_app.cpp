@@ -53,6 +53,16 @@ void GridWorker_SignalHandler( int )
 
 BEGIN_NCBI_SCOPE
 
+IWorkerNodeCleanupEventSource*
+    CDefaultWorkerNodeInitContext::GetCleanupEventSource() const
+{
+    const CGridWorkerApp* grid_app =
+        dynamic_cast<const CGridWorkerApp*>(&m_App);
+
+    _ASSERT(grid_app != NULL);
+    return grid_app->GetWorkerNode()->GetCleanupEventSource();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 
@@ -62,7 +72,7 @@ void CGridWorkerApp::Construct(
     INetScheduleClientFactory* client_factory,
     ESignalHandling signal_handling)
 {
-    m_AppImpl.reset(new CGridWorkerApp_Impl(*this,
+    m_WorkerNode.reset(new CGridWorkerNode(*this,
         job_factory, storage_factory, client_factory));
 
     m_MergeLogLines = false;
@@ -106,8 +116,8 @@ void CGridWorkerApp::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    m_AppImpl->Init(m_MergeLogLines);
-    m_AppImpl->GetJobFactory().Init(GetInitContext());
+    m_WorkerNode->Init(m_MergeLogLines);
+    m_WorkerNode->GetJobFactory().Init(GetInitContext());
 }
 
 void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
@@ -135,13 +145,13 @@ const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext()
 
 int CGridWorkerApp::Run(void)
 {
-    return m_AppImpl->Run();
+    return m_WorkerNode->Run();
 }
 
 void CGridWorkerApp::RequestShutdown()
 {
-    if (m_AppImpl.get())
-        m_AppImpl->RequestShutdown();
+    if (m_WorkerNode.get())
+        m_WorkerNode->RequestShutdown();
 }
 
 

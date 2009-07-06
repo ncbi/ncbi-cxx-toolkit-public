@@ -64,11 +64,9 @@ public:
                              CNcbiOstream& reply,
                              CGridWorkerNode& node) = 0;
     };
-    CWorkerNodeControlServer(
+    CWorkerNodeControlServer(CGridWorkerNode* worker_node,
         unsigned short start_port, unsigned short end_port);
 
-    void SetWorkerNode(CGridWorkerNode* worker_node)
-        { m_WorkerNode = worker_node; }
     CGridWorkerNode& GetWorkerNode() { return *m_WorkerNode; }
 
     virtual ~CWorkerNodeControlServer();

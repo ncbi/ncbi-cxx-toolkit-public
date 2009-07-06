@@ -120,10 +120,6 @@ public:
                       { m_ShutdownLevel = level; }
     bool IsShuttingDown();
 
-    void SetForceExit(bool force_exit) {m_ForceExit = force_exit;}
-    bool IsForceExitEnabled() const {return m_ForceExit;}
-
-
     /// Check if shutdown was requested.
     ///
     CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void)
@@ -141,7 +137,6 @@ private:
     static auto_ptr<CGridGlobals> sm_Instance;
 
     CAtomicCounter_WithAutoInit m_JobsStarted;
-    bool m_ForceExit;
     bool m_ReuseJobObject;
 
     volatile CNetScheduleAdmin::EShutdownLevel m_ShutdownLevel;

@@ -35,7 +35,7 @@
  */
 
 /// @file grid_worker.hpp
-/// NetSchedule Framework specs.
+/// Grid Framework specs.
 ///
 
 #include <connect/services/ns_client_factory.hpp>
@@ -51,6 +51,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/blob_storage.hpp>
+#include <corelib/ncbiapp.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -62,6 +63,41 @@ BEGIN_NCBI_SCOPE
 class CArgs;
 class IRegistry;
 class CNcbiEnvironment;
+
+class IWorkerNodeCleanupEventListener {
+public:
+    /// Event notifying of a safe clean-up point. It is generated for a
+    /// job after the job is finished (or the worker node is shutting
+    /// down). It is also generated for the whole worker node -- when
+    /// it is shutting down.
+    enum EWorkerNodeCleanupEvent {
+        /// For jobs -- run from the same thread after Do() is done;
+        /// for the whole WN -- run from a separate (clean-up) thread
+        /// after all jobs are done and cleaned up, and the whole worker
+        /// node is shutting down.
+        eRegularCleanup,
+
+        /// Called on emergency shutdown, always from a different (clean-up)
+        /// thread, even for the jobs.
+        eOnHardExit
+    };
+
+    virtual void HandleEvent(EWorkerNodeCleanupEvent cleanup_event) = 0;
+    virtual ~IWorkerNodeCleanupEventListener() {}
+};
+
+/// Clean-up event source for the worker node. This interface provides
+/// for subscribing for EWorkerNodeCleanupEvent. It is used by both
+/// IWorkerNodeInitContext (for the global worker node clean-up) and
+/// IWorkerNodeJob (for per-job clean-up).
+class NCBI_XCONNECT_EXPORT IWorkerNodeCleanupEventSource : public CObject
+{
+public:
+    virtual void AddListener(IWorkerNodeCleanupEventListener* listener) = 0;
+    virtual void RemoveListener(IWorkerNodeCleanupEventListener* listener) = 0;
+
+    virtual void CallEventHandlers() = 0;
+};
 
 /// Worker Node initialize context
 ///
@@ -77,15 +113,19 @@ public:
 
     /// Get a config file registry
     ///
-    virtual const IRegistry&        GetConfig() const;
+    virtual const IRegistry&        GetConfig() const = 0;
 
     /// Get command line arguments
     ///
-    virtual const CArgs&            GetArgs() const;
+    virtual const CArgs&            GetArgs() const = 0;
 
     /// Get environment variables
     ///
-    virtual const CNcbiEnvironment& GetEnvironment() const;
+    virtual const CNcbiEnvironment& GetEnvironment() const = 0;
+
+    /// Get interface for registering clean-up event listeners
+    ///
+    virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const = 0;
 };
 
 class CWorkerNodeJobContext;
@@ -137,9 +177,6 @@ class CWorkerNodeRequest;
 class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
 {
 public:
-
-    ~CWorkerNodeJobContext();
-
     /// Get the associated job structure to access all of its fields.
     const CNetScheduleJob& GetJob() const {return m_Job;}
 
@@ -296,6 +333,8 @@ public:
     bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
     ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
 
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource();
+
 private:
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
@@ -311,10 +350,9 @@ private:
     friend class CGridWorkerNode;
     CWorkerNodeJobContext(CGridWorkerNode&   worker_node,
                           const CNetScheduleJob& job,
-                          unsigned int       job_nubmer,
                           bool               log_requested);
 
-    void Reset(const CNetScheduleJob& job, unsigned int job_number);
+    void Reset(const CNetScheduleJob& job);
 
     CGridWorkerNode&     m_WorkerNode;
     CNetScheduleJob      m_Job;
@@ -325,6 +363,7 @@ private:
     CGridThreadContext*  m_ThreadContext;
     bool                 m_ExclusiveJob;
 
+    CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -487,59 +526,57 @@ public:
 
 };
 
+class CWorkerNodeJobWatchers;
+class CWorkerNodeIdleThread;
+class IGridWorkerNodeApp_Listener;
 class CWNJobsWatcher;
 /// Grid Worker Node
 ///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
 /// in the different threads (thread pool is used).
 ///
+/// @note
+/// Worker node application is parameterized using INI file settings.
+/// Please read the sample ini file for more information.
+///
 class NCBI_XCONNECT_EXPORT CGridWorkerNode
 {
 public:
-
     /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(IWorkerNodeJobFactory&      job_creator,
-                    IBlobStorageFactory&        ns_storage_creator,
-                    INetScheduleClientFactory&  ns_client_creator,
-                    IWorkerNodeJobWatcher*      job_wather,
-                    IRebalanceStrategy*         rebalance_strategy,
-                    unsigned short              control_port);
+    CGridWorkerNode(CNcbiApplication& app,
+        IWorkerNodeJobFactory* job_factory,
+        IBlobStorageFactory* storage_factory = NULL,
+        INetScheduleClientFactory* client_factory = NULL);
 
     virtual ~CGridWorkerNode();
 
-    /// Set the maximum threads running simultaneously
+    void Init(bool default_merge_lines_value);
+
+    /// Start job execution loop.
     ///
-    void SetMaxThreads(unsigned int max_threads)
-                      { m_MaxThreads = max_threads; }
+    int Run();
+
+    void RequestShutdown();
+
+    void ForceSingleThread(){ m_SingleThreadForced = true; }
+
+    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
+                          EOwnership owner = eNoOwnership);
+
+    void SetListener(IGridWorkerNodeApp_Listener* listener);
+
+    IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
 
     /// Get the maximum threads running simultaneously
     //
     unsigned int GetMaxThreads() const { return m_MaxThreads; }
 
-    void SetInitThreads(unsigned int init_threads)
-                      { m_InitThreads = init_threads; }
-
-    void SetNSTimeout(unsigned int timeout) { m_NSTimeout = timeout; }
-    void SetThreadsPoolTimeout(unsigned int timeout)
-                      { m_ThreadsPoolTimeout = timeout; }
-
-    void ActivateServerLog(bool on_off)
-                      { m_LogRequested = on_off; }
-
-    void SetMasterWorkerNodes(const string& hosts);
-    void SetAdminHosts(const string& hosts);
     bool IsHostInAdminHostsList(const string& host) const;
 
-    void SetUseEmbeddedStorage(bool on_off) { m_UseEmbeddedStorage = on_off; }
     bool IsEmeddedStorageUsed() const { return m_UseEmbeddedStorage; }
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
-    void SetCheckStatusPeriod(unsigned int sec) { m_CheckStatusPeriod = sec; }
     size_t GetServerOutputSize() const;
-
-    /// Start jobs execution.
-    ///
-    void Run();
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -554,7 +591,7 @@ public:
     string GetJobVersion() const
     {
         CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory.GetJobVersion();
+        return m_JobFactory->GetJobVersion();
     }
 
     /// Get a Connection Info
@@ -577,20 +614,19 @@ public:
     /// request-stop events by the framework itself.
     static void DisableDefaultRequestEventLogging();
 
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource();
+
 private:
-    IWorkerNodeJobFactory&       m_JobFactory;
-    IBlobStorageFactory&         m_NSStorageFactory;
-    IWorkerNodeJobWatcher*       m_JobWatcher;
+    auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
+    auto_ptr<IBlobStorageFactory>        m_StorageFactory;
+    auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
+    auto_ptr<CWorkerNodeJobWatchers>     m_JobWatchers;
 
     CNetScheduleAPI m_SharedNSClient;
     CNetScheduleExecuter m_NSExecuter;
 
-    auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
-    unsigned short               m_ControlPort;
     unsigned int                 m_MaxThreads;
-    unsigned int                 m_InitThreads;
     unsigned int                 m_NSTimeout;
-    unsigned int                 m_ThreadsPoolTimeout;
     mutable CFastMutex           m_JobFactoryMutex;
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
@@ -599,29 +635,24 @@ private:
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     bool                         m_UseEmbeddedStorage;
-    bool                         m_LogRequested;
+
+    CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
     {
         CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory.CreateInstance();
+        return m_JobFactory->CreateInstance();
     }
     IBlobStorage* CreateStorage()
     {
         CFastMutexGuard guard(m_StorageFactoryMutex);
-        return  m_NSStorageFactory.CreateInstance();
+        return  m_StorageFactory->CreateInstance();
     }
     friend class CWorkerNodeJobContext;
 
     void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
-                            IWorkerNodeJobWatcher::EEvent event)
-    {
-        if (m_JobWatcher) {
-            CFastMutexGuard guard(m_JobWatcherMutex);
-            m_JobWatcher->Notify(job, event);
-        }
-    }
+                            IWorkerNodeJobWatcher::EEvent event);
 
     set<SServerAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
@@ -635,8 +666,14 @@ private:
     bool x_CreateNSReadClient();
     bool x_AreMastersBusy() const;
 
-    CGridWorkerNode(const CGridWorkerNode&);
-    CGridWorkerNode& operator=(const CGridWorkerNode&);
+    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+
+    CRef<CWorkerNodeIdleThread>  m_IdleThread;
+
+    auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
+
+    CNcbiApplication& m_App;
+    bool m_SingleThreadForced;
 };
 
 inline const string& CGridWorkerNode::GetQueueName() const
@@ -670,7 +707,27 @@ inline bool CGridWorkerNode::IsExclusiveMode()
 }
 
 
-class CGridWorkerNodeException : public CException
+class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
+{
+public:
+    enum EErrCode {
+        eJobFactoryIsNotSet
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eJobFactoryIsNotSet: return "eJobFactoryIsNotSetError";
+        default:      return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CGridWorkerAppException, CException);
+};
+
+
+class NCBI_XCONNECT_EXPORT CGridWorkerNodeException : public CException
 {
 public:
     enum EErrCode {

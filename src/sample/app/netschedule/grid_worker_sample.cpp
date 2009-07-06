@@ -44,6 +44,26 @@ USING_NCBI_SCOPE;
     
 ///////////////////////////////////////////////////////////////////////
 
+class CSampleJobCleanupListener : public IWorkerNodeCleanupEventListener
+{
+public:
+    CSampleJobCleanupListener(const char* cleanup_type) :
+        m_CleanupType(cleanup_type)
+    {
+    }
+    virtual void HandleEvent(EWorkerNodeCleanupEvent cleanup_event);
+
+private:
+    const char* m_CleanupType;
+};
+
+void CSampleJobCleanupListener::HandleEvent(
+    EWorkerNodeCleanupEvent cleanup_event)
+{
+    LOG_POST(m_CleanupType << (cleanup_event ==
+        IWorkerNodeCleanupEventListener::eRegularCleanup ?
+            " regular clean-up" : " clean-up during force exit"));
+}
 
 /// NetSchedule sample job
 ///
@@ -59,12 +79,18 @@ public:
         m_Param = reg.GetString("sample", "parameter", "no parameter" );
         m_Iters = reg.GetInt("sample", "iterations", 1000,0,IRegistry::eReturn );
         m_SleepSec = reg.GetInt("sample", "sleep_sec", 2,0,IRegistry::eReturn );;
+
+        context.GetCleanupEventSource()->AddListener(
+            new CSampleJobCleanupListener("Worker node"));
     }
 
     virtual ~CSampleJob() {} 
 
     int Do(CWorkerNodeJobContext& context) 
     {
+        context.GetCleanupEventSource()->AddListener(
+            new CSampleJobCleanupListener("Job-do"));
+
         LOG_POST( context.GetJobKey() + " " + context.GetJobInput());
         LOG_POST( "This parameter is read from a config file: " << m_Param);
 

@@ -39,7 +39,7 @@
 ///
 
 
-#include <connect/services/grid_worker_app_impl.hpp>
+#include <connect/services/grid_worker.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 class CDefaultWorkerNodeInitContext : public IWorkerNodeInitContext
 {
 public:
-    CDefaultWorkerNodeInitContext(const CNcbiApplication& app)
+    CDefaultWorkerNodeInitContext(CNcbiApplication& app)
         : m_App(app)
     {}
 
@@ -69,8 +69,10 @@ public:
     virtual const CNcbiEnvironment& GetEnvironment() const
     { return m_App.GetEnvironment(); }
 
+    virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const;
+
 private:
-    const CNcbiApplication& m_App;
+    CNcbiApplication& m_App;
 
     CDefaultWorkerNodeInitContext(const CDefaultWorkerNodeInitContext&);
     CDefaultWorkerNodeInitContext& operator=(const CDefaultWorkerNodeInitContext&);
@@ -82,7 +84,7 @@ class IGridWorkerNodeApp_Listener
 {
 public:
     /// Notify that CGridWorkerNode::Run() is about to be executed.
-    /// This method can be overriddent to implement worker node-
+    /// This method can be overridden to implement worker node-
     /// specific initialization.
     virtual void OnGridWorkerStart() = 0;
 
@@ -156,6 +158,8 @@ public:
 
     void RequestShutdown();
 
+    CGridWorkerNode* GetWorkerNode() const {return m_WorkerNode.get();}
+
 protected:
 
     const IWorkerNodeInitContext& GetInitContext();
@@ -168,7 +172,7 @@ private:
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
-    auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
+    auto_ptr<CGridWorkerNode> m_WorkerNode;
 
     bool m_MergeLogLines;
 
@@ -178,7 +182,7 @@ private:
 
 inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 {
-    m_AppImpl->SetListener(listener);
+    m_WorkerNode->SetListener(listener);
 }
 
 inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)

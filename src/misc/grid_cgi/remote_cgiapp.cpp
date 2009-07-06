@@ -111,7 +111,7 @@ CRemoteCgiApp::CRemoteCgiApp(
     // hack!!! It needs to be removed when we know how to deal with unresolved
     // symbols in plugins.
     BlobStorage_RegisterDriver_NetCache(); 
-    m_AppImpl.reset(new  CGridWorkerApp_Impl(*this,
+    m_AppImpl.reset(new  CGridWorkerNode(*this,
                                              new CCgiWorkerNodeJobFactory(*this),
                                              storage_factory,
                                              client_factory));

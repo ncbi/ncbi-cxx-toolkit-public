@@ -110,7 +110,7 @@ void CWNJobsWatcher::Print(CNcbiOstream& os) const
 {
     os << "Started: " << CGridGlobals::GetInstance()
                               .GetStartTime().AsString() << endl;
-    os << "Jobs Succeed: " << m_JobsSucceed << endl
+    os << "Jobs Succeeded: " << m_JobsSucceed << endl
        << "Jobs Failed: "  << m_JobsFailed  << endl
        << "Jobs Returned: "<< m_JobsReturned << endl
        << "Jobs Canceled: "<< m_JobsCanceled << endl
@@ -176,7 +176,6 @@ void CWNJobsWatcher::x_KillNode(CGridWorkerNode& worker)
 auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
 CGridGlobals::CGridGlobals() :
-      m_ForceExit(false),
       m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
       m_StartTime(CTime(CTime::eCurrent)),

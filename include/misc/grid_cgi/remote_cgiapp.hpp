@@ -35,7 +35,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <cgi/cgictx.hpp>
 
-#include <connect/services/grid_worker_app_impl.hpp>
+#include <connect/services/grid_worker.hpp>
 
 /// @file grid_worker_cgiapp.hpp
 /// NetSchedule Framework specs. 
@@ -75,7 +75,7 @@ protected:
 
 private:
     CWorkerNodeJobContext* m_WorkerNodeContext;
-    auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
+    auto_ptr<CGridWorkerNode> m_AppImpl;
     friend class CCgiWorkerNodeJob;
     int RunJob(CNcbiIstream& is, CNcbiOstream& os, CWorkerNodeJobContext& );
 

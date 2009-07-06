@@ -46,14 +46,10 @@ BEGIN_NCBI_SCOPE
 class CGridThreadContext
 {
 public:
-    explicit CGridThreadContext(CGridWorkerNode& node, long check_status_period = 2);
+    explicit CGridThreadContext(CGridWorkerNode& node);
 
-    CWorkerNodeJobContext& GetJobContext();
-
-    void SetJobContext(CWorkerNodeJobContext& job_context);
-    void SetJobContext(CWorkerNodeJobContext& job_context, const CNetScheduleJob& job);
+    void RunJobs(CWorkerNodeJobContext& job_context);
     void CloseStreams();
-    void Reset();
 
     CNcbiIstream& GetIStream(IBlobStorage::ELockMode);
     CNcbiOstream& GetOStream();
@@ -69,6 +65,7 @@ public:
 
     IWorkerNodeJob* GetJob();
 private:
+    void x_HandleRunJobError(exception* ex = NULL);
 
     CGridWorkerNode&              m_Worker;
     CWorkerNodeJobContext*        m_JobContext;
@@ -84,9 +81,6 @@ private:
     CRequestRateControl           m_MsgThrottler;
     long                          m_CheckStatusPeriod;
     CRequestRateControl           m_StatusThrottler;
-
-    CGridThreadContext(const CGridThreadContext&);
-    CGridThreadContext& operator=(const CGridThreadContext&);
 };
 
 END_NCBI_SCOPE

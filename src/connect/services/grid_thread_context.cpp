@@ -49,57 +49,16 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-CGridThreadContext::CGridThreadContext(CGridWorkerNode& node, long check_status_period)
+CGridThreadContext::CGridThreadContext(CGridWorkerNode& node)
     : m_Worker(node),
       m_JobContext(NULL), m_Reporter(node.GetNSExecuter()), m_MsgThrottler(1),
-      m_CheckStatusPeriod(check_status_period > 1 ? check_status_period : 1),
       m_StatusThrottler(1,CTimeSpan(m_CheckStatusPeriod, 0))
 {
+    long check_status_period = node.GetCheckStatusPeriod();
+    m_CheckStatusPeriod = check_status_period > 1 ? check_status_period : 1;
     m_Reader.reset(node.CreateStorage());
     m_Writer.reset(node.CreateStorage());
     m_ProgressWriter.reset(node.CreateStorage());
-}
-
-void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context,
-                                       const CNetScheduleJob& new_job)
-{
-    job_context.Reset(new_job, CGridGlobals::GetInstance().GetNewJobNumber());
-    SetJobContext(job_context);
-}
-
-/// @internal
-void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
-{
-    _ASSERT(!m_JobContext);
-    m_JobContext = &job_context;
-    job_context.SetThreadContext(this);
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if (debug_context) {
-        debug_context->DumpInput(m_JobContext->GetJobInput(),
-                                 m_JobContext->GetJobNumber());
-    }
-    m_JobContext->GetWorkerNode()
-        .x_NotifyJobWatcher(*m_JobContext,
-                            IWorkerNodeJobWatcher::eJobStarted);
-}
-/// @internal
-void CGridThreadContext::Reset()
-{
-    _ASSERT(m_JobContext);
-    m_JobContext->GetWorkerNode()
-        .x_NotifyJobWatcher(*m_JobContext,
-                            IWorkerNodeJobWatcher::eJobStopped);
-    //if (m_JobContext->IsJobExclusive()) {
-    //    CGridGlobals::GetInstance().SetExclusiveMode(false);
-    //}
-    m_JobContext->SetThreadContext(NULL);
-    m_JobContext = NULL;
-}
-/// @internal
-CWorkerNodeJobContext& CGridThreadContext::GetJobContext()
-{
-    _ASSERT(m_JobContext);
-    return *m_JobContext;
 }
 
 /// @internal

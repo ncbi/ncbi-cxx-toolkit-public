@@ -33,7 +33,7 @@
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_control_thread.hpp>
-#include <connect/services/grid_worker_app_impl.hpp>
+#include <connect/services/grid_worker.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <corelib/ncbistre.hpp>
@@ -251,9 +251,10 @@ private:
 
 static STimeout kAcceptTimeout = {1,0};
 CWorkerNodeControlServer::CWorkerNodeControlServer(
+    CGridWorkerNode* worker_node,
     unsigned short start_port,
     unsigned short end_port) :
-        m_WorkerNode(NULL),
+        m_WorkerNode(worker_node),
         m_ShutdownRequested(false),
         m_Port(start_port)
 {
