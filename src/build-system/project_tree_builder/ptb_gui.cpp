@@ -131,9 +131,11 @@ INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
             break;
         }
         break;
+/*
     case WM_NCHITTEST:
         SetWindowLong(hDlg, DWL_MSGRESULT, HTCAPTION);
         return TRUE;
+*/
     default:
         break;
     }
