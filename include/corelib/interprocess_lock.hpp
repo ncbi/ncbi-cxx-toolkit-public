@@ -1,5 +1,5 @@
-#ifndef CORELIB___IPC_LOCK__HPP
-#define CORELIB___IPC_LOCK__HPP
+#ifndef CORELIB___INTERPROCESS_LOCK__HPP
+#define CORELIB___INTERPROCESS_LOCK__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -31,7 +31,7 @@
  *
  */
 
-/// @file ipc_lock.hpp 
+/// @file interprocess_lock.hpp 
 /// Defines a simple inter-process lock class.
 ///
 /// Defines classes: 
@@ -187,4 +187,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif  /* CORELIB___IPC_LOCK__HPP */
+#endif  /* CORELIB___INTERPROCESS_LOCK__HPP */

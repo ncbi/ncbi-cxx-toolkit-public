@@ -36,7 +36,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_process.hpp>
-#include <corelib/ipc_lock.hpp>
+#include <corelib/interprocess_lock.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 

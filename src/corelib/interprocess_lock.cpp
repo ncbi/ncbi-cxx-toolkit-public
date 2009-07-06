@@ -30,7 +30,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ipc_lock.hpp>
+#include <corelib/interprocess_lock.hpp>
 #include <map>
 
 #if defined(NCBI_OS_UNIX)
