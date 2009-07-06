@@ -1999,6 +1999,31 @@ static bool s_UnbalancedParentheses (string str)
 }
 
 
+const string sm_ValidSexQualifierValues[] = {
+  "female",
+  "male",
+  "hermaphrodite",
+  "unisexual",
+  "bisexual",
+  "asexual",
+  "monoecious",
+  "monecious",
+  "dioecious",
+  "diecious",
+};
+
+static bool s_IsValidSexQualifierValue (string str)
+
+{
+	str = NStr::ToLower(str);
+
+    const string *begin = sm_ValidSexQualifierValues;
+    const string *end = &(sm_ValidSexQualifierValues[sizeof(sm_ValidSexQualifierValues) / sizeof(string)]);
+
+    return find(begin, end, str) != end;
+}
+
+
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
  const CSerialObject& obj,
@@ -2064,6 +2089,12 @@ void CValidError_imp::ValidateBioSource
 	string countryname;
     bool germline = false;
     bool rearranged = false;
+	bool transgenic = false;
+	bool env_sample = false;
+	bool metagenomic = false;
+	bool sex = false;
+	bool mating_type = false;
+	bool iso_source = false;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
 		if (!(*ssit)->IsSetSubtype()) {
@@ -2164,34 +2195,200 @@ void CValidError_imp::ValidateBioSource
             rearranged = true;
             break;
 
+        case CSubSource::eSubtype_transgenic:
+            transgenic = true;
+            break;
+
+        case CSubSource::eSubtype_metagenomic:
+            metagenomic = true;
+            break;
+
+		case CSubSource::eSubtype_environmental_sample:
+            env_sample = true;
+            break;
+
+		case CSubSource::eSubtype_isolation_source:
+            iso_source = true;
+			break;
+
+		case CSubSource::eSubtype_sex:
+			sex = true;
+			if (isAnimal || isPlant) {
+				// always use /sex, do not check values at this time
+			} else if (isViral || isBacteria || isArchaea || isFungal) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					"Unexpected use of /sex qualifier", obj, ctx);
+			} else if (s_IsValidSexQualifierValue((*ssit)->GetName())) {
+				// otherwise values are restricted to specific list
+			} else {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					"Unexpected use of /sex qualifier", obj, ctx);
+			}
+
+			break;
+
+		case CSubSource::eSubtype_mating_type:
+			mating_type = true;
+			if (isAnimal || isPlant || isViral) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					"Unexpected use of /mating_type qualifier", obj, ctx);
+			} else if (s_IsValidSexQualifierValue((*ssit)->GetName())) {
+				// complain if one of the values that should go in /sex
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					"Unexpected use of /mating_type qualifier", obj, ctx);
+			}
+			break;
+
+		case CSubSource::eSubtype_plasmid_name:
+			if (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_plasmid) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					"Plasmid subsource but not plasmid location", obj, ctx);
+			}
+			break;
+
+		case CSubSource::eSubtype_plastid_name:
+			{
+				if ((*ssit)->IsSetName()) {
+					CBioSource::TGenome genome = CBioSource::eGenome_unknown;
+					if (bsrc.IsSetGenome()) {
+						genome = bsrc.GetGenome();
+					}
+
+				    const string& subname = ((*ssit)->GetName());
+					CBioSource::EGenome genome_from_name = CBioSource::GetGenomeByOrganelle (subname, NStr::eCase,  false);
+                    if (genome_from_name == CBioSource::eGenome_chloroplast
+						|| genome_from_name == CBioSource::eGenome_chromoplast
+						|| genome_from_name == CBioSource::eGenome_kinetoplast
+						|| genome_from_name == CBioSource::eGenome_plastid
+						|| genome_from_name == CBioSource::eGenome_apicoplast
+						|| genome_from_name == CBioSource::eGenome_leucoplast
+						|| genome_from_name == CBioSource::eGenome_proplastid) {
+					    if (genome_from_name != genome) {
+							string val_name = CBioSource::GetOrganelleByGenome(genome_from_name);
+							if (NStr::StartsWith(val_name, "plastid:")) {
+								val_name = val_name.substr(8);
+							}
+							PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+								"Plastid name subsource " + val_name + " but not " + val_name + " location", obj, ctx);
+						}
+					}
+				}
+			}
+			break;
+		
+		case CSubSource::eSubtype_cell_line:
+			if (isViral) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					"Virus has unexpected cell_line qualifier", obj, ctx);
+			}
+			break;
+
+		case CSubSource::eSubtype_cell_type:
+			if (isViral) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					"Virus has unexpected cell_type qualifier", obj, ctx);
+			}
+			break;
+
+		case CSubSource::eSubtype_tissue_type:
+			if (isViral) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					"Virus has unexpected tissue_type qualifier", obj, ctx);
+			}
+			break;
+
+		case CSubSource::eSubtype_frequency:
+			if ((*ssit)->IsSetName() && !NStr::IsBlank((*ssit)->GetName())) {
+				const string& frequency = (*ssit)->GetName();
+				if (NStr::Equal(frequency, "0")) {
+					//ignore
+				} else if (NStr::Equal(frequency, "1")) {
+					PostObjErr(eDiag_Info, eErr_SEQ_DESCR_BioSourceInconsistency, 
+							   "bad frequency qualifier value " + frequency,
+							   obj, ctx);
+				} else {
+					string::const_iterator sit = frequency.begin();
+					bool bad_frequency = false;
+					if (*sit == '0') {
+						++sit;
+					}
+					if (sit != frequency.end() && *sit == '.') {
+                        ++sit;
+						if (sit == frequency.end()) {
+							bad_frequency = true;
+						}
+						while (sit != frequency.end() && isdigit (*sit)) {
+							++sit;
+						}
+						if (sit != frequency.end()) {
+							bad_frequency = true;
+						}
+					} else {
+						bad_frequency = true;
+					}
+					if (bad_frequency) {
+						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+							       "bad frequency qualifier value " + frequency,
+								   obj, ctx);
+					}
+				}
+			}
+			break;
+
+
         default:
             break;
         }
 
-		if (!CSubSource::NeedsNoText(subtype) && (*ssit)->IsSetName()) {
-            const string& subname = (*ssit)->GetName();
-			if (s_UnbalancedParentheses(subname)) {
-				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
-                           "Unbalanced parentheses in '" + subname + "'",
-						   obj, ctx);
-			}
-			if (ContainsSgml(subname)) {
-				PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					       "subsource " + subname + " has SGML", 
-						   obj, ctx);
+		if ((*ssit)->IsSetName()) {
+			if (CSubSource::NeedsNoText(subtype)) {
+				if ((*ssit)->IsSetName() && !NStr::IsBlank((*ssit)->GetName())) {
+					string subname = CSubSource::GetSubtypeName (subtype);
+					if (subname.length() > 0) {
+						subname[0] = toupper(subname[0]);
+					}
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+						        subname + " qualifier should not have descriptive text",
+								obj, ctx);
+				}
+			} else {
+				const string& subname = (*ssit)->GetName();
+				if (s_UnbalancedParentheses(subname)) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
+							   "Unbalanced parentheses in '" + subname + "'",
+							   obj, ctx);
+				}
+				if (ContainsSgml(subname)) {
+					PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+							   "subsource " + subname + " has SGML", 
+							   obj, ctx);
+				}
 			}
 		}
     }
     if ( germline  &&  rearranged ) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
             "Germline and rearranged should not both be present", obj, ctx);
     }
-	  if ( chrom_count > 1 ) {
-		    string msg = 
-                chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
-                                 "Multiple identical chromosome qualifiers";
-		    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj, ctx);
-	  }
+	if (transgenic && env_sample) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+            "Transgenic and environmental sample should not both be present", obj, ctx);
+    }
+	if (metagenomic && (! env_sample)) {
+		PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BioSourceInconsistency, 
+			"Metagenomic should also have environmental sample annotated", obj, ctx);
+	}
+	if (sex && mating_type) {
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+			 "Sex and mating type should not both be present", obj, ctx);
+	}
+
+	if ( chrom_count > 1 ) {
+		string msg = 
+			chrom_conflict ? "Multiple conflicting chromosome qualifiers" :
+							 "Multiple identical chromosome qualifiers";
+		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj, ctx);
+	}
 
     if (country_count > 1) {
 		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
@@ -2225,7 +2422,8 @@ void CValidError_imp::ValidateBioSource
 		PostObjErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
 			     "No lineage for this BioSource.", obj, ctx);
 	} else {
-        const string& lineage = orgref.GetOrgname().GetLineage();
+		const COrgName& orgname = orgref.GetOrgname();
+        const string& lineage = orgname.GetLineage();
 		if ( bsrc.GetGenome() == CBioSource::eGenome_kinetoplast ) {
 			if ( lineage.find("Kinetoplastida") == string::npos ) {
 				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
@@ -2239,9 +2437,68 @@ void CValidError_imp::ValidateBioSource
                     "Only Chlorarchniophyta and Cryptophyta have nucleomorphs", obj, ctx);
 			}
 		}
+
+		if (orgname.IsSetDiv()) {
+			const string& div = orgname.GetDiv();
+			if (NStr::EqualCase(div, "BCT")
+				&& bsrc.GetGenome() != CBioSource::eGenome_unknown
+				&& bsrc.GetGenome() != CBioSource::eGenome_genomic
+				&& bsrc.GetGenome() != CBioSource::eGenome_plasmid) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+						   "Bacterial source should not have organelle location",
+						   obj, ctx);
+			} else if (NStr::EqualCase(div, "ENV") && !env_sample) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					       "BioSource with ENV division is missing environmental sample subsource",
+						   obj, ctx);
+			}
+        }
+
+		if (!metagenomic && NStr::FindNoCase(lineage, "metagenomes") != string::npos) {
+			PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+				       "If metagenomes appears in lineage, BioSource should have metagenomic qualifier",
+					   obj, ctx);
+		}
+
+	}
+
+	// looks for required modifiers for env_sample
+	if (env_sample && !iso_source) {
+		bool specific_host = false;
+		FOR_EACH_ORGMOD_ON_ORGREF (it, orgref) {
+			if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_nat_host) {
+				specific_host = true;
+				break;
+			}
+		}
+		if (!specific_host) {
+			PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+				       "Environmental sample should also have isolation source or specific host annotated",
+					   obj, ctx);
+		}
 	}
 
 	ValidateOrgRef (orgref, obj, ctx);
+}
+
+
+static bool s_FindWholeName (string taxname, string value)
+{
+	if (NStr::IsBlank(taxname) || NStr::IsBlank(value)) {
+		return false;
+	}
+	size_t pos = NStr::Find (taxname, value);
+	size_t value_len = value.length();
+	while (pos != string::npos 
+		   && ((pos != 0 && isalpha (taxname.c_str()[pos - 1])
+		       || isalpha (taxname.c_str()[pos + value_len])))) {
+	    pos = NStr::Find(taxname, value, pos + value_len);
+	}
+	if (pos == string::npos) {
+		return false;
+	} else {
+		return true;
+	}
 }
 
 
@@ -2273,6 +2530,72 @@ void CValidError_imp::ValidateOrgRef
     }
     const COrgName& orgname = orgref.GetOrgname();
     ValidateOrgName(orgname, obj, ctx);
+
+	// Look for modifiers in taxname
+	string taxname_search = "";
+	if (orgref.IsSetTaxname()) {
+		taxname_search = orgref.GetTaxname();
+	}
+	// skip first two words
+	size_t pos = NStr::Find (taxname_search, " ");
+	if (pos == string::npos) {
+		taxname_search = "";
+	} else {
+		taxname_search = taxname_search.substr(pos + 1);
+		NStr::TruncateSpacesInPlace(taxname_search);
+		pos = NStr::Find (taxname_search, " ");
+		if (pos == string::npos) {
+			taxname_search = "";
+		} else {
+			taxname_search = taxname_search.substr(pos + 1);
+			NStr::TruncateSpacesInPlace(taxname_search);
+		}
+	}
+
+	// first, determine if variety is present and in taxname - if so,
+	// can ignore missing subspecies
+	int num_bad_subspecies = 0;
+	bool have_variety_in_taxname = false;
+    FOR_EACH_ORGMOD_ON_ORGNAME (it, orgname) {
+		if (!(*it)->IsSetSubtype() || !(*it)->IsSetSubname()) {
+			continue;
+		}
+		int subtype = (*it)->GetSubtype();
+		const string& subname = (*it)->GetSubname();
+		string orgmod_name = COrgMod::GetSubtypeName(subtype);
+		if (orgmod_name.length() > 0) {
+			orgmod_name[0] = toupper(orgmod_name[0]);
+		}
+		NStr::ReplaceInPlace(orgmod_name, "-", " ");
+		if (subtype == COrgMod::eSubtype_sub_species) {
+			if (!s_FindWholeName(taxname_search, subname)) {
+			    ++num_bad_subspecies;
+			}
+		} else if (subtype == COrgMod::eSubtype_variety) {
+			if (s_FindWholeName(taxname_search, subname)) {
+                have_variety_in_taxname = true;
+			} else {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					       orgmod_name + " value specified is not found in taxname",
+                           obj, ctx);
+			}
+		} else if (subtype == COrgMod::eSubtype_forma
+			       || subtype == COrgMod::eSubtype_forma_specialis) {
+			if (!s_FindWholeName(taxname_search, subname)) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+					       orgmod_name + " value specified is not found in taxname",
+                           obj, ctx);
+			}
+		}
+	}
+	if (!have_variety_in_taxname) {
+		for (int i = 0; i < num_bad_subspecies; i++) {
+			PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+				       "Subspecies value specified is not found in taxname",
+                       obj, ctx);
+		}
+	}
+
 }
 
 
@@ -2293,9 +2616,13 @@ void CValidError_imp::ValidateOrgName
                                "Unknown orgmod subtype " + NStr::IntToString(subtype), obj, ctx);
 					break;
 				case COrgMod::eSubtype_variety:
-					if ( NStr::CompareNocase( orgname.GetDiv(), "PLN" ) != 0 ) {
+					if ( (!orgname.IsSetDiv() || !NStr::EqualNocase( orgname.GetDiv(), "PLN" ))
+						&& (!orgname.IsSetLineage() ||
+						    (NStr::Find(orgname.GetLineage(), "Cyanobacteria") == string::npos
+							&& NStr::Find(orgname.GetLineage(), "Myxogastria") == string::npos
+							&& NStr::Find(orgname.GetLineage(), "Oomycetes") == string::npos))) {
 						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-							"Orgmod variety should only be in plants or fungi", 
+							"Orgmod variety should only be in plants, fungi, or cyanobacteria", 
 							obj, ctx);
 					}
 					break;
@@ -2309,6 +2636,24 @@ void CValidError_imp::ValidateOrgName
 								   obj, ctx);
 					}
 					break;
+				case COrgMod::eSubtype_synonym:
+					if ((*omd_itr)->IsSetSubname() && !NStr::IsBlank((*omd_itr)->GetSubname())) {
+						const string& val = (*omd_itr)->GetSubname();
+
+						// look for synonym/gb_synonym duplication
+						FOR_EACH_ORGMOD_ON_ORGNAME (it2, orgname) {
+							if ((*it2)->IsSetSubtype() 
+								&& (*it2)->GetSubtype() == COrgMod::eSubtype_gb_synonym
+								&& (*it2)->IsSetSubname()
+								&& NStr::EqualNocase(val, (*it2)->GetSubname())) {
+                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+									       "OrgMod synonym is identical to OrgMod gb_synonym",
+										   obj, ctx);
+							}
+						}
+					}
+                    break;
+
 				default:
 					break;
             }
@@ -2398,9 +2743,247 @@ void CValidError_imp::ValidateOrgName
                 ++it_next;
 			}
 
-		}          
+		}
 
     }
+}
+
+
+bool CValidError_imp::IsOtherDNA(const CBioseq_Handle& bsh) const
+{
+    if ( bsh ) {
+        CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
+        if ( sd ) {
+            const CSeqdesc::TMolinfo& molinfo = sd->GetMolinfo();
+            if ( molinfo.CanGetBiomol()  &&
+                 molinfo.GetBiomol() == CMolInfo::eBiomol_other ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void CValidError_imp::ValidateBioSourceForSeq
+(const CBioSource&    source,
+ const CSerialObject& obj,
+ const CSeq_entry    *ctx,
+ const CBioseq_Handle& bsh)
+{
+    if ( source.IsSetIs_focus() ) {
+        // skip proteins, segmented bioseqs, or segmented parts
+        if ( !bsh.IsAa()  &&
+            !(bsh.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
+            !(GetAncestor(*(bsh.GetCompleteBioseq()), CBioseq_set::eClass_parts) != 0) ) {
+            if ( !CFeat_CI(bsh, CSeqFeatData::e_Biosrc) ) {
+                PostObjErr(eDiag_Error,
+                    eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
+                    "BioSource descriptor has focus, "
+                    "but no BioSource feature", obj, ctx);
+            }
+        }
+    }
+    if ( source.CanGetOrigin()  &&  
+         source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
+        if ( !IsOtherDNA(bsh) ) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                "Molinfo-biomol other should be used if "
+                "Biosource-location is synthetic", obj, ctx);
+        }
+    }
+
+	// check locations for HIV biosource
+	if (bsh.IsSetInst() && bsh.GetInst().IsSetMol()
+		&& source.IsSetOrg() && source.GetOrg().IsSetTaxname() 
+		&& (NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus")
+			|| NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 1")
+			|| NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 2"))) {
+
+		if (bsh.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+			if (!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_proviral) {
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					     "HIV with moltype DNA should be proviral", 
+                         obj, ctx);
+			}
+		} else if (bsh.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+			bool location_ok = false;
+			if (!source.IsSetGenome() || source.GetGenome() == CBioSource::eGenome_unknown) {
+                location_ok = true;
+			} else if (source.GetGenome() == CBioSource::eGenome_genomic) {
+				CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
+				if (mi && mi->GetMolinfo().IsSetBiomol()
+					&& mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+					location_ok = true;
+				}
+			}
+			if (!location_ok) {
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					     "HIV with moltype RNA should have source location unset or set to genomic (on genomic RNA sequence)", 
+                         obj, ctx);
+			}
+		}
+	}
+
+	CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
+    // look for conflicting cRNA notes on subsources
+	if (mi) {						
+        const CMolInfo& molinfo = mi->GetMolinfo();
+		FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
+			if ((*it)->IsSetSubtype()
+				&& (*it)->GetSubtype() == CSubSource::eSubtype_other
+				&& (*it)->IsSetName()
+				&& NStr::EqualNocase((*it)->GetName(), "cRNA")) {
+				if (!molinfo.IsSetBiomol() 
+					|| molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+							   "cRNA note conflicts with molecule type",
+							   obj, ctx);
+				} else {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+							   "cRNA note redundant with molecule type",
+							   obj, ctx);
+				}
+			}
+		}
+	}
+
+	// look at orgref in context
+	if (source.IsSetOrg()) {
+		const COrg_ref& orgref = source.GetOrg();
+
+		// look at uncultured sequence length and required modifiers
+		if (orgref.IsSetTaxname()) {
+			if (NStr::EqualNocase(orgref.GetTaxname(), "uncultured bacterium")
+				&& bsh.GetBioseqLength() >= 10000) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					       "Uncultured bacterium sequence length is suspiciously high",
+						   obj, ctx);
+			}
+			if (NStr::StartsWith(orgref.GetTaxname(), "uncultured ", NStr::eNocase)) {
+				bool is_env_sample = false;
+				FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
+					if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                        is_env_sample = true;
+						break;
+					}
+				}
+				if (!is_env_sample) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+						       "Uncultured should also have /environmental_sample",
+							   obj, ctx);
+				}
+			}
+		}
+
+		if (mi) {						
+            const CMolInfo& molinfo = mi->GetMolinfo();
+			// look for conflicting cRNA notes on orgmod
+			FOR_EACH_ORGMOD_ON_ORGREF (it, orgref) {
+				if ((*it)->IsSetSubtype() 
+					&& (*it)->GetSubtype() == COrgMod::eSubtype_other
+					&& (*it)->IsSetSubname()
+					&& NStr::EqualNocase((*it)->GetSubname(), "cRNA")) {
+					if (!molinfo.IsSetBiomol() 
+						|| molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA) {
+						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+								   "cRNA note conflicts with molecule type",
+								   obj, ctx);
+					} else {
+						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+								   "cRNA note redundant with molecule type",
+								   obj, ctx);
+					}
+				}
+			}
+
+
+			if (orgref.IsSetLineage()) {
+				const string& lineage = orgref.GetOrgname().GetLineage();
+
+				// look for incorrect DNA stage
+				if (molinfo.IsSetBiomol()  && molinfo.GetBiomol () == CMolInfo::eBiomol_genomic
+					&& bsh.IsSetInst() && bsh.GetInst().IsSetMol() && bsh.GetInst().GetMol() == CSeq_inst::eMol_dna
+					&& NStr::StartsWith(lineage, "Viruses; ")
+					&& NStr::FindNoCase(lineage, "no DNA stage") != string::npos) {
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+							 "Genomic DNA viral lineage indicates no DNA stage",
+							 obj, ctx);
+				}
+			    if (NStr::FindNoCase (lineage, "negative-strand viruses") != string::npos) {
+					bool is_ambisense = false;
+					if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
+						|| NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
+						|| NStr::FindNoCase(lineage, "Tospovirus") != string::npos
+						|| NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+						is_ambisense = true;
+					}
+
+					bool is_synthetic = false;
+					if (orgref.IsSetDivision() && NStr::EqualNocase(orgref.GetDivision(), "SYN")) {
+						is_synthetic = true;
+					} else if (source.IsSetOrigin()
+						       && (source.GetOrigin() == CBioSource::eOrigin_mut
+							       || source.GetOrigin() == CBioSource::eOrigin_artificial
+								   || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
+					    is_synthetic = true;
+					}
+
+					bool has_cds = false;
+
+					CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+					while (cds_ci) {
+						has_cds = true;
+						if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+							if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+								PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+									        "Negative-strand virus with minus strand CDS should be genomic",
+									        obj, ctx);
+							}
+						} else {
+                            if (!is_synthetic && !is_ambisense
+								&& (!molinfo.IsSetBiomol() 
+								    || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
+									    && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+								PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+									        "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
+											obj, ctx);
+							}
+						}
+						++cds_ci;
+					}
+					if (!has_cds) {
+						CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
+						while (misc_ci) {
+							if (misc_ci->IsSetComment()
+								&& NStr::FindNoCase (misc_ci->GetComment(), "nonfunctional") != string::npos) {
+							    if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+									if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+										PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+											        "Negative-strand virus with nonfunctional minus strand misc_feature should be mRNA or cRNA",
+													obj, ctx);
+									}
+								} else {
+									if (!is_synthetic && !is_ambisense
+										&& (!molinfo.IsSetBiomol() 
+											|| (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
+												&& molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+										PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+											        "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
+													obj, ctx);
+									}
+								}
+							}
+							++misc_ci;
+						}
+					}
+				}
+			}
+	    }
+	}
+
+	
+
 }
 
 

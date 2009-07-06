@@ -168,6 +168,8 @@ public:
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 	void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
+	void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
+	bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
@@ -562,7 +564,6 @@ private:
     bool IsHistAssemblyMissing(const CBioseq& seq);
     bool IsFlybaseDbxrefs(const TDbtags& dbxrefs);
     bool GraphsOnBioseq(const CBioseq& seq) const;
-    bool IsOtherDNA(const CBioseq& seq) const;
     bool IsSynthetic(const CBioseq& seq) const;
     bool x_IsArtificial(const CBioseq& seq) const;
     bool x_IsActiveFin(const CBioseq& seq) const;

@@ -4563,33 +4563,19 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         case CSeqdesc::e_Source:
             {
                 const CSeqdesc::TSource& source = desc.GetSource();
-                
-                if ( source.IsSetIs_focus() ) {
-                    // skip proteins, segmented bioseqs, or segmented parts
-                    if ( !seq.IsAa()  &&
-                        !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
-                        !(m_Imp.GetAncestor(seq, CBioseq_set::eClass_parts) != 0) ) {
-                        if ( !CFeat_CI(bsh, CSeqFeatData::e_Biosrc) ) {
-                            PostErr(eDiag_Error,
-                                eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
-                                "BioSource descriptor has focus, "
-                                "but no BioSource feature", ctx, desc);
-                        }
-                    }
-                }
-                if ( source.CanGetOrigin()  &&  
-                     source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
-                    if ( !IsOtherDNA(seq) ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                            "Molinfo-biomol other should be used if "
-                            "Biosource-location is synthetic", seq);
-                    }
-                }
-                if ( !org ) {
-                    org = &(desc.GetSource().GetOrg());
-                }
-                ValidateOrgContext(di, desc.GetSource().GetOrg(), 
-                    *org, seq, desc);
+
+				m_Imp.ValidateBioSourceForSeq (source, desc, &ctx, bsh);
+
+				// look at orgref in comparison to other descs
+				if (source.IsSetOrg()) {
+					const COrg_ref& orgref = source.GetOrg();
+					if ( !org ) {
+						org = &orgref;
+					}
+					ValidateOrgContext(di, orgref, 
+										*org, seq, desc);
+				}
+
             }
             break;
 
@@ -4929,23 +4915,6 @@ void CValidError_bioseq::ValidateMoltypeDescriptors (const CBioseq& seq)
         }
         ++desc_ci;
     }
-}
-
-
-bool CValidError_bioseq::IsOtherDNA(const CBioseq& seq) const
-{
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( bsh ) {
-        CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
-        if ( sd ) {
-            const CSeqdesc::TMolinfo& molinfo = sd->GetMolinfo();
-            if ( molinfo.CanGetBiomol()  &&
-                 molinfo.GetBiomol() == CMolInfo::eBiomol_other ) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 

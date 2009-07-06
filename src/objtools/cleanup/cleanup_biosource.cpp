@@ -280,9 +280,10 @@ void CCleanup_imp::x_SubtypeCleanup (
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, bs) {
       CSubSource& ss = **it;
       TSUBSOURCE_SUBTYPE chs = ss.GetSubtype();
-	  if (CSubSource::NeedsNoText (chs)) {
+	  if (CSubSource::NeedsNoText (chs) && ss.IsSetName() && NStr::EqualNocase(ss.GetName(), "TRUE")) {
           ss.ResetName();
           ss.SetName("");
+          ChangeMade (CCleanupChange::eCleanSubsource);
       } else if (chs == NCBI_SUBSOURCE(plastid_name)) {
           if (NStr::Equal (ss.GetName(), plastid_name)) {
               ERASE_SUBSOURCE_ON_BIOSOURCE (it, bs);
