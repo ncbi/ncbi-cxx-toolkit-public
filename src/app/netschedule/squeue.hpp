@@ -43,6 +43,7 @@
 
 #include "ns_types.hpp"
 #include "ns_util.hpp"
+#include "ns_format.hpp"
 #include "ns_db.hpp"
 #include "background_host.hpp"
 #include "job.hpp"
@@ -149,7 +150,7 @@ struct SQueueParameters
 };
 
 
-// key, value -> bitvector of job ids
+// key, value -> bit vector of job ids
 // typedef TNSBitVector TNSShortIntSet;
 typedef deque<unsigned> TNSShortIntSet;
 typedef map<TNSTag, TNSShortIntSet*> TNSTagMap;
@@ -165,11 +166,41 @@ private:
 };
 
 
-struct SLockedQueue;
+struct SFieldsDescription
+{
+    enum EFieldType {
+        eFT_Job,
+        eFT_Tag,
+        eFT_Run,
+        eFT_RunNum
+    };
+    typedef string (*FFormatter)(const string&, SQueueDescription*);
+
+    vector<int>    field_types;
+    vector<int>    field_nums;
+    vector<FFormatter> formatters;
+    bool           has_tags;
+    vector<string> pos_to_tag;
+    bool           has_affinity;
+    bool           has_run;
+
+    void Init() {
+        field_types.clear();
+        field_nums.clear();
+        formatters.clear();
+        pos_to_tag.clear();
+        has_tags = false;
+        has_affinity = false;
+        has_run = false;
+    }
+};
+
+
+class CQueue;
 class CQueueEnumCursor : public CBDB_FileCursor
 {
 public:
-    CQueueEnumCursor(SLockedQueue* queue);
+    CQueueEnumCursor(CQueue* queue);
 };
 
 
@@ -187,27 +218,28 @@ typedef CTimeLine<TNSBitVector> CJobTimeLine;
 ///
 /// @internal
 ///
-struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
+class CQueue : public CObjectEx
 {
+public:
     enum EQueueKind {
         eKindStatic  = 0,
         eKindDynamic = 1
     };
+    typedef int TQueueKind;
     enum EVectorId {
         eVIAll      = -1,
         eVIJob      = 0,
         eVITag      = 1,
         eVIAffinity = 2
     };
-    typedef int TQueueKind;
 
 public:
     // Constructor/destructor
-    SLockedQueue(CRequestExecutor& executor,
-                 const string&     queue_name,
-                 const string&     qclass_name,
-                 TQueueKind        queue_kind);
-    ~SLockedQueue();
+    CQueue(CRequestExecutor& executor,
+           const string&     queue_name,
+           const string&     qclass_name,
+           TQueueKind        queue_kind);
+    ~CQueue();
 
     void Attach(SQueueDbBlock* block);
     void Detach();
@@ -266,6 +298,36 @@ public:
         CRequestContextFactory* rec_ctx_f,
         const list<string>* aff_list,
         CJob*            new_job);
+
+    /// Extend job expiration timeout
+    /// @param tm
+    ///    Time worker node needs to execute the job (in seconds)
+    void JobDelayExpiration(
+        CWorkerNode*     worker_node,
+        unsigned         job_id,
+        time_t           tm);
+
+    // Worker node-specific methods
+    bool PutProgressMessage(unsigned      job_id,
+                            const string& msg);
+
+    void ReturnJob(unsigned job_id);
+
+    /// @param expected_status
+    ///    If current status is different from expected try to
+    ///    double read the database (to avoid races between nodes
+    ///    and submitters)
+    bool GetJobDescr(unsigned   job_id,
+                     int*       ret_code,
+                     string*    input,
+                     string*    output,
+                     string*    err_msg,
+                     string*    progress_msg,
+                     TJobStatus expected_status
+                     = CNetScheduleAPI::eJobNotFound);
+
+    /// Remove all jobs
+    void Truncate(void);
 
     /// Cancel job execution (job stays in special Canceled state)
     void Cancel(unsigned job_id);
@@ -402,7 +464,15 @@ public:
     void JobsWithStatus(TJobStatus    status,
         TNSBitVector* bv) const;
 
+    // Query-related
+    typedef vector<string>  TRecord;
+    typedef vector<TRecord> TRecordSet;
     TNSBitVector* ExecSelect(const string& query, list<string>& fields);
+    void PrepareFields(SFieldsDescription& field_descr,
+        const list<string>& fields);
+    void ExecProject(TRecordSet&               record_set,
+        const TNSBitVector&       ids,
+        const SFieldsDescription& field_descr);
 
     /// Clear all jobs, still running for node.
     /// Fails all such jobs, called by external node watcher, can safely
@@ -481,6 +551,19 @@ public:
     void PrintWNodeHosts(CNcbiOstream& out) const;
     void PrintJobStatusMatrix(CNcbiOstream& out) const;
 
+    void PrintQueue(CNcbiOstream& out,
+        TJobStatus    job_status,
+        const string& host,
+        unsigned      port);
+
+    /// Queue dump
+    void PrintJobDbStat(unsigned      job_id,
+        CNcbiOstream& out,
+        TJobStatus    status
+        = CNetScheduleAPI::eJobNotFound);
+    /// Dump all job records
+    void PrintAllJobDbStat(CNcbiOstream & out);
+
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus status,
         TNSBitVector::statistics* st) const;
@@ -494,7 +577,7 @@ public:
     friend class CStatisticsThread;
     class CStatisticsThread : public CThreadNonStop
     {
-        typedef SLockedQueue TContainer;
+        typedef CQueue TContainer;
     public:
         CStatisticsThread(TContainer& container);
         void DoJob(void);
@@ -556,6 +639,23 @@ private:
         time_t                 curr,
         unsigned               job_id,
         CJob&                  job);
+
+    bool x_FillRecord(vector<string>& record,
+                      const SFieldsDescription& field_descr,
+                      const CJob& job,
+                      map<string, string>& tags,
+                      const CJobRun* run,
+                      int run_num);
+    void x_PrintJobStat(const CJob&   job,
+                        unsigned      queue_run_timeout,
+                        CNcbiOstream& out,
+                        const char*   fsp = "\n",
+                        bool          fflag = true);
+    void x_PrintShortJobStat(const CJob&   job,
+                             const string& host,
+                             unsigned      port,
+                             CNcbiOstream& out,
+                             const char*   fsp = "\t");
 
 private:
     friend class CQueueGuard;
@@ -694,78 +794,78 @@ private:
 // we lock m_ParamLock for reading. In cases where you need more than one
 // parameter, to provide consistency use CQueueParamAccessor, which is a smart
 // guard around the parameter block.
-inline int SLockedQueue::GetTimeout() const
+inline int CQueue::GetTimeout() const
 {
     return m_Timeout;
 }
-inline int SLockedQueue::GetNotifyTimeout() const
+inline int CQueue::GetNotifyTimeout() const
 {
     return m_NotifyTimeout;
 }
-inline bool SLockedQueue::GetDeleteDone() const
+inline bool CQueue::GetDeleteDone() const
 {
     return m_DeleteDone;
 }
-inline int SLockedQueue::GetRunTimeout()  const
+inline int CQueue::GetRunTimeout()  const
 {
     return m_RunTimeout;
 }
-inline int SLockedQueue::GetRunTimeoutPrecision() const
+inline int CQueue::GetRunTimeoutPrecision() const
 {
     return m_RunTimeoutPrecision;
 }
-inline unsigned SLockedQueue::GetFailedRetries() const
+inline unsigned CQueue::GetFailedRetries() const
 {
     return m_FailedRetries;
 }
-inline time_t SLockedQueue::GetBlacklistTime() const
+inline time_t CQueue::GetBlacklistTime() const
 {
     // On some platforms time_t is 64-bit disregarding of
     // processor word size, so we need to lock parameters
     CReadLockGuard guard(m_ParamLock);
     return m_BlacklistTime;
 }
-inline time_t SLockedQueue::GetEmptyLifetime() const
+inline time_t CQueue::GetEmptyLifetime() const
 {
     CReadLockGuard guard(m_ParamLock);
     return m_EmptyLifetime;
 }
-inline unsigned SLockedQueue::GetMaxInputSize() const
+inline unsigned CQueue::GetMaxInputSize() const
 {
     return m_MaxInputSize;
 }
-inline unsigned SLockedQueue::GetMaxOutputSize() const
+inline unsigned CQueue::GetMaxOutputSize() const
 {
     return m_MaxOutputSize;
 }
-inline bool SLockedQueue::GetDenyAccessViolations() const
+inline bool CQueue::GetDenyAccessViolations() const
 {
     return m_DenyAccessViolations;
 }
-inline bool SLockedQueue::GetLogAccessViolations() const
+inline bool CQueue::GetLogAccessViolations() const
 {
     return m_LogAccessViolations;
 }
-inline unsigned SLockedQueue::GetLogJobState() const
+inline unsigned CQueue::GetLogJobState() const
 {
     return m_LogJobState;
 }
-inline bool SLockedQueue::IsVersionControl() const
+inline bool CQueue::IsVersionControl() const
 {
     CReadLockGuard guard(m_ParamLock);
     return m_ProgramVersionList.IsConfigured();
 }
-inline bool SLockedQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
+inline bool CQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
 {
     CReadLockGuard guard(m_ParamLock);
     return m_ProgramVersionList.IsMatchingClient(cinfo);
 }
-inline bool SLockedQueue::IsSubmitAllowed(unsigned host) const
+inline bool CQueue::IsSubmitAllowed(unsigned host) const
 {
     CReadLockGuard guard(m_ParamLock);
     return host == 0  ||  m_SubmHosts.IsAllowed(host);
 }
-inline bool SLockedQueue::IsWorkerAllowed(unsigned host) const
+inline bool CQueue::IsWorkerAllowed(unsigned host) const
 {
     CReadLockGuard guard(m_ParamLock);
     return host == 0  ||  m_WnodeHosts.IsAllowed(host);
@@ -776,7 +876,7 @@ class CQueueParamAccessor
 {
     // When modifying this, modify all places marked with PARAMETERS
 public:
-    CQueueParamAccessor(const SLockedQueue& queue) :
+    CQueueParamAccessor(const CQueue& queue) :
         m_Queue(queue), m_Guard(queue.m_ParamLock) { }
     int GetTimeout() { return m_Queue.m_Timeout; }
     int GetNotifyTimeout() { return m_Queue.m_NotifyTimeout; }
@@ -845,7 +945,7 @@ public:
     }
 
 private:
-    const SLockedQueue& m_Queue;
+    const CQueue&  m_Queue;
     CReadLockGuard m_Guard;
 };
 
@@ -860,7 +960,7 @@ public:
         : CBDB_Transaction(env, tsync, assoc)
     {
     }
-    CNS_Transaction(SLockedQueue*         queue,
+    CNS_Transaction(CQueue*               queue,
                     ETransSync            tsync = eEnvDefault,
                     EKeepFileAssociation  assoc = eNoAssociation)
         : CBDB_Transaction(queue->GetEnv(), tsync, assoc)
@@ -875,14 +975,6 @@ public:
 };
 
 
-template <>
-class CLockerTraits<SLockedQueue>
-{
-public:
-    typedef CIntrusiveLocker<SLockedQueue> TLockerType;
-};
-
-
 // Guards which locks the queue and set transaction for main
 // queue tables
 class CQueueGuard
@@ -892,7 +984,7 @@ public:
     {
     }
 
-    CQueueGuard(SLockedQueue* q,
+    CQueueGuard(CQueue*           q,
                 CBDB_Transaction* trans = NULL)
         : m_Queue(0)
     {
@@ -918,12 +1010,12 @@ public:
         }
     }
 
-    void Guard(SLockedQueue* q)
+    void Guard(CQueue* q)
     {
         Release();
         m_Queue = q;
         m_Queue->m_DbLock.Lock();
-        m_Queue->CountEvent(SLockedQueue::eStatDBLockEvent);
+        m_Queue->CountEvent(CQueue::eStatDBLockEvent);
     }
 
 private:
@@ -931,7 +1023,7 @@ private:
     CQueueGuard(const CQueueGuard&);
     void operator=(const CQueueGuard&);
 private:
-    SLockedQueue* m_Queue;
+    CQueue* m_Queue;
 };
 
 
@@ -939,10 +1031,10 @@ private:
 class CQueueJSGuard
 {
 public:
-    CQueueJSGuard(SLockedQueue* q,
-                  unsigned      job_id,
-                  TJobStatus    status,
-                  bool*         updated = 0)
+    CQueueJSGuard(CQueue*    q,
+                  unsigned   job_id,
+                  TJobStatus status,
+                  bool*      updated = 0)
         : m_Guard(q->m_StatusTracker, job_id, status, updated)
     {
     }

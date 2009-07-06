@@ -468,7 +468,7 @@ void CJob::CheckAffinityToken(CAffinityDictGuard& aff_dict_guard)
 }
 
 
-void CJob::FetchAffinityToken(SLockedQueue* queue)
+void CJob::FetchAffinityToken(CQueue* queue)
 {
     if (m_AffinityId)
         m_AffinityToken = queue->m_AffinityDict.GetAffToken(m_AffinityId);
@@ -482,7 +482,7 @@ void CJob::Delete()
 }
 
 
-CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue)
+CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 {
     SQueueDB&   job_db      = queue->m_JobDB;
     SJobInfoDB& job_info_db = queue->m_JobInfoDB;
@@ -562,7 +562,7 @@ CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue)
 }
 
 
-CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue, unsigned id)
+CJob::EJobFetchResult CJob::Fetch(CQueue* queue, unsigned id)
 {
     SQueueDB& job_db = queue->m_JobDB;
     job_db.id = id;
@@ -579,7 +579,7 @@ CJob::EJobFetchResult CJob::Fetch(SLockedQueue* queue, unsigned id)
 }
 
 
-bool CJob::Flush(SLockedQueue* queue)
+bool CJob::Flush(CQueue* queue)
 {
     if (m_Deleted) {
         queue->EraseJob(m_Id);

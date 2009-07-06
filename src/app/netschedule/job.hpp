@@ -46,7 +46,7 @@ typedef pair<string, string> TNSTag;
 typedef list<TNSTag> TNSTagList;
 
 // Forward for CJob/CJobRun friendship
-struct SLockedQueue;
+class CQueue;
 class CAffinityDictGuard;
 
 // Instantiation of a Job on a Worker Node
@@ -212,20 +212,20 @@ public:
     // Lookup affinity token and fill out affinity id
     void CheckAffinityToken(CAffinityDictGuard& aff_dict_guard);
     // Using affinity id fill out affinity token
-    void FetchAffinityToken(SLockedQueue* queue);
+    void FetchAffinityToken(CQueue* queue);
 
     // Mark job for deletion
     void Delete();
 
     // Fetch/flush
     // Fetch current object
-    EJobFetchResult Fetch(SLockedQueue* queue);
+    EJobFetchResult Fetch(CQueue* queue);
     // Fetch object by its numeric id
-    EJobFetchResult Fetch(SLockedQueue* queue, unsigned id);
+    EJobFetchResult Fetch(CQueue* queue, unsigned id);
     // Cursor like functionality - not here yet. May be we need
     // to create separate CJobIterator.
-    // EJobFetchResult FetchNext(SLockedQueue* queue);
-    bool Flush(SLockedQueue* queue);
+    // EJobFetchResult FetchNext(CQueue* queue);
+    bool Flush(CQueue* queue);
 
     // Should we notify submitter in the moment of time 'curr'
     bool ShouldNotify(time_t curr);

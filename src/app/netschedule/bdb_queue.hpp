@@ -57,144 +57,7 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SFieldsDescription
-{
-    enum EFieldType {
-        eFT_Job,
-        eFT_Tag,
-        eFT_Run,
-        eFT_RunNum
-    };
-    typedef string (*FFormatter)(const string&, SQueueDescription*);
-
-    vector<int>    field_types;
-    vector<int>    field_nums;
-    vector<FFormatter> formatters;
-    bool           has_tags;
-    vector<string> pos_to_tag;
-    bool           has_affinity;
-    bool           has_run;
-
-    void Init() {
-        field_types.clear();
-        field_nums.clear();
-        formatters.clear();
-        pos_to_tag.clear();
-        has_tags = false;
-        has_affinity = false;
-        has_run = false;
-    }
-};
-
-
 class CQueueDataBase;
-
-/// Main queue entry point
-///
-/// @internal
-///
-class CQueue
-{
-public:
-    /// @param client_host_addr - 0 means internal use
-    CQueue(CQueueDataBase&    db,
-           CRef<SLockedQueue> queue);
-
-    // Worker node-specific methods
-    bool PutProgressMessage(unsigned      job_id,
-                            const string& msg);
-
-    void ReturnJob(unsigned job_id);
-
-    /// @param expected_status
-    ///    If current status is different from expected try to
-    ///    double read the database (to avoid races between nodes
-    ///    and submitters)
-    bool GetJobDescr(unsigned   job_id,
-                     int*       ret_code,
-                     string*    input,
-                     string*    output,
-                     string*    err_msg,
-                     string*    progress_msg,
-                     TJobStatus expected_status
-                         = CNetScheduleAPI::eJobNotFound);
-
-    /// Prolong job expiration timeout
-    /// @param tm
-    ///    Time worker node needs to execute the job (in seconds)
-    void JobDelayExpiration(CWorkerNode*     worker_node,
-                            unsigned         job_id,
-                            time_t           tm);
-
-    /// Remove all jobs
-    void Truncate(void);
-
-    /// Pass socket for monitor
-    void SetMonitorSocket(CSocket& socket);
-    /// Are we monitoring?
-    bool IsMonitoring();
-    /// Send string to monitor
-    void MonitorPost(const string& msg);
-
-    void PrintQueue(CNcbiOstream& out,
-                    TJobStatus    job_status,
-                    const string& host,
-                    unsigned      port);
-
-    typedef vector<string>  TRecord;
-    typedef vector<TRecord> TRecordSet;
-    void PrepareFields(SFieldsDescription& field_descr,
-                       const list<string>& fields);
-    void ExecProject(TRecordSet&               record_set,
-                     const TNSBitVector&       ids,
-                     const SFieldsDescription& field_descr);
-    bool x_FillRecord(vector<string>& record,
-                      const SFieldsDescription& field_descr,
-                      const CJob& job,
-                      map<string, string>& tags,
-                      const CJobRun* run,
-                      int run_num);
-    /// Queue dump
-    void PrintJobDbStat(unsigned      job_id,
-                        CNcbiOstream& out,
-                        TJobStatus    status
-                            = CNetScheduleAPI::eJobNotFound);
-    /// Dump all job records
-    void PrintAllJobDbStat(CNcbiOstream & out);
-
-    // BerkeleyDB-specific statistics
-    void PrintMutexStat(CNcbiOstream& out);
-    void PrintLockStat(CNcbiOstream& out);
-    void PrintMemStat(CNcbiOstream& out);
-
-    CRef<SLockedQueue> GetQueue(void);
-
-private:
-    time_t x_ComputeExpirationTime(time_t time_run,
-                                   time_t run_timeout) const;
-
-    void x_PrintJobStat(const CJob&   job,
-                        unsigned      queue_run_timeout,
-                        CNcbiOstream& out,
-                        const char*   fsp = "\n",
-                        bool          fflag = true);
-    void x_PrintShortJobStat(const CJob&   job,
-                             const string& host,
-                             unsigned      port,
-                             CNcbiOstream& out,
-                             const char*   fsp = "\t");
-
-    const CRef<SLockedQueue> GetQueue(void) const;
-
-private:
-    CQueue(const CQueue&);
-    CQueue& operator=(const CQueue&);
-
-private:
-    // Per queue data
-    CQueueDataBase&    m_Db;      ///< Parent structure reference
-    CWeakRefOrig<SLockedQueue> m_LQueue;
-}; // CQueue
 
 
 /// Queue database manager
@@ -206,7 +69,7 @@ class CQueueConstIterator;
 class CQueueCollection
 {
 public:
-    typedef map<string, CRef<SLockedQueue> > TQueueMap;
+    typedef map<string, CRef<CQueue> > TQueueMap;
     typedef CQueueIterator iterator;
     typedef CQueueConstIterator const_iterator;
 
@@ -216,11 +79,11 @@ public:
 
     void Close();
 
-    CRef<SLockedQueue> GetQueue(const string& qname) const;
+    CRef<CQueue> GetQueue(const string& qname) const;
     bool QueueExists(const string& qname) const;
 
     /// Collection takes ownership of queue
-    SLockedQueue& AddQueue(const string& name, SLockedQueue* queue);
+    CQueue& AddQueue(const string& name, CQueue* queue);
     // Remove queue from collection, notifying every interested party
     // through week reference mechanism.
     bool RemoveQueue(const string& name);
@@ -269,7 +132,7 @@ public:
     {
         if (m_Lock) m_Lock->Unlock();
     }
-    SLockedQueue& operator*()
+    CQueue& operator*()
     {
         return *m_Iter->second;
     }
@@ -316,7 +179,7 @@ public:
     {
         if (m_Lock) m_Lock->Unlock();
     }
-    const SLockedQueue& operator*() const
+    const CQueue& operator*() const
     {
         return *m_Iter->second;
     }
@@ -399,7 +262,7 @@ public:
 
     CQueue* OpenQueue(const string& name);
 
-    typedef SLockedQueue::TQueueKind TQueueKind;
+    typedef CQueue::TQueueKind TQueueKind;
     void MountQueue(const string& qname,
                     const string& qclass,
                     TQueueKind    kind,

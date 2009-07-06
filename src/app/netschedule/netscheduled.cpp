@@ -317,7 +317,7 @@ public:
     };
     typedef unsigned TNSClientRole;
 
-    typedef void (CNetScheduleHandler::*FProcessor)(SLockedQueue*);
+    typedef void (CNetScheduleHandler::*FProcessor)(CQueue*);
     struct SCommandExtra {
         FProcessor    processor;
         TNSClientRole role;
@@ -335,60 +335,70 @@ private:
     void ProcessError(const CException& ex);
 
     // Command processors
-    void ProcessFastStatusS(SLockedQueue*);
-    void ProcessFastStatusW(SLockedQueue*);
-    void ProcessSubmit(SLockedQueue*);
-    void ProcessSubmitBatch(SLockedQueue*);
-    void ProcessBatchStart(SLockedQueue*);
-    void ProcessBatchSequenceEnd(SLockedQueue*);
-    void ProcessCancel(SLockedQueue*);
-    void ProcessStatus(SLockedQueue*);
-    void ProcessGetJob(SLockedQueue*);
-    void ProcessWaitGet(SLockedQueue*);
-    void ProcessPut(SLockedQueue*);
-    void ProcessJobExchange(SLockedQueue*);
-    void ProcessPutMessage(SLockedQueue*);
-    void ProcessGetMessage(SLockedQueue*);
-    void ProcessForceReschedule(SLockedQueue*);
-    void ProcessPutFailure(SLockedQueue*);
-    void ProcessDropQueue(SLockedQueue*);
-    void ProcessReturn(SLockedQueue*);
-    void ProcessJobRunTimeout(SLockedQueue*);
-    void ProcessJobDelayExpiration(SLockedQueue*);
-    void ProcessDropJob(SLockedQueue*);
-    void ProcessStatistics(SLockedQueue*);
-    void ProcessStatusSnapshot(SLockedQueue*);
-    void ProcessMonitor(SLockedQueue*);
-    void ProcessReloadConfig(SLockedQueue*);
-    void ProcessActiveCount(SLockedQueue*);
-    void ProcessDump(SLockedQueue*);
-    void ProcessPrintQueue(SLockedQueue*);
-    void ProcessShutdown(SLockedQueue*);
-    void ProcessVersion(SLockedQueue*);
-    void ProcessRegisterClient(SLockedQueue*);
-    void ProcessUnRegisterClient(SLockedQueue*);
-    void ProcessQList(SLockedQueue*);
-    void ProcessLog(SLockedQueue*);
-    void ProcessQuitSession(SLockedQueue*);
-    void ProcessCreateQueue(SLockedQueue*);
-    void ProcessDeleteQueue(SLockedQueue*);
-    void ProcessQueueInfo(SLockedQueue*);
-    void ProcessQuery(SLockedQueue*);
-    void ProcessSelectQuery(SLockedQueue*);
-    void ProcessGetParam(SLockedQueue*);
-    void ProcessGetConfiguration(SLockedQueue*);
-    void ProcessReading(SLockedQueue*);
-    void ProcessConfirm(SLockedQueue*);
-    void ProcessReadFailed(SLockedQueue*);
-    void ProcessReadRollback(SLockedQueue*);
-    void ProcessGetAffinityList(SLockedQueue*);
-    void ProcessInitWorkerNode(SLockedQueue*);
-    void ProcessClearWorkerNode(SLockedQueue*);
+    void ProcessFastStatusS(CQueue*);
+    void ProcessFastStatusW(CQueue*);
+    void ProcessSubmit(CQueue*);
+    void ProcessSubmitBatch(CQueue*);
+    void ProcessBatchStart(CQueue*);
+    void ProcessBatchSequenceEnd(CQueue*);
+    void ProcessCancel(CQueue*);
+    void ProcessStatus(CQueue*);
+    void ProcessGetJob(CQueue*);
+    void ProcessWaitGet(CQueue*);
+    void ProcessPut(CQueue*);
+    void ProcessJobExchange(CQueue*);
+    void ProcessPutMessage(CQueue*);
+    void ProcessGetMessage(CQueue*);
+    void ProcessForceReschedule(CQueue*);
+    void ProcessPutFailure(CQueue*);
+    void ProcessDropQueue(CQueue*);
+    void ProcessReturn(CQueue*);
+    void ProcessJobRunTimeout(CQueue*);
+    void ProcessJobDelayExpiration(CQueue*);
+    void ProcessDropJob(CQueue*);
+    void ProcessStatistics(CQueue*);
+    void ProcessStatusSnapshot(CQueue*);
+    void ProcessMonitor(CQueue*);
+    void ProcessReloadConfig(CQueue*);
+    void ProcessActiveCount(CQueue*);
+    void ProcessDump(CQueue*);
+    void ProcessPrintQueue(CQueue*);
+    void ProcessShutdown(CQueue*);
+    void ProcessVersion(CQueue*);
+    void ProcessRegisterClient(CQueue*);
+    void ProcessUnRegisterClient(CQueue*);
+    void ProcessQList(CQueue*);
+    void ProcessLog(CQueue*);
+    void ProcessQuitSession(CQueue*);
+    void ProcessCreateQueue(CQueue*);
+    void ProcessDeleteQueue(CQueue*);
+    void ProcessQueueInfo(CQueue*);
+    void ProcessQuery(CQueue*);
+    void ProcessSelectQuery(CQueue*);
+    void ProcessGetParam(CQueue*);
+    void ProcessGetConfiguration(CQueue*);
+    void ProcessReading(CQueue*);
+    void ProcessConfirm(CQueue*);
+    void ProcessReadFailed(CQueue*);
+    void ProcessReadRollback(CQueue*);
+    void ProcessGetAffinityList(CQueue*);
+    void ProcessInitWorkerNode(CQueue*);
+    void ProcessClearWorkerNode(CQueue*);
 
     // Delayed output handlers
     void WriteProjection();
 
 private:
+    CRef<CQueue> GetQueue(void) {
+        CRef<CQueue> ref(m_QueueRef.Lock());
+        if (ref != NULL) {
+            return ref;
+        } else {
+            NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue deleted");
+        }
+
+    }
+
     static
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     static
@@ -409,7 +419,7 @@ private:
                           const string& op,
                           const string& text);
     void x_MakeGetAnswer(const CJob& job);
-    void x_StatisticsNew(SLockedQueue* q, const string& what, time_t curr);
+    void x_StatisticsNew(CQueue* q, const string& what, time_t curr);
 
     // Data
     string m_Request;
@@ -422,7 +432,7 @@ private:
     string                      m_AuthString;
     CNetScheduleServer*         m_Server;
     string                      m_QueueName;
-    auto_ptr<CQueue>            m_Queue;
+    CWeakRef<CQueue>            m_QueueRef;
     SJS_Request                 m_JobReq;
     // Incapabilities - that is combination of ENSAccess
     // rights, which can NOT be performed by this connection
@@ -707,6 +717,16 @@ public:
     string GetQueueNames(const string& sep) const {
         return m_QueueDB->GetQueueNames(sep);
     }
+    void PrintMutexStat(CNcbiOstream& out) {
+        m_QueueDB->PrintMutexStat(out);
+    }
+    void PrintLockStat(CNcbiOstream& out) {
+        m_QueueDB->PrintLockStat(out);
+    }
+    void PrintMemStat(CNcbiOstream& out) {
+        m_QueueDB->PrintMemStat(out);
+    }
+
 
     unsigned GetInactivityTimeout(void) { return m_InactivityTimeout; }
     string& GetHost() { return m_Host; }
@@ -1025,9 +1045,9 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
     s_ReadBufToString(buffer, m_QueueName);
 
     if (m_QueueName != "noname" && !m_QueueName.empty()) {
-        m_Queue.reset(m_Server->OpenQueue(m_QueueName));
+        m_QueueRef.Reset(m_Server->OpenQueue(m_QueueName));
         m_Incaps &= ~eNSAC_Queue;
-        CRef<SLockedQueue> q(m_Queue->GetQueue());
+        CRef<CQueue> q(GetQueue());
         if (q->IsWorkerAllowed(m_PeerAddr))
             m_Incaps &= ~eNSAC_Worker;
         if (q->IsSubmitAllowed(m_PeerAddr))
@@ -1113,10 +1133,10 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     // queue from a weak one (m_Queue) in queue_ref, and take C pointer
     // into queue_ptr. Otherwise queue_ptr is NULL, which is OK for
     // commands which does not require a queue.
-    CRef<SLockedQueue> queue_ref;
-    SLockedQueue* queue_ptr = NULL;
+    CRef<CQueue> queue_ref;
+    CQueue* queue_ptr = NULL;
     if (extra.role & eNSAC_Queue) {
-        queue_ref.Reset(m_Queue->GetQueue());
+        queue_ref.Reset(GetQueue());
         queue_ptr = queue_ref.GetPointer();
     }
 
@@ -1166,7 +1186,7 @@ bool CNetScheduleHandler::x_CheckVersion()
         ParseVersionString(auth_prog,
                            &auth_prog_info.client_name,
                            &auth_prog_info.version_info);
-        if (!m_Queue->GetQueue()->IsMatchingClient(auth_prog_info))
+        if (!GetQueue()->IsMatchingClient(auth_prog_info))
             return false;
     }
     catch (exception&)
@@ -1192,10 +1212,10 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
     bool deny =
         (deficit & eNSAC_AnyAdminMask)  ||  // for any admin access
         (m_Incaps & eNSAC_Queue)        ||  // or if no queue
-        m_Queue->GetQueue()->GetDenyAccessViolations();  // or if queue configured so
+        GetQueue()->GetDenyAccessViolations();  // or if queue configured so
     bool report =
         !(m_Incaps & eNSAC_Queue)       &&  // only if there is a queue
-        m_Queue->GetQueue()->GetLogAccessViolations()  &&  // so configured
+        GetQueue()->GetLogAccessViolations()  &&  // so configured
         (m_Unreported & deficit);           // and we did not report it yet
     if (report) {
         m_Unreported &= ~deficit;
@@ -1283,14 +1303,14 @@ TNSBitVector CNetScheduleHandler::x_DeserializeBitVector(const string& s)
 
 bool CNetScheduleHandler::IsMonitoring()
 {
-    return !(m_Incaps & eNSAC_Queue)  &&  m_Queue->IsMonitoring();
+    return !(m_Incaps & eNSAC_Queue)  &&  GetQueue()->IsMonitoring();
 }
 
 
 void CNetScheduleHandler::MonitorPost(const string& msg)
 {
     if (!(m_Incaps & eNSAC_Queue))
-        m_Queue->MonitorPost(msg);
+        GetQueue()->MonitorPost(msg);
 }
 
 
@@ -1313,7 +1333,7 @@ void CNetScheduleHandler::x_MonitorJob(const CJob& job)
 //////////////////////////////////////////////////////////////////////////
 // Process* methods for processing commands
 
-void CNetScheduleHandler::ProcessFastStatusS(SLockedQueue* q)
+void CNetScheduleHandler::ProcessFastStatusS(CQueue* q)
 {
     TJobStatus status = q->GetJobStatus(m_JobReq.job_id);
     // TODO: update timestamp
@@ -1321,14 +1341,14 @@ void CNetScheduleHandler::ProcessFastStatusS(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessFastStatusW(SLockedQueue* q)
+void CNetScheduleHandler::ProcessFastStatusW(CQueue* q)
 {
     TJobStatus status = q->GetJobStatus(m_JobReq.job_id);
     WriteOK(NStr::IntToString((int) status));
 }
 
 
-void CNetScheduleHandler::ProcessSubmit(SLockedQueue* q)
+void CNetScheduleHandler::ProcessSubmit(CQueue* q)
 {
     CJob job;
     job.SetInput(NStr::ParseEscapes(m_JobReq.input));
@@ -1372,7 +1392,7 @@ void CNetScheduleHandler::ProcessSubmit(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessSubmitBatch(SLockedQueue* q)
+void CNetScheduleHandler::ProcessSubmitBatch(CQueue* q)
 {
     m_BatchSubmPort    = m_JobReq.port;
     m_BatchSubmTimeout = m_JobReq.timeout;
@@ -1440,7 +1460,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
 }
 
 
-void CNetScheduleHandler::ProcessBatchStart(SLockedQueue*)
+void CNetScheduleHandler::ProcessBatchStart(CQueue*)
 {
     m_BatchPos = 0;
     m_BatchStopWatch.Restart();
@@ -1458,7 +1478,7 @@ void CNetScheduleHandler::ProcessBatchStart(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessBatchSequenceEnd(SLockedQueue*)
+void CNetScheduleHandler::ProcessBatchSequenceEnd(CQueue*)
 {
     m_BatchJobs.clear();
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
@@ -1571,7 +1591,7 @@ void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
         m_BatchClientIP, m_BatchClientSID);
     CStopWatch sw(CStopWatch::eStart);
     unsigned job_id =
-        m_Queue->GetQueue()->SubmitBatch(m_BatchJobs);
+        GetQueue()->SubmitBatch(m_BatchJobs);
     double db_elapsed = sw.Elapsed();
 
     if (IsMonitoring()) {
@@ -1608,28 +1628,28 @@ void CNetScheduleHandler::ProcessMsgBatchSubmit(BUF buffer)
 }
 
 
-void CNetScheduleHandler::ProcessCancel(SLockedQueue* q)
+void CNetScheduleHandler::ProcessCancel(CQueue* q)
 {
     q->Cancel(m_JobReq.job_id);
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessForceReschedule(SLockedQueue* q)
+void CNetScheduleHandler::ProcessForceReschedule(CQueue* q)
 {
     q->ForceReschedule(m_JobReq.job_id);
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessDropJob(SLockedQueue* q)
+void CNetScheduleHandler::ProcessDropJob(CQueue* q)
 {
     q->EraseJob(m_JobReq.job_id);
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessJobRunTimeout(SLockedQueue*)
+void CNetScheduleHandler::ProcessJobRunTimeout(CQueue*)
 {
     if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
@@ -1645,15 +1665,15 @@ void CNetScheduleHandler::ProcessJobRunTimeout(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessJobDelayExpiration(SLockedQueue* q)
+void CNetScheduleHandler::ProcessJobDelayExpiration(CQueue* q)
 {
-    m_Queue->JobDelayExpiration(m_WorkerNode,
+    q->JobDelayExpiration(m_WorkerNode,
         m_JobReq.job_id, m_JobReq.timeout);
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessStatusSnapshot(SLockedQueue* q)
+void CNetScheduleHandler::ProcessStatusSnapshot(CQueue* q)
 {
     CJobStatusTracker::TStatusSummaryMap st_map;
 
@@ -1674,15 +1694,15 @@ void CNetScheduleHandler::ProcessStatusSnapshot(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessStatus(SLockedQueue* q)
+void CNetScheduleHandler::ProcessStatus(CQueue* q)
 {
     TJobStatus status = q->GetJobStatus(m_JobReq.job_id);
     int ret_code = 0;
     string input, output, error;
 
-    bool res = m_Queue->GetJobDescr(m_JobReq.job_id, &ret_code,
-                                    &input, &output,
-                                    &error, 0, status);
+    bool res = q->GetJobDescr(m_JobReq.job_id, &ret_code,
+                              &input, &output,
+                              &error, 0, status);
     if (!res) status = CNetScheduleAPI::eJobNotFound;
     string buf = NStr::IntToString((int) status);
     if (status != CNetScheduleAPI::eJobNotFound) {
@@ -1697,12 +1717,12 @@ void CNetScheduleHandler::ProcessStatus(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessGetMessage(SLockedQueue* q)
+void CNetScheduleHandler::ProcessGetMessage(CQueue* q)
 {
     string progress_msg;
 
-    if (m_Queue->GetJobDescr(m_JobReq.job_id, 0, 0, 0, 0,
-                             &progress_msg)) {
+    if (q->GetJobDescr(m_JobReq.job_id, 0, 0, 0, 0,
+                       &progress_msg)) {
         WriteOK(progress_msg);
     } else {
         WriteErr("Job not found");
@@ -1710,16 +1730,16 @@ void CNetScheduleHandler::ProcessGetMessage(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessPutMessage(SLockedQueue* q)
+void CNetScheduleHandler::ProcessPutMessage(CQueue* q)
 {
-    if(m_Queue->PutProgressMessage(m_JobReq.job_id, m_JobReq.param1))
+    if (q->PutProgressMessage(m_JobReq.job_id, m_JobReq.param1))
         WriteOK();
     else
         WriteErr("Job not found");
 }
 
 
-void CNetScheduleHandler::ProcessGetJob(SLockedQueue* q)
+void CNetScheduleHandler::ProcessGetJob(CQueue* q)
 {
     list<string> aff_list;
     NStr::Split(NStr::ParseEscapes(m_JobReq.affinity_token),
@@ -1760,7 +1780,7 @@ void CNetScheduleHandler::ProcessGetJob(SLockedQueue* q)
 
 
 void
-CNetScheduleHandler::ProcessJobExchange(SLockedQueue* q)
+CNetScheduleHandler::ProcessJobExchange(CQueue* q)
 {
     list<string> aff_list;
     NStr::Split(NStr::ParseEscapes(m_JobReq.affinity_token),
@@ -1801,7 +1821,7 @@ CNetScheduleHandler::ProcessJobExchange(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessWaitGet(SLockedQueue* q)
+void CNetScheduleHandler::ProcessWaitGet(CQueue* q)
 {
     list<string> aff_list;
     NStr::Split(NStr::ParseEscapes(m_JobReq.affinity_token),
@@ -1829,7 +1849,7 @@ void CNetScheduleHandler::ProcessWaitGet(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessRegisterClient(SLockedQueue* q)
+void CNetScheduleHandler::ProcessRegisterClient(CQueue* q)
 {
     q->GetWorkerNodeList().
         RegisterNotificationListener(m_WorkerNode, 0);
@@ -1837,13 +1857,13 @@ void CNetScheduleHandler::ProcessRegisterClient(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessUnRegisterClient(SLockedQueue* q)
+void CNetScheduleHandler::ProcessUnRegisterClient(CQueue* q)
 {
     q->UnRegisterNotificationListener(m_WorkerNode);
     WriteOK();
 }
 
-void CNetScheduleHandler::ProcessQList(SLockedQueue*)
+void CNetScheduleHandler::ProcessQList(CQueue*)
 {
     WriteOK(m_Server->GetQueueNames(";"));
 }
@@ -1855,7 +1875,7 @@ void CNetScheduleHandler::ProcessError(const CException& ex) {
 }
 
 
-void CNetScheduleHandler::ProcessQuitSession(SLockedQueue*)
+void CNetScheduleHandler::ProcessQuitSession(CQueue*)
 {
     // read trailing input
     CSocket& socket = GetSocket();
@@ -1866,7 +1886,7 @@ void CNetScheduleHandler::ProcessQuitSession(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessPutFailure(SLockedQueue* q)
+void CNetScheduleHandler::ProcessPutFailure(CQueue* q)
 {
     q->FailJob(m_WorkerNode, m_JobReq.job_id,
                NStr::ParseEscapes(m_JobReq.err_msg),
@@ -1876,7 +1896,7 @@ void CNetScheduleHandler::ProcessPutFailure(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessPut(SLockedQueue* q)
+void CNetScheduleHandler::ProcessPut(CQueue* q)
 {
     string output = NStr::ParseEscapes(m_JobReq.output);
     q->PutResultGetJob(m_WorkerNode,
@@ -1888,21 +1908,21 @@ void CNetScheduleHandler::ProcessPut(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessReturn(SLockedQueue* q)
+void CNetScheduleHandler::ProcessReturn(CQueue* q)
 {
-    m_Queue->ReturnJob(m_JobReq.job_id);
+    q->ReturnJob(m_JobReq.job_id);
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessDropQueue(SLockedQueue* q)
+void CNetScheduleHandler::ProcessDropQueue(CQueue* q)
 {
-    m_Queue->Truncate();
+    q->Truncate();
     WriteOK();
 }
 
 
-void CNetScheduleHandler::ProcessMonitor(SLockedQueue* q)
+void CNetScheduleHandler::ProcessMonitor(CQueue* q)
 {
     CSocket& socket = GetSocket();
     socket.DisableOSSendDelay(false);
@@ -1911,11 +1931,11 @@ void CNetScheduleHandler::ProcessMonitor(SLockedQueue* q)
     WriteOK(started);
     // Socket is released from regular scheduling here - it is
     // write only for monitor since this moment.
-    m_Queue->SetMonitorSocket(socket);
+    q->SetMonitorSocket(socket);
 }
 
 
-void CNetScheduleHandler::ProcessPrintQueue(SLockedQueue* q)
+void CNetScheduleHandler::ProcessPrintQueue(CQueue* q)
 {
     // TODO this method can not support session, because socket is closed at
     // the end.
@@ -1934,16 +1954,16 @@ void CNetScheduleHandler::ProcessPrintQueue(SLockedQueue* q)
 
     CConn_SocketStream ios(sock);  // sock is being passed and used exclusively
 
-    m_Queue->PrintQueue(ios,
-                        job_status,
-                        m_Server->GetHost(),
-                        m_Server->GetPort());
+    q->PrintQueue(ios,
+                  job_status,
+                  m_Server->GetHost(),
+                  m_Server->GetPort());
 
     ios << "OK:END" << endl;
 }
 
 
-void CNetScheduleHandler::ProcessDump(SLockedQueue* q)
+void CNetScheduleHandler::ProcessDump(CQueue* q)
 {
     // TODO this method can not support session, because socket is closed at
     // the end.
@@ -1962,7 +1982,7 @@ void CNetScheduleHandler::ProcessDump(SLockedQueue* q)
         q->PrintJobStatusMatrix(ios);
 
         ios << "OK:[Job DB]:" << endl;
-        m_Queue->PrintAllJobDbStat(ios);
+        q->PrintAllJobDbStat(ios);
     } else {
         try {
             TJobStatus status = q->GetJobStatus(m_JobReq.job_id);
@@ -1970,7 +1990,7 @@ void CNetScheduleHandler::ProcessDump(SLockedQueue* q)
             string st_str = CNetScheduleAPI::StatusToString(status);
             ios << "OK:" << "[Job status matrix]:" << st_str;
             ios << "OK:[Job DB]:" << endl;
-            m_Queue->PrintJobDbStat(m_JobReq.job_id, ios);
+            q->PrintJobDbStat(m_JobReq.job_id, ios);
             ios << "OK:END" << endl;
         }
         catch (CException&)
@@ -1980,7 +2000,7 @@ void CNetScheduleHandler::ProcessDump(SLockedQueue* q)
     }
 }
 
-void CNetScheduleHandler::ProcessReloadConfig(SLockedQueue* q)
+void CNetScheduleHandler::ProcessReloadConfig(CQueue* q)
 {
     CNcbiApplication* app = CNcbiApplication::Instance();
 
@@ -1991,15 +2011,15 @@ void CNetScheduleHandler::ProcessReloadConfig(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessActiveCount(SLockedQueue* q)
+void CNetScheduleHandler::ProcessActiveCount(CQueue* q)
 {
     WriteOK(NStr::UIntToString(m_Server->CountActiveJobs()));
 }
 
 
-void CNetScheduleHandler::x_StatisticsNew(SLockedQueue* q,
+void CNetScheduleHandler::x_StatisticsNew(CQueue*       q,
                                           const string& what,
-                                          time_t curr)
+                                          time_t        curr)
 {
     if (what == "WNODE") {
         CNcbiOstrstream ostr;
@@ -2034,7 +2054,7 @@ void CNetScheduleHandler::x_StatisticsNew(SLockedQueue* q,
 }
 
 
-void CNetScheduleHandler::ProcessStatistics(SLockedQueue* q)
+void CNetScheduleHandler::ProcessStatistics(CQueue* q)
 {
     CSocket& socket = GetSocket();
     socket.DisableOSSendDelay(false);
@@ -2053,16 +2073,16 @@ void CNetScheduleHandler::ProcessStatistics(SLockedQueue* q)
 
     string load_str = "Load: jobs dispatched: ";
     load_str +=
-        NStr::DoubleToString(q->GetAverage(SLockedQueue::eStatGetEvent));
+        NStr::DoubleToString(q->GetAverage(CQueue::eStatGetEvent));
     load_str += "/sec, jobs complete: ";
     load_str +=
-        NStr::DoubleToString(q->GetAverage(SLockedQueue::eStatPutEvent));
+        NStr::DoubleToString(q->GetAverage(CQueue::eStatPutEvent));
     load_str += "/sec, DB locks: ";
     load_str +=
-        NStr::DoubleToString(q->GetAverage(SLockedQueue::eStatDBLockEvent));
+        NStr::DoubleToString(q->GetAverage(CQueue::eStatDBLockEvent));
     load_str += "/sec, Job DB writes: ";
     load_str +=
-        NStr::DoubleToString(q->GetAverage(SLockedQueue::eStatDBWriteEvent));
+        NStr::DoubleToString(q->GetAverage(CQueue::eStatDBWriteEvent));
     load_str += "/sec";
     WriteOK(load_str);
 
@@ -2123,7 +2143,7 @@ void CNetScheduleHandler::ProcessStatistics(SLockedQueue* q)
         WriteOK("[Berkeley DB Mutexes]:");
         {{
             CNcbiOstrstream ostr;
-            m_Queue->PrintMutexStat(ostr);
+            m_Server->PrintMutexStat(ostr);
             ostr << ends;
 
             char* stat_str = ostr.str();
@@ -2139,7 +2159,7 @@ void CNetScheduleHandler::ProcessStatistics(SLockedQueue* q)
         WriteOK("[Berkeley DB Locks]:");
         {{
             CNcbiOstrstream ostr;
-            m_Queue->PrintLockStat(ostr);
+            m_Server->PrintLockStat(ostr);
             ostr << ends;
 
             char* stat_str = ostr.str();
@@ -2155,7 +2175,7 @@ void CNetScheduleHandler::ProcessStatistics(SLockedQueue* q)
         WriteOK("[Berkeley DB Memory Usage]:");
         {{
             CNcbiOstrstream ostr;
-            m_Queue->PrintMemStat(ostr);
+            m_Server->PrintMemStat(ostr);
             ostr << ends;
 
             char* stat_str = ostr.str();
@@ -2248,7 +2268,7 @@ void CNetScheduleHandler::ProcessStatistics(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessLog(SLockedQueue*)
+void CNetScheduleHandler::ProcessLog(CQueue*)
 {
     const char* str = m_JobReq.param1.c_str();
     if (NStr::strcasecmp(str, "ON") == 0) {
@@ -2264,7 +2284,7 @@ void CNetScheduleHandler::ProcessLog(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessShutdown(SLockedQueue*)
+void CNetScheduleHandler::ProcessShutdown(CQueue*)
 {
     CSocket& socket = GetSocket();
     string admin_host = socket.GetPeerAddress();
@@ -2278,13 +2298,13 @@ void CNetScheduleHandler::ProcessShutdown(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessVersion(SLockedQueue*)
+void CNetScheduleHandler::ProcessVersion(CQueue*)
 {
     WriteOK(NETSCHEDULED_FULL_VERSION);
 }
 
 
-void CNetScheduleHandler::ProcessCreateQueue(SLockedQueue*)
+void CNetScheduleHandler::ProcessCreateQueue(CQueue*)
 {
     const string& qname  = m_JobReq.param1;
     const string& qclass = m_JobReq.param2;
@@ -2293,7 +2313,7 @@ void CNetScheduleHandler::ProcessCreateQueue(SLockedQueue*)
     WriteOK();
 }
 
-void CNetScheduleHandler::ProcessDeleteQueue(SLockedQueue*)
+void CNetScheduleHandler::ProcessDeleteQueue(CQueue*)
 {
     const string& qname = m_JobReq.param1;
     m_Server->DeleteQueue(qname);
@@ -2301,7 +2321,7 @@ void CNetScheduleHandler::ProcessDeleteQueue(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessQueueInfo(SLockedQueue*)
+void CNetScheduleHandler::ProcessQueueInfo(CQueue*)
 {
     const string& qname = m_JobReq.param1;
     int kind;
@@ -2313,7 +2333,7 @@ void CNetScheduleHandler::ProcessQueueInfo(SLockedQueue*)
 }
 
 
-void CNetScheduleHandler::ProcessQuery(SLockedQueue* q)
+void CNetScheduleHandler::ProcessQuery(CQueue* q)
 {
     string result_str;
 
@@ -2334,7 +2354,7 @@ void CNetScheduleHandler::ProcessQuery(SLockedQueue* q)
         string str_fields(NStr::ParseEscapes(m_JobReq.param3));
         // Split fields
         NStr::Split(str_fields, "\t,", fields, NStr::eNoMergeDelims);
-        m_Queue->PrepareFields(m_FieldDescr, fields);
+        q->PrepareFields(m_FieldDescr, fields);
         m_DelayedOutput = &CNetScheduleHandler::WriteProjection;
         return;
     } else if (action == "COUNT") {
@@ -2358,7 +2378,7 @@ void CNetScheduleHandler::ProcessQuery(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessSelectQuery(SLockedQueue* q)
+void CNetScheduleHandler::ProcessSelectQuery(CQueue* q)
 {
     string result_str;
 
@@ -2372,7 +2392,7 @@ void CNetScheduleHandler::ProcessSelectQuery(SLockedQueue* q)
                  "SQL-like select is expected");
         m_SelectedIds.release();
     } else {
-        m_Queue->PrepareFields(m_FieldDescr, fields);
+        q->PrepareFields(m_FieldDescr, fields);
         m_DelayedOutput = &CNetScheduleHandler::WriteProjection;
     }
 }
@@ -2396,7 +2416,7 @@ void CNetScheduleHandler::WriteProjection()
         qdesc.host = m_Server->GetHost().c_str();
         qdesc.port = m_Server->GetPort();
         CQueue::TRecordSet record_set;
-        m_Queue->ExecProject(record_set, chunk, m_FieldDescr);
+        GetQueue()->ExecProject(record_set, chunk, m_FieldDescr);
         /*
         sort(record_set.begin(), record_set.end(), Less);
 
@@ -2432,7 +2452,7 @@ void CNetScheduleHandler::WriteProjection()
 }
 
 
-void CNetScheduleHandler::ProcessGetParam(SLockedQueue* q)
+void CNetScheduleHandler::ProcessGetParam(CQueue* q)
 {
     string res("max_input_size=");
     res += NStr::IntToString(q->GetMaxInputSize());
@@ -2444,18 +2464,18 @@ void CNetScheduleHandler::ProcessGetParam(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessGetConfiguration(SLockedQueue* q)
+void CNetScheduleHandler::ProcessGetConfiguration(CQueue* q)
 {
-    SLockedQueue::TParameterList parameters;
+    CQueue::TParameterList parameters;
     parameters = q->GetParameters();
-    ITERATE(SLockedQueue::TParameterList, it, parameters) {
+    ITERATE(CQueue::TParameterList, it, parameters) {
         WriteOK(it->first + '=' + it->second);
     }
     WriteOK("END");
 }
 
 
-void CNetScheduleHandler::ProcessReading(SLockedQueue* q)
+void CNetScheduleHandler::ProcessReading(CQueue* q)
 {
     unsigned read_id;
     TNSBitVector jobs;
@@ -2467,7 +2487,7 @@ void CNetScheduleHandler::ProcessReading(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessConfirm(SLockedQueue* q)
+void CNetScheduleHandler::ProcessConfirm(CQueue* q)
 {
     TNSBitVector jobs = NS_DecodeBitVector(m_JobReq.output);
     q->ConfirmJobs(m_JobReq.count, jobs);
@@ -2475,7 +2495,7 @@ void CNetScheduleHandler::ProcessConfirm(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessReadFailed(SLockedQueue* q)
+void CNetScheduleHandler::ProcessReadFailed(CQueue* q)
 {
     TNSBitVector jobs = NS_DecodeBitVector(m_JobReq.output);
 //    m_JobReq.err_msg; we still don't (and probably, won't) use this
@@ -2484,7 +2504,7 @@ void CNetScheduleHandler::ProcessReadFailed(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessReadRollback(SLockedQueue* q)
+void CNetScheduleHandler::ProcessReadRollback(CQueue* q)
 {
     TNSBitVector jobs = NS_DecodeBitVector(m_JobReq.output);
     q->ReturnReadingJobs(m_JobReq.count, jobs);
@@ -2492,13 +2512,13 @@ void CNetScheduleHandler::ProcessReadRollback(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessGetAffinityList(SLockedQueue* q)
+void CNetScheduleHandler::ProcessGetAffinityList(CQueue* q)
 {
     WriteOK(q->GetAffinityList());
 }
 
 
-void CNetScheduleHandler::ProcessInitWorkerNode(SLockedQueue* q)
+void CNetScheduleHandler::ProcessInitWorkerNode(CQueue* q)
 {
     string old_id = m_WorkerNode->GetId();
     string new_id = m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize);
@@ -2514,7 +2534,7 @@ void CNetScheduleHandler::ProcessInitWorkerNode(SLockedQueue* q)
 }
 
 
-void CNetScheduleHandler::ProcessClearWorkerNode(SLockedQueue* q)
+void CNetScheduleHandler::ProcessClearWorkerNode(CQueue* q)
 {
     q->ClearWorkerNode(
         m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize), "cleared");
