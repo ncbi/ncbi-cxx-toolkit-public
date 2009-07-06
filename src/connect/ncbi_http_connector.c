@@ -134,8 +134,8 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
             free(*retry);
         if (read_mode != eRM_DropUnread  &&  uuu->failure_count > 1) {
             CORE_LOGF_X(1, eLOG_Error,
-                        ("[HTTP]  Too many failed attempts (%d),"
-                         " giving up", uuu->failure_count));
+                        ("[HTTP]  Too many failed attempts (%d), giving up",
+                         uuu->failure_count));
         }
         uuu->can_connect = eCC_None;
         return 0/*failure*/;
@@ -148,7 +148,7 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
         if (**retry != '?') {
             if (uuu->net_info->req_method == eReqMethod_Get  ||  !uuu->w_len
                 ||  (uuu->flags & fHCC_InsecureRedirect)) {
-                int/*bool*/secure = uuu->net_info->scheme == eURL_Https ? 1 : 0;
+                int secure = uuu->net_info->scheme == eURL_Https ? 1 : 0;
                 *uuu->net_info->args = '\0'/*arguments not inherited*/;
                 fail = !ConnNetInfo_ParseURL(uuu->net_info, *retry);
                 if (!fail  &&  secure  &&  uuu->net_info->scheme != eURL_Https
@@ -161,8 +161,8 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
             fail = 1;
         if (fail) {
             CORE_LOGF_X(2, eLOG_Error,
-                        ("[HTTP]  %s to redirect to \"%s\"",
-                         fail < 0 ? "Prohibited" : "Unable", *retry));
+                        ("[HTTP]  %s redirect to \"%s\"",
+                         fail < 0 ? "Prohibited" : "Cannot", *retry));
         }
         free(*retry);
         if (fail) {
@@ -175,8 +175,8 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
                                         uuu->failure_count) == 0) {
         if (read_mode != eRM_DropUnread  &&  uuu->failure_count > 1) {
             CORE_LOGF_X(3, eLOG_Error,
-                        ("[HTTP]  Retry attempts (%d) exhausted,"
-                         " giving up", uuu->failure_count));
+                        ("[HTTP]  Retry attempts (%d) exhausted, giving up",
+                         uuu->failure_count));
         }
         uuu->can_connect = eCC_None;
         return 0/*failure*/;
@@ -190,12 +190,8 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
 /* Unconditionally drop the connection; timeout may specify time allowance */
 static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 {
-    size_t http_size = BUF_Size(uuu->http);
     assert(uuu->sock);
-    if (http_size  &&  BUF_Read(uuu->http, 0, http_size) != http_size) {
-        CORE_LOG_X(4, eLOG_Error, "[HTTP]  Cannot discard HTTP header buffer");
-        assert(0);
-    }
+    BUF_Erase(uuu->http);
     SOCK_SetTimeout(uuu->sock, eIO_Close, timeout);
     SOCK_Close(uuu->sock);
     uuu->sock = 0;
@@ -285,7 +281,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
     EIO_Status status;
 
     for (;;) {
-        char* null = 0;
+        size_t body_size;
+        char   buf[4096];
+        char*  null = 0;
 
         if (!uuu->sock) {
             if ((status = s_Connect(uuu, read_mode)) != eIO_Success)
@@ -304,7 +302,6 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
 
             SOCK_SetTimeout(uuu->sock, eIO_Write, uuu->w_timeout);
             do {
-                char   buf[4096];
                 size_t n_written;
                 size_t n_write = BUF_PeekAt(uuu->w_buf, off, buf, sizeof(buf));
                 status = SOCK_Write(uuu->sock, buf, n_write,
@@ -332,14 +329,19 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             break;
         }
 
-        if (status == eIO_Timeout  &&  uuu->w_timeout  &&
-            !(uuu->w_timeout->sec | uuu->w_timeout->usec)) {
+        if (status == eIO_Timeout
+            &&  (read_mode == eRM_WaitCalled
+                 ||  (uuu->w_timeout
+                      &&  !(uuu->w_timeout->sec | uuu->w_timeout->usec)))) {
             break;
         }
+        if ((body_size = BUF_Size(uuu->w_buf))) {
+            sprintf(buf, "writing request body at offset %lu",
+                    (unsigned long)(body_size - uuu->w_len));
+        } else
+            strcpy(buf, "flushing request header");
         CORE_LOGF_X(6, eLOG_Error,
-                    ("[HTTP]  Error writing body at offset %lu (%s)",
-                     (unsigned long)(BUF_Size(uuu->w_buf) - uuu->w_len),
-                     IO_StatusStr(status)));
+                    ("[HTTP]  Error %s (%s)", buf, IO_StatusStr(status)));
 
         /* write failed; close and try to use another server */
         SOCK_Abort(uuu->sock);
@@ -393,12 +395,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
                 if (!tmo)
                     level = eLOG_Error;
+                else if (read_mode == eRM_WaitCalled)
+                    return status;
                 else if (tmo->sec | tmo->usec)
                     level = eLOG_Warning;
-                else if (read_mode != eRM_WaitCalled)
-                    level = eLOG_Trace;
                 else
-                    return status;
+                    level = eLOG_Trace;
             } else
                 level = eLOG_Error;
             CORE_LOGF_X(8, level, ("[HTTP]  Error reading header (%s)",
@@ -409,12 +411,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     /* the entire header has been read */
     uuu->read_header = 0/*false*/;
     status = eIO_Success;
-
-    if (BUF_Read(uuu->http, 0, size) != size) {
-        CORE_LOG_X(9, eLOG_Error, "[HTTP]  Cannot discard HTTP header buffer");
-        status = eIO_Unknown;
-        assert(0);
-    }
+    BUF_Erase(uuu->http);
 
     /* HTTP status must come on the first line of the response */
     if (sscanf(header, "HTTP/%*d.%*d %d ", &http_status) != 1 || !http_status)
@@ -469,7 +466,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 if (message != s) {
                     if (s_MessageHook) {
                         if (s_MessageIssued <= 0) {
-                            s_MessageIssued = 1;
+                            s_MessageIssued  = 1;
                             s_MessageHook(message);
                         }
                     } else {
@@ -636,19 +633,17 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             break;
 
         if ((status = s_ReadHeader(uuu, &retry, read_mode)) == eIO_Success) {
-            size_t w_size = BUF_Size(uuu->w_buf);
-            assert(!uuu->read_header  &&  !retry);
             /* pending output data no longer needed */
-            if (BUF_Read(uuu->w_buf, 0, w_size) != w_size) {
-                CORE_LOG_X(15, eLOG_Error,
-                           "[HTTP]  Cannot discard output buffer");
-                assert(0);
-            }
+            assert(!uuu->read_header  &&  !retry);
+            BUF_Erase(uuu->w_buf);
             break;
         }
         /* if polling then bail out with eIO_Timeout */
-        if(status == eIO_Timeout && timeout && !(timeout->sec | timeout->usec))
+        if (status == eIO_Timeout
+            &&  (read_mode == eRM_WaitCalled
+                 ||  (timeout  &&  !(timeout->sec | timeout->usec)))) {
             break;
+        }
 
         /* HTTP header read error; disconnect and try to use another server */
         SOCK_Abort(uuu->sock);
@@ -726,13 +721,9 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
 {
     EIO_Status status = eIO_Success;
 
-    if (read_mode == eRM_DropUnread) {
-        size_t r_size = BUF_Size(uuu->r_buf);
-        if (r_size  &&  BUF_Read(uuu->r_buf, 0, r_size) != r_size) {
-            CORE_LOG_X(17, eLOG_Error, "[HTTP]  Cannot drop input buffer");
-            assert(0);
-        }
-    } else if ((status = s_PreRead(uuu, timeout, read_mode)) == eIO_Success) {
+    if (read_mode == eRM_DropUnread)
+        BUF_Erase(uuu->r_buf);
+    else if ((status = s_PreRead(uuu, timeout, read_mode)) == eIO_Success) {
         do {
             char   buf[4096];
             size_t x_read;
@@ -761,8 +752,6 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
                                  int/*bool*/     close,
                                  const STimeout* timeout)
 {
-    size_t w_size;
-
     /* store timeouts for later use */
     if (timeout) {
         uuu->oo_timeout = *timeout;
@@ -783,11 +772,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
     assert(!uuu->sock);
 
     /* clear pending output data, if any */
-    w_size = BUF_Size(uuu->w_buf);
-    if (w_size  &&  BUF_Read(uuu->w_buf, 0, w_size) != w_size) {
-        CORE_LOG_X(18, eLOG_Error, "[HTTP]  Cannot drop output buffer");
-        assert(0);
-    }
+    BUF_Erase(uuu->w_buf);
 }
 
 
@@ -899,11 +884,13 @@ static EIO_Status s_VT_Wait
 
     switch (event) {
     case eIO_Read:
+        if (BUF_Size(uuu->r_buf))
+            return eIO_Success;
         if (uuu->can_connect == eCC_None)
             return eIO_Closed;
         if (!uuu->sock  ||  uuu->read_header) {
             EIO_Status status = s_PreRead(uuu, timeout, eRM_WaitCalled);
-            if (status != eIO_Success  ||  BUF_Size(uuu->r_buf))
+            if (status != eIO_Success)
                 return status;
             assert(uuu->sock);
         }
@@ -914,9 +901,10 @@ static EIO_Status s_VT_Wait
             ||  (uuu->sock  &&  uuu->can_connect == eCC_Once)
             ? eIO_Closed : eIO_Success;
     default:
-        assert(0);
-        return eIO_InvalidArg;
+        break;
     }
+    assert(0);
+    return eIO_InvalidArg;
 }
 
 
