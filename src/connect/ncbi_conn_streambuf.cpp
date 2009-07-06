@@ -445,6 +445,7 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
 }
 
+
 const char* CConnException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -452,5 +453,6 @@ const char* CConnException::GetErrCodeString(void) const
     default:       return CException::GetErrCodeString();
     }
 }
+
 
 END_NCBI_SCOPE
