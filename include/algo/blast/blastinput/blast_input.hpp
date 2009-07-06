@@ -197,7 +197,7 @@ private:
 
 
 /// Defines user input exceptions
-class CInputException : public CException
+class NCBI_BLASTINPUT_EXPORT CInputException : public CException
 {
 public:
     /// Error types that reading BLAST input can generate

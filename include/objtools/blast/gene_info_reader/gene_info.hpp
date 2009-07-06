@@ -59,7 +59,7 @@ BEGIN_NCBI_SCOPE
 /// output Gene information in any class declared in this header file,
 /// classes derived from those, or other related classes.
 
-class CGeneInfoException : public CException
+class NCBI_XOBJREAD_EXPORT CGeneInfoException : public CException
 {
 public:
     /// Error types for Gene Information processing.
