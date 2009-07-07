@@ -1047,6 +1047,38 @@
 #  define  NCBI_XLOADER_PATCHER_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library sraread
+ */
+#ifdef NCBI_SRAREAD_EXPORTS
+#  define NCBI_SRAREAD_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_SRAREAD_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library bamread
+ */
+#ifdef NCBI_BAMREAD_EXPORTS
+#  define NCBI_BAMREAD_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BAMREAD_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library ncbi_xloader_sra
+ */
+#ifdef NCBI_XLOADER_SRA_EXPORTS
+#  define NCBI_XLOADER_SRA_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_SRA_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library ncbi_xloader_bam
+ */
+#ifdef NCBI_XLOADER_BAM_EXPORTS
+#  define NCBI_XLOADER_BAM_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_BAM_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xncbi
  */
 #ifdef NCBI_XNCBI_EXPORTS
@@ -1320,6 +1352,10 @@
 #  define NCBI_XLOADER_PATCHER_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
 #  define NCBI_XLOADER_TRACE_EXPORT
+#  define NCBI_SRAREAD_EXPORT
+#  define NCBI_BAMREAD_EXPORT
+#  define NCBI_XLOADER_SRA_EXPORT
+#  define NCBI_XLOADER_BAM_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJEDIT_EXPORT
 #  define NCBI_XOBJMANIP_EXPORT
