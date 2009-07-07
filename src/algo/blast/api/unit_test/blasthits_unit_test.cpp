@@ -160,11 +160,55 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         	hsp->subject.frame++;
         const Uint1* sequence = Blast_HSPGetTargetTranslation(target_t, hsp, NULL); // Test without retrieving length.
         BOOST_REQUIRE_EQUAL(kValues[2*index], (int) sequence[hsp->subject.offset+5]);
+
+        Int4 i, n = 0;
+        for (i = hsp->subject.offset-703; i < hsp->subject.offset - 693; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n!=0);
+        n = 0;
+        for (; i < hsp->subject.end + 693; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n==0);
+        n = 0;
+        for (; i < hsp->subject.end + 703; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n!=0);
+
         hsp->subject.offset += 200;
         hsp->subject.end += 200;
         sequence = Blast_HSPGetTargetTranslation(target_t, hsp, &length);
         BOOST_REQUIRE_EQUAL(kLength[index], length);
         BOOST_REQUIRE_EQUAL(kValues[2*index+1], (int) sequence[hsp->subject.offset+5]);
+
+        n = 0;
+        for (i = hsp->subject.offset-703; i < hsp->subject.offset - 693; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n!=0);
+        n = 0;
+        for (; i < hsp->subject.end + 693; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n==0);
+        n = 0;
+        for (; i < hsp->subject.end + 703; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n!=0);
+
+        // Testing full translation
+        Int4 offset = hsp->subject.offset;
+        hsp->subject.offset = -1;
+        sequence = Blast_HSPGetTargetTranslation(target_t, hsp, &length);
+        n = 0;
+        for (i=0; i < length; ++i) {
+            if (sequence[i] == 201) ++n;
+        }
+        BOOST_REQUIRE(n==0);
+        hsp->subject.offset = offset;
         hsp->subject.frame++;
     }
 
