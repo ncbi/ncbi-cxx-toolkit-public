@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "notif_thread.hpp"
-#include "bdb_queue.hpp"
+#include "queue_coll.hpp"
 
 BEGIN_NCBI_SCOPE
 

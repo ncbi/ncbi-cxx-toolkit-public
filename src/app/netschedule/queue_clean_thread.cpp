@@ -36,7 +36,7 @@
 #include <db.h>
 #include <db/bdb/bdb_expt.hpp>
 
-#include "bdb_queue.hpp"
+#include "queue_coll.hpp"
 #include "queue_clean_thread.hpp"
 
 BEGIN_NCBI_SCOPE

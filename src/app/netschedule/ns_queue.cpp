@@ -30,7 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include "squeue.hpp"
+#include "ns_queue.hpp"
 #include "background_host.hpp"
 #include "ns_util.hpp"
 #include "ns_format.hpp"

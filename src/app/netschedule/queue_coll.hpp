@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_BDB_QUEUE__HPP
-#define NETSCHEDULE_BDB_QUEUE__HPP
+#ifndef NETSCHEDULE_QUEUE_COLL__HPP
+#define NETSCHEDULE_QUEUE_COLL__HPP
 
 
 /*  $Id$
@@ -30,13 +30,13 @@
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description:
- *   NetSchedule job status database.
+ *   NetSchedule queue collection and database.
  *
  */
 
 
-/// @file bdb_queue.hpp
-/// NetSchedule job status database.
+/// @file queue_coll.hpp
+/// NetSchedule queue collection and database.
 ///
 /// @internal
 
@@ -50,7 +50,7 @@
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
-#include "squeue.hpp"
+#include "ns_queue.hpp"
 #include "queue_vc.hpp"
 #include "background_host.hpp"
 #include "worker_node.hpp"
@@ -369,4 +369,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_BDB_QUEUE__HPP */
+#endif /* NETSCHEDULE_QUEUE_COLL__HPP */

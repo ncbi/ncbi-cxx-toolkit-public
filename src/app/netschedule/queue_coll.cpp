@@ -25,7 +25,7 @@
  *
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
- * File Description: Network scheduler job status database.
+ * File Description: NetSchedule queue collection and database managenement.
  *
  */
 #include <ncbi_pch.hpp>
@@ -43,7 +43,7 @@
 
 #include <util/time_line.hpp>
 
-#include "bdb_queue.hpp"
+#include "queue_coll.hpp"
 #include "ns_util.hpp"
 #include "netschedule_version.hpp"
 

@@ -3,8 +3,8 @@
 #################################
 
 APP = netscheduled
-SRC = netscheduled bdb_queue job_status queue_clean_thread \
-      notif_thread ns_affinity squeue access_list ns_util ns_format \
+SRC = netscheduled queue_coll job_status queue_clean_thread \
+      notif_thread ns_affinity ns_queue access_list ns_util ns_format \
       worker_node job
 
 REQUIRES = MT bdb

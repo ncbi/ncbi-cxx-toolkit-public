@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_SQUEUE__HPP
-#define NETSCHEDULE_SQUEUE__HPP
+#ifndef NETSCHEDULE_NS_QUEUE__HPP
+#define NETSCHEDULE_NS_QUEUE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -1061,4 +1061,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_SQUEUE__HPP */
+#endif /* NETSCHEDULE_NS_QUEUE__HPP */

@@ -30,11 +30,11 @@
  * Authors:  Anatoliy Kuznetsov
  *
  * File Description:
- *   Net schedule queue version control
+ *   Net schedule queue client version control
  *
  */
-/// @file bdb_queue.hpp
-/// NetSchedule job status database.
+/// @file queue_vc.hpp
+/// NetSchedule queue client version control
 ///
 /// @internal
 
@@ -153,4 +153,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_BDB_QUEUE__HPP */
+#endif /* NETSCHEDULE_QUEUE_VC__HPP */

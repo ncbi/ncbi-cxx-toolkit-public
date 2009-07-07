@@ -53,7 +53,8 @@
 
 #include <db/bdb/bdb_expt.hpp>
 
-#include "bdb_queue.hpp"
+#include "ns_queue.hpp"
+#include "queue_coll.hpp"
 #include "ns_types.hpp"
 #include "ns_util.hpp"
 #include "job_status.hpp"

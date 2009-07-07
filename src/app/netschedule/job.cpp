@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "job.hpp"
-#include "squeue.hpp"
+#include "ns_queue.hpp"
 
 BEGIN_NCBI_SCOPE
 
