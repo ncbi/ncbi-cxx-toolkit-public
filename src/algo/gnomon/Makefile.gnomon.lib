@@ -3,7 +3,7 @@
 ASN_DEP = seq
 ASN = gnomon
 SRC = $(ASN:%=%__) $(ASN:%=%___) \
-    gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1
+    gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1 chainer
 LIB = xalgognomon
 DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 

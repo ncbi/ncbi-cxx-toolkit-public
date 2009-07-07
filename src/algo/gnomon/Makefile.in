@@ -5,7 +5,7 @@
 
 ASN_PROJ = gnomon
 
-SUB_PROJ = demo
+SUB_PROJ = demo test
 
 REQUIRES = objects
 
