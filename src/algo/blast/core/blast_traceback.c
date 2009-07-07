@@ -359,6 +359,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
    const Boolean kTranslateSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
+   const Boolean kFullTranslation = (fence_hit && *fence_hit);
    const Boolean kSmithWaterman = (ext_options->eTbackExt == 
                                    eSmithWatermanTbckFull);
    BlastQueryInfo* query_info = query_info_in;
@@ -375,6 +376,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    
    if (fence_hit) {
        orig_hsplist = BlastHSPListDup(hsp_list);
+       *fence_hit = FALSE;  /* reset fence_hit */
    }
    
    hsp_array = hsp_list->hsp_array;
@@ -479,8 +481,15 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                  subject = subject_blk->oof_sequence + CODON_LENGTH;
                  if (hsp->subject.frame < 0)
                       subject += subject_length + 1;
+            } else if (kFullTranslation) {
+                 /* previous traceback has hit the fence, will do full translation */
+                 BlastHSP* hsp_new = Blast_HSPNew();
+                 hsp_new->subject.frame = hsp->subject.frame;
+                 hsp_new->subject.offset = -1;
+            	 subject = Blast_HSPGetTargetTranslation(target_t, hsp_new, &subject_length);
+                 hsp_new = Blast_HSPFree(hsp_new);
             } else
-            	subject = Blast_HSPGetTargetTranslation(target_t, hsp, &subject_length);
+            	 subject = Blast_HSPGetTargetTranslation(target_t, hsp, &subject_length);
          }
 
          if (!kIsOutOfFrame && (((hsp->query.gapped_start == 0 && 
@@ -560,6 +569,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                  adjusted_subject, gap_align, score_params, q_start, s_start, 
                  query_length, adjusted_s_length,
                  fence_hit);
+             ASSERT(!(kFullTranslation && *fence_hit));
          }
          
          fence_error = (fence_hit && *fence_hit);
@@ -1153,6 +1163,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                  interrupt_search, progress_info);
    } else if (ext_params->options->compositionBasedStats > 0 ||
               ext_params->options->eTbackExt == eSmithWatermanTbck) {
+      /* FIXME partial sequence fetching/translation could lead to fence hit
+         and seg fault */
       status =
           Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
                                   hsp_stream, seq_src, default_db_genetic_code,
@@ -1187,6 +1199,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
             seq_arg.oid = batch->hsplist_array[0]->oid;
             seq_arg.encoding = encoding;
             seq_arg.check_oid_exclusion = TRUE;
+            seq_arg.reset_ranges = FALSE;
             
             BlastSequenceBlkClean(seq_arg.seq);
             if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0) {
@@ -1255,8 +1268,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                      BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
                      BlastSeqSrcGetSequence(seq_src, &seq_arg);
                         
-                     /* Retry the alignment */
-                     fence_hit = FALSE;  
+                     /* Retry the alignment with fence_hit set*/
                      Blast_TracebackFromHSPList(program_number, hsp_list, 
                                                 query, seq_arg.seq, 
                                                 query_info, gap_align,

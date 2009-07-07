@@ -897,8 +897,13 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
     	 Int4 start_shift = 0;
 
          /* HSP coordinates are in terms of protein sequences. */
-         nucl_start = MAX(0, 3*hsp->subject.offset - kMaxTranslation);
-         nucl_end = MIN(target_t->subject_blk->length, 3*hsp->subject.end + kMaxTranslation);
+         if (hsp->subject.offset < 0 ) {
+             nucl_start = 0;
+             nucl_end = target_t->subject_blk->length;
+         } else {
+             nucl_start = MAX(0, 3*hsp->subject.offset - kMaxTranslation);
+             nucl_end = MIN(target_t->subject_blk->length, 3*hsp->subject.end + kMaxTranslation);
+         }
 
          nucl_length = nucl_end - nucl_start;
 
@@ -951,6 +956,11 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
                        nucl_length, hsp->subject.frame, target_t->translations[context], 
                        target_t->gen_code_string);
                sfree(nucl_seq_rev);
+               /* partial translation needs to be fenced */
+               if(hsp->subject.offset >= 0) {
+                   target_t->translations[context][0] = FENCE_SENTRY;
+                   target_t->translations[context][length+1] = FENCE_SENTRY;
+               }
          }
          
     }
