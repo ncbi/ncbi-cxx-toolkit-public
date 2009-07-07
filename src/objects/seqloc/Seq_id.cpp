@@ -2056,8 +2056,19 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
                            "Not enough fields for ID of type " + typestr);
             }
         } else {
-            // XXX - stop if we have enough fields and the next one looks
-            // like an ID type?
+            if (i >= min_fields  &&  fasta_pieces.size() > 1
+                &&  (WhichInverseSeqId(fasta_pieces.front().c_str())
+                     != e_not_set)) {
+                // Likely mid-string optional-field omission;
+                // conservatively treat as such only if unable to
+                // parse the following piece as an ID type, though.
+                list<string>::iterator it = fasta_pieces.begin();
+                ++it;
+                _ASSERT(it != fasta_pieces.end());
+                if (WhichInverseSeqId(it->c_str()) == e_not_set) {
+                    break;
+                }
+            }
             fields[i] = fasta_pieces.front();
             fasta_pieces.pop_front();
         }
