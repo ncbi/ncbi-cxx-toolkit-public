@@ -2705,7 +2705,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "port", eNSPT_Int, eNSPA_Required },
           { "guid", eNSPT_Str, eNSPA_Required } } },
     // CLRN id : string
-    { "CLRN",     &CNetScheduleHandler::ProcessClearWorkerNode, eNSCR_Any,
+    { "CLRN",     &CNetScheduleHandler::ProcessClearWorkerNode, eNSCR_Queue,
         { { "guid", eNSPT_Str, eNSPA_Required } } },
     { NULL },
 };
