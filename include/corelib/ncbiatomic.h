@@ -45,7 +45,7 @@
  * @{
  */
 
-#if defined(NCBI_SWAP_POINTERS_EXTERN)  ||  defined(NCBI_COUNTER_IMPLEMENTATION)
+#if defined(NCBI_SWAP_POINTERS_EXTERN)  ||  defined(NCBI_SWAP_POINTERS_IMPLEMENTATION)
 #  ifdef __cplusplus
      extern "C"
 #  endif
@@ -63,7 +63,7 @@
      inline
 #endif
 void* NCBI_SwapPointers(void * volatile * location, void* new_value)
-#if defined(NCBI_SWAP_POINTERS_EXTERN)  &&  !defined(NCBI_COUNTER_IMPLEMENTATION)
+#if defined(NCBI_SWAP_POINTERS_EXTERN)  &&  !defined(NCBI_SWAP_POINTERS_IMPLEMENTATION)
          ;
 #else
 {

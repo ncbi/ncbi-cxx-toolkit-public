@@ -31,6 +31,7 @@
 *
 * =========================================================================== */
 
-#define NCBI_COUNTER_IMPLEMENTATION
 #include <ncbi_pch.hpp>
+#define NCBI_COUNTER_IMPLEMENTATION
+#define NCBI_SWAP_POINTERS_IMPLEMENTATION
 #include <corelib/ncbicntr.hpp>

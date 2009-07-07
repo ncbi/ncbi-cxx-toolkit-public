@@ -32,6 +32,12 @@
 
 
 #include <ncbi_pch.hpp>
+#include <corelib/impl/ncbi_atomic_defs.h>
+
+#if defined(NCBI_TCHECK)  &&  defined(NCBI_SWAP_POINTERS_EXTERN)
+#  define NCBI_SWAP_POINTERS_IMPLEMENTATION
+#endif
+
 #include <corelib/ncbiatomic.h>
 
 #ifdef NCBI_SLOW_ATOMIC_SWAP
