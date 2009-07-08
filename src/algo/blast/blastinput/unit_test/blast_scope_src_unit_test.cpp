@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE
     SDataLoaderConfig dlconfig(true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
     BOOST_CHECK(dlconfig.m_UseGenbank == false);
-    BOOST_CHECK(dlconfig.m_BlastDbName == kNonStdDb);
+    BOOST_CHECK_EQUAL(dlconfig.m_BlastDbName, kNonStdDb);
     CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
     string data_loader_name("BLASTDB_");
