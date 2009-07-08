@@ -27,6 +27,9 @@ databases cannot be found.
 makeblastdb.
 * Bug fixes and performance improvements to subject masking feature.
 * Added the update_blastdb.pl script
+* Updated BLAST+ user manual with documentation about windowmasker
+(experimental) integration, configuring BLAST, automatic resolution of sequence
+identifiers, and a description of how the BLAST databases are searched.
 
 November 3, 2008 (SVN revision: 144798)
 * First 2.2.19 release
