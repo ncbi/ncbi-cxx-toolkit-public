@@ -676,7 +676,7 @@ unsigned CQueueDataBase::CountActiveJobs() const
 }
 
     
-CQueue* CQueueDataBase::OpenQueue(const string& name)
+CRef<CQueue> CQueueDataBase::OpenQueue(const string& name)
 {
     return m_QueueCollection.GetQueue(name);
 }

@@ -166,6 +166,9 @@ struct SJS_Request
                 else if (key == "ip") {
                     param3 = val;
                 }
+                else if (key == "info") {
+                    param1 = val;
+                }
                 break;
             case 'j':
                 if (key == "job_key") {
@@ -701,7 +704,7 @@ public:
     unsigned CountActiveJobs() {
         return m_QueueDB->CountActiveJobs();
     }
-    CQueue* OpenQueue(const string& name) {
+    CRef<CQueue> OpenQueue(const string& name) {
         return m_QueueDB->OpenQueue(name);
     }
     void CreateQueue(const string& qname, const string& qclass,
@@ -2461,6 +2464,8 @@ void CNetScheduleHandler::ProcessGetParam(CQueue* q)
     res += NStr::IntToString(q->GetMaxOutputSize());
     res += ";";
     res += NETSCHEDULED_FEATURES;
+    if (!m_JobReq.param1.empty())
+        res += ";" + m_JobReq.param1;
     WriteOK(res);
 }
 
@@ -2679,7 +2684,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "fields", eNSPT_Str, eNSPA_Optional } } },
     { "QSEL",     &CNetScheduleHandler::ProcessSelectQuery, eNSCR_Queue,
         { { "select", eNSPT_Str, eNSPA_Required } } },
-    { "GETP",     &CNetScheduleHandler::ProcessGetParam, eNSCR_Queue },
+    // GETP [ client_info : id ]
+    { "GETP",     &CNetScheduleHandler::ProcessGetParam, eNSCR_Queue,
+        { { "info", eNSPT_Str, eNSPA_Optional } } },
     { "GETC",     &CNetScheduleHandler::ProcessGetConfiguration, eNSCR_Queue },
     // READ limit : int [ timeout : int ] -> group : int jobs : str (encoded_vec)
     { "READ",     &CNetScheduleHandler::ProcessReading, eNSCR_Submitter,

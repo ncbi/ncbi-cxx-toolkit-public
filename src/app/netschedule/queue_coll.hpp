@@ -260,7 +260,7 @@ public:
     // Count Pending and Running jobs in all queues
     unsigned CountActiveJobs() const;
 
-    CQueue* OpenQueue(const string& name);
+    CRef<CQueue> OpenQueue(const string& name);
 
     typedef CQueue::TQueueKind TQueueKind;
     void MountQueue(const string& qname,
