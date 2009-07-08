@@ -448,19 +448,20 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
 
                         case CWorkerNodeJobContext::eFailure:
                             PutFailure(kEmptyStr);
-                            more_jobs = false;
-                            break;
-
-                        case CWorkerNodeJobContext::eReturn:
-                            ReturnJob();
                             break;
 
                         case CWorkerNodeJobContext::eNotCommitted:
-                            if (job_context.GetShutdownLevel() !=
-                                    CNetScheduleAdmin::eNoShutdown)
-                                ReturnJob();
-                            else
+                            if (!TWorkerNode_AllowImplicitJobReturn::
+                                        GetDefault() &&
+                                    job_context.GetShutdownLevel() ==
+                                        CNetScheduleAdmin::eNoShutdown) {
                                 PutFailure("Job was not explicitly committed");
+                                break;
+                            }
+                            /* FALL THROUGH */
+
+                        case CWorkerNodeJobContext::eReturn:
+                            ReturnJob();
                     }
                     break;
                 } catch (CNetServiceException& ex) {

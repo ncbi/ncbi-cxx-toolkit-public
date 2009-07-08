@@ -47,6 +47,7 @@ NCBI_PARAM_DEF(string, netcache_api, fallback_server, kEmptyStr);
 NCBI_PARAM_DEF(string, netcache_client, fallback_servers, kEmptyStr);
 NCBI_PARAM_DEF(int, netservice_api, max_connection_pool_size, 0); // unlimited
 NCBI_PARAM_DEF(bool, server, stop_on_job_errors, true);
+NCBI_PARAM_DEF(bool, server, allow_implicit_job_return, false);
 NCBI_PARAM_DEF(bool, server, do_not_rebalance, false);
 
 
