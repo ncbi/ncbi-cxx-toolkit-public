@@ -63,7 +63,9 @@ SDataLoaderConfig::x_Init(SDataLoaderConfig::EConfigOpts options,
     m_UseFixedSizeSlices = true;
     m_UseBlastDbs = (options & eUseBlastDbDataLoader) ? true : false;
     m_UseGenbank = (options & eUseGenbankDataLoader) ? true : false;
-    m_BlastDbName.assign(dbname);
+    if ( !dbname.empty() ) {
+        m_BlastDbName.assign(dbname);
+    }
     m_IsLoadingProteins = load_proteins;
 
     CMetaRegistry::SEntry sentry =
@@ -103,6 +105,11 @@ SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig
         return;
     }
 
+    // if the database was already specified via the API, don't override it.
+    if ( !m_BlastDbName.empty() ) {
+        return;
+    }
+
     static const string kProtBlastDbLoaderConfig("BLASTDB_PROT_DATA_LOADER");
     static const string kNuclBlastDbLoaderConfig("BLASTDB_NUCL_DATA_LOADER");
 
@@ -113,7 +120,8 @@ SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig
 
         if (sentry.registry->HasEntry("BLAST", config_param)) {
             m_BlastDbName = sentry.registry->Get("BLAST", config_param);
-        } else if (m_BlastDbName.empty()) {
+        } else {
+            _ASSERT(m_BlastDbName.empty());
             m_BlastDbName = m_IsLoadingProteins 
                 ? kDefaultProteinBlastDb 
                 : kDefaultNucleotideBlastDb;
