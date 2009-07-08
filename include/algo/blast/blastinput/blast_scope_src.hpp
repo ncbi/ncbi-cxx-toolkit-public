@@ -73,19 +73,19 @@ struct NCBI_BLASTINPUT_EXPORT SDataLoaderConfig {
         eDefault = (eUseBlastDbDataLoader | eUseGenbankDataLoader)
     };
 
-    /// Constructor
+    /// Constructor which relies on the configuration file to set the BLAST
+    /// database to use 
     /// @param load_proteins is this object going to load/read proteins only
     /// [in]
     /// @param options configuration options [in]
     SDataLoaderConfig(bool load_proteins, EConfigOpts options = eDefault)
     {
-        const string db_name(load_proteins 
-                             ? kDefaultProteinBlastDb 
-                             : kDefaultNucleotideBlastDb);
-        x_Init(options, db_name, load_proteins);
+        x_Init(options, kEmptyStr, load_proteins);
     }
 
-    /// Constructor
+    /// Constructor which allows the specification of a BLAST database to use
+    /// to initialize the BLAST DB data loader, without the option to override
+    /// this at runtime via the configuration file
     /// @param dbname name of BLAST database [in]
     /// @param protein_data is this object going to load/read proteins only
     /// [in]
