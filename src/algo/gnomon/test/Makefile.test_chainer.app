@@ -8,24 +8,12 @@
 ###  BASIC PROJECT SETTINGS
 APP = test_chainer
 SRC = test_chainer
-# OBJ =
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xalgognomon test_boost xncbi
-#PRE_LIBS = $(BOOST_TEST_LIBS)
+LIB = xalgognomon xobjutil test_boost $(SOBJMGR_LIBS)
 
 REQUIRES = Boost.Test.Included
 
-# Uncomment to run automatically as part of "make check"
 CHECK_COPY = test_chainer.ini
 CHECK_CMD =
-
-###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
-# PRE_LIBS = $(NCBI_C_LIBPATH) .....
-# CFLAGS   = $(FAST_CFLAGS)
-# CXXFLAGS = $(FAST_CXXFLAGS)
-# LDFLAGS  = $(FAST_LDFLAGS)
-
-###  Kludge around issues with potentially-absent .dep files
-$(status_dir)/.%.dep:;
