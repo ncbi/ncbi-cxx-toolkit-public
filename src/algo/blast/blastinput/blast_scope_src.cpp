@@ -48,9 +48,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-const char* SDataLoaderConfig::kDefaultProteinBlastDb = "prot_dbs";
-const char* SDataLoaderConfig::kDefaultNucleotideBlastDb = "nucl_dbs";
+const char* SDataLoaderConfig::kDefaultProteinBlastDb = "nr";
+const char* SDataLoaderConfig::kDefaultNucleotideBlastDb = "nt";
 
+/// @note the database can be overridden at runtime by the DATA_LOADERS entry
+/// in the BLAST section of the NCBI configuration file. Allowed values are
+/// blastdb, genbank, and none. If this is changed, please update the
+/// BLAST+ user manual
 void
 SDataLoaderConfig::x_Init(SDataLoaderConfig::EConfigOpts options,
                           const string& dbname,
@@ -64,18 +68,55 @@ SDataLoaderConfig::x_Init(SDataLoaderConfig::EConfigOpts options,
 
     CMetaRegistry::SEntry sentry =
         CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    x_LoadDataLoadersConfig(sentry);
+    x_LoadBlastDbDataLoaderConfig(sentry);
+}
 
-    if (sentry.registry && sentry.registry->HasEntry("BLAST", "DATA_LOADERS")) {
-        string loaders = sentry.registry->Get("BLAST", "DATA_LOADERS");
-        if (NStr::FindNoCase(loaders, "blastdb") == NPOS) {
+void
+SDataLoaderConfig::x_LoadDataLoadersConfig(const CMetaRegistry::SEntry& sentry)
+{
+    static const string kDataLoadersConfig("DATA_LOADERS");
+
+    if (sentry.registry && 
+        sentry.registry->HasEntry("BLAST", kDataLoadersConfig)) {
+        const string& kLoaders = sentry.registry->Get("BLAST",
+                                                      kDataLoadersConfig);
+        if (NStr::FindNoCase(kLoaders, "blastdb") == NPOS) {
             m_UseBlastDbs = false;
         }
-        if (NStr::FindNoCase(loaders, "genbank") == NPOS) {
+        if (NStr::FindNoCase(kLoaders, "genbank") == NPOS) {
             m_UseGenbank = false;
         }
-        if (NStr::FindNoCase(loaders, "none") != NPOS) {
+        if (NStr::FindNoCase(kLoaders, "none") != NPOS) {
             m_UseBlastDbs = false;
             m_UseGenbank = false;
+        }
+    }
+}
+
+void
+SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig
+    (const CMetaRegistry::SEntry& sentry)
+{
+    if ( !m_UseBlastDbs ) {
+        m_BlastDbName.clear();
+        return;
+    }
+
+    static const string kProtBlastDbLoaderConfig("BLASTDB_PROT_DATA_LOADER");
+    static const string kNuclBlastDbLoaderConfig("BLASTDB_NUCL_DATA_LOADER");
+
+    if (sentry.registry) {
+        const string& config_param = m_IsLoadingProteins 
+            ? kProtBlastDbLoaderConfig 
+            : kNuclBlastDbLoaderConfig;
+
+        if (sentry.registry->HasEntry("BLAST", config_param)) {
+            m_BlastDbName = sentry.registry->Get("BLAST", config_param);
+        } else if (m_BlastDbName.empty()) {
+            m_BlastDbName = m_IsLoadingProteins 
+                ? kDefaultProteinBlastDb 
+                : kDefaultNucleotideBlastDb;
         }
     }
 }

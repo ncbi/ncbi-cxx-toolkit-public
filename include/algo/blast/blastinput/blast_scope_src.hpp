@@ -49,20 +49,26 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 /// Configuration structure for the CBlastScopeSource
+/// @note the choice of data loaders to use to configure the scope as well as
+/// the BLAST database(s) to search if the BLAST database data loader is used
+/// can be configured in the NCBI configuration file, BLAST section.
+/// For details, refer to the section 'Configuring BLAST' in the BLAST+ user
+/// manual
 struct NCBI_BLASTINPUT_EXPORT SDataLoaderConfig {
 
-    /// Default protein BLAST database to use for the BLAST DB data loader
+    /// Default protein BLAST database to use for the BLAST DB data loaders
     static const char* kDefaultProteinBlastDb;
-    /// Default nucleotide BLAST database to use for the BLAST DB data loader
+    /// Default nucleotide BLAST database to use for the BLAST DB data loaders
     static const char* kDefaultNucleotideBlastDb;
 
     /// Configuration options for the BlastScopeSource
-    /// @note these are overridden at runtime by the DATA_LOADERS entry in the
-    /// BLAST section of the NCBI configuration file. Allowed values are
-    /// blastdb, genbank, and none
     enum EConfigOpts {
+        /// Use the local BLAST database loader first, if this fails, use the
+        /// remote BLAST database data loader
         eUseBlastDbDataLoader = (0x1 << 0),
+        /// Use the Genbank data loader
         eUseGenbankDataLoader = (0x1 << 1),
+        /// Do not add any data loaders
         eUseNoDataLoaders     = (0x1 << 2),
         eDefault = (eUseBlastDbDataLoader | eUseGenbankDataLoader)
     };
@@ -104,9 +110,9 @@ struct NCBI_BLASTINPUT_EXPORT SDataLoaderConfig {
     /// Determine whether either of the data loaders should be used
     bool UseDataLoaders() const { return m_UseBlastDbs || m_UseGenbank; }
 
-    /// Use the BLAST database data loader
+    /// Use the BLAST database data loaders
     bool m_UseBlastDbs;
-    /// Name of the BLAST database to use (only valid if m_UseBlastDbs is true)
+    /// Name of the BLAST database to use (non-empty if m_UseBlastDbs is true)
     string m_BlastDbName;
 
     /// Is this intended to load protein sequences
@@ -129,6 +135,13 @@ private:
     /// @param load_proteins is this object going to load/read proteins only
     /// [in]
     void x_Init(EConfigOpts options, const string& dbname, bool load_proteins);
+
+    /// Load the DATA_LOADERS configuration value from the config file
+    void x_LoadDataLoadersConfig(const CMetaRegistry::SEntry& sentry);
+
+    /// Load the BLAST database configured to search for the blastdb
+    /// DATA_LOADERS option from the config file
+    void x_LoadBlastDbDataLoaderConfig(const CMetaRegistry::SEntry& sentry);
 };
 
 

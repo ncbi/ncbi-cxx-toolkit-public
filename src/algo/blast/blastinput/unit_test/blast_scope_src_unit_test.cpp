@@ -81,7 +81,9 @@ private:
 class CAutoNcbiConfigFile {
 public:
     static const char* kSection;
-    static const char* kName;
+    static const char* kDataLoaders;
+    static const char* kProtBlastDbDataLoader;
+    static const char* kNuclBlastDbDataLoader;
 
     typedef SDataLoaderConfig::EConfigOpts EConfigOpts;
 
@@ -98,7 +100,15 @@ public:
         if (opts & SDataLoaderConfig::eUseNoDataLoaders) {
             value += "none";
         }
-        m_Sentry.registry->Set(kSection, kName, value);
+        m_Sentry.registry->Set(kSection, kDataLoaders, value);
+    }
+
+    void SetProteinBlastDbDataLoader(const string& prot_db_name) {
+        m_Sentry.registry->Set(kSection, kProtBlastDbDataLoader, prot_db_name);
+    }
+
+    void SetNucleotideBlastDbDataLoader(const string& nucl_db_name) {
+        m_Sentry.registry->Set(kSection, kNuclBlastDbDataLoader, nucl_db_name);
     }
 
     void RemoveBLASTDBEnvVar() {
@@ -107,7 +117,9 @@ public:
     }
 
     ~CAutoNcbiConfigFile() {
-        m_Sentry.registry->Set(kSection, kName, kEmptyStr);
+        m_Sentry.registry->Set(kSection, kDataLoaders, kEmptyStr);
+        m_Sentry.registry->Set(kSection, kProtBlastDbDataLoader, kEmptyStr);
+        m_Sentry.registry->Set(kSection, kNuclBlastDbDataLoader, kEmptyStr);
         if ( !m_BlastDb.empty() ) {
             m_Sentry.registry->Set(kSection, "BLASTDB", m_BlastDb);
         }
@@ -118,7 +130,11 @@ private:
 };
 
 const char* CAutoNcbiConfigFile::kSection = "BLAST";
-const char* CAutoNcbiConfigFile::kName = "DATA_LOADERS";
+const char* CAutoNcbiConfigFile::kDataLoaders = "DATA_LOADERS";
+const char* CAutoNcbiConfigFile::kProtBlastDbDataLoader 
+    = "BLASTDB_PROT_DATA_LOADER";
+const char* CAutoNcbiConfigFile::kNuclBlastDbDataLoader
+    = "BLASTDB_NUCL_DATA_LOADER";
 
 BOOST_AUTO_TEST_SUITE(blast_scope_src)
 
@@ -130,10 +146,15 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData)
     const char* seq =
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
 
-    SDataLoaderConfig dlconfig("nr", true);
+    SDataLoaderConfig dlconfig(true);
+    BOOST_CHECK(dlconfig.m_BlastDbName == 
+                string(SDataLoaderConfig::kDefaultProteinBlastDb));
     CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
-    BOOST_REQUIRE_EQUAL(string("BLASTDB_nrProtein"), 
+    string data_loader_name("BLASTDB_");
+    data_loader_name += string(SDataLoaderConfig::kDefaultProteinBlastDb);
+    data_loader_name += "Protein";
+    BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
@@ -152,10 +173,16 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDbOnly_TestSequenceDataWithAccession)
     accessions.push_back("AAB42302");   
     accessions.push_back("NP_001024503");
 
-    SDataLoaderConfig dlconfig(true, SDataLoaderConfig::eUseBlastDbDataLoader);
+    const string kNonStdDb("prot_dbs");
+    SDataLoaderConfig dlconfig(kNonStdDb, true,
+                               SDataLoaderConfig::eUseBlastDbDataLoader);
+    BOOST_CHECK(dlconfig.m_BlastDbName == kNonStdDb);
     CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
-    BOOST_REQUIRE_EQUAL(string("BLASTDB_prot_dbsProtein"), 
+    string data_loader_name("BLASTDB_");
+    data_loader_name += kNonStdDb;
+    data_loader_name += "Protein";
+    BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
     ITERATE(vector<string>, acc, accessions) {
@@ -194,12 +221,47 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData)
 
 
     CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseBlastDbDataLoader);
-    SDataLoaderConfig dlconfig("nr", true);
+    SDataLoaderConfig dlconfig(true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
     BOOST_CHECK(dlconfig.m_UseGenbank == false);
+    BOOST_CHECK(dlconfig.m_BlastDbName == 
+                string(SDataLoaderConfig::kDefaultProteinBlastDb));
     CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
-    BOOST_REQUIRE_EQUAL(string("BLASTDB_nrProtein"), 
+    string data_loader_name("BLASTDB_");
+    data_loader_name += string(SDataLoaderConfig::kDefaultProteinBlastDb);
+    data_loader_name += "Protein";
+    BOOST_REQUIRE_EQUAL(data_loader_name,
+                        scope_source.GetBlastDbLoaderName());
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    for (size_t i = 0; i < sv.size(); i++) {
+        BOOST_CHECK_EQUAL((char)seq[i], (char)sv[i]);
+    }
+}
+
+BOOST_AUTO_TEST_CASE
+    (ConfigFileTest_RetrieveFromNonStandardBlastDb_TestSequenceData) 
+{
+    CSeq_loc seqloc;
+    seqloc.SetWhole().SetGi(1787519);
+
+    const char* seq = "MKAIFVLKGWWRTS";
+
+    const string kNonStdDb("ecoli");
+    CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseBlastDbDataLoader);
+    acf.SetProteinBlastDbDataLoader(kNonStdDb);
+    SDataLoaderConfig dlconfig(true);
+    BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
+    BOOST_CHECK(dlconfig.m_UseGenbank == false);
+    BOOST_CHECK(dlconfig.m_BlastDbName == kNonStdDb);
+    CBlastScopeSourceWrapper scope_source(dlconfig);
+    CRef<CScope> scope = scope_source.NewScope();
+    string data_loader_name("BLASTDB_");
+    data_loader_name += kNonStdDb + "Protein";
+    BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
@@ -220,9 +282,10 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromGenbank_TestSequenceData)
 
 
     CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseGenbankDataLoader);
-    SDataLoaderConfig dlconfig("nr", true);
+    SDataLoaderConfig dlconfig(true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == false);
     BOOST_CHECK(dlconfig.m_UseGenbank == true);
+    BOOST_CHECK(dlconfig.m_BlastDbName == kEmptyStr);
     CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
     BOOST_REQUIRE(scope_source.GetBlastDbLoaderName() == kEmptyStr);
@@ -242,9 +305,10 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_UseNoDataLoaders)
     seqloc.SetWhole().SetGi(129295);
 
     CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseNoDataLoaders);
-    SDataLoaderConfig dlconfig("nr", true);
+    SDataLoaderConfig dlconfig("pdbaa", true);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == false);
     BOOST_CHECK(dlconfig.m_UseGenbank == false);
+    BOOST_CHECK(dlconfig.m_BlastDbName == kEmptyStr);
     CBlastScopeSourceWrapper scope_source(dlconfig);
     CRef<CScope> scope = scope_source.NewScope();
     BOOST_REQUIRE(scope_source.GetBlastDbLoaderName() == kEmptyStr);
@@ -264,6 +328,7 @@ void s_RetrieveSequenceLength(int gi,
     SDataLoaderConfig dlconfig(dbname, is_prot);
     BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
     BOOST_CHECK(dlconfig.m_UseGenbank == true);
+    BOOST_CHECK(dlconfig.m_BlastDbName == dbname);
     CBlastScopeSourceWrapper scope_source(dlconfig);
 
     CRef<CScope> scope = scope_source.NewScope();
@@ -340,9 +405,11 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
 
     const CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
-    SDataLoaderConfig dlconfig("nr", true);
+    SDataLoaderConfig dlconfig(true);
     dlconfig.m_UseGenbank = false;
     BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
+    BOOST_CHECK(dlconfig.m_BlastDbName == 
+                string(SDataLoaderConfig::kDefaultProteinBlastDb));
     CBlastScopeSourceWrapper scope_source(dlconfig);
 
     CRef<CScope> scope = scope_source.NewScope();
@@ -358,7 +425,10 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
     SetDiagStream(diag_stream);
     SetDiagPostLevel(eDiag_Warning);
 
-    BOOST_REQUIRE_EQUAL(string("REMOTE_BLASTDB_nrProtein"), 
+    string data_loader_name("REMOTE_BLASTDB_");
+    data_loader_name += string(SDataLoaderConfig::kDefaultProteinBlastDb);
+    data_loader_name += "Protein";
+    BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 }
 
