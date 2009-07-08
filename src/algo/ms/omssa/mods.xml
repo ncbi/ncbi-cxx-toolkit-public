@@ -2684,4 +2684,52 @@
     <MSModSpec_unimod>431</MSModSpec_unimod>
     <MSModSpec_psi-ms>Palmitoleyl</MSModSpec_psi-ms>
   </MSModSpec>
+    <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod189">189</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>CHD2-di-methylation of K</MSModSpec_name>
+    <MSModSpec_monomass>32.056407</MSModSpec_monomass>
+    <MSModSpec_averagemass>32.0778</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>K</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>199</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Dimethyl:2H(4)</MSModSpec_psi-ms>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod190">190</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>CHD2-di-methylation of peptide n-term</MSModSpec_name>
+    <MSModSpec_monomass>32.056407</MSModSpec_monomass>
+    <MSModSpec_averagemass>32.0778</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_unimod>199</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Dimethyl:2H(4)</MSModSpec_psi-ms>
+  </MSModSpec>
+    <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod191">191</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>Maleimide-PEO2-Biotin of C</MSModSpec_name>
+    <MSModSpec_monomass>525.225719</MSModSpec_monomass>
+    <MSModSpec_averagemass>525.6183</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>C</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>522</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Maleimide-PEO2-Biotin</MSModSpec_psi-ms>
+  </MSModSpec>
 </MSModSpecSet>
