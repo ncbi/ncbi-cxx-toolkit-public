@@ -397,15 +397,19 @@ void CSafeStaticPtr<T>::Init(void)
     bool mutex_locked = false;
     if ( Init_Lock(&mutex_locked) ) {
         // Create the object and register for cleanup
+        T* ptr = 0;
         try {
-            m_Ptr = new T;
+            ptr = new T;
             CSafeStaticGuard::Register(this);
+            m_Ptr = ptr;
         }
         catch (CException& e) {
+            delete ptr;
             Init_Unlock(mutex_locked);
             NCBI_RETHROW_SAME(e, "CSafeStaticPtr::Init: Register() failed");
         }
         catch (...) {
+            delete ptr;
             Init_Unlock(mutex_locked);
             NCBI_THROW(CCoreException,eCore,
                        "CSafeStaticPtr::Init: Register() failed");
