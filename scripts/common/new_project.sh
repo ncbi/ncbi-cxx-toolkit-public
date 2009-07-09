@@ -127,6 +127,9 @@ include Makefile.$lib_name.lib
 include \$(builddir)/Makefile.is_dll_support
 include \$(builddir)/Makefile.\$(LIB_OR_DLL)
 
+###  Kludge around issues with potentially-absent .dep files
+\$(status_dir)/.%.dep:;
+
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
 EOF
@@ -150,9 +153,6 @@ SRC = $libsrc
 # CXXFLAGS = \$(FAST_CXXFLAGS)
 #
 # LIB_OR_DLL = dll
-
-###  Kludge around issues with potentially-absent .dep files
-\$(status_dir)/.%.dep:;
 EOF
 }
 
@@ -201,6 +201,9 @@ include Makefile.$app_name.app
 include \$(builddir)/Makefile.app
 MAKEFILE = `basename "$makefile_name"`
 
+###  Kludge around issues with potentially-absent .dep files
+\$(status_dir)/.%.dep:;
+
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
 EOF
@@ -242,9 +245,6 @@ EOF
 # CFLAGS   = \$(FAST_CFLAGS)
 # CXXFLAGS = \$(FAST_CXXFLAGS)
 # LDFLAGS  = \$(FAST_LDFLAGS)
-
-###  Kludge around issues with potentially-absent .dep files
-\$(status_dir)/.%.dep:;
 EOF
 }
 
