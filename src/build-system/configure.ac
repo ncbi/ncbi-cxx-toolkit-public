@@ -322,6 +322,10 @@ AC_ARG_WITH(sge,
    [ --with-sge=DIR          use Sun Grid Engine installation in DIR])
 AC_ARG_WITH(sge2,
    [ --without-sge           do not use Sun Grid Engine])
+AC_ARG_WITH(muparser,
+   [ --with-muparser=DIR     use muParser installation in DIR])
+AC_ARG_WITH(muparser2,
+   [ --without-muparser      do not use muParser])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
 AC_ARG_WITH(gif2,
@@ -388,7 +392,8 @@ geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
-sp expat sablot libxml libxslt xerces xalan oechem sge gif jpeg tiff png xpm \
+sp expat sablot libxml libxslt xerces xalan oechem sge muparser \
+gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -440,6 +445,7 @@ for x_arg in "$@" ; do
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
+      | --with-muparser=* \
       | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -5452,6 +5458,26 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
   [[AC_LANG_PROGRAM([[#include <sys/types.h>
                       #include <drmaa.h>]],
      [[char buf[1024]; drmaa_init("SGE", buf, sizeof(buf));]])]])
+
+
+### muParser
+case "$with_muparser" in
+   yes | '' ) : ${MUPARSER_PATH=$NCBI/muParser} ;;
+   *        ) MUPARSER_PATH=$with_muparser ;;
+esac
+
+if test -d "$MUPARSER_PATH"; then
+   NCBI_FIX_DIR(MUPARSER_PATH)
+fi
+if test -d "$MUPARSER_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
+   MUPARSER_LIBPATH=-L$MUPARSER_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib
+elif test -d "$MUPARSER_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
+   MUPARSER_LIBPATH=-L$MUPARSER_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB(muparser,
+  [[AC_LANG_PROGRAM([[#include <muParser.h>]],
+     [[mu::Parser parser;]])]])
 
 
 ### Image libraries

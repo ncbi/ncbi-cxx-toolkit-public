@@ -66,6 +66,11 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    SunOS* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;
+    *      ) : ${MUPARSER_PATH=$NCBI/muParser-1.30}       ;;
+esac
+
+case "$ncbi_platform" in
     SunOSSparc ) : ${MYSQL_PATH=/netopt/mysql/3-23.40} ;;
 esac
 

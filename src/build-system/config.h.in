@@ -231,6 +231,9 @@
 /* Define to 1 if liblzo2 is available. */
 #undef HAVE_LIBLZO
 
+/* Define to 1 if libmuparser is available. */
+#undef HAVE_LIBMUPARSER
+
 /* Define to 1 if liboechem is available. */
 #undef HAVE_LIBOECHEM
 
