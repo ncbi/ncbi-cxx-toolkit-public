@@ -412,7 +412,7 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
             if ( pos == NPOS) {
                 break;
             }
-            pos = str.find("<", pos);
+            pos = str.rfind("<", pos);
             if ( pos == NPOS) {
                 break;
             }
