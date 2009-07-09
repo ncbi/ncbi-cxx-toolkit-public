@@ -350,17 +350,17 @@ void CGeneModel::RemoveShortHolesAndRescore(const CGnomonEngine& gnomon) {
     }
 }
 
-bool CGeneModel::GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) const
+bool CGeneModel::GoodEnoughToBeAlternative(int maxcomposite) const
 {
     int composite = 0;
     ITERATE(CSupportInfoSet, s, Support()) {
         if(s->IsCore() && ++composite > maxcomposite) return false;
     }
     
-    return
-        GoodEnoughToBeAnnotation(minCdsLen) &&
-        !PStop() && FrameShifts().empty() &&
-        !isNMD();
+    return GoodEnoughToBeAnnotation();
+
+    //        && !PStop() && FrameShifts().empty() &&
+    //        !isNMD();
 }
 bool CGeneModel::CdsInvariant(bool check_start_stop) const
 {
@@ -589,25 +589,7 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
 
     _ASSERT( b.Strand() == a.Strand() );
 
-
-    /*
-    if((a.Status()&CGeneModel::ePolyA) != 0) {    // a has PolyA
-        if(a.Strand() == ePlus && b.Limits().GetTo() > a.Limits().GetTo()) 
-            return 0;
-        if(a.Strand() == eMinus && b.Limits().GetFrom() < a.Limits().GetFrom()) 
-            return 0;
-    }
-
-    if((b.Status()&CGeneModel::ePolyA) != 0) {    // b has PolyA
-        if(b.Strand() == ePlus && a.Limits().GetTo() > b.Limits().GetTo()) 
-            return 0;
-        if(b.Strand() == eMinus && a.Limits().GetFrom() < b.Limits().GetFrom()) 
-            return 0;
-    }
-    */
-        
-
-   
+    /*     this code creates clatter of similr chains 
     if((a.Status()&CGeneModel::ePolyA) != (b.Status()&CGeneModel::ePolyA)) {   // one has PolyA another doesn't
         if(a.Strand() == ePlus) {
             int polya = (a.Status()&CGeneModel::ePolyA) != 0 ? a.Limits().GetTo() : b.Limits().GetTo();
@@ -619,7 +601,7 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
                 return 0;
         }
     }
-   
+    */   
 
     TSignedSeqRange intersect(a.Limits() & b.Limits());
     if(intersect.GetLength() <= 1) return 0;     // intersection with 1 base is not legit
@@ -1247,10 +1229,16 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 
         attributes["support"].erase(0,1);
     }
-    ITERATE(CVectorSet<int>, i, a.EntrezGene()) {
-        if(!attributes["EntrezGene"].empty())
-            attributes["EntrezGene"] += ",";
-        attributes["EntrezGene"] += NStr::IntToString(*i);      
+    ITERATE(CVectorSet<int>, i, a.EntrezProt()) {
+        if(!attributes["EntrezProt"].empty())
+            attributes["EntrezProt"] += ",";
+        attributes["EntrezProt"] += NStr::IntToString(*i);      
+    }
+
+    ITERATE(CVectorSet<int>, i, a.EntrezmRNA()) {
+        if(!attributes["EntrezmRNA"].empty())
+            attributes["EntrezmRNA"] += ",";
+        attributes["EntrezmRNA"] += NStr::IntToString(*i);      
     }
 
     if(a.TargetLen() > 0)
@@ -1265,6 +1253,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Type()  &CGeneModel::emRNA)!=0)       attributes["flags"] += ",mRNA";
     if ((a.Type()  &CGeneModel::eProt)!=0)       attributes["flags"] += ",Prot";
 
+    if ((a.Status()&CGeneModel::eCap)!=0)      attributes["flags"] += ",Cap";
     if ((a.Status()&CGeneModel::ePolyA)!=0)      attributes["flags"] += ",PolyA";
     if ((a.Status()&CGeneModel::eSkipped)!=0)    attributes["flags"] += ",Skip";
 
@@ -1298,6 +1287,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         if ((a.Status()&CGeneModel::eFullSupCDS)!=0) attributes["flags"] += ",FullSupCDS";
         if ((a.Status()&CGeneModel::ePseudo)!=0)     attributes["flags"] += ",Pseudo";
         if (a.FrameShifts().size()>0)                attributes["flags"] += ",Frameshifts";
+        if(a.isNMD(50))                              attributes["flags"] += ",NMD";
 
         ITERATE(vector<TSignedSeqRange>, s, a.GetCdsInfo().PStops()) {
             attributes["pstop"] += ","+NStr::IntToString(s->GetFrom()+1)+" "+NStr::IntToString(s->GetTo()+1);
@@ -1343,10 +1333,16 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         }
     }
     
-    vector<string> entrezgene;
-    NStr::Tokenize(attributes["EntrezGene"], ",", entrezgene);
-    ITERATE(vector<string>, s, entrezgene) {
-        a.InsertEntrezGene(NStr::StringToInt(*s));
+    vector<string> entrezmrna;
+    NStr::Tokenize(attributes["EntrezmRNA"], ",", entrezmrna);
+    ITERATE(vector<string>, s, entrezmrna) {
+        a.InsertEntrezmRNA(NStr::StringToInt(*s));
+    }
+
+    vector<string> entrezprot;
+    NStr::Tokenize(attributes["EntrezProt"], ",", entrezprot);
+    ITERATE(vector<string>, s, entrezprot) {
+        a.InsertEntrezProt(NStr::StringToInt(*s));
     }
     
     vector<string> flags;
@@ -1361,6 +1357,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "FullSupCDS") a.Status()        |= CGeneModel::eFullSupCDS;
         else if (*f == "Pseudo")     a.Status()        |= CGeneModel::ePseudo;
         else if (*f == "PolyA")      a.Status()        |= CGeneModel::ePolyA;
+        else if (*f == "Cap")        a.Status()        |= CGeneModel::eCap;
         else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
         else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
         else if (*f == "Start") has_start = true;

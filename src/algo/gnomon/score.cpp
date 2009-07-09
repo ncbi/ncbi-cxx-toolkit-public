@@ -1346,7 +1346,7 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
     }
 
     if (cds_info.ConfirmedStart() && best_start != starts[frame].back()) {
-        cerr << "Moved ConfirmedStart " << model.ID() << endl;
+        model.AddComment("movedconfstart");
     }
                 
     bool has_start = best_start>=0;

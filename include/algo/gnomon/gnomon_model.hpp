@@ -300,7 +300,8 @@ public:
         eRightTrimmed = 16,
         eFullSupCDS = 32,
         ePseudo = 64,
-        ePolyA = 128
+        ePolyA = 128,
+        eCap = 256
     };
 
     CGeneModel(EStrand s = ePlus, int id = 0, int type = 0) :
@@ -373,6 +374,7 @@ public:
 
     const string& GetComment() const { return m_comment; }
     void SetComment(const string& comment) { m_comment = comment; }
+    void AddComment(const string& comment) { m_comment += " " + comment; }
 
     bool operator<(const CGeneModel& a) const { return Precede(Limits(),a.Limits()); }
 
@@ -392,12 +394,12 @@ public:
     bool FullCds() const { return HasStart() && HasStop() && Continuous(); }
     bool CompleteCds() const { return FullCds() && (!Open5primeEnd() || ConfirmedStart()); }
 
-    bool GoodEnoughToBeAnnotation(int minCdsLen) const
+    bool GoodEnoughToBeAnnotation() const
     {
         _ASSERT( !(OpenCds()&&ConfirmedStart()) );
-        return !OpenCds() && FullCds() && RealCdsLen() >= minCdsLen;
+        return (ReadingFrame().Empty() || (!OpenCds() && FullCds()));
     }
-    bool GoodEnoughToBeAlternative(int minCdsLen, int maxcomposite) const;
+    bool GoodEnoughToBeAlternative(int maxcomposite) const;
 
     bool Open5primeEnd() const
     {
@@ -418,14 +420,14 @@ public:
     bool ConfirmedStart() const { return m_cds_info.ConfirmedStart(); }  // start is confirmed by protein alignment
     bool ConfirmedStop() const { return m_cds_info.ConfirmedStop(); }  // stop is confirmed by protein alignment
 
-    bool isNMD() const
+    bool isNMD(int limit = 50) const
     {
         if (ReadingFrame().Empty() || Exons().size() <= 1)
             return false;
         if (Strand() == ePlus) {
-            return RealCdsLimits().GetTo() < Exons().back().GetFrom();
+            return RealCdsLimits().GetTo() < Exons().back().GetFrom() && FShiftedLen(RealCdsLimits().GetTo(),Exons()[Exons().size()-2].GetTo()) > limit;
         } else {
-            return RealCdsLimits().GetFrom() > Exons().front().GetTo();
+            return RealCdsLimits().GetFrom() > Exons().front().GetTo() && FShiftedLen(Exons()[1].GetFrom(),RealCdsLimits().GetFrom()) > limit ;
         }
     }
 
@@ -441,7 +443,7 @@ public:
     TSignedSeqPos FShiftedMove(TSignedSeqPos pos, int len) const;  // may retun <0 if hits a deletion at the end of move
 
     virtual CAlignMap GetAlignMap() const;
-    
+
     string GetProtein (const CResidueVec& contig_sequence) const;
     
     // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
@@ -458,9 +460,13 @@ public:
         return IdenticalAlign(a) && Type()==a.Type() && m_id==a.m_id && m_support==a.m_support;
     }
 
-    const CVectorSet<int>& EntrezGene() const { return m_entrez_gene; }
-    void InsertEntrezGene(int g) { m_entrez_gene.insert(g); };
-    void ClearEntrezGene() { m_entrez_gene.clear(); };
+    const CVectorSet<int>& EntrezmRNA() const { return m_entrez_mrna; }
+    void InsertEntrezmRNA(int g) { m_entrez_mrna.insert(g); };
+    void ClearEntrezmRNA() { m_entrez_mrna.clear(); };
+   
+    const CVectorSet<int>& EntrezProt() const { return m_entrez_prot; }
+    void InsertEntrezProt(int g) { m_entrez_prot.insert(g); };
+    void ClearEntrezProt() { m_entrez_prot.clear(); };
 
 #ifdef _DEBUG
     int oid;
@@ -486,8 +492,85 @@ private:
     CSupportInfoSet m_support;
     string m_protein_hit;
     string m_comment;
-    CVectorSet<int> m_entrez_gene;
+    CVectorSet<int> m_entrez_prot;
+    CVectorSet<int> m_entrez_mrna;
 };
+
+
+struct SSortModelsDescending {
+    bool operator()(const CGeneModel& a, const CGeneModel& b)
+    {
+        if(!a.EntrezmRNA().empty() && b.EntrezmRNA().empty())       // entrez gene is always better, mRNA is better than protein, both are better than one   
+            return true;
+        else if(!b.EntrezmRNA().empty() && a.EntrezmRNA().empty()) 
+            return false;
+        else if(!a.EntrezProt().empty() && b.EntrezProt().empty())    
+            return true;
+        else if(!b.EntrezProt().empty() && a.EntrezProt().empty()) 
+            return false;
+        else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is alway better
+            return true;
+        } else if(b.ReadingFrame().NotEmpty() && a.ReadingFrame().Empty()) {
+            return false;
+        } else if(a.ReadingFrame().NotEmpty()) {     // both coding
+            double ds = 0.025*(fabs(b.Score())+fabs(a.Score()));
+            
+            double as = a.Score();
+            if((a.Status()&&CGeneModel::ePolyA) != 0)
+                as += ds; 
+            if((a.Status()&&CGeneModel::eCap) != 0)
+                as += ds; 
+            if(a.isNMD())
+                as -= ds;
+            
+            double bs = a.Score();
+            if((b.Status()&&CGeneModel::ePolyA) != 0)
+                bs += ds; 
+            if((b.Status()&&CGeneModel::eCap) != 0)
+                bs += ds; 
+            if(b.isNMD())
+                bs -= ds;
+
+            if(as > bs)
+                return true;
+            else if(bs > as)
+                return false;
+            else if(a.Support().size() > b.Support().size())       // more alignments is better
+                return true;
+            else if(a.Support().size() < b.Support().size()) 
+                return false;
+            else 
+                return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
+        } else {                       // both noncoding
+            double asize = a.Support().size();
+            double bsize = b.Support().size();
+            double ds = 0.025*(asize+bsize);
+
+            if((a.Status()&&CGeneModel::ePolyA) != 0)
+                asize += ds; 
+            if((a.Status()&&CGeneModel::eCap) != 0)
+                asize += ds; 
+            if(a.isNMD())
+                asize -= ds;
+
+            if((b.Status()&&CGeneModel::ePolyA) != 0)
+                bsize += ds; 
+            if((b.Status()&&CGeneModel::eCap) != 0)
+                bsize += ds; 
+            if(b.isNMD())
+                bsize -= ds;
+
+
+            if(asize > bsize)     
+                return true;
+            else if(bsize > asize)
+                return false;
+            else 
+                return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
+        }
+    }
+};
+
 
 class CAlignMap {
 public:
