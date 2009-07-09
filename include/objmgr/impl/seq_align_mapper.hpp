@@ -51,12 +51,15 @@ public:
     CSeq_align_Mapper(const CSeq_align& align,
                       bool map_widths,
                       CScope* scope = 0);
+
     ~CSeq_align_Mapper(void);
 
 protected:
     virtual int GetSeqWidth(const CSeq_id& id) const;
     virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align,
                                                    EWidthFlag map_widths);
+    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSpliced_seg& spliced,
+                                                   const CSpliced_exon& exon);
 
 private:
     typedef CSeq_loc_Conversion_Set::TRange       TRange;
@@ -65,6 +68,9 @@ private:
     typedef CSeq_loc_Conversion_Set::TConvByIndex TConvByIndex;
 
     friend class CSeq_loc_Conversion_Set;
+
+    // Used only to create sub-aligns
+    CSeq_align_Mapper(CScope* scope);
 
     void Convert(CSeq_loc_Conversion_Set& cvts);
 

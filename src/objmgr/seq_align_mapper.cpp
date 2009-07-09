@@ -51,6 +51,12 @@ CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align,
 }
 
 
+CSeq_align_Mapper::CSeq_align_Mapper(CScope* scope)
+    : m_Scope(scope)
+{
+}
+
+
 CSeq_align_Mapper::~CSeq_align_Mapper(void)
 {
 }
@@ -191,6 +197,7 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         // Add segment for the skipped range
         SAlignment_Segment& lseg = x_InsertSeg(seg_it, dl,
             old_it->m_Rows.size());
+        lseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < old_it->m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& lrow =
                 lseg.CopyRow(r, old_it->m_Rows[r]);
@@ -209,6 +216,7 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
     SAlignment_Segment& mseg = x_InsertSeg(seg_it,
         rg.GetLength() - dr,
         old_it->m_Rows.size());
+    mseg.m_PartType = old_it->m_PartType;
     if (!dl  &&  !dr) {
         // copy scores if there's no truncation
         mseg.SetScores(old_it->m_Scores);
@@ -244,6 +252,7 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         SAlignment_Segment& rseg = x_InsertSeg(seg_it,
             dr,
             old_it->m_Rows.size());
+        rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < old_it->m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =
                 rseg.CopyRow(r, old_it->m_Rows[r]);
@@ -321,6 +330,7 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
             // Add segment for the skipped range
             SAlignment_Segment& lseg = x_InsertSeg(seg_it,
                 dl, seg.m_Rows.size());
+            lseg.m_PartType = old_it->m_PartType;
             for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
                 SAlignment_Segment::SAlignment_Row& lrow =
                     lseg.CopyRow(r, seg.m_Rows[r]);
@@ -341,6 +351,7 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         left_shift += dl;
         SAlignment_Segment& mseg = x_InsertSeg(seg_it,
             rg.GetLength() - dl - dr, seg.m_Rows.size());
+        mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
             mseg.SetScores(seg.m_Scores);
@@ -387,6 +398,7 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         // Add the remaining unmapped range
         SAlignment_Segment& rseg = x_InsertSeg(seg_it,
             rg.GetLength(), seg.m_Rows.size());
+        rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =
                 rseg.CopyRow(r, seg.m_Rows[r]);
@@ -430,6 +442,17 @@ CSeq_align_Mapper::CreateSubAlign(const CSeq_align& align,
                                   EWidthFlag map_widths)
 {
     return new CSeq_align_Mapper(align, map_widths == eWidth_Map, m_Scope);
+}
+
+
+CSeq_align_Mapper_Base*
+CSeq_align_Mapper::CreateSubAlign(const CSpliced_seg& spliced,
+                                  const CSpliced_exon& exon)
+{
+    auto_ptr<CSeq_align_Mapper> sub(
+        new CSeq_align_Mapper(m_Scope.GetPointerOrNull()));
+    sub->InitExon(spliced, exon);
+    return sub.release();
 }
 
 

@@ -44,7 +44,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
-#include <boost/test/parameterized_test.hpp>
+//#include <boost/test/parameterized_test.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -1222,18 +1222,21 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd)
     BOOST_CHECK_EQUAL(spl.GetGenomic_strand(), eNa_strand_plus);
     BOOST_CHECK_EQUAL(spl.GetProduct_type(),
         CSpliced_seg::eProduct_type_transcript);
-    // BOOST_CHECK_EQUAL(spl.GetProduct_length(), 90);
-    
+    BOOST_CHECK_EQUAL(spl.GetProduct_length(), 100);
+
     BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
     const CSpliced_exon& ex = **spl.GetExons().begin();
     BOOST_CHECK(ex.GetProduct_start().IsNucpos());
     BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 110);
     BOOST_CHECK(ex.GetProduct_end().IsNucpos());
     BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 199);
-    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 10);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
     BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
-    BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 3);
     CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
     BOOST_CHECK((*part)->IsMatch());
     BOOST_CHECK_EQUAL((*part)->GetMatch(), 40);
     part++;
@@ -1289,17 +1292,20 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd_Nuc2Prot)
     BOOST_CHECK_EQUAL(spl.GetProduct_type(),
         CSpliced_seg::eProduct_type_protein);
     // BOOST_CHECK_EQUAL(spl.GetProduct_length(), 30);
-    
+
     BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
     const CSpliced_exon& ex = **spl.GetExons().begin();
     BOOST_CHECK(ex.GetProduct_start().IsProtpos());
     BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 110);
     BOOST_CHECK(ex.GetProduct_end().IsProtpos());
     BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 139);
-    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 10);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
     BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
-    BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 3);
     CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
     BOOST_CHECK((*part)->IsMatch());
     BOOST_CHECK_EQUAL((*part)->GetMatch(), 40);
     part++;
@@ -1363,14 +1369,17 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse_SplicedProd_Nuc2Prot_MinusProd)
     BOOST_CHECK(ex.GetProduct_end().IsProtpos());
     BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 139);
     BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
-    BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 89);
-    BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 3);
     CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
-    BOOST_CHECK((*part)->IsMismatch());
-    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 40);
-    part++;
     BOOST_CHECK((*part)->IsMatch());
     BOOST_CHECK_EQUAL((*part)->GetMatch(), 50);
+    part++;
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 40);
 }
 
 
@@ -1445,81 +1454,46 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
     BOOST_CHECK_EQUAL(spl.GetProduct_type(),
         CSpliced_seg::eProduct_type_transcript);
     // BOOST_CHECK_EQUAL(spl.GetProduct_length(), 40);
-    
-    BOOST_CHECK_EQUAL(spl.GetExons().size(), 5);
-    CSpliced_seg::TExons::const_iterator ex_it = spl.GetExons().begin();
-    {{
-        const CSpliced_exon& ex = **ex_it;
-        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 100);
-        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 109);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 10);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 19);
-        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
-        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
-        BOOST_CHECK((*part)->IsMatch());
-        BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
-    }}
-    ex_it++;
-    {{
-        const CSpliced_exon& ex = **ex_it;
-        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 200);
-        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 209);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 30);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 39);
-        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
-        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
-        BOOST_CHECK((*part)->IsMatch());
-        BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
-    }}
-    ex_it++;
-    {{
-        const CSpliced_exon& ex = **ex_it;
-        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 210);
-        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 214);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 50);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 54);
-        BOOST_CHECK_EQUAL(ex.GetParts().size(), 2);
-        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
-        BOOST_CHECK((*part)->IsMatch());
-        BOOST_CHECK_EQUAL((*part)->GetMatch(), 2);
-        part++;
-        BOOST_CHECK((*part)->IsMismatch());
-        BOOST_CHECK_EQUAL((*part)->GetMismatch(), 3);
-    }}
-    ex_it++;
-    {{
-        const CSpliced_exon& ex = **ex_it;
-        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 300);
-        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 304);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 55);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 59);
-        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
-        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
-        BOOST_CHECK((*part)->IsMismatch());
-        BOOST_CHECK_EQUAL((*part)->GetMismatch(), 5);
-    }}
-    ex_it++;
-    {{
-        const CSpliced_exon& ex = **ex_it;
-        BOOST_CHECK(ex.GetProduct_start().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 305);
-        BOOST_CHECK(ex.GetProduct_end().IsNucpos());
-        BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 314);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 70);
-        BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 79);
-        BOOST_CHECK_EQUAL(ex.GetParts().size(), 1);
-        CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
-        BOOST_CHECK((*part)->IsMismatch());
-        BOOST_CHECK_EQUAL((*part)->GetMismatch(), 10);
-    }}
+
+    BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
+    const CSpliced_exon& ex = **spl.GetExons().begin();
+    BOOST_CHECK(ex.GetProduct_start().IsNucpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetNucpos(), 100);
+    BOOST_CHECK(ex.GetProduct_end().IsNucpos());
+    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 314);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
+    BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 10);
+    CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsMatch());
+    BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsMatch());
+    BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsMatch());
+    BOOST_CHECK_EQUAL((*part)->GetMatch(), 2);
+    part++;
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 8);
+    part++;
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 20);
 }
 
 

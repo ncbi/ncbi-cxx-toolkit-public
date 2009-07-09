@@ -92,7 +92,7 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
                            int                   frame);
 
     typedef vector< CRef<CScore> > TScores;
-    typedef CSpliced_exon::TParts  TParts;
+    typedef CSpliced_exon_chunk::E_Choice TPartType;
 
     void SetScores(const TScores& scores);
 
@@ -100,7 +100,8 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
     TRows     m_Rows;
     bool      m_HaveStrands;
     TScores   m_Scores;
-    TParts    m_Parts; // Used in splised-seg to store chunks
+    // Used only for spliced exon parts
+    TPartType m_PartType;
 };
 
 
@@ -139,6 +140,10 @@ protected:
     virtual int GetSeqWidth(const CSeq_id& id) const;
     virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align,
                                                    EWidthFlag map_widths);
+    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSpliced_seg& spliced,
+                                                   const CSpliced_exon& exon);
+    void InitExon(const CSpliced_seg& spliced,
+                  const CSpliced_exon& exon);
 
     void x_Init(const CSeq_align& align);
     SAlignment_Segment& x_InsertSeg(TSegments::iterator& where,
@@ -148,7 +153,8 @@ protected:
 private:
 
     // Segment insertion functions
-    SAlignment_Segment& x_PushSeg(int len, size_t dim);
+    SAlignment_Segment& x_PushSeg(int len, size_t dim,
+        ENa_strand strand = eNa_strand_unknown);
 
     void x_Init(const TDendiag& diags);
     void x_Init(const CDense_seg& denseg);
@@ -168,9 +174,6 @@ private:
 
     typedef vector<ENa_strand> TStrands;
     void x_FillKnownStrands(TStrands& strands) const;
-    void x_CopyParts(const SAlignment_Segment& src,
-                     SAlignment_Segment&       dst,
-                     TSeqPos                   from);
 
     void x_GetDstDendiag(CRef<CSeq_align>& dst) const;
     void x_GetDstDenseg(CRef<CSeq_align>& dst) const;
@@ -179,6 +182,13 @@ private:
     void x_GetDstDisc(CRef<CSeq_align>& dst) const;
     void x_GetDstSpliced(CRef<CSeq_align>& dst) const;
     void x_GetDstSparse(CRef<CSeq_align>& dst) const;
+    void x_GetDstExon(CSpliced_seg& spliced,
+                      TSegments::const_iterator& seg,
+                      CSeq_id_Handle& gen_id,
+                      CSeq_id_Handle& prod_id,
+                      ENa_strand& gen_strand,
+                      ENa_strand& prod_strand,
+                      bool& partial) const;
 
     // Special case: have to convert multi-id alignments to disc.
     void x_ConvToDstDisc(CRef<CSeq_align>& dst) const;
@@ -186,6 +196,7 @@ private:
                            int start_seg) const;
 
     CConstRef<CSeq_align>        m_OrigAlign;
+    CConstRef<CSpliced_exon>     m_OrigExon;
     bool                         m_HaveStrands;
     bool                         m_HaveWidths;
     bool                         m_OnlyNucs;

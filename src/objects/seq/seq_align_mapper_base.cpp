@@ -48,7 +48,8 @@ BEGIN_SCOPE(objects)
 SAlignment_Segment::SAlignment_Segment(int len, size_t dim)
     : m_Len(len),
       m_Rows(dim),
-      m_HaveStrands(false)
+      m_HaveStrands(false),
+      m_PartType(CSpliced_exon_chunk::e_not_set)
 {
     return;
 }
@@ -183,10 +184,18 @@ void CSeq_align_Mapper_Base::x_Init(const CSeq_align& align)
 }
 
 
-SAlignment_Segment& CSeq_align_Mapper_Base::x_PushSeg(int len, size_t dim)
+SAlignment_Segment& CSeq_align_Mapper_Base::x_PushSeg(int len,
+                                                      size_t dim,
+                                                      ENa_strand strand)
 {
-    m_Segs.push_back(SAlignment_Segment(len, dim));
-    return m_Segs.back();
+    if ( !IsReverse(strand) ) {
+        m_Segs.push_back(SAlignment_Segment(len, dim));
+        return m_Segs.back();
+    }
+    else {
+        m_Segs.push_front(SAlignment_Segment(len, dim));
+        return m_Segs.front();
+    }
 }
 
 
@@ -510,8 +519,31 @@ void CSeq_align_Mapper_Base::x_Init(const CSeq_align_set& align_set)
 }
 
 
-void CSeq_align_Mapper_Base::x_Init(const CSpliced_seg& spliced)
+TSeqPos GetPartLength(const CSpliced_exon_chunk& part)
 {
+    switch ( part.Which() ) {
+    case CSpliced_exon_chunk::e_Match:
+        return part.GetMatch();
+    case CSpliced_exon_chunk::e_Mismatch:
+        return part.GetMismatch();
+    case CSpliced_exon_chunk::e_Diag:
+        return part.GetDiag();
+    case CSpliced_exon_chunk::e_Product_ins:
+        return part.GetProduct_ins();
+    case CSpliced_exon_chunk::e_Genomic_ins:
+        return part.GetGenomic_ins();
+    default:
+        ERR_POST_X(21, Warning << "Unsupported CSpliced_exon_chunk type: " <<
+            part.SelectionName(part.Which()) << ", ignoring the chunk.");
+    }
+    return 0;
+}
+
+
+void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
+                                      const CSpliced_exon& exon)
+{
+    m_OrigExon.Reset(&exon);
     const CSeq_id* gen_id = spliced.IsSetGenomic_id() ?
         &spliced.GetGenomic_id() : 0;
     const CSeq_id* prod_id = spliced.IsSetProduct_id() ?
@@ -532,55 +564,124 @@ void CSeq_align_Mapper_Base::x_Init(const CSpliced_seg& spliced)
         spliced.GetGenomic_strand() : eNa_strand_unknown;
     ENa_strand prod_strand = spliced.IsSetProduct_strand() ?
         spliced.GetProduct_strand() : eNa_strand_unknown;
-    ITERATE ( CSpliced_seg::TExons, it, spliced.GetExons() ) {
-        const CSpliced_exon& ex = **it;
-        TSeqPos seg_len = ex.GetGenomic_end() - ex.GetGenomic_start() + 1;
-        SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2);
-        if ( ex.IsSetScores() ) {
-            ITERATE(CScore_set::Tdata, it, ex.GetScores().Get()) {
-                CRef<CScore> score(new CScore);
-                score->Assign(**it);
-                alnseg.m_Scores.push_back(score);
+
+    const CSeq_id* ex_gen_id = exon.IsSetGenomic_id() ?
+        &exon.GetGenomic_id() : gen_id;
+    const CSeq_id* ex_prod_id = exon.IsSetProduct_id() ?
+        &exon.GetProduct_id() : prod_id;
+    if ( !ex_gen_id  ) {
+        ERR_POST_X(14, Warning << "Missing genomic id in spliced-seg");
+        return;
+    }
+    if ( !ex_prod_id ) {
+        ERR_POST_X(15, Warning << "Missing product id in spliced-seg");
+    }
+    m_HaveStrands = m_HaveStrands  ||
+        exon.IsSetGenomic_strand() || exon.IsSetProduct_strand();
+    ENa_strand ex_gen_strand = exon.IsSetGenomic_strand() ?
+        exon.GetGenomic_strand() : gen_strand;
+    ENa_strand ex_prod_strand = exon.IsSetProduct_strand() ?
+        exon.GetProduct_strand() : prod_strand;
+
+    int gen_start = exon.GetGenomic_start();
+    int gen_end = exon.GetGenomic_end() + 1;
+
+    // both start and stop will be converted to genomic coords
+    int prod_start, prod_end;
+    int prod_start_frame = 0;
+    int prod_end_frame = 0;
+
+    if ( is_prot_prod ) {
+        TSeqPos pstart = exon.GetProduct_start().GetProtpos().GetAmin();
+        prod_start_frame = exon.GetProduct_start().GetProtpos().GetFrame();
+        prod_start = pstart*3 + prod_start_frame - 1;
+        TSeqPos pend = exon.GetProduct_end().GetProtpos().GetAmin();
+        prod_end_frame = exon.GetProduct_end().GetProtpos().GetFrame();
+        prod_end = pend*3 + prod_end_frame;
+    }
+    else {
+        prod_start = exon.GetProduct_start().GetNucpos();
+        prod_end = exon.GetProduct_end().GetNucpos() + 1;
+    }
+
+    if ( exon.IsSetParts() ) {
+        ITERATE(CSpliced_exon::TParts, it, exon.GetParts()) {
+            const CSpliced_exon_chunk& part = **it;
+            TSeqPos seg_len = GetPartLength(part);
+            if (seg_len == 0) {
+                continue;
             }
+
+            SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2, gen_strand);
+            alnseg.m_PartType = part.Which();
+
+            int part_gen_start;
+            if ( part.IsProduct_ins() ) {
+                part_gen_start = -1;
+            }
+            else {
+                if ( !IsReverse(gen_strand) ) {
+                    part_gen_start = gen_start;
+                    gen_start += seg_len;
+                }
+                else {
+                    gen_end -= seg_len;
+                    part_gen_start = gen_end;
+                }
+            }
+            alnseg.AddRow(0, *gen_id, part_gen_start,
+                m_HaveStrands, gen_strand, 1, 0);
+
+            int part_prod_start;
+            int part_prod_frame = 0;
+            if ( part.IsGenomic_ins() ) {
+                part_prod_start = -1;
+            }
+            else {
+                if ( !IsReverse(prod_strand) ) {
+                    if ( is_prot_prod ) {
+                        part_prod_start = prod_start/3;
+                        part_prod_frame = prod_start%3 + 1;
+                    }
+                    else {
+                        part_prod_start = prod_start;
+                    }
+                    prod_start += seg_len;
+                }
+                else {
+                    prod_end -= seg_len;
+                    if ( is_prot_prod ) {
+                        part_prod_start = prod_end/3;
+                        part_prod_frame = prod_end%3 + 1;
+                    }
+                    else {
+                        part_prod_start = prod_end;
+                    }
+                }
+            }
+            // if frame is set, the product is a protein
+            alnseg.AddRow(1, *prod_id, part_prod_start,
+                m_HaveStrands, prod_strand, is_prot_prod ? 3 : 1,
+                part_prod_frame);
         }
-        const CSeq_id* ex_gen_id = ex.IsSetGenomic_id() ?
-            &ex.GetGenomic_id() : gen_id;
-        const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
-            &ex.GetProduct_id() : prod_id;
-        m_HaveStrands = m_HaveStrands  ||
-            ex.IsSetGenomic_strand() || ex.IsSetProduct_strand();
-        ENa_strand ex_gen_strand = ex.IsSetGenomic_strand() ?
-            ex.GetGenomic_strand() : gen_strand;
-        ENa_strand ex_prod_strand = ex.IsSetProduct_strand() ?
-            ex.GetProduct_strand() : prod_strand;
-        if ( ex_gen_id ) {
-            alnseg.AddRow(0, *ex_gen_id,
-                ex.GetGenomic_start(),
-                m_HaveStrands,
-                ex_gen_strand,
-                1,
-                0);
-        }
-        else {
-            ERR_POST_X(14, Warning << "Missing genomic id in spliced-seg");
-        }
-        if ( ex_prod_id ) {
-            alnseg.AddRow(1, *ex_prod_id,
-                ex.GetProduct_start().IsNucpos() ?
-                ex.GetProduct_start().GetNucpos()
-                : ex.GetProduct_start().GetProtpos().GetAmin(),
-                m_HaveStrands,
-                ex_prod_strand,
-                is_prot_prod ? 3 : 1,
-                ex.GetProduct_start().IsProtpos() ?
-                ex.GetProduct_start().GetProtpos().GetFrame() : 0);
-        }
-        else {
-            ERR_POST_X(15, Warning << "Missing product id in spliced-seg");
-        }
-        if ( ex.IsSetParts()  &&  !ex.GetParts().empty() ) {
-            alnseg.m_Parts = ex.GetParts();
-        }
+    }
+    else {
+        // No parts, use the whole exon
+        TSeqPos seg_len = gen_end - gen_start;
+        SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2);
+        alnseg.AddRow(0, *ex_gen_id, gen_start,
+            m_HaveStrands, ex_gen_strand, 1, 0);
+        alnseg.AddRow(1, *ex_prod_id, prod_start,
+            m_HaveStrands, ex_prod_strand, is_prot_prod ? 3 : 1,
+            prod_start_frame);
+    }
+}
+
+
+void CSeq_align_Mapper_Base::x_Init(const CSpliced_seg& spliced)
+{
+    ITERATE(CSpliced_seg::TExons, it, spliced.GetExons() ) {
+        m_SubAligns.push_back(Ref(CreateSubAlign(spliced, **it)));
     }
 }
 
@@ -727,108 +828,6 @@ void CSeq_align_Mapper_Base::x_ConvertRow(CSeq_loc_Mapper_Base& mapper,
 }
 
 
-TSeqPos GetPartLength(const CSpliced_exon_chunk& part)
-{
-    switch ( part.Which() ) {
-    case CSpliced_exon_chunk::e_Match:
-        return part.GetMatch();
-    case CSpliced_exon_chunk::e_Mismatch:
-        return part.GetMismatch();
-    case CSpliced_exon_chunk::e_Diag:
-        return part.GetDiag();
-    case CSpliced_exon_chunk::e_Product_ins:
-        return part.GetProduct_ins();
-    case CSpliced_exon_chunk::e_Genomic_ins:
-        return part.GetGenomic_ins();
-    default:
-        ERR_POST_X(21, Warning << "Unsupported CSpliced_exon_chunk type: " <<
-            part.SelectionName(part.Which()) << ", ignoring the chunk.");
-    }
-    return 0;
-}
-
-
-void SetPartLength(const CSpliced_exon_chunk& src_part,
-                   CSpliced_exon_chunk&       dst_part,
-                   TSeqPos                    new_len)
-{
-    switch ( src_part.Which() ) {
-    case CSpliced_exon_chunk::e_Match:
-        dst_part.SetMatch(new_len);
-        break;
-    case CSpliced_exon_chunk::e_Mismatch:
-        dst_part.SetMismatch(new_len);
-        break;
-    case CSpliced_exon_chunk::e_Diag:
-        dst_part.SetDiag(new_len);
-        break;
-    case CSpliced_exon_chunk::e_Product_ins:
-        dst_part.SetProduct_ins(new_len);
-        break;
-    case CSpliced_exon_chunk::e_Genomic_ins:
-        dst_part.SetGenomic_ins(new_len);
-        break;
-    default:
-        break;
-    }
-}
-
-
-void CopyPart(TSeqPos&                   pos,
-              const CSpliced_exon_chunk& src_part,
-              const SAlignment_Segment&  src_seg,
-              SAlignment_Segment&        dst_seg,
-              TSeqPos                    from)
-{
-    TSeqPos len = GetPartLength(src_part);
-    TSeqPos to = from + dst_seg.m_Len;
-    ENa_strand dst_strand = dst_seg.m_Rows[1].m_IsSetStrand ?
-        dst_seg.m_Rows[1].m_Strand : eNa_strand_unknown;
-    if (pos + len >= from  &&  pos < to) {
-        TSeqPos new_from = pos < from ? from : pos;
-        TSeqPos new_to = pos + len > to ? to : pos + len;
-        if (new_from < new_to) {
-            CRef<CSpliced_exon_chunk> new_part(new CSpliced_exon_chunk);
-            SetPartLength(src_part, *new_part, new_to - new_from);
-            if ( !IsReverse(dst_strand) ) {
-                dst_seg.m_Parts.push_back(new_part);
-            }
-            else {
-                dst_seg.m_Parts.push_front(new_part);
-            }
-        }
-    }
-    pos += len;
-}
-
-
-void CSeq_align_Mapper_Base::x_CopyParts(const SAlignment_Segment& src,
-                                         SAlignment_Segment&       dst,
-                                         TSeqPos                   from)
-{
-    if ( src.m_Parts.empty() ) {
-        return;
-    }
-    _ASSERT(src.m_Rows.size() > 1);
-    TSeqPos pos = 0;
-    TSeqPos to = from + dst.m_Len;
-    ENa_strand src_strand = src.m_Rows[1].m_IsSetStrand ?
-        src.m_Rows[1].m_Strand : eNa_strand_unknown;
-    if ( !IsReverse(src_strand) ) {
-        SAlignment_Segment::TParts::const_iterator it = src.m_Parts.begin();
-        for ( ; it != src.m_Parts.end()  &&  pos < to; it++) {
-            CopyPart(pos, **it, src, dst, from);
-        }
-    }
-    else {
-        SAlignment_Segment::TParts::const_reverse_iterator it = src.m_Parts.rbegin();
-        for ( ; it != src.m_Parts.rend()  &&  pos < to; it++) {
-            CopyPart(pos, **it, src, dst, from);
-        }
-    }
-}
-
-
 CSeq_id_Handle
 CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                                          CSeq_loc_Mapper_Base& mapper,
@@ -936,6 +935,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
             // Add segment for the skipped range
             SAlignment_Segment& lseg = x_InsertSeg(seg_it,
                 dl/len_wid, seg.m_Rows.size());
+            lseg.m_PartType = old_it->m_PartType;
             for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
                 SAlignment_Segment::SAlignment_Row& lrow =
                     lseg.CopyRow(r, seg.m_Rows[r]);
@@ -963,14 +963,13 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                     }
                 }
             }
-            // Copy parts to the new segment
-            x_CopyParts(seg, lseg, start);
         }
         start += dl;
         left_shift += dl;
         // At least part of the interval was converted.
         SAlignment_Segment& mseg = x_InsertSeg(seg_it,
             (stop - dr - start + 1)/len_wid, seg.m_Rows.size());
+        mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
             mseg.SetScores(seg.m_Scores);
@@ -1022,7 +1021,6 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 }
             }
         }
-        x_CopyParts(seg, mseg, start);
         left_shift += mseg.m_Len*len_wid;
         start += mseg.m_Len*len_wid;
         mapped = true;
@@ -1041,6 +1039,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         // Add the remaining unmapped range
         SAlignment_Segment& rseg = x_InsertSeg(seg_it,
             (stop - start + 1)/len_wid, seg.m_Rows.size());
+        rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =
                 rseg.CopyRow(r, seg.m_Rows[r]);
@@ -1059,7 +1058,6 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
                 }
             }
         }
-        x_CopyParts(seg, rseg, start);
     }
     m_Segs.erase(old_it);
     return align_flags == eAlign_MultiId ? CSeq_id_Handle() : dst_id;
@@ -1373,6 +1371,221 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
 }
 
 
+void SetPartLength(CSpliced_exon_chunk&          part,
+                   CSpliced_exon_chunk::E_Choice ptype,
+                   TSeqPos                       len)
+{
+    switch ( ptype ) {
+    case CSpliced_exon_chunk::e_Match:
+        part.SetMatch(len);
+        break;
+    case CSpliced_exon_chunk::e_Mismatch:
+        part.SetMismatch(len);
+        break;
+    case CSpliced_exon_chunk::e_Diag:
+        part.SetDiag(len);
+        break;
+    case CSpliced_exon_chunk::e_Product_ins:
+        part.SetProduct_ins(len);
+        break;
+    case CSpliced_exon_chunk::e_Genomic_ins:
+        part.SetGenomic_ins(len);
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
+                                          TSegments::const_iterator& seg,
+                                          CSeq_id_Handle& gen_id,
+                                          CSeq_id_Handle& prod_id,
+                                          ENa_strand& gen_strand,
+                                          ENa_strand& prod_strand,
+                                          bool& partial) const
+{
+    CRef<CSpliced_exon> exon(new CSpliced_exon);
+    if (seg != m_Segs.begin()) {
+        partial = true;
+    }
+    int gen_start = -1;
+    int prod_start = -1;
+    int gen_end = 0;
+    int prod_end = 0;
+    gen_strand = eNa_strand_unknown;
+    prod_strand = eNa_strand_unknown;
+    bool gstrand_set = false;
+    bool pstrand_set = false;
+    bool prod_protein = true;
+    bool ex_partial = false;
+    CRef<CSpliced_exon_chunk> last_part;
+
+    for ( ; seg != m_Segs.end(); ++seg) {
+        const SAlignment_Segment::SAlignment_Row& gen_row = seg->m_Rows[0];
+        const SAlignment_Segment::SAlignment_Row& prod_row = seg->m_Rows[1];
+        if (seg->m_Rows.size() > 2) {
+            NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                    "Can not construct spliced-seg with more than two rows");
+        }
+
+        gen_id = gen_row.m_Id;
+        prod_id = prod_row.m_Id;
+        exon->SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
+        exon->SetProduct_id(const_cast<CSeq_id&>(*prod_id.GetSeqId()));
+        CSpliced_exon_chunk::E_Choice ptype = seg->m_PartType;
+
+        int gstart = gen_row.GetSegStart();
+        int pstart = prod_row.GetSegStart();
+        if (gstart < 0) {
+            if (pstart < 0) {
+                // Both gen and prod are missing - start new exon
+                ex_partial = true;
+                seg++;
+                break;
+            }
+            else {
+                ptype = CSpliced_exon_chunk::e_Product_ins;
+            }
+        }
+        else {
+            if (gen_start < 0  ||  gen_start > gstart) {
+                gen_start = gstart;
+            }
+            if (gen_end < gstart + seg->m_Len) {
+                gen_end = gstart + seg->m_Len;
+            }
+        }
+
+        if (pstart < 0) {
+            if (gstart >= 0) {
+                ptype = CSpliced_exon_chunk::e_Genomic_ins;
+            }
+        }
+        else {
+            int pend;
+            if (prod_row.m_Width == 3) {
+                int pframe = prod_row.m_Frame ? prod_row.m_Frame - 1 : 0;
+                pend = pstart*3 + pframe + seg->m_Len;
+                pstart = pstart*3 + pframe;
+                if (spliced.IsSetProduct_type()  &&
+                    spliced.GetProduct_type() ==
+                    CSpliced_seg::eProduct_type_transcript) {
+                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                            "Can not construct spliced-seg -- "
+                            "exons have different product types");
+                }
+                spliced.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+                prod_protein = true;
+            }
+            else {
+                if (spliced.IsSetProduct_type()  &&
+                    spliced.GetProduct_type() ==
+                    CSpliced_seg::eProduct_type_protein) {
+                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                            "Can not construct spliced-seg -- "
+                            "exons have different product types");
+                }
+                spliced.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+                prod_protein = false;
+                pend = pstart + seg->m_Len;
+            }
+            if (prod_start < 0  ||  prod_start > pstart) {
+                prod_start = pstart;
+            }
+            if (prod_end < pend) {
+                prod_end = pend;
+            }
+        }
+
+        // Check strands consistency
+        if (gstart >= 0  &&  gen_row.m_IsSetStrand) {
+            if ( !gstrand_set ) {
+                gen_strand = gen_row.m_Strand;
+                gstrand_set = true;
+            }
+            else if (gen_strand != gen_row.m_Strand) {
+                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                        "Can not construct spliced-seg "
+                        "with different genomic strands in the same exon");
+            }
+        }
+        if (pstart >= 0  &&  prod_row.m_IsSetStrand) {
+            if ( !pstrand_set ) {
+                prod_strand = prod_row.m_Strand;
+                pstrand_set = true;
+            }
+            else if (prod_strand != prod_row.m_Strand) {
+                NCBI_THROW(CAnnotMapperException, eBadAlignment,
+                        "Can not construct spliced-seg "
+                        "with different product strands in the same exon");
+            }
+        }
+
+        if (last_part  &&  last_part->Which() == ptype) {
+            SetPartLength(*last_part, ptype,
+                GetPartLength(*last_part) + seg->m_Len);
+        }
+        else {
+            last_part.Reset(new CSpliced_exon_chunk);
+            SetPartLength(*last_part, ptype, seg->m_Len);
+            // Parts order depend on the genomic strand
+            if ( !IsReverse(gen_strand) ) {
+                exon->SetParts().push_back(last_part);
+            }
+            else {
+                exon->SetParts().push_front(last_part);
+            }
+        }
+    }
+    partial |= ex_partial;
+    if ( exon->GetParts().empty() ) {
+        // No parts were inserted - truncated exon
+        return;
+    }
+    if ( ex_partial ) {
+        exon->SetPartial(true);
+    }
+    else {
+        if ( m_OrigExon->IsSetAcceptor_before_exon() ) {
+            exon->SetAcceptor_before_exon().Assign(
+                m_OrigExon->GetAcceptor_before_exon());
+        }
+        if ( m_OrigExon->IsSetDonor_after_exon() ) {
+            exon->SetDonor_after_exon().Assign(
+                m_OrigExon->GetDonor_after_exon());
+        }
+    }
+    exon->SetGenomic_start(gen_start);
+    exon->SetGenomic_end(gen_end - 1);
+    if (gen_strand != eNa_strand_unknown) {
+        exon->SetGenomic_strand(gen_strand);
+    }
+    if ( prod_protein ) {
+        exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
+        exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
+        exon->SetProduct_end().SetProtpos().SetAmin(prod_end/3);
+        exon->SetProduct_end().SetProtpos().SetFrame(prod_end%3 + 1);
+    }
+    else {
+        exon->SetProduct_start().SetNucpos(prod_start);
+        exon->SetProduct_end().SetNucpos(prod_end - 1);
+        if (prod_strand != eNa_strand_unknown) {
+            exon->SetGenomic_strand(prod_strand);
+        }
+    }
+    // scores should be copied from the original exon
+    if ( m_OrigExon->IsSetScores() ) {
+        ITERATE(CScore_set::Tdata, it, m_OrigExon->GetScores().Get()) {
+            CRef<CScore> score(new CScore);
+            score->Assign(**it);
+            exon->SetScores().Set().push_back(score);
+        }
+    }
+    spliced.SetExons().push_back(exon);
+}
+
+
 void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
 {
     CSpliced_seg& spliced = dst->SetSegs().SetSpliced();
@@ -1384,81 +1597,48 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     bool single_gen_str = true;
     bool single_prod_id = true;
     bool single_prod_str = true;
-    bool prod_protein = true;
+    bool partial = false;
 
-    ITERATE(TSegments, seg, m_Segs) {
-        const SAlignment_Segment::SAlignment_Row& gen_row = seg->m_Rows[0];
-        const SAlignment_Segment::SAlignment_Row& prod_row = seg->m_Rows[1];
-        if (seg->m_Rows.size() > 2) {
-            NCBI_THROW(CAnnotMapperException, eBadAlignment,
-                    "Can not construct spliced-seg with more than two rows");
+    ITERATE(TSubAligns, it, m_SubAligns) {
+        TSegments::const_iterator seg = (*it)->m_Segs.begin();
+        while (seg != (*it)->m_Segs.end()) {
+            CSeq_id_Handle ex_gen_id;
+            CSeq_id_Handle ex_prod_id;
+            ENa_strand ex_gen_strand = eNa_strand_unknown;
+            ENa_strand ex_prod_strand = eNa_strand_unknown;
+            (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
+                ex_gen_strand, ex_prod_strand, partial);
+            if ( !gen_id ) {
+                gen_id = ex_gen_id;
+            }
+            else {
+                single_gen_id &= gen_id == ex_gen_id;
+            }
+            if ( !prod_id ) {
+                prod_id = ex_prod_id;
+            }
+            else {
+                single_prod_id &= prod_id == ex_prod_id;
+            }
+            if (ex_gen_strand != eNa_strand_unknown) {
+                single_gen_str &= (gen_strand == eNa_strand_unknown) ||
+                    gen_strand == ex_gen_strand;
+                gen_strand = ex_gen_strand;
+            }
+            else {
+                single_gen_str &= gen_strand == eNa_strand_unknown;
+            }
+            if (ex_prod_strand != eNa_strand_unknown) {
+                single_prod_str &= (prod_strand == eNa_strand_unknown) ||
+                    prod_strand == ex_prod_strand;
+                prod_strand = ex_prod_strand;
+            }
+            else {
+                single_prod_str &= prod_strand == eNa_strand_unknown;
+            }
         }
-        CRef<CSpliced_exon> ex(new CSpliced_exon);
-        CSeq_id_Handle ex_gen_id = gen_row.m_Id;
-        CSeq_id_Handle ex_prod_id = prod_row.m_Id;
-        ex->SetGenomic_id(const_cast<CSeq_id&>(*ex_gen_id.GetSeqId()));
-        ex->SetProduct_id(const_cast<CSeq_id&>(*ex_prod_id.GetSeqId()));
-        if ( !gen_id ) {
-            gen_id = ex_gen_id;
-        }
-        else {
-            single_gen_id &= gen_id == ex_gen_id;
-        }
-        if ( !prod_id ) {
-            prod_id = ex_prod_id;
-        }
-        else {
-            single_prod_id &= prod_id == ex_prod_id;
-        }
-        int start = gen_row.GetSegStart();
-        if (start < 0) {
-            continue; // ??? How to reflect a missing part
-        }
-        ex->SetGenomic_start(start);
-        ex->SetGenomic_end(start + seg->m_Len - 1);
-        start = prod_row.GetSegStart();
-        if (start < 0) {
-            continue; // ??? How to reflect a missing part
-        }
-        if ( prod_row.m_Width == 3 ) {
-            ex->SetProduct_start().SetProtpos().SetAmin(start);
-            ex->SetProduct_start().SetProtpos().SetFrame(prod_row.m_Frame);
-            // Calculate frame:
-            // len = genomic_end - genomic_start =
-            // end_amin*3+(end_frame - 1) - (start_amin*3 + (start_frame - 1))
-            int fr = prod_row.m_Frame ? prod_row.m_Frame - 1 : 0;
-            TSeqPos end_pos = start*3 + fr + seg->m_Len - 1;
-            ex->SetProduct_end().SetProtpos().SetAmin(end_pos/3);
-            ex->SetProduct_end().SetProtpos().SetFrame(end_pos%3+1);
-        }
-        else {
-            prod_protein = false;
-            ex->SetProduct_start().SetNucpos(start);
-            ex->SetProduct_end().SetNucpos(start + seg->m_Len - 1);
-        }
-        if ( gen_row.m_IsSetStrand ) {
-            ex->SetGenomic_strand(gen_row.m_Strand);
-            single_gen_str &= (gen_strand == eNa_strand_unknown) ||
-                gen_strand == gen_row.m_Strand;
-            gen_strand = gen_row.m_Strand;
-        }
-        else {
-            single_gen_str &= gen_strand == eNa_strand_unknown;
-        }
-        if ( prod_row.m_IsSetStrand ) {
-            ex->SetProduct_strand(prod_row.m_Strand);
-            single_prod_str &= (prod_strand == eNa_strand_unknown) ||
-                prod_strand == prod_row.m_Strand;
-            prod_strand = prod_row.m_Strand;
-        }
-        else {
-            single_prod_str &= prod_strand == eNa_strand_unknown;
-        }
-        if ( !seg->m_Parts.empty() ) {
-            ex->SetParts() = seg->m_Parts;
-        }
-        spliced.SetExons().push_back(ex);
     }
+
     if ( single_gen_id ) {
         spliced.SetGenomic_id(const_cast<CSeq_id&>(*gen_id.GetSeqId()));
     }
@@ -1490,11 +1670,19 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         }
     }
 
-    if ( prod_protein ) {
-        spliced.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    const CSpliced_seg& orig = m_OrigAlign->GetSegs().GetSpliced();
+    if ( orig.IsSetPoly_a() ) {
+        spliced.SetPoly_a(orig.GetPoly_a());
     }
-    else {
-        spliced.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    if ( orig.IsSetProduct_length() ) {
+        spliced.SetProduct_length(orig.GetProduct_length());
+    }
+    if (!partial  &&  orig.IsSetModifiers()) {
+        ITERATE(CSpliced_seg::TModifiers, it, orig.GetModifiers()) {
+            CRef<CSpliced_seg_modifier> mod(new CSpliced_seg_modifier);
+            mod->Assign(**it);
+            spliced.SetModifiers().push_back(mod);
+        }
     }
 }
 
@@ -1675,6 +1863,16 @@ CSeq_align_Mapper_Base::CreateSubAlign(const CSeq_align& align,
                                        EWidthFlag map_widths)
 {
     return new CSeq_align_Mapper_Base(align, map_widths);
+}
+
+
+CSeq_align_Mapper_Base*
+CSeq_align_Mapper_Base::CreateSubAlign(const CSpliced_seg& spliced,
+                                       const CSpliced_exon& exon)
+{
+    auto_ptr<CSeq_align_Mapper_Base> sub(new CSeq_align_Mapper_Base);
+    sub->InitExon(spliced, exon);
+    return sub.release();
 }
 
 
