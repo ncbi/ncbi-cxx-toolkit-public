@@ -675,11 +675,12 @@ static EIO_Status s_CONN_ReadPersist
         *n_read += x_read;
         if (*n_read == size  ||  status != eIO_Success)
             break;
-        /* flush the unwritten output data (if any) */
+        /* keep flushing unwritten output data (if any) */
         if (conn->meta.flush) {
             conn->meta.flush(conn->meta.c_flush,
-                             conn->r_timeout == kDefaultTimeout ?
-                             conn->meta.default_timeout : conn->r_timeout);
+                             conn->r_timeout == kDefaultTimeout
+                             ? conn->meta.default_timeout
+                             : conn->r_timeout);
         }
     }
 
