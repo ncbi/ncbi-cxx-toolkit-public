@@ -153,7 +153,7 @@ if test "$need_check" = "yes" ; then
 
    export MAKEFLAGS
    MAKEFLAGS=
-   if test -s relevant.patterns ; then
+   if grep '^PROJECTS_ =.*[^ ]' Makefile.meta >/dev/null ; then
       "$make" check_p RUN_CHECK=N  ||  Error "MAKE CHECK_P failed"
    else
       "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
