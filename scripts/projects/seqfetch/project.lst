@@ -15,7 +15,6 @@ connect$
 connect/ext$
 cgi$
 cgi/impl$
-html$
 internal$
 internal/cppcore$
 internal/cppcore/seqfetch_cgi
