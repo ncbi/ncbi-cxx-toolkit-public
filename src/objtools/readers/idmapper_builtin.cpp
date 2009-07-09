@@ -71,6 +71,31 @@ CIdMapperBuiltin::InitializeCache()
         AddMapEntry( "chr20", 62750820 ); 
         AddMapEntry( "chrX", 62750821 ); 
     }
+    if ( m_strContext == "mm7" ) {
+    
+        AddMapEntry( "chr1", 83274082 ); 
+        AddMapEntry( "chr2", 83280972 ); 
+        AddMapEntry( "chr3", 83280974 ); 
+        AddMapEntry( "chr4", 83280976 ); 
+        AddMapEntry( "chr5", 83280978 ); 
+        AddMapEntry( "chr6", 83280980 ); 
+        AddMapEntry( "chr7", 83280982 ); 
+        AddMapEntry( "chr8", 83280984 ); 
+        AddMapEntry( "chr9", 83280986 ); 
+        AddMapEntry( "chr10", 83274084 ); 
+        AddMapEntry( "chr11", 83274086 ); 
+        AddMapEntry( "chr12", 83274088 ); 
+        AddMapEntry( "chr13", 83274090 ); 
+        AddMapEntry( "chr14", 83274246 ); 
+        AddMapEntry( "chr15", 83274631 ); 
+        AddMapEntry( "chr16", 83280964 ); 
+        AddMapEntry( "chr17", 83280966 ); 
+        AddMapEntry( "chr18", 83280968 ); 
+        AddMapEntry( "chr19", 83280970 ); 
+        AddMapEntry( "chrX", 83280988 ); 
+        AddMapEntry( "chrY", 83280990 ); 
+        AddMapEntry( "chrM", 167716836 ); 
+    }
     if ( m_strContext == "mm8" ) {
     
         AddMapEntry( "chr1", 94471495 ); 
@@ -94,6 +119,7 @@ CIdMapperBuiltin::InitializeCache()
         AddMapEntry( "chr19", 94471505 ); 
         AddMapEntry( "chrX", 94471643 ); 
         AddMapEntry( "chrY", 94490724 ); 
+        AddMapEntry( "chrM", 167716836 ); 
     }
     if ( m_strContext == "mm9" ) {
     
@@ -118,6 +144,7 @@ CIdMapperBuiltin::InitializeCache()
         AddMapEntry( "chr19", 149323268 ); 
         AddMapEntry( "chrX", 149361525 ); 
         AddMapEntry( "chrY", 149361526 ); 
+        AddMapEntry( "chrM", 167716836 ); 
     }  
     if ( m_strContext == "hg17" ) {
     
@@ -172,6 +199,35 @@ CIdMapperBuiltin::InitializeCache()
         AddMapEntry( "chr22", 89161203 );
         AddMapEntry( "chrX", 89161218 );
         AddMapEntry( "chrY", 89161220 );
+        AddMapEntry( "chrM", 17981852 );
+    }
+    if ( m_strContext == "hg19" ) {
+    
+        AddMapEntry( "chr1", 224589800 );
+        AddMapEntry( "chr2", 224589811 );
+        AddMapEntry( "chr3", 224589815 );
+        AddMapEntry( "chr4", 224589816 );
+        AddMapEntry( "chr5", 224589817 );
+        AddMapEntry( "chr6", 224589818 );
+        AddMapEntry( "chr7", 224589819 );
+        AddMapEntry( "chr8", 224589820 );
+        AddMapEntry( "chr9", 224589821 );
+        AddMapEntry( "chr10", 224589801 );
+        AddMapEntry( "chr11", 224589802 );
+        AddMapEntry( "chr12", 224589803 );
+        AddMapEntry( "chr13", 224589804 );
+        AddMapEntry( "chr14", 224589805 );
+        AddMapEntry( "chr15", 224589806 );
+        AddMapEntry( "chr16", 224589807 );
+        AddMapEntry( "chr17", 224589808 );
+        AddMapEntry( "chr18", 224589809 );
+        AddMapEntry( "chr19", 224589810 );
+        AddMapEntry( "chr20", 224589812 );
+        AddMapEntry( "chr21", 224589813 );
+        AddMapEntry( "chr22", 224589814 );
+        AddMapEntry( "chrX", 224589822 );
+        AddMapEntry( "chrY", 224589823 );
+        AddMapEntry( "chrM", 17981852 );
     }
 };
 
