@@ -43,185 +43,34 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
-#include "idmap.hpp"
-#include "idmapper_builtin.hpp"
-#include "idmapper_user.hpp"
-#include "idmapper_site.hpp"
-#include "idmapper_database.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ============================================================================
-CIdMapper*
-CIdMapper::GetIdMapper(
-    const string& strType )
-//  ============================================================================
-{
-    if ( strType == "builtin" ) {
-        return new CIdMapperBuiltin;
-    }
-    if ( strType == "user" ) {
-        return new CIdMapperUser;
-    }
-    if ( strType == "site" ) {
-        return new CIdMapperSite;
-    }
-    if ( strType == "database" ) {
-        return new CIdMapperDatabase;
-    }
-    return new CIdMapper;
-}
-
-//  ============================================================================
-CIdMapper*
-CIdMapper::GetIdMapper(
-    const CArgs& args )
-//  ============================================================================
-{
-    CIdMapper* pIdMapper = GetIdMapper( args[ "t" ].AsString() );
-    pIdMapper->Setup( args );
-    return pIdMapper;
-};
-
-//  ============================================================================
-void CIdMapper::Setup(
-    const CArgs& args )
-//  ============================================================================
-{
-};
-
-//  ============================================================================
-CSeq_id_Handle
-CIdMapper::MapID(
-    const string& strKey,
-    unsigned int& uLength )
-//  ============================================================================
-{
-    uLength = 0;    
-    CSeq_id id( CSeq_id::e_Local, strKey );
-    return CSeq_id_Handle::GetHandle( id );
-};
-
-//  ============================================================================
-void
-CIdMapper::MapId(
-    const string& strBuild,
-    CSeq_id& id )
-//  ============================================================================
-{
-    if ( id.Which() != CSeq_id::e_Local ) {
-        return;
-    }
-    const CSeq_id::TLocal& locid = id.GetLocal();
-    if ( ! locid.IsStr() ) {
-        return;
-    }
-    unsigned int iDummy( 0 );
-    CSeq_id_Handle mapped_handle = MapID( 
-        UcscID::Label( strBuild, locid.GetStr() ), iDummy );
-    id.SetGi( mapped_handle.GetGi() );
-}
-
-//  ============================================================================
-void
-CIdMapper::MapLocation(
-    const string& strBuild,
-    CSeq_loc& location )
-//  ============================================================================
-{
-    const CSeq_id* pId = location.GetId();
-    if ( ! pId || pId->Which() != CSeq_id::e_Local ) {
-        return;
-    }
-    const CSeq_id::TLocal& locid = pId->GetLocal();
-    if ( ! locid.IsStr() ) {
-        return;
-    }
-    string strChrom = locid.GetStr();
-    
-    unsigned int iDummy( 0 );
-    CSeq_id_Handle mapped_handle = MapID( 
-        UcscID::Label( strBuild, strChrom ), iDummy );            
-    location.SetId( *(mapped_handle.GetSeqId()) );
-};
-
-//  ============================================================================
 void
 CIdMapper::MapObject(
-    const string& strBuild,
-    CRef<CSerialObject>& object )
+    CRef< CSerialObject >& object )
 //  ============================================================================
 {
-//    CTypeIterator< CSeq_loc > locit( *object );
-//    for ( /*0*/; locit; ++locit ) {
-//        MapLocation( strBuild, *locit );
-//    }
     CTypeIterator< CSeq_id > idit( *object );
     for ( /*0*/; idit; ++idit ) {
-        MapId( strBuild, *idit );
-    }
-}
-
-//  ============================================================================
-void
-CIdMapper::MapSeqEntry(
-    const string& strBuild,
-    CSeq_entry& entry )
-//  ============================================================================
-{
-    CTypeIterator< CSeq_loc > locit( entry );
-    for ( /*0*/; locit; ++locit ) {
-        CSeq_loc& loc = *locit;
-        MapLocation( strBuild, loc );
-    }
-}
-
-//  ============================================================================
-void
-CIdMapper::MapSeqAnnot(
-    const string& strBuild,
-    CSeq_annot& annot )
-//  ============================================================================
-{
-    if ( ! annot.CanGetData() ) {
-        return;
-    }
-    CSeq_annot::TData& data = annot.SetData();
-    switch( data.Which() ) {
-    
-    case CSeq_annot::C_Data::e_Graph: {
-            list< CRef< CSeq_graph > >& graphs = data.SetGraph();
-            NON_CONST_ITERATE( list< CRef< CSeq_graph > >, it, graphs ) {
-                MapLocation( strBuild, (*it)->SetLoc() );
-            }
+        CSeq_id& id = *idit;
+        if ( id.Which() != CSeq_id::e_Local ) {
+            continue;
         }
-        break;
-    
-    case CSeq_annot::C_Data::e_Ftable: {
-            list< CRef< CSeq_feat > >& features = data.SetFtable();
-            NON_CONST_ITERATE( list< CRef< CSeq_feat > >, it, features ) {
-                MapLocation( strBuild, (*it)->SetLocation() );
-            }
+        const CSeq_id::TLocal& locid = id.GetLocal();
+        if ( ! locid.IsStr() ) {
+            continue;
         }
-        break;
-            
-    default: 
-        break;
+        CSeq_id_Handle hMappedHandle = Map( CSeq_id_Handle::GetHandle(id) );
+        if ( !hMappedHandle ) {
+            continue;
+        }
+        id.Set( hMappedHandle.Which(), 
+            hMappedHandle.GetSeqId()->GetSeqIdString() );
     }
-};
-
-//  ============================================================================
-void
-CIdMapper::Dump(
-    CNcbiOstream& out,
-    const string& strPrefix )
-//  ============================================================================
-{
-    out << strPrefix << "[CIdMapper:" << endl;
-    out << strPrefix << "]" << endl;
 };
 
 END_NCBI_SCOPE

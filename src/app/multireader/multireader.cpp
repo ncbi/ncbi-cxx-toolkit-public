@@ -49,7 +49,6 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -80,6 +79,8 @@ protected:
         
     void DumpErrors(
         CNcbiOstream& );
+        
+    CIdMapper* GetMapper();
             
 private:
     virtual void Init(void);
@@ -90,7 +91,6 @@ private:
     CNcbiIstream* m_pInput;
     CNcbiOstream* m_pOutput;
     CErrorContainer* m_pErrors;
-    string m_strBuild;
     bool m_bCheckOnly;
 };
 
@@ -120,6 +120,12 @@ void CMultiReaderApp::Init(void)
         CArgDescriptions::eOutputFile, "-"); 
 
     arg_desc->AddDefaultKey(
+        "mapfile",
+        "IdMapperConfig",
+        "IdMapper config filename",
+        CArgDescriptions::eString, "" );
+        
+    arg_desc->AddDefaultKey(
         "flags", 
         "Flags",
         "Processing bit flags",
@@ -146,7 +152,7 @@ void CMultiReaderApp::Init(void)
         true );
         
     arg_desc->AddDefaultKey(
-        "build", 
+        "genome", 
         "UCSC_build_number",
         "UCSC build number",
         CArgDescriptions::eString, 
@@ -216,8 +222,6 @@ void CMultiReaderApp::AppInitialize()
     if ( ! args["noerrors"] ) {
         m_pErrors = new CErrorContainer;
     }
-    
-    m_strBuild = args["build"].AsString();        
 }
 
 //  ============================================================================
@@ -246,11 +250,13 @@ void CMultiReaderApp::MapObject(
     if ( !object ) {
         return;
     }
-    if ( ! m_strBuild.empty() ) {
-        CIdMapper* pMapper = CIdMapper::GetIdMapper( "builtin" );
-        pMapper->MapObject( m_strBuild, object );
-        delete pMapper;
+    
+    CIdMapper* pMapper = GetMapper();
+    if ( !pMapper ) {
+        return;
     }
+    pMapper->MapObject( object );
+    delete pMapper;
 }
     
 //  ============================================================================
@@ -264,6 +270,27 @@ void CMultiReaderApp::DumpObject(
     *m_pOutput << MSerial_AsnText << *object << endl;
 }
 
+//  ============================================================================
+CIdMapper*
+CMultiReaderApp::GetMapper()
+//  ============================================================================
+{
+    const CArgs& args = GetArgs();
+    
+    string strBuild = args["build"].AsString();
+    if ( strBuild.empty() ) {
+        return 0;
+    }
+    if ( args["mapfile"] ) {
+        CNcbiIfstream* pMapFile = new CNcbiIfstream( 
+            args["mapfile"].AsString().c_str() );
+        CIdMapper* pMapper = new CIdMapperConfig( *pMapFile, strBuild );
+        pMapFile->close();
+        return pMapper;
+    }
+    return new CIdMapperBuiltin( strBuild );
+}        
+    
 //  ============================================================================
 void CMultiReaderApp::DumpErrors(
     CNcbiOstream& out )

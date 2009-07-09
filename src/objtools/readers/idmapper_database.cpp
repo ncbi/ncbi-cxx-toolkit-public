@@ -37,14 +37,22 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
-#include "idmap.hpp"
-#include "idmapper_database.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//  ============================================================================
+CSeq_id_Handle
+CIdMapperDatabase::Map(
+    const CSeq_id_Handle& from )
+//  ============================================================================
+{
+    /* for now... */
+    return CIdMapper::Map( from );
+};
+
+/*
 //  ============================================================================
 CIdMapperDatabase::CIdMapperDatabase()
 //  ============================================================================
@@ -66,7 +74,6 @@ CIdMapperDatabase::MapID(
     unsigned int& uLength )
 //  ============================================================================
 {
-    /* to be done */
     return CIdMapper::MapID( key, uLength );
 };
 
@@ -81,6 +88,7 @@ CIdMapperDatabase::Dump(
     m_Map.Dump( out, strPrefix + "\t" );
     out << strPrefix << "]" << endl;
 };
+*/
 
 END_NCBI_SCOPE
 

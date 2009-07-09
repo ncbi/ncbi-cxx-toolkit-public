@@ -1,4 +1,4 @@
-/*  $Id$
+/*  $Id: ucscid.hpp 151965 2009-02-10 14:13:52Z ludwigf $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -30,28 +30,4 @@
  *
  */
 
-#ifndef OBJTOOLS_IDMAPPER___UCSCID__HPP
-#define OBJTOOLS_IDMAPPER___UCSCID__HPP
-
-BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-//  ============================================================================
-class NCBI_XOBJREAD_EXPORT UcscID:
-//  ============================================================================
-    public CSeq_id
-{
-public:
-    static string Label(
-        const std::string&,
-        const std::string& );
-    
-public:
-    UcscID(
-        const std::string& );
-};
-
-END_objects_SCOPE
-END_NCBI_SCOPE
-
-#endif // OBJTOOLS_IDMAPPER___UCSCID__HPP
+//  about to be removed

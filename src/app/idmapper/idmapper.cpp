@@ -65,7 +65,6 @@
 #include <util/compress/stream.hpp>
 
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/ucscid.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 USING_NCBI_SCOPE;
@@ -122,17 +121,17 @@ int CIdMapperApp::Run()
 {
     const CArgs& args = GetArgs();
 
-    CIdMapper* pIdMapper = CIdMapper::GetIdMapper( args );
-    pIdMapper->Dump( cout );
-    cout << endl;    
+//    CIdMapper* pIdMapper = new CIdMapper::GetIdMapper( args );
+//    pIdMapper->Dump( cout );
+//    cout << endl;    
     
-    for ( unsigned int u = 1; u <= args.GetNExtra(); ++u ) {
-        string strKey = UcscID::Label( "", args[ u ].AsString() );
-        unsigned int uLength;
-        CSeq_id_Handle idh = pIdMapper->MapID( strKey, uLength );
-        cout << strKey << " ===> " << idh.GetSeqId()->AsFastaString() << endl;
-    }
-    delete pIdMapper;
+//    for ( unsigned int u = 1; u <= args.GetNExtra(); ++u ) {
+//        string strKey = UcscID::Label( "", args[ u ].AsString() );
+//        unsigned int uLength;
+//        CSeq_id_Handle idh = pIdMapper->MapID( strKey, uLength );
+//        cout << strKey << " ===> " << idh.GetSeqId()->AsFastaString() << endl;
+//    }
+//    delete pIdMapper;
         
     return 0;
 }

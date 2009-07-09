@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Frank Ludwig
+ * Author: Mike DiCuccio
  *
  * File Description:
  *
@@ -35,61 +35,189 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_annot_Base;
-class CSeq_graph;
-
 //  ============================================================================
-class NCBI_XOBJREAD_EXPORT CIdMapper
+class NCBI_XOBJREAD_EXPORT IIdMapper
 //  ============================================================================
 {
 public:
-    virtual ~CIdMapper() {};
+    virtual ~IIdMapper() {};
     
-    static CIdMapper* GetIdMapper(
-        const CArgs& );
-    
-    static CIdMapper* GetIdMapper(
-        const std::string& = "" );
+    virtual CSeq_id_Handle
+    Map(
+        const CSeq_id_Handle& ) =0;
 
-    virtual void Setup(
-        const CArgs& );
-            
-    virtual CSeq_id_Handle MapID(
-        const std::string&,
-        unsigned int& );
-
-    virtual void
+    virtual void 
     MapObject(
-        const std::string&,
-        CRef<CSerialObject>& );
-        
-    virtual void
-    MapSeqAnnot(
-        const std::string&, 
-        CSeq_annot& );
-                
-    virtual void
-    MapSeqEntry(
-        const std::string&, 
-        CSeq_entry& );
-                
-    virtual void Dump(
-        CNcbiOstream&,
-        const std::string& = "" );
-                
-protected:                                  
-    virtual void
-    MapLocation(
-        const std::string&,
-        CSeq_loc& );
-        
-    virtual void
-    MapId(
-        const std::string&,
-        CSeq_id& );
-        
-    CIdMapper() {};
+        CRef< CSerialObject >& ) =0; 
+
 };
+
+//  ============================================================================
+class NCBI_XOBJREAD_EXPORT CIdMapper: public IIdMapper
+//  ============================================================================
+{
+public:
+    //
+    //  The "strContext" parameter allows for additional specialization of the
+    //    mapper.
+    //  The "bInvert" parameter indicates the direction of the mapping.
+    //
+    CIdMapper(
+        const std::string& strContext = "",
+        bool bInvert = false ): m_strContext(strContext), m_bInvert(bInvert) {};
+    
+    virtual void
+    AddMapping(
+        const CSeq_id_Handle& to,
+        const CSeq_id_Handle& from ) 
+    {
+        if (!m_bInvert) {
+            m_Cache[ to ] = from;
+        } else {
+            m_Cache[ from ] = to;
+        }
+    };
+        
+    virtual CSeq_id_Handle
+    Map(
+        const CSeq_id_Handle& from ) 
+    {
+        CACHE::iterator to = m_Cache.find( from );
+        if ( to != m_Cache.end() ) {
+            return to->second;
+        }
+        return CSeq_id_Handle();
+    };
+        
+    //
+    //  Map all IDs embedded in this object
+    //
+    virtual void 
+    MapObject(
+        CRef< CSerialObject >& ); 
+
+    /* any other convenience functions with shared implementations*/ 
+    
+protected:
+    typedef std::map< CSeq_id_Handle, CSeq_id_Handle > CACHE;
+    
+    //
+    //  Initialize the cache of mappings. Most implementations will have their
+    //  own special way of doing this.
+    //
+    virtual void
+    InitializeCache() {};
+    
+    const std::string m_strContext;
+    const bool m_bInvert;
+    CACHE m_Cache;   
+};
+
+            
+//  ============================================================================
+class NCBI_XOBJREAD_EXPORT CIdMapperBuiltin: public CIdMapper
+//  
+//  A mapper that will load all its mappings from a compiled in table.
+//  ============================================================================
+{
+public:
+    //
+    //  The "strContext" parameter determines which of various compiled in
+    //  tables will be used.
+    //
+    CIdMapperBuiltin(
+        const std::string& strContext,
+        bool bInvert = false ): CIdMapper(strContext, bInvert)
+    {
+        InitializeCache();
+    };
+    
+protected:
+    virtual void
+    InitializeCache();
+    
+    void
+    AddMapEntry(
+        const std::string&,
+        int );
+};
+
+//  ============================================================================
+class NCBI_XOBJREAD_EXPORT CIdMapperConfig: public CIdMapper
+//
+//  A mapper that will read its mappings from an input stream (typically, a
+//  config file).
+//  ============================================================================
+{
+public:
+    //
+    //  The "istr" parameter provides the stream from which the mappings will be
+    //  initialized.
+    //
+    CIdMapperConfig(
+        CNcbiIstream& istr,
+        const std::string& strContext = "",
+        bool bInvert = false ): CIdMapper(strContext, bInvert), m_Istr(istr)
+    {
+        InitializeCache();
+    };
+    
+protected:
+    virtual void
+    InitializeCache();
+    
+    void
+    AddMapEntry(
+        const std::string& );
+
+    void
+    SetCurrentContext(
+        const std::string&,
+        std::string& );
+    
+    CSeq_id_Handle
+    SourceHandle(
+        const std::string& );
+        
+    CSeq_id_Handle
+    TargetHandle(
+        const std::string& );
+            
+    CNcbiIstream& m_Istr;
+};
+
+//  ============================================================================
+class NCBI_XOBJREAD_EXPORT CIdMapperDatabase: public CIdMapper
+//
+//  A mapper that will get its mappings from a database. Any mappings will be
+//  cached locally after lookup.
+//  ============================================================================
+{
+public:
+    //
+    //  The "strServer" parameter gives the host to where the database is 
+    //    located.
+    //  The "strDatabase" parameter gives the name of the database itself.
+    //
+    CIdMapperDatabase(
+        const std::string& strServer,
+        const std::string& strDatabase,
+        const std::string& strContext,
+        bool bInvert = false )
+        : CIdMapper(strContext, bInvert), 
+          m_strServer(strServer), 
+          m_strDatabase(strDatabase)
+    {};
+        
+    virtual CSeq_id_Handle
+    Map(
+        const CSeq_id_Handle& from );
+        
+protected:
+    const std::string m_strServer;
+    const std::string m_strDatabase;
+};
+
            
 END_objects_SCOPE
 END_NCBI_SCOPE
