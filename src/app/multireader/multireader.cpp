@@ -277,7 +277,7 @@ CMultiReaderApp::GetMapper()
 {
     const CArgs& args = GetArgs();
     
-    string strBuild = args["build"].AsString();
+    string strBuild = args["genome"].AsString();
     if ( strBuild.empty() ) {
         return 0;
     }
