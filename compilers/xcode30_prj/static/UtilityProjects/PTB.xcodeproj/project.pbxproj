@@ -9533,6 +9533,26 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>FILE4632</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>wsdlstr.cpp</string>
+        <key>path</key>
+        <string>../../../../src/serial/datatool/wsdlstr.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>SRC_FILE4632</key>
+      <dict>
+        <key>fileRef</key>
+        <string>FILE4632</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>FILE464</key>
       <dict>
         <key>isa</key>
@@ -10124,6 +10144,7 @@
           <string>FILE463</string>
           <string>FILE4621</string>
           <string>FILE4631</string>
+          <string>FILE4632</string>
         </array>
         <key>isa</key>
         <string>PBXGroup</string>
@@ -10245,6 +10266,7 @@
           <string>SRC_FILE463</string>
           <string>SRC_FILE4621</string>
           <string>SRC_FILE4631</string>
+          <string>SRC_FILE4632</string>
         </array>
         <key>isa</key>
         <string>PBXSourcesBuildPhase</string>
