@@ -53,8 +53,6 @@
 #include "access_list.hpp"
 #include "ns_affinity.hpp"
 
-#include "weak_ref_orig.hpp"
-
 #include <deque>
 #include <map>
 
