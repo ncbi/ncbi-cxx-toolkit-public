@@ -153,7 +153,11 @@ if test "$need_check" = "yes" ; then
 
    export MAKEFLAGS
    MAKEFLAGS=
-   "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
+   if test -s relevant.patterns ; then
+      "$make" check_p RUN_CHECK=N  ||  Error "MAKE CHECK_P failed"
+   else
+      "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
+   fi
    $run_script ./check.sh run
    $run_script ./check.sh load_to_db
 fi
