@@ -278,12 +278,14 @@ CMultiReaderApp::GetMapper()
     const CArgs& args = GetArgs();
     
     string strBuild = args["genome"].AsString();
-    if ( strBuild.empty() ) {
+    string strMapFile = args["mapfile"].AsString();
+    
+    bool bNoMap = strBuild.empty() && strMapFile.empty();
+    if ( bNoMap ) {
         return 0;
     }
-    if ( args["mapfile"] ) {
-        CNcbiIfstream* pMapFile = new CNcbiIfstream( 
-            args["mapfile"].AsString().c_str() );
+    if ( !strMapFile.empty() ) {
+        CNcbiIfstream* pMapFile = new CNcbiIfstream( strMapFile.c_str() );
         CIdMapper* pMapper = new CIdMapperConfig( *pMapFile, strBuild );
         pMapFile->close();
         return pMapper;
