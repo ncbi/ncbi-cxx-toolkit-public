@@ -326,5 +326,21 @@ bool  DTDLexer::EndPrevToken(void)
     return false;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// DTDEntityLexer
+
+DTDEntityLexer::DTDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
+    : DTDLexer(in,name)
+{
+    m_Str = &in;
+    m_AutoDelete = autoDelete;
+}
+DTDEntityLexer::~DTDEntityLexer(void)
+{
+    if (m_AutoDelete) {
+        delete m_Str;
+    }
+}
+
 
 END_NCBI_SCOPE

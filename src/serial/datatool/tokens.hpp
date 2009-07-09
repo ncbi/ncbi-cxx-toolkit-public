@@ -137,6 +137,7 @@ static const TToken K_OUTPUT         = 407;
 static const TToken K_BINDING        = 408;
 static const TToken K_SERVICE        = 409;
 static const TToken K_PORT           = 410;
+static const TToken K_ADDRESS        = 411;
 
 END_NCBI_SCOPE
 

@@ -166,6 +166,7 @@ public:
     virtual string      GetSpecKeyword(void) const;
 
 protected:
+    AutoPtr<CTypeStrings> AddMembers(AutoPtr<CClassTypeStrings>& code) const;
     virtual CClassTypeInfo* CreateClassInfo(void);
 };
 
@@ -188,6 +189,39 @@ public:
 
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
+};
+
+class CWsdlDataType : public CDataContainerType {
+    typedef CDataContainerType CParent;
+
+public:
+    enum EType {
+        eWsdlService,
+        eWsdlEndpoint,
+        eWsdlOperation,
+        eWsdlInput,
+        eWsdlOutput,
+        eWsdlMessage
+    };
+    void SetWsdlType(EType type)
+    {
+        m_Type = type;
+    }
+    EType GetWsdlType(void) const
+    {
+        return m_Type;
+    }
+
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const;
+
+    void       PrintASN(CNcbiOstream&, int)     const { }
+    void       PrintXMLSchema(CNcbiOstream&, int, bool)     const { }
+    void       PrintDTDElement(CNcbiOstream&, bool)   const { }
+    bool       CheckValue(const CDataValue&)    const { return false; }
+    TObjectPtr CreateDefault(const CDataValue&) const { return 0; }
+
+private:
+    EType m_Type;
 };
 
 END_NCBI_SCOPE

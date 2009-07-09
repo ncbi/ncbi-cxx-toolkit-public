@@ -36,6 +36,7 @@
 #include "wsdlparser.hpp"
 #include "tokens.hpp"
 #include "module.hpp"
+#include "datatool.hpp"
 #include <serial/error_codes.hpp>
 
 
@@ -49,6 +50,7 @@ BEGIN_NCBI_SCOPE
 WSDLParser::WSDLParser(WSDLLexer& lexer)
     : XSDParser(lexer)
 {
+    m_SrcType = eWsdl;
 }
 
 WSDLParser::~WSDLParser(void)
@@ -71,16 +73,18 @@ void WSDLParser::BuildDocumentTree(CDataTypeModule& module)
             ParseMessage();
             break;
         case K_PORTTYPE:
-            ParsePortType();
+            CreateTypeDefinition( DTDEntity::eWsdlInterface);
             break;
         case K_BINDING:
-            ParseBinding();
+            CreateTypeDefinition( DTDEntity::eWsdlBinding);
             break;
         case K_SERVICE:
             ParseService();
             break;
         case K_ENDOFTAG:
         case T_EOF:
+            ProcessEndpointTypes();
+            CollectDataObjects();
             return;
         default:
             ParseError("Invalid keyword", "keyword");
@@ -135,37 +139,398 @@ void WSDLParser::ParseTypes(CDataTypeModule& module)
     }
 }
 
+void WSDLParser::ParseContent(DTDElement& node)
+{
+    bool dounk=false;
+    TToken tok;
+    for ( tok=GetNextToken(); ; tok=GetNextToken()) {
+        dounk=false;
+        switch (tok) {
+        case T_EOF:
+            if (m_StackLexer.size() <= 1) {
+                return;
+            }
+            break;
+        case K_ENDOFTAG:
+            return;
+        case K_PORTTYPE:
+            ParsePortType(node);
+            break;
+        case K_BINDING:
+            ParseBinding(node);
+            break;
+        case K_OPERATION:
+            ParseOperation(node);
+            break;
+        case K_INPUT:
+            ParseInput(node);
+            break;
+        case K_OUTPUT:
+            ParseOutput(node);
+            break;
+        case K_PART:
+            ParsePart(node);
+            break;
+        case K_PORT:
+            ParsePort(node);
+            break;
+        case K_ADDRESS:
+            ParseAddress(node);
+            break;
+        default:
+            dounk = true;
+            break;
+        }
+        if (dounk) {
+            for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken())
+                ;
+            if (tok == K_CLOSING) {
+                ParseContent(node);
+            }
+        }
+    }
+}
+
+void WSDLParser::ParsePortType(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+}
+
+void WSDLParser::ParseBinding(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("style")) {
+        if (m_Value != "document") {
+            ParseError("Only document style binding is supported", "document");
+        }
+    }
+    if (GetAttribute("type")) {
+        string id = CreateEntityId(m_Value,DTDEntity::eWsdlInterface);
+        if (m_MapEntity.find(id) != m_MapEntity.end()) {
+            PushEntityLexer(id);
+        } else {
+            ParseError("Unresolved entity", id.c_str());
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+}
+
+void WSDLParser::ParseOperation(DTDElement& node)
+{
+    if (node.GetType() == DTDElement::eWsdlEndpoint) {
+        TToken tok = GetRawAttributeSet();
+        if (!GetAttribute("name")) {
+            ParseError("Operation has no name", "name");
+        }
+        DTDElement& item = EmbeddedElement(node, m_Value,DTDElement::eWsdlOperation);
+        item.SetSourceLine(Lexer().CurrentLine());
+        if (tok == K_CLOSING) {
+            ParseContent(item);
+        }
+        return;
+    }
+    TToken tok;
+    string value;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS;
+          tok = GetNextToken()) {
+        if (tok == K_ATTPAIR ) {
+            if (m_Attribute == "soapAction") {
+                value = m_ValuePrefix;
+                if (!value.empty()) {
+                    value += ':';
+                }
+                value += m_Value;
+            }
+        }
+    }
+    if (!value.empty()) {
+        DTDElement& action = EmbeddedElement(node, "#soapaction", DTDElement::eString);
+        action.SetDefault(value);
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+}
+
+void WSDLParser::ParseInput(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("message")) {
+        string item_name(CreateEmbeddedName(node, DTDElement::eWsdlInput));
+        DTDElement& item = m_MapElement[item_name];
+        item.SetEmbedded();
+        item.SetName(item_name);
+        item.SetType(DTDElement::eWsdlInput);
+        item.SetSourceLine(Lexer().CurrentLine());
+        AddElementContent(node,item_name);
+
+        string msg_name(CreateWsdlName(m_Value,DTDElement::eWsdlMessage));
+        DTDElement& msg = m_MapElement[msg_name];
+        msg.SetName(msg_name);
+        msg.SetType( DTDElement::eWsdlMessage);
+        AddElementContent(item,msg_name);
+        if (tok == K_CLOSING) {
+            ParseContent(item);
+        }
+        return;
+    }
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParseOutput(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("message")) {
+        string item_name(CreateEmbeddedName(node, DTDElement::eWsdlOutput));
+        DTDElement& item = m_MapElement[item_name];
+        item.SetEmbedded();
+        item.SetName(item_name);
+        item.SetType(DTDElement::eWsdlOutput);
+        item.SetSourceLine(Lexer().CurrentLine());
+        AddElementContent(node,item_name);
+
+        string msg_name(CreateWsdlName(m_Value,DTDElement::eWsdlMessage));
+        DTDElement& msg = m_MapElement[msg_name];
+        msg.SetName(msg_name);
+        msg.SetType( DTDElement::eWsdlMessage);
+        AddElementContent(item,msg_name);
+        if (tok == K_CLOSING) {
+            ParseContent(item);
+        }
+        return;
+    }
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParsePart(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (!GetAttribute("element")) {
+        ParseError("Part has no element", "element");
+    }
+    AddElementContent(node,m_Value);
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParsePort(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (!GetAttribute("name")) {
+        ParseError("Port has no name", "name");
+    }
+    string name(CreateWsdlName(m_Value,DTDElement::eWsdlEndpoint));
+    DTDElement& item = m_MapElement[name];
+    item.SetName(m_Value);
+    item.SetSourceLine(Lexer().CurrentLine());
+    item.SetType( DTDElement::eWsdlEndpoint);
+    item.SetNamespaceName(m_TargetNamespace);
+    if (!GetAttribute("binding")) {
+        ParseError("Port has no binding", "binding");
+    }
+    item.SetTypeName(CreateEntityId(m_Value,DTDEntity::eWsdlBinding));
+    AddElementContent(node,name);
+    if (tok == K_CLOSING) {
+        ParseContent(item);
+    }
+}
+
+void WSDLParser::ParseAddress(DTDElement& node)
+{
+    TToken tok;
+    string value;
+    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS;
+          tok = GetNextToken()) {
+        if (tok == K_ATTPAIR ) {
+            if (m_Attribute == "location") {
+                value = m_ValuePrefix;
+                if (!value.empty()) {
+                    value += ':';
+                }
+                value += m_Value;
+            }
+        }
+    }
+    if (value.empty()) {
+        ParseError("Port has no location", "location");
+    }
+    DTDElement& item = EmbeddedElement(node, "#location", DTDElement::eString);
+    item.SetSourceLine(Lexer().CurrentLine());
+    item.SetDefault(value);
+    if (tok == K_CLOSING) {
+        ParseContent(item);
+    }
+}
+
+string WSDLParser::CreateWsdlName(const string& name, DTDElement::EType type)
+{
+    string id;
+    switch (type) {
+    case DTDElement::eWsdlService:
+        id = string("service:") + name;
+        break;
+    case DTDElement::eWsdlEndpoint:
+        id = string("endpoint:") + name;
+        break;
+    case DTDElement::eWsdlOperation:
+        id = string("operation:") + name;
+        break;
+    case DTDElement::eWsdlInput:
+        id = string("input:") + name;
+        break;
+    case DTDElement::eWsdlOutput:
+        id = string("output:") + name;
+        break;
+    case DTDElement::eWsdlMessage:
+        id = string("message:") + name;
+        break;
+    default:
+        id = name;
+        break;
+    }
+    return id;
+}
+
+string WSDLParser::CreateEmbeddedName(DTDElement& node, DTDElement::EType type)
+{
+    return CreateWsdlName( CreateTmpEmbeddedName(
+        node.GetName(), node.GetContent().size()),type);
+}
+
+DTDElement& WSDLParser::EmbeddedElement(DTDElement& node,
+    const string& name, DTDElement::EType type)
+{
+    const list<string>& cont = node.GetContent();
+    ITERATE( list<string>, i, cont) {
+        if (m_MapElement.find( *i) != m_MapElement.end() &&
+            m_MapElement[*i].GetName() == name) {
+            return m_MapElement[*i];
+        }
+    }
+    string item_name(CreateEmbeddedName(node, type));
+    DTDElement& item = m_MapElement[item_name];
+    item.SetEmbedded();
+    item.SetNamed();
+    item.SetName(name);
+    item.SetType(type);
+    AddElementContent(node,item_name);
+    return item;
+}
+
 void WSDLParser::ParseMessage(void)
 {
     TToken tok = GetRawAttributeSet();
-    if (tok == K_CLOSING) {
-        SkipContent();
+    if (!GetAttribute("name")) {
+        ParseError("Message has no name", "name");
     }
-}
 
-void WSDLParser::ParsePortType(void)
-{
-    TToken tok = GetRawAttributeSet();
+    string msg_name(CreateWsdlName(m_Value,DTDElement::eWsdlMessage));
+    DTDElement& node = m_MapElement[msg_name];
+    node.SetName(msg_name);
+    node.SetType( DTDElement::eWsdlMessage);
+    node.SetSourceLine(Lexer().CurrentLine());
     if (tok == K_CLOSING) {
-        SkipContent();
-    }
-}
-
-void WSDLParser::ParseBinding(void)
-{
-    TToken tok = GetRawAttributeSet();
-    if (tok == K_CLOSING) {
-        SkipContent();
+        ParseContent(node);
     }
 }
 
 void WSDLParser::ParseService(void)
 {
     TToken tok = GetRawAttributeSet();
+    if (!GetAttribute("name")) {
+        ParseError("Service has no name", "name");
+    }
+//    ((CDataTool*)CNcbiApplication::Instance())->SetDefaultNamespace(string("NCBI_NS_NCBI::objects") + "::" + m_Value);
+    DTDElement& node = m_MapElement[CreateWsdlName(m_Value,DTDElement::eWsdlService)];
+    node.SetName(m_Value);
+    node.SetSourceLine(Lexer().CurrentLine());
+    node.SetType( DTDElement::eWsdlService);
     if (tok == K_CLOSING) {
-        SkipContent();
+        ParseContent(node);
     }
 }
 
+AbstractLexer* WSDLParser::CreateEntityLexer(
+    CNcbiIstream& in, const string& name, bool autoDelete /*=true*/)
+{
+    return new WSDLEntityLexer(in,name);
+}
+
+void WSDLParser::ProcessEndpointTypes(void)
+{
+    map<string,DTDElement>::iterator i;
+    bool found = false;
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+        DTDElement& node = i->second;
+        if (node.GetType() == DTDElement::eWsdlEndpoint) {
+            found = true;
+            PushEntityLexer(node.GetTypeName());
+            ParseContent(node);
+        }
+    }
+    if (!found) {
+        // no endpoint spec found
+        // create default (?)
+        map<string,DTDEntity>::iterator e;
+        for (e = m_MapEntity.begin(); e != m_MapEntity.end(); ++e) {
+            DTDEntity& ent = e->second;
+            string ename(e->first);
+            if (ent.GetType() == DTDEntity::eWsdlInterface) {
+                string name(CreateWsdlName(ent.GetName(),DTDElement::eWsdlEndpoint));
+                DTDElement& item = m_MapElement[name];
+                item.SetName(ent.GetName());
+                item.SetType( DTDElement::eWsdlEndpoint);
+                item.SetNamespaceName(m_TargetNamespace);
+                item.SetTypeName(ename);
+                found = true;
+            }
+        }
+        if (found) {
+            ProcessEndpointTypes();
+        }
+    }
+}
+
+void WSDLParser::CollectDataObjects(void)
+{
+    map<string,DTDElement>::iterator i;
+    for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+        DTDElement& node = i->second;
+        if (node.GetType() == DTDElement::eWsdlEndpoint ||
+            node.GetType() == DTDElement::eWsdlInput ||
+            node.GetType() == DTDElement::eWsdlOutput) {
+            CollectDataObjects(node,node);
+        }
+    }
+}
+
+void WSDLParser::CollectDataObjects(DTDElement& agent, DTDElement& node)
+{
+    const list<string> refs = node.GetContent();
+    for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
+        DTDElement& refNode = m_MapElement[*i];
+        if (refNode.GetType() < DTDElement::eWsdlService) {
+            if (&agent != &node &&
+//                !refNode.IsEmbedded() &&
+//                node.GetType() != DTDElement::eWsdlOperation &&
+                find(agent.GetContent().begin(), agent.GetContent().end(),*i) ==
+                     agent.GetContent().end()) {
+                agent.AddContent( *i);
+            }
+        } else {
+            CollectDataObjects(agent,refNode);
+        }
+    }
+}
 
 END_NCBI_SCOPE

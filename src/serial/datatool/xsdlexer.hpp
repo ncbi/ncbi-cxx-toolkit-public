@@ -57,6 +57,19 @@ protected:
     void   AddElement(void);
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// XSDEntityLexer
+
+class XSDEntityLexer : public XSDLexer
+{
+public:
+    XSDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
+    virtual ~XSDEntityLexer(void);
+protected:
+    CNcbiIstream* m_Str;
+    bool m_AutoDelete;
+};
+
 END_NCBI_SCOPE
 
 #endif // XSDLEXER_HPP

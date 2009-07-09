@@ -56,6 +56,19 @@ private:
     bool m_UseXsd;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// WSDLEntityLexer
+
+class WSDLEntityLexer : public WSDLLexer
+{
+public:
+    WSDLEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
+    virtual ~WSDLEntityLexer(void);
+protected:
+    CNcbiIstream* m_Str;
+    bool m_AutoDelete;
+};
+
 END_NCBI_SCOPE
 
 #endif // WSDLLEXER_HPP

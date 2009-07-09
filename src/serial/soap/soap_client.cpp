@@ -79,10 +79,10 @@ void CSoapHttpClient::RegisterObjectType(TTypeInfoGetter type_getter)
 void CSoapHttpClient::Invoke(CSoapMessage& response,
                              const CSoapMessage& request,
                              CConstRef<CSoapFault>* fault /*=0*/,
-                             const string& soap_action /*= kEmptyStr*/)
+                             const string& soap_action /*= kEmptyStr*/) const
 {
     response.Reset();
-    vector< TTypeInfoGetter >::iterator types_in;
+    vector< TTypeInfoGetter >::const_iterator types_in;
     for (types_in = m_Types.begin(); types_in != m_Types.end(); ++types_in) {
         response.RegisterObjectType(*types_in);
     }

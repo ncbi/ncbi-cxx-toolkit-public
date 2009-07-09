@@ -313,4 +313,20 @@ void  XSDLexer::AddElement(void)
     return;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// XSDEntityLexer
+
+XSDEntityLexer::XSDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
+    : XSDLexer(in,name)
+{
+    m_Str = &in;
+    m_AutoDelete = autoDelete;
+}
+XSDEntityLexer::~XSDEntityLexer(void)
+{
+    if (m_AutoDelete) {
+        delete m_Str;
+    }
+}
+
 END_NCBI_SCOPE

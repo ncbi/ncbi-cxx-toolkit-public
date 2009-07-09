@@ -83,6 +83,7 @@ TToken WSDLLexer::LookupKeyword(void)
         CHECK("message", K_MESSAGE, 7);
         CHECK("binding", K_BINDING, 7);
         CHECK("service", K_SERVICE, 7);
+        CHECK("address", K_ADDRESS, 7);
         break;
     case 8:
         CHECK("portType", K_PORTTYPE, 8);
@@ -95,6 +96,22 @@ TToken WSDLLexer::LookupKeyword(void)
         break;
     }
     return T_IDENTIFIER;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// WSDLEntityLexer
+
+WSDLEntityLexer::WSDLEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
+    : WSDLLexer(in,name)
+{
+    m_Str = &in;
+    m_AutoDelete = autoDelete;
+}
+WSDLEntityLexer::~WSDLEntityLexer(void)
+{
+    if (m_AutoDelete) {
+        delete m_Str;
+    }
 }
 
 END_NCBI_SCOPE

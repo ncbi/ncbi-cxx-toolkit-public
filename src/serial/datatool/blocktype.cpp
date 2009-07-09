@@ -581,9 +581,15 @@ AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
-    bool isRootClass = GetParentType() == 0;
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(
         GlobalName(), ClassName(), GetNamespaceName(), Comments()));
+    return AddMembers(code);
+}
+
+AutoPtr<CTypeStrings> CDataContainerType::AddMembers(
+    AutoPtr<CClassTypeStrings>& code) const
+{
+    bool isRootClass = GetParentType() == 0;
     bool haveUserClass = isRootClass;
 /*
     bool isObject;
@@ -645,6 +651,7 @@ string CDataContainerType::GetSpecKeyword(void) const
     }
     return GetASNKeyword();
 }
+
 
 const char* CDataSetType::GetASNKeyword(void) const
 {
@@ -760,6 +767,14 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
         }
     }
     return true;
+}
+
+AutoPtr<CTypeStrings> CWsdlDataType::GetFullCType(void) const
+{
+    AutoPtr<CClassTypeStrings> code(new CWsdlTypeStrings(
+        GlobalName(), ClassName(), GetNamespaceName(), Comments()));
+    code->SetHaveTypeInfo(false);
+    return AddMembers(code);
 }
 
 

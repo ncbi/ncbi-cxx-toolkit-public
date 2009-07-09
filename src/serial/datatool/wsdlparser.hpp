@@ -56,10 +56,31 @@ protected:
     void ParseHeader(void);
 
     void ParseTypes(CDataTypeModule& module);
+
+    void ParseContent(DTDElement& node);
+    void ParsePortType(DTDElement& node);
+    void ParseBinding(DTDElement& node);
+    void ParseOperation(DTDElement& node);
+    void ParseInput(DTDElement& node);
+    void ParseOutput(DTDElement& node);
+    void ParsePart(DTDElement& node);
+    void ParsePort(DTDElement& node);
+    void ParseAddress(DTDElement& node);
+
+    string CreateWsdlName(const string& name, DTDElement::EType type);
+    string CreateEmbeddedName(DTDElement& node, DTDElement::EType type);
+    DTDElement& EmbeddedElement(DTDElement& node, const string& name, DTDElement::EType type);
+
     void ParseMessage(void);
-    void ParsePortType(void);
-    void ParseBinding(void);
     void ParseService(void);
+    
+    virtual AbstractLexer* CreateEntityLexer(
+        CNcbiIstream& in, const string& name, bool autoDelete=true);
+
+private:
+    void ProcessEndpointTypes(void);
+    void CollectDataObjects(void);
+    void CollectDataObjects(DTDElement& agent, DTDElement& node);
 };
 
 END_NCBI_SCOPE

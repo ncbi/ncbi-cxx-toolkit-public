@@ -30,7 +30,6 @@
 *       DTDEntity
 *       DTDAttribute
 *       DTDElement
-*       DTDEntityLexer
 *
 * ===========================================================================
 */
@@ -468,39 +467,6 @@ void DTDElement::SetDefault(const string& value)
 const string& DTDElement::GetDefault(void) const
 {
     return m_Default;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// DTDEntityLexer
-
-DTDEntityLexer::DTDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
-    : DTDLexer(in,name)
-{
-    m_Str = &in;
-    m_AutoDelete = autoDelete;
-}
-DTDEntityLexer::~DTDEntityLexer(void)
-{
-    if (m_AutoDelete) {
-        delete m_Str;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// XSDEntityLexer
-
-XSDEntityLexer::XSDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
-    : XSDLexer(in,name)
-{
-    m_Str = &in;
-    m_AutoDelete = autoDelete;
-}
-XSDEntityLexer::~XSDEntityLexer(void)
-{
-    if (m_AutoDelete) {
-        delete m_Str;
-    }
 }
 
 

@@ -832,7 +832,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
             }
             if (code->GetPrimaryClass()->GetKind() == CTypeStrings::eKindObject) {
                 CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(code->GetPrimaryClass());
-                if (classtype) {
+                if (classtype && classtype->HaveTypeInfo()) {
                     out_inc <<
                         "#include " << code->Include(code->GetUserHPPName()) << "\n";
                     out_code << "    "
@@ -921,8 +921,12 @@ bool CCodeGenerator::Imported(const CDataType* type) const
 void CCodeGenerator::CollectTypes(const CDataType* type, EContext /*context*/)
 {
     if ( type->GetParentType() == 0 ) {
-        if ( !AddType(type) )
-            return;
+        const CWsdlDataType* w = dynamic_cast<const CWsdlDataType*>(type);
+        if (!w || w->GetWsdlType() == CWsdlDataType::eWsdlEndpoint) {
+            if ( !AddType(type) ) {
+                return;
+            }
+        }
     }
 
     if ( m_ExcludeRecursion )

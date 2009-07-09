@@ -197,6 +197,21 @@ private:
     string m_FileName;
 };
 
+class CWsdlTypeStrings : public CClassTypeStrings
+{
+    typedef CClassTypeStrings CParent;
+public:
+    CWsdlTypeStrings(const string& externalName, const string& className,
+                      const string& namespaceName,
+                      const CComments& comments);
+    ~CWsdlTypeStrings(void);
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+    void GenerateClassCode( CClassCode& code, CNcbiOstream& setters,
+        const string& methodPrefix, bool haveUserClass,
+        const string& classPrefix) const;
+};
+
 END_NCBI_SCOPE
 
 #endif

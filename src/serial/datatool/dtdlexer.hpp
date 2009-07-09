@@ -62,6 +62,19 @@ private:
     bool m_IdentifierEnd;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// DTDEntityLexer
+
+class DTDEntityLexer : public DTDLexer
+{
+public:
+    DTDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
+    virtual ~DTDEntityLexer(void);
+protected:
+    CNcbiIstream* m_Str;
+    bool m_AutoDelete;
+};
+
 END_NCBI_SCOPE
 
 #endif // DTDLEXER_HPP

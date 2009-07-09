@@ -68,7 +68,8 @@ public:
 
     enum ESrcType {
         eDTD,
-        eSchema
+        eSchema,
+        eWsdl
     };
         
     AutoPtr<CFileModules> Modules(const string& fileName);

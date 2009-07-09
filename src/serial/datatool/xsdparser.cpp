@@ -174,15 +174,19 @@ TToken XSDParser::GetNextToken(void)
             m_NamespaceToPrefix[data] = m_Attribute;
             m_Value = data;
         } else {
-            if (NStr::SplitInTwo(data, ":", str1, str2)) {
-                if (m_PrefixToNamespace.find(str1) == m_PrefixToNamespace.end()) {
-                    m_Value = data;
-                } else {
-                    m_Value = str2;
-                    m_ValuePrefix = str1;
-                }
+            if (m_Attribute == "targetNamespace") {
+                m_Value = data;
             } else {
-                m_Value = str1;
+                if (NStr::SplitInTwo(data, ":", str1, str2)) {
+//                    if (m_PrefixToNamespace.find(str1) == m_PrefixToNamespace.end()) {
+//                        m_Value = data;
+//                    } else {
+                        m_Value = str2;
+                        m_ValuePrefix = str1;
+//                    }
+                } else {
+                    m_Value = str1;
+                }
             }
         }
     } else if (tok != K_ENDOFTAG && tok != K_CLOSING) {
@@ -1113,6 +1117,12 @@ string XSDParser::CreateEntityId( const string& name, DTDEntity::EType type)
     case DTDEntity::eAttGroup:
         id = string("attgroup:") + name;
         break;
+    case DTDEntity::eWsdlInterface:
+        id = string("interface:") + name;
+        break;
+    case DTDEntity::eWsdlBinding:
+        id = string("binding:") + name;
+        break;
     default:
         id = name;
         break;
@@ -1138,6 +1148,7 @@ void XSDParser::CreateTypeDefinition(DTDEntity::EType type)
         ParseError("name");
     }
     m_MapEntity[id].SetData(data);
+    m_MapEntity[id].SetType(type);
     if (tok == K_CLOSING) {
         ParseTypeDefinition(m_MapEntity[id]);
     }

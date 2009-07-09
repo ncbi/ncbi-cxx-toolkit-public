@@ -40,8 +40,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include "dtdlexer.hpp"
-#include "xsdlexer.hpp"
 #include "comments.hpp"
 #include <list>
 #include <map>
@@ -72,7 +70,10 @@ public:
         eEntity,
         eType,
         eGroup,
-        eAttGroup
+        eAttGroup,
+        
+        eWsdlInterface,
+        eWsdlBinding
     };
 
     void SetName(const string& name);
@@ -206,7 +207,14 @@ public:
         eBigInt,
         eDouble,
         eOctetString,
-        eBase64Binary
+        eBase64Binary,
+
+        eWsdlService,
+        eWsdlEndpoint,
+        eWsdlOperation,
+        eWsdlInput,
+        eWsdlOutput,
+        eWsdlMessage
     };
     enum EOccurrence {
         eZero,
@@ -295,33 +303,6 @@ private:
     bool m_Named;
     CComments m_Comments;
     CComments m_AttribComments;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-// DTDEntityLexer
-
-class DTDEntityLexer : public DTDLexer
-{
-public:
-    DTDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
-    virtual ~DTDEntityLexer(void);
-protected:
-    CNcbiIstream* m_Str;
-    bool m_AutoDelete;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// XSDEntityLexer
-
-class XSDEntityLexer : public XSDLexer
-{
-public:
-    XSDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
-    virtual ~XSDEntityLexer(void);
-protected:
-    CNcbiIstream* m_Str;
-    bool m_AutoDelete;
 };
 
 END_NCBI_SCOPE

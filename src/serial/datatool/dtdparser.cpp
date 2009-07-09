@@ -421,7 +421,8 @@ void DTDParser::AddElementContent(DTDElement& node, string& id_name,
     if (type != DTDElement::eUnknown &&
         type != DTDElement::eSequence &&
         type != DTDElement::eChoice &&
-        type != DTDElement::eSet) {
+        type != DTDElement::eSet &&
+        type < DTDElement::eWsdlService) {
         ParseError("Unexpected element contents", "");
     }
     const list<string>& content = node.GetContent();
@@ -1013,8 +1014,28 @@ CDataType* DTDParser::x_Type(
             break;
 
         default:
-            ParseError("Unknown element", "element");
-            type = 0;
+            if (node.GetType() >= DTDElement::eWsdlService) {
+                CWsdlDataType* w = new CWsdlDataType();
+                CWsdlDataType::EType wt = CWsdlDataType::eWsdlService;
+                switch (node.GetType()) {
+                case DTDElement::eWsdlService:   wt = CWsdlDataType::eWsdlService;   break;
+                case DTDElement::eWsdlEndpoint:
+                    wt = CWsdlDataType::eWsdlEndpoint;
+                    break;
+                case DTDElement::eWsdlOperation: wt = CWsdlDataType::eWsdlOperation; break;
+                case DTDElement::eWsdlInput:     wt = CWsdlDataType::eWsdlInput;     break;
+                case DTDElement::eWsdlOutput:    wt = CWsdlDataType::eWsdlOutput;    break;
+                case DTDElement::eWsdlMessage:   wt = CWsdlDataType::eWsdlMessage;   break;
+                default:
+                   ParseError("Unknown WSDL element type", "element");
+                   break;
+                }
+                w->SetWsdlType(wt);
+                type = TypesBlock(w,node,ignoreAttrib);
+            } else {
+                ParseError("Unknown element", "element");
+                type = 0;
+            }
             break;
         }
     }
@@ -1376,6 +1397,7 @@ void DTDParser::PrintDocumentTree(void)
         if ((type == DTDElement::eSequence ||
              type == DTDElement::eChoice ||
              type == DTDElement::eSet ||
+             type >= DTDElement::eWsdlService ||
             node.HasAttributes()) && !node.IsEmbedded()) {
             PrintDocumentNode(i->first,i->second);
         }
@@ -1411,7 +1433,9 @@ void DTDParser::PrintDocumentTree(void)
         DTDElement& node = i->second;
         DTDElement::EType type = node.GetType();
         if ((type != DTDElement::eSequence &&
-             type != DTDElement::eChoice && type != DTDElement::eSet) &&
+             type != DTDElement::eChoice &&
+             type != DTDElement::eSet &&
+             type < DTDElement::eWsdlService) &&
              !node.IsReferenced()) {
             if (!started) {
                 cout << " === UNREFERENCED simpletype elements ===" << endl;
@@ -1441,6 +1465,7 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     default:
     case DTDElement::eUnknown:       cout << "UNKNOWN"; break;
     case DTDElement::eUnknownGroup:  cout << "UNKNOWN"; break;
+
     case DTDElement::eString:   cout << "string";  break;
     case DTDElement::eAny:      cout << "any";     break;
     case DTDElement::eEmpty:    cout << "empty";   break;
@@ -1448,11 +1473,19 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eChoice:   cout << "choice";  break;
     case DTDElement::eSet:      cout << "set";     break;
 
-    case DTDElement::eBoolean:     cout << "boolean";   break;
-    case DTDElement::eInteger:     cout << "integer";   break;
-    case DTDElement::eBigInt:      cout << "BigInt";    break;
-    case DTDElement::eDouble:      cout << "double";    break;
-    case DTDElement::eOctetString: cout << "OctetString";  break;
+    case DTDElement::eBoolean:      cout << "boolean";   break;
+    case DTDElement::eInteger:      cout << "integer";   break;
+    case DTDElement::eBigInt:       cout << "BigInt";    break;
+    case DTDElement::eDouble:       cout << "double";    break;
+    case DTDElement::eOctetString:  cout << "OctetString";  break;
+    case DTDElement::eBase64Binary: cout << "Base64Binary";  break;
+
+    case DTDElement::eWsdlService:   cout << "WsdlService";  break;
+    case DTDElement::eWsdlEndpoint:  cout << "WsdlEndpoint";  break;
+    case DTDElement::eWsdlOperation: cout << "WsdlOperation"; break;
+    case DTDElement::eWsdlInput:     cout << "WsdlInput";    break;
+    case DTDElement::eWsdlOutput:    cout << "WsdlOutput";   break;
+    case DTDElement::eWsdlMessage:   cout << "WsdlMessage";  break;
     }
     switch (node.GetOccurrence()) {
     default:
