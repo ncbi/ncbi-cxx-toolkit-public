@@ -1268,6 +1268,14 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                      BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
                      BlastSeqSrcGetSequence(seq_src, &seq_arg);
                         
+                     /* The C toolkit will erase genetic_code, so do it again */
+                     if (Blast_SubjectIsTranslated(program_number) && 
+                         seq_arg.seq->gen_code_string == NULL) {
+                         seq_arg.seq->gen_code_string = 
+                             GenCodeSingletonFind(default_db_genetic_code);
+                         ASSERT(seq_arg.seq->gen_code_string);
+                     }
+            
                      /* Retry the alignment with fence_hit set*/
                      Blast_TracebackFromHSPList(program_number, hsp_list, 
                                                 query, seq_arg.seq, 
