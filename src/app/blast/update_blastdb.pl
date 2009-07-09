@@ -39,7 +39,6 @@ use Getopt::Long;
 use Pod::Usage;
 use File::stat;
 
-use constant VERSION => 1.2;
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
 use constant USER => "anonymous";
@@ -54,28 +53,39 @@ my $opt_help = 0;
 my $opt_passive = 0;
 my $opt_timeout = 120;
 my $opt_showall = 0;
+my $opt_show_version = 0;
 my $result = GetOptions("verbose+"  =>  \$opt_verbose,
                         "quiet"     =>  \$opt_quiet,
                         "force"     =>  \$opt_force_download,
                         "passive"   =>  \$opt_passive,
                         "timeout=i" =>  \$opt_timeout,
                         "showall"   =>  \$opt_showall,
+                        "version"   =>  \$opt_show_version,
                         "help"      =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
 pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
-pod2usage({-exitval => 1, -verbose => 2}) unless (scalar @ARGV or $opt_showall);
+pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
+                                                  $opt_showall or
+                                                  $opt_show_version);
 
+my $exit_code = 0;
 
 # Connect and download files
-my $ftp = &connect_to_ftp();
-if ($opt_showall) {
+my $ftp = &connect_to_ftp() unless ($opt_show_version);
+if ($opt_show_version) {
+    my $revision = '$Revision$';
+    $revision =~ s/\$Revision: | \$//g;
+    print "$0 version $revision\n";
+} elsif ($opt_showall) {
     print "$_\n" foreach (sort(&get_available_databases()));
 } else {
     my @files = sort(&get_files_to_download());
-    &download(@files);
+    $exit_code = &download(@files);
 }
-$ftp->quit();
+$ftp->quit() unless ($opt_show_version);
+
+exit($exit_code);
 
 # Connects to NCBI ftp server
 sub connect_to_ftp
@@ -143,10 +153,12 @@ sub get_files_to_download
 }
 
 # Download the requestes files only if they are missing or if they are newer in
-# the FTP site.
+# the FTP site. Returns 0 if no files were downloaded, 1 if at least one file
+# was downloaded (so that this can be the application's exit code)
 sub download($)
 {
     my @requested_dbs = @ARGV;
+    my $retval = 0;
 
     for my $file (@_) {
 
@@ -162,10 +174,12 @@ sub download($)
             print STDERR "Downloading $file... " if $opt_verbose;
             $ftp->get($file);
             print STDERR "done.\n" if $opt_verbose;
+            $retval = 1 if ($retval == 0);
         } else {
             print STDERR "$file is up to date.\n" if $opt_verbose;
         }
     }
+    return $retval;
 }
 
 # Determine if a given pre-formatted BLAST database file is part of a
@@ -249,6 +263,10 @@ increase the verbosity level (maximum 2).
 
 Produce no output (default: false). Overrides the B<--verbose> option.
 
+=item B<--version>
+
+Prints this script's version. Overrides all other options.
+
 =back
 
 =head1 DESCRIPTION
@@ -258,7 +276,8 @@ command line from the NCBI ftp site.
 
 =head1 EXIT CODES
 
-This script returns 0 on success and a non-zero value on errors.
+This script returns 1 if it downloaded any files from the FTP site, otherwise
+it returns 0.
 
 =head1 BUGS
 
