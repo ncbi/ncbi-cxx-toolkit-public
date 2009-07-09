@@ -38,12 +38,15 @@ use Net::FTP;
 use Getopt::Long;
 use Pod::Usage;
 use File::stat;
+use Digest::MD5;
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
 use constant USER => "anonymous";
 use constant PASSWORD => "anonymous";
 use constant DEBUG => 0;
+use constant MAX_DOWNLOAD_ATTEMPTS => 3;
+use constant EXIT_FAILURE => 2;
 
 # Process command line options
 my $opt_verbose = 1;
@@ -54,6 +57,7 @@ my $opt_passive = 0;
 my $opt_timeout = 120;
 my $opt_showall = 0;
 my $opt_show_version = 0;
+my $opt_check_md5 = 1;
 my $result = GetOptions("verbose+"  =>  \$opt_verbose,
                         "quiet"     =>  \$opt_quiet,
                         "force"     =>  \$opt_force_download,
@@ -162,17 +166,39 @@ sub download($)
 
     for my $file (@_) {
 
+        my $attempts = 0;   # Download attempts for this file
         if ($opt_verbose and &is_multivolume_db($file)) {
             my $db_name = &extract_db_name($file);
             my $nvol = &get_num_volumes($db_name, @_);
             print STDERR "Downloading $db_name (" . $nvol . " volumes) ...\n";
         }
 
+download_file:
         if ($opt_force_download or
             not -f $file or 
             ((stat($file))->mtime < $ftp->mdtm($file))) {
             print STDERR "Downloading $file... " if $opt_verbose;
             $ftp->get($file);
+            if ($opt_check_md5) {
+                unless ($ftp->get("$file.md5")) {
+                    print STDERR "Failed to download $file.md5!\n";
+                    return EXIT_FAILURE;
+                }
+                my $rmt_digest = &read_md5_file("$file.md5");
+                my $lcl_digest = &compute_md5_checksum($file);
+                print "\nRMT Digest $rmt_digest" if (DEBUG);
+                print "\nLCL Digest $lcl_digest\n" if (DEBUG);
+                if ($lcl_digest ne $rmt_digest) {
+                    unlink $file, "$file.md5";
+                    if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
+                        print STDERR "too many failures, aborting download!\n";
+                        return EXIT_FAILURE;
+                    } else {
+                        print "corrupt download, trying again.\n";
+                        goto download_file;
+                    }
+                }
+            }
             print STDERR "done.\n" if $opt_verbose;
             $retval = 1 if ($retval == 0);
         } else {
@@ -180,6 +206,26 @@ sub download($)
         }
     }
     return $retval;
+}
+
+sub compute_md5_checksum($)
+{
+    my $file = shift;
+    open(DOWNLOADED_FILE, $file);
+    binmode(DOWNLOADED_FILE);
+    my $digest = Digest::MD5->new->addfile(*DOWNLOADED_FILE)->hexdigest;
+    close(DOWNLOADED_FILE);
+    return $digest;
+}
+
+sub read_md5_file($)
+{
+    my $md5file = shift;
+    open(IN, $md5file);
+    $_ = <IN>;
+    close(IN);
+    my @retval = split;
+    return $retval[0];
 }
 
 # Determine if a given pre-formatted BLAST database file is part of a
@@ -276,8 +322,8 @@ command line from the NCBI ftp site.
 
 =head1 EXIT CODES
 
-This script returns 1 if it downloaded any files from the FTP site, otherwise
-it returns 0.
+This script returns 0 on successful operations that result in no downloads, 1
+on successful operations that downloaded files, and 2 on errors.
 
 =head1 BUGS
 
