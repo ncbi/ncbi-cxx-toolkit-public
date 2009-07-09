@@ -83,10 +83,12 @@ CNCDBStat::x_GetSizeIndex(size_t size)
         return 0;
 
     int index = 1;
+#if SIZEOF_SIZE_T > 4
     if (size > 0xFFFFFFFF) {
         size >>= 32;
         index += 32;
     }
+#endif
     if (size > 0xFFFF) {
         size >>= 16;
         index += 16;

@@ -2379,7 +2379,7 @@ bool CBDB_Cache::Read(const string& key,
     time_t curr = time(0);
     int tz_delta = m_LocalTimer.GetLocalTimezone();
 
-    int overflow;
+    int overflow = 0;
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
@@ -2619,7 +2619,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     time_t curr = time(0);
     int tz_delta = m_LocalTimer.GetLocalTimezone();
-    int overflow;
+    int overflow = 0;
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
@@ -2825,7 +2825,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
     time_t curr = time(0);
     int tz_delta = m_LocalTimer.GetLocalTimezone();
-    int overflow;
+    int overflow = 0;
     unsigned volume_id, split_id;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
@@ -3166,15 +3166,14 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
     // ----------------------------------------------------
     unsigned coord[2] = {0,};
     unsigned overflow;
-    EBlobCheckinRes check_res =
+    _VERIFY(
         BlobCheckIn(blob_id_ext,
                     key, version, subkey,
                     eBlobCheckIn_Create,
                     blob_lock, do_id_lock,
                     &coord[0], &coord[1],
-                    &overflow);
-    //_TRACE("CBDB_Cache::GetWriteStream point 4");
-    _ASSERT(check_res != EBlobCheckIn_NotFound);
+                    &overflow)
+            != EBlobCheckIn_NotFound);
     _ASSERT(blob_lock.GetId());
 
 
