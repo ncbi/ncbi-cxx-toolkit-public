@@ -79,6 +79,22 @@ public:
     void Init();
     int Run();
 
+protected:
+    CIdMapper*
+    GetMapper();
+    
+    void
+    GetSourceIds(
+        std::vector< std::string >& );
+
+    CSeq_id_Handle
+    GetSourceHandle(
+        const std::string& );
+        
+    string
+    GetTargetString(
+        CSeq_id_Handle );
+                
 private:
     CNcbiIstream* m_Input;
     CNcbiOstream* m_Output;
@@ -93,21 +109,28 @@ void CIdMapperApp::Init()
         GetArguments().GetProgramBasename(),
         "Convert foreign ids to GI numbers",
         false);
-    
-    arg_desc->AddDefaultKey( "t", 
-        "mapsource",
-        "Source for mappings",
-        CArgDescriptions::eString, ""); 
 
-    arg_desc->AddOptionalKey( "umap",
-        "usermap",
-        "Source for user defined mappings",
+    arg_desc->AddFlag(
+        "reverse",
+        "Map in opposite direction",
+        true );
+            
+    arg_desc->AddDefaultKey( "genome", 
+        "genome",
+        "Source build or genome number",
+        CArgDescriptions::eString, 
+        ""); 
+
+    arg_desc->AddOptionalKey( "mapfile",
+        "mapfile",
+        "Mapper configuration file",
         CArgDescriptions::eInputFile );
         
-    arg_desc->AddOptionalKey( "db",
-        "usermap",
-        "Source for database provided mappings",
-        CArgDescriptions::eString );
+    arg_desc->AddDefaultKey( "mapdb",
+        "mapdb",
+        "Mapper database in the form \"host:database\"",
+        CArgDescriptions::eString,
+        "" );
         
     arg_desc->AddExtra( 1, 100, "ids to look up", CArgDescriptions::eString );
     
@@ -121,20 +144,83 @@ int CIdMapperApp::Run()
 {
     const CArgs& args = GetArgs();
 
-//    CIdMapper* pIdMapper = new CIdMapper::GetIdMapper( args );
-//    pIdMapper->Dump( cout );
-//    cout << endl;    
-    
-//    for ( unsigned int u = 1; u <= args.GetNExtra(); ++u ) {
-//        string strKey = UcscID::Label( "", args[ u ].AsString() );
-//        unsigned int uLength;
-//        CSeq_id_Handle idh = pIdMapper->MapID( strKey, uLength );
-//        cout << strKey << " ===> " << idh.GetSeqId()->AsFastaString() << endl;
-//    }
-//    delete pIdMapper;
+    CIdMapper* pMapper = GetMapper();
+    vector< string > SourceIds;
+    GetSourceIds( SourceIds );
+
+    vector<string>::iterator it;
+    for ( it = SourceIds.begin(); it != SourceIds.end(); ++it ) {
+        string strSource = *it;
+        CSeq_id_Handle hSource = GetSourceHandle( strSource );
+        CSeq_id_Handle hTarget = pMapper->Map( hSource );
+        string strTarget = GetTargetString( hTarget );
+        
+        cout << strSource << " :  " << strTarget << endl;
+    }    
+    delete pMapper;
         
     return 0;
 }
+
+//  ============================================================================
+CIdMapper*
+CIdMapperApp::GetMapper()
+//  ============================================================================
+{
+    string strGenome = GetArgs()[ "genome" ].AsString();
+    string strMapFile = GetArgs()[ "mapfile" ].AsString();
+    string strMapDb = GetArgs()[ "mapdb" ].AsString();
+    bool bReverse = GetArgs()[ "reverse" ];
+    
+    if ( strGenome.empty() && strMapFile.empty() && strMapDb.empty() ) {
+        return new CIdMapper( strGenome, bReverse );
+    }
+    if ( !strMapFile.empty() ) {
+        CNcbiIfstream istr( strMapFile.c_str() );
+        return new CIdMapperConfig( istr, strGenome, bReverse );
+    }
+    if ( !strMapDb.empty() ) {
+        string strHost;
+        string strDatabase;
+        NStr::SplitInTwo( strMapDb, ":", strHost, strDatabase );
+        return new CIdMapperDatabase( strHost, strDatabase, strGenome, bReverse );
+    }
+    return new CIdMapperBuiltin( strGenome, bReverse );
+};
+
+//  ============================================================================
+void
+CIdMapperApp::GetSourceIds(
+    vector< string >& Ids )
+//  ============================================================================
+{
+    const CArgs& args = GetArgs();
+    for ( unsigned int u = 1; u <= args.GetNExtra(); ++u ) {
+        Ids.push_back( args[ u ].AsString() );
+    }
+};
+
+//  ============================================================================
+CSeq_id_Handle
+CIdMapperApp::GetSourceHandle(
+    const string& strSource )
+//  ============================================================================
+{
+    CSeq_id source( CSeq_id::e_Local, strSource );
+    return CSeq_id_Handle::GetHandle( source );
+};
+
+//  ============================================================================
+string
+CIdMapperApp::GetTargetString(
+    CSeq_id_Handle hTarget )
+//  ============================================================================
+{
+    if ( !hTarget ) {
+        return "<unknown>";
+    }
+    return hTarget.AsString();
+};
 
 /////////////////////////////////////////////////////////////////////////////
 //
