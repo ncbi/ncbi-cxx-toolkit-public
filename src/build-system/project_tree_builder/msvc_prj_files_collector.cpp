@@ -147,13 +147,15 @@ static bool s_IsProducedByDatatool(const string&    src_path_abs,
     string asn_name = asn_base + ".asn";
     string dtd_name = asn_base + ".dtd";
     string xsd_name = asn_base + ".xsd";
+    string wsdl_name = asn_base + ".wsdl";
 
     //try to find this name in datatool generated sources container
     ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
         const CDataToolGeneratedSrc& asn = *p;
         if ((asn.m_SourceFile == asn_name) ||
             (asn.m_SourceFile == dtd_name) ||
-            (asn.m_SourceFile == xsd_name))
+            (asn.m_SourceFile == xsd_name) ||
+            (asn.m_SourceFile == wsdl_name))
             return true;
     }
     return false;
