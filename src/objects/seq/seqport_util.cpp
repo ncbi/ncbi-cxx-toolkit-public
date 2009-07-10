@@ -2878,8 +2878,10 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
     // Get string holding the in_seq
     const string& in_seq_data = in_seq.GetIupacna().Get();
 
+    // Out sequence may contain unfinished byte from the previous segment
+    if (*out_seq_length == 0)
+       out_seq->Reset();
     // Get vector where the out sequence will go
-    out_seq->Reset();
     vector<char>& out_seq_data = out_seq->SetNcbi2na().Set();
 
     // If uBeginIdx is after end of in_seq, return
@@ -3030,11 +3032,11 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                     amb_context->AddAmbiguity(c2, out_seq_pos);
                 }
                 rv = rg.GetRand() % 16;
-                c2 &= m_Masks->m_Table[c1].cMask[rv];
+                c1 &= m_Masks->m_Table[c1].cMask[rv];
                 rv = rg.GetRand() % 16;
                 c2 &= m_Masks->m_Table[c2].cMask[rv];
-                new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] |
-                    (m_FastNcbi4naNcbi2na->m_Table[1][c2] & 0xFC);
+                new_byte = (m_FastNcbi4naNcbi2na->m_Table[0][c1] & 0xF0) |
+                    (m_FastNcbi4naNcbi2na->m_Table[1][c2] & 0x0C);
                 break;
             default:
                 // This is a bogus assignment, just to suppress a
@@ -3178,8 +3180,10 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na(
     // Get vector holding the in_seq
     const vector<char>& in_seq_data = in_seq.GetNcbi4na().Get();
 
+    // Out sequence may contain unfinished byte from a previous segment.
+    if (*out_seq_length == 0)
+       out_seq->Reset();
     // Get vector where the out sequence will go
-    out_seq->Reset();
     vector<char>& out_seq_data = out_seq->SetNcbi2na().Set();
 
     // Save uBeginIdx and uLength as they will be modified below
