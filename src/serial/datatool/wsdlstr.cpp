@@ -100,7 +100,7 @@ void CWsdlTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     // constructors/destructor code
     string location("\"\"");
     ITERATE ( TMembers, i, m_Members ) {
-        if (i->dataType->IsStdType() && i->cName == "#location") {
+        if (i->dataType->IsStdType() && i->externalName == "#location") {
             location = i->defaultValue;
         }
     }
@@ -131,6 +131,13 @@ void CWsdlTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         "\n";
 }
 
+static inline
+const CWsdlDataType* x_WsdlDataType(const CDataType *type)
+{
+    return dynamic_cast<const CWsdlDataType*>(type);
+}
+
+
 void CWsdlTypeStrings::GenerateClassCode(
     CClassCode& code, CNcbiOstream& setters,
     const string& methodPrefix, bool haveUserClass,
@@ -143,8 +150,8 @@ void CWsdlTypeStrings::GenerateClassCode(
 
 // generate member methods
     ITERATE ( TMembers, i, m_Members ) {
-        const CWsdlDataType* type = dynamic_cast<const CWsdlDataType*>(i->dataType);
-        if (!type && i->cName != "#location") {
+        const CWsdlDataType* type = x_WsdlDataType(i->dataType);
+        if (!type && i->externalName != "#location") {
             if ( i->ref ) {
                 i->type->GeneratePointerTypeCode(code);
             }
@@ -157,7 +164,7 @@ void CWsdlTypeStrings::GenerateClassCode(
     ITERATE ( TMembers, i, m_Members ) {
 
 // collect operation inputs and outputs
-        const CWsdlDataType* type = dynamic_cast<const CWsdlDataType*>(i->dataType);
+        const CWsdlDataType* type = x_WsdlDataType(i->dataType);
         if (!type || type->GetWsdlType() != CWsdlDataType::eWsdlOperation) {
             continue;
         }
@@ -168,7 +175,7 @@ void CWsdlTypeStrings::GenerateClassCode(
         // operation
         CDataMemberContainerType::TMembers memb = type->GetMembers();
         ITERATE( CDataMemberContainerType::TMembers, m, memb) {
-            const CWsdlDataType* memb_type = dynamic_cast<const CWsdlDataType*>((*m)->GetType());
+            const CWsdlDataType* memb_type = x_WsdlDataType((*m)->GetType());
             if (!memb_type) {
                 const CDataType* st = (*m)->GetType();
                 if (st->IsStdType() && st->GetMemberName() == "#soapaction" && st->GetDataMember()) {
@@ -182,7 +189,7 @@ void CWsdlTypeStrings::GenerateClassCode(
                 ITERATE( CDataMemberContainerType::TMembers, mi, memin) {
                     const string& name = (*mi)->GetName();
                     ITERATE ( TMembers, ii, m_Members ) {
-                        if (ii->cName == name) {
+                        if (!x_WsdlDataType(ii->dataType) && ii->externalName == name) {
                             inputs.push_back(ii);
                         }
                     }
@@ -194,7 +201,7 @@ void CWsdlTypeStrings::GenerateClassCode(
                 ITERATE( CDataMemberContainerType::TMembers, mo, memout) {
                     const string& name = (*mo)->GetName();
                     ITERATE ( TMembers, ii, m_Members ) {
-                        if (ii->cName == name) {
+                        if (!x_WsdlDataType(ii->dataType) && ii->externalName == name) {
                             outputs.push_back(ii);
                         }
                     }
@@ -246,7 +253,7 @@ void CWsdlTypeStrings::GenerateClassCode(
 
         // declaration
         header << "    "
-            << methodRet << "\n    " << i->cName << "(";
+            << methodRet << "\n    " << i->externalName << "(";
         header << separator
             << NStr::Join(methodOut,string(",") + separator)
             << inout_separator
@@ -256,7 +263,7 @@ void CWsdlTypeStrings::GenerateClassCode(
         // definition
         methods
             << methodRet << "\n"
-            << methodPrefix << i->cName << "(";
+            << methodPrefix << i->externalName << "(";
         methods << separator
             << NStr::Join(methodOut,string(",") + separator)
             << inout_separator

@@ -51,6 +51,7 @@ WSDLParser::WSDLParser(WSDLLexer& lexer)
     : XSDParser(lexer)
 {
     m_SrcType = eWsdl;
+    m_ParsingTypes = false;
 }
 
 WSDLParser::~WSDLParser(void)
@@ -124,6 +125,7 @@ void WSDLParser::ParseTypes(CDataTypeModule& module)
 {
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
+        m_ParsingTypes = true;
         while (DTDParser::GetNextToken() == K_SCHEMA) {
             WSDLLexer& l = dynamic_cast<WSDLLexer&>(Lexer());
             l.UseXSDLexer(true);
@@ -132,6 +134,7 @@ void WSDLParser::ParseTypes(CDataTypeModule& module)
             EndScope();
             l.UseXSDLexer(false);
         }
+        m_ParsingTypes = false;
         tok = GetNextToken();
         if (tok != K_ENDOFTAG) {
             ParseError("Unexpected token", "end of tag");
@@ -211,6 +214,7 @@ void WSDLParser::ParseBinding(DTDElement& node)
         string id = CreateEntityId(m_Value,DTDEntity::eWsdlInterface);
         if (m_MapEntity.find(id) != m_MapEntity.end()) {
             PushEntityLexer(id);
+            ParseContent(node);
         } else {
             ParseError("Unresolved entity", id.c_str());
         }
@@ -463,7 +467,9 @@ void WSDLParser::ParseService(void)
 AbstractLexer* WSDLParser::CreateEntityLexer(
     CNcbiIstream& in, const string& name, bool autoDelete /*=true*/)
 {
-    return new WSDLEntityLexer(in,name);
+    WSDLEntityLexer* l = new WSDLEntityLexer(in,name);
+    l->UseXSDLexer(m_ParsingTypes);
+    return l;
 }
 
 void WSDLParser::ProcessEndpointTypes(void)

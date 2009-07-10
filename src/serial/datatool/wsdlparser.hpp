@@ -81,6 +81,8 @@ private:
     void ProcessEndpointTypes(void);
     void CollectDataObjects(void);
     void CollectDataObjects(DTDElement& agent, DTDElement& node);
+
+    bool m_ParsingTypes;
 };
 
 END_NCBI_SCOPE

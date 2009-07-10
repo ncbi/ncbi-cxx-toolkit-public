@@ -297,7 +297,7 @@ void XSDParser::ParseHeader()
             ;
         tok = GetNextToken();
     } else {
-        if (typeid(*this) == typeid(XSDParser)) {
+        if (m_SrcType == eSchema) {
             ERR_POST_X(4, "LINE " << Location() << " XML declaration is missing");
         }
     }
