@@ -206,6 +206,11 @@ CIdMapperApp::GetSourceHandle(
     const string& strSource )
 //  ============================================================================
 {
+    int iGi = NStr::StringToInt( strSource, NStr::fConvErr_NoThrow );
+    if ( iGi ) {
+        return CSeq_id_Handle::GetGiHandle( iGi );
+    }
+        
     CSeq_id source( CSeq_id::e_Local, strSource );
     return CSeq_id_Handle::GetHandle( source );
 };
