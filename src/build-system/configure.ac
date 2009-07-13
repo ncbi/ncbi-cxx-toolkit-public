@@ -326,6 +326,10 @@ AC_ARG_WITH(muparser,
    [ --with-muparser=DIR     use muParser installation in DIR])
 AC_ARG_WITH(muparser2,
    [ --without-muparser      do not use muParser])
+AC_ARG_WITH(hdf5,
+   [ --with-hdf5=DIR         use HDF5 installation in DIR])
+AC_ARG_WITH(hdf5b,
+   [ --without-hdf5          do not use HDF5])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
 AC_ARG_WITH(gif2,
@@ -392,7 +396,7 @@ geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
-sp expat sablot libxml libxslt xerces xalan oechem sge muparser \
+sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -445,7 +449,7 @@ for x_arg in "$@" ; do
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
-      | --with-muparser=* \
+      | --with-muparser=* | --with-hdf5=* \
       | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -5478,6 +5482,27 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(muparser,
   [[AC_LANG_PROGRAM([[#include <muParser.h>]],
      [[mu::Parser parser;]])]])
+
+
+### hdf5
+case "$with_hdf5" in
+   yes | '' ) : ${HDF5_PATH=$NCBI/hdf5} ;;
+   *        ) HDF5_PATH=$with_hdf5 ;;
+esac
+
+if test -d "$HDF5_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"; then
+   HDF5_PATH=$HDF5_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}
+elif test -d "$HDF5_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}"; then
+   HDF5_PATH=$HDF5_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}
+fi
+if test -d "$HDF5_PATH"; then
+   NCBI_FIX_DIR(HDF5_PATH)
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(hdf5, HDF5, hdf5_cpp,
+  [[AC_LANG_PROGRAM([[#include <H5Cpp.h>]],
+     [[H5::H5Library::open();]])]],
+  [-lhdf5])
 
 
 ### Image libraries

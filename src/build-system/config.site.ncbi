@@ -54,6 +54,10 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    Linux*     ) : ${HDF5_PATH=$NCBI/hdf5-1.8.3} ;;
+esac
+
+case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
     * ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
 esac

@@ -217,6 +217,9 @@
 /* Define to 1 if libgnutls is available. */
 #undef HAVE_LIBGNUTLS
 
+/* Define to 1 if libhdf5_cpp is available. */
+#undef HAVE_LIBHDF5
+
 /* Define to 1 if ICONV is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBICONV
