@@ -97,7 +97,7 @@ To support user-created alignments a utility, 'fa2cd' [formerly named 'fasta2cd'
 
 The .cn3 file created by the bma_refiner program can be loaded into Cn3D and
 saved as FASTA, if desired.  Also, a command-line utility program called 'cddalignview'
-exists in the NCBI C++ Toolkit (under src/app/cddalignview, relative to the
+exists in the NCBI C++ Toolkit (under src/objtools/cddalignview, relative to the
 toolkit's root directory) which will read a .cn3 file and generate FASTA output.
 
 NOTE:  A 'data' subdirectory contains some basic information used in
