@@ -56,28 +56,19 @@ public:
     //    
 public:
     CMultiReader(
-        CFormatGuess::EFormat = CFormatGuess::eUnknown );
+        CFormatGuess::EFormat = CFormatGuess::eUnknown,
+        int iFlags = 0 );
     
     virtual ~CMultiReader();
 
 public:
-    CRef< CSeq_annot >
-    ReadSeqAnnot(
-        ILineReader&,
-        CErrorContainer* =0 );
-        
-    CRef< CSeq_annot >
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CErrorContainer* =0 );
-         
-    virtual CRef< CSeq_entry >
-    ReadSeqEntry(
+    virtual CRef< CSerialObject >
+    ReadObject(
         CNcbiIstream&,
         CErrorContainer* =0 );
                 
-    virtual CRef< CSeq_entry >
-    ReadSeqEntry(
+    virtual CRef< CSerialObject >
+    ReadObject(
         ILineReader&,
         CErrorContainer* =0 );
                 
@@ -86,14 +77,10 @@ public:
     //
 protected:
     CReaderBase*
-    CreateReader(
-        CNcbiIstream& );
-
-    CReaderBase*
-    CreateReader(
-        ILineReader& );
+    CreateReader();
 
     CFormatGuess::EFormat m_iFormat;
+    int m_iFlags;
 };    
 
 END_objects_SCOPE

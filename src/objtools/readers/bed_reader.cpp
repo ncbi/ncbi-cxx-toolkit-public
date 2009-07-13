@@ -115,7 +115,7 @@ CBedReader::ReadSeqAnnot(
     ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
-{ 
+{
     CRef< CSeq_annot > annot( new CSeq_annot );
     string line;
     int linecount = 0;
@@ -144,45 +144,22 @@ CBedReader::ReadSeqAnnot(
             ProcessError( err, pErrorContainer );
         }
         continue;
-    }    
+    }
     return annot;
 }
-    
+ 
 //  ----------------------------------------------------------------------------                
-CRef< CSeq_annot >
-CBedReader::ReadSeqAnnot(
-    CNcbiIstream& in,
+CRef< CSerialObject >
+CBedReader::ReadObject(
+    ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    CStreamLineReader lr( in );
-    return ReadSeqAnnot( lr, pErrorContainer );
-};
-                
-//  ----------------------------------------------------------------------------
-void CBedReader::Read( 
-    CNcbiIstream& input, 
-    CRef<CSeq_annot>& annot )
-//  ----------------------------------------------------------------------------
-{
-    string line;
-    int linecount = 0;
-
-    while ( ! input.eof() ) {
-        ++linecount;
-        NcbiGetlineEOL( input, line );
-        if ( NStr::TruncateSpaces( line ).empty() ) {
-            continue;
-        }
-        if ( IsMetaInformation( line ) ) {
-            x_ProcessMetaInformation( line );
-            continue;
-        }
-        x_ParseFeature( line, annot );
-        continue;
-    }
+    CRef<CSerialObject> object( 
+        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );    
+    return object;
 }
-
+    
 //  ----------------------------------------------------------------------------
 bool CBedReader::IsMetaInformation(
     const string& line )

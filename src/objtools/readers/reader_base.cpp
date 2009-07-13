@@ -39,6 +39,7 @@
 #include <corelib/stream_utils.hpp>
 
 #include <util/static_map.hpp>
+#include <util/line_reader.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
@@ -99,53 +100,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 CReaderBase*
 CReaderBase::GetReader(
-    const string& format,
-    int flags )
-//  ----------------------------------------------------------------------------
-{
-    if ( format == "bed" || format == "bed12" ) {
-        return new CBedReader( flags );
-    }
-    if ( format == "microarray" || format == "bed15" ) {
-        return new CMicroArrayReader( flags );
-    }
-    if ( format == "wiggle" || format == "wig" ) {
-        return new CWiggleReader( flags );
-    }
-    if ( format == "gff" ) {
-        return new CGff3Reader( flags );
-    }
-    return 0;
-}
-
-//  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
-    const string& format,
-    const CArgs& args )
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Ok, select the appropriate reader object:
-    //
-    if ( format == "bed" || format == "bed12" ) {
-        return new CBedReader( args["g"].AsInteger() );
-    }
-    if ( format == "microarray" || format == "bed15" ) {
-        return new CMicroArrayReader( args["g"].AsInteger() );
-    }
-    if ( format == "wiggle" || format == "wig" ) {
-        return new CWiggleReader( args );
-    }
-    if ( format == "gff" ) {
-        return new CGff3Reader( args );
-    }
-    return 0;
-}
-
-//  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
     CFormatGuess::EFormat format,
     int flags )
 //  ----------------------------------------------------------------------------
@@ -165,24 +119,60 @@ CReaderBase::GetReader(
 }
 
 //  ----------------------------------------------------------------------------
-CReaderBase*
-CReaderBase::GetReader(
-    CFormatGuess::EFormat format,
-    const CArgs& args )
+CRef< CSerialObject >
+CReaderBase::ReadObject(
+    CNcbiIstream& istr,
+    CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------
 {
-    switch ( format ) {
-    default:
-        return 0;
-    case CFormatGuess::eBed:
-        return new CBedReader( args["g"].AsInteger() );
-    case CFormatGuess::eBed15:
-        return new CMicroArrayReader( args["g"].AsInteger() );
-    case CFormatGuess::eWiggle:
-        return new CWiggleReader( args );
-    }
+    CStreamLineReader lr( istr );
+    return ReadObject( lr, pErrorContainer );
 }
 
+//  ----------------------------------------------------------------------------
+CRef< CSeq_annot >
+CReaderBase::ReadSeqAnnot(
+    CNcbiIstream& istr,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------
+{
+    CStreamLineReader lr( istr );
+    return ReadSeqAnnot( lr, pErrorContainer );
+}
+
+//  ----------------------------------------------------------------------------
+CRef< CSeq_annot >
+CReaderBase::ReadSeqAnnot(
+    ILineReader&,
+    CErrorContainer* ) 
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_annot> object( new CSeq_annot() );
+    return object;
+}
+                
+//  ----------------------------------------------------------------------------
+CRef< CSeq_entry >
+CReaderBase::ReadSeqEntry(
+    CNcbiIstream& istr,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------
+{
+    CStreamLineReader lr( istr );
+    return ReadSeqEntry( lr, pErrorContainer );
+}
+
+//  ----------------------------------------------------------------------------
+CRef< CSeq_entry >
+CReaderBase::ReadSeqEntry(
+    ILineReader&,
+    CErrorContainer* ) 
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_entry> object( new CSeq_entry() );
+    return object;
+}
+                
 //  ----------------------------------------------------------------------------
 bool CReaderBase::SplitLines( 
     const char* pcBuffer, 

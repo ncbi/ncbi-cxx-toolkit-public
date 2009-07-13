@@ -59,23 +59,20 @@ public:
 public:
     CMicroArrayReader( 
         int =fDefaults );
+        
     virtual ~CMicroArrayReader();
     
     //
     //  interface:
     //
-    virtual void Read( 
-        CNcbiIstream&, 
-        CRef<CSeq_annot>& );
-                
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
         CErrorContainer* =0 );
                 
-    CRef< CSeq_annot >
-    ReadSeqAnnot(
-        CNcbiIstream&,
+    virtual CRef< CSerialObject >
+    ReadObject(
+        ILineReader&,
         CErrorContainer* =0 );
                 
     //

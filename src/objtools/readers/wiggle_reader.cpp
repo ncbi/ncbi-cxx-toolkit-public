@@ -106,33 +106,6 @@ CWiggleReader::CWiggleReader(
     m_pSet = new CWiggleSet;
 }
 
-
-//  ----------------------------------------------------------------------------
-CWiggleReader::CWiggleReader(
-    const CArgs& args ) :
-//  ----------------------------------------------------------------------------
-    m_uCurrentRecordType( TYPE_NONE )
-{
-    //
-    //  Make sure the provided options make sense:
-    //
-    if ( !args["usermap"].AsString().empty() && !args["sitemap"].AsString().empty() ) {
-        NCBI_THROW( CArgException, eInvalidArg,
-            "CReaderBase: Options \"sitemap\" and \"usermap\" are mutually exclusive" );
-    }
-    if ( !args["usermap"].AsString().empty() && !args["dbmap"].AsString().empty() ) {
-        NCBI_THROW( CArgException, eInvalidArg,
-            "CReaderBase: Options \"dbmap\" and \"usermap\" are mutually exclusive" );
-    }
-    if ( !args["dbmap"].AsString().empty() && !args["sitemap"].AsString().empty() ) {
-        NCBI_THROW( CArgException, eInvalidArg,
-            "CReaderBase: Options \"sitemap\" and \"dbmap\" are mutually exclusive" );
-    }
-
-    m_pSet = new CWiggleSet;
-}
-
-
 //  ----------------------------------------------------------------------------
 CWiggleReader::~CWiggleReader()
 //  ----------------------------------------------------------------------------
@@ -140,6 +113,18 @@ CWiggleReader::~CWiggleReader()
     delete m_pSet;
 }
 
+//  ----------------------------------------------------------------------------                
+CRef< CSerialObject >
+CWiggleReader::ReadObject(
+    ILineReader& lr,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CRef<CSerialObject> object( 
+        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );
+    return object; 
+}
+    
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CWiggleReader::ReadSeqAnnot(
@@ -157,7 +142,7 @@ CWiggleReader::ReadSeqAnnot(
     x_ReadLine( lr, pending );
     if ( lr.AtEOF() && pending.empty() ) {
         // empty file
-        return CRef<CSeq_annot >();
+        return CRef< CSeq_annot >();
     }
     while ( !lr.AtEOF() ) {
         //
@@ -194,25 +179,6 @@ CWiggleReader::ReadSeqAnnot(
     return annot; 
 }
     
-//  ----------------------------------------------------------------------------                
-CRef< CSeq_annot >
-CWiggleReader::ReadSeqAnnot(
-    CNcbiIstream& input,
-    CErrorContainer* pErrorContainer ) 
-//  ----------------------------------------------------------------------------                
-{
-    CStreamLineReader lr( input );
-    return ReadSeqAnnot( lr, pErrorContainer );
-};
-                
-//  ----------------------------------------------------------------------------
-void CWiggleReader::Dump(
-    CNcbiOstream& Out )
-//  ----------------------------------------------------------------------------
-{
-    m_pSet->Dump( Out );
-}
-
 //  ----------------------------------------------------------------------------
 void CWiggleReader::x_ParseTrackData(
     string& pending,

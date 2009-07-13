@@ -72,9 +72,6 @@ public:
     CWiggleReader( 
         int =fDefaults );
         
-    CWiggleReader( 
-        const CArgs& );
-        
     virtual ~CWiggleReader();
     
     //
@@ -88,17 +85,14 @@ public:
 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
-        CNcbiIstream&,
-        CErrorContainer* =0 );
-                
-    virtual CRef< CSeq_annot >
-    ReadSeqAnnot(
         ILineReader&,
         CErrorContainer* =0 );
                 
-    virtual void Dump(
-        CNcbiOstream& );
-        
+    virtual CRef< CSerialObject >
+    ReadObject(
+        ILineReader&,
+        CErrorContainer* =0 );
+                
     //
     //  class interface:
     //

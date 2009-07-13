@@ -110,6 +110,18 @@ CMicroArrayReader::~CMicroArrayReader()
 }
 
 //  ----------------------------------------------------------------------------                
+CRef< CSerialObject >
+CMicroArrayReader::ReadObject(
+    ILineReader& lr,
+    CErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    CRef<CSerialObject> object( 
+        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );
+    return object;
+}
+    
+//  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
@@ -145,44 +157,9 @@ CMicroArrayReader::ReadSeqAnnot(
         }
         continue;
     }
-    
     return annot;
 }
     
-//  ----------------------------------------------------------------------------                
-CRef< CSeq_annot >
-CMicroArrayReader::ReadSeqAnnot(
-    CNcbiIstream& input,
-    CErrorContainer* pErrorContainer ) 
-//  ----------------------------------------------------------------------------                
-{ 
-    CStreamLineReader lr( input );
-    return ReadSeqAnnot( lr, pErrorContainer );
-};
-                
-//  ----------------------------------------------------------------------------
-void CMicroArrayReader::Read( 
-    CNcbiIstream& input, 
-    CRef<CSeq_annot>& annot )
-//  ----------------------------------------------------------------------------
-{
-    string line;
-    int linecount = 0;
-
-    while ( ! input.eof() ) {
-        ++linecount;
-        NcbiGetlineEOL( input, line );
-        if ( NStr::TruncateSpaces( line ).empty() ) {
-            continue;
-        }
-        if ( IsMetaInformation( line ) ) {
-            x_ProcessMetaInformation( line, annot );
-            continue;
-        }
-        x_ParseFeature( line, annot );
-    }
-}
-
 //  ----------------------------------------------------------------------------
 bool CMicroArrayReader::IsMetaInformation(
     const string& line )

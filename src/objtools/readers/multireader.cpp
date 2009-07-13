@@ -86,6 +86,7 @@
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
+#include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -101,9 +102,10 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 CMultiReader::CMultiReader(
-    CFormatGuess::EFormat fmt )
+    CFormatGuess::EFormat fmt,
+    int iFlags )
 //  ----------------------------------------------------------------------------
-    : m_iFormat( fmt )
+    : m_iFormat( fmt ), m_iFlags( iFlags )
 {
 }
 
@@ -114,112 +116,58 @@ CMultiReader::~CMultiReader()
 };
 
 //  ----------------------------------------------------------------------------
-CRef< CSeq_annot >
-CMultiReader::ReadSeqAnnot(
+CRef< CSerialObject >
+CMultiReader::ReadObject(
     ILineReader& lr,
     CErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
-    CReaderBase* pReader = CreateReader( lr );
-    return pReader->ReadSeqAnnot( lr, pErrorContainer );
-};
-
-//  ----------------------------------------------------------------------------
-CRef< CSeq_annot >
-CMultiReader::ReadSeqAnnot(
-    CNcbiIstream& in,
-    CErrorContainer* pErrorContainer )
-//  ----------------------------------------------------------------------------
-{
-    CReaderBase* pReader = CreateReader( in );
-    return pReader->ReadSeqAnnot( in, pErrorContainer );
-};
-
-//  ----------------------------------------------------------------------------
-CRef< CSeq_entry >
-CMultiReader::ReadSeqEntry(
-    ILineReader& lr,
-    CErrorContainer* pErrorContainer )
-//  ----------------------------------------------------------------------------
-{
-    CReaderBase* pReader = CreateReader( lr );
-    return pReader->ReadSeqEntry( lr, pErrorContainer );
-};
-
-//  ----------------------------------------------------------------------------
-CRef< CSeq_entry >
-CMultiReader::ReadSeqEntry(
-    CNcbiIstream& in,
-    CErrorContainer* pErrorContainer )
-//  ----------------------------------------------------------------------------
-{
-    CReaderBase* pReader = CreateReader( in );
-    return pReader->ReadSeqEntry( in, pErrorContainer );
-};
-
-//  ----------------------------------------------------------------------------
-CReaderBase*
-CMultiReader::CreateReader(
-    ILineReader& /* not used */ )
-//  ----------------------------------------------------------------------------
-{
-    switch( m_iFormat ) {
-    case CFormatGuess::eBed:
-        return new CBedReader();
-        
-    case CFormatGuess::eBed15:
-        return new CMicroArrayReader();
-        
-    case CFormatGuess::eWiggle:
-        return new CWiggleReader();
-        
-    default:
+    CReaderBase* pReader = CreateReader();
+    if ( !pReader ) {
         NCBI_THROW2( CObjReaderParseException, eFormat,
             "File format not supported", 0 );
     }
-}
+    return pReader->ReadObject( lr, pErrorContainer );
+};
+
+//  ----------------------------------------------------------------------------
+CRef< CSerialObject >
+CMultiReader::ReadObject(
+    CNcbiIstream& in,
+    CErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    CReaderBase* pReader = CreateReader();
+    if ( !pReader ) {
+        NCBI_THROW2( CObjReaderParseException, eFormat,
+            "File format not supported", 0 );
+    }
+    return pReader->ReadObject( in, pErrorContainer );
+};
 
 //  ----------------------------------------------------------------------------
 CReaderBase*
-CMultiReader::CreateReader(
-    CNcbiIstream& in )
+CMultiReader::CreateReader()
 //  ----------------------------------------------------------------------------
 {
-    CFormatGuess fg( in );
-    
-    if ( m_iFormat == CFormatGuess::eUnknown ) {
-        m_iFormat = fg.GuessFormat();
-    }
-    else {
-        if ( ! fg.TestFormat( m_iFormat ) ) {
-            m_iFormat = CFormatGuess::eUnknown;
-        }
-    }
-    if ( m_iFormat == CFormatGuess::eUnknown ) {
-        NCBI_THROW2( CObjReaderParseException, eFormat,
-            "File format not recognized", 0 );
-//        CException error( EDiagSev::eDiag_Error, -1, 0 );
-//        throw error;
-    }
-    
     switch( m_iFormat ) {
     case CFormatGuess::eBed:
-        return new CBedReader();
+        return new CBedReader( m_iFlags );
         
     case CFormatGuess::eBed15:
-        return new CMicroArrayReader();
+        return new CMicroArrayReader( m_iFlags );
         
     case CFormatGuess::eWiggle:
-        return new CWiggleReader();
-    
+        return new CWiggleReader( m_iFlags );
+        
     case CFormatGuess::eGtf:
-        return new CGff3Reader();
-            
+        return new CGff3Reader( m_iFlags );
+    
     default:
-        NCBI_THROW2( CObjReaderParseException, eFormat,
-            "File format not supported", 0 );
+        return 0;
     }
 }
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -63,58 +63,42 @@ public:
     //  Class interface:
     //
     static CReaderBase* GetReader(
-        const string&,
-        int =0 );
-
-    static CReaderBase* GetReader(
         CFormatGuess::EFormat,
         int =0 );
-
-    static CReaderBase* GetReader(
-        const string&,
-        const CArgs& );
-
-    static CReaderBase* GetReader(
-        CFormatGuess::EFormat,
-        const CArgs& );
 
     //
     //  Object interface:
     //
-    virtual unsigned int 
-    ObjectType() const { return OT_SEQANNOT; };
-    
-    virtual void Read( 
-        CNcbiIstream&, 
-        CRef<CSeq_annot>& ) { return; };
-        
-    virtual void Read( 
-        CNcbiIstream&, 
-        CRef<CSeq_entry>& ) { return; };
-
+    virtual CRef< CSerialObject >
+    ReadObject(
+        CNcbiIstream&,
+        CErrorContainer* =0 );
+                
+    virtual CRef< CSerialObject >
+    ReadObject(
+        ILineReader&,
+        CErrorContainer* =0 ) =0;
+                
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream&,
-        CErrorContainer* =0 ) { return CRef< CSeq_annot >(); };
+        CErrorContainer* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        CErrorContainer* =0 ) { return CRef< CSeq_annot >(); };
+        CErrorContainer* =0 );
                 
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         CNcbiIstream&,
-        CErrorContainer* =0 ) { return CRef< CSeq_entry >(); };
+        CErrorContainer* =0 );
                 
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        CErrorContainer* =0 ) { return CRef< CSeq_entry >(); };
+        CErrorContainer* =0 );
                 
-    virtual void Dump(
-        CNcbiOstream& ) { return; };
-
     //
     //  Class helper functions:
     //
@@ -133,6 +117,7 @@ protected:
     //  Data:
     //
     unsigned int m_uLineNumber;
+    int m_iFlags;
 };
 
 END_objects_SCOPE

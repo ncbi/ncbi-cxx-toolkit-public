@@ -58,9 +58,6 @@ public:
     CGff3Reader( 
         int =0 );
 
-    CGff3Reader( 
-        const CArgs& );
-        
     virtual ~CGff3Reader();
     
     //
@@ -70,20 +67,16 @@ public:
     unsigned int 
     ObjectType() const { return OT_SEQENTRY; };
     
-    virtual void Read( 
-        CNcbiIstream&, 
-        CRef<CSeq_entry>& );
-
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
         CErrorContainer* =0 );
         
-    CRef< CSeq_entry >
-    ReadSeqEntry(
-        CNcbiIstream&,
+    virtual CRef< CSerialObject >
+    ReadObject(
+        ILineReader&,
         CErrorContainer* =0 );
-         
+                
     //
     //  helpers:
     //

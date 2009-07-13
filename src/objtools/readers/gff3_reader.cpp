@@ -102,31 +102,6 @@ CGff3Reader::CGff3Reader(
 {
 }
 
-
-//  ----------------------------------------------------------------------------
-CGff3Reader::CGff3Reader(
-    const CArgs& args )
-//  ----------------------------------------------------------------------------
-{
-    m_iReaderFlags = CGFFReader::fDefaults;
-    if ( args[ "numeric-ids-to-local" ] ) {
-        m_iReaderFlags |= CGFFReader::fNumericIdsAsLocal;
-    }
-    if ( args[ "all-ids-to-local" ] ) {
-        m_iReaderFlags |= CGFFReader::fAllIdsAsLocal;
-    }
-    if ( args[ "attribute-to-gbqual" ] ) {
-        m_iReaderFlags |= CGFFReader::fGBQuals;
-    }
-    if ( args[ "id-to-product" ] ) {
-        m_iReaderFlags |= CGFFReader::fSetProducts;
-    }
-    if ( args[ "no-gtf" ] ) {
-        m_iReaderFlags |= CGFFReader::fNoGTF;
-    }
-}
-
-
 //  ----------------------------------------------------------------------------
 CGff3Reader::~CGff3Reader()
 //  ----------------------------------------------------------------------------
@@ -166,18 +141,6 @@ bool CGff3Reader::VerifyLine(
     return true;
 }
 
-
-//  ----------------------------------------------------------------------------
-void CGff3Reader::Read( 
-    CNcbiIstream& input, 
-    CRef<CSeq_entry>& entry )
-//  ----------------------------------------------------------------------------
-{
-    CGFFReader reader;
-    entry.Reset( reader.Read( input, m_iReaderFlags ) );
-}
-
-
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_entry >
 CGff3Reader::ReadSeqEntry(
@@ -189,22 +152,28 @@ CGff3Reader::ReadSeqEntry(
     int linecount = 0;
     
     m_pErrors = pErrorContainer;
-    CRef< CSeq_entry > entry = CGFFReader::Read( lr );
+    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
     m_pErrors = 0;
     return entry;
 }
     
 //  ----------------------------------------------------------------------------                
-CRef< CSeq_entry >
-CGff3Reader::ReadSeqEntry(
-    CNcbiIstream& in,
+CRef< CSerialObject >
+CGff3Reader::ReadObject(
+    ILineReader& lr,
     CErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    CStreamLineReader lr( in );
-    return ReadSeqEntry( lr, pErrorContainer );
-};
-                
+    string line;
+    int linecount = 0;
+    
+    m_pErrors = pErrorContainer;
+    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
+    m_pErrors = 0;
+    CRef<CSerialObject> object( entry.ReleaseOrNull() );
+    return object;
+}
+    
 //  ----------------------------------------------------------------------------                
 void 
 CGff3Reader::x_Warn(
