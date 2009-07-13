@@ -48,6 +48,7 @@ Corrected definition of NCBI_SIGNATURE on Xcode
 Modified special handling of LibChoices on Unix
 
 June 10, 2009
+version 1.9.0
 Modified handling of ComponentChoices on Windows.
 Added processing of WSDL_PROJ macro in makefiles.
 Made it find Makefile.*.in in 'src' tree
@@ -56,5 +57,10 @@ also, find ncbiconf.*.h and include them into generated
 ncbiconf_msvc_site.h.
 Modified generation of makefile on Unix to avoid multipication
 of 'jobserver-fds' argument in parallel builds.
+
+July 13, 2009
+version 1.10.0
+Added possibility to customize locations of 3rd-party and NCBI C Toolkit libraries
+without editing project_tree_builder.ini
 
 
