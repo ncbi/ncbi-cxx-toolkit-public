@@ -3,7 +3,7 @@
 # Meta-makefile (deferred BLAST unit tests)
 #################################
 
-SUB_PROJ = blast_format blastdb seqdb_reader
+SUB_PROJ = blast_format blastdb seqdb_reader api
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

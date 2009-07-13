@@ -36,8 +36,8 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
-#include "../blast_setup.hpp"
-#include "../blast_objmgr_priv.hpp"
+#include "blast_setup.hpp"
+#include "blast_objmgr_priv.hpp"
 #include "test_objmgr.hpp"
 
 #include <algo/blast/core/blast_def.h>
@@ -46,7 +46,7 @@
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/gencode_singleton.h>
-#include "../../core/blast_hits_priv.h"
+#include "blast_hits_priv.h"
 
 extern "C" int h_score_compare_hsps(const void* v1, const void* v2)
 {

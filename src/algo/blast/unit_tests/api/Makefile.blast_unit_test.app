@@ -16,7 +16,9 @@ SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
 	hspfilter_culling_unit_test hspfilter_besthit_unit_test
     
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I.. -I$(srcdir)/..
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I$(srcdir)/../../api \
+           -I$(srcdir)/../../core -I$(top_srcdir)/algo/blast/api \
+           -I$(top_srcdir)/algo/blast/core
 
 LIB_ = test_boost $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt \
     $(BLAST_LIBS) xobjsimple $(OBJMGR_LIBS) xalgowinmask

@@ -39,7 +39,7 @@
 
 // BLAST includes
 #include <algo/blast/api/blast_aux.hpp>
-#include "../blast_objmgr_priv.hpp"
+#include "blast_objmgr_priv.hpp"
 
 // Serialization includes
 #include <serial/serial.hpp>

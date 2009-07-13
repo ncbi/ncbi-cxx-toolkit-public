@@ -51,7 +51,7 @@
 #include <serial/objostr.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
-#include "../blast_objmgr_priv.hpp"
+#include "blast_objmgr_priv.hpp"
 
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_encoding.h>
