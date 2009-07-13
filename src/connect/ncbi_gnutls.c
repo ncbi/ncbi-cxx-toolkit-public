@@ -465,9 +465,9 @@ extern SOCKSSL NcbiSetupGnuTls(void)
         s_GnuTlsExit,
         s_GnuTlsError
     };
-
     return &kGnuTlsOps;
 #else
+    CORE_LOG(eLOG_Critical, "Unavailable GNUTLS feature requested");
     return 0;
 #endif /*HAVE_LIBGNUTLS*/
 }
