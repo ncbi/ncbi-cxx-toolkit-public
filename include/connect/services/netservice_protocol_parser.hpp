@@ -45,20 +45,23 @@ BEGIN_NCBI_SCOPE
 
 
 enum ENSProtoArgFlags {
-    fNSPA_Required  = 1 << 0, ///< argument must be present
-    fNSPA_Optional  = 1 << 1, ///< the argument may be omited
-    fNSPA_Chain     = 1 << 2, ///< if the argument is absent, whole
+    fNSPA_Required  = 1 << 0, ///< Argument must be present
+    fNSPA_Optional  = 1 << 1, ///< The argument may be omitted
+    fNSPA_Chain     = 1 << 2, ///< If the argument is absent, whole
                               ///< chain is ignored
     fNSPA_Or        = 1 << 3, ///< This argument is ORed to next a|b
                               ///< as opposed to default sequence a b
     fNSPA_Match     = 1 << 4, ///< This argument is exact match with "key"
                               ///< field and uses "dflt" field as value as
                               ///< opposed to default using the arg as value
-    fNSPA_Clear     = 1 << 5, ///< do not match this arg, just set to default
-    fNSPA_ICPrefix  = 1 << 6, ///< special value for IC prefix that precedes
+    fNSPA_Clear     = 1 << 5, ///< Do not match this arg, just set to default
+    fNSPA_ICPrefix  = 1 << 6, ///< Special value for IC prefix that precedes
                               ///< command itself
-    fNSPA_Obsolete  = 1 << 7, ///< argument is now obsolete and using it
+    fNSPA_Obsolete  = 1 << 7, ///< Argument is now obsolete and using it
                               ///< causes parser error
+    fNSPA_Ellipsis  = 1 << 8, ///< Just parse the rest as key=value, do not
+                              ///< check anything, put these pairs in map.
+                              ///< Should be the last in the arg list.
 
     // Typical values
     eNSPA_None      = 0,      ///< end of arg list, intentionally set to 0
@@ -67,7 +70,8 @@ enum ENSProtoArgFlags {
     eNSPA_ICPrefix  = fNSPA_Required | fNSPA_ICPrefix,
     eNSPA_Optchain  = fNSPA_Optional | fNSPA_Chain,
     eNSPA_ClearOnly = fNSPA_Optional | fNSPA_Clear,
-    eNSPA_Obsolete  = fNSPA_Optional | fNSPA_Obsolete
+    eNSPA_Obsolete  = fNSPA_Optional | fNSPA_Obsolete,
+    eNSPA_Ellipsis  = fNSPA_Optional | fNSPA_Ellipsis
 };
 typedef unsigned int TNSProtoArgFlags;
 

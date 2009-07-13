@@ -263,7 +263,14 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         // token processing here
         bool matched = false;
         while (arg_descr->flags != eNSPA_None) {
-            if (arg_descr->flags & fNSPA_Match) {
+            if (arg_descr->flags & fNSPA_Ellipsis) {
+                if (!key) {
+                    NCBI_THROW(CNSProtoParserException, eBadToken,
+                        "Only key=value pairs allowed at this place");
+                }
+                matched = true;
+            }
+            else if (arg_descr->flags & fNSPA_Match) {
                 matched = strlen(arg_descr->key) == val_size
                        && strncmp(arg_descr->key, val, val_size) == 0;
             }
@@ -296,8 +303,13 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
         }
 
         // accept argument
-        (*params)[arg_descr->key] =
-            (arg_descr->flags & fNSPA_Match) ? "match" : string(val, val_size);
+        if (arg_descr->flags & fNSPA_Ellipsis) {
+            (*params)[string(key, key_size)] = string(val, val_size);
+        } else {
+            (*params)[arg_descr->key] =
+                (arg_descr->flags & fNSPA_Match) ?
+                "match" : string(val, val_size);
+        }
         // Process OR by skipping argument descriptions until OR flags is set
         while (arg_descr->flags != eNSPA_None
                &&  arg_descr->flags & fNSPA_Or)
@@ -305,7 +317,11 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
             ++arg_descr;
             s_SetDefaultValue(params, arg_descr);
         }
-        ++arg_descr;
+        if (!(arg_descr->flags & fNSPA_Ellipsis)) {
+            // Ellipsis consumes all the rest, so we increment this only
+            // for regular, non-ellipsis arguments.
+            ++arg_descr;
+        }
     }
     // Check that remaining arg descriptors are optional
     while (arg_descr->flags != eNSPA_None
@@ -336,8 +352,8 @@ CNetServProtoParserBase::x_ArgumentMatch(const char*             key,
     }
     if (arg_descr->flags & fNSPA_ICPrefix) {
         NCBI_THROW(CNSProtoParserException, eWrongMap,
-                   "IC Prefix can be only first in arguments list "
-                   "in command map.");
+                   "IC Prefix can be only the first in the arguments list "
+                   "of a command map.");
     }
     if (key != NULL  &&  !(strlen(arg_descr->key) == key_size
                            &&  strncmp(arg_descr->key, key, key_size) == 0))
