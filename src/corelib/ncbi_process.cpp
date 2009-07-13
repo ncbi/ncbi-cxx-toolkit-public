@@ -310,6 +310,7 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             int nullw = ::open("/dev/null", O_WRONLY);
             if (nullw < 0)
                 throw "Error opening /dev/null for writing";
+            NcbiCout.flush();
             ::fflush(stdout);
             if (nullw != STDOUT_FILENO) {
                 int error = ::dup2(nullw, STDOUT_FILENO);
@@ -327,6 +328,7 @@ bool CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                       ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
             if (fd < 0)
                 throw "Unable to open logfile for stderr";
+            NcbiCerr.flush();
             ::fflush(stderr);
             if (fd != STDERR_FILENO) {
                 int error = ::dup2(fd, STDERR_FILENO);
