@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
     Blast_HSPInit(1, 2000, 2000, 3000, 1, 2000, 0, 0, -3, 2000, NULL, &hsp);
     // These are values that come out for this case.  kLength could change if 
     // heuristic for allocating buffers in Blast_HSPGetTargetTranslation changes. 
-    const int kLength[kNumTests] = {3901, 4101, 4301, 4501, 4701, 4901 }; 
+    const int kLength[kNumTests] = {3899, 4099, 4300, 4500, 4699, 4899 }; 
     const int kValues[2*kNumTests] = {6, 18, 22, 10, 25, 19, 12, 18, 15, 1, 15, 11 };
     int index = 0;
     for (index=0; index<kNumTests; index++)
@@ -163,17 +163,17 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
 
         Int4 i, n = 0;
         for (i = hsp->subject.offset-703; i < hsp->subject.offset - 693; ++i) {
-            if (sequence[i] == 201) ++n;
+            if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
         n = 0;
         for (; i < hsp->subject.end + 693; ++i) {
-            if (sequence[i] == 201) ++n;
+            if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n==0);
         n = 0;
         for (; i < hsp->subject.end + 703; ++i) {
-            if (sequence[i] == 201) ++n;
+            if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
 
@@ -185,17 +185,17 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
 
         n = 0;
         for (i = hsp->subject.offset-703; i < hsp->subject.offset - 693; ++i) {
-            if (sequence[i] == 201) ++n;
+            if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
         n = 0;
         for (; i < hsp->subject.end + 693; ++i) {
-            if (sequence[i] == 201) ++n;
+            if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n==0);
         n = 0;
         for (; i < hsp->subject.end + 703; ++i) {
-            if (sequence[i] == 201) ++n;
+            if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
 

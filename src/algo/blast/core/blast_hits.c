@@ -886,7 +886,6 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
     if (target_t->partial == TRUE) /* partial == FALSE translation has already been done. */
     {  
     	 const int kMaxTranslation = 2100; /* Needs to be divisible by three (?) */
-         Boolean needs_translation = TRUE;
          Int4 start = target_t->range[2*context];
          Int4 stop = target_t->range[2*context+1];
          Int4 nucl_length = 0;
@@ -915,56 +914,40 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
          else
              nucl_shift = nucl_start;
 
-
-         if (start == stop)
-         {
-             target_t->translations[context] = (Uint1*) malloc(translation_length+2);
-             target_t->translations[context][translation_length+1] = 0;
-             target_t->range[2*context] = start_shift;
-             target_t->range[2*context+1] = start_shift + translation_length;
-         } 
-         else if (start_shift < start || start_shift+translation_length > stop)
-         {
-               if (translation_length <= stop-start)
-               {
-                    target_t->range[2*context] = start_shift;
-                    target_t->range[2*context+1] = start_shift+ translation_length;
-               }
-               else
-               {
-                    sfree(target_t->translations[context]);
-                    target_t->translations[context] = (Uint1*) malloc(translation_length+2);
-             	    target_t->translations[context][translation_length+1] = 0;
-                    target_t->range[2*context] = start_shift;
-                    target_t->range[2*context+1] = start_shift+translation_length;
-               }
-         }
-         else
-         {
-               needs_translation = FALSE;
-               
-         }
-
-         if (needs_translation)
-         {
-               Int4 length = 0; /* what do we need this for???? */
+         if (start_shift < start || start_shift+translation_length > stop) {
+               /* needs re-translation */
+               Int4 length = 0; /* actual translation length */
                Uint1* nucl_seq = target_t->subject_blk->sequence + nucl_shift;
                Uint1* nucl_seq_rev = NULL;
-               if (hsp->subject.frame < 0)
+
+               target_t->range[2*context] = start_shift;
+
+               if (translation_length > stop-start) {
+                   /* needs re-allocation */
+                   sfree(target_t->translations[context]);
+                   target_t->translations[context] = (Uint1*) malloc(translation_length+2);
+               }
+
+               if (hsp->subject.frame < 0) {
+                   /* needs reverse sequence */
                    GetReverseNuclSequence(nucl_seq, nucl_length, &nucl_seq_rev);
+               }
+
                length = BLAST_GetTranslation(nucl_seq, nucl_seq_rev,
                        nucl_length, hsp->subject.frame, target_t->translations[context], 
                        target_t->gen_code_string);
+
+               target_t->range[2*context+1] = start_shift + length;
+
                sfree(nucl_seq_rev);
+
                /* partial translation needs to be fenced */
                if(hsp->subject.offset >= 0) {
                    target_t->translations[context][0] = FENCE_SENTRY;
                    target_t->translations[context][length+1] = FENCE_SENTRY;
                }
          }
-         
     }
-
     if (translated_length)
         *translated_length = target_t->range[2*context+1];
 
