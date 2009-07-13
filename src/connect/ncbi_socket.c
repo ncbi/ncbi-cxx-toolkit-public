@@ -798,7 +798,7 @@ static EIO_Status s_InitAPI(int secure)
         if (ssl  &&  ssl->Init) {
             CORE_LOCK_WRITE;
             if (!s_SSL) {
-                s_SSL = ((status = ssl->Init(s_Recv,s_Send)) == eIO_Success
+                s_SSL = ((status = ssl->Init(s_Recv, s_Send)) == eIO_Success
                          ? ssl : &kNoSSL);
             }
             CORE_UNLOCK;
