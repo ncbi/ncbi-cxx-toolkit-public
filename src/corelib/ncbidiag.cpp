@@ -2195,7 +2195,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                             to_applog = true;
                         }
                         else {
-                            ERR_POST_X(4, Info <<
+                            ERR_POST_X_ONCE(4, Info <<
                                 "Failed to set log file to " <<
                                 CFile::NormalizePath(kDefaultFallback));
                         }
