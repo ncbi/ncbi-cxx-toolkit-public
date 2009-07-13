@@ -40,7 +40,7 @@ SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static
 #SunOSSparc : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 #IntelMAC    : universal : GCC.sh        --without-debug --without-mt  --with-static --with-universal --with-flat-makefile
 
