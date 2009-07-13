@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = taxon3
+SRC = taxon3__ taxon3___

@@ -106,6 +106,7 @@
 #  define NCBI_SEQTEST_EXPORTS
 #  define NCBI_SUBMIT_EXPORTS
 #  define NCBI_TAXON1_EXPORTS
+#  define NCBI_TAXON3_EXPORTS
 #endif
 
 
@@ -797,6 +798,14 @@
 #  define NCBI_TAXON1_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library taxon3
+ */
+#ifdef NCBI_TAXON3_EXPORTS
+#  define NCBI_TAXON3_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_TAXON3_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library threader
  */
 #ifdef NCBI_THREADER_EXPORTS
@@ -1322,6 +1331,7 @@
 #  define NCBI_STRUCTUTIL_EXPORT
 #  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TAXON1_EXPORT
+#  define NCBI_TAXON3_EXPORT
 #  define NCBI_THREADER_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_UNIMOD_EXPORT
