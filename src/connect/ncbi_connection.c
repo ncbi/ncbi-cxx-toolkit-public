@@ -48,9 +48,9 @@
  */
 #define CONN_LOG_EX(subcode, func_name, level, message, status)            \
   {                                                                        \
-      const char* ststr = status ? IO_StatusStr(status) : "";              \
+      const char* ststr = status ? IO_StatusStr((EIO_Status) status) : ""; \
       char stbuf[80];                                                      \
-      if (status == eIO_Timeout  &&  timeout) {                            \
+      if ((EIO_Status) status == eIO_Timeout  &&  timeout) {               \
           sprintf(stbuf, "%s[%u.%06u]", ststr,                             \
                   (unsigned int)(timeout->sec + timeout->usec / 1000000),  \
                   (unsigned int)               (timeout->usec % 1000000)); \
