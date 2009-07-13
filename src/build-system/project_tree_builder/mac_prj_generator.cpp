@@ -1131,6 +1131,8 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name)
         filetype = "sourcecode.c.h";
     } else if (ext == ".xsd") {
         filetype = "text.xml";
+    } else if (ext == ".wsdl") {
+        filetype = "text.xml";
     } else {
         filetype = "text";
     }
