@@ -92,6 +92,7 @@ private:
     CNcbiOstream* m_pOutput;
     CErrorContainer* m_pErrors;
     bool m_bCheckOnly;
+    int m_iFlags;
 };
 
 //  ============================================================================
@@ -126,12 +127,6 @@ void CMultiReaderApp::Init(void)
         CArgDescriptions::eString, "" );
         
     arg_desc->AddDefaultKey(
-        "flags", 
-        "Flags",
-        "Processing bit flags",
-        CArgDescriptions::eInteger, "0" );
-
-    arg_desc->AddDefaultKey(
         "format", 
         "Format",
         "Input file format",
@@ -139,7 +134,8 @@ void CMultiReaderApp::Init(void)
         "guess");
     arg_desc->SetConstraint(
         "format", 
-        &(*new CArgAllow_Strings, "bed", "microarray", "bed15", "wig", "wiggle", "gff", "guess") );
+        &(*new CArgAllow_Strings, 
+            "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "guess") );
 
     arg_desc->AddFlag(
         "checkonly",
@@ -157,6 +153,13 @@ void CMultiReaderApp::Init(void)
         "UCSC build number",
         CArgDescriptions::eString, 
         "" );
+        
+    arg_desc->AddDefaultKey(
+        "flags",
+        "reader_flags",
+        "Additional flags passed to the reader",
+        CArgDescriptions::eString,
+        "0" );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -199,6 +202,8 @@ void CMultiReaderApp::AppInitialize()
     m_pOutput = &args["output"].AsOutputFile();
     m_pErrors = 0;
     m_bCheckOnly = args["checkonly"];
+    m_iFlags = NStr::StringToInt( 
+        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
 
     string format = args["format"].AsString();
     if ( NStr::StartsWith( strProgramName, "wig" ) || format == "wig" ||
@@ -212,7 +217,7 @@ void CMultiReaderApp::AppInitialize()
         format == "microarray" ) {
         m_uFormat = CFormatGuess::eBed15;
     }
-    if ( NStr::StartsWith( strProgramName, "gff" ) || format == "gff" ) {
+    if ( NStr::StartsWith( strProgramName, "gtf" ) || format == "gtf" ) {
         m_uFormat = CFormatGuess::eGtf;
     }
     if ( m_uFormat == CFormatGuess::eUnknown ) {
@@ -229,17 +234,8 @@ void CMultiReaderApp::ReadObject(
     CRef<CSerialObject>& object )
 //  ============================================================================
 {
-    CMultiReader reader( m_uFormat );
-    
-    switch (m_uFormat) {    
-    case CFormatGuess::eGtf: {
-        object = reader.ReadSeqEntry( *m_pInput, m_pErrors );
-        break;
-    }    
-    default:
-        object = reader.ReadSeqAnnot( *m_pInput, m_pErrors );
-        break;
-    }
+    CMultiReader reader( m_uFormat, m_iFlags );
+    object = reader.ReadObject( *m_pInput, m_pErrors );
 }
 
 //  ============================================================================
