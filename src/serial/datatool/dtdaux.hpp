@@ -211,6 +211,7 @@ public:
 
         eWsdlService,
         eWsdlEndpoint,
+        eWsdlUnsupportedEndpoint,
         eWsdlOperation,
         eWsdlInput,
         eWsdlOutput,
@@ -248,6 +249,7 @@ public:
     // i.e. element contains other elements
     void AddContent( const string& ref_name);
     void RemoveContent( const string& ref_name);
+    void RemoveContent( void);
     const list<string>& GetContent(void) const;
 
     // element is contained somewhere

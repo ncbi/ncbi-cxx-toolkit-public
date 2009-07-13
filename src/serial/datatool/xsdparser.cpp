@@ -138,7 +138,9 @@ TToken XSDParser::GetNextToken(void)
     m_AttributePrefix.erase();
     m_Value.erase();
     m_ValuePrefix.erase();
-    if (tok == K_ATTPAIR || tok == K_XMLNS) {
+    if (tok == T_IDENTIFIER) {
+        m_Raw = m_IdentifierText;
+    } else if (tok == K_ATTPAIR || tok == K_XMLNS) {
 // format is
 // ns:attr="ns:value"
         if (!NStr::SplitInTwo(data, "=", str1, data2)) {
@@ -1174,6 +1176,17 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
                 data += CNcbiOstrstreamToString(buffer);
                 data += closing;
                 closing.erase();
+            }
+            if (!closing.empty()) {
+                if (!comments.Empty()) {
+                    CNcbiOstrstream buffer;
+                    comments.Print(buffer, "", "\n", "");
+                    data += CNcbiOstrstreamToString(buffer);
+                    comments = CComments();
+                }
+                data += closing;
+                closing.erase();
+                doctag_open = false;
             }
         }
         if (tok == K_DOCUMENTATION) {

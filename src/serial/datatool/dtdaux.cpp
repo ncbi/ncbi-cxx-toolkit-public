@@ -295,7 +295,10 @@ bool DTDElement::IsNamed(void) const
 
 void DTDElement::SetType( EType type)
 {
-    _ASSERT(m_Type == eUnknown || m_Type == eUnknownGroup || m_Type == type);
+    _ASSERT(m_Type == eUnknown ||
+            m_Type == eUnknownGroup ||
+            m_Type == eWsdlEndpoint ||
+            m_Type == type);
     m_Type = type;
 }
 
@@ -359,6 +362,11 @@ void DTDElement::RemoveContent( const string& ref_name)
 {
     string t(ref_name);
     m_Refs.remove(t);
+}
+
+void DTDElement::RemoveContent( void)
+{
+    m_Refs.clear();
 }
 
 const list<string>& DTDElement::GetContent(void) const

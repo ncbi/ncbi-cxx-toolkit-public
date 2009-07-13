@@ -50,6 +50,12 @@ public:
     WSDLParser( WSDLLexer& lexer);
     virtual ~WSDLParser(void);
 
+    enum EElementNamespace {
+        eUnknownNamespace,
+        eWsdlNamespace,
+        eSoapNamespace
+    };
+
 protected:
     virtual void BuildDocumentTree(CDataTypeModule& module);
 
@@ -59,6 +65,7 @@ protected:
 
     void ParseContent(DTDElement& node);
     void ParsePortType(DTDElement& node);
+    EElementNamespace GetElementNamespace();
     void ParseBinding(DTDElement& node);
     void ParseOperation(DTDElement& node);
     void ParseInput(DTDElement& node);

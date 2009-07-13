@@ -94,6 +94,8 @@ TToken WSDLLexer::LookupKeyword(void)
     case 11:
         CHECK("definitions", K_DEFINITIONS, 11);
         break;
+    case 13:
+        CHECK("documentation", K_DOCUMENTATION, 13);
     }
     return T_IDENTIFIER;
 }

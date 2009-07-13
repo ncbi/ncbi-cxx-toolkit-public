@@ -150,10 +150,7 @@ void WSDLParser::ParseContent(DTDElement& node)
         dounk=false;
         switch (tok) {
         case T_EOF:
-            if (m_StackLexer.size() <= 1) {
-                return;
-            }
-            break;
+            return;
         case K_ENDOFTAG:
             return;
         case K_PORTTYPE:
@@ -180,6 +177,9 @@ void WSDLParser::ParseContent(DTDElement& node)
         case K_ADDRESS:
             ParseAddress(node);
             break;
+        case K_DOCUMENTATION:
+            ParseDocumentation();
+            break;
         default:
             dounk = true;
             break;
@@ -202,22 +202,41 @@ void WSDLParser::ParsePortType(DTDElement& node)
     }
 }
 
-void WSDLParser::ParseBinding(DTDElement& node)
+WSDLParser::EElementNamespace WSDLParser::GetElementNamespace()
 {
-    TToken tok = GetRawAttributeSet();
-    if (GetAttribute("style")) {
-        if (m_Value != "document") {
-            ParseError("Only document style binding is supported", "document");
+    if (m_PrefixToNamespace.find(m_ElementPrefix) != m_PrefixToNamespace.end()) {
+        string ns(m_PrefixToNamespace[m_ElementPrefix]);
+        if (ns == "http://schemas.xmlsoap.org/wsdl/") {
+            return eWsdlNamespace;
+        } else if (ns == "http://schemas.xmlsoap.org/wsdl/soap/") {
+            return eSoapNamespace;
         }
     }
-    if (GetAttribute("type")) {
+    return eUnknownNamespace;
+}
+
+void WSDLParser::ParseBinding(DTDElement& node)
+{
+    EElementNamespace ns = GetElementNamespace();
+    TToken tok = GetRawAttributeSet();
+    if (ns == eWsdlNamespace) {
+        if (!GetAttribute("type")) {
+            ParseError("Binding has no type", "type");
+        }
         string id = CreateEntityId(m_Value,DTDEntity::eWsdlInterface);
-        if (m_MapEntity.find(id) != m_MapEntity.end()) {
-            PushEntityLexer(id);
-            ParseContent(node);
-        } else {
+        if (m_MapEntity.find(id) == m_MapEntity.end()) {
             ParseError("Unresolved entity", id.c_str());
         }
+        PushEntityLexer(id);
+        ParseContent(node);
+    } else if (ns == eSoapNamespace) {
+        if (GetAttribute("style")) {
+            if (m_Value != "document") {
+                ParseError("Only document style binding is supported", "document");
+            }
+        }
+    } else {
+        node.SetType(DTDElement::eWsdlUnsupportedEndpoint);
     }
     if (tok == K_CLOSING) {
         ParseContent(node);
@@ -318,10 +337,23 @@ void WSDLParser::ParseOutput(DTDElement& node)
 void WSDLParser::ParsePart(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
-    if (!GetAttribute("element")) {
-        ParseError("Part has no element", "element");
+    if (GetAttribute("element")) {
+        AddElementContent(node,m_Value);
+    } else {
+        bool ok = false;
+        if (GetAttribute("name")) {
+            string name(m_Value);
+            if (GetAttribute("type")) {
+                DTDElement& item = EmbeddedElement(node, name, DTDElement::eUnknown);
+                if (DefineElementType(item)) {
+                    ok = true;
+                }
+            }
+        }
+        if (!ok) {
+            ParseError("Part has no element", "element");
+        }
     }
-    AddElementContent(node,m_Value);
     if (tok == K_CLOSING) {
         SkipContent();
     }
@@ -484,7 +516,22 @@ void WSDLParser::ProcessEndpointTypes(void)
             ParseContent(node);
         }
     }
-    if (!found) {
+    if (found) {
+        // remove unsupported endpoints
+        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+            DTDElement& node = i->second;
+            if (node.GetType() == DTDElement::eWsdlService) {
+                list<string> refs = node.GetContent();
+                ITERATE(list<string>,r,refs) {
+                    DTDElement& refNode = m_MapElement[*r];
+                    if (refNode.GetType() == DTDElement::eWsdlUnsupportedEndpoint) {
+                        node.RemoveContent(*r);
+                        m_MapElement.erase(*r);
+                    }
+                }
+            }
+        }
+    } else {
         // no endpoint spec found
         // create default (?)
         map<string,DTDEntity>::iterator e;

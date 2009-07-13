@@ -872,7 +872,8 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
         }
 
         bool generate = type != DTDElement::eUnknown &&
-                        type != DTDElement::eUnknownGroup;
+                        type != DTDElement::eUnknownGroup &&
+                        type != DTDElement::eWsdlUnsupportedEndpoint;
         if (m_SrcType == eDTD) {
             generate = ( type == DTDElement::eSequence ||
                          type == DTDElement::eChoice ||
@@ -1482,6 +1483,7 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
 
     case DTDElement::eWsdlService:   cout << "WsdlService";  break;
     case DTDElement::eWsdlEndpoint:  cout << "WsdlEndpoint";  break;
+    case DTDElement::eWsdlUnsupportedEndpoint:  cout << "WsdlUnsupportedEndpoint";  break;
     case DTDElement::eWsdlOperation: cout << "WsdlOperation"; break;
     case DTDElement::eWsdlInput:     cout << "WsdlInput";    break;
     case DTDElement::eWsdlOutput:    cout << "WsdlOutput";   break;
