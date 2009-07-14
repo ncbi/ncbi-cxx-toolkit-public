@@ -69,6 +69,8 @@ bool BMAUtils::GetCharacterAndIndexForColumn(const BMA& bma, unsigned alignmentI
             result = (dummySeqIndex != BMA::eUndefined && 
                       (sequence && dummySeqIndex < sequence->m_sequenceString.size()));
             *residue = (result) ? sequence->m_sequenceString[dummySeqIndex] : '-';
+//            cout << "return from bma.GetSequenceAndIndexAt:  " << alignmentIndex << "  " << row << "  aligned = "  << isAligned << "  residue = " << *residue << endl;
+
             if (seqIndex) {
                 *seqIndex = (result) ? dummySeqIndex : BMA::eUndefined;
             }
