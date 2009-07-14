@@ -282,5 +282,35 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     out.close();
 }
 
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              unsigned int num_volumes,
+                              CWriteDB::ESeqType seq_type,
+                              const string& title /* = string() */)
+{
+    if (num_volumes >= 101) {
+        NCBI_THROW(CWriteDBException,
+                   eArgErr,
+                   "No more than 100 volumes are supported");
+    }
+    CNcbiOstrstream fname;
+    fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+
+    ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
+    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
+        << "\n#\n";
+
+    if ( !title.empty() ) {
+        out << "TITLE " << title << "\n";
+    }
+
+    out << "DBLIST ";
+    for (unsigned int i = 0; i < num_volumes; i++) {
+        CNcbiOstrstream oss;
+        oss << file_name << "." << setfill('0') << setw(2) << i << " ";
+        out << (string)CNcbiOstrstreamToString(oss);
+    }
+    out << "\n";
+    out.close();
+}
 END_NCBI_SCOPE
 

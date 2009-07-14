@@ -587,9 +587,38 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& gi_file_name,
                               const string& title = string());
 
+/** 
+ * @brief Writes an alias file that aggregates multiple existing BLAST
+ * databases.
+ * 
+ * @param file_name alias file name to create, it will overwrite any existing
+ * files of that name [in]
+ * @param db_names database names to aggregate [in]
+ * @param seq_type type of sequences stored in the database [in]
+ * @param title title to use in this alias file [in]
+ */
 NCBI_XOBJWRITE_EXPORT 
 void CWriteDB_CreateAliasFile(const string& file_name,
-                              const vector <string> & db_name,
+                              const vector <string> & db_names,
+                              CWriteDB::ESeqType seq_type,
+                              const string& title = string());
+
+/** 
+ * @brief Writes an alias file that aggregates multiple existing BLAST
+ * database volumes. For instance, it can be used to request a top level alias
+ * file for a database called wgs composed of 3 volumes, creating wgs.nal,
+ * which refers to wgs.00, wgs.01, and wgs.02
+ * 
+ * @param file_name alias file name to create, it will overwrite any existing
+ * files of that name [in]
+ * @param num_volumes Number of volumes that will be referred to in the alias
+ * file [in]
+ * @param seq_type type of sequences stored in the database [in]
+ * @param title title to use in this alias file [in]
+ */
+NCBI_XOBJWRITE_EXPORT 
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
                               const string& title = string());
 END_NCBI_SCOPE
