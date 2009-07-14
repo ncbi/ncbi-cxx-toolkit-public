@@ -5852,10 +5852,12 @@ esac
 # When using ccache and distcc together, ccache needs to be primary,
 # so look for distcc(.sh) first.
 
-if test "$with_distcc" != "no"; then
-   if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
-      DISTCC=$NCBI/bin/distcc.sh
-   fi
+if test -x $NCBI/bin/distcc.sh ; then
+   : ${DISTCC=$NCBI/bin/distcc.sh}
+   : ${with_distcc=yes}
+fi
+
+if test "$with_distcc" = "yes" ; then
    # Extract the first word of "distcc", so it can be a program name with args.
 set dummy distcc; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5

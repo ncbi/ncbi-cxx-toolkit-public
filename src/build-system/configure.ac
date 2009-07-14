@@ -1695,10 +1695,12 @@ esac
 # When using ccache and distcc together, ccache needs to be primary,
 # so look for distcc(.sh) first.
 
-if test "$with_distcc" != "no"; then
-   if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
-      DISTCC=$NCBI/bin/distcc.sh
-   fi
+if test -x $NCBI/bin/distcc.sh ; then
+   : ${DISTCC=$NCBI/bin/distcc.sh}
+   : ${with_distcc=yes}
+fi
+
+if test "$with_distcc" = "yes" ; then
    AC_CHECK_PROG(DISTCC, distcc, distcc, [])
    if test -n "$DISTCC" ; then
       # distcc is too clever and special-cases conftest.*, so use an
