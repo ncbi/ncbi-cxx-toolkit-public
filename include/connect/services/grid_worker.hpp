@@ -335,6 +335,8 @@ public:
 
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
+    CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
+
 private:
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
@@ -344,8 +346,6 @@ private:
     const string& GetErrMsg() const    { return m_Job.error_msg; }
 
     friend class CWorkerNodeRequest;
-    CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
-
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
     CWorkerNodeJobContext(CGridWorkerNode&   worker_node,
