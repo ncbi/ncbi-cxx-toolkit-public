@@ -276,7 +276,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
 
     out << "DBLIST ";
     ITERATE(vector< string >, iter, databases) {
-        out << *iter << " ";
+        out << "\"" << *iter << "\" ";
     }
     out << "\n";
     out.close();

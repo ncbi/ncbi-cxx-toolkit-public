@@ -587,6 +587,11 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& gi_file_name,
                               const string& title = string());
 
+NCBI_XOBJWRITE_EXPORT 
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const vector <string> & db_name,
+                              CWriteDB::ESeqType seq_type,
+                              const string& title = string());
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_WRITER___WRITEDB__HPP
