@@ -10920,11 +10920,13 @@ done
 
 
 
+
+
 for ac_func in euidaccess atoll basename lchown fseeko getpagesize getpwuid \
-               getrusage gettimeofday getuid readpassphrase nanosleep \
+               getrusage gettimeofday getuid readpassphrase readv nanosleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
-               sysmp timegm utimes lutimes
+               sysmp timegm utimes lutimes writev
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5

@@ -2671,10 +2671,10 @@ fi
 
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getpagesize getpwuid \
-               getrusage gettimeofday getuid readpassphrase nanosleep \
+               getrusage gettimeofday getuid readpassphrase readv nanosleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
-               sysmp timegm utimes lutimes)
+               sysmp timegm utimes lutimes writev)
 AC_LANG_POP(C)
 
 AC_TYPE_SIGNAL
