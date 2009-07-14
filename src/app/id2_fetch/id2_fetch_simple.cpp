@@ -68,6 +68,8 @@
 #include <util/compress/zlib.hpp>
 #include <corelib/rwstream.hpp>
 
+#include <dbapi/driver/driver_mgr.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -85,7 +87,9 @@ public:
     virtual void Exit(void);
 
 private:
+    void x_InitConnection(bool show_init);
     void x_InitConnection(const string& server_name, bool show_init);
+    void x_InitPubSeqConnection(const string& server_name, bool show_init);
     void x_SendRequestPacket(CID2_Request_Packet& packet);
     void x_ReadReply(CID2_Reply& reply);
     void x_ReadReply(CID2_Reply& reply, CObjectInfo& object);
@@ -94,7 +98,9 @@ private:
     void x_ProcessData(const CID2_Reply_Data& data);
     void x_SaveDataObject(const CObjectInfo& object, CNcbiOstream& out);
 
-    auto_ptr<CConn_ServiceStream> m_Server;
+    AutoPtr<CConn_ServiceStream>  m_ID2Conn;
+    AutoPtr<CDB_Connection>       m_PubSeqOS;
+    AutoPtr<CNcbiIstream>         m_PubSeqOSReply;
     CNcbiOstream*                 m_OutFile;  // ID2 reply output
     CNcbiOstream*                 m_DataFile; // ID2 data output
     ESerialDataFormat             m_Format;
@@ -112,7 +118,7 @@ void CId2FetchApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    AutoPtr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI
     arg_desc->AddOptionalKey
@@ -178,6 +184,12 @@ void CId2FetchApp::Init(void)
          "ID2 server name",
          CArgDescriptions::eString, "ID2");
 
+    // Server to connect
+    arg_desc->AddOptionalKey
+        ("pubseqos", "PubSeqOS",
+         "PubSeqOS server name",
+         CArgDescriptions::eString);
+
     // Number of requests
     arg_desc->AddDefaultKey
         ("count", "Count",
@@ -200,17 +212,51 @@ void CId2FetchApp::x_InitConnection(const string& server_name,
                                     bool show_init)
 {
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;
-    m_Server.reset(new CConn_ServiceStream
+    m_ID2Conn.reset(new CConn_ServiceStream
         (server_name, fSERV_Any, 0, 0, &tmout));
     
-    CONN_Wait(m_Server->GetCONN(), eIO_Write, &tmout);
-    const char* descr = CONN_Description(m_Server->GetCONN());
+    CONN_Wait(m_ID2Conn->GetCONN(), eIO_Write, &tmout);
+    const char* descr = CONN_Description(m_ID2Conn->GetCONN());
     if ( descr ) {
         LOG_POST("  connection description: " << descr);
     }
     
-    m_SerialNumber = 0;
+    x_InitConnection(show_init);
+}
 
+
+void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
+                                          bool show_init)
+{
+    C_DriverMgr drvMgr;
+    map<string,string> args;
+    args["packet"]="3584"; // 7*512
+    args["version"]="125"; // for correct connection to OpenServer
+    string errmsg;
+    I_DriverContext* context = drvMgr.GetDriverContext("ftds", &errmsg, &args);
+    if ( !context ) {
+        ERR_POST(Fatal<<"Failed to create ftds context: "<<errmsg);
+    }
+
+    m_PubSeqOS.reset(context->Connect(server_name, "anyone", "allowed", 0));
+    if ( !m_PubSeqOS.get() ) {
+        ERR_POST(Fatal<<"Failed to open PubSeqOS connection: "<<server_name);
+    }
+
+    {{
+        AutoPtr<CDB_LangCmd> cmd(m_PubSeqOS->LangCmd("set blob_stream on"));
+        if ( cmd ) {
+            cmd->Send();
+        }
+    }}
+
+    x_InitConnection(show_init);
+}
+
+
+void CId2FetchApp::x_InitConnection(bool show_init)
+{
+    m_SerialNumber = 0;
     CID2_Request req;
     req.SetRequest().SetInit();
     CID2_Request_Packet packet;
@@ -220,13 +266,122 @@ void CId2FetchApp::x_InitConnection(const string& server_name,
 }
 
 
+namespace {
+    bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
+    {
+        while ( result.Fetch() ) {
+            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
+                if ( result.ItemName(pos) == name ) {
+                    return true;
+                }
+                result.SkipItem();
+            }
+        }
+        return false;
+    }
+    
+    class CDB_Result_Reader : public CObject, public IReader
+    {
+    public:
+        CDB_Result_Reader(AutoPtr<CDB_RPCCmd> cmd,
+                          AutoPtr<CDB_Result> db_result)
+            : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
+            {
+            }
+
+        ERW_Result Read(void*   buf,
+                        size_t  count,
+                        size_t* bytes_read)
+            {
+                if ( !count ) {
+                    if ( bytes_read ) {
+                        *bytes_read = 0;
+                    }
+                    return eRW_Success;
+                }
+                size_t ret;
+                while ( (ret = m_DB_Result->ReadItem(buf, count)) == 0 ) {
+                    if ( !sx_FetchNextItem(*m_DB_Result, "asnout") ) {
+                        break;
+                    }
+                }
+                if ( bytes_read ) {
+                    *bytes_read = ret;
+                }
+                return ret? eRW_Success: eRW_Eof;
+            }
+        ERW_Result PendingCount(size_t* /*count*/)
+            {
+                return eRW_NotImplemented;
+            }
+
+    private:
+        AutoPtr<CDB_RPCCmd> m_DB_RPCCmd;
+        AutoPtr<CDB_Result> m_DB_Result;
+    };
+}
+
+
 void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
 {
     // Open connection to ID1 server
-    CObjectOStreamAsnBinary id2_server_output(*m_Server, false);
-    // Send request packet to the server
-    id2_server_output << packet;
-    id2_server_output.Flush();
+    if ( m_ID2Conn ) {
+        CObjectOStreamAsnBinary id2_server_output(*m_ID2Conn, false);
+        // Send request packet to the server
+        id2_server_output << packet;
+        id2_server_output.Flush();
+    }
+    else {
+        m_PubSeqOSReply.reset();
+        const size_t MAX_ASN_IN = 20*1024;
+        char buffer[MAX_ASN_IN];
+        size_t size;
+        {{
+            CNcbiOstrstream mem_str(buffer, sizeof(buffer));
+            {{
+                CObjectOStreamAsnBinary obj_str(mem_str);
+                obj_str << packet;
+            }}
+            if ( !mem_str ) {
+                ERR_POST(Fatal<<"PubSeqOS: packet size overflow");
+            }
+            size = mem_str.pcount();
+        }}
+        CDB_VarChar service("ID2");
+        CDB_VarChar short_asn;
+        CDB_LongBinary long_asn(size);
+        long_asn.SetValue(buffer, size);
+        CDB_TinyInt text_in(0);
+        CDB_TinyInt text_out(0);
+    
+        AutoPtr<CDB_RPCCmd> cmd(m_PubSeqOS->RPC("os_asn_request"));
+        cmd->SetParam("@service", &service);
+        cmd->SetParam("@asnin", &short_asn);
+        cmd->SetParam("@text", &text_in);
+        cmd->SetParam("@out_text", &text_out);
+        cmd->SetParam("@asnin_long", &long_asn);
+        cmd->Send();
+
+        AutoPtr<CDB_Result> dbr;
+        while( cmd->HasMoreResults() ) {
+            if ( cmd->HasFailed() ) {
+                ERR_POST(Fatal<<"PubSeqOS: failed RPC");
+            }
+            dbr = cmd->Result();
+            if ( !dbr.get() || dbr->ResultType() != eDB_RowResult ) {
+                continue;
+            }
+            if ( sx_FetchNextItem(*dbr, "asnout") ) {
+                AutoPtr<CDB_Result_Reader> reader
+                    (new CDB_Result_Reader(cmd, dbr));
+                m_PubSeqOSReply.reset(new CRStream(reader.release(),
+                                                   0, 0,
+                                                   CRWStreambuf::fOwnAll));
+                return;
+            }
+        }
+        ERR_POST(Fatal<<"PubSeqOS: no more results");
+    }
 }
 
 
@@ -378,7 +533,7 @@ namespace {
     private:
         CObjectIStream& m_Input;
         CIStreamContainerIterator m_Iter;
-        auto_ptr<CObjectIStream::ByteBlock> m_Block;
+        AutoPtr<CObjectIStream::ByteBlock> m_Block;
     };
 
     class CReadDataObjectHook : public CReadClassMemberHook
@@ -428,7 +583,7 @@ namespace {
             {{
                 COSSPipeReader reader(in, member);
                 CRStream stream(&reader);
-                auto_ptr<CObjectIStream> obj_stream;
+                AutoPtr<CObjectIStream> obj_stream;
                     
                 switch ( data.GetData_compression() ) {
                 case CID2_Reply_Data::eData_compression_none:
@@ -466,18 +621,30 @@ namespace {
 void CId2FetchApp::x_ReadReply(CID2_Reply& reply)
 {
     // Read server response in ASN.1 binary format
-    CObjectIStreamAsnBinary id2_server_input(*m_Server, false);
-    id2_server_input >> reply;
+    if ( m_ID2Conn ) {
+        CObjectIStreamAsnBinary id2_server_input(*m_ID2Conn, false);
+        id2_server_input >> reply;
+    }
+    else {
+        CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply, false);
+        id2_server_input >> reply;
+    }
 }
 
 
 void CId2FetchApp::x_ReadReply(CID2_Reply& reply, CObjectInfo& object)
 {
     // Read server response in ASN.1 binary format
-    CObjectIStreamAsnBinary id2_server_input(*m_Server, false);
     CRef<CReadDataObjectHook> hook(new CReadDataObjectHook);
     CObjectHookGuard<CID2_Reply_Data> guard("data", *hook);
-    id2_server_input >> reply;
+    if ( m_ID2Conn ) {
+        CObjectIStreamAsnBinary id2_server_input(*m_ID2Conn, false);
+        id2_server_input >> reply;
+    }
+    else {
+        CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply, false);
+        id2_server_input >> reply;
+    }
     object = hook->m_Object;
 }
 
@@ -536,7 +703,7 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
             }
         }
         if ( dump && m_OutFile ) {
-            auto_ptr<CObjectOStream> id2_client_output
+            AutoPtr<CObjectOStream> id2_client_output
                 (CObjectOStream::Open(m_Format, *m_OutFile));
 
             *id2_client_output << reply;
@@ -592,7 +759,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
 
     COSSReader reader(data.GetData());
     CRStream stream(&reader);
-    auto_ptr<CObjectIStream> obj_stream;
+    AutoPtr<CObjectIStream> obj_stream;
     
     switch ( data.GetData_compression() ) {
     case CID2_Reply_Data::eData_compression_none:
@@ -615,7 +782,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
     }
     _ASSERT( obj_stream.get() );
     obj_stream->UseMemoryPool();
-    auto_ptr<CObjectOStream> out_stream;
+    AutoPtr<CObjectOStream> out_stream;
     if ( m_DataFile ) {
         out_stream.reset(CObjectOStream::Open(m_Format, *m_DataFile));
     }
@@ -640,7 +807,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
 void CId2FetchApp::x_SaveDataObject(const CObjectInfo& object,
                                     CNcbiOstream& out)
 {
-    auto_ptr<CObjectOStream> out_stream(
+    AutoPtr<CObjectOStream> out_stream(
         CObjectOStream::Open(m_Format, out));
     out_stream->Write(object.GetObjectPtr(), object.GetTypeInfo());
     if ( m_Format != eSerial_AsnBinary) {
@@ -693,7 +860,12 @@ int CId2FetchApp::Run(void)
 
     int count = args["count"].AsInteger();
 
-    x_InitConnection(args["server"].AsString(), args["show_init"]);
+    if ( args["pubseqos"] ) {
+        x_InitPubSeqConnection(args["pubseqos"].AsString(), args["show_init"]);
+    }
+    else {
+        x_InitConnection(args["server"].AsString(), args["show_init"]);
+    }
 
     typedef vector<CRef<CID2_Request_Packet> > TReqs;
     TReqs reqs;
@@ -735,7 +907,7 @@ int CId2FetchApp::Run(void)
         in >> MSerial_AsnText >> *packet;
     }
     else if ( args["in"] ) {
-        auto_ptr<CObjectIStream> req_input
+        AutoPtr<CObjectIStream> req_input
             (CObjectIStream::Open(eSerial_AsnText, args["in"].AsInputFile()));
 
         while ( !req_input->EndOfData() ) {
