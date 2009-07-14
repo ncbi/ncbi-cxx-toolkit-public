@@ -258,5 +258,29 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     out.close();
 }
 
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const vector<string>& databases,
+                              CWriteDB::ESeqType seq_type,
+                              const string& title /* = string() */)
+{
+    CNcbiOstrstream fname;
+    fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+
+    ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
+    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
+        << "\n#\n";
+
+    if ( !title.empty() ) {
+        out << "TITLE " << title << "\n";
+    }
+
+    out << "DBLIST ";
+    ITERATE(vector< string >, iter, databases) {
+        out << *iter << " ";
+    }
+    out << "\n";
+    out.close();
+}
+
 END_NCBI_SCOPE
 
