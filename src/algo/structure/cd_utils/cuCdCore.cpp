@@ -2692,6 +2692,22 @@ bool CCdCore::RemoveCddDescrsOfType(int cddDescrChoice)
     return (count > 0);
 }
 
+unsigned int CCdCore::GetPmidReferences(set<unsigned int>& pmids) const
+{
+    list< CRef< CCdd_descr > >::const_iterator descCit, descEnd;
+
+    pmids.clear();
+    if (IsSetDescription()) {
+        descEnd = GetDescription().Get().end();
+        for (descCit = GetDescription().Get().begin(); descCit != descEnd; ++descCit) {
+            if ((*descCit)->IsReference()) {
+                if ((*descCit)->GetReference().IsPmid())
+                    pmids.insert((*descCit)->GetReference().GetPmid().Get());
+            }
+        }
+    }
+    return pmids.size();
+}
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

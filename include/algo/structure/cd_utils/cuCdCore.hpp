@@ -236,6 +236,10 @@ public:
     bool AddPmidReference(unsigned int pmid);
     bool AddSource(const string& source, bool removeExistingSources = true);
     bool AddCreateDate();  //  uses the current time
+    
+    //  Get all PMIDs found in the Cdd-descr-set, returning the number
+    //  of unique PMIDs.  Duplicate PMIDs are ignored by the returned set.
+    unsigned int GetPmidReferences(set<unsigned int>& pmids) const;
 
     //  Return the first title in the list of CCdd_descrs; by convention there should
     //  be at most one.  If there is no title, an empty string is returned.
