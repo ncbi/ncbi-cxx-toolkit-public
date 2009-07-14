@@ -21044,7 +21044,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
       fi
-      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.in; then
+      if test "$with_dbapi" != no -a -f ${real_srcdir}/src/objtools/data_loaders/genbank/pubseq/Makefile.ncbi_xreader_pubseqos.lib ; then
          echo "$as_me:$LINENO: checking for PubSeq service availability" >&5
 echo $ECHO_N "checking for PubSeq service availability... $ECHO_C" >&6
 if test "${ncbi_cv_db_pubseq+set}" = set; then
