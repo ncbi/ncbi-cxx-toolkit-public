@@ -492,16 +492,16 @@ for x_row in $x_tests; do
    x_name=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
+   ###x_requires=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Check application requirements
    # TODO:
    #    This check can be removed later, when project_tree_builder starts to check requiments
    #    on check list generation step.
-   for x_req in $x_requires; do
-      (echo "$x_features" | grep " $x_req " > /dev/null)  ||  continue 2
-   done
+   ###for x_req in $x_requires; do
+   ###   (echo "$x_features" | grep " $x_req " > /dev/null)  ||  continue 2
+   ###done
    
    # Copy specified files into the check tree
    if test ! -z "$x_files" ; then
