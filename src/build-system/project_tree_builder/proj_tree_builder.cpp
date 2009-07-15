@@ -940,10 +940,14 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
             }
         }
         check_requires = NStr::Join(k->second, " ");
-    } else {
+    }
+    if (check_requires_ok) {
         k = makefile.m_Contents.find("REQUIRES");
         if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
-            check_requires = NStr::Join(k->second, " ");
+            if (!check_requires.empty()) {
+                check_requires += " ";
+            }
+            check_requires += NStr::Join(k->second, " ");
         }
     }
     
