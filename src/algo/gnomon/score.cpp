@@ -1327,6 +1327,13 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
 
     CCDSInfo cds_info = model.GetCdsInfo();
 
+    if (best_score == BadScore() && (model.Type()&CGeneModel::eProt)!=0 ) {    // try to recover CDS if there are proteins
+        cds_info.Clear();
+        model.SetCdsInfo( cds_info );
+        FindStartsStops(model, m_data->m_ds[model.Strand()], mrna, mrnamap, starts, stops, frame);
+        best_score = SelectBestReadingFrame(model, mrna, mrnamap, starts, stops, frame, best_start, best_stop);
+    }
+
     if (best_score == BadScore()) {
         cds_info.Clear();
         model.SetCdsInfo( cds_info );
