@@ -832,6 +832,9 @@ CGridWorkerNode::CGridWorkerNode(
                                IWorkerNodeJobFactory*     job_factory,
                                IBlobStorageFactory*       storage_factory,
                                INetScheduleClientFactory* client_factory) :
+    m_JobFactory(job_factory),
+    m_StorageFactory(storage_factory),
+    m_ClientFactory(client_factory),
     m_MaxThreads(1),
     m_NSTimeout(30),
     m_CheckStatusPeriod(2),
@@ -839,9 +842,6 @@ CGridWorkerNode::CGridWorkerNode(
     m_IsProcessingExclusiveJob(false),
     m_UseEmbeddedStorage(false),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
-    m_JobFactory(job_factory),
-    m_StorageFactory(storage_factory),
-    m_ClientFactory(client_factory),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
     m_SingleThreadForced(false)
