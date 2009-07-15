@@ -46,12 +46,12 @@ void CGridClientApp::Init(void)
 
     CNcbiApplication::Init();
 
-    CNetScheduleClientFactory cf(GetConfig());
-    CNetScheduleAPI ns_api = cf.CreateInstance();
+    CNetScheduleClientFactory ns_cf(GetConfig());
+    CNetScheduleAPI ns_api = ns_cf.CreateInstance();
     ns_api.SetProgramVersion(GetProgramVersion());
 
-    CBlobStorageFactory cf(GetConfig());
-    auto_ptr<IBlobStorage> ns_storage(cf.CreateInstance());
+    CBlobStorageFactory bs_cf(GetConfig());
+    auto_ptr<IBlobStorage> ns_storage(bs_cf.CreateInstance());
 
     CGridClient::ECleanUp cleanup = UseAutomaticCleanup() ?
         CGridClient::eAutomaticCleanup :
