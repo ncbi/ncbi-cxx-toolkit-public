@@ -2,8 +2,8 @@
 
 APP = blastdbcheck
 SRC = blastdbcheck blastdb_aux
-REGEX_LIBS = xregexp $(PCRE_LIB)
-LIB_ = blastinput $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) $(REGEX_LIBS) \
+
+LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) $(REGEX_LIBS) \
 	$(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
