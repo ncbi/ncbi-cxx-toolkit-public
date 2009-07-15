@@ -896,7 +896,8 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
     {
         TSections::iterator sit = m_Sections.find(section);
         if (sit == m_Sections.end()) {
-            sit = m_Sections.insert(make_pair(section, SSection())).first;
+            sit = m_Sections.insert(make_pair(section, SSection(m_Flags)))
+                .first;
             sit->second.cleared = false;
         }
         SEntry& entry = sit->second.entries[name];
@@ -945,7 +946,8 @@ bool CMemoryRegistry::x_SetComment(const string& comment,
         if (comment.empty()) {
             return false;
         } else {
-            sit = m_Sections.insert(make_pair(section, SSection())).first;
+            sit = m_Sections.insert(make_pair(section, SSection(m_Flags)))
+                  .first;
             sit->second.cleared = false;
         }
     }
@@ -1143,9 +1145,10 @@ void CCompoundRegistry::x_ChildLockAction(FLockAction action)
 //
 // CTwoLayerRegistry
 
-CTwoLayerRegistry::CTwoLayerRegistry(IRWRegistry* persistent)
-    : m_Transient(CRegRef(new CMemoryRegistry)),
-      m_Persistent(CRegRef(persistent ? persistent : new CMemoryRegistry))
+CTwoLayerRegistry::CTwoLayerRegistry(IRWRegistry* persistent, TFlags flags)
+    : m_Transient(CRegRef(new CMemoryRegistry(flags))),
+      m_Persistent(CRegRef(persistent ? persistent
+                           : new CMemoryRegistry(flags)))
 {
 }
 
@@ -1314,25 +1317,27 @@ inline
 void CNcbiRegistry::x_Init(void)
 {
     CNcbiApplication* app = CNcbiApplication::Instance();
+    TFlags            cf  = m_Flags & fCaseFlags;
     if (app) {
-        m_EnvRegistry.Reset(new CEnvironmentRegistry(app->SetEnvironment()));
+        m_EnvRegistry.Reset(new CEnvironmentRegistry(app->SetEnvironment(),
+                                                     eNoOwnership, cf));
     } else {
-        m_EnvRegistry.Reset(new CEnvironmentRegistry);
+        m_EnvRegistry.Reset(new CEnvironmentRegistry(cf));
     }
     x_Add(*m_EnvRegistry, ePriority_Environment, sm_EnvRegName);
 
-    m_FileRegistry.Reset(new CTwoLayerRegistry);
+    m_FileRegistry.Reset(new CTwoLayerRegistry(NULL, cf));
     x_Add(*m_FileRegistry, ePriority_File, sm_FileRegName);
 
-    m_SysRegistry.Reset(new CTwoLayerRegistry);
+    m_SysRegistry.Reset(new CTwoLayerRegistry(NULL, cf));
     x_Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
 
     const char* override_path = getenv("NCBI_CONFIG_OVERRIDES");
     if (override_path  &&  *override_path) {
-        m_OverrideRegistry.Reset(new CCompoundRWRegistry);
+        m_OverrideRegistry.Reset(new CCompoundRWRegistry(cf));
         CMetaRegistry::SEntry entry
             = CMetaRegistry::Load(override_path, CMetaRegistry::eName_AsIs,
-                                  0, 0, m_OverrideRegistry.GetPointer());
+                                  0, cf, m_OverrideRegistry.GetPointer());
         if (entry.registry) {
             if (entry.registry != m_OverrideRegistry) {
                 ERR_POST_X(5, Warning << "Resetting m_OverrideRegistry");
@@ -1349,21 +1354,21 @@ void CNcbiRegistry::x_Init(void)
 }
 
 
-CNcbiRegistry::CNcbiRegistry(void)
-    : m_RuntimeOverrideCount(0)
+CNcbiRegistry::CNcbiRegistry(TFlags flags)
+    : m_RuntimeOverrideCount(0), m_Flags(flags)
 {
     x_Init();
 }
 
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
-    : m_RuntimeOverrideCount(0)
+    : m_RuntimeOverrideCount(0), m_Flags(flags)
 {
     x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,
-                 fTransient | fInternalSpaces | fWithNcbirc);
+                 fTransient | fInternalSpaces | fWithNcbirc | fCaseFlags);
     x_Init();
-    m_FileRegistry->Read(is, flags & ~fWithNcbirc);
-    IncludeNcbircIfAllowed(flags);
+    m_FileRegistry->Read(is, flags & ~(fWithNcbirc | fCaseFlags));
+    IncludeNcbircIfAllowed(flags & ~fCaseFlags);
 }
 
 
@@ -1429,7 +1434,8 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
         IncludeNcbircIfAllowed(flags);
         return NULL;
     } else if ((flags & fNoOverride) == 0) { // ensure proper layering
-        CRef<CCompoundRWRegistry> crwreg(new CCompoundRWRegistry);
+        CRef<CCompoundRWRegistry> crwreg
+            (new CCompoundRWRegistry(m_Flags & fCaseFlags));
         crwreg->Read(is, flags);
         ++m_RuntimeOverrideCount;
         x_Add(*crwreg, ePriority_RuntimeOverrides + m_RuntimeOverrideCount,
@@ -1451,9 +1457,10 @@ const char* CCompoundRWRegistry::sm_MainRegName       = ".main";
 const char* CCompoundRWRegistry::sm_BaseRegNamePrefix = ".base:";
 
 
-CCompoundRWRegistry::CCompoundRWRegistry(void)
+CCompoundRWRegistry::CCompoundRWRegistry(TFlags flags)
     : m_MainRegistry(new CTwoLayerRegistry),
-      m_AllRegistries(new CCompoundRegistry)
+      m_AllRegistries(new CCompoundRegistry),
+      m_Flags(flags)
 {
     x_Add(*m_MainRegistry, CCompoundRegistry::ePriority_Max - 1,
           sm_MainRegName);
@@ -1555,7 +1562,8 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags)
         CMetaRegistry::ENameStyle style
             = ((it->find('.') == NPOS)
                ? CMetaRegistry::eName_Ini : CMetaRegistry::eName_AsIs);
-        CRef<CCompoundRWRegistry> reg2(new CCompoundRWRegistry);
+        CRef<CCompoundRWRegistry> reg2
+            (new CCompoundRWRegistry(m_Flags & fCaseFlags));
         CMetaRegistry::SEntry entry2
             = CMetaRegistry::Load(*it, style, metareg_flags, flags,
                                   reg2.GetPointer());

@@ -44,17 +44,17 @@
 BEGIN_NCBI_SCOPE
 
 
-CEnvironmentRegistry::CEnvironmentRegistry()
+CEnvironmentRegistry::CEnvironmentRegistry(TFlags flags)
     : m_Env(new CNcbiEnvironment, eTakeOwnership),
-      m_Modified(false)
+      m_Modified(false), m_Flags(flags)
 {
     AddMapper(*new CNcbiEnvRegMapper);
 }
 
 
 CEnvironmentRegistry::CEnvironmentRegistry(CNcbiEnvironment& env,
-                                           EOwnership own)
-    : m_Env(&env, own), m_Modified(false)
+                                           EOwnership own, TFlags flags)
+    : m_Env(&env, own), m_Modified(false), m_Flags(flags)
 {
     AddMapper(*new CNcbiEnvRegMapper);
 }
@@ -128,7 +128,8 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
     REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         string        var_name = it->second->RegToEnv(section, name);
         const string* resultp  = &m_Env->Get(var_name);
-        if ((flags & fCountCleared) == 0  &&  resultp->empty()) {
+        if ((flags & fCountCleared) == 0  &&  (m_Flags & fCaseFlags) == 0
+            &&  resultp->empty()) {
             // try capitalizing the name
             resultp = &m_Env->Get(NStr::ToUpper(var_name));
         }
@@ -211,7 +212,7 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
             string cap_name = var_name;
             NStr::ToUpper(cap_name);
             string old_value = m_Env->Get(var_name);
-            if (old_value.empty()) {
+            if ((m_Flags & fCaseFlags) == 0  &&  old_value.empty()) {
                 old_value = m_Env->Get(cap_name);
             }
             if (MaybeSet(old_value, value, flags)) {

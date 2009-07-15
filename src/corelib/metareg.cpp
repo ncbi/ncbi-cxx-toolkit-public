@@ -85,7 +85,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
         } else {
             // Go through a temporary so errors (exceptions) won't
             // cause *registry to be incomplete.
-            CMemoryRegistry tmp_reg;
+            CMemoryRegistry tmp_reg(reg_flags & IRegistry::fCaseFlags);
             TStrStream      str;
             tmp_reg.Read(ifs, reg_flags);
             tmp_reg.Write(str, reg_flags);

@@ -87,8 +87,9 @@ class NCBI_XNCBI_EXPORT CEnvironmentRegistry : public IRWRegistry
 {
 public:
     /// Constructors.
-    CEnvironmentRegistry();
-    CEnvironmentRegistry(CNcbiEnvironment& env, EOwnership own = eNoOwnership);
+    CEnvironmentRegistry(TFlags flags = 0);
+    CEnvironmentRegistry(CNcbiEnvironment& env, EOwnership own = eNoOwnership,
+                         TFlags flags = 0);
 
     /// Destructor.
     ~CEnvironmentRegistry();
@@ -134,6 +135,7 @@ private:
     AutoPtr<CNcbiEnvironment> m_Env;
     TPriorityMap      m_PriorityMap;
     bool              m_Modified; ///< only tracks mods made through this.
+    TFlags            m_Flags;
 };
 
 

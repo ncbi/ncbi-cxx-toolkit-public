@@ -80,6 +80,8 @@ public:
     ///   derived classes may ignore some or all level-related flags.
     /// - Most read-only operations consider all layers; the only exception
     ///   is Write, which defaults to fPersistent and fJustCore.
+    /// - The presence or absence of fSectionCase and fEntryCase is relevant
+    ///   ONLY when constructing new registry objects.
     enum EFlags {
         fTransient      = 0x1,   ///< Transient -- not saved by default
         fPersistent     = 0x100, ///< Persistent -- saved when file is written
@@ -93,8 +95,11 @@ public:
         fInternalSpaces = 0x20,  ///< Allow internal whitespace in names
         fWithNcbirc     = 0x40,  ///< Include .ncbirc (used only by CNcbiReg.)
         fCountCleared   = 0x80,  ///< Let explicitly cleared entries stand
+        fSectionCase    = 0x1000,///< Create with case-sensitive section names
+        fEntryCase      = 0x2000,///< Create with case-sensitive entry names
         fCoreLayers     = fTransient | fPersistent | fJustCore,
-        fAllLayers      = fTransient | fPersistent | fNotJustCore
+        fAllLayers      = fTransient | fPersistent | fNotJustCore,
+        fCaseFlags      = fSectionCase | fEntryCase
     };
     typedef int TFlags;  ///< Binary OR of "EFlags"
 
@@ -429,7 +434,11 @@ protected:
 class NCBI_XNCBI_EXPORT CMemoryRegistry : public IRWRegistry
 {
 public:
-    CMemoryRegistry(void) : m_IsModified(false) {}
+    CMemoryRegistry(TFlags flags = 0)
+        : m_IsModified(false),
+          m_Sections((flags & fSectionCase) == 0 ? NStr::eNocase : NStr::eCase),
+          m_Flags(flags)
+        {}
 
 protected:
     bool x_Empty(TFlags flags) const;
@@ -455,18 +464,22 @@ public: // WorkShop needs these exposed
     struct SEntry {
         string value, comment;
     };
-    typedef map<string, SEntry, PNocase> TEntries;
+    typedef map<string, SEntry, PNocase_Conditional> TEntries;
     struct SSection {
+        SSection(TFlags flags)
+            : entries((flags & fEntryCase) == 0 ? NStr::eNocase : NStr::eCase)
+            { }
         string   comment;
         TEntries entries;
         bool     cleared;
     };
-    typedef map<string, SSection, PNocase> TSections;
+    typedef map<string, SSection, PNocase_Conditional> TSections;
 
 private:
     bool      m_IsModified;
     string    m_RegistryComment;
     TSections m_Sections;
+    TFlags    m_Flags;
 };
 
 
@@ -483,7 +496,7 @@ private:
 class NCBI_XNCBI_EXPORT CCompoundRegistry : public IRegistry
 {
 public:
-    CCompoundRegistry(void) : m_CoreCutoff(ePriority_Default) { }
+    CCompoundRegistry() : m_CoreCutoff(ePriority_Default) { }
 
     /// Priority for sub-registries; entries in higher-priority
     /// sub-registries take precedence over (identically named) entries
@@ -572,7 +585,7 @@ class NCBI_XNCBI_EXPORT CTwoLayerRegistry : public IRWRegistry
 public:
     /// Constructor.  The transient layer is always a new memory registry,
     /// and so is the persistent layer by default.
-    CTwoLayerRegistry(IRWRegistry* persistent = 0);
+    CTwoLayerRegistry(IRWRegistry* persistent = 0, TFlags flags = 0);
 
 protected:
     bool x_Empty(TFlags flags) const;
@@ -615,7 +628,7 @@ class NCBI_XNCBI_EXPORT CCompoundRWRegistry : public IRWRegistry
 {
 public:
     /// Constructor.
-    CCompoundRWRegistry(void);
+    CCompoundRWRegistry(TFlags m_Flags = 0);
 
     /// Destructor.
     ~CCompoundRWRegistry();
@@ -703,6 +716,7 @@ private:
     CRef<CTwoLayerRegistry> m_MainRegistry;
     CRef<CCompoundRegistry> m_AllRegistries;
     set<string>             m_BaseRegNames;
+    TFlags                  m_Flags;
 };
 
 
@@ -732,7 +746,7 @@ public:
     };
 
     /// Constructor.
-    CNcbiRegistry(void);
+    CNcbiRegistry(TFlags flags = 0);
 
     /// Constructor.
     ///
@@ -791,6 +805,7 @@ private:
     CRef<IRWRegistry>          m_OverrideRegistry;
     CRef<IRWRegistry>          m_SysRegistry;
     unsigned int               m_RuntimeOverrideCount;
+    TFlags                     m_Flags;
 };
 
 
