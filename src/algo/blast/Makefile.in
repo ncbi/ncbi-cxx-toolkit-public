@@ -3,8 +3,8 @@
 # Meta-makefile ("BLAST" project)
 #################################
 
-SUB_PROJ = composition_adjustment core dbindex dbindex_search api blastinput \
-           unit_tests format
+SUB_PROJ = composition_adjustment core dbindex dbindex_search api format blastinput \
+           unit_tests
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
