@@ -81,8 +81,8 @@ int CTest::Run(void)
     double e;
 
     START(1);
+    // Forbid zero requests per any time.
     {{
-        // Forbid zero requests per any time.
         CRequestRateControl mgr(0, CTimeSpan(0,0), CTimeSpan(1,0),
                                 CRequestRateControl::eErrCode);
         assert( !mgr.Approve() );
@@ -90,8 +90,8 @@ int CTest::Run(void)
     DONE;
 
     START(2);
+    // Allow only 1 request per any period of time.
     {{
-        // Allow only 1 request per any period of time.
         CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(0,0),
                                 CRequestRateControl::eErrCode);
         assert( mgr.Approve() );
@@ -100,9 +100,9 @@ int CTest::Run(void)
     DONE;
 
     START(3);
+    // Allow any number of requests with frequency 1 request per second
+    // The behaviour is the same for both modes.
     {{
-        // Allow any number of requests with frequency 1 request per second
-        // The behaviour is the same for both modes.
         CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
                                 CRequestRateControl::eErrCode);
         assert( mgr.Approve() );
@@ -113,9 +113,9 @@ int CTest::Run(void)
     DONE;
 
     START(4);
+    // Allow 2 request per second with any frequency.
+    // The behaviour is different for eContinuous/eDiscrete modes.
     {{
-        // Allow 2 request per second with any frequency.
-        // The behaviour is different for eContinuous/eDiscrete modes.
         {{
             CRequestRateControl mgr(2, CTimeSpan(1,0), CTimeSpan(0,0),
                                     CRequestRateControl::eErrCode);
@@ -165,10 +165,10 @@ int CTest::Run(void)
     DONE;
 
     START(5);
+    // Allow 2 request per 3 seconds with frequency 1 request per second.
+    // In this test behaviour of eContinuous and eDiscrete modes are the same
+    // for 3 second time interval. 
     {{
-        // Allow 2 request per 3 seconds with frequency 1 request per second.
-        // In this test behaviour of eContinuous and eDiscrete modes are the same
-        // for 3 second time interval. 
         {{
             CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
                                     CRequestRateControl::eErrCode);
@@ -202,10 +202,10 @@ int CTest::Run(void)
     // eSleep
 
     START(6);
+    // Allow any number of requests with frequency 1 request per second
+    // with auto sleep beetween requests.
+    // The behaviour is the same for both modes.
     {{
-        // Allow any number of requests with frequency 1 request per second
-        // with auto sleep beetween requests.
-        // The behaviour is the same for both modes.
         {{
             CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
                                     CRequestRateControl::eSleep);
@@ -233,10 +233,10 @@ int CTest::Run(void)
     DONE;
 
     START(7);
+    // Allow 2 request per 3 seconds with frequency 1 request per second
+    // with auto sleep beetween requests.
+    // The behaviour is different for both modes.
     {{
-        // Allow 2 request per 3 seconds with frequency 1 request per second
-        // with auto sleep beetween requests.
-        // The behaviour is different for both modes.
         CStopWatch sw(CStopWatch::eStart);
         {{
             LOG_POST("eContinuous");
@@ -297,8 +297,8 @@ int CTest::Run(void)
     DONE;
 
     START(8);
+    // Allow any number of requests (throtling is disabled)
     {{
-        // Allow any number of requests (throtling is disabled)
         {{
             CRequestRateControl mgr(CRequestRateControl::kNoLimit);
             CStopWatch sw(CStopWatch::eStart);
@@ -310,6 +310,23 @@ int CTest::Run(void)
         }}
     }}
     DONE;
+
+    START(9);
+    // eDiscrete mode test with empty time between requests
+    {{
+        CRequestRateControl mgr(1000, CTimeSpan(1,0), CTimeSpan(0,0),
+                                CRequestRateControl::eErrCode,
+                                CRequestRateControl::eDiscrete);
+        CStopWatch sw(CStopWatch::eStart);
+        for (int i=0; i<1000; i++) {
+            assert( mgr.Approve() );
+        }
+        ELAPSED;
+        assert( e < 0.1); 
+        assert( !mgr.Approve() );
+        SLEEP(1000);
+        assert( mgr.Approve() );
+    }}
 
     return 0;
 }

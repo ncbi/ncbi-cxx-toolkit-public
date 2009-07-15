@@ -122,6 +122,25 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
         }
     }
 
+    // Special case for eDiscrete mode and empty time between requests.
+    // We don't need to get time marks in this case, just increase number
+    // of requests and approve it.
+    if ( m_Mode == eDiscrete  &&  !empty_period  &&  empty_between  &&
+         m_NumRequests < m_NumRequestsAllowed
+         ) {
+        if (m_TimeLine.size() == 0) {
+            // Save only first request time, used in x_CleanTimeLine()
+            TTime now = m_StopWatch.Elapsed();
+            m_TimeLine.push_back(now);
+            // We will not update m_LastApproved except first time,
+            // we don't needed this information in this case.
+            m_LastApproved = now;
+        }
+        m_NumRequests++;
+        // Approve request
+        return true;
+    }
+
     // Get current time
     TTime now = m_StopWatch.Elapsed();
     TTime x_sleeptime = 0;
@@ -129,7 +148,10 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
     // Check number of requests per period
     if ( !empty_period ) {
         x_CleanTimeLine(now);
-        if ( m_TimeLine.size() >= m_NumRequestsAllowed ) {
+        if ( m_Mode == eContinuous ) {
+            m_NumRequests = m_TimeLine.size();
+        }
+        if ( m_NumRequests >= m_NumRequestsAllowed ) {
             switch(action) {
                 case eSleep:
                     // Get sleep time
@@ -199,7 +221,6 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
     }
     m_LastApproved = now;
     m_NumRequests++;
-
     // Approve request
     return true;
 }
@@ -226,7 +247,9 @@ void CRequestRateControl::Sleep(CTimeSpan sleep_time)
 
 void CRequestRateControl::x_CleanTimeLine(TTime now)
 {
-    if ( m_Mode == eContinuous ) {
+    switch (m_Mode) {
+
+    case eContinuous: {
         // Find first non-expired item
         TTimeLine::iterator current;
         for ( current = m_TimeLine.begin(); current != m_TimeLine.end();
@@ -237,17 +260,20 @@ void CRequestRateControl::x_CleanTimeLine(TTime now)
         }
         // Erase all expired items
         m_TimeLine.erase(m_TimeLine.begin(), current);
-
-    } else {
-        _ASSERT(m_Mode == eDiscrete);
+        break;
+    }
+    case eDiscrete: {
         if (m_TimeLine.size() > 0) {
             if (now - m_TimeLine.front() > m_PerPeriod) {
                 // Period ends, remove all restrictions
                 m_LastApproved = -1;
                 m_TimeLine.clear();
+                m_NumRequests = 0;
             }
         }
+        break;
     }
+    } // switch
 }
 
 
