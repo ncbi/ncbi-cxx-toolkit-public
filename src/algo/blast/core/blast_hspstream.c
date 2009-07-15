@@ -114,7 +114,12 @@ void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
       return;
 
    /* perform post-writer clean ups */
-   if (hsp_stream->writer && hsp_stream->writer_initialized) {
+   if (hsp_stream->writer) {
+       if (!hsp_stream->writer_initialized) {
+           /* some filter (e.g. hsp_queue) always needs finalization */
+           (hsp_stream->writer->InitFnPtr)
+                (hsp_stream->writer->data, hsp_stream->results);
+       }
        (hsp_stream->writer->FinalFnPtr)
             (hsp_stream->writer->data, hsp_stream->results);
    }
