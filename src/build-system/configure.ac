@@ -5816,13 +5816,17 @@ fi
 
 ## `internal' project cluster
 
-if test "$with_internal" = "no"  -o  ! -f ${real_srcdir}/src/internal/Makefile.in \
-    -o  ! -d ${real_srcdir}/include/internal; then
+if test "$with_internal" = "no"  \
+    -o  ! -f "${real_srcdir}/src/internal/Makefile.in"; then
    NoConfProjects="$NoConfProjects internal"
    internal=
 else
    reason=""
    sep=
+   if test ! -d "${real_srcdir}/include/internal"; then
+     reason="$reason${sep}headers"
+     sep=", "
+   fi
    if test "$with_sybase" = "no"; then
      reason="$reason${sep}Sybase"
      sep=", "
