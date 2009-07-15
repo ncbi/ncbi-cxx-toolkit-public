@@ -265,6 +265,11 @@ public:
     void WriteLock(void);
     void Unlock   (void);
 
+#ifdef NCBI_COMPILER_ICC
+    /// Work around a compiler bug that can cause memory leaks.
+    virtual ~IRegistry() { }
+#endif
+
 protected:
     enum EMasks {
         fLayerFlags = fAllLayers | fJustCore,
@@ -405,6 +410,10 @@ public:
                     const string& name    = kEmptyStr,
                     TFlags        flags   = 0);
 
+#ifdef NCBI_COMPILER_ICC
+    /// Work around a compiler bug that can cause memory leaks.
+    virtual ~IRWRegistry() { }
+#endif
 
 protected:
     /// Called locked, like the virtual methods inherited from IRegistry.
@@ -439,6 +448,11 @@ public:
           m_Sections((flags & fSectionCase) == 0 ? NStr::eNocase : NStr::eCase),
           m_Flags(flags)
         {}
+
+#ifdef NCBI_COMPILER_ICC
+    /// Work around a compiler bug that can cause memory leaks.
+    virtual ~CMemoryRegistry() { }
+#endif
 
 protected:
     bool x_Empty(TFlags flags) const;
@@ -497,6 +511,11 @@ class NCBI_XNCBI_EXPORT CCompoundRegistry : public IRegistry
 {
 public:
     CCompoundRegistry() : m_CoreCutoff(ePriority_Default) { }
+
+#ifdef NCBI_COMPILER_ICC
+    /// Work around a compiler bug that can cause memory leaks.
+    virtual ~CCompoundRegistry() { }
+#endif
 
     /// Priority for sub-registries; entries in higher-priority
     /// sub-registries take precedence over (identically named) entries
@@ -586,6 +605,11 @@ public:
     /// Constructor.  The transient layer is always a new memory registry,
     /// and so is the persistent layer by default.
     CTwoLayerRegistry(IRWRegistry* persistent = 0, TFlags flags = 0);
+
+#ifdef NCBI_COMPILER_ICC
+    /// Work around a compiler bug that can cause memory leaks.
+    virtual ~CTwoLayerRegistry() { }
+#endif
 
 protected:
     bool x_Empty(TFlags flags) const;
