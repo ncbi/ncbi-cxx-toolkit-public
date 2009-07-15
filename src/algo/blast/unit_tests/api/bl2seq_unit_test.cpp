@@ -48,7 +48,7 @@
 #include <serial/objostr.hpp>
 
 #include <algo/blast/api/tblastn_options.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
+#include <algo/blast/format/blastfmtutil.hpp>
 
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>

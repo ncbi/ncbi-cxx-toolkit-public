@@ -60,6 +60,7 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
+USING_SCOPE(align_format);
 
 void
 IBlastCmdLineArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,

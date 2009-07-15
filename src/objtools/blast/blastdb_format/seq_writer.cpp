@@ -37,14 +37,12 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast_format/seq_writer.hpp>
-#include <objtools/blast_format/blastdb_dataextract.hpp>
-#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
+#include <objtools/blast/blastdb_format/seq_writer.hpp>
+#include <objtools/blast/blastdb_format/blastdb_dataextract.hpp>
 #include "masking_fmt_spec.hpp"
 #include <numeric>      // for std::accumulate
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 const char CMaskingFmtSpecHelper::kDelim(',');
@@ -75,7 +73,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     }
 
     if (m_ReplOffsets.empty() || repl_types.size() != m_ReplOffsets.size()) {
-        NCBI_THROW(CInputException, eInvalidInput,
+        NCBI_THROW(CInvalidDataException, eInvalidInput,
                    "Invalid format specification");
     }
 
@@ -154,7 +152,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";
-            NCBI_THROW(CInputException, eInvalidInput, 
+            NCBI_THROW(CInvalidDataException, eInvalidInput, 
                        CNcbiOstrstreamToString(os));
         }
     }

@@ -38,20 +38,21 @@ Author: Jason Papadopoulos
 */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast_format/blast_format.hpp>
+#include <algo/blast/format/blast_format.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
 
-#include <objtools/blast_format/blastxml_format.hpp>
+#include <algo/blast/format/blastxml_format.hpp>
 #include "data4xmlformat.hpp"       /* NCBI_FAKE_WARNING */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+USING_SCOPE(align_format);
 #endif
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& options, 
@@ -505,8 +506,10 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
         tabinfo.SetParseLocalIds(m_BelieveQuery);
 
         if (m_FormatType == CFormattingArgs::eTabularWithComments) {
+            string strProgVersion =
+                NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
             CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
-            tabinfo.PrintHeader(m_Program, *(bhandle.GetBioseqCore()),
+            tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
                                 m_DbName, results.GetRID(), itr_num, aln_set,
                                 subject_bioseq);
         }

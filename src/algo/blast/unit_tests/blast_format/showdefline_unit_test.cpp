@@ -41,7 +41,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objects/blastdb/defline_extra.hpp>
-#include <objtools/blast_format/showdefline.hpp>
+#include <objtools/align_format/showdefline.hpp>
 
 #include "blast_test_util.hpp"
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
@@ -52,6 +52,7 @@
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;
+using namespace ncbi::align_format;
 using namespace TestUtil;
 
 BOOST_AUTO_TEST_SUITE(showdefline)
@@ -61,7 +62,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
     CShowBlastDeflineTest(const CSeq_align_set& seqalign,
                       CScope& scope,
                       size_t line_length = 65,
-                      size_t deflines_to_show = blast::kDfltArgNumDescriptions,
+                      size_t deflines_to_show = align_format::kDfltArgNumDescriptions,
                       bool translated_nuc_alignment = false,
                       CRange<TSeqPos>* master_range = NULL)
         : CShowBlastDefline(seqalign, scope, line_length, 

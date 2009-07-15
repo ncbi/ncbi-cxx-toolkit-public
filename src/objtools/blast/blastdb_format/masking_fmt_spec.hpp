@@ -30,13 +30,12 @@
 /// @file masking_fmt_spec.hpp
 /// Defines the CMaskingFmtSpecHelper class
 
-#ifndef OBJTOOLS_BLAST_FORMAT__MASKING_FMT_SPEC__HPP
-#define OBJTOOLS_BLAST_FORMAT__MASKING_FMT_SPEC__HPP
+#ifndef OBJTOOLS_BLASTDB_FORMAT__MASKING_FMT_SPEC__HPP
+#define OBJTOOLS_BLASTDB_FORMAT__MASKING_FMT_SPEC__HPP
 
-#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
+#include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
 
 BEGIN_NCBI_SCOPE
-using blast::CInputException;
 
 /// Auxiliary class to help parse the masking algorithm specification to assist
 /// the CSeqFormatter class
@@ -99,7 +98,7 @@ private:
                     os << "Invalid filtering algorithm IDs specification ";
                     os << "starting at '" << fmt_spec.substr(i) << "'";
                     string msg = CNcbiOstrstreamToString(os);
-                    NCBI_THROW(CInputException, eInvalidInput, msg);
+                    NCBI_THROW(CInvalidDataException, eInvalidInput, msg);
                 }
             }
         } /* else it means all masks are requested, so leave
@@ -154,7 +153,7 @@ private:
                 os << ", " << invalid_algo_ids[i];
             }
             string msg = CNcbiOstrstreamToString(os);
-            NCBI_THROW(CInputException, eInvalidInput, msg);
+            NCBI_THROW(CInvalidDataException, eInvalidInput, msg);
         }
         ITERATE(vector<int>, itr, invalid_algo_ids) {
             vector<int>::iterator pos = remove(filt_algorithms.begin(),
@@ -167,4 +166,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif  /* OBJTOOLS_BLAST_FORMAT__MASKING_FMT_SPEC__HPP */
+#endif  /* OBJTOOLS_BLASTDB_FORMAT__MASKING_FMT_SPEC__HPP */

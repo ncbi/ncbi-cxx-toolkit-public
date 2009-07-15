@@ -43,7 +43,8 @@
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/dbindex/dbindex.hpp>           // for CDbIndex_Exception
-#include <objtools/blast_format/blastfmtutil.hpp>   // for CBlastFormatUtil
+#include <objtools/blast/blastdb_format/invalid_data_exception.hpp> // for CInvalidDataException
+#include <algo/blast/format/blastfmtutil.hpp>   // for CBlastFormatUtil
 
 BEGIN_NCBI_SCOPE
 
@@ -108,6 +109,10 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 /// Standard catch statement for all BLAST command line programs
 /// @param exit_code exit code to be returned from main function
 #define CATCH_ALL(exit_code)                                                \
+    catch (const CInvalidDataException& e) {                                \
+        cerr << "BLAST options error: " << e.GetMsg() << endl;              \
+        exit_code = BLAST_INPUT_ERROR;                                      \
+    }                                                                       \
     catch (const blast::CInputException& e) {                               \
         cerr << "BLAST query/options error: " << e.GetMsg() << endl;        \
         exit_code = BLAST_INPUT_ERROR;                                      \

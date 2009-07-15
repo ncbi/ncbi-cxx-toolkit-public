@@ -41,7 +41,7 @@
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
-#include <objtools/blast_format/showalign.hpp>
+#include <objtools/align_format/showalign.hpp>
 
 
 #include "blast_test_util.hpp"
@@ -51,6 +51,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(blast);
+USING_SCOPE(align_format);
 using namespace TestUtil;
 
 BOOST_AUTO_TEST_SUITE(showalign)

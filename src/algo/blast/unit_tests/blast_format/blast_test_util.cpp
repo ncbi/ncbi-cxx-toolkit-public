@@ -55,7 +55,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 
 // Formatter includes
-#include <objtools/blast_format/showalign.hpp>
+#include <objtools/align_format/showalign.hpp>
 
 #include <sstream>
 
@@ -66,6 +66,7 @@ using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
+using namespace ncbi::align_format;
 
 namespace TestUtil {
 

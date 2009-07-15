@@ -32,8 +32,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast_format/seq_writer.hpp>
-#include <algo/blast/blastinput/blast_input.hpp>
+#include <objtools/blast/blastdb_format/seq_writer.hpp>
+#include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
 #include <corelib/ncbifile.hpp>
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -53,28 +53,28 @@ BOOST_AUTO_TEST_CASE(TestNoFormatSpecifier)
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
     const string format_spec("hello world!");
     BOOST_REQUIRE_THROW(CSeqFormatter f(format_spec, db, std::cout),
-                        blast::CInputException);
+                        CInvalidDataException);
 }
 
 BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_Empty)
 {
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
     BOOST_REQUIRE_THROW(CSeqFormatter f(kEmptyStr, db, std::cout),
-                        blast::CInputException);
+                        CInvalidDataException);
 }
 
 BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_InvalidAlgoId)
 {
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
     BOOST_REQUIRE_THROW(CSeqFormatter f("%m15", db, std::cout),
-                        blast::CInputException);
+                        CInvalidDataException);
 }
 
 BOOST_AUTO_TEST_CASE(TestInvalidFormatSpecifiers_InvalidAlgoIdSpec)
 {
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
     BOOST_REQUIRE_THROW(CSeqFormatter f("%mhello", db, std::cout),
-                        blast::CInputException);
+                        CInvalidDataException);
 }
 
 BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)

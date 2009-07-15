@@ -35,12 +35,14 @@
 #ifndef APP___DATA4XMLFORMAT__HPP
 #define APP___DATA4XMLFORMAT__HPP
 
-#include <algo/blast/api/blast_aux.hpp>
+#include <objects/seq/seqlocinfo.hpp>
+
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
-#include <objtools/blast_format/blastxml_format.hpp>
+
+#include <algo/blast/format/blastfmtutil.hpp>
+#include <algo/blast/format/blastxml_format.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -132,16 +134,13 @@ public:
     }
 
     /// @inheritDoc
-    CBlastFormattingMatrix* GetMatrix(void) const {
-        return new CBlastFormattingMatrix((int **)m_Matrix,
-                                           kMatrixCols, kMatrixCols); 
-    }
+    CBlastFormattingMatrix* GetMatrix(void) const;
 
     /// @inheritDoc
     unsigned int GetNumQueries(void) const { return m_Queries->Size(); }
 
     /// @inheritDoc
-    const blast::TMaskedQueryRegions* 
+    const TMaskedQueryRegions* 
         GetMaskLocations(int query_index) const {
         _ASSERT(query_index < (int)m_Masks.size());
         if (m_NoHitsFound) {
@@ -236,7 +235,7 @@ private:
     /// the alignments
     vector<CConstRef<CSeq_align_set> > m_Alignments;
     /// masks for the queries
-    blast::TSeqLocInfoVector m_Masks;
+    TSeqLocInfoVector m_Masks;
     /// True if results did not find any hits
     bool m_NoHitsFound;
     /// Error messages (one element per query)

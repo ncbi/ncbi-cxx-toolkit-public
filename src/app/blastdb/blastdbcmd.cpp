@@ -43,8 +43,8 @@ static char const rcsid[] =
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
-#include <objtools/blast_format/seq_writer.hpp>
-#include <objtools/blast_format/blastdb_seqid.hpp>
+#include <objtools/blast/blastdb_format/seq_writer.hpp>
+#include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
 #include "blastdb_aux.hpp"
 
 #include <algo/blast/blastinput/blast_input.hpp>

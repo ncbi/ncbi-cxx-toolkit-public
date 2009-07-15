@@ -23,7 +23,8 @@ HOSTED_LIBS    = xalnmgr   \
                  xobjedit  \
                  xcleanup  \
                  valerr    \
-                 blast_services
+                 blast_services \
+                 blastdb_format
 
 DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
 

@@ -3,7 +3,6 @@
 SUB_PROJ =  \
     ncbi_lds \
     ncbi_validator \
-    ncbi_xblastformat \
     ncbi_xloader_blastdb \
     ncbi_xloader_remoteblast \
     ncbi_xloader_cdd \
@@ -19,7 +18,8 @@ SUB_PROJ =  \
     ncbi_xreader_id2 \
     ncbi_xreader_pubseqos \
     ncbi_xreader_pubseqos2 \
-    ncbi_eutils
+    ncbi_eutils \
+    ncbi_align_format
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

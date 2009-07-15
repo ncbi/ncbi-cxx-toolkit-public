@@ -37,7 +37,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/blast_format/seqalignfilter.hpp>
+#include <objtools/align_format/seqalignfilter.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -48,6 +48,8 @@ static char const rcsid[] = "$Id$";
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+BEGIN_SCOPE(align_format)
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -546,4 +548,5 @@ void CSeqAlignFilter::ReadGiVector(const string& fname, vector<int>& vec_gis, bo
         sort(vec_gis.begin(), vec_gis.end());
 }
 
+END_SCOPE(align_format)
 END_NCBI_SCOPE

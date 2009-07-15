@@ -37,7 +37,7 @@
 #include <functional>
 #include <corelib/ncbiutil.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objtools/blast_format/showdefline.hpp>
+#include <objtools/align_format/showdefline.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)

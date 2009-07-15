@@ -60,6 +60,7 @@
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
+#include <objects/seq/seqlocinfo.hpp>
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
@@ -472,7 +473,7 @@ bool CDUpdater::blast(bool wait, int row)
 			return false;
 		seqList.push_back(seqOld);
 		CRef< CSeq_id > seqId = seqOld->SetSeq().SetId().front();
-		blast::TMaskedQueryRegions masks;
+		TMaskedQueryRegions masks;
 		int lo = m_cd->GetLowerBound(row);
 		int hi = m_cd->GetUpperBound(row);
 		int len = m_cd->GetSequenceStringByRow(row).length();

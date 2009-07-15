@@ -715,8 +715,8 @@ public:
     /// Default constructor
     CFormattingArgs()
         : m_OutputFormat(ePairwise), m_ShowGis(false), 
-        m_NumDescriptions(kDfltArgNumDescriptions),
-        m_NumAlignments(kDfltArgNumAlignments), m_Html(false)
+        m_NumDescriptions(align_format::kDfltArgNumDescriptions),
+        m_NumAlignments(align_format::kDfltArgNumAlignments), m_Html(false)
     {};
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */

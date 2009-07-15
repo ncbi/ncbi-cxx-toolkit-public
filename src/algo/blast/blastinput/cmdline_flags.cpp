@@ -46,6 +46,7 @@ static char const rcsid[] =
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
+USING_SCOPE(align_format);
 
 const string kArgQuery("query");
 const string kDfltArgQuery("-");

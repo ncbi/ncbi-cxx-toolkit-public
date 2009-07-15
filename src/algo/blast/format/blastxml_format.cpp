@@ -45,9 +45,9 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 
-#include <objtools/blast_format/blastxml_format.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
-#include <objtools/blast_format/showdefline.hpp>
+#include <algo/blast/format/blastxml_format.hpp>
+#include <algo/blast/format/blastfmtutil.hpp>
+#include <objtools/align_format/showdefline.hpp>
 
 #include <serial/objostrxml.hpp>
 
@@ -58,6 +58,9 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
+USING_SCOPE(align_format);
+
+ncbi::TMaskedQueryRegions mask;
 
 /// Auxiliary structure used for sorting CRange<int> objects in increasing
 /// order of starting positions.
@@ -80,6 +83,7 @@ public:
             delete *pItem;
     }
 };
+
 // helper function: serialize given object (could be partially initialized) 
 // to string buffer and return it in two parts before and after given tag.
 // object to serialize
@@ -94,6 +98,7 @@ static bool s_SerializeAndSplitBy(const CSerialObject &object,
 	string &end_part,
 	bool add_reference_dtdi = false,
 	bool add_xml_versioni = false );
+
 /// Masks a query sequence string corresponding to an alignment, given a list
 /// of mask locations.
 /// @param alnvec One alignment [in]
@@ -104,7 +109,7 @@ static bool s_SerializeAndSplitBy(const CSerialObject &object,
 ///                    alignment for?
 static void
 s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq, 
-               const TMaskedQueryRegions& mask_info, 
+               const ncbi::TMaskedQueryRegions& mask_info, 
                CDisplaySeqalign::SeqLocCharOption mask_char,
                int query_frame)
 {
@@ -118,7 +123,7 @@ s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
 
     CRangeVector masks_v;
     int aln_stop = query_seq.size() - 1;
-    ITERATE(TMaskedQueryRegions, mask_iter, mask_info) {
+    ITERATE(ncbi::TMaskedQueryRegions, mask_iter, mask_info) {
         if ((*mask_iter)->GetFrame() != query_frame)
             continue;
         int start = 
@@ -212,7 +217,7 @@ static void
 s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list, 
                        const CSeq_align_set& alnset, CScope* scope, 
                        const CBlastFormattingMatrix* matrix,
-                       const TMaskedQueryRegions* mask_info,
+                       const ncbi::TMaskedQueryRegions* mask_info,
                        int master_gentice_code, int slave_genetic_code)
 {
     int index = 1;
@@ -420,7 +425,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
 static void 
 s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
                    const CBlastFormattingMatrix* matrix, 
-                   const TMaskedQueryRegions* mask_info, 
+                   const ncbi::TMaskedQueryRegions* mask_info, 
                    bool ungapped, int master_gentice_code, int slave_genetic_code)
 {
     _ASSERT(align_in.GetSegs().IsDisc());
@@ -517,9 +522,9 @@ s_GetSubjectId(const CSeq_align& align)
 static void
 s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
                        CScope* scope, const CBlastFormattingMatrix* matrix, 
-                       const TMaskedQueryRegions* mask_info,
+                       const ncbi::TMaskedQueryRegions* mask_info,
                        bool ungapped, int master_gentice_code, int slave_genetic_code,
-		       CNcbiOstream *out_stream)
+                       CNcbiOstream *out_stream)
 {
     // If there are no hits for this query, return with empty Hits list.
     if (alnset.Get().empty())
@@ -529,7 +534,6 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
 
     int index = 1;
     bool incremental_output = (bool)out_stream;
-    bool add_leading_eol = true;
     while (iter != alnset.Get().end()) {
         CRef<CHit> new_hit;
         // Retrieve the next set of results for a single subject sequence.
@@ -575,7 +579,6 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
 		    string::size_type  end_xml_pos = out_str.find_first_of("\n\r");
 		    out_str.erase(0,end_xml_pos+1);
 		}
-		if( add_leading_eol ) { *out_stream << "\n"; add_leading_eol = false;}
 		*out_stream << out_str ; 
 	    }
 
@@ -599,7 +602,7 @@ static void
 s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CSeq_loc& seqloc, CScope* scope, 
                        const CBlastFormattingMatrix* matrix, 
-                       const TMaskedQueryRegions* mask_info,
+                       const ncbi::TMaskedQueryRegions* mask_info,
                        int index, CStatistics& stat, bool is_ungapped,
                        int master_gentice_code, int slave_genetic_code,
                        const vector<string>& messages,
@@ -636,12 +639,13 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
     one_query_iter->SetStat(stat);
     if (messages.size() > 0 && !messages[index].empty())
        one_query_iter->SetMessage(messages[index]);
-       // have serialized CIteration split and output first portion before hits
-       string serial_xml_start, serial_xml_end;
-       if( incremental_output ) {
-       bool split_res = s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
+    // have serialized CIteration split and output first portion before hits
+    string serial_xml_start, serial_xml_end;
+    if( incremental_output ) {
+    //bool add_dtd_reference = false, add_xml_version = false;	
+        bool split_res = s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
 		serial_xml_start, serial_xml_end); 
-       *out_stream << serial_xml_start << "\n<Iteration_hits>"; // PART BEFORE HITS
+        *out_stream << serial_xml_start << "\n<Iteration_hits>\n"; // PART BEFORE HITS
     }
     
     // Only add hits if they exist.
@@ -779,7 +783,7 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
 
     s_SetBlastXMLParameters(bxmlout, data);
 
-    auto_ptr<CBlastFormattingMatrix> matrix(data->GetMatrix());
+    auto_ptr< CBlastFormattingMatrix > matrix(data->GetMatrix());
 
     vector<CRef<CStatistics> > stat_vec;
     s_BlastXMLGetStatistics(stat_vec, data);
@@ -812,6 +816,7 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
     }
     if(incremental_output) *out_stream <<  "\n</BlastOutput_iterations>" << serial_xml_end << endl;
 }
+
 /// serialize givem object and split data by provided XML tag for futher manual integrationa
 //  <start of a  XML data ><TAG_NAME></TAG_NAME>< .., end of XML data>
 //static bool s_SerializeAndSplit(TConstObjectPtr object, TTypeInfo typeInfo )

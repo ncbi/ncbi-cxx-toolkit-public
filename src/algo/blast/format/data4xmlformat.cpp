@@ -44,6 +44,7 @@ static char const rcsid[] = "$Id$";
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+USING_SCOPE(align_format);
 #endif
 
 CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
@@ -223,4 +224,10 @@ CCmdLineBlastXMLReportData::GetEntropy(int query_index) const
     if (kbp)
         return kbp->H;
     return -1.0;
+}
+
+CBlastFormattingMatrix* CCmdLineBlastXMLReportData::GetMatrix(void) const
+{
+    return new CBlastFormattingMatrix((int **)m_Matrix,
+                                      kMatrixCols, kMatrixCols); 
 }

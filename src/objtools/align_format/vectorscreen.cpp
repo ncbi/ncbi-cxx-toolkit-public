@@ -35,8 +35,7 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast_format/vectorscreen.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
+#include <objtools/align_format/vectorscreen.hpp>
 #include <util/range.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -52,15 +51,9 @@ static char const rcsid[] = "$Id$";
 #include <objects/general/Object_id.hpp>
 #include <html/html.hpp>
 
-
-/** @addtogroup BlastFormatting
- *
- * @{
- */
-
-
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE (objects)
+USING_SCOPE(objects);
+BEGIN_SCOPE(align_format)
 
   
 static const int kNumSeqalignMatchTypes = 3;
@@ -136,9 +129,9 @@ static bool AlnFromRangeAscendingSort(CRef<CSeq_align> const& info1,
     list<int> use_this_gi;
     TSeqPos from1, from2;
     
-    CBlastFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
+    CAlignFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
                                    sum_n, num_ident, use_this_gi);
-    CBlastFormatUtil::GetAlnScores(*info2, score2, bits, evalue,
+    CAlignFormatUtil::GetAlnScores(*info2, score2, bits, evalue,
                                    sum_n, num_ident, use_this_gi);
     from1 = info1->GetSeqRange(0).GetFrom();
     from2 = info2->GetSeqRange(0).GetFrom();
@@ -161,9 +154,9 @@ static bool AlnScoreDescendingSort(CRef<CSeq_align> const& info1,
     double bits, evalue;
     list<int> use_this_gi;
     
-    CBlastFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
+    CAlignFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
                                    sum_n, num_ident, use_this_gi);
-    CBlastFormatUtil::GetAlnScores(*info2, score2, bits, evalue,
+    CAlignFormatUtil::GetAlnScores(*info2, score2, bits, evalue,
                                    sum_n, num_ident, use_this_gi);
     
     return (score1 > score2);
@@ -181,7 +174,7 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
                     seqalign.GetSeqRange(0).GetFrom());
     aln_stop = max(seqalign.GetSeqRange(0).GetTo(), 
                    seqalign.GetSeqRange(0).GetFrom());
-    CBlastFormatUtil::GetAlnScores(seqalign, score, bits, evalue,
+    CAlignFormatUtil::GetAlnScores(seqalign, score, bits, evalue,
                                    sum_n, num_ident,use_this_gi);
     if(aln_start < kTerminalFexibility || 
        aln_stop > master_len - 1 - kTerminalFexibility){
@@ -481,7 +474,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
 
 CRef<CSeq_align_set> CVecscreen::ProcessSeqAlign(void){
     CSeq_align_set actual_aln_list;
-    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+    CAlignFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
                                                      *m_SeqalignSetRef);
     x_MergeSeqalign(actual_aln_list);  
     //x_BuildHtmlBar(out);
@@ -682,7 +675,5 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
     }    
 }
 
-END_SCOPE(objects)
+END_SCOPE(align_format)
 END_NCBI_SCOPE
-
-/* @} */

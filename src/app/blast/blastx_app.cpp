@@ -43,7 +43,7 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blastx_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
-#include <objtools/blast_format/blast_format.hpp>
+#include <algo/blast/format/blast_format.hpp>
 #include "blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING

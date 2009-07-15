@@ -36,22 +36,16 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast_format/blastdb_dataextract.hpp>
+#include <objtools/blast/blastdb_format/invalid_data_exception.hpp>
+#include <objtools/blast/blastdb_format/blastdb_dataextract.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <util/sequtil/sequtil_manip.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(blast);
 USING_SCOPE(objects);
-
-/** @addtogroup BlastFormatting
- *
- * @{
- */
 
 string CGiExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 {
@@ -170,7 +164,7 @@ string CSeqDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
         //FIXME: change the enumeration when it's availble
         if (e.GetErrCode() == CSeqDBException::eArgErr ||
             e.GetErrCode() == CSeqDBException::eFileErr/*eOutOfRange*/) {
-            NCBI_THROW(CInputException, eInvalidRange, e.GetMsg());
+            NCBI_THROW(CInvalidDataException, eInvalidRange, e.GetMsg());
         }
         throw;
     }
@@ -367,7 +361,7 @@ string CFastaExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     try { m_FastaOstream.Write(*bioseq, range); }
     catch (const CObjmgrUtilException& e) {
         if (e.GetErrCode() == CObjmgrUtilException::eBadLocation) {
-            NCBI_THROW(CInputException, eInvalidRange, 
+            NCBI_THROW(CInvalidDataException, eInvalidRange, 
                        "Invalid sequence range");
         }
     }
@@ -375,5 +369,3 @@ string CFastaExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 }
 
 END_NCBI_SCOPE
-
-/* @} */

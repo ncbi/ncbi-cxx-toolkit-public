@@ -42,7 +42,7 @@
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
-#include <objtools/blast_format/seqalignfilter.hpp>
+#include <objtools/align_format/seqalignfilter.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -56,6 +56,7 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+USING_SCOPE(align_format);
 
 template<class ASNOBJ>
 void s_Stringify(const ASNOBJ & a, string & s)

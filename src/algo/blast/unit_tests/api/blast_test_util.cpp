@@ -54,7 +54,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 
 // Formatter includes
-#include <objtools/blast_format/showalign.hpp>
+#include <objtools/align_format/showalign.hpp>
 
 #include <sstream>
 

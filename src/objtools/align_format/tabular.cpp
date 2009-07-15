@@ -39,9 +39,11 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
-#include <objtools/blast_format/tabular.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
-#include <objtools/blast_format/showdefline.hpp>
+
+#include <objtools/align_format/tabular.hpp>
+#include <objtools/align_format/showdefline.hpp>
+#include <objtools/align_format/align_format_util.hpp>
+
 #include <serial/iterator.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -51,19 +53,15 @@ static char const rcsid[] = "$Id$";
 
 #include <map>
 
-/** @addtogroup BlastFormatting
- *
- * @{
- */
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+BEGIN_SCOPE(align_format)
 
 void 
 CBlastTabularInfo::x_AddDefaultFieldsToShow()
 {
     vector<string> format_tokens;
-    NStr::Tokenize(blast::kDfltArgTabularOutputFmt, " ", format_tokens);
+    NStr::Tokenize(kDfltArgTabularOutputFmt, " ", format_tokens);
     ITERATE (vector<string>, iter, format_tokens) {
         _ASSERT(m_FieldMap.count(*iter) > 0);
         x_AddFieldToShow(m_FieldMap[*iter]);
@@ -72,9 +70,9 @@ CBlastTabularInfo::x_AddDefaultFieldsToShow()
 
 void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
 {
-    for (size_t i = 0; i < blast::kNumTabularOutputFormatSpecifiers; i++) {
-        m_FieldMap.insert(make_pair(blast::sc_FormatSpecifiers[i].name,
-                                    blast::sc_FormatSpecifiers[i].field));
+    for (size_t i = 0; i < kNumTabularOutputFormatSpecifiers; i++) {
+        m_FieldMap.insert(make_pair(sc_FormatSpecifiers[i].name,
+                                    sc_FormatSpecifiers[i].field));
     }
     
     vector<string> format_tokens;
@@ -84,7 +82,7 @@ void CBlastTabularInfo::x_SetFieldsToShow(const string& format)
         x_AddDefaultFieldsToShow();
 
     ITERATE (vector<string>, iter, format_tokens) {
-        if (*iter == blast::kDfltArgTabularOutputFmtTag)
+        if (*iter == kDfltArgTabularOutputFmtTag)
             x_AddDefaultFieldsToShow();
         else if ((*iter)[0] == '-') {
             string field = (*iter).substr(1);
@@ -272,7 +270,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
     const CRef<CBlast_def_line_set> bdlRef = 
-        CBlastFormatUtil::GetBlastDefline(bh);
+        CAlignFormatUtil::GetBlastDefline(bh);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     
     if (!bdl.empty()) {
@@ -290,7 +288,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 
 int CBlastTabularInfo::SetFields(const CSeq_align& align, 
                                  CScope& scope, 
-                                 CBlastFormattingMatrix* matrix)
+                                 CNcbiMatrix<int>* matrix)
 {
     const int kQueryRow = 0;
     const int kSubjectRow = 1;
@@ -304,7 +302,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // First reset all fields.
     x_ResetFields();
 
-    CBlastFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
+    CAlignFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
                                    num_ident, use_this_gi);
     SetScores(score, bit_score, evalue);
 
@@ -362,7 +360,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         else
             finalAln = densegAln;
     } else if (align.GetSegs().IsDendiag()) {
-        finalAln = CBlastFormatUtil::CreateDensegFromDendiag(align);
+        finalAln = CAlignFormatUtil::CreateDensegFromDendiag(align);
     }
 
     const CDense_seg& ds = (finalAln ? finalAln->GetSegs().GetDenseg() :
@@ -371,7 +369,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     CAlnVec alnVec(ds, scope);
     
     int align_length, num_gaps, num_gap_opens;
-    CBlastFormatUtil::GetAlignLengths(alnVec, align_length, num_gaps, 
+    CAlignFormatUtil::GetAlignLengths(alnVec, align_length, num_gaps, 
                                       num_gap_opens);
 
     // Do not trust the identities count in the Seq-align, because if masking 
@@ -429,11 +427,11 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     
     int query_frame = 1, subject_frame = 1;
     if (kTranslated) {
-        query_frame = CBlastFormatUtil::
+        query_frame = CAlignFormatUtil::
             GetFrame (q_start - 1, ds.GetSeqStrand(kQueryRow), 
                       scope.GetBioseqHandle(align.GetSeq_id(0)));
     
-        subject_frame = CBlastFormatUtil::
+        subject_frame = CAlignFormatUtil::
             GetFrame (s_start - 1, ds.GetSeqStrand(kSubjectRow), 
                       scope.GetBioseqHandle(align.GetSeq_id(1)));
 
@@ -448,7 +446,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
 
 void CBlastTabularInfo::Print() 
 {
-    ITERATE(list<blast::ETabularField>, iter, m_FieldsToShow) {
+    ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
         // Add tab in front of field, except for the first field.
         if (iter != m_FieldsToShow.begin())
             m_Ostream << m_FieldDelimiter;
@@ -461,68 +459,68 @@ void CBlastTabularInfo::x_PrintFieldNames()
 {
     m_Ostream << "# Fields: ";
 
-    ITERATE(list<blast::ETabularField>, iter, m_FieldsToShow) {
+    ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
         if (iter != m_FieldsToShow.begin())
             m_Ostream << ", ";
 
         switch (*iter) {
-        case blast::eQuerySeqId:
+        case eQuerySeqId:
             m_Ostream << "query id"; break;
-        case blast::eQueryGi:
+        case eQueryGi:
             m_Ostream << "query gi"; break;
-        case blast::eQueryAccession:
+        case eQueryAccession:
             m_Ostream << "query acc."; break;
-        case blast::eSubjectSeqId:
+        case eSubjectSeqId:
             m_Ostream << "subject id"; break;
-        case blast::eSubjectAllSeqIds:
+        case eSubjectAllSeqIds:
             m_Ostream << "subject ids"; break;
-        case blast::eSubjectGi:
+        case eSubjectGi:
             m_Ostream << "subject gi"; break;
-        case blast::eSubjectAllGis:
+        case eSubjectAllGis:
             m_Ostream << "subject gis"; break;
-        case blast::eSubjectAccession:
+        case eSubjectAccession:
             m_Ostream << "subject acc."; break;
-        case blast::eSubjectAllAccessions:
+        case eSubjectAllAccessions:
             m_Ostream << "subject accs."; break;
-        case blast::eQueryStart:
+        case eQueryStart:
             m_Ostream << "q. start"; break;
-        case blast::eQueryEnd:
+        case eQueryEnd:
             m_Ostream << "q. end"; break;
-        case blast::eSubjectStart:
+        case eSubjectStart:
             m_Ostream << "s. start"; break;
-        case blast::eSubjectEnd:
+        case eSubjectEnd:
             m_Ostream << "s. end"; break;
-        case blast::eQuerySeq:
+        case eQuerySeq:
             m_Ostream << "query seq"; break;
-        case blast::eSubjectSeq:
+        case eSubjectSeq:
             m_Ostream << "subject seq"; break;
-        case blast::eEvalue:
+        case eEvalue:
             m_Ostream << "evalue"; break;
-        case blast::eBitScore:
+        case eBitScore:
             m_Ostream << "bit score"; break;
-        case blast::eScore:
+        case eScore:
             m_Ostream << "score"; break;
-        case blast::eAlignmentLength:
+        case eAlignmentLength:
             m_Ostream << "alignment length"; break;
-        case blast::ePercentIdentical:
+        case ePercentIdentical:
             m_Ostream << "% identity"; break;
-        case blast::eNumIdentical:
+        case eNumIdentical:
             m_Ostream << "identical"; break;
-        case blast::eMismatches:
+        case eMismatches:
             m_Ostream << "mismatches"; break;
-        case blast::ePositives:
+        case ePositives:
             m_Ostream << "positives"; break;
-        case blast::eGapOpenings:
+        case eGapOpenings:
             m_Ostream << "gap opens"; break;
-        case blast::eGaps:
+        case eGaps:
             m_Ostream << "gaps"; break;
-        case blast::ePercentPositives:
+        case ePercentPositives:
             m_Ostream << "% positives"; break;
-        case blast::eFrames:
+        case eFrames:
             m_Ostream << "query/sbjct frames"; break; 
-        case blast::eQueryFrame:
+        case eQueryFrame:
             m_Ostream << "query frame"; break; 
-        case blast::eSubjFrame:
+        case eSubjFrame:
             m_Ostream << "sbjct frame"; break; 
         default:
             break;
@@ -533,7 +531,7 @@ void CBlastTabularInfo::x_PrintFieldNames()
 }
 
 void 
-CBlastTabularInfo::PrintHeader(const string& program_in, 
+CBlastTabularInfo::PrintHeader(const string& program_version, 
        const CBioseq& bioseq, 
        const string& dbname, 
        const string& rid /* = kEmptyStr */,
@@ -542,9 +540,7 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
        CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
 {
     m_Ostream << "# ";
-    string program(program_in);
-    CBlastFormatUtil::BlastPrintVersionInfo(NStr::ToUpper(program), false, 
-                                            m_Ostream);
+    m_Ostream << program_version << "\n";
 
     if (iteration != numeric_limits<unsigned int>::max())
         m_Ostream << "# Iteration: " << iteration << "\n";
@@ -556,7 +552,7 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
 
     // Print the query defline with no html; there is no need to set the 
     // line length restriction, since it's ignored for the tabular case.
-    CBlastFormatUtil::AcknowledgeBlastQuery(bioseq, kLineLength, m_Ostream, 
+    CAlignFormatUtil::AcknowledgeBlastQuery(bioseq, kLineLength, m_Ostream, 
                                             kBelieveQuery, kHtmlFormat,
                                             kTabularFormat, rid);
     
@@ -565,7 +561,7 @@ CBlastTabularInfo::PrintHeader(const string& program_in,
     } else {
         _ASSERT(subj_bioseq.NotEmpty());
         m_Ostream << "\n";
-        CBlastFormatUtil::AcknowledgeBlastSubject(*subj_bioseq, kLineLength,
+        CAlignFormatUtil::AcknowledgeBlastSubject(*subj_bioseq, kLineLength,
                                                   m_Ostream, kBelieveQuery,
                                                   kHtmlFormat, kTabularFormat);
         m_Ostream << "\n";
@@ -586,7 +582,145 @@ void CBlastTabularInfo::PrintNumProcessed(int num_queries)
     m_Ostream << "# BLAST processed " << num_queries << " queries\n";
 }
 
+void 
+CBlastTabularInfo::SetScores(int score, double bit_score, double evalue)
+{
+    string total_bit_string;
+    m_Score = score;
+    CAlignFormatUtil::GetScoreString(evalue, bit_score, 0, m_Evalue, 
+                                     m_BitScore, total_bit_string);
+}
 
+void 
+CBlastTabularInfo::SetEndpoints(int q_start, int q_end, int s_start, int s_end)
+{
+    m_QueryStart = q_start;
+    m_QueryEnd = q_end;
+    m_SubjectStart = s_start;
+    m_SubjectEnd = s_end;    
+}
+
+void 
+CBlastTabularInfo::SetCounts(int num_ident, int length, int gaps, int gap_opens,
+                             int positives, int query_frame, int subject_frame)
+{
+    m_AlignLength = length;
+    m_NumIdent = num_ident;
+    m_NumGaps = gaps;
+    m_NumGapOpens = gap_opens;
+    m_NumPositives = positives;
+    m_QueryFrame = query_frame;
+    m_SubjectFrame = subject_frame;
+}
+
+void
+CBlastTabularInfo::SetQueryId(list<CRef<CSeq_id> >& id)
+{
+    m_QueryId = id;
+}
+
+void 
+CBlastTabularInfo::SetSubjectId(list<CRef<CSeq_id> >& id)
+{
+    m_SubjectIds.push_back(id);
+}
+
+list<string> 
+CBlastTabularInfo::GetAllFieldNames(void)
+{
+    list<string> field_names;
+
+    for (map<string, ETabularField>::iterator iter = m_FieldMap.begin();
+         iter != m_FieldMap.end(); ++iter) {
+        field_names.push_back((*iter).first);
+    }
+    return field_names;
+}
+
+void 
+CBlastTabularInfo::x_AddFieldToShow(ETabularField field)
+{
+    if (find(m_FieldsToShow.begin(), m_FieldsToShow.end(), field) == 
+        m_FieldsToShow.end())
+        m_FieldsToShow.push_back(field);
+}
+
+void 
+CBlastTabularInfo::x_DeleteFieldToShow(ETabularField field)
+{
+    list<ETabularField>::iterator iter; 
+
+    while ((iter = find(m_FieldsToShow.begin(), m_FieldsToShow.end(), field))
+           != m_FieldsToShow.end())
+        m_FieldsToShow.erase(iter); 
+}
+
+void 
+CBlastTabularInfo::x_PrintField(ETabularField field)
+{
+    switch (field) {
+    case eQuerySeqId:
+        x_PrintQuerySeqId(); break;
+    case eQueryGi:
+        x_PrintQueryGi(); break;
+    case eQueryAccession:
+        x_PrintQueryAccession(); break;
+    case eSubjectSeqId:
+        x_PrintSubjectSeqId(); break;
+    case eSubjectAllSeqIds:
+        x_PrintSubjectAllSeqIds(); break;
+    case eSubjectGi:
+        x_PrintSubjectGi(); break;
+    case eSubjectAllGis:
+        x_PrintSubjectAllGis(); break;
+    case eSubjectAccession:
+        x_PrintSubjectAccession(); break;
+    case eSubjectAllAccessions:
+        x_PrintSubjectAllAccessions(); break;
+    case eQueryStart:
+        x_PrintQueryStart(); break;
+    case eQueryEnd:
+        x_PrintQueryEnd(); break;
+    case eSubjectStart:
+        x_PrintSubjectStart(); break;
+    case eSubjectEnd:
+        x_PrintSubjectEnd(); break;
+    case eQuerySeq:
+        x_PrintQuerySeq(); break;
+    case eSubjectSeq:
+        x_PrintSubjectSeq(); break;
+    case eEvalue:
+        x_PrintEvalue(); break;
+    case eBitScore:
+        x_PrintBitScore(); break;
+    case eScore:
+        x_PrintScore(); break;
+    case eAlignmentLength:
+        x_PrintAlignmentLength(); break;
+    case ePercentIdentical:
+        x_PrintPercentIdentical(); break;
+    case eNumIdentical:
+        x_PrintNumIdentical(); break;
+    case eMismatches:
+        x_PrintMismatches(); break;
+    case ePositives:
+        x_PrintNumPositives(); break;
+    case eGapOpenings:
+        x_PrintGapOpenings(); break;
+    case eGaps:
+        x_PrintGaps(); break;
+    case ePercentPositives:
+        x_PrintPercentPositives(); break;
+    case eFrames:
+        x_PrintFrames(); break;
+    case eQueryFrame:
+        x_PrintQueryFrame(); break;
+    case eSubjFrame:
+        x_PrintSubjectFrame(); break;        
+    default:
+        break;
+    }
+}
+
+END_SCOPE(align_format)
 END_NCBI_SCOPE
-
-/* @} */

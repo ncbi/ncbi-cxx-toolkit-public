@@ -22,6 +22,7 @@ HOSTED_LIBS    = \
                  cobalt                 \
                  composition_adjustment \
                  xalgoblastdbindex      \
+                 xblastformat           \
                  xblast
 
 DEPENDENCIES   = \
@@ -29,7 +30,7 @@ DEPENDENCIES   = \
                  ncbi_seq ncbi_misc ncbi_seqext  \
                  ncbi_xloader_genbank ncbi_xreader \
                  ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
-                 ncbi_xobjsimple
+                 ncbi_xobjsimple ncbi_align_format
 
 CPPFLAGS = -DNCBI_XALGO_EXPORTS
 

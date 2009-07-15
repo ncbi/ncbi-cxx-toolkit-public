@@ -127,6 +127,7 @@
 #  define NCBI_XOBJEDIT_EXPORTS
 #  define NCBI_CLEANUP_EXPORTS
 #  define NCBI_VALERR_EXPORTS
+#  define NCBI_BLASTDB_FORMAT_EXPORTS
 #endif
 
 
@@ -176,6 +177,7 @@
 #  define NCBI_XALGOWINMASK_EXPORTS
 #  define NCBI_XALGODUSTMASK_EXPORTS
 #  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORTS
+#  define NCBI_XBLASTFORMAT_EXPORTS
 #endif
 
 
@@ -942,6 +944,22 @@
 #  define NCBI_XBLASTFORMAT_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library align_format
+ */
+#ifdef NCBI_ALIGN_FORMAT_EXPORTS
+#  define NCBI_ALIGN_FORMAT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_ALIGN_FORMAT_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library blastdb_format
+ */
+#ifdef NCBI_BLASTDB_FORMAT_EXPORTS
+#  define NCBI_BLASTDB_FORMAT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_BLASTDB_FORMAT_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xcgi
  */
 #if defined(NCBI_XCGI_EXPORTS) || defined(NCBI_XFCGI_EXPORTS)
@@ -1348,6 +1366,8 @@
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLASTFORMAT_EXPORT
+#  define NCBI_ALIGN_FORMAT_EXPORT
+#  define NCBI_BLASTDB_FORMAT_EXPORT
 #  define NCBI_XCGI_EXPORT
 #  define NCBI_XCGI_REDIRECT_EXPORT
 #  define NCBI_XCONNEXT_EXPORT

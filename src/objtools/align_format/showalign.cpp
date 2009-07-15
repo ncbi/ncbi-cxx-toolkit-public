@@ -35,7 +35,8 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <objtools/blast_format/showalign.hpp>
+
+#include <objtools/align_format/showalign.hpp>
 
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -57,7 +58,6 @@ static char const rcsid[] = "$Id$";
 #include <serial/objostrasnb.hpp> 
 #include <serial/objistrasnb.hpp> 
 #include <connect/ncbi_conn_stream.hpp>
-
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -93,12 +93,13 @@ static char const rcsid[] = "$Id$";
 #include <stdio.h>
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
 #include <html/htmlhelper.hpp>
 
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE (sequence);
+USING_SCOPE(objects);
+USING_SCOPE(sequence);
+BEGIN_SCOPE(align_format)
 
 static const char k_IdentityChar = '.';
 static const int k_NumFrame = 6;
@@ -177,7 +178,7 @@ static const int k_MinDeflinesToShow = 3;
 
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
                        CScope& scope,
-                       list <CRef<blast::CSeqLocInfo> >* mask_seqloc, 
+                       list <CRef<CSeqLocInfo> >* mask_seqloc, 
                        list <FeatureInfo*>* external_feature,
                        const char* matrix_name /* = BLAST_DEFAULT_MATRIX */)
     : m_SeqalignSetRef(&seqalign),
@@ -412,11 +413,11 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
     if(form_name){             
         string localClientButtons = "";
         if(showTreeButtons) {
-            string l_GetTreeViewForm  = CBlastFormatUtil::GetURLFromRegistry( "TREEVIEW_FRM");
+            string l_GetTreeViewForm  = CAlignFormatUtil::GetURLFromRegistry( "TREEVIEW_FRM");
             localClientButtons = "<td>" + l_GetTreeViewForm + "</td>";
         }
-        string l_GetSeqSubmitForm  = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SUB_FRM", db_type); 
-        string l_GetSeqSelectForm = CBlastFormatUtil::GetURLFromRegistry( "GETSEQ_SEL_FRM");
+        string l_GetSeqSubmitForm  = CAlignFormatUtil::GetURLFromRegistry( "GETSEQ_SUB_FRM", db_type); 
+        string l_GetSeqSelectForm = CAlignFormatUtil::GetURLFromRegistry( "GETSEQ_SEL_FRM");
         
         string template_str = "<table border=\"0\"><tr><td>" +
                             l_GetSeqSubmitForm + //k_GetSeqSubmitForm[db_type] +
@@ -977,23 +978,23 @@ void CDisplaySeqalign::x_PrintFeatures(TSAlnFeatureInfoList& feature,
             }
             out<<(*iter)->feature->feature_id;
             if((*iter)->feature_start.empty()){
-                CBlastFormatUtil::
+                CAlignFormatUtil::
                     AddSpace(out, id_length + k_IdStartMargin
                              +start_length + k_StartSequenceMargin
                              -(*iter)->feature->feature_id.size());
             } else {
                 int feat_start = (*iter)->feature_start.front();
                 if(feat_start > 0){
-                    CBlastFormatUtil::
+                    CAlignFormatUtil::
                         AddSpace(out, id_length + k_IdStartMargin
                                  -(*iter)->feature->feature_id.size());
                     out << feat_start;
-                    CBlastFormatUtil::
+                    CAlignFormatUtil::
                         AddSpace(out, start_length -
                                  NStr::IntToString(feat_start).size() +
                                  k_StartSequenceMargin);
                 } else { //no show start
-                    CBlastFormatUtil::
+                    CAlignFormatUtil::
                         AddSpace(out, id_length + k_IdStartMargin
                                  +start_length + k_StartSequenceMargin
                                  -(*iter)->feature->feature_id.size());
@@ -1037,7 +1038,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
     if (user_url.find("sra.cgi") != string::npos) {
         
         string url_with_parameters = 
-            CBlastFormatUtil::BuildSRAUrl(ids, user_url);
+            CAlignFormatUtil::BuildSRAUrl(ids, user_url);
 
         if (url_with_parameters != NcbiEmptyString) {
             urlLink += "<a href=\"";
@@ -1071,7 +1072,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
 
             strcpy(logstr_location, "align");
 
-            string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
+            string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");            
             sprintf(urlBuf, l_EntrezUrl.c_str(), 
                     (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
                     temp_class_info.c_str() : "", db, gi, dopt, m_Rid.c_str(),
@@ -1100,9 +1101,9 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
 }
 
 void
-CDisplaySeqalign::SetSubjectMasks(const blast::TSeqLocInfoVector& masks)
+CDisplaySeqalign::SetSubjectMasks(const TSeqLocInfoVector& masks)
 {
-    ITERATE(blast::TSeqLocInfoVector, sequence_masks, masks) {
+    ITERATE(TSeqLocInfoVector, sequence_masks, masks) {
         const CSeq_id& id = sequence_masks->front()->GetSeqId();
         m_SubjectMasks[id] = *sequence_masks;
     }
@@ -1159,7 +1160,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
         if(type_temp == "mapview" || type_temp == "mapview_prev" || 
            type_temp == "gsfasta"){
-            taxid[row] = CBlastFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
+            taxid[row] = CAlignFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
                                                             m_Scope);
         } else {
             taxid[row] = 0;
@@ -1333,7 +1334,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).
                                            GetBioseqCore()->GetId(), gi, 
                                            row, taxid[row], 
-                                           CBlastFormatUtil::
+                                           CAlignFormatUtil::
                                            GetLinkout(m_AV->GetBioseqHandle(row),
                                                       m_AV->GetSeqId(row)));     
                         out << urlLink;            
@@ -1380,7 +1381,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 
                 //print out sequence line
                 //adjust space between id and start
-                CBlastFormatUtil::AddSpace(out, 
+                CAlignFormatUtil::AddSpace(out, 
                                            maxIdLen-seqidArray[row].size()+
                                            k_IdStartMargin);
                 //not to display start and stop number for empty row
@@ -1392,13 +1393,13 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     startLen=NStr::IntToString(start).size();
                 }
 
-                CBlastFormatUtil::AddSpace(out, maxStartLen-startLen+
+                CAlignFormatUtil::AddSpace(out, maxStartLen-startLen+
                                            k_StartSequenceMargin);
                 x_OutputSeq(sequence[row], m_AV->GetSeqId(row), j, 
                             (int)actualLineLen, frame[row], row,
                             (row > 0 && colorMismatch)?true:false,  
                             masked_regions[row], out);
-                CBlastFormatUtil::AddSpace(out, k_SeqStopMargin);
+                CAlignFormatUtil::AddSpace(out, k_SeqStopMargin);
 
                  //not to display stop number for empty row in the middle
                 if (!(j > 0 && end == prev_stop[row])
@@ -1422,7 +1423,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                         m_QueryNumber);
                                 out << checkboxBuf;
                             }
-                            CBlastFormatUtil::AddSpace(out, 
+                            CAlignFormatUtil::AddSpace(out, 
                                                        maxIdLen
                                                        +k_IdStartMargin
                                                        +maxStartLen
@@ -1437,7 +1438,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                     m_QueryNumber);
                             out << checkboxBuf;
                         }
-                        CBlastFormatUtil::AddSpace(out, maxIdLen
+                        CAlignFormatUtil::AddSpace(out, maxIdLen
                                                    +k_IdStartMargin
                                                    +maxStartLen
                                                    +k_StartSequenceMargin);
@@ -1456,7 +1457,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 if (row == 0 && ((m_AlignOption & eShowMiddleLine)) 
                     && !(m_AlignOption&eMergeAlign)) {
                     CSeq_id no_id;
-                    CBlastFormatUtil::
+                    CAlignFormatUtil::
                         AddSpace(out, maxIdLen + k_IdStartMargin
                                  + maxStartLen + k_StartSequenceMargin);
                     x_OutputSeq(middleLine, no_id, j, (int)actualLineLen, 0,
@@ -1500,7 +1501,7 @@ CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
     } else if(align.GetSegs().Which() == 
               CSeq_align::C_Segs::e_Dendiag){
         CRef<CSeq_align> densegAln = 
-            CBlastFormatUtil::CreateDensegFromDendiag(align);
+            CAlignFormatUtil::CreateDensegFromDendiag(align);
         if (m_AlignOption & eTranslateNucToNucAlignment) { 
             finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
         } else {
@@ -1529,7 +1530,7 @@ CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
 void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
 {   
     CSeq_align_set actual_aln_list;
-    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+    CAlignFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
                                                      *m_SeqalignSetRef);
     if (actual_aln_list.Get().empty()){
         return;
@@ -1653,7 +1654,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         //save the current alnment regardless
                         CRef<SAlnInfo> alnvecInfo(new SAlnInfo);
                         int num_ident;
-                        CBlastFormatUtil::GetAlnScores(**iter, 
+                        CAlignFormatUtil::GetAlnScores(**iter, 
                                                        alnvecInfo->score, 
                                                        alnvecInfo->bits, 
                                                        alnvecInfo->evalue, 
@@ -1746,7 +1747,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 } else if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::
                           e_Dendiag){
                     alnVector[0]->Set().\
-                        push_back(CBlastFormatUtil::CreateDensegFromDendiag(**alnIter));
+                        push_back(CAlignFormatUtil::CreateDensegFromDendiag(**alnIter));
                 } else {
                     NCBI_THROW(CException, eUnknown, 
                                "Input Seq-align should be Denseg, Stdseg or Dendiag!");
@@ -1875,7 +1876,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                            CSeq_id::WorstRank);
     
         const CRef<CBlast_def_line_set> bdlRef 
-            =  CBlastFormatUtil::GetBlastDefline(bsp_handle);
+            =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;
@@ -1991,7 +1992,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         }
                         urlLink = x_GetUrl((*iter)->GetSeqid(), 
                                            gi_in_use_this_gi, 1, 
-                                           taxid, CBlastFormatUtil::GetLinkout(**iter));    
+                                           taxid, CAlignFormatUtil::GetLinkout(**iter));    
                         out<<urlLink;
                     }
                 
@@ -2015,11 +2016,11 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         }
                         if(m_AlignOption&eLinkout){
                             
-                            int linkout = CBlastFormatUtil::
+                            int linkout = CAlignFormatUtil::
                                 GetLinkout((**iter));
                             string user_url = m_Reg->Get(m_BlastType, 
                                                          "TOOL_URL");
-                            list<string> linkout_url =  CBlastFormatUtil::
+                            list<string> linkout_url =  CAlignFormatUtil::
                                 GetLinkoutUrl(linkout, (*iter)->GetSeqid(),
                                               m_Rid,
                                               m_CddRid, m_EntrezTerm,
@@ -2697,7 +2698,7 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     if(alternative_url != NcbiEmptyString){ 
         toolUrl = alternative_url;
     }
-    url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, toolUrl,
+    url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, taxid, toolUrl,
                                                          m_DbName,
                                                          m_IsDbNa, m_Rid, m_QueryNumber,
                                                          true);
@@ -2807,13 +2808,13 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
         }
 
         const CRef<CBlast_def_line_set> bdlRef 
-            =  CBlastFormatUtil::GetBlastDefline(bsp_handle);
+            =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
 
         for(list< CRef< CBlast_def_line > >::const_iterator 
                 iter = bdl.begin(); iter != bdl.end(); iter++)
         {
-            int linkout = CBlastFormatUtil::
+            int linkout = CAlignFormatUtil::
                 GetLinkout((**iter));
             if (linkout & eGene)
             {
@@ -2827,7 +2828,7 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 
 string CDisplaySeqalign::x_GetGeneLinkUrl(int gene_id)
 {
-    string strGeneLinkUrl = CBlastFormatUtil::GetURLFromRegistry("GENE_INFO");
+    string strGeneLinkUrl = CAlignFormatUtil::GetURLFromRegistry("GENE_INFO");
     AutoPtr<char, ArrayDeleter<char> > buf
         (new char[strGeneLinkUrl.size() + 1024]);
     sprintf(buf.get(), strGeneLinkUrl.c_str(), 
@@ -2913,80 +2914,80 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
             map< string, string> parameters_to_change;
             parameters_to_change.insert(map<string, string>::
                                         value_type("HSP_SORT", ""));
-            CBlastFormatUtil::BuildFormatQueryString(*m_Ctx, 
+            CAlignFormatUtil::BuildFormatQueryString(*m_Ctx, 
                                                      parameters_to_change,
                                                      query_buf);
             out << "\n";
-            CBlastFormatUtil::AddSpace(out, 57); 
+            CAlignFormatUtil::AddSpace(out, 57); 
             out << "Sort alignments for this subject sequence by:\n";
-            CBlastFormatUtil::AddSpace(out, 59); 
+            CAlignFormatUtil::AddSpace(out, 59); 
             
             string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
             int hsp_sort = hsp_sort_value == NcbiEmptyString ? 
                 0 : NStr::StringToInt(hsp_sort_value);
            
-            if (hsp_sort != CBlastFormatUtil::eEvalue) {
+            if (hsp_sort != CAlignFormatUtil::eEvalue) {
                 out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
                     << "&HSP_SORT="
-                    << CBlastFormatUtil::eEvalue
+                    << CAlignFormatUtil::eEvalue
                     << "#" << id_label << "\">";
             }
             
             out << "E value";
-            if (hsp_sort != CBlastFormatUtil::eEvalue) {
+            if (hsp_sort != CAlignFormatUtil::eEvalue) {
                 out << "</a>"; 
             }
             
-            CBlastFormatUtil::AddSpace(out, 2);
+            CAlignFormatUtil::AddSpace(out, 2);
 
-            if (hsp_sort != CBlastFormatUtil::eScore) {
+            if (hsp_sort != CAlignFormatUtil::eScore) {
                 out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
                     << "&HSP_SORT="
-                    << CBlastFormatUtil::eScore
+                    << CAlignFormatUtil::eScore
                     << "#" << id_label << "\">";
             }
             
             out << "Score";
-            if (hsp_sort != CBlastFormatUtil::eScore) {
+            if (hsp_sort != CAlignFormatUtil::eScore) {
                 out << "</a>"; 
             }
             
-            CBlastFormatUtil::AddSpace(out, 2);
+            CAlignFormatUtil::AddSpace(out, 2);
 
           
 
-            if (hsp_sort != CBlastFormatUtil::eHspPercentIdentity) {
+            if (hsp_sort != CAlignFormatUtil::eHspPercentIdentity) {
                 out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
                     << "&HSP_SORT="
-                    << CBlastFormatUtil::eHspPercentIdentity
+                    << CAlignFormatUtil::eHspPercentIdentity
                     << "#" << id_label << "\">";
             }
             out  << "Percent identity"; 
-            if (hsp_sort != CBlastFormatUtil::eHspPercentIdentity) {
+            if (hsp_sort != CAlignFormatUtil::eHspPercentIdentity) {
                 out << "</a>"; 
             }
             out << "\n";
-            CBlastFormatUtil::AddSpace(out, 59); 
-            if (hsp_sort != CBlastFormatUtil::eQueryStart) {
+            CAlignFormatUtil::AddSpace(out, 59); 
+            if (hsp_sort != CAlignFormatUtil::eQueryStart) {
                 out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
                     << "&HSP_SORT="
-                    << CBlastFormatUtil::eQueryStart
+                    << CAlignFormatUtil::eQueryStart
                     << "#" << id_label << "\">";
             } 
             out << "Query start position";
-            if (hsp_sort != CBlastFormatUtil::eQueryStart) {
+            if (hsp_sort != CAlignFormatUtil::eQueryStart) {
                 out << "</a>"; 
             }
-            CBlastFormatUtil::AddSpace(out, 2);
+            CAlignFormatUtil::AddSpace(out, 2);
            
-            if (hsp_sort != CBlastFormatUtil::eSubjectStart) {
+            if (hsp_sort != CAlignFormatUtil::eSubjectStart) {
                 out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
                     << "&HSP_SORT="
-                    << CBlastFormatUtil::eSubjectStart
+                    << CAlignFormatUtil::eSubjectStart
                     << "#" << id_label << "\">";
             } 
             out << "Subject start position";
-            if (hsp_sort != CBlastFormatUtil::eSubjectStart) {
+            if (hsp_sort != CAlignFormatUtil::eSubjectStart) {
                 out << "</a>"; 
             }
             
@@ -3028,7 +3029,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
     }
     if (m_AlignOption&eShowBlastInfo) {
         string evalue_buf, bit_score_buf, total_bit_buf;
-        CBlastFormatUtil::GetScoreString(aln_vec_info->evalue, 
+        CAlignFormatUtil::GetScoreString(aln_vec_info->evalue, 
                                          aln_vec_info->bits, 0, evalue_buf, 
                                          bit_score_buf, total_bit_buf);
         //add id anchor for mapviewer link
@@ -3096,7 +3097,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
     vector<SFeatInfo*>& feat_list 
         =  m_DynamicFeature->GetFeatInfo(id_str, actual_range, feat5, feat3, 2);
     
-    string l_EntrezSubseqUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ_SUBSEQ");
+    string l_EntrezSubseqUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_SUBSEQ");
 
     if(feat_list.size() > 0) { //has feature in this range
         out << " Features in this part of subject sequence:" << "\n";
@@ -3160,13 +3161,13 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
 
 void 
 CDisplaySeqalign::x_FillLocList(TSAlnSeqlocInfoList& loc_list, 
-                        const list< CRef<blast::CSeqLocInfo> >* masks) const
+                        const list< CRef<CSeqLocInfo> >* masks) const
 {
     if ( !masks ) {
         return;
     }
 
-    ITERATE(blast::TMaskedQueryRegions, iter, *masks) {
+    ITERATE(TMaskedQueryRegions, iter, *masks) {
         CRef<SAlnSeqlocInfo> alnloc(new SAlnSeqlocInfo);
         bool has_valid_loc = false;
         for (int i=0; i<m_AV->GetNumRows(); i++){
@@ -3346,4 +3347,5 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
     }
 }
 
+END_SCOPE(align_format)
 END_NCBI_SCOPE

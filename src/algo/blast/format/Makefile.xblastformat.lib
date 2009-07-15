@@ -1,0 +1,10 @@
+# $Id$
+
+ASN_DEP = seq blastdb blastxml scoremat
+
+LIB = xblastformat
+SRC = blastfmtutil blastxml_format blast_format data4xmlformat
+
+CPPFLAGS = $(ORIG_CPPFLAGS)
+
+DLL_LIB = blastxml xhtml xcgi

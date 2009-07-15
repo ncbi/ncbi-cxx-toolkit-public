@@ -69,8 +69,8 @@ static char const rcsid[] = "$Id$";
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/blastdb/defline_extra.hpp>
-#include <objtools/blast_format/showdefline.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
+
+#include <objtools/align_format/showdefline.hpp>
 
 #include <stdio.h>
 #include <html/htmlhelper.hpp>
@@ -79,6 +79,7 @@ static char const rcsid[] = "$Id$";
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
+BEGIN_SCOPE(align_format)
 
 //margins constant
 
@@ -156,7 +157,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
     if (user_url.find("sra.cgi") != string::npos) {
         
         string url_with_parameters = 
-            CBlastFormatUtil::BuildSRAUrl(ids, user_url);
+            CAlignFormatUtil::BuildSRAUrl(ids, user_url);
 
         if (url_with_parameters != NcbiEmptyString) {
             url_link += "<a href=\"";
@@ -170,7 +171,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
           (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
         
         string url_with_parameters = 
-            CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
+            CAlignFormatUtil::BuildUserUrl(ids, taxid, user_url,
                                            db_name,
                                            is_db_na, rid,
                                            query_number,
@@ -195,7 +196,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
             }    
             strcpy(logstr_location, "top");
 
-	        string l_EntrezUrl = CBlastFormatUtil::GetURLFromRegistry("ENTREZ");            
+	        string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry("ENTREZ");            
 	        sprintf(url_buf, l_EntrezUrl.c_str(), "", db, gi, dopt, rid.c_str(),
                     logstr_moltype, logstr_location, cur_align,
                     open_new_window ? "TARGET=\"EntrezView\"" : "");
@@ -286,7 +287,7 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
     CRef<CBlast_def_line_set> bdlRef = 
-        CBlastFormatUtil::GetBlastDefline(handle);
+        CAlignFormatUtil::GetBlastDefline(handle);
     bdlRef->PutTargetGiFirst(this_gi_first);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
 
@@ -342,7 +343,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            int blast_rank)
 {
 
-    const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
+    const CRef<CBlast_def_line_set> bdlRef = CAlignFormatUtil::GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     CRef<CSeq_id> wid;
@@ -422,9 +423,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             int cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
-					sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
+					sdl->linkout = CAlignFormatUtil::GetLinkout((**iter));
                     sdl->linkout_list =
-                        CBlastFormatUtil::GetLinkoutUrl(sdl->linkout,
+                        CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
@@ -436,9 +437,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             } else {
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
-                        sdl->linkout = CBlastFormatUtil::GetLinkout((**iter));
+                        sdl->linkout = CAlignFormatUtil::GetLinkout((**iter));
                         sdl->linkout_list = 
-                           CBlastFormatUtil::GetLinkoutUrl(sdl->linkout,
+                           CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
                                            cur_id, m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
@@ -472,7 +473,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         if (type_temp == "mapview" || type_temp == "mapview_prev" || 
             type_temp == "gsfasta") {
             taxid = 
-                CBlastFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
+                CAlignFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
         }
            
         sdl->id_url = s_GetIdUrl(*ids, sdl->gi, user_url,
@@ -603,7 +604,7 @@ bool CShowBlastDefline::x_CheckForStructureLink()
 
       ITERATE(list<SScoreInfo*>, iter, m_ScoreList) {
           const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*(*iter)->id);
-          const CRef<CBlast_def_line_set> bdlRef = CBlastFormatUtil::GetBlastDefline(handle);
+          const CRef<CBlast_def_line_set> bdlRef = CAlignFormatUtil::GetBlastDefline(handle);
           const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
           for(list< CRef< CBlast_def_line > >::const_iterator bdl_iter = bdl.begin();
               bdl_iter != bdl.end() && struct_linkout == false; bdl_iter++){
@@ -696,7 +697,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
-            CBlastFormatUtil::AddSpace(out, m_LineLen + kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_LineLen + kTwoSpaceMargin.size());
             if(m_Option & eHtml){
                 if((m_Option & eShowNewSeqGif)){
                     out << kPsiblastNewSeqBackgroundGif;
@@ -708,9 +709,9 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 }
             }
             out << kScore;
-            CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
-            CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-            CBlastFormatUtil::AddSpace(out, 2); //E align to l of value
+            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
+            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, 2); //E align to l of value
             out << kE;
             out << "\n";
             out << kHeader;
@@ -724,16 +725,16 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                     out << kPsiblastCheckedBackgroundGif;
                 }
             }
-            CBlastFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
-            CBlastFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
+            CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
             out << kBits;
             //in case m_MaxScoreLen > kBits.size()
-            CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - kBits.size()); 
-            CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kBits.size()); 
+            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             out << kValue;
             if(m_Option & eShowSumN){
-                CBlastFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
-                CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 out << kN;
             }
             out << "\n";
@@ -820,7 +821,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         }
         line_length += actual_line_component.size();
         //pad the short lines
-        CBlastFormatUtil::AddSpace(out, m_LineLen - line_length);
+        CAlignFormatUtil::AddSpace(out, m_LineLen - line_length);
         out << kTwoSpaceMargin;
        
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
@@ -830,12 +831,12 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
-        CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
+        CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
         out << kTwoSpaceMargin << (*iter)->evalue_string;
-        CBlastFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
+        CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
         if(m_Option & eShowSumN){ 
             out << kTwoSpaceMargin << (*iter)->sum_n;   
-            CBlastFormatUtil::AddSpace(out, m_MaxSumNLen - 
+            CAlignFormatUtil::AddSpace(out, m_MaxSumNLen - 
                      NStr::IntToString((*iter)->sum_n).size());
         }
         if((m_Option & eLinkout) && (m_Option & eHtml)){
@@ -898,8 +899,8 @@ static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
         out << "</a></th>\n";
     }
     else {
-        CBlastFormatUtil::AddSpace(out, max_data_len - columnText.size());
-        CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+        CAlignFormatUtil::AddSpace(out, max_data_len - columnText.size());
+        CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
     }
     
 }
@@ -1017,7 +1018,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
     //if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
-            //CBlastFormatUtil::AddSpace(out, m_LineLen + 1);
+            //CAlignFormatUtil::AddSpace(out, m_LineLen + 1);
 			///???
             if(m_Option & eHtml){
                 if((m_Option & eShowNewSeqGif)){
@@ -1059,8 +1060,8 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             }
 			
 			
-            CBlastFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
-            CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
+            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
 			*/
 
             string query_buf; 
@@ -1069,7 +1070,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                                         value_type("DISPLAY_SORT", ""));
             parameters_to_change.insert(map<string, string>::
                                         value_type("HSP_SORT", ""));
-            CBlastFormatUtil::BuildFormatQueryString(*m_Ctx, 
+            CAlignFormatUtil::BuildFormatQueryString(*m_Ctx, 
                                                      parameters_to_change,
                                                      query_buf);
         
@@ -1078,21 +1079,21 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             string display_sort_value = m_Ctx->GetRequestValue("DISPLAY_SORT").
                 GetValue();
             int display_sort = display_sort_value == NcbiEmptyString ? 
-                CBlastFormatUtil::eEvalue : NStr::StringToInt(display_sort_value);
+                CAlignFormatUtil::eEvalue : NStr::StringToInt(display_sort_value);
             
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eHighestScore,CBlastFormatUtil::eScore,kMaxScore,m_MaxScoreLen,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::eHighestScore,CAlignFormatUtil::eScore,kMaxScore,m_MaxScoreLen,m_Option & eHtml);
 
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eTotalScore,CBlastFormatUtil::eScore,kTotalScore,m_MaxTotalScoreLen,m_Option & eHtml);
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eQueryCoverage,CBlastFormatUtil::eHspEvalue,kCoverage,m_MaxQueryCoverLen,m_Option & eHtml);
-            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::eEvalue,CBlastFormatUtil::eHspEvalue,kEvalue,m_MaxEvalueLen,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::eTotalScore,CAlignFormatUtil::eScore,kTotalScore,m_MaxTotalScoreLen,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::eQueryCoverage,CAlignFormatUtil::eHspEvalue,kCoverage,m_MaxQueryCoverLen,m_Option & eHtml);
+            s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::eEvalue,CAlignFormatUtil::eHspEvalue,kEvalue,m_MaxEvalueLen,m_Option & eHtml);
             if(m_Option & eShowPercentIdent){
-                s_DisplayDescrColumnHeader(out,display_sort,query_buf,CBlastFormatUtil::ePercentIdentity,CBlastFormatUtil::eHspPercentIdentity,kIdentity,m_MaxPercentIdentityLen,m_Option & eHtml);
+                s_DisplayDescrColumnHeader(out,display_sort,query_buf,CAlignFormatUtil::ePercentIdentity,CAlignFormatUtil::eHspPercentIdentity,kIdentity,m_MaxPercentIdentityLen,m_Option & eHtml);
             }else {
                 tableColNumber--;
             }
            
             if(m_Option & eShowSumN){
-                // CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                // CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
                 out << "<th>" << kN << "</th>" << "\n";
                 
             }
@@ -1118,14 +1119,14 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
     // Mixed db is genomic + transcript and this does not apply to proteins.
     bool is_mixed_database = false;
     if (m_IsDbNa == true)
-       is_mixed_database = CBlastFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef);
+       is_mixed_database = CAlignFormatUtil::IsMixedDatabase(*m_AlnSetRef, *m_ScopeRef);
 
     map< string, string> parameters_to_change;
     string query_buf;
     if (is_mixed_database && m_Option & eHtml) {
         parameters_to_change.insert(map<string, string>::
                                     value_type("DATABASE_SORT", ""));
-        CBlastFormatUtil::BuildFormatQueryString(*m_Ctx, 
+        CAlignFormatUtil::BuildFormatQueryString(*m_Ctx, 
                                                  parameters_to_change,
                                                  query_buf);
     }
@@ -1168,9 +1169,9 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
                         << query_buf 
                         << "&DATABASE_SORT=";					
 					if (cur_database_type) {
-						out << CBlastFormatUtil::eGenomicFirst;				
+						out << CAlignFormatUtil::eGenomicFirst;				
 					} else {
-						out << CBlastFormatUtil::eNonGenomicFirst;
+						out << CAlignFormatUtil::eNonGenomicFirst;
 					}
 					out << "#sort_mark\">show first</a>]</span>";
 				}
@@ -1267,7 +1268,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
         line_length += actual_line_component.size();
         //pad the short lines
 		if (!(m_Option & eHtml)) {
-			CBlastFormatUtil::AddSpace(out, m_LineLen - line_length);
+			CAlignFormatUtil::AddSpace(out, m_LineLen - line_length);
 			out << kTwoSpaceMargin;
 		}
 		*/
@@ -1283,10 +1284,10 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 			out << "<td>" << (*iter)->total_bit_string << "</td>";
 		}
 		if (!(m_Option & eHtml)) {
-			CBlastFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
+			CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
 
 			out << kTwoSpaceMargin << kOneSpaceMargin << (*iter)->total_bit_string;
-			CBlastFormatUtil::AddSpace(out, m_MaxTotalScoreLen - 
+			CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - 
                                    (*iter)->total_bit_string.size());
 		}
 		
@@ -1298,7 +1299,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 			out << kTwoSpaceMargin << percent_coverage << "%";
         
 			//minus one due to % sign
-			CBlastFormatUtil::AddSpace(out, m_MaxQueryCoverLen - 
+			CAlignFormatUtil::AddSpace(out, m_MaxQueryCoverLen - 
 			                           NStr::IntToString(percent_coverage).size() - 1);
 		}
 
@@ -1307,7 +1308,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
 		}
 		else {
 			out << kTwoSpaceMargin << (*iter)->evalue_string;
-			CBlastFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
+			CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
 		}
         if(m_Option & eShowPercentIdent){
             percent_identity = 100*(*iter)->match/(*iter)->align_length;
@@ -1317,7 +1318,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             else {
                 out << kTwoSpaceMargin << percent_identity <<"%";
                 
-                CBlastFormatUtil::AddSpace(out, m_MaxPercentIdentityLen - 
+                CAlignFormatUtil::AddSpace(out, m_MaxPercentIdentityLen - 
                                            NStr::IntToString(percent_identity).size());
             }
         }
@@ -1330,7 +1331,7 @@ void CShowBlastDefline::x_DisplayDeflineTable(CNcbiOstream & out)
             if (m_Option & eHtml) {
                 out << "</td>";
             } else {
-                CBlastFormatUtil::AddSpace(out, m_MaxSumNLen - 
+                CAlignFormatUtil::AddSpace(out, m_MaxSumNLen - 
                                            NStr::IntToString((*iter)->sum_n).size());
             }
         }
@@ -1388,10 +1389,10 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
 
     use_this_gi.clear();
 
-    CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
+    CAlignFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
                                        num_ident, use_this_gi);
 
-    CBlastFormatUtil::GetScoreString(evalue, bits, 0, 
+    CAlignFormatUtil::GetScoreString(evalue, bits, 0, 
                               evalue_buf, bit_score_buf, total_bit_score_buf);
 
     auto_ptr<SScoreInfo> score_info(new SScoreInfo);
@@ -1431,11 +1432,11 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     int highest_ident = 0;
     int highest_identity = 0;
     list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.
-    score_info->master_covered_length =  CBlastFormatUtil::GetMasterCoverage(aln);
+    score_info->master_covered_length =  CAlignFormatUtil::GetMasterCoverage(aln);
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
-        int align_length = CBlastFormatUtil::GetAlignmentLength(**iter, 
+        int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, 
                                                         m_TranslatedNucAlignment);
-        CBlastFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
+        CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
                                    num_ident, use_this_gi);  
         use_this_gi.clear();
     
@@ -1456,7 +1457,7 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     score_info->align_length = highest_length;
 
     // Really need to call this twice??
-    CBlastFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, 
+    CAlignFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, 
                                      evalue_buf, bit_score_buf, total_bit_score_buf);
 
     score_info->total_bit_string = total_bit_score_buf; 
@@ -1521,4 +1522,6 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
     return sdl;
 }
 
+
+END_SCOPE(align_format)
 END_NCBI_SCOPE

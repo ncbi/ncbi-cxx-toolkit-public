@@ -36,6 +36,8 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 
+#include <objtools/align_format/align_format_util.hpp>
+
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistre.hpp>
@@ -67,36 +69,30 @@ static char const rcsid[] = "$Id$";
 #include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
-#include <objtools/blast_format/blastfmtutil.hpp>
-
 #include <objtools/blast/services/blast_services.hpp>   // for CBlastServices
 #include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for CSeqDBException
-#include <algo/blast/api/pssm_engine.hpp>   // for CScorematPssmConverter
-#include <objects/scoremat/Pssm.hpp>
-#include <objects/scoremat/PssmParameters.hpp>
 
 #include <objects/seq/seqport_util.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
-
-#include <algo/blast/core/blast_stat.h> // for BLAST_SCORE_MIN
 
 #include <stdio.h>
 #include <sstream>
 #include <iomanip>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE (ncbi);
+USING_SCOPE(ncbi);
 USING_SCOPE(objects);
+BEGIN_SCOPE(align_format)
 
-const string CBlastFormatUtil::kNoHitsFound("No hits found");
+const string CAlignFormatUtil::kNoHitsFound("No hits found");
 
 bool kTranslation;
 CRef<CScope> kScope;
 
-CNcbiRegistry *CBlastFormatUtil::m_Reg = NULL;
-bool  CBlastFormatUtil::m_geturl_debug_flag = false;
+CNcbiRegistry *CAlignFormatUtil::m_Reg = NULL;
+bool  CAlignFormatUtil::m_geturl_debug_flag = false;
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
 ///@param score: place to extract the raw score to
@@ -151,8 +147,8 @@ s_GetBlastScore(const container&  scoreList,
 ///@param line_len: length of each line desired
 ///@param out: stream to ouput
 ///
-void static WrapOutputLine(string str, size_t line_len, 
-                                      CNcbiOstream& out) 
+void CAlignFormatUtil::x_WrapOutputLine(string str, size_t line_len, 
+                                        CNcbiOstream& out) 
 {
     list<string> string_l;
     NStr::Wrap(str, line_len, string_l, NStr::fWrap_HTMLPre);
@@ -165,7 +161,7 @@ void static WrapOutputLine(string str, size_t line_len,
     }
 }
     
-void CBlastFormatUtil::BlastPrintError(list<SBlastError>& 
+void CAlignFormatUtil::BlastPrintError(list<SBlastError>& 
                                        error_return, 
                                        bool error_post, CNcbiOstream& out)
 {
@@ -194,66 +190,13 @@ void CBlastFormatUtil::BlastPrintError(list<SBlastError>&
 
 }
 
-string CBlastFormatUtil::BlastGetVersion(const string program)
-{
-    string program_uc = program;
-    return NStr::ToUpper(program_uc) + " " + blast::CBlastVersion().Print();
-}
-
-void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html, 
-                                             CNcbiOstream& out)
-{
-    if (html)
-        out << "<b>" << BlastGetVersion(program) << "</b>" << "\n";
-    else
-        out << BlastGetVersion(program) << "\n";
-}
-
-void 
-CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
-                                      CNcbiOstream& out, 
-                                      blast::CReference::EPublication pub,
-                                      bool is_psiblast /* = false */) 
-{
-    string reference("Reference");
-    if (pub == blast::CReference::eCompAdjustedMatrices) {
-        reference += " for compositional score matrix adjustment";
-    } else if (pub == blast::CReference::eCompBasedStats) {
-        reference += " for composition-based statistics";
-        if (is_psiblast) { 
-            reference += " starting in round 2";
-        }
-    } else if (pub == blast::CReference::eIndexedMegablast) {
-        reference += " for database indexing";
-    }
-
-    ostringstream str;
-    if(html)
-    {
-        str << "<b><a href=\""
-            << blast::CReference::GetPubmedUrl(pub)
-            << "\">" << reference << "</a>:</b>"
-            << "\n";
-        WrapOutputLine(str.str() + blast::CReference::GetString(pub), 
-                   line_len, out);
-    }
-    else
-    {
-        str << reference << ": ";
-        WrapOutputLine(str.str() + blast::CReference::GetHTMLFreeString(pub), 
-                   line_len, out);
-    }
-
-    out << "\n";
-}
-
-void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
+void  CAlignFormatUtil::PrintTildeSepLines(string str, size_t line_len,
                                            CNcbiOstream& out) {
     
     list<string> split_line;
     NStr::Split(str, "~", split_line);
     ITERATE(list<string>, iter, split_line) {
-        WrapOutputLine(*iter,  line_len, out);
+        x_WrapOutputLine(*iter,  line_len, out);
     }
 }
 
@@ -263,7 +206,7 @@ void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
 /// @return true if successfully filled, false otherwise (and a warning is
 /// printed out)
 static bool s_FillDbInfoRemotely(const string& dbname, 
-                                 CBlastFormatUtil::SDbInfo& info)
+                                 CAlignFormatUtil::SDbInfo& info)
 {
     static CBlastServices rmt_blast_services;
     CRef<CBlast4_database> blastdb(new CBlast4_database);
@@ -297,7 +240,7 @@ static bool s_FillDbInfoRemotely(const string& dbname,
 /// printed out)
 static bool
 s_FillDbInfoLocally(const string& dbname,
-                    CBlastFormatUtil::SDbInfo& info, 
+                    CAlignFormatUtil::SDbInfo& info, 
                     const vector<int>& dbfilt_algorithms)
 {
     CRef<CSeqDB> seqdb(new CSeqDB(dbname, info.is_protein 
@@ -345,7 +288,7 @@ s_FillDbInfoLocally(const string& dbname,
 }
 
 void
-CBlastFormatUtil::GetBlastDbInfo(vector<CBlastFormatUtil::SDbInfo>& retval,
+CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
                            const string& blastdb_names, bool is_protein,
                            const vector<int>& dbfilt_algorithms,
                            bool is_remote /* = false */)
@@ -357,7 +300,7 @@ CBlastFormatUtil::GetBlastDbInfo(vector<CBlastFormatUtil::SDbInfo>& retval,
     retval.reserve(dbs.size());
 
     ITERATE(vector<string>, i, dbs) {
-        CBlastFormatUtil::SDbInfo info;
+        CAlignFormatUtil::SDbInfo info;
         info.is_protein = is_protein;
         bool success = false;
         const string kDbName = NStr::TruncateSpaces(*i);
@@ -383,13 +326,13 @@ CBlastFormatUtil::GetBlastDbInfo(vector<CBlastFormatUtil::SDbInfo>& retval,
     }
 }
 
-void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
+void CAlignFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
                                      size_t line_length, 
                                      CNcbiOstream& out,
                                      bool top) 
 {
     if (top) {
-        const CBlastFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
+        const CAlignFormatUtil::SDbInfo* dbinfo = &(dbinfo_list.front());
         out << "Database: ";
 
         string db_titles = dbinfo->definition;
@@ -402,11 +345,11 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
             tot_length += dbinfo_list[i].total_length;
         }
 
-        WrapOutputLine(db_titles, line_length, out);
+        x_WrapOutputLine(db_titles, line_length, out);
         if ( !dbinfo->algorithm_names.empty() ) {
             out << "Masked using: " << dbinfo->algorithm_names << endl;
         }
-        CBlastFormatUtil::AddSpace(out, 11);
+        CAlignFormatUtil::AddSpace(out, 11);
         out << NStr::Int8ToString(tot_num_seqs, NStr::fWithCommas) << 
             " sequences; " <<
             NStr::Int8ToString(tot_length, NStr::fWithCommas) << 
@@ -417,7 +360,7 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
     ITERATE(vector<SDbInfo>, dbinfo, dbinfo_list) {
         if (dbinfo->subset == false) {
             out << "  Database: ";
-            WrapOutputLine(dbinfo->definition, line_length, out);
+            x_WrapOutputLine(dbinfo->definition, line_length, out);
 
             out << "    Posted date:  ";
             out << dbinfo->date << "\n";
@@ -443,7 +386,7 @@ void CBlastFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
 
 }
 
-void CBlastFormatUtil::PrintKAParameters(double lambda, double k, double h, 
+void CAlignFormatUtil::PrintKAParameters(double lambda, double k, double h, 
                                          size_t line_len, 
                                          CNcbiOstream& out, bool gapped, 
                                          float c) 
@@ -467,13 +410,13 @@ void CBlastFormatUtil::PrintKAParameters(double lambda, double k, double h,
     out << buffer;
     if (c != 0.0) {
         sprintf(buffer, "%#8.3g ", c);
-        WrapOutputLine(buffer, line_len, out);
+        x_WrapOutputLine(buffer, line_len, out);
     }
     out << "\n";
 }
 
 string
-CBlastFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
+CAlignFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
 {
     const CBioseq::TId& ids = cbs.GetId();
     string all_id_str = NcbiEmptyString;
@@ -501,7 +444,7 @@ CBlastFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
 }
 
 string
-CBlastFormatUtil::GetSeqDescrString(const CBioseq& cbs)
+CAlignFormatUtil::GetSeqDescrString(const CBioseq& cbs)
 {
     string all_descr_str = NcbiEmptyString;
 
@@ -517,7 +460,7 @@ CBlastFormatUtil::GetSeqDescrString(const CBioseq& cbs)
     return all_descr_str;
 }
 
-void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs, 
+void CAlignFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs, 
                                              size_t line_len,
                                              CNcbiOstream& out,
                                              bool believe_query,
@@ -526,13 +469,13 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
                                              const string& rid /* = kEmptyStr*/)
 {
     const string label("Query");
-    CBlastFormatUtil::x_AcknowledgeBlastSequence(cbs, line_len, out,
+    CAlignFormatUtil::x_AcknowledgeBlastSequence(cbs, line_len, out,
                                                  believe_query, html,
                                                  label, tabular, rid);
 }
 
 void 
-CBlastFormatUtil::AcknowledgeBlastSubject(const CBioseq& cbs, 
+CAlignFormatUtil::AcknowledgeBlastSubject(const CBioseq& cbs, 
                                           size_t line_len,
                                           CNcbiOstream& out,
                                           bool believe_query,
@@ -540,13 +483,13 @@ CBlastFormatUtil::AcknowledgeBlastSubject(const CBioseq& cbs,
                                           bool tabular /* = false */)
 {
     const string label("Subject");
-    CBlastFormatUtil::x_AcknowledgeBlastSequence(cbs, line_len, out,
+    CAlignFormatUtil::x_AcknowledgeBlastSequence(cbs, line_len, out,
                                                  believe_query, html,
                                                  label, tabular, kEmptyStr);
 }
 
 void 
-CBlastFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs, 
+CAlignFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs, 
                                              size_t line_len,
                                              CNcbiOstream& out,
                                              bool believe_query,
@@ -573,7 +516,7 @@ CBlastFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs,
     if (tabular) {
         out << all_id_str;
     } else {
-        WrapOutputLine(all_id_str, line_len, out);
+        x_WrapOutputLine(all_id_str, line_len, out);
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
             out << "Length=";
             out << cbs.GetInst().GetLength() <<"\n";
@@ -589,7 +532,7 @@ CBlastFormatUtil::x_AcknowledgeBlastSequence(const CBioseq& cbs,
     }
 }
 
-void CBlastFormatUtil::PrintPhiInfo(int num_patterns,
+void CAlignFormatUtil::PrintPhiInfo(int num_patterns,
                                     const string& pattern,
                                     double prob,
                                     vector<int>& offsets,
@@ -613,24 +556,89 @@ void CBlastFormatUtil::PrintPhiInfo(int num_patterns,
     out << "pattern probability=" << prob << "\n";
 
 }
+                                    
+
+/// Efficiently decode a Blast-def-line-set from binary ASN.1.
+/// @param oss Octet string sequence of binary ASN.1 data.
+/// @param bdls Blast def line set decoded from oss.
+static void
+s_OssToDefline(const CUser_field::TData::TOss & oss,
+               CBlast_def_line_set            & bdls)
+{
+    typedef const CUser_field::TData::TOss TOss;
+    
+    const char * data = NULL;
+    size_t size = 0;
+    string temp;
+    
+    if (oss.size() == 1) {
+        // In the single-element case, no copies are needed.
+        
+        const vector<char> & v = *oss.front();
+        data = & v[0];
+        size = v.size();
+    } else {
+        // Determine the octet string length and do one allocation.
+        
+        ITERATE (TOss, iter1, oss) {
+            size += (**iter1).size();
+        }
+        
+        temp.reserve(size);
+        
+        ITERATE (TOss, iter3, oss) {
+            // 23.2.4[1] "The elements of a vector are stored contiguously".
+            temp.append(& (**iter3)[0], (*iter3)->size());
+        }
+        
+        data = & temp[0];
+    }
+    
+    CObjectIStreamAsnBinary inpstr(data, size);
+    inpstr >> bdls;
+}
 
 CRef<CBlast_def_line_set> 
-CBlastFormatUtil::GetBlastDefline (const CBioseq_Handle& handle) 
+CAlignFormatUtil::GetBlastDefline (const CBioseq_Handle& handle) 
 {
-    CRef<CBlast_def_line_set> retval =
-        CSeqDB::ExtractBlastDefline(*handle.GetBioseqCore());
-    if (retval.NotEmpty()) {
-        return retval;
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
+    
+    if(handle.IsSetDescr()){
+        const CSeq_descr& desc = handle.GetDescr();
+        const list< CRef< CSeqdesc > >& descList = desc.Get();
+        for (list<CRef< CSeqdesc > >::const_iterator iter = descList.begin();
+             iter != descList.end(); iter++){
+            
+            if((*iter)->IsUser()){
+                const CUser_object& uobj = (*iter)->GetUser();
+                const CObject_id& uobjid = uobj.GetType();
+                if(uobjid.IsStr()){
+                    
+                    const string& label = uobjid.GetStr();
+                    if (label == kAsnDeflineObjLabel){
+                        const vector< CRef< CUser_field > >& usf = 
+                            uobj.GetData();
+                        
+                        if(usf.front()->GetData().IsOss()){
+                            //only one user field
+                            typedef const CUser_field::TData::TOss TOss;
+                            const TOss& oss = usf.front()->GetData().GetOss();
+                            
+                            s_OssToDefline(oss, *bdls);
+                        }
+                    }
+                }
+            }
+        }
     }
-    retval.Reset(new CBlast_def_line_set);
-    return retval;
+    return bdls;
 }
 
 ///Get linkout membership
 ///@param bdl: blast defline to get linkout membership from
 ///@return the value representing the membership bits set
 ///
-int CBlastFormatUtil::GetLinkout(const CBlast_def_line& bdl)
+int CAlignFormatUtil::GetLinkout(const CBlast_def_line& bdl)
 {
     int linkout = 0;
     
@@ -643,7 +651,7 @@ int CBlastFormatUtil::GetLinkout(const CBlast_def_line& bdl)
     return linkout;
 }
 
-void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
+void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
                                     double& bits, 
                                     double& evalue,
@@ -653,12 +661,12 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
 {
     int comp_adj_method = 0; // dummy variable
 
-    CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
+    CAlignFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
                                  num_ident, use_this_gi, comp_adj_method);
 }
 
 
-void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
+void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
                                     double& bits, 
                                     double& evalue,
@@ -695,7 +703,7 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
     }	
 }
 
-void CBlastFormatUtil::AddSpace(CNcbiOstream& out, int number)
+void CAlignFormatUtil::AddSpace(CNcbiOstream& out, int number)
 
 {
     for(int i=0; i<number; i++){
@@ -704,7 +712,7 @@ void CBlastFormatUtil::AddSpace(CNcbiOstream& out, int number)
 
 }
 
-void CBlastFormatUtil::GetScoreString(double evalue, 
+void CAlignFormatUtil::GetScoreString(double evalue, 
                                       double bit_score, 
                                       double total_bit_score, 
                                       string& evalue_str, 
@@ -773,7 +781,7 @@ void CBlastFormatUtil::GetScoreString(double evalue,
 }
 
 
-void CBlastFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln, 
+void CAlignFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln, 
                                      CSeq_align_set& new_aln,
                                      unsigned int number)
 {
@@ -799,7 +807,7 @@ void CBlastFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
 }
 
 
-void CBlastFormatUtil::PruneSeqalignAll(const CSeq_align_set& source_aln, 
+void CAlignFormatUtil::PruneSeqalignAll(const CSeq_align_set& source_aln, 
                                      CSeq_align_set& new_aln,
                                      unsigned int number)
 {
@@ -828,7 +836,7 @@ void CBlastFormatUtil::PruneSeqalignAll(const CSeq_align_set& source_aln,
 
 
 void 
-CBlastFormatUtil::GetAlignLengths(CAlnVec& salv, int& align_length, 
+CAlignFormatUtil::GetAlignLengths(CAlnVec& salv, int& align_length, 
                                   int& num_gaps, int& num_gap_opens)
 {
     num_gaps = num_gap_opens = align_length = 0;
@@ -853,7 +861,7 @@ CBlastFormatUtil::GetAlignLengths(CAlnVec& salv, int& align_length,
 }
 
 void 
-CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
+CAlignFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
                                                  const CSeq_align_set& source)
 {
     if (source.IsSet() && source.CanGet()) {
@@ -878,7 +886,7 @@ CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
 }
 
 CRef<CSeq_align> 
-CBlastFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln) 
+CAlignFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln) 
 {
     CRef<CSeq_align> sa(new CSeq_align);
     if ( !aln.GetSegs().IsDendiag()) {
@@ -938,13 +946,13 @@ CBlastFormatUtil::CreateDensegFromDendiag(const CSeq_align& aln)
     return sa;
 }
 
-int CBlastFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
+int CAlignFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
 {
     int taxid = 0;
     try{
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         const CRef<CBlast_def_line_set> bdlRef = 
-            CBlastFormatUtil::GetBlastDefline(handle);
+            CAlignFormatUtil::GetBlastDefline(handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         ITERATE(list<CRef<CBlast_def_line> >, iter_bdl, bdl) {
             CConstRef<CSeq_id> bdl_id = 
@@ -961,7 +969,7 @@ int CBlastFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
     return taxid;
 }
 
-int CBlastFormatUtil::GetFrame (int start, ENa_strand strand, 
+int CAlignFormatUtil::GetFrame (int start, ENa_strand strand, 
                                 const CBioseq_Handle& handle) 
 {
     int frame = 0;
@@ -976,42 +984,7 @@ int CBlastFormatUtil::GetFrame (int start, ENa_strand strand,
 }
 
 
-CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows, 
-                                               unsigned int ncols)
-{
-    const int kAsciiSize = 256;
-    Resize(kAsciiSize, kAsciiSize, INT_MIN);
-    
-    // Create a CSeq_data object from a vector of values from 0 to the size of
-    // the matrix (26).
-    const int kNumValues = max(ncols, nrows);
-    vector<char> ncbistdaa_values(kNumValues);
-    for (int index = 0; index < kNumValues; ++index)
-        ncbistdaa_values[index] = (char) index;
-
-    CSeq_data ncbistdaa_seq(ncbistdaa_values, CSeq_data::e_Ncbistdaa);
-
-    // Convert to IUPACaa using the CSeqportUtil::Convert method.
-    CSeq_data iupacaa_seq;
-    CSeqportUtil::Convert(ncbistdaa_seq, &iupacaa_seq, CSeq_data::e_Iupacaa);
-    
-    // Extract the IUPACaa values
-    vector<char> iupacaa_values(kNumValues);
-    for (int index = 0; index < kNumValues; ++index)
-        iupacaa_values[index] = iupacaa_seq.GetIupacaa().Get()[index];
-
-    // Fill the 256x256 output matrix.
-    for (unsigned int row = 0; row < nrows; ++row) {
-        for (unsigned int col = 0; col < ncols; ++col) {
-            if (iupacaa_values[row] >= 0 && iupacaa_values[col] >= 0) {
-                (*this)((int)iupacaa_values[row], (int)iupacaa_values[col]) = 
-                    data[row][col];
-            }
-        }
-    }
-}
-
-void CBlastFormatUtil::
+void CAlignFormatUtil::
 SortHitByPercentIdentityDescending(list< CRef<CSeq_align_set> >&
                                    seqalign_hit_list,
                                    bool do_translation
@@ -1023,7 +996,7 @@ SortHitByPercentIdentityDescending(list< CRef<CSeq_align_set> >&
 }
 
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHspByPercentIdentityDescending(const CRef<CSeq_align>& info1,
                                    const CRef<CSeq_align>& info2) 
 {
@@ -1060,7 +1033,7 @@ SortHspByPercentIdentityDescending(const CRef<CSeq_align>& info1,
     return retval;
 }
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHitByScoreDescending(const CRef<CSeq_align_set>& info1,
                          const CRef<CSeq_align_set>& info2) 
 {
@@ -1083,7 +1056,7 @@ SortHitByScoreDescending(const CRef<CSeq_align_set>& info1,
     return bits1 > bits2;
 }
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHitByMasterCoverageDescending(CRef<CSeq_align_set> const& info1,
                                   CRef<CSeq_align_set> const& info2) 
 {
@@ -1109,7 +1082,7 @@ SortHitByMasterCoverageDescending(CRef<CSeq_align_set> const& info1,
     return retval;
 }
 
-bool CBlastFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
+bool CAlignFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
                                                      CRef<CSeq_align_set>& info2)
 {
     int start1 = 0, start2 = 0;
@@ -1145,7 +1118,7 @@ bool CBlastFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1
 
 }
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHspByScoreDescending(const CRef<CSeq_align>& info1,
                          const CRef<CSeq_align>& info2)
 {
@@ -1165,7 +1138,7 @@ SortHspByScoreDescending(const CRef<CSeq_align>& info1,
         
 } 
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHspByMasterStartAscending(const CRef<CSeq_align>& info1,
                               const CRef<CSeq_align>& info2) 
 {
@@ -1195,7 +1168,7 @@ SortHspByMasterStartAscending(const CRef<CSeq_align>& info1,
     } 
 }
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHspBySubjectStartAscending(const CRef<CSeq_align>& info1,
                                const CRef<CSeq_align>& info2) 
 {
@@ -1225,7 +1198,7 @@ SortHspBySubjectStartAscending(const CRef<CSeq_align>& info1,
     } 
 }
 
-int CBlastFormatUtil::GetAlignmentLength(const CSeq_align& aln, bool do_translation)
+int CAlignFormatUtil::GetAlignmentLength(const CSeq_align& aln, bool do_translation)
 {
   
     CRef<CSeq_align> final_aln;
@@ -1255,7 +1228,7 @@ int CBlastFormatUtil::GetAlignmentLength(const CSeq_align& aln, bool do_translat
     return alnmap.GetAlnStop() + 1;
 }
 
-double CBlastFormatUtil::GetPercentIdentity(const CSeq_align& aln,
+double CAlignFormatUtil::GetPercentIdentity(const CSeq_align& aln,
                                             CScope& scope,
                                             bool do_translation) {
     double identity = 0;
@@ -1304,7 +1277,7 @@ double CBlastFormatUtil::GetPercentIdentity(const CSeq_align& aln,
     return identity;
 }
 
-bool CBlastFormatUtil::
+bool CAlignFormatUtil::
 SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
                                      const CRef<CSeq_align_set>& info2)
 {
@@ -1345,7 +1318,7 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
     return retval;
 }
 
-bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
+bool CAlignFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
                                                      CRef<CSeq_align_set> const& info2)
 {
     int score1,  score2, sum_n, num_ident;
@@ -1354,13 +1327,13 @@ bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const&
     double total_bits1 = 0, total_bits2 = 0;
     
     ITERATE(CSeq_align_set::Tdata, iter, info1->Get()) { 
-        CBlastFormatUtil::GetAlnScores(**iter, score1, bits, evalue,
+        CAlignFormatUtil::GetAlnScores(**iter, score1, bits, evalue,
                                        sum_n, num_ident, use_this_gi);
         total_bits1 += bits;
     }
     
     ITERATE(CSeq_align_set::Tdata, iter, info2->Get()) { 
-        CBlastFormatUtil::GetAlnScores(**iter, score2, bits, evalue,
+        CAlignFormatUtil::GetAlnScores(**iter, score2, bits, evalue,
                                        sum_n, num_ident, use_this_gi);
         total_bits2 += bits;
     }   
@@ -1370,7 +1343,7 @@ bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const&
         
 }
 
-void CBlastFormatUtil::
+void CAlignFormatUtil::
 SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
                        CScope& scope)
 {
@@ -1379,7 +1352,7 @@ SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
     seqalign_hit_list.sort(SortHitByMolecularTypeEx);
 }
 
-void CBlastFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
+void CAlignFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
                                bool do_translation, CScope& scope, int sort_method) 
 {
     kScope = &scope; 
@@ -1394,7 +1367,7 @@ void CBlastFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
     } 
 }
 
-bool CBlastFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& info1,
+bool CAlignFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& info1,
                                                  const CRef<CSeq_align_set>& info2) 
 {
     CConstRef<CSeq_id> id1, id2;
@@ -1405,9 +1378,9 @@ bool CBlastFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& inf
     const CBioseq_Handle& handle2 = kScope->GetBioseqHandle(*id2);
 
     const CRef<CBlast_def_line_set> bdl_ref1 = 
-        CBlastFormatUtil::GetBlastDefline(handle1);
+        CAlignFormatUtil::GetBlastDefline(handle1);
     const CRef<CBlast_def_line_set> bdl_ref2 = 
-        CBlastFormatUtil::GetBlastDefline(handle2);
+        CAlignFormatUtil::GetBlastDefline(handle2);
 
     int linkout1 = GetLinkout(*(bdl_ref1->Get().front()));
     int linkout2 = GetLinkout(*(bdl_ref2->Get().front()));
@@ -1415,7 +1388,7 @@ bool CBlastFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& inf
     return (linkout1 & eGenomicSeq) <= (linkout2 & eGenomicSeq);
 }
 
-void CBlastFormatUtil::
+void CAlignFormatUtil::
 SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >& 
                              target,
                              int sort_method,
@@ -1459,7 +1432,7 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
     }
 }
 
-void CBlastFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
+void CAlignFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
                                         const CSeq_align_set& source) 
 {
     CConstRef<CSeq_id> previous_id;
@@ -1485,7 +1458,7 @@ void CBlastFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
 }
 
 CRef<CSeq_align_set>
-CBlastFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
+CAlignFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
 {
     CRef<CSeq_align_set> align_set (new CSeq_align_set);
     CConstRef<CSeq_id> previous_id;
@@ -1502,7 +1475,7 @@ CBlastFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
 
 
 
-string CBlastFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
+string CAlignFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
 {
     string link = NcbiEmptyString;
     CConstRef<CSeq_id> seqId = GetSeq_idByType(ids, CSeq_id::e_General);
@@ -1549,7 +1522,7 @@ string CBlastFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
     return link;
 }
 
-string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
+string CAlignFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid, 
                                       string user_url, string database,
                                       bool db_is_na, string rid, int query_number,
                                       bool for_alignment) {
@@ -1669,7 +1642,7 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
     delete [] dbname;
     return link;
 }
-void CBlastFormatUtil::
+void CAlignFormatUtil::
 BuildFormatQueryString (CCgiContext& ctx, 
                         map< string, string>& parameters_to_change,
                         string& cgi_query) 
@@ -1723,7 +1696,7 @@ BuildFormatQueryString (CCgiContext& ctx,
     }
 }
 
-void CBlastFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_query) {
+void CAlignFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_query) {
  
     string format_type = ctx.GetRequestValue("FORMAT_TYPE").GetValue();
     string ridstr = ctx.GetRequestValue("RID").GetValue(); 
@@ -1786,11 +1759,11 @@ void CBlastFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_quer
 }
 
 
-int CBlastFormatUtil::GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id)
+int CAlignFormatUtil::GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id)
 {
     int linkout = 0;
     
-    const CRef<CBlast_def_line_set> bdl_ref = CBlastFormatUtil::GetBlastDefline(handle);
+    const CRef<CBlast_def_line_set> bdl_ref = CAlignFormatUtil::GetBlastDefline(handle);
     
     if (!bdl_ref.Empty()) {
         const list< CRef< CBlast_def_line > >& bdl = bdl_ref->Get();
@@ -1800,7 +1773,7 @@ int CBlastFormatUtil::GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
             ITERATE(CBioseq::TId, iter_id, cur_id) {
                 if ((*iter_id)->Match(id)) {
-                    linkout = CBlastFormatUtil::GetLinkout((**iter));
+                    linkout = CAlignFormatUtil::GetLinkout((**iter));
                     break;
                 }
             }
@@ -1809,7 +1782,7 @@ int CBlastFormatUtil::GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id
     return linkout;
 }
 
-bool CBlastFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset, 
+bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset, 
                                        CScope& scope) 
 {
     bool is_mixed = false;
@@ -1847,7 +1820,7 @@ bool CBlastFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
 ///@param entrez_term: entrez query term
 ///@param is_na: is this sequence nucleotide or not
 ///
-list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
+list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
                                              const string& rid,
                                              const string& cdd_rid, 
                                              const string& entrez_term,
@@ -1869,7 +1842,7 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     char buf[1024];
 
     if (linkout & eUnigene) {
-      string l_UnigeneUrl = CBlastFormatUtil::GetURLFromRegistry("UNIGEN");
+      string l_UnigeneUrl = CAlignFormatUtil::GetURLFromRegistry("UNIGEN");
         sprintf(buf, l_UnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
                 is_na ? "nucleotide" : "protein", gi, rid.c_str(),
                 for_alignment? "align" : "top", cur_align);
@@ -1884,13 +1857,13 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
-        string l_GeoUrl = CBlastFormatUtil::GetURLFromRegistry("GEO");
+        string l_GeoUrl = CAlignFormatUtil::GetURLFromRegistry("GEO");
         sprintf(buf, l_GeoUrl.c_str(), gi, rid.c_str(),
                 for_alignment? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
-      string l_GeneUrl = CBlastFormatUtil::GetURLFromRegistry("GENE");
+      string l_GeneUrl = CAlignFormatUtil::GetURLFromRegistry("GENE");
         sprintf(buf, l_GeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID",
                 rid.c_str(), for_alignment ? "align" : "top", cur_align);
         linkout_list.push_back(buf);
@@ -1898,7 +1871,7 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
 
     if((linkout & eAnnotatedInMapviewer) && !(linkout & eGenomicSeq)){
         /*  string url_with_parameters = 
-            CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
+            CAlignFormatUtil::BuildUserUrl(ids, taxid, user_url,
                                            db_name,
                                            db_is_na, rid,
                                            query_number);
@@ -1910,12 +1883,12 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     }
     
     if(linkout & eBioAssay && is_na){
-      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
+      string l_BioAssayUrl = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
         sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
     else if (linkout & eBioAssay && !is_na) {
-      string l_BioAssayUrl = CBlastFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
+      string l_BioAssayUrl = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
         sprintf(buf, l_BioAssayUrl.c_str(), gi, rid.c_str(), for_alignment ? "align" : "top", cur_align);
         linkout_list.push_back(buf);
     }
@@ -1929,7 +1902,7 @@ static bool FromRangeAscendingSort(CRange<TSeqPos> const& info1,
     return info1.GetFrom() < info2.GetFrom();
 }
 
-int CBlastFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset) 
+int CAlignFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset) 
 {
 
     list<CRange<TSeqPos> > merge_list; 
@@ -1975,7 +1948,7 @@ int CBlastFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset)
 }
 
 CRef<CSeq_align_set>
-CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
+CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
                                              CScope& scope,
                                              CSeq_align_set& aln_set,
                                              bool nuc_to_nuc_translation,
@@ -2001,7 +1974,7 @@ CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
         if (hit_sort == eTotalScore) {
             seqalign_hit_list.sort(SortHitByTotalScoreDescending);
         } else if (hit_sort == eHighestScore) {
-                seqalign_hit_list.sort(CBlastFormatUtil::SortHitByScoreDescending);
+                seqalign_hit_list.sort(CAlignFormatUtil::SortHitByScoreDescending);
         } else if (hit_sort == ePercentIdentity) {
             
             SortHitByPercentIdentityDescending(seqalign_hit_list, 
@@ -2032,7 +2005,7 @@ CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& /* ctx */,
     return HitListToHspList(seqalign_hit_total_list);
 }
 
-CRef<CSeq_align_set> CBlastFormatUtil::FilterSeqalignByEval(CSeq_align_set& source_aln,
+CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByEval(CSeq_align_set& source_aln,
                                      double evalueLow,
                                      double evalueHigh)
 {
@@ -2043,7 +2016,7 @@ CRef<CSeq_align_set> CBlastFormatUtil::FilterSeqalignByEval(CSeq_align_set& sour
     CRef<CSeq_align_set> new_aln(new CSeq_align_set);
     
     ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
-        CBlastFormatUtil::GetAlnScores(**iter, score, bits, evalue,
+        CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue,
                                        sum_n, num_ident, use_this_gi);
         if(evalue >= evalueLow && evalue <= evalueHigh) {
             new_aln->Set().push_back(*iter);
@@ -2054,7 +2027,7 @@ CRef<CSeq_align_set> CBlastFormatUtil::FilterSeqalignByEval(CSeq_align_set& sour
 }
 
 
-CRef<CSeq_align_set> CBlastFormatUtil::LimitSeqalignByHsps(CSeq_align_set& source_aln,
+CRef<CSeq_align_set> CAlignFormatUtil::LimitSeqalignByHsps(CSeq_align_set& source_aln,
                                                            int maxAligns,
                                                            int maxHsps)                                                           
 {
@@ -2088,7 +2061,7 @@ CRef<CSeq_align_set> CBlastFormatUtil::LimitSeqalignByHsps(CSeq_align_set& sourc
 }
 
 
-CRef<CSeq_align_set> CBlastFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set> &source_aln,
+CRef<CSeq_align_set> CAlignFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set> &source_aln,
                                                             int queryNumber) 
 {
     if(queryNumber == 0) {
@@ -2133,7 +2106,7 @@ CRef<CSeq_align_set> CBlastFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set>
 // 5) treat "_FORMAT" key as filename first and  string in second.
 //    in case of existances of filename, read it starting from 
 //    location specified by INCLUDE_BASE_DIR key
-string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
+string CAlignFormatUtil::GetURLFromRegistry( const string url_name, int index){
   string  result_url;
   string l_key, l_host_port, l_format; 
   string l_secion_name = "BLASTFMTUTIL";
@@ -2141,8 +2114,8 @@ string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
   string l_host_port_suffix = "_HOST_PORT";
   string l_subst_pattern;
   string l_cfg_file_name;
-  bool   l_dbg = CBlastFormatUtil::m_geturl_debug_flag;
-  if( getenv("GETURL_DEBUG") ) CBlastFormatUtil::m_geturl_debug_flag = l_dbg = true;
+  bool   l_dbg = CAlignFormatUtil::m_geturl_debug_flag;
+  if( getenv("GETURL_DEBUG") ) CAlignFormatUtil::m_geturl_debug_flag = l_dbg = true;
 
   if( !m_Reg ) {
     string l_ncbi_env;
@@ -2224,7 +2197,7 @@ string CBlastFormatUtil::GetURLFromRegistry( const string url_name, int index){
 //
 // return default URL value for the given key.
 //
-string  CBlastFormatUtil::GetURLDefault( const string url_name, int index) {
+string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
 
   string search_name = url_name;
   map <string,string>::iterator url_it;
@@ -2232,177 +2205,16 @@ string  CBlastFormatUtil::GetURLDefault( const string url_name, int index) {
 
   if( (url_it = k_UrlMap.find( search_name ) ) != k_UrlMap.end()) return url_it->second;
 
-  string error_msg = "CBlastFormatUtil::GetURLDefault:no_defualt_for"+url_name;
+  string error_msg = "CAlignFormatUtil::GetURLDefault:no_defualt_for"+url_name;
   if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index ); 
   return error_msg;
 }
 //
 // Release memory allocated for the NCBIRegistry object
 //
-void CBlastFormatUtil::ReleaseURLRegistry(void){
+void CAlignFormatUtil::ReleaseURLRegistry(void){
     if( m_Reg) { delete m_Reg; m_Reg = NULL;}
 }
 
-/** Standard order of letters according to S. Altschul
- * FIXME: Move to blast_encoding.[hc] ?
- */
-static int RESIDUE_ORDER[] = {
-     1,     /* A */
-    16,     /* R */
-    13,     /* N */
-     4,     /* D */ 
-     3,     /* C */
-    15,     /* Q */
-     5,     /* E */ 
-     7,     /* G */
-     8,     /* H */
-     9,     /* I */
-    11,     /* L */
-    10,     /* K */
-    12,     /* M */  
-     6,     /* F */
-    14,     /* P */
-    17,     /* S */
-    18,     /* T */
-    20,     /* W */
-    22,     /* Y */
-    19      /* V */
-};
-
-void 
-CBlastFormatUtil::PrintAsciiPssm
-    (const objects::CPssmWithParameters& pssm_with_params, 
-     CConstRef<blast::CBlastAncillaryData> ancillary_data, 
-     CNcbiOstream& out)
-{
-    _ASSERT(ancillary_data.NotEmpty());
-    static const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA[(int)'X'];
-    vector<double> info_content, gapless_col_weights, sigma;
-    blast::CScorematPssmConverter::GetInformationContent(pssm_with_params, 
-                                                         info_content);
-    blast::CScorematPssmConverter::GetGaplessColumnWeights(pssm_with_params, 
-                                                           gapless_col_weights);
-    blast::CScorematPssmConverter::GetSigma(pssm_with_params, sigma);
-
-    // We use whether the information content is available to assume whether
-    // the PSSM computation was done or not
-    bool pssm_calculation_done = info_content.empty() ? false : true;
-
-    if (pssm_calculation_done) {
-        out << "\nLast position-specific scoring matrix computed, weighted ";
-        out << "observed percentages rounded down, information per position, ";
-        out << "and relative weight of gapless real matches to pseudocounts\n";
-    } else {
-        out << "\nLast position-specific scoring matrix computed\n";
-    }
-
-    out << "         ";
-    // print the header for the last PSSM computed
-    for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
-        out << "  " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
-    }
-    if (pssm_calculation_done) {
-        // print the header for the weigthed observed percentages
-        for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
-            out << "   " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
-        }
-    }
-
-    // will need psiblast statistics: posCount, intervalSizes,
-    // sigma,
-    // posCounts can be calculated from residue_frequencies
-
-    const SIZE_TYPE kQueryLength = pssm_with_params.GetPssm().GetQueryLength();
-    _ASSERT(kQueryLength == 
-            (SIZE_TYPE)pssm_with_params.GetPssm().GetNumColumns());
-    const double kPseudoCount = pssm_with_params.GetParams().GetPseudocount();
-    auto_ptr< CNcbiMatrix<int> > pssm
-        (blast::CScorematPssmConverter::GetScores(pssm_with_params));
-    auto_ptr< CNcbiMatrix<double> > weighted_res_freqs
-        (blast::CScorematPssmConverter::
-            GetWeightedResidueFrequencies(pssm_with_params));
-    vector<int> interval_sizes, num_matching_seqs;
-    blast::CScorematPssmConverter::GetIntervalSizes(pssm_with_params,
-                                                    interval_sizes);
-    blast::CScorematPssmConverter::GetNumMatchingSeqs(pssm_with_params,
-                                                      num_matching_seqs);
-
-    CNCBIstdaa query;
-    pssm_with_params.GetPssm().GetQuerySequenceData(query);
-    const vector<char>& query_seq = query.Get();
-
-    out << fixed;
-    for (SIZE_TYPE i = 0; i < kQueryLength; i++) {
-        // print the residue for position i
-        out << "\n" << setw(5) << (i+1) << " " <<
-            NCBISTDAA_TO_AMINOACID[(int)query_seq[i]] << "  ";
-
-        // print the PSSM
-        for (SIZE_TYPE c = 0; c < DIM(RESIDUE_ORDER); c++) {
-            if ((*pssm)(RESIDUE_ORDER[c], i) == BLAST_SCORE_MIN) {
-                out << "-I ";
-            } else {
-                out << setw(3) << (*pssm)(RESIDUE_ORDER[c], i);
-            }
-        }
-        out << " ";
-
-        if (pssm_calculation_done) {
-            // Print the weighted observed
-            for (SIZE_TYPE c = 0; c < DIM(RESIDUE_ORDER); c++) {
-                if ((*pssm)(RESIDUE_ORDER[c], i) != BLAST_SCORE_MIN) {
-                    double value = 100;
-                    value *= (*weighted_res_freqs)(RESIDUE_ORDER[c], i);
-                    // round to the nearest integer
-                    value = (int)(value + (value > 0. ? 0.5 : -0.5));
-                    out << setw(4) << (int)value;
-                }
-            }
-
-            // print the information content
-            out << "  " << setprecision(2) << info_content[i] << " ";
-
-            // print the relative weight of gapless real matches to pseudocounts
-            if ((num_matching_seqs[i] > 1) && (query_seq[i] != kXResidue)) {
-                double val = gapless_col_weights[i]/kPseudoCount;
-                val *= (sigma[i] / interval_sizes[i] - 1);
-                out << setprecision(2) << val;
-            } else {
-                out << "    0.00";
-            }
-        }
-    }
-
-    const Blast_KarlinBlk* ungapped_kbp =
-        ancillary_data->GetUngappedKarlinBlk();
-    const Blast_KarlinBlk* gapped_kbp = 
-        ancillary_data->GetGappedKarlinBlk();
-    const Blast_KarlinBlk* psi_ungapped_kbp =
-        ancillary_data->GetPsiUngappedKarlinBlk();
-    const Blast_KarlinBlk* psi_gapped_kbp = 
-        ancillary_data->GetPsiGappedKarlinBlk();
-    out << "\n\n" << setprecision(4);
-    out << "                      K         Lambda\n";
-    if (ungapped_kbp) {
-        out << "Standard Ungapped    "
-            << ungapped_kbp->K << "     "
-            << ungapped_kbp->Lambda << "\n";
-    }
-    if (gapped_kbp) {
-        out << "Standard Gapped      "
-            << gapped_kbp->K << "     "
-            << gapped_kbp->Lambda << "\n";
-    }
-    if (psi_ungapped_kbp) {
-        out << "PSI Ungapped         "
-            << psi_ungapped_kbp->K << "     "
-            << psi_ungapped_kbp->Lambda << "\n";
-    }
-    if (psi_gapped_kbp) {
-        out << "PSI Gapped           "
-            << psi_gapped_kbp->K << "     "
-            << psi_gapped_kbp->Lambda << "\n";
-    }
-}
-
+END_SCOPE(align_format)
 END_NCBI_SCOPE

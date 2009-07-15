@@ -43,7 +43,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
+#include <algo/blast/format/blastfmtutil.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/blastdb/defline_extra.hpp>
 
