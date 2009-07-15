@@ -1091,6 +1091,9 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
             if (!encoded) {
                 if (c == '\n' || c == '\r') {
                     skip_spaces = true;
+                    if (c == '\n') {
+                        str += ' ';
+                    }
                     continue;
                 }
                 if (skip_spaces) {
@@ -1098,8 +1101,11 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
                         continue;
                     } else {
                         skip_spaces = false;
-                        str += ' ';
                     }
+                }
+            } else {
+                if (!IsWhiteSpace(c)) {
+                    skip_spaces = false;
                 }
             }
             str += char(c);
