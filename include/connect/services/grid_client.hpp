@@ -276,10 +276,6 @@ public:
                 EProgressMsg progress_msg,
                 bool use_embedded_storage = false);
 
-    /// Destructor
-    ///
-    ~CGridClient();
-
     /// Get a job submitter
     ///
     CGridJobSubmitter& GetJobSubmitter();

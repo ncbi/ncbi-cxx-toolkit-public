@@ -61,8 +61,6 @@ public:
     /// from inside your overriding method.
     virtual void Init(void);
 
-    virtual ~CGridClientApp();
-
     /// Get a grid client
     ///
     CGridClient& GetGridClient() { return *m_GridClient; }
@@ -78,13 +76,8 @@ public:
 protected:
     virtual bool UseProgressMessage() const;
     virtual bool UseAutomaticCleanup() const;
-    NCBI_DEPRECATED
-    virtual bool UsePermanentConnection() const;
 
 private:
-
-    CNetScheduleAPI m_NSClient;
-    auto_ptr<IBlobStorage>       m_NSStorage;
     auto_ptr<CGridClient>        m_GridClient;
 };
 

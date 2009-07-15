@@ -56,10 +56,6 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_client,
                                          progress_msg == eProgressMsgOn));
 }
 
-CGridClient::~CGridClient()
-{
-}
-
 CGridJobSubmitter& CGridClient::GetJobSubmitter()
 {
     return *m_JobSubmitter;

@@ -216,9 +216,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Routine magic spells
 
-// Use this marcos to implement the main function for the CSampleJob version 1.0.1
+// Use this macros to implement the main function for the CSampleJob version 1.0.1
 // with idle task CSampleIdleTask
 //NCBI_WORKERNODE_MAIN_EX(CSampleJob, CSampleIdleTask, 1.0.1);
 
-// if you don't need an Idle task just use this marcos.
+// if you don't need an Idle task just use this macros.
 NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1);
