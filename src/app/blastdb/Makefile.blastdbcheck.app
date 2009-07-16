@@ -3,8 +3,7 @@
 APP = blastdbcheck
 SRC = blastdbcheck blastdb_aux
 
-LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) $(REGEX_LIBS) \
-	$(OBJMGR_LIBS)
+LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
 CFLAGS   = $(FAST_CFLAGS)
