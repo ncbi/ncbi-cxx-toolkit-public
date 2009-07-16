@@ -3169,10 +3169,18 @@ bool CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
     more = 0;
     if ((ch & 0x80) != 0) {
         if ((ch & 0xE0) == 0xC0) {
+            if ((ch & 0xFE) == 0xC0) {
+                // C0 and C1 are not valid UTF-8 chars
+                return false;
+            }
             more = 1;
         } else if ((ch & 0xF0) == 0xE0) {
             more = 2;
         } else if ((ch & 0xF8) == 0xF0) {
+            if ((unsigned char)ch > (unsigned char)0xF4) {
+                // F5-FF are not valid UTF-8 chars
+                return false;
+            }
             more = 3;
         } else {
             return false;
