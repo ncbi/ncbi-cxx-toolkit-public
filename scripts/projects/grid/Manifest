@@ -32,9 +32,9 @@ APP: netcache_check netcache_control ncfetch.cgi$exe save_to_nc
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32 : - : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-flat-makefile --without-bdb
-Linux32 : - : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --without-bdb
-Linux64 : - : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --without-bdb
-Linux64 : - : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --without-bdb
-
-Win32   : - : msvc800_prj  dll     32  DebugDLL
+Linux32 : Release : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-flat-makefile --without-bdb
+Linux32 : Debug : GCC.sh 3.4.2 --with-debug --with-mt --with-flat-makefile --without-bdb
+Linux64 : Release : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-flat-makefile --without-bdb
+Linux64 : Debug : GCC.sh 4.0.1 --with-debug --with-mt --with-flat-makefile --without-bdb
+Win32 : Release : msvc800_prj static 32 ReleaseDLL
+Win32 : Debug : msvc800_prj static 32 DebugDLL
