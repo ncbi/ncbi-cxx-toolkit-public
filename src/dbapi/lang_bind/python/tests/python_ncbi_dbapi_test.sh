@@ -71,11 +71,6 @@ if test $? -ne 99 ; then
   exit 1
 fi
 
-# On Windows we already have a file with the correct name
-if test -f $CFG_LIB/libpython_ncbi_dbapi.so ; then
-    ln -sf $CFG_LIB/libpython_ncbi_dbapi.so $CFG_LIB/python_ncbi_dbapi.so
-fi
-
 
 # Loop through all combinations of {driver, server, test}
 for driver in $driver_list ; do

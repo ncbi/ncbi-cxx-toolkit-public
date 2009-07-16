@@ -1,0 +1,13 @@
+include $(builddir)/Makefile.mk
+
+LINK = $(libdir)/python_ncbi_dbapi.so
+
+all: $(LINK)
+
+$(LINK):
+	cd $(libdir)  &&  $(LN_S) libpython_ncbi_dbapi.so $(LINK)
+
+clean:;
+
+purge:
+	-$(RM) $(LINK)
