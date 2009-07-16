@@ -4280,6 +4280,16 @@ PYDBAPI_MODINIT_FUNC(initncbi_dbapi_stable)
     init_common("ncbi_dbapi_stable");
 }
 
+
+#ifdef NCBI_OS_DARWIN
+// force more of corelib to make it in
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_darwin_kludge)
+{
+    CFastMutexGuard GUARD(CPluginManagerGetterImpl::GetMutex());
+    CConfig config(NULL, eNoOwnership);
+}
+#endif
+
 END_NCBI_SCOPE
 
 
