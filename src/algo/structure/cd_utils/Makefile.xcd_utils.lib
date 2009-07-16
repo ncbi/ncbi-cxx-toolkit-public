@@ -27,6 +27,7 @@ SRC = \
     cuBaseClusterer \
     cuBlockExtender \
     cuBlockIntersector \
+    cuCdAnnotation \
     cuDbPriority \
     cuDistmat \
     cuDmAlignedOptimalScore \
