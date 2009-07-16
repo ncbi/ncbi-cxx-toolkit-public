@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq blast blastdb
+ASN_DEP = xnetblast blastdb
 
 ###  BASIC PROJECT SETTINGS
 LIB = align_format
