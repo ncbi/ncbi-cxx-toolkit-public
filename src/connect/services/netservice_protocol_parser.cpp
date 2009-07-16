@@ -85,13 +85,14 @@ CNetServProtoParserBase::x_GetNextInCmdMap(T* ptr)
 
 ENSProtoTokenType
 CNetServProtoParserBase::x_GetToken(const char** str,
+                                    const char*  end,
                                     const char** tok,
                                     size_t*      size)
 {
     ENSProtoTokenType ttype = eNSTT_None;
     const char* s = *str;
 
-    if (!*s) {
+    if (s >= end) {
         return ttype;
     }
 
@@ -108,12 +109,12 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         }
     }
 
-    for (; *s; ++s) {
+    for (; s < end; ++s) {
         if (ttype == eNSTT_Str) {
             if (*s == '"') {
                 break;
             }
-            else if (*s == '\\'  &&  *(s + 1)) {
+            else if (*s == '\\'  &&  (s + 1 < end)) {
                 ++s;
             }
         }
@@ -157,7 +158,7 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         if (ttype == eNSTT_Str) {
             ++s;
         }
-        while (*s  &&  isspace(*s)) {
+        while ((s < end)  &&  isspace(*s)) {
             ++s;
         }
     }
@@ -172,16 +173,17 @@ CNetServProtoParserBase::ParseCommand(CTempString          command,
                                       map<string, string>* params)
 {
     const char* s = command.data();
+    const char* end = s + command.size();
     const char* token;
     const char* cache_name = NULL;
     size_t tsize, cache_name_sz = 0;
     ENSProtoTokenType ttype;
 
-    ttype = x_GetToken(&s, &token, &tsize);
+    ttype = x_GetToken(&s, end, &token, &tsize);
     if (ttype == eNSTT_ICPrefix) {
         cache_name    = token + 3;
         cache_name_sz = tsize - 4;
-        ttype = x_GetToken(&s, &token, &tsize);
+        ttype = x_GetToken(&s, end, &token, &tsize);
     }
     if (ttype != eNSTT_Id) {
         NCBI_THROW(CNSProtoParserException, eNoCommand,
@@ -234,6 +236,7 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
                                         map<string, string>*    params)
 {
     const char* s = str.data();
+    const char* end = s + str.size();
     const char* key;
     const char* val;
     size_t key_size, val_size;
@@ -241,9 +244,9 @@ CNetServProtoParserBase::ParseArguments(CTempString             str,
 
     while (arg_descr->flags != eNSPA_None) // extra arguments are just ignored
     {
-        val_type = x_GetToken(&s, &key, &key_size);
+        val_type = x_GetToken(&s, end, &key, &key_size);
         if (val_type == eNSTT_Key) {
-            val_type = x_GetToken(&s, &val, &val_size);
+            val_type = x_GetToken(&s, end, &val, &val_size);
             if (val_type == eNSTT_Key) {
                 NCBI_THROW(CNSProtoParserException, eBadToken,
                            "Second equal sign met in the parameter val: '"

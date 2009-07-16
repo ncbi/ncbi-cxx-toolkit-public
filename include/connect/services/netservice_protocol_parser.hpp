@@ -162,6 +162,7 @@ private:
     template <class T> T* x_GetNextInCmdMap(T* ptr);
 
     ENSProtoTokenType x_GetToken(const char** str,
+                                 const char*  end,
                                  const char** tok,
                                  size_t*      size);
     bool x_ArgumentMatch(const char*             key,
