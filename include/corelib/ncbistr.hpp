@@ -41,7 +41,6 @@
 #  include <strings.h>
 #endif
 #include <stdarg.h>
-#include <string.h>
 #include <time.h>
 #include <vector>
 
