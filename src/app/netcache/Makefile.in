@@ -6,5 +6,4 @@ APP_PROJ = netcached
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
-SUB_PROJ = util test
-
+SUB_PROJ = test

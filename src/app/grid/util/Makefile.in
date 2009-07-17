@@ -2,8 +2,8 @@
 # $Id$
 #################################
 
-APP_PROJ = ncfetch save_to_nc netcache_control
+APP_PROJ = netcache_control ncfetch save_to_nc netcache_check \
+           netschedule_control netschedule_check
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
-
