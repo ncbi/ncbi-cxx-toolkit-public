@@ -41,6 +41,7 @@
 #include <serial/iterator.hpp>
 
 #include <objects/general/Date.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -48,7 +49,9 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -68,6 +71,15 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+static CRef<CFeat_id>
+s_StringToFeatId( const string& str )
+{
+    CRef<CObject_id> objid( new CObject_id );
+    objid->SetStr( str );
+    CRef<CFeat_id> featid( new CFeat_id );
+    featid->SetLocal( *objid );
+    return featid;
+}    
 
 static string& s_URLDecode(const CTempString& s, string& out) {
     SIZE_TYPE pos = 0;
@@ -576,6 +588,19 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
     if (record.frame >= 0  &&  feat->GetData().IsCdregion()) {
         feat->SetData().SetCdregion().SetFrame
             (static_cast<CCdregion::EFrame>(record.frame + 1));
+    }
+    if ( m_Version == 3 ) {
+        ITERATE (SRecord::TAttrs, it, record.attrs) {
+            string tag = it->front();
+            if (tag == "ID") {
+                feat->SetId( *s_StringToFeatId( (*it)[1] ) );
+            }
+            if (tag == "Parent") {
+                CRef<CSeqFeatXref> xref( new CSeqFeatXref );
+                xref->SetId( *s_StringToFeatId( (*it)[1] ) );
+                feat->SetXref().push_back( xref );
+            }
+        }
     }
 
     string gene_id;
