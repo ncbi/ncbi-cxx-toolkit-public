@@ -92,6 +92,13 @@ public:
     {
         return dummy_val;
     }
+
+#ifdef NCBI_COMPILER_ICC
+    // In the absence of the following constructor,
+    // ICC fills the object memory with zeros,
+    // erasing flags set by CObject::operator new
+    CScheduler_QueueEvent() {}
+#endif
 };
 
 
