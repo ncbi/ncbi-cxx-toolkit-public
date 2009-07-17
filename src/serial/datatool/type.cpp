@@ -58,7 +58,7 @@ bool CDataType::sm_EnableDTDEntities = false;
 bool CDataType::sm_EnforcedStdXml = false;
 bool CDataType::sm_XmlSourceSpec = false;
 set<string> CDataType::sm_SavedNames;
-
+map<string,string> CDataType::sm_ClassToMember;
 
 class CAnyTypeSource : public CTypeInfoSource
 {
@@ -488,7 +488,22 @@ string CDataType::ClassName(void) const
     }
     else {
         // global type
+#if 0
         return 'C'+Identifier(m_MemberName);
+#else
+        string g;
+        for (size_t i=0;;++i) {
+            g.assign(1,'C').append(i,'_').append(Identifier(m_MemberName));
+            if (sm_ClassToMember.find(g) == sm_ClassToMember.end()) {
+                sm_ClassToMember[g] = m_MemberName;
+            } else {
+                if ( sm_ClassToMember[g] != m_MemberName) {
+                    continue;
+                }
+            }
+            return g;
+        }
+#endif
     }
 }
 

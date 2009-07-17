@@ -50,12 +50,20 @@ public:
     XSDParser( XSDLexer& lexer);
     virtual ~XSDParser(void);
 
+    enum EElementNamespace {
+        eUnknownNamespace,
+        eSchemaNamespace,
+        eWsdlNamespace,
+        eSoapNamespace
+    };
+
 protected:
     virtual void BeginDocumentTree(void);
     virtual void BuildDocumentTree(CDataTypeModule& module);
     void Reset(void);
     TToken GetNextToken(void);
 
+    EElementNamespace GetElementNamespace(const string& prefix);
     bool IsAttribute(const char* att) const;
     bool IsValue(const char* value) const;
     bool DefineElementType(DTDElement& node);
@@ -128,7 +136,7 @@ protected:
     string m_Value;
     string m_ValuePrefix;
 
-    map<string,string> m_RawAttributes;
+    map<string, pair< string,string > > m_RawAttributes;
 
     map<string,string> m_PrefixToNamespace;
     map<string,string> m_NamespaceToPrefix;
@@ -144,7 +152,6 @@ private:
     set<string> m_EmbeddedNames;
     bool m_ResolveTypes;
     bool m_EnableNamespaceRedefinition;
-    size_t m_InitialLexerStackSize;
 };
 
 END_NCBI_SCOPE

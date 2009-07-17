@@ -52,7 +52,6 @@ XSDParser::XSDParser(XSDLexer& lexer)
     m_SrcType = eSchema;
     m_ResolveTypes = false;
     m_EnableNamespaceRedefinition = false;
-    m_InitialLexerStackSize = 0;
 }
 
 XSDParser::~XSDParser(void)
@@ -66,7 +65,6 @@ void XSDParser::BeginDocumentTree(void)
 
 void XSDParser::BuildDocumentTree(CDataTypeModule& module)
 {
-    m_InitialLexerStackSize = m_StackLexer.size();
     ParseHeader();
     CopyComments(module.Comments());
 
@@ -93,9 +91,13 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
             break;
         case K_ATTPAIR:
             break;
-        case K_ENDOFTAG:
         case T_EOF:
-            ProcessNamedTypes();
+            ParseError("Unexpected end-of-file", "keyword");
+            return;
+        case K_ENDOFTAG:
+            if (m_SrcType == eSchema) {
+                ProcessNamedTypes();
+            }
             return;
         case K_IMPORT:
             ParseImport();
@@ -206,6 +208,21 @@ TToken XSDParser::GetNextToken(void)
     }
     ConsumeToken();
     return tok;
+}
+
+XSDParser::EElementNamespace XSDParser::GetElementNamespace(const string& prefix)
+{
+    if (m_PrefixToNamespace.find(prefix) != m_PrefixToNamespace.end()) {
+        string ns(m_PrefixToNamespace[prefix]);
+        if        (ns == "http://www.w3.org/2001/XMLSchema") {
+            return eSchemaNamespace;
+        } else if (ns == "http://schemas.xmlsoap.org/wsdl/") {
+            return eWsdlNamespace;
+        } else if (ns == "http://schemas.xmlsoap.org/wsdl/soap/") {
+            return eSoapNamespace;
+        }
+    }
+    return eUnknownNamespace;
 }
 
 bool XSDParser::IsAttribute(const char* att) const
@@ -353,7 +370,8 @@ void XSDParser::ParseImport(void)
 {
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("namespace")) {
-        if (IsValue("http://www.w3.org/XML/1998/namespace")) {
+        if (IsValue("http://www.w3.org/XML/1998/namespace") ||
+            (IsValue("//www.w3.org/XML/1998/namespace") && m_ValuePrefix == "http")) {
             string name = "xml:lang";
             m_MapAttribute[name].SetName(name);
             m_MapAttribute[name].SetType(DTDAttribute::eString);
@@ -414,7 +432,7 @@ TToken XSDParser::GetRawAttributeSet(void)
     for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS;
           tok = GetNextToken()) {
         if (tok == K_ATTPAIR ) {
-            m_RawAttributes[m_Attribute] = m_Value;
+            m_RawAttributes[m_Attribute] = make_pair(m_ValuePrefix, m_Value);
         }
     }
     return tok;
@@ -424,10 +442,12 @@ bool XSDParser::GetAttribute(const string& att)
 {
     if (m_RawAttributes.find(att) != m_RawAttributes.end()) {
         m_Attribute = att;
-        m_Value = m_RawAttributes[att];
+        m_ValuePrefix = m_RawAttributes[att].first;
+        m_Value = m_RawAttributes[att].second;
         return true;
     }
     m_Attribute.erase();
+    m_ValuePrefix.erase();
     m_Value.erase();
     return false;
 }
@@ -509,8 +529,19 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     tok = GetRawAttributeSet();
 
     if (GetAttribute("ref")) {
-        name = m_Value;
-        ref=true;
+        if (IsValue("schema") &&
+            GetElementNamespace(m_ValuePrefix) == eSchemaNamespace) {
+            name = CreateTmpEmbeddedName(owner->GetName(), emb);
+            DTDElement& elem = m_MapElement[name];
+            elem.SetName(m_Value);
+            elem.SetSourceLine(Lexer().CurrentLine());
+            elem.SetEmbedded();
+            elem.SetType(DTDElement::eAny);
+            ref=false;
+        } else {
+            name = m_Value;
+            ref=true;
+        }
     }
     if (GetAttribute("name")) {
         ref=false;
@@ -595,6 +626,7 @@ void XSDParser::ParseGroupRef(DTDElement& node)
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
+    PopEntityLexer();
 }
 
 void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
@@ -607,10 +639,7 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         emb= node.GetContent().size();
         switch (tok) {
         case T_EOF:
-            if (m_StackLexer.size() <= m_InitialLexerStackSize) {
-                return;
-            }
-            break;
+            return;
         case K_ENDOFTAG:
             if (eatEOT) {
                 eatEOT= false;
@@ -790,6 +819,7 @@ void XSDParser::ParseExtension(DTDElement& node)
                 string id = CreateEntityId(m_Value,DTDEntity::eType);
                 if (m_MapEntity.find(id) != m_MapEntity.end()) {
                     PushEntityLexer(id);
+                    ParseContent(node);
                     extended=true;
                 } else {
                     ParseError("Unresolved entity", id.c_str());
@@ -814,6 +844,7 @@ void XSDParser::ParseRestriction(DTDElement& node)
             if (m_ResolveTypes) {
                 if (m_MapEntity.find(id) != m_MapEntity.end()) {
                     PushEntityLexer(id);
+                    ParseContent(node);
                     extended=true;
                 } else {
                     ParseError("Unresolved entity", id.c_str());
@@ -899,6 +930,7 @@ void XSDParser::ParseAttributeGroupRef(DTDElement& node)
     if (GetRawAttributeSet() == K_CLOSING) {
         ParseContent(node);
     }
+    PopEntityLexer();
 }
 
 void XSDParser::ParseAny(DTDElement& node)
@@ -1018,6 +1050,7 @@ void XSDParser::ParseExtension(DTDAttribute& att)
                 string id = CreateEntityId(m_Value,DTDEntity::eType);
                 if (m_MapEntity.find(id) != m_MapEntity.end()) {
                     PushEntityLexer(id);
+                    ParseContent(att);
                 } else {
                     ParseError("Unresolved entity", id.c_str());
                 }
@@ -1040,6 +1073,7 @@ void XSDParser::ParseRestriction(DTDAttribute& att)
                 string id = CreateEntityId(m_Value,DTDEntity::eType);
                 if (m_MapEntity.find(id) != m_MapEntity.end()) {
                     PushEntityLexer(id);
+                    ParseContent(att);
                 } else {
                     ParseError("Unresolved entity", id.c_str());
                 }

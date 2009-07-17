@@ -83,9 +83,14 @@ void WSDLParser::BuildDocumentTree(CDataTypeModule& module)
             ParseService();
             break;
         case K_ENDOFTAG:
-        case T_EOF:
+            m_ParsingTypes = true;
+            ProcessNamedTypes();
+            m_ParsingTypes = false;
             ProcessEndpointTypes();
             CollectDataObjects();
+            return;
+        case T_EOF:
+            ParseError("Unexpected end-of-file", "keyword");
             return;
         default:
             ParseError("Invalid keyword", "keyword");
@@ -202,22 +207,9 @@ void WSDLParser::ParsePortType(DTDElement& node)
     }
 }
 
-WSDLParser::EElementNamespace WSDLParser::GetElementNamespace()
-{
-    if (m_PrefixToNamespace.find(m_ElementPrefix) != m_PrefixToNamespace.end()) {
-        string ns(m_PrefixToNamespace[m_ElementPrefix]);
-        if (ns == "http://schemas.xmlsoap.org/wsdl/") {
-            return eWsdlNamespace;
-        } else if (ns == "http://schemas.xmlsoap.org/wsdl/soap/") {
-            return eSoapNamespace;
-        }
-    }
-    return eUnknownNamespace;
-}
-
 void WSDLParser::ParseBinding(DTDElement& node)
 {
-    EElementNamespace ns = GetElementNamespace();
+    EElementNamespace ns = GetElementNamespace(m_ElementPrefix);
     TToken tok = GetRawAttributeSet();
     if (ns == eWsdlNamespace) {
         if (!GetAttribute("type")) {
@@ -245,8 +237,8 @@ void WSDLParser::ParseBinding(DTDElement& node)
 
 void WSDLParser::ParseOperation(DTDElement& node)
 {
+    TToken tok = GetRawAttributeSet();
     if (node.GetType() == DTDElement::eWsdlEndpoint) {
-        TToken tok = GetRawAttributeSet();
         if (!GetAttribute("name")) {
             ParseError("Operation has no name", "name");
         }
@@ -257,23 +249,16 @@ void WSDLParser::ParseOperation(DTDElement& node)
         }
         return;
     }
-    TToken tok;
-    string value;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS;
-          tok = GetNextToken()) {
-        if (tok == K_ATTPAIR ) {
-            if (m_Attribute == "soapAction") {
-                value = m_ValuePrefix;
-                if (!value.empty()) {
-                    value += ':';
-                }
-                value += m_Value;
-            }
+    if (GetAttribute("soapAction")) {
+        string value(m_ValuePrefix);
+        if (!value.empty()) {
+            value += ':';
         }
-    }
-    if (!value.empty()) {
-        DTDElement& action = EmbeddedElement(node, "#soapaction", DTDElement::eString);
-        action.SetDefault(value);
+        value += m_Value;
+        if (!value.empty()) {
+            DTDElement& action = EmbeddedElement(node, "#soapaction", DTDElement::eString);
+            action.SetDefault(value);
+        }
     }
     if (tok == K_CLOSING) {
         ParseContent(node);
@@ -383,23 +368,15 @@ void WSDLParser::ParsePort(DTDElement& node)
 
 void WSDLParser::ParseAddress(DTDElement& node)
 {
-    TToken tok;
-    string value;
-    for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS;
-          tok = GetNextToken()) {
-        if (tok == K_ATTPAIR ) {
-            if (m_Attribute == "location") {
-                value = m_ValuePrefix;
-                if (!value.empty()) {
-                    value += ':';
-                }
-                value += m_Value;
-            }
-        }
-    }
-    if (value.empty()) {
+    TToken tok = GetRawAttributeSet();
+    if (!GetAttribute("location")) {
         ParseError("Port has no location", "location");
     }
+    string value(m_ValuePrefix);
+    if (!value.empty()) {
+        value += ':';
+    }
+    value += m_Value;
     DTDElement& item = EmbeddedElement(node, "#location", DTDElement::eString);
     item.SetSourceLine(Lexer().CurrentLine());
     item.SetDefault(value);

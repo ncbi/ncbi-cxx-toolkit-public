@@ -327,6 +327,7 @@ private:
     static bool sm_EnforcedStdXml;
     static bool sm_XmlSourceSpec;
     static set<string> sm_SavedNames;
+    static map<string,string> sm_ClassToMember;
 };
 
 #define CheckValueType(value, type, name) do{ \
