@@ -167,7 +167,7 @@ protected:
     void CloseTagIfNamed(TTypeInfo type);
     bool WillHaveName(TTypeInfo elementType);
 
-    TMemberIndex HasAnyContent(const CClassTypeInfoBase* classType);
+    TMemberIndex HasAnyContent(const CClassTypeInfoBase* classType, TMemberIndex pos = kInvalidMember);
     bool HasMoreElements(TTypeInfo elementType);
     TMemberIndex FindDeep(TTypeInfo type, const CTempString& name) const;
 #ifdef VIRTUAL_MID_LEVEL_IO

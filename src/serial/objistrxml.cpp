@@ -1446,10 +1446,11 @@ void CObjectIStreamXml::EndContainerElement(void)
     }
 }
 
-TMemberIndex CObjectIStreamXml::HasAnyContent(const CClassTypeInfoBase* classType)
+TMemberIndex CObjectIStreamXml::HasAnyContent(const CClassTypeInfoBase* classType, TMemberIndex pos)
 {
     const CItemsInfo& items = classType->GetItems();
-    for (TMemberIndex i = items.FirstIndex(); i <= items.LastIndex(); ++i) {
+    TMemberIndex i = (pos != kInvalidMember ? pos : items.FirstIndex());
+    for (; i <= items.LastIndex(); ++i) {
         const CItemInfo* itemInfo = items.GetItemInfo( i );
         if (itemInfo->GetId().HasAnyContent()) {
             return i;
@@ -2025,7 +2026,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     }
     if (x_IsStdXml()) {
         UndoClassMember();
-        ind = HasAnyContent(classType);
+        ind = HasAnyContent(classType,pos);
         if (ind != kInvalidMember) {
             TopFrame().SetNotag();
             return ind;
