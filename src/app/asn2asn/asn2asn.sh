@@ -14,7 +14,7 @@ fi
 d="$base/data"
 r="$base/res"
 
-tool="./asn2asn $@"
+tool="asn2asn $@"
 
 do_test() {
     cmd="$tool -i $d/$1 -o out"

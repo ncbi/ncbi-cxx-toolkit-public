@@ -1,6 +1,6 @@
 #! /bin/sh
 
-pcre=./test_pcre
+pcre=test_pcre
 out="/tmp/$pcre.$$"
 errcode=0
 
