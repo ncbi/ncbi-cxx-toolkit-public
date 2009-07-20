@@ -696,9 +696,13 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
                             // y loc is shorter
                             return false;
                         }
-                        int diff = (*it1)->Compare(**it2);
-                        if ( diff != 0 )
-                            return diff < 0;
+                        try {
+                            int diff = (*it1)->Compare(**it2);
+                            if ( diff != 0 )
+                                return diff < 0;
+                        }
+                        catch ( CException& /*ignored*/ ) {
+                        }
                     }
                 }
                 else {
