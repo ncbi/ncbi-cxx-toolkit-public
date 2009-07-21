@@ -162,6 +162,9 @@ protected:
     CSeqVector& x_GetSeqVector         (TNumrow row)       const;
     CSeqVector& x_GetConsensusSeqVector(void)              const;
 
+    void CreateConsensus(vector<string>& consens) const;
+    void RetrieveSegmentSequences(size_t segment, vector<string>& segs) const;
+
     mutable CRef<CScope>            m_Scope;
     mutable TBioseqHandleCache      m_BioseqHandlesCache;
     mutable TSeqVectorCache         m_SeqVectorCache;
