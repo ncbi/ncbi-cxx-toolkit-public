@@ -1009,7 +1009,7 @@ CDB_Char& CDB_Char::operator= (const string& s)
 {
     // Encoding of s ???
     CheckStringTruncation(s.size(), m_Size);
-    Assign(s, min(m_Size, s.size()));
+    Assign(s, m_Size);
 
     return *this;
 }
@@ -1021,7 +1021,7 @@ CDB_Char& CDB_Char::operator= (const char* s)
         // Encoding of s ???
         size_t len = strlen(s);
         CheckStringTruncation(len, m_Size);
-        Assign(s, min(len, m_Size));
+        Assign(s, m_Size);
     }
 
     return *this;
@@ -1032,7 +1032,7 @@ void CDB_Char::SetValue(const char* str, size_t len, EEncoding enc)
 {
     CheckStringTruncation(CDB_VarChar(str, len, enc).Size(), m_Size);
 
-    Assign(str, len, enc);
+    Assign(str, m_Size, enc);
 }
 
 
@@ -1131,7 +1131,7 @@ CDB_LongChar& CDB_LongChar::operator= (const string& s)
 {
     // Encoding of s ???
     CheckStringTruncation(s.size(), m_Size);
-    Assign(s, min(m_Size, s.size()));
+    Assign(s, m_Size);
 
     return *this;
 }
@@ -1143,7 +1143,7 @@ CDB_LongChar& CDB_LongChar::operator= (const char* s)
         // Encoding of s ???
         size_t len = strlen(s);
         CheckStringTruncation(len, m_Size);
-        Assign(s, min(len, m_Size));
+        Assign(s, m_Size);
     }
 
     return *this;
@@ -1156,7 +1156,7 @@ void CDB_LongChar::SetValue(const char* str,
 {
     CheckStringTruncation(CDB_VarChar(str, len, enc).Size(), m_Size);
 
-    Assign(str, len, enc);
+    Assign(str, m_Size, enc);
 }
 
 
