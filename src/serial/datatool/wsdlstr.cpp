@@ -252,6 +252,7 @@ void CWsdlTypeStrings::GenerateClassCode(
         methodIn.push_back(in_param);
 
         // declaration
+        i->comments.PrintHPPMember(header);
         header << "    "
             << methodRet << "\n    " << i->externalName << "(";
         header << separator

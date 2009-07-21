@@ -183,6 +183,7 @@ void WSDLParser::ParseContent(DTDElement& node)
             ParseAddress(node);
             break;
         case K_DOCUMENTATION:
+            SetCommentsIfEmpty(&(node.Comments()));
             ParseDocumentation();
             break;
         default:
