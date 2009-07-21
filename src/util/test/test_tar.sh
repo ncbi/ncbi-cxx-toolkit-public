@@ -23,7 +23,7 @@ cp -rp . $test_base.1/ 2>/dev/null
 if [ -f test_tar${exe} ]; then
     test_exe=./test_tar${exe}
 else
-    test_exe=$CONF_BIN/test_tar${exe}
+    test_exe=$CFG_BIN/test_tar${exe}
     cp -p $test_exe $test_base.1/ 2>/dev/null
 fi
 
