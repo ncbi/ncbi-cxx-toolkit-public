@@ -51,7 +51,7 @@ void CGridClientApp::Init(void)
     ns_api.SetProgramVersion(GetProgramVersion());
 
     CBlobStorageFactory bs_cf(GetConfig());
-    auto_ptr<IBlobStorage> ns_storage(bs_cf.CreateInstance());
+    m_NSStorage.reset(bs_cf.CreateInstance());
 
     CGridClient::ECleanUp cleanup = UseAutomaticCleanup() ?
         CGridClient::eAutomaticCleanup :
@@ -71,7 +71,7 @@ void CGridClientApp::Init(void)
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0,
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(ns_api.GetSubmitter(), *ns_storage,
+    m_GridClient.reset(new CGridClient(ns_api.GetSubmitter(), *m_NSStorage,
                                        cleanup, pmsg, use_embedded_input));
 }
 

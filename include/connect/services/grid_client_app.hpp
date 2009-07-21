@@ -78,6 +78,7 @@ protected:
     virtual bool UseAutomaticCleanup() const;
 
 private:
+    auto_ptr<IBlobStorage>       m_NSStorage;
     auto_ptr<CGridClient>        m_GridClient;
 };
 
