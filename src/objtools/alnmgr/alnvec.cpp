@@ -390,8 +390,6 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
     }
 
     bool isNucleotide = GetBioseqHandle(0).IsNucleotide();
-    bool isProtein = !isNucleotide;
-    const int numBases = isNucleotide ? 4 : 26;
 
     size_t i;
     size_t j;
@@ -399,146 +397,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
     // temporary storage for our consensus
     vector<string> consens(m_NumSegs);
 
-    // determine what the number of segments required for a gapped consensus
-    // segment is.  this must be rounded to be at least 50%.
-    int gap_seg_thresh = m_NumRows - m_NumRows / 2;
-
-    for (j = 0;  j < (size_t)m_NumSegs;  ++j) {
-        // evaluate for gap / no gap
-        int gap_count = 0;
-        for (i = 0;  i < (size_t)m_NumRows;  ++i) {
-            if (m_Starts[ j*m_NumRows + i ] == -1) {
-                ++gap_count;
-            }
-        }
-
-        // check to make sure that this seg is not a consensus
-        // gap seg
-        if ( gap_count <= gap_seg_thresh ) {
-            // we will build a segment with enough bases to match
-            consens[j].resize(m_Lens[j]);
-
-            // retrieve all sequences for this segment
-            vector<string> segs(m_NumRows);
-            for (i = 0;  i < (size_t)m_NumRows;  ++i) {
-                if (m_Starts[ j*m_NumRows + i ] != -1) {
-                    TSeqPos start = m_Starts[j*m_NumRows+i];
-                    TSeqPos stop  = start + m_Lens[j];
-
-                    if (IsPositiveStrand(i)) {
-                        x_GetSeqVector(i).GetSeqData(start, stop, segs[i]);
-                    } else {
-                        CSeqVector &  seq_vec = x_GetSeqVector(i);
-                        TSeqPos size = seq_vec.size();
-                        seq_vec.GetSeqData(size - stop, size - start, segs[i]);
-                    }
-                    if (isNucleotide) {
-                        for (size_t c = 0;  c < segs[i].length();  ++c) {
-                            segs[i][c] = FromIupac(segs[i][c]);
-                        }
-                    }
-                }
-            }
-
-            typedef multimap<int, unsigned char, greater<int> > TRevMap;
-
-            // 
-            // evaluate for a consensus
-            //
-            for (i = 0;  i < m_Lens[j];  ++i) {
-                // first, we record which bases occur and how often
-                // this is computed in NCBI4na notation
-                int base_count[26];
-                for (int pos = 0;  pos < numBases;  ++pos) {
-                    base_count[pos] = 0;
-                }
-                for (int row = 0;  row < m_NumRows;  ++row) {
-                    if (segs[row] != "") {
-                        for (int pos = 0;  pos < numBases;  ++pos) {
-                            if (isNucleotide && (segs[row][i] & (1<<pos)) ||
-                                isProtein && segs[row][i] == pos+'A') {
-                                ++base_count[ pos ];
-                            }
-                        }
-                    }
-                }
-
-                // we create a sorted list (in descending order) of
-                // frequencies of appearance to base
-                // the frequency is "global" for this position: that is,
-                // if 40% of the sequences are gapped, the highest frequency
-                // any base can have is 0.6
-                TRevMap rev_map;
-
-                for (int k = 0;  k < numBases;  ++k) {
-                    // this gets around a potentially tricky idiosyncrasy
-                    // in some implementations of multimap.  depending on
-                    // the library, the key may be const (or not)
-                    TRevMap::value_type p(base_count[k], isNucleotide ? (1<<k) : k);
-                    rev_map.insert(p);
-                }
-
-                // the base threshold for being considered unique is at least
-                // 70% of the available sequences
-                int base_thresh =
-                    ((m_NumRows - gap_count) * 7 + 5) / 10;
-
-                // now, the first element here contains the best frequency
-                // we scan for the appropriate bases
-                if (rev_map.count(rev_map.begin()->first) == 1 &&
-                    rev_map.begin()->first >= base_thresh) {
-                        consens[j][i] = isNucleotide ?
-                            ToIupac(rev_map.begin()->second) :
-                            (rev_map.begin()->second+'A');
-                } else {
-                    // now we need to make some guesses based on IUPACna
-                    // notation
-                    int               count;
-                    unsigned char     c    = 0x00;
-                    int               freq = 0;
-                    TRevMap::iterator curr = rev_map.begin();
-                    TRevMap::iterator prev = rev_map.begin();
-                    for (count = 0;
-                         curr != rev_map.end() &&
-                         (freq < base_thresh || prev->first == curr->first);
-                         ++curr, ++count) {
-                        prev = curr;
-                        freq += curr->first;
-                        if (isNucleotide) {
-                            c |= curr->second;
-                        } else {
-                            unsigned char cur_char = curr->second+'A';
-                            switch (c) {
-                                case 0x00:
-                                    c = cur_char;
-                                    break;
-                                case 'N': case 'D':
-                                    c = (cur_char == 'N' || cur_char == 'N') ? 'B' : 'X';
-                                    break;
-                                case 'Q': case 'E':
-                                    c = (cur_char == 'Q' || cur_char == 'E') ? 'Z' : 'X';
-                                    break;
-                                case 'I': case 'L':
-                                    c = (cur_char == 'I' || cur_char == 'L') ? 'J' : 'X';
-                                    break;
-                                default:
-                                    c = 'X';
-                            }
-                        }
-                    }
-
-                    //
-                    // catchall
-                    //
-                    if (count > 2) {
-                        consens[j][i] = isNucleotide ? 'N' : 'X';
-                    } else {
-                        consens[j][i] = isNucleotide ? ToIupac(c) : c;
-                    }
-                }
-            }
-        }
-    }
+    CreateConsensus(consens);
 
     //
     // now, create a new CDense_seg
@@ -628,6 +487,275 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
     return new_ds;
 }
 
+void TransposeSequences(vector<string>& segs)
+{
+    char* buf = NULL;
+    size_t cols = 0;
+    size_t rows = segs.size();
+    size_t gap_rows = 0;
+    for (size_t row = 0; row < rows; ++row) {
+        const string& s = segs[row];
+        if (s.empty()) {
+            ++gap_rows;
+            continue;
+        }
+        if (cols == 0) {
+            cols = s.size();
+            buf = new char[(rows+1)*(cols+1)];
+        }
+        const char* src = s.c_str();
+        char* dst = buf+(row-gap_rows);
+        while ((*dst = *src++)) {
+            dst += rows+1;
+        }
+    }
+    segs.clear();
+    for (size_t col = 0; col < cols; ++col) {
+        char* col_buf = buf + col*(rows+1);
+        *(col_buf+(rows-gap_rows)) = 0;
+        segs.push_back(string(col_buf));
+    }
+    delete[] buf;
+}
+
+void CollectNucleotideFrequences(const string& col, int base_count[], int numBases)
+{
+    // first, we record which bases occur and how often
+    // this is computed in NCBI4na notation
+    fill_n(base_count, numBases, 0);
+    
+    const char* i = col.c_str();
+    unsigned char c;
+    while ((c = *i++)) {
+        switch(c) {
+        case 'A':
+            ++base_count[0];
+            break;
+        case 'C':
+            ++base_count[1];
+            break;
+        case 'M':
+            ++base_count[1];
+            ++base_count[0];
+            break;
+        case 'G':
+            ++base_count[2];
+            break;
+        case'R':
+            ++base_count[2];
+            ++base_count[0];
+            break;
+        case 'S':
+            ++base_count[2];
+            ++base_count[1];
+            break;
+        case 'V':
+            ++base_count[2];
+            ++base_count[1];
+            ++base_count[0];
+            break;
+        case 'T':
+            ++base_count[3];
+            break;
+        case 'W':
+            ++base_count[3];
+            ++base_count[0];
+            break;
+        case 'Y':
+            ++base_count[3];
+            ++base_count[1];
+            break;
+        case 'H':
+            ++base_count[3];
+            ++base_count[1];
+            ++base_count[0];
+            break;
+        case 'K':
+            ++base_count[3];
+            ++base_count[2];
+            break;
+        case 'D':
+            ++base_count[3];
+            ++base_count[2];
+            ++base_count[0];
+            break;
+        case 'B':
+            ++base_count[3];
+            ++base_count[2];
+            ++base_count[1];
+            break;
+        case 'N':
+            ++base_count[3];
+            ++base_count[2];
+            ++base_count[1];
+            ++base_count[0];
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void CollectProteinFrequences(const string& col, int base_count[], int numBases)
+{
+    // first, we record which bases occur and how often
+    // this is computed in NCBI4na notation
+    fill_n(base_count, numBases, 0);
+    
+    const char* i = col.c_str();
+    char c;
+    while ((c = *i++)) {
+        int pos = c-'A';
+        if (0<=pos && pos < numBases)
+            ++base_count[ pos ];
+    }
+}
+
+void CAlnVec::CreateConsensus(vector<string>& consens) const
+{
+    bool isNucleotide = GetBioseqHandle(0).IsNucleotide();
+
+    const int numBases = isNucleotide ? 4 : 26;
+    int base_count[numBases];
+
+    // determine what the number of segments required for a gapped consensus
+    // segment is.  this must be rounded to be at least 50%.
+    int gap_seg_thresh = m_NumRows - m_NumRows / 2;
+
+    for (size_t j = 0;  j < (size_t)m_NumSegs;  ++j) {
+        // evaluate for gap / no gap
+        int gap_count = 0;
+        for (size_t i = 0;  i < (size_t)m_NumRows;  ++i) {
+            if (m_Starts[ j*m_NumRows + i ] == -1) {
+                ++gap_count;
+            }
+        }
+
+        // check to make sure that this seg is not a consensus
+        // gap seg
+        if ( gap_count > gap_seg_thresh )
+            continue;
+
+        // the base threshold for being considered unique is at least
+        // 70% of the available sequences
+        int base_thresh =
+            ((m_NumRows - gap_count) * 7 + 5) / 10;
+
+        {
+            // we will build a segment with enough bases to match
+            consens[j].resize(m_Lens[j]);
+
+            // retrieve all sequences for this segment
+            vector<string> segs(m_NumRows);
+            RetrieveSegmentSequences(j, segs);
+            TransposeSequences(segs);
+
+            typedef multimap<int, unsigned char, greater<int> > TRevMap;
+
+            // 
+            // evaluate for a consensus
+            //
+            for (size_t i = 0;  i < m_Lens[j];  ++i) {
+                if (isNucleotide) {
+                    CollectNucleotideFrequences(segs[i], base_count, numBases);
+                } else {
+                    CollectProteinFrequences(segs[i], base_count, numBases);
+                }
+
+
+                // we create a sorted list (in descending order) of
+                // frequencies of appearance to base
+                // the frequency is "global" for this position: that is,
+                // if 40% of the sequences are gapped, the highest frequency
+                // any base can have is 0.6
+                TRevMap rev_map;
+
+                for (int k = 0;  k < numBases;  ++k) {
+                    // this gets around a potentially tricky idiosyncrasy
+                    // in some implementations of multimap.  depending on
+                    // the library, the key may be const (or not)
+                    TRevMap::value_type p(base_count[k], isNucleotide ? (1<<k) : k);
+                    rev_map.insert(p);
+                }
+
+                // now, the first element here contains the best frequency
+                // we scan for the appropriate bases
+                if (rev_map.count(rev_map.begin()->first) == 1 &&
+                    rev_map.begin()->first >= base_thresh) {
+                        consens[j][i] = isNucleotide ?
+                            ToIupac(rev_map.begin()->second) :
+                            (rev_map.begin()->second+'A');
+                } else {
+                    // now we need to make some guesses based on IUPACna
+                    // notation
+                    int               count;
+                    unsigned char     c    = 0x00;
+                    int               freq = 0;
+                    TRevMap::iterator curr = rev_map.begin();
+                    TRevMap::iterator prev = rev_map.begin();
+                    for (count = 0;
+                         curr != rev_map.end() &&
+                         (freq < base_thresh || prev->first == curr->first);
+                         ++curr, ++count) {
+                        prev = curr;
+                        freq += curr->first;
+                        if (isNucleotide) {
+                            c |= curr->second;
+                        } else {
+                            unsigned char cur_char = curr->second+'A';
+                            switch (c) {
+                                case 0x00:
+                                    c = cur_char;
+                                    break;
+                                case 'N': case 'D':
+                                    c = (cur_char == 'N' || cur_char == 'N') ? 'B' : 'X';
+                                    break;
+                                case 'Q': case 'E':
+                                    c = (cur_char == 'Q' || cur_char == 'E') ? 'Z' : 'X';
+                                    break;
+                                case 'I': case 'L':
+                                    c = (cur_char == 'I' || cur_char == 'L') ? 'J' : 'X';
+                                    break;
+                                default:
+                                    c = 'X';
+                            }
+                        }
+                    }
+
+                    //
+                    // catchall
+                    //
+                    if (count > 2) {
+                        consens[j][i] = isNucleotide ? 'N' : 'X';
+                    } else {
+                        consens[j][i] = isNucleotide ? ToIupac(c) : c;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CAlnVec::RetrieveSegmentSequences(size_t segment, vector<string>& segs) const
+{
+    int segment_row_index = segment*m_NumRows;
+    for (size_t i = 0;  i < (size_t)m_NumRows;  ++i, ++segment_row_index) {
+        TSignedSeqPos start = m_Starts[ segment_row_index ];
+        if (start != -1) {
+            TSeqPos stop  = start + m_Lens[segment];
+            
+            string& s = segs[i];
+
+            if (IsPositiveStrand(i)) {
+                x_GetSeqVector(i).GetSeqData(start, stop, s);
+            } else {
+                CSeqVector &  seq_vec = x_GetSeqVector(i);
+                TSeqPos size = seq_vec.size();
+                seq_vec.GetSeqData(size - stop, size - start, s);
+            }
+        }
+    }
+}
 
 CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row,
                                           const CSeq_id& consensus_id) const

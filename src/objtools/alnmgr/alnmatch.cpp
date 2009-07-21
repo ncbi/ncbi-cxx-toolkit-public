@@ -121,7 +121,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
             if ((start1 = ds.GetStarts()[seg_off + row1]) >= 0) {
                 //search for a match for the piece of seq on row1
 
-                CRef<CAlnMixSeq> aln_seq1 = ds_seq[row1];
+                CAlnMixSeq* aln_seq1 = ds_seq[row1].GetNonNullPointer();
 
                 for (CAlnMap::TNumrow row2 = row1+1;
                      row2 < ds.GetDim();  row2++) {
@@ -138,7 +138,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
 
                         int score = 0;
 
-                        CRef<CAlnMixSeq> aln_seq2 = ds_seq[row2];
+                        CAlnMixSeq* aln_seq2 = ds_seq[row2].GetNonNullPointer();
 
 
 
@@ -213,9 +213,9 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                             CRef<CAlnMixMatch> match(new CAlnMixMatch);
                             m_Matches.push_back(match);
 
-                            match->m_AlnSeq1 = aln_seq1;
+                            match->m_AlnSeq1 = ds_seq[row1];
                             match->m_Start1 = start1;
-                            match->m_AlnSeq2 = aln_seq2;
+                            match->m_AlnSeq2 = ds_seq[row2];
                             match->m_Start2 = start2;
                             match->m_Len = len;
                             match->m_DsIdx = m_DsCnt;
@@ -238,7 +238,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                     //record it
                     CRef<CAlnMixMatch> match(new CAlnMixMatch);
                     match->m_Score = 0;
-                    match->m_AlnSeq1 = aln_seq1;
+                    match->m_AlnSeq1 = ds_seq[row1];
                     match->m_Start1 = start1;
                     match->m_AlnSeq2 = 0;
                     match->m_Start2 = 0;
