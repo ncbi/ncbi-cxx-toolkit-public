@@ -102,12 +102,19 @@ struct xml::impl::tree_impl {
 xml::tree_parser::tree_parser (const char *name, bool allow_exceptions) {
     std::auto_ptr<tree_impl> ap(pimpl_ = new tree_impl);
 
+    pimpl_->okay_ = true;
     xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&(pimpl_->sax_), name, 0, pimpl_);
-    if (allow_exceptions && !tmpdoc) throw std::runtime_error(pimpl_->last_error_);
 
-    if (tmpdoc) {
-	pimpl_->doc_.set_doc_data(tmpdoc);
-	pimpl_->okay_ = true;
+    if (tmpdoc && pimpl_->okay_)
+    {
+        // All is fine
+        pimpl_->doc_.set_doc_data(tmpdoc);
+    }
+    else
+    {
+        // A problem appeared
+        if (tmpdoc) xmlFreeDoc(tmpdoc);
+        if (allow_exceptions) throw std::runtime_error(pimpl_->last_error_);
     }
 
     ap.release();
@@ -118,7 +125,7 @@ xml::tree_parser::tree_parser (const char *data, size_type size, bool allow_exce
     xmlParserCtxtPtr ctxt;
 
     if ( (ctxt = xmlCreateMemoryParserCtxt(data, static_cast<int>(size))) == 0) {
-	throw std::bad_alloc();
+        throw std::bad_alloc();
     }
 
     if (ctxt->sax) xmlFree(ctxt->sax);
@@ -126,20 +133,21 @@ xml::tree_parser::tree_parser (const char *data, size_type size, bool allow_exce
 
     ctxt->_private = pimpl_;
 
-    xmlParseDocument(ctxt);
+    pimpl_->okay_ = true;
+    int ret(xmlParseDocument(ctxt));
 
-    if (!ctxt->wellFormed) {
-	xmlFreeDoc(ctxt->myDoc);
-	ctxt->myDoc = 0;
-	ctxt->sax = 0;
-	xmlFreeParserCtxt(ctxt);
+    if (!ctxt->wellFormed || ret != 0 || !pimpl_->okay_) {
+        xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = 0;
+        ctxt->sax = 0;
+        xmlFreeParserCtxt(ctxt);
+        pimpl_->okay_ = false;
 
-	if (allow_exceptions) throw std::runtime_error(pimpl_->last_error_);
-	ap.release(); return; // handle non-exception case
+        if (allow_exceptions) throw std::runtime_error(pimpl_->last_error_);
+        ap.release(); return; // handle non-exception case
     }
 
     pimpl_->doc_.set_doc_data(ctxt->myDoc);
-    pimpl_->okay_ = true;
     ctxt->sax = 0;
 
     xmlFreeParserCtxt(ctxt);
@@ -178,6 +186,8 @@ namespace {
 	    xmlParserCtxtPtr ctxt = static_cast<xmlParserCtxtPtr>(v);
 	    tree_impl *p = static_cast<tree_impl*>(ctxt->_private);
 	    if (!p) return; // handle bug in older versions of libxml
+
+            p->okay_ = false;
 
 	    va_list ap;
 	    va_start(ap, message);
