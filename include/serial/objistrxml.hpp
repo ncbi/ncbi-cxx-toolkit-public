@@ -109,6 +109,7 @@ public:
 
     virtual string ReadFileHeader(void);
     virtual string PeekNextTypeName(void);
+    void FindFileHeader(void);
 
 protected:
     EPointerType ReadPointerType(void);

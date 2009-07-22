@@ -567,6 +567,22 @@ string CObjectIStreamXml::PeekNextTypeName(void)
     return typeName;
 }
 
+void CObjectIStreamXml::FindFileHeader(void)
+{
+    char c;
+    for (;;) {
+        c = m_Input.PeekChar();
+        if (c == '<' &&
+            m_Input.PeekChar(1) == '?' &&
+            m_Input.PeekChar(2) == 'x' &&
+            m_Input.PeekChar(3) == 'm' &&
+            m_Input.PeekChar(4) == 'l') {
+            return;
+        }
+        m_Input.SkipChar();
+    }
+}
+
 void CObjectIStreamXml::x_EndTypeNamespace(void)
 {
     if (x_IsStdXml()) {
