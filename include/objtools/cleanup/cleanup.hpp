@@ -33,6 +33,7 @@
  *   .......
  *
  */
+#include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
 BEGIN_NCBI_SCOPE
