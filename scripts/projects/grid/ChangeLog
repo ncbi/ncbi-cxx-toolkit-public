@@ -6,6 +6,7 @@
 	* remote_app: Fix: send the END line after multiline ouptut.
 
 	* NS/NC API: Pass along ClientIP and SessionID to the server.
+	* remote_app, remote_cgi: Implemented the INIT NS command.
 	* ns_remote_job_control: Implemented bulk dump of output.
 
 	* netschedule control: Implemented the 'cancel' action.
