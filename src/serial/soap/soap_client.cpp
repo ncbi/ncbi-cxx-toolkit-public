@@ -101,7 +101,9 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 
     CConn_HttpStream http(net_info,
         MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml, eENCOD_None,
-            content_type, sizeof(content_type) - 1));
+            content_type, sizeof(content_type) - 1)
+            ,0,0,0,0, fHCC_AutoReconnect | fHCC_KeepHeader
+            );
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
     auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
@@ -117,6 +119,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     }
 
     *os << request;
+    dynamic_cast<CObjectIStreamXml*>(is.get())->FindFileHeader();
     *is >> response;
     if (fault) {
         *fault = SOAP_GetKnownObject<CSoapFault>(response);
