@@ -616,7 +616,12 @@ void CAlnVec::CreateConsensus(vector<string>& consens) const
     bool isNucleotide = GetBioseqHandle(0).IsNucleotide();
 
     const int numBases = isNucleotide ? 4 : 26;
+
+#ifdef NCBI_COMPILER_WORKSHOP
+    int base_count[26]; // must be a compile-time constant
+#else
     int base_count[numBases];
+#endif
 
     // determine what the number of segments required for a gapped consensus
     // segment is.  this must be rounded to be at least 50%.
