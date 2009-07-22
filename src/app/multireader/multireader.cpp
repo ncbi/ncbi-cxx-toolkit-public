@@ -82,6 +82,8 @@ protected:
         CNcbiOstream& );
         
     CIdMapper* GetMapper();
+    
+    CErrorContainerBase* GetErrorContainer();
             
 private:
     virtual void Init(void);
@@ -97,6 +99,31 @@ private:
 };
 
 //  ============================================================================
+class CErrorContainerCustom:
+//  ============================================================================
+    public CErrorContainerBase
+{
+public:
+    CErrorContainerCustom(
+        int iMaxCount,
+        int iMaxLevel ): m_iMaxCount( iMaxCount ), m_iMaxLevel( iMaxLevel ) {};
+    ~CErrorContainerCustom() {};
+    
+    bool
+    PutError(
+        const ILineError& err ) 
+    {
+        m_Errors.push_back( 
+            CLineError( err.Severity(), err.Line(), err.Message() ) );
+        return (err.Severity() <= m_iMaxLevel) && (m_Errors.size() < m_iMaxCount);
+    };
+    
+protected:
+    size_t m_iMaxCount;
+    int m_iMaxLevel;    
+};    
+        
+//  ============================================================================
 void CMultiReaderApp::Init(void)
 //  ============================================================================
 {
@@ -107,29 +134,23 @@ void CMultiReaderApp::Init(void)
          "C++ multi format file reader");
 
     //
-    //  shared flags and parameters:
+    //  input / output:
     //        
     arg_desc->AddKey(
         "input", 
-        "InputFile",
+        "File_In",
         "Input filename",
         CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey(
         "output", 
         "OutputFile",
-        "Output filename",
+        "File_Out",
         CArgDescriptions::eOutputFile, "-"); 
 
     arg_desc->AddDefaultKey(
-        "mapfile",
-        "IdMapperConfig",
-        "IdMapper config filename",
-        CArgDescriptions::eString, "" );
-        
-    arg_desc->AddDefaultKey(
         "format", 
-        "Format",
+        "STRING",
         "Input file format",
         CArgDescriptions::eString, 
         "guess");
@@ -138,6 +159,32 @@ void CMultiReaderApp::Init(void)
         &(*new CArgAllow_Strings, 
             "bed", "microarray", "bed15", "wig", "wiggle", "gtf", "guess") );
 
+    arg_desc->AddDefaultKey(
+        "flags",
+        "INTEGER",
+        "Additional flags passed to the reader",
+        CArgDescriptions::eString,
+        "0" );
+
+    //
+    //  ID mapping:
+    //
+    arg_desc->AddDefaultKey(
+        "mapfile",
+        "File_In",
+        "IdMapper config filename",
+        CArgDescriptions::eString, "" );
+
+    arg_desc->AddDefaultKey(
+        "genome", 
+        "STRING",
+        "UCSC build number",
+        CArgDescriptions::eString, 
+        "" );
+        
+    //
+    //  Error policy:
+    //        
     arg_desc->AddFlag(
         "checkonly",
         "check for errors only",
@@ -148,19 +195,34 @@ void CMultiReaderApp::Init(void)
         "suppress error display",
         true );
         
-    arg_desc->AddDefaultKey(
-        "genome", 
-        "UCSC_build_number",
-        "UCSC build number",
-        CArgDescriptions::eString, 
-        "" );
+    arg_desc->AddFlag(
+        "lenient",
+        "accept all input format errors",
+        true );
+        
+    arg_desc->AddFlag(
+        "strict",
+        "accept no input format errors",
+        true );
         
     arg_desc->AddDefaultKey(
-        "flags",
-        "reader_flags",
-        "Additional flags passed to the reader",
+        "max-error-count", 
+        "INTEGER",
+        "Maximum permissible error count",
+        CArgDescriptions::eInteger,
+        "-1" );
+        
+    arg_desc->AddDefaultKey(
+        "max-error-level", 
+        "STRING",
+        "Maximum permissible error level",
         CArgDescriptions::eString,
-        "0" );
+        "warning" );
+        
+    arg_desc->SetConstraint(
+        "max-error-level", 
+        &(*new CArgAllow_Strings, 
+            "info", "warning", "error" ) );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -229,9 +291,7 @@ void CMultiReaderApp::AppInitialize()
         m_uFormat = CFormatGuess::Format( *m_pInput );
     }
     
-    if ( ! args["noerrors"] ) {
-        m_pErrors = new CErrorContainerLevel( eDiag_Error );
-    }
+    m_pErrors = GetErrorContainer();
 }
 
 //  ============================================================================
@@ -293,6 +353,45 @@ CMultiReaderApp::GetMapper()
     }
     return new CIdMapperBuiltin( strBuild );
 }        
+
+//  ============================================================================
+CErrorContainerBase*
+CMultiReaderApp::GetErrorContainer()
+//  ============================================================================
+{
+    //
+    //  By default, allow all errors up to the level of "warning" but nothing
+    //  more serious. -strict trumps everything else, -lenient is the second
+    //  strongest. In the absence of -strict and -lenient, -max-error-count and
+    //  -max-error-level become additive, i.e. both are enforced.
+    //
+    const CArgs& args = GetArgs();
+    
+    if ( args["noerrors"] ) {   // not using error policy at all
+        return 0;
+    }
+    if ( args["strict"] ) {
+        return new CErrorContainerStrict;
+    }
+    if ( args["lenient"] ) {
+        return new CErrorContainerLenient;
+    }
+    
+    int iMaxErrorCount = args["max-error-count"].AsInteger();
+    int iMaxErrorLevel = eDiag_Warning;
+    string strMaxErrorLevel = args["max-error-level"].AsString();
+    if ( strMaxErrorLevel == "info" ) {
+        iMaxErrorLevel = eDiag_Info;
+    }
+    else if ( strMaxErrorLevel == "error" ) {
+        iMaxErrorLevel = eDiag_Error;
+    }
+    
+    if ( iMaxErrorCount == -1 ) {
+        return new CErrorContainerLevel( iMaxErrorLevel );
+    }
+    return new CErrorContainerCustom( iMaxErrorCount, iMaxErrorLevel );
+}
     
 //  ============================================================================
 void CMultiReaderApp::DumpErrors(
