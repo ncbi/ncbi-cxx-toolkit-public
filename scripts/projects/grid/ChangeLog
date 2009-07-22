@@ -1,4 +1,19 @@
+2009-07-17 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* remote_app, remote_cgi: Timeouts are now treated as failures.
+	* save_to_nc, netcache_control: Fixed binary IO on Windows.
+	* remote_app: Fixed temporary directory removal on Windows.
+	* remote_app: Fix: send the END line after multiline ouptut.
+
+	* NS/NC API: Pass along ClientIP and SessionID to the server.
+	* ns_remote_job_control: Implemented bulk dump of output.
+
+	* netschedule control: Implemented the 'cancel' action.
+	* NC API: Added a method to retrieve blob size.
+	* remote_app, remote_cgi: Introduced [log]/merge_lines=yes/no.
+
+	* netbvstore: The server and its client API were removed.
+
 2008-10-07 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
-	* The first release of Grid client-side applications
-	using the prepare_release.py framework.
+	* GRID 1.0.0: The first packaged release.
