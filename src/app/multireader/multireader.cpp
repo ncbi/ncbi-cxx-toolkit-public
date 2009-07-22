@@ -51,6 +51,7 @@
 
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/multireader.hpp>
 
@@ -90,7 +91,7 @@ private:
     CFormatGuess::EFormat m_uFormat;
     CNcbiIstream* m_pInput;
     CNcbiOstream* m_pOutput;
-    CErrorContainer* m_pErrors;
+    CErrorContainerBase* m_pErrors;
     bool m_bCheckOnly;
     int m_iFlags;
 };
@@ -173,9 +174,13 @@ CMultiReaderApp::Run(void)
     
     CRef< CSerialObject> object;
     
-    ReadObject( object );
-    MapObject( object );
-    DumpObject( object );       
+    try {
+        ReadObject( object );
+        MapObject( object );
+        DumpObject( object );       
+    }
+    catch ( CObjReaderLineException& /*err*/ ) {
+    }
     DumpErrors( cerr );
     
     return 0;
@@ -225,7 +230,7 @@ void CMultiReaderApp::AppInitialize()
     }
     
     if ( ! args["noerrors"] ) {
-        m_pErrors = new CErrorContainer;
+        m_pErrors = new CErrorContainerLevel( eDiag_Error );
     }
 }
 
