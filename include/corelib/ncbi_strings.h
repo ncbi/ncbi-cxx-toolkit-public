@@ -39,7 +39,7 @@
 */
 
 #include <ncbiconf.h>
-#include <corelib/mswin_export.h>
+#include <common/ncbi_export.h>
 
 
 /** @addtogroup String

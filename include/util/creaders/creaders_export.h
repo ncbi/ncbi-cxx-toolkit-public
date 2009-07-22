@@ -66,7 +66,11 @@
 #endif
 
 
-#else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
+#elif defined(__GNUC__)  &&  __GNUC__ >= 4
+
+#  define NCBI_CREADERS_EXPORT      __attribute__((visibility("default")))
+
+#else
 
 /*
  * NULL operations for other cases

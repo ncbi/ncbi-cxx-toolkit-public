@@ -35,10 +35,7 @@
 #ifndef __MASK_CMDLINE_ARGS__HPP__
 #define __MASK_CMDLINE_ARGS__HPP__
 
-#include <ncbiconf.h>
 #include <corelib/ncbistd.hpp>
-#include <corelib/mswin_export.h>
-#include <string>
 
 BEGIN_NCBI_SCOPE
 

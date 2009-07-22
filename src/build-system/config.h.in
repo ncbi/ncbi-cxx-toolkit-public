@@ -21,6 +21,10 @@
 /* Define to 1 if your C compiler supports __attribute__((destructor)) */
 #undef HAVE_ATTRIBUTE_DESTRUCTOR
 
+/* Define to 1 if your compiler supports
+   __attribute__((visibility("default"))) */
+#undef HAVE_ATTRIBUTE_VISIBILITY_DEFAULT
+
 /* Define to 1 if you have the `basename' function. */
 #undef HAVE_BASENAME
 

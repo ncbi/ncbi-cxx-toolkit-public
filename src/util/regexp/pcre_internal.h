@@ -131,6 +131,14 @@ PCRE_EXP_DATA_DEFN only if they are not already set. */
 #      define PCRE_EXP_DEFN
 #      define PCRE_EXP_DATA_DEFN
 #    endif
+#  elif defined(__GNUC__)  &&  __GNUC__ >= 4
+#    ifdef __cplusplus
+#      define PCRE_EXP_DECL   extern "C" __attribute__((visibility("default")))
+#    else
+#      define PCRE_EXP_DECL       extern __attribute__((visibility("default")))
+#    endif
+#    define PCRE_EXP_DEFN
+#    define PCRE_EXP_DATA_DEFN
 #  else
 #    ifdef __cplusplus
 #      define PCRE_EXP_DECL       extern "C"

@@ -52,7 +52,11 @@
 #  define NCBI_XBLAST_EXPORT        __declspec(dllimport)
 #endif
 
-#else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
+#elif defined(HAVE_ATTRIBUTE_VISIBILITY_DEFAULT)
+
+#  define NCBI_XBLAST_EXPORT        __attribute__((visibility("default")))
+
+#else
 
 /**
  * NULL operations for other cases

@@ -60,6 +60,9 @@ setting in pcre.h. We use:
 #      define PCRECPP_EXP_DECL       extern
 #      define PCRECPP_EXP_DEFN
 #    endif
+#  elif defined(__GNUC__)  &&  __GNUC__ >= 4
+#    define PCRECPP_EXP_DECL     extern __attribute__((visibility("default")))
+#    define PCRECPP_EXP_DEFN
 #  else
 #    define PCRECPP_EXP_DECL         extern
 #    define PCRECPP_EXP_DEFN

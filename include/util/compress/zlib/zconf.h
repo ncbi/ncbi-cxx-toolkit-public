@@ -243,6 +243,12 @@
 #  endif
 #endif
 
+#if defined(__GNUC__)  &&  __GNUC__ >= 4
+#  define ZEXTERN   extern __attribute__((visibility("default")))
+#  define ZEXPORT   __attribute__((visibility("default")))
+#  define ZEXPORTVA __attribute__((visibility("default")))
+#endif
+
 #ifndef ZEXTERN
 #  define ZEXTERN extern
 #endif

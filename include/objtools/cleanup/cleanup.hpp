@@ -33,11 +33,6 @@
  *   .......
  *
  */
-#include <corelib/ncbistd.hpp>
-#include <corelib/mswin_export.h>
-#include <corelib/ncbiobj.hpp>
-#include <serial/serialbase.hpp>
-#include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
 BEGIN_NCBI_SCOPE

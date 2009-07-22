@@ -3049,6 +3049,18 @@ if test $ncbi_cv_c_attribute_destructor = yes; then
       [Define to 1 if your C compiler supports __attribute__((destructor))])
 fi
 
+AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("default")))],
+   ncbi_cv_c_attribute_visibility_default,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[__attribute__((visibility("default"))) void f(void); void f(void) {}]],
+       [[f();]])],
+      [ncbi_cv_c_attribute_visibility_default=yes],
+      [ncbi_cv_c_attribute_visibility_default=no])])
+if test $ncbi_cv_c_attribute_visibility_default = yes; then
+   AC_DEFINE(HAVE_ATTRIBUTE_VISIBILITY_DEFAULT, 1,
+      [Define to 1 if your compiler supports __attribute__((visibility("default")))])
+fi
+
 AC_CACHE_CHECK([whether the C compiler supports C99 restrict],
    ncbi_cv_c_restrict,
    [ncbi_cv_c_restrict=no

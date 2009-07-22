@@ -34,6 +34,7 @@
 #include <string>
 #include <iostream>
 #include <ncbiconf.h>
+#include <common/ncbi_export.h>
 
 using namespace std;
 
@@ -41,11 +42,7 @@ using namespace std;
 extern "C" {
 #endif
 
-#if defined NCBI_OS_MSWIN
-#   define DllExport __declspec( dllexport )
-#elif defined NCBI_OS_UNIX
-#   define DllExport
-#endif
+#define DllExport NCBI_DLL_EXPORT
 
 DllExport int DllVar_Counter = 0;
 

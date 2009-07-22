@@ -38,7 +38,7 @@
 #define THRDDECL_H
 
 #include <stdio.h>
-#include <corelib/mswin_export.h>
+#include <common/ncbi_export.h>
 
 #ifdef __cplusplus
 extern "C" {

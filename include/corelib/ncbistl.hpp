@@ -36,7 +36,7 @@
 
 
 #include <ncbiconf.h>
-#include <corelib/mswin_export.h>
+#include <common/ncbi_export.h>
 
 
 // Get rid of some warnings in MSVC++ 6.00

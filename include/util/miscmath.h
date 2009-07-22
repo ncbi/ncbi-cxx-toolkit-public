@@ -34,7 +34,7 @@
  * Miscellaneous math functions that might not be part of the
  * system's standard libraries. */
 
-#include <corelib/mswin_export.h>
+#include <common/ncbi_export.h>
 
 #ifdef __cplusplus
 extern "C" {

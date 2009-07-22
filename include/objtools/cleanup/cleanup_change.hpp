@@ -34,9 +34,7 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/mswin_export.h>
 #include <bitset>
 
 BEGIN_NCBI_SCOPE
