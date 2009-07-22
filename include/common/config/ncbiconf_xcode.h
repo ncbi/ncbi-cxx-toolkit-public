@@ -298,7 +298,7 @@
 /* #undef HAVE_LIBKSTAT */
 
 /* Define to 1 if liblzo2 is available. */
-/* #undef HAVE_LIBLZO2 */
+/* #undef HAVE_LIBLZO */
 
 /* Define to 1 if liboechem is available. */
 /* #undef HAVE_LIBOECHEM */
