@@ -468,30 +468,31 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
             break;
         }
     case e_Equiv:
-/*
         {
             // Does it make any sense to GetTotalRange() from an equiv?
+            const CSeq_loc_equiv::Tdata& equiv = GetEquiv().Get();
             total_range = TRange::GetEmpty();
-            ITERATE(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
-                total_range += (*li)->GetTotalRange();
+            ITERATE( CSeq_loc_equiv::Tdata, li, equiv ) {
+                total_range += (*li)->x_CalculateTotalRangeCheckId(id);
             }
             break;
         }
-*/
     case e_Bond:
-/*
         {
             // Does it make any sense to GetTotalRange() from a bond?
-            const CSeq_bond& loc = GetBond();
-            TSeqPos pos = loc.GetA().GetPoint();
+            const CSeq_bond& bond = GetBond();
+            const CSeq_point& pointA = bond.GetA();
+            x_UpdateId(id, &pointA.GetId());
+            TSeqPos pos = pointA.GetPoint();
             total_range = TRange(pos, pos);
-            if ( loc.IsSetB() ) {
-                pos = loc.GetB().GetPoint();
+            if ( bond.IsSetB() ) {
+                const CSeq_point& pointB = bond.GetB();
+                x_UpdateId(id, &pointB.GetId());
+                pos = pointB.GetPoint();
                 total_range += TRange(pos, pos);
             }
             break;
         }
-*/
     case e_Feat:
     default:
         {
