@@ -543,7 +543,8 @@ CDiagContextThreadData::~CDiagContextThreadData(void)
 }
 
 
-void ThreadDataTlsCleanup(CDiagContextThreadData* value, void* cleanup_data)
+void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
+                                           void* cleanup_data)
 {
     if ( cleanup_data ) {
         // Copy properties from the main thread's TLS to the global properties.
@@ -627,7 +628,7 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         // This value is used as a flag to copy threads' properties to global
         // upon TLS cleanup.
         data = new CDiagContextThreadData;
-        s_ThreadData.SetValue(data, ThreadDataTlsCleanup,
+        s_ThreadData.SetValue(data, CDiagContext::sx_ThreadDataTlsCleanup,
             CThread::GetSelf() ? 0 : (void*)(1));
     }
 
@@ -2222,9 +2223,11 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         s_MergeLinesSetBySetupDiag = true;
         TLogSizeLimitParam::SetDefault(0); // No log size limit
     }
-    else if ( s_MergeLinesSetBySetupDiag ) {
-        UnsetDiagPostFlag(eDPF_PreMergeLines);
-        UnsetDiagPostFlag(eDPF_MergeLines);
+    else {
+        if ( s_MergeLinesSetBySetupDiag ) {
+            UnsetDiagPostFlag(eDPF_PreMergeLines);
+            UnsetDiagPostFlag(eDPF_MergeLines);
+        }
         // Disable throttling
         ctx.SetLogRate_Limit(eLogRate_App, CRequestRateControl::kNoLimit);
         ctx.SetLogRate_Limit(eLogRate_Err, CRequestRateControl::kNoLimit);

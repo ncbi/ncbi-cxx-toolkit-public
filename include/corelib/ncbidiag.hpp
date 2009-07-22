@@ -1983,8 +1983,6 @@ private:
     static void x_StartRequest(void);
 
     typedef map<string, string> TProperties;
-    friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
-                                     void* cleanup_data);
     friend class CDiagContext_Extra;
 
     // Reset logging rates to the values stored in CParam-s
@@ -1992,6 +1990,10 @@ private:
 
     // Check message logging rate
     bool ApproveMessage(SDiagMessage& msg, bool* show_warning);
+
+    static void sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
+                                        void*                   cleanup_data);
+    friend class CDiagContextThreadData;
 
     friend class CDiagBuffer;
 
