@@ -1689,7 +1689,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             rf.SetFrom(rf.GetFrom()+rf.GetLength()%3);
         }
 
-        reading_frame = amap.MapRangeEditedToOrig(rf,true);
+        reading_frame = amap.MapRangeEditedToOrig(rf,false);
 
         cds_info.SetReadingFrame(reading_frame, false);
 
