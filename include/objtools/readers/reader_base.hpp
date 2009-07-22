@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CErrorContainer;
+class IErrorContainer;
 class CObjReaderLineException;
 
 //  ----------------------------------------------------------------------------

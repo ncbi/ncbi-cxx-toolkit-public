@@ -187,7 +187,7 @@ public:
     {
         m_Errors.push_back( 
             CLineError( err.Severity(), err.Line(), err.Message() ) );
-        return (err.Severity() < m_iAcceptLevel);
+        return (err.Severity() <= m_iAcceptLevel);
     };    
 protected:
     int m_iAcceptLevel;

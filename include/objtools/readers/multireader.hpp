@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CReaderBase;
-class CErrorContainer;
+class IErrorContainer;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CMultiReader
