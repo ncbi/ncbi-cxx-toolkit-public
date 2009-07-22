@@ -70,12 +70,12 @@ public:
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
         
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     //
     //  helpers:
@@ -95,7 +95,7 @@ protected:
     //
 protected:
     int m_iReaderFlags;
-    CErrorContainer* m_pErrors;
+    IErrorContainer* m_pErrors;
 };
 
 END_SCOPE(objects)

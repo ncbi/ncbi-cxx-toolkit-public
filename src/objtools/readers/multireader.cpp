@@ -80,6 +80,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/multireader.hpp>
@@ -119,7 +120,7 @@ CMultiReader::~CMultiReader()
 CRef< CSerialObject >
 CMultiReader::ReadObject(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer )
+    IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
     CReaderBase* pReader = CreateReader();
@@ -134,7 +135,7 @@ CMultiReader::ReadObject(
 CRef< CSerialObject >
 CMultiReader::ReadObject(
     CNcbiIstream& in,
-    CErrorContainer* pErrorContainer )
+    IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
     CReaderBase* pReader = CreateReader();

@@ -80,6 +80,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
@@ -122,7 +123,7 @@ CReaderBase::GetReader(
 CRef< CSerialObject >
 CReaderBase::ReadObject(
     CNcbiIstream& istr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -133,7 +134,7 @@ CReaderBase::ReadObject(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     CNcbiIstream& istr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -144,7 +145,7 @@ CReaderBase::ReadSeqAnnot(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     ILineReader&,
-    CErrorContainer* ) 
+    IErrorContainer* ) 
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> object( new CSeq_annot() );
@@ -155,7 +156,7 @@ CReaderBase::ReadSeqAnnot(
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     CNcbiIstream& istr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -166,7 +167,7 @@ CReaderBase::ReadSeqEntry(
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     ILineReader&,
-    CErrorContainer* ) 
+    IErrorContainer* ) 
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_entry> object( new CSeq_entry() );
@@ -225,14 +226,14 @@ bool CReaderBase::SplitLines(
 void
 CReaderBase::ProcessError(
     CObjReaderLineException& err,
-    CErrorContainer* pContainer )
+    IErrorContainer* pContainer )
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
     if ( 0 == pContainer ) {
         throw( err );
     }
-    if ( ! pContainer->PostError( err ) )
+    if ( ! pContainer->PutError( err ) )
     {
         throw( err );
     }

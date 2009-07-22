@@ -80,6 +80,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/error_codes.hpp>
@@ -113,7 +114,7 @@ CBedReader::~CBedReader()
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
     CRef< CSeq_annot > annot( new CSeq_annot );
@@ -152,7 +153,7 @@ CBedReader::ReadSeqAnnot(
 CRef< CSerialObject >
 CBedReader::ReadObject(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 

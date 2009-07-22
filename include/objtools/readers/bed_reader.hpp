@@ -68,12 +68,12 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     //
     //  helpers:

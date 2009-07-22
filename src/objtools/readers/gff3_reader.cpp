@@ -80,6 +80,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/error_codes.hpp>
@@ -145,7 +146,7 @@ bool CGff3Reader::VerifyLine(
 CRef< CSeq_entry >
 CGff3Reader::ReadSeqEntry(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     string line;
@@ -161,7 +162,7 @@ CGff3Reader::ReadSeqEntry(
 CRef< CSerialObject >
 CGff3Reader::ReadObject(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     string line;

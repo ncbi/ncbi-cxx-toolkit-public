@@ -47,6 +47,7 @@
 #include <objtools/readers/reader_exception.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>

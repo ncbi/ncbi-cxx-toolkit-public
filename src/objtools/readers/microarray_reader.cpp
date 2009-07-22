@@ -80,6 +80,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/microarray_reader.hpp>
@@ -113,7 +114,7 @@ CMicroArrayReader::~CMicroArrayReader()
 CRef< CSerialObject >
 CMicroArrayReader::ReadObject(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
@@ -125,7 +126,7 @@ CMicroArrayReader::ReadObject(
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
-    CErrorContainer* pErrorContainer ) 
+    IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef< CSeq_annot > annot( new CSeq_annot );

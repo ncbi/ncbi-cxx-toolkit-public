@@ -72,32 +72,32 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         CNcbiIstream&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        CErrorContainer* =0 ) =0;
+        IErrorContainer* =0 ) =0;
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         CNcbiIstream&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        CErrorContainer* =0 );
+        IErrorContainer* =0 );
                 
     //
     //  Class helper functions:
@@ -111,7 +111,7 @@ protected:
     void
     ProcessError(
         CObjReaderLineException&,
-        CErrorContainer* );
+        IErrorContainer* );
         
     //
     //  Data:

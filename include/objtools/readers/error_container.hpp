@@ -34,130 +34,60 @@
 #define OBJTOOLS_READERS___ERRORCONTAINER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
-class CLineError
+class IErrorContainer
 //  ============================================================================
 {
 public:
-    CLineError(
-        EDiagSev eSeverity = eDiag_Error,
-        unsigned int uLine = 0,
-        const std::string& strMessage = std::string( "" ) )
-    : m_eSeverity( eSeverity ), m_uLine( uLine ), m_strMessage( strMessage ) {};
-        
-    EDiagSev
-    Severity() const { return m_eSeverity; };
-    
-    unsigned int
-    Line() const { return m_uLine; };
-    
-    std::string
-    Message() const { return m_strMessage; };
-    
-    std::string
-    SeverityStr() const 
-    {
-        switch ( m_eSeverity ) {
-        default:
-            return "Unknown";
-        case eDiag_Info:
-            return "Info";
-        case eDiag_Warning:
-            return "Warning";
-        case eDiag_Error:
-            return "Error";
-        case eDiag_Critical:
-            return "Critical";
-        case eDiag_Fatal:
-            return "Fatal";
-        }
-    };
-    
-    void Dump( 
-        std::ostream& out )
-    {
-        out << "            " << SeverityStr() << ":" << endl;
-        out << "Line:       " << Line() << endl;
-        out << "Message:    " << Message() << endl;
-        out << endl;
-    };
-        
-protected:
-    EDiagSev m_eSeverity;
-    unsigned int m_uLine;
-    std::string m_strMessage;
-};
-
-//  ============================================================================
-class CObjReaderLineException
-//  ============================================================================
-    : public CObjReaderParseException
-{
-public:
-    CObjReaderLineException(
-        EDiagSev eSeverity,
-        unsigned int uLine,
-        const std::string& strMessage )
-    : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine, 
-        eDiag_Info ) 
-    {
-        SetSeverity( eSeverity );
-    };
-    
-    EDiagSev Severity() const { return GetSeverity(); };
-    unsigned int LineNumber() const { return m_uLineNumber; };
-    const std::string& Message() const { return GetMsg(); };
-    
     //
-    //  Cludge alert: The line number may not be known at the time the exception
-    //  is generated. In that case, the exception will be fixed up before being
-    //  rethrown.
+    //  return true if the error was added to the container, false if not. In the
+    //  second case, the caller should terminate all further processing
     //
-    void 
-    SetLineNumber(
-        unsigned int uLineNumber ) { m_uLineNumber = uLineNumber; };
+    virtual bool
+    PutError(
+        const ILineError& ) =0;
+    
+    virtual const ILineError&
+    GetError(
+        size_t ) =0;
         
-protected:
-    unsigned int m_uLineNumber;
+    virtual size_t
+    Count() const =0;
+        
+    virtual void
+    ClearAll() =0;
 };
-        
+            
 //  ============================================================================
-class CErrorContainer
+class CErrorContainerBase:
 //  ============================================================================
+    public IErrorContainer
 {
 public:
-    CErrorContainer() {};
+    CErrorContainerBase() {};
+    virtual ~CErrorContainerBase() {};
     
 public:
-    bool
-    PostError(
-        const CObjReaderLineException& err ) 
-    { 
-        m_Errors.push_back( 
-            CLineError( err.Severity(), err.LineNumber(), err.Message() ) );
-        return ( err.Severity() < eDiag_Critical );
-    };
-        
     size_t
     Count() const { return m_Errors.size(); };
     
     void
     ClearAll() { m_Errors.clear(); };
     
-    const CLineError&
+    const ILineError&
     GetError(
         size_t uPos ) { return m_Errors[ uPos ]; };
     
-    void Dump(
+    virtual void Dump(
         std::ostream& out )
     {
         if ( m_Errors.size() ) {
-//            out << "ErrorContainer with " << m_Errors.size() << "errors:" << endl;
             std::vector<CLineError>::iterator it;
             for ( it= m_Errors.begin(); it != m_Errors.end(); ++it ) {
                 it->Dump( out );
@@ -168,12 +98,101 @@ public:
             out << "(( no errors ))" << endl;
         }
     };
-            
+                
 protected:
     std::vector< CLineError > m_Errors;
-        
 };
 
+//  ============================================================================
+class CErrorContainerLenient:
+//
+//  Accept everything.
+//  ============================================================================
+    public CErrorContainerBase
+{
+public:
+    CErrorContainerLenient() {};
+    ~CErrorContainerLenient() {};
+    
+    bool
+    PutError(
+        const ILineError& err ) 
+    {
+        m_Errors.push_back( 
+            CLineError( err.Severity(), err.Line(), err.Message() ) );
+        return true;
+    };
+};        
+
+//  ============================================================================
+class CErrorContainerStrict:
+//
+//  Don't accept any errors, at all.
+//  ============================================================================
+    public CErrorContainerBase
+{
+public:
+    CErrorContainerStrict() {};
+    ~CErrorContainerStrict() {};
+    
+    bool
+    PutError(
+        const ILineError& err ) 
+    {
+        m_Errors.push_back( 
+            CLineError( err.Severity(), err.Line(), err.Message() ) );
+        return false;
+    };
+};        
+
+//  ===========================================================================
+class CErrorContainerCount:
+//
+//  Accept up to <<count>> errors, any level.
+//  ===========================================================================
+    public CErrorContainerBase
+{
+public:
+    CErrorContainerCount(
+        size_t uMaxCount ): m_uMaxCount( uMaxCount ) {};
+    ~CErrorContainerCount() {};
+    
+    bool
+    PutError(
+        const ILineError& err ) 
+    {
+        m_Errors.push_back( 
+            CLineError( err.Severity(), err.Line(), err.Message() ) );
+        return (Count() < m_uMaxCount);
+    };    
+protected:
+    size_t m_uMaxCount;
+};
+
+//  ===========================================================================
+class CErrorContainerLevel:
+//
+//  Accept evrything up to a certain level.
+//  ===========================================================================
+    public CErrorContainerBase
+{
+public:
+    CErrorContainerLevel(
+        int iLevel ): m_iAcceptLevel( iLevel ) {};
+    ~CErrorContainerLevel() {};
+    
+    bool
+    PutError(
+        const ILineError& err ) 
+    {
+        m_Errors.push_back( 
+            CLineError( err.Severity(), err.Line(), err.Message() ) );
+        return (err.Severity() < m_iAcceptLevel);
+    };    
+protected:
+    int m_iAcceptLevel;
+};
+    
 END_objects_SCOPE
 END_NCBI_SCOPE
 
