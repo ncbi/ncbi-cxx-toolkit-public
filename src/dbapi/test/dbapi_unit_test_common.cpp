@@ -71,25 +71,25 @@ CDBSetConnParams::~CDBSetConnParams(void)
 {
 }
 
-Uint4 
+Uint4
 CDBSetConnParams::GetProtocolVersion(void) const
 {
     return m_ProtocolVersion;
 }
 
-string 
+string
 CDBSetConnParams::GetServerName(void) const
 {
     return m_ServerName;
 }
 
-string 
+string
 CDBSetConnParams::GetUserName(void) const
 {
     return m_UserName;
 }
 
-string 
+string
 CDBSetConnParams::GetPassword(void) const
 {
     return m_Password;
@@ -177,7 +177,7 @@ bool CommonInit(void)
 #endif
 
     DBAPI_RegisterDriver_FTDS();
-    DBAPI_RegisterDriver_FTDS_ODBC();
+    //DBAPI_RegisterDriver_FTDS_ODBC();
 
 #else
     CPluginManager_DllResolver::EnableGlobally(true);
@@ -329,17 +329,17 @@ string GetSybaseClientVersion(void)
     CNcbiEnvironment env;
     sybase_version = env.Get("SYBASE");
 
-	if (!sybase_version.empty()) {
-		CDirEntry dir_entry(sybase_version);
-		dir_entry.DereferenceLink();
-		sybase_version = dir_entry.GetPath();
+    if (!sybase_version.empty()) {
+        CDirEntry dir_entry(sybase_version);
+        dir_entry.DereferenceLink();
+        sybase_version = dir_entry.GetPath();
 
-		sybase_version = sybase_version.substr(
-				sybase_version.find_last_of('/') + 1
-				);
-	} else {
-		sybase_version = "0.0";
-	}
+        sybase_version = sybase_version.substr(
+                sybase_version.find_last_of('/') + 1
+                );
+    } else {
+        sybase_version = "0.0";
+    }
 #endif
 
     return sybase_version;
@@ -350,21 +350,21 @@ NCBITEST_INIT_VARIABLES(parser)
 {
     ////////////////////////
     // Sybase ...
-	{
-		double syb_client_ver = 0.0;
-		const string syb_client_ver_str = GetSybaseClientVersion();
+    {
+        double syb_client_ver = 0.0;
+        const string syb_client_ver_str = GetSybaseClientVersion();
 
-		if (!syb_client_ver_str.empty()) {
-			try {
-				syb_client_ver = NStr::StringToDouble(syb_client_ver_str.substr(0, 4));
-			} catch (const CStringException&) {
-				// Conversion error
-			}
-		}
+        if (!syb_client_ver_str.empty()) {
+            try {
+                syb_client_ver = NStr::StringToDouble(syb_client_ver_str.substr(0, 4));
+            } catch (const CStringException&) {
+                // Conversion error
+            }
+        }
 
-		parser->AddSymbol("SYBASE_ClientVersion", syb_client_ver);
+        parser->AddSymbol("SYBASE_ClientVersion", syb_client_ver);
 
-	}
+    }
 
     ///////////////////////
     // Configuration-related ...
@@ -452,18 +452,18 @@ string CUnitTestParams::GetServerName(void) const
     return server_name;
 }
 
-CDBConnParams::EServerType 
+CDBConnParams::EServerType
 CUnitTestParams::GetServerType(void) const
 {
     const string server_name = GetThis().GetServerName();
     const string driver_name = GetThis().GetDriverName();
 
-    if (driver_name == "dblib" 
+    if (driver_name == "dblib"
         || driver_name == "ftds_dblib"
         ) {
         if (NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
             || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
-            ) 
+            )
         {
             return eSybaseSQLServer;
         }
@@ -576,7 +576,7 @@ CTestArguments::SetDatabaseParameters(void)
          // GetDriverName() == odbc_driver ||
          // GetDriverName() == ftds_odbc_driver ||
          GetDriverName() == ftds_dblib_driver) && GetServerType() == CDBConnParams::eMSSqlServer
-        ) 
+        )
     {
         m_ParamBase.SetEncoding(eEncoding_UTF8);
         m_ParamBase2.SetEncoding(eEncoding_UTF8);

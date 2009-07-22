@@ -98,7 +98,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
 #endif
 
     DBAPI_RegisterDriver_FTDS();
-    DBAPI_RegisterDriver_FTDS_ODBC();
+    //DBAPI_RegisterDriver_FTDS_ODBC();
 
 #endif // NCBI_DLL_BUILD
 }

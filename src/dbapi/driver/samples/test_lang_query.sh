@@ -6,8 +6,7 @@
 ulimit -n 1536 > /dev/null 2>&1
 
 
-# driver_list="ftds64_dblib"
-driver_list="ctlib dblib ftds odbc ftds_odbc"
+driver_list="ctlib dblib ftds odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="MSDEV1 CLEMENTI"

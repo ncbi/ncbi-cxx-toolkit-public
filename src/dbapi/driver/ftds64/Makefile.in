@@ -2,7 +2,7 @@
 
 USR_PROJ = @freetds@
 POTENTIAL_SUB_PROJ = freetds
-SUB_PROJ = odbc dblib ctlib
+SUB_PROJ = ctlib
 
 REQUIRES = FreeTDS
 
