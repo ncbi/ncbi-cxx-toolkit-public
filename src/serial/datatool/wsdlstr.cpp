@@ -137,6 +137,30 @@ const CWsdlDataType* x_WsdlDataType(const CDataType *type)
     return dynamic_cast<const CWsdlDataType*>(type);
 }
 
+static
+void x_CollectMembers(
+    list<CWsdlTypeStrings::TMembers::const_iterator>& container,
+    const CWsdlDataType* memb_type,
+    const CWsdlTypeStrings::TMembers& members)
+{
+    CDataMemberContainerType::TMembers memin = memb_type->GetMembers();
+    ITERATE( CDataMemberContainerType::TMembers, mi, memin) {
+        const string& name = (*mi)->GetName();
+        ITERATE ( CWsdlTypeStrings::TMembers, ii, members ) {
+            if (!x_WsdlDataType(ii->dataType) && ii->externalName == name) {
+                container.push_back(ii);
+            }
+        }
+    }
+}
+static
+bool x_IsNullDataType(CWsdlTypeStrings::TMembers::const_iterator i)
+{
+    if (i->ref && i->dataType) {
+        return dynamic_cast<const CNullDataType*>(i->dataType->Resolve()) != 0;
+    }
+    return false;
+}
 
 void CWsdlTypeStrings::GenerateClassCode(
     CClassCode& code, CNcbiOstream& setters,
@@ -161,6 +185,7 @@ void CWsdlTypeStrings::GenerateClassCode(
         }
     }
 
+    set<string> regOut;
     ITERATE ( TMembers, i, m_Members ) {
 
 // collect operation inputs and outputs
@@ -170,7 +195,9 @@ void CWsdlTypeStrings::GenerateClassCode(
         }
 
         string soapaction("");
+        list<TMembers::const_iterator> headerinputs;
         list<TMembers::const_iterator> inputs;
+        list<TMembers::const_iterator> headeroutputs;
         list<TMembers::const_iterator> outputs;
         // operation
         CDataMemberContainerType::TMembers memb = type->GetMembers();
@@ -183,49 +210,57 @@ void CWsdlTypeStrings::GenerateClassCode(
                 }
                 continue;
             }
-            if (memb_type->GetWsdlType() == CWsdlDataType::eWsdlInput) {
-                // input
-                CDataMemberContainerType::TMembers memin = memb_type->GetMembers();
-                ITERATE( CDataMemberContainerType::TMembers, mi, memin) {
-                    const string& name = (*mi)->GetName();
-                    ITERATE ( TMembers, ii, m_Members ) {
-                        if (!x_WsdlDataType(ii->dataType) && ii->externalName == name) {
-                            inputs.push_back(ii);
-                        }
-                    }
-                }
-            }
-            if (memb_type->GetWsdlType() == CWsdlDataType::eWsdlOutput) {
-                // output
-                CDataMemberContainerType::TMembers memout = memb_type->GetMembers();
-                ITERATE( CDataMemberContainerType::TMembers, mo, memout) {
-                    const string& name = (*mo)->GetName();
-                    ITERATE ( TMembers, ii, m_Members ) {
-                        if (!x_WsdlDataType(ii->dataType) && ii->externalName == name) {
-                            outputs.push_back(ii);
-                        }
-                    }
-                }
+            switch (memb_type->GetWsdlType()) {
+            case CWsdlDataType::eWsdlHeaderInput:
+                x_CollectMembers( headerinputs,memb_type, m_Members);
+                break;
+            case CWsdlDataType::eWsdlInput:
+                x_CollectMembers( inputs,memb_type, m_Members);
+                break;
+            case CWsdlDataType::eWsdlHeaderOutput:
+                x_CollectMembers( headeroutputs,memb_type, m_Members);
+                break;
+            case CWsdlDataType::eWsdlOutput:
+                x_CollectMembers( outputs,memb_type, m_Members);
+                break;
+            default:
+                break;
             }
         }
 
 // generate operation code
-        string separator("\n        ");
-        string inout_separator = "," + separator;
-        
+
         //outputs
         string methodRet("void");
         list<string> methodOut;
-        int out_counter=0;
+        int out_counter=0, hout_counter=0;
+        size_t out_total = headeroutputs.size() + outputs.size();
+
+        ITERATE( list<TMembers::const_iterator>, out, headeroutputs) {
+            ++out_counter;
+            string reg("RegisterObjectType(");
+            reg += (*out)->type->GetCType(code.GetNamespace());
+            reg += "::GetTypeInfo);";
+            regOut.insert(reg);
+            string out_param = ncbiNamespace + "CConstRef< " +
+                 (*out)->type->GetCType(code.GetNamespace()) + " >";
+            if (out_total == 1) {
+                methodRet = out_param;
+            } else {
+                out_param += "& out" + NStr::IntToString(out_counter);
+                methodOut.push_back(out_param);
+            }
+        }
+        hout_counter = out_counter;
         ITERATE( list<TMembers::const_iterator>, out, outputs) {
             ++out_counter;
             string reg("RegisterObjectType(");
             reg += (*out)->type->GetCType(code.GetNamespace());
             reg += "::GetTypeInfo);";
-            code.AddConstructionCode(reg);
+            regOut.insert(reg);
             string out_param = ncbiNamespace + "CConstRef< " +
                  (*out)->type->GetCType(code.GetNamespace()) + " >";
-            if (outputs.size() == 1) {
+            if (out_total == 1) {
                 methodRet = out_param;
             } else {
                 out_param += "& out" + NStr::IntToString(out_counter);
@@ -233,72 +268,120 @@ void CWsdlTypeStrings::GenerateClassCode(
             }
         }
 
+        string separator("\n    ");
+        string hpp_separator("\n        ");
+        string comma_separator = "," + separator;
+        string commahpp_separator = "," + hpp_separator;
+        string inout_separator = "," + separator;
+        string inouthpp_separator = "," + hpp_separator;
         if (methodOut.empty()) {
             inout_separator = "";
+            inouthpp_separator = "";
         }
 
         // inputs
         list<string> methodIn;
-        int in_counter=0;
-        string in_param;
+        list<string> methodInNull;
+        int in_counter=0, hin_counter=0;
+        ITERATE( list<TMembers::const_iterator>, in, headerinputs) {
+            ++in_counter;
+            string in_type((*in)->type->GetCType(code.GetNamespace()));
+            string in_name(string("in") + NStr::IntToString(in_counter));
+            if (x_IsNullDataType(*in)) {
+                methodInNull.push_back(in_type + " " + in_name + ";");
+                methodInNull.push_back(in_name + ".Set();");
+            } else {
+                methodIn.push_back(string("const ") + in_type + "& " + in_name);
+            }
+        }
+        hin_counter = in_counter;
         ITERATE( list<TMembers::const_iterator>, in, inputs) {
             ++in_counter;
-            in_param =
-                string("const ") + (*in)->type->GetCType(code.GetNamespace()) +
-                "& in" + NStr::IntToString(in_counter);
-            methodIn.push_back(in_param);
+            string in_type((*in)->type->GetCType(code.GetNamespace()));
+            string in_name(string("in") + NStr::IntToString(in_counter));
+            if (x_IsNullDataType(*in)) {
+                methodInNull.push_back(in_type + " " + in_name + ";");
+                methodInNull.push_back(in_name + ".Set();");
+            } else {
+                methodIn.push_back(string("const ") + in_type + "& " + in_name);
+            }
         }
-        in_param = ncbiNamespace + "CConstRef< " + ncbiNamespace + "CSoapFault" + " >* fault";
-        methodIn.push_back(in_param);
+        methodIn.push_back(
+            ncbiNamespace + "CConstRef< " + ncbiNamespace + "CSoapFault" + " >* fault");
 
         // declaration
+        header << "\n";
         i->comments.PrintHPPMember(header);
         header << "    "
-            << methodRet << "\n    " << i->externalName << "(";
-        header << separator
-            << NStr::Join(methodOut,string(",") + separator)
-            << inout_separator
-            << NStr::Join(methodIn,string(",") + separator)
-            << " = 0) const;\n\n";
+            << methodRet << separator << i->externalName << "(";
+        header << hpp_separator
+            << NStr::Join(methodOut,commahpp_separator)
+            << inouthpp_separator
+            << NStr::Join(methodIn,commahpp_separator)
+            << " = 0) const;\n";
 
         // definition
         methods
             << methodRet << "\n"
             << methodPrefix << i->externalName << "(";
         methods << separator
-            << NStr::Join(methodOut,string(",") + separator)
+            << NStr::Join(methodOut,comma_separator)
             << inout_separator
-            << NStr::Join(methodIn,string(",") + separator)
-            << ") const\n";
-        methods
-            << "{\n"
-            << "    " << ncbiNamespace << "CSoapMessage request, response;\n";
-        for (int p=1; p <= in_counter; ++p) {
-            methods
-                << "    request.AddObject( in" << p
-                << ", "<< ncbiNamespace << "CSoapMessage::eMsgBody);\n";
+            << NStr::Join(methodIn,comma_separator)
+            << ") const\n{";
+        if (!methodInNull.empty()) {
+            methods << separator
+                << NStr::Join(methodInNull,separator);
         }
-        methods << "    Invoke(response,request,fault";
+        methods << separator
+            << ncbiNamespace << "CSoapMessage request, response;";
+        for (int p=1; p <= in_counter; ++p) {
+            methods << separator
+                << "request.AddObject( in" << p
+                << ", "<< ncbiNamespace;
+            if (p <= hin_counter) {
+                methods <<  "CSoapMessage::eMsgHeader";
+            } else {
+                methods <<  "CSoapMessage::eMsgBody";
+            }
+            methods <<  ");";
+        }
+        methods << separator << "Invoke(response,request,fault";
         if (!soapaction.empty()) {
             methods << "," << "\"" << soapaction << "\"";
         }
-        methods << ");\n";
+        methods << ");";
         out_counter=0;
-        ITERATE( list<TMembers::const_iterator>, out, outputs) {
+        ITERATE( list<TMembers::const_iterator>, out, headeroutputs) {
             ++out_counter;
-            if (outputs.size() == 1) {
-                methods
-                    << "    return ";
+            methods << separator;
+            if (out_total == 1) {
+                methods << "return ";
             } else {
-                methods
-                    << "    out" << out_counter << " = ";
+                methods << "out" << out_counter << " = ";
             }
             methods
                 << ncbiNamespace << "SOAP_GetKnownObject< "
                 << (*out)->type->GetCType(code.GetNamespace())
-                << " >(response);\n";
+                << " >(response, " << ncbiNamespace << "CSoapMessage::eMsgHeader);";
         }
-        methods << "}\n\n";
+        ITERATE( list<TMembers::const_iterator>, out, outputs) {
+            ++out_counter;
+            methods << separator;
+            if (out_total == 1) {
+                methods << "return ";
+            } else {
+                methods << "out" << out_counter << " = ";
+            }
+            methods
+                << ncbiNamespace << "SOAP_GetKnownObject< "
+                << (*out)->type->GetCType(code.GetNamespace())
+                << " >(response, " << ncbiNamespace << "CSoapMessage::eMsgBody);";
+        }
+        methods << "\n}\n\n";
+    }
+    ITERATE( set<string>, reg, regOut) {
+        code.AddConstructionCode(*reg);
     }
 }
 

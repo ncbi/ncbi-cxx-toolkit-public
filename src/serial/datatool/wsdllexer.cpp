@@ -70,6 +70,7 @@ TToken WSDLLexer::LookupKeyword(void)
     case 4:
         CHECK("part", K_PART, 4);
         CHECK("port", K_PORT, 4);
+        CHECK("body", K_BODY, 4);
         break;
     case 5:
         CHECK("input", K_INPUT, 5);
@@ -78,6 +79,7 @@ TToken WSDLLexer::LookupKeyword(void)
     case 6:
         CHECK("schema", K_SCHEMA, 6);
         CHECK("output", K_OUTPUT, 6);
+        CHECK("header", K_HEADER, 6);
         break;
     case 7:
         CHECK("message", K_MESSAGE, 7);

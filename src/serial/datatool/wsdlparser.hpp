@@ -61,6 +61,8 @@ protected:
     void ParsePortType(DTDElement& node);
     void ParseBinding(DTDElement& node);
     void ParseOperation(DTDElement& node);
+    void ParseBody(DTDElement& node);
+    void ParseHeader(DTDElement& node);
     void ParseInput(DTDElement& node);
     void ParseOutput(DTDElement& node);
     void ParsePart(DTDElement& node);
@@ -83,6 +85,7 @@ private:
     void CollectDataObjects(DTDElement& agent, DTDElement& node);
 
     bool m_ParsingTypes;
+    bool m_ParsingOutput;
 };
 
 END_NCBI_SCOPE

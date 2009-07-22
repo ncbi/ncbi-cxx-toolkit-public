@@ -138,6 +138,8 @@ static const TToken K_BINDING        = 408;
 static const TToken K_SERVICE        = 409;
 static const TToken K_PORT           = 410;
 static const TToken K_ADDRESS        = 411;
+static const TToken K_BODY           = 412;
+static const TToken K_HEADER         = 413;
 
 END_NCBI_SCOPE
 

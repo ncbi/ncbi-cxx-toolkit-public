@@ -1023,10 +1023,12 @@ CDataType* DTDParser::x_Type(
                 case DTDElement::eWsdlEndpoint:
                     wt = CWsdlDataType::eWsdlEndpoint;
                     break;
-                case DTDElement::eWsdlOperation: wt = CWsdlDataType::eWsdlOperation; break;
-                case DTDElement::eWsdlInput:     wt = CWsdlDataType::eWsdlInput;     break;
-                case DTDElement::eWsdlOutput:    wt = CWsdlDataType::eWsdlOutput;    break;
-                case DTDElement::eWsdlMessage:   wt = CWsdlDataType::eWsdlMessage;   break;
+                case DTDElement::eWsdlOperation:    wt = CWsdlDataType::eWsdlOperation;   break;
+                case DTDElement::eWsdlHeaderInput:  wt = CWsdlDataType::eWsdlHeaderInput; break;
+                case DTDElement::eWsdlInput:        wt = CWsdlDataType::eWsdlInput;       break;
+                case DTDElement::eWsdlHeaderOutput: wt = CWsdlDataType::eWsdlHeaderOutput; break;
+                case DTDElement::eWsdlOutput:       wt = CWsdlDataType::eWsdlOutput;      break;
+                case DTDElement::eWsdlMessage:      wt = CWsdlDataType::eWsdlMessage;     break;
                 default:
                    ParseError("Unknown WSDL element type", "element");
                    break;
@@ -1485,7 +1487,9 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eWsdlEndpoint:  cout << "WsdlEndpoint";  break;
     case DTDElement::eWsdlUnsupportedEndpoint:  cout << "WsdlUnsupportedEndpoint";  break;
     case DTDElement::eWsdlOperation: cout << "WsdlOperation"; break;
+    case DTDElement::eWsdlHeaderInput:  cout << "WsdlHeaderInput";    break;
     case DTDElement::eWsdlInput:     cout << "WsdlInput";    break;
+    case DTDElement::eWsdlHeaderOutput:  cout << "WsdlHeaderOutput";    break;
     case DTDElement::eWsdlOutput:    cout << "WsdlOutput";   break;
     case DTDElement::eWsdlMessage:   cout << "WsdlMessage";  break;
     }

@@ -213,7 +213,9 @@ public:
         eWsdlEndpoint,
         eWsdlUnsupportedEndpoint,
         eWsdlOperation,
+        eWsdlHeaderInput,
         eWsdlInput,
+        eWsdlHeaderOutput,
         eWsdlOutput,
         eWsdlMessage
     };

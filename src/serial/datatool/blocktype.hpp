@@ -199,7 +199,9 @@ public:
         eWsdlService,
         eWsdlEndpoint,
         eWsdlOperation,
+        eWsdlHeaderInput,
         eWsdlInput,
+        eWsdlHeaderOutput,
         eWsdlOutput,
         eWsdlMessage
     };

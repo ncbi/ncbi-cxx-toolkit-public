@@ -52,6 +52,7 @@ WSDLParser::WSDLParser(WSDLLexer& lexer)
 {
     m_SrcType = eWsdl;
     m_ParsingTypes = false;
+    m_ParsingOutput = false;
 }
 
 WSDLParser::~WSDLParser(void)
@@ -173,6 +174,12 @@ void WSDLParser::ParseContent(DTDElement& node)
         case K_OUTPUT:
             ParseOutput(node);
             break;
+        case K_BODY:
+            ParseBody(node);
+            break;
+        case K_HEADER:
+            ParseHeader(node);
+            break;
         case K_PART:
             ParsePart(node);
             break;
@@ -266,6 +273,46 @@ void WSDLParser::ParseOperation(DTDElement& node)
     }
 }
 
+void WSDLParser::ParseBody(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
+void WSDLParser::ParseHeader(DTDElement& node)
+{
+    EElementNamespace ns = GetElementNamespace(m_ElementPrefix);
+    TToken tok = GetRawAttributeSet();
+    if (ns == eSoapNamespace) {
+        if (GetAttribute("message")) {
+            DTDElement::EType etype;
+            etype = m_ParsingOutput ? DTDElement::eWsdlHeaderOutput : DTDElement::eWsdlHeaderInput;
+            string item_name(CreateEmbeddedName(node, etype));
+            DTDElement& item = m_MapElement[item_name];
+            item.SetEmbedded();
+            item.SetName(item_name);
+            item.SetType(etype);
+            item.SetSourceLine(Lexer().CurrentLine());
+            AddElementContent(node,item_name);
+
+            string msg_name(CreateWsdlName(m_Value,DTDElement::eWsdlMessage));
+            DTDElement& msg = m_MapElement[msg_name];
+            msg.SetName(msg_name);
+            msg.SetType( DTDElement::eWsdlMessage);
+            AddElementContent(item,msg_name);
+            if (tok == K_CLOSING) {
+                ParseContent(item);
+            }
+            return;
+        }
+    }
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
+}
+
 void WSDLParser::ParseInput(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
@@ -289,7 +336,7 @@ void WSDLParser::ParseInput(DTDElement& node)
         return;
     }
     if (tok == K_CLOSING) {
-        SkipContent();
+        ParseContent(node);
     }
 }
 
@@ -316,7 +363,9 @@ void WSDLParser::ParseOutput(DTDElement& node)
         return;
     }
     if (tok == K_CLOSING) {
-        SkipContent();
+        m_ParsingOutput = true;
+        ParseContent(node);
+        m_ParsingOutput = false;
     }
 }
 
@@ -399,8 +448,14 @@ string WSDLParser::CreateWsdlName(const string& name, DTDElement::EType type)
     case DTDElement::eWsdlOperation:
         id = string("operation:") + name;
         break;
+    case DTDElement::eWsdlHeaderInput:
+        id = string("headerinput:") + name;
+        break;
     case DTDElement::eWsdlInput:
         id = string("input:") + name;
+        break;
+    case DTDElement::eWsdlHeaderOutput:
+        id = string("headeroutput:") + name;
         break;
     case DTDElement::eWsdlOutput:
         id = string("output:") + name;
@@ -538,7 +593,9 @@ void WSDLParser::CollectDataObjects(void)
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
         DTDElement& node = i->second;
         if (node.GetType() == DTDElement::eWsdlEndpoint ||
+            node.GetType() == DTDElement::eWsdlHeaderInput ||
             node.GetType() == DTDElement::eWsdlInput ||
+            node.GetType() == DTDElement::eWsdlHeaderOutput ||
             node.GetType() == DTDElement::eWsdlOutput) {
             CollectDataObjects(node,node);
         }

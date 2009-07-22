@@ -1292,7 +1292,10 @@ void XSDParser::ProcessNamedTypes(void)
                         break;
                     }
                     PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
+                    string ns(m_TargetNamespace);
+                    m_TargetNamespace = node.GetNamespaceName();
                     ParseContent(node);
+                    m_TargetNamespace = ns;
                     node.SetTypeIfUnknown(DTDElement::eEmpty);
 // this is not always correct, but it seems that local elements
 // defined by means of global types should be made global as well
