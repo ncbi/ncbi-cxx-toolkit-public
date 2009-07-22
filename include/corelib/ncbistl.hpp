@@ -35,7 +35,6 @@
 /// The NCBI C++/STL use hints.
 
 
-#include <ncbiconf.h>
 #include <common/ncbi_export.h>
 
 

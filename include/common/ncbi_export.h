@@ -45,6 +45,8 @@
  *
  */
 
+#include <ncbiconf.h>
+
 /** @addtogroup WinDLL
  *
  * @{
