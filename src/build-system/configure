@@ -17651,6 +17651,11 @@ _ACEOF
 
 fi
 
+case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
+   GCC:[4-9]??\ *\ -fvisibility*|ICC:*\ -fvisibility* ) ;;
+   * ) ncbi_cv_c_attribute_visibility_default=unnecessary ;;
+esac
+
 echo "$as_me:$LINENO: checking whether $CC supports __attribute__((visibility(\"default\")))" >&5
 echo $ECHO_N "checking whether $CC supports __attribute__((visibility(\"default\")))... $ECHO_C" >&6
 if test "${ncbi_cv_c_attribute_visibility_default+set}" = set; then

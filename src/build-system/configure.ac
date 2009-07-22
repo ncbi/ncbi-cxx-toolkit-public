@@ -3049,6 +3049,11 @@ if test $ncbi_cv_c_attribute_destructor = yes; then
       [Define to 1 if your C compiler supports __attribute__((destructor))])
 fi
 
+case "$compiler:$compiler_version $CFLAGS $CXXFLAGS" in
+   GCC:[[4-9]]??\ *\ -fvisibility*|ICC:*\ -fvisibility* ) ;;
+   * ) ncbi_cv_c_attribute_visibility_default=unnecessary ;;
+esac
+
 AC_CACHE_CHECK([whether $CC supports __attribute__((visibility("default")))],
    ncbi_cv_c_attribute_visibility_default,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
