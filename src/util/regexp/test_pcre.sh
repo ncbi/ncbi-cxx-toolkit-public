@@ -21,8 +21,8 @@ case "`uname -s`" in
    diff testdata/wintestoutput3 $out  ||  errcode=3
    ;;
    
-  FreeBSD )
-   # Do not run test 2 on FreeBSD, some subtests fails here with "Bus error: 10 (core dumped)"
+  Darwin | FreeBSD )
+   # Some parts of test 2 can exceed available memory in some configurations.
    ;;
    
  * )
