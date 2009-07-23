@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 ///
-static CFastLocalTime s_LocalTime;
+static CFastLocalTime s_FastTime;
 
 
 // SPerConnInfo
@@ -57,8 +57,8 @@ void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
         timeout = socket->GetTimeout(eIO_ReadWrite);
     }
     if (timeout != kDefaultTimeout  &&  timeout != kInfiniteTimeout) {
-        expiration = s_LocalTime.GetLocalTime();
-        expiration.AddSecond(timeout->sec);
+        expiration = s_FastTime.GetLocalTime();
+        expiration.AddSecond(timeout->sec, CTime::eIgnoreDaylight);
         expiration.AddNanoSecond(timeout->usec * 1000);
     } else {
         expiration.Clear();
@@ -200,7 +200,7 @@ void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
 
 void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conns)
 {
-    CTime now(CTime::eCurrent, CTime::eGmt);
+    CTime now = s_FastTime.GetLocalTime();
     revived_conns.clear();
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
@@ -262,7 +262,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     polls.reserve(data.size()+1);
     polls.push_back(CSocketAPI::SPoll(
         dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
-    CTime current_time(CTime::eEmpty, CTime::eGmt);
+    CTime current_time(CTime::eEmpty);
     const CTime* alarm_time = NULL;
     const CTime* min_alarm_time = NULL;
     bool alarm_time_defined = false;
@@ -286,7 +286,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
             if (alarm_time != NULL) {
                 if (!alarm_time_defined) {
                     alarm_time_defined = true;
-                    current_time.SetCurrent();
+                    current_time = s_FastTime.GetLocalTime();
                     min_alarm_time = *alarm_time > current_time ?
                         alarm_time : NULL;
                     timer_requests.clear();
