@@ -179,8 +179,9 @@ BOOST_AUTO_TEST_CASE(RetrieveFromDefaultBlastDb_NoNcbirc)
 
     CAutoEnvironmentVariable auto_env1("NCBI", "/dev/null");
     CAutoEnvironmentVariable auto_env2("BLASTDB", "/blast/db/blast");
-    CMetaRegistry::SEntry sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    sentry.registry.Reset();
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    app->ReloadConfig(CMetaRegistry::fAlwaysReload, 0);
+
     SDataLoaderConfig dlconfig(true);
     BOOST_CHECK_EQUAL(dlconfig.m_BlastDbName, 
                       string(SDataLoaderConfig::kDefaultProteinBlastDb));
@@ -198,6 +199,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromDefaultBlastDb_NoNcbirc)
     for (size_t i = 0; i < sv.size(); i++) {
         BOOST_CHECK_EQUAL((char)seq[i], (char)sv[i]);
     }
+    app->GetConfig().IncludeNcbircIfAllowed();
 }
 
 // Motivated by JIRA WB-235
