@@ -3181,6 +3181,62 @@ DO_UNIQUE (STRING_IN_LIST, Var, Func)
 
 
 ///
+/// vector <string> macros
+
+/// STRING_IN_VECTOR macros
+
+#define STRING_IN_VECTOR_Type      vector <string>
+#define STRING_IN_VECTOR_Test(Var) (! (Var).empty())
+#define STRING_IN_VECTOR_Get(Var)  (Var)
+#define STRING_IN_VECTOR_Set(Var)  (Var)
+
+/// VECTOR_HAS_STRING
+
+#define VECTOR_HAS_STRING(Var) \
+ITEM_HAS (STRING_IN_VECTOR, Var)
+
+/// FOR_EACH_STRING_IN_VECTOR
+/// EDIT_EACH_STRING_IN_VECTOR
+// vector <string>& as input, dereference with [const] string& str = *itr;
+
+#define FOR_EACH_STRING_IN_VECTOR(Itr, Var) \
+FOR_EACH (STRING_IN_VECTOR, Itr, Var)
+
+#define EDIT_EACH_STRING_IN_VECTOR(Itr, Var) \
+EDIT_EACH (STRING_IN_VECTOR, Itr, Var)
+
+/// ADD_STRING_TO_VECTOR
+
+#define ADD_STRING_TO_VECTOR(Var, Ref) \
+ADD_ITEM (STRING_IN_VECTOR, Var, Ref)
+
+/// ERASE_STRING_IN_VECTOR
+
+#define ERASE_STRING_IN_VECTOR(Itr, Var) \
+VECTOR_ERASE_ITEM (STRING_IN_VECTOR, Itr, Var)
+
+/// STRING_IN_VECTOR_IS_SORTED
+
+#define STRING_IN_VECTOR_IS_SORTED(Var, Func) \
+IS_SORTED (STRING_IN_VECTOR, Var, Func)
+
+/// SORT_STRING_IN_VECTOR
+
+#define SORT_STRING_IN_VECTOR(Var, Func) \
+DO_VECTOR_SORT (STRING_IN_VECTOR, Var, Func)
+
+/// STRING_IN_VECTOR_IS_UNIQUE
+
+#define STRING_IN_VECTOR_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (STRING_IN_VECTOR, Var, Func)
+
+/// UNIQUE_STRING_IN_VECTOR
+
+#define UNIQUE_STRING_IN_VECTOR(Var, Func) \
+DO_UNIQUE (STRING_IN_VECTOR, Var, Func)
+
+
+///
 /// <string> macros
 
 /// CHAR_IN_STRING macros
