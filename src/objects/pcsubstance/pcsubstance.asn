@@ -137,7 +137,9 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         gene             INTEGER,                 -- Entrez Gene ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        probe            INTEGER                  -- Probe ID
+        probe            INTEGER,                 -- Probe ID
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        biosystem        INTEGER                  -- BioSystem ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
 }
 
