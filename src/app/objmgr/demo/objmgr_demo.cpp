@@ -754,7 +754,7 @@ int CDemoApp::Run(void)
             NcbiCout << "Sequence: length=" << seq_vect.size() << NcbiFlush;
             if ( check_seq_data ) {
                 CStopWatch sw(CStopWatch::eStart);
-                if ( seq_vect.CanGetRange(0, seq_vect.size() - 1) ) {
+                if ( seq_vect.CanGetRange(0, seq_vect.size()) ) {
                     NcbiCout << " data=";
                     sout.erase();
                     TSeqPos size = min(seq_vect.size(), 10u);
@@ -770,6 +770,15 @@ int CDemoApp::Run(void)
                              << " in " << sw;
                 }
             }
+            else {
+                try {
+                    seq_vect[seq_vect.size()-1];
+                    NcbiCout << " got last byte";
+                }
+                catch ( CException& exc ) {
+                    ERR_POST(" cannot get last byte: Exception: "<<exc.what());
+                }
+            }
             NcbiCout << NcbiEndl;
             if ( whole_sequence ) {
                 CStopWatch sw(CStopWatch::eStart);
@@ -780,8 +789,6 @@ int CDemoApp::Run(void)
                     NcbiCout << NStr::PrintableString(sout);
                 }
                 else {
-                    TSeqPos start2 = 10u;
-                    TSeqPos end2 = size-10u;
                     NcbiCout << NStr::PrintableString(sout.substr(0, 10));
                     NcbiCout << "..";
                     NcbiCout << NStr::PrintableString(sout.substr(size-10));
@@ -791,8 +798,22 @@ int CDemoApp::Run(void)
             if ( scan_whole_sequence ) {
                 CStopWatch sw(CStopWatch::eStart);
                 NcbiCout << "Scanning sequence..." << NcbiFlush;
-                for ( CSeqVector_CI it(seq_vect); it; ++it)
-                    ;
+                size_t pos = 0;
+                string buffer;
+                for ( CSeqVector_CI it(seq_vect); it; ) {
+                    _ASSERT(it.GetPos() == pos);
+                    if ( (pos & 255) == 0 ) {
+                        size_t cnt = min(size_t(99), seq_vect.size()-pos);
+                        it.GetSeqData(buffer, cnt);
+                        pos += cnt;
+                    }
+                    else {
+                        ++it;
+                        ++pos;
+                    }
+                    _ASSERT(it.GetPos() == pos);
+                }
+                _ASSERT(pos == seq_vect.size());
                 NcbiCout << "done" << " in " << sw << NcbiEndl;
             }
             // CSeq_descr iterator: iterates all descriptors starting
