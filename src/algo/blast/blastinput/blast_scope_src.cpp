@@ -113,18 +113,18 @@ SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig
     static const string kProtBlastDbLoaderConfig("BLASTDB_PROT_DATA_LOADER");
     static const string kNuclBlastDbLoaderConfig("BLASTDB_NUCL_DATA_LOADER");
 
-        const string& config_param = m_IsLoadingProteins 
-            ? kProtBlastDbLoaderConfig 
-            : kNuclBlastDbLoaderConfig;
+    const string& config_param = m_IsLoadingProteins 
+        ? kProtBlastDbLoaderConfig 
+        : kNuclBlastDbLoaderConfig;
 
     if (sentry.registry && sentry.registry->HasEntry("BLAST", config_param)) {
-            m_BlastDbName = sentry.registry->Get("BLAST", config_param);
-        } else {
-            _ASSERT(m_BlastDbName.empty());
-            m_BlastDbName = m_IsLoadingProteins 
-                ? kDefaultProteinBlastDb 
-                : kDefaultNucleotideBlastDb;
-        }
+        m_BlastDbName = sentry.registry->Get("BLAST", config_param);
+    } else {
+        _ASSERT(m_BlastDbName.empty());
+        m_BlastDbName = m_IsLoadingProteins 
+            ? kDefaultProteinBlastDb 
+            : kDefaultNucleotideBlastDb;
+    }
     _ASSERT( !m_BlastDbName.empty() );
 }
 
