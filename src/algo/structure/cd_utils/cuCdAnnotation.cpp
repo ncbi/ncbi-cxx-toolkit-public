@@ -1076,13 +1076,17 @@ void CCdAnnotationInfo::MappedToSlaveString(unsigned int row, vector<string>& in
     string rowStr = (addRowToAll) ? "Row " + NStr::UIntToString(row) + " Annot " : "Annot ";
     vector<string> ranges;
     CdAnnotMap rowAnnots;
-    bool mappingOK = MapRangesForRow(row, rowAnnots);
+
+    individualAnnotStrings.clear();
+    if (!MapRangesForRow(row, rowAnnots)) {
+        return;
+    }
+
     CdAnnotMapIt rowIt = rowAnnots.begin(), rowEnd = rowAnnots.end();
     AnnotDescrCit descrIt, descrEnd = m_annotDescrMap.end();
     
     RangeStringsForAnnots(rowAnnots, ranges);
 
-    individualAnnotStrings.clear();
     for (; rowIt != rowEnd; ++rowIt) {
         id = rowIt->first;
         descrIt = m_annotDescrMap.find(id);
