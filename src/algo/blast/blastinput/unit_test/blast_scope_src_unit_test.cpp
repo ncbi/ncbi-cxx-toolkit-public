@@ -168,6 +168,38 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData)
     }
 }
 
+// This is supposed to similate the absence of a .ncbirc file
+BOOST_AUTO_TEST_CASE(RetrieveFromDefaultBlastDb_NoNcbirc) 
+{
+    CSeq_loc seqloc;
+    seqloc.SetWhole().SetGi(129295);
+
+    const char* seq =
+"QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
+
+    CAutoEnvironmentVariable auto_env1("NCBI", "/dev/null");
+    CAutoEnvironmentVariable auto_env2("BLASTDB", "/blast/db/blast");
+    CMetaRegistry::SEntry sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    sentry.registry.Reset();
+    SDataLoaderConfig dlconfig(true);
+    BOOST_CHECK_EQUAL(dlconfig.m_BlastDbName, 
+                      string(SDataLoaderConfig::kDefaultProteinBlastDb));
+    CBlastScopeSourceWrapper scope_source(dlconfig);
+    CRef<CScope> scope = scope_source.NewScope();
+    string data_loader_name("BLASTDB_");
+    data_loader_name += string(SDataLoaderConfig::kDefaultProteinBlastDb);
+    data_loader_name += "Protein";
+    BOOST_REQUIRE_EQUAL(data_loader_name,
+                        scope_source.GetBlastDbLoaderName());
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    for (size_t i = 0; i < sv.size(); i++) {
+        BOOST_CHECK_EQUAL((char)seq[i], (char)sv[i]);
+    }
+}
+
 // Motivated by JIRA WB-235
 BOOST_AUTO_TEST_CASE(RetrieveFromBlastDbOnly_TestSequenceDataWithAccession) 
 {
