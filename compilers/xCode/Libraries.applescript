@@ -139,7 +139,7 @@ property proj : {name:"proj", path:"objects:proj", inc:{"proj__.cpp", "proj___.c
 property pub : {name:"pub", path:"objects:pub", inc:{"pub__.cpp", "pub___.cpp"}, asn1:true}
 property pubmed : {name:"pubmed", path:"objects:pubmed", inc:{"pubmed__.cpp", "pubmed___.cpp"}, asn1:true}
 property scoremat : {name:"scoremat", path:"objects:scoremat", inc:{"scoremat__.cpp", "scoremat___.cpp"}, asn1:true}
-property seq : {name:"seq", path:"objects:seq", inc:{"seq__.cpp", "seq___.cpp", "seqport_util.cpp", "seq_id_tree.cpp", "seq_id_handle.cpp", "seq_id_mapper.cpp", "seq_loc_mapper_base.cpp", "seq_align_mapper_base.cpp"}, asn1:true}
+property seq : {name:"seq", path:"objects:seq", inc:{"seq__.cpp", "seq___.cpp", "seqport_util.cpp", "seq_id_tree.cpp", "seq_id_handle.cpp", "seq_id_mapper.cpp", "seq_loc_mapper_base.cpp", "seq_align_mapper_base.cpp", "seqlocinfo.cpp"}, asn1:true}
 property seqalign : {name:"seqalign", path:"objects:seqalign", inc:{"seqalign__.cpp", "seqalign___.cpp"}, asn1:true}
 property seqblock : {name:"seqblock", path:"objects:seqblock", inc:{"seqblock__.cpp", "seqblock___.cpp"}, asn1:true}
 property seqfeat : {name:"seqfeat", path:"objects:seqfeat", inc:{"seqfeat__.cpp", "seqfeat___.cpp"}, asn1:true}
