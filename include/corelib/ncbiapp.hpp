@@ -241,7 +241,7 @@ public:
     ///   TRUE if a reload actually occurred.
     bool ReloadConfig(CMetaRegistry::TFlags flags
                       = CMetaRegistry::fReloadIfChanged,
-                      IRegistry::TFlags reg_flags = 0);
+                      IRegistry::TFlags reg_flags = IRegistry::fWithNcbirc);
 
     /// Flush the in-memory diagnostic stream (for "eDS_ToMemory" case only).
     ///
