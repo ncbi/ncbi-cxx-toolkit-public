@@ -520,6 +520,7 @@ CNCMessageHandler::x_AssignCmdParams(const map<string, string>& params)
     m_BlobKey.clear();
     m_BlobSubkey.clear();
     m_BlobVersion = 0;
+    m_KeyVersion = 1;
 
     string cache_name;
 
@@ -628,7 +629,7 @@ CNCMessageHandler::x_StartCommand(const SParsedCmd& cmd)
     m_DiagContext->SetRequestStatus(eStatus_OK);
 
     m_MaxCmdTime = m_CmdStartTime = m_Server->GetFastTime();
-    m_MaxCmdTime.AddSecond(m_Server->GetCmdTimeout());
+    m_MaxCmdTime.AddSecond(m_Server->GetCmdTimeout(), CTime::eIgnoreDaylight);
     x_CleanStateSpans();
 
     if (cmd_extra.need_blob_lock) {
@@ -1053,7 +1054,7 @@ CNCMessageHandler::x_DoCmd_Monitor(void)
     m_Socket->DisableOSSendDelay(false);
     m_SockBuffer.WriteMessage("OK:", "Monitor for " NETCACHED_VERSION "\n");
     m_Monitor->SetSocket(*m_Socket);
-    m_Server->CloseConnection(m_Socket);
+    x_CloseConnection();
     return true;
 }
 
