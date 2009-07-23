@@ -42,6 +42,10 @@
 BEGIN_NCBI_SCOPE
 
 
+///
+static CFastLocalTime s_LocalTime;
+
+
 // SPerConnInfo
 void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
     const TConnBase* conn)
@@ -53,7 +57,7 @@ void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
         timeout = socket->GetTimeout(eIO_ReadWrite);
     }
     if (timeout != kDefaultTimeout  &&  timeout != kInfiniteTimeout) {
-        expiration.SetCurrent();
+        expiration = s_LocalTime.GetLocalTime();
         expiration.AddSecond(timeout->sec);
         expiration.AddNanoSecond(timeout->usec * 1000);
     } else {
@@ -150,10 +154,11 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
         _TRACE("SetConnType called on unknown connection.");
     }
     else if (it->second.type != eClosedSocket) {
-        if (it->second.type == ePreDeferredSocket
-            &&  type == eInactiveSocket)
-        {
-            type = eDeferredSocket;
+        if (type == eInactiveSocket) {
+            if (it->second.type == ePreDeferredSocket)
+                type = eDeferredSocket;
+            else if (it->second.type == ePreClosedSocket)
+                type = eClosedSocket;
         }
         it->second.type = type;
         it->second.UpdateExpiration(conn);
@@ -188,7 +193,7 @@ void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
         _TRACE("Voluntarily closing connection " << conn);
         dynamic_cast<CServer_Connection*>(conn)
                                             ->OnSocketEvent(eServIO_OurClose);
-        it->second.type = eClosedSocket;
+        it->second.type = ePreClosedSocket;
     }
 }
 
@@ -206,8 +211,8 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
     NON_CONST_ITERATE(TData, it, data) {
         SPerConnInfo& info = it->second;
         //if (info.type != eListener) ++n_connections;
-        if (info.type == eActiveSocket  ||  info.type == eListener
-            ||  info.type == ePreDeferredSocket)
+        if (info.type != eInactiveSocket  &&  info.type != eDeferredSocket
+            &&  info.type != eClosedSocket)
         {
             continue;
         }

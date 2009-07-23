@@ -73,6 +73,7 @@ public:
         eListener,
         ePreDeferredSocket,
         eDeferredSocket,
+        ePreClosedSocket,
         eClosedSocket
     };
 
