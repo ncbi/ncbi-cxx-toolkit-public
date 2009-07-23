@@ -511,9 +511,9 @@ public:
         enum EPosition {ePosition = N};
     };
 
-#if !defined(NCBI_COMPILER_ICC) || NCBI_COMPILER_VERSION != 1010
-    // ICC 10 has a bug and doesn't compile with this line.
-    // Luckily it compiles successfully without it.
+#ifndef NCBI_COMPILER_ICC
+    // ICC 10 considers this declaration to be an error, and previous
+    // versions warn about it; all versions are happy to do without it.
     template <size_t N> friend class CClass;
 #endif
 
