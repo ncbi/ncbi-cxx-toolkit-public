@@ -370,8 +370,9 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             CAlnMap::TSegTypeFlags        ref_flags = alnmap.GetSegType(ref_row, i0);
             CAlnMap::TSegTypeFlags        tgt_flags = alnmap.GetSegType(tgt_row, i0);
 #endif
-            char                          type;
-            TSeqPos                       count;
+            //The type and count are guaranteed set by one of the if/else cases below.  
+            char                          type = 'X'; // Guaranteed set. Pacify compiler.
+            TSeqPos                       count = 0;  // Guaranteed set. Pacify compiler.
             TSignedSeqPos                 frameshift = 0;
 
             // cerr << "TARGET PIECE " << tgt_piece.GetFrom()

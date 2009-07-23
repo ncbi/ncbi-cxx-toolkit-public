@@ -371,9 +371,9 @@ private:
     TStyle      m_Style;
     TView       m_View;
     TFlags      m_Flags;  // custom flags
+    bool        m_RefSeqConventions;
     TGffOptions m_GffOptions;
 
-    bool        m_RefSeqConventions;
 };
 
 
