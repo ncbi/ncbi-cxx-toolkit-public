@@ -156,6 +156,9 @@ protected:
     typedef CTempString  TStr;
     typedef vector<TStr> TStrVec;
 
+    virtual void            x_Info(const string& message,
+                                   unsigned int line = 0);
+
     virtual void            x_Warn(const string& message,
                                    unsigned int line = 0);
 
@@ -220,6 +223,8 @@ protected:
     
     virtual bool            x_IsLineUcscMetaInformation(const TStr&);
 
+    virtual bool            x_SplitKeyValuePair( const string&, string&, string& );
+    
 private:
     typedef map<string, CRef<CSeq_id>, PNocase>    TSeqNameCache;
     typedef map<CConstRef<CSeq_id>, CRef<CBioseq>,

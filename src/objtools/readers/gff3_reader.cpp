@@ -177,6 +177,21 @@ CGff3Reader::ReadObject(
     
 //  ----------------------------------------------------------------------------                
 void 
+CGff3Reader::x_Info(
+    const string& message,
+    unsigned int line )
+//  ----------------------------------------------------------------------------                
+{
+    if ( !m_pErrors ) {
+        return CGFFReader::x_Info( message, line );
+    }
+    CObjReaderLineException err( eDiag_Info, line, message );
+    CReaderBase::m_uLineNumber = line;
+    ProcessError( err, m_pErrors );
+}
+
+//  ----------------------------------------------------------------------------                
+void 
 CGff3Reader::x_Warn(
     const string& message,
     unsigned int line )

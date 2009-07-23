@@ -84,6 +84,9 @@ protected:
     static bool VerifyLine(
         const std::string& );
     
+    virtual void x_Info(const string& message,
+        unsigned int line = 0);
+
     virtual void x_Warn(const string& message,
         unsigned int line = 0);
 

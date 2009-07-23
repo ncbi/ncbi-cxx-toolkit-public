@@ -381,6 +381,16 @@ void CGFFReader::x_Error(const string& message, unsigned int line)
 }
 
 
+void CGFFReader::x_Info(const string& message, unsigned int line)
+{
+    if (line) {
+        ERR_POST_X(1, Info << message << " [GFF input, line " << line << ']');
+    } else {
+        ERR_POST_X(1, Info << message << " [GFF input]");
+    }
+}
+
+
 void CGFFReader::x_Reset(void)
 {
     m_TSE.Reset(new CSeq_entry);
@@ -896,6 +906,19 @@ void CGFFReader::x_ParseV2Attributes(SRecord& record, const TStrVec& v,
     }
 }
 
+bool CGFFReader::x_SplitKeyValuePair( const string& pair, string& key, string& value )
+{
+    if ( NStr::SplitInTwo( pair, "=", key, value ) ) {
+        return true;
+    }
+//    if ( NStr::SplitInTwo( pair, " ", key, value ) ) {
+//        x_Info("(recovered) missdelimited attribute/value pair: " + key, x_GetLineNumber());
+//        return true;
+//    }
+    x_Warn("attribute without value: " + key, x_GetLineNumber());
+    return false;
+}
+            
 
 void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
                                      SIZE_TYPE& i)
@@ -905,19 +928,27 @@ void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
     ITERATE (vector<string>, it, v2) {
         attr.clear();
         string key, values;
-        if (NStr::SplitInTwo(*it, "=", key, values)) {
+        if (x_SplitKeyValuePair( *it, key, values )) {
             vector<string> vals;
             attr.resize(2);
             s_URLDecode(key, attr[0]);
             NStr::Tokenize(values, ",", vals);
             ITERATE (vector<string>, it2, vals) {
-                s_URLDecode(*it2, attr[1]);
+                string value( *it2 );
+                if ( NStr::MatchesMask(value, "\"*\"") ) {
+                    //
+                    //  Note: The GFF3 spec is ambiguous on whether quoting is
+                    //  required for free text values.
+                    //
+                    value = value.substr(1, value.length()-2);
+                }
+                s_URLDecode(value, attr[1]);
                 x_AddAttribute(record, attr);
             }
         } else {
             x_Warn("attribute without value: " + key, x_GetLineNumber());
             attr.resize(1);
-            s_URLDecode(key, attr[0]);
+            s_URLDecode(*it, attr[0]);
             x_AddAttribute(record, attr);
             continue;
         }
