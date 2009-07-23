@@ -911,10 +911,10 @@ bool CGFFReader::x_SplitKeyValuePair( const string& pair, string& key, string& v
     if ( NStr::SplitInTwo( pair, "=", key, value ) ) {
         return true;
     }
-//    if ( NStr::SplitInTwo( pair, " ", key, value ) ) {
-//        x_Info("(recovered) missdelimited attribute/value pair: " + key, x_GetLineNumber());
-//        return true;
-//    }
+    if ( NStr::SplitInTwo( pair, " ", key, value ) ) {
+        x_Info("(recovered) missdelimited attribute/value pair: " + key, x_GetLineNumber());
+        return true;
+    }
     x_Warn("attribute without value: " + key, x_GetLineNumber());
     return false;
 }
