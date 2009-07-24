@@ -53,7 +53,7 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
     case SQL_WCHAR:
     case SQL_CHAR:         return (prec < 256)? eDB_Char : eDB_LongChar;
     case SQL_WVARCHAR:
-    case SQL_VARCHAR:      return (prec < 256)? eDB_VarChar : eDB_LongChar;
+    case SQL_VARCHAR:      return eDB_VarChar;
     case SQL_LONGVARCHAR:  return eDB_Text;
     case SQL_LONGVARBINARY:
     case SQL_WLONGVARCHAR:
