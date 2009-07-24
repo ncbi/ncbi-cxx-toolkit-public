@@ -41,15 +41,11 @@
 #include <util/random_gen.hpp>
 
 // Objects includes
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/seq__.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqset/seqset__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/general/Name_std.hpp>
@@ -187,6 +183,7 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("blast_type",
                             &(*new CArgAllow_Strings,
                               "protein", "p", "nucleotide", "n"));
+    arg_desc->AddFlag("sra", "Use SRA data loader as a plugin");
 
     arg_desc->AddFlag("get_ids", "Get sequence ids");
     arg_desc->AddFlag("get_gi", "Get sequence gi");
@@ -467,7 +464,7 @@ int CDemoApp::Run(void)
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
     CRef<CGBDataLoader> gb_loader;
-    bool other_loaders = false;
+    vector<string> other_loaders;
     if ( args["loader"] ) {
         string genbank_readers = args["loader"].AsString();
         if ( genbank_readers != "-" ) {
@@ -501,9 +498,7 @@ int CDemoApp::Run(void)
             lds_db.reset(manager.ReleaseDB());
         }
 
-        CLDS_DataLoader::RegisterInObjectManager(*pOm, *lds_db,
-                                                 CObjectManager::eDefault);
-        other_loaders = true;
+        other_loaders.push_back(CLDS_DataLoader::RegisterInObjectManager(*pOm, *lds_db).GetLoader()->GetName());
         lds_db.release();
     }
 #endif
@@ -525,15 +520,19 @@ int CDemoApp::Run(void)
                 type = CBlastDbDataLoader::eNucleotide;
             }
         }
-        CBlastDbDataLoader::RegisterInObjectManager
-            (*pOm, db, type, true, CObjectManager::eDefault, 88);
-        other_loaders = true;
+        other_loaders.push_back(CBlastDbDataLoader::RegisterInObjectManager(*pOm, db, type).GetLoader()->GetName());
+    }
+    if ( args["sra"] ) {
+        other_loaders.push_back(pOm->RegisterDataLoader(0, "sra")->GetName());
     }
 
     // Create a new scope.
     CScope scope(*pOm);
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
+    ITERATE ( vector<string>, it, other_loaders ) {
+        scope.AddDataLoader(*it, 88);
+    }
 
     CSeq_entry_Handle added_entry;
     CSeq_annot_Handle added_annot;
@@ -586,7 +585,7 @@ int CDemoApp::Run(void)
             NcbiCout << "    " << it->AsString() << NcbiEndl;
         }
     }
-    if ( get_blob_id && gb_loader && !other_loaders ) {
+    if ( get_blob_id && gb_loader && other_loaders.empty() ) {
         try {
             CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
             if ( !blob_id ) {
