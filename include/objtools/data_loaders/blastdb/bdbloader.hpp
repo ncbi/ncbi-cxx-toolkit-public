@@ -152,7 +152,7 @@ public:
         CObjectManager& om,
         const string& dbname,
         const EDbType dbtype,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::EIsDefault is_default,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     /// @note this is added to temporarily comply with the toolkit's stable
     /// components rule of having backwards compatible APIs
