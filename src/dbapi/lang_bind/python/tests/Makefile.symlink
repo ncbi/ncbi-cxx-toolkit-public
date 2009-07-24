@@ -5,9 +5,13 @@ LINK = $(libdir)/python_ncbi_dbapi.so
 all: $(LINK)
 
 $(LINK):
+	if [ "$(OSTYPE)$(NCBI_PLATFORM_BITS)" = solaris64 \
+	     -a ! -d $(libdir)/64 ]; then \
+	    cd $(libdir)  &&  $(LN_S) . 64; \
+	fi
 	cd $(libdir)  &&  $(LN_S) libpython_ncbi_dbapi.so $(LINK)
 
 clean:;
 
 purge:
-	-$(RM) $(LINK)
+	-$(RM) $(LINK) $(libdir)/64
