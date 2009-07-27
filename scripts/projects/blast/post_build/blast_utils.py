@@ -8,7 +8,7 @@ from subprocess import call
 from shutil import move
         
 # URL from the test Bookshelf server to download the User Manual
-MANUAL_URL = "http://web.ncbi.nlm.nih.gov/bookshelf/booktest/picrender.fcgi?"
+MANUAL_URL = "http://www.ncbi.nlm.nih.gov/bookshelf/picrender.fcgi?"
 MANUAL_URL += "book=helpblast&part=CmdLineAppsManual&blobname=&blobtype=pdf"
 
 def safe_exec(cmd):
