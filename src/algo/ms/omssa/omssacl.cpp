@@ -83,6 +83,7 @@ void COMSSA::AppInit(CArgDescriptions *argDesc)
     if(!argDesc) return;
      argDesc->AddFlag("ns", "depreciated flag"); // to be deprecated
      argDesc->AddFlag("os", "use omssa 1.0 scoring"); // to be deprecated
+     argDesc->AddFlag("nrs", "turn off rank score"); // experimental
      argDesc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Search engine for identifying MS/MS peptide spectra");
 }
@@ -175,6 +176,8 @@ int COMSSA::Run()
     // set up rank scoring
     if(args["os"]) SearchEngine->SetRankScore() = false;
     else SearchEngine->SetRankScore() = true;
+    if(args["nrs"]) SearchEngine->SetPoissonOnly() = true;
+    else SearchEngine->SetPoissonOnly() = false;
 
     int FileRetVal(1);
 

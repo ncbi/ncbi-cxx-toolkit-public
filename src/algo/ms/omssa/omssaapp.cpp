@@ -59,7 +59,7 @@ USING_SCOPE(omssa);
 
 COMSSABase::COMSSABase()
 {
-    SetVersion(CVersionInfo(2, 1, 5));
+    SetVersion(CVersionInfo(2, 1, 7));
 }
 
 

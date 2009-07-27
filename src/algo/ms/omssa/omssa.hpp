@@ -192,6 +192,16 @@ public:
      * Sets the scoring to use rank statistics
      */
     bool& SetRankScore(void);
+    
+    /** 
+     * Sets the scoring to use rank statistics only with Poisson
+     */
+    bool& SetPoissonOnly(void);
+    
+    /** 
+     * Gets the scoring to use rank statistics only with Poisson
+     */
+    const bool GetPoissonOnly(void) const;
 
     /** 
      * Sets iterate search 
@@ -360,7 +370,7 @@ protected:
     //! calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList,  //<! the list of top hits to the spectrum
                    double Threshold,       //!< the noise threshold to apply to the peaks
-                   CMSPeak* Peaks         //!< the spectrum to be scored
+                   CMSPeak* Peaks          //!< the spectrum to be scored
                    );
 
     /**
@@ -592,6 +602,11 @@ private:
      * boolean to turn on rank scoring
      */
     bool UseRankScore;
+    
+    /**
+     * boolean to only use Poisson score when using Rank scoring
+     */
+    bool PoissonOnly;
 
     /**
      * boolean to turn on iterative search
@@ -775,6 +790,18 @@ inline
 bool& CSearch::SetRankScore(void)
 {
     return UseRankScore;
+}
+
+inline
+bool& CSearch::SetPoissonOnly(void)
+{
+    return PoissonOnly;
+}
+
+inline
+const bool CSearch::GetPoissonOnly(void) const
+{
+    return PoissonOnly;
 }
 
 inline

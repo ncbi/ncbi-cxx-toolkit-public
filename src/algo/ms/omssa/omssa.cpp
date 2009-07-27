@@ -1963,7 +1963,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             else {
                 pval = HitList[iHitList].CalcPvalue(a, HitList[iHitList].CountHits(Threshold, Peaks->GetMaxI(Which)));
             }
-            if (UseRankScore) {
+            if (UseRankScore && !GetPoissonOnly()) {
                 if (HitList[iHitList].GetM() != 0.0) {
                     double Perf = HitList[iHitList].CalcRankProb();
                     _TRACE( "Perf=" << Perf << " pval=" << pval << " N=" << N );
