@@ -4194,7 +4194,7 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
     if ( file_size == 0 ) {
         // Special case -- file is empty
         m_Handle = new SMemoryFileHandle();
-        m_Handle->hMap = 0;
+        m_Handle->hMap = kInvalidHandle;
         m_Handle->sFileName = m_FileName;
         return;
     }
@@ -4215,7 +4215,7 @@ CMemoryFileMap::~CMemoryFileMap(void)
 
 void* CMemoryFileMap::Map(off_t offset, size_t length)
 {
-    if ( !m_Handle  ||  !m_Handle->hMap ) {
+    if ( !m_Handle  ||  (m_Handle->hMap == kInvalidHandle) ) {
         // Special case.
         // Always return 0 if a file is unmapped or have zero length.
         return 0;
@@ -4301,7 +4301,7 @@ bool CMemoryFileMap::UnmapAll(void)
 void CMemoryFileMap::x_Open(void)
 {
     m_Handle = new SMemoryFileHandle();
-    m_Handle->hMap = 0;
+    m_Handle->hMap = kInvalidHandle;
     m_Handle->sFileName = m_FileName;
 
     string errmsg;
@@ -4313,9 +4313,9 @@ void CMemoryFileMap::x_Open(void)
 
         // If failed to attach to an existing file-mapping object then
         // create a new one (based on the specified file)
-        m_Handle->hMap = OpenFileMapping(m_Attrs->map_access, false,
-                                         m_FileName.c_str());
-        if ( !m_Handle->hMap ) { 
+        HANDLE hMap = OpenFileMapping(m_Attrs->map_access, false,
+                                      m_FileName.c_str());
+        if ( !hMap ) { 
 
             // NOTE:
             //
@@ -4344,21 +4344,22 @@ void CMemoryFileMap::x_Open(void)
 
             // Create mapping
 
-            m_Handle->hMap = CreateFileMapping(hFile, NULL,
-                                               x_map_protect,
-                                               0, 0, m_FileName.c_str());
-            if ( !m_Handle->hMap  &&
+            hMap = CreateFileMapping(hFile, NULL,
+                                     x_map_protect,
+                                     0, 0, m_FileName.c_str());
+            if ( !hMap  &&
                  (m_Attrs->map_protect != x_map_protect) ) {
-                m_Handle->hMap = CreateFileMapping(hFile, NULL,
-                                                   m_Attrs->map_protect,
-                                                   0, 0, m_FileName.c_str());
+                hMap = CreateFileMapping(hFile, NULL,
+                                         m_Attrs->map_protect,
+                                         0, 0, m_FileName.c_str());
             }
             CloseHandle(hFile);
-            if ( !m_Handle->hMap ) {
+            if ( !hMap ) {
                 errmsg += s_LastErrorMessage();
                 break;
             }
         }
+        m_Handle->hMap = hMap;
 
 #elif defined(NCBI_OS_UNIX)
         // Open file
@@ -4388,7 +4389,7 @@ void CMemoryFileMap::x_Close()
 
     // Close handle and cleanup
     if ( m_Handle ) {
-        if ( m_Handle->hMap ) { 
+        if ( m_Handle->hMap != kInvalidHandle ) { 
 #if defined(NCBI_OS_MSWIN)
             CloseHandle(m_Handle->hMap);
 #elif defined(NCBI_OS_UNIX)
@@ -4478,7 +4479,7 @@ void CMemoryFileMap::x_Extend(Uint8 length)
 CMemoryFileSegment* 
 CMemoryFileMap::x_GetMemoryFileSegment(void* ptr) const
 {
-    if ( !m_Handle  &&  !m_Handle->hMap ) {
+    if ( !m_Handle  &&  (m_Handle->hMap == kInvalidHandle) ) {
         NCBI_THROW(CFileException, eMemoryMap,
                    "CMemoryFileMap: File is not mapped");
     }
@@ -4503,7 +4504,7 @@ CMemoryFile::CMemoryFile(const string&  file_name,
     : CMemoryFileMap(file_name, protect, share, mode, max_file_len), m_Ptr(0)
 {
     // Check that file is ready for mapping to memory
-    if ( !m_Handle  ||  !m_Handle->hMap ) {
+    if ( !m_Handle  ||  (m_Handle->hMap == kInvalidHandle) ) {
         return;
     }
     Map(offset, length);

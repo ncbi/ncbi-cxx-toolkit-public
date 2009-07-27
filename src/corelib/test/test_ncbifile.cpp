@@ -861,6 +861,7 @@ static void s_TEST_MemoryFile(void)
     static const size_t s_DataLen    = sizeof(s_Data) - 1;
 
     CFile f(s_FileName);
+    f.Remove();
 
     // Create empty test file 
     {{
@@ -1099,6 +1100,19 @@ static void s_TEST_MemoryFile(void)
         assert( m.UnmapAll() );
         delete [] buf;
     }}
+    
+#if defined(NCBI_OS_UNIX)
+    // Check mapping file with file decriptor == 0
+    {{
+        ::fclose(stdin);
+        // Next used file descriptor possible will be 0
+        CMemoryFile m(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                        CMemoryFile::eMMS_Shared, 0, s_DataLen,
+                        CMemoryFile::eCreate, s_DataLen);
+        char* p = (char*)m.GetPtr();
+        assert( p );
+    }}
+#endif
     // Remove the file
     assert( f.Remove() );
 }
