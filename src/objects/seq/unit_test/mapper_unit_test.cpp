@@ -34,17 +34,17 @@
 
 #include <ncbi_pch.hpp>
 
-//#include <objects/seqloc/Seq_id.hpp>
-//#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <objects/seq/seq_align_mapper_base.hpp>
 #include <objects/seqres/seqres__.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
-//#include <boost/test/parameterized_test.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -1209,8 +1209,22 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd)
                 part->SetMismatch(50);
                 ex->SetParts().push_back(part);
             }}
+            CRef<CUser_object> ex_ext(new CUser_object);
+            ex_ext->SetType().SetStr("exon-info");
+            CRef<CUser_field> ex_fld(new CUser_field);
+            ex_fld->SetLabel().SetStr("Whatever");
+            ex_fld->SetData().SetInt(123);
+            ex_ext->SetData().push_back(ex_fld);
+            ex->SetExt().push_back(ex_ext);
             spl.SetExons().push_back(ex);
         }}
+        CRef<CUser_object> ext(new CUser_object);
+        ext->SetType().SetStr("info");
+        CRef<CUser_field> fld(new CUser_field);
+        fld->SetLabel().SetStr("Whatever");
+        fld->SetData().SetInt(456);
+        ext->SetData().push_back(fld);
+        aln.SetExt().push_back(ext);
     }}
     CRef<CSeq_align> mapped = mapper.Map(aln);
     BOOST_CHECK(mapped);
@@ -1242,6 +1256,14 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd)
     part++;
     BOOST_CHECK((*part)->IsMismatch());
     BOOST_CHECK_EQUAL((*part)->GetMismatch(), 50);
+
+    // Make sure exon's ext is copied, ignore the content
+    BOOST_CHECK(ex.IsSetExt());
+    BOOST_CHECK_EQUAL(ex.GetExt().size(), 1);
+
+    // Make sure alignment's ext is copied, ignore the content
+    BOOST_CHECK(mapped->IsSetExt());
+    BOOST_CHECK_EQUAL(mapped->GetExt().size(), 1);
 }
 
 

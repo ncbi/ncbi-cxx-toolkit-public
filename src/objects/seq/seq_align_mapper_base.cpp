@@ -36,6 +36,9 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/misc/error_codes.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <algorithm>
 
 
@@ -1086,6 +1089,17 @@ void CSeq_align_Mapper_Base::x_FillKnownStrands(TStrands& strands) const
 }
 
 
+template<class T, class C>
+void CloneContainer(const C& src, C& dst)
+{
+    ITERATE(typename C, it, src) {
+        CRef<T> elem(new T);
+        elem->Assign(**it);
+        dst.push_back(elem);
+    }
+}
+
+
 void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
 {
     TDendiag& diags = dst->SetSegs().SetDendiag();
@@ -1576,11 +1590,12 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
     }
     // scores should be copied from the original exon
     if ( m_OrigExon->IsSetScores() ) {
-        ITERATE(CScore_set::Tdata, it, m_OrigExon->GetScores().Get()) {
-            CRef<CScore> score(new CScore);
-            score->Assign(**it);
-            exon->SetScores().Set().push_back(score);
-        }
+        CloneContainer<CScore, CScore_set::Tdata>(
+            m_OrigExon->GetScores().Get(), exon->SetScores().Set());
+    }
+    if ( m_OrigExon->IsSetExt() ) {
+        CloneContainer<CUser_object, CSpliced_exon::TExt>(
+            m_OrigExon->GetExt(), exon->SetExt());
     }
     spliced.SetExons().push_back(exon);
 }
@@ -1791,10 +1806,16 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         dst->SetDim(m_OrigAlign->GetDim());
     }
     if (m_OrigAlign->IsSetScore()) {
-        dst->SetScore() = m_OrigAlign->GetScore();
+        CloneContainer<CScore, CSeq_align::TScore>(
+            m_OrigAlign->GetScore(), dst->SetScore());
     }
     if (m_OrigAlign->IsSetBounds()) {
-        dst->SetBounds() = m_OrigAlign->GetBounds();
+        CloneContainer<CSeq_loc, CSeq_align::TBounds>(
+            m_OrigAlign->GetBounds(), dst->SetBounds());
+    }
+    if (m_OrigAlign->IsSetExt()) {
+        CloneContainer<CUser_object, CSeq_align::TExt>(
+            m_OrigAlign->GetExt(), dst->SetExt());
     }
     switch ( m_OrigAlign->GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
