@@ -501,6 +501,20 @@ CLysN::CLysN(void)
     TopDown = false;
     NonSpecific = false;
 }
+/// CThermolysinP 
+/// 
+ 
+CThermolysinP::CThermolysinP(void) 
+{ 
+ CleaveAt = "\x01\x06\x09\x0b\x0c\x13"; 
+ CleaveOffset = "\x01\x01\x01\x01\x01\x01"; 
+ CheckProline = true; 
+ kCleave = 6; 
+ TopDown = false; 
+ NonSpecific = false; 
+} 
+ 
+/// 
 
 ///
 /// Simple minded factory to return back object for enzyme
@@ -576,6 +590,9 @@ CRef <CCleave>  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
     case eMSEnzymes_lysn:
         return CRef <CCleave> (new CLysN);
         break;
+    case eMSEnzymes_thermolysin_p: 
+        return CRef <CCleave> (new CThermolysinP); 
+        break; 
     default:
         return null;
         break;

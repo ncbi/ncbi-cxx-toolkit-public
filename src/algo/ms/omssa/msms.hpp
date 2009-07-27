@@ -1080,6 +1080,19 @@ public:
     CLysN(void);
 };
 
+/** 
+ * eMSEnzymes_thermolysin_p 
+ * cuts N terminal at A,F,I,L,M or V  
+ * 
+ */ 
+  
+class NCBI_XOMSSA_EXPORT CThermolysinP: public CCleave { 
+public: 
+ CThermolysinP(void); 
+}; 
+ 
+ 
+
 
 ///
 /// factory to return back object for enzyme
