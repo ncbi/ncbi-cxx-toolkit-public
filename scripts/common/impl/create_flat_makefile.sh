@@ -49,9 +49,10 @@ EOF
 
 DetectPlatform()
 {
+    arch="`uname -m`"
     osname="`uname`"
     if [ "$osname" = "Linux" ]; then
-        case "`arch`" in
+        case "$arch" in
             *86 )
                 PLATFORM="Linux32"
                 ;;
@@ -60,7 +61,7 @@ DetectPlatform()
                 ;;
         esac
     elif [ "$osname" = "SunOS" ]; then
-        case "`arch`" in
+        case "$arch" in
             sun* )
                 PLATFORM="SunOSSparc"
                 ;;
@@ -71,7 +72,7 @@ DetectPlatform()
     elif [ "$osname" = "IRIX64" ]; then
         PLATFORM="IRIX64"
     elif [ "$osname" = "Darwin" ]; then
-        case "`arch`" in
+        case "$arch" in
             ppc )
                 PLATFORM="PowerMAC"
                 ;;
@@ -80,13 +81,13 @@ DetectPlatform()
                 ;;
         esac
     elif [ "$osname" = "FreeBSD" ]; then
-        case "`uname -m`" in
+        case "$arch" in
             i386 )
                 PLATFORM="FreeBSD32"
                 ;;
         esac
     elif `echo "$osname" | grep -q -s CYGWIN_NT` ; then
-        case "`uname -m`" in
+        case "$arch" in
             *86 )
                 PLATFORM="Win32"
                 ;;
@@ -100,7 +101,6 @@ DetectPlatform()
     if [ -z "$PLATFORM" ]; then
         echo "Platform not defined for $osname -- please fix me"
         uname -a
-        exit 1
     fi
 }
 
