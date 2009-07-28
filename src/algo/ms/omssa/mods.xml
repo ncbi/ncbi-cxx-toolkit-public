@@ -2732,7 +2732,6 @@
     <MSModSpec_unimod>522</MSModSpec_unimod>
     <MSModSpec_psi-ms>Maleimide-PEO2-Biotin</MSModSpec_psi-ms>
   </MSModSpec>
-</MSModSpecSet>
 <MSModSpec>
     <MSModSpec_mod>
       <MSMod value="mod192">192</MSMod>
@@ -2784,4 +2783,4 @@
     <MSModSpec_unimod>35</MSModSpec_unimod>
     <MSModSpec_psi-ms>Oxidation</MSModSpec_psi-ms>
   </MSModSpec>
-
+</MSModSpecSet>
