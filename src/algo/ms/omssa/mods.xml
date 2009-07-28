@@ -13,7 +13,7 @@
     </MSModSpec_type>
     <MSModSpec_name>methylation of K</MSModSpec_name>
     <MSModSpec_monomass>14.015650</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -30,7 +30,7 @@
     </MSModSpec_type>
     <MSModSpec_name>oxidation of M</MSModSpec_name>
     <MSModSpec_monomass>15.994915</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>15.9994</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>M</MSModSpec_residues_E>
@@ -47,7 +47,7 @@
     </MSModSpec_type>
     <MSModSpec_name>carboxymethyl C</MSModSpec_name>
     <MSModSpec_monomass>58.005479</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>58.0361</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
@@ -64,7 +64,7 @@
     </MSModSpec_type>
     <MSModSpec_name>carbamidomethyl C</MSModSpec_name>
     <MSModSpec_monomass>57.021464</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>57.0513</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
@@ -81,7 +81,7 @@
     </MSModSpec_type>
     <MSModSpec_name>deamidation of N and Q</MSModSpec_name>
     <MSModSpec_monomass>0.984016</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>0.9848</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>N</MSModSpec_residues_E>
@@ -99,7 +99,7 @@
     </MSModSpec_type>
     <MSModSpec_name>propionamide C</MSModSpec_name>
     <MSModSpec_monomass>71.037114</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>71.0779</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
@@ -166,8 +166,8 @@
       <MSModType value="modnaa">2</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>M cleavage from protein n-term</MSModSpec_name>
-    <MSModSpec_monomass>-131.04</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>-131.040485</MSModSpec_monomass>
+    <MSModSpec_averagemass>-131.1961</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>M</MSModSpec_residues_E>
@@ -183,8 +183,8 @@
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>acetylation of protein n-term</MSModSpec_name>
-    <MSModSpec_monomass>42.01</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>42.010565</MSModSpec_monomass>
+    <MSModSpec_averagemass>42.0367</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>1</MSModSpec_unimod>
     <MSModSpec_psi-ms>Acetyl</MSModSpec_psi-ms>
@@ -197,8 +197,8 @@
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>methylation of protein n-term</MSModSpec_name>
-    <MSModSpec_monomass>14.02</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>14.015650</MSModSpec_monomass>
+    <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>34</MSModSpec_unimod>
     <MSModSpec_psi-ms>Methyl</MSModSpec_psi-ms>
@@ -211,8 +211,8 @@
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>tri-methylation of protein n-term</MSModSpec_name>
-    <MSModSpec_monomass>42.05</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>42.046950</MSModSpec_monomass>
+    <MSModSpec_averagemass>42.0797</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>37</MSModSpec_unimod>
     <MSModSpec_psi-ms>Trimethyl</MSModSpec_psi-ms>
@@ -225,8 +225,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>beta methythiolation of D</MSModSpec_name>
-    <MSModSpec_monomass>45.99</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>45.987721</MSModSpec_monomass>
+    <MSModSpec_averagemass>46.0916</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>D</MSModSpec_residues_E>
@@ -242,8 +242,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>methylation of Q</MSModSpec_name>
-    <MSModSpec_monomass>14.02</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>14.015650</MSModSpec_monomass>
+    <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>Q</MSModSpec_residues_E>
@@ -259,8 +259,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>tri-methylation of K</MSModSpec_name>
-    <MSModSpec_monomass>42.05</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>42.046950</MSModSpec_monomass>
+    <MSModSpec_averagemass>42.0797</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -276,8 +276,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>methylation of D</MSModSpec_name>
-    <MSModSpec_monomass>14.02</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>14.015650</MSModSpec_monomass>
+    <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>D</MSModSpec_residues_E>
@@ -293,8 +293,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>methylation of E</MSModSpec_name>
-    <MSModSpec_monomass>14.02</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>14.015650</MSModSpec_monomass>
+    <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>E</MSModSpec_residues_E>
@@ -310,8 +310,8 @@
       <MSModType value="modcp">7</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>methylation of peptide c-term</MSModSpec_name>
-    <MSModSpec_monomass>14.02</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>14.015650</MSModSpec_monomass>
+    <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>34</MSModSpec_unimod>
     <MSModSpec_psi-ms>Methyl</MSModSpec_psi-ms>
@@ -324,8 +324,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>tri-deuteromethylation of D</MSModSpec_name>
-    <MSModSpec_monomass>17.04</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>17.034480</MSModSpec_monomass>
+    <MSModSpec_averagemass>17.0451</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>D</MSModSpec_residues_E>
@@ -341,8 +341,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>tri-deuteromethylation of E</MSModSpec_name>
-    <MSModSpec_monomass>17.04</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>17.034480</MSModSpec_monomass>
+    <MSModSpec_averagemass>17.0451</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>E</MSModSpec_residues_E>
@@ -358,8 +358,8 @@
       <MSModType value="modcp">7</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>tri-deuteromethylation of peptide c-term</MSModSpec_name>
-    <MSModSpec_monomass>17.04</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>17.034480</MSModSpec_monomass>
+    <MSModSpec_averagemass>17.0451</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>298</MSModSpec_unimod>
     <MSModSpec_psi-ms>Methyl:2H(3)</MSModSpec_psi-ms>
@@ -2004,7 +2004,7 @@
     </MSModSpec_type>
     <MSModSpec_name>ICAT light</MSModSpec_name>
     <MSModSpec_monomass>227.126991</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>227.2603</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
@@ -2021,7 +2021,7 @@
     </MSModSpec_type>
     <MSModSpec_name>ICAT heavy</MSModSpec_name>
     <MSModSpec_monomass>236.157185</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>236.1942</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
@@ -2331,7 +2331,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ114 on nterm</MSModSpec_name>
     <MSModSpec_monomass>144.1059</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1680</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>532</MSModSpec_unimod>
     <MSModSpec_psi-ms>iTRAQ4plex114</MSModSpec_psi-ms>
@@ -2345,7 +2345,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ114 on K</MSModSpec_name>
     <MSModSpec_monomass>144.1059</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1680</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -2362,7 +2362,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ114 on Y</MSModSpec_name>
     <MSModSpec_monomass>144.1059</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1680</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>Y</MSModSpec_residues_E>
@@ -2379,7 +2379,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ115 on nterm</MSModSpec_name>
     <MSModSpec_monomass>144.0996</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1688</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>533</MSModSpec_unimod>
     <MSModSpec_psi-ms>iTRAQ4plex115</MSModSpec_psi-ms>
@@ -2393,7 +2393,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ115 on K</MSModSpec_name>
     <MSModSpec_monomass>144.0996</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1688</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -2410,7 +2410,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ115 on Y</MSModSpec_name>
     <MSModSpec_monomass>144.0996</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1688</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>Y</MSModSpec_residues_E>
@@ -2427,7 +2427,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ116 on nterm</MSModSpec_name>
     <MSModSpec_monomass>144.1021</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>214</MSModSpec_unimod>
     <MSModSpec_psi-ms>iTRAQ4plex</MSModSpec_psi-ms>
@@ -2441,7 +2441,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ116 on K</MSModSpec_name>
     <MSModSpec_monomass>144.1021</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -2458,7 +2458,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ116 on Y</MSModSpec_name>
     <MSModSpec_monomass>144.1021</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>Y</MSModSpec_residues_E>
@@ -2475,7 +2475,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ117 on nterm</MSModSpec_name>
     <MSModSpec_monomass>144.1021</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_unimod>214</MSModSpec_unimod>
     <MSModSpec_psi-ms>iTRAQ4plex</MSModSpec_psi-ms>
@@ -2489,7 +2489,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ117 on K</MSModSpec_name>
     <MSModSpec_monomass>144.1021</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -2506,7 +2506,7 @@
     </MSModSpec_type>
     <MSModSpec_name>iTRAQ117 on Y</MSModSpec_name>
     <MSModSpec_monomass>144.1021</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>144.1544</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>Y</MSModSpec_residues_E>
@@ -2522,8 +2522,8 @@
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
     <MSModSpec_name>MMTS on C</MSModSpec_name>
-    <MSModSpec_monomass>45.987</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_monomass>45.987721</MSModSpec_monomass>
+    <MSModSpec_averagemass>46.0916</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
@@ -2540,7 +2540,7 @@
     </MSModSpec_type>
     <MSModSpec_name>heavy lysine - 2H4</MSModSpec_name>
     <MSModSpec_monomass>4.025107008</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>4.0246</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -2557,7 +2557,7 @@
     </MSModSpec_type>
     <MSModSpec_name>heavy lysine - 13C6 15N2</MSModSpec_name>
     <MSModSpec_monomass>8.014198892</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>7.9427</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>K</MSModSpec_residues_E>
@@ -2574,7 +2574,7 @@
     </MSModSpec_type>
     <MSModSpec_name>Asparagine HexNAc</MSModSpec_name>
     <MSModSpec_monomass>203.0793726</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>203.1925</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>N</MSModSpec_residues_E>
@@ -2591,7 +2591,7 @@
     </MSModSpec_type>
     <MSModSpec_name>Asparagine dHexHexNAc</MSModSpec_name>
     <MSModSpec_monomass>349.1372815</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>349.3337</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>N</MSModSpec_residues_E>
@@ -2608,7 +2608,7 @@
     </MSModSpec_type>
     <MSModSpec_name>Serine HexNAc</MSModSpec_name>
     <MSModSpec_monomass>203.0793726</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>203.1925</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>S</MSModSpec_residues_E>
@@ -2625,7 +2625,7 @@
     </MSModSpec_type>
     <MSModSpec_name>Threonine HexNAc</MSModSpec_name>
     <MSModSpec_monomass>203.0793726</MSModSpec_monomass>
-    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_averagemass>203.1925</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>T</MSModSpec_residues_E>
@@ -2733,3 +2733,55 @@
     <MSModSpec_psi-ms>Maleimide-PEO2-Biotin</MSModSpec_psi-ms>
   </MSModSpec>
 </MSModSpecSet>
+<MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod192">192</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>phosphorylation of H</MSModSpec_name>
+    <MSModSpec_monomass>79.966331</MSModSpec_monomass>
+    <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>H</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>21</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Phospho</MSModSpec_psi-ms>
+  </MSModSpec>
+<MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod193">193</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>oxidation of C</MSModSpec_name>
+    <MSModSpec_monomass>15.994915</MSModSpec_monomass>
+    <MSModSpec_averagemass>15.9994</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>C</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>35</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Oxidation</MSModSpec_psi-ms>
+  </MSModSpec>
+<MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="mod194">194</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>oxidation of Y</MSModSpec_name>
+    <MSModSpec_monomass>15.994915</MSModSpec_monomass>
+    <MSModSpec_averagemass>15.9994</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+    <MSModSpec_unimod>35</MSModSpec_unimod>
+    <MSModSpec_psi-ms>Oxidation</MSModSpec_psi-ms>
+  </MSModSpec>
+
