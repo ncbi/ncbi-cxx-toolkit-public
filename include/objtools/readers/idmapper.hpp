@@ -64,7 +64,13 @@ public:
     //
     CIdMapper(
         const std::string& strContext = "",
-        bool bInvert = false ): m_strContext(strContext), m_bInvert(bInvert) {};
+        bool bInvert = false,
+        IErrorContainer* pErrors = 0 )
+    : 
+        m_strContext(strContext), 
+        m_bInvert(bInvert),
+        m_pErrors( pErrors ) 
+    {};
     
     virtual void
     AddMapping(
@@ -80,14 +86,7 @@ public:
         
     virtual CSeq_id_Handle
     Map(
-        const CSeq_id_Handle& from ) 
-    {
-        CACHE::iterator to = m_Cache.find( from );
-        if ( to != m_Cache.end() ) {
-            return to->second;
-        }
-        return CSeq_id_Handle();
-    };
+        const CSeq_id_Handle& ); 
         
     //
     //  Map all IDs embedded in this object
@@ -99,6 +98,10 @@ public:
     /* any other convenience functions with shared implementations*/ 
     
 protected:
+    static std::string
+    MapErrorString(
+        const CSeq_id_Handle& );
+        
     typedef std::map< CSeq_id_Handle, CSeq_id_Handle > CACHE;
     
     //
@@ -110,7 +113,8 @@ protected:
     
     const std::string m_strContext;
     const bool m_bInvert;
-    CACHE m_Cache;   
+    CACHE m_Cache;
+    IErrorContainer* m_pErrors;   
 };
 
             
@@ -127,7 +131,8 @@ public:
     //
     CIdMapperBuiltin(
         const std::string& strContext,
-        bool bInvert = false ): CIdMapper(strContext, bInvert)
+        bool bInvert = false,
+        IErrorContainer* pErrors = 0 ): CIdMapper(strContext, bInvert, pErrors)
     {
         InitializeCache();
     };
@@ -157,7 +162,9 @@ public:
     CIdMapperConfig(
         CNcbiIstream& istr,
         const std::string& strContext = "",
-        bool bInvert = false ): CIdMapper(strContext, bInvert), m_Istr(istr)
+        bool bInvert = false,
+        IErrorContainer* pErrors = 0)
+        : CIdMapper(strContext, bInvert, pErrors), m_Istr(istr)
     {
         InitializeCache();
     };
@@ -203,8 +210,9 @@ public:
         const std::string& strServer,
         const std::string& strDatabase,
         const std::string& strContext,
-        bool bInvert = false )
-        : CIdMapper(strContext, bInvert), 
+        bool bInvert = false,
+        IErrorContainer* pErrors = 0)
+        : CIdMapper(strContext, bInvert, pErrors), 
           m_strServer(strServer), 
           m_strDatabase(strDatabase)
     {};

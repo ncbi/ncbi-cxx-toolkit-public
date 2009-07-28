@@ -43,10 +43,47 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+//  ============================================================================
+CSeq_id_Handle
+CIdMapper::Map(
+    const CSeq_id_Handle& from )
+//  ============================================================================
+{
+    CACHE::iterator to = m_Cache.find( from );
+    if ( to != m_Cache.end() ) {
+        return to->second;
+    }
+    //
+    //  Cannot map this ID. We will treat this as an error.
+    //
+    CObjReaderLineException MapError( eDiag_Error, 0, 
+        MapErrorString( from ) );
+
+    if ( !m_pErrors || !m_pErrors->PutError( MapError ) ) {
+        throw MapError;
+    }
+    return CSeq_id_Handle();  
+};
+
+//  ============================================================================
+string
+CIdMapper::MapErrorString(
+    const CSeq_id_Handle& idh )
+//  ============================================================================
+{
+    string strId = idh.AsString();
+    string strMsg( 
+        string("IdMapper: Unable to resolve local ID \"") + strId + string("\"") );
+    return strMsg;
+};
 
 //  ============================================================================
 void

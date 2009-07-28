@@ -49,10 +49,10 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
+#include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/multireader.hpp>
 
 USING_NCBI_SCOPE;
@@ -347,11 +347,12 @@ CMultiReaderApp::GetMapper()
     }
     if ( !strMapFile.empty() ) {
         CNcbiIfstream* pMapFile = new CNcbiIfstream( strMapFile.c_str() );
-        CIdMapper* pMapper = new CIdMapperConfig( *pMapFile, strBuild );
+        CIdMapper* pMapper = new CIdMapperConfig( 
+            *pMapFile, strBuild, false, m_pErrors );
         pMapFile->close();
         return pMapper;
     }
-    return new CIdMapperBuiltin( strBuild );
+    return new CIdMapperBuiltin( strBuild, false, m_pErrors );
 }        
 
 //  ============================================================================

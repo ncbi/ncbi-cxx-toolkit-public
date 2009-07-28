@@ -37,6 +37,9 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
+#include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 BEGIN_NCBI_SCOPE
