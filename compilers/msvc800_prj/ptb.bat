@@ -52,13 +52,13 @@ call "%BUILD_TREE_ROOT%\msvcvars.bat"
 set DEFPTB_VERSION=
 set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
 if exist "%DEFPTB_VERSION_FILE%" (
-  for /f %%a in ('type %DEFPTB_VERSION_FILE%') do (set DEFPTB_VERSION=%%a & goto donedf)
+  for /f %%a in ('type "%DEFPTB_VERSION_FILE%"') do (set DEFPTB_VERSION=%%a & goto donedf)
   :donedf
   set DEFPTB_VERSION=%DEFPTB_VERSION: =%
 )
 if exist "%PREBUILT_PTB_EXE%" (
   set ptbver=
-  for /f "tokens=2" %%a in ('%PREBUILT_PTB_EXE% -version') do (set ptbver=%%a & goto donepb)
+  for /f "tokens=2" %%a in ('"%PREBUILT_PTB_EXE%" -version') do (set ptbver=%%a & goto donepb)
   :donepb
   set ptbver=%ptbver: =%
   if not "%DEFPTB_VERSION%"=="%ptbver%" (
@@ -67,6 +67,10 @@ if exist "%PREBUILT_PTB_EXE%" (
   )
 )
 
+if "%DEFPTB_VERSION%"=="" (
+  echo ERROR: DEFPTB_VERSION not specified
+  exit /b 1
+)
 for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do set PTB_VER=%%a%%b%%c
 if %PTB_VER% GEQ 180 (
   set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
