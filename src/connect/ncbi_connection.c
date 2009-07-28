@@ -83,9 +83,9 @@
 #define CONN_NOT_NULL(s_c, f_n)  CONN_NOT_NULL_EX(s_c, f_n, eIO_InvalidArg)
 
 #ifdef _DEBUG
-#  define CONN_TRACE(f_n, msg)  CONN_LOG(0, f_n, eLOG_Trace, msg)
+#  define CONN_TRACE(f_n, msg)   CONN_LOG(0, f_n, eLOG_Trace, msg)
 #else
-#  define CONN_TRACE(f_n, msg)  ((void) 0)
+#  define CONN_TRACE(f_n, msg)   ((void) 0)
 #endif /*_DEBUG*/
 
 
@@ -409,9 +409,8 @@ extern EIO_Status CONN_Wait
         : eIO_NotSupported;
 
     if (status != eIO_Success) {
-        const char* errmsg = (event == eIO_Read
-                              ? "Read event failed"
-                              : "Write event failed");
+        static const char* kErrMsg[] = { "Read event failed",
+                                         "Write event failed" };
         ELOG_Level level;
         switch (status) {
         case eIO_Timeout:
@@ -419,10 +418,8 @@ extern EIO_Status CONN_Wait
                 level = eLOG_Warning;
             else if (timeout->sec | timeout->usec)
                 level = eLOG_Trace;
-            else {
-                CONN_TRACE(Wait, errmsg);
+            else
                 return status;
-            }
             break;
         case eIO_Closed:
             level = event == eIO_Read ? eLOG_Trace : eLOG_Error;
@@ -434,7 +431,7 @@ extern EIO_Status CONN_Wait
             level = eLOG_Error;
             break;
         }
-        CONN_LOG(14, Wait, level, errmsg);
+        CONN_LOG(14, Wait, level, kErrMsg[event != eIO_Read]);
     }
     return status;
 }
