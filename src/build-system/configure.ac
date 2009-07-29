@@ -238,6 +238,10 @@ AC_ARG_WITH(wxwidgets,
    [ --without-wxwidgets     do not use wxWidgets (2.6+)])
 AC_ARG_WITH(wxwidgets2,
    [ --with-wxwidgets=DIR    use wxWidgets installation in DIR])
+AC_ARG_WITH(wxwidgets-ucs,
+   [ --with-wxwidgets-ucs    use Unicode builds of wxWidgets])
+AC_ARG_WITH(wxwidgets-ucs2,
+   [ --without-wxwidgets-ucs do not use Unicode builds of wxWidgets])
 AC_ARG_WITH(freetype,
    [ --without-freetype      do not use FreeType])
 AC_ARG_WITH(freetype_,
@@ -391,7 +395,7 @@ bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile check ncbi-public \
 strip pch caution ccache distcc \
-ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
+ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
@@ -470,6 +474,8 @@ if test "$with_gbench" = "yes" ; then
       fi
      ])
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
+   # Still geared for single-byte ("ANSI") builds.
+   test -d $srcdir/src/gui/widgets/wx  &&  : ${with_wxwidgets_ucs=no}
 fi
 
 if test "$with_bin_release" = "yes" ; then
@@ -4740,9 +4746,14 @@ if test "$with_wxwidgets" != "no" ; then
    WXWIDGETS_BINPATH=${WXWIDGETS_BINPATH:="$WXWIDGETS_ARCH_PATH/bin"}
    WXWIDGETS_LIBPATH=${WXWIDGETS_LIBPATH:="$WXWIDGETS_ARCH_PATH/lib"}
    WXWIDGETS_INCLUDE=
-   wxconf=$WXWIDGETS_BINPATH/wx-config
+   AS_UNSET(wxconf)
+   AC_PATH_PROG(wxconf, wx-config, [], $WXWIDGETS_BINPATH:$PATH)
    if test -x "$wxconf"; then
-      for x in `"$wxconf" --libs --static`; do
+      WXWIDGETS_ARCH_PATH=`$wxconf --exec-prefix`
+      if test -n "$with_wxwidgets_ucs"; then
+         wxconf="$wxconf --unicode=$with_wxwidgets_ucs"
+      fi
+      for x in `"$wxconf" --libs --static 2>/dev/null`; do
          case "$x" in
             -L*)
                 d=`echo $x | sed -e 's/^-L//'`
@@ -4754,9 +4765,11 @@ if test "$with_wxwidgets" != "no" ; then
          esac
       done
       export PKG_CONFIG_PATH
+   else
+      AS_UNSET(wxconf)
    fi
-   if test -x "$wxconf" \
-     &&  "$wxconf" --list | grep 'Default config is gtk2' >/dev/null; then
+   if test -n "$wxconf" \
+     &&  "$wxconf" --list 2>/dev/null | grep 'Default config is gtk2' >/dev/null; then
       gtkconf="pkg-config gtk+-2.0"
    elif test -x "$WXWIDGETS_BINPATH/gtk-config"; then
       gtkconf=$WXWIDGETS_BINPATH/gtk-config
@@ -4771,7 +4784,7 @@ if test "$with_wxwidgets" != "no" ; then
          baseflags=""
          basesed='s/-isysroot [[^ ]]*//g; s/-arch [[^ ]]*//g'
          if test -n "$SYSROOT"; then
-            deps=`$wxconf --libs --static | sed -e 's/.*\.a//'`
+            deps=`$wxconf --libs --static 2>/dev/null | sed -e 's/.*\.a//'`
             libsed="$basesed; s/\$/ $deps/"
          else
             libsed=$basesed
@@ -4785,7 +4798,7 @@ if test "$with_wxwidgets" != "no" ; then
    esac
    AC_CACHE_CHECK([for wxWidgets in $WXWIDGETS_ARCH_PATH],
       ncbi_cv_lib_wxwidgets,
-      [if test -x "$wxconf" ; then
+      [if test -n "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
           NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs], [$libsed; ])
 
@@ -4827,9 +4840,11 @@ else
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
    fi
    NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs $wxlibs], [$libsed; ])
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static $wxlibs | sed -e "$basesed"`
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static $wxlibs 2>/dev/null | sed -e "$basesed"`
+   : ${WXWIDGETS_STATIC_LIBS=$WXWIDGETS_LIBS}
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
-   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
+   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static 2>/dev/null | sed -e "$basesed"`
+   : ${WXWIDGETS_GL_STATIC_LIBS=$WXWIDGETS_GL_LIBS}
    WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
    AC_DEFINE(HAVE_WXWIDGETS, 1, [Define to 1 if wxWidgets is available.])
@@ -5875,12 +5890,21 @@ fi
 
 ## Genome Workbench
 
-if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/app/gbench \
-    -a  -d ${real_srcdir}/src/gui/plugins; then
+if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
    reason=""
    sep=
-   if test "$with_fltk" = "no"; then
-     reason="$reason${sep}FLTK"
+   if test -d "$real_srcdir/src/gui/plugins"; then
+     if test "$with_fltk" = "no"; then
+       reason="$reason${sep}FLTK"
+       sep=", "
+     fi
+   elif test -d "$real_srcdir/src/gui/packages"; then
+     if test "$with_wxwidgets" = "no"; then
+       reason="$reason${sep}wxWidgets"
+       sep=", "
+     fi
+   else
+     reason="$reason${sep}plugins or packages"
      sep=", "
    fi
    if test "$with_opengl" = "no"; then

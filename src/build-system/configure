@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS64_DBLIB_INCLUDE FTDS64_DBLIB_LIBS FTDS64_DBLIB_LIB FTDS64_ODBC_INCLUDE FTDS64_ODBC_LIBS FTDS64_ODBC_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS GCCPCH RUNPATH_ORIGIN D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC DBAPI_SQLITE3 THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos UNLESS_PUBSEQOS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT DISTCC CCACHE TAIL EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS64_DBLIB_INCLUDE FTDS64_DBLIB_LIBS FTDS64_DBLIB_LIB FTDS64_ODBC_INCLUDE FTDS64_ODBC_LIBS FTDS64_ODBC_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS SQLITE_INCLUDE SQLITE_LIBS SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS GCCPCH RUNPATH_ORIGIN D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC DBAPI_SQLITE3 THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos UNLESS_PUBSEQOS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -944,6 +944,8 @@ Optional Packages:
  --with-wxwin=DIR        use wxWindows installation in DIR
  --without-wxwidgets     do not use wxWidgets (2.6+)
  --with-wxwidgets=DIR    use wxWidgets installation in DIR
+ --with-wxwidgets-ucs    use Unicode builds of wxWidgets
+ --without-wxwidgets-ucs do not use Unicode builds of wxWidgets
  --without-freetype      do not use FreeType
  --with-freetype=DIR     use FreeType installation in DIR
  --without-fastcgi       do not use Fast-CGI library
@@ -1989,6 +1991,18 @@ if test "${with_wxwidgets2+set}" = set; then
 
 fi;
 
+# Check whether --with-wxwidgets-ucs or --without-wxwidgets-ucs was given.
+if test "${with_wxwidgets_ucs+set}" = set; then
+  withval="$with_wxwidgets_ucs"
+
+fi;
+
+# Check whether --with-wxwidgets-ucs2 or --without-wxwidgets-ucs2 was given.
+if test "${with_wxwidgets_ucs2+set}" = set; then
+  withval="$with_wxwidgets_ucs2"
+
+fi;
+
 # Check whether --with-freetype or --without-freetype was given.
 if test "${with_freetype+set}" = set; then
   withval="$with_freetype"
@@ -2421,7 +2435,7 @@ bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile check ncbi-public \
 strip pch caution ccache distcc \
-ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
+ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
@@ -2559,6 +2573,8 @@ echo "$as_me: error: incompatible options: --without-app but --with-gbench" >&2;
       fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
+   # Still geared for single-byte ("ANSI") builds.
+   test -d $srcdir/src/gui/widgets/wx  &&  : ${with_wxwidgets_ucs=no}
 fi
 
 if test "$with_bin_release" = "yes" ; then
@@ -26243,9 +26259,53 @@ if test "$with_wxwidgets" != "no" ; then
    WXWIDGETS_BINPATH=${WXWIDGETS_BINPATH:="$WXWIDGETS_ARCH_PATH/bin"}
    WXWIDGETS_LIBPATH=${WXWIDGETS_LIBPATH:="$WXWIDGETS_ARCH_PATH/lib"}
    WXWIDGETS_INCLUDE=
-   wxconf=$WXWIDGETS_BINPATH/wx-config
+   $as_unset wxconf || test "${wxconf+set}" != set || { wxconf=; export wxconf; }
+   # Extract the first word of "wx-config", so it can be a program name with args.
+set dummy wx-config; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_wxconf+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $wxconf in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_wxconf="$wxconf" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$WXWIDGETS_BINPATH:$PATH"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_wxconf="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+wxconf=$ac_cv_path_wxconf
+
+if test -n "$wxconf"; then
+  echo "$as_me:$LINENO: result: $wxconf" >&5
+echo "${ECHO_T}$wxconf" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
    if test -x "$wxconf"; then
-      for x in `"$wxconf" --libs --static`; do
+      WXWIDGETS_ARCH_PATH=`$wxconf --exec-prefix`
+      if test -n "$with_wxwidgets_ucs"; then
+         wxconf="$wxconf --unicode=$with_wxwidgets_ucs"
+      fi
+      for x in `"$wxconf" --libs --static 2>/dev/null`; do
          case "$x" in
             -L*)
                 d=`echo $x | sed -e 's/^-L//'`
@@ -26257,9 +26317,11 @@ if test "$with_wxwidgets" != "no" ; then
          esac
       done
       export PKG_CONFIG_PATH
+   else
+      $as_unset wxconf || test "${wxconf+set}" != set || { wxconf=; export wxconf; }
    fi
-   if test -x "$wxconf" \
-     &&  "$wxconf" --list | grep 'Default config is gtk2' >/dev/null; then
+   if test -n "$wxconf" \
+     &&  "$wxconf" --list 2>/dev/null | grep 'Default config is gtk2' >/dev/null; then
       gtkconf="pkg-config gtk+-2.0"
    elif test -x "$WXWIDGETS_BINPATH/gtk-config"; then
       gtkconf=$WXWIDGETS_BINPATH/gtk-config
@@ -26274,7 +26336,7 @@ if test "$with_wxwidgets" != "no" ; then
          baseflags=""
          basesed='s/-isysroot [^ ]*//g; s/-arch [^ ]*//g'
          if test -n "$SYSROOT"; then
-            deps=`$wxconf --libs --static | sed -e 's/.*\.a//'`
+            deps=`$wxconf --libs --static 2>/dev/null | sed -e 's/.*\.a//'`
             libsed="$basesed; s/\$/ $deps/"
          else
             libsed=$basesed
@@ -26291,7 +26353,7 @@ echo $ECHO_N "checking for wxWidgets in $WXWIDGETS_ARCH_PATH... $ECHO_C" >&6
 if test "${ncbi_cv_lib_wxwidgets+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -x "$wxconf" ; then
+  if test -n "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     WXWIDGETS_LIBS=`$wxconf --libs | sed -e "$libsed; "`
@@ -26426,9 +26488,11 @@ else
     done
     WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}"
  fi
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static $wxlibs | sed -e "$basesed"`
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static $wxlibs 2>/dev/null | sed -e "$basesed"`
+   : ${WXWIDGETS_STATIC_LIBS=$WXWIDGETS_LIBS}
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
-   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
+   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static 2>/dev/null | sed -e "$basesed"`
+   : ${WXWIDGETS_GL_STATIC_LIBS=$WXWIDGETS_GL_LIBS}
    WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
 
@@ -30697,12 +30761,21 @@ fi
 
 ## Genome Workbench
 
-if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/app/gbench \
-    -a  -d ${real_srcdir}/src/gui/plugins; then
+if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/gui/app/gbench"; then
    reason=""
    sep=
-   if test "$with_fltk" = "no"; then
-     reason="$reason${sep}FLTK"
+   if test -d "$real_srcdir/src/gui/plugins"; then
+     if test "$with_fltk" = "no"; then
+       reason="$reason${sep}FLTK"
+       sep=", "
+     fi
+   elif test -d "$real_srcdir/src/gui/packages"; then
+     if test "$with_wxwidgets" = "no"; then
+       reason="$reason${sep}wxWidgets"
+       sep=", "
+     fi
+   else
+     reason="$reason${sep}plugins or packages"
      sep=", "
    fi
    if test "$with_opengl" = "no"; then
@@ -31903,6 +31976,7 @@ s,@X_CFLAGS@,$X_CFLAGS,;t t
 s,@X_PRE_LIBS@,$X_PRE_LIBS,;t t
 s,@X_LIBS@,$X_LIBS,;t t
 s,@X_EXTRA_LIBS@,$X_EXTRA_LIBS,;t t
+s,@wxconf@,$wxconf,;t t
 s,@EXPAT_INCLUDE@,$EXPAT_INCLUDE,;t t
 s,@EXPAT_LIBS@,$EXPAT_LIBS,;t t
 s,@SABLOT_INCLUDE@,$SABLOT_INCLUDE,;t t
