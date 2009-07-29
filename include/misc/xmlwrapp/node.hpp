@@ -58,6 +58,7 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
+#include <deque>
 
 namespace xml {
 
@@ -528,6 +529,30 @@ public:
     //####################################################################
     ns lookup_namespace (const char*        prefix,
                          ns::ns_safety_type type = ns::type_safe_ns) const;
+
+    //####################################################################
+    /**
+      * Erase duplicate namespace definitions.
+      *
+      * Walks the nodes hierarchy down and erases dulicate namespace
+      * definitions.
+      *
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void erase_duplicate_ns_defs (void);
+
+    //####################################################################
+    /**
+      * Erase unused namespace definitions.
+      *
+      * Walks the nodes hierarchy down and erases unused namespace
+      * definitions.
+      *
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    void erase_unused_ns_defs (void);
 
     //####################################################################
     /**
@@ -1084,6 +1109,11 @@ private:
     ns add_namespace_def (const char* uri, const char* prefix);
     ns add_matched_namespace_def (void* libxml2RawNamespace, const char* uri,
                                   ns_definition_adding_type type);
+    void erase_duplicate_ns_defs (void* nd, std::deque<ns_list_type>& defs);
+    void erase_duplicate_ns_defs_single_node (void* nd, std::deque<ns_list_type>& defs);
+    void erase_unused_ns_defs (void* nd);
+    ns_list_type get_namespace_definitions (void* nd, ns::ns_safety_type type) const;
+    void* find_replacement_ns_def (std::deque<ns_list_type>& defs, void* ns);
 }; // end xml::node class
 
 } // end xml namespace

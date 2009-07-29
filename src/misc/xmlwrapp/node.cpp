@@ -418,11 +418,15 @@ xml::ns xml::node::get_namespace (xml::ns::ns_safety_type type) const {
 }
 //####################################################################
 xml::node::ns_list_type xml::node::get_namespace_definitions (xml::ns::ns_safety_type type) const {
+    return get_namespace_definitions(pimpl_->xmlnode_, type);
+}
+//####################################################################
+xml::node::ns_list_type xml::node::get_namespace_definitions (void* nd, xml::ns::ns_safety_type type) const {
     xml::node::ns_list_type      namespace_definitions;
-    if (!pimpl_->xmlnode_->nsDef) {
+    if (!reinterpret_cast<xmlNodePtr>(nd)->nsDef) {
         return namespace_definitions;
     }
-    for (xmlNs *  ns(pimpl_->xmlnode_->nsDef); ns; ns = ns->next) {
+    for (xmlNs *  ns(reinterpret_cast<xmlNodePtr>(nd)->nsDef); ns; ns = ns->next) {
         if (type == xml::ns::type_safe_ns) {
             namespace_definitions.push_back(xml::ns(reinterpret_cast<const char*>(ns->prefix),
                                                     reinterpret_cast<const char*>(ns->href)));
@@ -537,39 +541,14 @@ void xml::node::erase_namespace_definition (const char *prefix) {
     if (prefix && prefix[0] == '\0') prefix = NULL;
 
     // Search for the ns definition
-    xmlNs *definition(NULL);
-    xmlNs *current(pimpl_->xmlnode_->nsDef);
-    while (current) {
-        if (!prefix && !current->prefix) {
-            definition = current;
-            break;
-        }
-        else if (prefix && current->prefix) {
-            if (xmlStrEqual(reinterpret_cast<const xmlChar*>(prefix), current->prefix)) {
-                definition = current;
-                break;
-            }
-        }
-        current = current->next;
-    }
-
+    xmlNs *definition(lookup_ns_definition(pimpl_->xmlnode_, prefix));
     if (!definition) return;    // Not found
 
     if (is_ns_used(pimpl_->xmlnode_, definition))
         throw std::runtime_error( "Namespace is in use" );
 
     // Update the linked list pointers and free the namespace
-    if (pimpl_->xmlnode_->nsDef != definition) {
-        xmlNs *prev(pimpl_->xmlnode_->nsDef);
-        while (prev->next != definition)
-            prev = prev->next;
-        prev->next = definition->next;
-    }
-    else {
-        pimpl_->xmlnode_->nsDef = definition->next;
-    }
-
-    xmlFreeNs(definition);
+    erase_ns_definition(pimpl_->xmlnode_, definition);
     return;
 }
 //####################################################################
@@ -577,6 +556,79 @@ void xml::node::erase_namespace (void) {
     if (!pimpl_->xmlnode_->ns) return;
     if (!pimpl_->xmlnode_->ns->prefix) return;
     pimpl_->xmlnode_->ns = xmlSearchNs(NULL, pimpl_->xmlnode_, NULL);
+}
+//####################################################################
+void xml::node::erase_duplicate_ns_defs (void) {
+    std::deque<xml::node::ns_list_type> definitions_stack;
+    definitions_stack.push_front(get_namespace_definitions(xml::ns::type_unsafe_ns));
+    return erase_duplicate_ns_defs(pimpl_->xmlnode_, definitions_stack);
+}
+//####################################################################
+void xml::node::erase_duplicate_ns_defs (void* nd, std::deque<ns_list_type>& defs) {
+    xmlNodePtr current = reinterpret_cast<xmlNodePtr>(nd)->children;
+    while (current) {
+        erase_duplicate_ns_defs_single_node(current, defs);
+        defs.push_front(get_namespace_definitions(current, xml::ns::type_unsafe_ns));
+        erase_duplicate_ns_defs(current, defs);
+        defs.pop_front();
+        current = current->next;
+    }
+}
+//####################################################################
+void xml::node::erase_duplicate_ns_defs_single_node (void* nd, std::deque<ns_list_type>& defs) {
+    xmlNsPtr  ns(reinterpret_cast<xmlNodePtr>(nd)->nsDef);
+    while (ns) {
+        xmlNsPtr  replacement(reinterpret_cast<xmlNsPtr>(find_replacement_ns_def(defs, ns)));
+        if (replacement) {
+            replace_ns(reinterpret_cast<xmlNodePtr>(nd), ns, replacement);
+            xmlNsPtr next(ns->next);
+            erase_ns_definition(reinterpret_cast<xmlNodePtr>(nd), ns);
+            ns = next;
+        }
+        else {
+            ns = ns->next;
+        }
+    }
+}
+//####################################################################
+void* xml::node::find_replacement_ns_def (std::deque<ns_list_type>& defs, void* ns) {
+    xmlNsPtr nspace(reinterpret_cast<xmlNsPtr>(ns));
+    for (std::deque<ns_list_type>::const_iterator k(defs.begin()); k != defs.end(); ++k) {
+        for (ns_list_type::const_iterator j(k->begin()); j != k->end(); ++j) {
+            if (xmlStrcmp(nspace->prefix, reinterpret_cast<xmlNsPtr>(j->unsafe_ns_)->prefix) == 0) {
+                if (xmlStrcmp(nspace->href, reinterpret_cast<xmlNsPtr>(j->unsafe_ns_)->href) == 0) {
+                    return j->unsafe_ns_;
+                }
+                return NULL;
+            }
+        }
+    }
+    return NULL;
+}
+//####################################################################
+void xml::node::erase_unused_ns_defs (void) {
+    return erase_unused_ns_defs(pimpl_->xmlnode_);
+}
+//####################################################################
+void xml::node::erase_unused_ns_defs (void* nd) {
+    // Node itsef
+    xmlNsPtr  ns(reinterpret_cast<xmlNodePtr>(nd)->nsDef);
+    while (ns) {
+        if (!is_ns_used(reinterpret_cast<xmlNodePtr>(nd), ns)) {
+            xmlNsPtr next(ns->next);
+            erase_ns_definition(reinterpret_cast<xmlNodePtr>(nd), ns);
+            ns = next;
+        }
+        else {
+            ns = ns->next;
+        }
+    }
+    // Children
+    xmlNodePtr current = reinterpret_cast<xmlNodePtr>(nd)->children;
+    while (current) {
+        erase_unused_ns_defs(current);
+        current = current->next;
+    }
 }
 //####################################################################
 bool xml::node::is_text (void) const {

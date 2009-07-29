@@ -157,4 +157,49 @@ void xml::impl::update_children_default_ns (xmlNodePtr node, xmlNsPtr newns) {
     }
 }
 //####################################################################
+void xml::impl::erase_ns_definition (xmlNodePtr node, xmlNsPtr definition) {
+    if (!node->nsDef) return;
+    if (node->nsDef != definition) {
+        xmlNs *prev(node->nsDef);
+        while (prev && prev->next != definition)
+            prev = prev->next;
+        if (!prev) return;
+        prev->next = definition->next;
+    }
+    else {
+        node->nsDef = definition->next;
+    }
+    xmlFreeNs(definition);
+}
+//####################################################################
+xmlNsPtr xml::impl::lookup_ns_definition (xmlNodePtr node, const char *prefix) {
+    xmlNs *current(node->nsDef);
+    while (current) {
+        if (!prefix && !current->prefix) return current;
+        if (prefix && current->prefix) {
+            if (xmlStrEqual(reinterpret_cast<const xmlChar*>(prefix), current->prefix))
+                return current;
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+//####################################################################
+void xml::impl::replace_ns (xmlNodePtr node, xmlNsPtr oldNs, xmlNsPtr newNs) {
+    if (!node) return;
+
+    // Does the node itself use namespace
+    if (node->ns == oldNs) node->ns = newNs;
+
+    // Do the node attributes use namespace
+    for (xmlAttrPtr current = node->properties; current; current = current->next)
+        if (current->ns == oldNs) current->ns = newNs;
+
+    node = node->children;
+    while (node) {
+        replace_ns(node, oldNs, newNs);
+        node = node->next;
+    }
+}
+//####################################################################
 

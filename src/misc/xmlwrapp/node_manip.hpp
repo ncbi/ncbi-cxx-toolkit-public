@@ -137,6 +137,43 @@ namespace impl {
     **/
     //####################################################################
     void update_children_default_ns (xmlNodePtr node, xmlNsPtr newns);
+
+    //####################################################################
+    /**
+     * Erases namespace definition in the node. libxml2 namespace is freed.
+     * The function does not check whether the namespace is used.
+     *
+     * @param node The node to delete from.
+     * @param definition The namespace to be erased
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    void erase_ns_definition (xmlNodePtr node, xmlNsPtr definition);
+
+    //####################################################################
+    /**
+     * Searches for a namspace definition in the given node
+     *
+     * @param node The node to search in.
+     * @param prefix The namespace definition prefix
+     * @return pointer to the namespace definition or NULL if not found
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    xmlNsPtr lookup_ns_definition (xmlNodePtr node, const char *prefix);
+
+    //####################################################################
+    /**
+     * Replaces old namspace with a new one in nodes and attributes all
+     * the way down in the hierarchy
+     *
+     * @param node The node to start with.
+     * @param oldNs The old namespace
+     * @param newNs The new namespace
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    void replace_ns (xmlNodePtr node, xmlNsPtr oldNs, xmlNsPtr newNs);
 }
 
 }
