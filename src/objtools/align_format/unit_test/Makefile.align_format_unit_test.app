@@ -1,7 +1,8 @@
 # $Id$
 
 APP = align_format_unit_test
-SRC = showdefline_unit_test showalign_unit_test blast_test_util
+SRC = showdefline_unit_test showalign_unit_test blast_test_util \
+vectorscreen_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)

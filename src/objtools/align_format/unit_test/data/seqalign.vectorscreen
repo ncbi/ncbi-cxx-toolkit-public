@@ -1,0 +1,3907 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type
+        str "Hist Seqalign" ,
+      data {
+        {
+          label
+            str "Hist Seqalign" ,
+          data
+            bool TRUE } } } ,
+    user {
+      type
+        str "Blast Type" ,
+      data {
+        {
+          label
+            id 0 ,
+          data
+            int 0 } } } ,
+    user {
+      type
+        str "BLAST database title" ,
+      data {
+        {
+          label
+            str "UniVec" ,
+          data
+            bool TRUE } } } } ,
+  data
+    align {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 42 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 696574, 10, -19 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 843772, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 48 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 45 } } ,
+            starts {
+              1008 ,
+              26 ,
+              1030 ,
+              -1 ,
+              1031 ,
+              48 } ,
+            lens {
+              22 ,
+              1 ,
+              26 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 39 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 444825, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 783804, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 45 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 284 } } ,
+            starts {
+              1011 ,
+              0 ,
+              1030 ,
+              -1 ,
+              1031 ,
+              19 } ,
+            lens {
+              19 ,
+              1 ,
+              26 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 39 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 444825, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 783804, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 45 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 185 } } ,
+            starts {
+              1011 ,
+              0 ,
+              1030 ,
+              -1 ,
+              1031 ,
+              19 } ,
+            lens {
+              19 ,
+              1 ,
+              26 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 35 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 113540999, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 703846, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 41 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1524 } } ,
+            starts {
+              1008 ,
+              8 ,
+              1028 ,
+              -1 ,
+              1029 ,
+              28 } ,
+            lens {
+              20 ,
+              1 ,
+              21 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 35 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 113540999, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 703846, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 41 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1482 } } ,
+            starts {
+              1008 ,
+              299 ,
+              1028 ,
+              -1 ,
+              1029 ,
+              319 } ,
+            lens {
+              20 ,
+              1 ,
+              21 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 35 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 113540999, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 703846, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 41 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 286 } } ,
+            starts {
+              1008 ,
+              64 ,
+              1028 ,
+              -1 ,
+              1029 ,
+              84 } ,
+            lens {
+              20 ,
+              1 ,
+              21 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 34 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 453828999, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 683857, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 40 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1527 } } ,
+            starts {
+              1016 ,
+              0 ,
+              1028 ,
+              -1 ,
+              1029 ,
+              12 } ,
+            lens {
+              12 ,
+              1 ,
+              28 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 34 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 453828999, 10, -17 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 683857, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 40 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1167 } } ,
+            starts {
+              1016 ,
+              0 ,
+              1028 ,
+              -1 ,
+              1029 ,
+              12 } ,
+            lens {
+              12 ,
+              1 ,
+              28 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 29 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 463015, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 58391, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 29 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1764 } } ,
+            starts {
+              1028 ,
+              53 } ,
+            lens {
+              29 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 29 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 463015, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 58391, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 29 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1584 } } ,
+            starts {
+              1028 ,
+              11 } ,
+            lens {
+              29 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 29 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 463015, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 58391, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 29 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 285 } } ,
+            starts {
+              1028 ,
+              16 } ,
+            lens {
+              29 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 29 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 463015, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 58391, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 29 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 179 } } ,
+            starts {
+              1028 ,
+              16 } ,
+            lens {
+              29 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 29 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 463015, 10, -11 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 58391, 10, -3 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 29 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 42 } } ,
+            starts {
+              1028 ,
+              189 } ,
+            lens {
+              29 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 22 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 754708999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 443984, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 42 } } ,
+            starts {
+              1008 ,
+              82 } ,
+            lens {
+              22 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 42 } } ,
+            starts {
+              11 ,
+              164 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 28 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 18507, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 563921, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 28 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1658 } } ,
+            starts {
+              1029 ,
+              116 } ,
+            lens {
+              28 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 28 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 18507, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 563921, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 28 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 405 } } ,
+            starts {
+              1029 ,
+              21 } ,
+            lens {
+              28 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 405 } } ,
+            starts {
+              11 ,
+              53 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 28 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 18507, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 563921, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 28 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 283 } } ,
+            starts {
+              1029 ,
+              91 } ,
+            lens {
+              28 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 28 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 18507, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 563921, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 28 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 48 } } ,
+            starts {
+              1029 ,
+              172 } ,
+            lens {
+              28 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 27 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 739735, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 543931, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 27 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1768 } } ,
+            starts {
+              1028 ,
+              0 } ,
+            lens {
+              27 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 26 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 295677, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 523942, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1198 } } ,
+            starts {
+              1031 ,
+              73 } ,
+            lens {
+              26 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 26 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 295677, 10, -9 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 523942, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 26 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 175 } } ,
+            starts {
+              1031 ,
+              43 } ,
+            lens {
+              26 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 24 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 472387, 10, -8 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 483962999, 10, -7 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 24 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1869 } } ,
+            starts {
+              1028 ,
+              1318 } ,
+            lens {
+              24 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1869 } } ,
+            starts {
+              11 ,
+              1293 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 23 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 188815999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 463974, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 29 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 3 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1640 } } ,
+            starts {
+              1008 ,
+              62 ,
+              1028 ,
+              -1 ,
+              1029 ,
+              82 } ,
+            lens {
+              20 ,
+              1 ,
+              9 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 22 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 754708999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 443984, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1767 } } ,
+            starts {
+              1008 ,
+              51 } ,
+            lens {
+              22 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 22 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 754708999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 443984, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1423 } } ,
+            starts {
+              11 ,
+              28 } ,
+            lens {
+              22 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 22 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 754708999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 443984, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 404 } } ,
+            starts {
+              1008 ,
+              1257 } ,
+            lens {
+              22 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 404 } } ,
+            starts {
+              11 ,
+              0 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 22 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 754708999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 443984, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 287 } } ,
+            starts {
+              1008 ,
+              29 } ,
+            lens {
+              22 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 22 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 754708999, 10, -10 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 443984, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 22 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 178 } } ,
+            starts {
+              1008 ,
+              47 } ,
+            lens {
+              22 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1685 } } ,
+            starts {
+              11 ,
+              73 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1609 } } ,
+            starts {
+              11 ,
+              66 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1608 } } ,
+            starts {
+              1008 ,
+              13 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1598 } } ,
+            starts {
+              11 ,
+              73 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1596 } } ,
+            starts {
+              1008 ,
+              10 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1591 } } ,
+            starts {
+              1008 ,
+              54 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1590 } } ,
+            starts {
+              1008 ,
+              13 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1589 } } ,
+            starts {
+              11 ,
+              77 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1588 } } ,
+            starts {
+              11 ,
+              9 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1587 } } ,
+            starts {
+              11 ,
+              58 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1583 } } ,
+            starts {
+              1008 ,
+              124 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1580 } } ,
+            starts {
+              1008 ,
+              14 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1579 } } ,
+            starts {
+              11 ,
+              67 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1578 } } ,
+            starts {
+              1008 ,
+              16 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1565 } } ,
+            starts {
+              11 ,
+              70 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1564 } } ,
+            starts {
+              1008 ,
+              15 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1526 } } ,
+            starts {
+              11 ,
+              6 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1523 } } ,
+            starts {
+              11 ,
+              65 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1522 } } ,
+            starts {
+              1008 ,
+              23 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1407 } } ,
+            starts {
+              11 ,
+              13 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1361 } } ,
+            starts {
+              11 ,
+              28 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1290 } } ,
+            starts {
+              11 ,
+              176 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1263 } } ,
+            starts {
+              11 ,
+              13 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 857 } } ,
+            starts {
+              11 ,
+              7 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 856 } } ,
+            starts {
+              1008 ,
+              20 } ,
+            lens {
+              21 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 855 } } ,
+            starts {
+              1008 ,
+              28 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 854 } } ,
+            starts {
+              11 ,
+              38 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 288 } } ,
+            starts {
+              11 ,
+              1 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 20 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 120576, 10, -5 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 404005, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 20 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 288 } } ,
+            starts {
+              1008 ,
+              91 } ,
+            lens {
+              20 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 21 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 301662, 10, -6 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 423995, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 21 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 44 } } ,
+            starts {
+              11 ,
+              54 } ,
+            lens {
+              21 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 19 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 481949, 10, -5 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 384016, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 19 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1765 } } ,
+            starts {
+              1011 ,
+              30 } ,
+            lens {
+              19 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 19 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 481949, 10, -5 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 384016, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 19 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 51 } } ,
+            starts {
+              1038 ,
+              31 } ,
+            lens {
+              19 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1366 } } ,
+            starts {
+              1011 ,
+              66 } ,
+            lens {
+              18 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1291 } } ,
+            starts {
+              1031 ,
+              0 } ,
+            lens {
+              18 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1164 } } ,
+            starts {
+              1011 ,
+              88 } ,
+            lens {
+              18 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 973 } } ,
+            starts {
+              1039 ,
+              46 } ,
+            lens {
+              18 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 887 } } ,
+            starts {
+              1039 ,
+              86 } ,
+            lens {
+              18 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 885 } } ,
+            starts {
+              1039 ,
+              49 } ,
+            lens {
+              18 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 18 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 192638, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 364027, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 18 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 127 } } ,
+            starts {
+              1039 ,
+              58 } ,
+            lens {
+              18 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1929 } } ,
+            starts {
+              1040 ,
+              144 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1525 } } ,
+            starts {
+              1013 ,
+              47 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1478 } } ,
+            starts {
+              15 ,
+              43 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 862 } } ,
+            starts {
+              1040 ,
+              23 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 618 } } ,
+            starts {
+              1039 ,
+              219 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 569 } } ,
+            starts {
+              1040 ,
+              158 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 568 } } ,
+            starts {
+              1040 ,
+              51 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 566 } } ,
+            starts {
+              1040 ,
+              47 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 561 } } ,
+            starts {
+              1040 ,
+              48 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 551 } } ,
+            starts {
+              1040 ,
+              71 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 507 } } ,
+            starts {
+              1040 ,
+              19 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 505 } } ,
+            starts {
+              1040 ,
+              44 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 131 } } ,
+            starts {
+              1040 ,
+              61 } ,
+            lens {
+              17 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 17 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 769986, 10, -4 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 344037, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 17 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 52 } } ,
+            starts {
+              1040 ,
+              98 } ,
+            lens {
+              17 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 16 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 307768, 10, -3 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 324048, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 16 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 1000 } } ,
+            starts {
+              18 ,
+              1512 } ,
+            lens {
+              16 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 16 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 307768, 10, -3 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 324048, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 16 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 996 } } ,
+            starts {
+              18 ,
+              9 } ,
+            lens {
+              16 } ,
+            strands {
+              minus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 16 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 307768, 10, -3 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 324048, 10, -4 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 16 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              local
+                str "1_5430" ,
+              general {
+                db "BL_ORD_ID" ,
+                tag
+                  id 186 } } ,
+            starts {
+              1040 ,
+              66 } ,
+            lens {
+              16 } ,
+            strands {
+              minus ,
+              plus } } } } }
+
+
