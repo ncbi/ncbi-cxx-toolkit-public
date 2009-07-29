@@ -1,7 +1,7 @@
 # $Id$
 
-APP = blast_format_unit_test
-SRC = seqalignfilter_unit_test blastfmtutil_unit_test
+APP = align_format_unit_test
+SRC = showdefline_unit_test showalign_unit_test blast_test_util
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
@@ -14,7 +14,7 @@ LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(PCRE_LIBS) \
     $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = blast_format_unit_test
+CHECK_CMD = align_format_unit_test
 CHECK_COPY = data
 
 REQUIRES = Boost.Test.Included
