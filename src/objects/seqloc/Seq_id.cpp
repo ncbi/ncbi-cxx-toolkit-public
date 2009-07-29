@@ -1086,7 +1086,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  GQ  gb_dirsub",
     "2+6  GR  gb_est",
     "2+6  GS  gb_gss",
-    "2+6  GT  gb_other_nuc",
+    "2+6  GT  gb_est",
     "2+6  GU  gb_other_nuc",
     "2+6  GV  gb_other_nuc",
     "2+6  GW  gb_other_nuc",
