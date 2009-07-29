@@ -6397,7 +6397,7 @@ fi
 
 dnl Create Makefile.flat if requested
 if test "$with_flat_makefile" != "no"; then
-   if "$with_flat_makefile" = yes; then
+   if test "$with_flat_makefile" = yes; then
       cfm_flags=''
    else
       cfm_flags='-remoteptb'
