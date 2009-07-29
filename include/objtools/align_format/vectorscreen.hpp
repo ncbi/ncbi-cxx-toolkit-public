@@ -41,9 +41,6 @@
 #include <util/range.hpp>
 #include <objtools/align_format/align_format_util.hpp>
 
-//forward declarations
-class CVecscreenTest;  //For internal test only
-
 BEGIN_NCBI_SCOPE 
 USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
@@ -122,7 +119,7 @@ public:
     ///
     void VecscreenPrint(CNcbiOstream& out);
  
-private:
+protected:
     
     
     ///the current seqalign
@@ -195,10 +192,6 @@ private:
     ///@param out: the stream for output
     ///
     void x_BuildHtmlBar(CNcbiOstream& out);
-    
-    ///For internal test 
-    friend class ::CVecscreenTest;
- 
 };
 
 END_SCOPE(align_format)
