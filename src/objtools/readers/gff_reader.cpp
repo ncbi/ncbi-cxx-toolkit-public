@@ -491,7 +491,7 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
                    x_GetLineNumber());
             return null;
         } else if (m_Version < 3) {
-            x_Warn("Bad delimiters (should use tabs)", x_GetLineNumber());
+            x_Info("(Recovered) Bad delimiters (should use tabs)", x_GetLineNumber());
             misdelimited = true;
         }
     } else {
