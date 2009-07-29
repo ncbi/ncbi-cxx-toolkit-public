@@ -172,6 +172,7 @@
             usage_str += "    [-dll]      -- use  NCBI C++ toolkit DLLs' instead of static libraries\n";
             usage_str += "    [-b]        -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
             usage_str += "    [-v]        -- show details about what is being made\n";
+            usage_str += "    [-i]        -- enter the data interactively\n";
             usage_str += "EXAMPLES:\n";
             usage_str += "    cscript new_project.wsf my_app app/basic\n";
             usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
