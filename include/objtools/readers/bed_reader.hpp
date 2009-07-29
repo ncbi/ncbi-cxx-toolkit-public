@@ -79,14 +79,17 @@ public:
     //  helpers:
     //
 protected:
-    static bool IsMetaInformation(
-        const string& );
-
-    void x_ProcessMetaInformation(
-        const string& );
+    bool x_ParseBrowserLine(
+        const string&,
+        CRef<CSeq_annot>& );
     /* throws CObjReaderLineException */
-
-    void x_ParseFeature(
+        
+    bool x_ParseTrackLine(
+        const string&,
+        CRef<CSeq_annot>& );
+    /* throws CObjReaderLineException */
+        
+    bool x_ParseFeature(
         const string&,
         CRef<CSeq_annot>& );
     /* throws CObjReaderLineException */
@@ -94,10 +97,19 @@ protected:
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>& );
+        
     void x_SetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>& );
 
+    void x_GetTrackValues(
+        const string&,
+        map<string,string>& );
+        
+    void x_SetBrowserRegion(
+        const string&,
+        CAnnot_descr& );
+        
     //
     //  data:
     //

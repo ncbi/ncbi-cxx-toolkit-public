@@ -59,6 +59,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
@@ -118,6 +119,9 @@ CBedReader::ReadSeqAnnot(
 //  ----------------------------------------------------------------------------                
 {
     CRef< CSeq_annot > annot( new CSeq_annot );
+    CRef< CAnnot_descr > desc( new CAnnot_descr );
+    annot->SetDesc( *desc );
+
     string line;
     int linecount = 0;
 
@@ -127,17 +131,13 @@ CBedReader::ReadSeqAnnot(
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
-        if ( IsMetaInformation( line ) ) {
-            try {
-                x_ProcessMetaInformation( line );
-            }
-            catch( CObjReaderLineException& err ) {
-                err.SetLineNumber( linecount );
-                ProcessError( err, pErrorContainer );
-            }
-            continue;
-        }
         try {
+            if ( x_ParseBrowserLine( line, annot ) ) {
+                continue;
+            }
+            if ( x_ParseTrackLine( line, annot ) ) {
+                continue;
+            }
             x_ParseFeature( line, annot );
         }
         catch( CObjReaderLineException& err ) {
@@ -160,59 +160,177 @@ CBedReader::ReadObject(
         ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );    
     return object;
 }
+
+//  ----------------------------------------------------------------------------
+void CBedReader::x_SetBrowserRegion(
+    const string& strRaw,
+    CAnnot_descr& desc )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_loc> location( new CSeq_loc );
+    CSeq_interval& interval = location->SetInt();
+
+    string strChrom;
+    string strInterval;
+    if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad browser: cannot parse browser position" );
+        throw( err );
+    }
+    CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
+    location->SetId( *id );
+
+    string strFrom;
+    string strTo;
+    if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad browser: cannot parse browser position" );
+        throw( err );
+    }    
+    interval.SetFrom( NStr::StringToInt( strFrom ) - 1);
+    interval.SetTo( NStr::StringToInt( strTo ) - 1 );
+    interval.SetStrand( eNa_strand_unknown );
+
+    CRef<CAnnotdesc> region( new CAnnotdesc() );
+    region->SetRegion( *location );
+    desc.Set().push_back( region );
+}
     
 //  ----------------------------------------------------------------------------
-bool CBedReader::IsMetaInformation(
-    const string& line )
+bool CBedReader::x_ParseBrowserLine(
+    const string& strLine,
+    CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( NStr::StartsWith( line, "track" ) ) {
-        return true;
+    if ( ! NStr::StartsWith( strLine, "browser" ) ) {
+        return false;
     }
-    if ( NStr::StartsWith( line, "browser" ) ) {
-        return true;
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-void CBedReader::x_ProcessMetaInformation(
-    const string& line ) /* throws CObjReaderLineException */
-//  ----------------------------------------------------------------------------
-{
+    CAnnot_descr& desc = annot->SetDesc();
+    
     vector<string> fields;
-    NStr::Tokenize( line, " \t", fields, NStr::eMergeDelims );
-    if ( fields[0] == "track" ) {
-        for ( vector<string>::size_type i=1; i < fields.size(); ++i ) {
-            if ( NStr::StartsWith( fields[i], "useScore=" ) ) {
-                vector<string> splits;
-                NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
-                if ( splits.size() == 2 ) {
-                    m_usescore = (1 == NStr::StringToInt(splits[1]));
-                }
-                else {
-                    CObjReaderLineException err(
-                        eDiag_Error,
-                        0,
-                        "Bad track line: key=value pair expected" );
-                    throw( err );
-                }
+    NStr::Tokenize( strLine, " \t", fields, NStr::eMergeDelims );
+    for ( vector<string>::iterator it = fields.begin(); it != fields.end(); ++it ) {
+        if ( *it == "position" ) {
+            ++it;
+            if ( it == fields.end() ) {
+                CObjReaderLineException err(
+                    eDiag_Error,
+                    0,
+                    "Bad browser line: incomplete position directive" );
+                throw( err );
             }
+            x_SetBrowserRegion( *it, desc );
+            continue;
         }
-        return;
     }
-    if ( fields[0] == "browser" ) {
-        return;
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+void CBedReader::x_GetTrackValues(
+    const string& strLine,
+    map<string, string>& values )
+//  ----------------------------------------------------------------------------
+{
+    string strTemp( strLine );
+    
+    //
+    //  Hide blanks inside of string literals
+    //
+    bool bInString = false;
+    for ( size_t u=0; u < strTemp.size(); ++u ) {
+        switch ( strTemp[u] ) {
+        default:
+            break;
+        case '\"':
+            bInString = !bInString;
+            break;
+        case ' ':
+            if ( bInString ) {
+                strTemp[u] = '\"';
+            }
+            break;
+        }
     }
-    CObjReaderLineException err(
-        eDiag_Error,
-        0,
-        "Line type not recognized. Maybe not meta information?" );
-    throw( err );
+    vector<string> fields;
+    NStr::Tokenize( strTemp, " \t", fields, NStr::eMergeDelims );
+    for ( vector<string>::size_type i=1; i < fields.size(); ++i ) {
+        vector<string> splits;
+        NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );        
+        if ( splits.size() != 2 ) {
+            CObjReaderLineException err(
+                eDiag_Warning,
+                0,
+                "Bad track line: key=value pair expected" );
+            throw( err );
+        }
+        string strKey = splits[0];
+        //  Restore the hidden blanks, remove quotes     
+        string strValue = splits[1];
+        NStr::ReplaceInPlace( strValue, "\"", " " );
+        NStr::TruncateSpacesInPlace( strValue );
+        values[ strKey ] = strValue;
+    }
 }
 
 //  ----------------------------------------------------------------------------
-void CBedReader::x_ParseFeature(
+bool CBedReader::x_ParseTrackLine(
+    const string& strLine,
+    CRef<CSeq_annot>& annot )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+        return false;
+    }
+    CAnnot_descr& desc = annot->SetDesc();
+
+    CRef<CUser_object> trackdata( new CUser_object() );
+    trackdata->SetType().SetStr( "Track Data" );    
+    CRef<CAnnotdesc> user( new CAnnotdesc() );
+    user->SetUser( *trackdata );
+    desc.Set().push_back( user );
+    
+//    CRef<CUser_object> user( new CUser_object );
+
+    map<string, string> values;
+    x_GetTrackValues( strLine, values );
+    for ( map<string,string>::iterator it = values.begin(); it != values.end(); ++it ) {
+    
+        if ( it->first == "useScore" ) {
+            m_usescore = ( 1 == NStr::StringToInt( it->second ) );
+            trackdata->AddField( it->first, atoi( it->second.c_str() ) );
+            continue;
+        }
+        if ( it->first == "name" ) {
+            CRef<CAnnotdesc> name( new CAnnotdesc() );
+            name->SetName( it->second );
+            desc.Set().push_back( name );
+            continue;
+        }
+        if ( it->first == "description" ) {
+            CRef<CAnnotdesc> title( new CAnnotdesc() );
+            title->SetTitle( it->second );
+            desc.Set().push_back( title );
+            continue;
+        }
+        if ( it->first == "visibility" ) {
+            trackdata->AddField( it->first, atoi( it->second.c_str() ) );
+            continue;
+        }
+        trackdata->AddField( it->first, it->second );
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::x_ParseFeature(
     const string& record,
     CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
 //  ----------------------------------------------------------------------------
@@ -250,6 +368,7 @@ void CBedReader::x_ParseFeature(
         throw( err );    
     }
     ftable.push_back( feature );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
