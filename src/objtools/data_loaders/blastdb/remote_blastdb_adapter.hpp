@@ -109,8 +109,7 @@ public:
                     (idx+1 == m_SeqDataVector.size()));
         } else {
             if (((end-begin) % kRmtSequenceSliceSize) == 0) {
-                idx = log((double)((end-begin)/kRmtSequenceSliceSize)) /
-                    log((double)kSliceGrowthFactor);
+                idx = ilog2( (end-begin)/kRmtSequenceSliceSize );
             } else {
                 idx = m_SeqDataVector.size() - 1;
             }
@@ -157,6 +156,19 @@ private:
             }
         }
         return retval;
+    }
+
+    Int4 ilog2(Int4 x)
+    {
+        Int4 lg = 0;
+
+        if (x == 0)
+            return 0;
+
+        while ((x = x >> 1))
+            lg++;
+
+        return lg;
     }
 
 };
