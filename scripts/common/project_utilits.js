@@ -235,14 +235,14 @@ function FillTreeStructure(oShell, oTree)
         "ptb_version.txt"
         );
     GetFilesFromTree(oShell, oTree, oTask,
-        "/src/build-system", build_files, oTree.SrcBuildSystemBranch);
+        "/src/build-system", build_files, oTree.SrcBuildSystemBranch, false);
     var tmp = g_usefilecopy;
     g_usefilecopy = false;
     var build_files2 = new Array (
         "project_tree_builder.ini"
         );
     GetFilesFromTree(oShell, oTree, oTask,
-        "/src/build-system", build_files2, oTree.SrcBuildSystemBranch);
+        "/src/build-system", build_files2, oTree.SrcBuildSystemBranch, true);
     g_usefilecopy = tmp;
 
     var compiler_files = new Array (
@@ -256,21 +256,21 @@ function FillTreeStructure(oShell, oTree)
         "msvcvars.bat"
         );
     GetFilesFromTree(oShell, oTree, oTask,
-        "/compilers/" + GetMsvcFolder(), compiler_files, oTree.CompilersBranch);
+        "/compilers/" + GetMsvcFolder(), compiler_files, oTree.CompilersBranch, false);
 
     var dll_files = new Array (
         "dll_main.cpp"
         );
     GetFilesFromTree(oShell, oTree, oTask,
-        "/compilers/" + GetMsvcFolder() + "/dll", dll_files,  oTree.CompilersBranchDll);
+        "/compilers/" + GetMsvcFolder() + "/dll", dll_files,  oTree.CompilersBranchDll, false);
 
     GetFilesFromTree(oShell, oTree, oTask,
         "/include/common/config", new Array("ncbiconf_msvc*.*"),
-        oTree.IncludeConfig);
+        oTree.IncludeConfig, false);
 /*
     GetFilesFromTree(oShell, oTree, oTask,
         "/include/common/config/msvc", new Array("ncbiconf_msvc*.*"),
-        oTree.IncludeConfig + "\\msvc");
+        oTree.IncludeConfig + "\\msvc", false);
 */
 }
 
@@ -736,7 +736,7 @@ function GetRepository(oShell, relative_path)
 }
 
 // Get files from SVN tree
-function GetFilesFromTree(oShell, oTree, oTask, cvs_rel_path, files, target_abs_dir)
+function GetFilesFromTree(oShell, oTree, oTask, cvs_rel_path, files, target_abs_dir, trycopy)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
@@ -758,11 +758,26 @@ function GetFilesFromTree(oShell, oTree, oTask, cvs_rel_path, files, target_abs_
     // Get it from SVN
     RemoveFolder(oShell, oFso, "temp");
     var cvs_dir = GetRepository(oShell, cvs_rel_path);
-    execute(oShell, "svn checkout -N " + cvs_dir + " temp");
+    var res = execute(oShell, "svn checkout -N " + cvs_dir + " temp");
     for (var i = 0; i < files.length; ++i) {
         execute(oShell, "copy /Y \"temp\\" + files[i] + "\" \""+ target_abs_dir + "\"");
     }
     RemoveFolder(oShell, oFso, "temp");
+
+    // if SVN failed, still try to get the file
+    if (res != 0 && trycopy) {
+		var folder = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
+		if ( oFso.FolderExists(folder) ) {
+			var dir = oFso.GetFolder(folder);
+			var dir_files = new Enumerator(dir.files);
+			if (!dir_files.atEnd()) {
+                for (var i = 0; i < files.length; ++i) {
+			    	execute(oShell, "copy /Y \"" + folder + "\\" + files[i] + "\" \"" + target_abs_dir + "\"");
+			    }
+				return;
+			}
+		}
+    }
 }
 
 function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
