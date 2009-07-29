@@ -103,6 +103,28 @@ public:
     //  Class helper functions:
     //
 protected:
+    virtual bool x_ParseBrowserLine(
+        const string&,
+        CRef<CSeq_annot>& );
+        
+    virtual bool x_ParseTrackLine(
+        const string&,
+        CRef<CSeq_annot>& );
+        
+    virtual void x_GetTrackValues(
+        const string&,
+        map<string,string>& );
+        
+    virtual void x_SetBrowserRegion(
+        const string&,
+        CAnnot_descr& );
+
+    virtual void x_SetTrackData(
+        CRef<CSeq_annot>&,
+        CRef<CUser_object>&,
+        const string&,
+        const string& );
+                
     static bool SplitLines( 
         const char* pcBuffer, 
         size_t uSize,

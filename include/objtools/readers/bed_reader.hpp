@@ -79,16 +79,6 @@ public:
     //  helpers:
     //
 protected:
-    bool x_ParseBrowserLine(
-        const string&,
-        CRef<CSeq_annot>& );
-    /* throws CObjReaderLineException */
-        
-    bool x_ParseTrackLine(
-        const string&,
-        CRef<CSeq_annot>& );
-    /* throws CObjReaderLineException */
-        
     bool x_ParseFeature(
         const string&,
         CRef<CSeq_annot>& );
@@ -102,14 +92,12 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>& );
 
-    void x_GetTrackValues(
+    virtual void x_SetTrackData(
+    CRef<CSeq_annot>&,
+        CRef<CUser_object>&,
         const string&,
-        map<string,string>& );
-        
-    void x_SetBrowserRegion(
-        const string&,
-        CAnnot_descr& );
-        
+        const string& );
+                
     //
     //  data:
     //

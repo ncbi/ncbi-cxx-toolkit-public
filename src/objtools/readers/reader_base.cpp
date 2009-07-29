@@ -239,5 +239,161 @@ CReaderBase::ProcessError(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CReaderBase::x_SetBrowserRegion(
+    const string& strRaw,
+    CAnnot_descr& desc )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_loc> location( new CSeq_loc );
+    CSeq_interval& interval = location->SetInt();
+
+    string strChrom;
+    string strInterval;
+    if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad browser: cannot parse browser position" );
+        throw( err );
+    }
+    CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
+    location->SetId( *id );
+
+    string strFrom;
+    string strTo;
+    if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad browser: cannot parse browser position" );
+        throw( err );
+    }    
+    interval.SetFrom( NStr::StringToInt( strFrom ) - 1);
+    interval.SetTo( NStr::StringToInt( strTo ) - 1 );
+    interval.SetStrand( eNa_strand_unknown );
+
+    CRef<CAnnotdesc> region( new CAnnotdesc() );
+    region->SetRegion( *location );
+    desc.Set().push_back( region );
+}
+    
+//  ----------------------------------------------------------------------------
+void CReaderBase::x_GetTrackValues(
+    const string& strLine,
+    map<string, string>& values )
+//  ----------------------------------------------------------------------------
+{
+    string strTemp( strLine );
+    
+    //
+    //  Hide blanks inside of string literals
+    //
+    bool bInString = false;
+    for ( size_t u=0; u < strTemp.size(); ++u ) {
+        switch ( strTemp[u] ) {
+        default:
+            break;
+        case '\"':
+            bInString = !bInString;
+            break;
+        case ' ':
+            if ( bInString ) {
+                strTemp[u] = '\"';
+            }
+            break;
+        }
+    }
+    vector<string> fields;
+    NStr::Tokenize( strTemp, " \t", fields, NStr::eMergeDelims );
+    for ( vector<string>::size_type i=1; i < fields.size(); ++i ) {
+        vector<string> splits;
+        NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );        
+        if ( splits.size() != 2 ) {
+            CObjReaderLineException err(
+                eDiag_Warning,
+                0,
+                "Bad track line: key=value pair expected" );
+            throw( err );
+        }
+        string strKey = splits[0];
+        //  Restore the hidden blanks, remove quotes     
+        string strValue = splits[1];
+        NStr::ReplaceInPlace( strValue, "\"", " " );
+        NStr::TruncateSpacesInPlace( strValue );
+        values[ strKey ] = strValue;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::x_ParseBrowserLine(
+    const string& strLine,
+    CRef<CSeq_annot>& annot )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "browser" ) ) {
+        return false;
+    }
+    CAnnot_descr& desc = annot->SetDesc();
+    
+    vector<string> fields;
+    NStr::Tokenize( strLine, " \t", fields, NStr::eMergeDelims );
+    for ( vector<string>::iterator it = fields.begin(); it != fields.end(); ++it ) {
+        if ( *it == "position" ) {
+            ++it;
+            if ( it == fields.end() ) {
+                CObjReaderLineException err(
+                    eDiag_Error,
+                    0,
+                    "Bad browser line: incomplete position directive" );
+                throw( err );
+            }
+            x_SetBrowserRegion( *it, desc );
+            continue;
+        }
+    }
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::x_ParseTrackLine(
+    const string& strLine,
+    CRef<CSeq_annot>& annot )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+        return false;
+    }
+    CAnnot_descr& desc = annot->SetDesc();
+
+    CRef<CUser_object> trackdata( new CUser_object() );
+    trackdata->SetType().SetStr( "Track Data" );    
+    CRef<CAnnotdesc> user( new CAnnotdesc() );
+    user->SetUser( *trackdata );
+    desc.Set().push_back( user );
+    
+//    CRef<CUser_object> user( new CUser_object );
+
+    map<string, string> values;
+    x_GetTrackValues( strLine, values );
+    for ( map<string,string>::iterator it = values.begin(); it != values.end(); ++it ) {
+        x_SetTrackData( annot, trackdata, it->first, it->second );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+void CReaderBase::x_SetTrackData(
+    CRef<CSeq_annot>& annot,
+    CRef<CUser_object>& trackdata,
+    const string& strKey,
+    const string& strValue )
+//  ----------------------------------------------------------------------------
+{
+    trackdata->AddField( strKey, strValue );
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE
