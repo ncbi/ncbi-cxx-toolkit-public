@@ -3640,6 +3640,7 @@ if test "$with_sybase" != "no" ; then
                       [Define to 1 if the PUBSEQ service is available.])
             NCBI_FEATURE(PubSeqOS)
             ncbi_xreader_pubseqos=ncbi_xreader_pubseqos
+            ncbi_xreader_pubseqos2=ncbi_xreader_pubseqos2
             UNLESS_PUBSEQOS=\#
          fi
       fi
@@ -6284,6 +6285,7 @@ AC_SUBST(SQLITE3_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
+AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
 
 AC_SUBST(NCBI_C_ncbi)
