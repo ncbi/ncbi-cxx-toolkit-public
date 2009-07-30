@@ -1,0 +1,4 @@
+CPPFLAGS = $(ORIG_CPPFLAGS) $(HDF5_INCLUDE)
+
+SRC = MsHdf5
+LIB = mshdf5

@@ -1,3 +1,4 @@
-DTD_PROJ = mzML
+#DTD_PROJ = mzML
+XSD_PROJ = mzML
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

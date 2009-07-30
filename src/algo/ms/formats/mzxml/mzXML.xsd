@@ -153,7 +153,8 @@ Information about the separation technique, if any, used right before the acquis
       <xs:element ref="separation" minOccurs="0"/>
 <!--Acquisition independent properties of a MALDI experiment. -->
       <xs:element ref="spotting" minOccurs="0"/>
-      <xs:element ref="scan" maxOccurs="unbounded"/>
+<!--Modified to allow 0 scans for internal NCBI use. -->
+      <xs:element ref="scan" minOccurs="0" maxOccurs="unbounded"/>
 <!--sha-1 sum for this file (from the beginning of the file up to (and including) the opening tag of sha1 -->
       <xs:element name="sha1" type="xs:string" minOccurs="0"/>
     </xs:sequence>
@@ -208,7 +209,7 @@ Contact information for the person responsible for the instrument.
 <xs:element name="operator">
   <xs:complexType>
     <xs:simpleContent>
-      <xs:extension base="xs:string">
+      <xs:extension base="xs:anySimpleType">
         <xs:attribute name="first" type="xs:string" use="required"/>
         <xs:attribute name="last" type="xs:string" use="required"/>
         <xs:attribute name="phone" type="xs:string" use="optional"/>
@@ -231,7 +232,7 @@ Contact information for the person responsible for the instrument.
 <xs:element name="parentFile">
   <xs:complexType>
     <xs:simpleContent>
-      <xs:extension base="xs:string">
+      <xs:extension base="xs:anySimpleType">
         <xs:attribute name="fileName" type="xs:string" use="required"/>
         <xs:attribute name="fileType" use="required">
           <xs:simpleType>
@@ -432,7 +433,7 @@ Information about the separation technique, if any, used right before the acquis
 <xs:element name="software">
   <xs:complexType>
     <xs:simpleContent>
-      <xs:extension base="xs:string">
+      <xs:extension base="xs:anySimpleType">
         <xs:attribute name="type" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:string">

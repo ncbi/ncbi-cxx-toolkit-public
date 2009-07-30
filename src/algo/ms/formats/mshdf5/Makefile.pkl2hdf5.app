@@ -1,0 +1,26 @@
+#
+# Makefile.pkl2hdf5.app
+#
+#
+#############################################################################
+###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+APP = pkl2hdf5
+SRC = pkl2hdf5
+# OBJ =
+
+# PRE_LIBS = $(NCBI_C_LIBPATH) .....
+
+#LINK_WRAPPER = $(top_srcdir)/scripts/common/impl/favor-static
+
+LIB = mshdf5 mzXML general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress
+## If you need the C toolkit...
+# LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(ORIG_LIBS) $(CMPRS_LIBS) $(HDF5_LIBS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(HDF5_INCLUDE) 
+
+# CFLAGS   = $(ORIG_CFLAGS)
+# CXXFLAGS = $(ORIG_CXXFLAGS)
+LDFLAGS  =  $(ORIG_LDFLAGS) $(HDF5_LIBS)
+
+#                                                                         ###
+#############################################################################
