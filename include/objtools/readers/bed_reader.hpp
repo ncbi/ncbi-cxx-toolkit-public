@@ -93,7 +93,7 @@ protected:
         const vector<string>& );
 
     virtual void x_SetTrackData(
-    CRef<CSeq_annot>&,
+        CRef<CSeq_annot>&,
         CRef<CUser_object>&,
         const string&,
         const string& );

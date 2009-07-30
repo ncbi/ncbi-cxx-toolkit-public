@@ -140,58 +140,49 @@ CWiggleReader::ReadSeqAnnot(
     CWiggleRecord record;
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
-    x_ReadLine( lr, pending );
-    if ( lr.AtEOF() && pending.empty() ) {
-        // empty file
-        return CRef< CSeq_annot >();
+    while ( x_ReadLine( lr, pending ) ) {
+
+        try {
+            if ( x_ParseBrowserLine( pending, annot ) ) {
+                continue;
+            }
+            if ( x_ParseTrackData( pending, annot, record ) ) {
+                continue;
+            }
+            x_ParseGraphData( lr, pending, record );
+            m_pSet->AddRecord( record );
+        }
+        catch( CObjReaderLineException& err ) {
+            ProcessError( err, pErrorContainer );
+        }
     }
-    while ( !lr.AtEOF() ) {
-        //
-        //  Wrap the parsing of every single line into a try/catch block so
-        //  we have the option of continuing with the next line if resulting
-        //  exceptions are less than life threatening.
-        //
-        
-        try {
-            x_ParseTrackData( pending, record );
-        }
-        catch( CObjReaderLineException& err ) {
-            ProcessError( err, pErrorContainer );
-        }
-        x_ReadLine( lr, pending );
-        while( !pending.empty() || !lr.AtEOF() ) {
-        
-            try {            
-                x_ParseGraphData( lr, pending, record );
-                m_pSet->AddRecord( record );
-            }
-            catch( CObjReaderLineException& err ) {
-                ProcessError( err, pErrorContainer );
-            }
-            x_ReadLine( lr, pending );
-        }
-        try {
-            m_pSet->MakeGraph( graphset );
-        }
-        catch( CObjReaderLineException& err ) {
-            ProcessError( err, pErrorContainer );
-        }
+    
+    try {
+        m_pSet->MakeGraph( graphset );
+    }
+    catch( CObjReaderLineException& err ) {
+        ProcessError( err, pErrorContainer );
     }
     return annot; 
 }
     
 //  ----------------------------------------------------------------------------
-void CWiggleReader::x_ParseTrackData(
-    string& pending,
+bool CWiggleReader::x_ParseTrackData(
+    const string& pending,
+    CRef<CSeq_annot>& annot,
     CWiggleRecord& record )
 //
 //  Note:   Expecting a line that starts with "track". With comments already
 //          weeded out coming in, everything else triggers an error.
 //  ----------------------------------------------------------------------------
 {
+    if ( ! CReaderBase::x_ParseTrackLine( pending, annot ) ) {
+        return false;
+    }
     vector<string> parts;
     Tokenize( pending, " \t", parts );
     record.ParseTrackDefinition( parts );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -294,9 +285,6 @@ bool CWiggleReader::x_IsCommentLine(
     if ( line.empty() ) {
         return true;
     }
-    if ( NStr::StartsWith( line, "browser" ) ) {
-        return true;
-    }
     if ( NStr::StartsWith( line, "#" ) ) {
         return true;
     }
@@ -374,5 +362,32 @@ void CWiggleReader::Tokenize(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CWiggleReader::x_SetTrackData(
+    CRef<CSeq_annot>& annot,
+    CRef<CUser_object>& trackdata,
+    const string& strKey,
+    const string& strValue )
+//  ----------------------------------------------------------------------------
+{
+    CAnnot_descr& desc = annot->SetDesc();
+
+    if ( strKey == "name" ) {
+        CRef<CAnnotdesc> name( new CAnnotdesc() );
+        name->SetName( strValue );
+        desc.Set().push_back( name );
+        return;
+    }
+    if ( strKey == "description" ) {
+        CRef<CAnnotdesc> title( new CAnnotdesc() );
+        title->SetTitle( strValue );
+        desc.Set().push_back( title );
+        return;
+    }
+    if ( strKey == "type" ) {
+        return;
+    }
+    CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
+}
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -370,16 +370,16 @@ bool CReaderBase::x_ParseTrackLine(
 
     CRef<CUser_object> trackdata( new CUser_object() );
     trackdata->SetType().SetStr( "Track Data" );    
-    CRef<CAnnotdesc> user( new CAnnotdesc() );
-    user->SetUser( *trackdata );
-    desc.Set().push_back( user );
     
-//    CRef<CUser_object> user( new CUser_object );
-
     map<string, string> values;
     x_GetTrackValues( strLine, values );
     for ( map<string,string>::iterator it = values.begin(); it != values.end(); ++it ) {
         x_SetTrackData( annot, trackdata, it->first, it->second );
+    }
+    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
+        CRef<CAnnotdesc> user( new CAnnotdesc() );
+        user->SetUser( *trackdata );
+        desc.Set().push_back( user );
     }
     return true;
 }

@@ -105,8 +105,9 @@ public:
     //  helpers:
     //
 protected:
-    void x_ParseTrackData(
-        string&,
+    bool x_ParseTrackData(
+        const string&,
+        CRef<CSeq_annot>&,
         CWiggleRecord& );
     /* throws CObjReaderLineException */
 
@@ -116,6 +117,12 @@ protected:
         CWiggleRecord& );
     /* throws CObjReaderLineException */
 
+    virtual void x_SetTrackData(
+        CRef<CSeq_annot>&,
+        CRef<CUser_object>&,
+        const string&,
+        const string& );
+                
     bool x_IsCommentLine(
         const string& );
 

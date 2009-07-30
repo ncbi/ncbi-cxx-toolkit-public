@@ -128,8 +128,11 @@ CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
-{ 
+{
     CRef< CSeq_annot > annot( new CSeq_annot );
+    CRef< CAnnot_descr > desc( new CAnnot_descr );
+    annot->SetDesc( *desc );
+
     string line;
     int linecount = 0;
 
@@ -139,17 +142,13 @@ CMicroArrayReader::ReadSeqAnnot(
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
         }
-        if ( IsMetaInformation( line ) ) {
-            try {
-                x_ProcessMetaInformation( line, annot );
-            }
-            catch( CObjReaderLineException& err ) {
-                err.SetLineNumber( linecount );
-                ProcessError( err, pErrorContainer );
-            }
-            continue;
-        }
         try {
+            if ( x_ParseBrowserLine( line, annot ) ) {
+                continue;
+            }
+            if ( x_ParseTrackLine( line, annot ) ) {
+                continue;
+            }
             x_ParseFeature( line, annot );
         }
         catch( CObjReaderLineException& err ) {
@@ -159,128 +158,6 @@ CMicroArrayReader::ReadSeqAnnot(
         continue;
     }
     return annot;
-}
-    
-//  ----------------------------------------------------------------------------
-bool CMicroArrayReader::IsMetaInformation(
-    const string& line )
-//  ----------------------------------------------------------------------------
-{
-    if ( NStr::StartsWith( line, "track" ) ) {
-        return true;
-    }
-    if ( NStr::StartsWith( line, "browser" ) ) {
-        return true;
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-void CMicroArrayReader::x_ProcessMetaInformation(
-    const string& line,
-    CRef<CSeq_annot>& annot )
-//  ----------------------------------------------------------------------------
-{
-    vector<string> fields;
-    NStr::Tokenize( line, " \t", fields, NStr::eMergeDelims );
-    if ( fields[0] == "track" ) {
-        x_ProcessTrackLine( fields, annot );
-        return;
-    }
-    if ( fields[0] == "browser" ) {
-        return;
-    }
-    CObjReaderLineException err(
-        eDiag_Error,
-        0,
-        "Line type not recognized. Maybe not meta information?" );
-    throw( err );
-}
-
-//  ----------------------------------------------------------------------------
-void CMicroArrayReader::x_ProcessTrackLine(
-    const vector<string>& fields,
-    CRef<CSeq_annot>& annot )
-//  ----------------------------------------------------------------------------
-{
-    string expNames;
-    int expScale = -1;
-    int expStep = -1;
-
-    for ( vector<string>::size_type i=1; i < fields.size(); ++i ) {
-        vector<string> splits;
-        if ( NStr::StartsWith( fields[i], "useScore=" ) ) {
-            NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
-            if ( splits.size() == 2 ) {
-                m_usescore = (1 == NStr::StringToInt(splits[1]));
-                continue;
-            }
-            CObjReaderLineException err(
-                eDiag_Error,
-                0,
-                "Track Line Processing. Invalid \"useScore\" parameter." );
-            throw( err );
-        }
-        if ( NStr::StartsWith( fields[i], "expNames=" ) ) {
-            NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
-            if ( splits.size() == 2 ) {
-                expNames = splits[1];
-                continue;
-            }
-            CObjReaderLineException err(
-                eDiag_Error,
-                0,
-                "Track Line Processing. Invalid \"expNames\" parameter." );
-            throw( err );
-        }
-        if ( NStr::StartsWith( fields[i], "expScale=" ) ) {
-            NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
-            if ( splits.size() == 2 ) {
-                expScale = NStr::StringToInt(splits[1]);
-                continue;
-            }
-            CObjReaderLineException err(
-                eDiag_Error,
-                0,
-                "Track Line Processing. Invalid \"expScale\" parameter." );
-            throw( err );
-        }
-        if ( NStr::StartsWith( fields[i], "expStep=" ) ) {
-            NStr::Tokenize( fields[i], "=", splits, NStr::eMergeDelims );
-            if ( splits.size() == 2 ) {
-                expStep = NStr::StringToInt(splits[1]);
-                continue;
-            }
-            CObjReaderLineException err(
-                eDiag_Error,
-                0,
-                "Track Line Processing. Invalid \"expStep\" parameter." );
-            throw( err );
-        }
-    }
-    if ( m_flags & fReadAsBed ) {
-        return;
-    }
-
-    if ( expNames == "" || expScale == -1 || expStep == -1 ) {
-            CObjReaderLineException err(
-                eDiag_Error,
-                0,
-                "Track Line Processing. Missing \"exp\" parameter." );
-            throw( err );
-    }
-
-    CSeq_annot::TDesc::Tdata& data = annot->SetDesc().Set();
-    CRef< CAnnotdesc > annotdesc( new CAnnotdesc );
-
-    CRef<CUser_object> track_line( new CUser_object );
-    track_line->SetType().SetStr( "Track Line" );
-    track_line->AddField( "expNames", expNames );
-    track_line->AddField( "expScale", expScale );
-    track_line->AddField( "expStep", expStep );
-
-    annotdesc->SetUser( *track_line );
-    data.push_back( annotdesc );
 }
 
 //  ----------------------------------------------------------------------------
@@ -377,6 +254,96 @@ void CMicroArrayReader::x_SetFeatureDisplayData(
     }
 
     feature->SetData().SetUser( *display_data );
+}
+
+//  ----------------------------------------------------------------------------
+bool CMicroArrayReader::x_ParseTrackLine(
+    const string& strLine,
+    CRef<CSeq_annot>& annot )
+//  ----------------------------------------------------------------------------
+{
+    m_strExpNames = "";
+    m_iExpScale = -1;
+    m_iExpStep = -1;
+    
+    if ( ! CReaderBase::x_ParseTrackLine( strLine, annot ) ) {
+        return false;
+    }
+    if ( m_flags & fReadAsBed ) {
+        return true;
+    }
+    
+    if ( m_strExpNames.empty() ) {
+        CObjReaderLineException err(
+            eDiag_Warning,
+            0,
+            "Track Line Processing: Missing \"expName\" parameter." );
+        throw( err );
+    }
+    if ( m_iExpScale == -1 ) {
+        CObjReaderLineException err(
+            eDiag_Warning,
+            0,
+            "Track Line Processing: Missing \"expScale\" parameter." );
+        throw( err );
+    }
+    if ( m_iExpStep == -1 ) {
+        CObjReaderLineException err(
+            eDiag_Warning,
+            0,
+            "Track Line Processing: Missing \"expStep\" parameter." );
+        throw( err );
+    }
+    
+    return true;
+}
+//  ----------------------------------------------------------------------------
+void CMicroArrayReader::x_SetTrackData(
+    CRef<CSeq_annot>& annot,
+    CRef<CUser_object>& trackdata,
+    const string& strKey,
+    const string& strValue )
+//  ----------------------------------------------------------------------------
+{
+    CAnnot_descr& desc = annot->SetDesc();
+
+    if ( strKey == "useScore" ) {
+        m_usescore = ( 1 == NStr::StringToInt( strValue ) );
+        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+        return;
+    }
+    if ( strKey == "name" ) {
+        CRef<CAnnotdesc> name( new CAnnotdesc() );
+        name->SetName( strValue );
+        desc.Set().push_back( name );
+        return;
+    }
+    if ( strKey == "description" ) {
+        CRef<CAnnotdesc> title( new CAnnotdesc() );
+        title->SetTitle( strValue );
+        desc.Set().push_back( title );
+        return;
+    }
+    if ( strKey == "visibility" ) {
+        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+        return;
+    }
+    if ( strKey == "expNames" ) {
+        trackdata->AddField( strKey, strValue );
+        m_strExpNames = strValue;
+        return;
+    }
+    if ( strKey == "expScale" ) {
+        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+        m_iExpScale = NStr::StringToInt( strValue );
+        return;
+    }
+    if ( strKey == "expStep" ) {
+        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+        m_iExpStep = NStr::StringToInt( strValue );
+        return;
+    }
+    CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
 }
 
 END_objects_SCOPE

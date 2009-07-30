@@ -79,35 +79,37 @@ public:
     //  helpers:
     //
 protected:
-    static bool IsMetaInformation(
-        const string& );
-
-    void x_ProcessMetaInformation(
+    virtual bool x_ParseTrackLine(
         const string&,
         CRef<CSeq_annot>& );
-    /* throws CObjReaderLineException */
-
+        
     void x_ParseFeature(
         const string&,
         CRef<CSeq_annot>& );
-    /* throws CObjReaderLineException */
 
-    void x_ProcessTrackLine(
-        const vector<string>&,
-        CRef<CSeq_annot>& );
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>& );
+        
     void x_SetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>& );
 
+    virtual void x_SetTrackData(
+    CRef<CSeq_annot>&,
+        CRef<CUser_object>&,
+        const string&,
+        const string& );
+                
     //
     //  data:
     //
 protected:
     bool m_usescore;
     int m_flags;
+    string m_strExpNames;
+    int m_iExpScale;
+    int m_iExpStep;
 };
 
 
