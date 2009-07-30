@@ -39,6 +39,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -163,6 +164,12 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
         m_ExcludedTSE = sel.m_ExcludedTSE;
         m_AnnotTypesBitset = sel.m_AnnotTypesBitset;
+        if ( sel.m_SourceLoc ) {
+            m_SourceLoc.reset(new CHandleRangeMap(*sel.m_SourceLoc));
+        }
+        else {
+            m_SourceLoc.reset();
+        }
     }
     return *this;
 }
@@ -720,6 +727,21 @@ void SAnnotSelector::CheckLimitObjectType(void) const
     if ( !m_LimitObject ) {
         m_LimitObjectType = eLimit_None;
     }
+}
+
+
+SAnnotSelector& SAnnotSelector::SetSourceLoc(const CSeq_loc& loc)
+{
+    m_SourceLoc.reset(new CHandleRangeMap);
+    m_SourceLoc->AddLocation(loc);
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::ResetSourceLoc(void)
+{
+    m_SourceLoc.reset();
+    return *this;
 }
 
 

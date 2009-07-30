@@ -1777,6 +1777,25 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
                                    const CHandleRange&   hr,
                                    CSeq_loc_Conversion*  cvt)
 {
+    if ( !m_Selector->m_SourceLoc ) {
+        return x_SearchTSE2(tseh, id, hr, cvt);
+    }
+    const CHandleRangeMap& src_hrm = *m_Selector->m_SourceLoc;
+    CHandleRangeMap::const_iterator it = src_hrm.find(id);
+    if ( it == src_hrm.end() || !hr.IntersectingWithTotalRange(it->second) ) {
+        // non-overlapping loc
+        return false;
+    }
+    CHandleRange hr2(hr, it->second.GetOverlappingRange());
+    return !hr2.Empty() && x_SearchTSE2(tseh, id, hr2, cvt);
+}
+
+
+bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
+                                    const CSeq_id_Handle& id,
+                                    const CHandleRange&   hr,
+                                    CSeq_loc_Conversion*  cvt)
+{
     const CTSE_Info& tse = tseh.x_GetTSE_Info();
     bool found = false;
 

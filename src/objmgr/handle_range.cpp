@@ -57,6 +57,22 @@ CHandleRange::CHandleRange(void)
 }
 
 
+CHandleRange::CHandleRange(const CHandleRange& src, const TOpenRange& filter)
+    : m_TotalRanges_plus(TRange::GetEmpty()),
+      m_TotalRanges_minus(TRange::GetEmpty()),
+      m_IsCircular(false),
+      m_IsSingleStrand(true),
+      m_MoreBefore(false),
+      m_MoreAfter(false)
+{
+    ITERATE ( CHandleRange, it, src ) {
+        if ( it->first.IntersectingWith(filter) ) {
+            AddRange(it->first & filter, it->second);
+        }
+    }
+}
+
+
 CHandleRange::~CHandleRange(void)
 {
 }
@@ -198,12 +214,16 @@ bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
 }
 
 
-bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
+bool CHandleRange::IntersectingWithTotalRange(const CHandleRange& hr) const
 {
-    if ( !m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus) &&
-         !m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus) ) {
-        return false;
-    }
+    return
+        m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus) ||
+        m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus);
+}
+
+
+bool CHandleRange::IntersectingWithSubranges(const CHandleRange& hr) const
+{
     ITERATE(TRanges, it1, m_Ranges) {
         ITERATE(TRanges, it2, hr.m_Ranges) {
             if ( it1->first.IntersectingWith(it2->first) ) {
@@ -214,6 +234,12 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
         }
     }
     return false;
+}
+
+
+bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
+{
+    return IntersectingWithTotalRange(hr) && IntersectingWithSubranges(hr);
 }
 
 

@@ -51,6 +51,8 @@ public:
     typedef TRanges::const_iterator const_iterator;
 
     CHandleRange(void);
+    /// Trim src with filter range
+    CHandleRange(const CHandleRange& src, const TOpenRange& range);
     ~CHandleRange(void);
 
     bool Empty(void) const;
@@ -103,6 +105,12 @@ public:
 
     // Check if the two sets of ranges do intersect
     bool IntersectingWith(const CHandleRange& hr) const;
+
+    // Check if the two sets of ranges do intersect by total range
+    bool IntersectingWithTotalRange(const CHandleRange& hr) const;
+
+    // Check if the two sets of ranges do intersect by individual subranges
+    bool IntersectingWithSubranges(const CHandleRange& hr) const;
 
     // Check if the two sets of ranges do intersect ignoring strands
     bool IntersectingWith_NoStrand(const CHandleRange& hr) const;

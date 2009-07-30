@@ -59,6 +59,7 @@ class CBioseq_Handle;
 class CSeq_entry_Handle;
 class CSeq_annot_Handle;
 class CAnnotObject_Info;
+class CHandleRangeMap;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -631,6 +632,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Set filter for source location of annotations
+    SAnnotSelector& SetSourceLoc(const CSeq_loc& loc);
+
+    /// Reset filter for source location of annotations
+    SAnnotSelector& ResetSourceLoc(void);
+
 protected:
     friend class CAnnot_Collector;
 
@@ -674,6 +681,7 @@ protected:
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesBitset     m_AnnotTypesBitset;
+    AutoPtr<CHandleRangeMap> m_SourceLoc;
 };
 
 

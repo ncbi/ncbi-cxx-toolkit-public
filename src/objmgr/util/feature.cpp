@@ -772,8 +772,22 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
                         const CBioseq_Handle& master_seq,
                         const CRange<TSeqPos>& range)
 {
-    NCBI_THROW(CObjmgrUtilException, eNotImplemented,
-               "MapSeq_feat: not implemented");
+    SAnnotSelector sel(feat.GetFeatSubtype());
+    sel.SetExactDepth();
+    sel.SetResolveAll();
+    CSeq_annot_Handle annot = feat.GetAnnot();
+    sel.SetLimitSeqAnnot(annot);
+    sel.SetSourceLoc(feat.GetOriginalSeq_feat()->GetLocation());
+    for ( size_t depth = 0; depth < 10; ++depth ) {
+        sel.SetResolveDepth(depth);
+        for ( CFeat_CI it(master_seq, range, sel); it; ++it ) {
+            if ( it->GetSeq_feat_Handle() == feat ) {
+                return *it;
+            }
+        }
+    }
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "MapSeq_feat: feature not found");
 }
 
 
@@ -795,8 +809,7 @@ NCBI_XOBJUTIL_EXPORT
 CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
                         const CBioseq_Handle& master_seq)
 {
-    NCBI_THROW(CObjmgrUtilException, eNotImplemented,
-               "MapSeq_feat: not implemented");
+    return MapSeq_feat(feat, master_seq, CRange<TSeqPos>::GetWhole());
 }
 
 

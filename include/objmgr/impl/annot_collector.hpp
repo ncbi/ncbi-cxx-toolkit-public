@@ -280,29 +280,68 @@ private:
     void x_Initialize(const SAnnotSelector& selector);
     void x_GetTSE_Info(void);
 
+    // Search annotations directly referencing the master sequence.
+    // The master_range specifies region of master sequence to search.
+    // Called by: x_Initialize()
+    // Calls: x_SearchTSE()
     void x_SearchMaster(const CBioseq_Handle& bh,
                         const CSeq_id_Handle& master_id,
                         const CHandleRange& master_range);
+    // Search annotations referencing sequence segments on level 'level'.
+    // The master_range specifies region of master sequence to search.
+    // The master_loc_empty is empty Seq-loc with master Seq-id for sharing.
+    // Called by: x_Initialize()
     bool x_SearchSegments(const CBioseq_Handle& bh,
                           const CSeq_id_Handle& master_id,
                           const CHandleRange& master_range,
                           CSeq_loc& master_loc_empty,
                           int level);
+    // Search annotations referencing complex sequence location
+    // on level 'level'.
+    // The master_loc_empty is empty Seq-loc with master Seq-id for sharing.
+    // Called by: x_Initialize()
+    // Calls: x_SearchMapped()
     bool x_SearchSegments(const CHandleRangeMap& master_loc,
                           int level);
 
+    // Search annotations directly referencing segment of master sequence.
+    // The master_loc_empty is empty Seq-loc with master Seq-id for sharing.
+    // The master_hr specifies region of master sequence to search.
+    // Called by: x_SearchSegments()
+    // Calls: x_SearchLoc()
     bool x_SearchMapped(const CSeqMap_CI&     seg,
                         CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& master_id,
                         const CHandleRange&   master_hr);
+
+    // Search annotations directly on a complex sequence location with mapping.
+    // The optional mapping is in agument 'cvt'.
+    // The method finds relevant set of TSEs and calls x_SearchTSE() for each.
+    // Called by: x_SearchMapped(), x_SearchRange()
+    // Calls: x_SearchTSE()
     bool x_SearchLoc(const CHandleRangeMap& loc,
                      CSeq_loc_Conversion*   cvt,
                      const CTSE_Handle*     using_tse,
                      bool top_level = false);
+
+    // Search annotations within tse before filtering by source location.
+    // Called by: x_SearchLoc(), x_SearchMaster()
+    // Calls: x_SearchTSE2()
     bool x_SearchTSE(const CTSE_Handle&    tse,
                      const CSeq_id_Handle& id,
                      const CHandleRange&   hr,
                      CSeq_loc_Conversion*  cvt);
+
+    // Search annotations within tse after filtering by source location.
+    // Called by: x_SearchTSE()
+    // Calls: x_SearchObjects()
+    bool x_SearchTSE2(const CTSE_Handle&    tse,
+                      const CSeq_id_Handle& id,
+                      const CHandleRange&   hr,
+                      CSeq_loc_Conversion*  cvt);
+
+    // Called by: x_SearchTSE2()
+    // Calls: x_SearchRange()
     void x_SearchObjects(const CTSE_Handle&    tse,
                          const SIdAnnotObjs*   objs,
                          CMutexGuard&          guard,
@@ -310,6 +349,9 @@ private:
                          const CSeq_id_Handle& id,
                          const CHandleRange&   hr,
                          CSeq_loc_Conversion*  cvt);
+
+    // Called by: x_SearchObjects()
+    // Calls: x_SearchLoc() for annotations of type locs.
     void x_SearchRange(const CTSE_Handle&    tse,
                        const SIdAnnotObjs*   objs,
                        CMutexGuard&          guard,
@@ -317,9 +359,15 @@ private:
                        const CSeq_id_Handle& id,
                        const CHandleRange&   hr,
                        CSeq_loc_Conversion*  cvt);
+
+    // The x_SearchAll() is set of methods to search for annotations without
+    // specified location. They collect all matching annotations contained
+    // in argument object (Seq-entry or Seq-annot).
     void x_SearchAll(void);
     void x_SearchAll(const CSeq_entry_Info& entry_info);
     void x_SearchAll(const CSeq_annot_Info& annot_info);
+
+    // Order collected annotations by requested criteria.
     void x_Sort(void);
     
     void x_AddObjectMapping(CAnnotObject_Ref&    object_ref,

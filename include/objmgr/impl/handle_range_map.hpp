@@ -75,6 +75,9 @@ public:
 
     // iterate
     const_iterator begin(void) const { return m_LocMap.begin(); }
+    const_iterator find(const CSeq_id_Handle& idh) const {
+        return m_LocMap.find(idh);
+    }
     const_iterator end(void) const { return m_LocMap.end(); }
 
     bool IntersectingWithLoc(const CSeq_loc& loc) const;
