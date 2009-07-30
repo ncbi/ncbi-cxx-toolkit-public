@@ -4751,9 +4751,11 @@ if test "$with_wxwidgets" != "no" ; then
    if test -x "$wxconf"; then
       WXWIDGETS_ARCH_PATH=`$wxconf --exec-prefix`
       if test -n "$with_wxwidgets_ucs"; then
-         wxconf="$wxconf --unicode=$with_wxwidgets_ucs"
+         wxcfflags=--unicode=$with_wxwidgets_ucs
+      else
+         wxcfflags=
       fi
-      for x in `"$wxconf" --libs --static 2>/dev/null`; do
+      for x in `"$wxconf" $wxcfflags --libs --static 2>AS_MESSAGE_LOG_FD`; do
          case "$x" in
             -L*)
                 d=`echo $x | sed -e 's/^-L//'`
@@ -4768,8 +4770,9 @@ if test "$with_wxwidgets" != "no" ; then
    else
       AS_UNSET(wxconf)
    fi
-   if test -n "$wxconf" \
-     &&  "$wxconf" --list 2>/dev/null | grep 'Default config is gtk2' >/dev/null; then
+   if test -x "$wxconf" \
+     &&  "$wxconf" $wxcfflags --list 2>/dev/null \
+       | grep 'Default config is gtk2' >/dev/null; then
       gtkconf="pkg-config gtk+-2.0"
    elif test -x "$WXWIDGETS_BINPATH/gtk-config"; then
       gtkconf=$WXWIDGETS_BINPATH/gtk-config
@@ -4784,7 +4787,8 @@ if test "$with_wxwidgets" != "no" ; then
          baseflags=""
          basesed='s/-isysroot [[^ ]]*//g; s/-arch [[^ ]]*//g'
          if test -n "$SYSROOT"; then
-            deps=`$wxconf --libs --static 2>/dev/null | sed -e 's/.*\.a//'`
+            deps=`"$wxconf" $wxcfflags --libs --static 2>/dev/null \
+                  | sed -e 's/.*\.a//'`
             libsed="$basesed; s/\$/ $deps/"
          else
             libsed=$basesed
@@ -4798,9 +4802,10 @@ if test "$with_wxwidgets" != "no" ; then
    esac
    AC_CACHE_CHECK([for wxWidgets in $WXWIDGETS_ARCH_PATH],
       ncbi_cv_lib_wxwidgets,
-      [if test -n "$wxconf" ; then
-          WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs], [$libsed; ])
+      [if test -x "$wxconf" ; then
+          WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
+          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, ["$wxconf" $wxcfflags --libs],
+             [$libsed; ])
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -4826,7 +4831,7 @@ if test "$with_wxwidgets" = "no" ; then
    WXWIDGETS_POST_LINK=:
 else
    NCBI_PACKAGE(wxWidgets)
-   case "`$wxconf --version`" in
+   case "`"$wxconf" $wxcfflags --version`" in
       2.[[89]].* | 2.[[0-9]][[0-9]]* )
          NCBI_PACKAGE(wx2.8)
          wxlibs=std,richtext
@@ -4837,15 +4842,18 @@ else
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
-      WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
+      WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
    fi
-   NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf --libs $wxlibs], [$libsed; ])
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static $wxlibs 2>/dev/null | sed -e "$basesed"`
+   NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf $wxcfflags --libs $wxlibs],
+      [$libsed; ])
+   WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs --static $wxlibs \
+      2>/dev/null | sed -e "$basesed"`
    : ${WXWIDGETS_STATIC_LIBS=$WXWIDGETS_LIBS}
-   WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
-   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static 2>/dev/null | sed -e "$basesed"`
+   WXWIDGETS_GL_LIBS=`"$wxconf" $wxcfflags --gl-libs | sed -e "$basesed"`
+   WXWIDGETS_GL_STATIC_LIBS=`"$wxconf" $wxcfflags --gl-libs --static \
+      2>/dev/null | sed -e "$basesed"`
    : ${WXWIDGETS_GL_STATIC_LIBS=$WXWIDGETS_GL_LIBS}
-   WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`
+   WXWIDGETS_POST_LINK=`"$wxconf" $wxcfflags --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
    AC_DEFINE(HAVE_WXWIDGETS, 1, [Define to 1 if wxWidgets is available.])
 fi
