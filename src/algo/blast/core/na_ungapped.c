@@ -251,10 +251,12 @@ s_NuclUngappedExtend(BLAST_SequenceBlk * query,
  * @param diag The diagonal to be retrieved [in]
  * @param level The offset of the last hit on the specified diagonal [out]
  * @param hit_saved Whether or not the last hit on the specified diagonal was saved [out]
+ * @param hit_length length of the last hit on the specified diagonal [out]
  * @return 1 if successful, 0 if no hit was found on the specified diagonal.
  */
 static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
                                                 Int4 diag, Int4 * level,
+                                                Int4 * hit_len,
                                                 Int4 * hit_saved)
 {
     /* see http://lxr.linux.no/source/include/linux/hash.h */
@@ -265,6 +267,7 @@ static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
     while (index) {
         if (table->chain[index].diag == diag) {
             *level = table->chain[index].level;
+            *hit_len = table->chain[index].hit_len;
             *hit_saved = table->chain[index].hit_saved;
             return 1;
         }
@@ -280,40 +283,38 @@ static NCBI_INLINE Int4 s_BlastDiagHashRetrieve(BLAST_DiagHash * table,
  * @param table The hash table [in]
  * @param diag The diagonal to be stored [in]
  * @param level The offset of the hit to be stored [in]
+ * @param len The length of the hit to be stored [in]
  * @param hit_saved Whether or not this hit was stored [in]
  * @param s_end Needed to clean up defunct entries [in]
  * @param window_size Needed to clean up defunct entries [in]
- * @param min_step Needed to clean up defunct entries [in]
- * @param two_hits Needed to clean up defunct entries [in]
  * @return 1 if successful, 0 if memory allocation failed.
  */
 static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
                                               Int4 diag, Int4 level,
+                                              Int4 len,
                                               Int4 hit_saved,
-                                              Int4 s_end,
-                                              Int4 window_size,
-                                              Int4 min_step,
-                                              Int4 two_hits)
+                                              Int4 s_off,
+                                              Int4 window_size)
 {
     Uint4 bucket = ((Uint4) diag * 0x9E370001) % DIAGHASH_NUM_BUCKETS;
     Uint4 index = table->backbone[bucket];
+    DiagHashCell *cell = NULL;
 
     while (index) {
         /* if we find what we're looking for, save into it */
         if (table->chain[index].diag == diag) {
             table->chain[index].level = level;
+            table->chain[index].hit_len = len;
             table->chain[index].hit_saved = hit_saved;
             return 1;
         }
         /* otherwise, if this hit is stale, save into it. */
         else {
-            Int4 step = s_end - table->chain[index].level;
             /* if this hit is stale, save into it. */
-            if (!
-                (step <= (Int4) min_step
-                 || (two_hits && step <= window_size))) {
+            if ( s_off - table->chain[index].level > window_size) {
                 table->chain[index].diag = diag;
                 table->chain[index].level = level;
+                table->chain[index].hit_len = len;
                 table->chain[index].hit_saved = hit_saved;
                 return 1;
             }
@@ -324,7 +325,6 @@ static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
     /* if we got this far, we were unable to replace any existing entries. */
 
     /* if there's no more room, allocate more */
-
     if (table->occupancy == table->capacity) {
         table->capacity *= 2;
         table->chain =
@@ -333,15 +333,14 @@ static NCBI_INLINE Int4 s_BlastDiagHashInsert(BLAST_DiagHash * table,
             return 0;
     }
 
-    {
-        DiagHashCell *cell = table->chain + table->occupancy;
-        cell->diag = diag;
-        cell->level = level;
-        cell->hit_saved = hit_saved;
-        cell->next = table->backbone[bucket];
-        table->backbone[bucket] = table->occupancy;
-        table->occupancy++;
-    }
+    cell = table->chain + table->occupancy;
+    cell->diag = diag;
+    cell->level = level;
+    cell->hit_len = len;
+    cell->hit_saved = hit_saved;
+    cell->next = table->backbone[bucket];
+    table->backbone[bucket] = table->occupancy;
+    table->occupancy++;
 
     return 1;
 }
@@ -421,6 +420,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
 {
     Int4 diag, real_diag;
     Int4 s_end, s_off_pos, s_end_pos;
+    Int4 ext_right = 0;
     BlastUngappedData *ungapped_data;
     BlastUngappedData dummy_ungapped_data;
     Int4 window_size = word_params->options->window_size;
@@ -429,6 +429,8 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     DiagStruct *hit_level_array;
     BlastUngappedCutoffs *cutoffs = NULL;
     Boolean two_hits = (window_size > 0);
+    Boolean found = FALSE;
+    Int4 Delta = MIN(5, window_size - word_length);
 
     hit_level_array = diag_table->hit_level_array;
     ASSERT(hit_level_array);
@@ -441,41 +443,56 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     s_off_pos = s_off + diag_table->offset;
     s_end_pos = s_end + diag_table->offset;
 
-    if (contiguous) {
-        /* hit within the explored area should be rejected*/
-        if (s_off_pos < last_hit) return 0;
+    /* hit within the explored area should be rejected*/
+    if (s_off_pos < last_hit) return 0;
 
-        if (two_hits && (hit_saved || s_end_pos > last_hit + window_size )) {
-            /* this must be the 1st hit */
-            /* check to see if it can be extended to the right by
-               word_length and therefore qualifies for a double-hit */
-            Uint4 ext_right = s_BlastRightExtend(query, subject,
+    if (two_hits && (hit_saved || s_end_pos > last_hit + window_size )) {
+        /* check to see if it can be extended to the right by
+           word_length and therefore qualifies for a double-hit */
+        if (contiguous) {
+            ext_right = s_BlastRightExtend(query, subject,
                   q_off + word_length, s_end, query_info, word_length);
             /* update the right end*/
             s_end += ext_right;
             s_end_pos += ext_right;
-            if (ext_right < word_length) {
-                /* if it is not a double hit, then it is a new hit */
-                hit_ready = 0;
-                last_hit = s_end_pos;
-                hit_saved = 0;
-            }
         }
-    } else {
-        /* hit within the explored area should be rejected*/
-        if (s_off_pos < last_hit) return 0;
 
-        if (two_hits && (hit_saved || s_end_pos > last_hit + window_size )) {
-            /* first hit */
-            hit_ready = 0;
-            last_hit = s_end_pos;
-            hit_saved = 0;
+        if (ext_right < word_length) {
+            /* try off-diagonals */
+            Int4 orig_diag = real_diag + diag_table->diag_array_length;
+            Int4 s_a = s_off_pos + word_length - window_size;
+            Int4 s_b = s_end_pos - 2 * word_length;
+            Int4 delta;
+            if (Delta < 0) Delta = 0;
+            for (delta = 1; delta < Delta ; ++delta) {
+                Int4 off_diag  = (orig_diag + delta) & diag_table->diag_mask;
+                Int4 off_s_end = hit_level_array[off_diag].last_hit;
+                Int4 off_s_l   = diag_table->hit_len_array[off_diag];
+                if ( off_s_l
+                 && off_s_end - delta >= s_a 
+                 && off_s_end - off_s_l <= s_b) {
+                    found = TRUE;
+                    break;
+                }
+                off_diag  = (orig_diag - delta) & diag_table->diag_mask;
+                off_s_end = hit_level_array[off_diag].last_hit;
+                off_s_l   = diag_table->hit_len_array[off_diag];
+                if ( off_s_l
+                 && off_s_end >= s_a 
+                 && off_s_end - off_s_l + delta <= s_b) {
+                    found = TRUE;
+                    break;
+                }
+            }
+            if (!found) {
+                /* This is a new hit */
+                hit_ready = 0;
+            }
         }
     }
 
     if (hit_ready) {
         if (word_params->ungapped_extension) {
-            /* Perform ungapped extension */
             Int4 context = BSearchContextInfo(q_off, query_info);
             cutoffs = word_params->cutoffs + context;
             ungapped_data = &dummy_ungapped_data;
@@ -484,31 +501,27 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
                                  word_params->nucl_score_table,
                                  cutoffs->reduced_nucl_cutoff_score);
 
-            last_hit = ungapped_data->length + ungapped_data->s_start
-                + diag_table->offset;
+            if (found || ungapped_data->score >= cutoffs->cutoff_score) {
+                BlastUngappedData *final_data =
+                    (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
+                *final_data = *ungapped_data;
+                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
+                s_end_pos = ungapped_data->length + ungapped_data->s_start
+                          + diag_table->offset;
+            } else {
+                hit_ready = 0;
+            }
         } else {
             ungapped_data = NULL;
-            last_hit = s_end_pos;
-        }
-        if (ungapped_data == NULL) {
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
-            /* Set the "saved" flag for this hit */
-            hit_saved = 1;
-        } else if (ungapped_data->score >= cutoffs->cutoff_score) {
-            BlastUngappedData *final_data =
-                (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
-            *final_data = *ungapped_data;
-            BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
-            /* Set the "saved" flag for this hit */
-            hit_saved = 1;
-        } else {
-            /* Unset the "saved" flag for this hit */
-            hit_saved = 0;
         }
     } 
 
-    hit_level_array[real_diag].last_hit = last_hit;
-    hit_level_array[real_diag].flag = hit_saved;
+    hit_level_array[real_diag].last_hit = s_end_pos;
+    hit_level_array[real_diag].flag = hit_ready;
+    if (two_hits) {
+        diag_table->hit_len_array[real_diag] = (hit_ready) ? 0 : s_end_pos - s_off_pos;
+    }
 
     return hit_ready;
 }
@@ -543,7 +556,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                BlastInitHitList * init_hitlist)
 {
     Int4 diag;
-    Int4 s_end, s_off_pos, s_end_pos;
+    Int4 s_end, s_off_pos, s_end_pos, s_l;
+    Int4 ext_right = 0;
     BlastUngappedData *ungapped_data;
     BlastUngappedData dummy_ungapped_data;
     Int4 window_size = word_params->options->window_size;
@@ -551,6 +565,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     Int4 last_hit, hit_saved = 0;
     BlastUngappedCutoffs *cutoffs = NULL;
     Boolean two_hits = (window_size > 0);
+    Boolean found = FALSE;
+    Int4 Delta = MIN(5, window_size - word_length);
     Int4 rc;
 
     diag = s_off - q_off;
@@ -558,39 +574,59 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     s_off_pos = s_off + hash_table->offset;
     s_end_pos = s_end + hash_table->offset;
 
-    rc = s_BlastDiagHashRetrieve(hash_table, diag, &last_hit, &hit_saved);
+    rc = s_BlastDiagHashRetrieve(hash_table, diag, &last_hit, &s_l, &hit_saved);
 
     /* if there is no record in hashtable, we set last_hit to be a very negative number */
-    if(!rc) last_hit = 0;
-    if (contiguous) {
-        /* hit within the explored area should be rejected*/
-        if (s_off_pos < last_hit) return 0;
+    if(!rc)  last_hit = 0;
 
-        if (two_hits && (hit_saved || s_end_pos > last_hit + window_size )) {
-            /* this must be the 1st hit */
-            /* check to see if it can be extended to the right by
-               word_length and therefore qualifies for a double-hit */
-            Uint4 ext_right = s_BlastRightExtend(query, subject,
+    /* hit within the explored area should be rejected*/
+    if (s_off_pos < last_hit) return 0;
+
+    if (two_hits && (hit_saved || s_end_pos > last_hit + window_size )) {
+        /* this must be the 1st hit */
+        /* check to see if it can be extended to the right by
+           word_length and therefore qualifies for a double-hit */
+        if (contiguous) {
+            ext_right = s_BlastRightExtend(query, subject,
                   q_off + word_length, s_end, query_info, word_length);
             /* update the right end*/
             s_end += ext_right;
             s_end_pos += ext_right;
-            if (ext_right < word_length) {
-                /* if it is not a double hit, then it is a new hit */
-                hit_ready = 0;
-                last_hit = s_end_pos;
-                hit_saved = 0;
-            }
         }
-    } else {
-        /* hit within the explored area should be rejected*/
-        if (s_off_pos < last_hit) return 0;
 
-        if (two_hits && (hit_saved || s_end_pos > last_hit + window_size )) {
-            /* first hit */
-            hit_ready = 0;
-            last_hit = s_end_pos;
-            hit_saved = 0;
+        if (ext_right < word_length) {
+            /* try off-diagonal */
+            Int4 s_a = s_off_pos + word_length - window_size;
+            Int4 s_b = s_end_pos - 2 * word_length;
+            Int4 delta;
+            if (Delta < 0) Delta = 0;
+            for (delta = 1; delta < Delta; ++delta) {
+                Int4 off_s_end = 0;
+                Int4 off_s_l = 0;
+                Int4 off_hit_saved = 0;
+                Int4 off_rc = s_BlastDiagHashRetrieve(hash_table, diag + delta, 
+                              &off_s_end, &off_s_l, &off_hit_saved);
+                if ( off_rc
+                  && off_s_l
+                  && off_s_end - delta >= s_a
+                  && off_s_end - off_s_l <= s_b) {
+                     found = TRUE;
+                     break;
+                }
+                off_rc = s_BlastDiagHashRetrieve(hash_table, diag - delta, 
+                              &off_s_end, &off_s_l, &off_hit_saved);
+                if ( off_rc
+                  && off_s_l
+                  && off_s_end >= s_a
+                  && off_s_end - off_s_l + delta <= s_b) {
+                     found = TRUE;
+                     break;
+                }
+            }
+            if (!found) {
+                /* This is a new hit */
+                hit_ready = 0;
+            }
         }
     }
 
@@ -605,32 +641,25 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                  ungapped_data,
                                  word_params->nucl_score_table,
                                  cutoffs->reduced_nucl_cutoff_score);
-
-            last_hit = ungapped_data->length + ungapped_data->s_start 
-                + hash_table->offset;
+            if (found || ungapped_data->score >= cutoffs->cutoff_score) {
+                BlastUngappedData *final_data =
+                    (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
+                *final_data = *ungapped_data;
+                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
+                s_end_pos = ungapped_data->length + ungapped_data->s_start 
+                          + hash_table->offset;
+            } else {
+                hit_ready = 0;
+            }
         } else {
             ungapped_data = NULL;
-            last_hit = s_end_pos;
-        }
-        if (ungapped_data == NULL) {
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
-            /* Set the "saved" flag for this hit */
-            hit_saved = 1;
-        } else if (ungapped_data->score >= cutoffs->cutoff_score) {
-            BlastUngappedData *final_data =
-                (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
-            *final_data = *ungapped_data;
-            BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
-            /* Set the "saved" flag for this hit */
-            hit_saved = 1;
-        } else {
-            /* Unset the "saved" flag for this hit */
-            hit_saved = 0;
         }
     } 
-
-    s_BlastDiagHashInsert(hash_table, diag, last_hit, hit_saved, 
-        s_end + hash_table->offset, window_size, word_length ,two_hits);
+    
+    s_BlastDiagHashInsert(hash_table, diag, s_end_pos, 
+                          (hit_ready) ? 0 : s_end_pos - s_off_pos,
+                          hit_ready, s_off_pos, window_size + Delta);
 
     return hit_ready;
 }

@@ -66,6 +66,7 @@ typedef struct DiagHashCell {
    Int4 diag;            /**< This hit's diagonal */
    Int4 level      : 31; /**< This hit's offset in the subject sequence */
    Uint4 hit_saved : 1;  /**< Whether or not this hit has been saved */
+   Int4  hit_len;        /**< The length of last hit */
    Uint4 next;           /**< Offset of next element in the chain */
 }  DiagHashCell;
   
@@ -76,6 +77,7 @@ typedef struct DiagHashCell {
 typedef struct BLAST_DiagTable {
    DiagStruct* hit_level_array;/**< Array to hold latest hits and their 
                                   lengths for all diagonals */
+   Uint1* hit_len_array; /**< Array to hold the lengthof the latest hit */
    Int4 diag_array_length; /**< Smallest power of 2 longer than query length */
    Int4 diag_mask; /**< Used to mask off everything above
                           min_diag_length (mask = min_diag_length-1). */

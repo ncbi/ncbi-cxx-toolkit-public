@@ -80,7 +80,7 @@ s_BlastDiagTableFree(BLAST_DiagTable* diag_table)
 {
    if (diag_table) {
       sfree(diag_table->hit_level_array);
-               
+      sfree(diag_table->hit_len_array);               
       sfree(diag_table);
    }
    return NULL;
@@ -106,6 +106,7 @@ static Int4 s_BlastDiagClear(BLAST_DiagTable * diag)
     for (i = 0; i < n; i++) {
         diag_struct_array[i].flag = 0;
         diag_struct_array[i].last_hit = -diag->window;
+        if (diag->hit_len_array) diag->hit_len_array[i] = 0;
     }
     return 0;
 }
@@ -148,6 +149,10 @@ Int2 BlastExtendWordNew(Uint4 query_length,
 
         diag_table->hit_level_array = (DiagStruct *)
             calloc(diag_table->diag_array_length, sizeof(DiagStruct));
+        if (word_params->options->window_size) {
+            diag_table->hit_len_array = (Uint1 *)
+                 calloc(diag_table->diag_array_length, sizeof(Uint1));
+        }
         if (!diag_table->hit_level_array) {
             sfree(ewp);
             return -1;
@@ -173,7 +178,7 @@ Blast_ExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length)
         }
     } else if (ewp->hash_table) {
         if (ewp->hash_table->offset >= INT4_MAX / 4) {
-			ewp->hash_table->occupancy = 1;
+	    ewp->hash_table->occupancy = 1;
             ewp->hash_table->offset = ewp->hash_table->window;
             memset(ewp->hash_table->backbone, 0,
                    ewp->hash_table->num_buckets * sizeof(Int4));
