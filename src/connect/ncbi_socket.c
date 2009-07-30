@@ -436,8 +436,8 @@ static const char* s_ID(const SOCK sock, char* buf)
 
 /* Put socket description to the message, then log the transferred data
  */
-static void s_DoLog(const SOCK  sock, EIO_Event event,
-                    const void* data, size_t    size,  const void* ptr)
+static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
+                    const void* data,  size_t     size, const void* ptr)
 {
     const struct sockaddr* sa = (const struct sockaddr*) ptr;
     const char* what;
@@ -493,7 +493,7 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
             else
                 strcpy(tail, "???");
         }
-        CORE_LOGF_X(112, eLOG_Trace,
+        CORE_LOGF_X(112, level,
                     ("%s%s%s", s_ID(sock, _id), head, tail));
         break;
 
@@ -527,11 +527,7 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
             *tail = '\0';
         }
 
-        CORE_DATAF_EXX(109, !size  &&  data  &&
-                       (sock->type == eDatagram
-                        ||  (sock->n_read | sock->n_written))
-                       ? eLOG_Error : eLOG_Trace,
-                       data, size,
+        CORE_DATAF_EXX(109, level, data, size,
                        ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
                         sock->type == eDatagram
                         ? (event == eIO_Read ? " from " : " to ")
@@ -569,7 +565,7 @@ static void s_DoLog(const SOCK  sock, EIO_Event event,
                                   head + 1, sizeof(head) - 1);
         } else
             *head = '\0';
-        CORE_LOGF_X(113, eLOG_Trace,
+        CORE_LOGF_X(113, level,
                     ("%s%s%s (out: %s, in: %s)", s_ID(sock, _id),
                      ptr ? (const char*) ptr :
                      sock->keep ? "Leaving" : "Closing", head,
@@ -1783,11 +1779,13 @@ static EIO_Status s_Recv(SOCK    sock,
                               x_error                == SOCK_ECONNABORTED  ||
                               x_error                == SOCK_ENETRESET))) {
             /* statistics & logging */
-            if ((x_read < 0  &&  (sock->n_read | sock->n_written))  ||
+            if (x_read < 0  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
-                s_DoLog(sock, eIO_Read, (x_read < 0 ? (void*) &x_error :
-                                         x_read > 0 ? buf              : 0),
+                s_DoLog(x_read < 0  &&  sock->n_read  &&  sock->n_written
+                        ? eLOG_Error : eLOG_Trace, sock, eIO_Read,
+                        x_read < 0 ? (void*) &x_error :
+                        x_read > 0 ? buf              : 0,
                         (size_t)(x_read < 0 ? 0 : x_read), 0);
             }
 
@@ -1930,7 +1928,7 @@ static EIO_Status s_Read(SOCK    sock,
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(sock, eIO_Read, x_read > 0 ? x_buf :
+                s_DoLog(eLOG_Trace, sock, eIO_Read, x_read > 0 ? x_buf :
                         status == eIO_Success ? 0 : (void*) &x_error,
                         status != eIO_Success ? 0 : x_read, " [decrypt]");
             }
@@ -2184,11 +2182,12 @@ static EIO_Status s_Send(SOCK        sock,
                                  x_error               == SOCK_ENETRESET   ||
                                  x_error               == SOCK_ECONNABORTED))){
             /* statistics & logging */
-            if ((x_written < 0  &&  (sock->n_read | sock->n_written)) ||
+            if (x_written < 0  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
                  &&  (!sock->session  ||  flag > 0))) {
-                s_DoLog(sock, eIO_Write, (x_written < 0
-                                          ? (void*) &x_error : data),
+                s_DoLog(x_written < 0  &&  sock->n_read  &&  sock->n_written
+                        ? eLOG_Error : eLOG_Trace, sock, eIO_Write,
+                        x_written < 0 ? (void*) &x_error : data,
                         (size_t)(x_written < 0 ? 0 : x_written),
                         flag < 0 ? "" : 0);
             }
@@ -2337,7 +2336,7 @@ static EIO_Status s_WriteData(SOCK        sock,
 
         /* statistics & logging */
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-            s_DoLog(sock, eIO_Write,
+            s_DoLog(eLOG_Trace, sock, eIO_Write,
                     status == eIO_Success ? data : (void*) &x_error,
                     status != eIO_Success ? 0    : *n_written, " [encrypt]");
         }
@@ -2685,7 +2684,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
 
         /* statistics & logging */
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-            s_DoLog(sock, eIO_Close, 0, 0, abort ? "Aborting" : 0);
+            s_DoLog(eLOG_Trace, sock, eIO_Close, 0, 0, abort ? "Aborting" : 0);
     } else
         abort = 1;
 
@@ -2897,7 +2896,7 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(sock, eIO_Open, 0, 0, &addr.sa);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, &addr.sa);
 
     /* establish connection to the peer */
     sock->connected = 0;
@@ -3791,7 +3790,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 
     /* statistics & logging */
     if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(*sock, eIO_Open, 0, 0, &addr.sa);
+        s_DoLog(eLOG_Trace, *sock, eIO_Open, 0, 0, &addr.sa);
 
     return eIO_Success;
 }
@@ -4170,7 +4169,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
  
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(x_sock, eIO_Open, &peer, 0, &peer.sa);
+        s_DoLog(eLOG_Trace, x_sock, eIO_Open, &peer, 0, &peer.sa);
 
     /* success */
     *sock = x_sock;
@@ -5125,7 +5124,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 
     /* statistics & logging */
     if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(*sock, eIO_Open, 0, 0, 0);
+        s_DoLog(eLOG_Trace, *sock, eIO_Open, 0, 0, 0);
 
     return eIO_Success;
 }
@@ -5170,7 +5169,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(sock, eIO_Open, 0, 0, (struct sockaddr*) &addr);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, (struct sockaddr*) &addr);
 
     return eIO_Success;
 }
@@ -5254,7 +5253,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(sock, eIO_Open, &peer, 0, (struct sockaddr*) &peer);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, &peer, 0, (struct sockaddr*)&peer);
 
     return eIO_Success;
 }
@@ -5338,7 +5337,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(sock, eIO_Write, x_msg, (size_t) x_written,
+                s_DoLog(eLOG_Trace, sock, eIO_Write, x_msg, (size_t) x_written,
                         (struct sockaddr*) &addr);
             }
 
@@ -5484,7 +5483,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(sock, eIO_Read, x_msg, (size_t) x_read,
+                s_DoLog(eLOG_Trace, sock, eIO_Read, x_msg, (size_t) x_read,
                         (struct sockaddr*) &addr);
             }
 
