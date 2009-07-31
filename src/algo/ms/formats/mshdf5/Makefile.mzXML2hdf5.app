@@ -4,6 +4,9 @@
 #
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+
+REQUIRES = Xerces
+
 APP = mzXML2hdf5
 SRC = mzXML2hdf5 BinCompressedInputStream CompressedInputSource InFile MzXmlReader
 # OBJ =
@@ -14,7 +17,7 @@ SRC = mzXML2hdf5 BinCompressedInputStream CompressedInputSource InFile MzXmlRead
 
 LIB = mshdf5 mzXML general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress
 #LIB = mshdf5 mzXML xmlwrapp general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(HDF5_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS)  $(XERCES_LIBS) $(HDF5_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(XERCES_INCLUDE) $(HDF5_INCLUDE)
 #CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBXML_INCLUDE) $(HDF5_INCLUDE)
 

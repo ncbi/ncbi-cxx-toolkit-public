@@ -4,6 +4,9 @@
 #
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+
+REQUIRES = Xerces
+
 APP = fixMsHdf5
 SRC = fixMsHdf5
 # OBJ =
