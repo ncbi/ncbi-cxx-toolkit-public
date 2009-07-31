@@ -500,26 +500,55 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
-    /// Set all flags for searching external annotations. "seq" or "tse"
-    /// should contain the virtual segmented bioseq. The flags set are:
-    ///   ResolveTSE - prevent loading external bioseqs
-    ///   LimitTSE   - search only external annotations near the virtual bioseq
-    ///   SearchUnresolved - search on unresolved IDs.
-    SAnnotSelector& SetSearchExternal(const CTSE_Handle& tse);
-    SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
-    SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
-
+    /// External annotations for the Object Manger are annotations located in
+    /// top level Seq-entry different from TSE with the sequence they annotate.
+    /// They can be excluded from search by SetExcludeExternal() option.
+    ///
     /// Exclude all external annotations from the search.
-    /// Effective only when no limit is set.
+    /// Effective only when no Seq-entry/Bioseq/Seq-annot limit is set.
     SAnnotSelector& SetExcludeExternal(bool exclude = true)
         {
             m_ExcludeExternal = exclude;
             return *this;
         }
 
+    /// Set all flags for searching standard GenBank external annotations.
+    /// 'seq' or 'tse' should contain the virtual segmented bioseq as provided
+    /// by GenBank in its external annotations blobs (SNP, CDD, etc.)
+    /// The GenBank external annotations are presented as virtual delte
+    /// sequence referencing annotated GI.
+    /// So it's possible to lookup for external annotations without retrieving
+    /// the GI itself.
+    /// To make it possible the following flags are set by SetSearchExternal():
+    ///   SetResolveTSE() - prevents loading the GI sequence bioseqs
+    ///   SetLimitTSE()   - search only external annotations in the given TSE
+    ///   SearchUnresolved() - search on unresolved IDs (GI) too.
+    SAnnotSelector& SetSearchExternal(const CTSE_Handle& tse);
+    SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
+    SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
+
+    /// Object manager recognizes several fields of Seq-annot as annot name.
+    /// The fields are:
+    ///   1. Seq-annot.id.other.accession with optional version.
+    ///   2. Seq-annot.desc.name
+    /// This annot name applies to all contained annotations, and it's
+    /// possible to filter annotations by their name.
+    /// By default, or after ResetAnnotsNames() is called, no filter is set.
+    /// You can set add annot names to the filter, so only annotations with
+    /// added names are visilble.
+    /// Otherwise, or you can exclude annot names, so that matching annot
+    /// names are excluded from search.
+    /// Relevant methods are:
+    ///   ResetAnnotsNames()
+    ///   ResetUnnamedAnnots()
+    ///   ResetNamedAnnots()
+    ///   AddUnnamedAnnots()
+    ///   AddNamedAnnots()
+    ///   ExcludeUnnamedAnnots()
+    ///   ExcludeNamedAnnots()
+    ///   SetAllNamedAnnots()
     typedef vector<CAnnotName> TAnnotsNames;
     typedef set<string> TNamedAnnotAccessions;
-
     /// Select annotations from all Seq-annots
     SAnnotSelector& ResetAnnotsNames(void);
     /// Reset special processing of unnamed annots (added or excluded)
@@ -538,12 +567,20 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& ExcludeNamedAnnots(const CAnnotName& name);
     SAnnotSelector& ExcludeNamedAnnots(const char* name);
     /// Look for all named Seq-annots
+    /// Resets the filter, and then excludes unnamed annots.
     SAnnotSelector& SetAllNamedAnnots(void);
     // Compatibility:
     /// Look for named annot.
     /// If name is empty ("") look for unnamed annots too.
     SAnnotSelector& SetDataSource(const string& name);
 
+    // The following methods can be used to inspect annot filter:
+    //   GetIncludedAnnotsNames()
+    //   GetExcludedAnnotsNames()
+    //   IsSetAnnotsNames()
+    //   IsSetIncludedAnnotsNames()
+    //   IncludedAnnotName()
+    //   ExcludedAnnotName()
     // Access methods for iterator
     const TAnnotsNames& GetIncludedAnnotsNames(void) const
         {
