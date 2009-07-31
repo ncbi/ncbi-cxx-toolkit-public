@@ -294,7 +294,9 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                        eFileErr,
                        msg);
         } else {
-            m_DBList[i].Assign( resolved_path.FindBasePath() );
+            string base_path;
+            resolved_path.FindBasePath().GetString(base_path);
+            m_DBList[i].Assign(CSeqDB_Substring(CDirEntry::NormalizePath(base_path, eFollowLinks)));
         }
     }
     
