@@ -35,8 +35,3 @@ include $(builddir)/Makefile.$(LIB_OR_DLL)
 # If the makefile's changed, we probably at least need to relink.
 #
 $(XLIB) $(XDLL): $(srcdir)/Makefile.$(TMPL).lib
-
-# Guard against invalid PTB-oriented settings.
-#
-all: $(ASN_DEP:%=$(status_dir)/.%.dep)
-all: $(USR_DEP:%=$(status_dir)/.%.dep)

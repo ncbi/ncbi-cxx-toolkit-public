@@ -96,10 +96,4 @@ purge: clean
 	    $(RM) $(bindir)/$(XAPP); \
 	fi
 
-
-# Guard against invalid PTB-oriented settings.
-#
-all: $(ASN_DEP:%=$(status_dir)/.%.dep)
-all: $(USR_DEP:%=$(status_dir)/.%.dep)
-
 .PHONY: default_rule all unlink clean purge
