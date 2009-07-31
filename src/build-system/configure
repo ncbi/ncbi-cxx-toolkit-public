@@ -26308,7 +26308,7 @@ fi
       else
          wxcfflags=
       fi
-      for x in `"$wxconf" $wxcfflags --libs --static 2>5`; do
+      for x in `"$wxconf" $wxcfflags --libs --static 2>&5`; do
          case "$x" in
             -L*)
                 d=`echo $x | sed -e 's/^-L//'`

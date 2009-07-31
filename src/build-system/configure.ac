@@ -4756,7 +4756,7 @@ if test "$with_wxwidgets" != "no" ; then
       else
          wxcfflags=
       fi
-      for x in `"$wxconf" $wxcfflags --libs --static 2>AS_MESSAGE_LOG_FD`; do
+      for x in `"$wxconf" $wxcfflags --libs --static 2>&AS_MESSAGE_LOG_FD`; do
          case "$x" in
             -L*)
                 d=`echo $x | sed -e 's/^-L//'`
