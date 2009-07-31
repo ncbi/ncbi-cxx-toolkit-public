@@ -1,5 +1,5 @@
 #
-# Makefile.pkl2hdf5.app
+# $Id$
 #
 #
 #############################################################################
@@ -15,7 +15,7 @@ SRC = pkl2hdf5
 LIB = mshdf5 mzXML general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress
 ## If you need the C toolkit...
 # LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
-LIBS = $(ORIG_LIBS) $(CMPRS_LIBS) $(HDF5_LIBS)
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(HDF5_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(HDF5_INCLUDE) 
 
 # CFLAGS   = $(ORIG_CFLAGS)

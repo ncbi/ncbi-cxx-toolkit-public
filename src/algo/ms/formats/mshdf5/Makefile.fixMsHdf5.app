@@ -1,5 +1,5 @@
 #
-# Makefile.mshdf2mzXML.app
+# $Id$
 #
 #
 #############################################################################
@@ -13,7 +13,7 @@ SRC = fixMsHdf5
 #LINK_WRAPPER = $(top_srcdir)/scripts/common/impl/favor-static
 
 LIB = mshdf5 mzXML general xregexp $(PCRE_LIB) xconnect xser xutil xncbi xcompress
-LIBS = $(ORIG_LIBS) $(CMPRS_LIBS) $(HDF5_LIBS)
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(HDF5_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(XERCES_INCLUDE) $(HDF5_INCLUDE)
 
 # CFLAGS   = $(ORIG_CFLAGS)
