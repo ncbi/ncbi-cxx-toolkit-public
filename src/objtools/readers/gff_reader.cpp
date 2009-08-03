@@ -152,14 +152,10 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
                 
-                record->line_no = m_LineNumber;
-                string id = x_FeatureID(*record);
-                record->id = id;
-
-                if (id.empty()) {
+                if (record->id.empty()) {
                     x_ParseAndPlace(*record);
                 } else {
-                    CRef<SRecord>& match = m_DelayedRecords[id];
+                    CRef<SRecord>& match = m_DelayedRecords[ record->id ];
                     // _TRACE(id << " -> " << match.GetPointer());
                     if (match) {
                         x_MergeRecords(*match, *record);
@@ -404,15 +400,18 @@ void CGFFReader::x_Reset(void)
 }
 
 
-void CGFFReader::x_ParseStructuredComment(const TStr& line)
+bool CGFFReader::x_ParseStructuredComment(const TStr& line)
 {
+    if ( line.empty() || line[0] != '#' || line[1] != '#' ) {
+        return false;
+    }
     TStrVec v;
     // NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
     typedef CStrTokenize<TStr, TStrVec> TTokenizer;
     TTokenizer::TPosContainer pos_container;
     TTokenizer::Do(line, "# \t", v, TTokenizer::eMergeDelims, pos_container);
     if (v.empty()) {
-        return;
+        return true;
     }
     if (v[0] == "date"  &&  v.size() > 1) {
         x_ParseDateComment(v[1]);
@@ -424,6 +423,7 @@ void CGFFReader::x_ParseStructuredComment(const TStr& line)
         x_ReadFastaSequences(*m_LineReader);
     }
     // etc.
+    return true;
 }
 
 
@@ -586,6 +586,8 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
         }        
     }
 
+    record->line_no = m_LineNumber;
+    record->id = x_FeatureID(*record);
     return record;
 }
 
@@ -1320,6 +1322,154 @@ CRef<CBioseq> CGFFReader::x_ResolveNewID(const CSeq_id& id, const string& mol0)
     return seq;
 }
 
+void CGFFReader::x_SetProducts( CRef<CSeq_entry>& tse )
+{
+    CTypeIterator<CSeq_feat> feat_iter(*tse);
+    for ( ;  feat_iter;  ++feat_iter) {
+        CSeq_feat& feat = *feat_iter;
+
+        string qual_name;
+        switch (feat.GetData().GetSubtype()) {
+        case CSeqFeatData::eSubtype_cdregion:
+            qual_name = "protein_id";
+            break;
+
+        case CSeqFeatData::eSubtype_mRNA:
+            qual_name = "transcript_id";
+            break;
+
+        default:
+            continue;
+            break;
+        }
+
+        string id_str = feat.GetNamedQual(qual_name);
+        if ( !id_str.empty() ) {
+            CRef<CSeq_id> id = x_ResolveSeqName(id_str);
+            feat.SetProduct().SetWhole(*id);
+        }
+    }
+}
+
+void CGFFReader::x_CreateGeneFeatures( CRef<CSeq_entry>& tse )
+{
+    CTypeIterator<CSeq_annot> annot_iter(*tse);
+    for ( ;  annot_iter;  ++annot_iter) {
+        CSeq_annot& annot = *annot_iter;
+        if (annot.GetData().Which() != CSeq_annot::TData::e_Ftable) {
+            continue;
+        }
+
+        // we work within the scope of one annotation
+        CSeq_annot::TData::TFtable::iterator feat_iter = 
+            annot.SetData().SetFtable().begin();
+        CSeq_annot::TData::TFtable::iterator feat_end = 
+            annot.SetData().SetFtable().end();
+
+        /// we plan to create a series of gene features, one for each gene
+        /// identified above
+        /// genes are identified via a 'gene_id' marker
+        typedef map<string, CRef<CSeq_feat> > TGeneMap;
+        TGeneMap genes;
+        for (bool has_genes = false;
+             feat_iter != feat_end  &&  !has_genes;  ++feat_iter) {
+            CSeq_feat& feat = **feat_iter;
+
+            switch (feat.GetData().GetSubtype()) {
+            case CSeqFeatData::eSubtype_gene:
+                /// we already have genes, so don't add any more
+                has_genes = true;
+                genes.clear();
+                break;
+
+            case CSeqFeatData::eSubtype_mRNA:
+            case CSeqFeatData::eSubtype_cdregion:
+                /// for mRNA and CDS features, create a gene
+                /// this is only done if the gene_id parameter was set
+                /// in parsing, we promote gene_id to a gene xref
+                if ( !feat.GetGeneXref() ) {
+                    continue;
+                }
+                {{
+                    string gene_id;
+                    feat.GetGeneXref()->GetLabel(&gene_id);
+                    _ASSERT( !gene_id.empty() );
+                    TSeqRange range = feat.GetLocation().GetTotalRange();
+
+                    ENa_strand strand = feat.GetLocation().GetStrand();
+                    const CSeq_id* id = feat.GetLocation().GetId();
+                    if ( !id ) {
+                        x_Error("No consistent ID found; gene feature skipped");
+                        continue;
+                    }
+
+                    TGeneMap::iterator iter = genes.find(gene_id);
+                    if (iter == genes.end()) {
+                        /// new gene feature
+                        CRef<CSeq_feat> gene(new CSeq_feat());
+                        gene->SetData().SetGene().Assign(*feat.GetGeneXref());
+
+                        gene->SetLocation().SetInt().SetFrom(range.GetFrom());
+                        gene->SetLocation().SetInt().SetTo  (range.GetTo());
+                        gene->SetLocation().SetId(*id);
+                        gene->SetLocation().SetInt().SetStrand(strand);
+                        genes[gene_id] = gene;
+                    } else {
+                        /// we agglomerate the old location
+                        CRef<CSeq_feat> gene = iter->second;
+
+                        TSeqRange r2 = gene->GetLocation().GetTotalRange();
+                        range += r2;
+                        gene->SetLocation().SetInt().SetFrom(range.GetFrom());
+                        gene->SetLocation().SetInt().SetTo  (range.GetTo());
+                        gene->SetLocation().InvalidateTotalRangeCache();
+                    }
+                }}
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        ITERATE (TGeneMap, iter, genes) {
+            annot.SetData().SetFtable().push_back(iter->second);
+        }
+    }
+}
+
+void CGFFReader::x_RemapGeneRefs( CRef<CSeq_entry>& tse, TGeneRefs& gene_refs )
+{
+    if ( !tse  ||  gene_refs.empty() ) {
+        return;
+    }
+    NON_CONST_ITERATE (TGeneRefs, iter, gene_refs) {
+        if ( !iter->second->IsSetLocus()  &&
+             !iter->second->IsSetLocus_tag()) {
+            iter->second->SetLocus(iter->first);
+        } else if ( !iter->second->IsSetLocus()  ||
+                    iter->second->GetLocus() != iter->first) {
+            iter->second->SetSyn().push_back(iter->first);
+        }
+    }
+
+    CTypeIterator<CSeq_feat> feat_iter(*tse);
+    for ( ;  feat_iter;  ++feat_iter) {
+        const CGene_ref* ref = NULL;
+        if (feat_iter->GetData().IsGene()) {
+            ref = &feat_iter->GetData().GetGene();
+        } else {
+            ref = feat_iter->GetGeneXref();
+        }
+        if (ref  &&  ref->IsSetLocus()) {
+            TGeneRefs::const_iterator iter =
+                gene_refs.find(ref->GetLocus());
+            if (iter != gene_refs.end()) {
+                const_cast<CGene_ref*>(ref)->Assign(*iter->second);
+            }
+        }
+    }
+}
 
 void CGFFReader::x_PlaceSeq(CBioseq& seq)
 {

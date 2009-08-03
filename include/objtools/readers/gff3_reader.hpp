@@ -81,17 +81,38 @@ public:
     //  helpers:
     //
 protected:
-    static bool VerifyLine(
-        const std::string& );
-    
-    virtual void x_Info(const string& message,
+    virtual bool x_ParseBrowserLineToSeqEntry(
+        const string&,
+        CRef<CSeq_entry>& );
+        
+    virtual bool x_ParseTrackLineToSeqEntry(
+        const string&,
+        CRef<CSeq_entry>& );
+        
+    virtual void x_SetTrackDataToSeqEntry(
+        CRef<CSeq_entry>&,
+        CRef<CUser_object>&,
+        const string&,
+        const string& );
+                
+    virtual void x_Info(
+        const string& message,
         unsigned int line = 0);
 
-    virtual void x_Warn(const string& message,
+    virtual void x_Warn(
+        const string& message,
         unsigned int line = 0);
 
-    virtual void x_Error(const string& message,
+    virtual void x_Error(
+        const string& message,
         unsigned int line = 0);
+
+    bool x_IsCommentLine(
+        const string& );
+
+    bool x_ReadLine(
+        ILineReader&,
+        string& );
 
     //
     //  data:

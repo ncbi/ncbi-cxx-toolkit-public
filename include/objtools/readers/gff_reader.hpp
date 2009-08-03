@@ -153,6 +153,13 @@ public:
     };
 
 protected:
+    typedef map<string, CRef<CSeq_id>, PNocase>    TSeqNameCache;
+    typedef map<CConstRef<CSeq_id>, CRef<CBioseq>,
+                PPtrLess<CConstRef<CSeq_id> > >    TSeqCache;
+    typedef map<string, CRef<SRecord>, PNocase>    TDelayedRecords;
+
+    typedef map<string, CRef<CGene_ref> > TGeneRefs;
+
     typedef CTempString  TStr;
     typedef vector<TStr> TStrVec;
 
@@ -171,7 +178,7 @@ protected:
     TFlags                  x_GetFlags(void) const { return m_Flags; }
     unsigned int            x_GetLineNumber(void) { return m_LineNumber; }
 
-    virtual void            x_ParseStructuredComment(const TStr& line);
+    virtual bool            x_ParseStructuredComment(const TStr& line);
     virtual void            x_ParseDateComment(const TStr& date);
     virtual void            x_ParseTypeComment(const TStr& moltype,
                                                const TStr& seqname);
@@ -225,14 +232,13 @@ protected:
 
     virtual bool            x_SplitKeyValuePair( const string&, string&, string& );
     
-private:
-    typedef map<string, CRef<CSeq_id>, PNocase>    TSeqNameCache;
-    typedef map<CConstRef<CSeq_id>, CRef<CBioseq>,
-                PPtrLess<CConstRef<CSeq_id> > >    TSeqCache;
-    typedef map<string, CRef<SRecord>, PNocase>    TDelayedRecords;
-
-    typedef map<string, CRef<CGene_ref> > TGeneRefs;
-
+    virtual void            x_SetProducts( CRef<CSeq_entry>& );
+    
+    virtual void            x_CreateGeneFeatures( CRef<CSeq_entry>& );
+    
+    virtual void            x_RemapGeneRefs( CRef<CSeq_entry>&, TGeneRefs& ); 
+    
+protected:
     CRef<CSeq_entry> m_TSE;
     TSeqNameCache    m_SeqNameCache;
     TSeqCache        m_SeqCache;

@@ -59,6 +59,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -110,38 +111,6 @@ CGff3Reader::~CGff3Reader()
 }
 
 
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::VerifyLine(
-    const string& line )
-//  ----------------------------------------------------------------------------
-{
-    vector<string> tokens;
-    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
-        return false;
-    }
-    try {
-        NStr::StringToInt( tokens[3] );
-        NStr::StringToInt( tokens[4] );
-        if ( tokens[5] != "." ) {
-            NStr::StringToDouble( tokens[5] );
-        }
-    }
-    catch( ... ) {
-        return false;
-    }
-        
-    if ( tokens[6] != "+" && tokens[6] != "." && tokens[6] != "-" ) {
-        return false;
-    }
-    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
-        return false;
-    }
-    if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
-        return false;
-    }
-    return true;
-}
-
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_entry >
 CGff3Reader::ReadSeqEntry(
@@ -149,13 +118,104 @@ CGff3Reader::ReadSeqEntry(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    string line;
-    int linecount = 0;
+//    m_pErrors = pErrorContainer;
+//    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
+//    m_pErrors = 0;
+//    return entry;
+
+    x_Reset();
+    m_TSE->SetSet();
     
-    m_pErrors = pErrorContainer;
-    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
-    m_pErrors = 0;
-    return entry;
+    string strLine;
+    while( x_ReadLine( lr, strLine ) ) {
+    
+        try {
+            if ( x_ParseStructuredComment( strLine ) ) {
+                continue;
+            }
+            if ( x_ParseBrowserLineToSeqEntry( strLine, m_TSE ) ) {
+                continue;
+            }
+            if ( x_ParseTrackLineToSeqEntry( strLine, m_TSE ) ) {
+                continue;
+            }
+            // -->
+            CRef<SRecord> record = x_ParseFeatureInterval(strLine);
+            if (record) {
+                
+                record->line_no = m_LineNumber;
+                string id = x_FeatureID(*record);
+                record->id = id;
+
+                if (id.empty()) {
+                    x_ParseAndPlace(*record);
+                } else {
+                    CRef<SRecord>& match = m_DelayedRecords[id];
+                    // _TRACE(id << " -> " << match.GetPointer());
+                    if (match) {
+                        x_MergeRecords(*match, *record);
+                    } else {
+                        match.Reset(record);
+                    }
+                }
+            }
+        }
+        catch( CObjReaderLineException& err ) {
+            ProcessError( err, pErrorContainer );
+        }
+        // <--
+    }
+    // -->
+    NON_CONST_ITERATE (TDelayedRecords, it, m_DelayedRecords) {
+        SRecord& rec = *it->second;
+        /// merge mergeable ranges
+        NON_CONST_ITERATE (SRecord::TLoc, loc_iter, rec.loc) {
+            ITERATE (set<TSeqRange>, src_iter, loc_iter->merge_ranges) {
+                TSeqRange range(*src_iter);
+                set<TSeqRange>::iterator dst_iter =
+                    loc_iter->ranges.begin();
+                for ( ;  dst_iter != loc_iter->ranges.end();  ) {
+                    TSeqRange r(range);
+                    r += *dst_iter;
+                    if (r.GetLength() <=
+                        range.GetLength() + dst_iter->GetLength()) {
+                        range += *dst_iter;
+                        _TRACE("merging overlapping ranges: "
+                               << range.GetFrom() << " - "
+                               << range.GetTo() << " <-> "
+                               << dst_iter->GetFrom() << " - "
+                               << dst_iter->GetTo());
+                        loc_iter->ranges.erase(dst_iter++);
+                        break;
+                    } else {
+                        ++dst_iter;
+                    }
+                }
+                loc_iter->ranges.insert(range);
+            }
+        }
+
+        if (rec.key == "exon") {
+            rec.key = "mRNA";
+        }
+        x_ParseAndPlace(rec);
+    }
+
+    x_RemapGeneRefs( m_TSE, m_GeneRefs );
+
+    CRef<CSeq_entry> tse(m_TSE); // need to save before resetting.
+    x_Reset();
+    
+    // promote transcript_id and protein_id to products
+    if ( m_iReaderFlags & fSetProducts ) {
+        x_SetProducts( tse );
+    }
+
+    if ( m_iReaderFlags & fCreateGeneFeats ) {
+        x_CreateGeneFeatures( tse );
+    }
+    // <--
+    return tse;
 }
     
 //  ----------------------------------------------------------------------------                
@@ -165,13 +225,12 @@ CGff3Reader::ReadObject(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    string line;
-    int linecount = 0;
-    
-    m_pErrors = pErrorContainer;
-    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
-    m_pErrors = 0;
-    CRef<CSerialObject> object( entry.ReleaseOrNull() );
+//    m_pErrors = pErrorContainer;
+//    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
+//    m_pErrors = 0;
+//    CRef<CSerialObject> object( entry.ReleaseOrNull() );
+    CRef<CSerialObject> object( 
+        ReadSeqEntry( lr, pErrorContainer ).ReleaseOrNull() );
     return object;
 }
     
@@ -218,6 +277,120 @@ CGff3Reader::x_Error(
     CObjReaderLineException err( eDiag_Error, line, message );
     CReaderBase::m_uLineNumber = line;
     ProcessError( err, m_pErrors );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ReadLine(
+    ILineReader& lr,
+    string& strLine )
+//  ----------------------------------------------------------------------------
+{
+    strLine.clear();
+    while ( ! lr.AtEOF() ) {
+        strLine = *++lr;
+        ++m_uLineNumber;
+        NStr::TruncateSpacesInPlace( strLine );
+        if ( ! x_IsCommentLine( strLine ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_IsCommentLine(
+    const string& strLine )
+//  ----------------------------------------------------------------------------
+{
+    if ( strLine.empty() ) {
+        return true;
+    }
+    return (strLine[0] == '#' && strLine[1] != '#');
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ParseBrowserLineToSeqEntry(
+    const string& strLine,
+    CRef<CSeq_entry>& entry )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "browser" ) ) {
+        return false;
+    }
+    CSeq_descr& descr = entry->SetDescr();
+    
+    vector<string> fields;
+    NStr::Tokenize( strLine, " \t", fields, NStr::eMergeDelims );
+    for ( vector<string>::iterator it = fields.begin(); it != fields.end(); ++it ) {
+        if ( *it == "position" ) {
+            ++it;
+            if ( it == fields.end() ) {
+                CObjReaderLineException err(
+                    eDiag_Error,
+                    0,
+                    "Bad browser line: incomplete position directive" );
+                throw( err );
+            }
+            CRef<CSeqdesc> region( new CSeqdesc() );
+            region->SetRegion( *it );
+            descr.Set().push_back( region );
+            continue;
+        }
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_ParseTrackLineToSeqEntry(
+    const string& strLine,
+    CRef<CSeq_entry>& entry )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+        return false;
+    }
+    CSeq_descr& descr = entry->SetDescr();
+
+    CRef<CUser_object> trackdata( new CUser_object() );
+    trackdata->SetType().SetStr( "Track Data" );    
+    
+    map<string, string> values;
+    x_GetTrackValues( strLine, values );
+    for ( map<string,string>::iterator it = values.begin(); it != values.end(); ++it ) {
+        x_SetTrackDataToSeqEntry( entry, trackdata, it->first, it->second );
+    }
+    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
+        CRef<CSeqdesc> user( new CSeqdesc() );
+        user->SetUser( *trackdata );
+        descr.Set().push_back( user );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+void CGff3Reader::x_SetTrackDataToSeqEntry(
+    CRef<CSeq_entry>& entry,
+    CRef<CUser_object>& trackdata,
+    const string& strKey,
+    const string& strValue )
+//  ----------------------------------------------------------------------------
+{
+    CSeq_descr& descr = entry->SetDescr();
+
+    if ( strKey == "name" ) {
+        CRef<CSeqdesc> name( new CSeqdesc() );
+        name->SetName( strValue );
+        descr.Set().push_back( name );
+        return;
+    }
+    if ( strKey == "description" ) {
+        CRef<CSeqdesc> title( new CSeqdesc() );
+        title->SetTitle( strValue );
+        descr.Set().push_back( title );
+        return;
+    }
+    trackdata->AddField( strKey, strValue );
 }
 
 END_objects_SCOPE
