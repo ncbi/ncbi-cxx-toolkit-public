@@ -72,7 +72,10 @@ public:
 
         //< percent identity as 'pct_identity', range 0.0-100.0
         //< this will also create 'num_ident'
-        eScore_PercentIdentity
+        eScore_PercentIdentity,
+
+        //< percent coverage of query as 'pct_coverage', range 0.0-100.0
+        eScore_PercentCoverage
     };
 
     /// @name Functions to add scores directly to Seq-aligns

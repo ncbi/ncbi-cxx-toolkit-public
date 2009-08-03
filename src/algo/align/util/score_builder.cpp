@@ -481,6 +481,60 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
 }
 
 
+
+
+///
+/// calculate the length of our alignment
+///
+static size_t s_GetCoveredBases(const CSeq_align& align,
+                                int row)
+{
+    size_t len = 0;
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                if (ds.GetStarts()[(i * ds.GetDim()) + row] != -1) {
+                    len += ds.GetLens()[i];
+                }
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Disc:
+        ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter,
+                 align.GetSegs().GetDisc().Get()) {
+            len += s_GetCoveredBases(**iter, row);
+        }
+        break;
+
+    default:
+        _ASSERT(false);
+        break;
+    }
+
+    return len;
+}
+
+
+///
+/// calculate the percent coverage
+///
+static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
+                                 double* pct_coverage)
+{
+    size_t covered_bases;
+    covered_bases = s_GetCoveredBases(align, 0);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+    if (covered_bases) {
+        *pct_coverage = 100.0f * double(covered_bases) / double(bsh.GetBioseqLength());
+    } else {
+        *pct_coverage = 0;
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -525,7 +579,7 @@ TSeqPos CScoreBuilder::GetAlignLength(const CSeq_align& align)
 
 static const unsigned char reverse_4na[16] = {0, 8, 4, 0, 2, 0, 0, 0, 1};
 
-int CScoreBuilder::GetBlastScore(CScope& scope, 
+int CScoreBuilder::GetBlastScore(CScope& scope,
                                  const CSeq_align& align)
 {
     if (m_ScoreBlk == 0) {
@@ -555,7 +609,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
                         "Protein scoring parameters required");
         }
 
-        for (CAlnVec::TNumseg seg_idx = 0;  
+        for (CAlnVec::TNumseg seg_idx = 0;
                         seg_idx < vec.GetNumSegs();  ++seg_idx) {
 
             TSignedSeqPos start1 = vec.GetStart(0, seg_idx);
@@ -597,7 +651,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
         int strand1 = vec.StrandSign(0);
         int strand2 = vec.StrandSign(1);
 
-        for (CAlnVec::TNumseg seg_idx = 0;  
+        for (CAlnVec::TNumseg seg_idx = 0;
                         seg_idx < vec.GetNumSegs();  ++seg_idx) {
 
             TSignedSeqPos start1 = vec.GetStart(0, seg_idx);
@@ -698,21 +752,21 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
     switch (score) {
     case eScore_Blast:
         {{
-            align.SetNamedScore(CSeq_align::eScore_Score, 
+            align.SetNamedScore(CSeq_align::eScore_Score,
                                 GetBlastScore(scope, align));
         }}
         break;
 
     case eScore_Blast_BitScore:
         {{
-            align.SetNamedScore(CSeq_align::eScore_BitScore, 
+            align.SetNamedScore(CSeq_align::eScore_BitScore,
                                 GetBlastBitScore(scope, align));
         }}
         break;
 
     case eScore_Blast_EValue:
         {{
-            align.SetNamedScore(CSeq_align::eScore_EValue, 
+            align.SetNamedScore(CSeq_align::eScore_EValue,
                                 GetBlastEValue(scope, align));
         }}
         break;
@@ -735,6 +789,13 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                                  &identities, &mismatches, &pct_identity);
             align.SetNamedScore(CSeq_align::eScore_PercentIdentity, pct_identity);
             align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
+        }}
+        break;
+    case eScore_PercentCoverage:
+        {{
+            double pct_coverage = 0;
+            s_GetPercentCoverage(scope, align, &pct_coverage);
+            align.SetNamedScore("pct_coverage", pct_coverage);
         }}
         break;
     }
