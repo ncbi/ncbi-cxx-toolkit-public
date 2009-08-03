@@ -79,28 +79,28 @@ void CCompartApp::Init()
                             "Minimal identity for singleton compartments "
                             "in base pairs. Default = parameter disabled.",
                             CArgDescriptions::eInteger, "9999999");
-
-    argdescr->AddFlag("noxf", "Suppress overlap x-filtering: print all "
-                              "compartment hits intact");
     
     argdescr->AddDefaultKey("min_query_len", "min_query_len", 
                             "Minimum length for individual cDNA sequences.",
                             CArgDescriptions::eInteger, "50");
-
-    argdescr->AddDefaultKey("N", "N", 
-                            "Max number of compartments per query (0 = All).",
-                            CArgDescriptions::eInteger, "0");
     
     argdescr->AddDefaultKey ("maxvol", "maxvol", 
                              "Maximum index volume size in MB (approximate)",
                              CArgDescriptions::eInteger,
                              "512");
 
+    argdescr->AddFlag("noxf", "[With external hits] Suppress overlap x-filtering: print all "
+                              "compartment hits intact.");
+
     argdescr->AddOptionalKey("seqlens", "seqlens", 
-                             "Two-column file with sequence IDs and their lengths. "
+                             "[With external hits] Two-column file with sequence IDs and their lengths. "
                              "If none supplied, the program will attempt fetching "
                              "the lengths from GenBank. Cannot be used with -qdb.",
                              CArgDescriptions::eInputFile);
+
+    argdescr->AddDefaultKey("N", "N", 
+                            "[With external hits] Max number of compartments per query (0 = All).",
+                            CArgDescriptions::eInteger, "0");
 
     CArgAllow* constrain01 (new CArgAllow_Doubles(0.0, 1.0));
     argdescr->SetConstraint("penalty", constrain01);
