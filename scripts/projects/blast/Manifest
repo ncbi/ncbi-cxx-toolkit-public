@@ -20,6 +20,7 @@
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn 
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck
+APP: blast_formatter
 
 COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin

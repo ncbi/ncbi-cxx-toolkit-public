@@ -58,6 +58,7 @@ def main():
              "windowmasker.exe",
              "convert2blastmask.exe",
              "blastdbcheck.exe",
+             "blast_formatter.exe",
              "legacy_blast.pl",
              "update_blastdb.pl" ]
     
