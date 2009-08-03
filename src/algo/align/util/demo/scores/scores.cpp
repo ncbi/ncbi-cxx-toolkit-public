@@ -113,11 +113,20 @@ int CScoresApplication::Run(void)
     // Get arguments
     CArgs args = GetArgs();
     
-    CRef<CSeq_annot> seq_annot(new CSeq_annot());
     
-    // Read input file
-    CNcbiIfstream is(args["in"].AsString().c_str());
-    is >> MSerial_AsnBinary >> *seq_annot;
+    CRef<CSeq_annot> seq_annot(new CSeq_annot());
+    CNcbiIfstream is(args["in"].AsString().c_str());   
+    try {
+        while(true) {
+            CRef<CSeq_annot> tmp_annot(new CSeq_annot());
+            is >> MSerial_AsnBinary >> *tmp_annot;
+            CSeq_annot::TData::TAlign& alns = tmp_annot->SetData().SetAlign();
+            NON_CONST_ITERATE(CSeq_annot::TData::TAlign, it, alns) {
+                seq_annot->SetData().SetAlign().push_back(*it);
+            }
+        }
+    } catch (CEofException& e) {
+    }
     
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
@@ -125,8 +134,7 @@ int CScoresApplication::Run(void)
     scope->AddDefaults();
     CScoreBuilder score_builder(blast::eMegablast);
 
-    //const Int8 kEffectiveSearchSpace = 1050668186940LL; // 1
-    const Int8 kEffectiveSearchSpace = 105066818694LL; // 2
+    const Int8 kEffectiveSearchSpace = 1050668186940LL;
     
     CSeq_annot::TData::TAlign& align_list = seq_annot->SetData().SetAlign();
     try {
