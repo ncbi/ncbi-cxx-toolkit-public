@@ -1,0 +1,7 @@
+# $Id$
+#################################
+
+APP_PROJ = scores
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
