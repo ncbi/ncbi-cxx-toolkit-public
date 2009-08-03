@@ -859,6 +859,18 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
             return;
         }
     }
+    if (!memberInfo->Optional() &&
+        out.GetVerifyData() == eSerialVerifyData_Yes &&
+        memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer &&
+        memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetMaybe) {
+        CConstObjectInfo objinfo(memberInfo->GetItemPtr(classPtr),
+                                 memberInfo->GetTypeInfo());
+        CConstObjectInfo::CElementIterator ei = objinfo.BeginElements();
+        if (!ei.Valid()) {
+            out.ThrowError(CObjectOStream::fUnassigned,
+                string("Unassigned member: ")+memberInfo->GetId().GetName());
+        }
+    }
 #ifdef _DEBUG
     if (memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetMaybe &&
         memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
