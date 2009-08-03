@@ -801,9 +801,6 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
             continue;
         }
         
-//cout << "m_DBPath: " << m_DBPath.GetDirNameS() << endl;
-//cout << "m_DBList[i]: " << m_DBList[i].GetBasePathS() << endl;
-        
         // Finally, join the "current" directory (location of this alias node)
         // to the path specified in the alias file.
         

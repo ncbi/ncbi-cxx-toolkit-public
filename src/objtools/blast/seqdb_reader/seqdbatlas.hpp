@@ -1748,6 +1748,12 @@ public:
     ///
     /// @param bytes Number of bytes to use as the global memory bound.
     static void SetDefaultMemoryBound(Uint8 bytes);
+
+    /// Get BlastDB search path.
+    const string GetSearchPath() const 
+    {
+        return m_SearchPath;
+    }
     
 private:
     /// Private method to prevent copy construction.
@@ -1935,6 +1941,32 @@ private:
         }
     }
     
+    /// Generate search path
+    static const string s_SetSearchPath() {
+        string splitter;
+        string path;
+#if defined(NCBI_OS_UNIX)
+        splitter = ":";
+#else
+        splitter = ";";
+#endif
+        // Local directory first;
+        path  = CDirEntry::NormalizePath(CDir::GetCwd(),eFollowLinks);
+        path += splitter;
+        // Then, BLASTDB;
+        CNcbiEnvironment env;
+        path += CDirEntry::NormalizePath(env.Get("BLASTDB"),eFollowLinks);
+        path += splitter;
+        // Finally, the config file.
+        CMetaRegistry::SEntry sentry =
+             CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        if (sentry.registry) {
+            path += CDirEntry::NormalizePath(sentry.registry->Get("BLAST", "BLASTDB"),eFollowLinks);
+            path += splitter;
+        }
+        return path;
+    }
+
     // Data
     
     /// Protects most of the critical regions of the SeqDB library.
@@ -2022,6 +2054,9 @@ private:
     
     /// Flexible memory allocation manager.
     CSeqDBMapStrategy m_Strategy;
+
+    /// BlastDB search path.
+    const string m_SearchPath;
 };
 
 // Assumes lock is held.
