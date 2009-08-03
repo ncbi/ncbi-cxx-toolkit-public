@@ -3,5 +3,5 @@
 LIB = ncbi_xloader_blastdb_rmt
 SRC = bdbloader_rmt remote_blastdb_adapter
 
-ASN_DEP = seq seqset seqdb blastdb xnetblast
+ASN_DEP = blastdb xnetblast
 

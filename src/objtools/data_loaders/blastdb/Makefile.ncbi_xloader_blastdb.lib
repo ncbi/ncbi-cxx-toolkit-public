@@ -3,5 +3,5 @@
 LIB = ncbi_xloader_blastdb
 SRC = bdbloader cached_sequence local_blastdb_adapter
 
-ASN_DEP = seq seqset seqdb blastdb xnetblast
+ASN_DEP = blastdb seqset
 
