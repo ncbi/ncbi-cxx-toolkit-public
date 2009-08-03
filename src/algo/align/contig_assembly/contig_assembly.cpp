@@ -810,6 +810,8 @@ CContigAssembly::CAlnStats::CAlnStats(const objects::CDense_seg& ds,
             }
         }
     }
+
+    m_PctIdent = CContigAssembly::FracIdent(ds, scope);
 }
 
 

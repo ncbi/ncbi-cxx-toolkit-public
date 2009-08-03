@@ -59,18 +59,19 @@ public:
         CAlnStats(unsigned int adjusted_len,
                   unsigned int mm,
                   unsigned int gaps) :
-            m_AdjustedLen(adjusted_len), m_MM(mm), m_Gaps(gaps) {}
+            m_AdjustedLen(adjusted_len), m_MM(mm), m_Gaps(gaps), m_PctIdent(0.0) {}
         CAlnStats(const objects::CDense_seg& ds, objects::CScope& scope);
 
         unsigned int GetAdjustedLength() const {return m_AdjustedLen;}
         /// Returns a fraction between 0 and 1, not a percentage
-        double       GetFracIdentity() const;
+        double       GetFracIdentity() const { return m_PctIdent; }
         unsigned int GetNumMismatches() const {return m_MM;}
         unsigned int GetNumGaps() const {return m_Gaps;}
     private:
         unsigned int m_AdjustedLen;
         unsigned int m_MM;
         unsigned int m_Gaps;
+        double m_PctIdent;
     };
 
     /// Most users of the class need only to call this function.
@@ -232,11 +233,11 @@ public:
 };
 
 
-inline
+/*inline
 double CContigAssembly::CAlnStats::GetFracIdentity() const
 {
     return 1.0 - double(m_MM + m_Gaps) / m_AdjustedLen;
-}
+}*/
 
 
 END_NCBI_SCOPE
