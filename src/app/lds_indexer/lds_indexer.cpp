@@ -65,7 +65,7 @@ private:
 
 void CLDSIndexerApplication::Init(void)
 {
-    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostLevel(eDiag_Warning);
 
     // Prepare command line descriptions
     //
