@@ -10,4 +10,4 @@
 APP_PROJ = unit_test_seq_translator
 
 srcdir = .
-include $(builddir)/Makefile.meta
+include @builddir@/Makefile.meta

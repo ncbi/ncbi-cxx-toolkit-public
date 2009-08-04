@@ -13,10 +13,9 @@ SRC = unit_test_seq_translator
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = test_boost xobjutil $(OBJMGR_LIBS)
-PRE_LIBS = $(BOOST_TEST_LIBS)
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 # Uncomment to run automatically as part of "make check"
 CHECK_CMD =

@@ -4,7 +4,7 @@
 ##################################
 
 LIB_PROJ = util
-EXPENDABLE_SUB_PROJ = unit_test
+SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
