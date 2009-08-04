@@ -7,7 +7,7 @@ SRC = splign_app
 
 
 BLAST_DB_DATA_LOADER_LIBS = ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt
-LIB = xalgoalignsplign xalgoalignutil xalgoalignnw xalgoseq \
+LIB = xalgoalignsplign xalgoalignutil xqueryparse xalgoalignnw xalgoseq \
       $(BLAST_DB_DATA_LOADER_LIBS) \
 	  ncbi_xloader_lds lds bdb \
       xalnmgr xregexp $(PCRE_LIB) taxon1 \

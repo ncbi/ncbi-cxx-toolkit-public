@@ -1,6 +1,6 @@
 APP = cobalt
 SRC = cobalt_app
-LIB = cobalt xalgoalignnw xalgophytree fastme biotree ncbi_xloader_blastdb \
+LIB = cobalt xalgoalignnw xalgophytree fastme biotree \
       xalnmgr $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)

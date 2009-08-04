@@ -5,7 +5,7 @@
 APP = compart
 SRC = compart em
 
-LIB =  xalgoalignutil ncbi_xloader_blastdb xalnmgr \
+LIB =  xalgoalignutil xqueryparse xalnmgr \
        $(BLAST_LIBS:%=%$(STATIC)) \
        $(OBJMGR_LIBS:%=%$(STATIC))
 
