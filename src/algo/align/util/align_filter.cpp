@@ -30,8 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <gpipe/common/align_filter.hpp>
-#include <gpipe/common/buffer_writer.hpp>
+#include <algo/align/util/align_filter.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
