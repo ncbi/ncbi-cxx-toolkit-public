@@ -25,7 +25,7 @@ PLATF_FILE_MASKS=(   "*Linux64*"
                      "*Win64*"
                      "*Linux32*"
                      "*FreeBSD32*"
-                     "*PowerMAC*"
+                     "*IntelMAC*"
                      "*SunOSx86*"
                      "*SunOSSparc*")
 declare -a PLATF_DIR_NAMES
@@ -33,7 +33,7 @@ PLATF_DIR_NAMES=(    "Linux64"
                      "Win32"
                      "Linux32"
                      "FreeBSD32"
-                     "PowerMAC"
+                     "IntelMAC"
                      "SunOSx86"
                      "SunOSSparc"
                      "Irix")
