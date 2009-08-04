@@ -272,7 +272,11 @@ CreateMakefile_Meta()
 include Makefile.builddir
 
 ###  LIST OF PROJECTS TO BUILD, SUITABLE FOR IN-TREE USE
-include $makefile_name.in
+include Makefile.out
+
+###  RULE TO REGENERATE Makefile.out
+%.out: %.in
+	 sed -e 's,@builddir@,\$\$(builddir),g; s,@srcdir@,.,g' \$< > \$@
 
 ###  USE LOCAL TREE -- DON'T EDIT OR MOVE THESE TWO LINES !!!
 MAKE_LIB = \$(MAKE) -f Makefile.\$\${i}_lib \$(MFLAGS)
@@ -296,8 +300,7 @@ EOF
 
 EOF
   if test -f "$base"; then
-      sed -e 's,@builddir@,$(builddir),g; s,@srcdir@,.,g' \
-          -e "s,$old_proj_name,$proj_name,g" < "$base"
+      sed -e "s,$old_proj_name,$proj_name,g" < "$base"
   else
       case "$proj_type/$proj_subtype" in
           app/asn )
@@ -331,8 +334,8 @@ include @builddir@/Makefile.meta
 EOF
   fi >> "$makefile_name.in"
 
-  echo '# Dummy makefile for the sake of the check framework.' \
-      > "$makefile_name.out"
+  touch -t 197607040000 "$makefile_name.out"
+  (cd `dirname $makefile_name`  &&  make -f $makefile_name Makefile.out)
 }
 
 
