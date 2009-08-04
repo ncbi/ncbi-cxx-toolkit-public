@@ -1,7 +1,7 @@
 #ifndef TEST_ASSERT_IMPL__H
 #define TEST_ASSERT_IMPL__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

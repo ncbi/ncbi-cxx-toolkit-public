@@ -1,6 +1,21 @@
 #! /bin/sh
 # $Id$
 
+outlog()
+{
+  logfile="$1"
+  if [ -s "$logfile" ]; then
+    echo "=== $logfile ==="
+    if [ "`cat $logfile 2>/dev/null | wc -l`" -gt "200" ]; then
+      head -100 "$logfile"
+      echo '...'
+      tail -100 "$logfile"
+    else
+      cat "$logfile"
+    fi
+  fi
+}
+
 exit_code=0
 client_log=test_ncbi_trigger_client.log
 server_log=test_ncbi_trigger_server.log
@@ -39,14 +54,8 @@ test $server_exit_code != 0  &&  exit_code=$server_exit_code
 test $client_exit_code != 0  &&  exit_code=$client_exit_code
 
 if [ $exit_code != 0 ]; then
-  if [ -s $client_log ]; then
-    echo "=== $client_log ==="
-    cat $client_log
-  fi
-  if [ -s $server_log ]; then
-    echo "=== $server_log ==="
-    cat $server_log
-  fi
+  outlog "$client_log"
+  outlog "$server_log"
 fi
 
 exit $exit_code

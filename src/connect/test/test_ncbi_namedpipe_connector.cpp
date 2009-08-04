@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -36,11 +36,10 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
-#include <connect/ncbi_namedpipe.hpp>
 #include <connect/ncbi_namedpipe_connector.hpp>
-#include "../ncbi_priv.h"
+#include <connect/ncbi_util.h>
 #include "ncbi_conntest.h"
-#include "test_assert.h"  // This header must go last
+#include <common/test_assert.h>  // This header must go last
 
 
 USING_NCBI_SCOPE;

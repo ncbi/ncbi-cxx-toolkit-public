@@ -1,5 +1,5 @@
 #! /bin/sh
-#$Id$
+# $Id$
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 

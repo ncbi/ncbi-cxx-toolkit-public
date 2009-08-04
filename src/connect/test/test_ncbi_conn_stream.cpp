@@ -34,12 +34,11 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include "../ncbi_ansi_ext.h"
-#include "../ncbi_priv.h"               /* CORE logging facilities */
+#include "../ncbi_priv.h"        // CORE logging facilities
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-/* This header must go last */
-#include "test_assert.h"
+#include <common/test_assert.h>  // This header must go last
 
 #ifdef NCBI_OS_UNIX
 #  define DEV_NULL "/dev/null"

@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -35,11 +35,9 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-
-#include <connect/ncbi_pipe.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
-#include "../ncbi_priv.h"
 #include <connect/ncbi_connection.h>
+#include <connect/ncbi_util.h>
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -50,7 +48,7 @@
 #   error "Pipe tests configured for Windows and Unix only."
 #endif
 
-#include "test_assert.h"  // This header must go last
+#include <common/test_assert.h>  // This header must go last
 
 
 USING_NCBI_SCOPE;

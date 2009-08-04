@@ -1,7 +1,7 @@
 #ifndef NCBI_CONNTEST__H
 #define NCBI_CONNTEST__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
