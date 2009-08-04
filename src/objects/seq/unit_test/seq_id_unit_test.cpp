@@ -51,6 +51,7 @@
 #include <corelib/test_boost.hpp>
 
 #include <boost/test/parameterized_test.hpp>
+#include <util/util_exception.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -843,3 +844,127 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_locAssign)
         BOOST_CHECK_EQUAL(loc2->GetId()->GetGi(), 2);
     }
 }
+
+
+
+BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
+{
+    static const char* sc_SeqIdLabels[] = {
+        // order is important!
+        // - raw id in ASN.1
+        // - type
+        // - content
+        // - both
+        // - fasta (CSeq_id::AsFastaString())
+        // - seq-id string, +version
+        // - seq-id string, -version
+        "Seq-id ::= gi 1234",
+        "gi", "1234", "gi|1234",
+        "gi|1234", "1234", "1234",
+
+        "Seq-id ::= other { accession \"NM_123456\", version 1}",
+        "ref", "NM_123456.1", "ref|NM_123456.1",
+        "ref|NM_123456.1|", "NM_123456.1", "NM_123456",
+
+        "Seq-id ::= general { db \"ti\", tag id 1}",
+        "gnl", "ti|1", "gnl|ti|1",
+        "gnl|ti|1", "ti|1", "ti|1",
+
+        "Seq-id ::= general { db \"NCBI_GENOMES\", tag id 1}",
+        "gnl", "NCBI_GENOMES|1", "gnl|NCBI_GENOMES|1",
+        "gnl|NCBI_GENOMES|1", "NCBI_GENOMES|1", "NCBI_GENOMES|1",
+
+        "Seq-id ::= pir { name \"S34010\" }",
+        "pir", "S34010", "pir|S34010",
+        "pir||S34010", "S34010", "S34010",
+
+        "Seq-id ::= patent { seqid 257, cit { country \"JP\", id number \"2003530853\" } }",
+        "pat", "JP|2003530853|257", "pat|JP|2003530853|257",
+        "pat|JP|2003530853|257", "JP|2003530853|257", "JP|2003530853|257",
+
+        NULL, NULL, NULL, NULL, NULL, NULL
+    };
+
+
+    const char** p = sc_SeqIdLabels;
+    for ( ;  p  &&  *p;  p += 7) {
+        const char* src_id    = *(p + 0);
+        const char* type      = *(p + 1);
+        const char* content   = *(p + 2);
+        const char* both      = *(p + 3);
+        const char* fasta_str = *(p + 4);
+        const char* seqid_str1 = *(p + 5);
+        const char* seqid_str2 = *(p + 6);
+
+        LOG_POST(Info << "checking ID: " << src_id);
+        CSeq_id id;
+        {{
+             CNcbiIstrstream istr(src_id);
+             istr >> MSerial_AsnText >> id;
+         }}
+
+        string s;
+
+        s.erase();
+        id.GetLabel(&s, CSeq_id::eType);
+        LOG_POST(Info << "  type label: " << s);
+        BOOST_CHECK_EQUAL(s, type);
+
+        s.erase();
+        id.GetLabel(&s, CSeq_id::eContent);
+        LOG_POST(Info << "  content label: " << s);
+        BOOST_CHECK_EQUAL(s, content);
+
+        s.erase();
+        id.GetLabel(&s, CSeq_id::eBoth);
+        LOG_POST(Info << "  type + content label: " << s);
+        BOOST_CHECK_EQUAL(s, both);
+
+        LOG_POST(Info << "  fasta string: " << id.AsFastaString());
+        BOOST_CHECK_EQUAL(id.AsFastaString(), fasta_str);
+        LOG_POST(Info << "  id.GetSeqIdString(true): "
+                 << id.GetSeqIdString(true));
+        BOOST_CHECK_EQUAL(id.GetSeqIdString(true), seqid_str1);
+        LOG_POST(Info << "  id.GetSeqIdString(false): "
+                 << id.GetSeqIdString(false));
+        BOOST_CHECK_EQUAL(id.GetSeqIdString(false), seqid_str2);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel_FastaString)
+{
+    static const char* sc_Ids = "\
+Seq-id ::= pir {\
+  name \"S34010\"\
+}\
+Seq-id ::= patent {\
+  seqid 257,\
+  cit {\
+    country \"JP\",\
+    id number \"2003530853\"\
+  }\
+}\
+";
+
+    CNcbiIstrstream istr(sc_Ids);
+    while (istr) {
+        CSeq_id id;
+        try {
+            istr >> MSerial_AsnText >> id;
+        }
+        catch (CEofException&) {
+            break;
+        }
+
+        string fasta_seqid = id.AsFastaString();
+        string label;
+        id.GetLabel(&label, CSeq_id::eBoth);
+        BOOST_CHECK_EQUAL(label, fasta_seqid);
+
+        CSeq_id other(label);
+        BOOST_CHECK(other.Equals(id));
+    }
+}
+
+
