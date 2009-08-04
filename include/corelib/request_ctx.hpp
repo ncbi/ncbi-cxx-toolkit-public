@@ -43,6 +43,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/request_status.hpp>
 
 
 /** @addtogroup Diagnostics
@@ -106,6 +107,7 @@ public:
     /// Request exit startus
     int  GetRequestStatus(void) const;
     void SetRequestStatus(int status);
+    void SetRequestStatus(CRequestStatus::ECode code);
     bool IsSetRequestStatus(void) const;
     void UnsetRequestStatus(void);
 
@@ -335,6 +337,12 @@ void CRequestContext::SetRequestStatus(int status)
 {
     x_SetProp(eProp_ReqStatus);
     m_ReqStatus = status;
+}
+
+inline
+void CRequestContext::SetRequestStatus(CRequestStatus::ECode code)
+{
+    SetRequestStatus((int)code);
 }
 
 inline

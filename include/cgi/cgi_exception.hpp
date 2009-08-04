@@ -37,6 +37,7 @@
 
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/request_status.hpp>
 
 
 /** @addtogroup CGIExcep
@@ -63,47 +64,47 @@ public:
     enum EStatusCode {
         eStatusNotSet               = 0,   ///< Internal value - code not set
 
-        e200_Ok                     = 200,
-        e201_Created                = 201,
-        e202_Accepted               = 202,
-        e203_NonAuthInformation     = 203,
-        e204_NoContent              = 204,
-        e205_ResetContent           = 205,
-        e206_PartialContent         = 206,
+        e200_Ok                     = CRequestStatus::e200_Ok,
+        e201_Created                = CRequestStatus::e201_Created,
+        e202_Accepted               = CRequestStatus::e202_Accepted,
+        e203_NonAuthInformation     = CRequestStatus::e203_NonAuthInformation,
+        e204_NoContent              = CRequestStatus::e204_NoContent,
+        e205_ResetContent           = CRequestStatus::e205_ResetContent,
+        e206_PartialContent         = CRequestStatus::e206_PartialContent,
 
-        e300_MultipleChoices        = 300,
-        e301_MovedPermanently       = 301,
-        e302_Found                  = 302,
-        e303_SeeOther               = 303,
-        e304_NotModified            = 304,
-        e305_UseProxy               = 305,
-        e307_TemporaryRedirect      = 307,
+        e300_MultipleChoices        = CRequestStatus::e300_MultipleChoices,
+        e301_MovedPermanently       = CRequestStatus::e301_MovedPermanently,
+        e302_Found                  = CRequestStatus::e302_Found,
+        e303_SeeOther               = CRequestStatus::e303_SeeOther,
+        e304_NotModified            = CRequestStatus::e304_NotModified,
+        e305_UseProxy               = CRequestStatus::e305_UseProxy,
+        e307_TemporaryRedirect      = CRequestStatus::e307_TemporaryRedirect,
 
-        e400_BadRequest             = 400,
-        e401_Unauthorized           = 401,
-        e402_PaymentRequired        = 402,
-        e403_Forbidden              = 403,
-        e404_NotFound               = 404,
-        e405_MethodNotAllowed       = 405,
-        e406_NotAcceptable          = 406,
-        e407_ProxyAuthRequired      = 407,
-        e408_RequestTimeout         = 408,
-        e409_Conflict               = 409,
-        e410_Gone                   = 410,
-        e411_LengthRequired         = 411,
-        e412_PreconditionFailed     = 412,
-        e413_RequestEntityTooLarge  = 413,
-        e414_RequestURITooLong      = 414,
-        e415_UnsupportedMediaType   = 415,
-        e416_RangeNotSatisfiable    = 416,
-        e417_ExpectationFailed      = 417,
+        e400_BadRequest             = CRequestStatus::e400_BadRequest,
+        e401_Unauthorized           = CRequestStatus::e401_Unauthorized,
+        e402_PaymentRequired        = CRequestStatus::e402_PaymentRequired,
+        e403_Forbidden              = CRequestStatus::e403_Forbidden,
+        e404_NotFound               = CRequestStatus::e404_NotFound,
+        e405_MethodNotAllowed       = CRequestStatus::e405_MethodNotAllowed,
+        e406_NotAcceptable          = CRequestStatus::e406_NotAcceptable,
+        e407_ProxyAuthRequired      = CRequestStatus::e407_ProxyAuthRequired,
+        e408_RequestTimeout         = CRequestStatus::e408_RequestTimeout,
+        e409_Conflict               = CRequestStatus::e409_Conflict,
+        e410_Gone                   = CRequestStatus::e410_Gone,
+        e411_LengthRequired         = CRequestStatus::e411_LengthRequired,
+        e412_PreconditionFailed     = CRequestStatus::e412_PreconditionFailed,
+        e413_RequestEntityTooLarge  = CRequestStatus::e413_RequestEntityTooLarge,
+        e414_RequestURITooLong      = CRequestStatus::e414_RequestURITooLong,
+        e415_UnsupportedMediaType   = CRequestStatus::e415_UnsupportedMediaType,
+        e416_RangeNotSatisfiable    = CRequestStatus::e416_RangeNotSatisfiable,
+        e417_ExpectationFailed      = CRequestStatus::e417_ExpectationFailed,
 
-        e500_InternalServerError    = 500,
-        e501_NotImplemented         = 501,
-        e502_BadGateway             = 502,
-        e503_ServiceUnavailable     = 503,
-        e504_GatewayTimeout         = 504,
-        e505_HTTPVerNotSupported    = 505
+        e500_InternalServerError    = CRequestStatus::e500_InternalServerError,
+        e501_NotImplemented         = CRequestStatus::e501_NotImplemented,
+        e502_BadGateway             = CRequestStatus::e502_BadGateway,
+        e503_ServiceUnavailable     = CRequestStatus::e503_ServiceUnavailable,
+        e504_GatewayTimeout         = CRequestStatus::e504_GatewayTimeout,
+        e505_HTTPVerNotSupported    = CRequestStatus::e505_HTTPVerNotSupported
     };
 
     CCgiException& SetStatus(const SCgiStatus& status);
