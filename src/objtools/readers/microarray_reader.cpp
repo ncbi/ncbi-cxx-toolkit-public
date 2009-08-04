@@ -157,6 +157,7 @@ CMicroArrayReader::ReadSeqAnnot(
         }
         continue;
     }
+    x_AddConversionInfo( annot, pErrorContainer );
     return annot;
 }
 

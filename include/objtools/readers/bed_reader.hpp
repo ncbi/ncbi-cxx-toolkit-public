@@ -97,7 +97,7 @@ protected:
         CRef<CUser_object>&,
         const string&,
         const string& );
-                
+    
     //
     //  data:
     //

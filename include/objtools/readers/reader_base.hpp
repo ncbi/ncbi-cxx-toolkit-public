@@ -125,6 +125,14 @@ protected:
         const string&,
         const string& );
                 
+    virtual void x_AddConversionInfo(
+        CRef< CSeq_annot >&,
+        IErrorContainer* );
+                    
+    virtual void x_AddConversionInfo(
+        CRef< CSeq_entry >&,
+        IErrorContainer* );
+                    
     static bool SplitLines( 
         const char* pcBuffer, 
         size_t uSize,

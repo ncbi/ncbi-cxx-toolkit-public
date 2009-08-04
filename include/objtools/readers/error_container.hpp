@@ -59,7 +59,11 @@ public:
         
     virtual size_t
     Count() const =0;
-        
+    
+    virtual size_t
+    LevelCount(
+        EDiagSev ) =0;
+            
     virtual void
     ClearAll() =0;
 };
@@ -76,6 +80,17 @@ public:
 public:
     size_t
     Count() const { return m_Errors.size(); };
+    
+    virtual size_t
+    LevelCount(
+        EDiagSev eSev ) {
+        
+        size_t uCount( 0 );
+        for ( size_t u=0; u < Count(); ++u ) {
+            if ( m_Errors[u].Severity() == eSev ) ++uCount;
+        }
+        return uCount;
+    };
     
     void
     ClearAll() { m_Errors.clear(); };

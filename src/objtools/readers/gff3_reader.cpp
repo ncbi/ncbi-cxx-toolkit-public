@@ -215,6 +215,7 @@ CGff3Reader::ReadSeqEntry(
         x_CreateGeneFeatures( tse );
     }
     // <--
+    x_AddConversionInfo( tse, pErrorContainer );
     return tse;
 }
     

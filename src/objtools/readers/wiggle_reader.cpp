@@ -163,6 +163,7 @@ CWiggleReader::ReadSeqAnnot(
     catch( CObjReaderLineException& err ) {
         ProcessError( err, pErrorContainer );
     }
+    x_AddConversionInfo( annot, pErrorContainer );
     return annot; 
 }
     

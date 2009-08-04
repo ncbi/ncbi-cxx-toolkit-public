@@ -60,6 +60,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -393,6 +394,58 @@ void CReaderBase::x_SetTrackData(
 //  ----------------------------------------------------------------------------
 {
     trackdata->AddField( strKey, strValue );
+}
+
+//  ----------------------------------------------------------------------------
+void CReaderBase::x_AddConversionInfo(
+    CRef<CSeq_annot >& annot,
+    IErrorContainer *pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    if ( !annot || !pErrorContainer ) {
+        return;
+    }
+    CAnnot_descr& desc = annot->SetDesc();
+
+    CRef<CUser_object> conversioninfo( new CUser_object() );
+    conversioninfo->SetType().SetStr( "Conversion Info" );    
+    conversioninfo->AddField( 
+        "critical errors", int ( pErrorContainer->LevelCount( eDiag_Critical ) ) );
+    conversioninfo->AddField( 
+        "errors", int ( pErrorContainer->LevelCount( eDiag_Error ) ) );
+    conversioninfo->AddField( 
+        "warnings", int ( pErrorContainer->LevelCount( eDiag_Warning ) ) );
+    conversioninfo->AddField( 
+        "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
+    CRef<CAnnotdesc> user( new CAnnotdesc() );
+    user->SetUser( *conversioninfo );
+    desc.Set().push_back( user );
+}
+
+//  ----------------------------------------------------------------------------
+void CReaderBase::x_AddConversionInfo(
+    CRef<CSeq_entry >& entry,
+    IErrorContainer *pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    if ( !entry || !pErrorContainer ) {
+        return;
+    }
+    CSeq_descr& descr = entry->SetDescr();
+
+    CRef<CUser_object> conversioninfo( new CUser_object() );
+    conversioninfo->SetType().SetStr( "Conversion Info" );    
+    conversioninfo->AddField( 
+        "critical errors", int ( pErrorContainer->LevelCount( eDiag_Critical ) ) );
+    conversioninfo->AddField( 
+        "errors", int ( pErrorContainer->LevelCount( eDiag_Error ) ) );
+    conversioninfo->AddField( 
+        "warnings", int ( pErrorContainer->LevelCount( eDiag_Warning ) ) );
+    conversioninfo->AddField( 
+        "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
+    CRef<CSeqdesc> user( new CSeqdesc() );
+    user->SetUser( *conversioninfo );
+    descr.Set().push_back( user );
 }
 
 END_objects_SCOPE
