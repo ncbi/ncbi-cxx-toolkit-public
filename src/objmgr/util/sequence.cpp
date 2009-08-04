@@ -2562,14 +2562,18 @@ void CFastaOstream::SetMask(EMaskType type, CConstRef<CSeq_loc> location)
 template <class Container>
 void x_Translate(const Container& seq,
                  string& prot,
+                 int frame,
                  const CGenetic_code* code,
+                 bool is_5prime_complete,
                  bool include_stop,
-                 bool remove_trailing_X)
+                 bool remove_trailing_X,
+                 bool* alt_start)
 {
     // reserve our space
-    const size_t mod = seq.size() % 3;
+    const size_t usable_size = seq.size() - frame;
+    const size_t mod = usable_size % 3;
     prot.erase();
-    prot.reserve(seq.size() / 3 + (mod ? 1 : 0));
+    prot.reserve(usable_size / 3 + (mod ? 1 : 0));
 
     // get appropriate translation table
     const CTrans_table & tbl =
@@ -2578,11 +2582,15 @@ void x_Translate(const Container& seq,
 
     // main loop through bases
     typename Container::const_iterator start = seq.begin();
+    for (int i = 0;  i < frame;  ++i) {
+        ++start;
+    }
 
     size_t i;
     size_t k;
     size_t state = 0;
-    size_t length = seq.size() / 3;
+    size_t start_state = 0;
+    size_t length = usable_size / 3;
     for (i = 0;  i < length;  ++i) {
 
         // loop through one codon at a time
@@ -2590,8 +2598,15 @@ void x_Translate(const Container& seq,
             state = tbl.NextCodonState(state, *start);
         }
 
+        if ( !prot.size() ) {
+            start_state = state;
+        }
+
         // save translated amino acid
         prot.append(1, tbl.GetCodonResidue(state));
+        if (is_5prime_complete  &&  prot.size() == 1) {
+            prot[0] = tbl.GetStartResidue(state);
+        }
     }
 
     if (mod) {
@@ -2607,23 +2622,38 @@ void x_Translate(const Container& seq,
         }
 
         // save translated amino acid
-        prot.append(1, tbl.GetCodonResidue(state));
+        char c = tbl.GetCodonResidue(state);
+        if (c != 'X') {
+            // if padding was needed, trim ambiguous last residue
+            prot.append(1, tbl.GetCodonResidue(state));
+        }
+    }
+
+    // check for alternative start codon
+    if (alt_start) {
+        if ( tbl.IsAltStart(start_state) ) {
+            *alt_start = true;
+        } else {
+            *alt_start = false;
+        }
     }
 
     if ( !include_stop ) {
-        string::size_type pos = prot.find_first_of("*");
-        if (pos != string::npos) {
-            prot.erase(pos);
+        string::const_reverse_iterator riter = prot.rbegin();
+        string::const_reverse_iterator rend = prot.rend();
+        size_t count = 0;
+        for ( ;  riter != rend  &&  *riter == '*';  ++riter, ++count) {
         }
+        prot.resize(prot.size() - count);
     }
 
     if (remove_trailing_X) {
-        string::size_type pos = prot.find_last_not_of("X");
-        if (pos != string::npos) {
-            ++pos;
-            prot.erase(pos);
+        string::const_reverse_iterator riter = prot.rbegin();
+        string::const_reverse_iterator rend = prot.rend();
+        size_t count = 0;
+        for ( ;  riter != rend  &&  *riter == 'X';  ++riter, ++count) {
         }
-
+        prot.resize(prot.size() - count);
     }
 }
 
@@ -2631,18 +2661,22 @@ void x_Translate(const Container& seq,
 void CSeqTranslator::Translate(const string& seq, string& prot,
                                const CGenetic_code* code,
                                bool include_stop,
-                               bool remove_trailing_X)
+                               bool remove_trailing_X,
+                               bool* alt_start)
 {
-    x_Translate(seq, prot, code, include_stop, remove_trailing_X);
+    x_Translate(seq, prot, 0, code,
+                true, include_stop, remove_trailing_X, alt_start);
 }
 
 
 void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                const CGenetic_code* code,
                                bool include_stop,
-                               bool remove_trailing_X)
+                               bool remove_trailing_X,
+                               bool* alt_start)
 {
-    x_Translate(seq, prot, code, include_stop, remove_trailing_X);
+    x_Translate(seq, prot, 0, code,
+                true, include_stop, remove_trailing_X, alt_start);
 }
 
 
@@ -2651,65 +2685,91 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
                                string& prot,
                                const CGenetic_code* code,
                                bool include_stop,
-                               bool remove_trailing_X)
+                               bool remove_trailing_X,
+                               bool* alt_start)
 {
     CSeqVector seq(loc, handle.GetScope(), CBioseq_Handle::eCoding_Iupac);
-    x_Translate(seq, prot, code, include_stop, remove_trailing_X);
+    x_Translate(seq, prot, 0, code,
+                loc.IsPartialStart(eExtreme_Biological),
+                include_stop, remove_trailing_X, alt_start);
 }
 
 
 
-
-void CCdregion_translate::ReadSequenceByLocation (string& seq,
-                                                  const CBioseq_Handle& bsh,
-                                                  const CSeq_loc& loc,
-                                                  ETranslationLengthProblemOptions options,
-                                                  CBioseq_Handle::EVectorCoding coding)
-
+void CSeqTranslator::Translate(const CSeq_loc& loc,
+                               CScope& scope,
+                               string& prot,
+                               const CGenetic_code* code,
+                               bool include_stop,
+                               bool remove_trailing_X,
+                               bool* alt_start)
 {
-    // get vector of sequence under location
-    if (options == eThrowException || loc.GetTotalRange().GetLength() <= bsh.GetBioseqLength()) {
-        CSeqVector seqv(loc, bsh.GetScope(), coding);
-        seqv.GetSeqData(0, seqv.size(), seq);
-    } else {
-        // if specified location exceeds bioseq length, create truncated location
-        CRef<CSeq_loc> tmp_loc;
-        bool first = true;
+    CSeqVector seq(loc, scope, CBioseq_Handle::eCoding_Iupac);
+    x_Translate(seq, prot, 0, code,
+                loc.IsPartialStart(eExtreme_Biological),
+                include_stop, remove_trailing_X, alt_start);
+}
 
-        for (CSeq_loc_CI loc_iter(loc); loc_iter;  ++loc_iter) {
-            ENa_strand strand = loc_iter.GetStrand();
-            CSeq_loc_CI::TRange range = loc_iter.GetRange();
-            if (range.GetFrom() < bsh.GetBioseqLength()) {
-                TSeqPos from = range.GetFrom();
-                TSeqPos to = range.GetTo();
-                if (to >= bsh.GetBioseqLength()) {
-                    to = bsh.GetBioseqLength() - 1;
-                }               
-                CRef<CSeq_id> id(new CSeq_id());
-                id->Assign (loc_iter.GetSeq_id());
-                if (first) {
-                    tmp_loc = new CSeq_loc(*id, from, to, strand);
-                    first = false;
-                } else {
-                    CSeq_loc add(*id, from, to, strand);
-                    tmp_loc = sequence::Seq_loc_Add (*tmp_loc, add, CSeq_loc::fSort | CSeq_loc::fMerge_All, &(bsh.GetScope()));
-                }
+
+void CSeqTranslator::Translate(const CSeq_feat& feat,
+                               CScope& scope,
+                               string& prot,
+                               bool include_stop,
+                               bool remove_trailing_X,
+                               bool* alt_start)
+{
+    const CGenetic_code* code = NULL;
+    int frame = 0;
+    if (feat.GetData().IsCdregion()) {
+        const CCdregion& cdr = feat.GetData().GetCdregion();
+        if (cdr.IsSetFrame ()) {
+            switch (cdr.GetFrame ()) {
+            case CCdregion::eFrame_two :
+                frame = 1;
+                break;
+            case CCdregion::eFrame_three :
+                frame = 2;
+                break;
+            default :
+                break;
             }
         }
-        CSeqVector seqv(*tmp_loc, bsh.GetScope(), coding);
-        seqv.GetSeqData(0, seqv.size(), seq);
-        if (options == ePad) {
-            int num_pad = loc.GetTotalRange().GetLength() - seq.length();
-            string pad = (coding == CBioseq_Handle::eCoding_Iupac) ? "N" : "\15";
-            if (bsh.IsProtein ()) {
-                pad = (coding == CBioseq_Handle::eCoding_Iupac) ? "X" : "\21";
-            }
-            for (int i = 0; i < num_pad; i++) {
-                seq = seq + pad;
+        if (cdr.IsSetCode()) {
+            code = &cdr.GetCode();
+        }
+    }
+
+    CSeqVector seq(feat.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
+    x_Translate(seq, prot, frame, code,
+                feat.GetLocation().IsPartialStart(eExtreme_Biological),
+                include_stop, remove_trailing_X, alt_start);
+
+
+    // code break substitution
+    if (feat.GetData().IsCdregion()  &&
+        feat.GetData().GetCdregion().IsSetCode_break ()) {
+        const CCdregion& cdr = feat.GetData().GetCdregion();
+        string::size_type protlen = prot.size();
+        ITERATE (CCdregion::TCode_break, code_break, cdr.GetCode_break()) {
+            const CRef <CCode_break> brk = *code_break;
+            const CSeq_loc& cbk_loc = brk->GetLoc();
+            TSeqPos seq_pos =
+                sequence::LocationOffset(feat.GetLocation(), cbk_loc,
+                                         sequence::eOffset_FromStart,
+                                         &scope);
+            seq_pos -= frame;
+            string::size_type i = seq_pos / 3;
+            if (i >= 0  &&  i < protlen) {
+                const CCode_break::C_Aa& c_aa = brk->GetAa ();
+                if (c_aa.IsNcbieaa ()) {
+                    prot [i] = c_aa.GetNcbieaa ();
+                }
             }
         }
     }
 }
+
+
 
 void CCdregion_translate::TranslateCdregion (string& prot,
                                              const CBioseq_Handle& bsh,
@@ -2720,132 +2780,11 @@ void CCdregion_translate::TranslateCdregion (string& prot,
                                              bool* alt_start,
                                              ETranslationLengthProblemOptions options)
 {
-    // clear contents of result string
-    prot.erase();
-    if ( alt_start != 0 ) {
-        *alt_start = false;
-    }
-
-    // copy bases from coding region location
-    string bases = "";
-    ReadSequenceByLocation (bases, bsh, loc, options);
-
-    // calculate offset from frame parameter
-    int offset = 0;
-    if (cdr.IsSetFrame ()) {
-        switch (cdr.GetFrame ()) {
-            case CCdregion::eFrame_two :
-                offset = 1;
-                break;
-            case CCdregion::eFrame_three :
-                offset = 2;
-                break;
-            default :
-                break;
-        }
-    }
-
-    int dnalen = bases.size () - offset;
-    if (dnalen < 1) return;
-
-    // pad bases string if last codon is incomplete
-    bool incomplete_last_codon = false;
-    int mod = dnalen % 3;
-    if ( mod != 0 ) {
-        incomplete_last_codon = true;
-        bases += (mod == 1) ? "NN" : "N";
-        dnalen += 3 - mod;
-    }
-    _ASSERT((dnalen >= 3)  &&  ((dnalen % 3) == 0));
-
-    // resize output protein translation string
-    prot.resize(dnalen / 3);
-
-    // get appropriate translation table
-    const CTrans_table& tbl = cdr.IsSetCode() ?
-        CGen_code_table::GetTransTable(cdr.GetCode()) :
-        CGen_code_table::GetTransTable(1);
-
-    // main loop through bases
-    string::const_iterator it = bases.begin();
-    string::const_iterator end = bases.end();
-    for ( int i = 0; i < offset; ++i ) {
-        ++it;
-    }
-    unsigned int state = 0, j = 0;
-    while ( it != end ) {
-        // get one codon at a time
-        state = tbl.NextCodonState(state, *it++);
-        state = tbl.NextCodonState(state, *it++);
-        state = tbl.NextCodonState(state, *it++);
-
-        // save translated amino acid
-        prot[j++] = tbl.GetCodonResidue(state);
-    }
-
-    // check for alternative start codon
-    if ( alt_start != 0 ) {
-        state = 0;
-        state = tbl.NextCodonState (state, bases[0]);
-        state = tbl.NextCodonState (state, bases[1]);
-        state = tbl.NextCodonState (state, bases[2]);
-        if ( tbl.IsAltStart(state) ) {
-            *alt_start = true;
-        }
-    }
-
-    // if complete at 5' end, require valid start codon
-    if (offset == 0  &&  (! loc.IsPartialStart (eExtreme_Biological))) {
-        state = tbl.SetCodonState (bases [offset], bases [offset + 1], bases [offset + 2]);
-        prot [0] = tbl.GetStartResidue (state);
-    }
-
-    // code break substitution
-    if (cdr.IsSetCode_break ()) {
-        SIZE_TYPE protlen = prot.size ();
-        ITERATE (CCdregion::TCode_break, code_break, cdr.GetCode_break ()) {
-            const CRef <CCode_break> brk = *code_break;
-            const CSeq_loc& cbk_loc = brk->GetLoc ();
-            TSeqPos seq_pos = sequence::LocationOffset (loc, cbk_loc, sequence::eOffset_FromStart, &bsh.GetScope ());
-            seq_pos -= offset;
-            SIZE_TYPE i = seq_pos / 3;
-            if (i >= 0 && i < protlen) {
-              const CCode_break::C_Aa& c_aa = brk->GetAa ();
-              if (c_aa.IsNcbieaa ()) {
-                prot [i] = c_aa.GetNcbieaa ();
-              }
-            }
-        }
-    }
-
-    // optionally truncate at first terminator
-    if (! include_stop) {
-        SIZE_TYPE protlen = prot.size ();
-        for (SIZE_TYPE i = 0; i < protlen; i++) {
-            if (prot [i] == '*') {
-                prot.resize (i);
-                return;
-            }
-        }
-    }
-
-    // if padding was needed, trim ambiguous last residue
-    if (incomplete_last_codon) {
-        int protlen = prot.size ();
-        if (protlen > 0 && prot [protlen - 1] == 'X') {
-            protlen--;
-            prot.resize (protlen);
-        }
-    }
-
-    // optionally remove trailing X on 3' partial coding region
-    if (remove_trailing_X) {
-        int protlen = prot.size ();
-        while (protlen > 0 && prot [protlen - 1] == 'X') {
-            protlen--;
-        }
-        prot.resize (protlen);
-    }
+    CSeq_feat feat;
+    feat.SetLocation(const_cast<CSeq_loc&>(loc));
+    feat.SetData().SetCdregion(const_cast<CCdregion&>(cdr));
+    CSeqTranslator::Translate(feat, bsh.GetScope(), prot,
+                              include_stop, remove_trailing_X, alt_start);
 }
 
 

@@ -740,6 +740,7 @@ public:
     };
 
     /// translation coding region into ncbieaa protein sequence
+    NCBI_DEPRECATED
     static void TranslateCdregion (string& prot,
                                    const CBioseq_Handle& bsh,
                                    const CSeq_loc& loc,
@@ -749,6 +750,7 @@ public:
                                    bool* alt_start = 0,
                                    ETranslationLengthProblemOptions options = eThrowException);
 
+    NCBI_DEPRECATED
     static void TranslateCdregion(string& prot,
                                   const CSeq_feat& cds,
                                   CScope& scope,
@@ -756,14 +758,6 @@ public:
                                   bool remove_trailing_X = false,
                                   bool* alt_start = 0,
                                   ETranslationLengthProblemOptions options = eThrowException);
-
-    /// return iupac sequence letters under feature location
-    static void ReadSequenceByLocation (string& seq,
-                                        const CBioseq_Handle& bsh,
-                                        const CSeq_loc& loc,
-                                        ETranslationLengthProblemOptions options = eThrowException,
-                                        CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac);
-
 };
 
 
@@ -771,13 +765,17 @@ class NCBI_XOBJUTIL_EXPORT CSeqTranslator
 {
 public:
 
+    /// @name Deprecated old static interface
+    /// @{
+
     /// translate a string using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
     static void Translate(const string& seq,
                           string& prot,
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
-                          bool remove_trailing_X = false);
+                          bool remove_trailing_X = false,
+                          bool* alt_start = 0);
 
     /// translate a seq-vector using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
@@ -785,15 +783,37 @@ public:
                           string& prot,
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
-                          bool remove_trailing_X = false);
+                          bool remove_trailing_X = false,
+                          bool* alt_start = 0);
 
     /// utility function: translate a given location on a sequence
+    NCBI_DEPRECATED
     static void Translate(const CSeq_loc& loc,
                           const CBioseq_Handle& handle,
                           string& prot,
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
-                          bool remove_trailing_X = false);
+                          bool remove_trailing_X = false,
+                          bool* alt_start = 0);
+
+    /// utility function: translate a given location on a sequence
+    static void Translate(const CSeq_loc& loc,
+                          CScope& scope,
+                          string& prot,
+                          const CGenetic_code* code = NULL,
+                          bool include_stop = true,
+                          bool remove_trailing_X = false,
+                          bool* alt_start = 0);
+
+    /// Translate a CDRegion into a protein
+    static void Translate(const CSeq_feat& cds,
+                          CScope& scope,
+                          string& prot,
+                          bool include_stop = true,
+                          bool remove_trailing_X = false,
+                          bool* alt_start = 0);
+
+    /// @}
 };
 
 
