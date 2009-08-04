@@ -1488,6 +1488,7 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
 
     case CSeq_id::e_Patent:
         *label += id.GetPatent().GetCit().GetId().IsNumber() ? "pat" : "pgp";
+        break;
 
     default:
         *label += s_TextId[choice];
@@ -1551,7 +1552,7 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_General:
             {{
                 const CDbtag& dbt = id.GetGeneral();
-                if (flags & CSeq_id::fLabel_GeneralDbIsContent) {
+                if ((flags & CSeq_id::fLabel_GeneralDbIsContent) == 0) {
                     *label += dbt.GetDb() + '|';
                 }
                 if (dbt.GetTag().IsId()) {
@@ -1565,11 +1566,13 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_Patent:
             {{
                 const CId_pat& idp = id.GetPatent().GetCit();
-                *label += idp.GetCountry() +
-                    (idp.GetId().IsNumber() ?
-                        idp.GetId().GetNumber() :
-                        idp.GetId().GetApp_number()) +
-                    NStr::IntToString(id.GetPatent().GetSeqid());
+                *label += idp.GetCountry();
+                *label += '|';
+                *label += (idp.GetId().IsNumber() ?
+                           idp.GetId().GetNumber() :
+                           idp.GetId().GetApp_number());
+                *label += '|';
+                *label += NStr::IntToString(id.GetPatent().GetSeqid());
             }}
             break;
 
