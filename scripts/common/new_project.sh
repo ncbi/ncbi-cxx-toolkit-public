@@ -326,8 +326,8 @@ EOF
       esac
       cat <<EOF
 
-srcdir = .
-include \$(builddir)/Makefile.meta
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
 EOF
   fi >> "$makefile_name.in"
 
