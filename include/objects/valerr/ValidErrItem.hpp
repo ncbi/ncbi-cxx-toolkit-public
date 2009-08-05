@@ -136,6 +136,7 @@ enum EErrType {
     eErr_SEQ_INST_ProteinsHaveGeneralID,
     eErr_SEQ_INST_HighNContent,
     eErr_SEQ_INST_SeqLitDataLength0,
+	eErr_SEQ_INST_DSmRNA,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,
@@ -244,6 +245,7 @@ enum EErrType {
     eErr_SEQ_PKG_INSDRefSeqPackaging,
     eErr_SEQ_PKG_GPSnonGPSPackaging,
     eErr_SEQ_PKG_RefSeqPopSet,
+	eErr_SEQ_PKG_BioseqSetClassNotSet,
     ERR_CODE_END(SEQ_PKG),
 
     ERR_CODE_BEGIN(SEQ_FEAT) = 4000,
@@ -420,6 +422,8 @@ enum EErrType {
     eErr_SEQ_FEAT_MultiplyAnnotatedGenes,
     eErr_SEQ_FEAT_ReplicatedGeneSequence,
     eErr_SEQ_FEAT_ShortIntron,
+    eErr_SEQ_FEAT_GeneXrefStrandProblem,
+    eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem,
     eErr_SEQ_FEAT_SgmlPresentInText,
     eErr_SEQ_FEAT_MissingLocation,
     eErr_SEQ_FEAT_MultipleBioseqs,

@@ -291,6 +291,9 @@ the whole of a sequence.")),
    TErrTypStrs ( eErr_SEQ_INST_SeqLitDataLength0,
    TErrStrs( "SeqLitDataLength0",
 "A SeqLit component of a delta Bioseq must not have 0 length.")),
+   TErrTypStrs ( eErr_SEQ_INST_DSmRNA,
+   TErrStrs( "DSmRNA",
+"This mRNA Bioseq is not single stranded.")),
 
 /* SEQ_DESCR */
 
@@ -644,6 +647,9 @@ however be referenced remotely.")),
    TErrTypStrs ( eErr_SEQ_PKG_RefSeqPopSet,
    TErrStrs( "RefSeqPopSet",
 "RefSeq records should not be packaged in a popset.")),
+   TErrTypStrs ( eErr_SEQ_PKG_BioseqSetClassNotSet,
+   TErrStrs ("BioseqSetClassNotSet",
+"The BioseqSet class field is not set.")),
 
 /* SEQ_FEAT */
 
@@ -1312,6 +1318,12 @@ that should be replaced or supplemented with more informative information.")),
    TErrTypStrs (eErr_SEQ_FEAT_ShortIntron,
    TErrStrs ( "ShortIntron",
 "Introns should be longer than 10 nt.")),
+   TErrTypStrs (eErr_SEQ_FEAT_GeneXrefStrandProblem,
+   TErrStrs ( "GeneXrefStrandProblem",
+"This feature has a gene xref that points to a gene on the wrong strand.")),
+   TErrTypStrs (eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem,
+   TErrStrs ( "CDSmRNAXrefLocationProblem",
+"The CDS is not contained within the cross-referenced mRNA")),
    TErrTypStrs ( eErr_SEQ_FEAT_SgmlPresentInText,
    TErrStrs( "SgmlPresentInText",
 "SGML markup is embedded in text.")),
