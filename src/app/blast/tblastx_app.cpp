@@ -135,7 +135,7 @@ int CTblastxApp::Run(void)
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
                                m_CmdLineArgs->ExecuteRemotely(),
-                               db_adapter->GetFilteringAlgorithms(),
+                               db_adapter->GetFilteringAlgorithm(),
                                fmt_args->GetCustomOutputFormatSpec());
         
         formatter.PrintProlog();

@@ -64,9 +64,9 @@ public:
     /// Our destructor
     virtual ~CSeqDbSeqInfoSrc();
 
-    /// Sets the filtering algorithm IDs used in the search
-    /// @param algo_ids filtering algorithm IDs [in]
-    void SetFilteringAlgorithmIds(const vector<int>& algo_ids);
+    /// Sets the filtering algorithm ID used in the search
+    /// @param algo_id filtering algorithm ID [in]
+    void SetFilteringAlgorithmId(int algo_id);
 
     /// Retrieve a sequence identifier given its ordinal number.
     /// @param index the ordinal number to retrieve [in]
@@ -102,8 +102,9 @@ public:
 
 private:
     mutable CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
-    /// Algorithm IDs for filtering algorithms used with these subjects
-    vector<int> m_FilteringAlgoIds;
+    /// Filtering algorithm ID used with these subjects, use -1 if not
+    /// applicable
+    int m_FilteringAlgoId;
 
     /// Friend declaration so that this class can access the CSeqDB object to
     /// enable partial subject sequence fetching

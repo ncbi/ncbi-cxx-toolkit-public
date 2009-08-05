@@ -55,11 +55,13 @@ CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(const string& dbname, bool is_protein)
     m_iSeqDb.Reset(new CSeqDB(dbname, (is_protein
                                        ? CSeqDB::eProtein
                                        : CSeqDB::eNucleotide)));
+    SetFilteringAlgorithmId(-1);
 }
 
 CSeqDbSeqInfoSrc::CSeqDbSeqInfoSrc(ncbi::CSeqDB* seqdb)
 {
     m_iSeqDb.Reset(seqdb);
+    SetFilteringAlgorithmId(-1);
 }
 
 CSeqDbSeqInfoSrc::~CSeqDbSeqInfoSrc()
@@ -91,17 +93,16 @@ bool CSeqDbSeqInfoSrc::HasGiList() const
     return !! m_iSeqDb->GetGiList();
 }
 
-void CSeqDbSeqInfoSrc::SetFilteringAlgorithmIds(const vector<int>& algo_ids)
+void CSeqDbSeqInfoSrc::SetFilteringAlgorithmId(int algo_id)
 {
-    m_FilteringAlgoIds.clear();
-    copy(algo_ids.begin(), algo_ids.end(), back_inserter(m_FilteringAlgoIds));
+    m_FilteringAlgoId = algo_id;
 }
 
 bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
                                 const TSeqRange& target,
                                 TMaskedSubjRegions& retval) const
 {
-    if (m_FilteringAlgoIds.empty() || target == TSeqRange::GetEmpty()) {
+    if (m_FilteringAlgoId == -1 || target == TSeqRange::GetEmpty()) {
         return false;
     }
 
@@ -111,7 +112,8 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     CSeqDB::TSequenceRanges ranges;
-    m_iSeqDb->GetMaskData(index, m_FilteringAlgoIds, ranges);
+    vector<int> filt_algo_ids(1, m_FilteringAlgoId);
+    m_iSeqDb->GetMaskData(index, filt_algo_ids, ranges);
     ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
         if (target.IntersectingWith(*itr)) {
             CRef<CSeq_interval> si

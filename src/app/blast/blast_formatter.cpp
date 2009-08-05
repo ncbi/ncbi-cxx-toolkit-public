@@ -229,11 +229,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
 
     CRef<CBlast4_database> db = m_RmtBlast->GetDatabases();
     _ASSERT(db);
-    vector<int> filtering_algorithms;
-    {
-        const list<int>& tmp = m_RmtBlast->GetDbFilteringAlgorithmIds();
-        copy(tmp.begin(), tmp.end(), back_inserter(filtering_algorithms));
-    }
+    int filtering_algorithm = m_RmtBlast->GetDbFilteringAlgorithmId();
 
     const string kTask = m_RmtBlast->GetTask();
 
@@ -263,7 +259,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            opts.GetDbGeneticCode(),
                            opts.GetSumStatisticsMode(),
                            !kRid.empty(),
-                           filtering_algorithms,
+                           filtering_algorithm,
                            fmt_args.GetCustomOutputFormatSpec(),
                            kTask == "megablast",
                            opts.GetMBIndexLoaded());

@@ -234,14 +234,14 @@ static bool s_FillDbInfoRemotely(const string& dbname,
 /// databases
 /// @param dbname name of a single BLAST database [in]
 /// @param info structure to fill [in|out]
-/// @param dbfilt_algorithms filtering algorithm IDs used for this search
+/// @param dbfilt_algorithm filtering algorithm ID used for this search
 /// [in]
 /// @return true if successfully filled, false otherwise (and a warning is
 /// printed out)
 static bool
 s_FillDbInfoLocally(const string& dbname,
                     CAlignFormatUtil::SDbInfo& info, 
-                    const vector<int>& dbfilt_algorithms)
+                    int dbfilt_algorithm)
 {
     CRef<CSeqDB> seqdb(new CSeqDB(dbname, info.is_protein 
                           ? CSeqDB::eProtein : CSeqDB::eNucleotide));
@@ -257,32 +257,19 @@ s_FillDbInfoLocally(const string& dbname,
     info.number_seqs = seqdb->GetNumSeqs();
 
     // Process the filtering algorithm IDs
-    info.algorithm_names.clear();
-    info.detailed_masking_info.clear();
-    if (dbfilt_algorithms.empty()) {
+    info.filt_algorithm_name.clear();
+    info.filt_algorithm_options.clear();
+    if (dbfilt_algorithm == -1) {
         return true;
     }
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     EBlast_filter_program filtering_algorithm;
-    string opts, filt_algo_name;
-    seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms.front(), 
-                                   filtering_algorithm, filt_algo_name, opts);
-    info.algorithm_names += filt_algo_name;
-    size_t index = 1;
-    info.detailed_masking_info += 
-        NStr::IntToString(index) + ". " + filt_algo_name + ". Options: '" 
-        + opts + "'\n";
-    for (; index < dbfilt_algorithms.size(); index++) {
-        seqdb->GetMaskAlgorithmDetails(dbfilt_algorithms[index],
-                                       filtering_algorithm, filt_algo_name,
-                                       opts);
-        info.algorithm_names += ", " + filt_algo_name;
-        info.detailed_masking_info += "     " +
-            NStr::IntToString(index+1) + ". " + filt_algo_name + 
-            ". Options: '" + opts + "\n";
-    }
+    seqdb->GetMaskAlgorithmDetails(dbfilt_algorithm,
+                                   filtering_algorithm, 
+                                   info.filt_algorithm_name, 
+                                   info.filt_algorithm_options);
 #endif
     return true;
 }
@@ -290,7 +277,7 @@ s_FillDbInfoLocally(const string& dbname,
 void
 CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
                            const string& blastdb_names, bool is_protein,
-                           const vector<int>& dbfilt_algorithms,
+                           int dbfilt_algorithm /* = -1 */,
                            bool is_remote /* = false */)
 {
     retval.clear();
@@ -310,7 +297,7 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
         if (is_remote)
             success = s_FillDbInfoRemotely(kDbName, info);
         else
-            success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithms);
+            success = s_FillDbInfoLocally(kDbName, info, dbfilt_algorithm);
 
         if (success) {
             retval.push_back(info);
@@ -346,8 +333,12 @@ void CAlignFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
         }
 
         x_WrapOutputLine(db_titles, line_length, out);
-        if ( !dbinfo->algorithm_names.empty() ) {
-            out << "Masked using: " << dbinfo->algorithm_names << endl;
+        if ( !dbinfo->filt_algorithm_name.empty() ) {
+            out << "Masked using: '" << dbinfo->filt_algorithm_name << "'";
+            if ( !dbinfo->filt_algorithm_options.empty() ) {
+                out << ", options: '" << dbinfo->filt_algorithm_options << "'";
+            }
+            out << endl;
         }
         CAlignFormatUtil::AddSpace(out, 11);
         out << NStr::Int8ToString(tot_num_seqs, NStr::fWithCommas) << 
@@ -361,6 +352,14 @@ void CAlignFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
         if (dbinfo->subset == false) {
             out << "  Database: ";
             x_WrapOutputLine(dbinfo->definition, line_length, out);
+
+            if ( !dbinfo->filt_algorithm_name.empty() ) {
+                out << "  Masked using: '" << dbinfo->filt_algorithm_name << "'";
+                if ( !dbinfo->filt_algorithm_options.empty() ) {
+                    out << ", options: '" << dbinfo->filt_algorithm_options << "'";
+                }
+                out << endl;
+            }
 
             out << "    Posted date:  ";
             out << dbinfo->date << "\n";

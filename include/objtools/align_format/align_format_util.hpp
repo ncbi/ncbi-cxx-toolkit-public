@@ -265,8 +265,10 @@ public:
         Int8   total_length;
         int    number_seqs;
         bool   subset;	
-        string algorithm_names;
-        string detailed_masking_info;
+        /// Filtering algorithm ID used in BLAST search
+        string filt_algorithm_name;
+        /// Filtering algorithm options used in BLAST search
+        string filt_algorithm_options;
 
         /// Default constructor
         SDbInfo() {
@@ -318,12 +320,12 @@ public:
     /// Retrieve BLAST database information for presentation in BLAST report
     /// @param dbname space-separated list of BLAST database names [in]
     /// @param is_protein are these databases protein? [in]
-    /// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
-    /// applicable) [in]
+    /// @param dbfilt_algorithm BLAST database filtering algorithm ID (if
+    /// applicable), use -1 if not applicable [in]
     /// @param is_remote is this a remote BLAST search? [in]
     static void GetBlastDbInfo(vector<SDbInfo>& retval,
                                const string& blastdb_names, bool is_protein,
-                               const vector<int>& dbfilt_algorithms,
+                               int dbfilt_algorithm,
                                bool is_remote = false);
 
     ///Print out blast database information

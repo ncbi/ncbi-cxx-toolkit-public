@@ -67,9 +67,9 @@ public:
     /// Constructor
     /// @param seqdb 
     ///     CSeqDB object for an already opened BLAST database
-    CLocalDbAdapter(CRef<CSeqDB> seqdb, 
-                    const CSearchDatabase::TFilteringAlgorithms& filt_algs =
-                        CSearchDatabase::TFilteringAlgorithms());
+    /// @param filtering_algorithm 
+    /// filtering algorithm ID applied to the BLAST database [in]
+    CLocalDbAdapter(CRef<CSeqDB> seqdb, int filtering_algorithm);
     
     /// Constructor
     /// @param subject_sequences
@@ -109,8 +109,11 @@ public:
     /// @note ownership of the constructed object is handled by this class
     IBlastSeqInfoSrc* MakeSeqInfoSrc();
 
+    /// Retrieve the database filtering algorithm
+    /// @returns -1 if not none was used, otherwise the filtering algorithm ID
+    int GetFilteringAlgorithm() const;
     /// Retrieve the database filtering algorithms
-    const CSearchDatabase::TFilteringAlgorithms& GetFilteringAlgorithms() const;
+    NCBI_DEPRECATED const CSearchDatabase::TFilteringAlgorithms GetFilteringAlgorithms() const;
 
     /// Returns true if this object represents protein or nucleotide sequences
     bool IsProtein() const;
@@ -154,7 +157,7 @@ private:
 
     /// List of filtering algorithms to apply to sequences extracted from the
     /// BlastSeqSrc
-    CSearchDatabase::TFilteringAlgorithms m_FilteringAlgs;
+    int m_FilteringAlg;
 
     /// Prohibit copy-constructor
     CLocalDbAdapter(const CLocalDbAdapter&);
@@ -162,10 +165,16 @@ private:
     CLocalDbAdapter & operator=(const CLocalDbAdapter&);
 };
 
-inline const CSearchDatabase::TFilteringAlgorithms&
+inline int
+CLocalDbAdapter::GetFilteringAlgorithm() const
+{
+    return m_FilteringAlg;
+}
+
+inline const CSearchDatabase::TFilteringAlgorithms
 CLocalDbAdapter::GetFilteringAlgorithms() const
 {
-    return m_FilteringAlgs;
+    return vector<int>(1, m_FilteringAlg);
 }
 
 END_SCOPE(BLAST)

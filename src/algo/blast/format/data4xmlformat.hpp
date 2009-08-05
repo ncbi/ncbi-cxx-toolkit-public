@@ -61,7 +61,8 @@ public:
     ///                 (if applicable) [in]
     /// @param dbgencode Genetic code used to translate database sequences
     ///                 (if applicable) [in]
-    ///
+    /// @param dbfilt_algorithm DB Filtering algorithm to use, -1 means not
+    /// applicable FIXME: this is not being reported
     CCmdLineBlastXMLReportData(CRef<blast::CBlastQueryVector> queries,
                const blast::CSearchResultSet& results,
                const blast::CBlastOptions& opts, 
@@ -69,7 +70,7 @@ public:
                int qgencode = BLAST_GENETIC_CODE,
                int dbgencode = BLAST_GENETIC_CODE,
                bool is_remote = false,
-               const vector<int>& dbfilt_algorithms = vector<int>());
+               int dbfilt_algorithm = -1);
 
     /// Destructor
     ~CCmdLineBlastXMLReportData();

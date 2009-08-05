@@ -202,7 +202,7 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             // sequence data for formatting from this (local) source
             CRef<CSeqDB> seqdb = GetSeqDB(db_args); 
             db_adapter.Reset(new CLocalDbAdapter(seqdb,
-                                 search_db->GetFilteringAlgorithms()));
+                                 search_db->GetFilteringAlgorithm()));
             scope->AddDataLoader(RegisterOMDataLoader(seqdb));
         } catch (const CSeqDBException&) {
             // The BLAST database couldn't be found, report this for local
@@ -385,13 +385,9 @@ s_ImportDatabase(const CBlast4_subject& subj,
         search_db->SetGiListLimitation(limit);
     }
 
-    if (opts_builder.HaveDbFilteringAlgorithmIds()) {
-        CSearchDatabase::TFilteringAlgorithms algo_ids;
-        const list<int>& algo_id_list = 
-            opts_builder.GetDbFilteringAlgorithmIds();
-        copy(algo_id_list.begin(), algo_id_list.end(),
-             back_inserter(algo_ids));
-        search_db->SetFilteringAlgorithms(algo_ids);
+    if (opts_builder.HasDbFilteringAlgorithmId()) {
+        int algo_id = opts_builder.GetDbFilteringAlgorithmId();
+        search_db->SetFilteringAlgorithm(algo_id);
     }
 
     db_args->SetSearchDatabase(search_db);

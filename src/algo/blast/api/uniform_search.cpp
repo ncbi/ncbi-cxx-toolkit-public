@@ -118,6 +118,12 @@ CSearchDatabase::SetGiListLimitation(const TGiList& gilist)
     m_GiListLimitation = gilist; 
 }
 
+CSearchDatabase::TGiList& 
+CSearchDatabase::SetGiListLimitation()
+{ 
+    return m_GiListLimitation; 
+}
+
 const CSearchDatabase::TGiList& 
 CSearchDatabase::GetGiListLimitation() const 
 { 
@@ -125,9 +131,28 @@ CSearchDatabase::GetGiListLimitation() const
 }
 
 void 
+CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
+{
+    m_FilteringAlgs.clear();
+    m_FilteringAlgs.push_back(filt_algorithm_id);
+}
+
+int 
+CSearchDatabase::GetFilteringAlgorithm() const
+{
+    return (m_FilteringAlgs.empty() ? -1 : m_FilteringAlgs.front());
+}
+
+void 
 CSearchDatabase::SetFilteringAlgorithms(const TFilteringAlgorithms& flist) 
 {
     m_FilteringAlgs = flist; 
+}
+
+CSearchDatabase::TFilteringAlgorithms& 
+CSearchDatabase::SetFilteringAlgorithms()
+{ 
+    return m_FilteringAlgs; 
 }
 
 const CSearchDatabase::TFilteringAlgorithms& 
@@ -144,6 +169,12 @@ CSearchDatabase::SetNegativeGiListLimitation(const TGiList& gilist)
                "Cannot have a regular and a negative gi list simultaneously");
     }
     m_NegativeGiListLimitation = gilist; 
+}
+
+CSearchDatabase::TGiList& 
+CSearchDatabase::SetNegativeGiListLimitation()
+{ 
+    return m_NegativeGiListLimitation; 
 }
 
 const CSearchDatabase::TGiList& 

@@ -351,7 +351,7 @@ CSetupFactory::CreateBlastSeqSrc(const CSearchDatabase& db)
     bool prot = (db.GetMoleculeType() == CSearchDatabase::eBlastDbIsProtein);
 
     BlastSeqSrc* retval = SeqDbBlastSeqSrcInit(db.GetDatabaseName(), prot, 0, 0,
-                                               db.GetFilteringAlgorithms());
+                                               db.GetFilteringAlgorithm());
     char* error_str = BlastSeqSrcGetInitError(retval);
     if (error_str) {
         string msg(error_str);

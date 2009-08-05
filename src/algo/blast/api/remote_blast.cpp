@@ -1302,15 +1302,7 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
     }}
 
     // Set the filtering algorithms
-    {{
-        const CSearchDatabase::TFilteringAlgorithms& tmplist = 
-            db.GetFilteringAlgorithms();
-        if ( !tmplist.empty() ) {
-            list<Int4> filt_algs;
-            copy(tmplist.begin(), tmplist.end(), back_inserter(filt_algs));
-            SetDbFilteringAlgorithmIds(filt_algs);
-        }
-    }}
+    SetDbFilteringAlgorithmId(db.GetFilteringAlgorithm());
 }
 
 CRemoteBlast::~CRemoteBlast()
@@ -1331,6 +1323,12 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_GiList));
 }
 
+void CRemoteBlast::SetDbFilteringAlgorithmId(int algo_id)
+{
+    x_SetOneParam(B4Param_DbFilteringAlgorithmId, &algo_id);
+    m_DbFilteringAlgorithmId = algo_id;
+}
+
 void CRemoteBlast::SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids)
 {
     if (algo_ids.empty()) {
@@ -1338,9 +1336,7 @@ void CRemoteBlast::SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids)
     }
     x_SetOneParam(B4Param_DbFilteringAlgorithmIds, & algo_ids);
     
-    m_DbFilteringAlgorithmIds.clear();
-    copy(algo_ids.begin(), algo_ids.end(),
-         back_inserter(m_DbFilteringAlgorithmIds));
+    m_DbFilteringAlgorithmId = algo_ids.front();
 }
 
 void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
@@ -1709,8 +1705,8 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
             m_GiList = bob.GetGiList();
         }
 
-        if (bob.HaveDbFilteringAlgorithmIds()) {
-            m_DbFilteringAlgorithmIds = bob.GetDbFilteringAlgorithmIds();
+        if (bob.HasDbFilteringAlgorithmId()) {
+            m_DbFilteringAlgorithmId = bob.GetDbFilteringAlgorithmId();
         }
 
         if (bob.HaveNegativeGiList()) {

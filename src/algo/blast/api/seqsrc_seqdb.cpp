@@ -57,15 +57,18 @@ struct SSeqDB_SeqSrc_Data {
     }
     
     /// Constructor.
-    SSeqDB_SeqSrc_Data(CSeqDB * ptr, const vector<int> & algo_ids)
-        : seqdb((CSeqDBExpert*) ptr), algorithm_ids(algo_ids)
+    SSeqDB_SeqSrc_Data(CSeqDB * ptr, int algo_id)
+        : seqdb((CSeqDBExpert*) ptr), algorithm_id(-1)
     {
+        if (algo_id != -1) {
+            algorithm_id = algo_id;
+        }
     }
     
     /// Make a copy of this object, sharing the same SeqDB object.
     SSeqDB_SeqSrc_Data * clone()
     {
-        return new SSeqDB_SeqSrc_Data(&* seqdb, algorithm_ids);
+        return new SSeqDB_SeqSrc_Data(&* seqdb, algorithm_id);
     }
     
     /// Convenience to allow datap->method to use SeqDB methods.
@@ -85,8 +88,8 @@ struct SSeqDB_SeqSrc_Data {
     /// SeqDB object.
     CRef<CSeqDBExpert> seqdb;
     
-    /// Algorithm IDs for mask data fetching.
-    vector<int> algorithm_ids;
+    /// Algorithm ID for mask data fetching.
+    int algorithm_id;
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -227,7 +230,6 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
     TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
     
-    const vector<int> & filtering_algorithms = datap->algorithm_ids;
     CSeqDBExpert & seqdb = **datap;
     
     oid = args->oid;
@@ -296,7 +298,8 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    if ( !filtering_algorithms.empty() ) {
+    if ( datap->algorithm_id != -1 ) {
+        vector<int> filtering_algorithms(1, datap->algorithm_id);
         static const Boolean kCopySequenceRanges = false;
         CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
         seqdb.GetMaskData(oid, filtering_algorithms, ranges);
@@ -304,10 +307,10 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
             if (BlastSeqBlkSetSeqRanges(args->seq, 
                                     (SSeqRange*)& ranges[0],
                                     ranges.size(), kCopySequenceRanges) != 0) {
-            return BLAST_SEQSRC_ERROR;
+                return BLAST_SEQSRC_ERROR;
             }
         } else {
-        args->seq->num_seq_ranges=0;
+            args->seq->num_seq_ranges=0;
         }
     }
 #endif
@@ -471,11 +474,15 @@ public:
     /// Constructor
     CSeqDbSrcNewArgs(const string& db, bool is_prot,
                      Uint4 first_oid = 0, Uint4 final_oid = 0,
-                     const vector<int>& filtering_algorithms = vector<int>())
+                     int filtering_algorithm)
         : m_DbName(db), m_IsProtein(is_prot), 
           m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid),
-          m_FilteringAlgorithms(filtering_algorithms)
-    {}
+          m_FilteringAlgorithm(-1)
+    {
+        if (filtering_algorithm != -1) {
+            m_FilteringAlgorithm = filtering_algorithm;
+        }
+    }
 
     /// Getter functions for the private fields
     const string GetDbName() const { return m_DbName; }
@@ -485,17 +492,17 @@ public:
     Uint4 GetFirstOid() const { return m_FirstDbSeq; }
     /// Returns last database ordinal id covered by this BlastSeqSrc
     Uint4 GetFinalOid() const { return m_FinalDbSeq; }
-    /// Returns the default filtering algorithms to use with sequence data
+    /// Returns the default filtering algorithm to use with sequence data
     /// extracted from this BlastSeqSrc
-    vector<int> GetFilteringAlgorithms() const { return m_FilteringAlgorithms; }
+    int GetFilteringAlgorithm() const { return m_FilteringAlgorithm; }
 
 private:
     string m_DbName;        ///< Database name
     bool m_IsProtein;       ///< Is this database protein?
     Uint4 m_FirstDbSeq;     ///< Ordinal id of the first sequence to search
     Uint4 m_FinalDbSeq;     ///< Ordinal id of the last sequence to search
-    /// List of filtering algorithms to use when retrieving sequence data
-    vector<int> m_FilteringAlgorithms;
+    /// filtering algorithm ID to use when retrieving sequence data
+    int m_FilteringAlgorithm;
 };
 
 extern "C" {
@@ -613,7 +620,7 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
         datap->seqdb->SetIterationRange(seqdb_args->GetFirstOid(),
                                         seqdb_args->GetFinalOid());
         
-        datap->algorithm_ids = seqdb_args->GetFilteringAlgorithms();
+        datap->algorithm_id = seqdb_args->GetFilteringAlgorithm();
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, 
                         strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
@@ -637,12 +644,12 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
                  Uint4 first_seq, Uint4 last_seq,
-                 const vector<int>& filtering_algorithms /* = vector<int>() */)
+                 int filtering_algorithm /* = -1 */)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
     CSeqDbSrcNewArgs seqdb_args(dbname, is_prot, first_seq, last_seq,
-                                filtering_algorithms);
+                                filtering_algorithm);
 
     bssn_info.constructor = &s_SeqDbSrcNew;
     bssn_info.ctor_argument = (void*) &seqdb_args;
@@ -652,12 +659,12 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
 
 BlastSeqSrc* 
 SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
-                 const vector<int>& filtering_algorithms /* = vector<int>() */)
+                 int filtering_algorithm /* = -1 */)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc * seq_src = NULL;
 
-    TSeqDBData data(seqdb, filtering_algorithms);
+    TSeqDBData data(seqdb, filtering_algorithm);
 
     bssn_info.constructor = & s_SeqDbSrcSharedNew;
     bssn_info.ctor_argument = (void*) & data;

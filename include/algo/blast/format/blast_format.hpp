@@ -90,8 +90,8 @@ public:
     /// @param use_sum_statistics Were sum statistics used in this search? [in]
     /// @param is_remote_search is this formatting the results of a remote
     /// search [in]
-    /// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
-    /// applicable) [in]
+    /// @param dbfilt_algorithm BLAST database filtering algorithm ID (if
+    /// applicable), value of -1 means not available [in]
     /// @param is_megablast true if megablast [in]
     /// @param is_indexed true if indexed search [in]
     /// @param custom_output_format custom output format specification for
@@ -111,7 +111,7 @@ public:
                  int dbgencode = BLAST_GENETIC_CODE,
                  bool use_sum_statistics = false,
                  bool is_remote_search = false,
-                 const vector<int>& dbfilt_algorithms = vector<int>(),
+                 int dbfilt_algorithm = -1,
                  const string& custom_output_format = kEmptyStr,
                  bool is_megablast = false,
                  bool is_indexed = false);
@@ -137,8 +137,6 @@ public:
     /// @param is_html true if the output is to be in HTML format [in]
     /// @param is_remote_search is this formatting the results of a remote
     /// search [in]
-    /// @param dbfilt_algorithms BLAST database filtering algorithm IDs (if
-    /// applicable) [in]
     /// @param custom_output_format custom output format specification for
     /// tabular/comma-separated value output format. An empty string implies to
     /// use the default value when applicable. [in]

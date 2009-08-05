@@ -54,7 +54,7 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
      const string& dbname, bool db_is_aa,
      int qgencode, int dbgencode,
      bool is_remote,
-     const vector<int>& dbfilt_algorithms /* = vector<int>() */)
+     int dbfilt_algorithm /* = -1 */)
 : m_Queries(queries), m_Options(opts), 
   m_DbName(dbname),
   m_QueryGeneticCode(qgencode), 
@@ -70,8 +70,17 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
                    "XML formatting is only supported for a database search");
     }
     CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
-                               dbfilt_algorithms, 
-                               is_remote);
+                               dbfilt_algorithm, is_remote);
+    /// @todo FIXME add means to specify masked database (SB-343)
+    // Is this appropriate? What if it breaks parsers?
+    //if (dbfilt_algorithm != -1) {
+    //    int x = 0; // should be the index of the masked DB
+    //    _ASSERT(!m_DbInfo[x].filt_algorithm_name.empty());
+    //    m_DbName += ", masked using: '" + m_DbInfo[x].filt_algorithm_name + "'";
+    //    if ( !m_DbInfo[x].filt_algorithm_options.empty() ) {
+    //        m_DbName += ", options: '" + m_DbInfo[x].filt_algorithm_options + "'";
+    //    }
+    //}
 
     if (results.size() == 0) {
         m_NoHitsFound = true;

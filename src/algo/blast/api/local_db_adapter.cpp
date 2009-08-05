@@ -55,16 +55,15 @@ BEGIN_SCOPE(blast)
 
 CLocalDbAdapter::CLocalDbAdapter(const CSearchDatabase& dbinfo)
     : m_SeqSrc(0), m_SeqInfoSrc(0), m_DbName(dbinfo.GetDatabaseName()),
-    m_FilteringAlgs(dbinfo.GetFilteringAlgorithms())
+    m_FilteringAlg(dbinfo.GetFilteringAlgorithm())
 {
     m_DbInfo.Reset(new CSearchDatabase(dbinfo));
 }
 
 CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
-                                 const CSearchDatabase::TFilteringAlgorithms&
-                                 filt_algs)
+                                 int filtering_algorithm)
     : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb),
-    m_DbName(seqdb->GetDBNameList()), m_FilteringAlgs(filt_algs)
+    m_DbName(seqdb->GetDBNameList()), m_FilteringAlg(filtering_algorithm)
 {
     if (m_SeqDb.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "NULL CSeqDB");
@@ -143,7 +142,7 @@ CLocalDbAdapter::MakeSeqSrc()
                 m_SeqDb = x_InitSeqDB(m_DbInfo);
             }
             m_SeqSrc = SeqDbBlastSeqSrcInit(m_SeqDb.GetNonNullPointer(),
-                                            m_FilteringAlgs);
+                                            m_FilteringAlg);
         } else if (m_SubjectFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             const EBlastProgramType program =
                                m_OptsHandle->GetOptions().GetProgramType();
@@ -191,17 +190,17 @@ CLocalDbAdapter::x_InitSeqDB(CConstRef<CSearchDatabase> dbinfo)
 /*** Auxiliary function to initialize CSeqDB with the filtering algorithms used
  * for the database
  * @param dbhandle CSeqDB instance [in]
- * @param filtering_algorithms filtering algorithm IDs used for this search
+ * @param filtering_algorithm filtering algorithm ID used for this search
  * [in]
  * @return CSeqDbSeqInfoSrc initialized accordingly
  */
 static CRef<CSeqDbSeqInfoSrc>
 s_InitCSeqDbSeqInfoSrc(CRef<CSeqDB> dbhandle, 
-                      const vector<int>& filtering_algorithms)
+                       int filtering_algorithm)
 {
     _ASSERT(dbhandle.NotEmpty());
     CRef<CSeqDbSeqInfoSrc> retval(new CSeqDbSeqInfoSrc(dbhandle));
-    retval->SetFilteringAlgorithmIds(filtering_algorithms);
+    retval->SetFilteringAlgorithmId(filtering_algorithm);
     return retval;
 }
 
@@ -210,10 +209,10 @@ CLocalDbAdapter::MakeSeqInfoSrc()
 {
     if ( !m_SeqInfoSrc ) {
         if (m_SeqDb.NotEmpty()) {
-            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlgs);
+            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlg);
         } else if (m_DbInfo.NotEmpty()) {
             m_SeqDb = x_InitSeqDB(m_DbInfo);
-            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlgs);
+            m_SeqInfoSrc = &*s_InitCSeqDbSeqInfoSrc(m_SeqDb, m_FilteringAlg);
         } else if (m_SubjectFactory.NotEmpty() && m_OptsHandle.NotEmpty()) {
             EBlastProgramType p(m_OptsHandle->GetOptions().GetProgramType());
             if ( !m_Subjects.empty() ) {

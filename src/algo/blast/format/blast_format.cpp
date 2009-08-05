@@ -69,7 +69,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
                  int dbgencode /* = BLAST_GENETIC_CODE */,
                  bool use_sum_statistics /* = false */,
                  bool is_remote_search /* = false */,
-                 const vector<int>& dbfilt_algorithms /* = vector<int>() */,
+                 int dbfilt_algorithm /* = -1 */,
                  const string& custom_output_format /* = kEmptyStr */,
                  bool is_megablast /* = false */,
                  bool is_indexed /* = false */)
@@ -97,7 +97,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
         m_SeqInfoSrc.Reset(db_adapter.MakeSeqInfoSrc());
     } else {
         CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
-                                   dbfilt_algorithms, is_remote_search);
+                                   dbfilt_algorithm, is_remote_search);
     }
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());

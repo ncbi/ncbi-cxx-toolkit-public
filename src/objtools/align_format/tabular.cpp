@@ -530,6 +530,7 @@ void CBlastTabularInfo::x_PrintFieldNames()
     m_Ostream << "\n";
 }
 
+/// @todo FIXME add means to specify masked database (SB-343)
 void 
 CBlastTabularInfo::PrintHeader(const string& program_version, 
        const CBioseq& bioseq, 

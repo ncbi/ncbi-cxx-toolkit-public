@@ -135,10 +135,14 @@ public:
     /// @param gi_list list of GIs to exclude [in]
     void SetNegativeGIList(const list<Int4> & gi_list);
     
+    /// Sets the filtering algorithm ID to be applied to the BLAST database
+    /// (not supported by server yet)
+    /// @param algo_id algorithm ID to use
+    void SetDbFilteringAlgorithmId(int algo_id);
     /// Sets the filtering algorithm IDs to be applied to the BLAST database
     /// (not supported by server yet)
     /// @param algo_ids algorithm IDs to use
-    void SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids);
+    NCBI_DEPRECATED void SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids);
 
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
@@ -418,9 +422,13 @@ public:
     /// Fetch the search strategy for this object without submitting the search
     CRef<objects::CBlast4_request> GetSearchStrategy();
 
+    /// Returns the filtering algorithm ID used in the database
+    Int4 GetDbFilteringAlgorithmId() const {
+        return m_DbFilteringAlgorithmId;
+    }
     /// Returns the list of filtering algorithm IDs for the database
-    list<int> GetDbFilteringAlgorithmIds() const {
-        return m_DbFilteringAlgorithmIds;
+    NCBI_DEPRECATED list<int> GetDbFilteringAlgorithmIds() const {
+        return list<int>(1, m_DbFilteringAlgorithmId);
     }
 
     /// Returns the task used to create the remote search (if any)
@@ -701,8 +709,8 @@ private:
     /// Negative GI list.
     list<Int4> m_NegativeGiList;
 
-    /// List of filtering algorithms to use in the database
-    list<Int4> m_DbFilteringAlgorithmIds;
+    /// filtering algorithm to use in the database
+    int m_DbFilteringAlgorithmId;
 
     /// Task used when the search was submitted (recovered via
     /// CBlastOptionsBuilder)

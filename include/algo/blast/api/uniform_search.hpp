@@ -169,18 +169,34 @@ public:
     /// Mutator for the gi list
     /// @param gilist list of gis [in]
     void SetGiListLimitation(const TGiList& gilist);
+    /// Mutator for the gi list
+    TGiList& SetGiListLimitation();
     /// Accessor for the gi list
     const TGiList& GetGiListLimitation() const;
 
+    /// Mutator for the filtering algorithm
+    /// @param filt_algorithm_id filtering algorithm ID [in]
+    void SetFilteringAlgorithm(int filt_algorithm_id);
+    /// Accessor for the filtering algorithm ID
+    int GetFilteringAlgorithm() const;
+
+    /** BLAST only supports a single filtering algorithm for soft masking the
+     * BLAST Database. The 3 methods below will be deprecated in BLAST 2.2.22
+     */
+
     /// Mutator for the list of filtering algorithms
     /// @param flist list of filtering algorithms [in]
-    void SetFilteringAlgorithms(const TFilteringAlgorithms& flist);
+    NCBI_DEPRECATED void SetFilteringAlgorithms(const TFilteringAlgorithms& flist);
+    /// Mutator for the list of filtering algorithms
+    NCBI_DEPRECATED TFilteringAlgorithms& SetFilteringAlgorithms();
     /// Accessor for the list of filtering algorithms
-    const TFilteringAlgorithms& GetFilteringAlgorithms() const;
+    NCBI_DEPRECATED const TFilteringAlgorithms& GetFilteringAlgorithms() const;
 
     /// Mutator for the negative gi list
     /// @param gilist list of gis [in]
     void SetNegativeGiListLimitation(const TGiList& gilist);
+    /// Mutator for the negative gi list
+    TGiList& SetNegativeGiListLimitation();
     /// Accessor for the negative gi list
     const TGiList& GetNegativeGiListLimitation() const;
 
