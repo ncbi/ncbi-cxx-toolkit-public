@@ -1757,11 +1757,17 @@ string CDirEntry::LookupLink(void) const
 
 void CDirEntry::DereferenceLink(void)
 {
+#ifdef NCBI_OS_MSWIN
+    // Not impemented
+    return;
+#endif
+    string prev;
     while ( IsLink() ) {
         string name = LookupLink();
-        if ( name.empty() ) {
+        if ( name.empty() ||  name == prev ) {
             return;
         }
+        prev = name;
         if ( IsAbsolutePath(name) ) {
             Reset(name);
         } else {
@@ -1770,6 +1776,34 @@ void CDirEntry::DereferenceLink(void)
         }
     }
 }
+
+
+void CDirEntry::DereferencePath(void)
+{
+#ifdef NCBI_OS_MSWIN
+    // Not impemented
+    return;
+#endif
+    // Dereference each path components starting from last one
+    DereferenceLink();
+
+    // Get dir and file names
+    string path = GetPath();
+    size_t pos = path.find_last_of(ALL_SEPARATORS);
+    if (pos == NPOS) {
+        return; 
+    }
+    string filename = path.substr(pos+1);
+    string dirname  = path.substr(0, pos);
+    if ( dirname.empty() ) {
+        return;
+    }
+    // Dereference path one level up
+    CDirEntry e(dirname);
+    e.DereferencePath();
+    Reset(MakePath(e.GetPath(), filename));
+}
+
 
 bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size) const
 {

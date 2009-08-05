@@ -717,9 +717,22 @@ public:
     /// recursively until it is no further a link (but a file, directory,
     /// etc, or does not exist). Replace the entry path string with
     /// the dereferenced path.
+    /// @note
+    ///   This method dereference only last component of the path.
+    ///   To dereference all path components use DereferencePath() method.
     /// @sa 
-    ///   GetType, IsLink, LookupLink, GetPath
+    ///   DereferencePath, IsLink, LookupLink
     void DereferenceLink(void);
+
+    /// Dereference a path.
+    ///
+    /// Very similar to DereferenceLink() method, but dereference all
+    /// path components recursively until it is no further a link 
+    /// in the path (but a file, directory, etc, or does not exist).
+    /// Replace the entry path string with the dereferenced path.
+    /// @sa 
+    ///   DereferenceLink, IsLink, LookupLink
+    void DereferencePath(void);
 
     /// Get time stamp(s) of a directory entry.
     ///

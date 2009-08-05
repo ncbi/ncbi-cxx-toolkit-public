@@ -786,65 +786,88 @@ static void s_TEST_Dir(void)
 static void s_TEST_Link(void)
 {
 #if defined(NCBI_OS_UNIX)
-    CDir dir("dir1");
-    assert( !dir.Exists() );
-    assert( dir.Create() );
-    assert( dir.Exists() );
+    {{
+        CDir dir("dir1");
+        assert( !dir.Exists() );
+        assert( dir.Create() );
+        assert( dir.Exists() );
     
-    // Create link
-    CSymLink link("link1");
-    assert( !link.Exists() );
-    assert( link.Create("dir1") );
-    assert( link.Exists() );
+        // Create link
+        CSymLink link("link1");
+        assert( !link.Exists() );
+        assert( link.Create("dir1") );
+        assert( link.Exists() );
     
-    // Check link
-    assert( link.IsDir() );
-    assert( link.IsDir(eFollowLinks) );
-    assert( !link.IsDir(eIgnoreLinks) );
-    assert( link.GetType(eIgnoreLinks) == CDirEntry::eLink );
-    assert( link.IsLink() );
-    assert( link.LookupLink() == "dir1");
+        // Check link
+        assert( link.IsDir() );
+        assert( link.IsDir(eFollowLinks) );
+        assert( !link.IsDir(eIgnoreLinks) );
+        assert( link.GetType(eIgnoreLinks) == CDirEntry::eLink );
+        assert( link.IsLink() );
+        assert( link.LookupLink() == "dir1");
 
-    // Copy link with fCF_FollowLinks flag, set by default
-    CDir dir2("dir2");
-    assert( link.Copy("dir2") );
-    assert( dir2.IsDir() );
-    assert( dir2.Remove() );
-    assert( !dir2.Exists() );
+        // Copy link with fCF_FollowLinks flag, set by default
+        CDir dir2("dir2");
+        assert( link.Copy("dir2") );
+        assert( dir2.IsDir() );
+        assert( dir2.Remove() );
+        assert( !dir2.Exists() );
 
-    // Copy only link
-    CSymLink link2("link2");
-    assert( !link2.Exists() );
-    assert( link.Copy("link2", CDirEntry::fCF_Overwrite) );
-    assert( link2.Exists() );
-    assert( link2.IsLink() );
-    assert( link2.LookupLink() == "dir1");
-    assert( link2.Remove() );
-    assert( !link2.Exists() );
-    assert( dir.Exists() );
+        // Copy only link
+        CSymLink link2("link2");
+        assert( !link2.Exists() );
+        assert( link.Copy("link2", CDirEntry::fCF_Overwrite) );
+        assert( link2.Exists() );
+        assert( link2.IsLink() );
+        assert( link2.LookupLink() == "dir1");
+        assert( link2.Remove() );
+        assert( !link2.Exists() );
+        assert( dir.Exists() );
     
-    // Create link to link
-    assert( link2.Create("link1") );
-    assert( link2.Exists() );
+        // Create link to link
+        assert( link2.Create("link1") );
+        assert( link2.Exists() );
 
-    // Dereference nested link   
-    CDirEntry e = link2;
-    assert( e.IsLink() );
-    assert( e.LookupLink() == "link1");
-    e.DereferenceLink();
-    assert( e.IsDir() );
-    assert( e.GetPath() == "dir1");
+        // Dereference nested link   
+        CDirEntry e = link2;
+        assert( e.IsLink() );
+        assert( e.LookupLink() == "link1");
+        e.DereferenceLink();
+        assert( e.IsDir() );
+        assert( e.GetPath() == "dir1");
     
-    // Remove
-    assert( link2.Remove() );
-    assert( !link2.Exists() );
-    assert( link.Exists() );
-    assert( link.Remove() );
-    assert( !link.Exists() );
-    assert( dir.Exists() );
-    assert( e.Remove() );
-    assert( !dir.Exists() );
+        // Remove
+        assert( link2.Remove() );
+        assert( !link2.Exists() );
+        assert( link.Exists() );
+        assert( link.Remove() );
+        assert( !link.Exists() );
+        assert( dir.Exists() );
+        assert( e.Remove() );
+        assert( !dir.Exists() );
+    }}
     
+    // DereferencePath() test
+    {{
+        // Create structure
+        assert( CDir("dir").Create() );
+        assert( CDir("dir/dir1").Create() );
+        assert( CSymLink("dir/dir2").Create("dir1") );
+        assert( CDir("dir/dir2/entry").Create() );
+        assert( CSymLink("dir/dir1/link").Create("entry") );
+        
+        // Compare DereferenceLink() and DereferencePath()
+        CDirEntry e("dir/dir2/link");
+        e.DereferenceLink();
+        assert( e.GetPath() == "dir/dir2/entry");
+        e.Reset("dir/dir2/link");
+        e.DereferencePath();
+        assert( e.GetPath() == "dir/dir1/entry");
+        
+        // Cleanup
+        assert( CDir("dir").Remove(CDir::eRecursive) );
+        assert( !CDir("dir").Exists() );
+    }}
 #endif
 }
 
@@ -1318,8 +1341,6 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    cout << "Run test" << endl << endl;
-
     // CDirEntry
     s_TEST_SplitPath();
     s_TEST_CheckPath();
