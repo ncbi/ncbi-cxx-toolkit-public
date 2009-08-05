@@ -68,8 +68,16 @@ public:
     /// @param seqdb 
     ///     CSeqDB object for an already opened BLAST database
     /// @param filtering_algorithm 
-    /// filtering algorithm ID applied to the BLAST database [in]
-    CLocalDbAdapter(CRef<CSeqDB> seqdb, int filtering_algorithm);
+    /// filtering algorithm ID applied to the BLAST database, -1 means none [in]
+    CLocalDbAdapter(CRef<CSeqDB> seqdb, int filtering_algorithm = -1);
+
+    /// Constructor
+    /// @param seqdb 
+    ///     CSeqDB object for an already opened BLAST database
+    NCBI_DEPRECATED_CTOR(CLocalDbAdapter(CRef<CSeqDB> seqdb, 
+                                         const
+                                         CSearchDatabase::TFilteringAlgorithms&
+                                         filt_algs));
     
     /// Constructor
     /// @param subject_sequences

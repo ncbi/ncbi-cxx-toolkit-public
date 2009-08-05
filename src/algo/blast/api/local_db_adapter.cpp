@@ -70,6 +70,19 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
     }
 }
 
+CLocalDbAdapter::CLocalDbAdapter(CRef<CSeqDB> seqdb,
+                                 const CSearchDatabase::TFilteringAlgorithms& filt_algs)
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_SeqDb(seqdb),
+    m_DbName(seqdb->GetDBNameList()), m_FilteringAlg(-1)
+{
+    if (m_SeqDb.Empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, "NULL CSeqDB");
+    }
+    if ( !filt_algs.empty() ) {
+        m_FilteringAlg = filt_algs.front();
+    }
+}
+
 CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
                                  CConstRef<CBlastOptionsHandle> opts_handle)
     : m_SeqSrc(0), m_SeqInfoSrc(0), m_SubjectFactory(subject_sequences),
