@@ -87,8 +87,8 @@ void CSplignApp::Init()
                 fHideXmlHelp | fHideFullHelp);
 #endif
 
-    SetVersion(CVersionInfo(1, 36, 0, "Splign"));
-    string program_name ("Splign v.1.36");
+    SetVersion(CVersionInfo(1, 37, 0, "Splign"));
+    string program_name ("Splign v.1.37");
 #ifdef GENOME_PIPELINE
     program_name += 'p';
 #endif
@@ -141,25 +141,7 @@ void CSplignApp::Init()
         ("W", "mbwordsize", "[Pairwise mode] Megablast word size",
          CArgDescriptions::eInteger,
          "28");
-
-#ifdef GENOME_PIPELINE
-
-    argdescr->AddOptionalKey
-        ("querydb", "querydb",
-         "[Batch mode - no external hits] "
-         "Pathname to the blast database of query (cDNA) "
-         "sequences. To create one, use formatdb -o T -p F",
-         CArgDescriptions::eString);
-
-    argdescr->AddOptionalKey
-        ("subjdb", "subjdb",
-         "[Incremental mode - no external hits] "
-         "Pathname to the blast database of subject "
-         "sequences. To create one, use formatdb -o T -p F",
-         CArgDescriptions::eString);
-
-#endif
-    
+  
     CSplignArgUtil::SetupArgDescriptions(argdescr.get());
 
     argdescr->AddDefaultKey
@@ -596,9 +578,7 @@ enum ERunMode {
     eNotSet,
     ePairwise, // single query vs single subj
     eBatch1,   // use external raw blast hits
-    eBatch2,   // use pre-computed compartments
-    eBatch3,   // run blast internally using external blast db of queries
-    eIncremental // run blast internally using external blastdb of subjects
+    eBatch2    // use pre-computed compartments
 };
 
 
@@ -615,248 +595,6 @@ string GetLdsDbDir(const string& fasta_dir)
     lds_db_dir += "_SplignLDS_";
     return lds_db_dir;
 }
-
-
-void CSplignApp::x_GetDbBlastHits(const string& dbname,
-                                  blast::TSeqLocVector& queries,
-                                  THitRefs* phitrefs,
-                                  size_t chunk, size_t total_chunks)
-{
-    USING_SCOPE(objects);
-    USING_SCOPE(blast);
-
-    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
-    CRef<CSeqDB> seqdb (new CSeqDB(dbname, CSeqDB::eNucleotide));
-    CRef<CLocalDbAdapter> blastdb (new CLocalDbAdapter(seqdb));
-    CLocalBlast blast (query_factory, m_BlastOptionsHandle, blastdb);
-    CSearchResultSet results (*blast.Run());
-    phitrefs->resize(0);
-
-    const size_t num_results (results.GetNumResults());
-    for(size_t query_index (0); query_index != num_results; ++query_index) {
-        
-        CConstRef<objects::CSeq_align_set> ref_sas0 (results[query_index].
-                                                     GetSeqAlign());
-        if(ref_sas0->IsSet()) {
-            
-            const CSeq_align_set::Tdata & sas0 (ref_sas0->Get());
-            ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
-                
-                THitRef hitref (new CBlastTabular(**sa_iter, false));
-                phitrefs->push_back(hitref);
-                
-                THit::TId id (hitref->GetSubjId());
-                int oid (-1);
-                seqdb->SeqidToOid(*id, oid);
-                id = seqdb->GetSeqIDs(oid).back();
-                hitref->SetSubjId(id);
-            }
-        }
-    }
-
-//    BlastSeqSrcFree(seq_src);
-}
-
-
-void CSplignApp::x_DoIncremental(void)
-{
-    USING_SCOPE(objects);
-    USING_SCOPE(blast);
-
-    const CArgs& args   (GetArgs());
-    const string dbname (args["subjdb"].AsString());
-
-    CBlastDbDataLoader::RegisterInObjectManager(
-        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, true,
-        CObjectManager::eDefault);
-
-    CRef<ILineReader> line_reader;
-    const CArgValue& argval (args["query"]);
-    try {
-        line_reader.Reset(
-            new CMemoryLineReader(new CMemoryFile(argval.AsString()),
-                                  eTakeOwnership));
-    }
-    
-    catch (...) { // fall back to streams
-        line_reader.Reset(new CStreamLineReader(argval.AsInputFile()));
-    }
-
-    try {
-        CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
-        for(CConstRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
-            se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
-        {
-            CRef<CScope> scope (new CScope(*m_ObjMgr));
-            scope->AddDefaults();
-            scope->AddTopLevelSeqEntry(*se);
-
-            m_Splign->SetScope() = scope;
-
-            const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-            const CSeq_entry::TSeq::TId& qids = bioseq.GetId();
-            CRef<CSeq_id> seqid_query (qids.back());
-
-            TSeqLocVector queries;
-            CRef<CSeq_loc> sl (new CSeq_loc);
-            sl->SetWhole().Assign(*seqid_query);
-            queries.push_back(SSeqLoc(*sl, *scope));
-            
-            THitRefs hitrefs;
-            x_GetDbBlastHits(dbname, queries, &hitrefs, 0, 0);
-            typedef CHitComparator<CBlastTabular> THitComparator;
-            THitComparator hc (THitComparator::eSubjIdQueryId);
-            stable_sort(hitrefs.begin(), hitrefs.end(), hc);
-
-            THitRefs hitrefs_pair;
-            m_CurHitRef = numeric_limits<size_t>::max();
-            while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
-                x_ProcessPair(hitrefs_pair, args); 
-            }
-        }
-    }
-
-    catch (CObjReaderParseException& e) {
-        if(e.GetErrCode() != CObjReaderParseException::eEOF) {
-            throw;
-        }
-    }
-}
-
-
-void CSplignApp::x_DoBatch3(void)
-{
-    USING_SCOPE(objects);
-    USING_SCOPE(blast);
-
-    const CArgs& args   (GetArgs());
-    const string dbname (args["querydb"].AsString());
-    const size_t W      (args["W"].AsInteger());
-    
-    CBlastDbDataLoader::RegisterInObjectManager(
-        *m_ObjMgr, dbname, CBlastDbDataLoader::eNucleotide, true,
-        CObjectManager::eDefault);
-
-    CRef<ILineReader> line_reader;
-    try {
-        line_reader.Reset(
-                     new CMemoryLineReader(new CMemoryFile(args["subj"].AsString()),
-                                           eTakeOwnership));
-    } catch (...) { // fall back to streams
-        line_reader.Reset(new CStreamLineReader(args["subj"].AsInputFile()));
-    }
-    CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
-    for(CConstRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
-        se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
-    {
-        CRef<CScope> scope (new CScope(*m_ObjMgr));
-        scope->AddDefaults();
-        scope->AddTopLevelSeqEntry(*se);
-        m_Splign->SetScope() = scope;
-
-        const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-        const CSeq_entry::TSeq::TId& sids = bioseq.GetId();
-        CRef<CSeq_id> seqid_dna (sids.back());
-        if(bioseq.IsNa() == false) {
-            string errmsg;
-            errmsg = "Subject sequence not nucleotide: " 
-                + seqid_dna->GetSeqIdString(true);
-            NCBI_THROW(CSplignAppException, eBadData, errmsg);
-        }
-
-        TSeqPos offset = 0, len = bioseq.GetInst().GetLength();
-        const TSeqPos step1m = 1024*1024;
-        const TSeqPos step500k = 500*1024;
-
-        THitRefs pending;
-        while(offset < len || pending.size() > 0) {
-
-            TSeqPos from = offset, to = offset + step500k;
-
-            THitRefs hitrefs;
-            if(from < len) {
-
-                if(to >= len) {
-                    to = len - 1;
-                }
-
-                CRef<CSeq_loc> sl (new CSeq_loc (*seqid_dna, from, to));
-                TSeqLocVector queries;
-                queries.push_back(SSeqLoc(*sl, *scope));
-
-                x_GetDbBlastHits(dbname, queries, &hitrefs, 0, 0);
-                NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
-                
-                    THitRef h = *ii;
-                    h->SwapQS();
-                    if(h->GetQueryStrand() == false) {
-                        h->FlipStrands();
-                    }
-                }
-                copy(pending.begin(), pending.end(), back_inserter(hitrefs));
-                pending.resize(0);
-                
-                set<string> pending_ids;
-                NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
-                    
-                    const string id = (*ii)->GetQueryId()->AsFastaString();
-                    bool bp = pending_ids.find(id) != pending_ids.end();
-                    if(bp || (*ii)->GetSubjMin() + step1m > to) {
-                        pending.push_back(*ii);
-                        ii->Reset(NULL);
-                        if(!bp) {
-                            pending_ids.insert(id);
-                        }
-                    }
-                }
-
-                NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
-                    if(ii->NotNull()) {
-                        const string id = (*ii)->GetQueryId()->AsFastaString();
-                        if(pending_ids.find(id) != pending_ids.end()) {
-                            pending.push_back(*ii);
-                            ii->Reset(NULL);
-                        }
-                    }
-                }
-
-                size_t i = 0, n = hitrefs.size();
-                for(size_t j = 0; j < n; ++j) {
-                    if(hitrefs[j].NotNull()) {
-                        if(i < j) {
-                            hitrefs[i++] = hitrefs[j];
-                        }
-                        else {
-                            ++i;
-                        }
-                    }
-                }
-                if(i < n) {
-                    hitrefs.erase(hitrefs.begin() + i, hitrefs.end());
-                }
-
-            }
-            else {
-                hitrefs = pending;
-                pending.resize(0);
-            }
-
-            typedef CHitComparator<CBlastTabular> THitComparator;
-            THitComparator hc (THitComparator::eQueryId);
-            stable_sort(hitrefs.begin(), hitrefs.end(), hc);            
-
-            THitRefs hitrefs_pair;
-            m_CurHitRef = numeric_limits<size_t>::max();
-            while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
-                
-                x_ProcessPair(hitrefs_pair, args); 
-            }
-
-            offset = (to + 1 >= len)? len: (to - 2*W);
-        }
-    }
-}
-
 
 
 CRef<objects::CSeq_id> CSplignApp::x_ReadFastaSetId(const CArgValue& argval,
@@ -900,14 +638,6 @@ int CSplignApp::Run()
 
     const bool is_comps   = args["comps"];
 
-#ifdef GENOME_PIPELINE
-    const bool is_querydb = args["querydb"];
-    const bool is_subjdb  = args["subjdb"];
-#else
-    const bool is_querydb = false;
-    const bool is_subjdb = false;
-#endif
-
     const bool use_disc_megablast (args["disc"]);
 
     if(is_mklds) {
@@ -936,21 +666,13 @@ int CSplignApp::Run()
     // determine mode and verify arguments
     ERunMode run_mode (eNotSet);
     
-    if(is_query && is_subj && !(is_hits || is_comps || is_querydb || is_ldsdir)) {
+    if(is_query && is_subj && !(is_hits || is_comps || is_ldsdir)) {
         run_mode = ePairwise;
     }
-    else if(is_subj && is_querydb
-            && !(is_query || is_hits || is_comps || is_ldsdir)) 
-    {
-        run_mode = eBatch3;
-    }
-    else if(is_query && is_subjdb && !(is_subj || is_hits || is_comps || is_ldsdir)) {
-        run_mode = eIncremental;
-    }
-    else if(is_hits && is_ldsdir && !(is_comps ||is_query || is_subj || is_querydb)) {
+    else if(is_hits && is_ldsdir && !(is_comps ||is_query || is_subj)) {
         run_mode = eBatch1;
     }
-    else if(is_comps && is_ldsdir && !(is_hits ||is_query || is_subj || is_querydb)) {
+    else if(is_comps && is_ldsdir && !(is_hits ||is_query || is_subj)) {
         run_mode = eBatch2;
     }
 
@@ -1007,12 +729,6 @@ int CSplignApp::Run()
         scope.Reset (new CScope(*m_ObjMgr));
         scope->AddDefaults();
     }
-    else if(run_mode == eIncremental) {
-        x_DoIncremental();
-    }
-    else if(run_mode == eBatch3) {
-        x_DoBatch3();
-    }
     else {
         NCBI_THROW(CSplignAppException,
                    eGeneral,
@@ -1045,9 +761,6 @@ int CSplignApp::Run()
         while(x_GetNextComp(hit_stream, &hitrefs, &subj_min, &subj_max) ) {
             x_ProcessPair(hitrefs, args, subj_min, subj_max);
         }
-    }
-    else if (run_mode == eIncremental || run_mode == eBatch3) {
-        // done at the preparation step
     }
     else {
         NCBI_THROW(CSplignAppException,

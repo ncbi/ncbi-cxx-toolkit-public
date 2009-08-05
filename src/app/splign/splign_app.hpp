@@ -90,12 +90,6 @@ protected:
                          CRef<objects::CScope>  scope,
                          THitRefs* phitrefs);
 
-    void x_GetDbBlastHits(const string& dbname,
-                          blast::TSeqLocVector& queries,
-                          THitRefs* phitrefs,
-                          size_t chunk,
-                          size_t total_chunks);
-
     static THitRef s_ReadBlastHit(const string& m8);
 
     CNcbiOstream*                    m_AsnOut;
@@ -113,9 +107,6 @@ protected:
                        THit::TCoord* psubj_min,
                        THit::TCoord* psubj_max);
 
-
-    void x_DoIncremental(void);
-    void x_DoBatch3(void);
 
     CRef<objects::CSeq_id> x_ReadFastaSetId(const CArgValue& argval,
                                             CRef<objects::CScope>);
