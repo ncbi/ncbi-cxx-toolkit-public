@@ -70,6 +70,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
     TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
     TDbxrefPair("BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE),
+	TDbxrefPair("BioHealthBase", CDbtag::eDbtagType_BioHealthBase),
     TDbxrefPair("BoLD", CDbtag::eDbtagType_BoLD),
     TDbxrefPair("CDD", CDbtag::eDbtagType_CDD),
     TDbxrefPair("CK", CDbtag::eDbtagType_CK),
@@ -168,6 +169,29 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
 };
 
+
+static const TDbxrefPair kApprovedSrcDbXrefs[] = {
+    TDbxrefPair("AFTOL", CDbtag::eDbtagType_AFTOL),
+    TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
+    TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
+    TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
+    TDbxrefPair("BOLD", CDbtag::eDbtagType_BoLD),
+    TDbxrefPair("FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB),
+    TDbxrefPair("FLYBASE", CDbtag::eDbtagType_FLYBASE),
+    TDbxrefPair("GRIN", CDbtag::eDbtagType_GRIN),
+    TDbxrefPair("HOMD", CDbtag::eDbtagType_HOMD),
+    TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
+    TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
+    TDbxrefPair("JCM", CDbtag::eDbtagType_JCM),
+    TDbxrefPair("MGI", CDbtag::eDbtagType_MGI),
+    TDbxrefPair("NBRC", CDbtag::eDbtagType_NBRC),
+    TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
+    TDbxrefPair("UNILIB", CDbtag::eDbtagType_UNILIB),
+    TDbxrefPair("UNITE", CDbtag::eDbtagType_UNITE),
+    TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
+};
+
+
 static const char* const kSkippableDbXrefs[] = {
     "BankIt",
     "NCBIFILE",
@@ -181,6 +205,7 @@ typedef CStaticArraySet<const char*, PNocase_CStr> TDbxrefSet;
 
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedDb, kApprovedDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedRefSeqDb, kApprovedRefSeqDbXrefs);
+DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedSrcDb, kApprovedSrcDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefSet, sc_SkippableDbXrefs, kSkippableDbXrefs);
 
 // destructor
@@ -293,6 +318,52 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
         }
     }
     return m_Type;
+}
+
+
+bool CDbtag::GetDBFlags (bool& is_refseq, bool& is_src, string& correct_caps) const
+{
+	bool found = false;
+	is_refseq = false;
+	is_src = false;
+	correct_caps = "";
+
+    if ( !CanGetDb() ) {
+        return false;
+    }
+    const string& db = GetDb();
+    
+    const char* retval = 0;
+
+    ITERATE (TDbxrefTypeMap, it, sc_ApprovedSrcDb) {
+        if ( NStr::EqualNocase(db, it->first) ) {
+			correct_caps = it->first;
+            is_src = true;
+			found = true;
+            break;
+        }
+    }
+
+    ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
+        if ( NStr::EqualNocase(db, it->first) ) {
+            correct_caps = it->first;
+			is_refseq = true;
+			found = true;
+            break;
+        }
+    }
+
+	if (!found) {
+		ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
+			if ( NStr::EqualNocase(db, it->first) ) {
+				correct_caps = it->first;
+				found = true;
+				break;
+			}
+		}
+    }
+
+    return found;
 }
 
 

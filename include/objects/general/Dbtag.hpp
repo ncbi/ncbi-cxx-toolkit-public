@@ -152,6 +152,10 @@ public:
         eDbtagType_dictyBase,
         eDbtagType_niaEST,
         eDbtagType_taxon,
+		eDbtagType_HOMD,
+		eDbtagType_NBRC,
+		eDbtagType_UNILIB,
+		eDbtagType_BioHealthBase,
 
         // only approved for RefSeq
         eDbtagType_GenBank,
@@ -193,6 +197,9 @@ public:
 
     // Retrieve the enumerated type for the dbtag
     EDbtagType GetType(void) const;
+
+	// determine the situations where the dbtag would be appropriate
+    bool GetDBFlags (bool& is_refseq, bool& is_src, string& correct_caps) const;
 
     // Force a refresh of the internal type
     void InvalidateType(void);
