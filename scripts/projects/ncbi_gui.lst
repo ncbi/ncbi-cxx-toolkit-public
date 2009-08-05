@@ -17,6 +17,7 @@ internal/ID/utils$
 internal/mapview/objects
 -internal/mapview/objects/cache
 internal/blast/DistribDbSupport
+internal/blast/GumbelParams
 internal/gpipe/align_db
 misc/third_party_static
 objects

@@ -15,6 +15,7 @@ internal/ID/utils$
 internal/mapview/objects
 -internal/mapview/objects/cache
 internal/blast/DistribDbSupport
+internal/blast/GumbelParams
 internal/gpipe/align_db
 internal/test/misc/xmlwrapp
 internal/demo/misc/xmlwrapp
