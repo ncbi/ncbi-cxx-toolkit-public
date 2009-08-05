@@ -79,7 +79,7 @@ public:
 
     /// Get the query sequence used as master for the multiple sequence
     /// alignment in ncbistdaa encoding.
-    unsigned char* GetQuery() { return m_Query; }
+    unsigned char* GetQuery() { return m_Query.get(); }
 
     /// Get the query's length
     unsigned int GetQueryLength() { return m_MsaDimensions.query_length; }
@@ -112,7 +112,7 @@ public:
 private:
 
     /// Pointer to query sequence
-    unsigned char*                  m_Query;
+    TAutoUint1ArrayPtr              m_Query;
     /// The raw multiple sequence alignment in ASCII read from the input file
     vector<string>                  m_AsciiMsa;
     /// Structure representing the multiple sequence alignment

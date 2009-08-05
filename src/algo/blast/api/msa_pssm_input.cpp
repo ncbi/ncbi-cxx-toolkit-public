@@ -80,8 +80,8 @@ CPsiBlastInputClustalW::CPsiBlastInputClustalW
     if (query) {
         _ASSERT(query_length);
         m_MsaDimensions.query_length = query_length;
-        m_Query = new Uint1[query_length];
-        memcpy((void*) m_Query, (void*) query, query_length);
+        m_Query.reset(new Uint1[query_length]);
+        memcpy((void*) m_Query.get(), (void*) query, query_length);
     }
 
     m_Opts = opts;
@@ -112,9 +112,6 @@ CPsiBlastInputClustalW::CPsiBlastInputClustalW
 
 CPsiBlastInputClustalW::~CPsiBlastInputClustalW()
 {
-    if (m_Query) {
-        delete [] m_Query;
-    }
     PSIMsaFree(m_Msa);
     PSIDiagnosticsRequestFree(m_DiagnosticsRequest);
 }
@@ -175,7 +172,7 @@ void
 CPsiBlastInputClustalW::x_ExtractQueryForPssm()
 {
     // Test our pre-conditions
-    _ASSERT(m_Query && m_SeqEntry.NotEmpty());
+    _ASSERT(m_Query.get() && m_SeqEntry.NotEmpty());
     _ASSERT(m_QueryBioseq.Empty());
 
     for (CTypeIterator<CBioseq> itr(Begin(*m_SeqEntry)); itr; ++itr) {
@@ -186,7 +183,7 @@ CPsiBlastInputClustalW::x_ExtractQueryForPssm()
         // let's check the sequence data
         CNCBIstdaa sequence;
         s_GetQuerySequenceData(*itr, GetQueryLength(), sequence);
-        if (s_AreSequencesEqual(sequence, m_Query)) {
+        if (s_AreSequencesEqual(sequence, m_Query.get())) {
             m_QueryBioseq.Reset(&*itr);
             break;
         }
@@ -228,7 +225,7 @@ CPsiBlastInputClustalW::x_ValidateQueryInMsa()
             if (m_AsciiMsa[seq_idx][align_idx] == kGapChar) {
                 continue;
             }
-            char query_res = NCBISTDAA_TO_AMINOACID[m_Query[query_idx]];
+            char query_res = NCBISTDAA_TO_AMINOACID[m_Query.get()[query_idx]];
             const char kCurrentRes = toupper(m_AsciiMsa[seq_idx][align_idx]);
             /* Selenocysteines are replaced by X's in query; test for this
              * possibility */
@@ -273,20 +270,20 @@ CPsiBlastInputClustalW::x_ExtractQueryFromMsa()
     const unsigned int kQueryLength = kQuery.size() - kNumGaps;
 
     m_MsaDimensions.query_length = kQueryLength;
-    m_Query = new Uint1[kQueryLength];
+    m_Query.reset(new Uint1[kQueryLength]);
     unsigned int query_idx = 0;
     ITERATE(string, residue, kQuery) {
         _ASSERT(isalpha(*residue) || *residue == kGapChar);
         if (*residue == kGapChar) {
             continue;
         }
-        m_Query[query_idx] = AMINOACID_TO_NCBISTDAA[toupper(*residue)];
+        m_Query.get()[query_idx] = AMINOACID_TO_NCBISTDAA[toupper(*residue)];
         query_idx++;
     }
     _ASSERT(query_idx == kQueryLength);
 
     // Test our post-conditions
-    _ASSERT(m_Query != NULL);
+    _ASSERT(m_Query.get() != NULL);
     _ASSERT(m_MsaDimensions.query_length);
 }
 
@@ -301,7 +298,7 @@ CPsiBlastInputClustalW::x_CopyQueryToMsa()
         if (*residue == kGapChar) {
             continue;
         }
-        m_Msa->data[kQueryIndex][query_idx].letter = m_Query[query_idx];
+        m_Msa->data[kQueryIndex][query_idx].letter = m_Query.get()[query_idx];
         m_Msa->data[kQueryIndex][query_idx].is_aligned = 
             (isupper(*residue) ? true : false);
         query_idx++;
@@ -323,7 +320,7 @@ CPsiBlastInputClustalW::x_ExtractAlignmentData()
                 continue;
             }
             _ASSERT(toupper(m_AsciiMsa.front()[align_idx]) ==
-                    NCBISTDAA_TO_AMINOACID[m_Query[query_idx]]);
+                    NCBISTDAA_TO_AMINOACID[m_Query.get()[query_idx]]);
             const char kCurrentRes = m_AsciiMsa[seq_index][align_idx];
             _ASSERT(isalpha(kCurrentRes) || kCurrentRes == kGapChar);
             m_Msa->data[seq_index][query_idx].letter = 
