@@ -474,15 +474,11 @@ public:
     /// Constructor
     CSeqDbSrcNewArgs(const string& db, bool is_prot,
                      Uint4 first_oid = 0, Uint4 final_oid = 0,
-                     int filtering_algorithm)
+                     int filtering_algorithm = -1)
         : m_DbName(db), m_IsProtein(is_prot), 
           m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid),
-          m_FilteringAlgorithm(-1)
-    {
-        if (filtering_algorithm != -1) {
-            m_FilteringAlgorithm = filtering_algorithm;
-        }
-    }
+          m_FilteringAlgorithm(filtering_algorithm)
+    {}
 
     /// Getter functions for the private fields
     const string GetDbName() const { return m_DbName; }
