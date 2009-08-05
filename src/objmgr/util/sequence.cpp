@@ -2639,21 +2639,17 @@ void x_Translate(const Container& seq,
     }
 
     if ( !include_stop ) {
-        string::const_reverse_iterator riter = prot.rbegin();
-        string::const_reverse_iterator rend = prot.rend();
-        size_t count = 0;
-        for ( ;  riter != rend  &&  *riter == '*';  ++riter, ++count) {
+        SIZE_TYPE sz;
+        for (sz = prot.size();  sz > 0  &&  prot[sz - 1] == '*';  --sz) {
         }
-        prot.resize(prot.size() - count);
+        prot.resize(sz);
     }
 
     if (remove_trailing_X) {
-        string::const_reverse_iterator riter = prot.rbegin();
-        string::const_reverse_iterator rend = prot.rend();
-        size_t count = 0;
-        for ( ;  riter != rend  &&  *riter == 'X';  ++riter, ++count) {
+        SIZE_TYPE sz;
+        for (sz = prot.size();  sz > 0  &&  prot[sz - 1] == 'X';  --sz) {
         }
-        prot.resize(prot.size() - count);
+        prot.resize(sz);
     }
 }
 
