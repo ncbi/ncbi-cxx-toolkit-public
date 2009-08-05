@@ -80,7 +80,7 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype)
 
 bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id)
 {
-	if (NStr::IsBlank(str) || str.length() < 5) {
+	if (NStr::IsBlank(str) || str.length() < 3) {
 		return false;
 	}
 
