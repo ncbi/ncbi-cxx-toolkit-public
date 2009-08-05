@@ -45,9 +45,16 @@
 
 // generated classes
 
+
+// other includes
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+class CDate;
+class CDate_std;
 
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQFEAT_EXPORT CSubSource : public CSubSource_Base
@@ -72,6 +79,9 @@ public:
 
 	// identify whether subsource value should be blank
 	static bool NeedsNoText (const TSubtype& subtype);
+
+	// read collection date from string
+    static CRef<CDate> DateFromCollectionDate (const string& str) THROWS((CException));
 
 private:
     // Prohibit copy constructor and assignment operator
