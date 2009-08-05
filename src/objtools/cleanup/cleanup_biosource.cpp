@@ -299,7 +299,10 @@ void CCleanup_imp::x_SubtypeCleanup (
           SUBSOURCE_CHOICE_IS (ss, NCBI_SUBSOURCE(rev_primer_seq))) {
           string before = ss.GetName();
           NStr::ToLower (ss.SetName());
+		  ss.SetName (NStr::Replace(ss.GetName(), "<other>", "<OTHER>"));
           ss.SetName (NStr::Replace (ss.GetName(), " ", kEmptyStr));
+		  ss.SetName (NStr::Replace (ss.GetName(), "<galq>", "<gal q>"));
+		  ss.SetName (NStr::Replace (ss.GetName(), "<manq>", "<man q>"));
           if (NStr::Equal (before, ss.GetName())) continue;
           ChangeMade (CCleanupChange::eCleanSubsource);
       }
