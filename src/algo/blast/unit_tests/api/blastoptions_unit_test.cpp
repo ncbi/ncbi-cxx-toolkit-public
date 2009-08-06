@@ -1290,5 +1290,27 @@ BOOST_AUTO_TEST_CASE( testNewFilteringDefaults )
     BOOST_CHECK_EQUAL(string("F"), string(filter_string));/* NCBI_FAKE_WARNING */
     sfree(filter_string);
 }
+
+BOOST_AUTO_TEST_CASE( testOptionsDeepCopy )
+{
+    CRef<CBlastOptionsHandle> optsHandle;
+    
+    optsHandle = CBlastOptionsFactory::Create(eBlastp);
+    BOOST_REQUIRE(optsHandle.NotEmpty());
+
+    optsHandle->SetFilterString("L;m;");
+    optsHandle->SetDbLength(10000);
+    optsHandle->SetOptions().SetPHIPattern("Y-S-[SA]-X-[LVIM]", false);
+    //optsHandle->GetOptions().DebugDumpText(NcbiCerr, "BLAST options - original", 1);
+
+    CRef<CBlastOptions> optsClone = optsHandle->GetOptions().Clone();
+    optsHandle.Reset();
+    //optsClone->DebugDumpText(NcbiCerr, "BLAST options - clone", 1);
+
+    BOOST_CHECK_EQUAL(optsClone->GetDbLength(), 10000);
+    BOOST_CHECK_EQUAL(string(optsClone->GetFilterString()), string("L;m;"));
+    BOOST_CHECK_EQUAL(string(optsClone->GetPHIPattern()), string("Y-S-[SA]-X-[LVIM]"));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

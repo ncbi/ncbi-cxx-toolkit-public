@@ -136,6 +136,20 @@ public:
     ~CBlastOptionsRemote()
     {
     }
+
+    /// Copy constructor
+    CBlastOptionsRemote(const CBlastOptionsRemote& optsRemote)
+        : m_DefaultsMode(false)
+    {
+        x_DoDeepCopy(optsRemote);
+    }
+
+    /// Assignment operator
+    CBlastOptionsRemote& operator=(const CBlastOptionsRemote& optsRemote)
+    {
+        x_DoDeepCopy(optsRemote);
+        return *this;
+    }
     
     // the "new paradigm"
     typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
@@ -205,6 +219,18 @@ private:
     
     bool m_DefaultsMode;
     
+    /// Perform a "deep copy" of remote Blast options
+    /// @param optsRemote remote Blast options object to copy from.
+    void x_DoDeepCopy(const CBlastOptionsRemote& optsRemote)
+    {
+        if (&optsRemote != this)
+        {
+            m_ReqOpts.Reset(new objects::CBlast4_parameters);
+            m_ReqOpts->Assign(*optsRemote.m_ReqOpts);
+            m_DefaultsMode = optsRemote.m_DefaultsMode;
+        }
+    }
+
     template<class T>
     void x_SetParam(CBlast4Field & name, T & value)
     {
@@ -361,6 +387,14 @@ CBlastOptions::~CBlastOptions()
     if (m_Remote) {
         delete m_Remote;
     }
+}
+
+CRef<CBlastOptions> CBlastOptions::Clone() const
+{
+    CRef<CBlastOptions> optsRef;
+    optsRef.Reset(new CBlastOptions(GetLocality()));
+    optsRef->x_DoDeepCopy(*this);
+    return optsRef;
 }
 
 CBlastOptions::EAPILocality 
@@ -2248,6 +2282,37 @@ bool CBlastOptions::GetDefaultsMode() const
     }
     else
         return false;
+}
+
+void CBlastOptions::x_DoDeepCopy(const CBlastOptions& opts)
+{
+    if (&opts != this)
+    {
+        // Clean up the old object
+        if (m_Local)
+        {
+            delete m_Local;
+            m_Local = 0;
+        }
+        if (m_Remote)
+        {
+            delete m_Remote;
+            m_Remote = 0;
+        }
+
+        // Copy the contents of the new object
+        if (opts.m_Remote)
+        {
+            m_Remote = new CBlastOptionsRemote(*opts.m_Remote);
+        }
+        if (opts.m_Local)
+        {
+            m_Local = new CBlastOptionsLocal(*opts.m_Local);
+        }
+        m_ProgramName = opts.m_ProgramName;
+        m_ServiceName = opts.m_ServiceName;
+        m_DefaultsMode = opts.m_DefaultsMode;
+    }
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

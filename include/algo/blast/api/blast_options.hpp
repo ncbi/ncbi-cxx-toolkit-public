@@ -107,6 +107,10 @@ public:
     /// Destructor
     ~CBlastOptions();
 
+    /// Explicit deep copy of the Blast options object.
+    /// @return Copy of this Blast options object.
+    CRef<CBlastOptions> Clone() const;
+
     /// Return the locality used when the object was created
     EAPILocality GetLocality() const;
     
@@ -451,6 +455,10 @@ private:
     /// Returns BlastEffectiveLengthsOptions for eLocal objects, NULL for 
     /// eRemote
     BlastEffectiveLengthsOptions * GetEffLenOpts() const;
+
+    /// Perform a "deep copy" of Blast options
+    /// @param opts Blast options object to copy from.
+    void x_DoDeepCopy(const CBlastOptions& opts);
 
     /// This field is add
     CAutomaticGenCodeSingleton m_GenCodeSingletonVar;

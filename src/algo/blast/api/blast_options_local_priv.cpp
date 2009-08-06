@@ -66,11 +66,274 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     PSIBlastOptionsNew(&m_PSIBlastOpts);
     m_Program = eBlastNotSet;
     m_UseMBIndex = false;
+    m_ForceMBIndex = false;
     m_MBIndexLoaded = false;
 }
 
 CBlastOptionsLocal::~CBlastOptionsLocal()
 {
+}
+
+CBlastOptionsLocal::CBlastOptionsLocal(const CBlastOptionsLocal& optsLocal)
+{
+    x_DoDeepCopy(optsLocal);
+}
+
+CBlastOptionsLocal& CBlastOptionsLocal::operator=(const CBlastOptionsLocal& optsLocal)
+{
+    x_DoDeepCopy(optsLocal);
+    return *this;
+}
+
+void CBlastOptionsLocal::x_DoDeepCopy(const CBlastOptionsLocal& optsLocal)
+{
+    if (&optsLocal != this)
+    {
+        // Copy the contents of various options structures
+        x_Copy_CQuerySetUpOptions(m_QueryOpts,
+                            optsLocal.m_QueryOpts);
+        x_Copy_CLookupTableOptions(m_LutOpts,
+                            optsLocal.m_LutOpts);
+        x_Copy_CBlastInitialWordOptions(m_InitWordOpts,
+                            optsLocal.m_InitWordOpts);
+        x_Copy_CBlastExtensionOptions(m_ExtnOpts,
+                            optsLocal.m_ExtnOpts);
+        x_Copy_CBlastHitSavingOptions(m_HitSaveOpts,
+                            optsLocal.m_HitSaveOpts);
+        x_Copy_CPSIBlastOptions(m_PSIBlastOpts,
+                            optsLocal.m_PSIBlastOpts);
+        x_Copy_CBlastDatabaseOptions(m_DbOpts,
+                            optsLocal.m_DbOpts);
+        x_Copy_CBlastScoringOptions(m_ScoringOpts,
+                            optsLocal.m_ScoringOpts);
+        x_Copy_CBlastEffectiveLengthsOptions(m_EffLenOpts,
+                            optsLocal.m_EffLenOpts);
+
+        // Copy other member variables
+        m_Program = optsLocal.m_Program;
+        m_UseMBIndex = optsLocal.m_UseMBIndex;
+        m_ForceMBIndex = optsLocal.m_ForceMBIndex;
+        m_MBIndexLoaded = optsLocal.m_MBIndexLoaded;
+        m_MBIndexName = optsLocal.m_MBIndexName;
+    }
+}
+
+void CBlastOptionsLocal::x_Copy_CQuerySetUpOptions(
+                          CQuerySetUpOptions& queryOptsDst,
+                          const CQuerySetUpOptions& queryOptsSrc)
+{
+    QuerySetUpOptions* querySetUpOptionsNew =
+        (QuerySetUpOptions*)BlastMemDup(
+            queryOptsSrc.Get(),
+            sizeof(QuerySetUpOptions));
+
+    if (queryOptsSrc->filtering_options)
+    {
+        SBlastFilterOptions* blastFilterOptionsNew =
+            (SBlastFilterOptions*)BlastMemDup(
+                queryOptsSrc->filtering_options,
+                sizeof(SBlastFilterOptions));
+
+        SDustOptions*           dustOptionsNew = NULL;
+        SSegOptions*            segOptionsNew = NULL;
+        SRepeatFilterOptions*   repeatFilterOptionsNew = NULL;
+        SWindowMaskerOptions*   windowMaskerOptionsNew = NULL;
+
+        if (queryOptsSrc->filtering_options->dustOptions)
+        {
+            dustOptionsNew =
+                (SDustOptions*)BlastMemDup(
+                    queryOptsSrc->filtering_options->dustOptions,
+                    sizeof(SDustOptions));
+        }
+        if (queryOptsSrc->filtering_options->segOptions)
+        {
+            segOptionsNew =
+                (SSegOptions*)BlastMemDup(
+                    queryOptsSrc->filtering_options->segOptions,
+                    sizeof(SSegOptions));
+        }
+        if (queryOptsSrc->filtering_options->repeatFilterOptions)
+        {
+            repeatFilterOptionsNew =
+                (SRepeatFilterOptions*)BlastMemDup(
+                    queryOptsSrc->filtering_options->repeatFilterOptions,
+                    sizeof(SRepeatFilterOptions));
+            if (queryOptsSrc->filtering_options->repeatFilterOptions->database)
+            {
+                repeatFilterOptionsNew->database =
+                    strdup(queryOptsSrc->filtering_options->
+                           repeatFilterOptions->database);
+            }
+        }
+        if (queryOptsSrc->filtering_options->windowMaskerOptions)
+        {
+            windowMaskerOptionsNew =
+                (SWindowMaskerOptions*)BlastMemDup(
+                    queryOptsSrc->filtering_options->windowMaskerOptions,
+                    sizeof(SWindowMaskerOptions));
+            if (queryOptsSrc->filtering_options->windowMaskerOptions->database)
+            {
+                windowMaskerOptionsNew->database =
+                    strdup(queryOptsSrc->filtering_options->
+                           windowMaskerOptions->database);
+            }
+        }
+
+        blastFilterOptionsNew->dustOptions = dustOptionsNew;
+        blastFilterOptionsNew->segOptions = segOptionsNew;
+        blastFilterOptionsNew->repeatFilterOptions = repeatFilterOptionsNew;
+        blastFilterOptionsNew->windowMaskerOptions = windowMaskerOptionsNew;
+
+        querySetUpOptionsNew->filtering_options = blastFilterOptionsNew;
+    }
+
+    if (queryOptsSrc->filter_string)
+    {
+        querySetUpOptionsNew->filter_string =
+            strdup(queryOptsSrc->filter_string);
+    }
+
+    queryOptsDst.Reset(querySetUpOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CLookupTableOptions(
+                            CLookupTableOptions& lutOptsDst,
+                            const CLookupTableOptions& lutOptsSrc)
+{
+    LookupTableOptions* lookupTableOptionsNew =
+        (LookupTableOptions*)BlastMemDup(
+            lutOptsSrc.Get(),
+            sizeof(LookupTableOptions));
+
+    if (lutOptsSrc->phi_pattern)
+    {
+        lookupTableOptionsNew->phi_pattern =
+            strdup(lutOptsSrc->phi_pattern);
+    }
+
+    lutOptsDst.Reset(lookupTableOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CBlastInitialWordOptions(
+                            CBlastInitialWordOptions& initWordOptsDst,
+                            const CBlastInitialWordOptions& initWordOptsSrc)
+{
+    BlastInitialWordOptions* blastInitialWordOptionsNew =
+        (BlastInitialWordOptions*)BlastMemDup(
+            initWordOptsSrc.Get(),
+            sizeof(BlastInitialWordOptions));
+
+    initWordOptsDst.Reset(blastInitialWordOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CBlastExtensionOptions(
+                            CBlastExtensionOptions& extnOptsDst,
+                            const CBlastExtensionOptions& extnOptsSrc)
+{
+    BlastExtensionOptions* blastExtensionOptionsNew =
+        (BlastExtensionOptions*)BlastMemDup(
+            extnOptsSrc.Get(),
+            sizeof(BlastExtensionOptions));
+
+    extnOptsDst.Reset(blastExtensionOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CBlastHitSavingOptions(
+                            CBlastHitSavingOptions& hitSaveOptsDst,
+                            const CBlastHitSavingOptions& hitSaveOptsSrc)
+{
+    BlastHitSavingOptions* blastHitSavingOptionsNew =
+        (BlastHitSavingOptions*)BlastMemDup(
+            hitSaveOptsSrc.Get(),
+            sizeof(BlastHitSavingOptions));
+
+    if (hitSaveOptsSrc->hsp_filt_opt)
+    {
+        BlastHSPFilteringOptions* blastHSPFilteringOptionsNew =
+            (BlastHSPFilteringOptions*)BlastMemDup(
+                hitSaveOptsSrc->hsp_filt_opt,
+                sizeof(BlastHSPFilteringOptions));
+
+        BlastHSPBestHitOptions* blastHSPBestHitOptionsNew = NULL;
+        BlastHSPCullingOptions* blastHSPCullingOptionsNew = NULL;
+
+        if (hitSaveOptsSrc->hsp_filt_opt->best_hit)
+        {
+            blastHSPBestHitOptionsNew =
+                (BlastHSPBestHitOptions*)BlastMemDup(
+                    hitSaveOptsSrc->hsp_filt_opt->best_hit,
+                    sizeof(BlastHSPBestHitOptions));
+        }
+        if (hitSaveOptsSrc->hsp_filt_opt->culling_opts)
+        {
+            blastHSPCullingOptionsNew =
+                (BlastHSPCullingOptions*)BlastMemDup(
+                    hitSaveOptsSrc->hsp_filt_opt->culling_opts,
+                    sizeof(BlastHSPCullingOptions));
+        }
+
+        blastHSPFilteringOptionsNew->best_hit = blastHSPBestHitOptionsNew;
+        blastHSPFilteringOptionsNew->culling_opts = blastHSPCullingOptionsNew;
+
+        blastHitSavingOptionsNew->hsp_filt_opt = blastHSPFilteringOptionsNew;
+    }
+
+    hitSaveOptsDst.Reset(blastHitSavingOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CPSIBlastOptions(
+                            CPSIBlastOptions& psiBlastOptsDst,
+                            const CPSIBlastOptions& psiBlastOptsSrc)
+{
+    PSIBlastOptions* psiBlastOptionsNew =
+        (PSIBlastOptions*)BlastMemDup(
+            psiBlastOptsSrc.Get(),
+            sizeof(PSIBlastOptions));
+
+    psiBlastOptsDst.Reset(psiBlastOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CBlastDatabaseOptions(
+                            CBlastDatabaseOptions& dbOptsDst,
+                            const CBlastDatabaseOptions& dbOptsSrc)
+{
+    BlastDatabaseOptions* blastDatabaseOptionsNew =
+        (BlastDatabaseOptions*)BlastMemDup(
+            dbOptsSrc.Get(),
+            sizeof(BlastDatabaseOptions));
+
+    dbOptsDst.Reset(blastDatabaseOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CBlastScoringOptions(
+                            CBlastScoringOptions& scoringOptsDst,
+                            const CBlastScoringOptions& scoringOptsSrc)
+{
+    BlastScoringOptions* blastScoringOptionsNew = NULL;
+    BlastScoringOptionsDup(&blastScoringOptionsNew, scoringOptsSrc.Get());
+    scoringOptsDst.Reset(blastScoringOptionsNew);
+}
+
+void CBlastOptionsLocal::x_Copy_CBlastEffectiveLengthsOptions(
+                            CBlastEffectiveLengthsOptions& effLenOptsDst,
+                            const CBlastEffectiveLengthsOptions& effLenOptsSrc)
+{
+    BlastEffectiveLengthsOptions* blastEffectiveLengthsOptionsNew =
+        (BlastEffectiveLengthsOptions*)BlastMemDup(
+            effLenOptsSrc.Get(),
+            sizeof(BlastEffectiveLengthsOptions));
+
+    if (effLenOptsSrc->num_searchspaces > 0 &&
+        effLenOptsSrc->searchsp_eff)
+    {
+        blastEffectiveLengthsOptionsNew->searchsp_eff =
+        (Int8*)BlastMemDup(
+            effLenOptsSrc->searchsp_eff,
+            effLenOptsSrc->num_searchspaces * sizeof(Int8));
+    }
+
+    effLenOptsDst.Reset(blastEffectiveLengthsOptionsNew);
 }
 
 void 

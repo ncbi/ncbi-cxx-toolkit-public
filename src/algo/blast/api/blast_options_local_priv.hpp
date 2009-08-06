@@ -62,6 +62,12 @@ public:
     CBlastOptionsLocal();
     ~CBlastOptionsLocal();
 
+    /// Copy constructor
+    CBlastOptionsLocal(const CBlastOptionsLocal& optsLocal);
+
+    /// Assignment operator
+    CBlastOptionsLocal& operator=(const CBlastOptionsLocal& optsLocal);
+
     /// Validate the options
     bool Validate() const;
 
@@ -315,11 +321,6 @@ private:
     /// Megablast database index name.
     string m_MBIndexName;
 
-    /// Prohibit copy c-tor 
-    CBlastOptionsLocal(const CBlastOptionsLocal& bo);
-    /// Prohibit assignment operator
-    CBlastOptionsLocal& operator=(const CBlastOptionsLocal& bo);
-
     friend class CBlastOptions;
 
     /// Friend class which allows extraction of this class' data members for
@@ -380,6 +381,73 @@ private:
     {
         return m_EffLenOpts;
     }
+
+    /// Perform a "deep copy" of local Blast options
+    /// @param optsLocal local Blast options object to copy from.
+    void x_DoDeepCopy(const CBlastOptionsLocal& optsLocal);
+
+    /// Get a copy of CQuerySetUpOptions
+    /// @param queryOptsDst options structure to copy to.
+    /// @param queryOptsSrc options structure to copy from.
+    static void x_Copy_CQuerySetUpOptions(
+                    CQuerySetUpOptions& queryOptsDst,
+                    const CQuerySetUpOptions& queryOptsSrc);
+
+    /// Get a copy of CLookupTableOptions
+    /// @param lutOptsDst options structure to copy to.
+    /// @param lutOptsSrc options structure to copy from.
+    static void x_Copy_CLookupTableOptions(
+                              CLookupTableOptions& lutOptsDst,
+                              const CLookupTableOptions& lutOptsSrc);
+
+    /// Get a copy of CBlastInitialWordOptions
+    /// @param initWordOptsDst options structure to copy to.
+    /// @param initWordOptsSrc options structure to copy from.
+    static void x_Copy_CBlastInitialWordOptions(
+                              CBlastInitialWordOptions& initWordOptsDst,
+                              const CBlastInitialWordOptions& initWordOptsSrc);
+
+    /// Get a copy of CBlastExtensionOptions
+    /// @param extnOptsDst options structure to copy to.
+    /// @param extnOptsSrc options structure to copy from.
+    static void x_Copy_CBlastExtensionOptions(
+                              CBlastExtensionOptions& extnOptsDst,
+                              const CBlastExtensionOptions& extnOptsSrc);
+
+    /// Get a copy of CBlastHitSavingOptions
+    /// @param hitSaveOptsDst options structure to copy to.
+    /// @param hitSaveOptsSrc options structure to copy from.
+    static void x_Copy_CBlastHitSavingOptions(
+                              CBlastHitSavingOptions& hitSaveOptsDst,
+                              const CBlastHitSavingOptions& hitSaveOptsSrc);
+
+    /// Get a copy of CPSIBlastOptions
+    /// @param psiBlastOptsDst options structure to copy to.
+    /// @param psiBlastOptsSrc options structure to copy from.
+    static void x_Copy_CPSIBlastOptions(
+                              CPSIBlastOptions& psiBlastOptsDst,
+                              const CPSIBlastOptions& psiBlastOptsSrc);
+
+    /// Get a copy of CBlastDatabaseOptions
+    /// @param dbOptsDst options structure to copy to.
+    /// @param dbOptsSrc options structure to copy from.
+    static void x_Copy_CBlastDatabaseOptions(
+                              CBlastDatabaseOptions& dbOptsDst,
+                              const CBlastDatabaseOptions& dbOptsSrc);
+
+    /// Get a copy of CBlastScoringOptions
+    /// @param scoringOptsDst options structure to copy to.
+    /// @param scoringOptsSrc options structure to copy from.
+    static void x_Copy_CBlastScoringOptions(
+                              CBlastScoringOptions& scoringOptsDst,
+                              const CBlastScoringOptions& scoringOptsSrc);
+
+    /// Get a copy of CBlastEffectiveLengthsOptions
+    /// @param effLenOptsDst options structure to copy to.
+    /// @param effLenOptsSrc options structure to copy from.
+    static void x_Copy_CBlastEffectiveLengthsOptions(
+                              CBlastEffectiveLengthsOptions& effLenOptsDst,
+                              const CBlastEffectiveLengthsOptions& effLenOptsSrc);
 };
 
 inline EProgram
