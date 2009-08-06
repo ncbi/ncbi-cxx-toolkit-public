@@ -847,6 +847,9 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
 {
     const TRealQueue& q = const_cast<const TRealQueue&>(m_Queue);
     if ( !(this->*pred)(q) ) {
+#if SIZEOF_INT == SIZEOF_LONG
+        // If long is larger, converting from unsigned int to (signed)
+        // long for CTimeSpan will automatically be safe.
         unsigned int extra_sec = timeout_nsec / kNanoSecondsPerSecond;
         timeout_nsec %= kNanoSecondsPerSecond;
         // Do the comparison this way to avoid overflow.
@@ -856,6 +859,7 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
             timeout_sec += extra_sec;
         }
         // _ASSERT(timeout_nsec <= (unsigned long)kMax_Long);
+#endif
         CTimeSpan span(timeout_sec, timeout_nsec);
         while (span.GetSign() == ePositive  &&  !(this->*pred)(q) ) {
             CTime start(CTime::eCurrent, CTime::eGmt);
