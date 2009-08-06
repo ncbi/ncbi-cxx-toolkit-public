@@ -853,13 +853,13 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
         unsigned int extra_sec = timeout_nsec / kNanoSecondsPerSecond;
         timeout_nsec %= kNanoSecondsPerSecond;
         // Do the comparison this way to avoid overflow.
-        if (timeout_sec >= (unsigned long)kMax_Long - extra_sec) {
-            timeout_sec = kMax_Long; // clamp
+        if (timeout_sec >= kMax_Int - extra_sec) {
+            timeout_sec = kMax_Int; // clamp
         } else {
             timeout_sec += extra_sec;
         }
-        // _ASSERT(timeout_nsec <= (unsigned long)kMax_Long);
 #endif
+        // _ASSERT(timeout_nsec <= (unsigned long)kMax_Long);
         CTimeSpan span(timeout_sec, timeout_nsec);
         while (span.GetSign() == ePositive  &&  !(this->*pred)(q) ) {
             CTime start(CTime::eCurrent, CTime::eGmt);
