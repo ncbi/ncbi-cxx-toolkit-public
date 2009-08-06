@@ -1,4 +1,4 @@
 # $Id$
 
 LIB = taxon3
-SRC = taxon3__ taxon3___
+SRC = taxon3__ taxon3___ taxon3
