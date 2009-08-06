@@ -20,3 +20,4 @@ CHECK_COPY = data
 REQUIRES = Boost.Test.Included
 
 CHECK_AUTHORS = blastsoft
+CHECK_TIMEOUT = 300
