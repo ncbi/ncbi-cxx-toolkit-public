@@ -233,12 +233,13 @@ struct SHeader;
 /// CTar class
 ///
 /// (Throws exceptions on most errors.)
-/// Note that if a stream constructor is used then CTar can only perform
+/// Note that if stream constructor is used, then CTar can only perform
 /// one pass over the archive.  This means that only one full action will
-/// succeed (and it the action was to update (e.g. append) the archive, it
-/// has to be explicitly followed by Close().  Before next action, you should
-/// explicitly reset the stream position to the beginning of the archive
-/// for read/update operations or to the end of the archive for append ops.
+/// succeed (and if the action was to update (e.g. append) the archive, it
+/// has to be explicitly followed by Close() if no more appends are expected).
+/// Before next read/update action, the stream position has to be explicitly
+/// reset to the beginning of the archive, or it may remain at the end of the
+/// archive for a series of successive append operations.
 
 class NCBI_XUTIL_EXPORT CTar
 {
@@ -274,13 +275,17 @@ public:
 
         // --- Extract/List ---
         fMaskNocase         = (1<<10),
-        /// Skip unsupported entries rather than doing files out of them
+        /// Skip unsupported entries rather than making files out of them
         /// when extracting (the latter is the default POSIX requirement).
         fSkipUnsupported    = (1<<15),
 
         // --- Debugging ---
         fDumpBlockHeaders   = (1<<20),
         fSlowSkipWithRead   = (1<<21),
+
+        // --- Miscellaneous ---
+        /// Suppress NCBI signatures in entry headers
+        fStandardHeaderOnly = (1<<28),
 
         /// Default flags
         fDefault            = fOverwrite | fPreserveAll
@@ -350,6 +355,11 @@ public:
     /// @sa
     ///   Create, Update, SetBaseDir
     auto_ptr<TEntries> Append(const string& name);
+
+/*
+    // Suggested future API extension
+    auto_ptr<TEntries> Append(const CTarEntryInfo& info, istream& is);
+*/
 
     /// Look for more recent copies, if available, of archive members,
     /// and place them at the end of the archive:

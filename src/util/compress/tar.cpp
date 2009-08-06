@@ -333,7 +333,7 @@ enum ETar_Format {
 
 
 /// POSIX "ustar" tar archive member header
-typedef struct SHeader {             // byte offset
+typedef struct SHeader {     // byte offset
     char name[100];          //   0
     char mode[8];            // 100
     char uid[8];             // 108
@@ -355,7 +355,7 @@ typedef struct SHeader {             // byte offset
             char atime[12];
             char ctime[12];  // 357  
         } gt;
-    };
+    };                       // 500
 } SHeader;
 
 
@@ -874,17 +874,26 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += TAR_PRINTABLE(linkname, true) + '\n';
 
     switch (fmt) {
-    case eTar_Legacy:
-        tname = "legacy";
+    case eTar_Legacy:  // NCBI does not ever write this header
+        tname = "legacy (V7)";
         break;
     case eTar_OldGNU:
-        tname = "old GNU";
+        if (strncasecmp((const char*) h + kBlockSize - 4, "ncbi", 4) == 0)
+            tname = "old GNU (NCBI)";
+        else
+            tname = "old GNU";
         break;
     case eTar_Ustar:
-        tname = "ustar";
+        if (strncasecmp((const char*) h + kBlockSize - 4, "ncbi", 4) == 0)
+            tname = "ustar (NCBI)";
+        else
+            tname = "ustar";
         break;
-    case eTar_Posix:
-        tname = "posix";  // aka "pax"
+    case eTar_Posix:  // aka "pax"
+        if (strncasecmp((const char*) h + kBlockSize - 4, "ncbi", 4) == 0)
+            tname = "posix (NCBI)";
+        else
+            tname = "posix";
         break;
     default:
         tname = 0;
@@ -1543,6 +1552,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Read block
     const TBlock* block;
     size_t nread = sizeof(block->buffer);
+    _ASSERT(sizeof(*block) == kBlockSize/*== sizeof(block->buffer)*/);
     if (!(block = (const TBlock*) x_ReadArchive(nread))) {
         return eEOF;
     }
@@ -1894,6 +1904,7 @@ void CTar::x_WriteEntryInfo(const string& name)
 {
     // Prepare block info
     TBlock block;
+    _ASSERT(sizeof(block) == kBlockSize/*== sizeof(block.buffer)*/);
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
@@ -2040,6 +2051,13 @@ void CTar::x_WriteEntryInfo(const string& name)
         memcpy(h->magic,   "ustar  ", 8); // 2 spaces and '\0'-terminated
     }
 
+    // NCBI signature if allowed
+    if (!(m_Flags & fStandardHeaderOnly)) {
+        _ASSERT(sizeof(block.header) + 4 < sizeof(block.buffer));
+        memcpy(block.buffer + sizeof(block) - 4, "NCBI", 4);
+    }
+
+    // Final step:  check summing
     if (!s_TarChecksum(&block, fmt == eTar_OldGNU ? true : false)) {
         TAR_THROW(this, eMemory,
                   "Cannot store checksum");

@@ -85,12 +85,12 @@ protected:
 CTarTest::CTarTest()
     : m_Flags(0)
 {
-#if defined(__GLIBCPP__)  ||  (defined(__GLIBCXX__)  &&  __GLIBCXX__ < 20060524)
+#if defined(__GLIBCPP__) || (defined(__GLIBCXX__)  &&  __GLIBCXX__ < 20060524)
     // a/ sync_with_stdio(false) is 100% buggy in GCC < 4.1.1; or
     // b/ sync_with_stdio(any) is 100% buggy in Solaris STL;
     // when stdin's positioning methods (failing or not) get called...
     SetStdioFlags(fDefault_SyncWithStdio);
-#endif // __GLIBCPP__  ||  (__GLIBCXX__  &&  __GLIBCXX__ < 20060524)
+#endif // __GLIBCPP__ || (__GLIBCXX__  &&  __GLIBCXX__ < 20060524)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
                         eDPF_OmitInfoSev | eDPF_ErrorID);
@@ -103,10 +103,10 @@ void CTarTest::Init(void)
 {
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     args->PrintUsageIfNoArgs();
-    if (args->Exist("h")) {
+    if (args->Exist ("h")) {
         args->Delete("h");
     }
-    if (args->Exist("xmlhelp")) {
+    if (args->Exist ("xmlhelp")) {
         args->Delete("xmlhelp");
     }
     args->AddFlag("c", "Create archive");
@@ -116,16 +116,16 @@ void CTarTest::Init(void)
     args->AddFlag("x", "Extract archive");
     args->AddFlag("X", "Stream extract single entry [non-standard]");
     args->AddFlag("T", "Test archive [non-standard]");
-    args->AddKey("f", "archive_file_name",
-                 "Archive file name;  use '-' for stdin/stdout",
-                 CArgDescriptions::eString);
+    args->AddKey ("f", "archive_file_name",
+                  "Archive file name;  use '-' for stdin/stdout",
+                  CArgDescriptions::eString);
     args->AddOptionalKey("C", "directory",
                          "Set base directory", CArgDescriptions::eString);
-    args->AddDefaultKey("b", "blocking_factor",
-                        "Archive block size in 512-byte units"
-                        " (10K blocks in use by default)",
-                        CArgDescriptions::eInteger, "20");
-    args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
+    args->AddDefaultKey ("b", "blocking_factor",
+                         "Archive block size in 512-byte units"
+                         " (10K blocks in use by default)",
+                         CArgDescriptions::eInteger, "20");
+    args->SetConstraint ("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
     args->AddFlag("L", "Follow links");
     args->AddFlag("p", "Preserve all permissions");
@@ -136,6 +136,7 @@ void CTarTest::Init(void)
     args->AddFlag("B", "Create backup copies of destinations when extracting");
     args->AddFlag("E", "Maintain equal types of files and archive entries");
     args->AddFlag("S", "Skip unsupported entries instead of extracting them");
+    args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
     args->AddFlag("k", "Keep old files when extracting");
     args->AddFlag("v", "Turn on debugging information");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
@@ -146,19 +147,44 @@ void CTarTest::Init(void)
 }
 
 
+static string x_DataSize(Uint8 size, bool binary = true)
+{
+    const char* kSfx[] = {"", "K", "M", "G", "T", "P", "E", "Z", "Y", 0};
+    if (!size)
+        return "0";
+    const Uint8 kilo = binary ? 1 << 10 : 1000;
+    size_t idx = 0;
+    int prec = 0;
+    size *= 1000;
+    for (idx = 0;  idx < sizeof(kSfx)/sizeof(kSfx[0]);  idx++) {
+        if (size <= kilo * 1000)
+            break;
+        size /= kilo;
+        if (prec < 3)
+            prec++;
+    }
+    CNcbiOstrstream os;
+    os << fixed << setprecision(prec) << (double) size / 1000.0
+       << (kSfx[idx] ?           kSfx[idx]               : "?")
+       << (kSfx[idx] ? "iB" + (!*kSfx[idx]  ||  !binary) : "");
+    return CNcbiOstrstreamToString(os);
+}
+
+
 string CTarTest::x_Pos(const CTarEntryInfo& info)
 {
     Uint8 header_pos = info.GetPosition(CTarEntryInfo::ePos_Header);
     Uint8 data_pos   = info.GetPosition(CTarEntryInfo::ePos_Data);
+    Uint8 size       = info.GetSize();
     _ASSERT((header_pos & 0777) == 0  &&  (data_pos & 0777) == 0);
     if (!(m_Flags & fVerbose))
         return kEmptyStr;
     string pos(" at block "
                + NStr::UInt8ToString(header_pos >> 9, NStr::fWithCommas));
-    if (info.GetSize()) {
+    if (size) {
         pos += (" (data at "
                 + NStr::UInt8ToString(data_pos >> 9, NStr::fWithCommas)
-                + ')');
+                + ": " + x_DataSize(size) + ')');
     }
     return pos;
 }
@@ -193,7 +219,7 @@ int CTarTest::Run(void)
     }
     if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
-                   "You have to specify exactly one of c, r, u, t, x, X, T");
+                   "You must specify exactly one of c, r, u, t, x, X, T");
     }
 
     _ASSERT(args["f"].HasValue());
@@ -264,6 +290,9 @@ int CTarTest::Run(void)
     }
     if (args["S"].HasValue()) {
         m_Flags |=  CTar::fSkipUnsupported;
+    }
+    if (args["Z"].HasValue()) {
+        m_Flags |=  CTar::fStandardHeaderOnly;
     }
     if (args["v"].HasValue()) {
         m_Flags |=  fVerbose;
