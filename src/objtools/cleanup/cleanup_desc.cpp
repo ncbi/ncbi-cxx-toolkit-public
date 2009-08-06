@@ -498,61 +498,72 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
 {    
     CSeqdesc_CI molinfo (seh, CSeqdesc::e_Molinfo, 1);
 
-    while (molinfo) {
-        CSeqdesc_CI gbdesc_i (seh, CSeqdesc::e_Genbank, 1);
-        while (gbdesc_i) {
-            CGB_block& gb_block = const_cast<CGB_block&> ((*gbdesc_i).GetGenbank());
-            CMolInfo::TTech tech = CMolInfo::eTech_unknown;
-            if (molinfo && (*molinfo).GetMolinfo().CanGetTech()) {
-                tech = (*molinfo).GetMolinfo().GetTech();
-                if (tech == CMolInfo::eTech_htgs_0
-                    || tech == CMolInfo::eTech_htgs_1
-                    || tech == CMolInfo::eTech_htgs_2
-                    || tech == CMolInfo::eTech_htgs_3
-                    || tech == CMolInfo::eTech_est
-                    || tech == CMolInfo::eTech_sts) {
-                    x_CheckGenbankBlockTechKeywords(gb_block, tech);
-                }
+	bool is_patent = false;
+	if (seh.IsSeq()) {
+		FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(seh.GetSeq().GetCompleteBioseq())) {
+			if ((*id_it)->IsPatent()) {
+				is_patent = true;
+				break;
+			}
+		}
+	}
+
+	EDIT_EACH_DESCRIPTOR_ON_SEQENTRY (gbdesc_i, seh.GetEditHandle()) {
+		if (!(*gbdesc_i)->IsGenbank()) {
+			continue;
+		}
+
+        CGB_block& gb_block = (*gbdesc_i)->SetGenbank();
+        CMolInfo::TTech tech = CMolInfo::eTech_unknown;
+        if (molinfo && (*molinfo).GetMolinfo().CanGetTech()) {
+            tech = (*molinfo).GetMolinfo().GetTech();
+            if (tech == CMolInfo::eTech_htgs_0
+                || tech == CMolInfo::eTech_htgs_1
+                || tech == CMolInfo::eTech_htgs_2
+                || tech == CMolInfo::eTech_htgs_3
+                || tech == CMolInfo::eTech_est
+                || tech == CMolInfo::eTech_sts) {
+                x_CheckGenbankBlockTechKeywords(gb_block, tech);
             }
-            if (gb_block.CanGetDiv()) {
-                string gb_div = gb_block.GetDiv();
-                if (!NStr::IsBlank(gb_div)
-                    && molinfo
-                    && (NStr::Equal(gb_div, "EST")
-                        || NStr::Equal(gb_div, "STS")
-                        || NStr::Equal(gb_div, "GSS")
-                        || NStr::Equal(gb_div, "HTG"))) {
-                    if (NStr::Equal(gb_div, "HTG") || NStr::Equal(gb_div, "PRI")) {
-                        if (tech == CMolInfo::eTech_htgs_1
-                            || tech == CMolInfo::eTech_htgs_2
-                            || tech == CMolInfo::eTech_htgs_3) {
-                            gb_block.ResetDiv();
-                            ChangeMade(CCleanupChange::eChangeOther);
-                        }
-                    } else if ((tech == CMolInfo::eTech_est && NStr::Equal(gb_div, "EST"))
-                               || (tech == CMolInfo::eTech_sts && NStr::Equal(gb_div, "STS"))
-                               || (tech == CMolInfo::eTech_survey && NStr::Equal(gb_div, "GSS"))
-                               || ((tech == CMolInfo::eTech_htgs_1 
-                                    || tech == CMolInfo::eTech_htgs_2
-                                    || tech == CMolInfo::eTech_htgs_3) && NStr::Equal(gb_div, "HTG"))) {
+        }
+        if (gb_block.IsSetDiv()) {
+            string gb_div = gb_block.GetDiv();
+            if (!NStr::IsBlank(gb_div)
+                && molinfo
+                && (NStr::Equal(gb_div, "EST")
+                    || NStr::Equal(gb_div, "STS")
+                    || NStr::Equal(gb_div, "GSS")
+                    || NStr::Equal(gb_div, "HTG"))) {
+                if (NStr::Equal(gb_div, "HTG") || NStr::Equal(gb_div, "PRI")) {
+                    if (tech == CMolInfo::eTech_htgs_1
+                        || tech == CMolInfo::eTech_htgs_2
+                        || tech == CMolInfo::eTech_htgs_3) {
                         gb_block.ResetDiv();
                         ChangeMade(CCleanupChange::eChangeOther);
                     }
-			          }
-			          if (!NStr::IsBlank(div)) {
-			              if (NStr::Equal(div, gb_div)) {
-			                  gb_block.ResetDiv();
-			                  gb_block.ResetTaxonomy();
-			              } else if (NStr::Equal(gb_div, "UNA")
-			                   || NStr::Equal(gb_div, "UNC")) {
-			                  gb_block.ResetDiv();
-			                  ChangeMade(CCleanupChange::eChangeOther);
-			              }
-			          } 
-		        }
-		        ++gbdesc_i;
-	      }
-        ++molinfo;
+                } else if ((tech == CMolInfo::eTech_est && NStr::Equal(gb_div, "EST"))
+                           || (tech == CMolInfo::eTech_sts && NStr::Equal(gb_div, "STS"))
+                           || (tech == CMolInfo::eTech_survey && NStr::Equal(gb_div, "GSS"))
+                           || ((tech == CMolInfo::eTech_htgs_1 
+                                || tech == CMolInfo::eTech_htgs_2
+                                || tech == CMolInfo::eTech_htgs_3) && NStr::Equal(gb_div, "HTG"))) {
+                    gb_block.ResetDiv();
+                    ChangeMade(CCleanupChange::eChangeOther);
+                }
+            }
+		    if (NStr::Equal(div, gb_div)) {
+			    gb_block.ResetDiv();
+			    gb_block.ResetTaxonomy();
+			    ChangeMade(CCleanupChange::eChangeOther);
+		    } else if (NStr::Equal(gb_div, "UNA")
+			           || NStr::Equal(gb_div, "UNC")) {
+			    gb_block.ResetDiv();
+			    ChangeMade(CCleanupChange::eChangeOther);
+		    } else if (NStr::Equal(gb_div, "PAT") && is_patent) {
+			    gb_block.ResetDiv();
+			    ChangeMade(CCleanupChange::eChangeOther);
+		    }
+	    }
     }
 }
 
