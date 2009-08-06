@@ -525,6 +525,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
     }
     delete[] buf;
 
+    TTypeInfo type_info = CTestSerialObject::GetTypeInfo();
     {
         // write, stack path hook
         CNcbiOstrstream ostrs;
@@ -532,7 +533,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
             auto_ptr<CObjectOStream> os(
                 CObjectOStream::Open(eSerial_AsnText, ostrs));
             // set local write hook
-            CObjectTypeInfo(CTestSerialObject::GetTypeInfo()).SetPathWriteHook(
+            CObjectTypeInfo(type_info).SetPathWriteHook(
                 os.get(), "CTestSerialObject.*", new CWriteSerialObjectHook(&obj));
             *os << obj;
         }
@@ -545,7 +546,7 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
         auto_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
-        CObjectTypeInfo(CTestSerialObject::GetTypeInfo()).SetPathReadHook(
+        CObjectTypeInfo(type_info).SetPathReadHook(
             is.get(), "CTestSerialObject.*", new CReadSerialObjectHook(&obj_copy));
 
         *is >> obj_copy;
