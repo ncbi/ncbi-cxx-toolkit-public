@@ -39,6 +39,7 @@
 #include "blast_objmgr_priv.hpp"
 #include <algo/blast/core/blast_setup.h>
 #include "test_objmgr.hpp"
+#include <algo/blast/core/hspfilter_besthit.h>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
@@ -1310,6 +1311,20 @@ BOOST_AUTO_TEST_CASE( testOptionsDeepCopy )
     BOOST_CHECK_EQUAL(optsClone->GetDbLength(), 10000);
     BOOST_CHECK_EQUAL(string(optsClone->GetFilterString()), string("L;m;"));
     BOOST_CHECK_EQUAL(string(optsClone->GetPHIPattern()), string("Y-S-[SA]-X-[LVIM]"));
+
+    // try setting and unsetting the best hit options (SB-339, issue #4)
+    optsClone->SetBestHitScoreEdge(kBestHit_ScoreEdgeDflt);
+    optsClone->SetBestHitOverhang(kBestHit_OverhangDflt);
+    CRef<CBlastOptions> optsSnapshot = optsClone->Clone();
+
+    optsClone->SetBestHitScoreEdge(kBestHit_ScoreEdgeDflt * 2);
+    optsClone->SetBestHitOverhang(kBestHit_OverhangDflt * 2);
+    BOOST_CHECK_CLOSE(optsClone->GetBestHitScoreEdge(), kBestHit_ScoreEdgeDflt * 2, 0.00000001);
+    BOOST_CHECK_CLOSE(optsClone->GetBestHitOverhang(), kBestHit_OverhangDflt * 2, 0.00000001);
+
+    optsClone = optsSnapshot;
+    BOOST_CHECK_CLOSE(optsClone->GetBestHitScoreEdge(), kBestHit_ScoreEdgeDflt, 0.00000001);
+    BOOST_CHECK_CLOSE(optsClone->GetBestHitOverhang(), kBestHit_OverhangDflt, 0.00000001);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
