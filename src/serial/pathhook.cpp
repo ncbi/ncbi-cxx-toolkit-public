@@ -283,8 +283,9 @@ CItemInfo* CStreamPathHookBase::FindItem(const CObjectStack& stk)
             const CClassTypeInfoBase* classInfo =
                 dynamic_cast<const CClassTypeInfoBase*>(frame.GetTypeInfo());
             if (classInfo) {
-                return const_cast<CItemInfo*>(classInfo->GetItemInfo(
-                    stk.TopFrame().GetMemberId().GetName()));
+                const string& name(stk.TopFrame().GetMemberId().GetName());
+                return (classInfo->GetItems().Find(name) != kInvalidMember) ?
+                    const_cast<CItemInfo*>(classInfo->GetItemInfo(name)) : 0;
             }
             break;
         }
