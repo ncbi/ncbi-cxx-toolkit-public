@@ -270,7 +270,12 @@ void CMsvcConfigure::AnalyzeDefines(
     signature += "--";
     struct utsname u;
     if (uname(&u) == 0) {
-        signature += string(u.machine) + string("-apple-") + string(u.sysname) + string(u.release);
+//        signature += string(u.machine) + string("-apple-") + string(u.sysname) + string(u.release);
+        signature +=
+            GetApp().GetSite().GetPlatformInfo( u.sysname, "arch", u.machine) +
+            string("-apple-") +
+            GetApp().GetSite().GetPlatformInfo( u.sysname, "os", u.sysname) +
+            string(u.release);
     } else {
         signature += HOST;
     }

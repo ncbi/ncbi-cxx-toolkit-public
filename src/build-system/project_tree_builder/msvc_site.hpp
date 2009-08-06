@@ -181,6 +181,8 @@ public:
 
     string GetConfigureEntry(const string& entry) const;
     string GetDefinesEntry(const string& entry) const;
+    string GetPlatformInfo(const string& sysname,
+        const string& type, const string& orig) const;
 
 private:
     CPtbRegistry m_Registry;

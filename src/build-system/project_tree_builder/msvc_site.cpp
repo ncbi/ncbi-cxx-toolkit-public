@@ -632,6 +632,23 @@ string CMsvcSite::x_GetDefinesEntry(const string& entry) const
     return str;
 }
 
+string CMsvcSite::GetPlatformInfo(const string& sysname,
+    const string& type, const string& orig) const
+{
+    string section("PlatformSynonyms_");
+    section += sysname;
+    string str = m_Registry.Get( section, type);
+    string result(orig), syn, res;
+    if (!str.empty() && NStr::SplitInTwo(str, ":", syn, res)) {
+        list< string > entries;
+        NStr::Split(syn, LIST_SEPARATOR, entries);
+        if (find(entries.begin(), entries.end(), orig) != entries.end()) {
+            result = res;
+        }
+    }
+    return result;
+}
+
 bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
     if ( !lib_info.valid || lib_info.IsEmpty() )
