@@ -63,4 +63,9 @@ version 1.10.0
 Added possibility to customize locations of 3rd-party and NCBI C Toolkit libraries
 without editing project_tree_builder.ini
 
+August 07, 2009
+version 1.11.0
+Made it possible to modify parts of NCBI_SIGNATURE from project_tree_builder.ini
+
+
 
