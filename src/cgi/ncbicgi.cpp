@@ -1098,8 +1098,9 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                                 "Failed read of HTTP request body",
                                 istr->gcount());
                 }
+                string temp = CNcbiOstrstreamToString(buf);
                 m_Content.reset(new string);
-                *m_Content = CNcbiOstrstreamToString(buf);
+                m_Content->swap(temp);
             }
             // Let the user to retrieve and parse the content
             m_Input    = istr;
