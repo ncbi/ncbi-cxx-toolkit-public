@@ -225,15 +225,35 @@ public:
     /// @retain_overlap
     ///    Minimum length of overlaps to keep (0 = no overlaps)
 
+    enum EUnique_type {
+        e_Strict,
+        e_Query,
+        e_Subject
+    };
+    
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
                             typename THitRefs::iterator hri_end,
                             THitRefs* phits_new,
                             TCoord min_hit_len = 100,
                             double min_hit_idty = .9,
                             TCoord margin = 1,
-                            TCoord retain_overlap = 0)
+                            TCoord retain_overlap = 0,
+                            EUnique_type unique_type = e_Strict)
     {
 
+        int max_idx = 2;
+        int min_idx = 0;
+        switch (unique_type) {
+            case e_Strict:
+                break;
+            case e_Query:
+                max_idx = 1;
+                break;
+            case e_Subject:
+                min_idx = 1;
+                break;
+        }
+                
         if(hri_beg > hri_end) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal, 
                        "Invalid input iterator order");
@@ -370,8 +390,8 @@ public:
                         he[point].m_X =  (is_start ^ is_plus)? b: a;
                     }
                 }
-
-                for(Uint1 where = 0; where < 2; ++where) {
+      
+                for(Uint1 where = min_idx; where < max_idx; ++where) {
 
                     const TCoord cmin = hc->GetMin(where);
                     const TCoord cmax = hc->GetMax(where);
