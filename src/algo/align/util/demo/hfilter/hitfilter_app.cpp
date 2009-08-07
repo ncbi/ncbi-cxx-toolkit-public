@@ -39,6 +39,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/general/Object_id.hpp>
 #include <util/util_exception.hpp>
 
 #include <serial/objistr.hpp>
@@ -47,6 +48,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +61,11 @@ namespace {
     const string kMode_Multiple ("multiple");
 
     const CAppHitFilter::THit::TCoord kMinHitLen (10);
+    
+    const double BIG_DBL(0.5 * numeric_limits<float>::max());
+    const string STRICT("strict");
+    const string QUERY("query");
+    const string SUBJ("subject");
 }
 
 void CAppHitFilter::Init()
@@ -136,6 +143,21 @@ void CAppHitFilter::Init()
     argdescr->AddOptionalKey("ids", "ids", "Table to rename sequence IDs.",
                              CArgDescriptions::eInputFile);
 
+    argdescr->AddDefaultKey("ut", "uniqueness_type", 
+                            "uniqueness type (strict, query, or subject)",
+                            CArgDescriptions::eString, 
+                            "strict");
+    CArgAllow_Strings* unique_type = new CArgAllow_Strings;
+    unique_type->Allow("strict")->Allow("query")->Allow("subject");
+    argdescr->SetConstraint("ut", unique_type);
+
+    argdescr->AddFlag("keep_strands",
+                      "Keep plus-plus strands"
+                     );
+    
+    argdescr->AddFlag("no_output_constraint",
+                      "Do not output constraints"
+                     );
     CArgAllow_Strings* constrain_format = new CArgAllow_Strings;
     constrain_format->Allow(g_m8)->Allow(g_AsnTxt)->Allow(g_AsnBin);
     argdescr->SetConstraint("fmt_in", constrain_format);
@@ -286,7 +308,6 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs, bool one_pair)
             }
         }
     }
-
     if(one_pair && phitrefs->size()) {
 
         // check input validity
@@ -333,20 +354,34 @@ void CAppHitFilter::x_IterateSeqAlignList(const TSeqAlignList& sa_list,
 }
 
 void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
-{    
+{   
     const CArgs& args = GetArgs();
     const string fmt = args["fmt_out"].AsString();
 
     CNcbiOstream& ostr = args["file_out"]? args["file_out"].AsOutputFile(): cout;
-
+    
     string comment (args["m"]? args["m"].AsString(): "");
-
+    
     if(fmt == g_m8) {
 
         if(comment.size() > 0) {
             ostr << "# " << comment << endl;
         }
-
+        ostr << "#"
+             << "QueryId"
+             << "\tTargetId"
+             << "\tPercentIdent"
+             << "\tAlignLen"
+             << "\tNumMismatches"
+             << "\tNumGapOpenings"
+             << "\tQrySeqStart"
+             << "\tQrySeqStop"
+             << "\tTgtSeqStart"
+             << "\tTgtSeqStop"
+             << "\te-value"
+             << "\tbit score"
+             << endl;
+             
         ITERATE(THitRefs, ii, hitrefs) {
             const THit& hit = **ii;
             ostr << hit << endl;
@@ -356,12 +391,16 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 
         CRef<CSeq_annot> seq_annot (new CSeq_annot);
         CSeq_annot::TData::TAlign& align_list = seq_annot->SetData().SetAlign();
-
+        
         const bool fmt_txt (fmt == g_AsnTxt);
         ITERATE(THitRefs, ii, hitrefs) {
-            
             const THit& h = **ii;
-
+            
+            bool no_output_constraint = args["no_output_constraint"].HasValue();
+            if (no_output_constraint && h.GetScore() > BIG_DBL) {
+                continue;
+            }
+            
             CRef<CDense_seg> ds (new CDense_seg);
             const ENa_strand query_strand = h.GetQueryStrand()? eNa_strand_plus: 
                 eNa_strand_minus;
@@ -372,8 +411,9 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             ds->FromTranscript(h.GetQueryStart(), query_strand,
                               h.GetSubjStart(), subj_strand,
                               xcript);
-
-            if(query_strand == eNa_strand_plus  && subj_strand == eNa_strand_plus) {
+            
+            bool keep_strands = args["keep_strands"].HasValue();
+            if(!keep_strands && query_strand == eNa_strand_plus  && subj_strand == eNa_strand_plus) {
                 ds->ResetStrands();
             }
 
@@ -385,14 +425,33 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
                 ids.push_back(id);
             }
 
-            CDense_seg::TScores& scores = ds->SetScores();
-            CRef<CScore> score (new CScore);
-            score->SetValue().SetReal(h.GetScore());
-            scores.push_back(score);
 
-            CRef<CSeq_align> seq_align (new CSeq_align);
+            CRef<CSeq_align> seq_align (new CSeq_align());
+            
+            // add reciprocity
+            CRef<CScore> score(new CScore());
+            score->SetId().SetStr("reciprocity");
+            try {
+                if (h.GetScore() > BIG_DBL || args["ut"].AsString() == STRICT) 
+                {
+                    // derived from constraint alignment or 
+                    // uniquify query and subject specified
+                    score->SetValue().SetInt((int)e_ReciprocalBest);
+                } else if (args["ut"].AsString() == QUERY) {
+                    score->SetValue().SetInt((int)e_SubjectDuplication);
+                } else {
+                    score->SetValue().SetInt((int)e_QueryDuplication);
+                }
+            }
+            catch (CException &e) {
+                cerr << "Error adding reciprocity" << endl;
+                throw e;
+            }
+            seq_align->SetScore().push_back(score);
+                
             seq_align->SetType(CSeq_align::eType_partial);
             seq_align->SetSegs().SetDenseg(*ds);
+                        
             align_list.push_back(seq_align);
         }
 
@@ -400,11 +459,17 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             seq_annot->AddComment(comment);
         }
 
-        if(fmt_txt) {
-            ostr << MSerial_AsnText << *seq_annot << endl;
+        try {
+            if(fmt_txt) {
+                ostr << MSerial_AsnText << *seq_annot << endl;
+            }
+            else {
+                ostr << MSerial_AsnBinary << *seq_annot << flush;
+            }
         }
-        else {
-            ostr << MSerial_AsnBinary << *seq_annot;
+        catch (CException &e) {
+                cerr << "Error writing output file" << endl;
+                throw e;
         }
     }
 }
@@ -417,7 +482,7 @@ bool s_PHitRefScore(const CAppHitFilter::THitRef& lhs,
 
 
 int CAppHitFilter::Run()
-{    
+{        
     const CArgs& args = GetArgs();
 
     const bool   mode_multiple ( args["mode"].AsString() == kMode_Multiple );
@@ -474,27 +539,43 @@ void CAppHitFilter::x_DoPairwise(THitRefs* pall)
     const double min_idty      (args["min_idty"].AsDouble());
     const size_t margin        (args["coord_margin"].AsInteger());
     const THit::TCoord retain_overlap (1024 * args["retain_overlap"].AsInteger());
+    
+    CHitFilter<THit>::EUnique_type unique_type = CHitFilter<THit>::e_Strict;    
+    if (args["ut"].AsString() == "query") {
+        unique_type = CHitFilter<THit>::e_Query;
+    } else if (args["ut"].AsString() == "subject") {
+        unique_type = CHitFilter<THit>::e_Subject;
+    }
+        
+    try {
+        THitRefs hits;
+        for(x_ReadInputHits(&hits, true); hits.size(); x_ReadInputHits(&hits, true)) {
 
-    THitRefs hits;
-    for(x_ReadInputHits(&hits, true); hits.size(); x_ReadInputHits(&hits, true)) {
-
-        THitRefs hits_new;
-        CHitFilter<THit>::s_RunGreedy(hits.begin(), hits.end(), 
-                                      &hits_new, min_len, 
-                                      min_idty, margin,
-                                      retain_overlap);
-        sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
-        hits.resize(remove_if(hits.begin(), hits.end(), CHitFilter<THit>::s_PNullRef) 
-                    - hits.begin());
-        copy(hits.begin(), hits.end(), back_inserter(all));
-        copy(hits_new.begin(), hits_new.end(), back_inserter(all));
-        hits.clear();
+            THitRefs hits_new;
+            CHitFilter<THit>::s_RunGreedy(
+                hits.begin(), hits.end(), 
+                &hits_new, min_len, 
+                min_idty, margin,
+                retain_overlap,
+                unique_type
+                );
+            sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
+            hits.resize(remove_if(hits.begin(), hits.end(), CHitFilter<THit>::s_PNullRef) 
+                        - hits.begin());
+            copy(hits.begin(), hits.end(), back_inserter(all));
+            copy(hits_new.begin(), hits_new.end(), back_inserter(all));
+            hits.clear();
+        }
+    }
+    catch (CException &e) {
+        cerr << "Error running x_DoPairwise" << endl;
+        throw e;
     }
 }
 
 
 void CAppHitFilter::x_DoMultiple(THitRefs* pall)
-{
+{   
     THitRefs& all (*pall);
 
     const CArgs & args (GetArgs());
@@ -506,6 +587,12 @@ void CAppHitFilter::x_DoMultiple(THitRefs* pall)
     const THit::TCoord retain_overlap     = 1024 * args["retain_overlap"].AsInteger();
     const size_t margin (args["coord_margin"].AsInteger());
 
+    CHitFilter<THit>::EUnique_type unique_type = CHitFilter<THit>::e_Strict;    
+    if (args["ut"].AsString() == "query") {
+        unique_type = CHitFilter<THit>::e_Query;
+    } else if (args["ut"].AsString() == "subject") {
+        unique_type = CHitFilter<THit>::e_Subject;
+    }
 
     if(args["ids"]) {
         x_LoadIDs(args["ids"].AsInputFile());
@@ -517,7 +604,6 @@ void CAppHitFilter::x_DoMultiple(THitRefs* pall)
     }
 
     x_ReadInputHits(&all);
-
     copy(restraint.begin(), restraint.end(), back_inserter(all));
 
     sort(all.begin(), all.end(), s_PHitRefScore);
@@ -525,37 +611,48 @@ void CAppHitFilter::x_DoMultiple(THitRefs* pall)
     const size_t M = args["hits_per_chunk"].AsInteger();
     const size_t dim = all.size();
     size_t m = min(dim, M);
+        
     const THitRefs::iterator ii_beg = all.begin(), ii_end = all.end();
     THitRefs::iterator ii_hi = ii_beg, ii = ii_beg;
-    while(ii < ii_end) {
+    
+    try {    
+        while(ii < ii_end) {
 
-        THitRefs::iterator ii_dst = ii + m;
-        if(ii_dst > ii_end) {
-            ii_dst = ii_end;
-        }
+            THitRefs::iterator ii_dst = ii + m;
+            if(ii_dst > ii_end) {
+                ii_dst = ii_end;
+            }
 
-        if(ii_hi < ii) {
-            copy(ii, ii_dst, ii_hi);
-            ii_hi += ii_dst - ii;
-            ii = ii_dst;
+            if(ii_hi < ii) {
+                copy(ii, ii_dst, ii_hi);
+                ii_hi += ii_dst - ii;
+                ii = ii_dst;
+            }
+            else {
+                ii_hi = ii = ii_dst;
+            }
+            THitRefs hits_new;
+            CHitFilter<THit>::s_RunGreedy(
+                ii_beg, ii_hi, 
+                &hits_new, min_len, 
+                min_idty, margin,
+                retain_overlap,
+                unique_type
+            );
+            sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
+            THitRefs::iterator ii_hi0 = ii_hi;
+            ii_hi = remove_if(ii_beg, ii_hi, CHitFilter<THit>::s_PNullRef);
+            THitRefs::iterator jj = hits_new.begin(), jje = hits_new.end();
+            for(;jj != jje && ii_hi != ii_hi0; *ii_hi++ = *jj++);
+            if(jj != jje) {
+                LOG_POST("Warning: space from eliminated alignments "
+                         "not enough for all splits.");
+            }
         }
-        else {
-            ii_hi = ii = ii_dst;
-        }
-        THitRefs hits_new;
-        CHitFilter<THit>::s_RunGreedy(ii_beg, ii_hi, 
-                                      &hits_new, min_len, 
-                                      min_idty, margin,
-                                      retain_overlap);
-        sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
-        THitRefs::iterator ii_hi0 = ii_hi;
-        ii_hi = remove_if(ii_beg, ii_hi, CHitFilter<THit>::s_PNullRef);
-        THitRefs::iterator jj = hits_new.begin(), jje = hits_new.end();
-        for(;jj != jje && ii_hi != ii_hi0; *ii_hi++ = *jj++);
-        if(jj != jje) {
-            LOG_POST("Warning: space from eliminated alignments "
-                     "not enough for all splits.");
-        }
+    }
+    catch (CException &e) {
+        cerr << "Error in x_DoMultiple" << endl;
+        throw e;
     }
     all.erase(ii_hi, ii_end);
 }
@@ -614,7 +711,7 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
             hit->FlipStrands();
         }
 
-        hit->SetScore(0.5 * numeric_limits<float>::max());
+        hit->SetScore(BIG_DBL);
 
         all.push_back(hit);
 
