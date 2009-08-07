@@ -79,6 +79,13 @@ public:
     typedef CBlastTabular          THit;
     typedef CRef<THit>             THitRef;
     typedef vector<THitRef>        THitRefs;
+    
+    enum EReciprocity {
+        e_Other,
+        e_SubjectDuplication,
+        e_QueryDuplication,
+        e_ReciprocalBest
+    };
 
 private:
 
