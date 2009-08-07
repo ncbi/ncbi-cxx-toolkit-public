@@ -314,7 +314,27 @@ void CValidError_align::x_ValidateDenseg
     x_ValidateStrand(denseg, align);
     x_ValidateFastaLike(denseg, align);
     x_ValidateSegmentGap(denseg, align);
+
+#if 0
+	// commented out in C Toolkit
+	// look for short alignment
+	int align_len = 0;
+	for (size_t i = 0; i < numseg; i++) {
+		align_len += denseg.GetLens()[i];
+	}
+	bool is_short = false;
+	for (size_t i = 0; i < dim && !is_short; i++) {
+		CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*(denseg.GetIds()[i]), CScope::eGetBioseq_Loaded);
+		if (bsh && bsh.IsSetInst() && bsh.IsSetInst_Length() && align_len < bsh.GetInst_Length()) {
+			is_short = true;
+		}
+	}
+	if (is_short) {
+		PostErr (eDiag_Info, eErr_SEQ_ALIGN_ShortAln, "This alignment is shorter than at least one non-farpointer sequence.", align);
+	}
+#endif
     
+	// operations that require remote fetching
     if ( m_Imp.IsRemoteFetch() ) {
         x_ValidateSeqId(align);
         x_ValidateSeqLength(denseg, align);

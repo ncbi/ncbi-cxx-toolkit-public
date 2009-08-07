@@ -1256,7 +1256,9 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     }
 
     if ( gene.IsSetLocus_tag()  &&  !NStr::IsBlank (gene.GetLocus_tag()) ) {
-        ITERATE (string, it, gene.GetLocus_tag() ) {
+		const string& locus_tag = gene.GetLocus_tag();
+
+        ITERATE (string, it, locus_tag ) {
             if ( isspace((unsigned char)(*it)) != 0 ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem,
                     "Gene locus_tag '" + gene.GetLocus_tag() + 
@@ -1265,13 +1267,19 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
             }
         }
 
-        if (feat.IsSetComment() && NStr::EqualCase (feat.GetComment(), gene.GetLocus_tag())) {
+		if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
+			&& NStr::EqualNocase(locus_tag, gene.GetLocus())) {
+			PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
+				     "Gene locus and locus_tag '" + locus_tag + "' match",
+					 feat);
+		}
+        if (feat.IsSetComment() && NStr::EqualCase (feat.GetComment(), locus_tag)) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
                      "Comment has same value as gene locus", feat);
         }
         FOR_EACH_GBQUAL_ON_SEQFEAT (it, feat) {
             if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "old_locus_tag") && (*it)->IsSetVal()) {
-                if (NStr::EqualCase((*it)->GetVal(), gene.GetLocus_tag())) {
+                if (NStr::EqualCase((*it)->GetVal(), locus_tag)) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
                             "old_locus_tag has same value as gene locus_tag", feat);
                 }
@@ -1323,9 +1331,16 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
         PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
 			     "gene locus_tag " + gene.GetLocus_tag() + " has SGML", feat);
 	}
-	if (gene.IsSetDesc() && ContainsSgml(gene.GetDesc())) {
-        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			     "gene description " + gene.GetDesc() + " has SGML", feat);
+	if (gene.IsSetDesc()) {
+		string desc = gene.GetDesc();
+		if (ContainsSgml(desc)) {
+			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					 "gene description " + gene.GetDesc() + " has SGML", feat);
+		}
+		if (NStr::Find(desc, "..") != string::npos) {
+			PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
+				     "Possible location text (" + desc + ") on gene description", feat);
+		}
 	}
 	FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
 		if (ContainsSgml(*it)) {
@@ -4887,7 +4902,13 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
                                      "Cross-references are not between CDS and mRNA pair",
                                      feat);
-                        }
+						} else if (feat.GetData().IsCdregion()) {
+							ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(), m_Scope);
+                            if ( (comp != eContained) && (comp != eSame)) {
+								PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
+									     "CDS not contained within cross-referenced mRNA", feat);
+							}
+						}
                     }
                 }
                 if (!has_xref) {
@@ -5579,6 +5600,19 @@ vector < CConstRef <CSeq_feat> > GetFeaturesWithLabel (CBioseq_Handle bsh, strin
 }
 
 
+static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc& loc2)
+{
+	ENa_strand strand1 = loc1.GetStrand();
+	ENa_strand strand2 = loc2.GetStrand();
+
+	if (strand1 == strand2) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+
 // Check for redundant gene Xref
 // Do not call if feat is gene
 void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
@@ -5834,6 +5868,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 if (f->GetData().GetGene().IsSetLocus() 
                     && NStr::EqualCase (f->GetData().GetGene().GetLocus(), gene_xref->GetLocus())) {
                     found = true;
+					if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation())) {
+						PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+							"Gene cross-reference is not on expected strand", feat);
+					}
                 } else {
                     ++f;
                 }
@@ -5852,6 +5890,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 if (f->GetData().GetGene().IsSetLocus_tag() 
                     && NStr::EqualCase (f->GetData().GetGene().GetLocus_tag(), gene_xref->GetLocus_tag())) {
                     found = true;
+					if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation())) {
+						PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+							"Gene cross-reference is not on expected strand", feat);
+					}
                 } else {
                     ++f;
                 }

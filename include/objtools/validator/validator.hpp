@@ -79,6 +79,7 @@ public:
         eVal_locus_tag_general_match = 0x1000,
         eVal_do_rubisco_test         = 0x2000,
         eVal_indexer_version         = 0x4000,
+		eVal_use_entrez              = 0x8000,
 
         // !!! For test purposes only {
         eVal_perf_bottlenecks  = 0x10000

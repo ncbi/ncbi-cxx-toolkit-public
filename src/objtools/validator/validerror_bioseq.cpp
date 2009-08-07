@@ -594,6 +594,7 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
     if ( seq.IsNa() ) {
         // check for N bases at start or stop of sequence
         ValidateNsAndGaps(seq);
+
     }
 
     // Validate sequence length
@@ -641,6 +642,17 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                 break;
             }
         }
+
+		// look for double-stranded mRNA
+		if (mi->IsSetBiomol() && mi->GetBiomol() == CMolInfo::eBiomol_mRNA
+			&& seq.IsNa() 
+			&& seq.IsSetInst() && seq.GetInst().IsSetStrand()
+			&& seq.GetInst().GetStrand() != CSeq_inst::eStrand_not_set
+			&& seq.GetInst().GetStrand() != CSeq_inst::eStrand_ss) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_DSmRNA, 
+				    "mRNA not single stranded", seq);
+		}
+
     }
     
     
@@ -4486,6 +4498,9 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
+	string name_str = "";
+	string comment_str = "";
+
     for ( CSeqdesc_CI di(bsh); di; ++ di ) {
         const CSeqdesc& desc = *di;
 
@@ -4591,10 +4606,82 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                         "Non-TPA record should not have TpaAssembly object", seq);
                 }
+				if (oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
+					if (!CValidError_imp::IsWGSIntermediate(seq)) {
+						bool is_refseq = false;
+						FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+							if ((*id_it)->IsOther()) {
+								is_refseq = true;
+								break;
+							}
+						}
+						if (!is_refseq) {
+							PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNonRefSeq, 
+									"RefGeneTracking object should only be in RefSeq record", 
+									ctx, desc);
+						}
+					}
+				}
             }
             break;
+		case CSeqdesc::e_Title:
+			{
+				string title = desc.GetTitle();
+				size_t pos = NStr::Find(title, "[");
+				if (pos != string::npos) {
+					pos = NStr::Find(title, "=", pos + 1);
+				}
+				if (pos != string::npos) {
+					pos = NStr::Find(title, "]", pos + 1);
+				}
+				if (pos != string::npos) {
+					bool report_fasta_brackets = true;
+					FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+						if ((*id_it)->IsGeneral()) {
+							const CDbtag& dbtag = (*id_it)->GetGeneral();
+							if (dbtag.IsSetDb()) {
+								if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
+									|| NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
+									report_fasta_brackets = false;
+									break;
+								}
+							}
+						}
+					}
+					if (report_fasta_brackets) {
+						PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle, 
+							    "Title may have unparsed [...=...] construct",
+								ctx, desc);
+					}
+				}
+			}
+            break;
 
-        default:
+		case CSeqdesc::e_Name:
+			if (NStr::IsBlank(name_str)) {
+				name_str = desc.GetName();
+			} else if (NStr::EqualNocase(name_str, desc.GetName())) {
+				PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleNames, 
+					    "Undesired multiple name descriptors, identical text",
+						ctx, desc);
+			} else {
+				PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleNames, 
+					    "Undesired multiple name descriptors, different text",
+						ctx, desc);
+			}
+			break;
+
+		case CSeqdesc::e_Comment:
+			if (NStr::IsBlank(comment_str)) {
+				comment_str = desc.GetComment();
+			} else if (NStr::EqualNocase(comment_str, desc.GetComment())) {
+				PostErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleComments, 
+					    "Undesired multiple name descriptors, identical text",
+						ctx, desc);
+			}
+			break;
+
+		default:
             break;
         }
     }

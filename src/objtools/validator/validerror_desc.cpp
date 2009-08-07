@@ -42,6 +42,7 @@
 
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objtools/format/items/comment_item.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -101,6 +102,10 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_not_set:
             break;
         case CSeqdesc::e_Name:
+            if (NStr::IsBlank (desc.GetName())) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+                         "Name descriptor needs text", ctx, desc);
+			}
             break;
         case CSeqdesc::e_Title:
             if (NStr::IsBlank (desc.GetTitle())) {
@@ -116,6 +121,7 @@ void CValidError_desc::ValidateSeqDesc
                 if (NStr::EndsWith (title, "...")) {
                     // ok - ends with ellipsis
                 } else if (NStr::EndsWith (title, ",")
+					       || NStr::EndsWith(title, ".")
                            || NStr::EndsWith (title, ";")
                            || NStr::EndsWith (title, ":")) {
                     PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation, 
@@ -134,6 +140,10 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Genbank:
             break;
         case CSeqdesc::e_Region:
+			if (NStr::IsBlank (desc.GetRegion())) {
+				PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+						 "Region descriptor needs text", ctx, desc);
+			}
             break;
         case CSeqdesc::e_Sp:
             break;
@@ -181,6 +191,10 @@ void CValidError_desc::ValidateComment
             "attach reference specific comments to the reference "
             "REMARK instead.", *m_Ctx, desc);
     }
+    if (NStr::IsBlank (comment)) {
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+                 "Comment descriptor needs text", *m_Ctx, desc);
+	}
 }
 
 void CValidError_desc::ValidateUser
@@ -204,7 +218,14 @@ void CValidError_desc::ValidateUser
                 }
                 if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
                     has_ref_track_status = true;
-                    break;
+					if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
+						if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
+							PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
+									"RefGeneTracking object has illegal Status '" 
+									+ (*field)->GetData().GetStr() + "'",
+									*m_Ctx, desc);
+						}
+					}
                 }
             }
         }

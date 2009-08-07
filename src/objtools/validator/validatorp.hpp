@@ -100,6 +100,46 @@ BEGIN_SCOPE(validator)
 // =============================================================================
 class CValidError_desc;
 class CValidError_descr;
+class CCountryBlock;
+class CCountryLatLonMap;
+
+// ==================== for validating lat-lon versus country ================
+class CCountryBlock
+{
+public:
+	CCountryBlock (string country_name, double min_x, double min_y, double max_x, double max_y);
+	~CCountryBlock (void);
+
+	string GetCountry(void)            const { return m_CountryName; }
+	bool IsLatLonInCountryBlock (double x, double y);
+
+private:
+	string m_CountryName;
+	double m_MinX;
+	double m_MinY;
+	double m_MaxX;
+	double m_MaxY;
+};
+
+
+// note - once I get this working at a basic level, want to have sorted
+// indices for country name, for x then y, and for y then x
+class CCountryLatLonMap
+{
+public:
+	CCountryLatLonMap(void);
+	~CCountryLatLonMap(void);
+
+	bool IsCountryInLatLon(string country, double x, double y);
+	string GuessCountryForLatLon(double x, double y);
+	bool HaveLatLonForCountry (string country);
+	static bool DoesStringContainBodyOfWater(const string& country);
+
+private:
+    vector <CCountryBlock *> m_CountryBlockList;
+	static const string sm_BodiesOfWater[];
+};
+
 
 // ===========================  Central Validation  ==========================
 
@@ -168,6 +208,7 @@ public:
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 	void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
+	void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
 	bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
@@ -178,6 +219,9 @@ public:
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
         bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+	void ValidateTaxonomy(const CSeq_entry& se);
+	void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
+
         
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
@@ -198,6 +242,7 @@ public:
     bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
     bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
     bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
+	bool UseEntrez(void)              const { return m_UseEntrez; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -243,6 +288,8 @@ public:
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
     void AddProtWithoutFullRef(const CBioseq_Handle& seq);
+	static bool IsWGSIntermediate(const CBioseq& seq);
+	static bool IsWGSIntermediate(const CSeq_entry& se);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
 
@@ -292,11 +339,15 @@ private:
     void FindEmbeddedScript (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 
+	void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
+
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
     CSeq_entry_Handle       m_TSEH;
+
+	CCountryLatLonMap lat_lon_map;
 
     // error repoitory
     CValidError*       m_ErrRepository;
@@ -317,6 +368,7 @@ private:
     bool m_LocusTagGeneralMatch;
     bool m_DoRubiscoText;
     bool m_IndexerVersion;
+	bool m_UseEntrez;
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -346,6 +398,8 @@ private:
     bool m_ProductLocHasGI;
     bool m_GeneHasLocusTag;
     bool m_ProteinHasGeneralID;
+
+    bool m_IsTbl2Asn;
 
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
@@ -379,7 +433,6 @@ private:
 
     SIZE_TYPE   m_NumMisplacedFeatures;
 
-    bool m_IsTbl2Asn;
 };
 
 
@@ -453,7 +506,7 @@ private:
     void CheckForInconsistentBiomols (const CBioseq_set& seqset);
 
     bool IsMrnaProductInGPS(const CBioseq& seq); 
-    bool IsCDSProductInGPS(const CBioseq& seq); 
+    bool IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps); 
 };
 
 
@@ -829,6 +882,51 @@ public:
 
     void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
 private:
+};
+
+
+// ===========================  for handling PCR primer subtypes on BioSource ==
+
+class CPCRSet
+{
+public:
+	CPCRSet(size_t pos);
+	virtual ~CPCRSet(void);
+
+    string GetFwdName(void)            const { return m_FwdName; }
+    string GetFwdSeq(void)             const { return m_FwdSeq; }
+    string GetRevName(void)            const { return m_RevName; }
+    string GetRevSeq(void)             const { return m_RevSeq; }
+	size_t GetOrigPos(void)            const { return m_OrigPos; }
+
+	void SetFwdName(string fwd_name) { m_FwdName = fwd_name; }
+	void SetFwdSeq(string fwd_seq)   { m_FwdSeq = fwd_seq; }
+	void SetRevName(string rev_name) { m_RevName = rev_name; }
+	void SetRevSeq(string rev_seq)   { m_RevSeq = rev_seq; }
+
+private:
+	string m_FwdName;
+    string m_FwdSeq;
+	string m_RevName;
+	string m_RevSeq;
+	size_t m_OrigPos;
+};
+
+class CPCRSetList
+{
+public:
+	CPCRSetList(void);
+	~CPCRSetList(void);
+
+	void AddFwdName (string name);
+	void AddRevName (string name);
+	void AddFwdSeq (string name);
+	void AddRevSeq (string name);
+
+	bool AreSetsUnique(void);
+
+private:
+	vector <CPCRSet *> m_SetList;
 };
 
 
