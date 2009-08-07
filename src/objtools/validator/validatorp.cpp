@@ -1382,9 +1382,6 @@ void CValidError_imp::ValidateArticleHasJournal
             PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
                     "Journal title missing", obj, ctx);
         }
-        if ( jour.CanGetImp() ) {
-            const CImprint& imp = jour.GetImp();
-        }
     }
 }
 
@@ -4691,41 +4688,6 @@ void CValidError_imp::GatherSources
 }
 
 
-static void s_GetTaxFlags (const CT3Data& data, bool& is_species_level, bool& force_consult, bool& has_nucleomorphs)
-{
-    is_species_level = true;
-	force_consult = false;
-	has_nucleomorphs = false;
-
-	if (data.IsSetStatus()) {
-		ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
-			if ((*status_it)->IsSetProperty()) {
-				string prop = (*status_it)->GetProperty();
-				if (NStr::EqualNocase(prop, "is_species_level")) {
-					if ((*status_it)->IsSetValue()
-						&& (*status_it)->GetValue().IsBool()
-						&& !(*status_it)->GetValue().GetBool()) {
-						is_species_level = false;
-					}
-				} else if (NStr::EqualNocase(prop, "force_consult")) {
-					if ((*status_it)->IsSetValue()
-						&& (*status_it)->GetValue().IsBool()
-						&& (*status_it)->GetValue().GetBool()) {
-						force_consult = true;
-					}
-				} else if (NStr::EqualNocase(prop, "has_nucleomorphs")) {
-					if ((*status_it)->IsSetValue()
-						&& (*status_it)->GetValue().IsBool()
-						&& (*status_it)->GetValue().GetBool()) {
-						has_nucleomorphs = true;
-					}
-				}
-			}
-		}
-	}
-
-}
-
 
 static bool s_HasMisSpellFlag (const CT3Data& data)
 {
@@ -5019,7 +4981,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 				bool is_species_level = true;
 				bool force_consult = false;
 				bool has_nucleomorphs = false;
-				s_GetTaxFlags ((*reply_it)->GetData(), is_species_level, force_consult, has_nucleomorphs);
+				(*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
 				if (!is_species_level) {
 					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
 							"Taxonomy lookup reports is_species_level FALSE",
@@ -5058,7 +5020,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 				bool is_species_level = true;
 				bool force_consult = false;
 				bool has_nucleomorphs = false;
-				s_GetTaxFlags ((*reply_it)->GetData(), is_species_level, force_consult, has_nucleomorphs);
+				(*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
 				if (!is_species_level) {
 					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
 							"Taxonomy lookup reports is_species_level FALSE",
