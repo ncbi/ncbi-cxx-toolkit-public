@@ -194,7 +194,7 @@ typedef struct {
 
 #define CONN_SET_METHOD(meta, method, function, connector) \
     do {                                                   \
-        meta->method = function;                           \
+        meta->method                  = function;          \
         meta->CONN_TWO2ONE(c_,method) = connector;         \
     } while (0);
 
