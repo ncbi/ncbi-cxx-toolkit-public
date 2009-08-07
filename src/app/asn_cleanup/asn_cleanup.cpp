@@ -158,7 +158,10 @@ void CCleanupApp::Init(void)
     {{
         // no-cleanup
         arg_desc->AddFlag("nocleanup",
-            "Do not perform data cleanup prior to formatting");
+            "Do not perform extended data cleanup prior to formatting");
+        arg_desc->AddFlag("basic",
+            "Perform basic data cleanup prior to formatting");
+
         // remote
         arg_desc->AddFlag("gbload", "Use CGBDataLoader");
         // show progress
@@ -437,27 +440,49 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     CArgs args = GetArgs();
 
     bool any_changes = false;
-    if (!args["nocleanup"]) {
-        // perform ExtendedCleanup
+	if (args["basic"] || !args["nocleanup"]) {
         CCleanup cleanup;
         cleanup.SetScope(scope);
-        try {
-            CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
-            vector<string> changes_str = changes->GetAllDescriptions();
-            if (changes_str.size() == 0) {
-              printf ("No changes\n");
-            } else {
-              ITERATE(vector<string>, vit, changes_str) {
-                printf ("%s\n", (*vit).c_str());
-              }
-              any_changes = true;
-            }
+        
+		if (args["basic"]) {
+			// perform BasicCleanup
+			try {
+				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
+				vector<string> changes_str = changes->GetAllDescriptions();
+				if (changes_str.size() == 0) {
+					printf ("No changes from BasicCleanup\n");
+				} else {
+					printf ("Changes from BasicCleanup:\n");
+				    ITERATE(vector<string>, vit, changes_str) {
+					    printf ("%s\n", (*vit).c_str());
+				    }
+				    any_changes = true;
+				}
+			}
+			catch (CException& e) {
+				LOG_POST(Error << "error in basic cleanup: " << e.GetMsg());
+			}
+		}
 
-
-        }
-        catch (CException& e) {
-            LOG_POST(Error << "error in extended cleanup: " << e.GetMsg());
-        }
+		if (!args["nocleanup"]) {
+			// perform ExtendedCleanup
+			try {
+				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
+				vector<string> changes_str = changes->GetAllDescriptions();
+				if (changes_str.size() == 0) {
+				    printf ("No changes from ExtendedCleanup\n");
+				} else {
+					printf ("Changes from ExtendedCleanup:\n");
+				    ITERATE(vector<string>, vit, changes_str) {
+					    printf ("%s\n", (*vit).c_str());
+				    }
+				    any_changes = true;
+				}
+			}
+			catch (CException& e) {
+				LOG_POST(Error << "error in extended cleanup: " << e.GetMsg());
+			}
+		}
     }
     
     ESerialDataFormat outFormat = eSerial_AsnText;
@@ -509,27 +534,52 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     string file_name = args["o"].AsString();
     bool any_changes = false;
-    
-    if (!args["nocleanup"]) {
-        // perform ExtendedCleanup
+
+	if (args["basic"] || !args["nocleanup"]) {
         CCleanup cleanup;
         cleanup.SetScope(scope);
-        try {
-            CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())));
-            vector<string> changes_str = changes->GetAllDescriptions();
-            if (changes_str.size() == 0) {
-              printf ("No changes\n");
-            } else {
-              ITERATE(vector<string>, vit, changes_str) {
-                printf ("%s\n", (*vit).c_str());
-              }
-              any_changes = true;
-            }
-        }
-        catch (CException& e) {
-            LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
-            file_name = "last_error.sqn";
-        }
+
+		if (args["basic"]) {
+			// perform BasicCleanup
+			try {
+				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (entry);
+				vector<string> changes_str = changes->GetAllDescriptions();
+				if (changes_str.size() == 0) {
+					printf ("No changes from BasicCleanup\n");
+				} else {
+					printf ("Changes from BasicCleanup:\n");
+				    ITERATE(vector<string>, vit, changes_str) {
+					    printf ("%s\n", (*vit).c_str());
+				    }
+				    any_changes = true;
+				}
+			}
+			catch (CException& e) {
+				LOG_POST(Error << "error in basic cleanup: " << e.GetMsg() << label);
+				file_name = "last_error.sqn";
+			}
+		}
+    
+		if (!args["nocleanup"]) {
+			// perform ExtendedCleanup
+			try {
+				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())));
+				vector<string> changes_str = changes->GetAllDescriptions();
+				if (changes_str.size() == 0) {
+				    printf ("No changes from ExtendedCleanup\n");
+				} else {
+					printf ("Changes from ExtendedCleanup:\n");
+				    ITERATE(vector<string>, vit, changes_str) {
+					    printf ("%s\n", (*vit).c_str());
+				    }
+				    any_changes = true;
+				}
+			}
+			catch (CException& e) {
+				LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
+				file_name = "last_error.sqn";
+			}
+		}
     }
 
     auto_ptr<CObjectOStream> out(!args["o"]? 0:
