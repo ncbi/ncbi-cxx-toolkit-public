@@ -219,12 +219,14 @@ void CValidError_desc::ValidateUser
                 if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
                     has_ref_track_status = true;
 					if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
+#if 0
 						if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
 							PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
 									"RefGeneTracking object has illegal Status '" 
 									+ (*field)->GetData().GetStr() + "'",
 									*m_Ctx, desc);
 						}
+#endif
 					}
                 }
             }

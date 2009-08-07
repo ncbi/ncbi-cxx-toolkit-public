@@ -4820,6 +4820,7 @@ void CValidError_imp::ValidateSpecificHost
 		++feat_it;
 	}
 
+#if 0
 
 	CTaxon3 taxon3;
 	taxon3.Init();
@@ -4918,6 +4919,7 @@ void CValidError_imp::ValidateSpecificHost
             ++feat_it;
 		}
 	}
+#endif
 }
 
 
@@ -4956,6 +4958,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 		++feat_it;
 	}
 
+#if 0
 	CTaxon3 taxon3;
 	taxon3.Init();
 	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
@@ -5047,6 +5050,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 	// Now look at specific-host values
     ValidateSpecificHost (src_descs, desc_ctxs, src_feats);
 
+#endif
 
 }
 
