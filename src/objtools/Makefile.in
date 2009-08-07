@@ -6,7 +6,7 @@
 REQUIRES = objects
 
 SUB_PROJ = readers blast lds data_loaders simple alnmgr cddalignview \
-	test manip validator asniotest format align edit writers \
+	test manip format validator asniotest align edit writers \
 	cleanup seqmasks_io eutils align_format
 
 srcdir = @srcdir@
