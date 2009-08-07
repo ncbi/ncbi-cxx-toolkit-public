@@ -4,7 +4,7 @@
 
 APP = test_validator
 SRC = test_validator
-LIB = xvalidate xalnmgr xobjutil valerr submit tables $(OBJMGR_LIBS)
+LIB = xvalidate xalnmgr xobjutil valerr submit tables taxon3 xformat $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
