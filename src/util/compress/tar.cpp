@@ -878,19 +878,19 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "legacy (V7)";
         break;
     case eTar_OldGNU:
-        if (strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4) == 0)
+        if (!NStr::strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4))
             tname = "old GNU (NCBI)";
         else
             tname = "old GNU";
         break;
     case eTar_Ustar:
-        if (strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4) == 0)
+        if (!NStr::strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4))
             tname = "ustar (NCBI)";
         else
             tname = "ustar";
         break;
     case eTar_Posix:  // aka "pax"
-        if (strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4) == 0)
+        if (!NStr::strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4))
             tname = "posix (NCBI)";
         else
             tname = "posix";
