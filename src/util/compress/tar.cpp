@@ -2772,8 +2772,11 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
             mode_t mode = s_TarToMode(info.m_Stat.st_mode);
             if (chmod(dst->GetPath().c_str(), mode) != 0) {
                 // May fail due to setuid/setgid bits -- strip'em and try again
-                mode &= ~(S_ISUID | S_ISGID);
-                failed = chmod(dst->GetPath().c_str(), mode) != 0;
+                if (mode &   (S_ISUID | S_ISGID)) {
+                    mode &= ~(S_ISUID | S_ISGID);
+                    failed = chmod(dst->GetPath().c_str(), mode) != 0;
+                } else
+                    failed = true;
             }
         }
 #else
