@@ -548,7 +548,7 @@ private:
 ///
 /// vector<> template comes with a performance penalty, since it always
 /// initializes its content. This template is not a vector replacement,
-/// it's a version of AutoPtr<> tuned for array pointers. For convinience
+/// it's a version of AutoPtr<> tuned for array pointers. For convenience
 /// it defines array style access operator [] and size based contructor.
 ///
 /// @sa AutoPtr
@@ -563,7 +563,7 @@ public:
 
 public:
 
-    /// Construct the arrya using C++ new[] operator
+    /// Construct the array using C++ new[] operator
     /// @note In this case you should use ArrayDeleter<> or compatible
     explicit AutoArray(size_t size)
         : m_Ptr(new element_type[size]), m_Data(true)
