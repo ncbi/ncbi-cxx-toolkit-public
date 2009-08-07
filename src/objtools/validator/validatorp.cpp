@@ -4878,7 +4878,7 @@ void CValidError_imp::ValidateSpecificHost
 		    if ((*reply_it)->IsError()) {
 				string err_str = "?";
 				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessageA();
+					err_str = (*reply_it)->GetError().GetMessage();
 				}
 				if(NStr::Find(err_str, "ambiguous") != string::npos) {
 					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
@@ -4922,7 +4922,7 @@ void CValidError_imp::ValidateSpecificHost
 		    if ((*reply_it)->IsError()) {
 				string err_str = "?";
 				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessageA();
+					err_str = (*reply_it)->GetError().GetMessage();
 				}
 				if(NStr::Find(err_str, "ambiguous") != string::npos) {
 					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
@@ -5010,7 +5010,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 		    if ((*reply_it)->IsError()) {
 				string err_str = "?";
 				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessageA();
+					err_str = (*reply_it)->GetError().GetMessage();
 				}
 				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
 							"Taxonomy lookup failed with message '" + err_str + "'",
@@ -5049,7 +5049,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 		    if ((*reply_it)->IsError()) {
 				string err_str = "?";
 				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessageA();
+					err_str = (*reply_it)->GetError().GetMessage();
 				}
 				PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
 						"Taxonomy lookup failed with message '" + err_str + "'",
