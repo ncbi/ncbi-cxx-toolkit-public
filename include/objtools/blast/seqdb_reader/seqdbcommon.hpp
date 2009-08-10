@@ -705,12 +705,23 @@ public:
         return m_Gis;
     }
     
+    /// Set ID set for this negative list.
+    void SetGiList( const vector<int> & new_list ) 
+    {
+	m_Gis.clear();
+	m_Gis.reserve( new_list.size() );
+        m_Gis = new_list;
+    }
     /// Build ID set for this negative list.
     const vector<Int8> & GetTiList()
     {
         return m_Tis;
     }
-    
+    /// Get list size
+    int Size(void)
+    {
+	return (int)m_Gis.size();
+    }
 protected:
     /// GIs to exclude from the SeqDB instance.
     vector<int> m_Gis;
