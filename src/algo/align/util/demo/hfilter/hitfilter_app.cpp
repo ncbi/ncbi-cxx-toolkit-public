@@ -63,7 +63,7 @@ namespace {
     const CAppHitFilter::THit::TCoord kMinHitLen (10);
     
     const double BIG_DBL(0.5 * numeric_limits<float>::max());
-    const string STRICT("strict");
+    const string BOTH("strict");
     const string QUERY("query");
     const string SUBJ("subject");
 }
@@ -432,7 +432,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             CRef<CScore> score(new CScore());
             score->SetId().SetStr("reciprocity");
             try {
-                if (h.GetScore() > BIG_DBL || args["ut"].AsString() == STRICT) 
+                if (h.GetScore() > BIG_DBL || args["ut"].AsString() == BOTH) 
                 {
                     // derived from constraint alignment or 
                     // uniquify query and subject specified
