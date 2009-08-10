@@ -8,9 +8,10 @@
 
 APP = asnval
 SRC = asnval
-LIB = xformat xobjutil submit gbseq xalnmgr valid xvalidate entrez2cli entrez2 tables $(OBJMGR_LIBS)
+LIB = xvalidate xformat xalnmgr xobjutil valerr submit tables taxon3 gbseq \
+      $(OBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
