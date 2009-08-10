@@ -474,8 +474,6 @@ if test "$with_gbench" = "yes" ; then
       fi
      ])
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
-   # Still geared for single-byte ("ANSI") builds.
-   test -d $srcdir/src/gui/widgets/wx  &&  : ${with_wxwidgets_ucs=no}
 fi
 
 if test "$with_bin_release" = "yes" ; then
@@ -4730,6 +4728,8 @@ fi
 
 
 ## wxWidgets
+# Insist on single-byte builds by default, per various projects' expectations.
+: ${with_wxwidgets_ucs=no}
 if test "$with_wxwidgets" != "no" ; then
    case "$with_wxwidgets" in
       yes | "" ) : ${WXWIDGETS_PATH=$NCBI/wxwidgets} ;;
