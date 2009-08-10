@@ -48,13 +48,11 @@
 #include <fcntl.h>
 #endif
 
+#define NETCACHE_CONTROL_VERSION_MAJOR 1
+#define NETCACHE_CONTROL_VERSION_MINOR 0
+#define NETCACHE_CONTROL_VERSION_PATCH 0
+
 USING_NCBI_SCOPE;
-
-#define NETCACHE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
-
-#define NETCACHE_HUMAN_VERSION \
-      "NCBI NetCache control utility Version " NETCACHE_VERSION \
-      " build " __DATE__ " " __TIME__
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -65,6 +63,12 @@ USING_NCBI_SCOPE;
 class CNetCacheControl : public CNcbiApplication
 {
 public:
+    CNetCacheControl() {
+        SetVersion(CVersionInfo(
+            NETCACHE_CONTROL_VERSION_MAJOR,
+            NETCACHE_CONTROL_VERSION_MINOR,
+            NETCACHE_CONTROL_VERSION_PATCH));
+    }
     void Init();
     int Run();
 };
@@ -84,7 +88,6 @@ void CNetCacheControl::Init()
         "NetCache service name.", CArgDescriptions::eString, "");
 
     arg_desc->AddFlag("shutdown",      "Shutdown server");
-    arg_desc->AddFlag("version-full",  "Version");
     arg_desc->AddFlag("ver",           "Server version");
     arg_desc->AddFlag("getconf",       "Server config");
     arg_desc->AddFlag("health",        "Server health");
@@ -112,11 +115,6 @@ int CNetCacheControl::Run()
 {
     const CArgs& args = GetArgs();
     const string& service  = args["service"].AsString();
-
-    if (args["version-full"]) {
-        printf(NETCACHE_HUMAN_VERSION "\n");
-        return 0;
-    }
 
     CNetCacheAPI nc_client(service, "netcache_control");
     CNetCacheAdmin admin = nc_client.GetAdmin();

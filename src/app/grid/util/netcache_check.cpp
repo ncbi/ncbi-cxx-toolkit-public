@@ -45,13 +45,11 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#define NETCACHE_CHECK_VERSION_MAJOR 1
+#define NETCACHE_CHECK_VERSION_MINOR 0
+#define NETCACHE_CHECK_VERSION_PATCH 0
+
 USING_NCBI_SCOPE;
-
-#define NETCACHE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
-
-#define NETCACHE_CHECK_VERSION \
-      "NCBI NetCache check utility Version " NETCACHE_VERSION \
-      " build " __DATE__ " " __TIME__
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -63,6 +61,12 @@ USING_NCBI_SCOPE;
 class CNetCacheCheckApp : public CNcbiApplication
 {
 public:
+    CNetCacheCheckApp() {
+        SetVersion(CVersionInfo(
+            NETCACHE_CHECK_VERSION_MAJOR,
+            NETCACHE_CHECK_VERSION_MINOR,
+            NETCACHE_CHECK_VERSION_PATCH));
+    }
     void Init(void);
     int Run(void);
 };
@@ -77,7 +81,7 @@ void CNetCacheCheckApp::Init(void)
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetCache check.");
-    
+
     arg_desc->AddDefaultPositional("service_address", 
         "NetCache host or service name: { host:port | lb_service_name }.", 
         CArgDescriptions::eString,
@@ -86,7 +90,6 @@ void CNetCacheCheckApp::Init(void)
     arg_desc->AddDefaultKey("delay", "phase_delay",
         "Delay between test phases. Default: 3000 ms",
         CArgDescriptions::eInteger, "3000");
-    arg_desc->AddFlag("version-full", "Version");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -96,11 +99,6 @@ void CNetCacheCheckApp::Init(void)
 int CNetCacheCheckApp::Run(void)
 {
     CArgs args = GetArgs();
-
-    if (args["version-full"]) {
-        printf(NETCACHE_CHECK_VERSION "\n");
-        return 0;
-    }
 
     string service_name = args["service_address"].AsString();
 

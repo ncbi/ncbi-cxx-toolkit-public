@@ -44,13 +44,11 @@
 
 #include <common/ncbi_package_ver.h>
 
+#define NETSCHEDULE_CONTROL_VERSION_MAJOR 1
+#define NETSCHEDULE_CONTROL_VERSION_MINOR 0
+#define NETSCHEDULE_CONTROL_VERSION_PATCH 0
+
 USING_NCBI_SCOPE;
-
-#define NETSCHEDULE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
-
-#define NETSCHEDULE_HUMAN_VERSION \
-      "NCBI NetSchedule control utility Version " NETSCHEDULE_VERSION \
-      " build " __DATE__ " " __TIME__
 
 /// NetSchedule control application
 ///
@@ -59,6 +57,12 @@ USING_NCBI_SCOPE;
 class CNetScheduleControl : public CNcbiApplication
 {
 public:
+    CNetScheduleControl() {
+        SetVersion(CVersionInfo(
+            NETSCHEDULE_CONTROL_VERSION_MAJOR,
+            NETSCHEDULE_CONTROL_VERSION_MINOR,
+            NETSCHEDULE_CONTROL_VERSION_PATCH));
+    }
     void Init(void);
     int Run(void);
 
@@ -154,8 +158,6 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule control.");
-
-    arg_desc->AddFlag("version-full", "Version");
 
     arg_desc->AddOptionalKey("service",
                              "service_name",
@@ -284,11 +286,6 @@ void CNetScheduleControl::Init(void)
 int CNetScheduleControl::Run(void)
 {
     const CArgs& args = GetArgs();
-
-    if (args["version-full"]) {
-        printf(NETSCHEDULE_HUMAN_VERSION "\n");
-        return 0;
-    }
 
     CNcbiOstream& os = NcbiCout;
 

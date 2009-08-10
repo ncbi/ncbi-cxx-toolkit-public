@@ -44,14 +44,11 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#define NETSCHEDULE_CHECK_VERSION_MAJOR 1
+#define NETSCHEDULE_CHECK_VERSION_MINOR 0
+#define NETSCHEDULE_CHECK_VERSION_PATCH 0
 
 USING_NCBI_SCOPE;
-
-#define NETSCHEDULE_VERSION NCBI_AS_STRING(NCBI_PACKAGE_VERSION)
-
-#define NETSCHEDULE_HUMAN_VERSION \
-      "NCBI NetSchedule check utility Version " NETSCHEDULE_VERSION \
-      " build " __DATE__ " " __TIME__
 
 #define WORKER_NODE_PORT 9898
 
@@ -63,6 +60,12 @@ USING_NCBI_SCOPE;
 class CNetScheduleCheck : public CNcbiApplication
 {
 public:
+    CNetScheduleCheck() {
+        SetVersion(CVersionInfo(
+            NETSCHEDULE_CHECK_VERSION_MAJOR,
+            NETSCHEDULE_CHECK_VERSION_MINOR,
+            NETSCHEDULE_CHECK_VERSION_PATCH));
+    }
     void Init(void);
     int Run(void);
     int Run(CNetScheduleAPI& nc_client);
@@ -82,8 +85,6 @@ void CNetScheduleCheck::Init(void)
         CArgDescriptions::eString,
         "");
 
-    arg_desc->AddFlag("version-full", "Version");
-
     arg_desc->AddOptionalKey("qclass",
                              "queue",
                              "Queue class name",
@@ -96,11 +97,6 @@ void CNetScheduleCheck::Init(void)
 int CNetScheduleCheck::Run(void)
 {
     const CArgs& args = GetArgs();
-
-    if (args["version-full"]) {
-        printf(NETSCHEDULE_HUMAN_VERSION "\n");
-        return 0;
-    }
 
     const string& service  = args["service"].AsString();
 

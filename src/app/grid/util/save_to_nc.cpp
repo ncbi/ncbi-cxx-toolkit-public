@@ -46,14 +46,23 @@
 #include <fcntl.h>
 #endif
 
-USING_NCBI_SCOPE;
+#define SAVETONC_VERSION_MAJOR 1
+#define SAVETONC_VERSION_MINOR 0
+#define SAVETONC_VERSION_PATCH 0
 
+USING_NCBI_SCOPE;
 
 /// Save a file or stdin to NetCache BLOB
 ///
 class CSaveToNetCacheApp : public CNcbiApplication
 {
 public:
+    CSaveToNetCacheApp() {
+        SetVersion(CVersionInfo(
+            SAVETONC_VERSION_MAJOR,
+            SAVETONC_VERSION_MINOR,
+            SAVETONC_VERSION_PATCH));
+    }
     void Init(void);
     int Run(void);
 };
