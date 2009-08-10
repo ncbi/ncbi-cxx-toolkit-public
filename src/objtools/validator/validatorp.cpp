@@ -4747,52 +4747,52 @@ void CValidError_imp::ValidateSpecificHost
  const vector<CConstRef<CSeq_entry> > & desc_ctxs,
  const vector<CConstRef<CSeq_feat> > & src_feats)
 {
-	vector<CConstRef<CSeqdesc> > local_src_descs;
+    vector<CConstRef<CSeqdesc> > local_src_descs;
     vector<CConstRef<CSeq_entry> > local_desc_ctxs;
     vector<CConstRef<CSeq_feat> > local_src_feats;
 
-	vector< CRef<COrg_ref> > org_rq_list;
+    vector< CRef<COrg_ref> > org_rq_list;
 
-	// first do descriptors
-	vector<CConstRef<CSeqdesc> >::const_iterator desc_it = src_descs.begin();
-	vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = desc_ctxs.begin();
-	while (desc_it != src_descs.end() && ctx_it != desc_ctxs.end()) {
-		FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*desc_it)->GetSource()) {
-			if ((*mod_it)->IsSetSubtype()
-				&& (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-				&& (*mod_it)->IsSetSubname()
-				&& isupper ((*mod_it)->GetSubname().c_str()[0])) {
-				string host = (*mod_it)->GetSubname();
-				size_t pos = NStr::Find(host, " ");
-				if (pos != string::npos) {
-					if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
-					    && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
-					    pos = NStr::Find(host, " ", pos + 1);
-					    if (pos != string::npos) {
-							host = host.substr(0, pos);
-						}
-					} else {
-						host = host.substr(0, pos);
-					}
-				}
+    // first do descriptors
+    vector<CConstRef<CSeqdesc> >::const_iterator desc_it = src_descs.begin();
+    vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = desc_ctxs.begin();
+    while (desc_it != src_descs.end() && ctx_it != desc_ctxs.end()) {
+        FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*desc_it)->GetSource()) {
+            if ((*mod_it)->IsSetSubtype()
+                && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
+                && (*mod_it)->IsSetSubname()
+                && isupper ((*mod_it)->GetSubname().c_str()[0])) {
+               	string host = (*mod_it)->GetSubname();
+                size_t pos = NStr::Find(host, " ");
+                if (pos != string::npos) {
+                    if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
+                        && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
+                        pos = NStr::Find(host, " ", pos + 1);
+                        if (pos != string::npos) {
+                            host = host.substr(0, pos);
+                        }
+                    } else {
+                        host = host.substr(0, pos);
+                    }
+                }
 
-				CRef<COrg_ref> rq(new COrg_ref);
-				rq->SetTaxname(host);
-				org_rq_list.push_back(rq);
-				local_src_descs.push_back(*desc_it);
-				local_desc_ctxs.push_back(*ctx_it);
-			}
-		}
+                CRef<COrg_ref> rq(new COrg_ref);
+            	rq->SetTaxname(host);
+                org_rq_list.push_back(rq);
+            	local_src_descs.push_back(*desc_it);
+            	local_desc_ctxs.push_back(*ctx_it);
+            }
+        }
 
-		++desc_it;
-		++ctx_it;
-	}
+        ++desc_it;
+        ++ctx_it;
+    }
 
-	// collect features with specific hosts
-	vector<CConstRef<CSeq_feat> >::const_iterator feat_it = src_feats.begin();
-	while (feat_it != src_feats.end()) {
-		FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*feat_it)->GetData().GetBiosrc()) {
-			if ((*mod_it)->IsSetSubtype()
+    // collect features with specific hosts
+    vector<CConstRef<CSeq_feat> >::const_iterator feat_it = src_feats.begin();
+    while (feat_it != src_feats.end()) {
+        FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*feat_it)->GetData().GetBiosrc()) {
+            if ((*mod_it)->IsSetSubtype()
 				&& (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
 				&& (*mod_it)->IsSetSubname()
 				&& isupper ((*mod_it)->GetSubname().c_str()[0])) {
@@ -4820,7 +4820,6 @@ void CValidError_imp::ValidateSpecificHost
 		++feat_it;
 	}
 
-#if 0
 
 	CTaxon3 taxon3;
 	taxon3.Init();
@@ -4912,14 +4911,13 @@ void CValidError_imp::ValidateSpecificHost
 					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 								"Invalid value for specific host: " + host,
 								**feat_it);
-				}
-			}
-			++reply_it;
-			++rq_it;
+                }
+            }
+            ++reply_it;
+            ++rq_it;
             ++feat_it;
-		}
-	}
-#endif
+        }
+    }
 }
 
 
@@ -4958,7 +4956,6 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 		++feat_it;
 	}
 
-#if 0
 	CTaxon3 taxon3;
 	taxon3.Init();
 	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
@@ -5049,8 +5046,6 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
 	// Now look at specific-host values
     ValidateSpecificHost (src_descs, desc_ctxs, src_feats);
-
-#endif
 
 }
 
