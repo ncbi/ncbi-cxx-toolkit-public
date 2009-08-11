@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(kValues[2*index], (int) sequence[hsp->subject.offset+5]);
 
         Int4 i, n = 0;
-        for (i = hsp->subject.offset-703; i < hsp->subject.offset - 693; ++i) {
+        for (i = hsp->subject.offset-701; i < hsp->subject.offset - 693; ++i) {
             if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         }
         BOOST_REQUIRE(n==0);
         n = 0;
-        for (; i < hsp->subject.end + 703; ++i) {
+        for (; i < hsp->subject.end + 701; ++i) {
             if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(kValues[2*index+1], (int) sequence[hsp->subject.offset+5]);
 
         n = 0;
-        for (i = hsp->subject.offset-703; i < hsp->subject.offset - 693; ++i) {
+        for (i = hsp->subject.offset-701; i < hsp->subject.offset - 693; ++i) {
             if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         }
         BOOST_REQUIRE(n==0);
         n = 0;
-        for (; i < hsp->subject.end + 703; ++i) {
+        for (; i < hsp->subject.end + 701; ++i) {
             if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
