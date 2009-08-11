@@ -51,6 +51,9 @@ class CSeq_entry_Handle;
 class CSeq_submit;
 class CSeq_annot;
 class CSeq_annot_Handle;
+class CSeq_feat;
+class CBioSource;
+class CPubdesc;
 class CBioseq;
 class CSeqdesc;
 class CObjectManager;
@@ -111,6 +114,18 @@ public:
     // Validates stand alone Seq-annot objects. This will supress any
     // check on the context of the annotaions.
     CConstRef<CValidError> Validate(const CSeq_annot_Handle& sa, 
+        Uint4 options = 0);
+
+	// Validate Seq-feat
+    CConstRef<CValidError> Validate(const CSeq_feat& feat, 
+        Uint4 options = 0);
+
+	// Validate BioSource
+    CConstRef<CValidError> Validate(const CBioSource& src, 
+        Uint4 options = 0);
+
+	// Validate Pubdesc
+    CConstRef<CValidError> Validate(const CPubdesc& pubdesc, 
         Uint4 options = 0);
 
     // progress reporting

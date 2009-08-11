@@ -164,6 +164,10 @@ public:
     void Validate(const CSeq_submit& ss, CScope* scope = 0);
     void Validate(const CSeq_annot_Handle& sa);
 
+	void Validate(const CSeq_feat& feat);
+	void Validate(const CBioSource& src);
+	void Validate(const CPubdesc& pubdesc);
+
     void SetProgressCallback(CValidator::TProgressCallback callback,
         void* user_data);
 public:
@@ -200,6 +204,9 @@ public:
         TGraph graph);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAlign align);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry entry);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, const CBioSource& src);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, const COrg_ref& org);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, const CPubdesc& src);
     void PostObjErr (EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void PostBadDateError (EDiagSev sv, const string& msg, int flags, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 
@@ -221,6 +228,7 @@ public:
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 	void ValidateTaxonomy(const CSeq_entry& se);
 	void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
+    void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
 
         
     // getters

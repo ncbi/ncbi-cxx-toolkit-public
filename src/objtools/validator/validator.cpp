@@ -117,6 +117,39 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
+CConstRef<CValidError> CValidator::Validate
+(const CSeq_feat& feat, 
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&feat));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
+    imp.Validate(feat);
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::Validate
+(const CBioSource& src, 
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&src));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
+    imp.Validate(src);
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::Validate
+(const CPubdesc& pubdesc, 
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&pubdesc));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
+    imp.Validate(pubdesc);
+    return errors;
+}
+
+
 void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data)
 {
     m_PrgCallback = callback;

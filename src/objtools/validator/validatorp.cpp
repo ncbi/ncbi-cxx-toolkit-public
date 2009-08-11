@@ -322,6 +322,21 @@ void CValidError_imp::PostErr
         PostErr (sv, et, msg, *entry);
         return;
     }
+    const CBioSource* src = dynamic_cast < const CBioSource* > (&obj);
+    if (src != 0) {
+        PostErr (sv, et, msg, *src);
+        return;
+    }
+    const COrg_ref* org = dynamic_cast < const COrg_ref* > (&obj);
+    if (org != 0) {
+        PostErr (sv, et, msg, *org);
+        return;
+    }
+    const CPubdesc* pd = dynamic_cast < const CPubdesc* > (&obj);
+    if (pd != 0) {
+        PostErr (sv, et, msg, *pd);
+        return;
+    }
 }
 
 
@@ -616,6 +631,44 @@ void CValidError_imp::PostErr
 
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, GetAccessionFromObjects(&entry, NULL, *m_Scope));
 }
+
+
+void CValidError_imp::PostErr
+(EDiagSev      sv,
+ EErrType      et,
+ const string& msg,
+ const CBioSource& src)
+{
+    string desc = "BioSource: ";
+    
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, src, "");
+}
+
+
+void CValidError_imp::PostErr
+(EDiagSev      sv,
+ EErrType      et,
+ const string& msg,
+ const COrg_ref& org)
+{
+    string desc = "Org-ref: ";
+    
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, org, "");
+}
+
+
+void CValidError_imp::PostErr
+(EDiagSev      sv,
+ EErrType      et,
+ const string& msg,
+ const CPubdesc& pd)
+{
+    string desc = "Pubdesc: ";
+    
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, pd, "");
+}
+
+
 
 
 void CValidError_imp::PostObjErr 
@@ -1203,6 +1256,40 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
     }
     FindEmbeddedScript(*(sah.GetCompleteSeq_annot()));
     FindCollidingSerialNumbers(*(sah.GetCompleteSeq_annot()));
+}
+
+
+void CValidError_imp::Validate(const CSeq_feat& feat)
+{
+    CValidError_feat feat_validator(*this);
+    feat_validator.ValidateSeqFeat(feat, false);
+    if (feat.IsSetData() && feat.GetData().IsBiosrc()) {
+        const CBioSource& src = feat.GetData().GetBiosrc();
+        if (src.IsSetOrg()) {
+            ValidateTaxonomy (src.GetOrg(), src.IsSetGenome() ? src.GetGenome() : CBioSource::eGenome_unknown);
+        }
+    }
+    FindEmbeddedScript(feat);
+    FindCollidingSerialNumbers(feat);
+}
+
+
+void CValidError_imp::Validate(const CBioSource& src)
+{
+    ValidateBioSource(src, src);
+    if (src.IsSetOrg()) {
+        ValidateTaxonomy (src.GetOrg(), src.IsSetGenome() ? src.GetGenome() : CBioSource::eGenome_unknown);
+    }
+    FindEmbeddedScript(src);
+    FindCollidingSerialNumbers(src);
+}
+
+
+void CValidError_imp::Validate(const CPubdesc& pubdesc)
+{
+    ValidatePubdesc(pubdesc, pubdesc);
+    FindEmbeddedScript(pubdesc);
+    FindCollidingSerialNumbers(pubdesc);
 }
 
 
@@ -5048,6 +5135,124 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     ValidateSpecificHost (src_descs, desc_ctxs, src_feats);
 
 }
+
+
+void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
+{
+    // request list for taxon3
+    vector< CRef<COrg_ref> > org_rq_list;
+	CRef<COrg_ref> rq(new COrg_ref);
+	rq->Assign(org);
+	org_rq_list.push_back(rq);
+
+	CTaxon3 taxon3;
+	taxon3.Init();
+	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+	if (reply) {
+		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+
+		while (reply_it != reply->GetReply().end()) {
+		    if ((*reply_it)->IsError()) {
+				string err_str = "?";
+				if ((*reply_it)->GetError().IsSetMessage()) {
+					err_str = (*reply_it)->GetError().GetMessage();
+				}
+				PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							"Taxonomy lookup failed with message '" + err_str + "'", org);
+			} else if ((*reply_it)->IsData()) {
+				bool is_species_level = true;
+				bool force_consult = false;
+				bool has_nucleomorphs = false;
+				(*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
+				if (!is_species_level) {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							"Taxonomy lookup reports is_species_level FALSE", org);
+				}
+				if (force_consult) {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							"Taxonomy lookup reports taxonomy consultation needed", org);
+				}
+                if (genome == CBioSource::eGenome_nucleomorph
+					&& !has_nucleomorphs) {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							"Taxonomy lookup does not have expected nucleomorph flag", org);
+				}
+			}
+			++reply_it;
+		}
+    }
+
+	// Now look at specific-host values
+    org_rq_list.clear();
+
+    FOR_EACH_ORGMOD_ON_ORGREF  (mod_it, org) {
+        if ((*mod_it)->IsSetSubtype()
+            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
+            && (*mod_it)->IsSetSubname()
+            && isupper ((*mod_it)->GetSubname().c_str()[0])) {
+       	    string host = (*mod_it)->GetSubname();
+            size_t pos = NStr::Find(host, " ");
+            if (pos != string::npos) {
+                if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
+                    && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
+                    pos = NStr::Find(host, " ", pos + 1);
+                    if (pos != string::npos) {
+                        host = host.substr(0, pos);
+                    }
+                } else {
+                    host = host.substr(0, pos);
+                }
+            }
+
+            CRef<COrg_ref> rq(new COrg_ref);
+    	    rq->SetTaxname(host);
+            org_rq_list.push_back(rq);
+        }
+    }
+
+    reply = taxon3.SendOrgRefList(org_rq_list);
+	if (reply) {
+		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+		vector< CRef<COrg_ref> >::iterator rq_it = org_rq_list.begin();
+
+		while (reply_it != reply->GetReply().end()
+			   && rq_it != org_rq_list.end()) {
+		    
+		    string host = (*rq_it)->GetTaxname();
+		    if ((*reply_it)->IsError()) {
+				string err_str = "?";
+				if ((*reply_it)->GetError().IsSetMessage()) {
+					err_str = (*reply_it)->GetError().GetMessage();
+				}
+				if(NStr::Find(err_str, "ambiguous") != string::npos) {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+								"Specific host value is ambiguous: " + host, org);
+				} else {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								"Invalid value for specific host: " + host, org);
+				}
+			} else if ((*reply_it)->IsData()) {
+				if (s_HasMisSpellFlag((*reply_it)->GetData())) {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								"Specific host value is misspelled: " + host, org);
+				} else if ((*reply_it)->GetData().IsSetOrg()) {
+                    string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
+					if (!NStr::EqualCase(match, host)) {
+						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+									"Specific host value is incorrectly capitalized:  " + host, org);
+					}
+				} else {
+					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								"Invalid value for specific host: " + host, org);
+				}
+			}
+			++reply_it;
+			++rq_it;
+		}
+    }
+
+}
+
 
 // =============================================================================
 //                         CValidError_base Implementation

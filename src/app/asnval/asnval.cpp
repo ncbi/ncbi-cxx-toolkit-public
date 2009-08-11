@@ -50,8 +50,10 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Pubdesc.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objtools/validator/validator.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
@@ -102,8 +104,15 @@ private:
     CConstRef<CValidError> ProcessSeqEntry(void);
     CConstRef<CValidError> ProcessSeqSubmit(void);
     CConstRef<CValidError> ProcessSeqAnnot(void);
+    CConstRef<CValidError> ProcessSeqFeat(void);
+    CConstRef<CValidError> ProcessBioSource(void);
+    CConstRef<CValidError> ProcessPubdesc(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
+    CRef<CSeq_feat> ReadSeqFeat(void);
+    CRef<CBioSource> ReadBioSource(void);
+    CRef<CPubdesc> ReadPubdesc(void);
+
     SIZE_TYPE PrintValidError(CConstRef<CValidError> errors, 
         const CArgs& args);
     SIZE_TYPE PrintBatchErrors(CConstRef<CValidError> errors,
@@ -227,8 +236,14 @@ int CAsnvalApp::Run(void)
             eval = ProcessSeqEntry();
         } else if ( header == "Seq-annot" ) {           // Seq-annot
             eval = ProcessSeqAnnot();
+        } else if (header == "Seq-feat" ) {             // Seq-feat
+            eval = ProcessSeqFeat();
+        } else if (header == "BioSource" ) {             // BioSource
+            eval = ProcessBioSource();
+        } else if (header == "Pubdesc" ) {             // Pubdesc
+            eval = ProcessPubdesc();
         } else {
-            NCBI_THROW(CException, eUnknown, "Unhandaled type " + header);
+            NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
         }
     }
 
@@ -366,6 +381,61 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     scope.AddTopLevelSeqEntry(*se);
     return validator.Validate(*se, &scope, m_Options);
 }
+
+
+CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat(void)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    m_In->Read(ObjectInfo(*feat), CObjectIStream::eNoFileHeader);
+
+    return feat;
+}
+
+
+CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
+{
+    CRef<CSeq_feat> feat(ReadSeqFeat());
+
+    CValidator validator(*m_ObjMgr);
+    return validator.Validate(*feat, m_Options);
+}
+
+
+CRef<CBioSource> CAsnvalApp::ReadBioSource(void)
+{
+    CRef<CBioSource> src(new CBioSource);
+    m_In->Read(ObjectInfo(*src), CObjectIStream::eNoFileHeader);
+
+    return src;
+}
+
+
+CConstRef<CValidError> CAsnvalApp::ProcessBioSource(void)
+{
+    CRef<CBioSource> src(ReadBioSource());
+
+    CValidator validator(*m_ObjMgr);
+    return validator.Validate(*src, m_Options);
+}
+
+
+CRef<CPubdesc> CAsnvalApp::ReadPubdesc(void)
+{
+    CRef<CPubdesc> pd(new CPubdesc());
+    m_In->Read(ObjectInfo(*pd), CObjectIStream::eNoFileHeader);
+
+    return pd;
+}
+
+
+CConstRef<CValidError> CAsnvalApp::ProcessPubdesc(void)
+{
+    CRef<CPubdesc> pd(ReadPubdesc());
+
+    CValidator validator(*m_ObjMgr);
+    return validator.Validate(*pd, m_Options);
+}
+
 
 
 CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)

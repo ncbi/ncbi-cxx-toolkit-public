@@ -198,17 +198,19 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_se
     }
     _ASSERT(feat.CanGetLocation());
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, "Location", feat);
-    x_ValidateSeqFeatLoc(feat);
+    if (m_Scope) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, "Location", feat);
 
-    if ( feat.CanGetProduct() ) {
-        ValidateSeqFeatProduct(feat.GetProduct(), feat);
-        CBioseq_Handle p_bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-        if (p_bsh == bsh) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
+        if ( feat.CanGetProduct() ) {
+            ValidateSeqFeatProduct(feat.GetProduct(), feat);
+            CBioseq_Handle p_bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+            if (p_bsh == bsh) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
+            }
         }
     }
+    x_ValidateSeqFeatLoc(feat);
     
     ValidateFeatPartialness(feat);
     
@@ -5916,6 +5918,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
 void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 {
+    if (!m_Scope) {
+        return;
+    }
+
     CConstRef<CSeq_feat> operon = 
         GetOverlappingOperon(gene.GetLocation(), *m_Scope);
     if ( !operon  ||  !operon->CanGetQual() ) {
@@ -6274,36 +6280,6 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
         }
     } 
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
-    if (bsh) {
-        // look for mismatch in capitalization for IDs
-        CNcbiOstrstream os;
-        const CSeq_id *id = loc.GetId();
-        if (id) {
-            id->WriteAsFasta(os);
-            string loc_id = CNcbiOstrstreamToString(os);
-            FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
-                if ((*it)->IsGi() || (*it)->IsGibbsq() || (*it)->IsGibbmt()) {
-                    continue;
-                }
-                CNcbiOstrstream os2;
-                (*it)->WriteAsFasta(os2);
-                string bs_id = CNcbiOstrstreamToString(os2);
-                if (NStr::EqualNocase (loc_id, bs_id) && !NStr::EqualCase (loc_id, bs_id)) {
-                    PostErr (eDiag_Error, eErr_SEQ_FEAT_FeatureSeqIDCaseDifference,
-                             "Sequence identifier in feature location differs in capitalization with identifier on Bioseq",
-                             feat);
-                }
-            }
-        }
-        // look for protein features on the minus strand
-        if (bsh.IsAa() && loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_MinusStrandProtein, 
-                     "Feature on protein indicates negative strand",
-                     feat);
-        }            
-    }
-
     // feature location should not be whole
     if (loc.IsWhole ()) {
         string prefix = "Feature";
@@ -6317,85 +6293,117 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_WholeLocation, prefix + " may not have whole location", feat);
     }
 
-    // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
-    if (bsh.IsNa()) {
-        try {
-            int num_n = 0;
-            int num_real = 0;
-            int num_gap = 0;
-            int num_unknown_gap = 0;
-            bool first_in_gap = false, last_in_gap = false;
-            bool first = true;
-
-            for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
-                CSeqVector vec = GetSequenceFromLoc (loc_it.GetSeq_loc(), *m_Scope);
-                if ( !vec.empty() ) {
-                    CBioseq_Handle ph = m_Scope->GetBioseqHandle (loc_it.GetSeq_loc());
-                    TSeqPos offset = loc_it.GetSeq_loc().GetStart (eExtreme_Positional);
-                    string vec_data = GetSequenceStringFromLoc (loc, *m_Scope);
-                    int pos = 0;
-                    string::iterator it = vec_data.begin();
-                    while (it != vec_data.end()) {
-                        if (*it == 'N') {
-                            CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
-                            if (map_iter.GetType() == CSeqMap::eSeqGap) {
-                                if (map_iter.IsUnknownLength()) {
-                                    num_unknown_gap ++;
-                                } else {
-                                    num_gap++;
-                                }
-                            } else {
-                                num_n++;
-                            }
-                        } else {
-                            num_real++;
-                        }
-                        ++it;
-                        ++pos;
+    if (m_Scope) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
+        if (bsh) {
+            // look for mismatch in capitalization for IDs
+            CNcbiOstrstream os;
+            const CSeq_id *id = loc.GetId();
+            if (id) {
+                id->WriteAsFasta(os);
+                string loc_id = CNcbiOstrstreamToString(os);
+                FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
+                    if ((*it)->IsGi() || (*it)->IsGibbsq() || (*it)->IsGibbmt()) {
+                        continue;
+                    }
+                    CNcbiOstrstream os2;
+                    (*it)->WriteAsFasta(os2);
+                    string bs_id = CNcbiOstrstreamToString(os2);
+                    if (NStr::EqualNocase (loc_id, bs_id) && !NStr::EqualCase (loc_id, bs_id)) {
+                        PostErr (eDiag_Error, eErr_SEQ_FEAT_FeatureSeqIDCaseDifference,
+                                 "Sequence identifier in feature location differs in capitalization with identifier on Bioseq",
+                                 feat);
                     }
                 }
-                if (first) {
-                    if (vec.IsInGap(0)) {
-                        first_in_gap = true;
-                    }
-                    first = false;
-                }
-                last_in_gap = vec.IsInGap(vec.size() - 1);
             }
-            bool misc_feature_matches_gap = false;
-
-            if (num_real == 0 && num_n == 0
-                && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-                TSeqPos start = loc.GetStart(eExtreme_Positional);
-                TSeqPos stop = loc.GetStop(eExtreme_Positional);
-                if ((start == 0 || CSeqMap_CI(bsh, SSeqMapSelector(), start - 1).GetType() != CSeqMap::eSeqGap ) 
-                    && (stop == bsh.GetBioseqLength() - 1 || CSeqMap_CI(bsh, SSeqMapSelector(), stop + 1).GetType() != CSeqMap::eSeqGap )) {
-                    misc_feature_matches_gap = true;
-                }
-            }
-                    
-
-            if (num_gap == 0 && num_unknown_gap == 0 && num_n == 0) {
-                // ignore features that do not cover any gap characters
-            } else if (first_in_gap || last_in_gap) {
-                if (num_real > 0) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
-                             "Feature begins or ends in gap", feat);
-                } else if (misc_feature_matches_gap) {
-                    // ignore (misc_) features that exactly cover the gap
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
-                             "Feature inside sequence gap", feat);
-                }
-            } else if (num_real == 0 && num_gap == 0 && num_unknown_gap == 0 && num_n >= 50) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
-                         "Feature inside gap of Ns", feat);
-            } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && num_unknown_gap > 0) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
-                         "Feature crosses gap of unknown length", feat);
+            // look for protein features on the minus strand
+            if (bsh.IsAa() && loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MinusStrandProtein, 
+                         "Feature on protein indicates negative strand",
+                         feat);
             }            
-		} catch (CException &x1) {
-		} catch (std::exception &x2) {
+
+            // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
+            if (bsh.IsNa()) {
+                try {
+                    int num_n = 0;
+                    int num_real = 0;
+                    int num_gap = 0;
+                    int num_unknown_gap = 0;
+                    bool first_in_gap = false, last_in_gap = false;
+                    bool first = true;
+
+                    for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
+                        CSeqVector vec = GetSequenceFromLoc (loc_it.GetSeq_loc(), *m_Scope);
+                        if ( !vec.empty() ) {
+                            CBioseq_Handle ph = m_Scope->GetBioseqHandle (loc_it.GetSeq_loc());
+                            TSeqPos offset = loc_it.GetSeq_loc().GetStart (eExtreme_Positional);
+                            string vec_data = GetSequenceStringFromLoc (loc, *m_Scope);
+                            int pos = 0;
+                            string::iterator it = vec_data.begin();
+                            while (it != vec_data.end()) {
+                                if (*it == 'N') {
+                                    CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
+                                    if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                                        if (map_iter.IsUnknownLength()) {
+                                            num_unknown_gap ++;
+                                        } else {
+                                            num_gap++;
+                                        }
+                                    } else {
+                                        num_n++;
+                                    }
+                                } else {
+                                    num_real++;
+                                }
+                                ++it;
+                                ++pos;
+                            }
+                        }
+                        if (first) {
+                            if (vec.IsInGap(0)) {
+                                first_in_gap = true;
+                            }
+                            first = false;
+                        }
+                        last_in_gap = vec.IsInGap(vec.size() - 1);
+                    }
+                    bool misc_feature_matches_gap = false;
+
+                    if (num_real == 0 && num_n == 0
+                        && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+                        TSeqPos start = loc.GetStart(eExtreme_Positional);
+                        TSeqPos stop = loc.GetStop(eExtreme_Positional);
+                        if ((start == 0 || CSeqMap_CI(bsh, SSeqMapSelector(), start - 1).GetType() != CSeqMap::eSeqGap ) 
+                            && (stop == bsh.GetBioseqLength() - 1 || CSeqMap_CI(bsh, SSeqMapSelector(), stop + 1).GetType() != CSeqMap::eSeqGap )) {
+                            misc_feature_matches_gap = true;
+                        }
+                    }
+                            
+
+                    if (num_gap == 0 && num_unknown_gap == 0 && num_n == 0) {
+                        // ignore features that do not cover any gap characters
+                    } else if (first_in_gap || last_in_gap) {
+                        if (num_real > 0) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
+                                     "Feature begins or ends in gap", feat);
+                        } else if (misc_feature_matches_gap) {
+                            // ignore (misc_) features that exactly cover the gap
+                        } else {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
+                                     "Feature inside sequence gap", feat);
+                        }
+                    } else if (num_real == 0 && num_gap == 0 && num_unknown_gap == 0 && num_n >= 50) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureInsideGap, 
+                                 "Feature inside gap of Ns", feat);
+                    } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && num_unknown_gap > 0) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
+                                 "Feature crosses gap of unknown length", feat);
+                    }            
+		        } catch (CException &x1) {
+		        } catch (std::exception &x2) {
+                }
+            }
         }
     }
 }
