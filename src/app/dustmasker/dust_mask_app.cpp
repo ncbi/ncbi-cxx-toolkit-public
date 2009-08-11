@@ -98,6 +98,9 @@ void CDustMaskApplication::Init(void)
                              "DUST linker (how close masked intervals "
                              "should be to get merged together).",
                              CArgDescriptions::eInteger, "1" );
+    arg_desc->AddDefaultKey( kInputFormat, "input_format",
+                             "input format (possible values: fasta, blastdb)",
+                             CArgDescriptions::eString, *kInputFormats );
     arg_desc->AddDefaultKey( kOutputFormat, "output_format",
                              "output format",
                              CArgDescriptions::eString, *kOutputFormats );
@@ -138,11 +141,30 @@ CDustMaskApplication::x_GetWriter()
     return retval;
 }
 
+CMaskReader * CDustMaskApplication::x_GetReader()
+{
+    const CArgs & args( GetArgs() );
+    const string & format( args[kInputFormat].AsString() );
+    
+    if( format == "fasta" ) {
+        CNcbiIstream& input_stream  = GetArgs()[kInput].AsInputFile();
+        return new CMaskFastaReader( 
+                input_stream, true, args["parse_seqids"] );
+    }
+    else if( format == "blastdb" ) {
+        return new CMaskBDBReader( args[kInput].AsString() );
+    }
+    else {
+        throw runtime_error( "Unknown input format" );
+    }
+
+    return 0;
+}
+
 //-------------------------------------------------------------------------
 int CDustMaskApplication::Run (void)
 {
     // Set up the input and output streams.
-    CNcbiIstream& input_stream  = GetArgs()[kInput].AsInputFile();
     CNcbiOstream& output_stream = GetArgs()[kOutput].AsOutputFile();
 
     // Set up the object manager.
@@ -157,9 +179,7 @@ int CDustMaskApplication::Run (void)
     // Now process each input sequence in a loop.
     CRef< CSeq_entry > aSeqEntry( 0 );
     auto_ptr<CMaskWriter> writer(x_GetWriter());
-
-    CMaskFastaReader * reader = 
-        new CMaskFastaReader( input_stream, true, GetArgs()["parse_seqids"] );
+    CMaskReader * reader = x_GetReader();
 
     while( (aSeqEntry = reader->GetNextSequence()).NotEmpty() )
     {
