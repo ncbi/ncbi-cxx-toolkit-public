@@ -191,7 +191,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
             dbl = DEF_CONN_TIMEOUT;
         info->timeout->sec  = (unsigned int) dbl;
         info->timeout->usec = (unsigned int)
-            ((dbl - info->timeout->sec) * 1000000);
+            ((dbl - info->timeout->sec) * 1000000.0);
     }
 
     /* max. # of attempts to establish connection */
@@ -1197,10 +1197,17 @@ extern EIO_Status URL_ConnectEx
     st = SOCK_CreateEx(host, port, c_timeout, sock, header, hdrsize, flags);
     free(header);
     if (st != eIO_Success) {
+        char temp[80];
         assert(!*sock);
+        if (st == eIO_Timeout  &&  c_timeout) {
+            sprintf(temp, "[%u.%06u]",
+                    (unsigned int)(c_timeout->sec + c_timeout->usec/1000000),
+                    (unsigned int)                 (c_timeout->usec%1000000));
+        } else
+            *temp = '\0';
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
-                     host, port, IO_StatusStr(st)));
+                    ("[URL_Connect]  Socket connect to %s:%hu failed: %s%s",
+                     host, port, IO_StatusStr(st), temp));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
     return st;
