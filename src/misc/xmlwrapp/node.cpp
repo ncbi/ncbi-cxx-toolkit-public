@@ -47,6 +47,7 @@
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/nodes_view.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/node_set.hpp>
 #include "utility.hpp"
 #include "ait_impl.hpp"
 #include "node_manip.hpp"
@@ -68,6 +69,8 @@
 // libxml includes
 #include <libxml/tree.h>
 #include <libxml/parser.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
 
 // Workshop compiler define
 #include <ncbiconf.h>
@@ -417,12 +420,12 @@ xml::ns xml::node::get_namespace (xml::ns::ns_safety_type type) const {
     return xml::ns(pimpl_->xmlnode_->ns);
 }
 //####################################################################
-xml::node::ns_list_type xml::node::get_namespace_definitions (xml::ns::ns_safety_type type) const {
+xml::ns_list_type xml::node::get_namespace_definitions (xml::ns::ns_safety_type type) const {
     return get_namespace_definitions(pimpl_->xmlnode_, type);
 }
 //####################################################################
-xml::node::ns_list_type xml::node::get_namespace_definitions (void* nd, xml::ns::ns_safety_type type) const {
-    xml::node::ns_list_type      namespace_definitions;
+xml::ns_list_type xml::node::get_namespace_definitions (void* nd, xml::ns::ns_safety_type type) const {
+    xml::ns_list_type      namespace_definitions;
     if (!reinterpret_cast<xmlNodePtr>(nd)->nsDef) {
         return namespace_definitions;
     }
@@ -493,9 +496,9 @@ xml::ns xml::node::add_namespace_definition (const xml::ns &name_space, ns_defin
     return add_namespace_def(name_space.get_uri(), name_space.get_prefix());
 }
 //####################################################################
-void xml::node::add_namespace_definitions (const xml::node::ns_list_type &name_spaces,
+void xml::node::add_namespace_definitions (const xml::ns_list_type &name_spaces,
                                            ns_definition_adding_type type) {
-    xml::node::ns_list_type::const_iterator  first(name_spaces.begin()), last(name_spaces.end());
+    xml::ns_list_type::const_iterator  first(name_spaces.begin()), last(name_spaces.end());
     for (; first != last; ++first) { add_namespace_definition(*first, type); }
 }
 //####################################################################
@@ -559,7 +562,7 @@ void xml::node::erase_namespace (void) {
 }
 //####################################################################
 void xml::node::erase_duplicate_ns_defs (void) {
-    std::deque<xml::node::ns_list_type> definitions_stack;
+    std::deque<xml::ns_list_type> definitions_stack;
     definitions_stack.push_front(get_namespace_definitions(xml::ns::type_unsafe_ns));
     return erase_duplicate_ns_defs(pimpl_->xmlnode_, definitions_stack);
 }
@@ -629,6 +632,16 @@ void xml::node::erase_unused_ns_defs (void* nd) {
         erase_unused_ns_defs(current);
         current = current->next;
     }
+}
+//####################################################################
+std::string xml::node::get_path (void) const {
+    xmlChar* path(xmlGetNodePath(pimpl_->xmlnode_));
+    if (path) {
+        std::string node_path(reinterpret_cast<const char*>(path));
+        xmlFree(path);
+        return node_path;
+    }
+    throw std::runtime_error("Cannot get node path");
 }
 //####################################################################
 bool xml::node::is_text (void) const {
@@ -740,6 +753,80 @@ xml::const_nodes_view xml::node::elements(const char *name) const
            );
 }
 
+//####################################################################
+xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) {
+    xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));
+    xmlXPathObjectPtr       object(reinterpret_cast<xmlXPathObjectPtr>(evaluate_xpath_expression(expr, xpath_context)));
+    xmlXPathFreeContext(xpath_context);
+    return node_set(object);
+}
+//####################################################################
+const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) const {
+    // Create a context
+    xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));
+    xmlXPathObjectPtr       object(reinterpret_cast<xmlXPathObjectPtr>(evaluate_xpath_expression(expr, xpath_context)));
+    xmlXPathFreeContext(xpath_context);
+    return node_set(object);
+}
+//####################################################################
+void* xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
+    if (!pimpl_->xmlnode_ || !pimpl_->xmlnode_->doc) {
+        throw std::runtime_error("cannot create xpath context (reference to document is not set)");
+    }
+    xmlXPathContextPtr  xpath_context(xmlXPathNewContext(pimpl_->xmlnode_->doc));
+    if (!xpath_context) {
+        xmlErrorPtr     last_error(xmlGetLastError());
+        std::string     message("cannot create xpath context");
+
+        if (last_error && last_error->message)
+            message += " : " + std::string(last_error->message);
+
+        throw std::runtime_error(message);
+    }
+    const ns_list_type& nspaces(expr.get_namespaces());
+    for (ns_list_type::const_iterator k(nspaces.begin()); k!=nspaces.end(); ++k) {
+        const char* prefix(k->get_prefix());
+        if (strlen(prefix) == 0) {
+            prefix = NULL;
+        }
+        if (xmlXPathRegisterNs(xpath_context, reinterpret_cast<const xmlChar*>(prefix),
+                                              reinterpret_cast<const xmlChar*>(k->get_uri())) != 0) {
+            xmlErrorPtr     last_error(xmlGetLastError());
+            std::string     message("cannot create xpath context (namespace registering error)");
+
+            if (last_error && last_error->message)
+                message += " : " + std::string(last_error->message);
+
+            xmlXPathFreeContext(xpath_context);
+            throw std::runtime_error(message);
+        }
+    }
+    return xpath_context;
+}
+//####################################################################
+void* xml::node::evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const {
+    xmlXPathObjectPtr object(NULL);
+
+    if (expr.get_compile_type() == xpath_expression::type_compile) {
+        object = xmlXPathCompiledEval(reinterpret_cast<xmlXPathCompExprPtr>(expr.get_compiled_expression()),
+                                      reinterpret_cast<xmlXPathContextPtr>(context));
+    }
+    else {
+        object = xmlXPathEvalExpression(reinterpret_cast<const xmlChar*>(expr.get_xpath()),
+                                        reinterpret_cast<xmlXPathContextPtr>(context));
+    }
+    if (!object) {
+        xmlErrorPtr     last_error(xmlGetLastError());
+        std::string     message("error evaluating xpath expression");
+
+        if (last_error && last_error->message)
+            message += " : " + std::string(last_error->message);
+
+        xmlXPathFreeContext(reinterpret_cast<xmlXPathContextPtr>(context));
+        throw std::runtime_error(message);
+    }
+    return object;
+}
 //####################################################################
 xml::node::iterator xml::node::insert (const node &n) {
     return iterator(xml::impl::node_insert(pimpl_->xmlnode_, 0, n.pimpl_->xmlnode_));

@@ -57,7 +57,6 @@
 #include <cstddef>
 #include <iosfwd>
 #include <string>
-#include <vector>
 #include <deque>
 
 namespace xml {
@@ -67,6 +66,8 @@ class document;
 class attributes;
 class nodes_view;
 class const_nodes_view;
+class xpath_expression;
+class node_set;
 
 namespace impl {
 class node_iterator;
@@ -92,8 +93,6 @@ class node {
 public:
     /// size type
     typedef std::size_t size_type;
-
-    typedef std::vector<xml::ns>  ns_list_type;  ///< type for holding XML namespaces
 
     /// enum for the different types of XML nodes
     enum node_type {
@@ -320,7 +319,7 @@ public:
     const char* get_name (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Set the content of a node. If this node is an element node, this
      * function will remove all of its children nodes and replace them
      * with one text node set to the given string.
@@ -332,7 +331,7 @@ public:
     void set_content (const char *content);
 
     //####################################################################
-    /** 
+    /**
      * Get the content for this text node. If this node is not a text node
      * but it has children nodes that are text nodes, the contents of those
      * child nodes will be returned. If there is no content or these
@@ -348,7 +347,7 @@ public:
     const char* get_content (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get this node's "type". You can use that information to know what you
      * can and cannot do with it.
      *
@@ -359,7 +358,7 @@ public:
     node_type get_type (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Get the list of attributes. You can use the returned object to get
      * and set the attributes for this node. Make sure you use a reference
      * to this returned object, to prevent a copy.
@@ -371,7 +370,7 @@ public:
     xml::attributes& get_attributes (void);
 
     //####################################################################
-    /** 
+    /**
      * Get the list of attributes. You can use the returned object to get
      * the attributes for this node. Make sure you use a reference to this
      * returned object, to prevent a copy.
@@ -384,7 +383,7 @@ public:
 
     //####################################################################
     /**
-     * Get the namespace of this xml::node. 
+     * Get the namespace of this xml::node.
      *
      * @param type
      *  The required type of namespace object (safe/unsafe).
@@ -556,6 +555,17 @@ public:
 
     //####################################################################
     /**
+      * Get the node path.
+      *
+      * @return node path
+      * @exception throw an exception in case of errors
+      * @author Sergey Satskiy, NCBI
+     **/
+    //####################################################################
+    std::string get_path (void) const;
+
+    //####################################################################
+    /**
      * Find out if this node is a text node or sometiming like a text node,
      * CDATA for example.
      *
@@ -566,7 +576,7 @@ public:
     bool is_text (void) const;
 
     //####################################################################
-    /** 
+    /**
      * Add a child xml::node to this node.
      *
      * @param child The child xml::node to add.
@@ -576,7 +586,7 @@ public:
     void push_back (const node &child);
 
     //####################################################################
-    /** 
+    /**
      * Swap this node with another one.
      *
      * @param other The other node to swap with.
@@ -952,8 +962,30 @@ public:
     **/
     const_nodes_view elements(const char *name) const;
 
+    /**
+     * Run the given XPath query.
+     *
+     * @param expr
+     *  XPath expression to run
+     * @return
+     *  XPath query result nodes set
+     * @author Sergey Satskiy, NCBI
+    **/
+    node_set run_xpath_query (const xpath_expression& expr);
+
+    /**
+     * Run the given XPath query.
+     *
+     * @param expr
+     *  XPath expression to run
+     * @return
+     *  XPath query const result nodes set
+     * @author Sergey Satskiy, NCBI
+    **/
+    const node_set run_xpath_query (const xpath_expression& expr) const;
+
     //####################################################################
-    /** 
+    /**
      * Insert a new child node. The new node will be inserted at the end of
      * the child list. This is similar to the xml::node::push_back member
      * function except that an iterator to the inserted node is returned.
@@ -1103,9 +1135,11 @@ private:
     friend class document;
     friend struct impl::doc_impl;
     friend struct impl::node_cmp;
+    friend class node_set;
 
     void sort_fo (impl::cbfo_node_compare &fo);
 
+    // XML namespaces support
     ns add_namespace_def (const char* uri, const char* prefix);
     ns add_matched_namespace_def (void* libxml2RawNamespace, const char* uri,
                                   ns_definition_adding_type type);
@@ -1114,6 +1148,11 @@ private:
     void erase_unused_ns_defs (void* nd);
     ns_list_type get_namespace_definitions (void* nd, ns::ns_safety_type type) const;
     void* find_replacement_ns_def (std::deque<ns_list_type>& defs, void* ns);
+
+    // XML XPath support
+    void* create_xpath_context (const xml::xpath_expression& expr) const;
+    void* evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const;
+
 }; // end xml::node class
 
 } // end xml namespace

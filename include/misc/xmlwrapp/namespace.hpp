@@ -38,7 +38,7 @@
 
 // standard includes
 #include <string>
-
+#include <vector>
 
 namespace xml {
 
@@ -86,7 +86,7 @@ public:
      * @note
      *  The lifetime of the returned string is either the lifetime of the
      *  namespace object itself (if it's a "safe" object) or the lifetime
-     *  of the underlying libxml2 document (if it's an "unsafe" object). 
+     *  of the underlying libxml2 document (if it's an "unsafe" object).
      * @author Sergey Satskiy, NCBI
     **/
     const char* get_prefix (void) const;
@@ -99,7 +99,7 @@ public:
      * @note
      *  The lifetime of the returned string is either the lifetime of the
      *  namespace object itself (if it's a "safe" object) or the lifetime
-     *  of the underlying libxml2 document (if it's an "unsafe" object). 
+     *  of the underlying libxml2 document (if it's an "unsafe" object).
      * @author Sergey Satskiy, NCBI
     **/
     const char* get_uri (void) const;
@@ -180,6 +180,12 @@ private:
     friend class node;
     friend class attributes;
 };
+
+
+/**
+ * type for holding XML namespaces
+**/
+typedef std::vector<xml::ns>  ns_list_type;
 
 
 } // xml namespace
