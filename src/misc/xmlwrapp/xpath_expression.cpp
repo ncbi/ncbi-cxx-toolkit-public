@@ -107,7 +107,7 @@ xpath_expression::xpath_expression (const xpath_expression&  other) :
 }
 
 
-xpath_expression::xpath_expression& xpath_expression::operator= (const xpath_expression& other)
+xpath_expression& xpath_expression::operator= (const xpath_expression& other)
 {
     if (this == &other) return *this;
 
