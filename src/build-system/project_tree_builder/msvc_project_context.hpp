@@ -126,7 +126,7 @@ public:
     const list<string> Defines(const SConfigInfo& cfg_info) const;
 
 
-    const list<string>& PreBuilds(void) const
+    const list<CProjKey>& PreBuilds(void) const
     {
         return m_PreBuilds;
     }
@@ -184,7 +184,7 @@ private:
 
     list<string> m_Defines;
 
-    list<string> m_PreBuilds;
+    list<CProjKey> m_PreBuilds;
 
     list<string> m_NcbiCLibs;
     

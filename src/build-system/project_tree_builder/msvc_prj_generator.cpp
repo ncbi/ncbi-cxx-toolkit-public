@@ -553,7 +553,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         combined = "$(InputDir)" + *i + "__.cpp;" + "$(InputDir)" + *i + "___.cpp;";
     }
 #endif
-    if (GetApp().GetCurrentBuildTree()) {
+    if (GetApp().GetIncompleteBuildTree()) {
         build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp";
     } else {
         build_info->m_Outputs = "$(InputDir)$(InputName).files;";

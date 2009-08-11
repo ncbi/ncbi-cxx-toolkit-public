@@ -362,7 +362,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,11,0) );
+    SetVersion( CVersionInfo(1,12,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -370,6 +370,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_TweakVTuneR = false;
     m_TweakVTuneD = false;
     m_CurrentBuildTree = 0;
+    m_IncompleteBuildTree = 0;
     m_ConfirmCfg = false;
     m_AllDllBuild = false;
     m_ExitCode = 0;
@@ -661,8 +662,9 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         PTB_INFO("Building configurations: " << str_config);
     }}
 
+    m_CurrentBuildTree = &projects_tree;
     if ( m_AddMissingLibs ) {
-        m_CurrentBuildTree = &projects_tree;
+        m_IncompleteBuildTree = &projects_tree;
     }
     // Projects
     CMsvcProjectGenerator prj_gen(*configurations);
@@ -792,8 +794,9 @@ void CProjBulderApp::GenerateMacProjects(CProjectItemsTree& projects_tree)
         PTB_INFO("Building configurations: " << str_config);
     }}
 
+    m_CurrentBuildTree = &projects_tree;
     if ( m_AddMissingLibs ) {
-        m_CurrentBuildTree = &projects_tree;
+        m_IncompleteBuildTree = &projects_tree;
     }
     // Projects
     CMacProjectGenerator prj_gen(*configurations, projects_tree);

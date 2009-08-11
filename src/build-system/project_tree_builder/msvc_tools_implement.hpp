@@ -594,8 +594,8 @@ private:
 class CPreBuildEventTool : public IPreBuildEventTool
 {
 public:
-    CPreBuildEventTool(EMakeFileType maketype)
-        : m_MakeType(maketype)
+    CPreBuildEventTool(const list<CProjKey>& lib_depends, EMakeFileType maketype)
+        : m_LibDepends(lib_depends), m_MakeType(maketype)
     {
     }
     virtual string Name(void) const
@@ -611,8 +611,21 @@ public:
                 command_line += "@echo " + echo + " project\n";
             }
         }
+        if ( !m_LibDepends.empty() ) {
+            const CProjectItemsTree* tree = GetApp().GetCurrentBuildTree();
+            ITERATE(list<CProjKey>, p, m_LibDepends) {
+                if (tree->m_Projects.find(*p) == tree->m_Projects.end()) {
+                    command_line += "@echo ERROR: This project depends on missing " + CreateProjectName(*p) + "\n";
+                    command_line += "exit 1\n";
+                    break;
+                }
+            }
+        }
         return command_line;
     }
+protected:
+    list<CProjKey> m_LibDepends;
+
 private:    
     EMakeFileType m_MakeType;
 
@@ -623,57 +636,37 @@ private:
 class CPreBuildEventToolLibImpl : public CPreBuildEventTool // for LIB
 {
 public:
-    CPreBuildEventToolLibImpl(const list<string>& lib_depends, EMakeFileType maketype)
-        : CPreBuildEventTool(maketype), m_LibDepends(lib_depends)
+    CPreBuildEventToolLibImpl(const list<CProjKey>& lib_depends, EMakeFileType maketype)
+        : CPreBuildEventTool(lib_depends, maketype)
     {
     }
 
     virtual string CommandLine(void) const
     {
-        string command_line, cmd;
-        command_line += CPreBuildEventTool::CommandLine();
+        string command_line = CPreBuildEventTool::CommandLine();
         if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
             return command_line;
         }
+        string cmd;
         if ( !m_LibDepends.empty() ) {
-#if 0
-            command_line += "@echo on\n";
-#else
             cmd = "\"";
             cmd += GetApp().GetProjectTreeRoot();
             cmd += "asn_prebuild.bat\"";
             cmd += " \"$(OutDir)\" \"$(ConfigurationName)\" \"$(SolutionPath)\"";
-#endif
         }
-        ITERATE(list<string>, p, m_LibDepends)
+        ITERATE(list<CProjKey>, p, m_LibDepends)
         {
-            const string& lib = *p;
-#if 0
-            
-            command_line += "IF EXIST \"$(OutDir)\"\\" + lib;
-            command_line += " GOTO HAVE_" + lib + "\n";
-
-            command_line += "devenv /build \"$(ConfigurationName)\" /project ";
-            command_line += lib;
-            command_line += " \"$(SolutionPath)\"\n";
-
-            command_line += ":HAVE_" + lib + "\n";
-#else
+            const string& lib = CreateProjectName(*p);
             cmd += " ";
             cmd += lib;
-#endif
         }
-#if 1
         if (!cmd.empty()) {
             command_line += "@echo " + cmd + "\n" + cmd;
         }
-#endif
         return command_line;
     }
 
 private:
-    list<string> m_LibDepends;
-
 	CPreBuildEventToolLibImpl(const CPreBuildEventToolLibImpl&);
 	CPreBuildEventToolLibImpl& operator= (const CPreBuildEventToolLibImpl&);
 };

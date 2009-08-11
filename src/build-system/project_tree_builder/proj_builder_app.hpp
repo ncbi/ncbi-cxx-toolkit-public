@@ -98,6 +98,7 @@ private:
     auto_ptr<CDllSrcFilesDistr> m_DllSrcFilesDistr;
 
     const CProjectItemsTree*    m_CurrentBuildTree;
+    const CProjectItemsTree*    m_IncompleteBuildTree;
 
     set<string>  m_ProjectTags;
     set<string>  m_AllowedTags;
@@ -162,6 +163,10 @@ public:
     const CProjectItemsTree* GetCurrentBuildTree(void) const
     {
         return m_CurrentBuildTree;
+    }
+    const CProjectItemsTree* GetIncompleteBuildTree(void) const
+    {
+        return m_IncompleteBuildTree;
     }
 
     CDllSrcFilesDistr&       GetDllFilesDistr  (void);

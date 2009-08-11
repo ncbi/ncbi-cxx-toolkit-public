@@ -596,7 +596,6 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
     SMakeProjectT::ConvertLibDependsMacro(depends, depends_libs);
 
     const CMsvcSite& site = GetApp().GetSite();
-    depends_ids->clear();
     ITERATE(list<string>, p, depends_libs) {
         string id = *p;
         if(CSymResolver::IsDefine(id)) {
@@ -625,7 +624,6 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
 void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends, 
                                            list<string>& depends_libs)
 {
-    depends_libs.clear();
     ITERATE(list<string>, p, depends) {
         const string& id = *p;
         if (id[0] == '#') {
@@ -1089,14 +1087,16 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         }
     }
 
-    // depends - TODO
+    // depends
     list<CProjKey> depends_ids;
+    list<CProjKey> unconditional_depends_ids;
     k = m->second.m_Contents.find("ASN_DEP");
     if (k != m->second.m_Contents.end()) {
         const list<string> depends = k->second;
-        SMakeProjectT::ConvertLibDepends(depends, &depends_ids);
+        SMakeProjectT::ConvertLibDepends(depends, &unconditional_depends_ids);
+        copy(unconditional_depends_ids.begin(),
+             unconditional_depends_ids.end(), back_inserter(depends_ids));
     }
-    list<CProjKey> unconditional_depends_ids;
     k = m->second.m_Contents.find("USR_DEP");
     if (k != m->second.m_Contents.end()) {
         const list<string> depends = k->second;

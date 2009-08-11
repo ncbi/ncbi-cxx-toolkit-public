@@ -36,6 +36,7 @@
 #include "msvc_site.hpp"
 #include "msvc_prj_defines.hpp"
 #include "ptb_err_codes.hpp"
+#include "proj_tree_builder.hpp"
 
 #include <algorithm>
 #include <set>
@@ -250,18 +251,27 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         m_Defines.push_back(GetApp().GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "DllBuildDefine"));
     }
     // Pre-Builds for LIB projects:
-    if (m_ProjType == CProjKey::eLib) {
-        ITERATE(list<CProjKey>, p, project.m_Depends) {
+    {
+        ITERATE(set<CProjKey>, p, project.m_UnconditionalDepends) {
             const CProjKey& proj_key = *p;
-            if (proj_key.Type() == CProjKey::eLib) {
-                if (GetApp().GetCurrentBuildTree()) {
+            {
+                if (GetApp().GetIncompleteBuildTree()) {
                     // do not attempt to prebuild what is missing
-                    if (GetApp().GetCurrentBuildTree()->m_Projects.find(proj_key) ==
-                        GetApp().GetCurrentBuildTree()->m_Projects.end()) {
+                    if (GetApp().GetIncompleteBuildTree()->m_Projects.find(proj_key) ==
+                        GetApp().GetIncompleteBuildTree()->m_Projects.end()) {
                         continue;
                     }
+                } else if (GetApp().GetCurrentBuildTree()) {
+                    if (GetApp().GetCurrentBuildTree()->m_Projects.find(proj_key) ==
+                        GetApp().GetCurrentBuildTree()->m_Projects.end()) {
+                        PTB_WARNING_EX(
+                            CDirEntry::ConcatPath(m_SourcesBaseDir, m_ProjectName),
+                                ePTB_ProjectNotFound, "depends on missing project: " << proj_key.Id());
+                    }
                 }
-                m_PreBuilds.push_back(CreateProjectName(proj_key));
+                if (!SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
+                    m_PreBuilds.push_back(proj_key);
+                }
             }
         }
     }
@@ -351,7 +361,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     }
 
     string ext_inc;
-    const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
+    const CProjectItemsTree* all_projects = GetApp().GetIncompleteBuildTree();
     if (all_projects) {
         string inc_dir = CDirEntry::ConcatPath(m_SrcRoot, 
             GetApp().GetConfig().Get("ProjectTree", "include"));
@@ -418,7 +428,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         additional_libs.push_back(ncbi_lib);        
     }
 
-    const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
+    const CProjectItemsTree* all_projects = GetApp().GetIncompleteBuildTree();
     if (all_projects) {
         string static_lib_dir  = CDirEntry::ConcatPath(m_StaticLibRoot, cfg_info.GetConfigFullName());
         string dynamic_lib_dir = CDirEntry::ConcatPath(m_DynamicLibRoot, cfg_info.GetConfigFullName());
@@ -468,7 +478,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
 {
     list<string> dir_list;
 // library folder
-    const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
+    const CProjectItemsTree* all_projects = GetApp().GetIncompleteBuildTree();
     if (all_projects) {
         string lib_dir;
         try {
@@ -829,7 +839,8 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
                                                 (project_context.PreBuilds(),
                                                  project_context.GetMakeType()));
     } else {
-        m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.GetMakeType()));
+        m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.PreBuilds(),
+                                                     project_context.GetMakeType()));
     }
     m_PreLinkEvent.reset(new CPreLinkEventToolDummyImpl());
 
