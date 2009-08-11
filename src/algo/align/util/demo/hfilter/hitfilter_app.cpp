@@ -62,10 +62,10 @@ namespace {
 
     const CAppHitFilter::THit::TCoord kMinHitLen (10);
     
-    const double BIG_DBL(0.5 * numeric_limits<float>::max());
-    const string BOTH("strict");
-    const string QUERY("query");
-    const string SUBJ("subject");
+    const double kBigDbl(0.5 * numeric_limits<float>::max());
+    const string kBoth("strict");
+    const string kQuery("query");
+    const string kSubj("subject");
 }
 
 void CAppHitFilter::Init()
@@ -397,7 +397,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             const THit& h = **ii;
             
             bool no_output_constraint = args["no_output_constraint"].HasValue();
-            if (no_output_constraint && h.GetScore() > BIG_DBL) {
+            if (no_output_constraint && h.GetScore() > kBigDbl) {
                 continue;
             }
             
@@ -432,12 +432,12 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             CRef<CScore> score(new CScore());
             score->SetId().SetStr("reciprocity");
             try {
-                if (h.GetScore() > BIG_DBL || args["ut"].AsString() == BOTH) 
+                if (h.GetScore() > kBigDbl || args["ut"].AsString() == kBoth) 
                 {
                     // derived from constraint alignment or 
                     // uniquify query and subject specified
                     score->SetValue().SetInt((int)e_ReciprocalBest);
-                } else if (args["ut"].AsString() == QUERY) {
+                } else if (args["ut"].AsString() == kQuery) {
                     score->SetValue().SetInt((int)e_SubjectDuplication);
                 } else {
                     score->SetValue().SetInt((int)e_QueryDuplication);
@@ -711,7 +711,7 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
             hit->FlipStrands();
         }
 
-        hit->SetScore(BIG_DBL);
+        hit->SetScore(kBigDbl);
 
         all.push_back(hit);
 
