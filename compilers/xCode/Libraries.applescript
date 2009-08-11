@@ -75,6 +75,7 @@ property xcache_bdb : {name:"xcache_bdb", path:"db:bdb", inc:{"bdb_blobcache.cpp
 property xcache_netcache : {name:"xcache_netcache", path:"connect:services"}
 property regexp : {name:"regexp", path:"util:regexp", exc:{"dftables.c", "pcredemo.c", "pcregrep.c", "pcretest.c"}}
 property xregexp : {name:"xregexp", path:"util:xregexp"}
+property xqueryparse : {name:"xqueryparse", path:"util:qparse", exc:{"query_parser_bison.tab.c"}}
 property ximage : {name:"ximage", path:"util:image"}
 property xcompress : {name:"xcompress", path:"util:compress"}
 property xbz2 : {name:"xbz2", path:"util:compress:bzip2", inc:{"blocksort.c", "compress.c", "huffman.c", "decompress.c", "crctable.c", "randtable.c", "bzlib.c"}}
@@ -153,6 +154,7 @@ property seqedit : {name:"seqedit", path:"objects:seqedit", inc:{"seqedit__.cpp"
 property seqtable : {name:"seqtable", path:"objects:seqtable", inc:{"seqtable__.cpp", "seqtable___.cpp"}, asn1:true}
 property submit : {name:"submit", path:"objects:submit", inc:{"submit__.cpp", "submit___.cpp"}, asn1:true}
 property taxon1 : {name:"taxon1", path:"objects:taxon1", inc:{"taxon1__.cpp", "taxon1___.cpp", "taxon1.cpp", "cache.cpp", "utils.cpp", "ctreecont.cpp"}, asn1:true}
+property taxon3 : {name:"taxon3", path:"objects:taxon3", inc:{"taxon3__.cpp", "taxon3___.cpp", "taxon3.cpp"}, asn1:true}
 property tinyseq : {name:"tinyseq", path:"objects:tinyseq", inc:{"tinyseq__.cpp", "tinyseq___.cpp"}, asn1:true}
 property valerr : {name:"valerr", path:"objects:valerr", inc:{"valerr__.cpp", "valerr___.cpp"}, asn1:true}
 
@@ -275,7 +277,7 @@ property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view
 (*****************************************************************************************)
 -- Organize everything into convinient packs --
 (*****************************************************************************************)
-property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, regexp, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, fworks:"CoreServices", req:true}
+property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, regexp, xqueryparse, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, fworks:"CoreServices", req:true}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core" & BDB_LIBS, req:true}
 property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb db", req:true}
@@ -287,7 +289,7 @@ property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", r
 property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoprosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple ncbi_pub", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
-property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
+property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, taxon3, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true}
