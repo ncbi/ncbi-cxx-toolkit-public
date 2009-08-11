@@ -2355,9 +2355,12 @@ public:
     ///
     /// Can throw a CStringException if the conversion is impossible
     /// or the string has invalid UTF-8 format.
-    string AsLatin1(void) const
+    /// @param substitute_on_error
+    ///   If the conversion is impossible, append the provided string
+    ///   or, if substitute_on_error equals 0, throw the exception
+    string AsLatin1(const char* substitute_on_error = 0) const
     {
-        return AsSingleByteString(eEncoding_ISO8859_1);
+        return AsSingleByteString(eEncoding_ISO8859_1,substitute_on_error);
     }
     
     /// Convert the string to a single-byte character representation
@@ -2366,9 +2369,13 @@ public:
     /// or the string has invalid UTF-8 format.
     /// @param encoding
     ///   Desired encoding
+    /// @param substitute_on_error
+    ///   If the conversion is impossible, append the provided string
+    ///   or, if substitute_on_error equals 0, throw the exception
     /// @return
     ///   C++ string
-    string AsSingleByteString(EEncoding encoding) const;
+    string AsSingleByteString(EEncoding encoding,
+        const char* substitute_on_error = 0) const;
 
 #if defined(HAVE_WSTRING)
     /// Convert to Unicode (UCS-2 with no surrogates where

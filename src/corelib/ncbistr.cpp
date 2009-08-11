@@ -2944,12 +2944,23 @@ SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
 }
 
 
-string CStringUTF8::AsSingleByteString(EEncoding encoding) const
+string CStringUTF8::AsSingleByteString(EEncoding encoding,
+    const char* substitute_on_error) const
 {
     string result;
     result.reserve( GetSymbolCount()+1 );
     for ( const char* src = c_str(); *src; ++src ) {
-        result.append(1, SymbolToChar( Decode( src ), encoding));
+        TUnicodeSymbol sym = Decode( src );
+        if (substitute_on_error) {
+            try {
+                result.append(1, SymbolToChar( sym, encoding));
+            }
+            catch (CStringException&) {
+                result.append(substitute_on_error);
+            }
+        } else {
+            result.append(1, SymbolToChar( sym, encoding));
+        }
     }
     return result;
 }
