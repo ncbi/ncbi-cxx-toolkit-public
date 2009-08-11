@@ -492,7 +492,7 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
     const TSeqPos kExpectedLength = 232;
     BOOST_CHECK_EQUAL(kExpectedLength, length);
 
-    const string kWarnings = error_stream.str();
+    const string kWarnings = CNcbiOstrstreamToString(error_stream);
     const string kExpectedMsg("Error initializing local BLAST database data");
     BOOST_CHECK(kWarnings.find(kExpectedMsg) != NPOS);
 
