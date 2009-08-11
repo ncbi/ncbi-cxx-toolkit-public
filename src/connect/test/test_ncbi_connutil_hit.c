@@ -66,7 +66,7 @@ int main(int argc, char** argv)
             "  URL args:        '%s'\n"
             "  Input data file: '%s'\n"
             "  User header:     '%s'\n"
-            " Reply(if any) from the hit URL goes to the standard output.\n\n",
+            "Response(if any) from the hit URL goes to standard output.\n\n",
             argv[0],
             host, (unsigned short) port, path, args, inp_file, user_header);
 
