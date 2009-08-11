@@ -2384,9 +2384,13 @@ public:
     /// Can throw a CStringException if the conversion is impossible
     /// or the string has invalid UTF-8 format.
     /// Defined only if wstring is supported by the compiler.
-    wstring AsUnicode(void) const
+    ///
+    /// @param substitute_on_error
+    ///   If the conversion is impossible, append the provided string
+    ///   or, if substitute_on_error equals 0, throw the exception
+    wstring AsUnicode(const wchar_t* substitute_on_error = 0) const
     {
-        return x_AsBasicString<wchar_t>();
+        return x_AsBasicString<wchar_t>(substitute_on_error);
     }
 #endif // HAVE_WSTRING
 
@@ -2394,9 +2398,13 @@ public:
     ///
     /// Can throw a CStringException if the conversion is impossible
     /// or the string has invalid UTF-8 format.
-    TStringUCS2 AsUCS2(void) const
+    ///
+    /// @param substitute_on_error
+    ///   If the conversion is impossible, append the provided string
+    ///   or, if substitute_on_error equals 0, throw the exception
+    TStringUCS2 AsUCS2(const TCharUCS2* substitute_on_error = 0) const
     {
-        return x_AsBasicString<TCharUCS2>();
+        return x_AsBasicString<TCharUCS2>(substitute_on_error);
     }
 
     /// Guess the encoding of the C string
@@ -2504,7 +2512,7 @@ private:
 
     /// Conversion to basic_string with any base type we need
     template <typename TChar>
-    basic_string<TChar> x_AsBasicString(void) const;
+    basic_string<TChar> x_AsBasicString(const TChar* substitute_on_error) const;
 
     void   x_Validate(void) const;
     /// Convert Unicode code point into UTF8 and append
@@ -3536,7 +3544,8 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 
 template <typename TChar>
 inline
-basic_string<TChar> CStringUTF8::x_AsBasicString(void) const
+basic_string<TChar> CStringUTF8::x_AsBasicString(
+    const TChar* substitute_on_error) const
 {
     TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
     basic_string<TChar> result;
@@ -3544,9 +3553,14 @@ basic_string<TChar> CStringUTF8::x_AsBasicString(void) const
     for (const char* src = c_str(); *src; ++src) {
         TUnicodeSymbol ch = Decode(src);
         if (ch > max_char) {
-            NCBI_THROW2(CStringException, eConvert,
-                "Failed to convert symbol to wide character",
-                (SIZE_TYPE)(src - c_str()));
+            if (substitute_on_error) {
+                result.append(substitute_on_error);
+                continue;
+            } else {
+                NCBI_THROW2(CStringException, eConvert,
+                    "Failed to convert symbol to wide character",
+                    (SIZE_TYPE)(src - c_str()));
+            }
         }
         result.append(1, (TChar)ch);
     }
