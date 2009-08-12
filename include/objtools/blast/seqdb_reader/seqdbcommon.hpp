@@ -918,6 +918,13 @@ public:
     /// an intersection of them.  Note that both arguments to this
     /// function are potentially modified (sorted in place).
     CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis);
+
+    /// The two lists of GIs are sorted and this class is computed as
+    /// an intersection of them. Since gilist is negative this means
+    /// all gi's in the vector that are NOT in the negative list.
+    /// Note that both arguments to this
+    /// function are potentially modified (sorted in place).
+    CIntersectionGiList(CSeqDBNegativeList & gilist, vector<int> & gis);
 };
 
 
