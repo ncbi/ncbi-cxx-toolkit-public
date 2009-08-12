@@ -73,10 +73,10 @@ protected:
         CRef<CSerialObject>& );
         
     void MapObject(
-        CRef<CSerialObject> );
+        CSerialObject& );
         
     void DumpObject(
-        CRef<CSerialObject> );
+        CSerialObject& );
         
     void DumpErrors(
         CNcbiOstream& );
@@ -238,8 +238,8 @@ CMultiReaderApp::Run(void)
     
     try {
         ReadObject( object );
-        MapObject( object );
-        DumpObject( object );       
+        MapObject( *object );
+        DumpObject( *object );       
     }
     catch ( CObjReaderLineException& /*err*/ ) {
     }
@@ -305,13 +305,9 @@ void CMultiReaderApp::ReadObject(
 
 //  ============================================================================
 void CMultiReaderApp::MapObject(
-    CRef<CSerialObject> object )
+    CSerialObject& object )
 //  ============================================================================
 {
-    if ( !object ) {
-        return;
-    }
-    
     CIdMapper* pMapper = GetMapper();
     if ( !pMapper ) {
         return;
@@ -322,13 +318,13 @@ void CMultiReaderApp::MapObject(
     
 //  ============================================================================
 void CMultiReaderApp::DumpObject(
-    CRef<CSerialObject> object )
+    CSerialObject& object )
 //  ============================================================================
 {
-    if ( m_bCheckOnly || !object ) {
+    if ( m_bCheckOnly ) {
         return;
     }
-    *m_pOutput << MSerial_AsnText << *object << endl;
+    *m_pOutput << MSerial_AsnText << object << endl;
 }
 
 //  ============================================================================

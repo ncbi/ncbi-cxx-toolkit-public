@@ -48,7 +48,7 @@ public:
 
     virtual void 
     MapObject(
-        CRef< CSerialObject >& ) =0; 
+        CSerialObject& ) =0; 
 
 };
 
@@ -93,7 +93,7 @@ public:
     //
     virtual void 
     MapObject(
-        CRef< CSerialObject >& ); 
+        CSerialObject& ); 
 
     /* any other convenience functions with shared implementations*/ 
     

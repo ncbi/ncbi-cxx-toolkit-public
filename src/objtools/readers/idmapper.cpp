@@ -88,10 +88,10 @@ CIdMapper::MapErrorString(
 //  ============================================================================
 void
 CIdMapper::MapObject(
-    CRef< CSerialObject >& object )
+    CSerialObject& object )
 //  ============================================================================
 {
-    CTypeIterator< CSeq_id > idit( *object );
+    CTypeIterator< CSeq_id > idit( object );
     for ( /*0*/; idit; ++idit ) {
         CSeq_id& id = *idit;
         if ( id.Which() != CSeq_id::e_Local ) {
