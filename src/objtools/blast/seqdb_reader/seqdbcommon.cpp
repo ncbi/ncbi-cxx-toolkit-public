@@ -1452,6 +1452,45 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
 
+
+CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector<int> & gis)
+{
+    neg_gilist.InsureOrder();
+    sort(gis.begin(), gis.end());
+    
+    int list_i = 0;
+    int list_n = neg_gilist.GetNumGis();
+    int gis_i = 0;
+    int gis_n = (int) gis.size();
+    
+    while(list_i < list_n && gis_i < gis_n) {
+        int L = neg_gilist.GetGi(list_i);
+        int G = gis[gis_i];
+        
+        if (L < G) {
+            list_i ++;
+            continue;
+        }
+        
+        if (L > G) {
+            m_GisOids.push_back(gis[gis_i]);
+            gis_i ++;
+            continue;
+        }
+        
+        list_i++;
+        gis_i++;
+    }
+
+    // push all the remaining vector gi's if any left
+    while (gis_i < gis_n) {
+        m_GisOids.push_back(gis[gis_i++]);
+    }
+    
+    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
+}
+
+
 CSeqDBIdSet::CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive)
     : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
 {
