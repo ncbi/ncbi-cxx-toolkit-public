@@ -33,6 +33,7 @@
 
 #include "proj_builder_app.hpp"
 #include "msvc_project_context.hpp"
+#include "proj_tree_builder.hpp"
 
 
 #include "msvc_prj_utils.hpp"
@@ -462,6 +463,19 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
     string script;
     CRef<CArray> inputs(  new CArray);
     CRef<CArray> outputs( new CArray);
+    ITERATE( set<CProjKey>, p, prj.m_UnconditionalDepends) {
+        const CProjKey& proj_key = *p;
+        if (m_Projects_tree.m_Projects.find(proj_key) ==
+            m_Projects_tree.m_Projects.end()) {
+            PTB_WARNING_EX(
+                CDirEntry::ConcatPath(prj.m_SourcesBaseDir, CreateProjectName(CProjKey(prj.m_ProjType, prj.m_ID))),
+                ePTB_ProjectNotFound, " depends on missing project: " << proj_key.Id());
+            if (!SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
+                script += "echo ERROR: this project depends on missing " + CreateProjectName(proj_key);
+                script += "\nexit 1\n";
+            }
+        }
+    }
     // configurable files
     ITERATE ( list<string>, f, prj_files.GetConfigurableSources()) {
         string outfile(GetRelativePath( *f));
