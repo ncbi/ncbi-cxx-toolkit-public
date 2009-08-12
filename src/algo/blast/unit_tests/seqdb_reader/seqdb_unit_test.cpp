@@ -2271,6 +2271,55 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     }
 }
 
+BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
+{
+        
+    vector<int> a3; // multiples of 3 from 0..500
+    vector<int> a5; // multiples of 5 from 0..500
+    
+    // The number 41 is added to the front of one set and the end of
+    // the other to verify that the code computing the intersection
+    // correctly sorts its inputs.
+    
+    int special = 41;
+    
+    // Add to start of a3
+    a3.push_back(special);
+    
+    for(int i = 0; (i*3) < 500; i++) {
+        a3.push_back(i*3);
+        
+        if (i*5 < 500) {
+            a5.push_back(i*5);
+        }
+    }
+    
+    // Add to end of a5
+    a5.push_back(special);
+    a5.push_back(1000);
+    
+    CSeqDBNegativeList gi3;
+    gi3.SetGiList(a3);
+    
+    // Intersection <> multiples of 15.
+    CIntersectionGiList both(gi3, a5);
+    
+    // all elements of a5 have to be in the intersect list
+    // unless they are also found in a3
+    for(int i = 0; i < a5.size(); i++) {
+        if (gi3.FindGi(a5[i])) {
+            BOOST_REQUIRE(false == both.FindGi(a5[i]));
+        } else {
+            BOOST_REQUIRE(true == both.FindGi(a5[i]));
+        }
+    }
+
+    // all elements in the intersect list have to be found in a5
+    for(int i = 0; i < both.GetNumGis(); i++) {
+        BOOST_REQUIRE(std::find(a5.begin(), a5.end(), both[i].gi) != a5.end());
+    }
+}
+
 BOOST_AUTO_TEST_CASE(ComputedList)
 {
         
