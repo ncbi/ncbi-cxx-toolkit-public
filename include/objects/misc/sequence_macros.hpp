@@ -247,6 +247,16 @@ typedef COrgMod::TSubtype TORGMOD_SUBTYPE;
 //   old_lineage            old_name         other
 
 
+/// CUser_field definitions
+
+#define NCBI_USERFIELD(Type) CUser_field::TData::e_##Type
+typedef CUser_field::C_Data::E_Choice TUSERFIELD_CHOICE;
+
+//   Str        Int         Real     Bool      Os
+//   Object     Strs        Ints     Reals     Oss
+//   Fields     Objects
+
+
 /// CPub definitions
 
 #define NCBI_PUB(Type) CPub::e_##Type
@@ -2053,6 +2063,61 @@ ADD_ITEM (AUTHOR_ON_PUB, Var, Ref)
 
 #define ERASE_AUTHOR_ON_PUB(Itr, Var) \
 LIST_ERASE_ITEM (AUTHOR_ON_PUB, Itr, Var)
+
+
+///
+/// CUser_object macros
+
+/// USERFIELD_ON_USEROBJECT macros
+
+#define USERFIELD_ON_USEROBJECT_Type      CUser_object::TData
+#define USERFIELD_ON_USEROBJECT_Test(Var) (Var).IsSetData()
+#define USERFIELD_ON_USEROBJECT_Get(Var)  (Var).GetData()
+#define USERFIELD_ON_USEROBJECT_Set(Var)  (Var).SetData()
+
+/// USEROBJECT_HAS_USERFIELD
+
+#define USEROBJECT_HAS_USERFIELD(Var) \
+ITEM_HAS (USERFIELD_ON_USEROBJECT, Var)
+
+/// FOR_EACH_USERFIELD_ON_USEROBJECT
+/// EDIT_EACH_USERFIELD_ON_USEROBJECT
+// CUser_object& as input, dereference with [const] CUser_field& fld = **itr;
+
+#define FOR_EACH_USERFIELD_ON_USEROBJECT(Itr, Var) \
+FOR_EACH (USERFIELD_ON_USEROBJECT, Itr, Var)
+
+#define EDIT_EACH_USERFIELD_ON_USEROBJECT(Itr, Var) \
+EDIT_EACH (USERFIELD_ON_USEROBJECT, Itr, Var)
+
+/// ADD_USERFIELD_TO_USEROBJECT
+
+#define ADD_USERFIELD_TO_USEROBJECT(Var, Ref) \
+ADD_ITEM (USERFIELD_ON_USEROBJECT, Var, Ref)
+
+/// ERASE_USERFIELD_ON_USEROBJECT
+
+#define ERASE_USERFIELD_ON_USEROBJECT(Itr, Var) \
+VECTOR_ERASE_ITEM (USERFIELD_ON_USEROBJECT, Itr, Var)
+
+
+///
+/// CUser_field macros
+
+/// USERFIELD_CHOICE macros
+
+#define USERFIELD_CHOICE_Test(Var) (Var).IsSetData() && Var.GetData().Which() != CUser_field::TData::e_not_set
+#define USERFIELD_CHOICE_Chs(Var)  (Var).GetData().Which()
+
+/// USERFIELD_CHOICE_IS
+
+#define USERFIELD_CHOICE_IS(Var, Chs) \
+CHOICE_IS (USERFIELD_CHOICE, Var, Chs)
+
+/// SWITCH_ON_USERFIELD_CHOICE
+
+#define SWITCH_ON_USERFIELD_CHOICE(Var) \
+SWITCH_ON (USERFIELD_CHOICE, Var)
 
 
 ///
