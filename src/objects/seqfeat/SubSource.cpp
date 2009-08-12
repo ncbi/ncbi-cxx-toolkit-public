@@ -556,6 +556,7 @@ const string CCountries::sm_Former_Countries[] = {
     "Burma",
     "Czechoslovakia",
     "Ivory Coast",
+    "Korea",
     "Serbia and Montenegro",
     "Siam",
     "USSR",
