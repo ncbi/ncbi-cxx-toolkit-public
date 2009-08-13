@@ -427,7 +427,8 @@ static int/*bool*/ s_IsValidAuth(const char* challenge, size_t len)
     if (word < len) {
         /* 1st word is always the scheme name */
         const char* param = challenge + word;
-        for (param += strspn(param, " \t");  param < challenge + len; ) {
+        for (param += strspn(param, " \t");  param < challenge + len;
+             param += strspn(param, ", \t")) {
             size_t parlen = (size_t)(challenge + len - param);
             const char* c = (const char*) memchr(param, ',', parlen);
             if (c)
@@ -436,9 +437,7 @@ static int/*bool*/ s_IsValidAuth(const char* challenge, size_t len)
                 return 0/*false*/;
             if (parlen > 6  &&  strncasecmp(param, "realm=", 6) == 0)
                 retval = 1/*true, but keep scanning*/;
-            param += parlen;
-            if (c)
-                param += strspn(param, ", \t");
+            param += c ? ++parlen : parlen;
         }
     }
     return retval;
