@@ -31,10 +31,10 @@
 
 #include <ncbi_pch.hpp>
 #include <util/util_misc.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
-#  include <corelib/ncbimtx.hpp>
 #if defined(HAVE_READPASSPHRASE)
 #  include <readpassphrase.h>
 #endif
@@ -61,12 +61,11 @@ const char* CGetPasswordFromConsoleException::GetErrCodeString(void) const
 string g_GetPasswordFromConsole(const string& prompt)
 {
     string      password;
+    CMutex      lock;
+    CMutexGuard guard(lock);
 
 #if defined(NCBI_OS_UNIX)
     // UNIX implementation
-
-    CMutex      lock;
-    CMutexGuard guard(lock);
 
 #if defined(HAVE_READPASSPHRASE)
 
@@ -84,7 +83,7 @@ string g_GetPasswordFromConsole(const string& prompt)
     char* raw_password = getpass(prompt.c_str());
 
 #else
-#  error "Unsupported UNIX platform. It does not have either getpass() nor getpassphrase() functions."
+#  error "Unsupported UNIX platform. It does not have either getpass() or {get,read}passphrase() functions."
 #endif
 
     if (!raw_password)
