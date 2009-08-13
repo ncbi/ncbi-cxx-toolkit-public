@@ -124,6 +124,10 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgFinalGappedXDropoff;
 /// Argument to select the window size in the 2-hit wordfinder algorithm
 NCBI_BLASTINPUT_EXPORT extern const string kArgWindowSize;
 
+/// Argument to select the off-diagonal scan range in the 2-hit wordfinder algorithm
+NCBI_BLASTINPUT_EXPORT extern const string kArgOffDiagonalRange;
+NCBI_BLASTINPUT_EXPORT extern const int kDfltOffDiagonalRange;
+
 /// Argument to select the wordfinder's word size
 NCBI_BLASTINPUT_EXPORT extern const string kArgWordSize;
 

@@ -133,6 +133,7 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
+    SetOffDiagonalRange(BLAST_SCAN_RANGE_NUCL);
 }
 
 void

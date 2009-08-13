@@ -187,6 +187,20 @@ public:
                                          CBlastOptions& options);
 };
 
+/** Argument class to retrieve and set the off-diagonal range used in 2-hit
+    algorithm */
+class NCBI_BLASTINPUT_EXPORT COffDiagonalRangeArg : public IBlastCmdLineArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions 
+     * @note this depends on the matrix already being set...
+     */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+};
+
 /** Argument class to retrieve and set the word threshold BLAST algorithm 
  * option */
 class NCBI_BLASTINPUT_EXPORT CWordThresholdArg : public IBlastCmdLineArgs

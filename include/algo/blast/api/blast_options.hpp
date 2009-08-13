@@ -244,6 +244,9 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
+    int GetOffDiagonalRange() const;
+    void SetOffDiagonalRange(int r);
+
     double GetXDropoff() const;
     void SetXDropoff(double x);
 

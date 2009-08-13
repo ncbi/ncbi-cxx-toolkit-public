@@ -147,6 +147,9 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
+    int GetOffDiagonalRange() const;
+    void SetOffDiagonalRange(int r);
+
     double GetXDropoff() const;
     void SetXDropoff(double x);
 
@@ -908,6 +911,18 @@ inline void
 CBlastOptionsLocal::SetWindowSize(int s)
 {
     m_InitWordOpts->window_size = s;
+}
+
+inline int
+CBlastOptionsLocal::GetOffDiagonalRange() const
+{
+    return m_InitWordOpts->scan_range;
+}
+
+inline void
+CBlastOptionsLocal::SetOffDiagonalRange(int r)
+{
+    m_InitWordOpts->scan_range = r;
 }
 
 inline double

@@ -424,13 +424,14 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     BlastUngappedData *ungapped_data;
     BlastUngappedData dummy_ungapped_data;
     Int4 window_size = word_params->options->window_size;
+    Int4 scan_range = word_params->options->scan_range;
     Int4 hit_ready = 1;
     Int4 last_hit, hit_saved;
     DiagStruct *hit_level_array;
     BlastUngappedCutoffs *cutoffs = NULL;
     Boolean two_hits = (window_size > 0);
     Boolean found = FALSE;
-    Int4 Delta = MIN(5, window_size - word_length);
+    Int4 Delta = MIN(scan_range, window_size - word_length);
 
     hit_level_array = diag_table->hit_level_array;
     ASSERT(hit_level_array);
@@ -464,7 +465,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
             Int4 s_b = s_end_pos - 2 * word_length;
             Int4 delta;
             if (Delta < 0) Delta = 0;
-            for (delta = 1; delta < Delta ; ++delta) {
+            for (delta = 1; delta <= Delta ; ++delta) {
                 Int4 off_diag  = (orig_diag + delta) & diag_table->diag_mask;
                 Int4 off_s_end = hit_level_array[off_diag].last_hit;
                 Int4 off_s_l   = diag_table->hit_len_array[off_diag];
@@ -561,12 +562,13 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     BlastUngappedData *ungapped_data;
     BlastUngappedData dummy_ungapped_data;
     Int4 window_size = word_params->options->window_size;
+    Int4 scan_range = word_params->options->scan_range;
     Int4 hit_ready = 1; 
     Int4 last_hit, hit_saved = 0;
     BlastUngappedCutoffs *cutoffs = NULL;
     Boolean two_hits = (window_size > 0);
     Boolean found = FALSE;
-    Int4 Delta = MIN(5, window_size - word_length);
+    Int4 Delta = MIN(scan_range, window_size - word_length);
     Int4 rc;
 
     diag = s_off - q_off;
@@ -600,7 +602,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             Int4 s_b = s_end_pos - 2 * word_length;
             Int4 delta;
             if (Delta < 0) Delta = 0;
-            for (delta = 1; delta < Delta; ++delta) {
+            for (delta = 1; delta <= Delta; ++delta) {
                 Int4 off_s_end = 0;
                 Int4 off_s_l = 0;
                 Int4 off_hit_saved = 0;
@@ -659,7 +661,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     
     s_BlastDiagHashInsert(hash_table, diag, s_end_pos, 
                           (hit_ready) ? 0 : s_end_pos - s_off_pos,
-                          hit_ready, s_off_pos, window_size + Delta);
+                          hit_ready, s_off_pos, window_size + Delta + 1);
 
     return hit_ready;
 }

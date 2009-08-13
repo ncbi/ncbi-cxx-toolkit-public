@@ -181,6 +181,8 @@ public:
     /// Sets WindowSize
     /// @param ws WindowSize [in]
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
+    int GetOffDiagonalRange() const { return m_Opts->GetOffDiagonalRange(); }
+    void SetOffDiagonalRange(int r) { m_Opts->SetOffDiagonalRange(r); }
     
     /******************* Query setup options ************************/
     /// Clears the filtering options

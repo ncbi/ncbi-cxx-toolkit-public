@@ -481,7 +481,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
     case eBlastOpt_WindowSize:
         x_SetParam(B4Param_WindowSize, v);
         return;
-        
+
     case eBlastOpt_GapOpeningCost:
         x_SetParam(B4Param_GapOpeningCost, v);
         return;
@@ -1403,6 +1403,25 @@ CBlastOptions::SetWindowSize(int w)
     }
 }
 
+int 
+CBlastOptions::GetOffDiagonalRange() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetOffDiagonalRange() not available.");
+    }
+    return m_Local->GetOffDiagonalRange();
+}
+void 
+CBlastOptions::SetOffDiagonalRange(int w)
+{
+    if (m_Local) {
+        m_Local->SetOffDiagonalRange(w);
+    }
+    // N/A for the time being
+    //if (m_Remote) {
+    //    m_Remote->SetValue(eBlastOpt_OffDiagonalRange, w);
+    //}
+}
 double 
 CBlastOptions::GetXDropoff() const
 {

@@ -60,6 +60,7 @@ extern "C" {
                                           (contiguous megablast) */
 #define BLAST_WINDOW_SIZE_DISC 40  /**< default window size 
                                           (discontiguous megablast) */
+#define BLAST_SCAN_RANGE_NUCL 0   /**< default scan range (blastn) */
 
 /** length of word to trigger an extension. */
 #define BLAST_WORDSIZE_PROT 3   /**< default word size (all protein searches) */
@@ -254,6 +255,7 @@ typedef struct BlastInitialWordOptions {
    double gap_trigger; /**< Score in bits for starting gapped extension */
    Int4 window_size; /**< Maximal allowed distance between 2 hits in case 2 
                         hits are required to trigger the extension */
+   Int4 scan_range;  /**< Maximal number of gaps allowed between 2 hits */
    double x_dropoff; /**< X-dropoff value (in bits) for the ungapped 
                          extension */
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */

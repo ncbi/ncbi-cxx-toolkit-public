@@ -211,6 +211,8 @@ const string kArgGappedXDropoff("xdrop_gap");
 const string kArgFinalGappedXDropoff("xdrop_gap_final");
 
 const string kArgWindowSize("window_size");
+const string kArgOffDiagonalRange("off_diagonal_range");
+const int kDfltOffDiagonalRange = 0;
 
 const string kArgWordSize("word_size");
 

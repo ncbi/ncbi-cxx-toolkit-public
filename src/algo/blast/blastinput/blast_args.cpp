@@ -426,6 +426,31 @@ CWindowSizeArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 }
 
 void
+COffDiagonalRangeArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Extension options");
+    // 2-hit wordfinder off diagonal range
+    arg_desc.AddDefaultKey(kArgOffDiagonalRange, "int_value", 
+                            "Number of off-diagonals to search for the 2nd hit, "
+                            "use 0 to turn off",
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(kDfltOffDiagonalRange));
+    arg_desc.SetConstraint(kArgOffDiagonalRange, 
+                           new CArgAllowValuesGreaterThanOrEqual(0));
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+COffDiagonalRangeArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
+{
+    if (args[kArgOffDiagonalRange]) {
+        opt.SetOffDiagonalRange(args[kArgOffDiagonalRange].AsInteger());
+    } else {
+        opt.SetOffDiagonalRange(0);
+    }
+}
+
+void
 CWordThresholdArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
