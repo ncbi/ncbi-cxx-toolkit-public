@@ -23,7 +23,9 @@
  *
  * ===========================================================================
  *
- * Author:  Sergey Satskiy
+ * Author:  Sergey Satskiy,
+ *          Anton Lavrentiev (providing line by line advices of how it must be
+ *          implemented)
  *
  */
 
@@ -31,9 +33,11 @@
 #include <util/util_misc.hpp>
 
 #if defined(NCBI_OS_UNIX)
-#  include <termios.h>
 #  include <unistd.h>
-#  include <corelib/ncbistre.hpp>
+#  include <corelib/ncbimtx.hpp>
+#if defined(HAVE_READPASSPHRASE)
+#  include <readpassphrase.h>
+#endif
 #elif defined(NCBI_OS_MSWIN)
 #  include <conio.h>
 #else
@@ -47,9 +51,7 @@ BEGIN_NCBI_SCOPE
 const char* CGetPasswordFromConsoleException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eGetTerminalAttrError: return "eGetTerminalAttrError";
-    case eSetTerminalAttrError: return "eSetTerminalAttrError";
-    case eGetLineError:         return "eGetLineError";
+    case eGetPassError:         return "eGetPassError";
     case eKeyboardInterrupt:    return "eKeyboardInterrupt";
     default:                    return CException::GetErrCodeString();
     }
@@ -58,42 +60,38 @@ const char* CGetPasswordFromConsoleException::GetErrCodeString(void) const
 
 string g_GetPasswordFromConsole(const string& prompt)
 {
-    string password;
+    string      password;
 
 #if defined(NCBI_OS_UNIX)
     // UNIX implementation
 
-    struct termios old_attributes;
+    CMutex      lock;
+    CMutexGuard guard(lock);
 
-    if (tcgetattr(0, &old_attributes) != 0) {
+#if defined(HAVE_READPASSPHRASE)
+
+    char password_buffer[1024];
+    char* raw_password = readpassphrase(prompt.c_str(), password_buffer,
+                                        sizeof(password_buffer),
+                                        RPP_ECHO_OFF | RPP_REQUIRE_TTY);
+
+#elif defined(HAVE_GETPASSPHRASE)
+
+    char* raw_password = getpassphrase(prompt.c_str());
+
+#elif defined(HAVE_GETPASS)
+
+    char* raw_password = getpass(prompt.c_str());
+
+#else
+#  error "Unsupported UNIX platform. It does not have either getpass() nor getpassphrase() functions."
+#endif
+
+    if (!raw_password)
         NCBI_THROW
-            (CGetPasswordFromConsoleException, eGetTerminalAttrError,
-             "g_GetPasswordFromConsole(): cannot get terminal attributes");
-    }
-
-
-    struct termios new_attributes = old_attributes;
-    new_attributes.c_lflag &= ~ECHO;
-
-    if (tcsetattr(0, TCSADRAIN, &new_attributes) != 0) {
-        NCBI_THROW
-            (CGetPasswordFromConsoleException, eSetTerminalAttrError,
-             "g_GetPasswordFromConsole(): cannot set terminal attributes");
-    }
-
-    if ( !prompt.empty() )
-        NcbiCout << prompt << NcbiFlush;
-
-    if ( !NcbiGetline(NcbiCin, password, '\n') ) {
-        tcsetattr(0, TCSADRAIN, &old_attributes);
-        NcbiCin.clear();
-        NCBI_THROW
-            (CGetPasswordFromConsoleException, eGetLineError,
-             "g_GetPasswordFromConsole(): cannot get line from terminal");
-    }
-
-    // Restore terminal attributes
-    tcsetattr(0, TCSADRAIN, &old_attributes);
+            (CGetPasswordFromConsoleException, eGetPassError,
+             "g_GetPasswordFromConsole(): error getting password");
+    password = string(raw_password);
 
 #elif defined(NCBI_OS_MSWIN)
     // Windows implementation
