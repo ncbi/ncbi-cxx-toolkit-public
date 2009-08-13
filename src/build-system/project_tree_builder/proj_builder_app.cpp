@@ -932,6 +932,16 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 continue;
             }
 
+            string error;
+	    ITERATE(set<CProjKey>, u, p->second.m_UnconditionalDepends) {
+                const CProjKey& proj_key = *u;
+                if (projects_tree.m_Projects.find(proj_key) ==
+                    projects_tree.m_Projects.end()) {
+                    if (!SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
+                        error = "@echo ERROR: this project depends on missing " + CreateProjectName(proj_key);
+                    }
+                }
+	    }
             set<string> lib_guid, visited;
             ITERATE(list<CProjKey>, i, p->second.m_Depends) {
 
@@ -1000,6 +1010,9 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 	        ofs << " " << *d;
 	    }
 	    ofs << endl << "\t";
+	    if (!error.empty()) {
+	        ofs << error << endl << "\t@exit 1" << endl << "\t";
+	    }
 	    ofs << "+";
 	    if (p->second.m_MakeType == eMakeType_Expendable) {
 	        ofs << "-";
