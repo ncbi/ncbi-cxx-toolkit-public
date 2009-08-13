@@ -672,7 +672,7 @@ public:
     static string gethostname(void);
 
     static string ntoa(unsigned int  host);
-    bool          isip(const string& host);
+    static bool   isip(const string& host);
 
     /// empty str on err
     static string       gethostbyaddr(unsigned int  host);
