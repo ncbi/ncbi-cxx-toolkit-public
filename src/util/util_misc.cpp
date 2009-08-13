@@ -83,7 +83,7 @@ string g_GetPasswordFromConsole(const string& prompt)
     char* raw_password = getpass(prompt.c_str());
 
 #else
-#  error "Unsupported UNIX platform. It does not have either getpass() or {get,read}passphrase() functions."
+#  error "Unsupported Unix platform; the getpass, getpassphrase, and readpassphrase functions are all absent"
 #endif
 
     if (!raw_password)
