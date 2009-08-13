@@ -76,6 +76,10 @@ Location: {src,include}/util/regexp
 Author:   Philip Hazel
 License:  BSDish [src/util/regexp/doc/LICENCE]
 
+Location: {src,include}/misc/xmlwrapp
+Author:   Peter J Jones at al. [src/misc/xmlwrapp/AUTHORS]
+License:  BSDish [src/misc/xmlwrapp/LICENSE]
+
 
 
 ==============================================================
