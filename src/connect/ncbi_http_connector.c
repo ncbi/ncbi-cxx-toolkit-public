@@ -393,13 +393,13 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
 
 static int/*bool*/ s_IsValidParam(const char* param, size_t parlen)
 {
-    assert(!isspace((unsigned char)(*param)));
     const char* e = (const char*) memchr(param, '=', parlen);
     size_t toklen;
     if (!e  ||  e == param)
         return 0/*false*/;
     if ((toklen = (size_t)(++e - param)) >= parlen)
         return 0/*false*/;
+    assert(!isspace((unsigned char)(*param)));
     if (strcspn(param, " \t") < toklen)
         return 0/*false*/;
     if (*e == '\''  ||  *e == '"') {
