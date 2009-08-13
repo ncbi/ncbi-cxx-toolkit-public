@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         }
         BOOST_REQUIRE(n==0);
         n = 0;
-        for (; i < hsp->subject.end + 701; ++i) {
+        for (; i < hsp->subject.end + 701 && n == 0; ++i) {
             if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         }
         BOOST_REQUIRE(n==0);
         n = 0;
-        for (; i < hsp->subject.end + 701; ++i) {
+        for (; i < hsp->subject.end + 701 && n == 0; ++i) {
             if (sequence[i] == 201) ++n; 
         }
         BOOST_REQUIRE(n!=0);
