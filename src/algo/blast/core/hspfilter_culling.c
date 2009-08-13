@@ -617,8 +617,7 @@ s_BlastHSPCullingRun(void* data, BlastHSPList* hsp_list)
       A.begin = A.hsp->query.offset;
       A.end   = A.hsp->query.end;
       A.next  = NULL;
-      qlen    = BlastQueryInfoGetQueryLength(cull_data->query_info, 
-                                             params->program, A.cid);
+      qlen    = cull_data->query_info->contexts[A.cid].query_length;
 
       if (! c_tree[A.cid]) {
          c_tree[A.cid] = s_CTreeNew(qlen);
