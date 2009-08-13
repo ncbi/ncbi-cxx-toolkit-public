@@ -356,10 +356,10 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
 {
     const int kQueryGi = 14702146; 
     const string kDbName("data/seqn");
-    const size_t kNumHits = 3;
-    const int kGis[kNumHits] = { 46071158, 46072400, 46071955 };
-    const int kScores[kNumHits] = { 1024, 944, 88 };
-    const int kNumIdent[kNumHits] = { 449, 414, 47 };
+    const size_t kNumHits = 2;
+    const int kGis[kNumHits] = { 46071158, 46072400 };
+    const int kScores[kNumHits] = { 1024, 944 };
+    const int kNumIdent[kNumHits] = { 449, 414 };
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
     query_loc->SetWhole().SetGi(kQueryGi);
@@ -389,22 +389,22 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
     BOOST_REQUIRE_EQUAL(kNumHits, alignment->Get().size());
 
     CRef<CSeq_align> first_hit = alignment->Get().front();
-    CRef<CSeq_align> third_hit = alignment->Get().back();
+    CRef<CSeq_align> second_hit = alignment->Get().back();
 
     int score;
     BOOST_REQUIRE(first_hit->GetNamedScore("score", score));
     BOOST_REQUIRE_EQUAL(kScores[0], score);
-    BOOST_REQUIRE(third_hit->GetNamedScore("score", score));
-    BOOST_REQUIRE_EQUAL(kScores[2], score);
+    BOOST_REQUIRE(second_hit->GetNamedScore("score", score));
+    BOOST_REQUIRE_EQUAL(kScores[1], score);
 
     int num_ident;
     BOOST_REQUIRE(first_hit->GetNamedScore("num_ident", num_ident));
     BOOST_REQUIRE_EQUAL(kNumIdent[0], num_ident);
-    BOOST_REQUIRE(third_hit->GetNamedScore("num_ident", num_ident));
-    BOOST_REQUIRE_EQUAL(kNumIdent[2], num_ident);
+    BOOST_REQUIRE(second_hit->GetNamedScore("num_ident", num_ident));
+    BOOST_REQUIRE_EQUAL(kNumIdent[1], num_ident);
 
     BOOST_REQUIRE_EQUAL(kGis[0], first_hit->GetSeq_id(1).GetGi());
-    BOOST_REQUIRE_EQUAL(kGis[2], third_hit->GetSeq_id(1).GetGi());
+    BOOST_REQUIRE_EQUAL(kGis[1], second_hit->GetSeq_id(1).GetGi());
 
 }
 
