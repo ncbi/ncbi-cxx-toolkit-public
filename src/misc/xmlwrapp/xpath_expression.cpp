@@ -39,6 +39,7 @@
 #include <misc/xmlwrapp/xpath_expression.hpp>
 
 // standard includes
+#include <string.h>
 #include <stdexcept>
 
 // libxml includes
