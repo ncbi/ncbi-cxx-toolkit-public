@@ -2591,6 +2591,9 @@ void x_Translate(const Container& seq,
     size_t state = 0;
     size_t start_state = 0;
     size_t length = usable_size / 3;
+    bool check_start = (is_5prime_complete && frame == 0);
+    bool first_time = true;
+
     for (i = 0;  i < length;  ++i) {
 
         // loop through one codon at a time
@@ -2598,15 +2601,18 @@ void x_Translate(const Container& seq,
             state = tbl.NextCodonState(state, *start);
         }
 
-        if ( !prot.size() ) {
+        if (first_time) {
             start_state = state;
         }
 
         // save translated amino acid
-        prot.append(1, tbl.GetCodonResidue(state));
-        if (is_5prime_complete  &&  prot.size() == 1) {
-            prot[0] = tbl.GetStartResidue(state);
+        if (first_time  &&  check_start) {
+            prot.append(1, tbl.GetStartResidue(state));
+        } else {
+            prot.append(1, tbl.GetCodonResidue(state));
         }
+
+        first_time = false;
     }
 
     if (mod) {
@@ -2737,7 +2743,7 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
 
     CSeqVector seq(feat.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, frame, code,
-                feat.GetLocation().IsPartialStart(eExtreme_Biological),
+                !feat.GetLocation().IsPartialStart(eExtreme_Biological),
                 include_stop, remove_trailing_X, alt_start);
 
 
