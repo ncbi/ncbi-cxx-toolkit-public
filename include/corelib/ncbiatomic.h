@@ -123,7 +123,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
     return old_value;
 #    elif defined(__ppc__) ||  defined(__ppc64__)
     void* old_value;
-    int   swapped;
+    int   swapped = 0;
     NCBI_SCHED_SPIN_INIT();
     while ( !swapped ) {
         swapped = 0;
