@@ -19,11 +19,11 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-in input_file_name] [-out output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
+    windowmasker -mk_counts [-in input_file_name] [-out output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
 
     windowmasker -ustat unit_counts [-in input_file_name] [-out output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-infmt input_format] [-outfmt output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
 
-    windowmasker -convert true -in input_file_name -out output_file_name [-sformat output_format] [-smem available_memory]
+    windowmasker -convert -in input_file_name -out output_file_name [-sformat output_format] [-smem available_memory]
 
 DESCRIPTION
 
@@ -40,8 +40,7 @@ DESCRIPTION
     multiple times for masking. In addition, an option is provided
     to convert between different unit counts formats.
 
-    Stage 1 is selected with "-mk_counts true" command line option
-    (this option is set to "false" by default). Stage 1 processes
+    Stage 1 is selected with "-mk_counts" flag. Stage 1 processes
     input data in up to 4 passes.
 
         Pass 1 (optional). Checking for long possibly duplicate 
@@ -68,7 +67,7 @@ DESCRIPTION
         The counts of units that appear more than T_high times
         in the genome are assigned the count value of T_high.
         
-    Stage 2 corresponds to "-mk_counts false", which is the default.
+    Stage 2 is enabled by providing "-ustat <stat_file>" argument.
     WindowMasker reads the data generated in Stage 1 and a set of 
     input DNA sequences to output information about masked 
     subintervals. If "-dust true" is specified, then 
@@ -79,7 +78,7 @@ DESCRIPTION
     it is masked by either DUST or by WinMask.
 
     The unit counts format conversion function is triggered by
-    "-convert true" command line option.
+    "-convert" flag.
 
 OPTIONS
 
@@ -88,24 +87,30 @@ OPTIONS
     Stage 2 options. Some options are applicable in both stages 
     but could have somewhat different meaning.
 
+
+Options Selecting WindowMasker Mode of Operation
+
+    -mk_counts 
+
+        The presence of this flag enables Stage 1 processing
+        (counts creation).
+
+    -convert
+
+        If this flag is given, windowmasker functions as a converter
+        between different supported counts formats. In this case
+        options other than "-in", "-out", "-sformat", and "-smem" are 
+        not supported.
+
+    -ustat unit_counts
+
+        This option enables Stage 2 processing. It specifies
+        the name of the file containing the unit counts for the
+        genome in use. Unit counts are typically created during
+        Stage 1 of WindowMasker processing. The format of the unit
+        counts file is recognized automatically
+
 Common Options
-
-    -mk_counts true/false
-
-        Default: false
-
-        Select the mode of operation of WindowMasker. The value of 
-        true selects Stage 1 processing, e.g. creation of unit counts 
-        and computation of threshold parameters.  The value of false 
-        (default) selects Stage 2 processing, e.g. sequence masking.
-
-    -convert true/false
-
-        Default: false
-
-        Select unit counts format conversion function. If the value
-        is 'true' then all other options except "-in", "-out", 
-        "-sformat", and "-smem" are ignored.
 
     -exclude_ids exclude_id_list
 
@@ -188,7 +193,7 @@ Stage 1 Options
         counts will be generated based on all the sequences contained 
         in the listed files.
 
-        If "-convert true" is specified, then "-in" option is required
+        If "-convert" is specified, then "-in" option is required
         and its value must be the name of a valid unit counts file.
 
     -mem available_memory
@@ -209,7 +214,7 @@ Stage 1 Options
         and standard output is used if it is not specified.  Section 
         FILES contains the description of format of the file.
 
-        If "-convert true" option is given then "-out" option is
+        If "-convert" option is given then "-out" option is
         required and specifies the name of the target output unit
         counts file.
 
@@ -231,7 +236,7 @@ Stage 1 Options
         in a portable text format at the expense of startup performance
         during Stage 2.
 
-        If "-convert true" option is specified, then "-sformat" 
+        If "-convert" option is specified, then "-sformat" 
         determines the conversion target format.
 
     -smem available_memory
@@ -396,14 +401,6 @@ Stage 2 Options
         spans that whole number of words. This option allows to 
         overcome some problems resulting from direct CSeq_id 
         comparisons.
-
-    -ustat unit_counts
-
-        This option is required for Stage 2 processing. It specifies
-        the name of the file containing the unit counts for the
-        genome in use. Unit counts are typically created during
-        Stage 1 of WindowMasker processing. The format of the unit
-        counts file is recognized automatically
 
     -window window_size
 
@@ -654,7 +651,7 @@ SAMPLE WINDOWMASKER SESSION
     progress by printing dots to standard error (stderr).
 
 
-./windowmasker -mk_counts true -fa_list true -in fa_list -checkdup true -out ustat.15
+./windowmasker -mk_counts -fa_list true -in fa_list -checkdup true -out ustat.15
 Possible duplication of sequences:
 subject: lcl|Hs1_27103_34 and query: lcl|Hs1_33153_34
 at intervals

@@ -179,12 +179,19 @@ void CWinMaskApplication::Init(void)
                              "enable debug output",
                              CArgDescriptions::eBoolean, "false" );
 #endif
+    /*
     arg_desc->AddDefaultKey( "mk_counts", "generate_counts",
                              "generate frequency counts for a database",
                              CArgDescriptions::eBoolean, "false" );
+    */
+    arg_desc->AddFlag( "mk_counts", "generate frequency counts for a database" );
+    arg_desc->AddFlag( "convert", "convert counts between different formats" );
+
+    /*
     arg_desc->AddDefaultKey( "convert", "convert_counts",
                              "convert counts between different formats",
                              CArgDescriptions::eBoolean, "false" );
+    */
     arg_desc->AddDefaultKey( "fa_list", "input_is_a_list",
                              "indicates that -input represents a file containing "
                              "a list of names of fasta files to process, one name "
@@ -296,6 +303,50 @@ void CWinMaskApplication::Init(void)
     arg_desc->SetConstraint( "mem", new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "unit", new CArgAllow_Integers( 1, 16 ) );
 
+    // Set up dependencies.
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "outfmt" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "ustat" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "window" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "t_thres" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "t_extend" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "set_t_low" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "set_t_high" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "infmt" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "dust" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "dust_level" );
+    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "convert" );
+
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "checkdup" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "fa_list" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "mem" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "unit" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "genome_size" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "sformat" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "smem" );
+    arg_desc->CArgDescriptions::SetDependency( "ustat", CArgDescriptions::eExcludes, "convert" );
+
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "checkdup" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "window" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "t_extend" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "t_thres" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "t_high" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "t_low" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "set_t_low" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "set_t_high" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "infmt" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "outfmt" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "parse_seqids" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "fa_list" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "mem" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "unit" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "genome_size" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "dust" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "dust_level" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "exclude_ids" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "ids" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "text_match" );
+    arg_desc->CArgDescriptions::SetDependency( "convert", CArgDescriptions::eExcludes, "use_ba" );
+
     // Parse the arguments according to descriptions.
     SetupArgDescriptions(arg_desc.release());
 }
@@ -307,7 +358,8 @@ int CWinMaskApplication::Run (void)
 
     // Branch away immediately if the converter is called.
     //
-    if( GetArgs()["convert"].AsBoolean() ) {
+    // if( GetArgs()["convert"].AsBoolean() ) {
+    if( GetArgs()["convert"] ) {
         CWinMaskCountsConverter converter( 
                 GetArgs()[kInput].AsString(),
                 GetArgs()[kOutput].AsString(),

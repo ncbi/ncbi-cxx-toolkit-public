@@ -72,17 +72,20 @@ CWinMaskConfig::x_GetWriter(const CArgs& args,
 
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args )
-    : is( !args["mk_counts"].AsBoolean() && args[kInputFormat].AsString() != "blastdb" ? 
+    // : is( !args["mk_counts"].AsBoolean() && args[kInputFormat].AsString() != "blastdb" ? 
+    : is( !args["mk_counts"] && args[kInputFormat].AsString() != "blastdb" ? 
           // ( !args[kInput].AsString().empty() 
           ( !(args[kInput].AsString() == "-")
             ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
-      os( !args["mk_counts"].AsBoolean() ?
+      // os( !args["mk_counts"].AsBoolean() ?
+      os( !args["mk_counts"] ?
           // ( !args[kOutput].AsString().empty() 
           ( !(args[kOutput].AsString() == "-")
             ? new CNcbiOfstream( args[kOutput].AsString().c_str() )
             : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
-      lstat_name( args["ustat"].AsString() ),
+      // lstat_name( args["ustat"].AsString() ),
+      lstat_name( args["ustat"] ? args["ustat"].AsString() : "" ),
       textend( args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
       cutoff_score( args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
       max_score( args["t_high"] ? args["t_high"].AsInteger() : 0 ),
@@ -110,32 +113,41 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       unit_step( 1 ),
       // merge_unit_step( args["mustep"].AsInteger() ),
       merge_unit_step( 1 ),
-      mk_counts( args["mk_counts"].AsBoolean() ),
-      fa_list( args["fa_list"].AsBoolean() ),
-      mem( args["mem"].AsInteger() ),
+      // mk_counts( args["mk_counts"].AsBoolean() ),
+      mk_counts( args["mk_counts"] ),
+      // fa_list( args["fa_list"].AsBoolean() ),
+      fa_list( args["fa_list"] ? args["fa_list"].AsBoolean() : false ),
+      // mem( args["mem"].AsInteger() ),
+      mem( args["mem"] ? args["mem"].AsInteger() : 1536 ),
       unit_size( args["unit"] ? args["unit"].AsInteger() : 0 ),
       genome_size( args["genome_size"] ? args["genome_size"].AsInt8() : 0 ),
       input( args[kInput].AsString() ),
       output( args[kOutput].AsString() ),
       // th( args["th"].AsString() ),
       th( "90,99,99.5,99.8" ),
-      use_dust( args["dust"].AsBoolean() ),
+      // use_dust( args["dust"].AsBoolean() ),
+      use_dust( args["dust"] ? args["dust"].AsBoolean() : false ),
       // dust_window( args["dust_window"].AsInteger() ),
       // dust_linker( args["dust_linker"].AsInteger() ),
       dust_window( 64 ),
       // dust_level( 20 ),
-      dust_level( args["dust_level"].AsInteger() ),
+      // dust_level( args["dust_level"].AsInteger() ),
+      dust_level( args["dust_level"] ? args["dust_level"].AsInteger() : 20 ),
       dust_linker( 1 ),
-      checkdup( args["checkdup"].AsBoolean() ),
-      sformat( args["sformat"].AsString() ),
-      smem( args["smem"].AsInteger() ),
+      // checkdup( args["checkdup"].AsBoolean() ),
+      checkdup( args["checkdup"] ? args["checkdup"].AsBoolean() : false ),
+      // sformat( args["sformat"].AsString() ),
+      sformat( args["sformat"] ? args["sformat"].AsString() : "ascii" ),
+      // smem( args["smem"].AsInteger() ),
+      smem( args["smem"] ? args["smem"].AsInteger() : 512 ),
       ids( 0 ), exclude_ids( 0 ),
       use_ba( args["use_ba"].AsBoolean() ),
       text_match( args["text_match"].AsBoolean() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
-    string iformatstr = args[kInputFormat].AsString();
+    // string iformatstr = args[kInputFormat].AsString();
+    string iformatstr = args[kInputFormat] ? args[kInputFormat].AsString() : "fasta";
 
     if( !mk_counts )
     {
