@@ -253,20 +253,31 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     // Pre-Builds for LIB projects:
     {
         ITERATE(set<CProjKey>, p, project.m_UnconditionalDepends) {
-            const CProjKey& proj_key = *p;
+            CProjKey proj_key = *p;
             {
+                const CProjectItemsTree* curr_tree = GetApp().GetCurrentBuildTree();
                 if (GetApp().GetIncompleteBuildTree()) {
                     // do not attempt to prebuild what is missing
                     if (GetApp().GetIncompleteBuildTree()->m_Projects.find(proj_key) ==
                         GetApp().GetIncompleteBuildTree()->m_Projects.end()) {
                         continue;
                     }
-                } else if (GetApp().GetCurrentBuildTree()) {
-                    if (GetApp().GetCurrentBuildTree()->m_Projects.find(proj_key) ==
-                        GetApp().GetCurrentBuildTree()->m_Projects.end()) {
-                        PTB_WARNING_EX(
-                            CDirEntry::ConcatPath(m_SourcesBaseDir, m_ProjectName),
-                                ePTB_ProjectNotFound, "depends on missing project: " << proj_key.Id());
+                } else if (curr_tree) {
+                    if (curr_tree->m_Projects.find(proj_key) ==
+                        curr_tree->m_Projects.end()) {
+                        
+                        string dll(GetDllHost(*curr_tree, proj_key.Id()));
+                        if (!dll.empty()) {
+                            CProjKey id_alt(CProjKey::eDll,dll);
+                            if (curr_tree->m_Projects.find(id_alt) ==
+                                curr_tree->m_Projects.end()) {
+                                PTB_WARNING_EX(
+                                    CDirEntry::ConcatPath(m_SourcesBaseDir, m_ProjectName),
+                                        ePTB_ProjectNotFound, "depends on missing project: " << proj_key.Id());
+                            } else {
+                                proj_key = id_alt;
+                            }
+                        }
                     }
                 }
                 if (!SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
