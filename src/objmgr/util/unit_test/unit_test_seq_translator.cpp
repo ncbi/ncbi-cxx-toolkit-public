@@ -549,8 +549,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial)
                  CBioseq_Handle bsh =
                      scope.GetBioseqHandle(feat_iter->GetProduct());
                  CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+                 vec.SetCoding(CSeq_data::e_Ncbieaa); // allow extensions
                  vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-                 real_prot_seq[50] = '*';
              }}
 
             ///
@@ -1101,7 +1101,7 @@ GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
         mol aa,\
         length 374,\
         topology not-set,\
-        seq-data ncbieaa \"EFSLLLPRLECNGAISAHRNLRLPGSSDSPASASPVAGITGMCTHARLILX\
+        seq-data ncbieaa \"-FSLLLPRLECNGAISAHRNLRLPGSSDSPASASPVAGITGMCTHARLIL*\
 FFLVEMEFLHVGQAGLELPTSDDPSVSASQSARYRTGHHARLCLANFCGRNRVSLMCPSWSPELKQSTCLSLPKCWDY\
 RRAAVPGLFILFFLRHRCPTLTQDEVQWCDHSSLQPSTPEIKHPPASASQVAGTKDMHHYTWLIFIFIFNFLRQSLNS\
 VTQAGVQWRNLGSLQPLPPGFKLFSCPSLLSSWDYRRPPRLANFFVFLVEMGFTMFARLILISGPCDLPASASQSAGI\
