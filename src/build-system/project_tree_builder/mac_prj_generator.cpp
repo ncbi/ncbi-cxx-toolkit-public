@@ -463,7 +463,7 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
     string script;
     CRef<CArray> inputs(  new CArray);
     CRef<CArray> outputs( new CArray);
-    ITERATE( set<CProjKey>, p, prj.m_UnconditionalDepends) {
+    ITERATE( list<CProjKey>, p, prj_files.GetProjectContext().PreBuilds()) {
         const CProjKey& proj_key = *p;
         if (m_Projects_tree.m_Projects.find(proj_key) ==
             m_Projects_tree.m_Projects.end()) {
