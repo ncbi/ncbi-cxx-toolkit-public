@@ -266,17 +266,20 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                     if (curr_tree->m_Projects.find(proj_key) ==
                         curr_tree->m_Projects.end()) {
                         
+                        bool depfound = false;
                         string dll(GetDllHost(*curr_tree, proj_key.Id()));
                         if (!dll.empty()) {
                             CProjKey id_alt(CProjKey::eDll,dll);
-                            if (curr_tree->m_Projects.find(id_alt) ==
+                            if (curr_tree->m_Projects.find(id_alt) !=
                                 curr_tree->m_Projects.end()) {
-                                PTB_WARNING_EX(
-                                    CDirEntry::ConcatPath(m_SourcesBaseDir, m_ProjectName),
-                                        ePTB_ProjectNotFound, "depends on missing project: " << proj_key.Id());
-                            } else {
                                 proj_key = id_alt;
+                                depfound = true;
                             }
+                        }
+                        if (!depfound) {
+                            PTB_WARNING_EX(
+                                CDirEntry::ConcatPath(m_SourcesBaseDir, m_ProjectName),
+                                    ePTB_ProjectNotFound, "depends on missing project: " << proj_key.Id());
                         }
                     }
                 }
