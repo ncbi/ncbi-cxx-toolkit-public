@@ -372,9 +372,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
 
 
 /* Extend user header.
- * Existings tags matching (case-insensitively) those from "header" are
- * appended with new value (separated by a comma and a space) if the added
- * value is non-empty, otherwise, the tags are left untouched. All new
+ * Existings tags matching (case-insensitively) those from "header" get
+ * appended with new value (separated by a space) if the added value
+ * is non-empty, otherwise, the tags are left untouched.  All new
  * unmatched tags from "header" with non-empty values get added to the end
  * of the user header.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
