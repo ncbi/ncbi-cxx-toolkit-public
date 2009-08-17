@@ -263,6 +263,12 @@ public:
     /// @param m GappedMode [in]
     void SetGappedMode(bool m = true) { m_Opts->SetGappedMode(m); }
 
+    /// Returns Culling limit
+    int GetCullingLimit() const { return m_Opts->GetCullingLimit(); }
+    /// Sets Culling limit
+    /// @param s CullingLimit [in]
+    void SetCullingLimit(int s) { m_Opts->SetCullingLimit(s); }
+
     /******************** Database (subject) options *******************/
     /// Returns DbLength
     Int8 GetDbLength() const { return m_Opts->GetDbLength(); }
