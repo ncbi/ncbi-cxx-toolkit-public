@@ -73,7 +73,7 @@
 #include <algo/sequence/loc_mapper.hpp>
 #include <algo/sequence/compare_feats.hpp>
 
-#include <db/bdb/bdb_blobcache.hpp>
+//#include <db/bdb/bdb_blobcache.hpp>
 #include <dbapi/driver/drivers.hpp>
 
 #include <limits>
@@ -1604,7 +1604,7 @@ int CXcompareAnnotsApplication::Run(void)
             ERR_POST(Fatal << "Can't load query scope");
         }
         if(m_args["allow_ID"]) {
-            m_scope_t->AddDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
+            m_scope_q->AddDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
         }
 
         if(res == eLoadScope_SeqAnnot || res == eLoadScope_SeqEntry) {
