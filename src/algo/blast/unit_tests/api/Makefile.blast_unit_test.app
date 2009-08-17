@@ -12,7 +12,7 @@ SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
     hspstream_test_util scoreblk_unit_test seqalign_cmp seqalign_set_convert \
     split_query_unit_test phiblast_unit_test prelimsearch_unit_test \
 	psiblast_unit_test psibl2seq_unit_test traceback_unit_test \
-	tracebacksearch_unit_test msa2pssm_unit_test \
+	tracebacksearch_unit_test msa2pssm_unit_test optionshandle_unit_test \
 	hspfilter_culling_unit_test hspfilter_besthit_unit_test
     
 
