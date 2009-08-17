@@ -101,11 +101,71 @@ bool CSplicedAligner::x_CheckMemoryLimit()
 }
 
 
+class CSpliceRanker {
+
+public:
+
+    typedef Uint1 TRank;
+
+    CSpliceRanker(void)
+    {
+        m_Ranks.assign(0xFFFF, 0);
+
+        const vector<Uint2> ascii (0xFF, 0xFFFF);
+        m_Char2Bits.push_back(ascii);
+        m_Char2Bits.push_back(ascii);
+        m_Char2Bits.push_back(ascii);
+        m_Char2Bits.push_back(ascii);
+
+        Uint2 cA(0x00), cG(0x01), cC(0x02), cT(0x0F);
+        m_Char2Bits[0]['A'] = cA;
+        m_Char2Bits[0]['G'] = cG;
+        m_Char2Bits[0]['C'] = cC;
+        m_Char2Bits[0]['T'] = cT;
+
+        for(Uint1 k (0); k < 4; ++k) {
+            m_Char2Bits[k]['A'] = cA; cA <<= 4;
+            m_Char2Bits[k]['G'] = cG; cG <<= 4;
+            m_Char2Bits[k]['C'] = cC; cC <<= 4;
+            m_Char2Bits[k]['T'] = cT; cT <<= 4;
+        }
+
+        // GA-AG, GT-TG; also tentatively TT-AG
+        const Uint2 idxGAAG ( m_Char2Bits[0]['G'] | m_Char2Bits[1]['A'] | 
+                              m_Char2Bits[2]['A'] | m_Char2Bits[3]['G']   );
+        const Uint2 idxGTTG ( m_Char2Bits[0]['G'] | m_Char2Bits[1]['T'] | 
+                              m_Char2Bits[2]['T'] | m_Char2Bits[3]['G']   );
+        const Uint2 idxTTAG ( m_Char2Bits[0]['T'] | m_Char2Bits[1]['T'] | 
+                              m_Char2Bits[2]['A'] | m_Char2Bits[3]['G']   );
+
+        m_Ranks[idxGAAG] = m_Ranks[idxGTTG] = 1; // = m_Ranks[idxTTAG] = 1;
+    }
+
+    TRank GetRank(const char * donor, const char * acceptor) const {
+
+        return m_Ranks[ m_Char2Bits[0] [donor[0]]
+                      | m_Char2Bits[1] [donor[1]]
+                      | m_Char2Bits[2] [acceptor[0]]
+                      | m_Char2Bits[3] [acceptor[1]] ];
+    }
+
+    private:
+
+        vector<TRank> m_Ranks;
+        vector<vector<Uint2> > m_Char2Bits;
+};
+
+
+namespace {
+    CSpliceRanker g_Ranker;
+}
+
 size_t GetSplicePriority(const  char * dnr, const char* acc)
 {
-    // GA-AG, GT-TG
-    const size_t rv (dnr[0] == 'G' && acc[1] == 'G' && dnr[1] == acc[0] &&
-                     (dnr[1] == 'A' || dnr[1] == 'T')? 1: 0);
+    // GA-AG, GT-TG; TT-AG
+    const size_t rv (dnr[0] == 'G' && acc[1] == 'G' && 
+                     dnr[1] == acc[0] &&
+                    (dnr[1] == 'A' || dnr[1] == 'T')? 1: 0);
     return rv;
 }
 
@@ -163,12 +223,13 @@ void CSplicedAligner::CheckPreferences(void)
             }
             else {
 
-                size_t maxpr (0);
+                CSpliceRanker::TRank maxpr (0);
                 int jmaxpr (0);
                 // explore the left of the splice
                 int j;
                 for(j = -1; j >= -csq_matches && *(p1 + j) == *(p2e + j); --j) {
-                    const size_t pr (GetSplicePriority(p2 + j, p2e + j - 2));
+                    const CSpliceRanker::TRank pr (
+                        g_Ranker.GetRank(p2 + j, p2e + j - 2));
                     if(pr > maxpr) {
                         maxpr = pr;
                         jmaxpr = j;
@@ -179,7 +240,8 @@ void CSplicedAligner::CheckPreferences(void)
                 for(j = 1; j <= ti + 1 && m_Transcript[ti - j + 1] == eTS_Match
                         && *(p1 + j - 1) == *(p2 + j - 1); ++j)
                     {
-                        const size_t pr (GetSplicePriority(p2 + j, p2e + j - 2));
+                        const CSpliceRanker::TRank pr (
+                            g_Ranker.GetRank(p2 + j, p2e + j - 2));
                         if(pr > maxpr) {
                             maxpr = pr;
                             jmaxpr = j;
