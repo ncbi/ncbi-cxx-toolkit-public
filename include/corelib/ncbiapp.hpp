@@ -495,6 +495,14 @@ private:
     
     void x_AddDefaultArgs(void);
 
+    // Wrappers for parts of AppMain() called with or without try/catch
+    // depending on settings.
+    void x_TryInit(EAppDiagStream diag, const char* conf);
+    void x_TryMain(EAppDiagStream diag,
+                   const char*    conf,
+                   int*           exit_code,
+                   bool*          got_exception);
+
     static CNcbiApplication*   m_Instance;   ///< Current app. instance
     CRef<CVersion>             m_Version;    ///< Program version
     auto_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.

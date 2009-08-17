@@ -246,6 +246,159 @@ static void s_MacArgMunging(CNcbiApplication&   app,
 #endif  /* NCBI_OS_DARWIN */
 
 
+NCBI_PARAM_DECL(bool, Debug, Catch_Unhandled_Exceptions);
+NCBI_PARAM_DEF_EX(bool, Debug, Catch_Unhandled_Exceptions, true,
+                  eParam_NoThread,
+                  DEBUG_CATCH_UNHANDLED_EXCEPTIONS);
+typedef NCBI_PARAM_TYPE(Debug, Catch_Unhandled_Exceptions) TParamCatchExceptions;
+
+bool s_HandleExceptions(void)
+{
+    return TParamCatchExceptions::GetDefault();
+}
+
+
+void CNcbiApplication::x_TryInit(EAppDiagStream diag,
+                                 const char*    conf)
+{
+    // Load registry from the config file
+    if ( conf ) {
+        string x_conf(conf);
+        LoadConfig(*m_Config, &x_conf);
+    } else {
+        LoadConfig(*m_Config, NULL);
+    }
+
+    CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush);
+    CDiagContext::x_FinalizeSetupDiag();
+
+    // Setup the standard features from the config file.
+    // Don't call till after LoadConfig()
+    // NOTE: this will override environment variables,
+    // except DIAG_POST_LEVEL which is Set*Fixed*.
+    x_HonorStandardSettings();
+
+    // Application start
+    AppStart();
+
+    // Do init
+#if (defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION < 900)
+    // ICC 8.0 have an optimization bug in exceptions handling,
+    // so workaround it here
+    try {
+        Init();
+    }
+    catch (CArgHelpException& ) {
+        throw;
+    }
+#else
+    Init();
+#endif
+
+    // If the app still has no arg description - provide default one
+    if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
+        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+        arg_desc->SetUsageContext
+            (GetArguments().GetProgramBasename(),
+             "This program has no mandatory arguments");
+        SetupArgDescriptions(arg_desc.release());
+    }
+}
+
+
+void CNcbiApplication::x_TryMain(EAppDiagStream diag,
+                                 const char*    conf,
+                                 int*           exit_code,
+                                 bool*          got_exception)
+{
+    // Initialize the application
+    if ( s_HandleExceptions() ) {
+        try {
+            x_TryInit(diag, conf);
+        }
+        catch (CArgHelpException& e) {
+            x_AddDefaultArgs();
+            // Print USAGE
+            if (e.GetErrCode() == CArgHelpException::eHelpXml) {
+                m_ArgDesc->PrintUsageXml(cout);
+            } else {
+                string str;
+                m_ArgDesc->PrintUsage
+                    (str, e.GetErrCode() == CArgHelpException::eHelpFull);
+                cout << str;
+            }
+            *exit_code = 0;
+        }
+        catch (CArgException& e) {
+            NCBI_RETHROW_SAME(e, "Application's initialization failed");
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION_X(15,
+                                    "Application's initialization failed", e);
+            *got_exception = true;
+            *exit_code = 2;
+        }
+        catch (exception& e) {
+            ERR_POST_X(6, "Application's initialization failed: " << e.what());
+            *got_exception = true;
+            *exit_code = 2;
+        }
+    }
+    else {
+        x_TryInit(diag, conf);
+    }
+
+    // Run application
+    if (*exit_code == 1) {
+        GetDiagContext().SetGlobalAppState(eDiagAppState_AppRun);
+        if ( s_HandleExceptions() ) {
+            try {
+                *exit_code = m_DryRun ? DryRun() : Run();
+            }
+            catch (CArgException& e) {
+                NCBI_RETHROW_SAME(e, "Application's execution failed");
+            }
+            catch (CException& e) {
+                NCBI_REPORT_EXCEPTION_X(16,
+                                        "Application's execution failed", e);
+                *got_exception = true;
+                *exit_code = 3;
+            }
+            catch (exception& e) {
+                ERR_POST_X(7, "Application's execution failed: " << e.what());
+                *got_exception = true;
+                *exit_code = 3;
+            }
+        }
+        else {
+            *exit_code = m_DryRun ? DryRun() : Run();
+        }
+    }
+    GetDiagContext().SetGlobalAppState(eDiagAppState_AppEnd);
+
+    // Close application
+    if ( s_HandleExceptions() ) {
+        try {
+            Exit();
+        }
+        catch (CArgException& e) {
+            NCBI_RETHROW_SAME(e, "Application's cleanup failed");
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION_X(17, "Application's cleanup failed", e);
+            *got_exception = true;
+        }
+        catch (exception& e) {
+            ERR_POST_X(8, "Application's cleanup failed: "<< e.what());
+            *got_exception = true;
+        }
+    }
+    else {
+        Exit();
+    }
+}
+
+
 int CNcbiApplication::AppMain
 (int                argc,
  const char* const* argv,
@@ -415,143 +568,37 @@ int CNcbiApplication::AppMain
     int exit_code = 1;
     bool got_exception = false;
 
-    try {
-        // Initialize the application
+    if ( s_HandleExceptions() ) {
         try {
-            // Load registry from the config file
-            if ( conf ) {
-                string x_conf(conf);
-                LoadConfig(*m_Config, &x_conf);
-            } else {
-                LoadConfig(*m_Config, NULL);
-            }
-
-            CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush);
-            CDiagContext::x_FinalizeSetupDiag();
-
-            // Setup the standard features from the config file.
-            // Don't call till after LoadConfig()
-            // NOTE: this will override environment variables,
-            // except DIAG_POST_LEVEL which is Set*Fixed*.
-            x_HonorStandardSettings();
-
-            // Application start
-            AppStart();
-
-            // Do init
-#if (defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION < 900)
-            // ICC 8.0 have an optimization bug in exceptions handling,
-            // so workaround it here
-            try {
-                Init();
-            }
-            catch (CArgHelpException& ) {
-                throw;
-            }
-#else
-            Init();
-#endif
-
-            // If the app still has no arg description - provide default one
-            if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
-                auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-                arg_desc->SetUsageContext
-                    (GetArguments().GetProgramBasename(),
-                     "This program has no mandatory arguments");
-                SetupArgDescriptions(arg_desc.release());
-            }
+            x_TryMain(diag, conf, &exit_code, &got_exception);
         }
-        catch (CArgHelpException& e) {
-            x_AddDefaultArgs();
-            // Print USAGE
-            if (e.GetErrCode() == CArgHelpException::eHelpXml) {
-                m_ArgDesc->PrintUsageXml(cout);
-            } else {
+        catch (CArgException& e) {
+            // Print USAGE and the exception error message
+            if ( m_ArgDesc.get() ) {
+                x_AddDefaultArgs();
                 string str;
-                m_ArgDesc->PrintUsage
-                    (str, e.GetErrCode() == CArgHelpException::eHelpFull);
-                cout << str;
+                LOG_POST_X(9, m_ArgDesc->PrintUsage(str) << string(72, '='));
             }
-            exit_code = 0;
-        }
-        catch (CArgException& e) {
-            NCBI_RETHROW_SAME(e, "Application's initialization failed");
-        }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION_X(15,
-                                    "Application's initialization failed", e);
+            NCBI_REPORT_EXCEPTION_X(18, "", e);
             got_exception = true;
-            exit_code = 2;
+            exit_code = 1;
         }
-        catch (exception& e) {
-            ERR_POST_X(6, "Application's initialization failed: " << e.what());
-            got_exception = true;
-            exit_code = 2;
-        }
-
-        // Run application
-        if (exit_code == 1) {
-            GetDiagContext().SetGlobalAppState(eDiagAppState_AppRun);
-            try {
-                exit_code = m_DryRun ? DryRun() : Run();
-            }
-            catch (CArgException& e) {
-                NCBI_RETHROW_SAME(e, "Application's execution failed");
-            }
-            catch (CException& e) {
-                NCBI_REPORT_EXCEPTION_X(16,
-                                        "Application's execution failed", e);
-                got_exception = true;
-                exit_code = 3;
-            }
-            catch (exception& e) {
-                ERR_POST_X(7, "Application's execution failed: " << e.what());
-                got_exception = true;
-                exit_code = 3;
-            }
-        }
-        GetDiagContext().SetGlobalAppState(eDiagAppState_AppEnd);
-
-        // Close application
-        try {
-            Exit();
-        }
-        catch (CArgException& e) {
-            NCBI_RETHROW_SAME(e, "Application's cleanup failed");
-        }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION_X(17, "Application's cleanup failed", e);
-            got_exception = true;
-        }
-        catch (exception& e) {
-            ERR_POST_X(8, "Application's cleanup failed: "<< e.what());
-            got_exception = true;
-        }
-
-    }
-    catch (CArgException& e) {
-        // Print USAGE and the exception error message
-        if ( m_ArgDesc.get() ) {
-            x_AddDefaultArgs();
-            string str;
-            LOG_POST_X(9, m_ArgDesc->PrintUsage(str) << string(72, '='));
-        }
-        NCBI_REPORT_EXCEPTION_X(18, "", e);
-        got_exception = true;
-        exit_code = 1;
-    }
 #if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
-    // Microsoft promotes many common application errors to exceptions.
-    // This includes occurrences such as dereference of a NULL pointer and
-    // walking off of a dangling pointer.  The catch-all is lifted only in
-    // debug mode to permit easy inspection of such error conditions, while
-    // maintaining safety of production, release-mode applications.
-    catch (...) {
-        ERR_POST_X(10, Warning <<
-                       "Application has thrown an exception of unknown type");
-        throw;
-    }
+        // Microsoft promotes many common application errors to exceptions.
+        // This includes occurrences such as dereference of a NULL pointer and
+        // walking off of a dangling pointer.  The catch-all is lifted only in
+        // debug mode to permit easy inspection of such error conditions, while
+        // maintaining safety of production, release-mode applications.
+        catch (...) {
+            ERR_POST_X(10, Warning <<
+                           "Application has thrown an exception of unknown type");
+            throw;
+        }
 #endif
+    }
+    else {
+        x_TryMain(diag, conf, &exit_code, &got_exception);
+    }
 
     if (m_ExitCodeCond == eAllExits
         ||  (got_exception  &&  m_ExitCodeCond == eExceptionalExits)) {
