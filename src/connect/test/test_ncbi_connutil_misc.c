@@ -289,6 +289,10 @@ static void TEST_ConnNetInfo(void)
                                  "My-Tag4: Value 4.1\r\n"
                                  "My-Tag5: \t \r\n"
                                  "My-Tag6: Value 6\r\n");
+    ConnNetInfo_ExtendUserHeader(net_info,
+                                 "My-Tag6: Value 6\r\n");
+    ConnNetInfo_ExtendUserHeader(net_info,
+                                 "My-Tag6:Value 6\r\n");
     printf("HTTP User Header after extend:\n\"%s\"\n",
            net_info->http_user_header ? net_info->http_user_header : "<NONE>");
     ConnNetInfo_SetUserHeader(net_info, 0);

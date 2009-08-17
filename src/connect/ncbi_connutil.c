@@ -568,6 +568,12 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                 continue;
 
             if (op == eUserHeaderOp_Extend) {
+                if (linelen - taglen >= len
+                    &&  strncasecmp(line + linelen - len, newtagval, len) == 0
+                    &&  (linelen - taglen == len  ||
+                         isspace((unsigned char) line[linelen - len - 1]))) {
+                    len = 0;
+                }
                 l = linelen + len;
                 if (len && linelen > 1 && line[linelen - 2] == '\r')
                     --l;
@@ -598,7 +604,8 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                     memcpy(line, newline, len);
                 linelen = l;
                 used = 1;
-            }
+            } else if (op == eUserHeaderOp_Extend)
+                used = 1;
         }
 
         if (op == eUserHeaderOp_Delete)

@@ -360,7 +360,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
 /* Override user header.
  * Tags replaced (case-insensitively), and tags with empty values effectively
  * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
- * any appearence (if any) of "My-Tag: [<value>]" from the user header.
+ * a first appearence (if any) of "My-Tag: [<value>]" from the user header.
  * Unmatched tags with non-empty values are simply added to the existing user
  * header (as with "Append" above).
  * Return non-zero if successful, otherwise return 0 to indicate an error.
@@ -372,11 +372,13 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
 
 
 /* Extend user header.
- * Existings tags matching (case-insensitively) those from "header" get
- * appended with new value (separated by a space) if the added value
- * is non-empty, otherwise, the tags are left untouched.  All new
- * unmatched tags from "header" with non-empty values get added to the end
- * of the user header.
+ * Existings tags matching (case-insensitively) first appearances of those
+ * from "header" get appended with new value (separated by a space) if the
+ * added value is non-empty, otherwise, the tags are left untouched.  If new
+ * tag value matches (case-insensitively) last tag value already in the
+ * header, the new value does not get added (to avoid repetitive duplicates).
+ * All new unmatched tags from "header" with non-empty values get added
+ * to the end of the user header (as with "Append" above).
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
