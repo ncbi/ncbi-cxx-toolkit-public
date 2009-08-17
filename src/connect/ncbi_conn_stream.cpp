@@ -39,6 +39,7 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <corelib/ncbiapp.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Connect_Stream
@@ -124,7 +125,8 @@ static SOCK s_GrabSOCK(CSocket& socket)
     SOCK sock = socket.GetSOCK();
     if (socket.SetOwnership(eNoOwnership) == eNoOwnership) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
-                   "CConn_SocketStream::CConn_SocketStream socket not owned");
+                   "CConn_SocketStream::CConn_SocketStream(): "
+                   "Socket must be owned");
     }
     socket.Reset(0/*empty*/,
                  eNoOwnership/*irrelevant*/,
@@ -141,6 +143,17 @@ CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
                      timeout, buf_size)
 {
     return;
+}
+
+
+static void x_SetupUserAgent(SConnNetInfo* net_info)
+{
+    CNcbiApplication* theApp = CNcbiApplication::Instance();
+    if (theApp) {
+        string user_agent("User-Agent: ");
+        user_agent += theApp->GetProgramDisplayName() + "\r\n";
+        ConnNetInfo_ExtendUserHeader(net_info, user_agent.c_str());
+    }
 }
 
 
@@ -174,6 +187,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
     if (user_header)
         ConnNetInfo_OverrideUserHeader(net_info, user_header);
+    x_SetupUserAgent(net_info);
     if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
@@ -299,6 +313,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
         ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(service);
     if (!net_info)
         return 0;
+    x_SetupUserAgent(net_info);
     if (timeout && timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
