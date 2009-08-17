@@ -150,15 +150,62 @@ void CheckWrittenFile(const string& filename, const Uint8& len_bytes)
     NCBI_THROW(CException, eUnknown, errmsg);
 }
 
+
+//
+// Brute-force reversal & complementation
+
 template<typename T>
-T g_RC(T v)
+T ReverseAndComplement(T v)
 {
     T rv (0);
     for(size_t i (0), imax (4*sizeof(T)); i < imax; ++i, v >>= 2) {
         rv = (rv << 2) | (v & 3);
     }
     rv = ~rv;
+
     return rv;
+}
+
+
+//
+// Table-based bit reversal & complementation
+
+template<typename T>
+class CReverseAndComplement {
+
+public:
+
+    CReverseAndComplement(void) {
+
+        m_Table.resize(0xFF);
+
+        for(Uint1 i(1); i < 0xFF; ++i) {
+            m_Table[i] = ReverseAndComplement(i);
+        }
+
+        m_Table[0]     = 0xFF;
+        m_Table[0xFF]  = 0;
+    }
+
+    T operator() (T v) const {
+
+        T rv (0);
+        for(size_t i(0), imax(sizeof(T)); i < imax; ++i)  {
+            rv <<= 8;
+            rv |= m_Table[v & 0xFF];
+            v >>= 8;
+        }
+        return rv;
+    }
+
+private:
+
+    vector<Uint1> m_Table;
+};
+
+
+namespace {
+    CReverseAndComplement<Uint4> g_RC;
 }
 
 
