@@ -2779,7 +2779,7 @@ ITEM_HAS (DBXREF_ON_GENEREF, Var)
 
 /// FOR_EACH_DBXREF_ON_GENEREF
 /// EDIT_EACH_DBXREF_ON_GENEREF
-// CGene_ref& as input, dereference with [const] CDbtag& dbt = *itr;
+// CGene_ref& as input, dereference with [const] CDbtag& dbt = **itr;
 
 #define FOR_EACH_DBXREF_ON_GENEREF(Itr, Var) \
 FOR_EACH (DBXREF_ON_GENEREF, Itr, Var)
