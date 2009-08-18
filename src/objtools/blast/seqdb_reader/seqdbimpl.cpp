@@ -1944,6 +1944,9 @@ string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
         objects::EBlast_filter_program algo;
         string algo_opts, algo_name;
         GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
+        if (algo_opts.empty()) {
+            algo_opts.assign("default options used");
+        }
         retval << "    " << setw(10) << left << (*algo_id) 
                << setw(20) << left << algo_name
                << setw(40) << left << algo_opts << endl;
