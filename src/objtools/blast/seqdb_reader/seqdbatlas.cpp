@@ -193,7 +193,7 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
       m_OpenRegionsTrigger(CSeqDBMapStrategy::eOpenRegionsWindow),
       m_MaxFileSize       (0),
       m_Strategy          (*this),
-      m_SearchPath        (s_SetSearchPath())
+      m_SearchPath        (GenerateSearchPath())
 {
     for(int i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;

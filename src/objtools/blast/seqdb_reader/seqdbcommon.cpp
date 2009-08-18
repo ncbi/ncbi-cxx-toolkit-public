@@ -356,23 +356,6 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
     return result;
 }
 
-static const string s_SeqDB_SetSearchPath() {
-    // Local directory first;
-    string pathology(CDir::GetCwd() + s_GetPathSplitter());
-    // Then, BLASTDB;
-    CNcbiEnvironment env;
-    pathology += env.Get("BLASTDB");
-    pathology += s_GetPathSplitter();
-    // Finally, the config file.
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    if (sentry.registry) {
-        pathology += sentry.registry->Get("BLAST", "BLASTDB");
-        pathology += s_GetPathSplitter();
-    }
-    return pathology;
-}
-
 static string
 s_SeqDB_FindBlastDBPath(const string         & dbname,
                         char                   dbtype,
@@ -381,7 +364,7 @@ s_SeqDB_FindBlastDBPath(const string         & dbname,
                         CSeqDB_FileExistence & access,
                         const string           path="")
 {
-    const string pathology = (path=="") ? s_SeqDB_SetSearchPath() : path;
+    const string pathology = (path=="") ? CSeqDBAtlas::GenerateSearchPath() : path;
     
     if (sp) {
         *sp = pathology;
