@@ -39,8 +39,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CSeqDB::ESeqType
-ParseTypeString(const string& str);
+/// Convert a string to a CSeqDB ESeqType object
+CSeqDB::ESeqType ParseTypeString(const string& str);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

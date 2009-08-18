@@ -155,9 +155,9 @@ void CBlastDbCheckApplication::Init(void)
     arg_desc->SetDependency("dir", CArgDescriptions::eExcludes, "db");
     
     arg_desc->AddFlag
-        ("recurse",
+        ("recursive",
          "Specify true to recurse through all dbs in directory tree.");
-    arg_desc->SetDependency("recurse", CArgDescriptions::eExcludes, "db");
+    arg_desc->SetDependency("recursive", CArgDescriptions::eExcludes, "db");
     
     
     arg_desc->SetCurrentGroup("Output Options");
@@ -616,9 +616,13 @@ public:
         
         set<int> oids;
         
-        for(int i = 0; i < m_N; i++) {
+        for(int i = 0; i < m_N;) {
             int oid = m_Rng.GetRand(0, max-1);
-            oids.insert(oid);
+            // for alias DBs, not all OIDs will be fine, so check it first
+            if (db.CheckOrFindOID(oid)) {
+                oids.insert(oid);
+                i++;
+            }
         }
         
         Log(db, e_Minutiae) << "<testing " << m_N
@@ -650,7 +654,7 @@ public:
     virtual bool DoTest(CSeqDB & db, TSeen & seen)
     {
         Log(db, e_Minutiae) << "<testing " << m_N << " OIDs at each end>" << endl;
-        
+
         for(int oid = 0; db.CheckOrFindOID(oid); oid ++) {
             if (oid > m_N) {
                 int new_oid = db.GetNumOIDs()-m_N;
@@ -666,6 +670,7 @@ public:
     }
     
 private:
+    /// Test m_N elements from the start, m_N elements from the end
     int m_N;
 };
 
@@ -751,18 +756,9 @@ public:
     
     virtual bool Test(CTestAction & action);
     
-    // For files found by FindFilesInDir
-    void AddDB(CDirEntry & de)
-    {
-        m_DBs.push_back(de.GetPath());
-    }
-    
 private:
-    void x_FindDbs();
-    void x_ParseName(string & fname, string & seqtype);
-    
     string         m_Dir;
-    vector<string> m_DBs;
+    vector<SSeqDBInitInfo> m_DBs;
     
     CBlastDbCheckLog & m_Out;
     
@@ -771,59 +767,6 @@ private:
     bool   m_Recurse;
 };
 
-class CFoundFiles {
-public:
-    void operator()(CDirEntry & de)
-    {
-        dirs->AddDB(de);
-    }
-    
-    CRef<CDirTest> dirs;
-};
-
-void CDirTest::x_FindDbs()
-{
-    // 1. Find every database volume (but not alias files etc).
-    vector<string> fmasks, dmasks;
-    
-    // If the type is 'guess' we do both types of databases.
-    
-    if (m_DbType != "nucl") {
-        fmasks.push_back("*.pin");
-    }
-    if (m_DbType != "prot") {
-        fmasks.push_back("*.nin");
-    }
-    dmasks.push_back("*");
-    
-    EFindFiles flags = (EFindFiles)
-        (fFF_File | (m_Recurse ? fFF_Recursive : 0));
-    
-    CFoundFiles ff;
-    ff.dirs = this;
-    
-    FindFilesInDir(CDir(m_Dir), fmasks, dmasks, ff, flags);
-}
-
-void CDirTest::x_ParseName(string & fname, string & seqtype)
-{
-    if (fname.size() < 5) {
-        throw runtime_error("internal: db name is too short");
-    }
-    
-    string ext_str(fname, fname.size()-4, 4);
-    fname.resize(fname.size()-4);
-    
-    if (ext_str == ".pin") {
-        seqtype = "prot";
-    } else if (ext_str == ".nin") {
-        seqtype = "nucl";
-    } else {
-        throw runtime_error
-            (string("internal: unknown extension: ") + ext_str);
-    }
-}
-
 bool CDirTest::Test(CTestAction & action)
 {
     bool success = true;
@@ -831,24 +774,20 @@ bool CDirTest::Test(CTestAction & action)
     m_Out.Log(e_Summary)
         << "Finding database volumes..." << flush;
     
-    x_FindDbs();
+    // N.B.: this app was not designed to work with alias files, in particular,
+    // the ends test needs to be fixed.
+    m_DBs = FindBlastDBs(m_Dir, m_DbType, m_Recurse);
     
     m_Out.Log(e_Summary) << "(done)" << endl;
     
     m_Out.Log(e_Summary)
         << "Testing " << m_DBs.size() << " volume(s)." << endl;
     
-    sort(m_DBs.begin(), m_DBs.end());
-    
     int total = m_DBs.size(), passed = 0;
     
-    ITERATE(vector<string>, iter, m_DBs) {
-        string fname(*iter), seqtype;
-        x_ParseName(fname, seqtype);
+    ITERATE(vector<SSeqDBInitInfo>, iter, m_DBs) {
         
-        CSeqDB::ESeqType pn = ParseTypeString(seqtype);
-        
-        CRef<CSeqDB> db(new CSeqDB(fname, pn));
+        CRef<CSeqDB> db = iter->InitSeqDb();
         TSeen seen;
         
         bool okay = action.DoTest(*db, seen);
@@ -917,7 +856,7 @@ int CBlastDbCheckApplication::Run(void)
         string db(args["db"] ? args["db"].AsString() : "");
         string dir(args["dir"] ? args["dir"].AsString() : "");
         string dbtype(args["dbtype"].AsString());
-        bool recurse = !! args["recurse"];
+        bool recurse = !! args["recursive"];
         //int threads = args["threads"].AsInteger();
         
         if ((db == "") == (dir == "")) {
@@ -936,10 +875,11 @@ int CBlastDbCheckApplication::Run(void)
         bool full = !! args["full"];
         //bool fork1 = !! args["fork"];
         
-        int stride = args["stride"].AsInteger();
-        int random_sample = args["random"].AsInteger();
-        int end_amt = args["ends"].AsInteger();
-        bool isam = args["isam"].AsString() == "T";
+        // FIXME: should use flags for all of these
+        int stride = 1;
+        int random_sample = 0;
+        int end_amt = 0;
+        bool isam = false;
         
         if (full) {
             output.Log(e_Summary)
@@ -948,6 +888,11 @@ int CBlastDbCheckApplication::Run(void)
             stride = 1;
             random_sample = 0;
             end_amt = 0;
+        } else {
+            stride = args["stride"].AsInteger();
+            random_sample = args["random"].AsInteger();
+            end_amt = args["ends"].AsInteger();
+            isam = args["isam"].AsString() == "T";
         }
         
         // Behavior modification flags

@@ -172,6 +172,9 @@ public:
         eNucleotide,
         eUnknown
     };
+
+    /// Converts a CSeqDB sequence type into a human readable string
+    static string ESeqType2String(ESeqType type);
     
     /// Types of summary information available.
     enum ESummaryType {
@@ -334,6 +337,9 @@ public:
     /// been returned by RetSequence().
     ~CSeqDB();
     
+    /// Returns the default BLAST database search path
+    /// configured for this local installation of BLAST
+    static string GenerateSearchPath();
     
     /// Returns the sequence length in base pairs or residues.
     int GetSeqLength(int oid) const;
@@ -1300,6 +1306,43 @@ protected:
     CSeqDB();
 };
 
+/// Structure to define basic information to initialize a BLAST DB
+struct NCBI_XOBJREAD_EXPORT SSeqDBInitInfo : public CObject {
+    /// The BLAST DB name
+    string m_BlastDbName;
+    /// The molecule type
+    CSeqDB::ESeqType m_MoleculeType;
+
+    /// Default constructor
+    SSeqDBInitInfo() {
+        m_MoleculeType = CSeqDB::eUnknown;
+    }
+
+    /// operator less to support sorting
+    inline bool operator<(const SSeqDBInitInfo& rhs) const {
+        if (m_BlastDbName < rhs.m_BlastDbName) {
+            return true;
+        } else {
+            return false;
+        }
+        return ((int)m_MoleculeType < (int)rhs.m_MoleculeType);
+    }
+
+    /// Create a new CSeqDB instance from this object
+    CRef<CSeqDB> InitSeqDb() const {
+        return CRef<CSeqDB>(new CSeqDB(m_BlastDbName, m_MoleculeType)); 
+    }
+};
+
+/// Find BLAST DBs in the directory specified
+/// @param path directory to search BLAST DBs [in]
+/// @param dbtype BLAST DB molecule type, allowed values are 'prot', 'nucl',
+/// and 'guess' (which means any) [in]
+/// @param recurse whether BLAST DBs should be found recursively or not [in]
+/// @param include_alias_files Should alias files be included also? [in]
+vector<SSeqDBInitInfo>
+FindBlastDBs(const string& path, const string& dbtype, bool recurse,
+             bool include_alias_files = false);
 
 /// CSeqDBSequence --
 ///

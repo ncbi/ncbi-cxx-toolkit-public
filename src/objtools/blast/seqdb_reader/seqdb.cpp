@@ -1132,5 +1132,70 @@ void CSeqDB::SetNumberOfThreads(int num_threads)
     m_Impl->SetNumberOfThreads(num_threads);
 }
 
+string CSeqDB::ESeqType2String(ESeqType type)
+{
+    string retval("Unknown");
+    switch (type) {
+    case eProtein: retval.assign("Protein"); break;
+    case eNucleotide: retval.assign("Nucleotide"); break;
+    case eUnknown:
+    default: break;
+    }
+    return retval;
+}
+
+string CSeqDB::GenerateSearchPath()
+{
+    return CSeqDBAtlas::GenerateSearchPath();
+}
+
+/// Functor class for FindFilesInDir
+class CBlastDbFinder {
+public:
+    void operator() (CDirEntry& de) {
+        const string& extn = de.GetPath().substr(de.GetPath().length() - 3, 1);
+        SSeqDBInitInfo value;
+        // rm extension
+        value.m_BlastDbName = de.GetPath().substr(0, de.GetPath().length() - 4);
+        value.m_MoleculeType = 
+            (extn == "n" ? CSeqDB::eNucleotide : CSeqDB::eProtein);
+        m_DBs.push_back(value);
+    }
+
+    vector<SSeqDBInitInfo> m_DBs;
+};
+
+vector<SSeqDBInitInfo>
+FindBlastDBs(const string& path, const string& dbtype, bool recurse,
+             bool include_alias_files /* = false */)
+{
+    // 1. Find every database volume (but not alias files etc).
+    vector<string> fmasks, dmasks;
+    
+    // If the type is 'guess' we do both types of databases.
+    
+    if (dbtype != "nucl") {
+        fmasks.push_back("*.pin");
+        if (include_alias_files) {
+            fmasks.push_back("*.pal");
+        }
+    }
+    if (dbtype != "prot") {
+        fmasks.push_back("*.nin");
+        if (include_alias_files) {
+            fmasks.push_back("*.nal");
+        }
+    }
+    dmasks.push_back("*");
+    
+    EFindFiles flags = (EFindFiles)
+        (fFF_File | (recurse ? fFF_Recursive : 0));
+    
+    CBlastDbFinder dbfinder;
+    FindFilesInDir(CDir(path), fmasks, dmasks, dbfinder, flags);
+    sort(dbfinder.m_DBs.begin(), dbfinder.m_DBs.end());
+    return dbfinder.m_DBs;
+}
+
 END_NCBI_SCOPE
 

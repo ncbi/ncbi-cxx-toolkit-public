@@ -4,7 +4,7 @@ ASN_DEP = xnetblast blastdb
 
 ###  BASIC PROJECT SETTINGS
 LIB = blastdb_format
-SRC = seq_writer blastdb_dataextract
+SRC = seq_writer blastdb_dataextract blastdb_formatter
 # OBJ =
 
 CPPFLAGS = $(ORIG_CPPFLAGS)

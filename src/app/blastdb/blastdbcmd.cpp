@@ -44,6 +44,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <objtools/blast/blastdb_format/seq_writer.hpp>
+#include <objtools/blast/blastdb_format/blastdb_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
 #include "blastdb_aux.hpp"
 
@@ -389,7 +390,8 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddFlag("info", "Print BLAST database information", true);
     // All other options to this program should be here
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
-        "target_only", "ctrl_a", "get_dups", "pig", "range" };
+        "target_only", "ctrl_a", "get_dups", "pig", "range",
+        "mask_sequence_with" };
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
@@ -460,6 +462,47 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddFlag("ctrl_a", 
                       "Use Ctrl-A as the non-redundant defline separator",true);
 
+    const char* exclusions_discovery[]  = { "entry", "entry_batch", "outfmt",
+        "strand", "target_only", "ctrl_a", "get_dups", "pig", "range", "db",
+        "info", "mask_sequence_with", "line_length" };
+    arg_desc->SetCurrentGroup("BLAST database configuration and discovery options");
+    arg_desc->AddFlag("show_blastdb_search_path", 
+                      "Displays the default BLAST database search paths", true);
+    arg_desc->AddOptionalKey("list", "directory",
+                             "List BLAST databases in the specified directory",
+                             CArgDescriptions::eString);
+    arg_desc->AddFlag("recursive", 
+                      "Recursively traverse the directory structure to list "
+                      "available BLAST databases", true);
+    arg_desc->AddDefaultKey("list_outfmt", "format",
+            "Output format for the list option, where the available format specifiers are:\n"
+            "\t\t%f means the BLAST database absolute file name path\n"
+            "\t\t%p means the BLAST database molecule type\n"
+            "\t\t%t means the BLAST database title\n"
+            "\t\t%d means the date of last update of the BLAST database\n"
+            "\t\t%l means the number of bases/residues in the BLAST database\n"
+            "\t\t%n means the number of sequences in the BLAST database\n"
+            "\tFor every format each line of output will "
+            "correspond to a BLAST database.\n",
+            CArgDescriptions::eString, "%f %p");
+    for (size_t i = 0; i <
+         sizeof(exclusions_discovery)/sizeof(*exclusions_discovery); i++) {
+        arg_desc->SetDependency("list", CArgDescriptions::eExcludes,
+                                string(exclusions_discovery[i]));
+        arg_desc->SetDependency("recursive", CArgDescriptions::eExcludes,
+                                string(exclusions_discovery[i]));
+        arg_desc->SetDependency("list_outfmt", CArgDescriptions::eExcludes,
+                                string(exclusions_discovery[i]));
+        arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
+                                string(exclusions_discovery[i]));
+    }
+    arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
+                            "list");
+    arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
+                            "recursive");
+    arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
+                            "list_outfmt");
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -469,6 +512,26 @@ int CBlastDBCmdApp::Run(void)
     const CArgs& args = GetArgs();
 
     try {
+        CNcbiOstream& out = args["out"].AsOutputFile();
+        if (args["show_blastdb_search_path"]) {
+            out << CSeqDB::GenerateSearchPath() << NcbiEndl;
+            return status;
+        } else if (args["list"]) {
+            const string& blastdb_dir = args["list"].AsString();
+            const bool recurse = args["recursive"];
+            const string dbtype = args["dbtype"] 
+                ? args["dbtype"].AsString() 
+                : "guess";
+            const string& kOutFmt = args["list_outfmt"].AsString();
+            const vector<SSeqDBInitInfo> dbs = 
+                FindBlastDBs(blastdb_dir, dbtype, recurse, true);
+            CBlastDbFormatter blastdb_fmt(kOutFmt);
+            ITERATE(vector<SSeqDBInitInfo>, db, dbs) {
+                out << blastdb_fmt.Write(*db) << NcbiEndl;
+            }
+            return status;
+        }
+        
         x_InitApplicationData();
 
         if (args["info"]) {
