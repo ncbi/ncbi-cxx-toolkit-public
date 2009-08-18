@@ -117,11 +117,7 @@ public:
         m_Char2Bits.push_back(ascii);
         m_Char2Bits.push_back(ascii);
 
-        Uint2 cA(0x00), cG(0x01), cC(0x02), cT(0x0F);
-        m_Char2Bits[0]['A'] = cA;
-        m_Char2Bits[0]['G'] = cG;
-        m_Char2Bits[0]['C'] = cC;
-        m_Char2Bits[0]['T'] = cT;
+        Uint2 cA(0x00), cG(0x01), cC(0x02), cT(0x03);
 
         for(Uint1 k (0); k < 4; ++k) {
             m_Char2Bits[k]['A'] = cA; cA <<= 4;
@@ -130,15 +126,9 @@ public:
             m_Char2Bits[k]['T'] = cT; cT <<= 4;
         }
 
-        // GA-AG, GT-TG; also tentatively TT-AG
-        const Uint2 idxGAAG ( m_Char2Bits[0]['G'] | m_Char2Bits[1]['A'] | 
-                              m_Char2Bits[2]['A'] | m_Char2Bits[3]['G']   );
-        const Uint2 idxGTTG ( m_Char2Bits[0]['G'] | m_Char2Bits[1]['T'] | 
-                              m_Char2Bits[2]['T'] | m_Char2Bits[3]['G']   );
-        const Uint2 idxTTAG ( m_Char2Bits[0]['T'] | m_Char2Bits[1]['T'] | 
-                              m_Char2Bits[2]['A'] | m_Char2Bits[3]['G']   );
-
-        m_Ranks[idxGAAG] = m_Ranks[idxGTTG] = 1; // = m_Ranks[idxTTAG] = 1;
+        m_Ranks[x_GetIdx("GAAG")] = 
+            m_Ranks[x_GetIdx("GTTG")] = 
+                m_Ranks[x_GetIdx("TTAG")] = 1;
     }
 
     TRank GetRank(const char * donor, const char * acceptor) const {
@@ -149,24 +139,23 @@ public:
                       | m_Char2Bits[3] [acceptor[1]] ];
     }
 
-    private:
+private:
+    
+    vector<TRank> m_Ranks;
+    vector<vector<Uint2> > m_Char2Bits;
 
-        vector<TRank> m_Ranks;
-        vector<vector<Uint2> > m_Char2Bits;
+    Uint2 x_GetIdx(const char splice[4]) const {
+        return
+              m_Char2Bits[0][splice[0]] 
+            | m_Char2Bits[1][splice[1]] 
+            | m_Char2Bits[2][splice[2]]
+            | m_Char2Bits[3][splice[3]];
+    }
 };
 
 
 namespace {
     CSpliceRanker g_Ranker;
-}
-
-size_t GetSplicePriority(const  char * dnr, const char* acc)
-{
-    // GA-AG, GT-TG; TT-AG
-    const size_t rv (dnr[0] == 'G' && acc[1] == 'G' && 
-                     dnr[1] == acc[0] &&
-                    (dnr[1] == 'A' || dnr[1] == 'T')? 1: 0);
-    return rv;
 }
 
 
