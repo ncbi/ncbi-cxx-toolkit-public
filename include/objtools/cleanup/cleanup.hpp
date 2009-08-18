@@ -63,7 +63,8 @@ public:
     };
 
     // Construtor / Destructor
-    CCleanup();
+    CCleanup(
+        CRef<CScope> Scope = CRef<CScope>() );
     ~CCleanup();
 
     void SetScope(CRef<CScope> scope);

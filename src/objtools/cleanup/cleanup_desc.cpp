@@ -636,7 +636,10 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
 
     if (seh.IsSet()) {       
         FOR_EACH_SEQENTRY_ON_SEQSET (it, *(seh.GetSet().GetCompleteBioseq_set())) {
-            x_ChangeGenBankBlocks (m_Scope->GetSeq_entryHandle (**it));
+            const CSeq_entry& se = **it;
+            if ( m_Scope ) {
+                x_ChangeGenBankBlocks (m_Scope->GetSeq_entryHandle (se));
+            }
         }
     }
 }
