@@ -547,7 +547,7 @@ const string CCountries::sm_Countries[] = {
     "Yemen",
     "Yugoslavia",
     "Zambia",
-    "Zimbabwe",
+    "Zimbabwe"
 };
 
 const string CCountries::sm_Former_Countries[] = {
@@ -555,13 +555,12 @@ const string CCountries::sm_Former_Countries[] = {
     "British Guiana",
     "Burma",
     "Czechoslovakia",
-    "Ivory Coast",
     "Korea",
     "Serbia and Montenegro",
     "Siam",
     "USSR",
     "Yugoslavia",
-    "Zaire",
+    "Zaire"
 };
 
 bool CCountries::IsValid(const string& country)
