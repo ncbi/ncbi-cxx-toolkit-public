@@ -71,7 +71,7 @@ public:
             return m_Errors;
         }
 
-    const string GetVar(const string& section, const string& value) const;
+    const string GetVar(const string& section, const string& value, bool collect) const;
     string GetFileNamePrefix(void) const;
     
     void AddDefinition(const string& name, const AutoPtr<CDataType>& type);
@@ -79,6 +79,7 @@ public:
     void AddImports(const TImports& imports);
     void AddImports(const string& module, const list<string>& types);
 
+    void PrintSampleDEF(CNcbiOstream& out) const;
     virtual void PrintASN(CNcbiOstream& out) const;
     virtual void PrintSpecDump(CNcbiOstream& out) const;
     virtual void PrintXMLSchema(CNcbiOstream& out) const;
@@ -133,6 +134,9 @@ public:
     static string ToAsnId(const string& name);
 
 private:
+    const string x_GetVar(const string& section,
+        const string& value, bool collect=false) const;
+
     int m_SourceLine;
     bool m_Errors;
     string m_Name;
@@ -152,6 +156,7 @@ private:
     TImportsByName m_ImportedTypes;
     set<string> m_ImportRef;
     static string s_ModuleFileSuffix;
+    mutable map< string, set< string > > m_DefVars;
 };
 
 END_NCBI_SCOPE

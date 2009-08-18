@@ -280,24 +280,31 @@ bool CDataType::CheckType(void) const
     return true;
 }
 
-const string CDataType::GetVar(const string& varName) const
+const string CDataType::GetVar(const string& varName, int collect /*= 0*/) const
 {
     const CDataType* parent = GetParentType();
+    if (collect >=0 && GetDataMember()) {
+#if 0
+        collect = GetDataMember()->Notag() ? 1 : 0;
+#else
+        collect = GetDataMember()->GetType()->IsPrimitive() ? -1 : 1;
+#endif
+    }
     if ( !parent ) {
-        return GetModule()->GetVar(m_MemberName, varName);
+        return GetModule()->GetVar(m_MemberName, varName, collect > 0);
     }
     else {
         string s;
         if (IsUniSeq() && m_MemberName == parent->GetMemberName()) {
-            s = parent->GetVar(varName);
+            s = parent->GetVar(varName, collect);
         } else {
-            s = parent->GetVar(m_MemberName + '.' + varName);
+            s = parent->GetVar(m_MemberName + '.' + varName, collect);
         }
         if (!s.empty()) {
             return s;
         }
         s = string(GetDEFKeyword()) + '.' + varName;
-        return parent->GetVar(s);
+        return parent->GetVar(s, -1);
     }
 }
 

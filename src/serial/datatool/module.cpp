@@ -97,6 +97,20 @@ void CDataTypeModule::AddImports(const string& module, const list<string>& types
     m_Imports.push_back(import);
 }
 
+void CDataTypeModule::PrintSampleDEF(CNcbiOstream& out) const
+{
+    map< string, set< string > >::const_iterator s = m_DefVars.begin();
+    for (s = m_DefVars.begin(); s != m_DefVars.end(); ++s) {
+        out << "[" << s->first << "]" << endl;
+        ITERATE( set<string>, v, s->second) {
+            if (NStr::EndsWith(*v, "._class")) {
+                out << *v << " = " << endl;
+            }
+        }
+        out << endl;
+    }
+}
+
 void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 {
     m_Comments.PrintASN(out, 0, CComments::eMultiline);
@@ -467,29 +481,37 @@ string CDataTypeModule::GetFileNamePrefix(void) const
     return GetModuleContainer().GetFileNamePrefix();
 }
 
-const string CDataTypeModule::GetVar(const string& typeName,
-                                      const string& varName) const
+const string CDataTypeModule::GetVar(
+    const string& typeName, const string& varName, bool collect) const
 {
     _ASSERT(!typeName.empty());
     _ASSERT(!varName.empty());
-    const CNcbiRegistry& registry = GetConfig();
     {
-        const string& s = registry.Get(GetName() + '.' + typeName, varName);
+        const string& s = x_GetVar(GetName() + '.' + typeName, varName);
         if ( !s.empty() )
             return s;
     }
     {
-        const string& s = registry.Get(typeName, varName);
+        const string& s = x_GetVar(typeName, varName, collect);
         if ( !s.empty() )
             return s;
     }
     {
-        const string& s = registry.Get(GetName(), varName);
+        const string& s = x_GetVar(GetName(), varName);
         if ( !s.empty() )
             return s;
     }
     // default section
-    return registry.Get("-", varName);
+    return x_GetVar("-", varName);
+}
+
+string const CDataTypeModule::x_GetVar(
+    const string& section, const string& value, bool collect) const
+{
+    if (collect) {
+        m_DefVars[section].insert(value);
+    }
+    return GetConfig().Get(section, value);
 }
 
 bool CDataTypeModule::AddImportRef(const string& imp)

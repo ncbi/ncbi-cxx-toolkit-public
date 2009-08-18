@@ -86,6 +86,18 @@ bool CFileModules::CheckNames(void) const
     return ok;
 }
 
+void CFileModules::PrintSampleDEF(const string& rootdir) const
+{
+    ITERATE ( TModules, mi, m_Modules ) {
+        string fileName =
+            Path(rootdir, Path(GetFileNamePrefix(), (*mi)->GetName() + "._sample_def"));
+        CNcbiOfstream out(fileName.c_str());
+        (*mi)->PrintSampleDEF(out);
+        if ( !out )
+            ERR_POST_X(5, Fatal << "Cannot write to file "<<fileName);
+    }
+}
+
 void CFileModules::PrintASN(CNcbiOstream& out) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
@@ -310,6 +322,13 @@ void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
 {
     moduleSet->SetModuleContainer(this);
     m_ModuleSets.push_back(moduleSet);
+}
+
+void CFileSet::PrintSampleDEF(const string& rootdir) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintSampleDEF(rootdir);
+    }
 }
 
 void CFileSet::PrintASN(CNcbiOstream& out) const

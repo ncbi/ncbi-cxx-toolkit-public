@@ -109,7 +109,7 @@ public:
     const CNamespace& Namespace(void) const;
     string InheritFromClass(void) const;
     const CDataType* InheritFromType(void) const;
-    const string GetVar(const string& value) const;
+    const string GetVar(const string& value, int collect = 0) const;
     bool GetBoolVar(const string& value, bool default_value = false) const;
     void  ForbidVar(const string& var, const string& value);
     void  AllowVar(const string& var, const string& value);

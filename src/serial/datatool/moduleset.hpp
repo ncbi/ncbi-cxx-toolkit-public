@@ -58,6 +58,7 @@ public:
     bool Check(void) const;
     bool CheckNames(void) const;
 
+    void PrintSampleDEF(const string& rootdir) const;
     void PrintASN(CNcbiOstream& out) const;
     void PrintSpecDump(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;
@@ -123,6 +124,7 @@ public:
     bool Check(void) const;
     bool CheckNames(void) const;
 
+    void PrintSampleDEF(const string& rootdir) const;
     void PrintASN(CNcbiOstream& out) const;
     void PrintSpecDump(CNcbiOstream& out) const;
     void PrintXMLSchema(CNcbiOstream& out) const;

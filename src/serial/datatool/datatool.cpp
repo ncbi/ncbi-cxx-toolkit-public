@@ -169,6 +169,8 @@ void CDataTool::Init(void)
                "silently ignore absent code definition file");
     d->AddFlag("odw",
                "issue a warning about absent code definition file");
+    d->AddFlag("ods",
+               "generate sample definition file");
     d->AddOptionalKey("of", "listFile",
                       "write list of generated C++ files",
                       CArgDescriptions::eOutputFile);
@@ -602,6 +604,10 @@ bool CDataTool::GenerateCode(void)
     
     // generate code
     generator.GenerateCode();
+
+    if ( const CArgValue& f = GetArgs()["ods"] ) {
+        generator.GetMainModules().PrintSampleDEF(generator.GetCPPDir());
+    }
     return true;
 }
 
