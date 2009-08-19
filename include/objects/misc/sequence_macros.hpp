@@ -537,6 +537,11 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define CHOICE_IS(Base, Var, Chs) \
 (Base##_Test(Var) && Base##_Chs(Var) == Chs)
 
+/// FIELD_IS_SET base macro
+
+#define FIELD_IS_SET(Var, Fld) \
+    ((Var).IsSet##Fld())
+
 
 /// SWITCH_ON base macro calls NCBI_SWITCH with generated components
 
@@ -1574,7 +1579,7 @@ ITEM_HAS (ORGREF_ON_BIOSOURCE, Var)
 /// BIOSOURCE_HAS_ORGNAME
 
 #define BIOSOURCE_HAS_ORGNAME(Var) \
-ITEM_HAS (ORGNAME_ON_BIOSOURCE_Test, Var)
+ITEM_HAS (ORGNAME_ON_BIOSOURCE, Var)
 
 
 /// SUBSOURCE_ON_BIOSOURCE macros
