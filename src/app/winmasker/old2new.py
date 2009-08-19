@@ -171,11 +171,15 @@ def process( start_idx ):
 def main():
     global HELP_STR
     mode = 'exec'
-    if len( sys.argv ) <= 1: print HELP_STR
+    if len( sys.argv ) <= 1: 
+        print HELP_STR
+        return
     else:
          if sys.argv[1] == '--print-only': 
             mode = 'print'
-            if len( sys.argv ) <= 2: print HELP_STR
+            if len( sys.argv ) <= 2: 
+                print HELP_STR
+                return
             else: 
                   wm_name = sys.argv[2]
                   start_idx = 2
