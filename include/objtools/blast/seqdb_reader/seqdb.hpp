@@ -1340,6 +1340,7 @@ struct NCBI_XOBJREAD_EXPORT SSeqDBInitInfo : public CObject {
 /// and 'guess' (which means any) [in]
 /// @param recurse whether BLAST DBs should be found recursively or not [in]
 /// @param include_alias_files Should alias files be included also? [in]
+NCBI_XOBJREAD_EXPORT 
 vector<SSeqDBInitInfo>
 FindBlastDBs(const string& path, const string& dbtype, bool recurse,
              bool include_alias_files = false);
