@@ -60,7 +60,12 @@ GC-GenomicPart ::= CHOICE {
 GC-Assembly ::= SEQUENCE
 {
     -- The identifier of this assembly
-    -- examples: GC internal id, Assembly-accession.version
+    -- Types of DbTags used:
+    -- db "GenColl", tag id <assembly-release-id>
+    -- db "GenColl", tag str <assembly-accession.version>
+    -- db "AGP", tag id <agp-sumbission-id>
+    -- db "UCSC_name", tag str <UCSC identifier for assembly>
+    -- db "Ensembl_name",tag str <Ensembl identifier for assembly>
     id SET OF Dbtag,
 
     -- project ID for this genome
