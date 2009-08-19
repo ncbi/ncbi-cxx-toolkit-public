@@ -31,6 +31,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistr.hpp>
@@ -72,7 +73,6 @@ void CMsHdf5::newSpectraSet(string name)
     m_curGroup = new Group(h5file->createGroup(m_curSetRoot));
     m_pathStack.clear();
     m_path = getCurrentPath();
-    //H5Library::garbageCollect();
 }
 
 void CMsHdf5::addSpectrum(Uint4 scan, Uint4 msLevel, Uint4 parentScan, vector<float> &mz, vector<float> &it, string &info) 
@@ -140,7 +140,6 @@ void CMsHdf5::writeSpectra()
     parameters.setDeflate(6);
     hsize_t chunk_dims[2];
     Uint4 chunk_size = computeNumChunkElements(sizeof(Uint4)*4, nRows);
-    //if (chunk_size > nRows) chunk_size = nRows;
     chunk_dims[0] = chunk_size;
     chunk_dims[1] = 4;
     parameters.setChunk(2, chunk_dims);
@@ -199,7 +198,6 @@ void CMsHdf5::writeSpectra(Uint4 msLevel)
     parameters.setDeflate(6);
     hsize_t chunk_dims[3];
     Uint4 chunk_size = computeNumChunkElements(sizeof(float)*mLen*2, nSpec);
-    //if (chunk_size > nSpec) chunk_size = nSpec;
     chunk_dims[0] = chunk_size;
     chunk_dims[1] = mLen;
     chunk_dims[2] = 2;
@@ -273,7 +271,6 @@ void CMsHdf5::addMetadata(string data)
 
     // Array size
     hsize_t dimensions[] = {size};
-    //hsize_t dimensions[] = {1};
     DataSpace dataspace(1, dimensions);
 
     // HDF5 Creation properties
@@ -282,7 +279,6 @@ void CMsHdf5::addMetadata(string data)
     parameters.setChunk(1, dimensions);
     
     // Define datatype
-    //StrType datatype(PredType::C_S1, size);
     StrType datatype(PredType::NATIVE_CHAR);
     datatype.setOrder(H5T_ORDER_LE);
 
@@ -314,15 +310,12 @@ void CMsHdf5::addAttribute(string key, string value)
 {
     // Create new dataspace for attribute
     DataSpace dataspace = DataSpace(H5S_SCALAR);
-
-    // Create new string datatype for attribute
-    //StrType datatype(PredType::C_S1, value.size()+1);
-    //DataType* datatype;
     
     try {
         int iVal = NStr::StringToInt(value);
         IntType datatype(PredType::STD_I32LE);
         datatype.setOrder(H5T_ORDER_LE);
+        // Create attribute and write to it
         Attribute attr = m_curGroup->createAttribute(key, datatype, dataspace);
         attr.write(datatype, &iVal);
     } catch (...) {
@@ -340,9 +333,6 @@ void CMsHdf5::addAttribute(string key, string value)
         }
     }
 
-    // Create attribute and write to it
-    //Attribute attr = m_curGroup->createAttribute(key, datatype, dataspace);
-    //attr.write(datatype, value.c_str());
 }
 
 string CMsHdf5::getCurrentPath() 
@@ -533,7 +523,7 @@ void CMsHdf5::getPrecursorMzs(const string &spectraSetName, TSpecMap &specMap, T
             scanNum = (*iMapEntry).second.scan;
             idx  = (*iMapEntry).second.idx;
             offsetInfo[0] = idx;
-            if ((idx < 0) || (idx >= sizeInfo[0])) {
+            if (idx >= sizeInfo[0]) {
                 throw OutOfBounds("Group: " + spectraSetName + 
                                   ", rows: " + NStr::IntToString(sizeInfo[0]) + 
                                   ", index: " + NStr::IntToString(idx));
@@ -543,7 +533,7 @@ void CMsHdf5::getPrecursorMzs(const string &spectraSetName, TSpecMap &specMap, T
             //cout << bufInfo << endl;
             string valInfo(bufInfo, sizeInfo[1]);
 
-            // use serial object to decode
+            // use serial object to decode, broken?
             //CNcbiIstrstream bufStream(valInfo.c_str());
             //objects::CScan scan;
             //bufStream >> MSerial_Xml >> scan;
@@ -552,8 +542,6 @@ void CMsHdf5::getPrecursorMzs(const string &spectraSetName, TSpecMap &specMap, T
 
             // use reg expression to decode
             string value = RxpParse.GetMatch(valInfo, 0, 1);
-            //cout << valInfo << endl;
-            //cout << value << endl;
             specPreMap[scanNum] = NStr::StringToDouble(value);
         }
     }

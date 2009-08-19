@@ -25,80 +25,34 @@
  *
  * ===========================================================================
  * $Id$
- * Author:  Douglas Slotta and Dennis Troup
- * File Description: The interface to Xerces-C
+ * Author:  Douglas Slotta
+ * File Description: The SAX parser of mzXML via xmlwrapp
  */
-
-#include <xercesc/sax2/DefaultHandler.hpp>
 
 #include <string>
 #include <memory>
 #include <stack>
 
+#include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <algo/ms/formats/mshdf5/MsHdf5.hpp>
-
-XERCES_CPP_NAMESPACE_BEGIN
-
-class MemBufFormatTarget;
-class XMLFormatter;
-class SAXParseException;
-class InputSource;
-
-XERCES_CPP_NAMESPACE_END
 
 USING_SCOPE(ncbi);
 
-class MzXmlReader : public xercesc::DefaultHandler {
+class MzXmlReader : public xml::event_parser {
     
 public:
     
-    explicit MzXmlReader(const char * encoding, CRef<CMsHdf5> msHdf5);
-    virtual ~MzXmlReader();
-    
-    virtual void characters(const XMLCh * const chars,
-                            const unsigned int  length);
+    MzXmlReader(CRef<CMsHdf5> msHdf5);
+    ~MzXmlReader();
 
-    virtual void endElement(const XMLCh * const uri,
-                            const XMLCh * const localname,
-                            const XMLCh * const qname);
-
-    virtual void startElement(const XMLCh * const         uri,
-                              const XMLCh * const         localname,
-                              const XMLCh * const         qname,
-                              const xercesc::Attributes & attrs);
-    
-    virtual void warning(const xercesc::SAXParseException & exception);
-    virtual void error(const xercesc::SAXParseException & exception);
-    
-    virtual xercesc::InputSource * resolveEntity(const XMLCh * const publicId,
-                                                 const XMLCh * const systemId);
-    
-    static void initialize();    
-    static void terminate();
-    
 private:
-    
+
     MzXmlReader(const MzXmlReader &);
     MzXmlReader & operator=(const MzXmlReader &);
     
-    void addAttributes(const xercesc::Attributes &attrs);
-    void addScanAttributes(const xercesc::Attributes &attrs);
-    
-    void printName(const XMLCh * const uri,
-                   const XMLCh * const localname,
-                   const XMLCh * const qname,
-                   const string & prefix);
-    
-    void recordError(const xercesc::SAXParseException & exception,
-                     int                                severity);
-    
-    string findXMLDefinition(const string & publicLocation, 
-                             const string & systemLocation) const;
-    
-    auto_ptr<xercesc::MemBufFormatTarget> m_buffer;
-    auto_ptr<xercesc::XMLFormatter>       m_formatter;
-    
-    string toString(const XMLCh * const name);
+    bool start_element(const string &name, const attrs_type &attrs);
+    bool end_element(const string &name);
+    bool text(const string &data);
 
     void convertPeaks(Uint4 peakCount, string &peaks, vector<float> &mz, vector<float> &it);    
     
@@ -113,10 +67,6 @@ private:
     bool m_inMsRun;
     string m_lastStartElement;
     string m_metadata;
-
-
-    static unsigned int m_activeInstances;
-    
 };
 
 #endif

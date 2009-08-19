@@ -82,14 +82,9 @@ int CHdf2mzXMLApplication::Run(void)
 
     CRef<CMsHdf5> msHdf5(new CMsHdf5(inFilename, H5F_ACC_RDONLY));
 
-    //for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
-    //    string fileName = args[extra].AsString();
-    //    cerr << "Reading " << fileName << " as SpectraSet " ;
-    //}
 
     set<string> groups;
     msHdf5->getGroups(groups);    
-    //groups.insert("DoesNotExist");
 
     cout << "Loading all precursor M/Z ratios" << endl;
     CTime start(CTime::eCurrent);

@@ -22,162 +22,69 @@
  *
  * ===========================================================================
  * $Id$
- * Authors:  Douglas Slotta and Dennis Troup
- * File Description: The interface to Xerces-C
+ * Author:  Douglas Slotta
+ * File Description: SAX parser of mzXML via xmlwrapp
  */
 
-#include "MzXmlReader.hpp"
+// standard includes
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistl.hpp>
+#include <connect/ncbi_socket.h>
 
-#include <xercesc/sax2/Attributes.hpp>
-#include <xercesc/util/XMLString.hpp>
-#include <xercesc/framework/XMLFormatter.hpp>
-#include <xercesc/framework/MemBufFormatTarget.hpp>
-#include <xercesc/framework/LocalFileInputSource.hpp>
-#include <xercesc/sax/EntityResolver.hpp>
+#include "MzXmlReader.hpp"
 
 #include <iostream>
 #include <string>
 #include <unistd.h>
 #include <sys/stat.h>
 
-// standard includes
-#include <corelib/ncbistl.hpp>
-#include <connect/ncbi_socket.h>
-
-using namespace xercesc;
+//using namespace xercesc;
 USING_SCOPE(ncbi);
 
-MzXmlReader::MzXmlReader(const char * encoding, CRef<CMsHdf5> msHdf5) :
-    DefaultHandler()
+MzXmlReader::MzXmlReader(CRef<CMsHdf5> msHdf5)
 {
     m_msHdf5 = msHdf5;
     m_inMsRun = false;
-    
-    m_buffer.reset(new MemBufFormatTarget);
-    m_formatter.reset(new XMLFormatter(encoding, 0, m_buffer.get(),
-                                      XMLFormatter::NoEscapes,
-                                      XMLFormatter::UnRep_CharRef));
     m_lastStartElement.clear();
     m_metadata.clear();
-    initialize();
 }
 
 MzXmlReader::~MzXmlReader()
 {
-    terminate();
 }
 
-void MzXmlReader::characters(const XMLCh * const chars, const unsigned int  length)
+bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)
 {
-    if (m_inMsRun) {
-        m_formatter->formatBuf(chars, length);
-        string value(reinterpret_cast<const char *>(m_buffer->getRawBuffer()));
-        m_elementText += NStr::TruncateSpaces(value);
-        m_buffer->reset();
-    }
-}
-
-void MzXmlReader::printName(const XMLCh * const uri,
-                            const XMLCh * const localname,
-                            const XMLCh * const qname,
-                            const string &      prefix)
-{
-    cout << prefix << toString(qname) << endl;
-}
-
-void MzXmlReader::endElement(const XMLCh * const uri,
-                                 const XMLCh * const localname,
-                                 const XMLCh * const qname)
-{
-    //printName(uri, localname, qname, "stop: ");
-    string qnameStr = toString(qname);
-
-    if (m_inMsRun) {
-        if (qnameStr == "peaks") {
-            m_peaksStack.push(m_elementText);
-        } else {
-            string xmlText = "";
-            
-            if (m_lastStartElement == qnameStr && qnameStr != "scan" && m_elementText.empty()) {
-                xmlText += "/>\n";
-            } else {
-                if (!m_elementText.empty()) {
-                    xmlText += ">\n" + m_elementText + "\n";
-                }
-                xmlText += "</" + qnameStr + ">\n";
-            }
-            m_lastStartElement.clear();
-
-            if (m_scanStack.size() > 0) {
-                m_scanInfoStack.top() += xmlText;
-            } else {            
-                m_metadata += xmlText;
-            }
-
-            if (qnameStr == "scan") {
-                int scanNum = m_scanStack.top();
-                m_scanStack.pop();
-                int parentScan = 0;
-                if (m_scanStack.size() > 0) parentScan = m_scanStack.top();
-                vector<float> mz, it;
-                convertPeaks(m_peaksCountStack.top(), m_peaksStack.top(), mz, it);
-                m_msHdf5->addSpectrum(scanNum,
-                                      m_msLevelStack.top(),
-                                      parentScan,
-                                      mz, it,
-                                      m_scanInfoStack.top());
-                m_peaksCountStack.pop();
-                m_peaksStack.pop();
-                m_scanInfoStack.pop();
-                m_msLevelStack.pop();
-            }
-        
-            if (qnameStr == "msRun") {
-                m_inMsRun = false;
-                m_msHdf5->addMetadata(m_metadata);
-                m_msHdf5->writeSpectra();
-            }
-        }
-        m_elementText.clear();
-    }   
-}
-
-void MzXmlReader::startElement(const XMLCh * const uri,
-                               const XMLCh * const localname,
-                               const XMLCh * const qname,
-                               const Attributes &  attrs)
-{
-    string qnameStr = toString(qname);
-    
-    if (qnameStr == "msRun") {
+    if (name == "msRun") {
         m_inMsRun = true;
     }
     
     if (m_inMsRun) {
 
-        if (qnameStr != "peaks") {
+        if (name != "peaks") {
             string xmlText = "";
             
             if (!m_lastStartElement.empty() && m_lastStartElement != "scan") {
                 xmlText += ">\n";
             }
 
-            xmlText += "<" + qnameStr;
-            for (uint i = 0; i < attrs.getLength(); i++) {
-                string name = toString(attrs.getQName(i));
-                string value = toString(attrs.getValue(i));
-                xmlText += " " + name + "=\"" + value + "\"";
+            xmlText += "<" + name;
+            ITERATE(attrs_type, iAttr, attrs) {
+                xmlText += " " + iAttr->first + "=\"" + iAttr->second + "\"";
             }
-            m_lastStartElement = qnameStr;
+            m_lastStartElement = name;
 
-            if (qnameStr == "scan") {
+            if (name == "scan") {
                 xmlText += ">\n";
-                string scanIdStr = toString(attrs.getValue(XMLString::transcode("num")));
-                Uint4 scanId = NStr::StringToUInt(scanIdStr);
+                attrs_type::const_iterator iAt;
+                iAt = attrs.find("num");
+                Uint4 scanId = NStr::StringToUInt(iAt->second);
                 m_scanStack.push(scanId);
-                string peaksCount = toString(attrs.getValue(XMLString::transcode("peaksCount")));
+                iAt = attrs.find("peaksCount");
+                string peaksCount = iAt->second;
                 m_peaksCountStack.push(NStr::StringToUInt(peaksCount));
-                string msLevel = toString(attrs.getValue(XMLString::transcode("msLevel")));
+                iAt = attrs.find("msLevel");
+                string msLevel = iAt->second;
                 m_msLevelStack.push(NStr::StringToUInt(msLevel));
                 m_scanInfoStack.push(xmlText);
             } else if (m_scanStack.size() > 0) {
@@ -188,147 +95,66 @@ void MzXmlReader::startElement(const XMLCh * const uri,
         }
         m_elementText.clear();
     }
-    
+    return true;    
 }
 
-void MzXmlReader::addAttributes(const Attributes &attrs)
+bool MzXmlReader::end_element(const string &name)
 {
-    for (uint i = 0; i < attrs.getLength(); i++) {
-        string name = toString(attrs.getQName(i));
-        string value = toString(attrs.getValue(i));
-        m_msHdf5->addAttribute(name, value);
-    }
-}
+    if (m_inMsRun) {
+        if (name == "peaks") {
+            m_peaksStack.push(m_elementText);
+        } else {
+            string xmlText = "";
+            
+            if (m_lastStartElement == name && name != "scan" && m_elementText.empty()) {
+                xmlText += "/>";
+            } else {
+                if (!m_elementText.empty()) {
+                    xmlText += ">" + m_elementText;
+                }
+                xmlText += "</" + name + ">";
+            }
+            m_lastStartElement.clear();
 
-void MzXmlReader::addScanAttributes(const Attributes &attrs)
-{
-    for (uint i = 0; i < attrs.getLength(); i++) {
-        string name = toString(attrs.getQName(i));
-        string value = toString(attrs.getValue(i));
-        if (!NStr::EqualCase(name, "num") && 
-            !NStr::EqualCase(name, "peaksCount") &&
-            !NStr::EqualCase(name, "lowMz") && 
-            !NStr::EqualCase(name, "highMz")) {
-            m_msHdf5->addAttribute(name, value);
+            if (m_scanStack.size() > 0) {
+                m_scanInfoStack.top() += xmlText;
+            } else {            
+                m_metadata += xmlText;
+            }
+
+            if (name == "scan") {
+                int scanNum = m_scanStack.top();
+                m_scanStack.pop();
+                int parentScan = 0;
+                if (m_scanStack.size() > 0) parentScan = m_scanStack.top();
+                vector<float> mz, it;
+                convertPeaks(m_peaksCountStack.top(), m_peaksStack.top(), mz, it);
+                m_msHdf5->addSpectrum(scanNum, m_msLevelStack.top(), parentScan,
+                                      mz, it, m_scanInfoStack.top());
+                m_peaksCountStack.pop();
+                m_peaksStack.pop();
+                m_scanInfoStack.pop();
+                m_msLevelStack.pop();
+            }
+        
+            if (name == "msRun") {
+                m_inMsRun = false;
+                m_msHdf5->addMetadata(m_metadata);
+                m_msHdf5->writeSpectra();
+            }
         }
-    }
+        m_elementText.clear();
+    }   
+    return true;
 }
 
-void MzXmlReader::warning(const SAXParseException & exception)
-{
-    recordError(exception, 0);
-}
 
-void MzXmlReader::error(const SAXParseException & exception)
+bool MzXmlReader::text(const string &data)
 {
-    recordError(exception, 1);
-}
-
-void MzXmlReader::recordError(const SAXParseException & exception,
-                                  int                       severity)
-{
-    cerr << (severity == 0 ? "Warning" : "Error") << ": ";
-    
-    int lineNumber(exception.getLineNumber());
-    if (lineNumber != -1) {
-        cerr << "At line #" << lineNumber << ", ";
+    if (m_inMsRun) {
+        m_elementText += NStr::TruncateSpaces(data);
     }
-    
-    int columnNumber(exception.getColumnNumber());
-    if (columnNumber != -1) {
-        cerr << "column #" << columnNumber << ", ";
-    }
-    
-    char * message(XMLString::transcode(exception.getMessage()));
-    cerr << message << "\n";
-    XMLString::release(&message);
-}
-
-InputSource * MzXmlReader::resolveEntity(const XMLCh * const publicId,
-                                             const XMLCh * const systemId)
-{
-    string publicLocation(toString(publicId));
-    string systemLocation(toString(systemId));
-    
-    string localFile(findXMLDefinition(publicLocation, systemLocation));
-    
-    InputSource * newSource(0);
-    
-    if (!localFile.empty()) {
-        XMLCh * xmlFile = XMLString::transcode(localFile.c_str());
-        newSource = new LocalFileInputSource(xmlFile);
-        XMLString::release(&xmlFile);
-    }
-    
-    return newSource;
-}
-
-string MzXmlReader::findXMLDefinition(const string & publicLocation,
-                                          const string & systemLocation) const
-{
-    // Prefer the locally defined location over the schema defined location.
-    string localFile;
-    if (systemLocation.find("mzXML_2.0") == string::npos) {
-        if (systemLocation.find("mzXML_idx") == string::npos) {
-            //localFile = "/panfs/pan1/geo_dev/bin/config/mzXML_2.1.xsd";
-            localFile = "/home/slottad/NCBI/schema/mzXML/mzXML_2.1.xsd";
-        }
-        else {
-            //localFile = "/panfs/pan1/geo_dev/bin/config/mzXML_idx_2.1.xsd";
-            localFile = "/home/slottad/NCBI/schema/mzXML/mzXML_idx_2.1.xsd";
-        }
-    }
-    else {
-        if (systemLocation.find("mzXML_idx") == string::npos) {
-            //localFile = "/panfs/pan1/geo_dev/bin/config/mzXML_2.0.xsd";
-            localFile = "/home/slottad/NCBI/schema/mzXML/mzXML_2.0.xsd";
-        }
-        else {
-            //localFile = "/panfs/pan1/geo_dev/bin/config/mzXML_idx_2.0.xsd";
-            localFile = "/home/slottad/NCBI/schema/mzXML_idx_2.0.xsd";
-        }
-    }
-    
-    struct stat info;
-    if (localFile.empty() ||
-        (stat(localFile.c_str(), &info) || !S_ISREG(info.st_mode))) {
-        localFile.clear();
-    }
-	
-    return localFile;
-}
-
-void MzXmlReader::initialize()
-{
-    if (++m_activeInstances == 1) {
-        try {
-            XMLPlatformUtils::Initialize();
-        }
-        catch (const XMLException & toCatch) {
-            char * message(XMLString::transcode(toCatch.getMessage()));
-            cerr << "Error: " << message << "\n";
-            XMLString::release(&message);
-        }
-    }
-}
-
-void MzXmlReader::terminate()
-{
-    if (--m_activeInstances == 0) {
-        XMLPlatformUtils::Terminate();
-    }
-}
-
-string MzXmlReader::toString(const XMLCh * const name)
-{
-    string value;
-    if (name) {
-        char * char_value(XMLString::transcode(name));
-        value = char_value;
-        XMLString::release(&char_value);
-    }
-  
-    return value;
+    return true;
 }
 
 void MzXmlReader::convertPeaks(Uint4 peakCount, string &peaks, vector<float> &mz, vector<float> &it) 
@@ -361,6 +187,4 @@ void MzXmlReader::convertPeaks(Uint4 peakCount, string &peaks, vector<float> &mz
     }
 
 }
-
-unsigned int MzXmlReader::m_activeInstances(0);
 

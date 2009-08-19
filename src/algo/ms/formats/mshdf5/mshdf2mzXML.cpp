@@ -40,7 +40,6 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objostrxml.hpp>
-//#include <connect/ncbi_socket.h>
 #include <algo/ms/formats/mzxml/mzXML__.hpp>
 
 #include <algo/ms/formats/mshdf5/MsHdf5.hpp>
@@ -122,7 +121,6 @@ int CHdf2mzXMLApplication::Run(void)
             string specName = group + ":" 
                 + NStr::IntToString(scanNum) + "\t" 
                 + NStr::IntToString(idx);
-            //cout << specName << "\t" << msLevel << endl;
 
             msHdf5->getSpectrum(specName, spec, *pScan, NStr::IntToString(msLevel));
             string b64peaks;
@@ -151,7 +149,6 @@ int CHdf2mzXMLApplication::Run(void)
                                ncbi::CDirEntry::fWrite | ncbi::CDirEntry::fRead,
                                ncbi::CDirEntry::fDefault,
                                ncbi::CDirEntry::fDefault);
-        //cout << MSerial_Xml << msRun;
     }
 
 

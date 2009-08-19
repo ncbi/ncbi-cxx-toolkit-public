@@ -37,18 +37,14 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 
+#include <util/compress/zlib.hpp>
+#include <util/compress/bzip2.hpp>
+#include <util/compress/stream.hpp>
+
 #include <algo/ms/formats/mshdf5/MsHdf5.hpp>
-#include "CompressedInputSource.hpp"
 #include "MzXmlReader.hpp"
 
-#include <xercesc/util/XMLString.hpp>
-#include <xercesc/sax2/SAX2XMLReader.hpp>
-#include <xercesc/sax2/XMLReaderFactory.hpp>
-#include <xercesc/framework/StdInInputSource.hpp>
-#include <xercesc/framework/LocalFileInputSource.hpp>
-
 USING_SCOPE(ncbi);
-USING_SCOPE(xercesc);
 
 class CMzXML2hdf5Application : public CNcbiApplication
 {
@@ -86,29 +82,22 @@ int CMzXML2hdf5Application::Run(void)
     // Get arguments
     CArgs args = GetArgs();
     
-    //CNcbiIstream& inFile = args["in"].AsInputFile();
     string outFile = args["out"].AsString();
 
     CRef<CMsHdf5> msHdf5(new CMsHdf5(outFile, H5F_ACC_TRUNC));
 
-    MzXmlReader::initialize();
-
-    auto_ptr<SAX2XMLReader> parser(XMLReaderFactory::createXMLReader());
-    parser->setFeature(XMLUni::fgSAX2CoreNameSpaces, true);
-    parser->setFeature(XMLUni::fgXercesSchema, false);
-    parser->setFeature(XMLUni::fgSAX2CoreValidation, false);
-    parser->setFeature(XMLUni::fgXercesSchemaFullChecking, false);
-
-    auto_ptr<MzXmlReader> xmlReader(new MzXmlReader("UTF8", msHdf5));
-    parser->setContentHandler(xmlReader.get());
-    parser->setErrorHandler(xmlReader.get());
-    parser->setEntityResolver(xmlReader.get());
-
     for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
         string fileName = args[extra].AsString();
+        if (fileName.empty() || fileName == "-") {
+            cerr << "Unable to processs standard input" << endl;
+            continue;
+        }
         cerr << "Reading " << fileName << " as SpectraSet " ;
         try {
-            auto_ptr<InputSource> input;
+            istream *inStream = NULL;
+            CCompressionIStream *inCompStream = NULL;
+            CNcbiIfstream ifStream(fileName.c_str());
+
             size_t startPos = fileName.rfind("/");
             if (startPos == string::npos) {
                 startPos = 0; 
@@ -119,52 +108,29 @@ int CMzXML2hdf5Application::Run(void)
             string suffix(fileName.substr(pos));
             string base;
             if (suffix == ".bz2") {
-                input.reset(new CompressedInputSource(fileName, BZIP2_COMPRESSED));
                 base = fileName.substr(startPos,fileName.rfind(".", pos-1)-startPos);
+                inCompStream = new CCompressionIStream(ifStream, new CBZip2StreamDecompressor(), CCompressionStream::fOwnProcessor);
+                inStream = inCompStream;
             }
             else if (suffix == ".gz") {
-                input.reset(new CompressedInputSource(fileName, GZIP_COMPRESSED));
                 base = fileName.substr(startPos,fileName.rfind(".", pos-1)-startPos);
+                inCompStream = new CCompressionIStream(ifStream, new CZipStreamDecompressor(CZipCompression::fGZip), CCompressionStream::fOwnProcessor);
+                inStream = inCompStream;
             }
             else { // no compression
-                if (fileName.empty() || fileName == "-") {
-                    // Should never be here!
-                    input.reset(new StdInInputSource);
-                }
-                else {
-                    XMLCh * xmlFile(XMLString::transcode(fileName.c_str()));
-                    input.reset(new LocalFileInputSource(xmlFile));
-                    XMLString::release(&xmlFile);
-                    base = fileName.substr(startPos,pos-startPos);
-                }
+                base = fileName.substr(startPos,pos-startPos);
+                inStream = &ifStream;
             }
             cerr << base << endl;
-            
+
+            MzXmlReader mzXmlParser(msHdf5);            
             msHdf5->newSpectraSet(base);  // Need to catch existing path exception
-            parser->parse(*input);
-        }
-        catch (const XMLException & toCatch) {
-            char * message(XMLString::transcode(toCatch.getMessage()));
-            cerr << "XML Error: " << message << "\n";
-            XMLString::release(&message);
-            return EXIT_FAILURE; // Exit unsuccessfully
-        }
-        catch (const SAXParseException & toCatch) {
-            char * message(XMLString::transcode(toCatch.getMessage()));
-            cerr << "SAX Parsing Error at line #" << toCatch.getLineNumber()
-                 << ": " << message << "\n";
-            XMLString::release(&message);
-            return EXIT_FAILURE; // Exit unsuccessfully
-        }
-        catch (const SAXException & toCatch) {
-            char * message(XMLString::transcode(toCatch.getMessage()));
-            cerr << "SAX Error: " << message << "\n";
-            XMLString::release(&message);
-            return EXIT_FAILURE; // Exit unsuccessfully
-        }
-        catch (std::exception & ex) {
-            cerr << "Error: " << ex.what() << "\n";
-            return EXIT_FAILURE; // Exit unsuccessfully
+            mzXmlParser.parse_stream(*inStream);
+
+            if (inCompStream) {
+                inCompStream->Finalize();
+                delete inCompStream;
+            }
         }
         catch (...) {
             cerr << "Unexpected exception, aborting.\n";
