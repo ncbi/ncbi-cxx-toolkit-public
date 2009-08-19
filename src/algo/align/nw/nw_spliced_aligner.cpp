@@ -159,6 +159,24 @@ namespace {
 }
 
 
+size_t GetSplicePriority(const  char * dnr, const char* acc)
+{
+    // GA-AG, GT-TG, TT-AG
+    size_t rv (0);
+    if(acc[1] == 'G') {
+        if(acc[0] == 'T') {
+            rv = dnr[1] == 'T' && dnr[0] == 'G';
+        }
+        else if(acc[0] == 'A') {
+            rv = (dnr[1] == 'A' && dnr[0] == 'G') 
+                || (dnr[1] == 'T' && dnr[0] == 'T');
+        }
+    }
+
+    return rv;
+}
+
+
 // Prefer experimentally verified non-consensus
 // splices among equally scoring alternatives
 void CSplicedAligner::CheckPreferences(void)
@@ -212,13 +230,12 @@ void CSplicedAligner::CheckPreferences(void)
             }
             else {
 
-                CSpliceRanker::TRank maxpr (0);
+                size_t maxpr (0);
                 int jmaxpr (0);
                 // explore the left of the splice
                 int j;
-                for(j = -1; j >= -csq_matches && *(p1 + j) == *(p2e + j); --j) {
-                    const CSpliceRanker::TRank pr (
-                        g_Ranker.GetRank(p2 + j, p2e + j - 2));
+                for(j = -1; *(p1 + j) == *(p2e + j) && j >= -csq_matches; --j) {
+                    const size_t pr (GetSplicePriority(p2 + j, p2e + j - 2));
                     if(pr > maxpr) {
                         maxpr = pr;
                         jmaxpr = j;
@@ -229,8 +246,7 @@ void CSplicedAligner::CheckPreferences(void)
                 for(j = 1; j <= ti + 1 && m_Transcript[ti - j + 1] == eTS_Match
                         && *(p1 + j - 1) == *(p2 + j - 1); ++j)
                     {
-                        const CSpliceRanker::TRank pr (
-                            g_Ranker.GetRank(p2 + j, p2e + j - 2));
+                        const size_t pr (GetSplicePriority(p2 + j, p2e + j - 2));
                         if(pr > maxpr) {
                             maxpr = pr;
                             jmaxpr = j;

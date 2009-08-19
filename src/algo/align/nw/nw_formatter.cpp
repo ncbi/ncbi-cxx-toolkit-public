@@ -499,17 +499,26 @@ bool CNWFormatter::SSegment::s_IsConsensusSplice(const char* donor,
                                                  const char* acceptor,
                                                  bool semi_as_cons)
 {
+    if(!donor || !acceptor) return false;
+
     bool rv;
     if(semi_as_cons) {
-        rv = donor && acceptor &&
-            (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
-            &&
-            (acceptor[0] == 'A' && acceptor[1] == 'G');
+
+        if(acceptor[0] == 'A') {
+            if(donor[0] == 'G' && acceptor[1] == 'G') {
+                rv = donor[1] == 'T' || donor[1] == 'C';
+            }
+            else {
+                rv = donor[0] == 'A' && donor[1] == 'T' && acceptor[1] == 'C';
+            }
+        }
+        else {
+            rv = false;
+        }
     }
     else {
-        rv = donor && acceptor 
-            && donor[0] == 'G' && donor[1] == 'T'
-            && acceptor[0] == 'A' && acceptor[1] == 'G';
+        rv = donor[0] == 'G' && donor[1] == 'T' 
+             && acceptor[0] == 'A' && acceptor[1] == 'G';
     }
 
     return rv;
