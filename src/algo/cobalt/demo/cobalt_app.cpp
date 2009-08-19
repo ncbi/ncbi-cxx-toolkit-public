@@ -47,6 +47,7 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <objtools/alnmgr/alnvec.hpp>
 
 #include <algo/cobalt/cobalt.hpp>
+#include <algo/cobalt/version.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -54,6 +55,13 @@ USING_SCOPE(cobalt);
 
 class CMultiApplication : public CNcbiApplication
 {
+public:
+    CMultiApplication(void) {
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CMultiAlignerVersion());
+        SetFullVersion(version);
+    }
+
 private:
     virtual void Init(void);
     virtual int Run(void);
