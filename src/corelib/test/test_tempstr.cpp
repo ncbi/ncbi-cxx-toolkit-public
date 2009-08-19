@@ -31,25 +31,15 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbistr.hpp>
-
-#include <boost/version.hpp>
-#include <boost/test/unit_test.hpp>
-#include <boost/test/unit_test_log.hpp>
-
+#include <corelib/test_boost.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
-
-using boost::unit_test_framework::test_suite;
 
 USING_NCBI_SCOPE;
 
 
 
-void TestTempString()
+BOOST_AUTO_TEST_CASE(TestTempString)
 {
     string str("hello, world");
     CTempString temp_str(str);
@@ -295,10 +285,8 @@ void TestTempString()
 }
 
 
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/[])
+NCBITEST_AUTO_INIT()
 {
-    test_suite* suite = BOOST_TEST_SUITE("CTempString Unit Test");
-    suite->add(BOOST_TEST_CASE(TestTempString));
-
-    return suite;
+    boost::unit_test::framework::master_test_suite().p_name->assign
+        ("CTempString Unit Test");
 }

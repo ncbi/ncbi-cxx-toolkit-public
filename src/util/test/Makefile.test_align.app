@@ -5,7 +5,8 @@ SRC = test_align
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = xncbi
-LIBS = $(BOOST_TEST_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB  = test_boost xncbi
 
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
+
+CHECK_CMD =

@@ -2,13 +2,11 @@
 
 APP = test_value_convert
 SRC = test_value_convert
-LIB = xncbi
+LIB = test_boost xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIBS = $(BOOST_LIBS) $(ORIG_LIBS)
-
-REQUIRES = Boost.Test
+REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 

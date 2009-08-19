@@ -31,17 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbimisc.hpp>
 
 #include "test_align.hpp"
 
 #include <util/align_range.hpp>
 #include <util/align_range_coll.hpp>
-
-#include <boost/version.hpp>
-#include <boost/test/unit_test_log.hpp>
-#include <boost/test/unit_test_suite.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -135,9 +129,20 @@ void AR_Test_Direction(const TAlignRange& r, bool dir)
     BOOST_CHECK_EQUAL(r.IsReversed(), ! dir);
 }
 
+
+ostream& operator<<(ostream& out, const TAlignRange& r)
+{
+    return out << "TAlignRange [" << r.GetFirstFrom() << ", " << r.GetSecondFrom()
+        << ", " << r.GetLength() << "]";
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 /// Test Cases
-void AR_Test_SetGet()
+
+BOOST_AUTO_TEST_SUITE(CAlignRange_Unit_Test)
+
+BOOST_AUTO_TEST_CASE(AR_Test_SetGet)
 {
     TAlignRange r;
 
@@ -173,7 +178,7 @@ void AR_Test_SetGet()
 }
 
 
-void AR_Test_Constructors()
+BOOST_AUTO_TEST_CASE(AR_Test_Constructors)
 {
     // check default constructor
     {
@@ -195,7 +200,7 @@ void AR_Test_Constructors()
 }
 
 
-void AR_Test_Equality()
+BOOST_AUTO_TEST_CASE(AR_Test_Equality)
 {
     {
         TAlignRange r1, r2;
@@ -245,7 +250,7 @@ void AR_Test_OutOfBounds_Transform(const TAlignRange& r, TSignedSeqPos pos_1, TS
 }
 
 
-void AR_Test_CoordTransform()
+BOOST_AUTO_TEST_CASE(AR_Test_CoordTransform)
 {  
     // AR_Test_Invariants() already checks that ends map to each other 
     // from <-> from or from <-> to
@@ -285,14 +290,8 @@ void AR_Test_CoordTransform()
     AR_Test_OutOfBounds_Transform(r, 1000, 1000);
 }       
 
-ostream& operator<<(ostream& out, const TAlignRange& r)
-{
-    return out << "TAlignRange [" << r.GetFirstFrom() << ", " << r.GetSecondFrom()
-        << ", " << r.GetLength() << "]";
-}
 
-
-void AR_Test_Empty()
+BOOST_AUTO_TEST_CASE(AR_Test_Empty)
 {
     TAlignRange r = TAlignRange::GetEmpty();
     BOOST_CHECK(r.Empty());
@@ -324,7 +323,7 @@ void AR_Test_Clip(TSignedSeqPos clip_from, TSignedSeqPos clip_to, const TAlignRa
 }
 
 
-void AR_Test_Intersect()
+BOOST_AUTO_TEST_CASE(AR_Test_Intersect)
 {
     {
         // seg [1001, 1100], [2001, 2100] direct    
@@ -373,7 +372,7 @@ void AR_Test_Combine_Abutting(const TAlignRange& r, const TAlignRange& r_a, cons
 
 /// check CAlignRange::IsAbutting(), CombineWithAbutting() and 
 /// CombinationWithAbutting() functions
-void AR_Test_Combine()
+BOOST_AUTO_TEST_CASE(AR_Test_Combine)
 {
     {
         // seg [1001, 1100], [2001, 2100] direct    
@@ -436,6 +435,8 @@ void AR_Test_Combine()
         AR_Test_Combine_Abutting(r_2, r_2, r_2);
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -506,8 +507,10 @@ ostream& operator<<(ostream& out, const TSignedRange& r)
 ///////////////////////////////////////////////////////////////////////////////
 ///  TAlignColl - Test Cases
 
+BOOST_AUTO_TEST_SUITE(CAlignRangeCollection_Unit_Test)
+
 /// insertion must be tested first as all other tests rely on insert()
-void AC_Test_Insert()
+BOOST_AUTO_TEST_CASE(AC_Test_Insert)
 {
    TAlignColl coll(0);
    BOOST_CHECK_EQUAL(coll.empty(), true);
@@ -558,7 +561,7 @@ void AC_Test_Insert()
 }
 
 
-void AC_Test_Constructors()
+BOOST_AUTO_TEST_CASE(AC_Test_Constructors)
 {
     // check state of an empty collection
     TAlignColl coll_1;
@@ -582,7 +585,7 @@ void AC_Test_Constructors()
 }
 
 
-void AC_Test_Erase()
+BOOST_AUTO_TEST_CASE(AC_Test_Erase)
 {
     TAlignColl coll;
 
@@ -612,7 +615,7 @@ void AC_Test_Erase()
 }
 
 
-void AC_Test_PushPop()
+BOOST_AUTO_TEST_CASE(AC_Test_PushPop)
 {
     TAlignColl coll(0);
 
@@ -640,7 +643,7 @@ void AC_Test_PushPop()
 
 /// Tests insert(), Validate(), Sort(), CombineAbutting() methods in a collection
 /// that does not have fKeepNormalized flag set
-void AC_TestDenormalized()
+BOOST_AUTO_TEST_CASE(AC_TestDenormalized)
 {   
     TAlignColl coll(0);
 
@@ -706,7 +709,7 @@ void AC_TestDenormalized()
 }
 
 
-void AC_Test_Remove()
+BOOST_AUTO_TEST_CASE(AC_Test_Remove)
 {
     TAlignColl coll(0);
 
@@ -737,7 +740,7 @@ void AC_Test_Remove()
 }
 
 
-void AC_TestDirections()
+BOOST_AUTO_TEST_CASE(AC_TestDirections)
 {
     SARange ranges_1[] = { {101, 1001, 10, true} };
     
@@ -767,7 +770,7 @@ void AC_TestDirections()
 }
 
 
-void AC_TestNormalized_Strict()
+BOOST_AUTO_TEST_CASE(AC_TestNormalized_Strict)
 {
     {
        TAlignColl coll(TAlignColl::fKeepNormalized);
@@ -841,7 +844,7 @@ void AC_CheckBounds(const TAlignColl& coll, const TSignedRange& r_1, const TSign
 }
 
 
-void AC_TestBounds()
+BOOST_AUTO_TEST_CASE(AC_TestBounds)
 {
     SARange ranges_1[] = { {1, 1001, 10, true}, {101, 1101, 50, true}, {201, 1201, 50, true} };        
     TAlignColl coll; // normalized
@@ -858,7 +861,7 @@ void AC_TestBounds()
 
 
 // test CAlignRangeCollection::find(), find_2()
-void AC_TestFind()
+BOOST_AUTO_TEST_CASE(AC_TestFind)
 {
     {
         // test direct
@@ -932,7 +935,7 @@ void AC_TestFind()
 }
 
 
-void AC_Test_GetSecondByFirst()
+BOOST_AUTO_TEST_CASE(AC_Test_GetSecondByFirst)
 {
     {
         TAlignColl coll;
@@ -1027,7 +1030,7 @@ void AC_Test_GetSecondByFirst()
 }
 
 
-void AC_Test_GetFirstBySecond()
+BOOST_AUTO_TEST_CASE(AC_Test_GetFirstBySecond)
 {
     {
         TAlignColl coll;
@@ -1125,7 +1128,7 @@ void AC_Test_GetFirstBySecond()
 }
 
 
-void AC_Test_Extender()
+BOOST_AUTO_TEST_CASE(AC_Test_Extender)
 {
     {
         TAlignColl coll;
@@ -1217,63 +1220,26 @@ void AC_Test_Extender()
     }
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 
 END_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
 /// main entry point for tests
 
-std::ofstream out("res.xml"); //TODO
-
-
-test_suite* init_unit_test_suite(int /*argc*/, char * /*argv*/[])
-{    
-#if BOOST_VERSION >= 103300
+NCBITEST_AUTO_INIT()
+{
+#if 0
+    // Historic setup, disabled for the sake of uniformity; can still
+    // be reenabled at runtime by means of the usual flags or env. vars.
     typedef boost::unit_test_framework::unit_test_log_t TLog; 
     TLog& log = boost::unit_test_framework::unit_test_log;
+    static std::ofstream out("res.xml"); //TODO
     log.set_stream(out);    
     log.set_format(boost::unit_test_framework::XML);
-#  if BOOST_VERSION >= 103500
     log.set_threshold_level(boost::unit_test_framework::log_test_units);
-#  else
-    log.set_threshold_level(boost::unit_test_framework::log_test_suites);
-#  endif
-#else
-    typedef boost::unit_test_framework::unit_test_log TLog; 
-    TLog& log = TLog::instance();
-    log.set_log_stream(out);    
-    log.set_log_format("XML");
-    log.set_log_threshold_level(boost::unit_test_framework::log_test_suites);
 #endif
 
-    //boost::unit_test_framework::unit_test_result::set_report_format("XML");
-    test_suite* test
-        = BOOST_TEST_SUITE("UTIL Align Range, Collection Unit Test.");
-
-    test_suite* ar_suite = BOOST_TEST_SUITE("CAlignRange Unit Test");
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Empty));
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_SetGet));
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Constructors));
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Equality));
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_CoordTransform));
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Intersect)); 
-    ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_Combine)); 
-    test->add(ar_suite);
-    
-    test_suite* ac_suite = BOOST_TEST_SUITE("CAlignRangeCollection Unit Test");
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_Insert));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_Constructors));    
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_Erase));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_PushPop));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_TestDenormalized));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_TestBounds));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_TestDirections));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_TestNormalized_Strict));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_TestFind));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_GetSecondByFirst));
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_GetFirstBySecond));    
-    ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_Extender));    
-    test->add(ac_suite);
-
-    return test;
+    boost::unit_test::framework::master_test_suite().p_name->assign
+        ("UTIL Align Range, Collection Unit Test.");
 }

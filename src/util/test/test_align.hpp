@@ -33,11 +33,7 @@
  * ===========================================================================
  */
 
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
-
-#include <boost/test/unit_test.hpp>
+#include <corelib/test_boost.hpp>
 
 using boost::unit_test_framework::test_suite;
 

@@ -31,9 +31,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/lds/lds_admin.hpp>
@@ -44,54 +41,11 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-// Boost unit test stuff, copied over from example
-// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
-#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
-#  undef numeric_limits
-#endif
-
-#define BOOST_AUTO_TEST_MAIN
-#include <boost/test/auto_unit_test.hpp>
-#ifndef BOOST_PARAM_TEST_CASE
-#  include <boost/test/parameterized_test.hpp>
-#endif
-#ifndef BOOST_AUTO_TEST_CASE
-#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
-#endif
-
+#include <corelib/test_boost.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
-
-// Boost stuff again
-using boost::unit_test::test_suite;
-
-// Use macros rather than inline functions to get accurate line number reports
-
-// #define CHECK_NO_THROW(statement) BOOST_CHECK_NO_THROW(statement)
-#define CHECK_NO_THROW(statement)                                       \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_CHECK_MESSAGE(true, "no exceptions were thrown by "#statement); \
-    } catch (std::exception& e) {                                       \
-        BOOST_ERROR("an exception was thrown by "#statement": " << e.what()); \
-    } catch (...) {                                                     \
-        BOOST_ERROR("a nonstandard exception was thrown by "#statement); \
-    }
-
-#define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
-#define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
-#define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
-
-#define CHECK_THROW_STD_(statement, xtype)                              \
-    try {                                                               \
-        statement;                                                      \
-        BOOST_ERROR(#statement" failed to throw "#xtype);               \
-    } catch (xtype& e) {                                                \
-        BOOST_MESSAGE(#statement" properly threw "#xtype": " << e.what()); \
-    }
-#define CHECK_THROW_STD(s, x) CHECK_NO_THROW(CHECK_THROW_STD_(s, x))
 
 static const char* kLdsDbDirName = "_LDS_";
 static const char* kLdsDbName    = "test.ldsdb";
@@ -140,7 +94,8 @@ BOOST_AUTO_TEST_CASE(use_lds_index)
 
     for (size_t n = 0; n < kNumTestIds; ++n) {
         CSeq_id seqid (kTestIds[n]);
-        CHECK_EQUAL(kTestLengths[n],
-                    sequence::GetLength(seqid, scope.GetNonNullPointer()));
+        NCBITEST_CHECK_EQUAL
+            (kTestLengths[n],
+             sequence::GetLength(seqid, scope.GetNonNullPointer()));
     }
 }
