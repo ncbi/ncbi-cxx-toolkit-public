@@ -44,6 +44,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
+#include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 
 #include "algo/winmask/seq_masker_ostat.hpp"
 #include "win_mask_config.hpp"
@@ -90,6 +92,8 @@ public:
      **             on the value of use_list parameter
      **\param output name of the output file (empty means standard 
      **              output)
+     **\param infmt input format
+     **\param sformat counts format
      **\param th string describing 4 percentage values (comma separated)
      **          used to compute winmask score thresholds
      **\param mem_avail memory (in megabytes) available to the function
@@ -111,6 +115,7 @@ public:
      **/
     CWinMaskCountsGenerator( const string & input,
                              const string & output,
+                             const string & infmt,
                              const string & sformat,
                              const string & th,
                              Uint4 mem_avail,
@@ -163,6 +168,30 @@ private:
      **/
     Uint8 fastalen( const string & fname ) const;
 
+    /**\internal
+     **\brief Return a sequence stream based on input format.
+     **
+     **\param name database name for blastdb format
+     **\param is istream for fasta format
+     **\param infmt input format
+     **\param parse_seqids flag to parse ids in fasta stream
+     **
+     **\return ptr to the CMaskReader sequence stream object
+     **/
+    CMaskReader * x_GetReader( 
+            const string & name, CNcbiIstream * is, 
+            const string & infmt, bool parse_seqids ) const
+    {
+        if( infmt == "fasta" ) {
+            assert( is != 0 );
+            return new CMaskFastaReader( *is, true, parse_seqids );
+        }
+        else if( infmt == "blastdb" ) {
+            return new CMaskBDBReader( name );
+        }
+        else return 0;
+    }
+
     string input;                   /**<\internal input file (or list of input files) */
     CRef< CSeqMaskerOstat > ustat;  /**<\internal object used to output the unit counts statistics */
     Uint4 max_mem;                  /**<\internal available memory in bytes */
@@ -182,6 +211,8 @@ private:
 
     const CWinMaskConfig::CIdSet * ids;         /**<\internal set of ids to process */
     const CWinMaskConfig::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
+
+    string infmt;                   /**<\internal input format */
 };
 
 END_NCBI_SCOPE

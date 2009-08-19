@@ -50,7 +50,6 @@
 
 #include <algo/winmask/seq_masker_util.hpp>
 
-#include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_dup_table.hpp"
 #include "win_mask_util.hpp"
@@ -106,7 +105,11 @@ string mkdata( const CSeq_entry & entry )
 Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 {
     CNcbiIfstream input_stream( fname.c_str() );
-    CMaskFastaReader reader( input_stream );
+    // CMaskFastaReader reader( input_stream );
+    std::auto_ptr< CMaskReader > reader_p( x_GetReader( 
+                fname, &input_stream, infmt, false ) );
+    assert( reader_p.get() != 0 );
+    CMaskReader & reader( *reader_p.get() );
     CRef< CSeq_entry > entry( 0 );
     Uint8 result = 0;
 
@@ -137,6 +140,7 @@ static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
     const string & arg_input,
     const string & output,
+    const string & infmt_arg,
     const string & sformat,
     const string & arg_th,
     Uint4 mem_avail,
@@ -161,7 +165,8 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
     total_ecodes( 0 ), 
     score_counts( max_count, 0 ),
-    ids( arg_ids ), exclude_ids( arg_exclude_ids )
+    ids( arg_ids ), exclude_ids( arg_exclude_ids ),
+    infmt( infmt_arg )
 {
     // Parse arg_th to set up th[].
     string::size_type pos( 0 );
@@ -200,7 +205,7 @@ void CWinMaskCountsGenerator::operator()()
     // Check for duplicates, if necessary.
     if( check_duplicates )
     {
-        CheckDuplicates( file_list, ids, exclude_ids );
+        CheckDuplicates( file_list, infmt, ids, exclude_ids );
         cerr << "." << flush;
     }
 
@@ -390,7 +395,11 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
          it != input_list.end(); ++it )
     {
         CNcbiIfstream input_stream( it->c_str() );
-        CMaskFastaReader reader( input_stream );
+        // CMaskFastaReader reader( input_stream );
+        std::auto_ptr< CMaskReader > reader_p(
+                x_GetReader( *it, &input_stream, infmt, false ) );
+        assert( reader_p.get() != 0 );
+        CMaskReader & reader( *reader_p.get() );
         CRef< CSeq_entry > entry( 0 );
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )

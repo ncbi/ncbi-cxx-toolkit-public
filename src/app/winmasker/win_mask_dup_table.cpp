@@ -48,6 +48,7 @@
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
+#include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 #include "win_mask_dup_table.hpp"
 #include "win_mask_util.hpp"
 
@@ -531,8 +532,25 @@ static const string GetIdString( const CSeq_entry & entry )
 }
 #endif
 
+namespace {
+    CMaskReader * x_GetReader( 
+            const string & name, CNcbiIstream * is, 
+            const string & infmt, bool parse_seqids )
+    {
+        if( infmt == "fasta" ) {
+            assert( is != 0 );
+            return new CMaskFastaReader( *is, true, parse_seqids );
+        }
+        else if( infmt == "blastdb" ) {
+            return new CMaskBDBReader( name );
+        }
+        else return 0;
+    }
+}
+
 //------------------------------------------------------------------------------
 void CheckDuplicates( const vector< string > & input,
+                      const string & infmt,
                       const CWinMaskConfig::CIdSet * ids,
                       const CWinMaskConfig::CIdSet * exclude_ids )
 {
@@ -544,7 +562,11 @@ void CheckDuplicates( const vector< string > & input,
     for( input_iterator i( input.begin() ); i != input.end(); ++i )
     {
         CNcbiIfstream istream( i->c_str() );
-        CMaskFastaReader reader( istream );
+        // CMaskFastaReader reader( istream );
+        std::auto_ptr< CMaskReader > reader_p(
+                x_GetReader( *i, &istream, infmt, false ) );
+        assert( reader_p.get() != 0 );
+        CMaskReader & reader( *reader_p.get() );
         CRef< CSeq_entry > entry( 0 );
         Uint4 seqnum( 0 );
 

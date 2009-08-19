@@ -56,11 +56,13 @@ BEGIN_NCBI_SCOPE
  ** duplication and reports possible duplicates to the standard error.
  ** 
  **\param input list of input file names
+ **\param infmt input format
  **\param ids set of ids to check
  **\param exclude_ids set of ids to ignore
  **
  **/
 void CheckDuplicates( const vector< string > & input,
+                      const string & infmt,
                       const CWinMaskConfig::CIdSet * ids,
                       const CWinMaskConfig::CIdSet * exclude_ids );
 

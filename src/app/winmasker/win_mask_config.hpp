@@ -586,6 +586,16 @@ public:
     }
 
     /**
+     ** \brief Input file format.
+     ** 
+     ** \return string indicating input file format.
+     **/
+    const string InFmt() const
+    {
+        return iformatstr;
+    }
+
+    /**
      **\brief The set of query ids to process.
      **
      ** Only the sequences from the input file that match 
@@ -836,6 +846,7 @@ private:
     Uint4 dust_level;               /**< level value for dusting */
     Uint4 dust_linker;              /**< number of bases to use for linking */
     bool checkdup;                  /**< check for duplicate contigs */
+    string iformatstr;              /**< input format */
     string sformat;                 /**< unit counts format for counts generator */
     Uint4 smem;                     /**< memory (in megabytes available for masking stage) */
     CIdSet * ids;                   /**< set of ids to process */

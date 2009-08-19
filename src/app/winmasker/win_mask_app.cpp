@@ -311,7 +311,7 @@ void CWinMaskApplication::Init(void)
     arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "t_extend" );
     arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "set_t_low" );
     arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "set_t_high" );
-    arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "infmt" );
+    // arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "infmt" );
     arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "dust" );
     arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "dust_level" );
     arg_desc->CArgDescriptions::SetDependency( "mk_counts", CArgDescriptions::eExcludes, "convert" );
@@ -387,6 +387,7 @@ int CWinMaskApplication::Run (void)
         {
             CWinMaskCountsGenerator cg( aConfig.Input(),
                                         aConfig.Output(),
+                                        aConfig.InFmt(),
                                         aConfig.SFormat(),
                                         aConfig.Th(),
                                         aConfig.Mem(),

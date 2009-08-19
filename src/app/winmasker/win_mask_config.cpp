@@ -147,7 +147,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
     // string iformatstr = args[kInputFormat].AsString();
-    string iformatstr = args[kInputFormat] ? args[kInputFormat].AsString() : "fasta";
+    iformatstr = args[kInputFormat] ? args[kInputFormat].AsString() : "fasta";
 
     if( !mk_counts )
     {
