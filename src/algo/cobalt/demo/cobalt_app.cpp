@@ -176,7 +176,7 @@ void CMultiApplication::Init(void)
                      CArgDescriptions::eDouble, "0.8");
     arg_desc->AddDefaultKey("alph", "name",
                      "Alphabet for used k-mer counting",
-                     CArgDescriptions::eString, "regular");
+                     CArgDescriptions::eString, "se-b15");
     arg_desc->SetConstraint("alph", &(*new CArgAllow_Strings, "regular",
                                       "se-v10", "se-b15"));
 
