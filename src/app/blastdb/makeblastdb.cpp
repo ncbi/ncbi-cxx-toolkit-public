@@ -347,7 +347,7 @@ void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
 
 class CRawSeqDBSource : public IRawSequenceSource {
 public:
-    CRawSeqDBSource(const string & name, bool protein);
+    CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb);
     
     virtual ~CRawSeqDBSource()
     {
@@ -360,6 +360,7 @@ public:
     virtual bool GetNext(CTempString               & sequence,
                          CTempString               & ambiguities,
                          CRef<CBlast_def_line_set> & deflines,
+                         vector<SBlastDbMaskData>  & mask_range,
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs);
     
@@ -374,7 +375,7 @@ public:
     {
         return m_Source->GetColumnId(name);
     }
-    
+
     virtual const map<string,string> & GetColumnMetaData(int id)
     {
         return m_Source->GetColumnMetaData(id);
@@ -396,13 +397,14 @@ private:
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     vector<CBlastDbBlob> m_Blobs;
-    
     vector<int> m_ColumnIds;
     vector<string> m_ColumnNames;
+    vector<int> m_MaskIds;
+    map<int, int> m_MaskIdMap;
 #endif
 };
 
-CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein)
+CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb)
     : m_Sequence(NULL), m_Oid(0)
 {
     CSeqDB::ESeqType seqtype =
@@ -411,8 +413,16 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein)
     m_Source.Reset(new CSeqDBExpert(name, seqtype));
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
+    // Process mask meta data
+    m_Source->GetAvailableMaskAlgorithms(m_MaskIds);
+    ITERATE(vector<int>, algo_id, m_MaskIds) {
+        objects::EBlast_filter_program algo;
+        string algo_opts, algo_name;
+        m_Source->GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
+        m_MaskIdMap[*algo_id] = outdb->RegisterMaskingAlgorithm(algo, algo_opts); 
+    }              
+    // Process columns
     m_Source->ListColumns(m_ColumnNames);
-    
     for(int i = 0; i < (int)m_ColumnNames.size(); i++) {
         m_ColumnIds.push_back(m_Source->GetColumnId(m_ColumnNames[i]));
     }
@@ -423,12 +433,13 @@ bool
 CRawSeqDBSource::GetNext(CTempString               & sequence,
                          CTempString               & ambiguities,
                          CRef<CBlast_def_line_set> & deflines,
+                         vector<SBlastDbMaskData>  & mask_range,
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs)
 {
     if (! m_Source->CheckOrFindOID(m_Oid))
         return false;
-    
+
     if (m_Sequence) {
         m_Source->RetSequence(& m_Sequence);
         m_Sequence = NULL;
@@ -445,9 +456,26 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
+    // process masks
+    ITERATE(vector<int>, algo_id, m_MaskIds) { 
+
+        vector<int> algo_ids;
+        CSeqDB::TSequenceRanges ranges;
+        algo_ids.push_back(*algo_id);
+        m_Source->GetMaskData(m_Oid, algo_ids, ranges);
+
+        SBlastDbMaskData mask_data;
+        mask_data.algorithm_id = m_MaskIdMap[*algo_id];
+
+        ITERATE(CSeqDB::TSequenceRanges, range, ranges) {
+            mask_data.offsets.push_back(pair<int, int>(range->first, range->second));
+        }
+       
+        mask_range.push_back(mask_data);
+    }
+
     // The column IDs will be the same each time; another approach is
     // to only send back the IDs for those columns that are non-empty.
-    
     column_ids = m_ColumnIds;
     column_blobs.resize(column_ids.size());
     m_Blobs.resize(column_ids.size());
@@ -561,6 +589,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
 void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                                          bool           is_protein)
 {
+    bool has_fasta_data = FALSE;
     vector<CTempString> names;
     SeqDB_SplitQuoted(paths, names);
 
@@ -572,6 +601,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
 
         if (seq_file == "-") {
             x_AddSequenceData(cin);
+            has_fasta_data = TRUE;
         } else {
             CFile input_file(seq_file);
             if ( !input_file.Exists() ) {
@@ -585,11 +615,13 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             }
             CNcbiIfstream f(seq_file.c_str(), ios::binary);
             x_AddSequenceData(f);
+            has_fasta_data = TRUE;
         }
     }
 
     if (blastdb.size() > 0)
     {
+
         CSeqDB::ESeqType seqtype =
             (is_protein
              ? CSeqDB::eProtein : CSeqDB::eNucleotide);
@@ -600,7 +632,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             const string & s = *iter;
 
             try {
-                    CSeqDB db(s, seqtype);
+                 CSeqDB db(s, seqtype);
             }
             catch(const CSeqDBException &) {
                   ERR_POST(Error << "Unable to open input "
@@ -613,9 +645,13 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
         if (final_blastdb.size()) {
             string quoted;
             SeqDB_CombineAndQuote(final_blastdb, quoted);
-
-            CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein));
-            m_DB->AddSequences(*raw);
+            if (has_fasta_data) {
+                ERR_POST(Error << "Ignoring sequence input file '"
+                               << quoted << "' as it mixes with FASTA files.");
+            } else {
+                CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein, m_DB));
+                m_DB->AddSequences(*raw);
+            }
         }
     }
 }

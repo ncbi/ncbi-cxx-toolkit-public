@@ -94,6 +94,7 @@ public:
     virtual bool GetNext(CTempString               & sequence,
                          CTempString               & ambiguities,
                          CRef<objects::CBlast_def_line_set> & deflines,
+                         vector<SBlastDbMaskData>  & mask_ranges,
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs) = 0;
     

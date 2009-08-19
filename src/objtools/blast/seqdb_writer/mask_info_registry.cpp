@@ -82,7 +82,16 @@ int
 CMaskInfoRegistry::Add(EBlast_filter_program program, 
                        const string& options /* = string() */)
 {
+   
     int algo_id = (int)program;
+    string algo_descr = NStr::IntToString(algo_id) + options;
+
+    if (find(m_RegisteredAlgos.begin(), m_RegisteredAlgos.end(), algo_descr) 
+            != m_RegisteredAlgos.end()) {
+        NCBI_THROW(CWriteDBException, eArgErr, "Duplicate masking algorithm found.");
+    }
+
+    m_RegisteredAlgos.push_back(algo_descr);
 
     switch (program) {
     case eBlast_filter_program_dust:

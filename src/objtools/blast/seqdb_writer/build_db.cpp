@@ -785,14 +785,19 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
     
     vector<string> all_names;
     map<int, int> in2out;
+    int mask_id;
     
     src.GetColumnNames(all_names);
-    
-    // It may be necessary to handle masking data specially.
     
     for(int i = 0; i < (int) all_names.size(); i++) {
         string name = all_names[i];
         int in_id = src.GetColumnId(name);
+
+        // skip masking data column
+        if (name == "BlastDb/MaskData") {
+            mask_id = in_id;
+            continue;
+        }
         int out_id = m_OutputDb->FindColumn(name);
         
         if (out_id < 0) {
@@ -819,10 +824,12 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
     while(! done) {
         CTempString sequence, ambiguities;
         CRef<CBlast_def_line_set> deflines;
+        CMaskedRangesVector  mask_data;
         
         if (src.GetNext(sequence,
                         ambiguities,
                         deflines,
+                        mask_data,
                         column_ids,
                         column_blobs)) {
             
@@ -855,6 +862,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
      (!defined(NCBI_COMPILER_MIPSPRO)) )
             for(int i = 0; i < (int)column_ids.size(); i++) {
                 int in_id = column_ids[i];
+                if (in_id == mask_id) continue;
                 
                 if (column_blobs[i].size() == 0)
                     continue;
@@ -869,10 +877,19 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
                 blob_out.Clear();
                 blob_out.WriteRaw(& blob_in.data()[0], blob_in.size());
             }
-
             // Don't forget about the IMaskDataSource!
-            ITERATE(CBlast_def_line_set::Tdata, defline, deflines->Get()) {
-                x_AddMasksForSeqId((*defline)->GetSeqid());
+            if (!m_MaskData.Empty()) {
+                ITERATE(CBlast_def_line_set::Tdata, defline, deflines->Get()) {
+                    const CMaskedRangesVector rng = 
+                        m_MaskData->GetRanges((*defline)->GetSeqid());
+                    if (!rng.empty()) {
+                        mask_data.insert(mask_data.end(), rng.begin(), rng.end());  //TODO merge?
+                        m_FoundMatchingMasks = true;
+                    }
+                }
+            }
+            if (!mask_data.empty()) {
+                m_OutputDb->SetMaskData(mask_data);
             }
 #endif
             

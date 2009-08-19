@@ -67,6 +67,7 @@ private:
     int x_FindNextValidIdWithinRange(int start, int stop);
     int x_AssignId(int start, int end);
     int x_AssignId(int start, int end, bool use_start);
+    vector<string> m_RegisteredAlgos;
 };
 
 END_NCBI_SCOPE
