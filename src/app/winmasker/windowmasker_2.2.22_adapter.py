@@ -7,7 +7,7 @@
 import sys
 import os
 
-NAME_STR = 'old2new.py'
+NAME_STR = 'windowmasker_2.2.22_adapter.py'
 DESCR_STR = \
 'old style to new style command line options\
  converter for windowmasker'
@@ -18,10 +18,10 @@ HELP_STR = """
 WINDOWMASKER COMMAND LINE OPTIONS CONVERTER
 ------------------------------------------------------------------------------
 
-old2new.py takes old style command line for windowmasker, converts it to
-the new format and runs the resulting command.
+windowmasker_2.2.22_adapter.py takes old style command line for windowmasker, 
+converts it to the new format and runs the resulting command.
 
-USAGE: old2new.py [--print-only] <wm_command> <options>
+USAGE: windowmasker_2.2.22_adapter.py [--print-only] <wm_command> <options>
 
 If '--print-only' flag is given as the first argument, then the resulting
 command line is printed out, but windowmasker is not run.
