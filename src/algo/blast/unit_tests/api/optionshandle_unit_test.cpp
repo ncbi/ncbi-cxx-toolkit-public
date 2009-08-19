@@ -241,7 +241,9 @@ BOOST_AUTO_TEST_CASE(CaseSensitiveTest) {
 }
 
 BOOST_AUTO_TEST_CASE(BadNameTest) {
-       CBlastOptionsHandle* handle = CBlastOptionsFactory::CreateTask("mega"); 
+       CBlastOptionsHandle* handle = NULL;
+       BOOST_CHECK_THROW(handle = CBlastOptionsFactory::CreateTask("mega"),
+                         CBlastException); 
        CBlastNucleotideOptionsHandle* opts =
              dynamic_cast<CBlastNucleotideOptionsHandle*> (handle);
        BOOST_REQUIRE(opts == NULL);
