@@ -89,24 +89,26 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
     {
     public:
 
-        SMapper(const CSeq_align& aln, CScope& scope, CSeq_loc_Mapper::TMapOptions opts = 0)
+        SMapper(const CSeq_align& aln, CScope& scope,
+                CSeq_loc_Mapper::TMapOptions opts = 0)
             : m_aln(aln), m_scope(scope)
         {
             if(aln.GetSegs().IsSpliced()) {
                 //row 1 is always genomic in spliced-segs
                 m_genomic_row = 1;
-
-                //note: currently there's a bug when remapping using spliced-seg, so
-                //we use a disc-seg representation for mapping.
-                CRef<CSeq_align> disc_aln = aln.GetSegs().GetSpliced().AsDiscSeg();
-                m_mapper.Reset(new CSeq_loc_Mapper(*disc_aln, aln.GetSeq_id(1), &scope, opts));
+                m_mapper.Reset
+                    (new CSeq_loc_Mapper(aln, aln.GetSeq_id(1),
+                                         &scope, opts));
             } else {
                 //otherwise, find exactly one genomic row
                 CSeq_align::TDim num_rows = aln.CheckNumRows();
                 if (num_rows != 2) {
-                    /// make sure we only have two rows. anything else represents
-                    /// a mixed-strand case or more than two sequences
-                    NCBI_THROW(CException, eUnknown, "CreateGeneModelFromAlign(): failed to create consistent alignment");
+                    /// make sure we only have two rows. anything else
+                    /// represents a mixed-strand case or more than two
+                    /// sequences
+                    NCBI_THROW(CException, eUnknown,
+                               "CreateGeneModelFromAlign(): "
+                               "failed to create consistent alignment");
                 }
                 for (CSeq_align::TDim i = 0;  i < num_rows;  ++i) {
                     const CSeq_id& id = aln.GetSeq_id(i);
@@ -119,15 +121,21 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                              && info->GetBiomol() == CMolInfo::eBiomol_genomic)
                     {
                         if(m_mapper.IsNull()) {
-                            m_mapper.Reset(new CSeq_loc_Mapper(aln, aln.GetSeq_id(i), &scope, opts));
+                            m_mapper.Reset
+                                (new CSeq_loc_Mapper(aln, aln.GetSeq_id(i),
+                                                     &scope, opts));
                             m_genomic_row = i;
                         } else {
-                            NCBI_THROW(CException, eUnknown, "CreateGeneModelFromAlign(): More than one genomic row in alignment");
+                            NCBI_THROW(CException, eUnknown,
+                                       "CreateGeneModelFromAlign(): "
+                                       "More than one genomic row in alignment");
                         }
                     }
                 }
-                if(m_mapper.IsNull()) {
-                    NCBI_THROW(CException, eUnknown, "CreateGeneModelFromAlign(): No genomic sequence found in alignment");
+                if (m_mapper.IsNull()) {
+                    NCBI_THROW(CException, eUnknown,
+                               "CreateGeneModelFromAlign(): "
+                               "No genomic sequence found in alignment");
                 }
             }
         }
@@ -140,7 +148,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 } else {
                     const CSeq_id& id = m_aln.GetSeq_id(GetRnaRow());
                     CBioseq_Handle handle = m_scope.GetBioseqHandle(id);
-                    CRef<CSeq_loc> range_loc = handle.GetRangeSeq_loc(0, 0, eNa_strand_plus); //0-0 meanns whole range
+                    CRef<CSeq_loc> range_loc =
+                        handle.GetRangeSeq_loc(0, 0, eNa_strand_plus); //0-0 meanns whole range
                     //todo: truncate the range loc not to include polyA, or else the remapped loc will be erroneously partial
                     //not a huge issue as it only applies to seg alignments only.
                     rna_loc = m_mapper->Map(*range_loc);
@@ -168,9 +177,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
 
     private:
 
-        /*!
-         * This has special logic to set partialness based on alignment properties
-         */
+        /// This has special logic to set partialness based on alignment
+        /// properties
         CRef<CSeq_loc> x_GetLocFromSplicedExons(const CSeq_align& aln) const
         {
             CRef<CSeq_loc> loc(new CSeq_loc);
@@ -460,7 +468,8 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 /// this is created as a translation of the genomic
                 /// location
                 CSeqTranslator::Translate
-                    (*new_loc, handle, inst.SetSeq_data().SetIupacaa().Set(),
+                    (*new_loc, handle.GetScope(),
+                     inst.SetSeq_data().SetIupacaa().Set(),
                      NULL /* default genetic code */,
                      false /* trim at first stop codon */);
                 inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
