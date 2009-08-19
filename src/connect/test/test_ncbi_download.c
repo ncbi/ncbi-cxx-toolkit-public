@@ -82,6 +82,12 @@ int main(int argc, const char* argv[])
                                service, IO_StatusStr(status)));
     }
 
+    description = CONN_Description(conn);
+    CORE_LOGF(eLOG_Note, ("Reading from \"%s\" (%s%s%s) please wait...",
+                          service, CONN_GetType(conn),
+                          description ? ", "        : "",
+                          description ? description : ""));
+
     elapsed = time(0);
     total = 0;
 
@@ -95,16 +101,13 @@ int main(int argc, const char* argv[])
     elapsed = time(0) - elapsed;
 
     if (status == eIO_Closed)
-        sprintf(buf, "%.2f KB/s", elapsed ? total / (1024.0 * elapsed) : 0.0);
-    description = CONN_Description(conn);
+        sprintf(buf, "%.2f KiB/s", elapsed ? total / (1024.0 * elapsed) : 0.0);
 
     CORE_LOGF(status != eIO_Closed ? eLOG_Fatal :
               total ? eLOG_Note : eLOG_Error,
-              ("%lu byte%s read from \"%s\" in %lus (%s%s%s): %s",
-               (unsigned long) total, &"s"[total == 1], service,
-               (unsigned long) elapsed, CONN_GetType(conn),
-               description ? ", "        : "",
-               description ? description : "", 
+              ("%lu byte%s read in %lus: %s",
+               (unsigned long) total, &"s"[total == 1],
+               (unsigned long) elapsed,
                status == eIO_Closed ? buf : IO_StatusStr(status)));
 
     if (description)
