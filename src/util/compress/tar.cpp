@@ -83,7 +83,7 @@ BEGIN_NCBI_SCOPE
 
 // Convert a number to an octal string padded to the left
 // with [leading] zeros ('0') and having _no_ trailing '\0'.
-static bool s_NumToOctal(unsigned long val, char* ptr, size_t len)
+static bool s_NumToOctal(Uint8 val, char* ptr, size_t len)
 {
     _ASSERT(len > 0);
     do {
@@ -96,7 +96,7 @@ static bool s_NumToOctal(unsigned long val, char* ptr, size_t len)
 
 // Convert an octal number (possibly preceded by spaces) to numeric form.
 // Stop either at the end of the field or at first '\0' (if any).
-static bool s_OctalToNum(unsigned long& val, const char* ptr, size_t len)
+static bool s_OctalToNum(Uint8& val, const char* ptr, size_t len)
 {
     _ASSERT(ptr  &&  len > 0);
     size_t i = *ptr ? 0 : 1;
@@ -137,14 +137,12 @@ static bool s_NumToBase256(Uint8 val, char* ptr, size_t len)
 // conventional octal representation (perhaps, with terminating '\0'
 // sacrificed), or -1 if the value converted using base-256.
 static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
-{
-    if ((unsigned long) val == val) {                       // Max file size:
-        if (s_NumToOctal((unsigned long) val, ptr,   len))  //   8GiB-1
-            return  1/*okay*/;
-        if (s_NumToOctal((unsigned long) val, ptr, ++len))  //   64GiB-1
-            return  1/*okay*/;
-    }
-    if (s_NumToBase256  (val,                 ptr,   len))  //   up to 2^94-1
+{                                         // Max file size:
+    if (s_NumToOctal  (val, ptr,   len))  //   8GiB-1
+        return  1/*okay*/;
+    if (s_NumToOctal  (val, ptr, ++len))  //   64GiB-1
+        return  1/*okay*/;
+    if (s_NumToBase256(val, ptr,   len))  //   up to 2^94-1
         return -1/*okay, base-256*/;
     return 0/*failure*/;
 }
@@ -172,14 +170,10 @@ static bool s_Base256ToNum(Uint8& val, const char* ptr, size_t len)
 // or -1 if base-256 representation used.
 static int s_DecodeUint8(Uint8& val, const char* ptr, size_t len)
 {
-    if (!(*ptr & '\x80')) {
-        unsigned long temp;
-        if (!s_OctalToNum(temp, ptr, len))
-            return 0/*failure*/;
-        val = (Uint8) temp;
-        return 1/*okay*/;
-    }
-    return s_Base256ToNum(val, ptr, len) ? -1/*okay*/ : 0/*failure*/;
+    if (*ptr & '\x80')
+        return s_Base256ToNum(val, ptr, len) ? -1/*okay*/ : 0/*failure*/;
+    else
+        return s_OctalToNum  (val, ptr, len) ?  1/*okay*/ : 0/*failure*/;
 }
 
 
@@ -682,9 +676,8 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 
 static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 {
-    unsigned long val;
     string dump;
-    Uint8 tmp;
+    Uint8 val;
     int ok;
 
     dump += TAR_PRINTABLE(name, true) + '\n';
@@ -696,30 +689,30 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     }
     dump += '\n';
 
-    ok = s_DecodeUint8(tmp, h->uid, sizeof(h->uid));
+    ok = s_DecodeUint8(val, h->uid, sizeof(h->uid));
     dump += TAR_PRINTABLE(uid, ok <= 0);
-    if (ok  &&  tmp > 7) {
-        dump += " [" + NStr::UInt8ToString(tmp) + ']';
+    if (ok  &&  val > 7) {
+        dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
         }
     }
     dump += '\n';
     
-    ok = s_DecodeUint8(tmp, h->gid, sizeof(h->gid));
+    ok = s_DecodeUint8(val, h->gid, sizeof(h->gid));
     dump += TAR_PRINTABLE(gid, ok <= 0);
-    if (ok  &&  tmp > 7) {
-        dump += " [" + NStr::UInt8ToString(tmp) + ']';
+    if (ok  &&  val > 7) {
+        dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
         }
     }
     dump += '\n';
 
-    ok = s_DecodeUint8(tmp, h->size, sizeof(h->size));
+    ok = s_DecodeUint8(val, h->size, sizeof(h->size));
     dump += TAR_PRINTABLE(size, ok <= 0);
-    if (ok < 0  ||  tmp > 7) {
-        dump += " [" + NStr::UInt8ToString(tmp) + ']';
+    if (ok < 0  ||  val > 7) {
+        dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
         }
@@ -730,8 +723,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += TAR_PRINTABLE(mtime, !ok);
     if (ok  &&  val) {
         CTime mtime((time_t) val);
-        dump += (" [" + NStr::UIntToString(val)
-                 + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
+        dump += (" ["
+                 + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                 + mtime.ToLocalTime().AsString("Y-M-D h:m:s]"));
     }
     dump += '\n';
 
@@ -917,14 +911,14 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         ok = s_OctalToNum(val, h->devmajor, sizeof(h->devmajor));
         dump += TAR_PRINTABLE(devmajor, !ok);
         if (ok  &&  val > 7) {
-            dump += " [" + NStr::UIntToString(val) + ']';
+            dump += " [" + NStr::UInt8ToString(val) + ']';
         }
         dump += '\n';
 
         ok = s_OctalToNum(val, h->devminor, sizeof(h->devminor));
         dump += TAR_PRINTABLE(devminor, !ok);
         if (ok  &&  val > 7) {
-            dump += " [" + NStr::UIntToString(val) + ']';
+            dump += " [" + NStr::UInt8ToString(val) + ']';
         }
         dump += '\n';
 
@@ -933,8 +927,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += TAR_PRINTABLE(gt.atime, !ok);
             if (ok  &&  val) {
                 CTime mtime((time_t) val);
-                dump += (" [" + NStr::UIntToString(val)
-                         + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
+                dump += (" ["
+                         + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                         + mtime.ToLocalTime().AsString("Y-M-D h:m:s]"));
             }
             dump += '\n';
 
@@ -942,8 +937,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += TAR_PRINTABLE(gt.ctime, !ok);
             if (ok  &&  val) {
                 CTime mtime((time_t) val);
-                dump += (" [" + NStr::UIntToString(val)
-                         + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
+                dump += (" ["
+                         + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                         + mtime.ToLocalTime().AsString("Y-M-D h:m:s]"));
             }
             tname = h->gt.ctime + sizeof(h->gt.ctime);
         } else {
@@ -1536,12 +1532,12 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
                    const string& entryname, const SHeader* h, ETar_Format fmt,
                    Uint8 datasize)
 {
-    unsigned long blocks = (unsigned long) BLOCK_OF(datasize + (kBlockSize-1));
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
+    Uint8 blocks = BLOCK_OF(datasize + (kBlockSize-1));
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
              + s_DumpHeader(h, fmt) + '\n'
              + (blocks
-                ? "Blocks of data: " + NStr::UIntToString(blocks) + '\n'
+                ? "Blocks of data: " + NStr::UInt8ToString(blocks) + '\n'
                 : kEmptyStr));
     SetDiagPostLevel(level);
 }
@@ -1576,7 +1572,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                      "Unrecognized format", h, fmt);
     }
 
-    unsigned long val;
+    Uint8 val;
     // Get checksum from header
     if (!s_OctalToNum(val, h->checksum, sizeof(h->checksum))) {
         // We must allow all zero bytes here in case of pad/zero blocks
@@ -1659,35 +1655,33 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     }
     m_Current.m_Stat.st_mode = (mode_t) val;
 
-    Uint8 tmp;
-
     // User Id
-    if (!s_DecodeUint8(tmp, h->uid, sizeof(h->uid))) {
+    if (!s_DecodeUint8(val, h->uid, sizeof(h->uid))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad user ID", h, fmt);
     }
-    m_Current.m_Stat.st_uid = (uid_t) tmp;
+    m_Current.m_Stat.st_uid = (uid_t) val;
 
     // Group Id
-    if (!s_DecodeUint8(tmp, h->gid, sizeof(h->gid))) {
+    if (!s_DecodeUint8(val, h->gid, sizeof(h->gid))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad group ID", h, fmt);
     }
-    m_Current.m_Stat.st_gid = (gid_t) tmp;
+    m_Current.m_Stat.st_gid = (gid_t) val;
 
     // Size
-    if (!s_DecodeUint8(tmp, h->size, sizeof(h->size))) {
+    if (!s_DecodeUint8(val, h->size, sizeof(h->size))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry size", h, fmt);
     }
-    m_Current.m_Stat.st_size = /*(?)*/ tmp;
+    m_Current.m_Stat.st_size = /*(?)*/ val;
 
     // Modification time
     if (!s_OctalToNum(val, h->mtime, sizeof(h->mtime))) {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad modification time", h, fmt);
     }
-    m_Current.m_Stat.st_mtime = val;
+    m_Current.m_Stat.st_mtime = (time_t) val;
 
     if (fmt == eTar_OldGNU  ||  (fmt & eTar_Ustar)) {
         // User name
@@ -1759,7 +1753,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device minor number", h, fmt);
         }
-        usum = val; // set aside
+        usum = (unsigned int) val; // set aside
         if (!s_OctalToNum(val, h->devmajor, sizeof(h->devmajor))) {
             TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device major number", h, fmt);            
@@ -1980,7 +1974,7 @@ void CTar::x_WriteEntryInfo(const string& name)
     }
 
     // Modification time
-    if (!s_NumToOctal((unsigned long) m_Current.GetModificationTime(),
+    if (!s_NumToOctal(m_Current.GetModificationTime(),
                       h->mtime, sizeof(h->mtime) - 1)) {
         TAR_THROW(this, eMemory,
                   "Cannot store modification time");
