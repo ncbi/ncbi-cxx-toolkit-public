@@ -7,7 +7,7 @@
 #################################
 
 APP = test_serial
-SRC = serialobject serialobject_Base test_serial cppwebenv twebenv
+SRC = serialobject serialobject_Base test_serial test_cserial test_common cppwebenv twebenv
 
 DATATOOL_SRC = we_cpp
 
