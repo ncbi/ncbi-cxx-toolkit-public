@@ -102,9 +102,8 @@ public:
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
 #if SIZEOF_LONG == 4  &&  \
-    ((defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  \
-     defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP) || \
-     defined(NCBI_COMPILER_MSVC))
+    (defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC)  ||  \
+     defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COMPILER_MSVC))
     operator long(void) const
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
@@ -152,14 +151,22 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value));
     }
+#if SIZEOF_LONG == 8
+    operator unsigned long int(void) const
+    {
+        return MakeCP<CP>(NStr::StringToUInt8(m_Value));
+    }
+    operator long int(void) const
+    {
+        return MakeCP<CP>(NStr::StringToInt8(m_Value));
+    }
+#else
     operator unsigned long int(void) const
     {
         return MakeCP<CP>(NStr::StringToUInt(m_Value));
     }
-    operator long int(void) const
-    {
-        return MakeCP<CP>(NStr::StringToInt(m_Value));
-    }
+    // long already handled above
+#endif
     operator unsigned long long(void) const
     {
         return MakeCP<CP>(NStr::StringToUInt8(m_Value));
