@@ -5459,10 +5459,18 @@ else
    SQLITE3_LIBDIR=$SQLITE3_PATH/lib
 fi
 NCBI_RPATHIFY(SQLITE3_LIBPATH, $SQLITE3_LIBDIR)
-AC_MSG_NOTICE([SQLite3's asynchronous VFS extension to be required.])
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
- AC_LANG_PROGRAM([#include <sqlite3async.h>],
-    [int status = sqlite3async_initialize("parent-VFS", 1);]))
+ AC_LANG_PROGRAM([#include <sqlite3.h>],
+    [sqlite3* db; int status = sqlite3_open("foo.db", &db);]))
+if test -n "$SQLITE3_LIBS"; then
+   CPPFLAGS="$SQLITE3_INCLUDE $orig_CPPFLAGS"
+   AC_CHECK_HEADER(sqlite3async.h,
+      [AC_DEFINE(HAVE_SQLITE3ASYNC_H, 1,
+          [Define to 1 if you have the <sqlite3async.h> header file.])
+       NCBI_PACKAGE(SQLITE3ASYNC)])
+   LIBS="$SQLITE3_LIBS $orig_LIBS"
+   AC_CHECK_FUNCS(sqlite3_unlock_notify)
+fi
 if test -n "$SQLITE3_LIBS" -a -f "$SQLITE3_LIBDIR/libsqlite3-static.a"; then
    SQLITE3_STATIC_LIBS="-L$SQLITE3_LIBDIR -lsqlite3-static"
 else

@@ -435,6 +435,12 @@
 /* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
 #undef HAVE_SQLGETPRIVATEPROFILESTRING
 
+/* Define to 1 if you have the <sqlite3async.h> header file. */
+#undef HAVE_SQLITE3ASYNC_H
+
+/* Define to 1 if you have the `sqlite3_unlock_notify' function. */
+#undef HAVE_SQLITE3_UNLOCK_NOTIFY
+
 /* Define to 1 if the system has the type `SQLLEN'. */
 #undef HAVE_SQLLEN
 
