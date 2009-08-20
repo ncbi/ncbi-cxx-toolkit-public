@@ -240,6 +240,8 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args[kArgWordSize]) {
+        if (m_QueryIsProtein && args[kArgWordSize].AsInteger() > 5)
+           opt.SetLookupTableType(eCompressedAaLookupTable);
         opt.SetWordSize(args[kArgWordSize].AsInteger());
     }
 
