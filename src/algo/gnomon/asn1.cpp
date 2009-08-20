@@ -741,7 +741,7 @@ CRef<CSeq_entry>  CAnnotationASN1::CImplementationData::create_prot_seq_entry(co
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CScope scope(*obj_mgr);
     scope.AddTopLevelSeqEntry(mrna_seq_entry);
-    CCdregion_translate::TranslateCdregion(strprot, cdregion_feature, scope, false);
+    CSeqTranslator::Translate(cdregion_feature, scope, strprot, false);
 
     CSeq_inst& seq_inst = sprot->SetSeq().SetInst();
     seq_inst.SetRepr(CSeq_inst::eRepr_raw);
