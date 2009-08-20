@@ -605,7 +605,7 @@ bool CDataTool::GenerateCode(void)
     // generate code
     generator.GenerateCode();
 
-    if ( const CArgValue& f = GetArgs()["ods"] ) {
+    if ( GetArgs()["ods"] ) {
         generator.GetMainModules().PrintSampleDEF(generator.GetCPPDir());
     }
     return true;
