@@ -306,14 +306,20 @@ static size_t s_Length(const char* ptr, size_t maxsize)
 // Constants / macros / typedefs
 //
 
-/// Round up to the nearest multiple of kBlockSize
-#define ALIGN_SIZE(size) (((size) + (kBlockSize-1)) & ~(kBlockSize-1))
-#define OFFSET_OF(size)  ( (size)                   &  (kBlockSize-1))
+/// Round up to the nearest multiple of kBlockSize:
+//#define ALIGN_SIZE(size)   SIZE_OF(BLOCK_OF(size + (BLOCK_SIZE-1)))
+#define ALIGN_SIZE(size) (((size) + (BLOCK_SIZE-1)) & ~(BLOCK_SIZE-1))
+#define OFFSET_OF(size)  ( (size)                   &  (BLOCK_SIZE-1))
 #define BLOCK_OF(pos)    ((pos) >> 9)
 #define SIZE_OF(blk)     ((blk) << 9)
 
 /// Tar block size (512 bytes)
-static const size_t kBlockSize = SIZE_OF(1);
+/// NB: Using Uint8 here is bad because we want to have "regular sizes" as
+/// size_t.  Using size_t here is bad because (see ALIGN_SIZE above) it
+/// can cause 32-bit truncation of the result (as in ~(BLOCK_SIZE-1) being
+/// zero-filled in the higher-order bits if sizeof(size_t)==4) in expressions
+/// where mixed with wider Uint8's.  So the macro is the best bet!
+#define BLOCK_SIZE       SIZE_OF(1)
 
 
 /// Recognized TAR formats
@@ -344,18 +350,19 @@ typedef struct SHeader {     // byte offset
     char devmajor[8];        // 329
     char devminor[8];        // 337
     union {                  // 345
-        char prefix[155];    // NB: not valid with old GNU format
-        struct {             // NB: old GNU format only
+        char prefix[155];    // NB: not valid with old GNU format (no need)
+        struct {             // NB:                old GNU format only
             char atime[12];
-            char ctime[12];  // 357  
+            char ctime[12];  // 357
         } gt;
     };                       // 500
+    // NCBI in last 4 bytes  // 508
 } SHeader;
 
 
 /// Block as a header.
 union TBlock {
-    char    buffer[kBlockSize];
+    char    buffer[BLOCK_SIZE];
     SHeader header;
 };
 
@@ -611,14 +618,14 @@ static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
 {
     _ASSERT(!OFFSET_OF(pos));
     _ASSERT(!OFFSET_OF(recsize));
-    _ASSERT(recsize >= kBlockSize);
+    _ASSERT(recsize >= BLOCK_SIZE);
     string result;
     if (!file.empty()) {
         CDirEntry temp(file);
         result = temp.GetName() + ": ";
     }
     result += "At record " + NStr::UInt8ToString(pos / recsize);
-    if (recsize != kBlockSize) {
+    if (recsize != BLOCK_SIZE) {
         result +=
             ", block " + NStr::UInt8ToString(BLOCK_OF(pos % recsize)) +
             " [thru #" + NStr::UInt8ToString(BLOCK_OF(pos),
@@ -872,19 +879,19 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "legacy (V7)";
         break;
     case eTar_OldGNU:
-        if (!NStr::strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4))
+        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4))
             tname = "old GNU (NCBI)";
         else
             tname = "old GNU";
         break;
     case eTar_Ustar:
-        if (!NStr::strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4))
+        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4))
             tname = "ustar (NCBI)";
         else
             tname = "ustar";
         break;
     case eTar_Posix:  // aka "pax"
-        if (!NStr::strncasecmp((const char*) h + kBlockSize - 4, "NCBI", 4))
+        if (!NStr::strncasecmp((const char*) h + BLOCK_SIZE - 4, "NCBI", 4))
             tname = "posix (NCBI)";
         else
             tname = "posix";
@@ -949,16 +956,24 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     } else
         tname = h->version + sizeof(h->version);
 
-    for (size_t n = 0;  &tname[n] < (const char*) h + kBlockSize;  n++) {
+    size_t n = 0;
+    while (&tname[n] < (const char*) h + BLOCK_SIZE) {
         if (tname[n]) {
             size_t offset = (size_t)(&tname[n] - (const char*) h);
-            dump += '\n';
-            dump += "@" + s_AddressAsString(offset) + ':' + string(11, ' ')
-                + '"' + NStr::PrintableString(string(&tname[n],
-                                                     kBlockSize - offset))
-                + '"';
-            break;
-        }
+            size_t len = BLOCK_SIZE - offset;
+            if (len & ~0xF) // len > 16
+                len = 0x10; // len = 16
+            const char* e = (const char*) memchr(&tname[n], '\0', len);
+            if (e)
+                len = (size_t)(e - &tname[n]);
+            else if (len > (offset & 0xF))
+                len -= (offset & 0xF);
+            _ASSERT(len);
+            dump += "\n@" + s_AddressAsString(offset) + ':' + string(11, ' ')
+                + '"' + NStr::PrintableString(string(&tname[n], len)) + '"';
+            n += len;
+        } else
+            n++;
     }
 
     return dump;
@@ -1078,13 +1093,13 @@ void CTar::x_Flush(bool nothrow)
     _ASSERT(!(m_BufferPos % m_BufferSize)); // m_BufferSize if write error
     _ASSERT(!m_Bad == !m_BufferPos);
     if (!m_Bad
-        &&  (pad < kBlockSize || pad - OFFSET_OF(pad) < (kBlockSize << 1))) {
+        &&  (pad < BLOCK_SIZE || pad - OFFSET_OF(pad) < (BLOCK_SIZE << 1))) {
         // Write EOT (two zero blocks), if have not already done so by padding
         memset(m_Buffer, 0, m_BufferSize - pad);
         x_WriteArchive(m_BufferSize, nothrow ? (const char*)(-1L) : 0);
         _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
-        if (!m_Bad  &&  m_BufferSize == kBlockSize) {
-            x_WriteArchive(kBlockSize, nothrow ? (const char*)(-1L) : 0);
+        if (!m_Bad  &&  m_BufferSize == BLOCK_SIZE) {
+            x_WriteArchive(BLOCK_SIZE, nothrow ? (const char*)(-1L) : 0);
             _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
         }
     }
@@ -1241,9 +1256,8 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
 const CTarEntryInfo* CTar::GetNextEntryInfo(void)
 {
     if (m_OpenMode) {
-        size_t skip= (size_t)(m_Current.GetPosition(CTarEntryInfo::ePos_Data)
-                              + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos);
-        x_SkipArchive(skip);
+        x_Skip(BLOCK_OF(m_Current.GetPosition(CTarEntryInfo::ePos_Data)
+                        + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos));
     }
 
     auto_ptr<TEntries> temp = x_Open(eInternal);
@@ -1263,18 +1277,18 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files) const
 
     ITERATE(TFiles, it, files) {
         // Count in the file size
-        result += kBlockSize/*header*/ + ALIGN_SIZE(it->second);
+        result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(it->second);
 
         // Count in the long name (if any)
         string path = x_ToFilesystemPath(it->first);
         string name = x_ToArchiveName(path);
         size_t namelen = name.length() + 1;
         if (namelen > sizeof(((SHeader*) 0)->name)) {
-            result += kBlockSize/*long name header*/ + ALIGN_SIZE(namelen);
+            result += BLOCK_SIZE/*long name header*/ + ALIGN_SIZE(namelen);
         }
     }
     if (result) {
-        result += kBlockSize << 1; // EOT
+        result += BLOCK_SIZE << 1; // EOT
         Uint8 incomplete = result % m_BufferSize;
         if (incomplete) {
             result += m_BufferSize - incomplete;
@@ -1533,7 +1547,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
                    Uint8 datasize)
 {
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
-    Uint8 blocks = BLOCK_OF(datasize + (kBlockSize-1));
+    Uint8 blocks = BLOCK_OF(ALIGN_SIZE(datasize));
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
              + s_DumpHeader(h, fmt) + '\n'
              + (blocks
@@ -1548,11 +1562,11 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Read block
     const TBlock* block;
     size_t nread = sizeof(block->buffer);
-    _ASSERT(sizeof(*block) == kBlockSize/*== sizeof(block->buffer)*/);
+    _ASSERT(sizeof(*block) == BLOCK_SIZE/*== sizeof(block->buffer)*/);
     if (!(block = (const TBlock*) x_ReadArchive(nread))) {
         return eEOF;
     }
-    if (nread != kBlockSize) {
+    if (nread != BLOCK_SIZE) {
         TAR_THROW(this, eRead,
                   "Unexpected EOF in archive");
     }
@@ -1582,7 +1596,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                              "Bad checksum", h, fmt);
             }
         }
-        m_StreamPos += kBlockSize;  // NB: nread
+        m_StreamPos += BLOCK_SIZE;  // NB: nread
         return eZeroBlock;
     }
     int checksum = int(val);
@@ -1629,7 +1643,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 
     // Set all info members now (thus, validating the header block)
 
-    m_Current.m_HeaderSize = kBlockSize;
+    m_Current.m_HeaderSize = BLOCK_SIZE;
 
     // Name
     if (m_Current.GetName().empty()) {
@@ -1675,6 +1689,16 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                      "Bad entry size", h, fmt);
     }
     m_Current.m_Stat.st_size = /*(?)*/ val;
+    if (m_Current.GetSize() != val) {
+        static volatile int warned = 0;
+        if (!warned) {
+            warned = 1;
+            ERR_POST(Critical << "CAUTION:"
+                     " ***"
+                     "This RTL may not support large TAR entries"
+                     " ***");
+        }
+    }
 
     // Modification time
     if (!s_OctalToNum(val, h->mtime, sizeof(h->mtime))) {
@@ -1809,7 +1833,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 s_Dump(m_FileName, m_StreamPos, m_BufferSize,
                        m_Current.GetName(), h, fmt, hsize);
             }
-            m_StreamPos += kBlockSize;  // NB: nread
+            m_StreamPos += BLOCK_SIZE;  // NB: nread
             // Read in the extended information
             string buffer;
             while (hsize) {
@@ -1888,7 +1912,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         s_Dump(m_FileName, m_StreamPos, m_BufferSize,
                m_Current.GetName(), h, fmt, m_Current.GetSize());
     }
-    m_StreamPos += kBlockSize;  // NB: nread
+    m_StreamPos += BLOCK_SIZE;  // NB: nread
 
     return eSuccess;
 }
@@ -1898,7 +1922,7 @@ void CTar::x_WriteEntryInfo(const string& name)
 {
     // Prepare block info
     TBlock block;
-    _ASSERT(sizeof(block) == kBlockSize/*== sizeof(block.buffer)*/);
+    _ASSERT(sizeof(block) == BLOCK_SIZE/*== sizeof(block.buffer)*/);
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
@@ -2131,9 +2155,9 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 }
 
 
-void CTar::x_Backspace(EAction action, size_t blocks)
+void CTar::x_Backspace(EAction action, Uint8 blocks)
 {
-    _ASSERT((Uint8) SIZE_OF(blocks) <= m_StreamPos);
+    _ASSERT(SIZE_OF(blocks) <= m_StreamPos);
     m_Current.m_Name.erase();
     if (!blocks  ||  (action != eAppend  &&  action != eUpdate)) {
         return;
@@ -2146,23 +2170,31 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 
     // Assertion:  there's data (perhaps 0's) in the file, backup is possible.
     _ASSERT(!OFFSET_OF(m_StreamPos));
-    size_t gap = SIZE_OF(blocks);
+    Uint8 gap = SIZE_OF(blocks);
     m_StreamPos -= gap;
     if (m_BufferPos == 0)
         m_BufferPos += m_BufferSize;
-    CT_POS_TYPE rec = (CT_OFF_TYPE)(m_StreamPos / m_BufferSize);
-    size_t      off = (size_t)     (m_StreamPos % m_BufferSize);
+    CT_POS_TYPE rec  = (CT_OFF_TYPE)(m_StreamPos / m_BufferSize);
+    size_t      off  = (size_t)     (m_StreamPos % m_BufferSize);
     if (gap > m_BufferPos) {
-        // Refetch the block
-        m_FileStream->seekg(rec * m_BufferSize);
-        blocks = kBlockSize;                  // temp
+        size_t temp  = 0;
         m_BufferPos  = 0;
-        x_ReadArchive(blocks);                // Refetch the record
+        // Refetch the block
+        if (!m_FileStream->seekg(rec * m_BufferSize)  ||
+            !x_ReadArchive(temp = BLOCK_SIZE)) {
+            TAR_POST(85, Error,
+                     "Archive backspace error in record reget"
+                     + string(temp ? " (EOF)" : ""));
+        }
         m_BufferPos  = off;
     } else
         m_BufferPos -= gap;
 
-    m_FileStream->seekp(rec * m_BufferSize);  // Always set put position here
+    // Always set put position here
+    if (!m_FileStream->seekp(rec * m_BufferSize)) {
+        TAR_POST(86, Error,
+                 "Archive backspace error in record reset");
+    }
 }
 
 
@@ -2194,7 +2226,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             if ((m_Flags & fIgnoreZeroBlocks)  ||  zeroblock_count < 2) {
                 if (xinfo.GetType() == CTarEntryInfo::eUnknown) {
                     // Not yet reading an entry -- advance
-                    pos += kBlockSize;
+                    pos += BLOCK_SIZE;
                 }
                 continue;
             }
@@ -2464,26 +2496,27 @@ bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* done)
         }
     }
 
-    x_SkipArchive((size_t) size);
+    x_Skip(BLOCK_OF(ALIGN_SIZE(size)));
 
     return extract;
 }
 
 
-void CTar::x_SkipArchive(size_t size)
+void CTar::x_Skip(Uint8 blocks)
 {
-    while (size) {
+    while (blocks) {
 #ifndef NCBI_COMPILER_WORKSHOP
         // RogueWave RTL is buggy in seeking pipes -- it clobbers
         // (discards) streambuf data instead of leaving it alone..
         if (!(m_Flags & fSlowSkipWithRead)
-            &&  !m_BufferPos  &&  size >= m_BufferSize) {
+            &&  !m_BufferPos  &&  blocks >= BLOCK_OF(m_BufferSize)) {
             CT_OFF_TYPE fskip =
-                CT_OFF_TYPE((size / m_BufferSize) * m_BufferSize);
+                (CT_OFF_TYPE)(blocks / BLOCK_OF(m_BufferSize) * m_BufferSize);
+            _ASSERT(ALIGN_SIZE(fskip) == fskip);
             if (m_Stream->rdbuf()->PUBSEEKOFF(fskip, IOS_BASE::cur)
                 != (CT_POS_TYPE)((CT_OFF_TYPE)(-1))) {
-                m_StreamPos += fskip;
-                size        -= fskip;
+                blocks      -= BLOCK_OF(fskip);
+                m_StreamPos +=          fskip;
                 continue;
             }
             if (m_FileStream) {
@@ -2494,14 +2527,17 @@ void CTar::x_SkipArchive(size_t size)
             m_Flags |= fSlowSkipWithRead;
         }
 #endif // NCBI_COMPILER_WORKSHOP
-        size_t nskip = size < m_BufferSize ? (size_t) size : m_BufferSize;
+        size_t nskip = (blocks < BLOCK_OF(m_BufferSize)
+                        ? (size_t) SIZE_OF(blocks)
+                        : m_BufferSize);
+        _ASSERT(ALIGN_SIZE(nskip) == nskip);
         if (!x_ReadArchive(nskip)) {
-            int x_errno = errno;
             TAR_THROW(this, eRead,
-                      "Archive skip failed" + s_OSReason(x_errno));
+                      "Archive skip failed (EOF)");
         }
-        m_StreamPos += ALIGN_SIZE(nskip);
-        size        -=            nskip;
+        nskip        = ALIGN_SIZE(nskip);
+        blocks      -= BLOCK_OF(nskip);
+        m_StreamPos +=          nskip;
     }
 }
 
@@ -3036,8 +3072,8 @@ void CTar::x_AppendFile(const string& file)
     while (size) {
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;
-        if (avail > (size_t) size) {
-            avail = (size_t) size;
+        if (avail > size) {
+            avail = size;
         }
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
@@ -3051,7 +3087,7 @@ void CTar::x_AppendFile(const string& file)
         size -= avail;
     }
 
-    // Write zeros to get the written size a multiple of kBlockSize
+    // Write zeros to get the written size a multiple of BLOCK_SIZE
     size_t zero = ALIGN_SIZE(m_BufferPos) - m_BufferPos;
     memset(m_Buffer + m_BufferPos, 0, zero);
     x_WriteArchive(zero);
@@ -3113,11 +3149,11 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
 
         size_t off = (size_t) OFFSET_OF(m_Read);
         if (off) {
-            read = kBlockSize - off;
+            read = BLOCK_SIZE - off;
             if (m_Tar->m_BufferPos) {
-                off += m_Tar->m_BufferPos  - kBlockSize;
+                off += m_Tar->m_BufferPos  - BLOCK_SIZE;
             } else {
-                off += m_Tar->m_BufferSize - kBlockSize;
+                off += m_Tar->m_BufferSize - BLOCK_SIZE;
             }
             if (read > count)
                 read = count;

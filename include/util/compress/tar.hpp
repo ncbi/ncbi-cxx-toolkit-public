@@ -476,10 +476,10 @@ public:
     // Streaming
     //------------------------------------------------------------------------
 
-    /// Iterate over the archive and return first (or next) entry.
+    /// Iterate over the archive forward and return first (or next) entry.
     ///
-    /// When using this call (possibly along with GetNextEntryData), the
-    /// tar archive stream (if any) must not be accessed outside the CTar API,
+    /// When using this call (possibly along with GetNextEntryData), the tar
+    /// archive stream (if any) must not be accessed outside the CTar API,
     /// since otherwise, inconsistency in data may result.
     /// An application may call GetNextEntryData() to stream some or all of
     /// data out of this entry, or it may call GetNextEntryInfo() again to
@@ -502,8 +502,8 @@ public:
     /// (even of size 0).  The ownership of the pointer is given to the caller
     /// (so it has to be explicitly deleted when no longer needed).
     /// The IReader may be used to read all or part of data out of the entry
-    /// without affecting GetNextEntryInfo()'s ability to finds any succeding
-    /// entries.
+    /// without affecting GetNextEntryInfo()'s ability to find any succeeding
+    /// entry.
     /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   Pointer to IReader, or 0 if the current entry is not a file.
@@ -564,8 +564,9 @@ protected:
     // Flush the archive (writing an appropriate EOT if necessary).
     void x_Flush(bool nothrow = false);
 
-    // Backspace the archive.
-    void x_Backspace(EAction action, size_t blocks);
+    // Backspace and skip the archive (in terms of blocks).
+    void x_Backspace(EAction action, Uint8 blocks);
+    void x_Skip(Uint8 blocks);  // Can do either skip or read
 
     // Parse in extended entry information (POSIX) for the current entry.
     EStatus x_ParsePAXHeader(const string& buffer);
@@ -600,7 +601,6 @@ protected:
 
     // Read/write specified number of bytes from/to the archive.
     const char* x_ReadArchive (size_t& n);
-    void        x_SkipArchive (size_t  n);  // Can do either skip or read
     void        x_WriteArchive(size_t  n, const char* buffer = 0);
 
     // Check path and convert it to an archive name.
