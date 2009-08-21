@@ -85,6 +85,8 @@ const int kSQLITE_DefPageSize = 32768;
                SQLITE_ERRMSG_STRM(handle, msg))
 
 
+#ifdef HAVE_SQLITE3ASYNC_H
+
 /// Background thread for executing all asynchronous writes to database
 /// if they exist.
 class CSQLITE_AsyncWritesThread : public CThread
@@ -97,6 +99,9 @@ protected:
     }
 };
 
+#endif  // HAVE_SQLITE3ASYNC_H
+
+#ifdef HAVE_SQLITE3_UNLOCK_NOTIFY
 
 /// Class helping make smart waits when database is locked by another thread
 class CLockWaiter
@@ -141,6 +146,8 @@ static map<sqlite3*, CLockWaiter> s_LockWaiters;
 /// Mutex for working with s_LockWaiters
 DEFINE_STATIC_FAST_MUTEX(s_LockWaitersMutex);
 
+#endif  // HAVE_SQLITE3_UNLOCK_NOTIFY
+
 
 /// Unified handling of return codes from sqlite. Throw exception if
 /// return code indicates some error, return SQLITE_BUSY if last operation
@@ -159,6 +166,7 @@ s_ProcessErrorCode(sqlite3*                    handle,
     case SQLITE_BUSY:
         SleepMilliSec(1);
         break;
+#ifdef HAVE_SQLITE3_UNLOCK_NOTIFY
     case SQLITE_LOCKED:
     case SQLITE_LOCKED_SHAREDCACHE:
         CLockWaiter* waiter;
@@ -177,6 +185,7 @@ s_ProcessErrorCode(sqlite3*                    handle,
         }
         sqlite3_code = SQLITE_BUSY;
         break;
+#endif  // HAVE_SQLITE3_UNLOCK_NOTIFY
     case SQLITE_CONSTRAINT:
         SQLITE_THROW(CSQLITE_Exception::eConstraint, handle,
                      "Constraint violation in statement");
@@ -250,6 +259,7 @@ CSQLITE_Exception::GetErrCodeString(void) const
 }
 
 
+#ifdef HAVE_SQLITE3ASYNC_H
 
 /// Background thread for executing all asynchronous writings to databases
 static CRef<CThread> s_AsyncWritesThread;
@@ -264,26 +274,58 @@ CSQLITE_Global::RunAsyncWritesThread(void)
 }
 
 void
+CSQLITE_Global::SetAsyncWritesFileLocking(bool lock_files)
+{
+    if (sqlite3async_control(SQLITEASYNC_LOCKFILES, int(lock_files))
+        != SQLITE_OK)
+    {
+        ERR_POST_X(7, "File locking for asynchronous writing mode is not set "
+                      "because of an error");
+    }
+}
+
+#endif  // HAVE_SQLITE3ASYNC_H
+
+void
 CSQLITE_Global::Finalize(void)
 {
+#ifdef HAVE_SQLITE3ASYNC_H
     _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_IDLE)
                                                                 == SQLITE_OK);
     if (s_AsyncWritesThread.NotNull()) {
         s_AsyncWritesThread->Join();
     }
     sqlite3async_shutdown();
+#endif
+
     _VERIFY(sqlite3_shutdown() == SQLITE_OK);
 }
 
 void
 CSQLITE_Global::Initialize(void)
 {
-    _VERIFY(sqlite3_enable_shared_cache(true)          == SQLITE_OK);
     _VERIFY(sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK);
     _VERIFY(sqlite3_initialize()                       == SQLITE_OK);
+#ifdef HAVE_SQLITE3ASYNC_H
     _VERIFY(sqlite3async_initialize(NULL, 0)           == SQLITE_OK);
     _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_NEVER)
                                                        == SQLITE_OK);
+#endif
+}
+
+void
+CSQLITE_Global::EnableSharedCache(bool enable /* = true */)
+{
+#if defined(NCBI_THREADS) && !defined(HAVE_SQLITE3_UNLOCK_NOTIFY)
+    if (enable) {
+        NCBI_THROW(CSQLITE_Exception, eBadCall,
+                   "Cannot turn on shared cache because of lack of capabilities");
+    }
+#else
+    if (sqlite3_enable_shared_cache(enable) != SQLITE_OK) {
+        ERR_POST_X(9, "Setting for sharing cache is not set because of an error");
+    }
+#endif
 }
 
 void
@@ -295,13 +337,11 @@ CSQLITE_Global::SetCustomPageCache(sqlite3_pcache_methods* methods)
 }
 
 void
-CSQLITE_Global::SetAsyncWritesFileLocking(bool lock_files)
+CSQLITE_Global::SetCustomMallocFuncs(sqlite3_mem_methods* methods)
 {
-    if (sqlite3async_control(SQLITEASYNC_LOCKFILES, int(lock_files))
-        != SQLITE_OK)
-    {
-        ERR_POST_X(7, "File locking for asynchronous writing mode is not set "
-                      "because of an error");
+    if (sqlite3_config(SQLITE_CONFIG_MALLOC, methods) != SQLITE_OK) {
+        ERR_POST_X(8,
+                   "Custom malloc functions are not set because of an error");
     }
 }
 

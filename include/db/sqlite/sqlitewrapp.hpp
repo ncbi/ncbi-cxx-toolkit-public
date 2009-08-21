@@ -42,7 +42,9 @@
 #include <corelib/obj_pool.hpp>
 
 #include <sqlite3.h>
-#include <sqlite3async.h>
+#ifdef HAVE_SQLITE3ASYNC_H
+# include <sqlite3async.h>
+#endif
 
 #include <deque>
 
@@ -63,15 +65,30 @@ class CSQLITE_Global
 public:
     /// Install non-default cache for all SQLite databases. Can be useful
     /// if default policy of working with cache is inappropriate for your
-    /// application. For more details on sqlite3_pcache_methods look comments
-    /// before it in sqlite3.h.
+    /// application. For more details on sqlite3_pcache_methods look into
+    /// comments before it in sqlite3.h.
     /// Method can be called only before SQLite is initialized with
     /// Initialize() method.
     static void SetCustomPageCache(sqlite3_pcache_methods* methods);
+    /// Install non-default memory management for SQLite. For more details on
+    /// sqlite3_mem_methods look into comments before it in sqlite3.h.
+    /// Method can be called only before SQLite is initialized with
+    /// Initialize() method.
+    static void SetCustomMallocFuncs(sqlite3_mem_methods* methods);
     /// Initialization of SQLite and tuning some default parameters.
     /// For these SQLite wrappers to work properly this method should be
     /// called before any work with other classes.
     static void Initialize(void);
+    /// Finish all SQLite operations. Method should be called at the end of
+    /// application execution. After it has been called any further attempts
+    /// to use wrapper classes will likely cause application crash.
+    static void Finalize(void);
+    /// Enable use of the same cache by different connections to the same
+    /// database file. Setting can be changed at any time and will affect all
+    /// connections opened after changing.
+    static void EnableSharedCache(bool enable = true);
+
+#ifdef HAVE_SQLITE3ASYNC_H
     /// Setup the option for asynchronous file system to do the actual locking
     /// of database files on disk. If lock_files is TRUE then files will be
     /// actually locked on hard disk, if it is FALSE files will not be locked
@@ -82,10 +99,7 @@ public:
     /// Launch background thread doing all asynchronous writes to databases.
     /// Method is no-op if background thread has already launched.
     static void RunAsyncWritesThread(void);
-    /// Finish all SQLite operations. Method should be called at the end of
-    /// application execution. After it has been called any further attempts
-    /// to use wrapper classes will likely cause application crash.
-    static void Finalize(void);
+#endif  // HAVE_SQLITE3ASYNC_H
 
 private:
     CSQLITE_Global(void);
@@ -226,10 +240,8 @@ public:
 
     /// Get database file name for the connection
     const string&   GetFileName(void) const;
-
     /// Get flags controlling database connection operation
     TOperationFlags GetFlags   (void) const;
-
     /// Change flags controlling database connection operation.
     /// NOTE: Vacuuming flags cannot be changed here. New flags will be
     ///       applied only to newly created low-level SQLite connections.
@@ -239,20 +251,16 @@ public:
     ///       mandatory - you will get memory and other resources leak
     ///       otherwise.
     void SetFlags(TOperationFlags flags);
-
     /// Set page size for the database (in bytes). Setting has any value only
     /// if database is empty (has no tables) and no statements are created
     /// yet. Page size should be power of 2 and be less than or equal to
     /// 32768. If page size is not set default value is used.
     void SetPageSize(unsigned int size);
-
     /// Get page size used in the database (in bytes)
     unsigned int GetPageSize(void);
-
     /// Set recommended size of the database cache (number of pages). If value
     /// is not set or set to 0 then default SQLite value is used.
     void SetCacheSize(unsigned int size);
-
     /// Get recommended size of the database cache. If cache size was not set
     /// by SetCacheSize() method then this method returns 0, though actually
     /// SQLite uses some default value.
@@ -263,7 +271,6 @@ public:
     ///
     /// @sa EOperationFlags
     void Vacuum(size_t max_free_size);
-
     /// Create statement for executing manual vacuuming.
     /// Caller is responsible for deleting returned statement object.
     ///
@@ -272,7 +279,6 @@ public:
 
     /// Execute sql statement without returning any results.
     void ExecuteSql(CTempString sql);
-
     /// Delete database under this connection. Method makes sure that journal
     /// file is deleted along with database file itself. All CSQLITE_Statement
     /// and CSQLITE_Blob objects on this connection should be deleted before
@@ -520,7 +526,6 @@ public:
                  CTempString         table,
                  CTempString         column,
                  Int8                rowid);
-
     /// Create object reading and writing blob
     /// Identified row with blob should exist in database, exception is
     /// thrown otherwise.
@@ -540,15 +545,12 @@ public:
                  CTempString         table,
                  CTempString         column,
                  Int8                rowid);
-
     ~CSQLITE_Blob(void);
 
     /// Set current position inside the blob to desired value
     void   ResetPosition(size_t position = 0);
-
     /// Get current position inside the blob
     size_t GetPosition  (void);
-
     /// Get size of the blob
     size_t GetSize(void);
 
@@ -562,7 +564,6 @@ public:
     ///   Number of bytes read from blob. If current position is beyond end
     ///   of the blob then 0 is returned and buffer is unchanged.
     size_t Read   (void*       buffer, size_t size);
-
     /// Write to blob at current position
     ///
     /// @param data
@@ -570,7 +571,6 @@ public:
     /// @param size
     ///   Number of bytes to write
     void   Write  (const void* data,   size_t size);
-
     /// Set statement to use when appending to existing blob if necessary.
     /// Statement should be of the form
     /// "update ... set ... = ...||?2 where rowid=?1"
@@ -642,8 +642,10 @@ public:
         eBlobRead,      ///< Error reading directly from blob
         eBlobWrite,     ///< Error writing directly to blob
         eConstraint,    ///< Constraint violation during statement execution
-        eDeadLock       ///< SQLite detected possible deadlock between
-        ///< different threads
+        eDeadLock,      ///< SQLite detected possible deadlock between
+                        ///< different threads
+        eBadCall        ///< Method called when there's no enough capabilities
+                        ///< to finish it successfully
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CSQLITE_Exception, CException);
