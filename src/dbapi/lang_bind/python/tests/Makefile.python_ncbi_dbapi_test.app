@@ -3,15 +3,19 @@
 APP = python_ncbi_dbapi_test
 SRC = python_ncbi_dbapi_test
 
-REQUIRES = PYTHON Boost.Test
+REQUIRES = PYTHON Boost.Test.Included
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PYTHON_INCLUDE) $(BOOST_INCLUDE)
 
-LIB  = dbapi_driver$(STATIC) xutil xncbi
-LIBS = $(BOOST_TEST_LIBS) $(PYTHON_LIBS) $(ORIG_LIBS)
+LIB  = dbapi_driver$(STATIC) xutil xncbi test_boost
+LIBS = $(PYTHON_LIBS) $(ORIG_LIBS)
 
-# CHECK_REQUIRES = mswin
 CHECK_REQUIRES = DLL
-CHECK_CMD = python_ncbi_dbapi_test.sh
-CHECK_COPY = python_ncbi_dbapi_test.sh
+CHECK_COPY = python_ncbi_dbapi_test.ini
 CHECK_TIMEOUT = 300
+
+CHECK_CMD = python_ncbi_dbapi_test -d ctlib -S Sybase
+CHECK_CMD = python_ncbi_dbapi_test -d dblib -S Sybase
+CHECK_CMD = python_ncbi_dbapi_test -d ftds  -S Sybase
+CHECK_CMD = python_ncbi_dbapi_test -d ftds  -S MsSql
+CHECK_CMD = python_ncbi_dbapi_test -d odbc  -S MsSql

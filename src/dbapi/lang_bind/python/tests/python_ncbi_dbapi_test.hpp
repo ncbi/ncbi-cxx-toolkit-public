@@ -33,15 +33,7 @@
 #ifndef PYTHON_NCBI_DBAPI_TEST_H
 #define PYTHON_NCBI_DBAPI_TEST_H
 
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
-
-#include <boost/test/unit_test.hpp>
-
-#include "../pythonpp/pythonpp_emb.hpp"
-
-using boost::unit_test_framework::test_suite;
+#include <corelib/test_boost.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +41,7 @@ BEGIN_NCBI_SCOPE
 class CTestArguments
 {
 public:
-    CTestArguments(int argc, char * argv[]);
+    CTestArguments(void);
 
 public:
     typedef map<string, string> TDatabaseParameters;
@@ -58,9 +50,6 @@ public:
         eUnknown,   //< Server type is not known
         eSybase,    //< Sybase server
         eMsSql,     //< Microsoft SQL server
-        eMySql,     //< MySql server
-        eSqlite,    //< Sqlite server
-        eOracle     //< ORACLE server
     };
 
     string GetDriverName(void) const
@@ -70,6 +59,19 @@ public:
 
     string GetServerName(void) const
     {
+        if (NStr::CompareNocase(m_ServerName, "MsSql") == 0) {
+#ifdef HAVE_LIBCONNEXT
+            return "MS_TEST";
+#else
+            return "MSDEV1";
+#endif
+        } else if (NStr::CompareNocase(m_ServerName, "Sybase") == 0) {
+#ifdef HAVE_LIBCONNEXT
+            return "SYB_TEST";
+#else
+            return "CLEMENTI";
+#endif
+        }
         return m_ServerName;
     }
 
@@ -107,55 +109,6 @@ private:
     string m_UserPassword;
     string m_DatabaseName;
     TDatabaseParameters m_DatabaseParameters;
-};
-
-
-class CPythonDBAPITest
-{
-public:
-    CPythonDBAPITest(const CTestArguments& args);
-    ~CPythonDBAPITest(void);
-
-public:
-    // Test IStatement interface.
-
-    // Test particular methods.
-    void MakeTestPreparation(void);
-    void TestBasic(void);
-    void TestConnection(void);
-    void TestExecute(void);
-    void TestFetch(void);
-    void TestParameters(void);
-    void TestExecuteMany(void);
-    void Test_callproc(void);
-    void TestExecuteStoredProc(void);
-    void Test_SelectStmt(void);
-    void Test_LOB(void);
-    void Test_RaiseError(void);
-    void Test_Exception(void);
-
-    // Test scenarios.
-    void TestTransaction(void);
-    void TestScenario_1(void);
-    void TestScenario_2(void);
-
-    // Run a Python script from a file
-    void TestFromFile(void);
-
-private:
-    static void ExecuteStr(const char* cmd);
-    static void ExecuteSQL(const string& sql);
-
-private:
-    pythonpp::CEngine* m_Engine;
-    const CTestArguments m_args;
-};
-
-///////////////////////////////////////////////////////////////////////////
-struct CPythonDBAPITestSuite : public test_suite
-{
-    CPythonDBAPITestSuite(const CTestArguments& args);
-    ~CPythonDBAPITestSuite(void);
 };
 
 END_NCBI_SCOPE
