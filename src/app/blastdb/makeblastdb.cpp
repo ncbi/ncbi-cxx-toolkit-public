@@ -468,7 +468,7 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
         mask_data.algorithm_id = m_MaskIdMap[*algo_id];
 
         ITERATE(CSeqDB::TSequenceRanges, range, ranges) {
-            mask_data.offsets.push_back(pair<int, int>(range->first, range->second));
+            mask_data.offsets.push_back(pair<TSeqPos, TSeqPos>(range->first, range->second));
         }
        
         mask_range.push_back(mask_data);
