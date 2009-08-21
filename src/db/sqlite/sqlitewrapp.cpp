@@ -356,11 +356,13 @@ CSQLITE_HandleFactory::CreateObject(void)
 {
     sqlite3* result = NULL;
     const char* vfs = NULL;
+#ifdef HAVE_SQLITE3ASYNC_H
     if ((m_Conn->GetFlags() & CSQLITE_Connection::eAllWrites)
                                         == CSQLITE_Connection::fWritesAsync)
     {
         vfs = SQLITEASYNC_VFSNAME;
     }
+#endif
     SQLITE_SAFE_CALL((sqlite3_open_v2(m_Conn->GetFileName().c_str(),
                                       &result,
                                       SQLITE_OPEN_READWRITE

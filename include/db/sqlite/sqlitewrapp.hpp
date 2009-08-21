@@ -199,14 +199,20 @@ public:
         fWritesSync    = 0x000,  ///< All writes are synchronous - when update
                                  ///< has executed data is already in file
                                  ///< (though @sa fSyncOff)
+#ifdef HAVE_SQLITE3ASYNC_H
         fWritesAsync   = 0x400,  ///< All writes are asynchronous - updates
                                  ///< return as quick as they can, actual
                                  ///< writes to database happen in background
                                  ///< thread (@sa
                                  ///< CSQLITE_Global::RunAsyncWritesThread)
+#endif
         /// Default value for writes mode group of flags
         fDefaultWrites = fWritesSync,
-        eAllWrites     = fWritesSync + fWritesAsync,
+        eAllWrites     = fWritesSync
+#ifdef HAVE_SQLITE3ASYNC_H
+                         + fWritesAsync
+#endif
+                         ,
 
         /// Default value of all flags
         eDefaultFlags = fDefaultMT + fDefaultVacuum + fDefaultJournal
