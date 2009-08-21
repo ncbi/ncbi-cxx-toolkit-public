@@ -181,6 +181,9 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
         BOOST_CHECK(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif
     }
+#ifdef HAVE_NCBI_C
+    WebEnvFree(env);
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -228,6 +231,9 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
         BOOST_CHECK(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif
     }
+#ifdef HAVE_NCBI_C
+    WebEnvFree(env);
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -393,6 +399,9 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
         BOOST_CHECK(SerialEquals<CTestSerialObject>(obj, obj_copy));
 #endif
     }
+#ifdef HAVE_NCBI_C
+    WebEnvFree(env);
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -545,6 +554,9 @@ BOOST_AUTO_TEST_CASE(s_TestIterators)
             }
         }
     }
+#ifdef HAVE_NCBI_C
+    WebEnvFree(env);
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -655,6 +667,9 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
         }
 #endif
     }
+#ifdef HAVE_NCBI_C
+    WebEnvFree(env);
+#endif
 }
 
 #ifndef HAVE_NCBI_C

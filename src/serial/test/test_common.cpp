@@ -39,7 +39,7 @@
 
 void InitializeTestObject(
 #ifdef HAVE_NCBI_C
-    WebEnv* env,
+    WebEnv*& env,
 #else
     CRef<CWeb_Env>& env,
 #endif

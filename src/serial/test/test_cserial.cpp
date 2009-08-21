@@ -58,6 +58,7 @@ BOOST_AUTO_TEST_CASE(s_TestCAsnSerialization)
                 CObjectOStream::Open(bin_out,eSerial_AsnBinary));
             out->Write(&env, GetSequenceTypeRef(&env).Get());
         }
+        WebEnvFree(env);
         BOOST_CHECK( CFile( bin_in).Compare( bin_out) );
         {
             // C-style Object must be clean before loading: using new WebEnv instance
@@ -72,6 +73,7 @@ BOOST_AUTO_TEST_CASE(s_TestCAsnSerialization)
                 CObjectOStream::Open(text_out,eSerial_AsnText));
             out->SetAutoSeparator(false);
             out->Write(&env2, GetSequenceTypeRef(&env2).Get());
+            WebEnvFree(env2);
         }
         BOOST_CHECK( CFile(text_in).Compare(text_out) );
     }
@@ -95,6 +97,7 @@ BOOST_AUTO_TEST_CASE(s_TestCPrintAsn)
             CNcbiOfstream out(text_out.c_str());
             PrintAsn(out, CConstObjectInfo(&env,GetSequenceTypeRef(&env).Get()));
         }
+        WebEnvFree(env);
         BOOST_CHECK( CFile(text_in).Compare(text_out) );
     }
 }
