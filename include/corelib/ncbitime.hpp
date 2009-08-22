@@ -38,6 +38,7 @@
 ///   CTimeFormat- storage class for fime format.
 ///   CTime      - standard Date/Time class to represent an absolute time.
 ///   CTimeSpan  - class to represents a relative time span.
+///   CTimeout   - timeout interval for various I/O etc activity
 ///   CStopWatch - stop watch class to measure elasped time.
 ///
 /// NOTE about CTime:
@@ -56,6 +57,7 @@
 ///     less than January 1, 1900.
 
 #include <corelib/ncbistd.hpp>
+#include <connect/ncbi_types.h>  // STimeout
 
 
 BEGIN_NCBI_SCOPE
@@ -1423,6 +1425,41 @@ private:
 private:
     long  m_Sec;      ///< Seconds part of the time span
     long  m_NanoSec;  ///< Nanoseconds after the second
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// C++ version of STimeout
+///
+
+class NCBI_XNCBI_EXPORT CTimeout
+{
+public:
+    /// Create default timeout
+    CTimeout(void) : m_Ptr(kDefaultTimeout) {}
+    /// Create timeout from STimeout*
+    CTimeout(const STimeout* tmo) { Set(tmo); }
+    /// Initialize timeout in seconds and microseconds
+    CTimeout(unsigned int sec, unsigned int usec) { Set(sec, usec); }
+    ~CTimeout(void) {}
+
+    /// Get STimeout*
+    const STimeout* Get(void) const { return m_Ptr; }
+    /// Convert to const STimeout*
+    operator const STimeout*(void) const { return Get(); }
+
+    /// Set timeout
+    void Set(const STimeout* tmo);
+    /// Set timeout in seconds and microseconds
+    void Set(unsigned int sec, unsigned int usec);
+    /// Copy timeout from STimeout*
+    const CTimeout& operator=(const STimeout* tmo) { Set(tmo); return *this; }
+
+private:
+    const STimeout* m_Ptr;
+    STimeout        m_Timeout;
 };
 
 
