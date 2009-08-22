@@ -9,23 +9,31 @@ else
 fi
 test -x "$tar"  ||  exit 0
 
+huge_tar="/am/ftp-geo/DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
+if [ -f "$huge_tar" ]; then
+  echo
+  echo "`date` *** Testing compatibility with existing NCBI data"
+  echo
+    
+  test_tar -T -f "$huge_tar"  ||  exit 1
+fi
+
+echo
+echo "`date` *** Preparing file staging area"
+echo
+
 test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 
 test_base="${TMPDIR:-/tmp}/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
 trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
 
-echo
-echo "`date` *** Preparing file staging area"
-echo
-
 cp -rp . $test_base.1/ 2>/dev/null
-
 if [ -f test_tar${exe} ]; then
-    test_exe=./test_tar${exe}
+  test_exe=./test_tar${exe}
 else
-    test_exe=$CFG_BIN/test_tar${exe}
-    cp -p $test_exe $test_base.1/ 2>/dev/null
+  test_exe=$CFG_BIN/test_tar${exe}
+  cp -p $test_exe $test_base.1/ 2>/dev/null
 fi
 
 mkdir $test_base.1/testdir 2>/dev/null
