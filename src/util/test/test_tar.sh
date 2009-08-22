@@ -15,6 +15,7 @@ test_base="${TMPDIR:-/tmp}/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
 trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
 
+echo
 echo "`date` *** Preparing file staging area"
 echo
 
@@ -67,7 +68,8 @@ echo
 dd if=$test_base.tar bs=123 2>/dev/null | test_tar -v -T -f -         ||  exit 1
 
 sleep 1
-mkdir $test_base.1/newdir 2>/dev/null
+mkdir             $test_base.1/newdir 2>/dev/null
+chmod g+s,o+t,o-x $test_base.1/newdir 2>/dev/null
 date 2>/dev/null | tee -a $test_base.1/testdir.$$/datefile $test_base.1/newdir/datefile >$test_base.1/datefile 2>/dev/null
 cp -fp $test_base.1/newdir/datefile $test_base.1/newdir/dummyfile 2>/dev/null
 
@@ -144,6 +146,63 @@ test_tar -X -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefi
 head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                           ||  exit 1
 cat "$test_exe" "$test_base.out.temp" "$test_base.2/newdir/datefile" > "$test_base.out.2"                ||  exit 1
 cmp -l "$test_base.out.1" "$test_base.out.2"                                                             ||  exit 1
+
+if [ "`uname`" = "Linux" ]; then
+  prebs="`expr $$ % 10000`"
+  spabs="`expr $$ % 1000`"
+  posbs="`expr $$ % 10240`"
+  nseek="`expr 1024000 / $spabs`"
+  size="`expr $nseek '*' $spabs + $spabs`"
+
+  echo
+  echo "`date` *** Testing sparse file tolerance (seek: ${nseek}, bs: ${spabs}, size: ${size})"
+  echo
+
+  dd of=$test_base.1/newdir/pre-sparse  bs="$prebs" count=1               if=/dev/urandom                              ||  exit 1
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" if=/dev/urandom                              ||  exit 1
+  dd of=$test_base.1/newdir/post-sparse bs="$posbs" count=1               if=/dev/urandom                              ||  exit 1
+
+  ( cd $test_base.1/newdir  &&  $tar -Srvf $test_base.tar pre-sparse sparse-file post-sparse )                         ||  exit 1
+
+  test_tar -T -v -f $test_base.tar                                                                                     ||  exit 1
+  test_tar -X -v -f $test_base.tar                                   sparse-file > $test_base.2/newdir/sparse-file     ||  exit 1
+
+  real="`ls -l $test_base.1/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
+  if [ "$size" != "$real" ]; then
+    echo "--- Sparse file size mismatch: $size is expected, $real is found"
+    exit 1
+  fi
+
+  real="`expr $size - $spabs`"
+  nseek="`expr $real / 512`"
+  real="`expr $size - $nseek '*' 512`"
+  real="`expr $real / 512 + 1`"
+  dd if=$test_base.1/newdir/sparse-file bs=512 count="$real" skip="$nseek" | cmp -l - $test_base.2/newdir/sparse-file  ||  exit 1
+
+  free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
+  if [ "$free" -gt "4200000" ]; then
+    echo
+    echo "`date` *** ${free}KiB available in /tmp:  Testing 4GiB barrier"
+    echo
+
+    dd of=$test_base.1/newdir/huge-file bs=1 count="`expr $$ % 10000`" seek=4G if=/dev/urandom                         ||  exit 1
+    real="`ls -l $test_base.1/newdir/huge-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
+    test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse                           ||  exit 1
+    size="`test_tar -t -v -f $test_base.tar huge-file 2>&1 | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
+
+    if [ "$size" != "$real" ]; then
+      echo "--- Entry size mismatch: $size is expected to be $real"
+      exit 1
+    fi
+    size="`ls -l $test_base.tar | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
+    if [ "$size" -le "$real" ]; then
+      echo "--- Archive size mismatch: $size is expected to be greater than $real"
+      exit 1
+    fi
+
+    $tar tvf $test_base.tar                                                                                            ||  exit 1
+  fi
+fi
 
 echo
 echo "`date` *** TEST COMPLETE"
