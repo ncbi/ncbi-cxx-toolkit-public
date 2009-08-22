@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include <connect/ncbi_types.h>
+#include <corelib/ncbitime.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <serial/serialdef.hpp>
