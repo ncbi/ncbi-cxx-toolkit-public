@@ -698,7 +698,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 
     ok = s_DecodeUint8(val, h->uid, sizeof(h->uid));
     dump += TAR_PRINTABLE(uid, ok <= 0);
-    if (ok  &&  val > 7) {
+    if (ok  &&  (ok < 0  || val > 7)) {
         dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
@@ -708,7 +708,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     
     ok = s_DecodeUint8(val, h->gid, sizeof(h->gid));
     dump += TAR_PRINTABLE(gid, ok <= 0);
-    if (ok  &&  val > 7) {
+    if (ok  &&  (ok < 0  ||  val > 7)) {
         dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
@@ -718,7 +718,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 
     ok = s_DecodeUint8(val, h->size, sizeof(h->size));
     dump += TAR_PRINTABLE(size, ok <= 0);
-    if (ok < 0  ||  val > 7) {
+    if (ok  &&  (ok < 0  ||  val > 7)) {
         dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
@@ -730,9 +730,13 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += TAR_PRINTABLE(mtime, !ok);
     if (ok  &&  val) {
         CTime mtime((time_t) val);
-        dump += (" ["
-                 + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
-                 + mtime.ToLocalTime().AsString("Y-M-D h:m:s]"));
+        ok = (Uint8) mtime.GetTimeT() == val ? true : false;
+        if (ok  ||  val > 7) {
+            dump += (" ["
+                     + (val > 7 ? NStr::UInt8ToString(val) + ", "        : "")
+                     + (ok ? mtime.ToLocalTime().AsString("Y-M-D h:m:s") : "")
+                     + ']');
+        }
     }
     dump += '\n';
 
@@ -933,20 +937,32 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             ok = s_OctalToNum(val, h->gt.atime, sizeof(h->gt.atime));
             dump += TAR_PRINTABLE(gt.atime, !ok);
             if (ok  &&  val) {
-                CTime mtime((time_t) val);
-                dump += (" ["
-                         + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
-                         + mtime.ToLocalTime().AsString("Y-M-D h:m:s]"));
+                CTime atime((time_t) val);
+                ok = (Uint8) atime.GetTimeT() == val ? true : false;
+                if (ok  ||  val > 7) {
+                    dump += (" ["
+                             + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                             + (ok
+                                ? atime.ToLocalTime().AsString("Y-M-D h:m:s")
+                                : "")
+                             + ']');
+                }
             }
             dump += '\n';
 
             ok = s_OctalToNum(val, h->gt.ctime, sizeof(h->gt.ctime));
             dump += TAR_PRINTABLE(gt.ctime, !ok);
             if (ok  &&  val) {
-                CTime mtime((time_t) val);
-                dump += (" ["
-                         + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
-                         + mtime.ToLocalTime().AsString("Y-M-D h:m:s]"));
+                CTime ctime((time_t) val);
+                ok = (Uint8) ctime.GetTimeT() == val ? true : false;
+                if (ok  ||  val > 7) {
+                    dump += (" ["
+                             + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                             + (ok
+                                ? ctime.ToLocalTime().AsString("Y-M-D h:m:s")
+                                : "")
+                             + ']');
+                }
             }
             tname = h->gt.ctime + sizeof(h->gt.ctime);
         } else {
@@ -961,19 +977,46 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         if (tname[n]) {
             size_t offset = (size_t)(&tname[n] - (const char*) h);
             size_t len = BLOCK_SIZE - offset;
-            if (len & ~0xF) // len > 16
-                len = 0x10; // len = 16
+            if (len & ~0xF) {  // len > 16
+                len = 0x10;    // len = 16
+            }
             const char* e = (const char*) memchr(&tname[n], '\0', len);
-            if (e)
+            if (e) {
                 len = (size_t)(e - &tname[n]);
-            else if (len > (offset & 0xF))
-                len -= (offset & 0xF);
+                ok = s_DecodeUint8(val, &tname[n], len);
+            } else {
+                if (len  > (offset & 0xF)) {
+                    len -= (offset & 0xF);
+                }
+                ok = false;
+            }
             _ASSERT(len);
             dump += "\n@" + s_AddressAsString(offset) + ':' + string(11, ' ')
                 + '"' + NStr::PrintableString(string(&tname[n], len)) + '"';
+            if (ok) {
+                CTime time((time_t) val);
+                bool okaytime = (Uint8) time.GetTimeT() == val;
+                if (ok < 0  ||  val > 7  ||  okaytime) {
+                    dump += " [";
+                    if (ok < 0  ||  val > 7) {
+                        dump += NStr::UInt8ToString(val);
+                    }
+                    if (ok < 0) {
+                        dump += "] (base-256)";
+                    } else if (okaytime) {
+                        if (val > 7) {
+                            dump += ", ";
+                        }
+                        dump += time.ToLocalTime().AsString("Y-M-D h:m:s]");
+                    } else {
+                        dump += ']';
+                    }
+                }
+            }
             n += len;
-        } else
+        } else {
             n++;
+        }
     }
 
     return dump;
@@ -1690,14 +1733,10 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     }
     m_Current.m_Stat.st_size = /*(?)*/ val;
     if (m_Current.GetSize() != val) {
-        static volatile int warned = 0;
-        if (!warned) {
-            warned = 1;
-            ERR_POST(Critical << "CAUTION:"
-                     " ***"
-                     "This RTL may not support large TAR entries"
-                     " ***");
-        }
+        ERR_POST_ONCE(Critical << "CAUTION:"
+                      " ***"
+                      "This RTL may not support large TAR entries"
+                      " ***");
     }
 
     // Modification time
@@ -3220,7 +3259,9 @@ IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
     }
 
     _ASSERT(tar->m_Current == *temp->begin());
-    if (tar->m_Current.GetType() != CTarEntryInfo::eFile) {
+    CTarEntryInfo::EType type = tar->m_Current.GetType();
+    if (type != CTarEntryInfo::eFile  &&
+        (type != CTarEntryInfo::eUnknown  ||  (flags & fSkipUnsupported))) {
         return 0;
     }
 

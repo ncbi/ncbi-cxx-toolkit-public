@@ -525,7 +525,8 @@ public:
     /// @sa
     ///   CTarEntryInfo::GetPosition, Extract, SetMask, SetFlags,
     ///   GetNextEntryInfo, GetNextEntryData, IReader, CRStream
-    static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
+    static IReader* Extract(istream& is, const string& name,
+                            TFlags flags = fSkipUnsupported);
 
 protected:
     /// Archive action
