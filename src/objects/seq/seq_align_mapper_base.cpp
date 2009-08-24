@@ -1310,6 +1310,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                                                int start_seg) const
 {
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
+    dst->SetType(CSeq_align::eType_partial);
     dseg.SetDim(m_Segs.front().m_Rows.size());
     CDense_seg::TNumseg num_seg = m_Segs.size();
 
@@ -1353,7 +1354,10 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     x_FillKnownStrands(strands);
     cur_seg = 0;
     ITERATE(TSegments, seg_it, m_Segs) {
-        if (cur_seg < start_seg) continue;
+        if (cur_seg < start_seg) {
+            cur_seg++;
+            continue;
+        }
         if (cur_seg >= start_seg + num_seg) {
             break;
         }
