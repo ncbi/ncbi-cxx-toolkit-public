@@ -502,7 +502,7 @@ string CUrl::ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
         url += "?" + m_ArgsList->GetQueryString(amp_enc, encoder);
     }
     if ( !m_Fragment.empty() ) {
-        url += "#" + encoder->EncodePath(m_Fragment);
+        url += "#" + encoder->EncodeFragment(m_Fragment);
     }
     return url;
 }

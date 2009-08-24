@@ -124,6 +124,10 @@ public:
     virtual string EncodeArgValue(const string& value) const = 0;
     /// Decode CGI argument value
     virtual string DecodeArgValue(const string& value) const = 0;
+    /// Encode fragment
+    virtual string EncodeFragment(const string& value) const = 0;
+    /// Decode fragment
+    virtual string DecodeFragment(const string& value) const = 0;
 };
 
 
@@ -152,6 +156,10 @@ public:
         {  return value; }
     virtual string DecodeArgValue(const string& value) const
         {  return value; }
+    virtual string EncodeFragment(const string& value) const
+        {  return value; }
+    virtual string DecodeFragment(const string& value) const
+        {  return value; }
 };
 
 
@@ -164,7 +172,7 @@ public:
     CDefaultUrlEncoder(EUrlEncode encode = eUrlEncode_SkipMarkChars)
         : m_Encode(NStr::EUrlEncode(encode)) { return; }
     virtual string EncodePath(const string& path) const
-        { return NStr::URLEncode(path, NStr::eUrlEnc_Path); }
+        { return NStr::URLEncode(path, NStr::eUrlEnc_URIPath); }
     virtual string DecodePath(const string& path) const
         { return NStr::URLDecode(path); }
     virtual string EncodeArgName(const string& name) const
@@ -179,6 +187,10 @@ public:
         { return NStr::URLDecode(value,
             m_Encode == NStr::eUrlEnc_PercentOnly ?
             NStr::eUrlDec_Percent : NStr::eUrlDec_All); }
+    virtual string EncodeFragment(const string& value) const
+        { return NStr::URLEncode(value, NStr::eUrlEnc_URIFragment); }
+    virtual string DecodeFragment(const string& value) const
+        { return NStr::URLDecode(value, NStr::eUrlDec_All); }
 private:
     NStr::EUrlEncode m_Encode;
 };
@@ -688,7 +700,7 @@ inline
 void CUrl::x_SetFragment(const string& fragment,
                          const IUrlEncoder& encoder)
 {
-    m_Fragment = encoder.DecodePath(fragment);
+    m_Fragment = encoder.DecodeFragment(fragment);
 }
 
 inline
