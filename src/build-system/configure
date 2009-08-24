@@ -28699,7 +28699,8 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-sqlite3* db; int status = sqlite3_open("foo.db", &db);
+sqlite3_pcache_methods m;
+     int status = sqlite3_config(SQLITE_CONFIG_GETPCACHE, &m);
   ;
   return 0;
 }

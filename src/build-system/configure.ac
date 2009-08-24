@@ -5461,7 +5461,8 @@ fi
 NCBI_RPATHIFY(SQLITE3_LIBPATH, $SQLITE3_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
  AC_LANG_PROGRAM([#include <sqlite3.h>],
-    [sqlite3* db; int status = sqlite3_open("foo.db", &db);]))
+    [sqlite3_pcache_methods m;
+     int status = sqlite3_config(SQLITE_CONFIG_GETPCACHE, &m);]))
 if test -n "$SQLITE3_LIBS"; then
    CPPFLAGS="$SQLITE3_INCLUDE $orig_CPPFLAGS"
    AC_CHECK_HEADER(sqlite3async.h,
