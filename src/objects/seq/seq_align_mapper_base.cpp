@@ -522,27 +522,6 @@ void CSeq_align_Mapper_Base::x_Init(const CSeq_align_set& align_set)
 }
 
 
-TSeqPos GetPartLength(const CSpliced_exon_chunk& part)
-{
-    switch ( part.Which() ) {
-    case CSpliced_exon_chunk::e_Match:
-        return part.GetMatch();
-    case CSpliced_exon_chunk::e_Mismatch:
-        return part.GetMismatch();
-    case CSpliced_exon_chunk::e_Diag:
-        return part.GetDiag();
-    case CSpliced_exon_chunk::e_Product_ins:
-        return part.GetProduct_ins();
-    case CSpliced_exon_chunk::e_Genomic_ins:
-        return part.GetGenomic_ins();
-    default:
-        ERR_POST_X(21, Warning << "Unsupported CSpliced_exon_chunk type: " <<
-            part.SelectionName(part.Which()) << ", ignoring the chunk.");
-    }
-    return 0;
-}
-
-
 void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                                       const CSpliced_exon& exon)
 {
@@ -610,7 +589,8 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     if ( exon.IsSetParts() ) {
         ITERATE(CSpliced_exon::TParts, it, exon.GetParts()) {
             const CSpliced_exon_chunk& part = **it;
-            TSeqPos seg_len = GetPartLength(part);
+            TSeqPos seg_len =
+                CSeq_loc_Mapper_Base::sx_GetExonPartLength(part);
             if (seg_len == 0) {
                 continue;
             }
@@ -1542,7 +1522,8 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
 
         if (last_part  &&  last_part->Which() == ptype) {
             SetPartLength(*last_part, ptype,
-                GetPartLength(*last_part) + seg->m_Len);
+                CSeq_loc_Mapper_Base::
+                sx_GetExonPartLength(*last_part) + seg->m_Len);
         }
         else {
             last_part.Reset(new CSpliced_exon_chunk);

@@ -39,6 +39,7 @@
 #include <util/rangemap.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/annot_mapper_exception.hpp>
@@ -440,6 +441,19 @@ private:
     void x_InitSpliced(const CSpliced_seg& spliced, int to_row);
     void x_InitSparse(const CSparse_seg& sparse, int to_row,
                       TMapOptions opts);
+
+    void x_IterateExonParts(const CSpliced_exon::TParts& parts,
+                            int                        to_row,
+                            const CSeq_id&             gen_id,
+                            TSeqPos&                   gen_start,
+                            TSeqPos&                   gen_len,
+                            ENa_strand                 gen_strand,
+                            const CSeq_id&             prod_id,
+                            TSeqPos&                   prod_start,
+                            TSeqPos&                   prod_len,
+                            ENa_strand                 prod_strand,
+                            int                        src_width);
+    static TSeqPos sx_GetExonPartLength(const CSpliced_exon_chunk& part);
 
     bool x_MapNextRange(const TRange&     src_rg,
                         bool              is_set_strand,

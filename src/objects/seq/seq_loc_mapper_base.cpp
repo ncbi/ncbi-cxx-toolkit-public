@@ -831,7 +831,8 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
             TSeqPos dst_start = r_dst.GetFrom();
 
             if (src_len != dst_len) {
-                _TRACE("");
+                ERR_POST_X(23, Error <<
+                    "Genomic vs product length mismatch in dense-seg");
             }
             x_NextMappingRange(
                 src_id, src_start, src_len, src_strand,
@@ -991,6 +992,81 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
 }
 
 
+TSeqPos CSeq_loc_Mapper_Base::sx_GetExonPartLength(const CSpliced_exon_chunk& part)
+{
+    switch ( part.Which() ) {
+    case CSpliced_exon_chunk::e_Match:
+        return part.GetMatch();
+    case CSpliced_exon_chunk::e_Mismatch:
+        return part.GetMismatch();
+    case CSpliced_exon_chunk::e_Diag:
+        return part.GetDiag();
+    case CSpliced_exon_chunk::e_Product_ins:
+        return part.GetProduct_ins();
+    case CSpliced_exon_chunk::e_Genomic_ins:
+        return part.GetGenomic_ins();
+    default:
+        ERR_POST_X(22, Warning << "Unsupported CSpliced_exon_chunk type: " <<
+            part.SelectionName(part.Which()) << ", ignoring the chunk.");
+    }
+    return 0;
+}
+
+
+void CSeq_loc_Mapper_Base::
+x_IterateExonParts(const CSpliced_exon::TParts& parts,
+                   int                        to_row,
+                   const CSeq_id&             gen_id,
+                   TSeqPos&                   gen_start,
+                   TSeqPos&                   gen_len,
+                   ENa_strand                 gen_strand,
+                   const CSeq_id&             prod_id,
+                   TSeqPos&                   prod_start,
+                   TSeqPos&                   prod_len,
+                   ENa_strand                 prod_strand,
+                   int                        src_width)
+{
+    bool rev_gen = IsReverse(gen_strand);
+    bool rev_prod = IsReverse(prod_strand);
+    ITERATE(CSpliced_exon::TParts, it, parts) {
+        const CSpliced_exon_chunk& part = **it;
+        TSeqPos plen = sx_GetExonPartLength(part);
+        if ( part.IsMatch() || part.IsMismatch() || part.IsDiag() ) {
+            TSeqPos pgen_len = plen;
+            TSeqPos pprod_len = plen;
+            if (to_row == 1) {
+                x_NextMappingRange(
+                    gen_id, gen_start, pgen_len, gen_strand,
+                    prod_id, prod_start, pprod_len, prod_strand,
+                    0, 0, src_width);
+            }
+            else {
+                x_NextMappingRange(
+                    prod_id, prod_start, pprod_len, prod_strand,
+                    gen_id, gen_start, pgen_len, gen_strand,
+                    0, 0, src_width);
+            }
+            if (pgen_len  ||  pprod_len) {
+                //### report error!!!
+                _ASSERT(0);
+            }
+        }
+        if (!rev_gen  &&  !part.IsProduct_ins()) {
+            gen_start += plen;
+        }
+        if (!rev_prod  &&  !part.IsGenomic_ins()) {
+            prod_start += plen;
+        }
+        if ( !part.IsProduct_ins() ) {
+            gen_len -= plen;
+        }
+        if ( !part.IsGenomic_ins() ) {
+            prod_len -= plen;
+        }
+    }
+}
+
+
 void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
                                          int                 to_row)
 {
@@ -1084,10 +1160,6 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
             if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
                 m_Widths[src_idh] = GetWidthFlags(src_width);
             }
-            x_NextMappingRange(
-                *ex_gen_id, gen_from, gen_len, ex_gen_strand,
-                *ex_prod_id, prod_from, prod_len, prod_strand,
-                0, 0, src_width);
         }
         else {
             // Set width flags if not set yet.
@@ -1099,10 +1171,26 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
             if (m_UseWidth  &&  m_Widths.find(src_idh) == m_Widths.end()) {
                 m_Widths[src_idh] = GetWidthFlags(src_width);
             }
-            x_NextMappingRange(
-                *ex_prod_id, prod_from, prod_len, ex_prod_strand,
-                *ex_gen_id, gen_from, gen_len, gen_strand,
-                0, 0, src_width);
+        }
+        if ( ex.IsSetParts() ) {
+            x_IterateExonParts(ex.GetParts(), to_row,
+               *ex_gen_id, gen_from, gen_len, ex_gen_strand,
+               *ex_prod_id, prod_from, prod_len, ex_prod_strand,
+               src_width);
+        }
+        else {
+            if ( to_row == 1 ) {
+                x_NextMappingRange(
+                    *ex_gen_id, gen_from, gen_len, ex_gen_strand,
+                    *ex_prod_id, prod_from, prod_len, prod_strand,
+                    0, 0, src_width);
+            }
+            else {
+                x_NextMappingRange(
+                    *ex_prod_id, prod_from, prod_len, ex_prod_strand,
+                    *ex_gen_id, gen_from, gen_len, gen_strand,
+                    0, 0, src_width);
+            }
         }
         if (gen_len  ||  prod_len) {
             ERR_POST_X(17, Error <<
