@@ -52,6 +52,8 @@ $(XLIB): $(XLIBOBJ)
 	    cd $(libdir) && $(RM) $(XLIBLINK) $(XOLD_DLLS) && \
 	    $(LN_S) $(XLIB) $(XLIBLINK); \
 	fi
+
+export-libdep: $(XLIB)
 	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
 	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \
 	    $(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) && \
@@ -64,7 +66,7 @@ $(XLIB): $(XLIBOBJ)
 
 ### Standard targets
 
-all: $(XLIB) export-headers
+all: export-headers export-libdep
 
 unlink: unlink-lib
 
@@ -87,4 +89,4 @@ deactivate-lib: unlink-lib
 	fi
 
 .PHONY: default_rule all unlink unlink-lib clean clean-lib purge
-.PHONY: deactivate deactivate-lib
+.PHONY: deactivate deactivate-lib export-libdep

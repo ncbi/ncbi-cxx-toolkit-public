@@ -85,6 +85,8 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	        $(LN_S) $(XDLL_LOADABLE) $(XDLL_LOADABLE_LINK); \
 	    fi; \
 	fi
+
+export-dlldep: $(XDLL)
 	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
 	    $(BINCOPY) $(XDLLDEP) $(status_dir) && \
 	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP) && \
@@ -98,7 +100,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 
 ### Standard targets
 
-all: $(XDLL) export-headers
+all: export-headers export-dlldep
 
 unlink: unlink-dll
 
@@ -124,4 +126,4 @@ deactivate-dll: unlink-dll
 	fi
 
 .PHONY: default_rule all unlink unlink-dll clean clean-dll purge 
-.PHONY: deactivate deactivate-dll
+.PHONY: deactivate deactivate-dll export-dlldep
