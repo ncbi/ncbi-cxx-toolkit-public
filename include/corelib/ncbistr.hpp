@@ -1675,6 +1675,15 @@ public:
                                   ///< space and '%' to %## format
         eUrlEnc_Path,             ///< Same as ProcessMarkChars but preserves
                                   ///< valid path characters ('/', '.')
+
+        eUrlEnc_URIScheme,        ///< Encode scheme part of an URI.
+        eUrlEnc_URIUserinfo,      ///< Encode userinfo part of an URI.
+        eUrlEnc_URIHost,          ///< Encode host part of an URI.
+        eUrlEnc_URIPath,          ///< Encode path part of an URI.
+        eUrlEnc_URIQueryName,     ///< Encode query part of an URI, arg name.
+        eUrlEnc_URIQueryValue,    ///< Encode query part of an URI, arg value.
+        eUrlEnc_URIFragment,      ///< Encode fragment part of an URI.
+
         eUrlEnc_None              ///< Do not encode
     };
     /// URL decode flags
