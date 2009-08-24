@@ -57,7 +57,7 @@ public:
         fForceTranscribeMrna = 0x40,
         fDensegAsExon        = 0x80,
 
-        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion | fDensegAsExon
+        fDefaults = fCreateGene | fCreateMrna | fCreateCdregion
     };
     typedef int TGeneModelCreateFlags;
 
