@@ -161,7 +161,7 @@ namespace {
 
 size_t GetSplicePriority(const  char * dnr, const char* acc)
 {
-    // GA-AG, GT-TG, TT-AG
+    // GA-AG, GT-TG, TT-AG, AT-AG
     size_t rv (0);
     if(acc[1] == 'G') {
         if(acc[0] == 'T') {
@@ -169,7 +169,7 @@ size_t GetSplicePriority(const  char * dnr, const char* acc)
         }
         else if(acc[0] == 'A') {
             rv = (dnr[1] == 'A' && dnr[0] == 'G') 
-                || (dnr[1] == 'T' && dnr[0] == 'T');
+                || (dnr[1] == 'T' && (dnr[0] == 'T' || dnr[0] == 'A' ));
         }
     }
 
