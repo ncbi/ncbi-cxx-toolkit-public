@@ -66,7 +66,7 @@ USRP_BRA = \
       fi ; \
       if NCBICXX_TESTING_REQS=1 $(MAKE_USR) -q requirements ; then \
          $(RWL) -base "make_$$i" $(MAKE_USR)
-USRP_KET = || $(NOTK_BRA) echo 'FAILED: $(srcdir)/Makefile.$$i' ; \
+USRP_KET = || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i" ; \
               exit 1 $(NOTK_KET) ; \
       else \
          echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -82,7 +82,7 @@ ASNP_BRA = \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_ASN)
-ASNP_KET = ) || $(NOTK_BRA) echo 'FAILED: $(srcdir)/Makefile.$$i.lib' ; \
+ASNP_KET = ) || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
                 exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -94,7 +94,7 @@ DTDP_BRA = \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_DTD)
-DTDP_KET = ) || $(NOTK_BRA) echo 'FAILED: $(srcdir)/Makefile.$$i.lib' ; \
+DTDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
                  exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -106,7 +106,7 @@ XSDP_BRA = \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_XSD)
-XSDP_KET = ) || $(NOTK_BRA) echo 'FAILED: $(srcdir)/Makefile.$$i.lib' ; \
+XSDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
                  exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -128,7 +128,7 @@ LIBP_BRA = \
         $(RWL) -base "make_$$i" $(MAKE_LIB)
 LIBP_KET = && continue ; \
         $(MAKE_LIB) $(deactivate) ; \
-        $(NOTK_BRA) echo 'FAILED: $(srcdir)/Makefile.$$i.lib' ; \
+        $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
         exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -150,7 +150,7 @@ APPP_BRA = \
         $(RWL) -base "make_$$i" $(MAKE_APP)
 APPP_KET = && continue ; \
         $(MAKE_APP) unlink ; \
-        $(NOTK_BRA) echo 'FAILED: $(srcdir)/Makefile.$$i.app' ; \
+        $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.app" ; \
         exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
