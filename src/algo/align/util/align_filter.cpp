@@ -183,36 +183,40 @@ void CAlignFilter::Filter(const CSeq_annot& aligns_in,
 bool CAlignFilter::Match(const CSeq_align& align)
 {
     if (align.CheckNumRows() == 2) {
-        CSeq_id_Handle query =
-            CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
-        query = sequence::GetId(query, *m_Scope,
-                                sequence::eGetId_Canonical);
-        if (m_QueryBlacklist.size()  &&
-            m_QueryBlacklist.find(query) != m_QueryBlacklist.end()) {
-            /// reject: query sequence found in black list
-            return false;
+        if (m_QueryBlacklist.size()  ||  m_QueryWhitelist.size()) {
+            CSeq_id_Handle query =
+                CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+            query = sequence::GetId(query, *m_Scope,
+                                    sequence::eGetId_Canonical);
+            if (m_QueryBlacklist.size()  &&
+                m_QueryBlacklist.find(query) != m_QueryBlacklist.end()) {
+                /// reject: query sequence found in black list
+                return false;
+            }
+
+            if (m_QueryWhitelist.size()  &&
+                m_QueryWhitelist.find(query) != m_QueryWhitelist.end()) {
+                /// accept: query sequence found in white list
+                return true;
+            }
         }
 
-        if (m_QueryWhitelist.size()  &&
-            m_QueryWhitelist.find(query) != m_QueryWhitelist.end()) {
-            /// accept: query sequence found in white list
-            return true;
-        }
+        if (m_SubjectBlacklist.size()  ||  m_SubjectWhitelist.size()) {
+            CSeq_id_Handle subject =
+                CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+            subject = sequence::GetId(subject, *m_Scope,
+                                      sequence::eGetId_Canonical);
+            if (m_SubjectBlacklist.size()  &&
+                m_SubjectBlacklist.find(subject) != m_SubjectBlacklist.end()) {
+                /// reject: subject sequence found in black list
+                return false;
+            }
 
-        CSeq_id_Handle subject =
-            CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
-        subject = sequence::GetId(subject, *m_Scope,
-                                sequence::eGetId_Canonical);
-        if (m_SubjectBlacklist.size()  &&
-            m_SubjectBlacklist.find(subject) != m_SubjectBlacklist.end()) {
-            /// reject: subject sequence found in black list
-            return false;
-        }
-
-        if (m_SubjectWhitelist.size()  &&
-            m_SubjectWhitelist.find(subject) != m_SubjectWhitelist.end()) {
-            /// accept: subject sequence found in white list
-            return true;
+            if (m_SubjectWhitelist.size()  &&
+                m_SubjectWhitelist.find(subject) != m_SubjectWhitelist.end()) {
+                /// accept: subject sequence found in white list
+                return true;
+            }
         }
     }
 
