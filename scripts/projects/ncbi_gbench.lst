@@ -22,7 +22,7 @@ objmgr
 objtools
 serial
 util
--[^g].*/app
+-[^gi].*/app
 -[^g].*/samples
 -[^g].*/mssamples
 -[^g].*/unit_test
