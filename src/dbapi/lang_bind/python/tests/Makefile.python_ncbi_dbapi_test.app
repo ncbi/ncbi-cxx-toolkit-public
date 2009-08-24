@@ -19,3 +19,5 @@ CHECK_CMD = python_ncbi_dbapi_test -d dblib -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -d ftds  -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -d ftds  -S MsSql
 CHECK_CMD = python_ncbi_dbapi_test -d odbc  -S MsSql
+
+CHECK_AUTHORS = ivanovp
