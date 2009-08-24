@@ -1,4 +1,682 @@
 Seq-align ::= {
+  type disc,
+  dim 2,
+  segs disc {
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 112, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          0,
+          914182
+        },
+        lens {
+          112
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 122, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          112,
+          916846
+        },
+        lens {
+          122
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 234, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          234,
+          932827
+        },
+        lens {
+          234
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 82, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          468,
+          940326
+        },
+        lens {
+          82
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 133, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          550,
+          949248
+        },
+        lens {
+          133
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 79, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          683,
+          950022
+        },
+        lens {
+          79
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 136, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          762,
+          954062
+        },
+        lens {
+          136
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 77, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          898,
+          956954
+        },
+        lens {
+          77
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 167, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          975,
+          957986
+        },
+        lens {
+          167
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 38, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1142,
+          961653
+        },
+        lens {
+          38
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 81, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1180,
+          968612
+        },
+        lens {
+          81
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 132, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1261,
+          973508
+        },
+        lens {
+          132
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 91, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1393,
+          976628
+        },
+        lens {
+          91
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 63, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1484,
+          978365
+        },
+        lens {
+          63
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 86, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1547,
+          979258
+        },
+        lens {
+          86
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 49, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1633,
+          980377
+        },
+        lens {
+          49
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 74, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1682,
+          981535
+        },
+        lens {
+          74
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 79, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1756,
+          982910
+        },
+        lens {
+          79
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 98, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1835,
+          989368
+        },
+        lens {
+          98
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 65, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1933,
+          994286
+        },
+        lens {
+          65
+        }
+      }
+    },
+    {
+      type global,
+      dim 2,
+      score {
+        {
+          id str "splign",
+          value real { 1096, 10, 0 }
+        },
+        {
+          id str "idty",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 49619230,
+          other {
+            accession "NT_011515",
+            version 12
+          }
+        },
+        starts {
+          1998,
+          994895
+        },
+        lens {
+          1096
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
   type global,
   dim 2,
   score {

@@ -412,13 +412,39 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
         if (feat_iter  &&  feat_iter.GetSize()) {
             cds_feat.Reset(new CSeq_feat());
             cds_feat->Assign(feat_iter->GetOriginalFeature());
-            CRef<CSeq_loc> new_loc =
+            CRef<CSeq_loc> cds_loc =
                 mapper.Map(feat_iter->GetLocation());
-            cds_feat->SetLocation(*new_loc);
 
-            if (new_loc->IsPartialStart(eExtreme_Positional)  ||
-                new_loc->IsPartialStop(eExtreme_Positional)) {
+            /// use the RNA location as a guide; truncate / intersect with the
+            /// total range of this location
+            TSeqRange cds_range = cds_loc->GetTotalRange();
+            bool is_partial_5prime = cds_loc->IsPartialStart(eExtreme_Positional);
+            bool is_partial_3prime = cds_loc->IsPartialStop(eExtreme_Positional);
+            cds_loc->Reset();
+            for (CSeq_loc_CI loc_it(*loc);  loc_it;  ++loc_it) {
+                TSeqRange this_range = loc_it.GetRange();
+                if (this_range.IntersectingWith(cds_range)) {
+                    this_range.IntersectWith(cds_range);
+                    CRef<CSeq_interval> ival(new CSeq_interval);
+                    ival->SetFrom(this_range.GetFrom());
+                    ival->SetTo(this_range.GetTo());
+                    if (loc_it.IsSetStrand()) {
+                        ival->SetStrand(loc_it.GetStrand());
+                    }
+                    cds_loc->SetPacked_int().Set().push_back(ival);
+                }
+            }
+            cds_loc->SetId(*loc->GetId());
+            cds_feat->SetLocation(*cds_loc);
+
+            if (is_partial_5prime  ||  is_partial_3prime) {
                 cds_feat->SetPartial(true);
+                if (is_partial_5prime) {
+                    cds_loc->SetPartialStart(true, eExtreme_Positional);
+                }
+                if (is_partial_3prime) {
+                    cds_loc->SetPartialStop(true, eExtreme_Positional);
+                }
             }
 
 
@@ -468,7 +494,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                 /// this is created as a translation of the genomic
                 /// location
                 CSeqTranslator::Translate
-                    (*new_loc, handle.GetScope(),
+                    (*cds_loc, handle.GetScope(),
                      inst.SetSeq_data().SetIupacaa().Set(),
                      NULL /* default genetic code */,
                      false /* trim at first stop codon */);

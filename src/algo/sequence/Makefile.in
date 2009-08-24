@@ -5,7 +5,7 @@
 
 LIB_PROJ = xalgoseq
 
-SUB_PROJ = demo
+SUB_PROJ = demo unit_test
 
 REQUIRES = objects
 
