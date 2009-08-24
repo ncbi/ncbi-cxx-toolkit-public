@@ -39,7 +39,7 @@ global ToolkitSource
 global ProjBuilderLib
 
 global TheNCBIPath, TheFLTKPath, TheBDBPath, ThePCREPath, TheOUTPath
-global libTypeDLL, cpuOptimization, zeroLink, fixContinue, xcodeVersion, projFile
+global libTypeDLL, guiLibs, zeroLink, fixContinue, xcodeTarget, projFile
 
 
 (* ==== 3rd party libarary properties ==== *)
@@ -159,6 +159,28 @@ on clicked theObject
 		end if
 		close panel window "install_libs"
 	end if
+	
+	if name of theObject is "guiOpt" then
+		set checked to content of theObject
+		repeat with library in AllLibraries
+			if gui of library is true then set req of library to checked
+		end repeat
+		repeat with tool in AllConsoleTools
+			if gui of tool is true and checked is false then set req of tool to false -- uncheck only
+		end repeat
+		repeat with the_app in AllApplications
+			if gui of the_app is true and checked is false then set req of the_app to false -- uncheck only
+		end repeat
+		
+		--if libDataSource is not null then set update views of libDataSource to true
+		--x_SaveTableData(libDataSource, AllLibraries)
+		--x_SaveTableData(toolDataSource, AllConsoleTools)
+		--x_SaveTableData(appDataSource, AllApplications)
+		my x_ReloadTable(libDataSource, AllLibraries)
+		my x_ReloadTable(toolDataSource, AllConsoleTools)
+		my x_ReloadTable(appDataSource, AllApplications)
+	end if
+	
 	
 	if name of theObject is "do_it" then
 		if libScriptRunning then -- cancel
@@ -384,6 +406,8 @@ end ChooseFolder
 
 
 on x_ReloadTable(theDS, thePack)
+	if theDS is null then return
+	
 	set update views of theDS to false
 	delete every data row in theDS
 	
@@ -668,17 +692,13 @@ on ValidatePaths()
 	end if
 	
 	set libTypeDLL to true --content of button "libType" of window "Main" -- DLL or Static
-	set cpuOptimization to content of button "cpuOpt" of window "Main" -- CPU specific optimization
+	set guiLibs to content of button "guiOpt" of window "Main" -- CPU specific optimization
 	set zeroLink to false --content of button "zeroLink" of window "Main" -- Use Zero Link
 	set fixContinue to content of button "fixCont" of window "Main" -- Use Fix & Continue
-	set xcodeVersion to current row of matrix "xcodeVer" of window "Main" -- Xcode version 1.5 / 2.0+
+	set xcodeTarget to current row of matrix "xcodeTar" of window "Main" -- Debug / Release
 	
-	-- Xcode file format:
-	if xcodeVersion is 1 then
-		set projFile to "NCBI.xcode"
-	else if xcodeVersion is 2 then
-		set projFile to "NCBI.xcodeproj"
-	end if
+	
+	set projFile to "NCBI.xcodeproj"
 	
 	return "" -- no errors found
 end ValidatePaths
@@ -717,6 +737,7 @@ end x_SelectAll
 
 
 on x_SaveTableData(theDS, thePack)
+	if theDS is null then return
 	set c to 1
 	repeat with p in thePack
 		set theDataRow to item c of the data rows of theDS

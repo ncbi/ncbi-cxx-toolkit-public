@@ -41,7 +41,7 @@ global newProject
 
 (* external globals *)
 global TheNCBIPath, TheFLTKPath, TheBDBPath, ThePCREPath, TheOUTPath
-global libTypeDLL, cpuOptimization, zeroLink, fixContinue, xcodeVersion, projFile
+global libTypeDLL, guiLibs, zeroLink, fixContinue, xcodeTarget, projFile
 
 (**)
 
@@ -62,17 +62,17 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 (* Build settings for the project *)
 
 property buildSettingsCommon : {|GCC_MODEL_CPU|:"|none|", |GCC_MODEL_TUNING|:"|none|", |FRAMEWORK_SEARCH_PATHS|:"/System/Library/Frameworks/CoreServices.framework/Frameworks", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |STRIP_INSTALLED_PRODUCT|:"NO", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
-property buildSettingsDebug : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_DLL_BUILD NCBI_XCODE_BUILD _DEBUG _MT HAVE_CONFIG_H"}
+property buildSettingsDebug : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_DLL_BUILD NCBI_XCODE_BUILD _DEBUG _MT HAVE_CONFIG_H"}
 property buildSettingsRelease : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_DLL_BUILD NCBI_XCODE_BUILD _MT NDEBUG HAVE_CONFIG_H"}
 
 (* Build styles for the project *)
 property buildStyleDebug : {isa:"PBXBuildStyle", |name|:"Debug", |buildRules|:{}, |buildSettings|:buildSettingsDebug}
 property buildStyleRelease : {isa:"PBXBuildStyle", |name|:"Release", |buildRules|:{}, |buildSettings|:buildSettingsRelease}
-property projectBuildStyles : {"BUILDSTYLE__Development", "BUILDSTYLE__Deployment"}
+property projectBuildStyles : {}
 
 
 (* Root Objects, project and main group *)
-property rootObject : {isa:"PBXProject", |hasScannedForEncodings|:"1", |mainGroup|:"MAINGROUP", |targets|:{}, |buildSettings|:{|name|:"NCBI"}, |buildStyles|:{}}
+property rootObject : {isa:"PBXProject", |hasScannedForEncodings|:"1", |mainGroup|:"MAINGROUP", |targets|:{}, |buildSettings|:{|name|:"NCBI", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"NO"}, |buildStyles|:{}}
 property mainGroup : {isa:"PBXGroup", children:{"HEADERS", "SOURCES", "FRAMEWORKS"}, |name|:"NCBI C++ Toolkit", |refType|:"4"}
 property emptyProject : {|rootObject|:"ROOT_OBJECT", |archiveVersion|:"1", |objectVersion|:"39", objects:{}}
 
@@ -132,32 +132,6 @@ script ProjBuilder
 			set |GCC_ENABLE_FIX_AND_CONTINUE| of buildSettingsDebug to "YES"
 		end if
 		
-		if cpuOptimization then
-			log "Getting CPU type"
-			set cpuType to do shell script "/usr/sbin/ioreg | grep PowerPC | awk '{print $3}'| cut -c 9-10"
-			
-			if cpuType contains "G5" then
-				set |GCC_MODEL_TUNING| of buildSettingsDebug to "G5"
-				set |GCC_MODEL_CPU| of buildSettingsDebug to "G5"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDebug to "YES"
-				set |GCC_MODEL_TUNING| of buildSettingsRelease to "G5"
-				set |GCC_MODEL_CPU| of buildSettingsRelease to "G5"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsRelease to "YES"
-			else if cpuType contains "G4" then
-				set |GCC_MODEL_TUNING| of buildSettingsDebug to "G4"
-				set |GCC_MODEL_CPU| of buildSettingsDebug to "G4"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDebug to "YES"
-				set |GCC_MODEL_TUNING| of buildSettingsRelease to "G4"
-				set |GCC_MODEL_CPU| of buildSettingsRelease to "G4"
-				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsRelease to "YES"
-			else
-				set |GCC_MODEL_TUNING| of buildSettingsDebug to "G3"
-				set |GCC_MODEL_CPU| of buildSettingsDebug to "G3"
-				set |GCC_MODEL_TUNING| of buildSettingsRelease to "G3"
-				set |GCC_MODEL_CPU| of buildSettingsRelease to "G3"
-			end if
-			log cpuType
-		end if
 		
 		set newProject to emptyProject
 		set objValues to {}
@@ -168,17 +142,29 @@ script ProjBuilder
 		set libDepList to {}
 		set appDepList to {}
 		
+		if xcodeTarget is 1 then
+			copy "BUILDSTYLE__Development" to the end of projectBuildStyles
+			copy "BUILDSTYLE__Deployment" to the end of projectBuildStyles
+		else
+			copy "BUILDSTYLE__Deployment" to the end of projectBuildStyles
+		end if
+		
+		
 		set |buildStyles| of rootObject to projectBuildStyles
 		
 		addPair(mainGroup, "MAINGROUP")
-		addPair(buildStyleDebug, "BUILDSTYLE__Development")
-		addPair(buildStyleRelease, "BUILDSTYLE__Deployment")
 		
-		if xcodeVersion is 1 then
-			set |objectVersion| of newProject to "39"
-		else if xcodeVersion is 2 then
-			set |objectVersion| of newProject to "42"
+		addPair(buildStyleRelease, "BUILDSTYLE__Deployment")
+		if xcodeTarget is 1 then
+			set |GCC_GENERATE_DEBUGGING_SYMBOLS| of |buildSettings| of rootObject to "YES"
+			--property rootObject : {isa:"PBXProject", |hasScannedForEncodings|:"1", |mainGroup|:"MAINGROUP", |targets|:{}, |buildSettings|:{|name|:"NCBI"}, |buildStyles|:{}}
+			addPair(buildStyleDebug, "BUILDSTYLE__Development")
 		end if
+		
+		
+		set |objectVersion| of newProject to "42"
+		
+		
 		log "Done initialize ProjBuilder"
 	end Initialize
 	
