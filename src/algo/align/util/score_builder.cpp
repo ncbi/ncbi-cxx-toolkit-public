@@ -256,7 +256,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                      } else {
                          if (sizes.empty()) {
                              sizes.resize(seg.GetDim(), 0);
-                         } else if (sizes.size() != seg.GetDim()) {
+                         } else if (sizes.size() != (size_t)seg.GetDim()) {
                              NCBI_THROW(CException, eUnknown,
                                         "invalid std-seg: "
                                         "inconsistent number of locs");
@@ -495,7 +495,13 @@ static size_t s_GetCoveredBases(const CSeq_align& align,
         {{
             const CDense_seg& ds = align.GetSegs().GetDenseg();
             for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                if (ds.GetStarts()[(i * ds.GetDim()) + row] != -1) {
+                int CoveredCount = 0;
+                for(CDense_seg::TDim d = 0; d < ds.GetDim(); d++) {
+                    if(ds.GetStarts()[(i * ds.GetDim()) + d] != -1) {
+                        CoveredCount++;
+                    }
+                }
+                if (ds.GetStarts()[(i * ds.GetDim()) + row] != -1 && CoveredCount >= 2) {
                     len += ds.GetLens()[i];
                 }
             }
