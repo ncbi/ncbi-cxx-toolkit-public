@@ -140,6 +140,7 @@ public:
         ///< @sa DecompressFile, DecompressFileIntoDir
         fRestoreFileAttr       = (1<<4)
     };
+    typedef CZipCompression::TFlags TZipFlags; ///< Bitwise OR of EFlags
 
     /// Constructor.
     CZipCompression(
@@ -373,8 +374,6 @@ public:
 
     /// Opens a compressed file for reading or writing.
     ///
-    /// For reading/writing gzip (.gz) files the appropriate
-    /// CZipCompression::EFlags flags should be set before Open() call.
     /// @param file_name
     ///   File name of the file to open.
     /// @param mode
@@ -465,11 +464,11 @@ class NCBI_XUTIL_EXPORT CZipCompressor : public CZipCompression,
 public:
     /// Constructor.
     CZipCompressor(
-        ELevel               level       = eLevel_Default,
-        int                  window_bits = kZlibDefaultWbits,
-        int                  mem_level   = kZlibDefaultMemLevel,
-        int                  strategy    = kZlibDefaultStrategy,
-        CCompression::TFlags flags       = 0
+        ELevel    level       = eLevel_Default,
+        int       window_bits = kZlibDefaultWbits,
+        int       mem_level   = kZlibDefaultMemLevel,
+        int       strategy    = kZlibDefaultStrategy,
+        TZipFlags flags       = 0
     );
     /// Destructor.
     virtual ~CZipCompressor(void);
@@ -514,8 +513,8 @@ class NCBI_XUTIL_EXPORT CZipDecompressor : public CZipCompression,
 public:
     /// Constructor.
     CZipDecompressor(
-        int                  window_bits = kZlibDefaultWbits,
-        CCompression::TFlags flags       = 0
+        int       window_bits = kZlibDefaultWbits,
+        TZipFlags flags       = 0
     );
     /// Destructor.
     virtual ~CZipDecompressor(void);
@@ -546,7 +545,12 @@ private:
 ///
 /// CZipStreamCompressor -- zlib based compression stream processor
 ///
-/// See util/compress/stream.hpp for details.
+/// See util/compress/stream.hpp for details of stream processing.
+/// @note
+///   Compression/decompression flags (CZipCompression:EFlags) can greatly
+///   affect CZipStreamCompressor behaviour. By default, compressor
+///   produce plain zip data, that is not compatible with gzip/gunzip utility.
+///   Please use appropriate flags in constructor to change default behaviour.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CZipStreamCompressor
@@ -555,13 +559,13 @@ class NCBI_XUTIL_EXPORT CZipStreamCompressor
 public:
     /// Full constructor
     CZipStreamCompressor(
-        CCompression::ELevel  level,
-        streamsize            in_bufsize,
-        streamsize            out_bufsize,
-        int                   window_bits,
-        int                   mem_level,
-        int                   strategy,
-        CCompression::TFlags  flags = 0
+        CZipCompression::ELevel    level,
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        int                        window_bits,
+        int                        mem_level,
+        int                        strategy,
+        CZipCompression::TZipFlags flags = 0
         ) 
         : CCompressionStreamProcessor(
               new CZipCompressor(level,window_bits,mem_level,strategy,flags),
@@ -570,8 +574,8 @@ public:
 
     /// Conventional constructor
     CZipStreamCompressor(
-        CCompression::ELevel  level,
-        CCompression::TFlags  flags = 0
+        CZipCompression::ELevel    level,
+        CZipCompression::TZipFlags flags = 0
         )
         : CCompressionStreamProcessor(
               new CZipCompressor(level, kZlibDefaultWbits,
@@ -581,9 +585,9 @@ public:
     {}
 
     /// Conventional constructor
-    CZipStreamCompressor(CCompression::TFlags flags = 0)
+    CZipStreamCompressor(CZipCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor(
-              new CZipCompressor(CCompression::eLevel_Default,
+              new CZipCompressor(CZipCompression::eLevel_Default,
                                  kZlibDefaultWbits, kZlibDefaultMemLevel,
                                  kZlibDefaultStrategy, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
@@ -595,7 +599,12 @@ public:
 ///
 /// CZipStreamDecompressor -- zlib based decompression stream processor
 ///
-/// See util/compress/stream.hpp for details.
+/// See util/compress/stream.hpp for details of stream processing.
+/// @note
+///   Compression/decompression flags (CZipCompression:EFlags) can greatly
+///   affect CZipStreamDecompressor behaviour. By default, decompressor
+///   do not allow data in gzip format. Please use appropriate flags
+///   in constructor to change default behaviour.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CZipStreamDecompressor
@@ -604,10 +613,10 @@ class NCBI_XUTIL_EXPORT CZipStreamDecompressor
 public:
     /// Full constructor
     CZipStreamDecompressor(
-        streamsize            in_bufsize,
-        streamsize            out_bufsize,
-        int                   window_bits,
-        CCompression::TFlags  flags
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        int                        window_bits,
+        CZipCompression::TZipFlags flags
         )
         : CCompressionStreamProcessor( 
               new CZipDecompressor(window_bits, flags),
@@ -615,7 +624,7 @@ public:
     {}
 
     /// Conventional constructor
-    CZipStreamDecompressor(CCompression::TFlags flags = 0)
+    CZipStreamDecompressor(CZipCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor( 
               new CZipDecompressor(kZlibDefaultWbits, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)

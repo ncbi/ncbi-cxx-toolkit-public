@@ -175,7 +175,7 @@ void CLZOCompression::InitCompression(ELevel level)
 static
 size_t s_CheckLZOHeader(const void* src_buf, size_t src_len,
                         size_t*                     block_size = 0,
-                        CLZOCompression::TFlags*    lzo_flags = 0,
+                        CLZOCompression::TLZOFlags* lzo_flags = 0,
                         CLZOCompression::SFileInfo* info = 0)
 {
     // LZO header cannot be less than kMinHeaderSize
@@ -242,7 +242,7 @@ size_t s_CheckLZOHeader(const void* src_buf, size_t src_len,
 
 static size_t s_WriteLZOHeader(void* src_buf, size_t buf_size,
                                size_t                            block_size,
-                               CLZOCompression::TFlags           lzo_flags,
+                               CLZOCompression::TLZOFlags        lzo_flags,
                                const CLZOCompression::SFileInfo* info = 0)
 {
     // Buffer size cannot be less than kMinHeaderSize
@@ -370,7 +370,7 @@ int CLZOCompression::DecompressBlock(const lzo_bytep src_buf,
                                            lzo_uint  src_len,
                                            lzo_bytep dst_buf, 
                                            lzo_uintp dst_len,
-                                           TFlags flags)
+                                           TLZOFlags flags)
 {
     bool have_crc32 = (flags & fChecksum) > 0;
     if ( have_crc32 ) {
@@ -409,7 +409,7 @@ int CLZOCompression::DecompressBlockStream(const lzo_bytep src_buf,
                                            lzo_uint  src_len,
                                            lzo_bytep dst_buf, 
                                            lzo_uintp dst_len,
-                                           TFlags    flags,
+                                           TLZOFlags flags,
                                            lzo_uintp processed)
 {
     *processed = 0;
@@ -566,7 +566,7 @@ bool CLZOCompression::DecompressBuffer(
         lzo_bytep       dst = (lzo_bytep)dst_buf;
 
         // Check header
-        TFlags header_flags;
+        TLZOFlags header_flags;
         size_t header_len = s_CheckLZOHeader(src, src_len, 
                                              0 /* header's blocksize */,
                                              &header_flags);
@@ -626,7 +626,7 @@ size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len,
 
 size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len,
                                                       size_t block_size, 
-                                                      TFlags flags)
+                                                      TLZOFlags flags)
 {
     #define ESTIMATE(block_size) (block_size + (block_size / 16) + 64 + 3)
 
@@ -984,7 +984,7 @@ void CLZOBuffer::ResetBuffer(size_t in_bufsize, size_t out_bufsize)
 
 
 CLZOCompressor::CLZOCompressor(
-                  ELevel level, size_t blocksize, TFlags flags)
+                  ELevel level, size_t blocksize, TLZOFlags flags)
     : CLZOCompression(level, blocksize), m_NeedWriteHeader(true)
 {
     SetFlags(flags | fStreamFormat);
@@ -1200,7 +1200,7 @@ bool CLZOCompressor::CompressCache(void)
 //
 
 
-CLZODecompressor::CLZODecompressor(size_t blocksize, TFlags flags)
+CLZODecompressor::CLZODecompressor(size_t blocksize, TLZOFlags flags)
     : CLZOCompression(eLevel_Default, blocksize), m_BlockLen(0), 
       m_HeaderLen(kMaxHeaderSize), m_HeaderFlags(0)
 

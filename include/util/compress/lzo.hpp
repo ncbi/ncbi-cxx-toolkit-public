@@ -81,18 +81,18 @@ BEGIN_NCBI_SCOPE
 // <blocksize>
 //    LZO is a block compression algorithm - it compresses and decompresses
 //    a block of data. Block size must be the same for compression
-//    and decompression. Default value is 256K (262144 bytes).
-//    This parameter define a block size used only for file/stream based 
-//    compression/decompression. The methods operated with all data located
-//    in memory (like CompressBuffer/DecompressBuffer) works by default with
-//    one big block - the whole data buffer.
+//    and decompression. This parameter define a block size used only
+//    for file/stream based compression/decompression. The methods operated
+//    with all data located in memory (like CompressBuffer/DecompressBuffer)
+//    works by default with one big block - the whole data buffer.
 //
 
 /// Default LZO block size.
 ///
 /// We use such block size to reduce overhead with a stream processor's
 /// methods calls, because compression/decompression output streams use
-/// by default 16Kb - 1 as output buffer size. 
+/// by default (16Kb - 1) as output buffer size. But you can use any value
+/// if you think that it works better for you.
 /// @sa CCompressionStreambuf::CCompressionStreambuf
 const size_t kLZODefaultBlockSize = 24*1024;
 
@@ -133,6 +133,8 @@ public:
         ///< Works only with fStreamFormat flag.
         fStoreFileInfo        = (1<<3) | fStreamFormat
     }; 
+    typedef CLZOCompression::TFlags TLZOFlags; ///< Bitwise OR of EFlags
+
     /// Define a pointer to LZO1X compression function.
     typedef int(*TLZOCompressionFunc)
             ( const lzo_bytep src, lzo_uint  src_len,
@@ -257,9 +259,9 @@ public:
     ///   Estimated buffer size.
     /// @sa
     ///   CompressBuffer
-    size_t EstimateCompressionBufferSize(size_t src_len, 
-                                         size_t blocksize, 
-                                         TFlags flags);
+    size_t EstimateCompressionBufferSize(size_t    src_len, 
+                                         size_t    blocksize, 
+                                         TLZOFlags flags);
     /// Compress file.
     ///
     /// @param src_file
@@ -335,7 +337,7 @@ protected:
     ///   Return decompressor error code.
     int DecompressBlock(const lzo_bytep src_buf, lzo_uint src_len,
                               lzo_bytep dst_buf, lzo_uintp dst_len /* out */,
-                              TFlags flags);
+                              TLZOFlags flags);
 
     /// Decompress block of data for stream format (fStreamFormat flag).
     ///
@@ -344,7 +346,7 @@ protected:
     int DecompressBlockStream(
                         const lzo_bytep src_buf, lzo_uint src_len,
                               lzo_bytep dst_buf, lzo_uintp dst_len /* out */,
-                              TFlags flags,
+                              TLZOFlags flags,
                               lzo_uintp processed /* out */);
 
 protected:
@@ -514,9 +516,9 @@ class NCBI_XUTIL_EXPORT CLZOCompressor : public CLZOCompression,
 public:
     /// Constructor.
     CLZOCompressor(
-        ELevel               level       = eLevel_Default,
-        size_t               blocksize   = kLZODefaultBlockSize,
-        CCompression::TFlags flags       = 0
+        ELevel    level       = eLevel_Default,
+        size_t    blocksize   = kLZODefaultBlockSize,
+        TLZOFlags flags       = 0
     );
     /// Destructor.
     virtual ~CLZOCompressor(void);
@@ -560,8 +562,8 @@ class NCBI_XUTIL_EXPORT CLZODecompressor : public CLZOCompression,
 public:
     /// Constructor.
     CLZODecompressor(
-        size_t               blocksize = kLZODefaultBlockSize,
-        CCompression::TFlags flags     = 0
+        size_t    blocksize = kLZODefaultBlockSize,
+        TLZOFlags flags     = 0
     );
 
     /// Destructor.
@@ -597,9 +599,12 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-/// CLZOStreamCompressor -- zlib based compression stream processor
+/// CLZOStreamCompressor -- lzo based compression stream processor
 ///
-/// See util/compress/stream.hpp for details.
+/// See util/compress/stream.hpp for details of stream processing.
+/// @note
+///   Stream compressor always produce data in stream format,
+///   see fStreamFormat flag description.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CLZOStreamCompressor
@@ -608,11 +613,11 @@ class NCBI_XUTIL_EXPORT CLZOStreamCompressor
 public:
     /// Constructor.
     CLZOStreamCompressor(
-        CCompression::ELevel level       = CCompression::eLevel_Default,
-        streamsize           in_bufsize  = kCompressionDefaultBufSize,
-        streamsize           out_bufsize = kCompressionDefaultBufSize,
-        size_t               blocksize   = kLZODefaultBlockSize,
-        CCompression::TFlags flags       = 0
+        CLZOCompression::ELevel    level       = CCompression::eLevel_Default,
+        streamsize                 in_bufsize  = kCompressionDefaultBufSize,
+        streamsize                 out_bufsize = kCompressionDefaultBufSize,
+        size_t                     blocksize   = kLZODefaultBlockSize,
+        CLZOCompression::TLZOFlags flags       = 0
         )
         : CCompressionStreamProcessor(
               new CLZOCompressor(level, blocksize),
@@ -623,9 +628,12 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CLZOStreamDecompressor -- zlib based decompression stream processor
+/// CLZOStreamDecompressor -- lzo based decompression stream processor
 ///
-/// See util/compress/stream.hpp for details.
+/// See util/compress/stream.hpp for details of stream processing.
+/// @note
+///   The stream decompressor always suppose that data is in stream format
+///   and use fStreamFormat flag automaticaly.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CLZOStreamDecompressor
@@ -634,10 +642,10 @@ class NCBI_XUTIL_EXPORT CLZOStreamDecompressor
 public:
     /// Full constructor
     CLZOStreamDecompressor(
-        streamsize           in_bufsize,
-        streamsize           out_bufsize,
-        size_t               blocksize,
-        CCompression::TFlags flags   = 0
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        size_t                     blocksize,
+        CLZOCompression::TLZOFlags flags   = 0
         )
         : CCompressionStreamProcessor(
              new CLZODecompressor(blocksize, flags),
@@ -645,7 +653,7 @@ public:
     {}
 
     /// Conventional constructor
-    CLZOStreamDecompressor(CCompression::TFlags flags = 0)
+    CLZOStreamDecompressor(CLZOCompression::TLZOFlags flags = 0)
         : CCompressionStreamProcessor( 
               new CLZODecompressor(kLZODefaultBlockSize, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)

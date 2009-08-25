@@ -444,7 +444,7 @@ bool CBZip2CompressionFile::Close(void)
 
 
 CBZip2Compressor::CBZip2Compressor(
-                  ELevel level, int verbosity, int work_factor, TFlags flags)
+                  ELevel level, int verbosity, int work_factor, TBZip2Flags flags)
     : CBZip2Compression(level, verbosity, work_factor)
 {
     SetFlags(flags);
@@ -605,7 +605,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::End(void)
 
 
 CBZip2Decompressor::CBZip2Decompressor(int verbosity, int small_decompress,
-                                       TFlags flags)
+                                       TBZip2Flags flags)
     : CBZip2Compression(eLevel_Default, verbosity, 0, small_decompress)
 {
     SetFlags(flags);

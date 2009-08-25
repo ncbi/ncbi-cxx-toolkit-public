@@ -859,7 +859,7 @@ bool CZipCompressionFile::Close(void)
 
 
 CZipCompressor::CZipCompressor(ELevel level,  int window_bits,
-                               int mem_level, int strategy, TFlags flags)
+                               int mem_level, int strategy, TZipFlags flags)
     : CZipCompression(level, window_bits, mem_level, strategy),
       m_CRC32(0), m_NeedWriteHeader(true)
 {
@@ -1057,7 +1057,7 @@ CCompressionProcessor::EStatus CZipCompressor::End(void)
 //
 
 
-CZipDecompressor::CZipDecompressor(int window_bits, TFlags flags)
+CZipDecompressor::CZipDecompressor(int window_bits, TZipFlags flags)
     : CZipCompression(eLevel_Default, window_bits, 0, 0),
       m_NeedCheckHeader(true), m_IsGZ(false), m_SkipInput(0)
 {
