@@ -599,7 +599,6 @@ fi
 
 
 #### Detect supported compilers
-changequote(, )dnl
 compiler=
 compiler_ver=
 ncbi_compiler="UNKNOWN"
@@ -611,28 +610,34 @@ if test "$GCC" = "yes" ; then
      2.95* | 2.96* | 3.* | 4.* )
        compiler="GCC"
        ncbi_compiler="GCC"
-       ncbi_compiler_ver="$compiler_ver" ;;
+       ncbi_compiler_ver="$compiler_ver"
+       NCBI_FEATURE(GCC)
+       ;;
    esac
 elif test "$KCC" = "yes" ; then
    compiler_ver="$kcc_ver"
    compiler="KCC"
    ncbi_compiler="KCC"
-   ncbi_compiler_ver="`echo $kcc_ver | sed 's%^KAI .*C[+][+] \([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $kcc_ver | sed 's%^KAI .*C[[+]][[+]] \([[0-9.]]*\).*%\1%'`"
+   NCBI_FEATURE(KCC)
 elif test "$ICC" = "yes" ; then
    compiler_ver="$icc_ver"
    compiler="ICC"
    ncbi_compiler="ICC"
-   ncbi_compiler_ver="`echo $icc_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $icc_ver | sed 's%.*Version \([[0-9.]]*\).*%\1%'`"
+   NCBI_FEATURE(ICC)
 elif test "$VAC" = "yes" ; then
    compiler_ver="$vac_ver"
    compiler="VisualAge"
    ncbi_compiler="VISUALAGE"
-   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*[Vv]ersion:* 0*\([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*[[Vv]]ersion:* 0*\([[0-9.]]*\).*%\1%'`"
+   NCBI_FEATURE(VisualAge)
 elif test "$CCC" = "yes" ; then
    compiler_ver="$ccc_ver"
    compiler=Compaq
    ncbi_compiler="COMPAQ"
-   ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[+][+] V\([0-9.]*\).*%\1%'`"
+   ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[[+]][[+]] V\([[0-9.]]*\).*%\1%'`"
+   NCBI_FEATURE(CompaqCompiler)
 else
    case "$host_os" in
     solaris* )
@@ -674,7 +679,9 @@ else
           compiler="WorkShop510"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.10" ;;
-      esac ;;
+      esac
+      NCBI_FEATURE(WorkShop)
+      ;;
 
     irix* )
       compiler_ver="`$real_CXX -version 2>&1`"
@@ -682,19 +689,26 @@ else
         MIPSpro*Compilers:*Version*7\.3* )
           compiler="MIPSpro73"
           ncbi_compiler="MIPSPRO"
-          ncbi_compiler_ver="7.3" ;;
-      esac ;;
+          ncbi_compiler_ver="7.3"
+          NCBI_FEATURE(MIPSpro)
+          ;;
+      esac
+      ;;
 
     cygwin* )
       case "$real_CXX" in
         *cl\.exe* | cl)
           compiler="MSVC"
           ncbi_compiler="MSVC"
-          ncbi_compiler_ver="6.0" ;;
-      esac ;;
+          ncbi_compiler_ver="6.0"
+          NCBI_FEATURE(MSVC)
+          ;;
+      esac
+      ;;
    esac
 fi
 
+changequote(, )dnl
 #ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9]\)\.\([0-9]\).*%\1\2\3%; s%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%; s%^\([0-9][0-9]\)$%\10%; s%^\([0-9]\)$%\100%'`"
 case "$compiler:$ncbi_compiler_ver" in
     WorkShop*:?.?? )   ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\)/\1\20/' ;;

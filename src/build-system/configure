@@ -4187,28 +4187,34 @@ if test "$GCC" = "yes" ; then
      2.95* | 2.96* | 3.* | 4.* )
        compiler="GCC"
        ncbi_compiler="GCC"
-       ncbi_compiler_ver="$compiler_ver" ;;
+       ncbi_compiler_ver="$compiler_ver"
+                 WithFeatures="$WithFeatures${WithFeaturesSep}GCC"; WithFeaturesSep=" "
+       ;;
    esac
 elif test "$KCC" = "yes" ; then
    compiler_ver="$kcc_ver"
    compiler="KCC"
    ncbi_compiler="KCC"
    ncbi_compiler_ver="`echo $kcc_ver | sed 's%^KAI .*C[+][+] \([0-9.]*\).*%\1%'`"
+             WithFeatures="$WithFeatures${WithFeaturesSep}KCC"; WithFeaturesSep=" "
 elif test "$ICC" = "yes" ; then
    compiler_ver="$icc_ver"
    compiler="ICC"
    ncbi_compiler="ICC"
    ncbi_compiler_ver="`echo $icc_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+             WithFeatures="$WithFeatures${WithFeaturesSep}ICC"; WithFeaturesSep=" "
 elif test "$VAC" = "yes" ; then
    compiler_ver="$vac_ver"
    compiler="VisualAge"
    ncbi_compiler="VISUALAGE"
    ncbi_compiler_ver="`echo $vac_ver | sed 's%.*[Vv]ersion:* 0*\([0-9.]*\).*%\1%'`"
+             WithFeatures="$WithFeatures${WithFeaturesSep}VisualAge"; WithFeaturesSep=" "
 elif test "$CCC" = "yes" ; then
    compiler_ver="$ccc_ver"
    compiler=Compaq
    ncbi_compiler="COMPAQ"
    ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[+][+] V\([0-9.]*\).*%\1%'`"
+             WithFeatures="$WithFeatures${WithFeaturesSep}CompaqCompiler"; WithFeaturesSep=" "
 else
    case "$host_os" in
     solaris* )
@@ -4250,7 +4256,9 @@ else
           compiler="WorkShop510"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.10" ;;
-      esac ;;
+      esac
+                WithFeatures="$WithFeatures${WithFeaturesSep}WorkShop"; WithFeaturesSep=" "
+      ;;
 
     irix* )
       compiler_ver="`$real_CXX -version 2>&1`"
@@ -4258,16 +4266,22 @@ else
         MIPSpro*Compilers:*Version*7\.3* )
           compiler="MIPSpro73"
           ncbi_compiler="MIPSPRO"
-          ncbi_compiler_ver="7.3" ;;
-      esac ;;
+          ncbi_compiler_ver="7.3"
+                    WithFeatures="$WithFeatures${WithFeaturesSep}MIPSpro"; WithFeaturesSep=" "
+          ;;
+      esac
+      ;;
 
     cygwin* )
       case "$real_CXX" in
         *cl\.exe* | cl)
           compiler="MSVC"
           ncbi_compiler="MSVC"
-          ncbi_compiler_ver="6.0" ;;
-      esac ;;
+          ncbi_compiler_ver="6.0"
+                    WithFeatures="$WithFeatures${WithFeaturesSep}MSVC"; WithFeaturesSep=" "
+          ;;
+      esac
+      ;;
    esac
 fi
 
@@ -31113,7 +31127,7 @@ CHECK_TOOLS=$with_check_tools
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS PubSeqOS check; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS PubSeqOS check; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
