@@ -72,10 +72,13 @@ public:
         //< percent identity (0.0-100.0) (pct_identity)
         eScore_PercentIdentity,
 
+        //< percent coverage (0.0-100.0) (pct_coverage)
+        eScore_PercentCoverage,
+
         //< blast-style 'sum_e'
         eScore_SumEValue,
 
-        //< Composition-adjustment method.
+        //< Composition-adjustment method from BLAST (comp_adjustment_method)
         eScore_CompAdjMethod
     };
 
