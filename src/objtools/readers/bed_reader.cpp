@@ -268,8 +268,26 @@ void CBedReader::x_SetFeatureLocation(
 
     CRef<CSeq_loc> location( new CSeq_loc );
     CSeq_interval& interval = location->SetInt();
-    interval.SetFrom( NStr::StringToInt( fields[1] ) - 1);
-    interval.SetTo( NStr::StringToInt( fields[2] ) - 2 );
+    try {
+        interval.SetFrom( NStr::StringToInt( fields[1] ) - 1);
+    }
+    catch ( ... ) {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line --- Bad \"SeqStart\" value." );
+        throw( err );
+    }
+    try {
+        interval.SetTo( NStr::StringToInt( fields[2] ) - 2 );
+    }
+    catch ( ... ) {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line --- Bad \"SeqStop\" value." );
+        throw( err );
+    }
 
     size_t strand_field = 5;
     if (fields.size() == 5  &&  (fields[4] == "-"  ||  fields[4] == "+")) {
