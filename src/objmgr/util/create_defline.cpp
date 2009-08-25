@@ -994,7 +994,10 @@ CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
 
         cds_loc = &cds_feat->GetLocation();
         if (cds_loc) {
-            gene_feat = GetOverlappingGene (*cds_loc, scope);
+            gene_feat = GetBestOverlappingFeat (*cds_loc,
+                                                CSeqFeatData::eSubtype_gene,
+                                                eOverlap_Subset,
+                                                scope);
             if (gene_feat) {
                 gene_ref = &gene_feat->GetData().GetGene();
             }
@@ -1300,7 +1303,10 @@ string CDeflineGenerator::x_TitleFromSegSeq  (
         }
 
         CConstRef<CSeq_feat> gene_feat
-            = GetOverlappingGene(it->GetLocation(), scope);
+            = GetBestOverlappingFeat(it->GetLocation(),
+                                     CSeqFeatData::eSubtype_gene,
+                                     eOverlap_Subset,
+                                     scope);
         if (locus.empty()  &&  gene_feat.NotEmpty()) {
             if (gene_feat->GetData().GetGene().IsSetLocus()) {
                 locus = gene_feat->GetData().GetGene().GetLocus();
