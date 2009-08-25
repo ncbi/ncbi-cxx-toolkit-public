@@ -1357,6 +1357,24 @@ public:
                                 SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
+    /// Test for presence of a given string in a list or vector of strings
+
+    static const string* Find(const list<string>& lst, const string& val,
+                               ECase use_case = eCase);
+
+    static const string* FindCase(const list<string>& lst, const string& val);
+
+    static const string* FindNoCase(const list<string>& lst, const string& val);
+
+    static const string* Find(const vector<string>& vec, const string& val,
+                              ECase use_case = eCase);
+
+    static const string* FindCase(const vector<string>& vec, const string& val);
+
+    static const string* FindNoCase(const vector<string>& vec,
+                                    const string& val);
+
+
     /// Which end to truncate a string.
     enum ETrunc {
         eTrunc_Begin,  ///< Truncate leading spaces only
@@ -3498,6 +3516,30 @@ SIZE_TYPE NStr::FindCase(const string& str, const string& pattern,
         SIZE_TYPE result = str.rfind(pattern, end);
         return (result == NPOS  ||  result < start) ? NPOS : result;
     }
+}
+
+inline
+const string* NStr::FindCase(const list<string>& lst, const string& val)
+{
+    return Find(lst, val, eCase);
+}
+
+inline
+const string* NStr::FindNoCase(const list <string>& lst, const string& val)
+{
+    return Find(lst, val, eNocase);
+}
+
+inline
+const string* NStr::FindCase(const vector <string>& vec, const string& val)
+{
+    return Find(vec, val, eCase);
+}
+
+inline
+const string* NStr::FindNoCase(const vector <string>& vec, const string& val)
+{
+    return Find(vec, val, eNocase);
 }
 
 

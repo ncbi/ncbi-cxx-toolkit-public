@@ -1373,6 +1373,35 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 }
 
 
+const string* NStr::Find(const list <string>& lst, const string& val,
+                         ECase use_case)
+{
+   if (lst.empty()) return NULL;
+
+   ITERATE (list<string>, st_itr, lst) {
+       if (Equal(*st_itr, val, use_case)) {
+           return &*st_itr;
+       }
+   }
+
+   return NULL;
+}
+
+const string* NStr::Find(const vector <string>& vec, const string& val,
+                         ECase use_case)
+{
+   if (vec.empty()) return NULL;
+
+   ITERATE (vector<string>, st_itr, vec) {
+       if (Equal(*st_itr, val, use_case)) {
+           return &*st_itr;
+       }
+   }
+
+   return NULL;
+}
+
+
 template <class TStr>
 TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
                       const TStr& empty_str)
