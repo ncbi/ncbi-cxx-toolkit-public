@@ -1251,12 +1251,12 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
                 // close current seg
                 TSeqPos query_close = query_strand == eNa_strand_plus?
                     start1: 1 - pos1;
-                starts.push_back(seg_type == 1? -1: query_start + query_close);
+                starts.push_back(seg_type == 1? (TSeqPos)-1: query_start + query_close);
                 strands.push_back(query_strand);
                 
                 TSeqPos subj_close = subj_strand == eNa_strand_plus?
                     start2: 1- pos2;
-                starts.push_back(seg_type == 2? -1: subj_start + subj_close);
+                starts.push_back(seg_type == 2? (TSeqPos)-1: subj_start + subj_close);
                 strands.push_back(subj_strand);
                 
                 switch(seg_type) {
@@ -1315,11 +1315,11 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     }
     
     TSeqPos query_close = query_strand == eNa_strand_plus? start1: 1 - pos1;
-    starts.push_back(seg_type == 1? -1: query_start + query_close);
+    starts.push_back(seg_type == 1? (TSeqPos)-1: query_start + query_close);
     strands.push_back(query_strand);
     
     TSeqPos subj_close = subj_strand == eNa_strand_plus? start2: 1 - pos2;
-    starts.push_back(seg_type == 2? -1: subj_start + subj_close);
+    starts.push_back(seg_type == 2? (TSeqPos)-1: subj_start + subj_close);
     strands.push_back(subj_strand);
     
     switch(seg_type) {
