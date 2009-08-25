@@ -50,6 +50,7 @@ typedef std::map<string,CWiggleTrack*>::iterator TrackIter;
 typedef std::map<int,CWiggleData*> DataStore;
 typedef std::map<int,CWiggleData*>::iterator DataIter;
 typedef std::map<int,CWiggleData*>::const_iterator DataCiter;
+typedef std::vector<CWiggleData*> DataVector;
 
 class CIdMapper;
 
@@ -57,8 +58,11 @@ class CIdMapper;
 class CWiggleData
 //  ===========================================================================
 {
+    friend class CWiggleTrack;
 public:
     CWiggleData(
+        const string&,
+        unsigned int,
         unsigned int,
         double );
     ~CWiggleData() {};
@@ -67,10 +71,22 @@ public:
         CNcbiOstream& );
         
     unsigned int SeqStart() const { return m_uSeqStart; };
+    unsigned int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };
     
 protected:
+    void FillGraphsReal(
+        CSeq_graph& );
+        
+    void FillGraphsInt(
+        CSeq_graph& );
+        
+    void FillGraphsByte(
+        CSeq_graph& );
+
+    string m_strChrom;        
     unsigned int m_uSeqStart;
+    unsigned int m_uSeqSpan;
     double m_dValue;
 };
 
@@ -127,6 +143,9 @@ public:
     void MakeGraph(
         CSeq_annot::TData::TGraph& );
         
+    void MakeGraphs(
+        CSeq_annot::TData::TGraph& );
+        
     const char* Chrom() const { return m_strChrom.c_str(); };
     size_t Count() const { return m_Entries.size(); };
     unsigned int SeqStart() const;
@@ -134,13 +153,13 @@ public:
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     
 protected:
-    void FillGraphReal(
+    void FillGraphsReal(
         CReal_graph& );
         
-    void FillGraphInt(
+    void FillGraphsInt(
         CInt_graph& );
         
-    void FillGraphByte(
+    void FillGraphsByte(
         CByte_graph& );
         
     bool DataValue(
@@ -163,7 +182,9 @@ protected:
     unsigned int m_uSeqSpan;
     double m_dMaxValue;
     double m_dMinValue;
+    bool m_bEvenlySpaced;
     DataStore m_Entries;
+    DataVector m_Data;
 };
 
 //  ===========================================================================

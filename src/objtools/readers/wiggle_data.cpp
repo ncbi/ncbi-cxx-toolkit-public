@@ -59,10 +59,14 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ===========================================================================
 CWiggleData::CWiggleData(
+    const string& strChrom,
     unsigned int seq_start,
+    unsigned int seq_span,
     double value ):
 //  ===========================================================================
+    m_strChrom( strChrom ),
     m_uSeqStart( seq_start ),
+    m_uSeqSpan( seq_span ),
     m_dValue( value )
 {
 };
@@ -83,7 +87,7 @@ void CWiggleRecord::Reset()
     m_strChrom = "";
     m_uSeqStart = 0;
     m_uSeqStep = 0;
-    m_uSeqSpan = 0;
+    m_uSeqSpan = 1;
     m_dValue = 0;
 }
 
@@ -275,7 +279,7 @@ void CWiggleRecord::ParseDeclarationFixedstep(
             continue;
         }
         if ( key_value_pair[0] == "start" ) {
-            m_uSeqStart = NStr::StringToUInt( key_value_pair[1] ) - 1;
+            m_uSeqStart = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
         if ( key_value_pair[0] == "step" ) {
@@ -299,10 +303,13 @@ CWiggleTrack::CWiggleTrack(
     m_strName( record.Name() ),
     m_strChrom( record.Chrom() ),
     m_uGraphType( GRAPH_UNKNOWN ),
-    m_uSeqLength( 0 )
+    m_uSeqLength( 0 ),
+    m_bEvenlySpaced( true )
 {
-    CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );
+    CWiggleData* pData = new CWiggleData( record.Chrom(), 
+        record.SeqStart(), record.SeqSpan(), record.Value() );
     m_Entries[ pData->SeqStart() ] = pData;
+    /**/ m_Data.push_back( pData );
     m_uSeqSpan = record.SeqSpan();
     m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
     m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
@@ -338,21 +345,15 @@ void CWiggleTrack::AddRecord(
         throw( err );
     }
     if ( SeqSpan() != record.SeqSpan() ) {
-        CObjReaderLineException err( 
-            eDiag_Warning,
-            0,
-            "Data record with suspicious span: rejected." );
-        throw( err );
+        m_bEvenlySpaced = false;
     }
     if ( 0 != (record.SeqStart() - m_uSeqStart) % SeqSpan() ) {
-        CObjReaderLineException err( 
-            eDiag_Warning,
-            0,
-            "Data record not aligned with span multiple: rejected." );
-        throw( err );
+        m_bEvenlySpaced = false;
     }
-    CWiggleData* pData = new CWiggleData( record.SeqStart(), record.Value() );        
+    CWiggleData* pData = new CWiggleData( record.Chrom(), 
+        record.SeqStart(), record.SeqSpan(), record.Value() );        
     m_Entries[ record.SeqStart() ] = pData;
+    m_Data.push_back( pData );
     
     if ( m_uSeqLength == 0 ) {
         if ( m_uSeqStart > record.SeqStart() ) {
@@ -451,39 +452,101 @@ void CWiggleTrack::MakeGraph(
     CSeq_annot::TData::TGraph& graphset )
 //  ===========================================================================
 {
-    CRef<CSeq_graph> graph( new CSeq_graph );
-    graph->SetTitle( m_strName );
-    
-    CSeq_interval& loc = graph->SetLoc().SetInt();
-    loc.SetId().Set( CSeq_id::e_Local, m_strChrom );
-    loc.SetFrom( SeqStart() );
-    loc.SetTo( SeqStop() );
+    if ( m_bEvenlySpaced ) {
+        CRef<CSeq_graph> graph( new CSeq_graph );
+        graph->SetTitle( m_strName );
         
-    graph->SetComp( SeqSpan() );
-    graph->SetNumval( (SeqStop() - SeqStart() + 1) / SeqSpan() );
-    graph->SetA( ScaleLinear() );
-    graph->SetB( ScaleConst() );
-    
-    switch( GetGraphType() ) {
+        CSeq_interval& loc = graph->SetLoc().SetInt();
+        loc.SetId().Set( CSeq_id::e_Local, m_strChrom );
+        loc.SetFrom( SeqStart() );
+        loc.SetTo( SeqStop() );
             
-        default:
-            FillGraphByte( graph->SetGraph().SetByte() );
-            break;
-    
-        case GRAPH_REAL:
-            FillGraphReal( graph->SetGraph().SetReal() );
-            break;
-            
-        case GRAPH_INT:
-            FillGraphInt( graph->SetGraph().SetInt() );
-            break;
+        graph->SetComp( SeqSpan() );
+        graph->SetNumval( (SeqStop() - SeqStart() + 1) / SeqSpan() );
+        graph->SetA( ScaleLinear() );
+        graph->SetB( ScaleConst() );
+        
+        switch( GetGraphType() ) {
+                
+            default:
+                FillGraphsByte( graph->SetGraph().SetByte() );
+                break;
+        
+            case GRAPH_REAL:
+                FillGraphsReal( graph->SetGraph().SetReal() );
+                break;
+                
+            case GRAPH_INT:
+                FillGraphsInt( graph->SetGraph().SetInt() );
+                break;
+        }
+                
+        graphset.push_back( graph );
     }
+    else {
+        for ( unsigned int u=0; u < m_Data.size(); ++u ) {
+            CRef<CSeq_graph> graph( new CSeq_graph );
+            graph->SetTitle( m_strName );
             
-    graphset.push_back( graph );
+            switch( GetGraphType() ) {
+                    
+                default:
+                    m_Data[u]->FillGraphsByte( *graph );
+                    break;
+            
+                case GRAPH_REAL:
+                    m_Data[u]->FillGraphsReal( *graph );
+                    break;
+                    
+                case GRAPH_INT:
+                    m_Data[u]->FillGraphsInt( *graph );
+                    break;
+            }                
+            graphset.push_back( graph );
+        }
+    }
 }
 
 //  ===========================================================================
-void CWiggleTrack::FillGraphReal(
+void CWiggleTrack::MakeGraphs(
+    CSeq_annot::TData::TGraph& graphset )
+//  ===========================================================================
+{
+    for ( unsigned int u=0; u < m_Data.size(); ++u ) {
+        CRef<CSeq_graph> graph( new CSeq_graph );
+        graph->SetTitle( m_strName );
+        
+        switch( GetGraphType() ) {
+                
+            default:
+//                FillGraphsByte( graph->SetGraph().SetByte() );
+                m_Data[u]->FillGraphsByte( *graph );
+                break;
+        
+            case GRAPH_REAL:
+//                m_Data[u]->FillGraphsReal( graph->SetGraph().SetReal() );
+                m_Data[u]->FillGraphsReal( *graph );
+                break;
+                
+            case GRAPH_INT:
+//                m_Data[u]->FillGraphsInt( graph->SetGraph().SetInt() );
+                m_Data[u]->FillGraphsInt( *graph );
+                break;
+        }                
+        graphset.push_back( graph );
+    }
+}
+
+//  ===========================================================================
+void CWiggleData::FillGraphsReal(
+    CSeq_graph& graph )
+//  ===========================================================================
+{
+}
+
+
+//  ===========================================================================
+void CWiggleTrack::FillGraphsReal(
     CReal_graph& graph )
 //  ===========================================================================
 {
@@ -513,7 +576,7 @@ void CWiggleTrack::FillGraphReal(
 }
 
 //  ===========================================================================
-void CWiggleTrack::FillGraphInt(
+void CWiggleTrack::FillGraphsInt(
     CInt_graph& graph )
 //  ===========================================================================
 {
@@ -521,7 +584,14 @@ void CWiggleTrack::FillGraphInt(
 }
 
 //  ===========================================================================
-void CWiggleTrack::FillGraphByte(
+void CWiggleData::FillGraphsInt(
+    CSeq_graph& graph )
+//  ===========================================================================
+{
+}
+
+//  ===========================================================================
+void CWiggleTrack::FillGraphsByte(
     CByte_graph& graph )
 //
 //  Idea:   Scale the set of values found linearly to the interval 1 (lowest)
@@ -538,6 +608,32 @@ void CWiggleTrack::FillGraphByte(
         values[ u ] = ByteGraphValue( SeqStart() + u * SeqSpan() );
     }
     graph.SetValues() = values;
+}
+
+//  ===========================================================================
+void CWiggleData::FillGraphsByte(
+    CSeq_graph& graph )
+//
+//  Idea:   Scale the set of values found linearly to the interval 1 (lowest)
+//          to 255 (highest). Gap "values" are set to 0.
+//  ===========================================================================
+{
+    CSeq_interval& loc = graph.SetLoc().SetInt();
+    loc.SetId().Set( CSeq_id::e_Local, m_strChrom );
+    loc.SetFrom( SeqStart() );
+    loc.SetTo( SeqStart() + SeqSpan() );
+
+    graph.SetComp( SeqSpan() );
+    graph.SetNumval( 1 );
+    graph.SetA( 0 );
+    graph.SetB( Value() );
+        
+    CByte_graph& bytes = graph.SetGraph().SetByte();
+    bytes.SetMin( 0 );
+    bytes.SetMax( 1 );
+    bytes.SetAxis( 0 );
+    vector<char> values( 1, 1 );
+    bytes.SetValues() = values;
 }
 
 //  ===========================================================================

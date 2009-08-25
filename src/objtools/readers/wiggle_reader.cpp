@@ -141,7 +141,6 @@ CWiggleReader::ReadSeqAnnot(
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
     while ( x_ReadLine( lr, pending ) ) {
-
         try {
             if ( x_ParseBrowserLine( pending, annot ) ) {
                 continue;
@@ -156,7 +155,6 @@ CWiggleReader::ReadSeqAnnot(
             ProcessError( err, pErrorContainer );
         }
     }
-    
     try {
         m_pSet->MakeGraph( graphset );
     }
