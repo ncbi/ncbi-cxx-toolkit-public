@@ -10,4 +10,4 @@ CHECK_REQUIRES = unix -WorkShop
 CHECK_CMD = test_tar.sh
 CHECK_COPY = test_tar.sh
 CHECK_AUTHORS = lavr
-CHECK_TIMEOUT = 300
+CHECK_TIMEOUT = 400
