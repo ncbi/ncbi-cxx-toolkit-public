@@ -68,8 +68,6 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 
-#include <test/test_assert.h>
-
 #include <algo/sequence/loc_mapper.hpp>
 #include <algo/sequence/compare_feats.hpp>
 
