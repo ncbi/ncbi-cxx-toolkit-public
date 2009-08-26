@@ -294,9 +294,13 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                        eFileErr,
                        msg);
         } else {
-            string base_path;
-            resolved_path.FindBasePath().GetString(base_path);
-            m_DBList[i].Assign(CSeqDB_Substring(CDirEntry::NormalizePath(base_path, eFollowLinks)));
+            string dir_name, base_name;
+            resolved_path.FindDirName().GetString(dir_name);
+            resolved_path.FindBaseName().GetString(base_name);
+            m_DBList[i].Assign(CSeqDB_Substring(
+                CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                CDirEntry::GetPathSeparator() +
+                base_name  ));
         }
     }
     
@@ -743,20 +747,23 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
                 // "dblist", it is assumed to refer to a volume instead of
                 // to itself.
                 
-				// normalize this_name
-				bool found = false;
-				string orig_name = this_name.GetBasePathS();
-				string normal_name = CDirEntry::NormalizePath(orig_name, eFollowLinks);
-				for (int i = 0; i < (int) m_VolNames.size(); i++) {
-					if (m_VolNames[i].GetBasePathS() == normal_name) {
-						found = true;
-						break;
-					}
-				}
+                // normalize this_name
+                bool found = false;
+                string dir_name, base_name;
+                this_name.FindDirName().GetString(dir_name);
+                this_name.FindBaseName().GetString(base_name);
+                string normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                      CDirEntry::GetPathSeparator() + base_name;
+                for (int i = 0; i < (int) m_VolNames.size(); i++) {
+                    if (m_VolNames[i].GetBasePathS() == normal_name) {
+                        found = true;
+                        break;
+                    }
+                }
 
-				if (!found) {
-					m_VolNames.push_back(CSeqDB_BasePath(normal_name));
-				}
+                if (!found) {
+                    m_VolNames.push_back(CSeqDB_BasePath(normal_name));
+                }
                 continue;
             }
         }
@@ -784,8 +791,11 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
             } else if (m_Atlas.DoesFileExist(new_volume, locked)) {
                 // normalize this_name
                 bool found = false;
-                string orig_name = result.GetBasePathS();
-                string normal_name = CDirEntry::NormalizePath(orig_name, eFollowLinks);
+                string dir_name, base_name;
+                result.FindDirName().GetString(dir_name);
+                result.FindBaseName().GetString(base_name);
+                string normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                      CDirEntry::GetPathSeparator() + base_name;
                 for (int i = 0; i < (int) m_VolNames.size(); i++) {
                     if (m_VolNames[i].GetBasePathS() == normal_name) {
                         found = true;
@@ -831,20 +841,23 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         if (m_Atlas.DoesFileExist(new_vol_path, locked)) {
             CSeqDB_BasePath bp( new_db_path.FindBasePath() );
 
-			// normalize this_name
-			bool found = false;
-			string orig_name = bp.GetBasePathS();
-			string normal_name = CDirEntry::NormalizePath(orig_name, eFollowLinks);
-			for (int i = 0; i < (int) m_VolNames.size(); i++) {
-				if (m_VolNames[i].GetBasePathS() == normal_name) {
-					found = true;
-					break;
-				}
-			}
+            // normalize this_name
+            bool found = false;
+            string dir_name, base_name;
+            bp.FindDirName().GetString(dir_name);
+            bp.FindBaseName().GetString(base_name);
+            string normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                  CDirEntry::GetPathSeparator() + base_name;
+            for (int i = 0; i < (int) m_VolNames.size(); i++) {
+                if (m_VolNames[i].GetBasePathS() == normal_name) {
+                    found = true;
+                    break;
+                }
+            }
 
-			if (!found) {
-				m_VolNames.push_back(CSeqDB_BasePath(normal_name));
-			}
+            if (!found) {
+                m_VolNames.push_back(CSeqDB_BasePath(normal_name));
+            }
 
             continue;
         }
