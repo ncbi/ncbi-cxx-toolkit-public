@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                 eBlastEncodingNcbi4na,
                                 subj->scope,
                                 eNa_strand_plus,
-                                eNoSentinels));
+                                eSentinels));
 
     BLAST_SequenceBlk* subject_blk;
     BlastSeqBlkNew(&subject_blk);
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
     // These are values that come out for this case.  kLength could change if 
     // heuristic for allocating buffers in Blast_HSPGetTargetTranslation changes. 
     const int kLength[kNumTests] = {3899, 4099, 4300, 4500, 4699, 4899 }; 
-    const int kValues[2*kNumTests] = {6, 18, 22, 10, 25, 19, 12, 18, 15, 1, 15, 11 };
+    const int kValues[2*kNumTests] = {6, 16, 18, 10, 10, 6, 8, 4, 18, 17, 1, 6};
     int index = 0;
     for (index=0; index<kNumTests; index++)
     {
