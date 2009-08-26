@@ -206,8 +206,7 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
                 const CDbtag& dtg = wid->GetGeneral();
                 const string& dbname = dtg.GetDb();
                 if(NStr::CompareNocase(dbname, "TI") == 0){
-                    string actual_id;
-                    wid->GetLabel(&actual_id, CSeq_id::eContent);
+                    string actual_id = CAlignFormatUtil::GetGnlID(dtg);
                     sprintf(url_buf, kTraceUrl.c_str(), "", actual_id.c_str(),
                             rid.c_str());
                     url_link = url_buf;

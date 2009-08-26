@@ -1086,10 +1086,11 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
                 const CDbtag& dtg = wid->GetGeneral();
                 const string& dbName = dtg.GetDb();
                 if(NStr::CompareNocase(dbName, "TI") == 0){
+                    string gnl_id = CAlignFormatUtil::GetGnlID(dtg);
                     sprintf(urlBuf, kTraceUrl.c_str(),
                             (m_AlignOption & eShowInfoOnMouseOverSeqid) ?
-                            temp_class_info.c_str() : "",
-                            wid->GetSeqIdString().c_str(), m_Rid.c_str());
+                            temp_class_info.c_str() : "", 
+                            gnl_id.c_str(), m_Rid.c_str());
                     urlLink = urlBuf;
                 } else { //future use
                     

@@ -702,6 +702,18 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
     }	
 }
 
+string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
+{
+   string retval = NcbiEmptyString;
+
+   if(dtg.GetTag().IsId())
+     retval = NStr::IntToString(dtg.GetTag().GetId());
+   else
+     retval = dtg.GetTag().GetStr();
+
+   return retval;
+}
+
 void CAlignFormatUtil::AddSpace(CNcbiOstream& out, int number)
 
 {
