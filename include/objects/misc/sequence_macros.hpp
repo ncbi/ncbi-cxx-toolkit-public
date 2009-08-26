@@ -537,11 +537,6 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define CHOICE_IS(Base, Var, Chs) \
 (Base##_Test(Var) && Base##_Chs(Var) == Chs)
 
-/// FIELD_IS_SET base macro
-
-#define FIELD_IS_SET(Var, Fld) \
-    ((Var).IsSet##Fld())
-
 
 /// SWITCH_ON base macro calls NCBI_SWITCH with generated components
 
@@ -635,6 +630,204 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
 // Miscellaneous macros for testing objects include
 // "XXX_IS_YYY" or "XXX_HAS_YYY"
 // "XXX_CHOICE_IS"
+
+
+///
+/// list <string> macros
+
+/// STRING_IN_LIST macros
+
+#define STRING_IN_LIST_Type      list <string>
+#define STRING_IN_LIST_Test(Var) (! (Var).empty())
+#define STRING_IN_LIST_Get(Var)  (Var)
+#define STRING_IN_LIST_Set(Var)  (Var)
+
+/// LIST_HAS_STRING
+
+#define LIST_HAS_STRING(Var) \
+ITEM_HAS (STRING_IN_LIST, Var)
+
+/// FOR_EACH_STRING_IN_LIST
+/// EDIT_EACH_STRING_IN_LIST
+// list <string>& as input, dereference with [const] string& str = *itr;
+
+#define FOR_EACH_STRING_IN_LIST(Itr, Var) \
+FOR_EACH (STRING_IN_LIST, Itr, Var)
+
+#define EDIT_EACH_STRING_IN_LIST(Itr, Var) \
+EDIT_EACH (STRING_IN_LIST, Itr, Var)
+
+/// ADD_STRING_TO_LIST
+
+#define ADD_STRING_TO_LIST(Var, Ref) \
+ADD_ITEM (STRING_IN_LIST, Var, Ref)
+
+/// ERASE_STRING_IN_LIST
+
+#define ERASE_STRING_IN_LIST(Itr, Var) \
+LIST_ERASE_ITEM (STRING_IN_LIST, Itr, Var)
+
+/// STRING_IN_LIST_IS_SORTED
+
+#define STRING_IN_LIST_IS_SORTED(Var, Func) \
+IS_SORTED (STRING_IN_LIST, Var, Func)
+
+/// SORT_STRING_IN_LIST
+
+#define SORT_STRING_IN_LIST(Var, Func) \
+DO_LIST_SORT (STRING_IN_LIST, Var, Func)
+
+/// STRING_IN_LIST_IS_UNIQUE
+
+#define STRING_IN_LIST_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (STRING_IN_LIST, Var, Func)
+
+/// UNIQUE_STRING_IN_LIST
+
+#define UNIQUE_STRING_IN_LIST(Var, Func) \
+DO_UNIQUE (STRING_IN_LIST, Var, Func)
+
+
+///
+/// vector <string> macros
+
+/// STRING_IN_VECTOR macros
+
+#define STRING_IN_VECTOR_Type      vector <string>
+#define STRING_IN_VECTOR_Test(Var) (! (Var).empty())
+#define STRING_IN_VECTOR_Get(Var)  (Var)
+#define STRING_IN_VECTOR_Set(Var)  (Var)
+
+/// VECTOR_HAS_STRING
+
+#define VECTOR_HAS_STRING(Var) \
+ITEM_HAS (STRING_IN_VECTOR, Var)
+
+/// FOR_EACH_STRING_IN_VECTOR
+/// EDIT_EACH_STRING_IN_VECTOR
+// vector <string>& as input, dereference with [const] string& str = *itr;
+
+#define FOR_EACH_STRING_IN_VECTOR(Itr, Var) \
+FOR_EACH (STRING_IN_VECTOR, Itr, Var)
+
+#define EDIT_EACH_STRING_IN_VECTOR(Itr, Var) \
+EDIT_EACH (STRING_IN_VECTOR, Itr, Var)
+
+/// ADD_STRING_TO_VECTOR
+
+#define ADD_STRING_TO_VECTOR(Var, Ref) \
+ADD_ITEM (STRING_IN_VECTOR, Var, Ref)
+
+/// ERASE_STRING_IN_VECTOR
+
+#define ERASE_STRING_IN_VECTOR(Itr, Var) \
+VECTOR_ERASE_ITEM (STRING_IN_VECTOR, Itr, Var)
+
+/// STRING_IN_VECTOR_IS_SORTED
+
+#define STRING_IN_VECTOR_IS_SORTED(Var, Func) \
+IS_SORTED (STRING_IN_VECTOR, Var, Func)
+
+/// SORT_STRING_IN_VECTOR
+
+#define SORT_STRING_IN_VECTOR(Var, Func) \
+DO_VECTOR_SORT (STRING_IN_VECTOR, Var, Func)
+
+/// STRING_IN_VECTOR_IS_UNIQUE
+
+#define STRING_IN_VECTOR_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (STRING_IN_VECTOR, Var, Func)
+
+/// UNIQUE_STRING_IN_VECTOR
+
+#define UNIQUE_STRING_IN_VECTOR(Var, Func) \
+DO_UNIQUE (STRING_IN_VECTOR, Var, Func)
+
+
+///
+/// <string> macros
+
+/// CHAR_IN_STRING macros
+
+#define CHAR_IN_STRING_Type      string
+#define CHAR_IN_STRING_Test(Var) (! (Var).empty())
+#define CHAR_IN_STRING_Get(Var)  (Var)
+#define CHAR_IN_STRING_Set(Var)  (Var)
+
+/// STRING_HAS_CHAR
+
+#define STRING_HAS_CHAR(Var) \
+ITEM_HAS (CHAR_IN_STRING, Var)
+
+/// FOR_EACH_CHAR_IN_STRING
+/// EDIT_EACH_CHAR_IN_STRING
+// string& as input, dereference with [const] char& ch = *itr;
+
+#define FOR_EACH_CHAR_IN_STRING(Itr, Var) \
+FOR_EACH (CHAR_IN_STRING, Itr, Var)
+
+#define EDIT_EACH_CHAR_IN_STRING(Itr, Var) \
+EDIT_EACH (CHAR_IN_STRING, Itr, Var)
+
+/// ADD_CHAR_TO_STRING
+
+#define ADD_CHAR_TO_STRING(Var, Ref) \
+ADD_ITEM (CHAR_IN_STRING, Var, Ref)
+
+/// ERASE_CHAR_IN_STRING
+
+#define ERASE_CHAR_IN_STRING(Itr, Var) \
+LIST_ERASE_ITEM (CHAR_IN_STRING, Itr, Var)
+
+/// CHAR_IN_STRING_IS_SORTED
+
+#define CHAR_IN_STRING_IS_SORTED(Var, Func) \
+IS_SORTED (CHAR_IN_STRING, Var, Func)
+
+/// SORT_CHAR_IN_STRING
+
+#define SORT_CHAR_IN_STRING(Var, Func) \
+DO_LIST_SORT (CHAR_IN_STRING, Var, Func)
+
+/// CHAR_IN_STRING_IS_UNIQUE
+
+#define CHAR_IN_STRING_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (CHAR_IN_STRING, Var, Func)
+
+/// UNIQUE_CHAR_IN_STRING
+
+#define UNIQUE_CHAR_IN_STRING(Var, Func) \
+DO_UNIQUE (CHAR_IN_STRING, Var, Func)
+
+
+///
+/// STRING_FIELD and STRING_MATCH macros
+
+/// STRING_FIELD_IS_SET base macro
+
+#define STRING_FIELD_IS_SET(Var, Fld) \
+    ((Var).IsSet##Fld())
+
+/// GET_STRING_FIELD base macro
+
+#define GET_STRING_FIELD(Var, Fld) \
+    ((Var).Set##Fld())
+
+/// SET_STRING_FIELD base macro
+
+#define SET_STRING_FIELD(Var, Fld, Str) \
+    ((Var).Set##Fld(Str))
+
+
+/// STRING_FIELD_MATCH base macro
+
+#define STRING_FIELD_MATCH(Var, Fld, Str) \
+    ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Set##Fld(), Str))
+
+/// STRING_SET_MATCH base macro
+
+#define STRING_SET_MATCH(Var, Fld, Str) \
+    ((Var).IsSet##Fld() && NStr::FindNoCase((Var).Set##Fld(), Str) != NULL)
 
 
 ///
@@ -3192,174 +3385,6 @@ DO_UNIQUE (DBXREF_ON_PROTREF, Var, Func)
 #define SORT_DBXREF_ON_PROT SORT_DBXREF_ON_PROTREF
 #define DBXREF_ON_PROT_IS_UNIQUE DBXREF_ON_PROTREF_IS_UNIQUE
 #define UNIQUE_DBXREF_ON_PROT UNIQUE_DBXREF_ON_PROTREF
-
-
-///
-/// list <string> macros
-
-/// STRING_IN_LIST macros
-
-#define STRING_IN_LIST_Type      list <string>
-#define STRING_IN_LIST_Test(Var) (! (Var).empty())
-#define STRING_IN_LIST_Get(Var)  (Var)
-#define STRING_IN_LIST_Set(Var)  (Var)
-
-/// LIST_HAS_STRING
-
-#define LIST_HAS_STRING(Var) \
-ITEM_HAS (STRING_IN_LIST, Var)
-
-/// FOR_EACH_STRING_IN_LIST
-/// EDIT_EACH_STRING_IN_LIST
-// list <string>& as input, dereference with [const] string& str = *itr;
-
-#define FOR_EACH_STRING_IN_LIST(Itr, Var) \
-FOR_EACH (STRING_IN_LIST, Itr, Var)
-
-#define EDIT_EACH_STRING_IN_LIST(Itr, Var) \
-EDIT_EACH (STRING_IN_LIST, Itr, Var)
-
-/// ADD_STRING_TO_LIST
-
-#define ADD_STRING_TO_LIST(Var, Ref) \
-ADD_ITEM (STRING_IN_LIST, Var, Ref)
-
-/// ERASE_STRING_IN_LIST
-
-#define ERASE_STRING_IN_LIST(Itr, Var) \
-LIST_ERASE_ITEM (STRING_IN_LIST, Itr, Var)
-
-/// STRING_IN_LIST_IS_SORTED
-
-#define STRING_IN_LIST_IS_SORTED(Var, Func) \
-IS_SORTED (STRING_IN_LIST, Var, Func)
-
-/// SORT_STRING_IN_LIST
-
-#define SORT_STRING_IN_LIST(Var, Func) \
-DO_LIST_SORT (STRING_IN_LIST, Var, Func)
-
-/// STRING_IN_LIST_IS_UNIQUE
-
-#define STRING_IN_LIST_IS_UNIQUE(Var, Func) \
-IS_UNIQUE (STRING_IN_LIST, Var, Func)
-
-/// UNIQUE_STRING_IN_LIST
-
-#define UNIQUE_STRING_IN_LIST(Var, Func) \
-DO_UNIQUE (STRING_IN_LIST, Var, Func)
-
-
-///
-/// vector <string> macros
-
-/// STRING_IN_VECTOR macros
-
-#define STRING_IN_VECTOR_Type      vector <string>
-#define STRING_IN_VECTOR_Test(Var) (! (Var).empty())
-#define STRING_IN_VECTOR_Get(Var)  (Var)
-#define STRING_IN_VECTOR_Set(Var)  (Var)
-
-/// VECTOR_HAS_STRING
-
-#define VECTOR_HAS_STRING(Var) \
-ITEM_HAS (STRING_IN_VECTOR, Var)
-
-/// FOR_EACH_STRING_IN_VECTOR
-/// EDIT_EACH_STRING_IN_VECTOR
-// vector <string>& as input, dereference with [const] string& str = *itr;
-
-#define FOR_EACH_STRING_IN_VECTOR(Itr, Var) \
-FOR_EACH (STRING_IN_VECTOR, Itr, Var)
-
-#define EDIT_EACH_STRING_IN_VECTOR(Itr, Var) \
-EDIT_EACH (STRING_IN_VECTOR, Itr, Var)
-
-/// ADD_STRING_TO_VECTOR
-
-#define ADD_STRING_TO_VECTOR(Var, Ref) \
-ADD_ITEM (STRING_IN_VECTOR, Var, Ref)
-
-/// ERASE_STRING_IN_VECTOR
-
-#define ERASE_STRING_IN_VECTOR(Itr, Var) \
-VECTOR_ERASE_ITEM (STRING_IN_VECTOR, Itr, Var)
-
-/// STRING_IN_VECTOR_IS_SORTED
-
-#define STRING_IN_VECTOR_IS_SORTED(Var, Func) \
-IS_SORTED (STRING_IN_VECTOR, Var, Func)
-
-/// SORT_STRING_IN_VECTOR
-
-#define SORT_STRING_IN_VECTOR(Var, Func) \
-DO_VECTOR_SORT (STRING_IN_VECTOR, Var, Func)
-
-/// STRING_IN_VECTOR_IS_UNIQUE
-
-#define STRING_IN_VECTOR_IS_UNIQUE(Var, Func) \
-IS_UNIQUE (STRING_IN_VECTOR, Var, Func)
-
-/// UNIQUE_STRING_IN_VECTOR
-
-#define UNIQUE_STRING_IN_VECTOR(Var, Func) \
-DO_UNIQUE (STRING_IN_VECTOR, Var, Func)
-
-
-///
-/// <string> macros
-
-/// CHAR_IN_STRING macros
-
-#define CHAR_IN_STRING_Type      string
-#define CHAR_IN_STRING_Test(Var) (! (Var).empty())
-#define CHAR_IN_STRING_Get(Var)  (Var)
-#define CHAR_IN_STRING_Set(Var)  (Var)
-
-/// STRING_HAS_CHAR
-
-#define STRING_HAS_CHAR(Var) \
-ITEM_HAS (CHAR_IN_STRING, Var)
-
-/// FOR_EACH_CHAR_IN_STRING
-/// EDIT_EACH_CHAR_IN_STRING
-// string& as input, dereference with [const] char& ch = *itr;
-
-#define FOR_EACH_CHAR_IN_STRING(Itr, Var) \
-FOR_EACH (CHAR_IN_STRING, Itr, Var)
-
-#define EDIT_EACH_CHAR_IN_STRING(Itr, Var) \
-EDIT_EACH (CHAR_IN_STRING, Itr, Var)
-
-/// ADD_CHAR_TO_STRING
-
-#define ADD_CHAR_TO_STRING(Var, Ref) \
-ADD_ITEM (CHAR_IN_STRING, Var, Ref)
-
-/// ERASE_CHAR_IN_STRING
-
-#define ERASE_CHAR_IN_STRING(Itr, Var) \
-LIST_ERASE_ITEM (CHAR_IN_STRING, Itr, Var)
-
-/// CHAR_IN_STRING_IS_SORTED
-
-#define CHAR_IN_STRING_IS_SORTED(Var, Func) \
-IS_SORTED (CHAR_IN_STRING, Var, Func)
-
-/// SORT_CHAR_IN_STRING
-
-#define SORT_CHAR_IN_STRING(Var, Func) \
-DO_LIST_SORT (CHAR_IN_STRING, Var, Func)
-
-/// CHAR_IN_STRING_IS_UNIQUE
-
-#define CHAR_IN_STRING_IS_UNIQUE(Var, Func) \
-IS_UNIQUE (CHAR_IN_STRING, Var, Func)
-
-/// UNIQUE_CHAR_IN_STRING
-
-#define UNIQUE_CHAR_IN_STRING(Var, Func) \
-DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 
 
