@@ -61,7 +61,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     m_DBLibCtx(&cntx),
     m_Login(NULL),
     m_Link(NULL)
-{    
+{
     m_Login = GetDBLibCtx().Check(dblogin());
     _ASSERT(m_Login);
 
@@ -79,17 +79,17 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
         DBSETLUSER(m_Login, (char*) params.GetUserName().c_str())
         != SUCCEED ||
         DBSETLPWD (m_Login, (char*) params.GetPassword().c_str())
-        != SUCCEED) 
+        != SUCCEED)
     {
         DATABASE_DRIVER_ERROR( err_str, 200011 );
     }
 
 #ifndef MS_DBLIB_IN_USE
-    DBSETLCHARSET( 
-            m_Login, 
+    DBSETLCHARSET(
+            m_Login,
             const_cast<char*>(
                 GetCDriverContext().GetClientCharset().c_str()
-                ) 
+                )
             );
 #endif
     BCP_SETL(m_Login, TRUE);
@@ -101,22 +101,11 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
 
     string server_name;
 
-    
-#if defined(FTDS_IN_USE)
-    if (params.GetHost()) {
-        server_name = impl::ConvertN2A(params.GetHost());
-        if (params.GetPort()) {
-            server_name += ":" + NStr::IntToString(params.GetPort());
-        }
-    } else {
-        server_name = params.GetServerName();
-    }
-#else
+
     server_name = params.GetServerName();
-#endif
 
     m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
-    
+
 
     /*  Error: Could not open interface file.
      *  This is a development code. DO NOT DELETE IT !!!
@@ -126,11 +115,11 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
         string port_str = NStr::IntToString(params.GetPort());
 
         RETCODE rc = dbsetconnect(
-                "query", 
-                // "master", 
-                "tcp", 
-                "ether", 
-                // (char*)server_name.c_str(), 
+                "query",
+                // "master",
+                "tcp",
+                "ether",
+                // (char*)server_name.c_str(),
                 //"130.14.24.38",
                 "sybdev",
                 // (char*)port_str.c_str()
@@ -183,7 +172,7 @@ bool CDBL_Connection::IsAlive()
 }
 
 
-void 
+void
 CDBL_Connection::SetTimeout(size_t nof_secs)
 {
     // DATABASE_DRIVER_ERROR( "SetTimeout is not supported.", 100011 );
@@ -502,7 +491,6 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
     impl::CResult* res= 0;
 
     while ((x_Status & 0x1) != 0) {
-#if !defined(FTDS_LOGIC)
         if ((x_Status & 0x20) != 0) { // check for return parameters from exec
             x_Status ^= 0x20;
             int n;
@@ -540,15 +528,12 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             delete dbres;
             delete res;
         }
-#endif
 
         RETCODE rc = Check(dbresults(pLink));
 
         switch (rc) {
         case SUCCEED:
-#if !defined(FTDS_LOGIC)
             x_Status |= 0x60;
-#endif
             if (DBCMDROW(pLink) == SUCCEED) { // we could get rows in result
                 if(!GetResultProcessor()) {
                     while(1) {
@@ -563,26 +548,6 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                     continue;
                 }
 
-#if defined(FTDS_LOGIC)
-                res = new CTDS_RowResult(*this, pLink, &x_Status);
-                if(res) {
-                    dbres= Create_Result(*res);
-                    GetResultProcessor()->ProcessResult(*dbres);
-                    delete dbres;
-                    delete res;
-                }
-                if ((x_Status & 0x10) != 0) { // we do have a compute result
-                    res = new CTDS_ComputeResult(*this, pLink, &x_Status);
-                    if(res) {
-                        dbres= Create_Result(*res);
-                        GetResultProcessor()->ProcessResult(*dbres);
-                        delete dbres;
-                        delete res;
-                    }
-                }
-            }
-            continue;
-#else
 // This optimization is currently unavailable for MS dblib...
 #ifndef MS_DBLIB_IN_USE /*Text,Image*/
                 if (Check(dbnumcols(pLink)) == 1) {
@@ -601,7 +566,6 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             } else {
                 continue;
             }
-#endif // FTDS_IN_USE
         case NO_MORE_RESULTS:
             x_Status = 2;
             break;
@@ -611,46 +575,8 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
         break;
     }
 
-#if defined(FTDS_LOGIC)
-    // we've done with the row results at this point
-    // let's look at return parameters and ret status
-    if (m_ResProc && x_Status == 2) {
-        x_Status = 4;
-        int n = Check(dbnumrets(pLink));
-        if (n > 0) {
-            res = new CTDS_ParamResult(pLink, n);
-            if(res) {
-                dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
-                delete dbres;
-                delete res;
-            }
-        }
-    }
-
-    if (m_ResProc && x_Status == 4) {
-        if (Check(dbhasretstat(pLink))) {
-            res = new CTDS_StatusResult(pLink);
-            if(res) {
-                dbres= Create_Result(*res);
-                m_ResProc->ProcessResult(*dbres);
-                delete dbres;
-                delete res;
-            }
-        }
-    }
-#endif
-
     return SUCCEED;
 }
-
-#ifdef FTDS_IN_USE
-void CTDS_Connection::TDS_SetTimeout(void)
-{
-    // This is a private function. It is not supposed to be called outside.
-    _ASSERT(false);
-}
-#endif
 
 RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 {

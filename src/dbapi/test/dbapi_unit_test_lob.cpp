@@ -323,8 +323,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             }
 
             // Read blob via Read method ...
-            // ftds_odbc is hanging up ...
-            if (GetArgs().GetDriverName() != ftds_odbc_driver) {
+            {
                 char buff[3];
 
                 sql = "SELECT text_field FROM "+ GetTableName();
@@ -355,8 +354,6 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                         }
                     }
                 }
-            } else {
-                GetArgs().PutMsgDisabled("Test_LOB Read blob via Read method");
             }
 
             // Read Blob
@@ -627,7 +624,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
                 sql =
                     "CREATE TABLE " + table_name + " ( \n"
                     "   id NUMERIC IDENTITY NOT NULL, \n"
-                    "   text01  TEXT NULL \n" 
+                    "   text01  TEXT NULL \n"
                     ") \n";
 
                 auto_stmt->ExecuteUpdate( sql );
@@ -638,7 +635,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
             auto_stmt->ExecuteUpdate( sql );
 
             // Update data ...
-            sql = 
+            sql =
                 "DECLARE @p binary(16) \n"
                 "SELECT @p = textptr(text01) FROM " + table_name + " WHERE id = 1 \n"
                 "WRITETEXT " + table_name + ".text01 @p '" + clob_value + "'"
@@ -689,10 +686,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 sql =
                     "CREATE TABLE " + table_name + " ( \n"
                     "   id NUMERIC IDENTITY NOT NULL, \n"
-                    "   text01  TEXT NULL, \n" 
-                    "   text02  TEXT NULL, \n" 
-                    "   image01 IMAGE NULL, \n" 
-                    "   image02 IMAGE NULL \n" 
+                    "   text01  TEXT NULL, \n"
+                    "   text02  TEXT NULL, \n"
+                    "   image01 IMAGE NULL, \n"
+                    "   image02 IMAGE NULL \n"
                     ") \n";
 
                 auto_stmt->ExecuteUpdate( sql );
@@ -706,7 +703,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 sql += " VALUES('', '', '', '')";
 
                 auto_stmt->ExecuteUpdate( sql );
-                
+
                 /*
                 for (int i = 0; i < num_of_records; ++i) {
                     auto_stmt->ExecuteUpdate( sql );
@@ -913,10 +910,10 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                 sql =
                     "CREATE TABLE " + table_name + " ( \n"
                     "   id NUMERIC IDENTITY NOT NULL, \n"
-                    "   text01  TEXT NULL, \n" 
-                    "   text02  TEXT NULL, \n" 
-                    "   image01 IMAGE NULL, \n" 
-                    "   image02 IMAGE NULL \n" 
+                    "   text01  TEXT NULL, \n"
+                    "   text02  TEXT NULL, \n"
+                    "   image01 IMAGE NULL, \n"
+                    "   image02 IMAGE NULL \n"
                     ") \n";
 
                 auto_stmt.reset(conn->LangCmd(sql));
@@ -936,7 +933,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                 rc = auto_stmt->Send();
                 BOOST_CHECK(rc);
                 auto_stmt->DumpResults();
-                
+
                 /*
                 for (int i = 0; i < num_of_records; ++i) {
                     auto_stmt->ExecuteUpdate( sql );
@@ -1038,12 +1035,12 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                                 break;
                         };
 
-                        // You have to call either 
+                        // You have to call either
                         // obj_lob->Truncate();
                         // rs->GetItem(obj_lob);
                         // or
                         // rs->GetItem(obj_lob, I_Result::eAssignLOB);
-                        
+
                         BOOST_CHECK(obj_lob);
 
                         rs->GetItem(obj_lob, I_Result::eAssignLOB);

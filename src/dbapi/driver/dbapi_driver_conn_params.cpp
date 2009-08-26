@@ -45,9 +45,9 @@ CDBConnParamsBase::CDBConnParamsBase(void)
 , m_Host(0)
 , m_PortNumber(0)
 {
-	SetParam("secure_login", "false");
-	SetParam("is_pooled", "false");
-	SetParam("do_not_connect", "false");
+    SetParam("secure_login", "false");
+    SetParam("is_pooled", "false");
+    SetParam("do_not_connect", "false");
 }
 
 CDBConnParamsBase::~CDBConnParamsBase(void)
@@ -86,7 +86,7 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
             case eSybaseOpenServer:
                 if (NStr::Compare(driver_name, "ftds") == 0) {
                     return 125;
-                } 
+                }
             case eSybaseSQLServer:
                 // ftds64 can autodetect tds version by itself.
 
@@ -94,11 +94,6 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
                     // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
                     // BcpIn to it using protocol version other than "100".
                     return 100;
-                } else if (NStr::Compare(driver_name, "ftds_odbc") == 0) {
-                    return 50;
-                } else if (NStr::Compare(driver_name, "ftds_dblib") == 0) {
-                    // ftds_dblib works with Sybase databases using protocol v42 only ...
-                    return 42;
                 }
             default:
                 break;
@@ -109,18 +104,18 @@ Uint4  CDBConnParamsBase::GetProtocolVersion(void) const
 }
 
 
-EEncoding 
+EEncoding
 CDBConnParamsBase::GetEncoding(void) const
 {
     if (m_Encoding == eEncoding_Unknown) {
-    	return eEncoding_ISO8859_1;
+        return eEncoding_ISO8859_1;
     }
 
     return m_Encoding;
 }
 
 
-string 
+string
 CDBConnParamsBase::GetServerName(void) const
 {
     return m_ServerName;
@@ -131,7 +126,7 @@ string CDBConnParamsBase::GetDatabaseName(void) const
     return m_DatabaseName;
 }
 
-string 
+string
 CDBConnParamsBase::GetUserName(void) const
 {
     if (m_UserName.empty()) {
@@ -141,7 +136,7 @@ CDBConnParamsBase::GetUserName(void) const
     return m_UserName;
 }
 
-string 
+string
 CDBConnParamsBase::GetPassword(void) const
 {
     if (m_Password.empty()) {
@@ -151,19 +146,19 @@ CDBConnParamsBase::GetPassword(void) const
     return m_Password;
 }
 
-CDBConnParams::EServerType 
+CDBConnParams::EServerType
 CDBConnParamsBase::GetServerType(void) const
 {
     return m_ServerType;
 }
 
-Uint4 
+Uint4
 CDBConnParamsBase::GetHost(void) const
 {
     return m_Host;
 }
 
-Uint2 
+Uint2
 CDBConnParamsBase::GetPort(void) const
 {
     if (!m_PortNumber) {
@@ -183,34 +178,34 @@ CDBConnParamsBase::GetPort(void) const
     return m_PortNumber;
 }
 
-CRef<IConnValidator> 
+CRef<IConnValidator>
 CDBConnParamsBase::GetConnValidator(void) const
 {
     return m_Validator;
 }
 
 
-string 
+string
 CDBConnParamsBase::GetParam(const string& key) const
 {
-	TUnclassifiedParamMap::const_iterator it = m_UnclassifiedParamMap.find(key);
+    TUnclassifiedParamMap::const_iterator it = m_UnclassifiedParamMap.find(key);
 
-	if (it != m_UnclassifiedParamMap.end()) {
-		return it->second;
-	}
+    if (it != m_UnclassifiedParamMap.end()) {
+        return it->second;
+    }
 
-	return string();
+    return string();
 }
 
 
-void 
+void
 CDBConnParamsBase::SetParam(const string& key, const string& value)
 {
-	string tmp_key = key;
+    string tmp_key = key;
 
-	// Use lower-case keys ...
-	NStr::ToLower(tmp_key);
-	m_UnclassifiedParamMap[tmp_key] = value;
+    // Use lower-case keys ...
+    NStr::ToLower(tmp_key);
+    m_UnclassifiedParamMap[tmp_key] = value;
 }
 
 
@@ -230,24 +225,24 @@ CDBDefaultConnParams::CDBDefaultConnParams(
     SetPassword(passwd);
 
     SetParam(
-		"pool_name", 
-		pool_name
-		);
+        "pool_name",
+        pool_name
+        );
 
     SetParam(
-		"secure_login", 
-		((mode & I_DriverContext::fPasswordEncrypted) != 0) ? "true" : "false"
-		);
+        "secure_login",
+        ((mode & I_DriverContext::fPasswordEncrypted) != 0) ? "true" : "false"
+        );
 
     SetParam(
-		"is_pooled", 
-		reusable ? "true" : "false"
-		);
+        "is_pooled",
+        reusable ? "true" : "false"
+        );
 
     SetParam(
-		"do_not_connect", 
-		(mode & I_DriverContext::fDoNotConnect) != 0 ? "true" : "false"
-		);
+        "do_not_connect",
+        (mode & I_DriverContext::fDoNotConnect) != 0 ? "true" : "false"
+        );
 }
 
 
@@ -471,8 +466,8 @@ void CDB_ODBC_ConnParams::x_MapPairToParam(const string& key, const string& valu
         // SetHost(host);
         SetPort(static_cast<Uint2>(NStr::StringToInt(port)));
     } else {
-		SetParam(key, value);
-	}
+        SetParam(key, value);
+    }
 }
 
 
@@ -661,7 +656,7 @@ CDBInterfacesFileConnParams::~CDBInterfacesFileConnParams(void)
 }
 
 
-CDBConnParams::EServerType 
+CDBConnParams::EServerType
 CDBInterfacesFileConnParams::GetServerType(void) const
 {
     const string server_name = GetThis().GetServerName();
@@ -720,7 +715,7 @@ CCPPToolkitConnParams::~CCPPToolkitConnParams(void)
 }
 
 
-CDBConnParams::EServerType 
+CDBConnParams::EServerType
 CCPPToolkitConnParams::GetServerType(void) const
 {
     const string server_name = GetThis().GetServerName();
@@ -748,16 +743,16 @@ CCPPToolkitConnParams::GetServerType(void) const
         || NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
-        ) 
+        )
     {
         return eSybaseSQLServer;
-    } else if ( NStr::CompareNocase(server_name, 0, 7, "LINK_OS") == 0 
+    } else if ( NStr::CompareNocase(server_name, 0, 7, "LINK_OS") == 0
         || NStr::CompareNocase(server_name, 0, 7, "MAIL_OS") == 0
         || NStr::CompareNocase(server_name, 0, 9, "PUBSEQ_OS") == 0
         || NStr::CompareNocase(server_name, 0, 7, "TEST_OS") == 0
         || NStr::CompareNocase(server_name, 0, 8, "TRACE_OS") == 0
         || NStr::CompareNocase(server_name, 0, 7, "TROS_OS") == 0
-        ) 
+        )
     {
         return eSybaseOpenServer;
     }

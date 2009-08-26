@@ -1090,7 +1090,6 @@ BOOST_AUTO_TEST_CASE(Test_NCBI_LS)
             "NCBI_LS"
             );
 
-        // Does not work with ftds_odbc ...
     //     {
     //         int sid = 0;
     //
@@ -1255,7 +1254,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBObjectConvert)
 
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
-{    
+{
     const Uint1 value_Uint1 = 1;
     const Int2 value_Int2 = 2;
     const Int4 value_Int4 = 4;
@@ -1974,7 +1973,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         }
 
         // text
-        if (GetArgs().GetDriverName() != ftds_dblib_driver)
         {
             sql = "select Convert(text, '12345')";
 
@@ -1998,7 +1996,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
         }
 
         // image
-        if (GetArgs().GetDriverName() != ftds_dblib_driver)
         {
             sql = "select Convert(image, '12345')";
 
@@ -2024,7 +2021,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
 
     // Second test ...
     {
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)) 
+        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2047,8 +2044,8 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
                 }
             }
         }
-        
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)) 
+
+        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2074,7 +2071,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvert)
             }
         }
 
-        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer)) 
+        if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2356,9 +2353,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         }
 
         // binary
-        if (GetArgs().GetDriverName() != ftds_odbc_driver
-            && GetArgs().GetDriverName() != odbc_driver
-            )
+        if (GetArgs().GetDriverName() != odbc_driver)
         {
             sql = "select Convert(binary(32), '12345')";
 
@@ -2377,9 +2372,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
                 while (rs->Fetch()) {
                     string string_value = ConvertSafe(*rs);
 
-                    if (GetArgs().GetDriverName() == dblib_driver
-                        || GetArgs().GetDriverName() == ftds_dblib_driver
-                        ) {
+                    if (GetArgs().GetDriverName() == dblib_driver) {
                         BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     } else {
                         BOOST_CHECK_EQUAL(string_value, string("12345"));
@@ -2389,9 +2382,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
         }
 
         // varbinary
-        if (GetArgs().GetDriverName() != ftds_odbc_driver
-            && GetArgs().GetDriverName() != odbc_driver
-            )
+        if (GetArgs().GetDriverName() != odbc_driver)
         {
             sql = "select Convert(varbinary(32), '12345')";
 
@@ -2465,9 +2456,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBResultConvertSafe)
 
     // Second test ...
     {
-        if (GetArgs().GetDriverName() != dblib_driver
-            && GetArgs().GetDriverName() != ftds_dblib_driver
-            )
+        if (GetArgs().GetDriverName() != dblib_driver)
         {
             sql = "select 1, 2.0, '3'";
 
@@ -2521,9 +2510,8 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe)
         DoTest_CDBCmdConvertSafe<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvertSafe<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvertSafe<Int4>("select 1, 2.0, '3'", 1);
-        if (!((GetArgs().GetDriverName() == dblib_driver || 
-                GetArgs().GetDriverName() == ftds_driver || 
-                GetArgs().GetDriverName() == ftds_dblib_driver || 
+        if (!((GetArgs().GetDriverName() == dblib_driver ||
+                GetArgs().GetDriverName() == ftds_driver ||
                 GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             )
@@ -2587,7 +2575,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe2)
     }
 
     // RPC
-    if (!(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer))
     {
         // pair ...
         {
@@ -2763,7 +2750,6 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert2)
 
 
     // RPC
-    if (!(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer))
     {
         // pair ...
         {
@@ -2921,9 +2907,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert3)
 {
     string sql;
 
-    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) &&
-        !(GetArgs().GetDriverName() == ftds_dblib_driver && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
-        )
+    if (!(GetArgs().GetDriverName() == dblib_driver && GetArgs().GetServerType() == CDBConnParams::eMSSqlServer))
     {
         // vector ...
         {
@@ -3004,10 +2988,9 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert)
         DoTest_CDBCmdConvert<Uint1>("select Convert(tinyint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvert<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvert<Int4>("select 1, 2.0, '3'", 1);
-        if (!((GetArgs().GetDriverName() == dblib_driver || 
-                GetArgs().GetDriverName() == ftds_driver || 
-                GetArgs().GetDriverName() == ftds_dblib_driver || 
-                GetArgs().GetDriverName() == ctlib_driver) 
+        if (!((GetArgs().GetDriverName() == dblib_driver ||
+                GetArgs().GetDriverName() == ftds_driver ||
+                GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             )
         {
@@ -3032,7 +3015,7 @@ void DoTest_CDBObjectConvertSql(const string& sql, const T& v)
 BOOST_AUTO_TEST_CASE(Test_CDBObjectConvertSql)
 {
     string sql;
-    
+
     sql = "SELECT null";
 
     DoTest_CDBObjectConvertSql<bool>(sql, bool());
@@ -3063,7 +3046,7 @@ void DoTest_CDBObjectConvertSqlSafe(const string& sql, const T& v)
 BOOST_AUTO_TEST_CASE(Test_CDBObjectConvertSqlSafe)
 {
     string sql;
-    
+
     sql = "SELECT null";
 
     DoTest_CDBObjectConvertSqlSafe<bool>(sql, bool());
@@ -3082,7 +3065,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBObjectConvertSqlSafe)
 /*
 template <typename FROM>
 inline
-const value_slice::CValueConvert<value_slice::SSafeCP, FROM> 
+const value_slice::CValueConvert<value_slice::SSafeCP, FROM>
 ConvertSafeSQL(const FROM& value)
 {
     return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
@@ -3090,7 +3073,7 @@ ConvertSafeSQL(const FROM& value)
 
 template <typename FROM>
 inline
-const value_slice::CValueConvert<value_slice::SSafeCP, FROM> 
+const value_slice::CValueConvert<value_slice::SSafeCP, FROM>
 ConvertSafeSQL(FROM& value)
 {
     return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);

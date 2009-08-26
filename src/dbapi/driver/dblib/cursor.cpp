@@ -78,7 +78,7 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CDBL_CursorCmd::OpenCursor()
 {
-    const bool connected_to_MSSQLServer = 
+    const bool connected_to_MSSQLServer =
         GetConnection().GetServerType() == CDBConnParams::eMSSqlServer;
 
     // We need to close it first
@@ -204,20 +204,6 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
     auto_ptr<I_ITDescriptor> d_guard(desc);
 
     if(desc) {
-#ifdef FTDS_IN_USE
-        // For some starnge reason this code does not work with Sybase dblib ...
-        while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
-//             if (r.get()) {
-//                 while (r->Fetch())
-//                     continue;
-//             }
-        }
-
-        // m_Res may not be deleted here. Checked.
-//         delete m_Res;
-//         m_Res = NULL;
-#endif
         return GetConnection().x_SendData(*desc, data, log_it);
     }
     return false;
@@ -322,7 +308,7 @@ bool CDBL_CursorCmd::CloseCursor()
 
     if (CursorIsDeclared()) {
         string buff;
-        const bool connected_to_MSSQLServer = 
+        const bool connected_to_MSSQLServer =
             GetConnection().GetServerType() == CDBConnParams::eMSSqlServer;
 
         if ( connected_to_MSSQLServer ) {
@@ -384,7 +370,7 @@ bool CDBL_CursorCmd::x_AssignParams()
 
         if (!param.IsNULL()) {
             switch (param.GetType()) {
-            case eDB_Bit: 
+            case eDB_Bit:
                 DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
                 break;
             case eDB_Int: {

@@ -101,7 +101,7 @@ CODBCContextRegistry::CODBCContextRegistry(void)
 {
 #if defined(NCBI_OS_MSWIN) && defined(NCBI_DLL_BUILD)
     try {
-        m_ExitProcessPatched = 
+        m_ExitProcessPatched =
             NWinHook::COnExitProcess::Instance().Add(CODBCContextRegistry::StaticClearAll);
     } catch (const NWinHook::CWinHookException&) {
         // Just in case ...
@@ -162,11 +162,11 @@ CODBCContextRegistry::ClearAll(void)
         CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
-			try {
-				// x_Close will unregister and remove handler from the registry.
-				m_Registry.back()->x_Close(false);
-			}
-			NCBI_CATCH_ALL_X(4, "Error closing context");
+            try {
+                // x_Close will unregister and remove handler from the registry.
+                m_Registry.back()->x_Close(false);
+            }
+            NCBI_CATCH_ALL_X(4, "Error closing context");
         }
     }
 }
@@ -477,10 +477,6 @@ void CODBCContext::x_ReportConError(SQLHDBC con)
 // Driver manager related functions
 //
 
-#if defined(FTDS_IN_USE)
-#	define CDbapiOdbcCFBase CFTDS_DbapiOdbcCFBase
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 class CDbapiOdbcCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CODBCContext>
 {
@@ -527,11 +523,7 @@ CDbapiOdbcCFBase::CreateInstance(
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
-#if defined(FTDS_IN_USE)
-        int tds_version = 70; // version 80 doesn't work with MS SQL 2005
-#else
         int tds_version = 80;
-#endif
 
         bool use_dsn = false;
 
@@ -579,19 +571,6 @@ CDbapiOdbcCFBase::CreateInstance(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-#ifdef FTDS_IN_USE
-
-class CDbapiOdbcCF_ftds64 : public CDbapiOdbcCFBase
-{
-public:
-    CDbapiOdbcCF_ftds64(void)
-    : CDbapiOdbcCFBase("ftds_odbc")
-    {
-    }
-};
-
-#else
-
 class CDbapiOdbcCF : public CDbapiOdbcCFBase
 {
 public:
@@ -601,29 +580,7 @@ public:
     }
 };
 
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
-#ifdef FTDS_IN_USE
-
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void
-NCBI_EntryPoint_xdbapi_ftds_odbc(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiOdbcCF_ftds64>::NCBI_EntryPointImpl( info_list, method );
-}
-
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void
-DBAPI_RegisterDriver_FTDS_ODBC(void)
-{
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_odbc );
-}
-
-#else
-
 NCBI_DBAPIDRIVER_ODBC_EXPORT
 void
 NCBI_EntryPoint_xdbapi_odbc(
@@ -639,8 +596,6 @@ DBAPI_RegisterDriver_ODBC(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
 }
-
-#endif
 
 
 END_NCBI_SCOPE

@@ -65,41 +65,6 @@
 #    define CDBLExceptions          CMSDBLExceptions
 #endif // MS_DBLIB_IN_USE
 
-#ifdef FTDS_IN_USE
-#    include <cspublic.h>
-
-#    define CDBLibContext           CTDSContext
-#    define CDBL_Connection         CTDS_Connection
-#    define CDBL_Cmd                CTDS_Cmd
-#    define CDBL_LangCmd            CTDS_LangCmd
-#    define CDBL_RPCCmd             CTDS_RPCCmd
-#    define CDBL_CursorCmd          CTDS_CursorCmd
-#    define CDBL_BCPInCmd           CTDS_BCPInCmd
-#    define CDBL_SendDataCmd        CTDS_SendDataCmd
-#    define CDBL_Result             CTDS_Result
-#    define CDBL_ResultBase         CTDS_ResultBase
-#    define CDBL_RowResult          CTDS_RowResult
-#    define CDBL_ParamResult        CTDS_ParamResult
-#    define CDBL_ComputeResult      CTDS_ComputeResult
-#    define CDBL_StatusResult       CTDS_StatusResult
-#    define CDBL_CursorResult       CTDS_CursorResult
-#    define CDBL_BlobResult         CTDS_BlobResult
-#    define CDBL_ITDescriptor       CTDS_ITDescriptor
-#    define SDBL_ColDescr           STDS_ColDescr
-#    define CDblibContextRegistry   CTDSContextRegistry
-#    define CDBLExceptions          CTDSExceptions
-
-#    define DBLIB_dberr_handler     TDS_dberr_handler
-#    define DBLIB_dbmsg_handler     TDS_dbmsg_handler
-
-#    define DBLIB_SetApplicationName    TDS_SetApplicationName
-#    define DBLIB_SetHostName           TDS_SetHostName
-#    define DBLIB_SetPacketSize         TDS_SetPacketSize
-#    define DBLIB_SetMaxNofConns        TDS_SetMaxNofConns
-
-#endif // FTDS_IN_USE
-
-
 #ifdef MS_DBLIB_IN_USE
     #include <windows.h>
 
@@ -128,11 +93,7 @@ BEGIN_NCBI_SCOPE
 #   define DBCOLINFO    DBCOL
 #endif
 
-#ifdef FTDS_IN_USE
-#    define DEFAULT_TDS_VERSION DBVERSION_UNKNOWN
-#else
-#    define DEFAULT_TDS_VERSION DBVERSION_46
-#endif // FTDS_IN_USE
+#define DEFAULT_TDS_VERSION DBVERSION_46
 
 class CDBLibContext;
 class CDBL_Connection;
@@ -150,10 +111,6 @@ class CDBL_BlobResult;
 
 
 const unsigned int kDBLibMaxNameLen = 128 + 4;
-
-#ifdef FTDS_IN_USE
-const unsigned int kTDSMaxNameLen = kDBLibMaxNameLen;
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -321,7 +278,7 @@ private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     RETCODE x_Results(DBPROCESS* pLink);
-    
+
     CDBLibContext& GetDBLibCtx(void) const
     {
         _ASSERT(m_DBLibCtx);
@@ -345,11 +302,6 @@ private:
 
     void CheckFunctCall(void);
     void CheckFunctCall(const string& extra_msg);
-
-#ifdef FTDS_IN_USE
-    /// Function name keept the same as with ftds.
-    void TDS_SetTimeout(void);
-#endif
 
     string GetDbgInfo(void) const
     {
@@ -504,12 +456,6 @@ private:
 
 private:
     bool x_AssignParams(char* param_buff);
-
-#ifdef FTDS_IN_USE
-    bool x_AddParamValue(string& cmd, const CDB_Object& param);
-    bool x_AssignOutputParams(void);
-    bool x_AssignParams(void);
-#endif
 
     impl::CResult*   m_Res;
     unsigned int     m_Status;
@@ -681,11 +627,11 @@ protected:
     }
     EDB_Type GetDataType(int n);
     CDB_Object* GetItemInternal(
-		I_Result::EGetItem policy, 
-		int item_no,
-		SDBL_ColDescr* fmt,
-		CDB_Object* item_buff
-		);
+        I_Result::EGetItem policy,
+        int item_no,
+        SDBL_ColDescr* fmt,
+        CDB_Object* item_buff
+        );
     EDB_Type RetGetDataType(int n);
     CDB_Object* RetGetItem(int item_no,
                            SDBL_ColDescr* fmt,
@@ -717,8 +663,8 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ResultBase :
 {
 protected:
     CDBL_ResultBase(
-            CDBL_Connection& conn, 
-            DBPROCESS* cmd, 
+            CDBL_Connection& conn,
+            DBPROCESS* cmd,
             unsigned int* res_status = NULL
             );
     virtual ~CDBL_ResultBase(void);
@@ -728,7 +674,7 @@ protected:
     virtual int             GetColumnNum(void) const;
     virtual bool            SkipItem(void);
 
-protected: 
+protected:
     int            m_CurrItem;
     size_t         m_Offset;
     int            m_CmdNum;
@@ -759,7 +705,7 @@ protected:
     virtual EDB_ResType     ResultType(void) const;
     virtual bool            Fetch(void);
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -788,7 +734,7 @@ protected:
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -825,7 +771,7 @@ protected:
     virtual EDB_ResType     ResultType(void) const;
     virtual bool            Fetch(void);
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -857,7 +803,7 @@ protected:
     virtual bool            Fetch(void);
     virtual int             CurrentItemNo(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -889,7 +835,7 @@ protected:
     virtual int             CurrentItemNo(void) const ;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -922,7 +868,7 @@ protected:
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -962,9 +908,6 @@ private:
 #if defined(MS_DBLIB_IN_USE)
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd01
 #    define CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM CDBL_ITDESCRIPTOR_TYPE_MAGNUM
-#elif defined(FTDS_IN_USE)
-#    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xf00
-#    define CTDS_ITDESCRIPTOR_TYPE_MAGNUM CDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #else
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
 #endif
@@ -993,9 +936,7 @@ public:
     virtual int DescriptorType(void) const;
 
 private:
-#ifndef FTDS_IN_USE
     bool x_MakeObjName(DBCOLINFO* col_info);
-#endif
 
 protected:
     // data

@@ -98,10 +98,6 @@ bool CDBL_LangCmd::Cancel()
 {
     if (WasSent()) {
         if ( GetResultSet() ) {
-#if 1 && defined(FTDS_IN_USE)
-            while (GetResultSet()->Fetch())
-               continue;
-#endif
             ClearResultSet();
         }
         SetWasSent(false);
@@ -122,13 +118,6 @@ CDB_Result* CDBL_LangCmd::Result()
         if(m_RowCount < 0) {
             m_RowCount = DBCOUNT(GetCmd());
         }
-
-#if 1 && defined(FTDS_IN_USE)
-        // This Fetch is required by FreeTDS v063
-        // Useful stuff
-        while (GetResultSet()->Fetch())
-            continue;
-#endif
 
         ClearResultSet();
     }
@@ -152,7 +141,6 @@ CDB_Result* CDBL_LangCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
-#if !defined(FTDS_LOGIC)
         if ((m_Status & 0x20) != 0) { // check for return parameters from exec
             m_Status ^= 0x20;
             int n = Check(dbnumrets(GetCmd()));
@@ -174,15 +162,12 @@ CDB_Result* CDBL_LangCmd::Result()
                 return Create_Result(*GetResultSet());
             }
         }
-#endif
 
         RETCODE rc = Check(dbresults(GetCmd()));
 
         switch (rc) {
         case SUCCEED:
-#if !defined(FTDS_LOGIC)
             m_Status |= 0x60;
-#endif
             if (DBCMDROW(GetCmd()) == SUCCEED) { // we could get rows in result
 
 // This optimization is currently unavailable for MS dblib...
@@ -214,32 +199,6 @@ CDB_Result* CDBL_LangCmd::Result()
         }
         break;
     }
-
-#if defined(FTDS_LOGIC)
-    // we've done with the row results at this point
-    // let's look at return parameters and ret status
-    if (m_Status == 2) {
-        m_Status = 4;
-        int n = Check(dbnumrets(GetCmd()));
-        if (n > 0) {
-            SetResultSet( new CTDS_ParamResult(GetConnection(), GetCmd(), n) );
-            m_RowCount = 1;
-
-            return Create_Result(*GetResultSet());
-        }
-    }
-
-    if (m_Status == 4) {
-        m_Status = 6;
-        DBBOOL has_return_status = Check(dbhasretstat(GetCmd()));
-        if (has_return_status) {
-            SetResultSet( new CTDS_StatusResult(GetConnection(), GetCmd()) );
-            m_RowCount = 1;
-
-            return Create_Result(*GetResultSet());
-        }
-    }
-#endif
 
     SetWasSent(false);
     return 0;
@@ -286,7 +245,7 @@ bool CDBL_LangCmd::x_AssignParams()
             return false;
 
         switch (param.GetType()) {
-        case eDB_Bit: 
+        case eDB_Bit:
             DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
             break;
         case eDB_Int:

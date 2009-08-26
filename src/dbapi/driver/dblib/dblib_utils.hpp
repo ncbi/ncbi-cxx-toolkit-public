@@ -39,10 +39,6 @@
 #    define GetDBLExceptionStorage  GetMSDBLExceptionStorage
 #endif // MS_DBLIB_IN_USE
 
-#ifdef FTDS_IN_USE
-#    define GetDBLExceptionStorage  GetTDSExceptionStorage
-#endif // FTDS_IN_USE
-
 BEGIN_NCBI_SCOPE
 
 
@@ -55,28 +51,6 @@ extern "C"
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void
 NCBI_EntryPoint_xdbapi_msdblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
-#elif defined(FTDS_IN_USE)
-
-// Uncomment a line below if you want to simulate a previous ftds driver logic.
-// #define FTDS_LOGIC
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_ftds_dblib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 

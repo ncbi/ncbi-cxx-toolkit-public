@@ -1,3 +1,0 @@
-[Linker]
-AdditionalDependencies= odbc_ftds64.lib tds_ftds64.lib
-AdditionalLibraryDirectories=$(OutDir)/../../lib/$(ConfigurationName)

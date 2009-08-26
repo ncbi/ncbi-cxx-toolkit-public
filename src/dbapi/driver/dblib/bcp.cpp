@@ -85,7 +85,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
-            case eDB_Bit: 
+            case eDB_Bit:
                 DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
                 break;
             case eDB_Int: {
@@ -111,7 +111,6 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-#ifndef FTDS_IN_USE
                 DBNUMERIC* v = reinterpret_cast<DBNUMERIC*> (pb);
                 Int8 v8 = val.Value();
                 v->precision= 18;
@@ -121,10 +120,6 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 r = Check(bcp_bind(GetCmd(), (BYTE*) v, 0,
                              val.IsNULL() ? 0 : -1, 0, 0, SYBNUMERIC, i + 1));
                 pb = (void*) (v + 1);
-#else
-                r = Check(bcp_bind(GetCmd(), (BYTE*) val.BindVal(), 0,
-                             val.IsNULL() ? 0 : -1, 0, 0, SYBINT8, i + 1));
-#endif
             }
             break;
             case eDB_Char: {
@@ -301,7 +296,6 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_BigInt: {
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-#ifndef FTDS_IN_USE
                 DBNUMERIC* v = (DBNUMERIC*) pb;
                 v->precision= 18;
                 v->scale= 0;
@@ -313,12 +307,6 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                     Check(bcp_collen(GetCmd(),  val.IsNULL() ? 0 : -1, i + 1))
                     == SUCCEED ? SUCCEED : FAIL;
                 pb = (void*) (v + 1);
-#else
-                r = Check(bcp_colptr(GetCmd(), (BYTE*) val.BindVal(), i + 1))
-                    == SUCCEED &&
-                    Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
-                    == SUCCEED ? SUCCEED : FAIL;
-#endif
             }
             break;
             case eDB_Char: {

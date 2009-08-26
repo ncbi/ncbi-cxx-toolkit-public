@@ -60,13 +60,13 @@ CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection& conn,
 }
 
 
-CDBParams& 
+CDBParams&
 CDBL_RPCCmd::GetBindParams(void)
 {
     if (m_InParams.get() == NULL) {
         m_InParams.reset(new impl::CRowInfo_SP_SQL_Server(
-                    GetQuery(), 
-                    GetConnImpl(), 
+                    GetQuery(),
+                    GetConnImpl(),
                     GetBindParamsImpl()
                     )
                 );
@@ -80,13 +80,6 @@ bool CDBL_RPCCmd::Send()
 {
     if (WasSent()) {
         Cancel();
-    } else {
-#if 1 && defined(FTDS_IN_USE)
-        if ( GetResultSet() ) {
-            while (GetResultSet()->Fetch())
-                continue;
-        }
-#endif
     }
 
     SetHasFailed(false);
@@ -117,11 +110,6 @@ bool CDBL_RPCCmd::Cancel()
 {
     if (WasSent()) {
         if (GetResultSet()) {
-#if 1 && defined(FTDS_IN_USE)
-            while (GetResultSet()->Fetch())
-                continue;
-#endif
-
             ClearResultSet();
         }
         SetWasSent(false);
@@ -138,11 +126,6 @@ CDB_Result* CDBL_RPCCmd::Result()
         if(m_RowCount < 0) {
             m_RowCount = DBCOUNT(GetCmd());
         }
-
-#if 1 && defined(FTDS_IN_USE)
-        while (GetResultSet()->Fetch())
-            continue;
-#endif
 
         ClearResultSet();
     }
@@ -402,24 +385,6 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
     return true;
 }
 
-
-#ifdef FTDS_IN_USE
-bool CDBL_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
-{
-    return false;
-}
-
-bool CDBL_RPCCmd::x_AssignOutputParams(void)
-{
-    return false;
-}
-
-bool CDBL_RPCCmd::x_AssignParams(void)
-{
-    return false;
-}
-
-#endif
 
 END_NCBI_SCOPE
 

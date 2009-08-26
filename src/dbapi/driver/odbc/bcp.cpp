@@ -35,11 +35,7 @@
 #include <dbapi/error_codes.hpp>
 #include <string.h>
 
-#ifdef FTDS_IN_USE
-//    #include <sybdb.h>
-#else
-    #include <odbcss.h>
-#endif
+#include <odbcss.h>
 
 #include "odbc_utils.hpp"
 
@@ -153,8 +149,8 @@ CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
     case eDB_Image:
         bcp_datatype = SQLIMAGE;
         break;
-	default:
-		break;
+    default:
+        break;
     }
 
     return bcp_datatype;
@@ -258,7 +254,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             }
         }
 
-	GetBindParamsImpl().LockBinding();
+    GetBindParamsImpl().LockBinding();
         m_WasBound = true;
     }
 
@@ -270,7 +266,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             CDB_Object& param = *GetBindParamsImpl().GetParam(i);
 
             switch ( param.GetType() ) {
-            case eDB_Bit: 
+            case eDB_Bit:
                 DATABASE_DRIVER_ERROR("Bit data type is not supported", 10005);
                 break;
             case eDB_Int: {

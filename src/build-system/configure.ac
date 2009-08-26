@@ -1382,7 +1382,7 @@ fi
 case "$host_os" in
     linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath'\$\$ORIGIN'" ;;
     * )               RUNPATH_ORIGIN="-DNCBI_RPO_SUFFIX_EATER=" ;;
-esac  
+esac
 
 case "$compiler:$compiler_version:$with_bin_release" in
   GCC:*:yes )
@@ -3719,12 +3719,8 @@ if test "$with_ftds" != "no" ; then
          try_local=no
          ;;
    esac
-   : ${FTDS_DBLIBS:="-lsybdb -ltds"}
    : ${FTDS_CTLIBS:="-lct -ltds"}
-   : ${FTDS_ODBCLIBS:="-ltdsodbc -ltds"}
-   NCBI_RPATHIFY(FTDS_DBLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_DBLIBS)
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
-   NCBI_RPATHIFY(FTDS_ODBCLIBS, $FTDS_PATH/lib/odbc, [ ]$FTDS_ODBCLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(64)
    if test -n "$freetds" ; then
@@ -3737,7 +3733,7 @@ if test "$with_ftds" != "no" ; then
       fi
       AC_MSG_NOTICE([Using bundled FreeTDS (version $with_ftds) from $FTDS_PATH])
    else
-      FTDS_LIBS="$FTDS_DBLIBS" # Switch to CTLIBS?
+      FTDS_LIBS="$FTDS_CTLIBS"
       AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
          [CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
           LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
@@ -3770,12 +3766,6 @@ if test "$with_ftds" = "no" ; then
    FTDS64_CTLIB_INCLUDE=
    FTDS64_CTLIB_LIBS=
    FTDS64_CTLIB_LIB=
-   FTDS64_DBLIB_INCLUDE=
-   FTDS64_DBLIB_LIBS=
-   FTDS64_DBLIB_LIB=
-   FTDS64_ODBC_INCLUDE=
-   FTDS64_ODBC_LIBS=
-   FTDS64_ODBC_LIB=
    freetds=
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
@@ -3788,12 +3778,6 @@ AC_SUBST(FTDS64_LIB)
 AC_SUBST(FTDS64_CTLIB_INCLUDE)
 AC_SUBST(FTDS64_CTLIB_LIBS)
 AC_SUBST(FTDS64_CTLIB_LIB)
-AC_SUBST(FTDS64_DBLIB_INCLUDE)
-AC_SUBST(FTDS64_DBLIB_LIBS)
-AC_SUBST(FTDS64_DBLIB_LIB)
-AC_SUBST(FTDS64_ODBC_INCLUDE)
-AC_SUBST(FTDS64_ODBC_LIBS)
-AC_SUBST(FTDS64_ODBC_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
@@ -4098,7 +4082,7 @@ if test "$with_cppunit" != "no" ; then
             [[
                CPPUNIT_NS::TestResult controller;
                CPPUNIT_NS::TestResultCollector result;
-               controller.addListener( &result );        
+               controller.addListener( &result );
             ]])],
             [ncbi_cv_lib_cppunit=yes], [ncbi_cv_lib_cppunit=no])
        else
@@ -4215,7 +4199,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          test "$with_debug" = "yes"  &&  BOOST_D=-d
          test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
          found=no
-         for bvers in "-$ncbi_cv_lib_boost_version" ''; do         
+         for bvers in "-$ncbi_cv_lib_boost_version" ''; do
             for b64 in $BOOST_64 ''; do
                for bmt in "$BOOST_MT" '-mt' ''; do
                   for bd in "$BOOST_D" '' '-d'; do
@@ -4302,12 +4286,12 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
    BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
    BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
-      
+
    AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$RT_LIBS $orig_LIBS"
       found=
-      for mode in included external; do 
+      for mode in included external; do
         if test "$mode" = external; then
           CPPFLAGS="-DNCBI_BOOST_NOT_INCLUDED $CPPFLAGS"
           LIBS="$BOOST_LIBPATH $BOOST_TEST_UTF_LIBS $LIBS"
@@ -4413,7 +4397,7 @@ if test "$with_ncbi_c" != "no" ; then
    if test "$ncbi_compiler" = ICC -a -d "$NCBI_C_PATH/ncbi_icc"; then
       NCBI_C_PATH=$NCBI_C_PATH/ncbi_icc
    fi
-   
+
    NCBI_C_INCLUDE="-I$NCBI_C_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
      NCBI_C_LIBPATH="$NCBI_C_PATH/lib${bit64_sfx}"
@@ -5112,7 +5096,7 @@ if test "$with_orbacus" != no; then
        linux*:no) LIBJTC="-lJTC -pthread" ;;
        *)         LIBJTC="-lJTC"          ;;
    esac
-   
+
    case "$with_mt:$ORBACUS_LIBPATH" in
       yes:* | *:-L*MT/lib* )
          LIBOB="-lOB $LIBJTC"

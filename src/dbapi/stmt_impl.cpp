@@ -260,7 +260,7 @@ void CStatement::ExecuteLast()
     m_cmd->Send();
 }
 
-const IResultSetMetaData& 
+const IResultSetMetaData&
 CStatement::GetParamsMetaData(void)
 {
     return m_InParams;
@@ -293,7 +293,7 @@ CNcbiOstream& CStatement::GetBlobOStream(I_ITDescriptor &d, size_t blob_size,
     return *m_ostr;
 }
 
-CDB_Result* CStatement::GetCDB_Result() 
+CDB_Result* CStatement::GetCDB_Result()
 {
     return m_irs == 0 ? 0 : m_irs->GetCDB_Result();
 }
@@ -347,8 +347,7 @@ void CStatement::PurgeResults()
         if (HasRows()) {
             auto_ptr<IResultSet> rs( GetResultSet() );
             if (rs.get()) {
-                // The fetch below is required by ftds_odbc driver in
-                // order to retrieve number of rows.
+                // Is it necessary???
                 while (rs->Next()) {
                     ;
                 }

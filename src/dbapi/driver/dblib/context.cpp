@@ -108,7 +108,7 @@ m_ExitProcessPatched(false)
 #if defined(NCBI_OS_MSWIN) && defined(NCBI_DLL_BUILD)
 
     try {
-        m_ExitProcessPatched = 
+        m_ExitProcessPatched =
             NWinHook::COnExitProcess::Instance().Add(CDblibContextRegistry::StaticClearAll);
     } catch (const NWinHook::CWinHookException&) {
         // Just in case ...
@@ -505,24 +505,6 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         }
         return INT_TIMEOUT;
 
-#ifdef FTDS_IN_USE
-    case 50000:
-        {
-            CDB_TruncateEx ex(GetBlankCompileInfo(),
-                              0,
-                              message,
-                              dberr);
-
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
-
-            return INT_CANCEL;
-        }
-#endif
-
     default:
         if(dberr == 1205) {
             CDB_DeadlockEx ex(GetBlankCompileInfo(),
@@ -767,168 +749,6 @@ DBAPI_RegisterDriver_MSDBLIB(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
 }
-
-#elif defined(FTDS_IN_USE)
-
-class CDbapiFtdsCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
-{
-public:
-    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
-
-public:
-    CDbapiFtdsCFBase(const string& driver_name);
-    ~CDbapiFtdsCFBase(void);
-
-public:
-    virtual TInterface*
-    CreateInstance(
-        const string& driver  = kEmptyStr,
-        CVersionInfo version =
-        NCBI_INTERFACE_VERSION(I_DriverContext),
-        const TPluginManagerParamTree* params = 0) const;
-
-};
-
-CDbapiFtdsCFBase::CDbapiFtdsCFBase(const string& driver_name)
-    : TParent(driver_name, 1)
-{
-    return ;
-}
-
-CDbapiFtdsCFBase::~CDbapiFtdsCFBase(void)
-{
-    return ;
-}
-
-CDbapiFtdsCFBase::TInterface*
-CDbapiFtdsCFBase::CreateInstance(
-    const string& driver,
-    CVersionInfo version,
-    const TPluginManagerParamTree* params) const
-{
-    TImplementation* drv = 0;
-    if ( !driver.empty() && driver != m_DriverName ) {
-        return 0;
-    }
-    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
-                        != CVersionInfo::eNonCompatible) {
-        // Mandatory parameters ....
-        DBINT db_version = DBVERSION_UNKNOWN;
-
-        // Optional parameters ...
-        CS_INT page_size = 0;
-
-        string client_charset;
-
-        if ( params != NULL ) {
-            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
-            typedef TPluginManagerParamTree::TValueType   TValue;
-
-            // Get parameters ...
-            TCIter cit = params->SubNodeBegin();
-            TCIter cend = params->SubNodeEnd();
-
-            for (; cit != cend; ++cit) {
-                const TValue& v = (*cit)->GetValue();
-
-                if ( v.id == "reuse_context" ) {
-                    bool reuse_context = (v.value != "false");
-                    CFastMutexGuard mg(s_CtxMutex);
-
-                    if ( reuse_context && g_pContext ) {
-                        return g_pContext;
-                    }
-                } else if ( v.id == "version" ) {
-                    int value = NStr::StringToInt( v.value );
-
-                    switch ( value ) {
-                    case 42 :
-                        db_version = DBVERSION_42;
-                        break;
-                    case 46 :
-                        db_version = DBVERSION_46;
-                        break;
-                    case 70 :
-                        db_version = DBVERSION_70;
-                        break;
-                    case 80 :
-                        db_version = DBVERSION_80;
-                        break;
-                    case 100 :
-                        db_version = DBVERSION_100;
-                        break;
-                    }
-                } else if ( v.id == "packet" ) {
-                    page_size = NStr::StringToInt( v.value );
-                } else if ( v.id == "client_charset" ) {
-                    client_charset = v.value;
-                }
-            }
-        }
-
-        // Create a driver ...
-        drv = new CDBLibContext( db_version );
-
-        // Set parameters ...
-        if ( page_size ) {
-            drv->DBLIB_SetPacketSize( page_size );
-        }
-
-        // Set client's charset ...
-        if ( !client_charset.empty() ) {
-            drv->SetClientCharset( client_charset.c_str() );
-        }
-    }
-    return drv;
-}
-
-class CDbapiFtdsCF : public CDbapiFtdsCFBase
-{
-public:
-    CDbapiFtdsCF(void)
-    : CDbapiFtdsCFBase("ftds")
-    {
-    }
-};
-
-class CDbapiFtdsCF64 : public CDbapiFtdsCFBase
-{
-public:
-    CDbapiFtdsCF64(void)
-    : CDbapiFtdsCFBase("ftds_dblib")
-    {
-    }
-};
-
-///////////////////////////////////////////////////////////////////////////////
-void
-NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiFtdsCF>::NCBI_EntryPointImpl( info_list, method );
-}
-
-void
-NCBI_EntryPoint_xdbapi_ftds_dblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiFtdsCF64>::NCBI_EntryPointImpl( info_list, method );
-}
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-DBAPI_RegisterDriver_FTDS(void)
-{
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_dblib );
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// NOTE:  we define a generic ("ftds") driver name here -- in order to
-//        provide a default, but also to prevent from accidental linking
-//        of more than one version of FreeTDS driver to the same application
 
 #else
 

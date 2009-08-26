@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             GetArgs().PutMsgDisabled("Check sequent call of ExecuteQuery");
         }
 
-        // Select NULL values and empty strings ... 
+        // Select NULL values and empty strings ...
         {
             auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
             auto_ptr<IResultSet> rs;
@@ -254,10 +254,10 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
             sql += table_name;
 
             auto_stmt->SendSql(sql);
-            while( auto_stmt->HasMoreResults() ) { 
-                if( auto_stmt->HasRows() ) { 
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
-                    while( rs->Next() ) { 
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    while( rs->Next() ) {
                         ;
                     }
                 }
@@ -1362,25 +1362,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK(md);
 
                     EDB_Type curr_type = md->GetType(1);
-                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                        ) {
-                        BOOST_CHECK_EQUAL(curr_type, eDB_Double);
-                    } else {
-                        BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
-                    }
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
 
-                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                        ) {
-                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
-                    } else if (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer
-                        ) {
-                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
-                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
-                        GetArgs().GetDriverName() == odbc_driver
-                        ) {
+                    if (GetArgs().GetDriverName() == odbc_driver) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 38);
                     } else {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 35);
@@ -1397,25 +1381,9 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                     BOOST_CHECK(md);
 
                     EDB_Type curr_type = md->GetType(1);
-                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                        ) {
-                        BOOST_CHECK_EQUAL(curr_type, eDB_Double);
-                    } else {
-                        BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
-                    }
+                    BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
 
-                    if (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
-                        ) {
-                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8);
-                    } else if (GetArgs().GetDriverName() == ftds_dblib_driver && 
-                            GetArgs().GetServerType() == CDBConnParams::eMSSqlServer
-                        ) {
-                        BOOST_CHECK_EQUAL(md->GetMaxSize(1), 17);
-                    } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
-                        GetArgs().GetDriverName() == odbc_driver
-                        ) {
+                    if (GetArgs().GetDriverName() == odbc_driver) {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 18);
                     } else {
                         BOOST_CHECK_EQUAL(md->GetMaxSize(1), 35);
@@ -1553,11 +1521,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver) {
-                    BOOST_CHECK_EQUAL(curr_type, eDB_SmallDateTime);
-                } else {
-                    BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
-                }
+                BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
 
                 if (GetArgs().GetDriverName() == odbc_driver) {
                     BOOST_CHECK_EQUAL(md->GetMaxSize(1), 23);
@@ -1576,9 +1540,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver ||
-                    GetArgs().GetDriverName() == odbc_driver
-                    ) {
+                if (GetArgs().GetDriverName() == odbc_driver) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Char);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
@@ -1590,8 +1552,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
             }
 
             // long char
-            // ftds_dblib_driver will crash in DumpResults().
-            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
+            {
                 rs = auto_stmt->ExecuteQuery("select convert(char(8000), '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
@@ -1600,21 +1561,16 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 EDB_Type curr_type = md->GetType(1);
                 if (GetArgs().GetDriverName() == ftds_driver ||
                     GetArgs().GetDriverName() == dblib_driver ||
-                    GetArgs().GetDriverName() == ftds_dblib_driver ||
                     GetArgs().GetDriverName() == ctlib_driver
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
-                } else if (GetArgs().GetDriverName() == ftds_odbc_driver ||
-                    GetArgs().GetDriverName() == odbc_driver
-                    ) {
+                } else if (GetArgs().GetDriverName() == odbc_driver) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_LongChar);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Char);
                 }
 
-                if (GetArgs().GetDriverName() == dblib_driver ||
-                    GetArgs().GetDriverName() == ftds_dblib_driver
-                    ) {
+                if (GetArgs().GetDriverName() == dblib_driver) {
                     BOOST_CHECK_EQUAL(md->GetMaxSize(1), 255);
                 } else {
                     // BOOST_CHECK_EQUAL(md->GetMaxSize(1), 8000);
@@ -1645,9 +1601,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver ||
-                    GetArgs().GetDriverName() == odbc_driver
-                    ) {
+                if (GetArgs().GetDriverName() == odbc_driver) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Char);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
@@ -1679,9 +1633,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_odbc_driver ||
-                    GetArgs().GetDriverName() == odbc_driver
-                    ) {
+                if (GetArgs().GetDriverName() == odbc_driver) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
                 } else {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
@@ -1692,26 +1644,23 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
             }
 
             // long binary
-            // ftds_dblib_driver will crash in DumpResults.
-            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
+            {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(8000), '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
                 EDB_Type curr_type = md->GetType(1);
-                if ((GetArgs().GetDriverName() == ftds_driver && 
+                if ((GetArgs().GetDriverName() == ftds_driver &&
                         GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) ||
                     GetArgs().GetDriverName() == dblib_driver ||
-                    GetArgs().GetDriverName() == ftds_dblib_driver ||
-                    (GetArgs().GetDriverName() == ctlib_driver && 
+                    (GetArgs().GetDriverName() == ctlib_driver &&
                         NStr::CompareNocase(GetSybaseClientVersion(), 0, 4, "12.0") == 0)
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
-                } else if ((GetArgs().GetDriverName() == ftds_driver && 
+                } else if ((GetArgs().GetDriverName() == ftds_driver &&
                         GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) ||
                     GetArgs().GetDriverName() == ctlib_driver ||
-                    GetArgs().GetDriverName() == ftds_odbc_driver ||
                     GetArgs().GetDriverName() == odbc_driver
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_LongBinary);
@@ -1720,8 +1669,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 }
 
                 if (GetArgs().GetDriverName() == dblib_driver ||
-                    GetArgs().GetDriverName() == ftds_dblib_driver ||
-                    (GetArgs().GetDriverName() == ctlib_driver && 
+                    (GetArgs().GetDriverName() == ctlib_driver &&
                         NStr::CompareNocase(GetSybaseClientVersion(), 0, 4, "12.0") == 0)
                     ) {
                     BOOST_CHECK_EQUAL(md->GetMaxSize(1), 255);
@@ -1767,8 +1715,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
             }
 
             // text
-            // ftds_dblib_driver will crash in DumpResults.
-            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
+            {
                 rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
@@ -1782,8 +1729,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
             }
 
             // image
-            // ftds_dblib_driver will crash in DumpResults.
-            if (GetArgs().GetDriverName() != ftds_dblib_driver) {
+            {
                 rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
@@ -1934,13 +1880,13 @@ BOOST_AUTO_TEST_CASE(Test_StmtMetaData)
         //////////////////////////////////////////////////////////////////////
         {
             if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
-		auto_stmt.reset(
-			GetConnection().GetCallableStatement("sybsystemprocs..sp_stored_procedures")
-			);
+        auto_stmt.reset(
+            GetConnection().GetCallableStatement("sybsystemprocs..sp_stored_procedures")
+            );
             } else {
-		auto_stmt.reset(
-			GetConnection().GetCallableStatement("master..sp_stored_procedures")
-			);
+        auto_stmt.reset(
+            GetConnection().GetCallableStatement("master..sp_stored_procedures")
+            );
             }
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -1956,13 +1902,13 @@ BOOST_AUTO_TEST_CASE(Test_StmtMetaData)
         //////////////////////////////////////////////////////////////////////
         {
             if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
-		auto_stmt.reset(
-			GetConnection().GetCallableStatement("sybsystemprocs.dbo.sp_stored_procedures")
-			);
+        auto_stmt.reset(
+            GetConnection().GetCallableStatement("sybsystemprocs.dbo.sp_stored_procedures")
+            );
             } else {
-		auto_stmt.reset(
-			GetConnection().GetCallableStatement("master.dbo.sp_stored_procedures")
-			);
+        auto_stmt.reset(
+            GetConnection().GetCallableStatement("master.dbo.sp_stored_procedures")
+            );
             }
 
             const IResultSetMetaData& mi = auto_stmt->GetParamsMetaData();
@@ -2162,7 +2108,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 
 
         // Special case: empty strings and strings with spaces.
-        if (GetArgs().GetDriverName() != ftds_odbc_driver) {
+        {
             auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
 
             // Initialize data (strings are EMPTY) ...
@@ -2328,8 +2274,6 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 
                 DumpResults(auto_stmt.get());
             }
-        } else {
-            GetArgs().PutMsgDisabled("Testing of NULL-value + empty string is disabled.");
         }
     }
     catch(const CException& ex) {

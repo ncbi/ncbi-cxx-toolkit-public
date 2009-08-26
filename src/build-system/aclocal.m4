@@ -373,23 +373,11 @@ AC_DEFUN(NCBI_LOCAL_FTDS,
          FTDS$1[_CTLIB_LIB]="ct_ftds$1${STATIC} tds_ftds$1${STATIC}"
          FTDS$1[_CTLIB_LIBS]='$(ICONV_LIBS)'
          FTDS$1[_CTLIB_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
-         FTDS$1[_DBLIB_LIB]="sybdb_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_DBLIB_LIBS]='$(ICONV_LIBS)'
-         FTDS$1[_DBLIB_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
-         FTDS$1[_ODBC_LIB]="odbc_ftds$1${STATIC} tds_ftds$1${STATIC}"
-         FTDS$1[_ODBC_LIBS]='$(ICONV_LIBS)'
-         FTDS$1[_ODBC_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
          FTDS$1[_CTLIB_LIB]=
          FTDS$1[_CTLIB_LIBS]=$FTDS_CTLIBS
          FTDS$1[_CTLIB_INCLUDE]=$FTDS_INCLUDE
-         FTDS$1[_DBLIB_LIB]=
-         FTDS$1[_DBLIB_LIBS]=$FTDS_DBLIBS
-         FTDS$1[_DBLIB_INCLUDE]=$FTDS_INCLUDE
-         FTDS$1[_ODBC_LIB]=
-         FTDS$1[_ODBC_LIBS]=$FTDS_ODBCLIBS
-         FTDS$1[_ODBC_INCLUDE]=$FTDS_INCLUDE
       fi
       FTDS$1[_LIB]='$(FTDS$1[_CTLIB_LIB])'
       FTDS$1[_LIBS]='$(FTDS$1[_CTLIB_LIBS])'

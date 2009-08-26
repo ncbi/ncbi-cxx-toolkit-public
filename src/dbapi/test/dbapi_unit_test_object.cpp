@@ -462,22 +462,12 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         }
 
                         while (rs->Fetch()) {
-                            if (GetArgs().GetDriverName() == ftds_dblib_driver
-                                && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
-                                CDB_Double db_obj;
+                            CDB_Numeric db_obj;
 
-                                rs->GetItem(&db_obj);
-                                double_value = db_obj.Value();
+                            rs->GetItem(&db_obj);
+                            string string_value = db_obj.Value();
 
-                                BOOST_CHECK_EQUAL(double_value, 1);
-                            } else {
-                                CDB_Numeric db_obj;
-
-                                rs->GetItem(&db_obj);
-                                string string_value = db_obj.Value();
-
-                                BOOST_CHECK_EQUAL(string_value, string("1"));
-                            }
+                            BOOST_CHECK_EQUAL(string_value, string("1"));
                         }
                     }
                 }
@@ -499,17 +489,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         }
 
                         while (rs->Fetch()) {
-                            if (GetArgs().GetDriverName() == ftds_dblib_driver
-                                && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
-                                CDB_Double db_obj;
-
-                                rs->GetItem(&db_obj);
-                                double_value = db_obj.Value();
-
-                                BOOST_CHECK_EQUAL(double_value, 2843113322.00);
-                            } else if (GetArgs().GetDriverName() == ftds_odbc_driver
-                                       || GetArgs().GetDriverName() == odbc_driver
-                                ) {
+                            if (GetArgs().GetDriverName() == odbc_driver) {
                                 CDB_Numeric db_obj;
 
                                 rs->GetItem(&db_obj);
@@ -547,22 +527,12 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                     }
 
                     while (rs->Fetch()) {
-                            if (GetArgs().GetDriverName() == ftds_dblib_driver
-                                && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) {
-                            CDB_Double db_obj;
+                        CDB_Numeric db_obj;
 
-                            rs->GetItem(&db_obj);
-                            double_value = db_obj.Value();
+                        rs->GetItem(&db_obj);
+                        string string_value = db_obj.Value();
 
-                            BOOST_CHECK_EQUAL(double_value, 1);
-                        } else {
-                            CDB_Numeric db_obj;
-
-                            rs->GetItem(&db_obj);
-                            string string_value = db_obj.Value();
-
-                            BOOST_CHECK_EQUAL(string_value, string("1"));
-                        }
+                        BOOST_CHECK_EQUAL(string_value, string("1"));
                     }
                 }
             }
@@ -859,7 +829,6 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
             }
 
             // text
-            if (GetArgs().GetDriverName() != ftds_dblib_driver)
             {
                 sql = "select Convert(text, '12345')";
 
@@ -892,7 +861,6 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
             }
 
             // image
-            if (GetArgs().GetDriverName() != ftds_dblib_driver)
             {
                 sql = "select Convert(image, '12345')";
 
@@ -2348,7 +2316,7 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
             auto_stmt->ExecuteUpdate( sql );
         }
 
-	// First test ...
+    // First test ...
         {
             // Initialization ...
             {
@@ -2498,32 +2466,32 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
             }
         }
 
-	// Second test ...
-	{
-	    /*
-	    double double_array[] = {
-		87832866,
-		2661188789U,
-		2661188789U,
-		30811,
-		0.00115779083871678,
-		16727456,
-		0.628570812756419,
-		2536866043U,
-		95.3283004004118,
-		0,
-		8583,
-		0.000322525032251667,
-		13634779,
-		0.512356697741973,
-		93921117,
-		3.52929177321887,
-		40319553,
-		160410,
-		1218,
-		125
-	    };
-	    */
+    // Second test ...
+    {
+        /*
+        double double_array[] = {
+        87832866,
+        2661188789U,
+        2661188789U,
+        30811,
+        0.00115779083871678,
+        16727456,
+        0.628570812756419,
+        2536866043U,
+        95.3283004004118,
+        0,
+        8583,
+        0.000322525032251667,
+        13634779,
+        0.512356697741973,
+        93921117,
+        3.52929177321887,
+        40319553,
+        160410,
+        1218,
+        125
+        };
+        */
 
             // Clean table ...
             {
@@ -2549,7 +2517,7 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
                 auto_stmt->ClearParamList();
             }
 
-	}
+    }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -2571,13 +2539,13 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
-                "   vc_max VARCHAR(MAX) NULL" 
+                "   vc_max VARCHAR(MAX) NULL"
                 ") \n";
 
             auto_stmt->ExecuteUpdate( sql );
         }
 
-        // SQL value injection technique ... 
+        // SQL value injection technique ...
         {
             // Clean table ...
             {
@@ -2681,7 +2649,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
-                "   vc_max VARCHAR(MAX) NULL" 
+                "   vc_max VARCHAR(MAX) NULL"
                 ") \n";
 
             auto_stmt->ExecuteUpdate( sql );
@@ -2760,7 +2728,7 @@ BOOST_AUTO_TEST_CASE(Test_CHAR)
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
-                "   char1_field CHAR(1) NULL" 
+                "   char1_field CHAR(1) NULL"
                 ") \n";
 
             auto_stmt->ExecuteUpdate( sql );

@@ -32,7 +32,6 @@
 
 #include <dbapi/driver/ftds64/ncbi_ftds_rename_sybdb_ver64.h>
 #include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
-#include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
 
 #if defined(HAVE_GETHOSTBYADDR_R)
 #  if   HAVE_GETHOSTBYADDR_R == 5

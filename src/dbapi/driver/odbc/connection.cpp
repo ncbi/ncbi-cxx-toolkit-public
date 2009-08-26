@@ -48,20 +48,10 @@
 
 BEGIN_NCBI_SCOPE
 
-#ifdef FTDS_IN_USE
-#	define IsBCPCapable IsBCPCapableFTDS
-
-inline
-bool IsBCPCapable(void)
-{
-    return false;
-}
-#else
 bool IsBCPCapable(void)
 {
     return true;
 }
-#endif
 
 static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
@@ -157,7 +147,6 @@ void CODBC_Connection::x_Connect(
                 ;
         }
 
-#ifndef FTDS_IN_USE
         CNcbiApplication* app = CNcbiApplication::Instance();
 
         // Connection strings for SQL Native Client 2005.
@@ -173,16 +162,6 @@ void CODBC_Connection::x_Connect(
         }
 
         connect_str += conn_str_suffix;
-#else
-        connect_str = "DRIVER={FreeTDS}";
-        connect_str += conn_str_suffix;
-
-        connect_str += ";" + x_MakeFreeTDSVersion(cntx.GetTDSVersion());
-
-        if (!GetCDriverContext().GetClientCharset().empty()) {
-            connect_str += ";client_charset=" + GetCDriverContext().GetClientCharset();
-        }
-#endif
 
         rc = SQLDriverConnect(m_Link,
                               0,
@@ -335,16 +314,12 @@ string CODBC_Connection::x_MakeFreeTDSVersion(int version)
 
 bool CODBC_Connection::IsAlive(void)
 {
-    // FreeTDS odbc driver does not support SQL_ATTR_CONNECTION_DEAD attribute.
-
-#if !defined(FTDS_IN_USE)
     if (m_Link) {
         SQLINTEGER status;
         SQLRETURN r= SQLGetConnectAttr(m_Link, SQL_ATTR_CONNECTION_DEAD, &status, SQL_IS_INTEGER, 0);
 
         return ((r == SQL_SUCCESS || r == SQL_SUCCESS_WITH_INFO) && (status == SQL_CD_FALSE));
     }
-#endif
 
     return (m_Link != NULL);
 }
@@ -377,9 +352,6 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name)
 
 CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name)
 {
-#ifdef FTDS_IN_USE
-    return NULL; // not implemented yet
-#else
     if ( !IsBCPable() ) {
         string err_message = "No bcp on this connection." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410003 );
@@ -390,7 +362,6 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name)
 
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(*this, m_Link, table_name);
     return Create_BCPInCmd(*bcmd);
-#endif
 }
 
 
@@ -402,7 +373,7 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
         query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-#if 1 // defined(FTDS_IN_USE)
+#if 1
     CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(*this,
                                                         cursor_name,
                                                         query);
@@ -436,23 +407,23 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_
     SQLLEN      s = lob.Size();
     SQLLEN      ph;
 
-	CDB_ITDescriptor::ETDescriptorType desc_type = CDB_ITDescriptor::eUnknown;
-	
-	if (lob.GetType() == eDB_Image) {
-			desc_type = CDB_ITDescriptor::eBinary;
-	} else {
-			desc_type = CDB_ITDescriptor::eText;
-	}
+    CDB_ITDescriptor::ETDescriptorType desc_type = CDB_ITDescriptor::eUnknown;
+
+    if (lob.GetType() == eDB_Image) {
+            desc_type = CDB_ITDescriptor::eBinary;
+    } else {
+            desc_type = CDB_ITDescriptor::eText;
+    }
 
     if((!ODBC_xSendDataPrepare(
-			stmt, 
-			(CDB_ITDescriptor&)desc, 
-			s, 
-			(desc_type == CDB_ITDescriptor::eText), 
-			log_it, 
-			p, 
-			&ph
-			)) ||
+            stmt,
+            (CDB_ITDescriptor&)desc,
+            s,
+            (desc_type == CDB_ITDescriptor::eText),
+            log_it,
+            p,
+            &ph
+            )) ||
        (!ODBC_xSendDataGetId(stmt, &p ))) {
         string err_message = "Cannot prepare a command." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
@@ -567,7 +538,7 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     q += descr_in.SearchConditions();
     //q+= " ;\nset rowcount 0";
 
-#if defined(SQL_TEXTPTR_LOGGING) && !defined(FTDS_IN_USE)
+#if defined(SQL_TEXTPTR_LOGGING)
     if(!logit) {
         switch(SQLSetStmtAttr(stmt.GetHandle(), SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
             (SQLPOINTER)SQL_TL_OFF, SQL_IS_INTEGER)) {

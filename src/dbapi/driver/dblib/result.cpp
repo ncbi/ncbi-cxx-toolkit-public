@@ -37,13 +37,6 @@
 #include <dbapi/error_codes.hpp>
 
 
-// SYBUNIQUE is defined in <tds.h>
-// Unfortunately we cannot include <tds.h> because of conflicts with <sybdb.h>
-#ifdef FTDS_IN_USE
-#define SYBUNIQUE 36
-#endif
-
-
 #define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Results
 
 BEGIN_NCBI_SCOPE
@@ -351,7 +344,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
 
 CDBL_ResultBase::CDBL_ResultBase(
-        CDBL_Connection& conn, 
+        CDBL_Connection& conn,
         DBPROCESS* cmd,
         unsigned int* res_status
         ) :
@@ -366,7 +359,7 @@ CDBL_ResultBase::CDBL_ResultBase(
 }
 
 
-CDBL_ResultBase::~CDBL_ResultBase(void) 
+CDBL_ResultBase::~CDBL_ResultBase(void)
 {
 }
 
@@ -465,7 +458,7 @@ CDB_Object* CDBL_RowResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem po
         return 0;
     }
     CDB_Object* r = GetItemInternal(policy,
-									m_CurrItem + 1,
+                                    m_CurrItem + 1,
                                     &m_ColFmt[m_CurrItem],
                                     item_buff);
     ++m_CurrItem;
@@ -620,22 +613,22 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff, I_Result::EGetItem p
         DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
     }
 
-	CDB_Stream* val = NULL;
+    CDB_Stream* val = NULL;
 
-	if (item_buff) {
-			val = static_cast<CDB_Stream*>(item_buff);
+    if (item_buff) {
+            val = static_cast<CDB_Stream*>(item_buff);
 
-			if (policy == I_Result::eAssignLOB) {
-					// Explicitly truncate previous value ...
-					val->Truncate();
-			}
-	} else if (m_ColFmt.data_type == eDB_Text) {
-			val = new CDB_Text;
-	} else {
-			val = new CDB_Image;
-	}
+            if (policy == I_Result::eAssignLOB) {
+                    // Explicitly truncate previous value ...
+                    val->Truncate();
+            }
+    } else if (m_ColFmt.data_type == eDB_Text) {
+            val = new CDB_Text;
+    } else {
+            val = new CDB_Image;
+    }
 
-	_ASSERT(val);
+    _ASSERT(val);
 
 
     // check if we do have something in buffer
@@ -1273,7 +1266,7 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn,
                                      int col_num) :
 CDBL_Result(conn, dblink)
 {
-#if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE)
+#if defined(MS_DBLIB_IN_USE)
 
     DBCOL dbcol;
 
@@ -1364,7 +1357,7 @@ CDBL_ITDescriptor::~CDBL_ITDescriptor()
 {
 }
 
-#if !defined(MS_DBLIB_IN_USE) && !defined(FTDS_IN_USE)
+#if !defined(MS_DBLIB_IN_USE)
 bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 {
     if (!col_info || !col_info->coltxobjname)
@@ -1401,18 +1394,12 @@ EDB_Type CDBL_Result::GetDataType(int n)
     case SYBINT1:      return eDB_TinyInt;
     case SYBINT2:      return eDB_SmallInt;
     case SYBINT4:      return eDB_Int;
-#ifdef FTDS_IN_USE
-    case SYBINT8:      return eDB_BigInt;
-#endif
     case SYBDECIMAL:
     case SYBNUMERIC:   break;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
     case SYBTEXT:      return eDB_Text;
     case SYBIMAGE:     return eDB_Image;
-#ifdef FTDS_IN_USE
-    case SYBUNIQUE:    return eDB_VarBinary;
-#endif
     default:           return eDB_UnsupportedType;
     }
 
@@ -1430,11 +1417,11 @@ EDB_Type CDBL_Result::GetDataType(int n)
 // Aux. for CDBL_RowResult::GetItem()
 CDB_Object*
 CDBL_Result::GetItemInternal(
-	I_Result::EGetItem policy, 
-	int item_no,
-	SDBL_ColDescr* fmt,
-	CDB_Object* item_buff
-	)
+    I_Result::EGetItem policy,
+    int item_no,
+    SDBL_ColDescr* fmt,
+    CDB_Object* item_buff
+    )
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
     const BYTE* d_ptr = Check(dbdata (GetCmd(), item_no));
@@ -1447,27 +1434,6 @@ CDBL_Result::GetItemInternal(
 
     switch (fmt->data_type) {
     case eDB_BigInt: {
-#ifdef FTDS_IN_USE
-        if(Check(dbcoltype(GetCmd(), item_no)) == SYBINT8) {
-          Int8* v= (Int8*) d_ptr;
-          if(item_buff) {
-            if(v) {
-              if(b_type == eDB_BigInt) {
-                *((CDB_BigInt*) item_buff)= *v;
-              }
-              else {
-                DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
-              }
-            }
-            else
-                item_buff->AssignNULL();
-            return item_buff;
-          }
-
-          return v ?
-            new CDB_BigInt(*v) : new CDB_BigInt;
-        }
-#endif
         DBNUMERIC* v = (DBNUMERIC*) d_ptr;
         if (item_buff) {
             if (v) {
@@ -1521,20 +1487,20 @@ CDBL_Result::GetItemInternal(
         }
 
         CDB_Text* v = NULL;
-		
-		if (item_buff) {
-				v = static_cast<CDB_Text*>(item_buff);
 
-				if (policy == I_Result::eAssignLOB) {
-						// Explicitly truncate previous value ...
-						v->Truncate();
-				}
-		} else {
-				v = new CDB_Text;
-		}
+        if (item_buff) {
+                v = static_cast<CDB_Text*>(item_buff);
 
-		_ASSERT(v);
-	
+                if (policy == I_Result::eAssignLOB) {
+                        // Explicitly truncate previous value ...
+                        v->Truncate();
+                }
+        } else {
+                v = new CDB_Text;
+        }
+
+        _ASSERT(v);
+
         v->Append((char*) d_ptr, (int) d_len);
         return v;
     }
@@ -1545,20 +1511,20 @@ CDBL_Result::GetItemInternal(
         }
 
         CDB_Image* v = NULL;
-		
-		if (item_buff) {
-				v = static_cast<CDB_Image*>(item_buff);
 
-				if (policy == I_Result::eAssignLOB) {
-						// Explicitly truncate previous value ...
-						v->Truncate();
-				}
-		} else {
-				v = new CDB_Image;
-		}
+        if (item_buff) {
+                v = static_cast<CDB_Image*>(item_buff);
 
-		_ASSERT(v);
-	
+                if (policy == I_Result::eAssignLOB) {
+                        // Explicitly truncate previous value ...
+                        v->Truncate();
+                }
+        } else {
+                v = new CDB_Image;
+        }
+
+        _ASSERT(v);
+
         v->Append((void*) d_ptr, (int) d_len);
         return v;
     }
@@ -1584,9 +1550,6 @@ EDB_Type CDBL_Result::RetGetDataType(int n)
     case SYBINT4:      return eDB_Int;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
-#ifdef FTDS_IN_USE
-    case SYBUNIQUE:    return eDB_VarBinary;
-#endif
     default:           return eDB_UnsupportedType;
     }
 }
@@ -1625,9 +1588,6 @@ EDB_Type CDBL_Result::AltGetDataType(int id, int n)
     case SYBINT4:      return eDB_Int;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
-#ifdef FTDS_IN_USE
-    case SYBUNIQUE:    return eDB_VarBinary;
-#endif
     default:           return eDB_UnsupportedType;
     }
 }

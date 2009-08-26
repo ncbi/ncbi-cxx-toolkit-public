@@ -100,9 +100,6 @@ CDBSetConnParams::GetPassword(void) const
 const char* ftds64_driver = "ftds";
 const char* ftds_driver = ftds64_driver;
 
-const char* ftds_odbc_driver = "ftds_odbc";
-const char* ftds_dblib_driver = "ftds_dblib";
-
 const char* odbc_driver = "odbc";
 const char* ctlib_driver = "ctlib";
 const char* dblib_driver = "dblib";
@@ -177,7 +174,6 @@ bool CommonInit(void)
 #endif
 
     DBAPI_RegisterDriver_FTDS();
-    //DBAPI_RegisterDriver_FTDS_ODBC();
 
 #else
     CPluginManager_DllResolver::EnableGlobally(true);
@@ -408,16 +404,13 @@ NCBITEST_INIT_VARIABLES(parser)
 
     parser->AddSymbol("DRIVER_ftds", GetArgs().GetDriverName() == ftds_driver);
     parser->AddSymbol("DRIVER_ftds64", GetArgs().GetDriverName() == ftds64_driver);
-    parser->AddSymbol("DRIVER_ftds_odbc", GetArgs().GetDriverName() == ftds_odbc_driver);
-    parser->AddSymbol("DRIVER_ftds_dblib", GetArgs().GetDriverName() == ftds_dblib_driver);
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == odbc_driver);
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == ctlib_driver);
     parser->AddSymbol("DRIVER_dblib", GetArgs().GetDriverName() == dblib_driver);
     parser->AddSymbol("DRIVER_mysql", GetArgs().GetDriverName() == "mysql");
 
     parser->AddSymbol("DRIVER_IsBcpAvailable", GetArgs().IsBCPAvailable());
-    parser->AddSymbol("DRIVER_IsOdbcBased", GetArgs().GetDriverName() == ftds_odbc_driver ||
-            GetArgs().GetDriverName() == odbc_driver);
+    parser->AddSymbol("DRIVER_IsOdbcBased", GetArgs().GetDriverName() == odbc_driver);
 }
 
 
@@ -458,9 +451,7 @@ CUnitTestParams::GetServerType(void) const
     const string server_name = GetThis().GetServerName();
     const string driver_name = GetThis().GetDriverName();
 
-    if (driver_name == "dblib"
-        || driver_name == "ftds_dblib"
-        ) {
+    if (driver_name == "dblib") {
         if (NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
             || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
             )
@@ -548,8 +539,6 @@ CTestArguments::IsBCPAvailable(void) const
         // Solaris Intel native Sybase drivers ...
         // There is no apropriate client
         return false;
-    } else if ( GetDriverName() == ftds_odbc_driver ) {
-        return false;
     }
 
     return true;
@@ -558,8 +547,7 @@ CTestArguments::IsBCPAvailable(void) const
 bool
 CTestArguments::IsODBCBased(void) const
 {
-    return GetDriverName() == odbc_driver ||
-           GetDriverName() == ftds_odbc_driver;
+    return GetDriverName() == odbc_driver;
 }
 
 bool CTestArguments::DriverAllowsMultipleContexts(void) const
@@ -572,10 +560,9 @@ bool CTestArguments::DriverAllowsMultipleContexts(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ((GetDriverName() == ftds64_driver ||
-         // GetDriverName() == odbc_driver ||
-         // GetDriverName() == ftds_odbc_driver ||
-         GetDriverName() == ftds_dblib_driver) && GetServerType() == CDBConnParams::eMSSqlServer
+    if ((GetDriverName() == ftds64_driver
+         // || GetDriverName() == odbc_driver
+        ) && GetServerType() == CDBConnParams::eMSSqlServer
         )
     {
         m_ParamBase.SetEncoding(eEncoding_UTF8);
@@ -612,24 +599,21 @@ void CTestArguments::PutMsgExpected(const char* msg, const char* replacement) co
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
 // Describe the expected command-line arguments
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver, \
-                    ftds_dblib_driver, ftds_odbc_driver
+#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver
 
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
-//#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver,
-//                    ftds_dblib_driver, ftds_odbc_driver
+//#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver
 
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "Sybase"
 //#define DEF_DRIVER    ctlib_driver
-//#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, ftds_dblib_driver,
-//                    ftds_odbc_driver
+//#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver
 #else
 #define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
-//#define ALL_DRIVERS   ftds64_driver, ftds_dblib_driver, ftds_odbc_driver
+//#define ALL_DRIVERS   ftds64_driver
 #endif
 
     arg_desc->AddDefaultKey("S", "server",

@@ -255,9 +255,6 @@ private:
 extern const char* ftds64_driver;
 extern const char* ftds_driver;
 
-extern const char* ftds_odbc_driver;
-extern const char* ftds_dblib_driver;
-
 extern const char* odbc_driver;
 extern const char* ctlib_driver;
 extern const char* dblib_driver;

@@ -50,10 +50,7 @@
 #  endif
 #endif
 
-#if defined(FTDS_IN_USE)
-#  define HAVE_SQLGETPRIVATEPROFILESTRING 0
-#  include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
-#elif defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
 #  define HAVE_SQLGETPRIVATEPROFILESTRING 1
 #endif
 
@@ -65,9 +62,7 @@
 #include <sqlext.h>
 #include <sqltypes.h>
 
-#if !defined(FTDS_IN_USE)
-#  define HAS_DEFERRED_PREPARE 1
-#endif
+#define HAS_DEFERRED_PREPARE 1
 
 BEGIN_NCBI_SCOPE
 
@@ -84,28 +79,6 @@ BEGIN_SCOPE(odbc)
 #endif
 
 END_SCOPE(odbc)
-
-#ifdef FTDS_IN_USE
-// Make it look like the ftds driver ...
-#    define CODBC_Reporter			CODBC_TDS_Reporter
-#    define CODBCContext            CODBC_TDSContext
-#    define CODBC_Connection        CODBC_TDS_Connection
-#    define CStatementBase			CODBC_TDSStatementBase
-#    define CODBC_LangCmd           CODBC_TDS_LangCmd
-#    define CODBC_RPCCmd            CODBC_TDS_RPCCmd
-#    define CODBC_CursorCmdBase     CODBC_TDS_CursorCmdBase
-#    define CODBC_CursorCmd         CODBC_TDS_CursorCmd
-#    define CODBC_CursorCmdExpl     CODBC_TDS_CursorCmdExpl
-#    define CODBC_BCPInCmd          CODBC_TDS_BCPInCmd
-#    define CODBC_SendDataCmd       CODBC_TDS_SendDataCmd
-#    define CODBC_RowResult         CODBC_TDS_RowResult
-#    define CODBC_StatusResult      CODBC_TDS_StatusResult
-#    define CODBC_ParamResult       CODBC_TDS_ParamResult
-#    define CODBC_CursorResult      CODBC_TDS_CursorResult
-#    define CODBC_CursorResultExpl  CODBC_TDS_CursorResultExpl
-#    define CODBCContextRegistry    CODBC_TDSContextRegistry
-
-#endif // FTDS_IN_USE
 
 class CODBCContext;
 class CODBC_Connection;
@@ -714,7 +687,7 @@ protected:
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
@@ -825,7 +798,7 @@ protected:
     virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0,
-							I_Result::EGetItem policy = I_Result::eAppendLOB);
+                            I_Result::EGetItem policy = I_Result::eAppendLOB);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);

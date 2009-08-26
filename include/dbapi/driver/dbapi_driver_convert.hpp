@@ -50,7 +50,7 @@ namespace value_slice
 template <>
 class CValueConvert<SSafeCP, CDB_Result>
 {
-public: 
+public:
     typedef const CDB_Result obj_type;
     typedef SSafeCP CP;
 
@@ -120,14 +120,14 @@ private:
     }
 
 private:
-    obj_type* m_Value; 
+    obj_type* m_Value;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 template <>
 class CValueConvert<SSafeSqlCP, CDB_Result>
 {
-public: 
+public:
     typedef const CDB_Result obj_type;
     typedef SSafeSqlCP CP;
 
@@ -148,7 +148,7 @@ public:
 
         // *null* is reported as eDB_Int by several drivers.
         // That means that *null* can be checked using Int4 type only.
-        // List of *special* drivers: ftds64, ctlib, ftds_odbc.
+        // List of *special* drivers: ftds64, ctlib.
         if (db_type == eDB_Int) {
             CDB_Int db_obj_int;
 
@@ -156,7 +156,7 @@ public:
             if (db_obj_int.IsNULL()) {
                 return bool();
             }
-            
+
             throw CInvalidConversionException();
         }
 
@@ -208,7 +208,7 @@ public:
 
         // *null* is reported as eDB_Int by several drivers.
         // That means that *null* can be checked using Int4 type only.
-        // List of *special* drivers: ftds64, ctlib, ftds_odbc.
+        // List of *special* drivers: ftds64, ctlib.
         CDB_Int db_obj_int;
         if (db_type == eDB_Int) {
 
@@ -241,7 +241,7 @@ private:
 
         // *null* is reported as eDB_Int by several drivers.
         // That means that *null* can be checked using Int4 type only.
-        // List of *special* drivers: ftds64, ctlib, ftds_odbc.
+        // List of *special* drivers: ftds64, ctlib.
         if (db_type == eDB_Int) {
             CDB_Int db_obj_int;
 
@@ -265,14 +265,14 @@ private:
     }
 
 private:
-    obj_type* m_Value; 
+    obj_type* m_Value;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 template <>
 class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SRunTimeCP, CDB_Result>
 {
-public: 
+public:
     typedef const CDB_Result obj_type;
 
     CValueConvert(obj_type& value);
@@ -428,7 +428,7 @@ private:
             case eDB_Image:
                 value = ConvertFromLOB<TO, CDB_Image>();
                 break;
-            case eDB_Bit: 
+            case eDB_Bit:
                 value = ConvertFrom<TO, CDB_Bit>();
                 break;
             case eDB_Numeric:
@@ -455,14 +455,14 @@ private:
     }
 
 private:
-    obj_type* m_Value; 
+    obj_type* m_Value;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 template <>
 class NCBI_DBAPIDRIVER_EXPORT CValueConvert<SRunTimeSqlCP, CDB_Result>
 {
-public: 
+public:
     typedef const CDB_Result obj_type;
 
     CValueConvert(obj_type& value);
@@ -601,7 +601,7 @@ private:
             case eDB_Image:
                 value = ConvertFromLOB<TO, CDB_Image>();
                 break;
-            case eDB_Bit: 
+            case eDB_Bit:
                 value = ConvertFrom<TO, CDB_Bit>();
                 break;
             case eDB_Numeric:
@@ -628,7 +628,7 @@ private:
     }
 
 private:
-    obj_type* m_Value; 
+    obj_type* m_Value;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -719,7 +719,7 @@ public:
         TResult result(source);
         const unsigned int n = source.NofItems();
         TValue res_val;
-        
+
         for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
             res_val.push_back(CMakeObject<CP, T, CDB_Result>::Make(source));
         }
@@ -741,7 +741,7 @@ public:
         TResult result(source);
         const unsigned int n = source.NofItems();
         TValue res_val;
-        
+
         for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
             res_val.push(CMakeObject<CP, T, CDB_Result>::Make(source));
         }
@@ -763,7 +763,7 @@ public:
         TResult result(source);
         const unsigned int n = source.NofItems();
         TValue res_val;
-        
+
         for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
             res_val.push_back(CMakeObject<CP, T, CDB_Result>::Make(source));
         }
@@ -785,7 +785,7 @@ public:
         TResult result(source);
         const unsigned int n = source.NofItems();
         TValue res_val;
-        
+
         for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
             res_val.insert(CMakeObject<CP, T, CDB_Result>::Make(source));
         }
@@ -808,7 +808,7 @@ public:
         TResult result(source);
         const unsigned int n = source.NofItems();
         TValue res_val;
-        
+
         for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
             // We may get an error at run-time ...
             K k = CMakeObject<CP, K, CDB_Result>::Make(source);
@@ -835,7 +835,7 @@ public:
         TResult result(source);
         const unsigned int n = source.NofItems();
         TValue res_val;
-        
+
         for (unsigned int i = source.CurrentItemNo(); i < n; i = source.CurrentItemNo()) {
             /* Not all data types have default constructor ... */
             K k = CMakeObject<CP, K, CDB_Result>::Make(source);
@@ -843,7 +843,7 @@ public:
 
             if (static_cast<unsigned int>(source.CurrentItemNo()) < n) {
                 v = CMakeObject<CP, V, CDB_Result>::Make(source);
-            } 
+            }
 
             res_val.insert(pair<K, V>(k, v));
         }
@@ -853,7 +853,7 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-template <typename CP, typename TO> 
+template <typename CP, typename TO>
 class CConvertTO
 {
 public:
@@ -867,7 +867,7 @@ public:
     }
 };
 
-template <typename CP, typename T> 
+template <typename CP, typename T>
 class CConvertTO<CP, vector<T> >
 {
 public:
@@ -881,7 +881,7 @@ public:
     }
 };
 
-template <typename CP, typename T> 
+template <typename CP, typename T>
 class CConvertTO<CP, deque<T> >
 {
 public:
@@ -895,7 +895,7 @@ public:
     }
 };
 
-template <typename CP, typename T> 
+template <typename CP, typename T>
 class CConvertTO<CP, set<T> >
 {
 public:
@@ -909,7 +909,7 @@ public:
     }
 };
 
-template <typename CP, typename T> 
+template <typename CP, typename T>
 class CConvertTO<CP, stack<T> >
 {
 public:
@@ -923,7 +923,7 @@ public:
     }
 };
 
-template <typename CP, typename K, typename V> 
+template <typename CP, typename K, typename V>
 class CConvertTO<CP, map<K, V> >
 {
 public:
@@ -944,7 +944,7 @@ public:
 template <typename CP>
 class CValueConvert<CP, CDB_LangCmd>
 {
-public: 
+public:
     typedef CDB_LangCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj>& other)
@@ -971,8 +971,8 @@ public:
     }
 
 public:
-    template <typename TO> 
-    operator TO(void) const 
+    template <typename TO>
+    operator TO(void) const
     {
         TO result;
 
@@ -985,20 +985,20 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-			break;
+            break;
         }
 
         return result;
     }
 
 private:
-    TObj* m_Stmt; 
+    TObj* m_Stmt;
 };
 
 template <typename CP>
 class CValueConvert<CP, CDB_LangCmd*>
 {
-public: 
+public:
     typedef CDB_LangCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj*>& other)
@@ -1025,8 +1025,8 @@ public:
     }
 
 public:
-    template <typename TO> 
-    operator TO(void) const 
+    template <typename TO>
+    operator TO(void) const
     {
         TO result;
 
@@ -1039,21 +1039,21 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-			break;
+            break;
         }
 
         return result;
     }
 
 private:
-    mutable auto_ptr<TObj> m_Stmt; 
+    mutable auto_ptr<TObj> m_Stmt;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 template <typename CP>
 class CValueConvert<CP, CDB_RPCCmd>
 {
-public: 
+public:
     typedef CDB_RPCCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj>& other)
@@ -1080,8 +1080,8 @@ public:
     }
 
 public:
-    template <typename TO> 
-    operator TO(void) const 
+    template <typename TO>
+    operator TO(void) const
     {
         TO result;
 
@@ -1094,20 +1094,20 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-			break;
+            break;
         }
 
         return result;
     }
 
 private:
-    TObj* m_Stmt; 
+    TObj* m_Stmt;
 };
 
 template <typename CP>
 class CValueConvert<CP, CDB_RPCCmd*>
 {
-public: 
+public:
     typedef CDB_RPCCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj*>& other)
@@ -1134,8 +1134,8 @@ public:
     }
 
 public:
-    template <typename TO> 
-    operator TO(void) const 
+    template <typename TO>
+    operator TO(void) const
     {
         TO result;
 
@@ -1148,21 +1148,21 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-			break;
+            break;
         }
 
         return result;
     }
 
 private:
-    mutable auto_ptr<TObj> m_Stmt; 
+    mutable auto_ptr<TObj> m_Stmt;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 template <typename CP>
 class CValueConvert<CP, CDB_CursorCmd>
 {
-public: 
+public:
     typedef CDB_CursorCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj>& other)
@@ -1183,8 +1183,8 @@ public:
     }
 
 public:
-    template <typename TO> 
-    operator TO(void) const 
+    template <typename TO>
+    operator TO(void) const
     {
         TO result;
 
@@ -1194,14 +1194,14 @@ public:
     }
 
 private:
-    TObj* m_Stmt; 
+    TObj* m_Stmt;
     auto_ptr<CDB_Result> m_RS;
 };
 
 template <typename CP>
 class CValueConvert<CP, CDB_CursorCmd*>
 {
-public: 
+public:
     typedef CDB_CursorCmd TObj;
 
     CValueConvert(const CValueConvert<CP, TObj*>& other)
@@ -1222,8 +1222,8 @@ public:
     }
 
 public:
-    template <typename TO> 
-    operator TO(void) const 
+    template <typename TO>
+    operator TO(void) const
     {
         TO result;
 
@@ -1233,7 +1233,7 @@ public:
     }
 
 private:
-    mutable auto_ptr<TObj> m_Stmt; 
+    mutable auto_ptr<TObj> m_Stmt;
     mutable auto_ptr<CDB_Result> m_RS;
 };
 
@@ -1242,5 +1242,5 @@ private:
 END_NCBI_SCOPE
 
 
-#endif // DBAPI_DRIVER___DBAPI_DRIVER_CONVERT__HPP 
+#endif // DBAPI_DRIVER___DBAPI_DRIVER_CONVERT__HPP
 
