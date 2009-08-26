@@ -315,12 +315,13 @@ double CAlignFilter::x_TermValue(const CQueryParseTree::TNode& term_node,
     case CQueryParseNode::eString:
         {{
              string str = term_node.GetValue().GetStrValue();
+             double val;
              try {
-                 double val =  NStr::StringToDouble(str);
-                 return val;
+                 val = NStr::StringToDouble(str);
              } catch (...) {
+                 val = x_GetAlignmentScore(str, align);
              }
-             return x_GetAlignmentScore(str, align);
+             return val;
          }}
     case CQueryParseNode::eFunction:
         return x_FuncCall(term_node, align);
