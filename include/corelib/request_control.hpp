@@ -87,7 +87,7 @@ public:
     /// 
     /// @sa 
     ///   Reset
-    const static unsigned int kNoLimit = kMax_UInt;
+    static const unsigned int kNoLimit = kMax_UInt;
 
     /// What to do if exceeded the rate limits.
     enum EThrottleAction {
