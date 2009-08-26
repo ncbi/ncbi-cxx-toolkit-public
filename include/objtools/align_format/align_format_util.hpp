@@ -465,11 +465,17 @@ public:
                              list<int>& use_this_gi,
                              int& comp_adj_method);
 
+    
     ///Add the specified white space
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
     ///
     static void AddSpace(CNcbiOstream& out, int number);
+
+    ///Return ID for GNL label
+    ///@param wid: CSeqId to get label from
+    ///
+    static string CAlignFormatUtil::GetGnlID(const CDbtag& dtg);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
