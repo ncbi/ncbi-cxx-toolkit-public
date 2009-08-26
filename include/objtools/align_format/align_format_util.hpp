@@ -475,7 +475,7 @@ public:
     ///Return ID for GNL label
     ///@param wid: CSeqId to get label from
     ///
-    static string CAlignFormatUtil::GetGnlID(const CDbtag& dtg);
+    static string GetGnlID(const CDbtag& dtg);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
