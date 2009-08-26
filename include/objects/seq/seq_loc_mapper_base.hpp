@@ -112,6 +112,7 @@ private:
     ENa_strand          m_Dst_strand;
     bool                m_Reverse;
     bool                m_ExtTo;
+    int                 m_Group;
 
     friend class CSeq_loc_Mapper_Base;
     //friend class CSeq_loc_Mapper;
@@ -126,6 +127,8 @@ public:
     TSeqPos GetDst_from(void) const { return m_Dst_from; }
     TSeqPos GetLength(void) const { return m_Src_to - m_Src_from; }
     bool GetReverse(void) const { return m_Reverse; }
+    int GetGroup(void) const { return m_Group; }
+    void SetGroup(int grp) { m_Group = grp; }
 };
 
 
@@ -146,14 +149,14 @@ public:
     TIdMap& GetIdMap(void) { return m_IdMap; }
 
     void AddConversion(CRef<CMappingRange> cvt);
-    void AddConversion(CSeq_id_Handle    src_id,
-                       TSeqPos           src_from,
-                       TSeqPos           src_length,
-                       ENa_strand        src_strand,
-                       CSeq_id_Handle    dst_id,
-                       TSeqPos           dst_from,
-                       ENa_strand        dst_strand,
-                       bool              ext_to = false);
+    CRef<CMappingRange> AddConversion(CSeq_id_Handle    src_id,
+                                      TSeqPos           src_from,
+                                      TSeqPos           src_length,
+                                      ENa_strand        src_strand,
+                                      CSeq_id_Handle    dst_id,
+                                      TSeqPos           dst_from,
+                                      ENa_strand        dst_strand,
+                                      bool              ext_to = false);
 
     TRangeIterator BeginMappingRanges(CSeq_id_Handle id,
                                       TSeqPos        from,
@@ -278,6 +281,9 @@ public:
     CSeq_loc_Mapper_Base& SetMergeNone(void);
     /// Merge only abutting intervals, keep overlapping
     CSeq_loc_Mapper_Base& SetMergeAbutting(void);
+    /// Merge only intervals from the same group (e.g. mapped through
+    /// the same exon)
+    CSeq_loc_Mapper_Base& SetMergeBySeg(void);
     /// Merge intervals only if one is completely covered by another
     CSeq_loc_Mapper_Base& SetMergeContained(void);
     /// Merge any abutting or overlapping intervals
@@ -388,8 +394,25 @@ protected:
     // Destination locations arranged by ID/range
     typedef CRef<CInt_fuzz>                      TFuzz;
     typedef pair<TFuzz, TFuzz>                   TRangeFuzz;
-    typedef pair<TRange, TRangeFuzz>             TRangeWithFuzz;
-    typedef list<TRangeWithFuzz>                 TMappedRanges;
+
+    struct SMappedRange {
+        SMappedRange(void) : group(0) {}
+        SMappedRange(const TRange&      rg,
+                     const TRangeFuzz&  fz,
+                     int                grp = 0)
+            : range(rg), fuzz(fz), group(grp) {}
+
+        TRange      range;
+        TRangeFuzz  fuzz;
+        int         group;
+
+        bool operator<(const SMappedRange& rg) const
+            {
+                return range < rg.range;
+            }
+    };
+    //typedef pair<TRange, TRangeFuzz>             TRangeWithFuzz;
+    typedef list<SMappedRange>                   TMappedRanges;
     // 0 = not set, any other index = na_strand + 1
     typedef vector<TMappedRanges>                TRangesByStrand;
     typedef map<CSeq_id_Handle, TRangesByStrand> TRangesById;
@@ -409,6 +432,7 @@ private:
         eMergeNone,      // no merging
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
         eMergeContained, // merge if one is contained in another
+        eMergeBySeg,     // merge ranges by mapping group (e.g. exon)
         eMergeAll        // merge both abutting and overlapping intervals
     };
     enum EGapFlags {
@@ -481,7 +505,8 @@ private:
     void x_PushMappedRange(const CSeq_id_Handle& id,
                            size_t                strand_idx,
                            const TRange&         range,
-                           const TRangeFuzz&     fuzz);
+                           const TRangeFuzz&     fuzz,
+                           int                   group);
 
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,
@@ -516,6 +541,7 @@ protected:
     CRef<CMappingRanges> m_Mappings;
     CRef<CSeq_loc>       m_Dst_loc;
     TDstStrandMap        m_DstRanges;
+    int                  m_CurrentGroup;
 
 public:
     // Methods for getting widths and mappings
@@ -599,6 +625,14 @@ inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetMergeAbutting(void)
 {
     m_MergeFlag = eMergeAbutting;
+    return *this;
+}
+
+
+inline
+CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetMergeBySeg(void)
+{
+    m_MergeFlag = eMergeBySeg;
     return *this;
 }
 

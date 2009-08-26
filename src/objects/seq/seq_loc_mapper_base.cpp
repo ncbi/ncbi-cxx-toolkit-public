@@ -85,7 +85,8 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
       m_Dst_from(dst_from),
       m_Dst_strand(dst_strand),
       m_Reverse(!SameOrientation(src_strand, dst_strand)),
-      m_ExtTo(ext_to)
+      m_ExtTo(ext_to),
+      m_Group(0)
 {
     return;
 }
@@ -255,20 +256,22 @@ void CMappingRanges::AddConversion(CRef<CMappingRange> cvt)
 }
 
 
-void CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
-                                   TSeqPos           src_from,
-                                   TSeqPos           src_length,
-                                   ENa_strand        src_strand,
-                                   CSeq_id_Handle    dst_id,
-                                   TSeqPos           dst_from,
-                                   ENa_strand        dst_strand,
-                                   bool              ext_to)
+CRef<CMappingRange>
+CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
+                              TSeqPos           src_from,
+                              TSeqPos           src_length,
+                              ENa_strand        src_strand,
+                              CSeq_id_Handle    dst_id,
+                              TSeqPos           dst_from,
+                              ENa_strand        dst_strand,
+                              bool              ext_to)
 {
     CRef<CMappingRange> cvt(new CMappingRange(
         src_id, src_from, src_length, src_strand,
         dst_id, dst_from, dst_strand,
         ext_to));
     AddConversion(cvt);
+    return cvt;
 }
 
 
@@ -320,7 +323,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(void)
       m_Dst_width(0),
       m_Partial(false),
       m_LastTruncated(false),
-      m_Mappings(new CMappingRanges)
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0)
 {
 }
 
@@ -334,7 +338,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges)
       m_Dst_width(1),
       m_Partial(false),
       m_LastTruncated(false),
-      m_Mappings(mapping_ranges)
+      m_Mappings(mapping_ranges),
+      m_CurrentGroup(0)
 {
 }
 
@@ -349,7 +354,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_Dst_width(0),
       m_Partial(false),
       m_LastTruncated(false),
-      m_Mappings(new CMappingRanges)
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0)
 {
     x_InitializeFeat(map_feat, dir);
 }
@@ -365,7 +371,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_Dst_width(0),
       m_Partial(false),
       m_LastTruncated(false),
-      m_Mappings(new CMappingRanges)
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0)
 {
     x_InitializeLocs(source, target);
 }
@@ -382,7 +389,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Dst_width(0),
       m_Partial(false),
       m_LastTruncated(false),
-      m_Mappings(new CMappingRanges)
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0)
 {
     x_InitializeAlign(map_align, to_id, opts);
 }
@@ -399,7 +407,8 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Dst_width(0),
       m_Partial(false),
       m_LastTruncated(false),
-      m_Mappings(new CMappingRanges)
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0)
 {
     x_InitializeAlign(map_align, to_row, opts);
 }
@@ -542,6 +551,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                     NCBI_THROW(CAnnotMapperException, eBadAlignment,
                                "Target ID not found in the alignment");
                 }
+                m_CurrentGroup++;
                 x_InitAlign(**diag_it, to_row);
             }
             break;
@@ -578,6 +588,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                     NCBI_THROW(CAnnotMapperException, eBadAlignment,
                                "Target ID not found in the alignment");
                 }
+                m_CurrentGroup++;
                 x_InitAlign(**std_seg, to_row);
             }
             break;
@@ -603,6 +614,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
         {
             const CSeq_align_set& aln_set = map_align.GetSegs().GetDisc();
             ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
+                m_CurrentGroup++;
                 x_InitializeAlign(**aln, to_id, opts);
             }
             break;
@@ -644,6 +656,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
         {
             const TDendiag& diags = map_align.GetSegs().GetDendiag();
             ITERATE(TDendiag, diag_it, diags) {
+                m_CurrentGroup++;
                 x_InitAlign(**diag_it, to_row);
             }
             break;
@@ -658,6 +671,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
         {
             const TStd& std_segs = map_align.GetSegs().GetStd();
             ITERATE(TStd, std_seg, std_segs) {
+                m_CurrentGroup++;
                 x_InitAlign(**std_seg, to_row);
             }
             break;
@@ -673,6 +687,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             // The same row in each sub-alignment?
             const CSeq_align_set& aln_set = map_align.GetSegs().GetDisc();
             ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
+                m_CurrentGroup++;
                 x_InitializeAlign(**aln, to_row, opts);
             }
             break;
@@ -1106,6 +1121,7 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
     }
 
     ITERATE(CSpliced_seg::TExons, it, spliced.GetExons()) {
+        m_CurrentGroup++;
         const CSpliced_exon& ex = **it;
         const CSeq_id* ex_gen_id = ex.IsSetGenomic_id() ?
             &ex.GetGenomic_id() : gen_id;
@@ -1451,10 +1467,13 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
     TSynonyms syns;
     CollectSynonyms(CSeq_id_Handle::GetHandle(src_id), syns);
     ITERATE(TSynonyms, syn_it, syns) {
-        m_Mappings->AddConversion(
+        CRef<CMappingRange> rg = m_Mappings->AddConversion(
             *syn_it, src_start, length, src_strand,
             CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
             ext_right);
+        if ( m_CurrentGroup ) {
+            rg->SetGroup(m_CurrentGroup);
+        }
     }
     m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
         .push_back(TRange(dst_start, dst_start + length - 1));
@@ -1676,7 +1695,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         src_strand, &dst_strand);
     x_PushMappedRange(cvt.m_Dst_id_Handle,
                       STRAND_TO_INDEX(is_set_dst_strand, dst_strand),
-                      rg, mapped_fuzz);
+                      rg, mapped_fuzz, cvt.m_Group);
     if ( m_GraphRanges  &&  !used_rg.Empty() ) {
         m_GraphRanges->AddRange(used_rg);
         if ( !src_rg.IsWhole() ) {
@@ -1785,7 +1804,7 @@ void CSeq_loc_Mapper_Base::x_Map_PackedInt_Element(const CSeq_interval& si)
             TRange rg(si.GetFrom(), si.GetTo());
             x_PushMappedRange(CSeq_id_Handle::GetHandle(si.GetId()),
                 STRAND_TO_INDEX(si.IsSetStrand(), si.GetStrand()),
-                rg, fuzz);
+                rg, fuzz, 0);
         }
         else {
             m_Partial = true;
@@ -1816,7 +1835,7 @@ void CSeq_loc_Mapper_Base::x_Map_PackedPnt_Element(const CPacked_seqpnt& pp,
                 CSeq_id_Handle::GetHandle(pp.GetId()),
                 STRAND_TO_INDEX(pp.IsSetStrand(),
                                 pp.GetStrand()),
-                rg, fuzz);
+                rg, fuzz, 0);
         }
         else {
             m_Partial = true;
@@ -1857,7 +1876,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
                     cvt.GetDstIdHandle(),
                     // CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
                     STRAND_TO_INDEX(false, eNa_strand_unknown),
-                    TRange::GetEmpty(), fuzz);
+                    TRange::GetEmpty(), fuzz, 0);
                 res = true;
                 break;
             }
@@ -2220,7 +2239,8 @@ CSeq_loc_Mapper_Base::x_GetMappedRanges(const CSeq_id_Handle& id,
 void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
                                              size_t                strand_idx,
                                              const TRange&         range,
-                                             const TRangeFuzz&     fuzz)
+                                             const TRangeFuzz&     fuzz,
+                                             int                   group)
 {
     bool reverse = (strand_idx > 0) &&
         IsReverse(INDEX_TO_STRAND(strand_idx));
@@ -2230,11 +2250,11 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
         {
             if ( reverse ) {
                 x_GetMappedRanges(id, strand_idx)
-                    .push_front(TRangeWithFuzz(range, fuzz));
+                    .push_front(SMappedRange(range, fuzz, group));
             }
             else {
                 x_GetMappedRanges(id, strand_idx)
-                    .push_back(TRangeWithFuzz(range, fuzz));
+                    .push_back(SMappedRange(range, fuzz, group));
             }
             break;
         }
@@ -2243,15 +2263,16 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
             x_PushRangesToDstMix();
             if ( reverse ) {
                 x_GetMappedRanges(id, strand_idx)
-                    .push_front(TRangeWithFuzz(range, fuzz));
+                    .push_front(SMappedRange(range, fuzz, group));
             }
             else {
                 x_GetMappedRanges(id, strand_idx)
-                    .push_back(TRangeWithFuzz(range, fuzz));
+                    .push_back(SMappedRange(range, fuzz, group));
             }
             break;
         }
     case eMergeAbutting:
+    case eMergeBySeg:
     default:
         {
             TRangesById::iterator it = m_MappedLocs.begin();
@@ -2261,40 +2282,50 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
             // New strand
             no_merge = no_merge  ||
                 (it->second.size() <= strand_idx)  ||  it->second.empty();
-            // Ranges are not abutting
+            // Ranges are not abutting or belong to different groups
             if ( !no_merge ) {
                 if ( reverse ) {
-                    no_merge = no_merge ||
-                        (it->second[strand_idx].front().first.GetFrom() !=
-                        range.GetToOpen());
+                    const SMappedRange& mrg = it->second[strand_idx].front();
+                    if (m_MergeFlag == eMergeAbutting) {
+                        no_merge = no_merge ||
+                            (mrg.range.GetFrom() != range.GetToOpen());
+                    }
+                    if (m_MergeFlag == eMergeBySeg) {
+                        no_merge = no_merge  ||  (mrg.group != group);
+                    }
                 }
                 else {
-                    no_merge = no_merge  ||
-                        (it->second[strand_idx].back().first.GetToOpen() !=
-                        range.GetFrom());
+                    const SMappedRange& mrg = it->second[strand_idx].back();
+                    if (m_MergeFlag == eMergeAbutting) {
+                        no_merge = no_merge  ||
+                            (mrg.range.GetToOpen() != range.GetFrom());
+                    }
+                    if (m_MergeFlag == eMergeBySeg) {
+                        no_merge = no_merge  ||  (mrg.group != group);
+                    }
                 }
             }
             if ( no_merge ) {
                 x_PushRangesToDstMix();
                 if ( reverse ) {
                     x_GetMappedRanges(id, strand_idx)
-                        .push_front(TRangeWithFuzz(range, fuzz));
+                        .push_front(SMappedRange(range, fuzz, group));
                 }
                 else {
                     x_GetMappedRanges(id, strand_idx)
-                        .push_back(TRangeWithFuzz(range, fuzz));
+                        .push_back(SMappedRange(range, fuzz, group));
                 }
             }
             else {
                 if ( reverse ) {
-                    TRangeWithFuzz& last_rg = it->second[strand_idx].front();
-                    last_rg.first.SetFrom(range.GetFrom());
-                    last_rg.second.first = fuzz.first;
+                    SMappedRange& last_rg = it->second[strand_idx].front();
+                    last_rg.range.SetFrom(range.GetFrom());
+                    last_rg.fuzz.first = fuzz.first;
                 }
                 else {
-                    TRangeWithFuzz& last_rg = it->second[strand_idx].back();
-                    last_rg.first.SetTo(range.GetTo());
-                    last_rg.second.second = fuzz.second;
+                    SMappedRange& last_rg = it->second[strand_idx].back();
+                    last_rg.range.SetTo(range.GetTo());
+                    last_rg.fuzz.second = fuzz.second;
                 }
             }
         }
@@ -2373,7 +2404,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                 id_it->second[str].sort();
             }
             NON_CONST_ITERATE(TMappedRanges, rg_it, id_it->second[str]) {
-                if ( rg_it->first.Empty() ) {
+                if ( rg_it->range.Empty() ) {
                     // Empty seq-loc
                     CRef<CSeq_loc> loc(new CSeq_loc);
                     loc->SetEmpty().Assign(*id_it->first.GetSeqId());
@@ -2386,33 +2417,33 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                     continue;
                 }
                 if (to == kInvalidSeqPos) {
-                    from = rg_it->first.GetFrom();
-                    to = rg_it->first.GetTo();
-                    fuzz = rg_it->second;
+                    from = rg_it->range.GetFrom();
+                    to = rg_it->range.GetTo();
+                    fuzz = rg_it->fuzz;
                     continue;
                 }
                 if (m_MergeFlag == eMergeAbutting) {
-                    if (rg_it->first.GetFrom() == to + 1) {
-                        to = rg_it->first.GetTo();
-                        fuzz.second = rg_it->second.second;
+                    if (rg_it->range.GetFrom() == to + 1) {
+                        to = rg_it->range.GetTo();
+                        fuzz.second = rg_it->fuzz.second;
                         continue;
                     }
                 }
                 if (m_MergeFlag == eMergeContained) {
                     // Ignore interval completely covered by another one
-                    if (rg_it->first.GetTo() <= to) {
+                    if (rg_it->range.GetTo() <= to) {
                         continue;
                     }
-                    if (rg_it->first.GetFrom() == from) {
-                        to = rg_it->first.GetTo();
-                        fuzz.second = rg_it->second.second;
+                    if (rg_it->range.GetFrom() == from) {
+                        to = rg_it->range.GetTo();
+                        fuzz.second = rg_it->fuzz.second;
                         continue;
                     }
                 }
                 if (m_MergeFlag == eMergeAll) {
-                    if (rg_it->first.GetFrom() <= to + 1) {
-                        to = rg_it->first.GetTo();
-                        fuzz.second = rg_it->second.second;
+                    if (rg_it->range.GetFrom() <= to + 1) {
+                        to = rg_it->range.GetTo();
+                        fuzz.second = rg_it->fuzz.second;
                         continue;
                     }
                 }
@@ -2425,9 +2456,9 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
                     dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
                         str, fuzz));
                 }
-                from = rg_it->first.GetFrom();
-                to = rg_it->first.GetTo();
-                fuzz = rg_it->second;
+                from = rg_it->range.GetFrom();
+                to = rg_it->range.GetTo();
+                fuzz = rg_it->fuzz;
             }
             // last interval or point
             if ( x_ReverseRangeOrder() ) {
