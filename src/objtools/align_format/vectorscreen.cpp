@@ -260,7 +260,7 @@ CVecscreen::CVecscreen(const CSeq_align_set& seqalign, TSeqPos master_length){
     m_ImagePath = "./";
     m_MasterLen = master_length;
     m_FinalSeqalign = new CSeq_align_set;
-    m_HelpDocsUrl = "www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html";    
+    m_HelpDocsUrl = "http://www.ncbi.nlm.nih.gov/VecScreen/VecScreen_docs.html";    
     m_ShowWeakMatch = true;
 }
 
