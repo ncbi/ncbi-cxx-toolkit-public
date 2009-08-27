@@ -1349,6 +1349,57 @@ static void s_TestTimeSpan(void)
 
 //============================================================================
 //
+// TestTimeout
+//
+//============================================================================
+
+// This test do not test Stimeout, because last one need linking with connect library.
+
+static void s_TestTimeout(void)
+{
+    LOG_POST("\n---------------------------");
+    LOG_POST("Test Timeout");
+    LOG_POST("---------------------------\n");
+
+    unsigned long ms;
+    double        ds;
+
+    CTimeout t1;
+    assert(t1 == kDefaultTimeout);
+    CTimeout t2(kInfiniteTimeout);
+    assert(t2 == kInfiniteTimeout);
+    assert(t2.GetAsMilliSeconds() == kMax_ULong);
+    assert(t2.GetAsDouble() > kMax_ULong);
+
+    CTimeout t3(3,400000);
+    ms = t3.GetAsMilliSeconds();
+    ds = t3.GetAsDouble();
+    assert(ms == 3400);
+    assert(ds > 3.3  &&  ds < 3.5);
+    t3.Set(1,2000);
+    assert(t3.GetAsMilliSeconds() == 1002);
+
+    CTimeout t4(6.75);
+    ms = t4.GetAsMilliSeconds();
+    ds = t4.GetAsDouble();
+    assert(ms > 6749  &&  ms < 6751);
+    assert(ds > 6.74  &&  ds < 6.76);
+    t3.Set(1,2000);
+    assert(t3.GetAsMilliSeconds() == 1002);
+
+    CTimeout t5(t3);
+    assert(t5.GetAsMilliSeconds() == 1002);
+    t5 = t3;
+    assert(t3.GetAsMilliSeconds() == 1002);
+    t5 = t1;
+    assert(t5 == kDefaultTimeout);
+    t5 = t2;
+    assert(t5 == kInfiniteTimeout);
+}
+
+
+//============================================================================
+//
 // DemoStopWatch
 //
 //============================================================================
@@ -1413,6 +1464,7 @@ int main()
         s_TestGMT();
         s_TestGMTSpeed();
         s_TestTimeSpan();
+        s_TestTimeout();
         s_DemoStopWatch();
     } catch (CException& e) {
         ERR_POST(Fatal << e);

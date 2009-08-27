@@ -35,11 +35,11 @@
 
 /// @file ncbitime.hpp
 /// Defines:
-///   CTimeFormat- storage class for fime format.
-///   CTime      - standard Date/Time class to represent an absolute time.
-///   CTimeSpan  - class to represents a relative time span.
-///   CTimeout   - timeout interval for various I/O etc activity
-///   CStopWatch - stop watch class to measure elasped time.
+///   CTimeFormat - storage class for fime format.
+///   CTime       - standard Date/Time class to represent an absolute time.
+///   CTimeSpan   - class to represents a relative time span.
+///   CTimeout    - timeout interval for various I/O etc activity.
+///   CStopWatch  - stop watch class to measure elasped time.
 ///
 /// NOTE about CTime:
 ///
@@ -1431,35 +1431,62 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// C++ version of STimeout
+/// CTimeout --
 ///
+/// Timeout interval for various I/O etc activity.
+///
+/// Next special constant can be used in the constructor, Set() method or 
+/// comparison of CTimeout objects:
+///   - kDefaultTimeout
+///   - kInfiniteTimeout.
 
 class NCBI_XNCBI_EXPORT CTimeout
 {
 public:
-    /// Create default timeout
+    /// Create default timeout.
     CTimeout(void) : m_Ptr(kDefaultTimeout) {}
-    /// Create timeout from STimeout*
-    CTimeout(const STimeout* tmo) { Set(tmo); }
-    /// Initialize timeout in seconds and microseconds
-    CTimeout(unsigned int sec, unsigned int usec) { Set(sec, usec); }
+    /// Initialize timeout in seconds and microseconds.
+    CTimeout(unsigned int sec, unsigned int usec);
+    /// Initialize timeout from number of seconds (fractional value).
+    CTimeout(double sec);
+    /// Create timeout from STimeout*.
+    CTimeout(const STimeout* t);
+    /// Copy constructor.
+    CTimeout(const CTimeout& t);
+    /// Destructor.
     ~CTimeout(void) {}
 
-    /// Get STimeout*
-    const STimeout* Get(void) const { return m_Ptr; }
-    /// Convert to const STimeout*
+    //
+    // Get timeout
+    //
+    /// Convert to const STimeout*.
     operator const STimeout*(void) const { return Get(); }
+    /// Get STimeout*.
+    const STimeout* Get(void) const { return m_Ptr; }
 
-    /// Set timeout
-    void Set(const STimeout* tmo);
-    /// Set timeout in seconds and microseconds
+    /// Get as number of milliseconds.
+    unsigned long GetAsMilliSeconds(void) const;
+    /// Convert as number of seconds (fractional value).
+    double GetAsDouble(void) const;
+
+    //
+    // Set timeout
+    //
+    /// Set timeout in seconds and microseconds.
     void Set(unsigned int sec, unsigned int usec);
-    /// Copy timeout from STimeout*
-    const CTimeout& operator=(const STimeout* tmo) { Set(tmo); return *this; }
+    /// Set timeout from number of seconds (fractional value).
+    void Set(double sec);
+    /// Set timeout from STimeout.
+    void Set(const STimeout* t);
+
+    /// Assignment operator.
+    const CTimeout& operator= (const CTimeout& t);
+    /// Copy timeout from STimeout*.
+    const CTimeout& operator=(const STimeout* t);
 
 private:
-    const STimeout* m_Ptr;
-    STimeout        m_Timeout;
+    const STimeout* m_Ptr;      ///< Pointer to m_Timeout, or special value.
+    STimeout        m_Timeout;  ///< Storage for timeout value.
 };
 
 
@@ -2264,6 +2291,36 @@ inline
 bool CTimeSpan::operator<= (const CTimeSpan& t) const
 {
     return !(*this > t);
+}
+
+
+//
+// CTimeout
+//
+
+inline
+CTimeout::CTimeout(unsigned int sec, unsigned int usec)
+{ 
+    Set(sec, usec);
+}
+
+inline
+CTimeout::CTimeout(double sec)
+{
+    Set(sec);
+}
+
+inline
+CTimeout::CTimeout(const STimeout* t)
+{
+    Set(t);
+}
+
+inline
+const CTimeout& CTimeout::operator=(const STimeout* t)
+{
+    Set(t);
+    return *this;
 }
 
 

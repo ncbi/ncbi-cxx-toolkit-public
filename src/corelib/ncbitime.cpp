@@ -85,7 +85,7 @@ static CSafeStaticPtr<CFastLocalTime> s_FastLocalTime;
 //============================================================================
 
 // Number of days per month
-static int s_DaysInMonth[12] = {
+    static int s_DaysInMonth[12] = {
     31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
@@ -109,8 +109,8 @@ static const char* kWeekdayFull [7] = {
 };
 
 // Default value for time/timespan format
-static const char* kDefaultFormatTime = "M/D/Y h:m:s";
-static const char* kDefaultFormatSpan = "-S.n";
+static const char* kDefaultFormatTime      = "M/D/Y h:m:s";
+static const char* kDefaultFormatSpan      = "-S.n";
 static const char* kDefaultFormatStopWatch = "-S.n";
 
 // Set of the checked format symbols.
@@ -2301,12 +2301,54 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 //
 //=============================================================================
 
-void CTimeout::Set(const STimeout* tmo)
+
+CTimeout::CTimeout(const CTimeout& t)
 {
-    if (tmo == kDefaultTimeout  ||  tmo == kInfiniteTimeout) {
-        m_Ptr = tmo;
+    m_Timeout = t.m_Timeout;
+    if (t.m_Ptr == &t.m_Timeout) {
+        m_Ptr = &m_Timeout;
     } else {
-        m_Timeout = *tmo;
+        m_Ptr = t.m_Ptr; // special value
+    }
+}
+
+
+unsigned long CTimeout::GetAsMilliSeconds(void) const
+{ 
+    if (m_Ptr == kDefaultTimeout  ||  m_Ptr == kInfiniteTimeout) {
+        return kMax_ULong;
+    }
+    return m_Timeout.sec * kMilliSecondsPerSecond + m_Timeout.usec/1000;
+}
+
+
+double CTimeout::GetAsDouble(void) const
+{
+    if (m_Ptr == kDefaultTimeout  ||  m_Ptr == kInfiniteTimeout) {
+        return kMax_Double;
+    }
+    return m_Timeout.sec + double(m_Timeout.usec) / kMicroSecondsPerSecond;
+}
+
+
+const CTimeout& CTimeout::operator= (const CTimeout& t)
+{
+    m_Timeout = t.m_Timeout;
+    if (t.m_Ptr == &t.m_Timeout) {
+        m_Ptr = &m_Timeout;
+    } else {
+        m_Ptr = t.m_Ptr; // special value
+    }
+    return *this;
+}
+
+
+void CTimeout::Set(const STimeout* t)
+{
+    if (t == kDefaultTimeout  ||  t == kInfiniteTimeout) {
+        m_Ptr = t;
+    } else {
+        m_Timeout = *t;
         m_Ptr = &m_Timeout;
     }
 }
@@ -2317,6 +2359,15 @@ void CTimeout::Set(unsigned int sec, unsigned int usec)
     m_Timeout.sec  = sec;
     m_Timeout.usec = usec;
     m_Ptr = &m_Timeout;
+}
+
+
+void CTimeout::Set(double sec)
+{
+    m_Timeout.sec  = (unsigned int)sec;
+    m_Timeout.usec = (unsigned int)((sec - m_Timeout.sec) * kMicroSecondsPerSecond);
+    m_Ptr = &m_Timeout;
+    return;
 }
 
 
