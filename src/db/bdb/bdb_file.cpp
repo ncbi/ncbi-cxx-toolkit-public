@@ -1742,18 +1742,7 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
         return eBDB_KeyEmpty;
     case DB_BUFFER_SMALL:
         buf->resize_mem(m_DBT_Data->size);
-        {
-            unsigned int retry_flag;
-            if (bdb_flag & DB_FIRST) {
-                retry_flag = DB_FIRST;
-            } else
-            if (bdb_flag & DB_LAST) {
-                retry_flag = DB_LAST;
-            } else {
-                retry_flag = DB_CURRENT;
-            }
-            return this->ReadCursor(dbc, retry_flag, buf);
-        }
+        return this->ReadCursor(dbc, bdb_flag, buf);
         break;
     } // switch
 
