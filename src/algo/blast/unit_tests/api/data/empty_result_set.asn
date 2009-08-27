@@ -1,0 +1,129 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 13
+      },
+      {
+        id str "e_value",
+        value real { 346694288512853, 10, -16 }
+      },
+      {
+        id str "bit_score",
+        value real { 262634874155843, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 13
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 555,
+        gi 115431893
+      },
+      starts {
+        570,
+        100
+      },
+      lens {
+        13
+      },
+      strands {
+        plus,
+        plus
+      }
+    }
+  }
+}
+Seq-align-set ::= {
+}
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 14
+      },
+      {
+        id str "e_value",
+        value real { 331391578029247, 10, -16 }
+      },
+      {
+        id str "bit_score",
+        value real { 282458414682259, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 14
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 3090,
+        gi 115431894
+      },
+      starts {
+        1517,
+        136
+      },
+      lens {
+        14
+      },
+      strands {
+        minus,
+        plus
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 14
+      },
+      {
+        id str "e_value",
+        value real { 331391578029247, 10, -16 }
+      },
+      {
+        id str "bit_score",
+        value real { 282458414682259, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 14
+      }
+    },
+    segs denseg {
+      dim 2,
+      numseg 1,
+      ids {
+        gi 3090,
+        gi 115431894
+      },
+      starts {
+        782,
+        136
+      },
+      lens {
+        14
+      },
+      strands {
+        minus,
+        plus
+      }
+    }
+  }
+}
