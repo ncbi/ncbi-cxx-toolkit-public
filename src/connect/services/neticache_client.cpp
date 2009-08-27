@@ -348,12 +348,11 @@ CNetICacheClient::CNetICacheClient() :
     m_Host("localhost"),
     m_Port(9000),
     m_OwnSocket(eNoOwnership),
-    m_Timeout(s_GetDefaultCommTimeout()),
     m_ClientName("neticache_client"),
+    m_Timeout(s_GetDefaultCommTimeout()),
     m_CacheName("default_cache"),
     m_Throttler(5000, CTimeSpan(60,0))
 {
-    m_Timeout.sec = 180000;
 }
 
 
@@ -365,12 +364,11 @@ CNetICacheClient::CNetICacheClient(const string&  host,
     m_Host(host),
     m_Port(port),
     m_OwnSocket(eNoOwnership),
-    m_Timeout(s_GetDefaultCommTimeout()),
     m_ClientName(client_name),
+    m_Timeout(s_GetDefaultCommTimeout()),
     m_CacheName(cache_name),
     m_Throttler(5000, CTimeSpan(60,0))
 {
-    m_Timeout.sec = 180000;
 }
 
 CNetICacheClient::CNetICacheClient(
@@ -380,8 +378,8 @@ CNetICacheClient::CNetICacheClient(
     const string& lbsm_affinity_name) :
         m_Sock(0),
         m_OwnSocket(eNoOwnership),
-        m_Timeout(s_GetDefaultCommTimeout()),
         m_ClientName(client_name),
+        m_Timeout(s_GetDefaultCommTimeout()),
         m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
         m_ServiceDiscovery(
             new CNetServiceDiscovery(lb_service_name, lbsm_affinity_name)),
