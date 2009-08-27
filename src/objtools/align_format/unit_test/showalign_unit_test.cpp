@@ -121,6 +121,19 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     return true;
 }
 
+// Note: this essentially disables the performance tests for the automated
+// toolkit builds, which implies that the BLAST team should be running these
+// themselves (CVSROOT/individual/camacho/scripts/autobuild.pl should do this)
+NCBITEST_AUTO_INIT()
+{
+    if (CNcbiApplication::Instance()->GetEnvironment()
+        .Get("NCBI_AUTOMATED_BUILD") == "1") {
+        // Suppress timeout
+        typedef SNcbiTestTCTimeout<BOOST_AUTO_TC_UNIQUE_ID(TestPerformance)> TTimeout;
+        TTimeout new_timeout(kMax_Int);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(TestSimpleAlignment_LocalBlastDBLoader)
 {
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eLocal));
