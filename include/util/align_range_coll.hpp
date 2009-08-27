@@ -247,6 +247,7 @@ public:
                     x_SetFlags(fNotValidated); // erasing probably fixed the problem
                 }
             }
+            return it_res;
         }
         return it_del;
     }
