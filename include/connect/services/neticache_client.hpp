@@ -37,13 +37,19 @@
 /// NetCache ICache client specs.
 ///
 
-#include <connect/services/netservice_client.hpp>
+#include <connect/services/netservice_api.hpp>
 #include <connect/services/srv_discovery.hpp>
 
+#include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+
+#include <util/resource_pool.hpp>
 #include <util/cache/icache.hpp>
 
 #include <corelib/request_control.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,10 +64,13 @@ BEGIN_NCBI_SCOPE
 ///
 /// @note This implementation is thread safe and synchronized
 ///
-class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
+class NCBI_NET_CACHE_EXPORT CNetICacheClient : virtual protected CConnIniter,
                                                public ICache
 {
 public:
+    /// Construct the client without connecting to any particular
+    /// server. Actual server (host and port) will be extracted from the
+    /// blob key.
     CNetICacheClient();
 
     CNetICacheClient(const string&  host,
@@ -86,6 +95,8 @@ public:
                              const string& cache_name,
                              const string& client_name);
 
+    /// Return socket to the socket pool
+    /// @note thread sync. method
     virtual
     void ReturnSocket(CSocket* sock, const string& blob_comments);
 
@@ -155,6 +166,87 @@ public:
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const;
+
+    /// Set communication timeout default for all new connections
+    static
+        void SetDefaultCommunicationTimeout(const STimeout& to);
+
+    /// Set communication timeout (ReadWrite)
+    void SetCommunicationTimeout(const STimeout& to);
+    STimeout& SetCommunicationTimeout();
+    STimeout  GetCommunicationTimeout() const;
+
+    void RestoreHostPort();
+
+    /// Set socket (connected to the server)
+    ///
+    /// @param sock
+    ///    Connected socket to the server.
+    ///    Communication timeouts of the socket won't be changed
+    /// @param own
+    ///    Socket ownership
+    ///
+    void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
+
+    /// Detach and return current socket.
+    /// Caller is responsible for deletion.
+    CSocket* DetachSocket();
+
+    /// Set client name comment (like LB service name).
+    /// May be sent to server for better logging.
+    void SetClientNameComment(const string& comment)
+    {
+        m_ClientNameComment = comment;
+    }
+
+    const string& GetClientNameComment() const
+    {
+        return m_ClientNameComment;
+    }
+    const string& GetClientName() const { return m_ClientName; }
+
+    /// Get socket out of the socket pool (if there are sockets available)
+    /// @note thread sync. method
+    CSocket* GetPoolSocket();
+
+    const string& GetHost() const { return m_Host; }
+    unsigned short GetPort() const { return m_Port; }
+
+protected:
+    bool ReadStr(CSocket& sock, string* str);
+    void WriteStr(const char* str, size_t len);
+    void CreateSocket(const string& hostname, unsigned port);
+    void WaitForServer(unsigned wait_sec=0);
+
+    /// @internal
+    class CSockGuard
+    {
+    public:
+        CSockGuard(CSocket& sock) : m_Sock(&sock) {}
+        CSockGuard(CSocket* sock) : m_Sock(sock) {}
+        ~CSockGuard() { if (m_Sock) m_Sock->Close(); }
+        /// Dismiss the guard (no disconnect)
+        void Release() { m_Sock = 0; }
+    private:
+        CSockGuard(const CSockGuard&);
+        CSockGuard& operator=(const CSockGuard&);
+    private:
+        CSocket*    m_Sock;
+    };
+
+protected:
+    CSocket*                m_Sock;
+    string                  m_Host;
+    unsigned short          m_Port;
+    EOwnership              m_OwnSocket;
+    string                  m_ClientName;
+    STimeout                m_Timeout;
+    string                  m_ClientNameComment;
+    string                  m_Tmp;                 ///< Temporary string
+
+private:
+    CResourcePool<CSocket>  m_SockPool;
+    CFastMutex              m_SockPool_Lock;
 
 protected:
     /// Connect to server

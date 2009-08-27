@@ -46,6 +46,8 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <memory>
 
@@ -76,7 +78,7 @@ public:
     /// Set pointer on parent object responsible for socket pooling
     /// If parent set RW will return socket to its parent for reuse.
     /// If parent not set, socket is closed.
-    void SetSocketParent(CNetServiceClient* parent);
+    void SetSocketParent(CNetICacheClient* parent);
 
     /// Access to CSocketReaderWriter::m_Sock
     CSocket& GetSocket() { _ASSERT(m_Sock); return *m_Sock; }
@@ -96,7 +98,7 @@ public:
     }
 
 protected:
-    CNetServiceClient*  m_Parent;
+    CNetICacheClient*  m_Parent;
     /// Flag that EOF is controlled not on the socket level (sock close)
     /// but based on the BLOB size
     bool m_BlobSizeControl;
@@ -157,7 +159,7 @@ void CNetCacheSock_RW::OwnSocket()
     m_IsOwned = eTakeOwnership;
 }
 
-void CNetCacheSock_RW::SetSocketParent(CNetServiceClient* parent)
+void CNetCacheSock_RW::SetSocketParent(CNetICacheClient* parent)
 {
     m_Parent = parent;
 }
@@ -341,8 +343,13 @@ void s_MakeCommand(string* cmd)
 
 
 
-CNetICacheClient::CNetICacheClient()
-  : CNetServiceClient("localhost", 9000, "netcache_client"),
+CNetICacheClient::CNetICacheClient() :
+    m_Sock(0),
+    m_Host("localhost"),
+    m_Port(9000),
+    m_OwnSocket(eNoOwnership),
+    m_Timeout(s_GetDefaultCommTimeout()),
+    m_ClientName("neticache_client"),
     m_CacheName("default_cache"),
     m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -353,8 +360,13 @@ CNetICacheClient::CNetICacheClient()
 CNetICacheClient::CNetICacheClient(const string&  host,
                                    unsigned short port,
                                    const string&  cache_name,
-                                   const string&  client_name)
-  : CNetServiceClient(host, port, client_name),
+                                   const string&  client_name) :
+    m_Sock(0),
+    m_Host(host),
+    m_Port(port),
+    m_OwnSocket(eNoOwnership),
+    m_Timeout(s_GetDefaultCommTimeout()),
+    m_ClientName(client_name),
     m_CacheName(cache_name),
     m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -366,7 +378,10 @@ CNetICacheClient::CNetICacheClient(
     const string& cache_name,
     const string& client_name,
     const string& lbsm_affinity_name) :
-        CNetServiceClient(client_name),
+        m_Sock(0),
+        m_OwnSocket(eNoOwnership),
+        m_Timeout(s_GetDefaultCommTimeout()),
+        m_ClientName(client_name),
         m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
         m_ServiceDiscovery(
             new CNetServiceDiscovery(lb_service_name, lbsm_affinity_name)),
@@ -401,6 +416,8 @@ void CNetICacheClient::SetConnectionParams(
 
 CNetICacheClient::~CNetICacheClient()
 {
+    if (m_OwnSocket == eTakeOwnership)
+        delete m_Sock;
 }
 
 
@@ -421,13 +438,204 @@ void CNetICacheClient::ReturnSocket(CSocket* sock, const string& blob_comments)
     }}
 
     {{
-    CFastMutexGuard guard(m_Lock);
-    if (m_Sock == 0) {
-        m_Sock = sock;
-        return;
-    }
+        CFastMutexGuard guard(m_Lock);
+        if (m_Sock == 0) {
+            m_Sock = sock;
+            return;
+        }
     }}
-    CNetServiceClient::ReturnSocket(sock, blob_comments);
+
+    _ASSERT(sock);
+    CFastMutexGuard guard(m_SockPool_Lock);
+    m_SockPool.Put(sock);
+}
+
+
+void CNetICacheClient::SetDefaultCommunicationTimeout(const STimeout& to)
+{
+    s_SetDefaultCommTimeout(to);
+}
+
+
+void CNetICacheClient::SetCommunicationTimeout(const STimeout& to)
+{
+    m_Timeout = to;
+    if (m_Sock) {
+        m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
+    }
+}
+
+
+STimeout& CNetICacheClient::SetCommunicationTimeout()
+{
+    return m_Timeout;
+}
+
+
+STimeout CNetICacheClient::GetCommunicationTimeout() const
+{
+    return m_Timeout;
+}
+
+
+void CNetICacheClient::RestoreHostPort()
+{
+    unsigned int host;
+    m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
+    m_Host = CSocketAPI::ntoa(host);
+    /*
+    m_Host = CSocketAPI::gethostbyaddr(host);
+    string::size_type pos = m_Host.find_first_of(".");
+    if (pos != string::npos) {
+    m_Host.erase(pos, m_Host.length());
+    }
+    */
+    m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
+    //cerr << m_Host << " ";
+}
+
+
+void CNetICacheClient::SetSocket(CSocket* sock, EOwnership own)
+{
+    if (m_OwnSocket == eTakeOwnership) {
+        delete m_Sock;
+    }
+    if ((m_Sock=sock) != 0) {
+        m_Sock->DisableOSSendDelay();
+        m_OwnSocket = own;
+        if ( TServConn_UserLinger2::GetDefault() ) {
+            STimeout zero = {0,0};
+            m_Sock->SetTimeout(eIO_Close,&zero);
+        }
+        RestoreHostPort();
+    }
+}
+
+
+CSocket* CNetICacheClient::DetachSocket()
+{
+    CSocket* s = m_Sock; m_Sock = 0; return s;
+}
+
+
+bool CNetICacheClient::ReadStr(CSocket& sock, string* str)
+{
+    _ASSERT(str);
+
+    EIO_Status io_st = sock.ReadLine(*str);
+    switch (io_st)
+    {
+    case eIO_Success:
+        return true;
+    case eIO_Timeout:
+        {
+            string msg = "Communication timeout reading from server.";
+            NCBI_THROW(CNetServiceException, eTimeout, msg);
+        }
+        break;
+    default: // invalid socket or request, bailing out
+        return false;
+    }
+
+    return true;
+}
+
+
+void CNetICacheClient::WriteStr(const char* str, size_t len)
+{
+    const char* buf_ptr = str;
+    size_t size_to_write = len;
+    while (size_to_write) {
+        size_t n_written;
+        EIO_Status io_st = m_Sock->Write(buf_ptr, size_to_write, &n_written);
+        NCBI_IO_CHECK(io_st);
+        size_to_write -= n_written;
+        buf_ptr       += n_written;
+    } // while
+}
+
+
+void CNetICacheClient::CreateSocket(const string& hostname,
+                                     unsigned      port)
+{
+    EIO_Status io_st;
+    if (m_Sock == 0) {
+        m_Sock = new CSocket();
+        if ( TServConn_UserLinger2::GetDefault() ) {
+            STimeout zero = {0,0};
+            m_Sock->SetTimeout(eIO_Close,&zero);
+        }
+        m_OwnSocket = eTakeOwnership;
+    } //else {
+
+    unsigned conn_repeats = 0;
+
+    do {
+        io_st = m_Sock->Connect(hostname, port, &m_Timeout, eOn);
+        if (io_st != eIO_Success) {
+            if (io_st == eIO_Unknown) {
+
+                m_Sock->Close();
+
+                // most likely this is an indication we have too many
+                // open ports on the client side
+                // (this kernel limitation manifests itself on Linux)
+                //
+
+                if (++conn_repeats > TServConn_ConnMaxRetries::GetDefault()) {
+                    if ( io_st != eIO_Success) {
+                        throw CIO_Exception(DIAG_COMPILE_INFO,
+                            0, (CIO_Exception::EErrCode)io_st,
+                            "IO error. Failed to connect to server.");
+                    }
+                    //NCBI_IO_CHECK(io_st);
+                }
+                // give system a chance to recover
+
+                SleepMilliSec(1000 * conn_repeats);
+            } else {
+                NCBI_IO_CHECK(io_st);
+            }
+        } else {
+            break;
+        }
+
+    } while (1);
+
+    m_Sock->SetDataLogging(eDefault);
+
+    //    }
+    m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
+    m_Sock->DisableOSSendDelay();
+
+    m_Host = hostname;
+    m_Port = port;
+}
+
+
+void CNetICacheClient::WaitForServer(unsigned wait_sec)
+{
+    STimeout to = {wait_sec, 0};
+    if ( wait_sec == 0)
+        to = m_Timeout;
+    while (true) {
+        EIO_Status io_st = m_Sock->Wait(eIO_Read, &to);
+        if (io_st == eIO_Timeout) {
+            NCBI_THROW(CNetServiceException, eTimeout,
+                "No response from " + m_Host + ":" + NStr::IntToString(m_Port) +
+                " for " + NStr::IntToString(to.sec) + " sec.");
+        }
+        else {
+            break;
+        }
+    }
+}
+
+
+CSocket* CNetICacheClient::GetPoolSocket()
+{
+    CFastMutexGuard guard(m_SockPool_Lock);
+    return m_SockPool.GetIfAvailable();
 }
 
 
