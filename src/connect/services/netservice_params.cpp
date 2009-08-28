@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <connect/services/netservice_params.hpp>
+#include "netservice_params.hpp"
 
 BEGIN_NCBI_SCOPE
 

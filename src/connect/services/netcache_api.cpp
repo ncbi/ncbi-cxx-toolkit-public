@@ -33,9 +33,9 @@
 #include <ncbi_pch.hpp>
 
 #include "netcache_api_impl.hpp"
+#include "netservice_params.hpp"
 
 #include <connect/services/srv_connections_expt.hpp>
-#include <connect/services/netservice_params.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>

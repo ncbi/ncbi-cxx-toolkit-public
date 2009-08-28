@@ -41,48 +41,59 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_PARAM_DECL(double, netservice_api, communication_timeout);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    double, netservice_api, communication_timeout);
 typedef NCBI_PARAM_TYPE(netservice_api, communication_timeout)
     TServConn_CommTimeout;
 
-NCBI_PARAM_DECL(unsigned int, netservice_api, connection_max_retries);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    unsigned int, netservice_api, connection_max_retries);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_max_retries)
     TServConn_ConnMaxRetries;
 
-NCBI_PARAM_DECL(unsigned int, netservice_api, retry_delay);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    unsigned int, netservice_api, retry_delay);
 typedef NCBI_PARAM_TYPE(netservice_api, retry_delay)
     TServConn_RetryDelay;
 
-NCBI_PARAM_DECL(bool, netservice_api, use_linger2);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    bool, netservice_api, use_linger2);
 typedef NCBI_PARAM_TYPE(netservice_api, use_linger2)
     TServConn_UserLinger2;
 
-NCBI_PARAM_DECL(int, netservice_api, max_find_lbname_retries);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    int, netservice_api, max_find_lbname_retries);
 typedef NCBI_PARAM_TYPE(netservice_api, max_find_lbname_retries)
     TServConn_MaxFineLBNameRetries;
 
-NCBI_PARAM_DECL(string, netcache_api, fallback_server);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    string, netcache_api, fallback_server);
 typedef NCBI_PARAM_TYPE(netcache_api, fallback_server)
     TCGI_NetCacheFallbackServer;
 
-NCBI_PARAM_DECL(string, netcache_client, fallback_servers);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    string, netcache_client, fallback_servers);
 typedef NCBI_PARAM_TYPE(netcache_client, fallback_servers)
     TCGI_NetCacheFallbackServers;
 
-NCBI_PARAM_DECL(int, netservice_api, max_connection_pool_size);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    int, netservice_api, max_connection_pool_size);
 typedef NCBI_PARAM_TYPE(netservice_api, max_connection_pool_size)
     TServConn_MaxConnPoolSize;
 
 // Worker node-specific parameters
-NCBI_PARAM_DECL(bool, server, stop_on_job_errors);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    bool, server, stop_on_job_errors);
 typedef NCBI_PARAM_TYPE(server, stop_on_job_errors)
     TWorkerNode_StopOnJobErrors;
 
-NCBI_PARAM_DECL(bool, server, allow_implicit_job_return);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    bool, server, allow_implicit_job_return);
 typedef NCBI_PARAM_TYPE(server, allow_implicit_job_return)
     TWorkerNode_AllowImplicitJobReturn;
 
-NCBI_PARAM_DECL(bool, server, do_not_rebalance);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCONNECT_EXPORT,
+    bool, server, do_not_rebalance);
 typedef NCBI_PARAM_TYPE(server, do_not_rebalance)
     TWorkerNode_DoNotRebalance;
 

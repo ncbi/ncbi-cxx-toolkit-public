@@ -32,8 +32,9 @@
 
 #include <ncbi_pch.hpp>
 
+#include "netservice_params.hpp"
+
 #include <connect/services/neticache_client.hpp>
-#include <connect/services/netservice_params.hpp>
 #include <connect/services/error_codes.hpp>
 #include <connect/services/netcache_api_expt.hpp>
 
