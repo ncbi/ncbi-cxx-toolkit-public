@@ -449,12 +449,6 @@ void CNetICacheClient::ReturnSocket(CSocket* sock, const string& blob_comments)
 }
 
 
-void CNetICacheClient::SetDefaultCommunicationTimeout(const STimeout& to)
-{
-    s_SetDefaultCommTimeout(to);
-}
-
-
 void CNetICacheClient::SetCommunicationTimeout(const STimeout& to)
 {
     m_Timeout = to;
@@ -464,49 +458,9 @@ void CNetICacheClient::SetCommunicationTimeout(const STimeout& to)
 }
 
 
-STimeout& CNetICacheClient::SetCommunicationTimeout()
-{
-    return m_Timeout;
-}
-
-
 STimeout CNetICacheClient::GetCommunicationTimeout() const
 {
     return m_Timeout;
-}
-
-
-void CNetICacheClient::RestoreHostPort()
-{
-    unsigned int host;
-    m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
-    m_Host = CSocketAPI::ntoa(host);
-    /*
-    m_Host = CSocketAPI::gethostbyaddr(host);
-    string::size_type pos = m_Host.find_first_of(".");
-    if (pos != string::npos) {
-    m_Host.erase(pos, m_Host.length());
-    }
-    */
-    m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
-    //cerr << m_Host << " ";
-}
-
-
-void CNetICacheClient::SetSocket(CSocket* sock, EOwnership own)
-{
-    if (m_OwnSocket == eTakeOwnership) {
-        delete m_Sock;
-    }
-    if ((m_Sock=sock) != 0) {
-        m_Sock->DisableOSSendDelay();
-        m_OwnSocket = own;
-        if ( TServConn_UserLinger2::GetDefault() ) {
-            STimeout zero = {0,0};
-            m_Sock->SetTimeout(eIO_Close,&zero);
-        }
-        RestoreHostPort();
-    }
 }
 
 
@@ -630,17 +584,11 @@ void CNetICacheClient::WaitForServer(unsigned wait_sec)
 }
 
 
-CSocket* CNetICacheClient::GetPoolSocket()
-{
-    CFastMutexGuard guard(m_SockPool_Lock);
-    return m_SockPool.GetIfAvailable();
-}
-
-
 bool CNetICacheClient::CheckConnect()
 {
     if (!m_Sock) {
-        m_Sock = GetPoolSocket();
+        CFastMutexGuard guard(m_SockPool_Lock);
+        m_Sock = m_SockPool.GetIfAvailable();
     }
 
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
@@ -710,11 +658,6 @@ string CNetICacheClient::MakeCommandPacket(const string& cmd_str,
         // connection has been re-established,
         //   need to send authentication line
         out_str = m_ClientName;
-        const string& client_name_comment = GetClientNameComment();
-        if (!client_name_comment.empty()) {
-            out_str.append(" ");
-            out_str.append(client_name_comment);
-        }
         out_str.append("\r\n");
     }
     out_str.append("IC(");
@@ -758,16 +701,9 @@ void CNetICacheClient::CheckOK(string* str) const
 void CNetICacheClient::RegisterSession(unsigned pid)
 {
     CFastMutexGuard guard(m_Lock);
-    bool reconnected = CheckConnect();
-    if (reconnected) {
+    if (CheckConnect()) {
         // connection reestablished
-        string auth = m_ClientName;
-        const string& client_name_comment = GetClientNameComment();
-        if (!client_name_comment.empty()) {
-            auth.append(" ");
-            auth.append(client_name_comment);
-        }
-        WriteStr(auth.c_str(), auth.length() + 1);
+        WriteStr(m_ClientName.c_str(), m_ClientName.length() + 1);
     }
 
     _ASSERT(m_Sock);
@@ -797,16 +733,9 @@ void CNetICacheClient::RegisterSession(unsigned pid)
 void CNetICacheClient::UnRegisterSession(unsigned pid)
 {
     CFastMutexGuard guard(m_Lock);
-    bool reconnected = CheckConnect();
-    if (reconnected) {
+    if (CheckConnect()) {
         // connection reestablished
-        string auth = m_ClientName;
-        const string& client_name_comment = GetClientNameComment();
-        if (!client_name_comment.empty()) {
-            auth.append(" ");
-            auth.append(client_name_comment);
-        }
-        WriteStr(auth.c_str(), auth.length() + 1);
+        WriteStr(m_ClientName.c_str(), m_ClientName.length() + 1);
     }
 
     _ASSERT(m_Sock);

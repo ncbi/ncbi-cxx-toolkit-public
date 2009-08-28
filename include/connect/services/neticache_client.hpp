@@ -167,47 +167,15 @@ public:
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const;
 
-    /// Set communication timeout default for all new connections
-    static
-        void SetDefaultCommunicationTimeout(const STimeout& to);
-
-    /// Set communication timeout (ReadWrite)
+    /// Set communication timeout
     void SetCommunicationTimeout(const STimeout& to);
-    STimeout& SetCommunicationTimeout();
     STimeout  GetCommunicationTimeout() const;
-
-    void RestoreHostPort();
-
-    /// Set socket (connected to the server)
-    ///
-    /// @param sock
-    ///    Connected socket to the server.
-    ///    Communication timeouts of the socket won't be changed
-    /// @param own
-    ///    Socket ownership
-    ///
-    void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
 
     /// Detach and return current socket.
     /// Caller is responsible for deletion.
     CSocket* DetachSocket();
 
-    /// Set client name comment (like LB service name).
-    /// May be sent to server for better logging.
-    void SetClientNameComment(const string& comment)
-    {
-        m_ClientNameComment = comment;
-    }
-
-    const string& GetClientNameComment() const
-    {
-        return m_ClientNameComment;
-    }
     const string& GetClientName() const { return m_ClientName; }
-
-    /// Get socket out of the socket pool (if there are sockets available)
-    /// @note thread sync. method
-    CSocket* GetPoolSocket();
 
     const string& GetHost() const { return m_Host; }
     unsigned short GetPort() const { return m_Port; }
@@ -241,7 +209,6 @@ protected:
     EOwnership              m_OwnSocket;
     string                  m_ClientName;
     STimeout                m_Timeout;
-    string                  m_ClientNameComment;
     string                  m_Tmp;                 ///< Temporary string
 
 private:
