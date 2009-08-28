@@ -512,7 +512,7 @@ CBioTree<TBioNode>::operator=(const CBioTree<TBioNode>& btr)
 {
     m_FeatureDict = btr.m_FeatureDict;
     m_NodeIdCounter = btr.m_NodeIdCounter;
-    m_TreeNode = new TBioTreeNode(*(btr.m_TreeNode));
+    m_TreeNode.reset(new TBioTreeNode(*(btr.m_TreeNode)));
     return *this;
 }
 
