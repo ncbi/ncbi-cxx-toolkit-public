@@ -1321,15 +1321,17 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
     CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
     CRef<CBlast_def_line> defline;
     
-    if (bioseq.CanGetId() && bioseq.GetId().front()->IsLocal()) {
-        CRef<CSeq_id> gnl_id(bioseq.GetId().front());
+    if (bioseq.CanGetId() && bioseq.GetId().front()->IsLocal() &&
+        (no_parse_id || bioseq.GetId().front()->GetLocal().IsStr())) {
+
+        CRef<CSeq_id> gnl_id (bioseq.GetId().front());
 
         if (no_parse_id) {
             // Generate an BL_ORD_ID in case no parse is needed
             gnl_id = new CSeq_id();
             gnl_id->SetGeneral().SetDb("BL_ORD_ID");
             gnl_id->SetGeneral().SetTag().SetId(0);  // will be filled later
-        } 
+        }
      
         // Build the local defline.
         defline.Reset(new CBlast_def_line);
