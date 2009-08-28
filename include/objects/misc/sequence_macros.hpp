@@ -801,22 +801,22 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 
 ///
-/// STRING_FIELD and STRING_MATCH macros
+/// Generic FIELD macros
 
-/// STRING_FIELD_IS_SET base macro
+/// FIELD_IS_SET base macro
 
-#define STRING_FIELD_IS_SET(Var, Fld) \
+#define FIELD_IS_SET(Var, Fld) \
     ((Var).IsSet##Fld())
 
-/// GET_STRING_FIELD base macro
+/// GET_FIELD base macro
 
-#define GET_STRING_FIELD(Var, Fld) \
+#define GET_FIELD(Var, Fld) \
     ((Var).Set##Fld())
 
-/// SET_STRING_FIELD base macro
+/// SET_FIELD base macro
 
-#define SET_STRING_FIELD(Var, Fld, Str) \
-    ((Var).Set##Fld(Str))
+#define SET_FIELD(Var, Fld, Val) \
+    ((Var).Set##Fld(Val))
 
 
 /// STRING_FIELD_MATCH base macro
@@ -824,7 +824,7 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define STRING_FIELD_MATCH(Var, Fld, Str) \
     ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Set##Fld(), Str))
 
-/// STRING_SET_MATCH base macro
+/// STRING_SET_MATCH base macro (for list or vectors)
 
 #define STRING_SET_MATCH(Var, Fld, Str) \
     ((Var).IsSet##Fld() && NStr::FindNoCase((Var).Set##Fld(), Str) != NULL)
