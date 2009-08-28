@@ -408,7 +408,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:"),
     TDbtUrl(CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?"),
     TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://www.genedb.org/genedb/Dispatcher?formType=navBar&submit=Search+for&organism=All%3Apombe%3Acerevisiae%3Adicty%3Aasp%3Atryp%3Aleish%3Amalaria%3Astyphi%3Aglossina&desc=yes&ohmr=%2F&name="),
-    TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=Retrieve&dopt=full_report&list_uids="),
+    TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/"),
     TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
     TDbtUrl(CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id="),
     TDbtUrl(CDbtag::eDbtagType_HSSP, "http://www.sander.ebi.ac.uk/hssp"),
@@ -457,7 +457,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_dbEST, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
     TDbtUrl(CDbtag::eDbtagType_dbProbe, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=probe&cmd=Retrieve&list_uids="),
     TDbtUrl(CDbtag::eDbtagType_dbSNP, "http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs="),
-    TDbtUrl(CDbtag::eDbtagType_dbSTS, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
+    TDbtUrl(CDbtag::eDbtagType_dbSTS, "http://www.ncbi.nlm.nih.gov/nuccore/"),
     TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
     TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
     TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
@@ -518,8 +518,10 @@ string CDbtag::GetUrl(void) const
             break;
 
         case eDbtagType_dbEST:
-        case eDbtagType_dbSTS:
             tag.insert(0, "val=gnl|dbest|");
+            break;
+
+        case eDbtagType_dbSTS:
             break;
 
         case eDbtagType_niaEST:
