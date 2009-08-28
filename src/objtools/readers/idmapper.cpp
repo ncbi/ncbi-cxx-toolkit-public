@@ -52,6 +52,40 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ============================================================================
+bool 
+HandleComparator::operator()(
+    CSeq_id_Handle handle1,
+    CSeq_id_Handle handle2 ) const 
+//  ============================================================================
+{
+    if ( handle1.operator==( handle2 ) ) {
+        return true;
+    }
+    
+    CConstRef<CSeq_id> id1 = handle1.GetSeqId();
+    CConstRef<CSeq_id> id2 = handle2.GetSeqId();
+    if ( (id1->Which() != CSeq_id::e_Local) || (id2->Which() != CSeq_id::e_Local) ) {
+        return false;
+    }
+    
+    string str1 = id1->GetLocal().GetStr();
+    NStr::ToLower( str1 );
+    string str2 = id2->GetLocal().GetStr();
+    NStr::ToLower( str2 );
+    
+    if ( str1 == str2 ) {
+        return true;
+    }
+    if ( string( "chr" ) + str1 == str2 ) {
+        return true;
+    }
+    if ( string( "chr" ) + str2 == str1 ) {
+        return true;
+    }
+    return false;
+};
+
+//  ============================================================================
 CSeq_id_Handle
 CIdMapper::Map(
     const CSeq_id_Handle& from )
@@ -108,6 +142,14 @@ CIdMapper::MapObject(
         id.Set( hMappedHandle.Which(), 
             hMappedHandle.GetSeqId()->GetSeqIdString() );
     }
+};
+
+//  ============================================================================
+void
+CIdMapper::GetSupportedContexts(
+    vector<string>& contexts )
+//  ============================================================================
+{
 };
 
 END_NCBI_SCOPE

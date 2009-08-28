@@ -36,6 +36,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
+struct HandleComparator
+//  ============================================================================
+{
+    bool operator()(
+        CSeq_id_Handle,
+        CSeq_id_Handle ) const;
+};
+                        
+//  ============================================================================
 class NCBI_XOBJREAD_EXPORT IIdMapper
 //  ============================================================================
 {
@@ -48,7 +57,11 @@ public:
 
     virtual void 
     MapObject(
-        CSerialObject& ) =0; 
+        CSerialObject& ) =0;
+        
+    virtual void
+    GetSupportedContexts(
+        std::vector<std::string>& ) =0; 
 
 };
 
@@ -56,6 +69,9 @@ public:
 class NCBI_XOBJREAD_EXPORT CIdMapper: public IIdMapper
 //  ============================================================================
 {
+protected:
+    typedef std::map< CSeq_id_Handle, CSeq_id_Handle, HandleComparator > CACHE;
+    
 public:
     //
     //  The "strContext" parameter allows for additional specialization of the
@@ -95,14 +111,14 @@ public:
     MapObject(
         CSerialObject& ); 
 
-    /* any other convenience functions with shared implementations*/ 
+    virtual void
+    GetSupportedContexts(
+        std::vector<std::string>& ); 
     
 protected:
     static std::string
     MapErrorString(
         const CSeq_id_Handle& );
-        
-    typedef std::map< CSeq_id_Handle, CSeq_id_Handle > CACHE;
     
     //
     //  Initialize the cache of mappings. Most implementations will have their
