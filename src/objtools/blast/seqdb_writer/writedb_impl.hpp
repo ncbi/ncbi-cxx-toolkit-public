@@ -446,13 +446,15 @@ private:
     /// @param linkout Linkout bits for each defline. [in]
     /// @param pig PIG to attach to a protein sequence. [in]
     /// @param accept_gt Whether greater-than is a delimiter. [in]
+    /// @param no_parse_id Whether seq_id should not be parsed. [in]
     static void
     x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                              CConstRef<CBlast_def_line_set> & deflines,
                              const vector< vector<int> >    & membits,
                              const vector< vector<int> >    & linkout,
                              int                              pig,
-                             bool                             accept_gt);
+                             bool                             accept_gt,
+                             bool                             no_parse_id);
     
     /// Returns true if we have unwritten sequence data.
     bool x_HaveSequence() const;
@@ -479,13 +481,15 @@ private:
     /// @param linkouts Linkout bits for each defline. [in]
     /// @param pig PIG to attach to a protein sequence. [in]
     /// @param OID the current OID for local id. [in]
+    /// @param no_parse_id whether we should not parse id. [in]
     static void x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                   CConstRef<CBlast_def_line_set> & deflines,
                                   string                         & bin_hdr,
                                   const vector< vector<int> >    & membbits,
                                   const vector< vector<int> >    & linkouts,
                                   int                              pig,
-                                  int                              OID=-1);
+                                  int                              OID=-1,
+                                  bool                             no_parse_id=false);
     
     /// Compute the hash of a (raw) sequence.
     ///

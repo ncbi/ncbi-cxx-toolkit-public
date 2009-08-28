@@ -442,7 +442,8 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  const vector< vector<int> >    & membbits,
                                  const vector< vector<int> >    & linkouts,
                                  int                              pig,
-                                 int                              OID)
+                                 int                              OID,
+                                 bool                             no_parse_id)
 {
     bool use_bin = (deflines.Empty() && pig == 0);
     
@@ -474,7 +475,8 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                      membbits,
                                      linkouts,
                                      pig,
-                                     false);
+                                     false,
+                                     no_parse_id);
         }
         
         if (bin_hdr.empty() && deflines.Empty()) {
@@ -559,7 +561,8 @@ void CWriteDB_Impl::x_CookHeader()
                       m_Memberships,
                       m_Linkouts,
                       m_Pig,
-                      OID);
+                      OID,
+                      m_NoParseID);
 }
 
 void CWriteDB_Impl::x_CookIds()
@@ -1264,7 +1267,8 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                          const vector< vector<int> >    & membits,
                          const vector< vector<int> >    & linkout,
                          int                              pig,
-                         bool                             accept_gt)
+                         bool                             accept_gt,
+                         bool                             no_parse_id)
 {
     if (! bioseq.CanGetDescr()) {
         return;
@@ -1318,12 +1322,14 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
     CRef<CBlast_def_line> defline;
     
     if (bioseq.CanGetId() && bioseq.GetId().front()->IsLocal()) {
-        // Generate an local id
-        // int local_id = bioseq.GetId().front()->GetLocal().GetId();
+        CRef<CSeq_id> gnl_id(bioseq.GetId().front());
 
-        CRef<CSeq_id> gnl_id(new CSeq_id);
-        gnl_id->SetGeneral().SetDb("BL_ORD_ID");
-        gnl_id->SetGeneral().SetTag().SetId(0); // will be reset later...
+        if (no_parse_id) {
+            // Generate an BL_ORD_ID in case no parse is needed
+            gnl_id = new CSeq_id();
+            gnl_id->SetGeneral().SetDb("BL_ORD_ID");
+            gnl_id->SetGeneral().SetTag().SetId(0);  // will be filled later
+        } 
      
         // Build the local defline.
         defline.Reset(new CBlast_def_line);
