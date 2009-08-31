@@ -144,7 +144,7 @@ void s_ReadObject(CNcbiIstream          & file,
         break;
         
     default:
-        throw runtime_error(string("Unknown encoding for ") + msg);
+        NCBI_THROW(CInvalidDataException, eInvalidInput, string("Unknown encoding for ") + msg);
     }
 }
 
@@ -517,7 +517,8 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input)
         break;
         
     default:
-        throw runtime_error("Input format not recognized");
+        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+              "Input format not recognized");
     }
 }
 
@@ -538,8 +539,8 @@ void CMakeBlastDBApp::x_ProcessMaskData()
                    NStr::eNoMergeDelims);
     
     if (! mask_list.size()) {
-        throw runtime_error("mask_data option found, "
-                            "but no files were specified.");
+        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                "mask_data option found, but no files were specified.");
     }
     
     ITERATE(vector<string>, iter, mask_list) {
@@ -574,7 +575,8 @@ void CMakeBlastDBApp::x_ProcessMaskData()
                 CConstRef<CSeq_id> seqid((**iter).GetId());
                 
                 if (seqid.Empty()) {
-                    throw runtime_error("Cannot get masked range Seq-id");
+                    NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                                     "Cannot get masked range Seq-id");
                 }
                 
                 m_Ranges->Insert(algo_id, *seqid, **iter);
@@ -639,7 +641,8 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             // if paths.size() == 1, we will happily take it to be the same 
             // case as a single volume database and recreate a new db 
             if (paths.size() > 1) {
-                throw runtime_error("Modifying an alias BLAST db is current not supported.");
+                NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                    "Modifying an alias BLAST db is currently not supported.");
             } 
             final_blastdb.push_back(blastdb[0]);
         } else {
@@ -696,7 +699,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
     vector<string> input_files;
     NStr::Tokenize(dbname, kInputSeparators, input_files);
     if (dbname == "-" || input_files.size() > 1) {
-        throw runtime_error("Please provide a database name using " + kOutput);
+        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+            "Please provide a database name using " + kOutput);
     }
 
     if (args[kInput].AsString() == dbname) {
@@ -708,7 +712,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
     // be overwritten (as in formatdb)
     
     if (title == "-") {
-        throw runtime_error("Please provide a title using -title");
+        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                         "Please provide a title using -title");
     }
     
     m_LogFile = & (args["logfile"].HasValue()
