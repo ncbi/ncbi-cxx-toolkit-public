@@ -1,0 +1,13 @@
+# $Id$
+
+ASN_DEP = seq blast xnetblast
+
+SRC = result_set  sequence_set   \
+      alignment_filterer  alignment_scorer  \
+      blast_aligner  banded_aligner   \
+      ngalign
+
+LIB = xngalign
+
+CXXFLAGS = $(FAST_CXXFLAGS) -I./.
+LDFLAGS  = $(FAST_LDFLAGS)
