@@ -78,7 +78,8 @@ public:
     
     /** @inheritDoc */
     CMakeBlastDBApp()
-        : m_LogFile(NULL)
+        : m_LogFile(NULL),
+          m_IsModifyMode(false)
     {
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
@@ -110,6 +111,8 @@ private:
     CRef<CBuildDatabase> m_DB;
     
     CRef<CMaskedRangeSet> m_Ranges;
+
+    bool m_IsModifyMode;
 };
 
 /// Reads an object defined in a NCBI ASN.1 spec from a stream in multiple
@@ -628,18 +631,32 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
 
         vector<string> final_blastdb;
 
-        ITERATE(vector<string>, iter, blastdb) {
-            const string & s = *iter;
+        if (m_IsModifyMode) {
+            ASSERT(blastdb.size()==1);
+            CSeqDB db(blastdb[0], seqtype);
+            vector<string> paths;
+            db.FindVolumePaths(paths);
+            // if paths.size() == 1, we will happily take it to be the same 
+            // case as a single volume database and recreate a new db 
+            if (paths.size() > 1) {
+                throw runtime_error("Modifying an alias BLAST db is current not supported.");
+            } 
+            final_blastdb.push_back(blastdb[0]);
+        } else {
 
-            try {
-                 CSeqDB db(s, seqtype);
+            ITERATE(vector<string>, iter, blastdb) {
+                const string & s = *iter;
+
+                try {
+                     CSeqDB db(s, seqtype);
+                }
+                catch(const CSeqDBException &) {
+                      ERR_POST(Error << "Unable to open input "
+                                     << s << " as either FASTA file or BLAST db");
+                        continue;
+                }
+                final_blastdb.push_back(s);
             }
-            catch(const CSeqDBException &) {
-                  ERR_POST(Error << "Unable to open input "
-                                 << s << " as either FASTA file or BLAST db");
-                    continue;
-            }
-            final_blastdb.push_back(s);
         }
 
         if (final_blastdb.size()) {
@@ -681,6 +698,11 @@ void CMakeBlastDBApp::x_BuildDatabase()
     if (dbname == "-" || input_files.size() > 1) {
         throw runtime_error("Please provide a database name using " + kOutput);
     }
+
+    if (args[kInput].AsString() == dbname) {
+        m_IsModifyMode = true;
+    }
+
     _ASSERT(NStr::Find(dbname, kInputSeparators) == NPOS);
     // N.B.: Source database(s) in the current working directory will
     // be overwritten (as in formatdb)
