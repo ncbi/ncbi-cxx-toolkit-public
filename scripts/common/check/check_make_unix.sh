@@ -320,8 +320,10 @@ export CFG_BIN CFG_LIB
 check_exec="\$root_dir/scripts/common/check/check_exec.sh"
 CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
+CHECK_SIGNATURE="\$signature"
 export CHECK_EXEC
 export CHECK_EXEC_STDIN
+export CHECK_SIGNATURE
 
 # Avoid possible hangs on Mac OS X.
 DYLD_BIND_AT_LAUNCH=1

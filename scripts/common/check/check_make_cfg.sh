@@ -273,6 +273,9 @@ export PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\${PATH}"
 export CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
 export CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 
+# Define signature of the current build to use by test applications
+export CHECK_SIGNATURE="\$signature"
+
 # Enable silent abort for NCBI applications on fatal errors
 export DIAG_SILENT_ABORT="Y"
 
