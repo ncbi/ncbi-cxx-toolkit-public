@@ -109,7 +109,7 @@ CInterProcessLock::~CInterProcessLock()
 
 /// Try to acquire a lock for specified file descriptor.
 /// Return errno on error, or 0 on success.
-static int s_Lock(int fd) 
+static int s_UnixLock(int fd) 
 {
     int x_errno = 0;
 #  if defined(F_TLOCK)
@@ -188,15 +188,13 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
     int x_errno = 0;
     
     if (timeout == kInfiniteTimeout  ||  timeout == kDefaultTimeout) {
-        if ( lockf(fd, F_LOCK, 0) < 0) {
-            x_errno = errno;
-        }
+        x_errno = s_UnixLock(fd);
 
     } else {
         unsigned long ms = timeout.GetAsMilliSeconds();
         if ( !ms ) {
             // Timeout == 0
-            x_errno = s_Lock(fd);
+            x_errno = s_UnixLock(fd);
         } else {
             // Timeout > 0
             unsigned long ms_gran;
@@ -207,7 +205,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
             }
             // Try to lock within specified timeout
             for (;;) {
-                x_errno = s_Lock(fd);
+                x_errno = s_UnixLock(fd);
                 if ( !x_errno ) {
                     // Successfully locked
                     break;
