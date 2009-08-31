@@ -248,5 +248,22 @@ CIdMapperBuiltin::AddMapEntry(
         CSeq_id_Handle::GetHandle( target ) );
 };
 
+//  =============================================================================
+void
+CIdMapperBuiltin::GetSupportedContexts(
+    vector<string>& contexts )
+//  =============================================================================
+{
+    //  HACK ALERT --- FIX !!!
+    
+    contexts.push_back( "rn4" );
+    contexts.push_back( "mm7" );
+    contexts.push_back( "mm8" );
+    contexts.push_back( "mm9" );
+    contexts.push_back( "hg17" );
+    contexts.push_back( "hg18" );
+    contexts.push_back( "hg19" );
+};
+
 END_NCBI_SCOPE
 
