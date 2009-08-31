@@ -79,8 +79,7 @@ void CWinMaskApplication::Init(void)
 
     // Adding command line arguments descriptions
     arg_desc->AddDefaultKey( "ustat", "unit_counts",
-                             "file with unit counts"
-                             "(required if -mk_counts is false)",
+                             "file with unit counts",
                              CArgDescriptions::eString, "" );
     /*
     arg_desc->AddDefaultKey( kInput, "input_file_name",
@@ -195,7 +194,7 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "fa_list", "input_is_a_list",
                              "indicates that -input represents a file containing "
                              "a list of names of fasta files to process, one name "
-                             " per line (can only be used with -mk_counts true)", 
+                             " per line", 
                              CArgDescriptions::eBoolean, "false" );
     arg_desc->AddDefaultKey( "mem", "available_memory",
                              "memory available for mk_counts option in megabytes",
