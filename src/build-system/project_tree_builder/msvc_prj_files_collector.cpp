@@ -279,7 +279,8 @@ CMsvcPrjFilesCollector::CollectSources(void)
                 CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               abs_path + ".cpp"));
         } else {
-            if (SMakeProjectT::IsConfigurableDefine(CDirEntry(abs_path).GetBase()) ||
+            if (m_Project->m_MakeType >= eMakeType_Excluded ||
+                SMakeProjectT::IsConfigurableDefine(CDirEntry(abs_path).GetBase()) ||
                 !m_Project->m_DatatoolSources.empty()) {
                 PTB_WARNING_EX(abs_path, ePTB_FileNotFound,
                             "Source file not found");
