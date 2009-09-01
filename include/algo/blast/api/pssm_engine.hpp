@@ -41,7 +41,7 @@
 #include <algo/blast/api/blast_results.hpp> // for CBlastAncillaryData
 
 // Forward declarations
-class CPssmEngineTest;      // unit test class
+class CPssmCreateTestFixture;      // unit test class
 
 /** @addtogroup AlgoBlast
  *
@@ -219,7 +219,7 @@ private:
     CPssmEngine& operator=(const CPssmEngine& rhs);
 
     /// unit test class
-    friend class ::CPssmEngineTest; 
+    friend class ::CPssmCreateTestFixture; 
 };
 
 /// Auxiliary class to convert data encoded in the PSSM to CNcbiMatrix

@@ -40,7 +40,7 @@
 #include <objmgr/scope.hpp>
 
 /// Forward declaration for unit test classes
-class CPssmEngineTest;
+class CPssmCreateTestFixture;
 
 /** @addtogroup AlgoBlast
  *
@@ -246,7 +246,7 @@ private:
     void x_ExtractQueryForPssm();
 
     /// unit test class
-    friend class ::CPssmEngineTest;
+    friend class ::CPssmCreateTestFixture;
 
 private:
     /// prohibit copy constructor
