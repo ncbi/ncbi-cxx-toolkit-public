@@ -439,6 +439,7 @@ int CWinMaskApplication::Run (void)
 
     while( (aSeqEntry = theReader.GetNextSequence()).NotEmpty() )
     {
+        if( aSeqEntry->Which() == CSeq_entry::e_not_set ) continue;
         CScope scope(*om);
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*aSeqEntry);
         Uint4 masked = 0;

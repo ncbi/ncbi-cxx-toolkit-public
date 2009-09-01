@@ -53,7 +53,7 @@ CRef< CSeq_entry > CMaskBDBReader::GetNextSequence()
     if( oid_ < seqdb_->GetNumOIDs() ) {
         CRef< CBioseq > seq = seqdb_->GetBioseq( oid_++ );
         entry.Reset( new CSeq_entry );
-        entry->SetSeq( *seq );
+        if( seq.NotEmpty() ) entry->SetSeq( *seq );
     }
 
     return entry;
