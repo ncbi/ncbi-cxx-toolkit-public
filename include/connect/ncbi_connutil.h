@@ -118,7 +118,7 @@ typedef enum {
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create
  *             it, and then fix (hard-code) some fields, if really necessary.
- * NOTE:       "scheme", "user", and "pass" are reserved (unused) fields.
+ * NOTE:       Not all fields are fully user throughout the library.
  */
 typedef struct {
     char           client_host[256]; /* effective client hostname ('\0'=def) */
@@ -348,7 +348,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetUserHeader
 
 
 /* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
- * header was set, or if "header" == NULL).
+ * header was set); do nothing if the provided "header" is NULL or empty.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader

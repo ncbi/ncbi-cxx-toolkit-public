@@ -32,7 +32,7 @@
  *   Implement CONNECTOR for the HTTP-based network connection
  *
  *   See in "ncbi_connector.h" for the detailed specification of the underlying
- *   connector("CONNECTOR", "SConnectorTag") methods and structures.
+ *   connector ("CONNECTOR", "SConnectorTag") methods and structures.
  *
  */
 
@@ -55,37 +55,50 @@ extern "C" {
  * Use the configuration values recorded in "net_info". If "net_info" is NULL,
  * then use the default info (created by "ConnNetInfo_Create(0)").
  *
+ * If "net_info" does not explicitly specify an HTTP request method (i.e.
+ * it has it as "eReqMethod_Any"), then the actual method sent to the HTTP
+ * server depends on whether any data have been written to the connection
+ * with CONN_Write():  the presense of pending data will cause POST request
+ * (with Content-Length tag provided automatically and reflecting the total
+ * pending data size), and GET request method will result in the absence
+ * of data.  An explicit value for the request method will cause the
+ * specified request to be used regardless of pending data, and causing
+ * an error logged if any data will have to be sent with GET (per the RFC).
+ *
  * In order to workaround some HTTP communication features, this code does:
  *  1) Accumulate all output data in an internal memory buffer until the
  *     first "Read" (or "Peek", or "Close", or "Wait" on read) is attempted
  *     (also see fHCC_Flushable flag below).
  *  2) On the first "Read" (or "Peek", or "Close", or "Wait" on read), compose
  *     and send the whole HTTP request as:
- *        {POST|GET} <info->path>?<info->args> HTTP/1.0\r\n
+ *        {POST|GET} <net_info->path>?<net_info->args> HTTP/1.0\r\n
  *        <user_header\r\n>
  *        Content-Length: <accumulated_data_length>\r\n
  *        \r\n
  *        <accumulated_data>
  *     NOTE:
- *       if <user->header> is neither a NULL pointer nor an empty string, then:
- *       - it must NOT contain "empty lines":  '\r\n\r\n';
+ *       if <user_header> is neither a NULL pointer nor an empty string, then:
+ *       - it must NOT contain any "empty lines":  '\r\n\r\n';
  *       - it must be terminated by a single '\r\n';
  *       - it gets inserted to the HTTP header "as is", without any
- *         automatic checking or encoding.
+ *         automatic checking or encoding;
+ *       - "user_header" specified in the arguments overrides any user
+ *         header that can be provided in the "net_info" argument, see
+ *         ConnNetInfo_OverrideUserHeader() from <connect/ncbi_connutil.h>.
  *     NOTE:
  *       Data may depart to server side earlier if Flush()'ed in
  *       fHCC_Flushable connector, see below in "flags".
- *     After the request has been sent, reply data from the peer
- *     CGI program are then can be actually read out.
- *  4) On any "Write" operation. which follows data reading, the connection
- *     to the peer CGI program is forcedly closed (the peer CGI process will
- *     presumably die if has not done yet so), and data to be written are
+ *  3) After the request has been sent, then the response data from
+ *     the peer (usually a CGI program) can be actually read out.
+ *  4) On any "Write" operation, which follows data reading, the connection
+ *     to the peer is forcedly closed (the peer CGI process will presumably
+ *     die if it has not done so yet on its own), and data to be written
  *     again are stored in the buffer until next "Read" etc, see item 1).
  *
  *  *) If "fHCC_AutoReconnect" is set in "flags", then the connector makes
- *     an automatic reconnect to the same CGI program with just the
- *     same parameters, and micro-session steps (1,2,3) are repeated with
- *     another instance of the CGI program.
+ *     an automatic reconnect to the same URL with just the same parameters,
+ *     and micro-session steps (1,2,3) are repeated (with another instance
+ *     of the CGI program).
  *
  *     If "fHCC_AutoReconnect" is not set then only one
  *     "Write ... Write Read ... Read" micro-session is allowed, any
@@ -128,8 +141,11 @@ extern "C" {
  *       do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
  *
- * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "info->args")
- *       is performed by URL_Encode() and URL_Decode() -- "ncbi_connutil.[ch]".
+ * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "net_info->args")
+ *       is performed by URL_Encode() and URL_Decode() -- see "ncbi_connutil.[ch]".
+ *
+ * @sa
+ *  SConnNetInfo, ConnNetInfo_OverriderUserHeader, URL_Encode, URL_Decode
  */
 
 typedef enum {
