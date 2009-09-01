@@ -665,7 +665,10 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
 #endif
 
 		if (retval <= 0) {
-            if (!retval || (errno != EINTR  &&  errno != EAGAIN)) {
+            if (!retval || (sock_errno != TDSSOCK_EINTR
+                            &&  sock_errno != EAGAIN
+                            &&  sock_errno != TDSSOCK_EINPROGRESS))
+            {
                 tdsdump_log(TDS_DBG_NETWORK, "TDS: Write failed in tds_write_packet\nError: %d (%s)\n", sock_errno, strerror(sock_errno));
                 tds_client_msg(tds->tds_ctx, tds, 20006, 9, 0, 0, "Write to SQL Server failed.");
                 tds->in_pos = 0;
