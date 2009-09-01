@@ -61,7 +61,7 @@ namespace {
     const string kMode_Multiple ("multiple");
 
     const CAppHitFilter::THit::TCoord kMinHitLen (10);
-    
+
     const double kBigDbl(0.5 * numeric_limits<float>::max());
     const string kBoth("strict");
     const string kQuery("query");
@@ -75,7 +75,7 @@ void CAppHitFilter::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "HitFilter v.2.0.2");
-    
+
     argdescr->AddDefaultKey("mode", "mode", 
                             "Specify whether the hits should be resolved in pairs "
                             "or as a single set.",
@@ -85,11 +85,11 @@ void CAppHitFilter::Init()
     argdescr->AddDefaultKey("min_idty", "min_idty", 
                             "Minimal input hit identity",
                             CArgDescriptions::eDouble, "0.95");
-    
+
     argdescr->AddDefaultKey("min_len", "min_len", 
                             "Minimal input hit length",
                             CArgDescriptions::eInteger, "500");
-    
+
     argdescr->AddDefaultKey("retain_overlap", "retain_overlap", 
                             "Min overlap to retain in kilobases (0=OFF)",
                             CArgDescriptions::eInteger, "0");
@@ -103,7 +103,7 @@ void CAppHitFilter::Init()
 
     argdescr->AddFlag("sas", "Assume seq-align-set as the top-level structure "
                       "for the input ASN hits", true);
-    
+
     argdescr->AddDefaultKey("merge", "merge",
                             "Merge abutting alignments unless the merged "
                             "alignment overlap length ratio is greater "
@@ -120,20 +120,20 @@ void CAppHitFilter::Init()
     argdescr->AddOptionalKey("file_out", "file_out", "Output file (stdout otherwise)",
                              CArgDescriptions::eOutputFile,
                              CArgDescriptions::fBinary);    
-    
+
     argdescr->AddOptionalKey("m", "m",
                              "Text description/comment to add to the output",
                              CArgDescriptions::eString);
-    
+
     argdescr->AddDefaultKey("fmt_out", "fmt_out", "Output format",
                             CArgDescriptions::eString, g_m8);
-    
+
     argdescr->AddDefaultKey("hits_per_chunk", "hits_per_chunk", 
                             "Input is split into chunks with the number of hits "
                             "per chunk limited by this parameter.",
                             CArgDescriptions::eInteger, 
                             "5000000");
-    
+
     argdescr->AddDefaultKey("coord_margin", "coord_margin", 
                             "Larger values of this argument will result in less "
                             "RAM used but longer running times.",
@@ -154,7 +154,7 @@ void CAppHitFilter::Init()
     argdescr->AddFlag("keep_strands",
                       "Keep plus-plus strands"
                      );
-    
+
     argdescr->AddFlag("no_output_constraint",
                       "Do not output constraints"
                      );
@@ -162,13 +162,13 @@ void CAppHitFilter::Init()
     constrain_format->Allow(g_m8)->Allow(g_AsnTxt)->Allow(g_AsnBin);
     argdescr->SetConstraint("fmt_in", constrain_format);
     argdescr->SetConstraint("fmt_out", constrain_format);
-    
+
     CArgAllow* constrain_minlen = new CArgAllow_Integers(kMinHitLen, 1000000);
     argdescr->SetConstraint("min_len", constrain_minlen);
-    
+
     CArgAllow* constrain_minidty = new CArgAllow_Doubles(0.0, 1.0);
     argdescr->SetConstraint("min_idty", constrain_minidty);
-    
+
     CArgAllow* constrain_merge = new CArgAllow_Doubles(-1.0, 1.0);
     argdescr->SetConstraint("merge", constrain_merge);
 
@@ -222,7 +222,7 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs, bool one_pair)
     CNcbiIstream& istr = args["file_in"]? args["file_in"].AsInputFile(): cin;
 
     phitrefs->clear();
-  
+
     if(fmt_in == g_m8) {
 
         static string firstline;
@@ -314,7 +314,7 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs, bool one_pair)
 
         typedef set<string> TStringSet;
         static TStringSet idtags;
-        
+
         const string strid_query (phitrefs->front()->GetId(0)->GetSeqIdString(true));
         const string strid_subj (phitrefs->front()->GetId(1)->GetSeqIdString(true));
         const string tag (strid_subj + "$_#_&" + strid_query);
@@ -338,7 +338,7 @@ void CAppHitFilter::x_IterateSeqAlignList(const TSeqAlignList& sa_list,
 
 {
     ITERATE(TSeqAlignList, ii, sa_list) {
-                    
+
         const CRange<TSeqPos> r ((*ii)->GetSeqRange(0));
         if(r.GetTo() - r.GetFrom() >= min_len) {
 
@@ -359,9 +359,9 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
     const string fmt = args["fmt_out"].AsString();
 
     CNcbiOstream& ostr = args["file_out"]? args["file_out"].AsOutputFile(): cout;
-    
+
     string comment (args["m"]? args["m"].AsString(): "");
-    
+
     if(fmt == g_m8) {
 
         if(comment.size() > 0) {
@@ -381,7 +381,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
              << "\te-value"
              << "\tbit score"
              << endl;
-             
+
         ITERATE(THitRefs, ii, hitrefs) {
             const THit& hit = **ii;
             ostr << hit << endl;
@@ -391,16 +391,16 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 
         CRef<CSeq_annot> seq_annot (new CSeq_annot);
         CSeq_annot::TData::TAlign& align_list = seq_annot->SetData().SetAlign();
-        
+
         const bool fmt_txt (fmt == g_AsnTxt);
         ITERATE(THitRefs, ii, hitrefs) {
             const THit& h = **ii;
-            
+
             bool no_output_constraint = args["no_output_constraint"].HasValue();
-            if (no_output_constraint && h.GetScore() > kBigDbl) {
+            if (no_output_constraint && h.GetScore() >= kBigDbl) {
                 continue;
             }
-            
+
             CRef<CDense_seg> ds (new CDense_seg);
             const ENa_strand query_strand = h.GetQueryStrand()? eNa_strand_plus: 
                 eNa_strand_minus;
@@ -411,7 +411,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             ds->FromTranscript(h.GetQueryStart(), query_strand,
                               h.GetSubjStart(), subj_strand,
                               xcript);
-            
+
             bool keep_strands = args["keep_strands"].HasValue();
             if(!keep_strands && query_strand == eNa_strand_plus  && subj_strand == eNa_strand_plus) {
                 ds->ResetStrands();
@@ -427,7 +427,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 
 
             CRef<CSeq_align> seq_align (new CSeq_align());
-            
+
             // add reciprocity
             CRef<CScore> score(new CScore());
             score->SetId().SetStr("reciprocity");
@@ -448,10 +448,10 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
                 throw e;
             }
             seq_align->SetScore().push_back(score);
-                
+
             seq_align->SetType(CSeq_align::eType_partial);
             seq_align->SetSegs().SetDenseg(*ds);
-                        
+
             align_list.push_back(seq_align);
         }
 
@@ -517,7 +517,6 @@ int CAppHitFilter::Run()
     }
 
     if(maxlenfr >= 0) {
-
         THitRefs merged;
         CHitFilter<THit>::s_MergeAbutting(all.begin(), all.end(), maxlenfr, &merged);
         all = merged;
@@ -539,21 +538,21 @@ void CAppHitFilter::x_DoPairwise(THitRefs* pall)
     const double min_idty      (args["min_idty"].AsDouble());
     const size_t margin        (args["coord_margin"].AsInteger());
     const THit::TCoord retain_overlap (1024 * args["retain_overlap"].AsInteger());
-    
-    CHitFilter<THit>::EUnique_type unique_type = CHitFilter<THit>::e_Strict;    
+
+    CHitFilter<THit>::EUnique_type unique_type = CHitFilter<THit>::e_Strict;
     if (args["ut"].AsString() == "query") {
         unique_type = CHitFilter<THit>::e_Query;
     } else if (args["ut"].AsString() == "subject") {
         unique_type = CHitFilter<THit>::e_Subject;
     }
-        
+
     try {
         THitRefs hits;
         for(x_ReadInputHits(&hits, true); hits.size(); x_ReadInputHits(&hits, true)) {
 
             THitRefs hits_new;
             CHitFilter<THit>::s_RunGreedy(
-                hits.begin(), hits.end(), 
+                hits.begin(), hits.end(),
                 &hits_new, min_len, 
                 min_idty, margin,
                 retain_overlap,
@@ -611,10 +610,10 @@ void CAppHitFilter::x_DoMultiple(THitRefs* pall)
     const size_t M = args["hits_per_chunk"].AsInteger();
     const size_t dim = all.size();
     size_t m = min(dim, M);
-        
+
     const THitRefs::iterator ii_beg = all.begin(), ii_end = all.end();
     THitRefs::iterator ii_hi = ii_beg, ii = ii_beg;
-    
+
     try {    
         while(ii < ii_end) {
 
@@ -647,7 +646,7 @@ void CAppHitFilter::x_DoMultiple(THitRefs* pall)
             if(jj != jje) {
                 LOG_POST("Warning: space from eliminated alignments "
                          "not enough for all splits.");
-            }
+            }            
         }
     }
     catch (CException &e) {
@@ -673,7 +672,7 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
     TSeqAlignList& sa_list = seq_annot->SetData().SetAlign();
     THit::TCoord maxlen = 0;
     NON_CONST_ITERATE(TSeqAlignList, ii, sa_list) {
-                    
+
         CRef<CSeq_align> seq_align = *ii;
 
         THitRef hit (new THit(*seq_align, true));
@@ -719,11 +718,15 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
             maxlen = hit->GetLength();
         }
     }
-
     float score_factor = 0.25 / maxlen;
+    CArgs args = GetArgs();    
     NON_CONST_ITERATE(THitRefs, ii, all) {
         THitRef& h = *ii;
         h->SetScore(h->GetScore() * (1 + score_factor * h->GetLength()));
+
+        if (args["no_output_constraint"].HasValue()) {
+            h->SetIdentity(1.0);
+        }
     }
 }
 
