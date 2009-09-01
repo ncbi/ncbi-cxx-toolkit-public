@@ -875,6 +875,7 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
                               const BlastHSP* hsp, Int4* translated_length)
 {
     Int4 context = -1;
+    Int4 start, stop;
 
     ASSERT(target_t != NULL);
 
@@ -882,12 +883,14 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
        return NULL;
 
     context = BLAST_FrameToContext(hsp->subject.frame, target_t->program_number);
+    start = target_t->range[2*context];
+    stop = target_t->range[2*context+1];
 
-    if (target_t->partial == TRUE) /* partial == FALSE translation has already been done. */
+    /* skip translation if full translation has already been done */
+    if (target_t->partial && (start || 
+        (stop < target_t->subject_blk->length / CODON_LENGTH -3))) 
     {  
     	 const int kMaxTranslation = 2100; /* Needs to be divisible by three (?) */
-         Int4 start = target_t->range[2*context];
-         Int4 stop = target_t->range[2*context+1];
          Int4 nucl_length = 0;
          Int4 translation_length = 0;
          Int4 nucl_start = 0;
@@ -896,17 +899,21 @@ Blast_HSPGetTargetTranslation(SBlastTargetTranslation* target_t,
     	 Int4 start_shift = 0;
 
          /* HSP coordinates are in terms of protein sequences. */
-         if (hsp->subject.offset < 0 ) {
+         if (hsp->subject.offset < 0) {
              nucl_start = 0;
              nucl_end = target_t->subject_blk->length;
          } else {
              nucl_start = MAX(0, 3*hsp->subject.offset - kMaxTranslation);
              nucl_end = MIN(target_t->subject_blk->length, 3*hsp->subject.end + kMaxTranslation);
+             /* extend to the end of the sequence if close */
+             if (target_t->subject_blk->length - nucl_end <= 21) {
+                 nucl_end = target_t->subject_blk->length;
+             }
          }
 
          nucl_length = nucl_end - nucl_start;
 
-         translation_length = 1+nucl_length/3;
+         translation_length = 1+nucl_length/CODON_LENGTH;
          start_shift = nucl_start/CODON_LENGTH;
 
          if (hsp->subject.frame < 0)
