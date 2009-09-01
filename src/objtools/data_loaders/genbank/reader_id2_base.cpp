@@ -935,9 +935,21 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
             }
             if ( num >= request_count || done[num] ) {
                 // unknown serial num - bad reply
-                NCBI_THROW(CLoaderException, eOtherError,
-                           "CId2ReaderBase: bad reply serial number: "+
-                           x_ConnDescription(conn));
+                if ( TErrorFlags error = x_GetError(reply) ) {
+                    if ( error & fError_bad_connection ) {
+                        NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
+                                       "CId2ReaderBase: connection failed"<<
+                                       x_ConnDescription(conn));
+                    }
+                }
+                else if ( reply.GetReply().IsEmpty() ) {
+                    ERR_POST_X(8, "CId2ReaderBase: bad reply serial number: "<<
+                               x_ConnDescription(conn));
+                    continue;
+                }
+                NCBI_THROW_FMT(CLoaderException, eOtherError,
+                               "CId2ReaderBase: bad reply serial number: "<<
+                               x_ConnDescription(conn));
             }
             try {
                 x_ProcessReply(result, loaded_sets[num], reply);
