@@ -636,8 +636,6 @@ static void TEST__server(unsigned short port)
         assert(status == eIO_Success);
 
         assert(SOCK_GetPeerAddressString  (sock, full,sizeof(full)));
-        SOCK_GetPeerAddressStringEx(sock, addr,sizeof(addr),eSAF_IP);
-        printf("ADDR = %s\n", addr);
         assert(SOCK_GetPeerAddressStringEx(sock, addr,sizeof(addr),eSAF_IP));
         assert(SOCK_GetPeerAddressStringEx(sock, port,sizeof(port),eSAF_Port));
         assert(strcmp(full, strcat(strcat(addr, ":"), port)) == 0);
