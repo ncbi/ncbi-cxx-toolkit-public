@@ -69,6 +69,9 @@ public:
         //< count of identities (num_ident)
         eScore_IdentityCount,
 
+        //< count of mismatches (num_mismatch)
+        eScore_MismatchCount,
+
         //< percent identity (0.0-100.0) (pct_identity)
         eScore_PercentIdentity,
 
