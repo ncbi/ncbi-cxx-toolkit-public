@@ -5,7 +5,7 @@ SRC = score_builder_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xalgoalignutil xalnmgr tables $(BLAST_LIBS) \
+LIB = xalgoalignutil xalnmgr xqueryparse tables $(BLAST_LIBS) \
 	  test_boost $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
