@@ -54,6 +54,8 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/general/Object_id.hpp>
 #include <algo/align/util/score_builder.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -65,30 +67,136 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-BOOST_AUTO_TEST_CASE(TestDnaAlignment)
+NCBITEST_INIT_CMDLINE(arg_desc)
 {
-    const string kFileName("data/seqalign.asn");
-    ifstream in(kFileName.c_str());
-    CSeq_align alignment;
-    in >> MSerial_AsnText >> alignment;
+    // Here we make descriptions of command line parameters that we are
+    // going to use.
 
+    arg_desc->AddKey("data-in", "InputData",
+                     "Concatenated Seq-aligns used to generate gene models",
+                     CArgDescriptions::eInputFile);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Dense_seg)
+{
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
+
     CScoreBuilder score_builder(blast::eBlastn);
 
-    const int kExpectedNumIdent = 37325;
-    int num_ident = score_builder.GetIdentityCount(*scope, alignment);
-    BOOST_REQUIRE_EQUAL(kExpectedNumIdent, num_ident);
-    bool rc = true;
-    rc = alignment.GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
-    BOOST_REQUIRE_EQUAL(false, rc);
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    CNcbiIstream& istr = args["data-in"].AsInputFile();
+    while (istr) {
+        CSeq_align alignment;
+        try {
+            istr >> MSerial_AsnText >> alignment;
+        }
+        catch (CEofException&) {
+            break;
+        }
 
-    const int kExpectedScore = 74180;
-    int score = score_builder.GetBlastScore(*scope, alignment);
-    BOOST_REQUIRE_EQUAL(kExpectedScore, score);
-    rc = alignment.GetNamedScore(CSeq_align::eScore_Score, score);
-    BOOST_REQUIRE_EQUAL(rc, false);
+        ///
+        /// we test several distinct scores
+        ///
 
+        int kExpectedIdentities = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_IdentityCount,
+                                kExpectedIdentities);
+
+        int kExpectedMismatches = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_MismatchCount,
+                                kExpectedMismatches);
+
+        int kExpectedScore = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_Score,
+                                kExpectedScore);
+
+        double kExpectedPctIdentity = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_PercentIdentity,
+                                kExpectedPctIdentity);
+
+        double kExpectedPctCoverage = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_PercentCoverage,
+                                kExpectedPctCoverage);
+
+        /// reset scores to avoid any taint in score generation
+        alignment.ResetScore();
+
+        /// check identity count
+        {{
+             int actual =
+                 score_builder.GetIdentityCount(*scope, alignment);
+             LOG_POST(Error << "Verifying score: num_ident: "
+                      << kExpectedIdentities << " == " << actual);
+             BOOST_CHECK_EQUAL(kExpectedIdentities, actual);
+         }}
+
+        /// check mismatch count
+        {{
+             int actual =
+                 score_builder.GetMismatchCount(*scope, alignment);
+             LOG_POST(Error << "Verifying score: num_mismatch: "
+                      << kExpectedMismatches << " == " << actual);
+             BOOST_CHECK_EQUAL(kExpectedMismatches, actual);
+         }}
+
+        /// check percent identity
+        {{
+             double actual =
+                 score_builder.GetPercentIdentity(*scope, alignment);
+             LOG_POST(Error << "Verifying score: pct_identity: "
+                      << kExpectedPctIdentity << " == " << actual);
+
+             /// machine precision is a problme here
+             /// we verify to 12 digits of precision
+             Uint8 int_pct_identity_expected = kExpectedPctIdentity * 1e12;
+             Uint8 int_pct_identity_actual = actual * 1e12;
+             BOOST_CHECK_EQUAL(int_pct_identity_expected,
+                               int_pct_identity_actual);
+
+             /**
+             CScore score;
+             score.SetId().SetStr("pct_identity");
+             score.SetValue().SetReal(actual);
+             cerr << MSerial_AsnText << score;
+             **/
+         }}
+
+        /// check percent coverage
+        {{
+             double actual =
+                 score_builder.GetPercentCoverage(*scope, alignment);
+             LOG_POST(Error << "Verifying score: pct_coverage: "
+                      << kExpectedPctCoverage << " == " << actual);
+
+             /// machine precision is a problme here
+             /// we verify to 12 digits of precision
+             Uint8 int_pct_coverage_expected = kExpectedPctCoverage * 1e12;
+             Uint8 int_pct_coverage_actual = actual * 1e12;
+             BOOST_CHECK_EQUAL(int_pct_coverage_expected,
+                               int_pct_coverage_actual);
+
+             /**
+             CScore score;
+             score.SetId().SetStr("pct_coverage");
+             score.SetValue().SetReal(actual);
+             cerr << MSerial_AsnText << score;
+             **/
+         }}
+
+        if (alignment.GetSegs().IsDenseg()) {
+            ///
+            /// our encoded dense-segs have a BLAST-style 'score'
+            ///
+            int actual = score_builder.GetBlastScore(*scope, alignment);
+            LOG_POST(Error << "Verifying score: score: "
+                     << kExpectedScore << " == " << actual);
+            BOOST_CHECK_EQUAL(kExpectedScore, actual);
+        }
+    }
 }
+
+

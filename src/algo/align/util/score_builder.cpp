@@ -37,6 +37,7 @@
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_options.h>
 
+#include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -157,50 +158,6 @@ CScoreBuilder::~CScoreBuilder()
 }
 
 ///
-/// calculate the length of all gap segments
-///
-static size_t s_GetGapLength(const CSeq_align& align)
-{
-    size_t gap_length = 0;
-    switch (align.GetSegs().Which()) {
-    case CSeq_align::TSegs::e_Denseg:
-        {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
-            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                bool is_gapped = false;
-                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                        is_gapped = true;
-                        break;
-                    }
-                }
-                if (is_gapped) {
-                    gap_length += ds.GetLens()[i];
-                }
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Disc:
-        {{
-            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
-                gap_length += s_GetGapLength(**iter);
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Std:
-        break;
-
-    default:
-        break;
-    }
-
-    return gap_length;
-}
-
-
-///
 /// calculate the length of our alignment
 ///
 static size_t s_GetAlignmentLength(const CSeq_align& align,
@@ -261,8 +218,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                                         "invalid std-seg: "
                                         "inconsistent number of locs");
                          }
-                         TSeqRange r = (*it)->GetTotalRange();
-                         sizes[i] += (*it)->GetTotalRange().GetLength();
+                         sizes[i] += sequence::GetLength(**it, NULL);
                      }
 
                      ++i;
@@ -436,22 +392,30 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
 
     case CSeq_align::TSegs::e_Spliced:
         {{
-            ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
-                const CSpliced_exon& exon = **iter;
-                if (exon.IsSetParts()) {
-                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                        const CSpliced_exon_chunk& chunk = **it;
-                        if (chunk.IsMatch()) {
-                            *identities += chunk.GetMatch();
-                        } else if (chunk.IsMismatch()) {
-                            *mismatches += chunk.GetMismatch();
-                        }
-                    }
-                } else {
-                    *identities += exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
-                }
-            }
-        }}
+             ITERATE (CSpliced_seg::TExons, iter,
+                      align.GetSegs().GetSpliced().GetExons()) {
+                 const CSpliced_exon& exon = **iter;
+                 if (exon.IsSetParts()) {
+                     ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                         const CSpliced_exon_chunk& chunk = **it;
+                         switch (chunk.Which()) {
+                         case CSpliced_exon_chunk::e_Match:
+                             *identities += chunk.GetMatch();
+                             break;
+                         case CSpliced_exon_chunk::e_Mismatch:
+                             *mismatches += chunk.GetMismatch();
+                             break;
+
+                         default:
+                             break;
+                         }
+                     }
+                 } else {
+                     *identities +=
+                         exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+                 }
+             }
+         }}
         break;
 
     default:
@@ -493,19 +457,20 @@ static size_t s_GetCoveredBases(const CSeq_align& align,
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
-            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                int CoveredCount = 0;
-                for(CDense_seg::TDim d = 0; d < ds.GetDim(); d++) {
-                    if(ds.GetStarts()[(i * ds.GetDim()) + d] != -1) {
-                        CoveredCount++;
-                    }
-                }
-                if (ds.GetStarts()[(i * ds.GetDim()) + row] != -1 && CoveredCount >= 2) {
-                    len += ds.GetLens()[i];
-                }
-            }
-        }}
+             const CDense_seg& ds = align.GetSegs().GetDenseg();
+             for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                 int count_covered = 0;
+                 for (CDense_seg::TDim d = 0; d < ds.GetDim(); d++) {
+                     if (ds.GetStarts()[(i * ds.GetDim()) + d] != -1) {
+                         ++count_covered;
+                     }
+                 }
+                 if (ds.GetStarts()[(i * ds.GetDim()) + row] != -1  &&
+                     count_covered >= 2) {
+                     len += ds.GetLens()[i];
+                 }
+             }
+         }}
         break;
 
     case CSeq_align::TSegs::e_Disc:
@@ -513,6 +478,56 @@ static size_t s_GetCoveredBases(const CSeq_align& align,
                  align.GetSegs().GetDisc().Get()) {
             len += s_GetCoveredBases(**iter, row);
         }
+        break;
+
+    case CSeq_align::TSegs::e_Std:
+        {{
+             ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
+                 const CStd_seg& seg = **iter;
+
+                 const CSeq_loc& loc = *seg.GetLoc()[row];
+                 if (loc.IsEmpty()) {
+                     /// skip
+                 } else {
+                     len += sequence::GetLength(loc, NULL);
+                 }
+             }
+         }}
+        break;
+
+    case CSeq_align::TSegs::e_Spliced:
+        {{
+            ITERATE (CSpliced_seg::TExons, iter,
+                     align.GetSegs().GetSpliced().GetExons()) {
+                const CSpliced_exon& exon = **iter;
+                if (exon.IsSetParts()) {
+                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                        const CSpliced_exon_chunk& chunk = **it;
+                        if (chunk.IsMatch()) {
+                            len += chunk.GetMatch();
+                        } else if (chunk.IsMismatch()) {
+                            len += chunk.GetMismatch();
+                        } else if (chunk.IsDiag()) {
+                            len += chunk.GetDiag();
+                        } else if (row == 0  &&  chunk.IsProduct_ins()) {
+                            len += chunk.GetProduct_ins();
+                        } else if (row == 1  &&  chunk.IsGenomic_ins()) {
+                            len += chunk.GetGenomic_ins();
+                        }
+                    }
+                } else if (row == 0) {
+                    if (exon.GetProduct_end().IsNucpos()) {
+                        len += exon.GetProduct_end().GetNucpos() -
+                            exon.GetProduct_start().GetNucpos() + 1;
+                    } else {
+                        len += exon.GetProduct_end().GetProtpos().GetAmin() -
+                            exon.GetProduct_start().GetProtpos().GetAmin() + 1;
+                    }
+                } else if (row == 1) {
+                    len += exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+                }
+            }
+        }}
         break;
 
     default:
@@ -534,7 +549,8 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
     covered_bases = s_GetCoveredBases(align, 0);
     CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
     if (covered_bases) {
-        *pct_coverage = 100.0f * double(covered_bases) / double(bsh.GetBioseqLength());
+        *pct_coverage =
+            100.0f * double(covered_bases) / double(bsh.GetBioseqLength());
     } else {
         *pct_coverage = 0;
     }
@@ -544,11 +560,31 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
 /////////////////////////////////////////////////////////////////////////////
 
 
+double CScoreBuilder::GetPercentIdentity(CScope& scope,
+                                         const CSeq_align& align)
+{
+    int identities = 0;
+    int mismatches = 0;
+    double pct_identity = 0;
+    s_GetPercentIdentity(scope, align, &identities, &mismatches, &pct_identity);
+    return pct_identity;
+}
+
+
+double CScoreBuilder::GetPercentCoverage(CScope& scope,
+                                         const CSeq_align& align)
+{
+    double pct_coverage = 0;
+    s_GetPercentCoverage(scope, align, &pct_coverage);
+    return pct_coverage;
+}
+
+
 int CScoreBuilder::GetIdentityCount(CScope& scope, const CSeq_align& align)
 {
     int identities = 0;
     int mismatches = 0;
-    s_GetCountIdentityMismatch(scope, align, &identities,&mismatches);
+    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
     return identities;
 }
 
@@ -774,6 +810,15 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
         {{
             align.SetNamedScore(CSeq_align::eScore_EValue,
                                 GetBlastEValue(scope, align));
+        }}
+        break;
+
+    case eScore_MismatchCount:
+        {{
+            int identities = 0;
+            int mismatches = 0;
+            s_GetCountIdentityMismatch(scope, align, &identities, &mismatches);
+            align.SetNamedScore(CSeq_align::eScore_MismatchCount, mismatches);
         }}
         break;
 

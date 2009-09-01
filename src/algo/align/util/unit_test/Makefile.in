@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = algoalignutil_unit_test
+APP_PROJ = score_builder_unit_test
 
 REQUIRES = Boost.Test.Included
 

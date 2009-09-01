@@ -70,6 +70,9 @@ public:
         //< count of ungapped identities as 'num_ident'
         eScore_IdentityCount,
 
+        //< count of ungapped identities as 'num_mismatch'
+        eScore_MismatchCount,
+
         //< percent identity as 'pct_identity', range 0.0-100.0
         //< this will also create 'num_ident'
         eScore_PercentIdentity,
@@ -90,6 +93,12 @@ public:
 
     /// @name Functions to compute scores without adding
     /// @{
+
+    /// Compute ungapped percent identity (range 0-100)
+    double GetPercentIdentity(CScope& scope, const CSeq_align& align);
+
+    /// Compute percent coverage of the query (sequence 0) (range 0-100)
+    double GetPercentCoverage(CScope& scope, const CSeq_align& align);
 
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);
     int GetMismatchCount  (CScope& scope, const CSeq_align& align);
