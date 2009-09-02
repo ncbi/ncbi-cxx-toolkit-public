@@ -276,6 +276,8 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
     if (refresh) {
         Refresh();
     }
+
+    m_SimplifyMode = method;
 }
 
 void CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
@@ -325,6 +327,8 @@ void CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
     if (refresh) {
         Refresh();
     }
+
+    m_SimplifyMode = eNone;
 }
 
 void CGuideTree::RerootTree(int new_root_id, bool refresh)
@@ -401,7 +405,8 @@ void CGuideTree::x_Init(void)
     m_DistanceMode = true;
     m_NodeSize = 3;
     m_LineWidth = 1;
-    m_QueryNodeId = -1;    
+    m_QueryNodeId = -1;
+    m_SimplifyMode = eNone;
 }
 
 

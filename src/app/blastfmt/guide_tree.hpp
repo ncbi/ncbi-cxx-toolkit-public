@@ -206,6 +206,11 @@ public:
     ///
     string GetErrorMessage(void) {return m_ErrorMessage;}
 
+    /// Get current tree simplification mode
+    /// @return tree simplifcation mode
+    ///
+    ETreeSimplifyMode GetSimplifyMode(void) const {return m_SimplifyMode;}
+
 
     // --- Generating output ---
 
@@ -563,6 +568,10 @@ protected:
 
     /// Error message
     string m_ErrorMessage;
+
+    /// Current tree simplification mode
+    ///
+    ETreeSimplifyMode m_SimplifyMode;
 };
 
 
