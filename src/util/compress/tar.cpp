@@ -1735,7 +1735,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     if (m_Current.GetSize() != val) {
         ERR_POST_ONCE(Critical << "CAUTION:"
                       " ***"
-                      " This RTL may not support large TAR entries"
+                      " This run-time may not support large TAR entries"
+                      " (have you built with --with-lfs?)"
                       " ***");
     }
 
