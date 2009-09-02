@@ -195,6 +195,27 @@ NCBI_PARAM_ENUM_DEF_EX(EDiagSev, Diag, Tee_Min_Severity,
 typedef NCBI_PARAM_TYPE(Diag, Tee_Min_Severity) TTeeMinSeverity;
 
 
+NCBI_PARAM_DECL(size_t, Diag, Collect_Limit);
+NCBI_PARAM_DEF_EX(size_t, Diag, Collect_Limit, 1000, eParam_NoThread,
+                  DIAG_COLLECT_LIMIT);
+typedef NCBI_PARAM_TYPE(Diag, Collect_Limit) TDiagCollectLimit;
+
+
+NCBI_PARAM_DECL(bool, Log, Truncate);
+NCBI_PARAM_DEF_EX(bool, Log, Truncate, false, eParam_NoThread, LOG_TRUNCATE);
+typedef NCBI_PARAM_TYPE(Log, Truncate) TLogTruncateParam;
+
+
+NCBI_PARAM_DECL(bool, Log, NoCreate);
+NCBI_PARAM_DEF_EX(bool, Log, NoCreate, false, eParam_NoThread, LOG_NOCREATE);
+typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
+
+
+static bool s_UseRootLog = true;
+static bool s_FinishedSetupDiag = false;
+static bool s_MergeLinesSetBySetupDiag = false;
+
+
 CDiagCollectGuard::CDiagCollectGuard(void)
 {
     // the severities will be adjusted by x_Init()
@@ -556,7 +577,7 @@ void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
                                                  props->end());
         }
         // Print stop message.
-        if (!CDiagContext::IsSetOldPostFormat()) {
+        if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
             GetDiagContext().PrintStop();
         }
         s_ThreadDataState = eDeinitialized; // re-enable protection
@@ -712,12 +733,6 @@ CDiagCollectGuard* CDiagContextThreadData::GetCollectGuard(void)
 {
     return m_CollectGuards.empty() ? NULL : m_CollectGuards.front();
 }
-
-
-NCBI_PARAM_DECL(size_t, Diag, Collect_Limit);
-NCBI_PARAM_DEF_EX(size_t, Diag, Collect_Limit, 1000, eParam_NoThread,
-                  DIAG_COLLECT_LIMIT);
-typedef NCBI_PARAM_TYPE(Diag, Collect_Limit) TDiagCollectLimit;
 
 
 void CDiagContextThreadData::CollectDiagMessage(const SDiagMessage& mess)
@@ -1976,11 +1991,6 @@ string GetDefaultLogLocation(CNcbiApplication& app)
 }
 
 
-NCBI_PARAM_DECL(bool, Log, Truncate);
-NCBI_PARAM_DEF_EX(bool, Log, Truncate, false, eParam_NoThread, LOG_TRUNCATE);
-typedef NCBI_PARAM_TYPE(Log, Truncate) TLogTruncateParam;
-
-
 bool CDiagContext::GetLogTruncate(void)
 {
     return TLogTruncateParam::GetDefault();
@@ -2000,10 +2010,6 @@ ios::openmode s_GetLogOpenMode(void)
 }
 
 
-NCBI_PARAM_DECL(bool, Log, NoCreate);
-NCBI_PARAM_DEF_EX(bool, Log, NoCreate, false, eParam_NoThread, LOG_NOCREATE);
-typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
-
 bool OpenLogFileFromConfig(CNcbiRegistry& config, string* new_name)
 {
     string logname = config.GetString("LOG", "File", kEmptyStr);
@@ -2021,10 +2027,6 @@ bool OpenLogFileFromConfig(CNcbiRegistry& config, string* new_name)
     return false;
 }
 
-
-static bool s_UseRootLog = true;
-static bool s_FinishedSetupDiag = false;
-static bool s_MergeLinesSetBySetupDiag = false;
 
 void CDiagContext::SetUseRootLog(void)
 {
