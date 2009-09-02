@@ -35,12 +35,18 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/rwstream.hpp>
 #include <util/compress/tar.hpp>
+#include <errno.h>
 #ifdef NCBI_OS_MSWIN
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
 #endif // NCBI_OS_MSWIN
 
 #include <common/test_assert.h>  // This header must go last
+
+
+#ifndef   EOVERFLOW
+#  define EOVERFLOW (-1)
+#endif // EOVERFLOW
 
 
 USING_NCBI_SCOPE;
@@ -139,11 +145,62 @@ void CTarTest::Init(void)
     args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
     args->AddFlag("k", "Keep old files when extracting");
     args->AddFlag("v", "Turn on debugging information");
+    args->AddFlag("lfs", "Large File Support check [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of files to process", CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
-                          "Tar test suite: a simplified tar utility");
+                          "Tar test suite: a simplified tar utility"
+                          " [with some extras]");
     SetupArgDescriptions(args.release());
+}
+
+
+static int x_CheckLFS(const CArgs& args, const string& path)
+{
+    CDirEntry::SStat st;
+    int  nolfs = sizeof(st.orig.st_size) <= 4 ? -1 : 0;
+    bool verbose = args["v"].HasValue() ? true : false;
+    string message = (string(path.empty() ? "Large File Support (LFS)" : "LFS")
+                      + string(nolfs ? " is not present" : " is present"));
+    if (!path.empty()) {
+        CDirEntry file(path);
+        if (file.Stat(&st, eFollowLinks)) {
+            CDirEntry::EType type = CDirEntry::GetType(st.orig);
+            if (type == CDirEntry::eFile) {
+                ifstream ifs(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+                if (!ifs) {
+                    message +=
+                        string(nolfs ? " and" : " but") +
+                        " C++ run-time cannot work with";
+                    nolfs = -1;
+                } else {
+                    message +=
+                        string(nolfs ? " but" : " and") + 
+                        " TAR API should work for";
+                    nolfs = 0;
+                }
+            } else {
+                message +=
+                    string(nolfs ? " but" : " and") +
+                    " TAR API should work for";
+                nolfs = 0;
+            }
+        } else if (errno == EOVERFLOW) {
+            message +=
+                string(nolfs ? " and" : " but") +
+                " TAR API may not work for";
+            nolfs = -1;
+        } else {
+            message +=
+                string(nolfs ? " and" : " but") +
+                " nothing can be figured for";
+        }
+        message += " `" + path + '\'';
+    }
+    if (verbose) {
+        LOG_POST(message);
+    }
+    return nolfs;
 }
 
 
@@ -192,9 +249,20 @@ string CTarTest::x_Pos(const CTarEntryInfo& info)
 
 int CTarTest::Run(void)
 {
-    TAction action = eNone;
-
     const CArgs& args = GetArgs();
+
+    _ASSERT(args["f"].HasValue());
+    string file = args["f"].AsString();
+    if (file == "-") {
+        file.erase();
+    }
+
+    if (args["lfs"].HasValue()) {
+        // Special priority treatment of this flag
+        return x_CheckLFS(args, file);
+    }
+
+    TAction action = eNone;
 
     if (args["c"].HasValue()) {
         action |= eCreate;
@@ -220,12 +288,6 @@ int CTarTest::Run(void)
     if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
                    "You must specify exactly one of c, r, u, t, x, X, T");
-    }
-
-    _ASSERT(args["f"].HasValue());
-    string file = args["f"].AsString();
-    if (file == "-") {
-        file.erase();
     }
 
     size_t blocking_factor = args["b"].AsInteger();
