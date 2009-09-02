@@ -655,7 +655,7 @@ public:
 
     /// Get status information on a dir entry.
     ///
-    /// By default have the same behaviour as UNIX's lstat().
+    /// By default have the same behavior as UNIX's lstat().
     /// @param buffer
     ///   Pointer to structure that stores results.
     /// @param follow_links
