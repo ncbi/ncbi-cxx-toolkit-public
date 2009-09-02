@@ -71,11 +71,10 @@ BOOST_AUTO_TEST_CASE(s_TestCAsnSerialization)
             // write ASN text
             auto_ptr<CObjectOStream> out(
                 CObjectOStream::Open(text_out,eSerial_AsnText));
-            out->SetAutoSeparator(false);
             out->Write(&env2, GetSequenceTypeRef(&env2).Get());
             WebEnvFree(env2);
         }
-        BOOST_CHECK( CFile(text_in).Compare(text_out) );
+        BOOST_CHECK( CFile(text_in).CompareTextContents(text_out, CFile::eIgnoreEol) );
     }
 }
 
@@ -98,7 +97,7 @@ BOOST_AUTO_TEST_CASE(s_TestCPrintAsn)
             PrintAsn(out, CConstObjectInfo(&env,GetSequenceTypeRef(&env).Get()));
         }
         WebEnvFree(env);
-        BOOST_CHECK( CFile(text_in).Compare(text_out) );
+        BOOST_CHECK( CFile(text_in).CompareTextContents(text_out, CFile::eIgnoreEol) );
     }
 }
 

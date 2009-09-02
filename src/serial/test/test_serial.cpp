@@ -90,10 +90,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             // specify output as a file name
             auto_ptr<CObjectOStream> out(
                 CObjectOStream::Open(text_out,eSerial_AsnText));
-            out->SetAutoSeparator(false);
             *out << *env;
         }
-        BOOST_CHECK( CFile(text_in).Compare(text_out) );
+        BOOST_CHECK( CFile(text_in).CompareTextContents(text_out, CFile::eIgnoreEol) );
         {
             // write ASN binary
             // specify output as a stream, use MSerial manipulator
@@ -588,7 +587,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialization2)
                 CObjectOStream::Open(text_out,eSerial_AsnText));
             *out << write;
         }
-        BOOST_CHECK( CFile(text_in).Compare(text_out) );
+        BOOST_CHECK( CFile(text_in).CompareTextContents(text_out, CFile::eIgnoreEol) );
         {
             // write ASN text
             CNcbiOfstream out(text_out2.c_str());
@@ -692,7 +691,7 @@ BOOST_AUTO_TEST_CASE(s_TestPrintAsn)
             CNcbiOfstream out(text_out.c_str());
             PrintAsn(out, ConstObjectInfo(*env));
         }
-        BOOST_CHECK( CFile(text_in).Compare(text_out) );
+        BOOST_CHECK( CFile(text_in).CompareTextContents(text_out, CFile::eIgnoreEol) );
     }
 }
 
