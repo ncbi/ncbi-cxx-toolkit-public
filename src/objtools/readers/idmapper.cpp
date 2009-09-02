@@ -48,14 +48,19 @@
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
 
+// Object manager includes
+#include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ============================================================================
-bool 
-HandleComparator::operator()(
+bool
+s_HandlesAreEqual(
     CSeq_id_Handle handle1,
-    CSeq_id_Handle handle2 ) const 
+    CSeq_id_Handle handle2 )
 //  ============================================================================
 {
     if ( handle1.operator==( handle2 ) ) {
@@ -85,16 +90,19 @@ HandleComparator::operator()(
     return false;
 };
 
+
 //  ============================================================================
 CSeq_id_Handle
 CIdMapper::Map(
     const CSeq_id_Handle& from )
 //  ============================================================================
 {
-    CACHE::iterator to = m_Cache.find( from );
-    if ( to != m_Cache.end() ) {
-        return to->second;
+    for ( CACHE::iterator it = m_Cache.begin(); it != m_Cache.end(); ++it ) {
+        if ( s_HandlesAreEqual( from, it->first ) ) {
+            return it->second;
+        }
     }
+
     //
     //  Cannot map this ID. We will treat this as an error.
     //
@@ -105,6 +113,25 @@ CIdMapper::Map(
         throw MapError;
     }
     return CSeq_id_Handle();  
+};
+
+//  ============================================================================
+CRef<CSeq_loc>
+CIdMapper::MapLocation(
+    const CSeq_id_Handle& idhFrom,
+    const CSeq_loc& locFrom )
+//  ============================================================================
+{
+    CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+
+    CScope scope(*pOm);
+    scope.AddDefaults();
+
+    CBioseq_Handle hbsFrom = scope.GetBioseqHandle( idhFrom );
+
+    CRef<CSeq_loc_Mapper> mapper;
+    mapper.Reset( new CSeq_loc_Mapper( hbsFrom, CSeq_loc_Mapper::eSeqMap_Down ) );
+    return mapper->Map( locFrom );
 };
 
 //  ============================================================================

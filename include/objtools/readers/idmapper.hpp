@@ -36,19 +36,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-/// Functor for CSeq_id_Handle comparision
-///
-/// Will test given CSeq_id_Handles for equality- for the purpose of ID mapping,
-/// which is more lenient than strict identity.
-///
-struct HandleComparator
-{
-    bool operator()(
-        CSeq_id_Handle,
-        CSeq_id_Handle ) const;
-};
-
-
 /// General IdMapper interface
 ///
 /// This interface should suffice for typical IdMapper use, regardless of the 
@@ -66,6 +53,12 @@ public:
     Map(
         const CSeq_id_Handle& ) =0;
 
+    ///!
+    virtual CRef<CSeq_loc>
+    MapLocation(
+        const CSeq_id_Handle&,
+        const CSeq_loc& ) =0;
+        
     /// Map all embedded IDs in a given object at once.
     virtual void 
     MapObject(
@@ -89,7 +82,7 @@ public:
 class NCBI_XOBJREAD_EXPORT CIdMapper: public IIdMapper
 {
 protected:
-    typedef std::map< CSeq_id_Handle, CSeq_id_Handle, HandleComparator > CACHE;
+    typedef std::map< CSeq_id_Handle, CSeq_id_Handle > CACHE;
     
 public:
     /// Constructor specifying the mapping context, direction, and error handling.
@@ -132,6 +125,12 @@ public:
     virtual CSeq_id_Handle
     Map(
         const CSeq_id_Handle& ); 
+        
+    ///!
+    virtual CRef<CSeq_loc>
+    MapLocation(
+        const CSeq_id_Handle&,
+        const CSeq_loc& );
         
     virtual void 
     MapObject(
