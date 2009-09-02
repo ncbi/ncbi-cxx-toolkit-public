@@ -1295,7 +1295,7 @@ public:
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
                       size_t buf_size = 0) const;
 
-    /// Compare files by content.
+    /// Compare files contents in binary form.
     ///
     /// @param file
     ///   File name to compare.
@@ -1305,6 +1305,25 @@ public:
     /// @return
     ///   TRUE if files content is equal; FALSE otherwise.
     bool Compare(const string& file, size_t buf_size = 0) const;
+
+    enum ECompareText {
+        eIgnoreEol,   ///< Skip end-of-line ('\r' and '\n')
+        eIgnoreWs     ///< Skip white space (in terms of isspace())
+    };
+
+    /// Compare files contents in text form.
+    ///
+    /// @param file
+    ///   File name to compare.
+    /// @param mode
+    ///   Type of white space characters to ignore
+    /// @param buf_size
+    ///   Size of buffer to read file.
+    ///   Zero value means using default buffer size.
+    /// @return
+    ///   TRUE if files content is equal; FALSE otherwise.
+    bool CompareTextContents(const string& file, ECompareText mode,
+                             size_t buf_size = 0) const;
 };
 
 
