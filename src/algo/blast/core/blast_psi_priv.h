@@ -64,23 +64,30 @@ extern "C" {
 /* Extern declarations for constants (defined in blast_psi_priv.c) */
 
 /** Percent identity threshold for discarding near-identical matches */
+NCBI_XBLAST_EXPORT 
 extern const double kPSINearIdentical;
 
 /** Percent identity threshold for discarding identical matches */
+NCBI_XBLAST_EXPORT 
 extern const double kPSIIdentical;
 
 /** Index into multiple sequence alignment structure for the query sequence */
+NCBI_XBLAST_EXPORT 
 extern const unsigned int kQueryIndex;
 
 /** Small constant to test against 0 */
+NCBI_XBLAST_EXPORT 
 extern const double kEpsilon;
 
 /** Successor to POSIT_SCALE_FACTOR  */
+NCBI_XBLAST_EXPORT 
 extern const int kPSIScaleFactor;
 
 /** Constant used in scaling PSSM routines: Successor to POSIT_PERCENT */
+NCBI_XBLAST_EXPORT 
 extern const double kPositScalingPercent;
 /** Constant used in scaling PSSM routines: Successor to POSIT_NUM_ITERATIONS */
+NCBI_XBLAST_EXPORT 
 extern const Uint4 kPositScalingNumIterations;
 
 /****************************************************************************/
@@ -95,6 +102,7 @@ extern const Uint4 kPositScalingNumIterations;
  *          element in the matrix [in]
  * @return pointer to allocated memory or NULL in case of failure
  */
+NCBI_XBLAST_EXPORT 
 void**
 _PSIAllocateMatrix(unsigned int ncols, unsigned int nrows, 
                    unsigned int data_type_sz);
@@ -105,6 +113,7 @@ _PSIAllocateMatrix(unsigned int ncols, unsigned int nrows,
  * @param ncols number of columns in the matrix [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT 
 void**
 _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
 
@@ -115,6 +124,7 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
  * @param ncols Number of columns to copy   [in]
  * @param nrows Number of rows to copy      [in]
  */
+NCBI_XBLAST_EXPORT 
 void
 _PSICopyMatrix_int(int** dest, int** src,
                    unsigned int ncols, unsigned int nrows);
@@ -126,6 +136,7 @@ _PSICopyMatrix_int(int** dest, int** src,
  * @param ncols Number of columns to copy   [in]
  * @param nrows Number of rows to copy      [in]
  */
+NCBI_XBLAST_EXPORT 
 void
 _PSICopyMatrix_double(double** dest, double** src,
                       unsigned int ncols, unsigned int nrows);
@@ -159,6 +170,7 @@ typedef struct _PSIPackedMsa {
  * @return newly allocated structure or NULL in case of memory allocation
  * failure
  */
+NCBI_XBLAST_EXPORT 
 _PSIPackedMsa*
 _PSIPackedMsaNew(const PSIMsa* msa);
 
@@ -166,6 +178,7 @@ _PSIPackedMsaNew(const PSIMsa* msa);
  * @param msa multiple sequence alignment data structure to deallocate [in] 
  * @return NULL
  */
+NCBI_XBLAST_EXPORT 
 _PSIPackedMsa*
 _PSIPackedMsaFree(_PSIPackedMsa* msa);
 
@@ -173,6 +186,7 @@ _PSIPackedMsaFree(_PSIPackedMsa* msa);
  * alignment
  * @param msa multiple sequence alignment data structure to deallocate [in] 
  */
+NCBI_XBLAST_EXPORT 
 unsigned int
 _PSIPackedMsaGetNumberOfAlignedSeqs(const _PSIPackedMsa* msa);
 
@@ -215,6 +229,7 @@ typedef struct _PSIMsa {
  * @return newly allocated structure or NULL in case of memory allocation
  * failure
  */
+NCBI_XBLAST_EXPORT 
 _PSIMsa*
 _PSIMsaNew(const _PSIPackedMsa* packed_msa, Uint4 alphabet_size);
 
@@ -222,6 +237,7 @@ _PSIMsaNew(const _PSIPackedMsa* packed_msa, Uint4 alphabet_size);
  * @param msa multiple sequence alignment data structure to deallocate [in] 
  * @return NULL
  */
+NCBI_XBLAST_EXPORT 
 _PSIMsa*
 _PSIMsaFree(_PSIMsa* msa);
 
@@ -241,6 +257,7 @@ typedef struct _PSIInternalPssmData {
  * @return newly allocated structure or NULL in case of memory allocation
  * failure 
  */
+NCBI_XBLAST_EXPORT 
 _PSIInternalPssmData*
 _PSIInternalPssmDataNew(Uint4 query_length, Uint4 alphabet_size);
 
@@ -248,6 +265,7 @@ _PSIInternalPssmDataNew(Uint4 query_length, Uint4 alphabet_size);
  * @param pssm data structure to deallocate [in] 
  * @return NULL
  */
+NCBI_XBLAST_EXPORT 
 _PSIInternalPssmData*
 _PSIInternalPssmDataFree(_PSIInternalPssmData* pssm);
 
@@ -270,6 +288,7 @@ typedef struct _PSIAlignedBlock {
  * @return newly allocated structure or NULL in case of memory allocation
  * failure 
  */
+NCBI_XBLAST_EXPORT 
 _PSIAlignedBlock*
 _PSIAlignedBlockNew(Uint4 query_length);
 
@@ -277,6 +296,7 @@ _PSIAlignedBlockNew(Uint4 query_length);
  * @param aligned_blocks data structure to deallocate [in] 
  * @return NULL
  */
+NCBI_XBLAST_EXPORT 
 _PSIAlignedBlock*
 _PSIAlignedBlockFree(_PSIAlignedBlock* aligned_blocks);
 
@@ -324,6 +344,7 @@ typedef struct _PSISequenceWeights {
  * @return newly allocated structure or NULL in case of memory allocation
  * failure 
  */
+NCBI_XBLAST_EXPORT 
 _PSISequenceWeights*
 _PSISequenceWeightsNew(const PSIMsaDimensions* dims, const BlastScoreBlk* sbp);
 
@@ -331,6 +352,7 @@ _PSISequenceWeightsNew(const PSIMsaDimensions* dims, const BlastScoreBlk* sbp);
  * @param seq_weights data structure to deallocate [in] 
  * @return NULL
  */
+NCBI_XBLAST_EXPORT 
 _PSISequenceWeights*
 _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
 
@@ -373,6 +395,7 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
  * @param msa multiple sequence alignment data structure [in]
  * @return PSIERR_BADPARAM if alignment is NULL; PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int 
 _PSIPurgeBiasedSegments(_PSIPackedMsa* msa);
 
@@ -384,6 +407,7 @@ _PSIPurgeBiasedSegments(_PSIPackedMsa* msa);
  * @return One of the errors defined above if validation fails or bad
  * parameter is passed in, else PSI_SUCCESS
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIValidateMSA(const _PSIMsa* msa, Boolean ignored_unaligned_positions);
 
@@ -396,6 +420,7 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignored_unaligned_positions);
  * @return PSIERR_BADPARAM if arguments are NULL
  *         PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
                            _PSIAlignedBlock* aligned_block);
@@ -415,6 +440,7 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
  * memory allocation failure, PSIERR_BADSEQWEIGHTS if the sequence weights fail
  * to add up to 1.0, PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIComputeSequenceWeights(const _PSIMsa* msa,
                            const _PSIAlignedBlock* aligned_blocks,
@@ -437,6 +463,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,
  * @param internal_pssm PSSM being computed [out]
  * @return PSIERR_BADPARAM if arguments are NULL, PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIComputeFreqRatios(const _PSIMsa* msa,
                       const _PSISequenceWeights* seq_weights,
@@ -456,6 +483,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
  * @param std_probs array containing the standard residue probabilities [in]
  * @return PSIERR_BADPARAM if arguments are NULL, PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
                             const Uint1* query,
@@ -473,6 +501,7 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
  * @return PSIERR_BADPARAM if arguments are NULL, PSIERR_POSITIVEAVGSCORE if
  * the average score of the generated PSSM is positive, PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIScaleMatrix(const Uint1* query,
                 const double* std_probs,
@@ -493,6 +522,7 @@ _PSIScaleMatrix(const Uint1* query,
  * @param sbp Score block structure where the calculated lambda and K will be
  * returned [in|out]
  */
+NCBI_XBLAST_EXPORT 
 void
 _PSIUpdateLambdaK(const int** pssm,
                   const Uint1* query,
@@ -508,6 +538,7 @@ _PSIUpdateLambdaK(const int** pssm,
  * blast_kappa.c's scalePosMatrix also does something very similar.
  * @todo remove std_probs as it's not used
  */
+NCBI_XBLAST_EXPORT 
 int
 _IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
                    _PSIInternalPssmData* internal_pssm, 
@@ -524,6 +555,7 @@ _IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
  * @return  PSIERR_BADPARAM if no alignment is given, or if seq_index or stop
  *          are invalid, PSI_SUCCESS otherwise
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIPurgeAlignedRegion(_PSIPackedMsa* msa,
                        unsigned int seq_index,
@@ -537,6 +569,7 @@ _PSIPurgeAlignedRegion(_PSIPackedMsa* msa,
  * sequences.
  * @param msa multiple sequence alignment structure [in|out]
  */
+NCBI_XBLAST_EXPORT 
 void
 _PSIUpdatePositionCounts(_PSIMsa* msa);
 
@@ -546,6 +579,7 @@ _PSIUpdatePositionCounts(_PSIMsa* msa);
  * @param length length of the sequence above [in]
  * @return number of non-X residues in the sequence
  */
+NCBI_XBLAST_EXPORT 
 Uint4
 _PSISequenceLengthWithoutX(const Uint1* seq, Uint4 length);
 
@@ -562,6 +596,7 @@ _PSISequenceLengthWithoutX(const Uint1* seq, Uint4 length);
  * with the query sequence [in]
  * @return structure containing the score frequencies, or NULL in case of error
  */
+NCBI_XBLAST_EXPORT 
 Blast_ScoreFreq*
 _PSIComputeScoreProbabilities(const int** pssm,
                               const Uint1* query,
@@ -578,6 +613,7 @@ _PSIComputeScoreProbabilities(const int** pssm,
  * @return PSI_SUCCESS on success, PSIERR_OUTOFMEM if memory allocation fails
  * or PSIERR_BADPARAM if any of its arguments is NULL
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSISaveDiagnostics(const _PSIMsa* msa,
                     const _PSIAlignedBlock* aligned_block,
@@ -595,6 +631,7 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
  * @return array of length query_length containing the information content per
  * query position or NULL on error (e.g.: out-of-memory or NULL parameters)
  */
+NCBI_XBLAST_EXPORT 
 double*
 _PSICalculateInformationContentFromScoreMatrix(
     Int4** score_mat,
@@ -616,6 +653,7 @@ _PSICalculateInformationContentFromScoreMatrix(
  * @return array of length query_length containing the information content per
  * query position or NULL on error (e.g.: out-of-memory or NULL parameters)
  */
+NCBI_XBLAST_EXPORT 
 double*
 _PSICalculateInformationContentFromFreqRatios(
     double** freq_ratios,
@@ -633,6 +671,7 @@ void __printMsaFP(FILE* fp, const _PSIPackedMsa* msa);
  * artificial consensus sequence of the multiple sequence alignment
  * constructed by them. This should be called after _PSIPurgeBiasedSegments.
  */
+NCBI_XBLAST_EXPORT 
 void
 _PSIStructureGroupCustomization(_PSIMsa* msa);
 
@@ -642,6 +681,7 @@ _PSIStructureGroupCustomization(_PSIMsa* msa);
  * @return One of the errors defined above if validation fails or bad
  * parameter is passed in, else PSI_SUCCESS
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIValidateMSA_StructureGroup(const _PSIMsa* msa);
 
