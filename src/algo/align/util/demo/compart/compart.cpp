@@ -50,7 +50,7 @@ void CCompartApp::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Compart v.1.33. Unless -qdb and -sdb are specified, "
+                              "Compart v.1.34. Unless -qdb and -sdb are specified, "
                               "the tool expects tabular blast hits at stdin collated "
                               "by query and subject, e.g. with 'sort -k 1,1 -k 2,2'");
 
@@ -80,26 +80,34 @@ void CCompartApp::Init()
                             "in base pairs. Default = parameter disabled.",
                             CArgDescriptions::eInteger, "9999999");
     
+    argdescr->AddDefaultKey("dropoff", "dropoff", 
+                            "Max score drop-off during hit extension.",
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(CElementaryMatching::
+                                              s_GetDefaultDropOff()));
+
     argdescr->AddDefaultKey("min_query_len", "min_query_len", 
                             "Minimum length for individual cDNA sequences.",
                             CArgDescriptions::eInteger, "50");
-    
+  
     argdescr->AddDefaultKey ("maxvol", "maxvol", 
                              "Maximum index volume size in MB (approximate)",
                              CArgDescriptions::eInteger,
                              "512");
 
-    argdescr->AddFlag("noxf", "[With external hits] Suppress overlap x-filtering: print all "
-                              "compartment hits intact.");
+    argdescr->AddFlag("noxf", "[With external hits] Suppress overlap x-filtering: "
+                      "print all compartment hits intact.");
 
     argdescr->AddOptionalKey("seqlens", "seqlens", 
-                             "[With external hits] Two-column file with sequence IDs and their lengths. "
-                             "If none supplied, the program will attempt fetching "
-                             "the lengths from GenBank. Cannot be used with -qdb.",
+                             "[With external hits] Two-column file with sequence IDs "
+                             "and their lengths. If none supplied, the program will "
+                             "attempt fetching the lengths from GenBank. "
+                             "Cannot be used with -qdb.",
                              CArgDescriptions::eInputFile);
 
     argdescr->AddDefaultKey("N", "N", 
-                            "[With external hits] Max number of compartments per query (0 = All).",
+                            "[With external hits] Max number of compartments "
+                            "per query (0 = All).",
                             CArgDescriptions::eInteger, "0");
 
     CArgAllow* constrain01 (new CArgAllow_Doubles(0.0, 1.0));
@@ -210,12 +218,14 @@ int CCompartApp::Run()
 
         matcher->SetMinQueryLength(m_min_query_len);
 
-        matcher->SetPenalty(args["penalty"].AsDouble());
-        matcher->SetMinIdty(args["min_idty"].AsDouble());
-        matcher->SetMinSingletonIdty(args["min_singleton_idty"].AsDouble());
+        matcher->SetPenalty(m_penalty);
+        matcher->SetMinIdty(m_min_idty);
+        matcher->SetMinSingletonIdty(m_min_singleton_idty);
 
         matcher->SetHitsOnly(args["ho"]);
         matcher->SetMaxVolSize(1024 * 1024 * (args["maxvol"].AsInteger()));
+
+        matcher->SetDropOff(args["dropoff"].AsInteger());
 
         try { matcher->Run(); }
         catch(std::bad_alloc&) {

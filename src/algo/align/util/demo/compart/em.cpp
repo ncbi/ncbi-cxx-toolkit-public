@@ -1302,7 +1302,7 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
                                       const Int8 & right_limit0,
                                       THitRef hitref)
 {
-    const int Wm (1), Wms (-2), XDropOff(5);
+    const int Wm (1), Wms (-2);
     int score (int(hitref->GetLength()) * Wm 
                + int(hitref->GetMismatches()) * (Wms - Wm));
     int score_max (score);
@@ -1317,7 +1317,7 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
     size_t mm (0), mm0 (0);
     bool no_overrun_yet (true);
     for(Int8 q (q0 - 1), s (s0 - 1);
-        (q + s > left_limit && score + XDropOff >= score_max 
+        (q + s > left_limit && score + m_XDropOff >= score_max 
          && q >= m_ii_cdna->m_Start && s >= m_ii_genomic->m_Start);
         --q, --s)
     {
@@ -1370,7 +1370,7 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
     no_overrun_yet = true;
 
     for(Int8 q (q0 + 1), s (s0 + 1);
-        (q + s < right_limit && score + XDropOff >= score_max
+        (q + s < right_limit && score + m_XDropOff >= score_max
          && q < m_ii_cdna->m_Start + m_ii_cdna->m_Length 
          && s < m_ii_genomic->m_Start + m_ii_genomic->m_Length);
         ++q, ++s)

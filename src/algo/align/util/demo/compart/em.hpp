@@ -49,7 +49,7 @@ class CElementaryMatching: public CObject {
 public:
 
     CElementaryMatching(const string& qdb, const string & sdb):
-        m_qdb(qdb), m_sdb (sdb)
+        m_qdb(qdb), m_sdb(sdb), m_XDropOff(s_GetDefaultDropOff())
     {
         x_InitBasic();
     }
@@ -72,6 +72,10 @@ public:
     void   SetMaxVolSize(size_t max_vol_size) { m_MaxVolSize = max_vol_size; }
 
     void   SetMinQueryLength(size_t min_qlen) { m_MinQueryLength = min_qlen; }
+
+    void   SetDropOff(int dropoff) { m_XDropOff = dropoff; }
+    int    GetDropOff(void) const { return m_XDropOff; }
+    static int s_GetDefaultDropOff(void) { return 5; }
     
     void Run(void);
     
@@ -247,6 +251,8 @@ private:
     size_t                    m_MinQueryLength;
 
     string                    m_qdb, m_sdb;
+
+    int                       m_XDropOff;
 
     CBoolVector               m_Mers;
 
