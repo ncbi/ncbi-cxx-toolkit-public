@@ -74,15 +74,20 @@ CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc)
     m_QueryNodeId = guide_tree_calc.GetQueryNodeId();
 }
 
-CGuideTree::CGuideTree(const CBioTreeDynamic& tree, int height, int width,
-                       CImageIO::EType format) 
-    : m_DataSource(new CPhyloTreeDataSource(tree))
+CGuideTree::CGuideTree(const CBioTreeContainer& btc)
 {
     x_Init();
 
-    m_Height = height;
-    m_Width = width;
-    m_ImageFormat = format;
+    CBioTreeDynamic dyntree;
+    BioTreeConvertContainer2Dynamic(dyntree, btc);
+    m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
+}
+
+
+CGuideTree::CGuideTree(const CBioTreeDynamic& tree)
+    : m_DataSource(new CPhyloTreeDataSource(tree))
+{
+    x_Init();
 }
 
 

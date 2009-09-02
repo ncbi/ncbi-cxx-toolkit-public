@@ -288,8 +288,7 @@ int CGuideTreeApplication::Run(void)
 
         // Otherwise load tree
         args["i"].AsInputFile() >> MSerial_AsnText >> btc;
-        BioTreeConvertContainer2Dynamic(dyntree, btc);
-        gtree.reset(new CGuideTree(dyntree));
+        gtree.reset(new CGuideTree(btc));
     }
 
     // Simplify tree

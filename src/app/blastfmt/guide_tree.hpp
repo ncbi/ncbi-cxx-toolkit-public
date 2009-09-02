@@ -122,14 +122,16 @@ public:
     ///
     CGuideTree(const CGuideTreeCalc& guide_tree_calc);
 
+    /// Constructor
+    /// @param btc BioTreeContainer object
+    ///
+    CGuideTree(const CBioTreeContainer& btc);
+
+
     /// Contructor
     /// @param tree Tree structure [in]
-    /// @param height Image height [in]
-    /// @param width Image width [in]
-    /// @param format Ouput image format [in]
     ///
-    CGuideTree(const CBioTreeDynamic& tree, int height = 600, int width = 800,
-               CImageIO::EType format = CImageIO::ePng);
+    CGuideTree(const CBioTreeDynamic& tree);
 
 
     /// Destructor
