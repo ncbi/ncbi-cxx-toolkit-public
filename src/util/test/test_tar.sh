@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Locate native tar;  exit if none found
+# Locate native tar;  exit successfully if none found
 string="`whereis tar 2>/dev/null`"
 if [ -z "$string" ]; then
   tar="`which tar 2>/dev/null`"
@@ -9,13 +9,40 @@ else
 fi
 test -x "$tar"  ||  exit 0
 
+# Figure out whether the API is lf64 clean, also exclude notoriously slow platforms
+okay=false
+case ${CHECK_SIGNATURE:-Unknown} in
+
+  GCC* )
+    # Older GCC builds are not lf64 clean
+    test `echo $CHECK_SIGNATURE | sed 's/^[^_]*_//;s/-.*$//'` -ge 340  &&  okay=true
+    ;;
+
+  WorkShop* )
+    # Although 64-bit build should be okay, it is very slow (because RTL
+    # has a file positioning bug, the archive has to be read out seqentially,
+    # which prevents from using faster direct access file seeks)...
+    ;;
+
+  * )
+    # NB: Here falls ICC
+    test_tar -lfs -f -  &&  okay=true
+    ;;
+
+esac
+
 huge_tar="/am/ftp-geo/DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
 if [ -f "$huge_tar" ]; then
-  echo
-  echo "`date` *** Testing compatibility with existing NCBI data"
-  echo
+  if $okay ; then
+    echo
+    echo "`date` *** Testing compatibility with existing NCBI data"
+    echo
     
-  test_tar -T -f "$huge_tar"  ||  exit 1
+    test_tar -T -f "$huge_tar"  ||  exit 1
+  else
+    echo
+    echo "`date` *** LF64 not supported, skipping data compatibility test"
+  fi
 fi
 
 echo
@@ -70,7 +97,7 @@ echo
 
 (cd $test_base.1  &&  $tar xf  $test_base.tar)
 
-echo "`date` *** Testing the archive"
+echo "`date` *** Testing the resultant archive"
 echo
 
 dd if=$test_base.tar bs=123 2>/dev/null | test_tar -T -f -            ||  exit 1
@@ -187,28 +214,30 @@ if [ "`uname`" = "Linux" ]; then
   real="`expr $real / 512 + 1`"
   dd if=$test_base.1/newdir/sparse-file bs=512 count="$real" skip="$nseek" | cmp -l - $test_base.2/newdir/sparse-file  ||  exit 1
 
-  free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
-  if [ "$free" -gt "4200000" ]; then
-    echo
-    echo "`date` *** ${free}KiB available in /tmp:  Testing 4GiB barrier"
-    echo
+  if $okay ; then
+    free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
+    if [ "$free" -gt "4200000" ]; then
+      echo
+      echo "`date` *** ${free}KiB available in /tmp:  Testing 4GiB barrier"
+      echo
 
-    dd of=$test_base.1/newdir/huge-file bs=1 count="`expr $$ % 10000`" seek=4G if=/dev/urandom                         ||  exit 1
-    real="`ls -l $test_base.1/newdir/huge-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
-    test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse                           ||  exit 1
-    size="`test_tar -t -v -f $test_base.tar huge-file 2>&1 | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
+      dd of=$test_base.1/newdir/huge-file bs=1 count="`expr $$ % 10000`" seek=4G if=/dev/urandom                       ||  exit 1
+      real="`ls -l $test_base.1/newdir/huge-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
+      test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse                         ||  exit 1
+      size="`test_tar -t -v -f $test_base.tar huge-file 2>&1 | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
 
-    if [ "$size" != "$real" ]; then
-      echo "--- Entry size mismatch: $size is expected to be $real"
-      exit 1
+      if [ "$size" != "$real" ]; then
+        echo "--- Entry size mismatch: $size is expected to be $real"
+        exit 1
+      fi
+      size="`ls -l $test_base.tar | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
+      if [ "$size" -le "$real" ]; then
+        echo "--- Archive size mismatch: $size is expected to be greater than $real"
+        exit 1
+      fi
+
+      $tar tvf $test_base.tar                                                                                          ||  exit 1
     fi
-    size="`ls -l $test_base.tar | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
-    if [ "$size" -le "$real" ]; then
-      echo "--- Archive size mismatch: $size is expected to be greater than $real"
-      exit 1
-    fi
-
-    $tar tvf $test_base.tar                                                                                            ||  exit 1
   fi
 fi
 
