@@ -54,10 +54,10 @@ public:
         const CSeq_id_Handle& ) =0;
 
     ///!
-    virtual CRef<CSeq_loc>
-    MapLocation(
-        const CSeq_id_Handle&,
-        const CSeq_loc& ) =0;
+//    virtual CRef<CSeq_loc>
+//    MapLocation(
+//        const CSeq_id_Handle&,
+//        const CSeq_loc& ) =0;
         
     /// Map all embedded IDs in a given object at once.
     virtual void 
@@ -127,10 +127,10 @@ public:
         const CSeq_id_Handle& ); 
         
     ///!
-    virtual CRef<CSeq_loc>
-    MapLocation(
-        const CSeq_id_Handle&,
-        const CSeq_loc& );
+//    virtual CRef<CSeq_loc>
+//    MapLocation(
+//        const CSeq_id_Handle&,
+//        const CSeq_loc& );
         
     virtual void 
     MapObject(

@@ -115,6 +115,7 @@ CIdMapper::Map(
     return CSeq_id_Handle();  
 };
 
+/*
 //  ============================================================================
 CRef<CSeq_loc>
 CIdMapper::MapLocation(
@@ -133,6 +134,7 @@ CIdMapper::MapLocation(
     mapper.Reset( new CSeq_loc_Mapper( hbsFrom, CSeq_loc_Mapper::eSeqMap_Down ) );
     return mapper->Map( locFrom );
 };
+*/
 
 //  ============================================================================
 string
