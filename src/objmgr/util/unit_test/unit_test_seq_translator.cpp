@@ -653,7 +653,6 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial_minus)
                  CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
                  vec.SetCoding(CSeq_data::e_Ncbieaa);
                  vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-                 real_prot_seq[50] = '*';
              }}
 
             ///
@@ -676,7 +675,6 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial_minus)
             }
 
             /// use CSeqTranslator::Translate()
-            real_prot_seq += '*';
             tmp.clear();
             CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
                                       scope, tmp,
