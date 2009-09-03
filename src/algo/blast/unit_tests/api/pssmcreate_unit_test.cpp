@@ -767,43 +767,32 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
         memset((void*) &request, 0, sizeof(request));
         request.information_content = true;
 
-        bool caught_exception = false;
-        try {
-            pssm_strategy.Reset(
+        pssm_strategy.Reset(
                 new CPsiBlastInputData(seq.data.get(),
                                        seq.length,
                                        sas, q->scope, 
                                        *opts, 
                                        "BLOSUM80",
                                        &request));
-            pssm_engine.Reset(new CPssmEngine(pssm_strategy));
-            pssm = pssm_engine->Run();
-        } catch (const CBlastException&) {
-            caught_exception = true;
-        }
+        pssm_engine.Reset(new CPssmEngine(pssm_strategy));
+        BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);
+
         pssm_strategy.Reset();
         pssm_engine.Reset();
-        BOOST_REQUIRE_EQUAL(true, caught_exception);
 
         // Test the unsupported diagnostics
         memset((void*) &request, 0, sizeof(request));
         request.gapless_column_weights = true;
 
-        caught_exception = false;
-        try {
-            pssm_strategy.Reset(
+        pssm_strategy.Reset(
                 new CPsiBlastInputData(seq.data.get(),
                                        seq.length,
                                        sas, q->scope, 
                                        *opts, 
                                        "BLOSUM80",
                                        &request));
-            pssm_engine.Reset(new CPssmEngine(pssm_strategy));
-            pssm = pssm_engine->Run();
-        } catch (const CBlastException&) {
-            caught_exception = true;
-        }
-        BOOST_REQUIRE_EQUAL(true, caught_exception);
+        pssm_engine.Reset(new CPssmEngine(pssm_strategy));
+        BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);
 }
 
 // test sequence alignment convertion to multiple sequence alignment
