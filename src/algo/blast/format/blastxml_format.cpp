@@ -48,6 +48,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/format/blastxml_format.hpp>
 #include <algo/blast/format/blastfmtutil.hpp>
 #include <objtools/align_format/showdefline.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 
 #include <serial/objostrxml.hpp>
 
@@ -458,11 +459,10 @@ s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
         hit->SetId(seqid);
         hit->SetDef(defline);
 
-        string accession;
         // Find the "best" Seq-id, and retrieve accession (without version).
         CSeq_id_Handle idh = 
             sequence::GetId(kSubjBioseqHandle, sequence::eGetId_Best); 
-        idh.GetSeqId()->GetLabel(&accession, CSeq_id::eContent, 0);
+        string accession = CAlignFormatUtil::GetLabel(idh.GetSeqId());
         hit->SetAccession(accession);
         
         int length = sequence::GetLength(kSeqId, scope);
