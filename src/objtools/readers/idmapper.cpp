@@ -48,11 +48,6 @@
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
 
-// Object manager includes
-#include <objmgr/scope.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/seq_loc_mapper.hpp>
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
