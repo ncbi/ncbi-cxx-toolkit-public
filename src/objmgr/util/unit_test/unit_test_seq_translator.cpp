@@ -651,6 +651,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial_minus)
                  CBioseq_Handle bsh =
                      scope.GetBioseqHandle(feat_iter->GetProduct());
                  CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+                 vec.SetCoding(CSeq_data::e_Ncbieaa);
                  vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
                  real_prot_seq[50] = '*';
              }}
