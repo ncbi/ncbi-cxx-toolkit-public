@@ -107,6 +107,7 @@ private:
     int m_ExitCode;
     set<CProjKey> m_SuspiciousProj;
     list<string>  m_GeneratedFiles;
+    list<string>  m_ProjWatchers;
     list<string>  m_CustomMetaData;
     list<string>  m_CustomConfH;
 
@@ -185,6 +186,8 @@ public:
     void SetFail(int exit_code=1) {m_ExitCode=exit_code;}
     void RegisterSuspiciousProject(const CProjKey& proj);
     void RegisterGeneratedFile( const string& file);
+    void RegisterProjectWatcher(
+        const string& project, const string& dir,  const string& watcher);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
@@ -201,6 +204,7 @@ private:
     void    CreateCheckList(const list<SConfigInfo>* configs,
                             CProjectItemsTree& projects_tree);
     void    ReportGeneratedFiles(void);
+    void    ReportProjectWatchers(void);
     bool    ConfirmConfiguration(void);
 };
 

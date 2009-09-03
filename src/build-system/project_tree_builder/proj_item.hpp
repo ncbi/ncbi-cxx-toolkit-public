@@ -166,6 +166,7 @@ public:
     string m_ExportHeadersDest;
     list<string> m_ExportHeaders;
 
+    string m_Watchers;
     list<string> m_CheckInfo;
     mutable set<string> m_CheckConfigs;
 

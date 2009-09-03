@@ -268,6 +268,13 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
     dll->m_Defines.sort();
     dll->m_Defines.unique();
 
+    // watchers
+    if (!lib.m_Watchers.empty()) {
+        if (!dll->m_Watchers.empty()) {
+            dll->m_Watchers += " ";
+        }
+        dll->m_Watchers += lib.m_Watchers;
+    }
     {{
         string makefile_name = 
             SMakeProjectT::CreateMakeAppLibFileName(lib.m_SourcesBaseDir,

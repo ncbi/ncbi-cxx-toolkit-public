@@ -953,6 +953,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     k = makefile.m_Contents.find("WATCHERS");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
         check_authors = NStr::Join(k->second, " ");
+        project.m_Watchers = check_authors;
     } else {
         k = makefile.m_Contents.find("CHECK_AUTHORS");
         if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
@@ -1212,6 +1213,10 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     if (k != m->second.m_Contents.end()) {
         (tree->m_Projects[proj_key]).m_ExportHeadersDest = k->second.front();
     }
+    k = m->second.m_Contents.find("WATCHERS");
+    if ( k != m->second.m_Contents.end() && !k->second.empty() ) {
+        tree->m_Projects[proj_key].m_Watchers = NStr::Join(k->second, " ");
+    }
 
     if (!dll_host.empty() && GetApp().GetBuildType().GetType() == CBuildType::eDll) {
         tree->m_Projects[proj_key].m_DllHost = dll_host;
@@ -1332,6 +1337,10 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("DLL_TYPE");
     if (k != m->second.m_Contents.end() && k->second.front() == "plugin") {
         tree->m_Projects[proj_key].m_IsBundle = true;
+    }
+    k = m->second.m_Contents.find("WATCHERS");
+    if ( k != m->second.m_Contents.end() && !k->second.empty() ) {
+        tree->m_Projects[proj_key].m_Watchers = NStr::Join(k->second, " ");
     }
     return proj_key;
 }

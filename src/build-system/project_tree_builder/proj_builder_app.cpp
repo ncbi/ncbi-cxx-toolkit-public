@@ -631,6 +631,7 @@ int CProjBulderApp::Run(void)
         GenerateMacProjects(prj_tree);
     }
     ReportGeneratedFiles();
+    ReportProjectWatchers();
     //
     PTB_INFO("Done.  Elapsed time = " << sw.Elapsed() << " seconds");
     return m_ExitCode;
@@ -1241,6 +1242,17 @@ void CProjBulderApp::ReportGeneratedFiles(void)
     }
 }
 
+void CProjBulderApp::ReportProjectWatchers(void)
+{
+    m_ProjWatchers.sort();
+    string file_path( m_Solution + "_watchers.txt");
+    CNcbiOfstream ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+    if (ofs.is_open()) {
+        ITERATE( list<string>, f, m_ProjWatchers) {
+            ofs << *f << endl;
+        }
+    }
+}
 
 void CProjBulderApp::Exit(void)
 {
@@ -1753,6 +1765,28 @@ void CProjBulderApp::RegisterSuspiciousProject(const CProjKey& proj)
 void CProjBulderApp::RegisterGeneratedFile( const string& file)
 {
     m_GeneratedFiles.push_back(file);
+}
+
+void CProjBulderApp::RegisterProjectWatcher(
+    const string& project, const string& dir,  const string& watcher)
+{
+    if (watcher.empty()) {
+        return;
+    }
+    string sep;
+    sep += CDirEntry::GetPathSeparator();
+    string root(GetProjectTreeInfo().m_Src);
+    if (!CDirEntry::IsAbsolutePath(root)) {
+        root = CDirEntry::ConcatPath(CDir::GetCwd(), root);
+    }
+    string path(dir);
+    if (!CDirEntry::IsAbsolutePath(path)) {
+        path = CDirEntry::ConcatPath(CDir::GetCwd(), path);
+    }
+    path = CDirEntry::DeleteTrailingPathSeparator(
+        CDirEntry::CreateRelativePath(root, path));
+    NStr::ReplaceInPlace( path, sep, "/");
+    m_ProjWatchers.push_back( project + ", " + path + ", " + watcher );
 }
 
 CProjBulderApp& GetApp(void)

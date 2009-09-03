@@ -477,6 +477,8 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         xmlprj.SetGlobals("");
     }}
 
+    GetApp().RegisterProjectWatcher(
+        project_context.ProjectName(), prj.m_SourcesBaseDir, prj.m_Watchers);
 
     string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
                                                 project_context.ProjectName());
