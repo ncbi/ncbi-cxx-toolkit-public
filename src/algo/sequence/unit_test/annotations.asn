@@ -943,12 +943,6 @@ Seq-annot ::= {
           strand plus,
           id gi 224514634
         }
-      },
-      dbxref {
-        {
-          db "CCDS",
-          tag str "CCDS42971.1"
-        }
       }
     }
   }
