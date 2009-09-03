@@ -66,7 +66,8 @@ class CSeq_id_Which_Tree;
 ///
 
 
-typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
+typedef set<CSeq_id_Handle>             TSeq_id_HandleSet;
+typedef set<CSeq_id_HandleRange>        TSeq_id_HandleRangeSet;
 
 
 class NCBI_SEQ_EXPORT CSeq_id_Mapper : public CObject
@@ -83,14 +84,19 @@ public:
 
     /// Get the list of matching handles, do not create new handles
     bool HaveMatchingHandles(const CSeq_id_Handle& id);
+    NCBI_DEPRECATED // use GetMatchingHandleRanges
     void GetMatchingHandles(const CSeq_id_Handle& id,
                             TSeq_id_HandleSet& h_set);
+    void GetMatchingHandleRanges(const CSeq_id_Handle& id,
+                                 TSeq_id_HandleRangeSet& h_set);
     bool HaveReverseMatch(const CSeq_id_Handle& id);
     void GetReverseMatchingHandles(const CSeq_id_Handle& id,
                                    TSeq_id_HandleSet& h_set);
     /// Get the list of string-matching handles, do not create new handles
-    void GetMatchingHandlesStr(string sid,
-                               TSeq_id_HandleSet& h_set);
+    //void GetMatchingHandlesStr(string sid,
+    //                           TSeq_id_HandleSet& h_set);
+    void GetMatchingHandleRangesStr(string sid,
+                                    TSeq_id_HandleRangeSet& h_set);
     
     /// Get seq-id for the given handle
     static CConstRef<CSeq_id> GetSeq_id(const CSeq_id_Handle& handle);

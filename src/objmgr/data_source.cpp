@@ -1046,22 +1046,48 @@ SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh,
     }
     else if ( idh.HaveMatchingHandles() ) { 
         // Try to find the best matching id (not exactly equal)
-        CSeq_id_Handle::TMatches hset;
-        idh.GetMatchingHandles(hset);
-        ITERATE ( CSeq_id_Handle::TMatches, hit, hset ) {
-            if ( *hit == idh ) // already checked
-                continue;
-            if ( ret && ret.m_Seq_id.IsBetter(*hit) ) // worse hit
-                continue;
-            ITERATE ( TTSE_LockSet, it, locks ) {
-                it->second->x_GetRecords(*hit, true);
+        CSeq_id_Handle::TMatchRanges hset;
+        idh.GetMatchingHandleRanges(hset);
+        ITERATE ( CSeq_id_Handle::TMatchRanges, hit, hset ) {
+            if ( IsSingleHandle(*hit) ) {
+                const CSeq_id_Handle& id = hit->first;
+                if ( id == idh ) // already checked
+                    continue;
+                if ( ret && ret.m_Seq_id.IsBetter(id) ) // worse hit
+                    continue;
+                ITERATE ( TTSE_LockSet, it, locks ) {
+                    it->second->x_GetRecords(id, true);
+                }
+                TTSE_Lock new_tse = x_FindBestTSE(id, locks);
+                if ( new_tse ) {
+                    ret.m_TSE_Lock = new_tse;
+                    ret.m_Seq_id = id;
+                    ret.m_Bioseq = ret.m_TSE_Lock->FindBioseq(id);
+                    _ASSERT(ret);
+                }
             }
-            TTSE_Lock new_tse = x_FindBestTSE(*hit, locks);
-            if ( new_tse ) {
-                ret.m_TSE_Lock = new_tse;
-                ret.m_Seq_id = *hit;
-                ret.m_Bioseq = ret.m_TSE_Lock->FindBioseq(ret.m_Seq_id);
-                _ASSERT(ret);
+            else {
+                ITERATE ( TTSE_LockSet, it, locks ) {
+                    it->second->x_GetRecords(*hit, true);
+                }
+                TMainLock::TReadLockGuard guard(m_DSMainLock);
+                for ( TSeq_id2TSE_Set::const_iterator idit
+                          = m_TSE_seq.lower_bound(hit->first);
+                      idit != m_TSE_seq.end() && !(hit->second < idit->first);
+                      ++idit ) {
+                    const CSeq_id_Handle& id = idit->first;
+                    if ( id == idh ) // already checked
+                        continue;
+                    if ( ret && ret.m_Seq_id.IsBetter(id) ) // worse hit
+                        continue;
+                    TTSE_Lock new_tse = x_FindBestTSE(id, locks);
+                    if ( new_tse ) {
+                        ret.m_TSE_Lock = new_tse;
+                        ret.m_Seq_id = id;
+                        ret.m_Bioseq = ret.m_TSE_Lock->FindBioseq(id);
+                        _ASSERT(ret);
+                    }
+                }
             }
         }
     }
@@ -1090,6 +1116,34 @@ CDataSource::TSeqMatches CDataSource::GetMatches(const CSeq_id_Handle& idh,
                     continue;
                 }
                 SSeqMatch_DS match(tse_lock, idh);
+                _ASSERT(match);
+                ret.push_back(match);
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+CDataSource::TSeqMatches
+CDataSource::GetMatches(const CSeq_id_HandleRange& id_range,
+                        const TTSE_LockSet& history)
+{
+    TSeqMatches ret;
+
+    if ( !history.empty() ) {
+        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        for ( TSeq_id2TSE_Set::const_iterator idit =
+                  m_TSE_seq.lower_bound(id_range.first);
+              idit != m_TSE_seq.end() && !(id_range.second < idit->first);
+              ++idit ) {
+            ITERATE ( TTSE_Set, it, idit->second ) {
+                TTSE_Lock tse_lock = history.FindLock(*it);
+                if ( !tse_lock ) {
+                    continue;
+                }
+                SSeqMatch_DS match(tse_lock, idit->first);
                 _ASSERT(match);
                 ret.push_back(match);
             }

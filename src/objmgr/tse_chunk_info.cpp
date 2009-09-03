@@ -116,6 +116,9 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
     // register bioseq ids
     {{
         set<CSeq_id_Handle> ids;
+        if ( !m_BioseqIds.empty() ) {
+            TBioseqIds(m_BioseqIds).swap(m_BioseqIds);
+        }
         sort(m_BioseqIds.begin(), m_BioseqIds.end());
         ITERATE ( TBioseqIds, it, m_BioseqIds ) {
             split_info.x_SetContainedId(*it, chunk_id);

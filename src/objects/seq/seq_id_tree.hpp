@@ -37,6 +37,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/hash_map.hpp>
 
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -96,13 +97,18 @@ public:
     virtual void DropInfo(const CSeq_id_Info* info);
 
     typedef set<CSeq_id_Handle> TSeq_id_MatchList;
+    typedef set<CSeq_id_HandleRange> TSeq_id_MatchList2;
 
     // Get the list of matching seq-id.
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const = 0;
+    //virtual void FindMatch(const CSeq_id_Handle& id,
+    //                       TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const = 0;
+    virtual void FindMatch2(const CSeq_id_Handle& id,
+                            TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const = 0;
 
     // returns true if FindMatch(h1, id_list) will put h2 in id_list.
     virtual bool Match(const CSeq_id_Handle& h1,
@@ -159,10 +165,14 @@ public:
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatch(const CSeq_id_Handle& id,
+    //                       TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2(const CSeq_id_Handle& id,
+                            TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
 
@@ -187,8 +197,10 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -233,6 +245,18 @@ protected:
 // Gi tree
 
 
+class CSeq_id_Gi_Info : public CSeq_id_Info
+{
+public:
+    CSeq_id_Gi_Info(CSeq_id_Mapper* mapper)
+        : CSeq_id_Info(CSeq_id::e_Gi, mapper)
+        {
+        }
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+};
+
+
 class CSeq_id_Gi_Tree : public CSeq_id_Which_Tree
 {
 public:
@@ -247,8 +271,10 @@ public:
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -265,28 +291,73 @@ protected:
 // e_Ddbj, e_Prf, e_Tpg, e_Tpe, e_Tpd trees
 
 
+class CSeq_id_Textseq_Info : public CSeq_id_Info {
+public:
+    typedef pair<int, string> TKey;
+
+    CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
+                         CSeq_id_Mapper* mapper,
+                         const TKey& key);
+    ~CSeq_id_Textseq_Info(void);
+    
+    const TKey& GetKey(void) const {
+        return m_Key;
+    }
+    const string& GetAccPrefix(void) const {
+        return m_Key.second;
+    }
+    int GetAccDigits(void) const {
+        return m_Key.first & 0xff;
+    }
+    int GetMaxVersion(void) const {
+        return m_MaxVersion;
+    }
+    void Restore(CTextseq_id& id, int param) const;
+
+    static TKey ParseAcc(const string& acc, const CTextseq_id* tid);
+    int ParseAccNumber(const string& acc) const;
+    int Pack(const CTextseq_id& id) const;
+    int UnpackVersion(int param) const;
+    static int GetVersionMul(int acc_digits);
+    int GetVersionMul(void) const;
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    virtual void GetRangeHandles(int packed,
+                                 set<CSeq_id_Handle>& matches) const;
+    
+private:
+    TKey m_Key;
+    int  m_MaxVersion;
+    int  m_MaxCount;
+};
+
+
 class CSeq_id_Textseq_Tree : public CSeq_id_Which_Tree
 {
 public:
     CSeq_id_Textseq_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_Textseq_Tree(void);
-
+    
     virtual bool Empty(void) const;
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatch(const CSeq_id_Handle& id,
+    //                       TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2(const CSeq_id_Handle& id,
+                            TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
     virtual bool Match(const CSeq_id_Handle& h1,
                        const CSeq_id_Handle& h2) const;
     virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
                                  const CSeq_id_Handle& h2) const;
-
+    
     virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
@@ -298,22 +369,55 @@ protected:
                              const CTextseq_id& tid) const;
 
 private:
-    typedef vector<CSeq_id_Info*>   TVersions;
-    typedef map<string, TVersions, PNocase> TStringMap;
-
+    struct PNocase_Hash {
+        size_t operator()(const string& s) const {
+            size_t hash = 0;
+            ITERATE ( string, i, s )
+                hash = 5*hash + toupper(*i & 0xff);
+            return hash;
+        }
+    };
+    struct PNocase_Equals : PNocase {
+        bool operator()(const string& a, const string& b) const {
+            return Equals(a, b);
+        }
+    };
+    //typedef hash_multimap<string, CSeq_id_Info*,
+    //                      PNocase_Hash, PNocase_Equals> TStringMap;
+    typedef multimap<string, CSeq_id_Info*, PNocase> TStringMap;
+    typedef TStringMap::value_type TStringMapValue;
+    typedef TStringMap::const_iterator TStringMapCI;
+    typedef pair<TStringMapCI, TStringMapCI> TVersions;
+    typedef CSeq_id_Textseq_Info::TKey TPackedKey;
+    typedef map<TPackedKey, CConstRef<CSeq_id_Textseq_Info> > TPackedMap;
+    
     static bool x_Equals(const CTextseq_id& id1, const CTextseq_id& id2);
+    static void x_Erase(TStringMap& str_map,
+                        const string& key,
+                        const CSeq_id_Info* info);
     CSeq_id_Info* x_FindVersionEqual(const TVersions& ver_list,
                                      CSeq_id::E_Choice type,
                                      const CTextseq_id& tid) const;
 
-    void x_FindVersionMatch(const TVersions& ver_list,
-                            const CTextseq_id& tid,
-                            TSeq_id_MatchList& id_list,
+    void x_FindVersionMatch(TSeq_id_MatchList2& id_list,
                             bool by_accession,
-                            bool is_swissprot) const;
+                            const TVersions& ver_list,
+                            CSeq_id::E_Choice which,
+                            const CTextseq_id* tid) const;
+    void x_FindByAccession(TSeq_id_MatchList2& id_list,
+                           const string& str,
+                           CSeq_id::E_Choice which,
+                           const CTextseq_id* tid) const;
+    void x_FindByName(TSeq_id_MatchList2& id_list,
+                      const string& str,
+                      CSeq_id::E_Choice which,
+                      const CTextseq_id* tid) const;
+
+    bool x_GetVersion(int& version, const CSeq_id_Handle& id) const;
 
     TStringMap m_ByAccession;
     TStringMap m_ByName; // Used for searching by string
+    TPackedMap m_PackedMap;
 };
 
 
@@ -472,8 +576,10 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -491,6 +597,97 @@ private:
 // e_General tree
 
 
+class CSeq_id_General_Id_Info : public CSeq_id_Info {
+public:
+    typedef string TKey;
+    typedef PNocase PKeyLess;
+
+    CSeq_id_General_Id_Info(CSeq_id_Mapper* mapper, const TKey& key);
+    ~CSeq_id_General_Id_Info(void);
+    
+    const TKey& GetKey(void) const {
+        return m_Key;
+    }
+    const string& GetDbtag(void) const {
+        return m_Key;
+    }
+    void Restore(CDbtag& id, int param) const;
+
+    static TKey Parse(const CDbtag& id);
+    int Pack(const CDbtag& id) const;
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    
+private:
+    TKey m_Key;
+    int  m_MaxCount;
+};
+
+
+class CSeq_id_General_Str_Info : public CSeq_id_Info {
+public:
+    struct TKey {
+        // all upper case
+        int m_Key;
+        string m_Db;
+        string m_StrPrefix;
+        string m_StrSuffix;
+        bool operator==(const TKey& b) const {
+            return m_Key == b.m_Key && m_Db == b.m_Db &&
+                m_StrPrefix == b.m_StrPrefix && m_StrSuffix == b.m_StrSuffix;
+        }
+        bool operator!=(const TKey& b) const {
+            return m_Key != b.m_Key || m_Db != b.m_Db ||
+                m_StrPrefix != b.m_StrPrefix || m_StrSuffix != b.m_StrSuffix;
+        }
+    };
+    struct PKeyLess {
+        bool operator()(const TKey& a, const TKey& b) const {
+            if ( a.m_Key != b.m_Key ) {
+                return a.m_Key < b.m_Key;
+            }
+            if ( int diff = NStr::Compare(a.m_Db, b.m_Db) ) {
+                return diff < 0;
+            }
+            if ( int diff = NStr::Compare(a.m_StrPrefix, b.m_StrPrefix) ) {
+                return diff < 0;
+            }
+            return NStr::Compare(a.m_StrSuffix, b.m_StrSuffix) < 0;
+        }
+    };
+
+    CSeq_id_General_Str_Info(CSeq_id_Mapper* mapper, const TKey& key);
+    ~CSeq_id_General_Str_Info(void);
+    
+    const TKey& GetKey(void) const {
+        return m_Key;
+    }
+    const string& GetDbtag(void) const {
+        return m_Key.m_Db;
+    }
+    const string& GetStrPrefix(void) const {
+        return m_Key.m_StrPrefix;
+    }
+    const string& GetStrSuffix(void) const {
+        return m_Key.m_StrSuffix;
+    }
+    int GetStrDigits(void) const {
+        return m_Key.m_Key & 0xff;
+    }
+    void Restore(CDbtag& id, int param) const;
+
+    static TKey Parse(const CDbtag& id);
+    int ParseStrNumber(const string& str) const;
+    int Pack(const CDbtag& id) const;
+    
+    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    
+private:
+    TKey m_Key;
+    int  m_MaxCount;
+};
+
+
 class CSeq_id_General_Tree : public CSeq_id_Which_Tree
 {
 public:
@@ -502,8 +699,10 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -513,13 +712,20 @@ private:
     public:
         typedef map<string, CSeq_id_Info*, PNocase> TByStr;
         typedef map<int, CSeq_id_Info*>    TById;
-
         TByStr m_ByStr;
         TById  m_ById;
     };
     typedef map<string, STagMap, PNocase> TDbMap;
+    typedef CSeq_id_General_Id_Info::TKey TPackedIdKey;
+    typedef map<TPackedIdKey, CConstRef<CSeq_id_General_Id_Info>,
+                CSeq_id_General_Id_Info::PKeyLess> TPackedIdMap;
+    typedef CSeq_id_General_Str_Info::TKey TPackedStrKey;
+    typedef map<TPackedStrKey, CConstRef<CSeq_id_General_Str_Info>,
+                CSeq_id_General_Str_Info::PKeyLess> TPackedStrMap;
 
     TDbMap m_DbMap;
+    TPackedIdMap m_PackedIdMap;
+    TPackedStrMap m_PackedStrMap;
 };
 
 
@@ -538,8 +744,10 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -568,8 +776,10 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -606,11 +816,15 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const;
-
+    //virtual void FindMatch(const CSeq_id_Handle& id,
+    //                       TSeq_id_MatchList& id_list) const;
+    //virtual void FindMatchStr(const string& sid,
+    //                          TSeq_id_MatchList& id_list) const;
+    virtual void FindMatch2(const CSeq_id_Handle& id,
+                            TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch2Str(const string& sid,
+                               TSeq_id_MatchList2& id_list) const;
+    
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CPDB_seq_id& pid) const;

@@ -62,21 +62,22 @@ class CSeq_id_Handle;
 class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
 
-
-class CSeq_id_Info : public CObject
+class NCBI_SEQ_EXPORT CSeq_id_Info : public CObject
 {
 public:
-    NCBI_SEQ_EXPORT CSeq_id_Info(CSeq_id::E_Choice type,
-                                 CSeq_id_Mapper* mapper);
-    NCBI_SEQ_EXPORT CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
-                                 CSeq_id_Mapper* mapper);
-    NCBI_SEQ_EXPORT ~CSeq_id_Info(void);
+    CSeq_id_Info(CSeq_id::E_Choice type,
+                 CSeq_id_Mapper* mapper);
+    CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
+                 CSeq_id_Mapper* mapper);
+    ~CSeq_id_Info(void);
 
     CConstRef<CSeq_id> GetSeqId(void) const
         {
             return m_Seq_id;
         }
-    NCBI_SEQ_EXPORT CConstRef<CSeq_id> GetGiSeqId(int gi) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    virtual void GetRangeHandles(int packed,
+                                 set<CSeq_id_Handle>& matches) const;
 
     // locking
     void AddLock(void) const
@@ -102,12 +103,12 @@ public:
         {
             return *m_Mapper;
         }
-    NCBI_SEQ_EXPORT CSeq_id_Which_Tree& GetTree(void) const;
+    CSeq_id_Which_Tree& GetTree(void) const;
 
-private:
+protected:
     friend class CSeq_id_Which_Tree;
 
-    NCBI_SEQ_EXPORT void x_RemoveLastLock(void) const;
+    void x_RemoveLastLock(void) const;
 
     mutable CAtomicCounter_WithAutoInit m_LockCounter;
     CSeq_id::E_Choice            m_Seq_id_Type;
@@ -146,20 +147,18 @@ class CSeq_id_Handle
 public:
     // 'ctors
     CSeq_id_Handle(void)
-        : m_Info(null), m_Gi(0)
+        : m_Info(null), m_Packed(0)
         {
         }
-    explicit CSeq_id_Handle(const CSeq_id_Info* info, int gi = 0)
-        : m_Info(info), m_Gi(gi)
+    CSeq_id_Handle(ENull /*null*/)
+        : m_Info(null), m_Packed(0)
+        {
+        }
+    explicit CSeq_id_Handle(const CSeq_id_Info* info, int packed = 0)
+        : m_Info(info), m_Packed(packed)
         {
             _ASSERT(info);
         }
-
-    /// Faster way to create a handle for a gi.
-    static NCBI_SEQ_EXPORT CSeq_id_Handle GetGiHandle(int gi);
-
-    /// Faster way to create a handle for a gi.
-    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(int gi);
 
     /// Normal way of getting a handle, works for any seq-id.
     static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(const CSeq_id& id);
@@ -167,21 +166,24 @@ public:
     /// Construct CSeq_id from string representation and return handle for it.
     static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(const string& str_id);
 
+    /// Faster way to create a handle for a gi.
+    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(int gi);
+
+    /// Faster way to create a handle for a gi.
+    static CSeq_id_Handle GetGiHandle(int gi)
+        {
+            return GetHandle(gi);
+        }
+    
     bool operator== (const CSeq_id_Handle& handle) const
         {
-            return m_Gi == handle.m_Gi && m_Info == handle.m_Info;
+            return m_Packed == handle.m_Packed && m_Info == handle.m_Info;
         }
     bool operator!= (const CSeq_id_Handle& handle) const
         {
-            return m_Gi != handle.m_Gi || m_Info != handle.m_Info;
+            return m_Packed != handle.m_Packed || m_Info != handle.m_Info;
         }
-    bool operator<  (const CSeq_id_Handle& handle) const
-        {
-            // gi != 0 first
-            unsigned g1 = unsigned(m_Gi-1), g2 = unsigned(handle.m_Gi-1);
-            return unsigned(g1) < unsigned(g2) ||
-                (g1 == g2 && m_Info < handle.m_Info);
-        }
+    bool NCBI_SEQ_EXPORT operator<  (const CSeq_id_Handle& handle) const;
     bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 
     /// Check if the handle is a valid or an empty one
@@ -191,7 +193,7 @@ public:
     void Reset(void)
         {
             m_Info.Reset();
-            m_Gi = 0;
+            m_Packed = 0;
         }
 
     //
@@ -200,8 +202,12 @@ public:
 
     //
     typedef set<CSeq_id_Handle> TMatches;
+    typedef pair<CSeq_id_Handle, CSeq_id_Handle> CSeq_id_HandleRange;
+    typedef set<CSeq_id_HandleRange> TMatchRanges;
+    NCBI_DEPRECATED // use GetMatchingHandleRanges
     void NCBI_SEQ_EXPORT GetMatchingHandles(TMatches& matches) const;
     void NCBI_SEQ_EXPORT GetReverseMatchingHandles(TMatches& matches) const;
+    void NCBI_SEQ_EXPORT GetMatchingHandleRanges(TMatchRanges& matches) const;
 
     /// True if *this matches to h.
     /// This mean that *this is either the same as h,
@@ -213,46 +219,91 @@ public:
 
     string NCBI_SEQ_EXPORT AsString(void) const;
 
-    bool IsGi(void) const
-        {
-            return m_Gi != 0;
-        }
-    int GetGi(void) const
-        {
-            return m_Gi;
-        }
-    unsigned NCBI_SEQ_EXPORT GetHash(void) const;
-
     CSeq_id::E_Choice Which(void) const
         {
             return m_Info->GetType();
         }
+    bool IsPacked(void) const
+        {
+            return m_Packed != 0;
+        }
+    int GetPacked(void) const
+        {
+            return m_Packed;
+        }
+    bool IsGi(void) const
+        {
+            return m_Packed && m_Info->GetType() == CSeq_id::e_Gi;
+        }
+    int GetGi(void) const
+        {
+            return IsGi()? m_Packed: 0;
+        }
+    unsigned NCBI_SEQ_EXPORT GetHash(void) const;
+
     CSeq_id::EAccessionInfo IdentifyAccession(void) const
         {
-            return m_Info->GetSeqId()->IdentifyAccession();
+            return GetSeqId()->IdentifyAccession();
         }
 
-    CConstRef<CSeq_id> NCBI_SEQ_EXPORT GetSeqId(void) const;
-    CConstRef<CSeq_id> NCBI_SEQ_EXPORT GetSeqIdOrNull(void) const;
+    CConstRef<CSeq_id> GetSeqId(void) const
+        {
+            CConstRef<CSeq_id> ret;
+            if ( m_Packed ) {
+                ret = m_Info->GetPackedSeqId(m_Packed);
+            }
+            else {
+                ret = m_Info->GetSeqId();
+            }
+            return ret;
+        }
+    CConstRef<CSeq_id> GetSeqIdOrNull(void) const
+        {
+            CConstRef<CSeq_id> ret;
+            if ( m_Info ) {
+                if ( m_Packed ) {
+                    ret = m_Info->GetPackedSeqId(m_Packed);
+                }
+                else {
+                    ret = m_Info->GetSeqId();
+                }
+            }
+            return ret;
+        }
 
     CSeq_id_Mapper& GetMapper(void) const
         {
             return m_Info->GetMapper();
         }
-
     void Swap(CSeq_id_Handle& idh)
         {
             m_Info.Swap(idh.m_Info);
-            swap(m_Gi, idh.m_Gi);
+            swap(m_Packed, idh.m_Packed);
         }
+
+public:
+    const CSeq_id_Info* x_GetInfo(void) const {
+        return m_Info;
+    }
 
 private:
     friend class CSeq_id_Mapper;
 
     // Seq-id info
     CConstRef<CSeq_id_Info, CSeq_id_InfoLocker> m_Info;
-    int m_Gi;
+    int m_Packed;
 };
+
+/// range of handles: range.first <= id <= range.second
+/// single handle if range.first == range.second
+typedef pair<CSeq_id_Handle, CSeq_id_Handle> CSeq_id_HandleRange;
+
+inline
+bool IsSingleHandle(const CSeq_id_HandleRange& id_range)
+{
+    return !id_range.second;
+}
+
 
 /// Get CConstRef<CSeq_id> from a seq-id handle (for container
 /// searching template functions)

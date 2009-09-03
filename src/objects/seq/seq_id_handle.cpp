@@ -72,29 +72,6 @@ CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
-{
-    CConstRef<CSeq_id> ret;
-#if defined NCBI_SLOW_ATOMIC_SWAP
-    CFastMutexGuard guard(sx_GetSeqIdMutex);
-    ret = m_Seq_id;
-    const_cast<CSeq_id_Info*>(this)->m_Seq_id.Reset();
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<CSeq_id_Info*>(this)->m_Seq_id = ret;
-#else
-    const_cast<CSeq_id_Info*>(this)->m_Seq_id.AtomicReleaseTo(ret);
-    if ( !ret || !ret->ReferencedOnlyOnce() ) {
-        ret.Reset(new CSeq_id);
-    }
-    const_cast<CSeq_id_Info*>(this)->m_Seq_id.AtomicResetFrom(ret);
-#endif
-    const_cast<CSeq_id&>(*ret).SetGi(gi);
-    return ret;
-}
-
-
 CSeq_id_Info::~CSeq_id_Info(void)
 {
     _ASSERT(m_LockCounter.Get() == 0);
@@ -107,6 +84,20 @@ CSeq_id_Which_Tree& CSeq_id_Info::GetTree(void) const
 }
 
 
+CConstRef<CSeq_id> CSeq_id_Info::GetPackedSeqId(int /*packed*/) const
+{
+    NCBI_THROW(CIdMapperException, eTypeError,
+               "CSeq_id_Handle is not packed");
+}
+
+
+void CSeq_id_Info::GetRangeHandles(int /*packed*/,
+                                   set<CSeq_id_Handle>& /*id_list*/) const
+{
+    NCBI_THROW(CIdMapperException, eTypeError,
+               "CSeq_id_Handle is not packed");
+}
+
 
 void CSeq_id_Info::x_RemoveLastLock(void) const
 {
@@ -118,40 +109,6 @@ void CSeq_id_Info::x_RemoveLastLock(void) const
 //
 //  CSeq_id_Handle::
 //
-
-
-CConstRef<CSeq_id> CSeq_id_Handle::GetSeqId(void) const
-{
-    _ASSERT(m_Info);
-    CConstRef<CSeq_id> ret;
-    if ( IsGi() ) {
-        ret = m_Info->GetGiSeqId(GetGi());
-    }
-    else {
-        ret = m_Info->GetSeqId();
-    }
-    return ret;
-}
-
-
-CConstRef<CSeq_id> CSeq_id_Handle::GetSeqIdOrNull(void) const
-{
-    CConstRef<CSeq_id> ret;
-    if ( IsGi() ) {
-        _ASSERT(m_Info);
-        ret = m_Info->GetGiSeqId(GetGi());
-    }
-    else if ( m_Info ) {
-        ret = m_Info->GetSeqId();
-    }
-    return ret;
-}
-
-
-CSeq_id_Handle CSeq_id_Handle::GetGiHandle(int gi)
-{
-    return CSeq_id_Mapper::GetInstance()->GetGiHandle(gi);
-}
 
 
 CSeq_id_Handle CSeq_id_Handle::GetHandle(int gi)
@@ -187,7 +144,23 @@ bool CSeq_id_Handle::HaveReverseMatch(void) const
 
 void CSeq_id_Handle::GetMatchingHandles(TMatches& matches) const
 {
-    GetMapper().GetMatchingHandles(*this, matches);
+    TMatchRanges match_ranges;
+    GetMatchingHandleRanges(match_ranges);
+    ITERATE ( TMatchRanges, it, match_ranges ) {
+        if ( IsSingleHandle(*it) ) {
+            matches.insert(it->first);
+        }
+        else {
+            it->first.x_GetInfo()->GetRangeHandles(it->first.GetPacked(),
+                                                   matches);
+        }
+    }
+}
+
+
+void CSeq_id_Handle::GetMatchingHandleRanges(TMatchRanges& matches) const
+{
+    GetMapper().GetMatchingHandleRanges(*this, matches);
 }
 
 
@@ -218,6 +191,21 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 }
 
 
+bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
+{
+    // packed first
+    bool packed1 = m_Packed != 0;
+    bool packed2 = handle.m_Packed != 0;
+    if ( packed1 != packed2 ) {
+        return packed1;
+    }
+    if ( m_Info != handle.m_Info ) {
+        return m_Info < handle.m_Info;
+    }
+    return m_Packed < handle.m_Packed;
+}
+
+
 string CSeq_id_Handle::AsString() const
 {
     CNcbiOstrstream os;
@@ -225,7 +213,7 @@ string CSeq_id_Handle::AsString() const
         os << "gi|" << GetGi();
     }
     else if ( m_Info ) {
-        m_Info->GetSeqId()->WriteAsFasta(os);
+        GetSeqId()->WriteAsFasta(os);
     }
     else {
         os << "unknown";
@@ -236,7 +224,7 @@ string CSeq_id_Handle::AsString() const
 
 unsigned CSeq_id_Handle::GetHash(void) const
 {
-    unsigned hash = m_Gi;
+    unsigned hash = m_Packed;
     if ( !hash ) {
         hash = unsigned((intptr_t)(m_Info.GetPointerOrNull())>>3);
     }

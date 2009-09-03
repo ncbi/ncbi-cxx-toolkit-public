@@ -274,6 +274,25 @@ CDataSource_ScopeInfo::x_FindBestTSEInIndex(const CSeq_id_Handle& idh) const
 }
 
 
+pair<CSeq_id_Handle, CDataSource_ScopeInfo::TTSE_ScopeInfo>
+CDataSource_ScopeInfo::x_FindBestTSEInIndex(const CSeq_id_HandleRange& id_range) const
+{
+    pair<CSeq_id_Handle, TTSE_ScopeInfo> ret;
+    for ( TTSE_BySeqId::const_iterator it =
+              m_TSE_BySeqId.lower_bound(id_range.first);
+          it != m_TSE_BySeqId.end() && !(id_range.second < it->first);
+          ++it ) {
+        if ( !ret.second || it->first.IsBetter(ret.first) ||
+             ret.first == it->first && x_IsBetter(ret.first,
+                                                  *it->second, *ret.second) ) {
+            ret.first = it->first;
+            ret.second = it->second;
+        }
+    }
+    return ret;
+}
+
+
 void CDataSource_ScopeInfo::UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock)
 {
     {{
@@ -530,14 +549,20 @@ SSeqMatch_Scope CDataSource_ScopeInfo::x_GetSeqMatch(const CSeq_id_Handle& idh)
 {
     SSeqMatch_Scope ret = x_FindBestTSE(idh);
     if ( !ret && idh.HaveMatchingHandles() ) {
-        CSeq_id_Handle::TMatches ids;
-        idh.GetMatchingHandles(ids);
-        ITERATE ( CSeq_id_Handle::TMatches, it, ids ) {
-            if ( *it == idh ) // already checked
-                continue;
-            if ( ret && ret.m_Seq_id.IsBetter(*it) ) // worse hit
-                continue;
-            ret = x_FindBestTSE(*it);
+        CSeq_id_Handle::TMatchRanges ids;
+        idh.GetMatchingHandleRanges(ids);
+        ITERATE ( CSeq_id_Handle::TMatchRanges, it, ids ) {
+            if ( IsSingleHandle(*it) ) {
+                const CSeq_id_Handle& id = it->first;
+                if ( id == idh ) // already checked
+                    continue;
+                if ( ret && ret.m_Seq_id.IsBetter(id) ) // worse hit
+                    continue;
+                ret = x_FindBestTSE(id);
+            }
+            else {
+                x_FindBestTSE(ret, *it);
+            }
         }
     }
     return ret;
@@ -573,6 +598,39 @@ SSeqMatch_Scope CDataSource_ScopeInfo::x_FindBestTSE(const CSeq_id_Handle& idh)
         }
     }
     return ret;
+}
+
+
+void CDataSource_ScopeInfo::x_FindBestTSE(SSeqMatch_Scope& ret,
+                                          const CSeq_id_HandleRange& id_range)
+{
+    if ( m_CanBeUnloaded ) {
+        // We have full index of static TSEs.
+        TTSE_InfoMapMutex::TReadLockGuard guard(GetTSE_InfoMapMutex());
+        pair<CSeq_id_Handle, TTSE_ScopeInfo> best =
+            x_FindBestTSEInIndex(id_range);
+        if ( best.second && (!ret || best.first.IsBetter(ret.m_Seq_id)) ) {
+            x_SetMatch(ret, *best.second, best.first);
+        }
+    }
+    else {
+        // We have to ask data source about it.
+        CDataSource::TSeqMatches matches;
+        {{
+            TTSE_LockSetMutex::TReadLockGuard guard(m_TSE_LockSetMutex);
+            CDataSource::TSeqMatches matches2 =
+                GetDataSource().GetMatches(id_range, m_TSE_LockSet);
+            matches.swap(matches2);
+        }}
+        ITERATE ( CDataSource::TSeqMatches, it, matches ) {
+            SSeqMatch_Scope nxt;
+            x_SetMatch(nxt, *it);
+            if ( !ret || nxt.m_Seq_id.IsBetter(ret.m_Seq_id) ||
+                 x_IsBetter(nxt.m_Seq_id, *nxt.m_TSE_Lock, *ret.m_TSE_Lock) ) {
+                ret = nxt;
+            }
+        }
+    }
 }
 
 
@@ -1038,6 +1096,22 @@ bool CTSE_ScopeInfo::ContainsBioseq(const CSeq_id_Handle& id) const
 }
 
 
+bool CTSE_ScopeInfo::ContainsBioseq(const CSeq_id_HandleRange& id_range) const
+{
+    if ( CanBeUnloaded() ) {
+        TSeqIds::const_iterator it =
+            lower_bound(m_UnloadedInfo->m_BioseqsIds.begin(),
+                        m_UnloadedInfo->m_BioseqsIds.end(),
+                        id_range.first);
+        return it != m_UnloadedInfo->m_BioseqsIds.end() &&
+            !(id_range.second < *it);
+    }
+    else {
+        return m_TSE_Lock->ContainsBioseq(id_range);
+    }
+}
+
+
 bool CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
 {
     if ( CanBeUnloaded() ) {
@@ -1045,10 +1119,15 @@ bool CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
             return true;
         }
         if ( id.HaveMatchingHandles() ) {
-            CSeq_id_Handle::TMatches ids;
-            id.GetMatchingHandles(ids);
-            ITERATE ( CSeq_id_Handle::TMatches, it, ids ) {
-                if ( *it != id ) {
+            CSeq_id_Handle::TMatchRanges ids;
+            id.GetMatchingHandleRanges(ids);
+            ITERATE ( CSeq_id_Handle::TMatchRanges, it, ids ) {
+                if ( IsSingleHandle(*it) ) {
+                    if ( it->first != id && ContainsBioseq(it->first) ) {
+                        return true;
+                    }
+                }
+                else {
                     if ( ContainsBioseq(*it) ) {
                         return true;
                     }
