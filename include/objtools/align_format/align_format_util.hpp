@@ -473,9 +473,14 @@ public:
     static void AddSpace(CNcbiOstream& out, int number);
 
     ///Return ID for GNL label
-    ///@param wid: CSeqId to get label from
-    ///
+    ///@param dtg: dbtag to build label from
     static string GetGnlID(const CDbtag& dtg);
+
+    ///Return a label for an ID
+    /// Tries to recreate behavior of GetLabel before a change that 
+    /// prepends "ti|" to trace IDs
+    ///@param id CSeqId: to build label from
+    static string GetLabel(CConstRef<CSeq_id> id);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
