@@ -714,6 +714,22 @@ string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
    return retval;
 }
 
+string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id)
+{
+    string retval = "";
+    if (id->Which() == CSeq_id::e_General){
+        const CDbtag& dtg = id->GetGeneral();
+        const string& dbName = dtg.GetDb();
+        if(NStr::CompareNocase(dbName, "TI") == 0){
+             retval = CAlignFormatUtil::GetGnlID(dtg);
+        }
+    } 
+    if (retval == "")
+      retval = id->GetSeqIdString();
+
+    return retval;
+}
+
 void CAlignFormatUtil::AddSpace(CNcbiOstream& out, int number)
 
 {

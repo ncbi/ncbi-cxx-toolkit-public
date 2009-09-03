@@ -1082,18 +1082,18 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
             urlLink = urlBuf;
         } else {//seqid general, dbtag specified
             const CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-            if(wid->Which() == CSeq_id::e_General){
+            // Comparison to TI prevents putting in trace URL for non-trace searches.
+            if(wid->Which() == CSeq_id::e_General) {
                 const CDbtag& dtg = wid->GetGeneral();
                 const string& dbName = dtg.GetDb();
-                if(NStr::CompareNocase(dbName, "TI") == 0){
-                    string gnl_id = CAlignFormatUtil::GetGnlID(dtg);
+                if ( NStr::CompareNocase(dbName, "TI") == 0) {
+                
                     sprintf(urlBuf, kTraceUrl.c_str(),
                             (m_AlignOption & eShowInfoOnMouseOverSeqid) ?
                             temp_class_info.c_str() : "", 
-                            gnl_id.c_str(), m_Rid.c_str());
+                            CAlignFormatUtil::GetLabel(wid).c_str(), m_Rid.c_str());
                     urlLink = urlBuf;
                 } else { //future use
-                    
                 }
             }
         }
@@ -1321,13 +1321,12 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     }
                     else if(m_AlignOption & eShowCheckBox) {                        
                         const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
-                        string id_str;
-                        seqID->GetLabel(&id_str, CSeq_id::eContent);
+                        string id_str = CAlignFormatUtil::GetLabel(seqID);
                         if(seqID->IsLocal()) {
                             id_str = "lcl|" + id_str;            
                         }        
                         char checkboxBuf[512];                        
-                        sprintf(checkboxBuf, k_CheckboxEx.c_str(),id_str.c_str());                                    
+                        sprintf(checkboxBuf, k_CheckboxEx.c_str(), id_str.c_str());
                         out << checkboxBuf;        
                     }                    
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
@@ -1894,7 +1893,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                 && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                 char buf[512];
                 sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
-                        NStr::IntToString(gi).c_str() : wid->GetSeqIdString().c_str(),
+                        NStr::IntToString(gi).c_str() : CAlignFormatUtil::GetLabel(wid).c_str(),
                         m_QueryNumber);
                 out << buf;
             }
@@ -1976,7 +1975,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                         char buf[512];
                         sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
-                                NStr::IntToString(gi).c_str() : wid2->GetSeqIdString().c_str(),
+                                NStr::IntToString(gi).c_str() : CAlignFormatUtil::GetLabel(wid2).c_str(),
                                 m_QueryNumber);
                                 out << buf;
                     }
