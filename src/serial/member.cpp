@@ -860,8 +860,9 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
         }
     }
     if (!memberInfo->Optional() &&
-        out.GetDataFormat() == eSerial_Xml &&
         out.GetVerifyData() == eSerialVerifyData_Yes &&
+        out.GetDataFormat() == eSerial_Xml &&
+        memberInfo->GetId().HaveNoPrefix() &&
         memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer &&
         memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetMaybe) {
         CConstObjectInfo objinfo(memberInfo->GetItemPtr(classPtr),
