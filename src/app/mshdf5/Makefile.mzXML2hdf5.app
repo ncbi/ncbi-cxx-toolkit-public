@@ -5,6 +5,8 @@
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
 
+REQUIRES = LIBXML LIBXSLT
+
 APP = mzXML2hdf5
 SRC = mzXML2hdf5 MzXmlReader
 # OBJ =
