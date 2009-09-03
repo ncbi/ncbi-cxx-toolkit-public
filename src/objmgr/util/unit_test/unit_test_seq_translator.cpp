@@ -72,7 +72,7 @@ extern const char* sc_TestEntry_alt_frame; //
 extern const char* sc_TestEntry_internal_stop; //
 extern const char* sc_TestEntry_5prime_partial;
 extern const char* sc_TestEntry_3prime_partial;
-
+extern const char* sc_TestEntry_5prime_partial_minus;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 {
@@ -628,6 +628,62 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_3prime_partial)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial_minus)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_5prime_partial_minus);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    for (CBioseq_CI bs_iter(seh);  bs_iter;  ++bs_iter) {
+        CFeat_CI feat_iter(*bs_iter,
+                           SAnnotSelector().IncludeFeatSubtype
+                           (CSeqFeatData::eSubtype_cdregion));
+        for ( ;  feat_iter;  ++feat_iter) {
+            ///
+            /// retrieve the actual protein sequence
+            ///
+            string real_prot_seq;
+            {{
+                 CBioseq_Handle bsh =
+                     scope.GetBioseqHandle(feat_iter->GetProduct());
+                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
+                 real_prot_seq[50] = '*';
+             }}
+
+            ///
+            /// translate the CDRegion directly
+            ///
+            string tmp;
+
+            /// use CSeqTranslator::Translate()
+            tmp.clear();
+            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
+                                      scope, tmp,
+                                      false, true);
+            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+            for (size_t i = 0;  i < real_prot_seq.size()  &&  i < tmp.size();  ++i) {
+                if (real_prot_seq[i] != tmp[i]) {
+                    LOG_POST(Error << "char " << i << ": "
+                             << real_prot_seq[i] << " != "
+                             << tmp[i]);
+                }
+            }
+
+            /// use CSeqTranslator::Translate()
+            real_prot_seq += '*';
+            tmp.clear();
+            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
+                                      scope, tmp,
+                                      true, true);
+            BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+        }
+    }
+}
 
 
 const char* sc_TestEntry ="\
@@ -1249,6 +1305,74 @@ LSGWSQTPDL\"\
             strand plus,\
             id gi 3002526,\
             fuzz-from lim tl\
+          }\
+        }\
+      }\
+    }\
+  }\
+}";
+
+const char* sc_TestEntry_5prime_partial_minus ="\
+Seq-entry ::= set {\
+  class nuc-prot,\
+  seq-set {\
+    seq {\
+      id {\
+        local str \"minus_5_prime_partial\" },\
+      inst {\
+        repr raw,\
+        mol dna,\
+        length 20,\
+        seq-data iupacna \"AAATTTGGGCAAATTTGGGC\"\
+      }\
+    },\
+    seq {\
+      id {\
+        local str \"minus_5_prime_partial_prot\" },\
+      inst {\
+        repr raw,\
+        mol aa,\
+        length 5,\
+        seq-data ncbieaa \"-FAQI\"\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data prot {\
+                name {\
+                  \"test protein\"\
+                }\
+              },\
+              location int {\
+                from 0,\
+                to 5,\
+                strand plus,\
+                id local str \"minus_5_prime_partial_prot\"\
+              }\
+            }\
+          }\
+        }\
+      }\
+    }\
+  },\
+  annot {\
+    {\
+      data ftable {\
+        {\
+          data cdregion {\
+            frame one,\
+            code {\
+              id 1\
+            }\
+          },\
+          product whole local str \"minus_5_prime_partial_prot\",\
+          location int {\
+            from 0,\
+            to 15,\
+            strand minus,\
+            id local str \"minus_5_prime_partial\",\
+            fuzz-from lim tr\
           }\
         }\
       }\
