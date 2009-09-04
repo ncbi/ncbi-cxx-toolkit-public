@@ -95,7 +95,7 @@ public:
     /// @param scope Scope [in]
     /// @param query_id Seqid of query sequence [in]
     ///
-    CGuideTreeCalc(const CRef<CSeq_annot>& annot, CRef<CScope> scope,
+    CGuideTreeCalc(CRef<CSeq_annot> annot, CRef<CScope> scope,
                    const string &query_id = "");
 
     /// Create CGuideTreeCalc from Seq-align
@@ -103,7 +103,7 @@ public:
     /// @param scope Scope [in]
     /// @param query_id Seqid of query sequence [in]
     ///
-    CGuideTreeCalc(const CSeq_align& seq_aln, const CRef<CScope>& scope,
+    CGuideTreeCalc(const CSeq_align& seq_aln, CRef<CScope> scope,
                    const string& query_id = "");
 
     ~CGuideTreeCalc() {}
@@ -155,6 +155,13 @@ public:
     /// @return Tree
     ///
     auto_ptr<CBioTreeDynamic> GetTree(void);
+
+
+    /// Get seq_align that corresponds to current tree
+    /// @return Seq_align
+    ///
+    CRef<CSeq_align> GetSeqAlign(void) const;
+
 
     /// Get maximum allowed diveregence between sequences included in tree
     /// reconstruction

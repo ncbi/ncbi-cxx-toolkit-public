@@ -94,6 +94,10 @@ void CGuideTreeApplication::Init(void)
     arg_desc->AddOptionalKey("query", "id", "Query sequence id",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("seqalign", "filename", "Write seq_align "
+                             "correspoinding to the tree to a file",
+                             CArgDescriptions::eOutputFile);
+
     arg_desc->AddDefaultKey("divergence", "value", "Maximum divergence"
                             " between sequences",
                             CArgDescriptions::eDouble, "0.85");
@@ -282,6 +286,12 @@ int CGuideTreeApplication::Run(void)
                 NcbiCerr << "Warning: " << *it << NcbiEndl;
             }
             NcbiCerr << NcbiEndl;
+        }
+
+        // Write seq_align
+        if (args["seqalign"]) {
+            CRef<CSeq_align> seqalign = calc->GetSeqAlign();
+            args["seqalign"].AsOutputFile() << MSerial_AsnText << *seqalign;
         }
     }
     else {

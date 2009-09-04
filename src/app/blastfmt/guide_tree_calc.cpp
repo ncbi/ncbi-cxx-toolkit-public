@@ -74,7 +74,7 @@ static const string s_kUnknown = "unknown";
 static const string s_kSubtreeDisplayed = "0";
 
 
-CGuideTreeCalc::CGuideTreeCalc(const CRef<CSeq_annot>& annot,
+CGuideTreeCalc::CGuideTreeCalc(CRef<CSeq_annot> annot,
                                CRef<CScope> scope, const string& query_id)
     : m_Scope(scope), 
       m_QuerySeqId(query_id)
@@ -85,8 +85,8 @@ CGuideTreeCalc::CGuideTreeCalc(const CRef<CSeq_annot>& annot,
 
 
 CGuideTreeCalc::CGuideTreeCalc(const CSeq_align& seq_aln,
-                                    const CRef<CScope>& scope,
-                                    const string& query_id)
+                               CRef<CScope> scope,
+                               const string& query_id)
     : m_Scope(scope),
       m_QuerySeqId(query_id)
 {
@@ -104,6 +104,19 @@ auto_ptr<CBioTreeDynamic> CGuideTreeCalc::GetTree(void)
     return dyntree;
 }
 
+
+CRef<CSeq_align> CGuideTreeCalc::GetSeqAlign(void) const
+{
+    CRef<CDense_seg> denseg(new CDense_seg());
+    denseg->Assign(m_AlignDataSource->GetAlnMgr().GetDenseg());
+
+    CRef<CSeq_align> seqalign(new CSeq_align());
+    seqalign->SetType(CSeq_align::eType_global);
+    seqalign->SetSegs().SetDenseg(*denseg);
+    seqalign->SetDim(denseg->GetDim());
+
+    return seqalign;
+}
 
 // Check if query in seq-align belongs to the query in m_QuerySeqID
 static bool s_SeqAlignQueryMatch(CRef<CSeq_align>& seq_align,
@@ -254,7 +267,10 @@ CRef<CAlnVec> CGuideTreeCalc::x_CreateValidAlign(
 
         alnvec = x_CreateSubsetAlign(alnvec, new_align_index);
 
+        // save current alignment
+        m_AlignDataSource->Init(*alnvec);
     }        
+
     return alnvec;
 
 }
