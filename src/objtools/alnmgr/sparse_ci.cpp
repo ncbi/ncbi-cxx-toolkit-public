@@ -163,9 +163,9 @@ void CSparse_CI::x_InitIterator()
             if(res.first == m_Coll->end())   {
                 m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first - 1;
             } else {
-                m_Clip->m_Last_It_1 = res.first;
+                m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first;
                 if (res.first != m_Coll->begin()) {
-                    m_Clip->m_Last_It_2 = res.first - 1;
+                    --m_Clip->m_Last_It_2;
                     last_gap = true;
                 }
             }
