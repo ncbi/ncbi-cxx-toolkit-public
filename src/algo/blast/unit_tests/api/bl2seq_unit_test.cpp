@@ -655,7 +655,7 @@ o.close();
 
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsCompBasedStats)
 {
-    CSeq_id qid("pir|A01243|DXCH");
+    CSeq_id qid("gi|68737"); // "pir|A01243|DXCH"
     auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CSeq_id sid("gi|118086484");
