@@ -75,6 +75,7 @@ public:
 	bool findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)const;
 	bool findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry)const;
 	void dump(string filename); //for debug
+    void reset() { m_table.clear(); }
 private:
 	typedef multimap<CRef< CSeq_id >, CRef< CBioseq >, LessBySeqId> SeqidToBioseqMap;
 	SeqidToBioseqMap m_table;
