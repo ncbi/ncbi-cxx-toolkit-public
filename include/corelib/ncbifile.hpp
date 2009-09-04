@@ -1678,28 +1678,28 @@ public:
     /// Get free disk space information.
     ///
     /// Get information for the user associated with the calling thread only.
-    /// If per-user quotas are in use, that some returned values may be less
-    /// than the total number of free/total bytes on the disk.
+    /// If per-user quotas are in use, then the returned values may be less
+    /// than the actual number of free bytes available on disk.
     /// @param path
-    ///   String that specifies filesystem for which information
-    ///   is to be returned. 
+    ///   String that specifies the file system for which to return
+    ///   the number of free bytes available on disk.
     /// @return
-    ///   The amount of free space.
-    /// @sa 
+    ///   The amount of free space in bytes.
+    /// @sa
     ///   GetFileSystemInfo, GetTotalDiskSpace
     static Uint8 GetFreeDiskSpace(const string& path);
 
     /// Get total disk space information.
     ///
     /// Get information for the user associated with the calling thread only.
-    /// If per-user quotas are in use, that some returned values may be less
-    /// than the total number of free/total bytes on the disk.
+    /// If per-user quotas are in use, then the returned value may be less
+    /// than the actual total number of bytes on the disk.
     /// @param path
-    ///   String that specifies file system for which information
-    ///   is to be returned. 
+    ///   String that specifies the file system for which to return
+    ///   the total disk space in bytes.
     /// @return
-    ///   The amount of total disk space.
-    /// @sa 
+    ///   The amount of total disk space in bytes.
+    /// @sa
     ///   GetFileSystemInfo, GetFreeDiskSpace
     static Uint8 GetTotalDiskSpace(const string& path);
 };
