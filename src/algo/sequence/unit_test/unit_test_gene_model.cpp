@@ -111,7 +111,28 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         CGeneModel::CreateGeneModelFromAlign(align, scope,
                                              actual_annot, seqs);
 
-        BOOST_CHECK(expected_annot.Equals(actual_annot));
+        CSeq_annot::TData::TFtable::const_iterator actual_iter =
+            actual_annot.GetData().GetFtable().begin();
+        CSeq_annot::TData::TFtable::const_iterator actual_end =
+            actual_annot.GetData().GetFtable().end();
+
+        CSeq_annot::TData::TFtable::const_iterator expected_iter =
+            expected_annot.GetData().GetFtable().begin();
+        CSeq_annot::TData::TFtable::const_iterator expected_end =
+            expected_annot.GetData().GetFtable().end();
+
+        for ( ;  actual_iter != actual_end  &&  expected_iter != expected_end;
+              ++actual_iter, ++expected_iter) {
+
+            const CSeq_feat& f1 = **actual_iter;
+            const CSeq_feat& f2 = **expected_iter;
+            BOOST_CHECK(f1.GetData().GetSubtype() == f2.GetData().GetSubtype());
+            BOOST_CHECK(f1.GetLocation().Equals(f2.GetLocation()));
+            BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
+            if (f1.IsSetProduct()) {
+                BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));
+            }
+        }
     }
 
     BOOST_CHECK(align_istr.eof());
