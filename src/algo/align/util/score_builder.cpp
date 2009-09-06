@@ -624,6 +624,11 @@ static const unsigned char reverse_4na[16] = {0, 8, 4, 0, 2, 0, 0, 0, 1};
 int CScoreBuilder::GetBlastScore(CScope& scope,
                                  const CSeq_align& align)
 {
+    if ( !align.GetSegs().IsDenseg() ) {
+        NCBI_THROW(CException, eUnknown,
+            "CScoreBuilder::AddScore(): only dense-seg alignments are supported");
+    }
+
     if (m_ScoreBlk == 0) {
         NCBI_THROW(CException, eUnknown,
                "Blast scoring parameters have not been specified");
@@ -781,16 +786,6 @@ double CScoreBuilder::GetBlastEValue(CScope& scope,
 void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                              EScoreType score)
 {
-    if (align.GetSegs().IsDisc()) {
-        NON_CONST_ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.SetSegs().SetDisc().Set()) {
-            AddScore(scope, **iter, score);
-        }
-        return;
-    } else if ( !align.GetSegs().IsDenseg() ) {
-        NCBI_THROW(CException, eUnknown,
-            "CScoreBuilder::AddScore(): only dense-seg alignments are supported");
-    }
-
     switch (score) {
     case eScore_Blast:
         {{
