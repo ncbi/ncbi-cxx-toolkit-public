@@ -79,7 +79,7 @@ public:
         eSignal_USR1  = (1<<10),    ///< User defined signal 1
         eSignal_USR2  = (1<<11),    ///< User defined signal 2
 
-        eSignal_Any   = 0xffffffff  ///< Any/all signal(s) from the list above
+        eSignal_Any   = 0xfffffff   ///< Any/all signal(s) from the list above
     };
     typedef int TSignalMask;        ///< Binary OR of "ESignal"
 
