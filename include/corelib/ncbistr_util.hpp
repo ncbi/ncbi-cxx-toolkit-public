@@ -53,8 +53,8 @@ BEGIN_NCBI_SCOPE
 ///
 struct CStrDummyTokenPos
 {
-    void push_back(SIZE_TYPE /*pos*/) {}
-    void reserve(SIZE_TYPE) {}
+    void push_back(string::size_type /*pos*/) {}
+    void reserve(string::size_type) {}
 };
 
 /// Base class for string splitting 
@@ -169,7 +169,7 @@ public:
 
         // Tokenization
         //
-        SIZE_TYPE pos, prev_pos;
+        string::size_type pos, prev_pos;
         for (pos = 0;;) {
             prev_pos = (merge == eMergeDelims ? 
                             str.find_first_not_of(delim, pos) : pos);
@@ -206,7 +206,7 @@ struct CStringTokenCount
                  const string&                  delim,
                  CStrTokenizeBase::EMergeDelims merge) 
     {
-        SIZE_TYPE pos, prev_pos;
+        string::size_type pos, prev_pos;
         size_t tokens = 0;
 
         // Count number of tokens         
@@ -265,11 +265,11 @@ public:
         : m_TokenPos(token_pos)
     {}
 
-    void push_back(SIZE_TYPE pos)
+    void push_back(string::size_type pos)
     {
         if (m_TokenPos) m_TokenPos->push_back(pos);
     }
-    void reserve(SIZE_TYPE capacity)
+    void reserve(string::size_type capacity)
     {
         if (m_TokenPos) m_TokenPos->reserve(capacity);
     }
