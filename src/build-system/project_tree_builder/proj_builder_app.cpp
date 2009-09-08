@@ -1332,6 +1332,10 @@ void CProjBulderApp::ParseArguments(void)
             m_TweakVTuneD = NStr::StringToBool(v);
         }
     } else {
+        CDir sln_dir(CDirEntry(m_Solution).GetDir());
+        if ( !sln_dir.Exists() ) {
+            sln_dir.CreatePath();
+        }
         int j;
         string entry[] = {"ThirdPartyBasePath","ThirdParty_C_ncbi",""};
         for (j=0; !entry[j].empty(); ++j) {
