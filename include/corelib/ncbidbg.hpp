@@ -1,5 +1,5 @@
-#ifndef NCBIDBG__HPP
-#define NCBIDBG__HPP
+#ifndef CORELIB___NCBIDBG__HPP
+#define CORELIB___NCBIDBG__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -39,8 +39,13 @@
  ///      include <common/test_assert.h> as a last header file.
  ///      [test apps in 'connect' branch include "test/test_assert.h" instead]
 
+#if defined(TEST_ASSERT__H)
+#  error "<common/test_assert.h> can not be included before this header"
+#endif
+
 
 #include <corelib/ncbidiag.hpp>
+
 // Use standard _ASSERT macro on MSVC in Debug modes.
 // See NCBI_ASSERT declaration below.
 #if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
@@ -152,4 +157,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif  /* NCBIDBG__HPP */
+#endif  /* CORELIB___NCBIDBG__HPP */
