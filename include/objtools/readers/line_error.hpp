@@ -34,6 +34,9 @@
 #define OBJTOOLS_READERS___LINEERROR__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/reader_exception.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +47,7 @@ class ILineError
 //  ============================================================================
 {
 public:
+    virtual ~ILineError() throw() {}
     virtual EDiagSev
     Severity() const =0;
     
@@ -85,7 +89,7 @@ public:
         const std::string& strMessage = std::string( "" ) )
     : m_eSeverity( eSeverity ), m_uLine( uLine ), m_strMessage( strMessage ) {};
     
-    virtual ~CLineError() {};
+    virtual ~CLineError() throw() {};
         
     EDiagSev
     Severity() const { return m_eSeverity; };
@@ -126,7 +130,7 @@ public:
     {
         SetSeverity( eSeverity );
     };
-    
+
     EDiagSev Severity() const { return GetSeverity(); };
     unsigned int Line() const { return m_uLineNumber; };
     std::string Message() const { return GetMsg(); };

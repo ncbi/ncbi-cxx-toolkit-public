@@ -3,8 +3,7 @@
 # Meta-makefile ("objtools/readers" project)
 ############################################
 
-LIB_PROJ = xobjread xobjreadex
-SUB_PROJ = app test unit_test
+APP_PROJ = unit_test_idmapper
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

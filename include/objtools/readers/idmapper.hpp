@@ -1,3 +1,6 @@
+#ifndef OBJTOOLS_IDMAPPER___IDMAPPER__HPP
+#define OBJTOOLS_IDMAPPER___IDMAPPER__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -25,50 +28,38 @@
  *
  * Author:  Frank Ludwig
  *
- * File Description: Definition of the IIdMapper interface and its 
+ * File Description: Definition of the IIdMapper interface and its
  *          implementation
  *
  */
 
-#ifndef OBJTOOLS_IDMAPPER___IDMAPPER__HPP
-#define OBJTOOLS_IDMAPPER___IDMAPPER__HPP
+#include <corelib/ncbistd.hpp>
+#include <objects/seq/seq_id_handle.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
+#include <objtools/readers/error_container.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /// General IdMapper interface
 ///
-/// This interface should suffice for typical IdMapper use, regardless of the 
+/// This interface should suffice for typical IdMapper use, regardless of the
 /// actual inplementation.
 ///
 class NCBI_XOBJREAD_EXPORT IIdMapper
 {
 public:
     virtual ~IIdMapper() {};
-    
+
     /// Map a single given CSeq_id_Handle to another.
-    /// @return 
-    ///   the mapped handle, or an invalid handle if a mapping is not possible. 
-    virtual CSeq_id_Handle
-    Map(
-        const CSeq_id_Handle& ) =0;
+    /// @return
+    ///   the mapped handle, or an invalid handle if a mapping is not possible.
+    virtual CSeq_id_Handle Map(const CSeq_id_Handle& id) = 0;
 
-    ///!
-//    virtual CRef<CSeq_loc>
-//    MapLocation(
-//        const CSeq_id_Handle&,
-//        const CSeq_loc& ) =0;
-        
+    virtual CRef<CSeq_loc> Map(const CSeq_loc& loc) = 0;
+
     /// Map all embedded IDs in a given object at once.
-    virtual void 
-    MapObject(
-        CSerialObject& ) =0;
-    
-    /// Retrieve a catalog of all mapping contexts supported by this class.    
-    static void
-    GetSupportedContexts(
-        std::vector<std::string>& contexts ) { contexts.clear(); }; 
-
+    virtual void MapObject(CSerialObject&) = 0;
 };
 
 
@@ -76,121 +67,72 @@ public:
 ///
 /// Provides the means to set up and maintain an internal table of mappings
 /// and to use such table for actual ID mapping.
-/// Actual initialization of the internal table is left for derived classes to 
+/// Actual initialization of the internal table is left for derived classes to
 /// implement.
-///  
+///
 class NCBI_XOBJREAD_EXPORT CIdMapper: public IIdMapper
 {
-protected:
-    typedef std::map< CSeq_id_Handle, CSeq_id_Handle > CACHE;
-    
+
 public:
-    /// Constructor specifying the mapping context, direction, and error handling.
+    /// Constructor specifying the mapping context, direction, and error
+    /// handling.
     /// @param strContext
-    ///   the mapping context or genome source IDs will belong to. Something like
-    ///   "mm6" or "hg18".
+    ///   the mapping context or genome source IDs will belong to. Something
+    ///   like "mm6" or "hg18".
     /// @param bInvert
     ///   Mapping direction. "true" will map in reverse direction.
     /// @param pErrors
-    ///   Optional error container. If specified, mapping errors will be passed to
-    ///   the error container for further processing. If not specified, mapping
-    ///   errors result in exceptions that need to be handled.
-    CIdMapper(
-        const std::string& strContext = "",
-        bool bInvert = false,
-        IErrorContainer* pErrors = 0 )
-    : 
-        m_strContext(strContext), 
-        m_bInvert(bInvert),
-        m_pErrors( pErrors ) 
-    {};
-    
+    ///   Optional error container. If specified, mapping errors will be passed
+    ///   to the error container for further processing. If not specified,
+    ///   mapping errors result in exceptions that need to be handled.
+    CIdMapper(const std::string& strContext = "",
+              bool bInvert = false,
+              IErrorContainer* pErrors = 0 );
+
     /// Add a mapping to the internal mapping table.
     /// @param from
     ///   source handle, or target handle in the case of reverse mapping
     /// @param to
     ///   target handle, or source handle in the case of reverse mapping
-    virtual void
-    AddMapping(
-        const CSeq_id_Handle& from,
-        const CSeq_id_Handle& to ) 
+    virtual void AddMapping(const CSeq_id_Handle& from,
+                            const CSeq_id_Handle& to );
+
+    virtual void AddMapping(const CSeq_loc& loc_from,
+                            const CSeq_loc& loc_to);
+
+    virtual CSeq_id_Handle Map(const CSeq_id_Handle&);
+
+    virtual CRef<CSeq_loc> Map(const CSeq_loc& loc);
+
+    /// Map all embedded IDs in a given object at once.
+    virtual void MapObject(CSerialObject&);
+
+    struct SMappingContext
     {
-        if (!m_bInvert) {
-            m_Cache[ from ] = to;
-        } else {
-            m_Cache[ to ] = from;
-        }
+        string context;
+        string map_from;
+        string map_to;
     };
-        
-    virtual CSeq_id_Handle
-    Map(
-        const CSeq_id_Handle& ); 
-        
-    ///!
-//    virtual CRef<CSeq_loc>
-//    MapLocation(
-//        const CSeq_id_Handle&,
-//        const CSeq_loc& );
-        
-    virtual void 
-    MapObject(
-        CSerialObject& ); 
 
 protected:
     static std::string
-    MapErrorString(
-        const CSeq_id_Handle& );
-    
-    virtual void
-    InitializeCache() {};
-    
+    MapErrorString(const CSeq_id_Handle& );
+
+    static std::string
+    MapErrorString(const CSeq_loc& );
+
     const std::string m_strContext;
     const bool m_bInvert;
-    CACHE m_Cache;
-    IErrorContainer* m_pErrors;   
-};
 
-            
-/// IdMapper implementation using hardcoded values
-///
-/// Mapping targets are fixed at compile time and cannot be modified later. 
-/// Useful for self contained applications that should work without external
-/// configuration files or databases.
-///  
-class NCBI_XOBJREAD_EXPORT CIdMapperBuiltin: public CIdMapper
-{
-
-public:
-    /// Constructor specifying the mapping context, direction, and error handling.
-    /// @param strContext
-    ///   the mapping context or genome source IDs will belong to. Something like
-    ///   "mm6" or "hg18".
-    /// @param bInvert
-    ///   Mapping direction. "true" will map in reverse direction.
-    /// @param pErrors
-    ///   Optional error container. If specified, mapping errors will be passed to
-    ///   the error container for further processing. If not specified, mapping
-    ///   errors result in exceptions that need to be handled.
-    CIdMapperBuiltin(
-        const std::string& strContext,
-        bool bInvert = false,
-        IErrorContainer* pErrors = 0 ): CIdMapper(strContext, bInvert, pErrors)
+    struct SMapper
     {
-        InitializeCache();
+        CSeq_id_Handle dest_idh;
+        CRef<CSeq_loc_Mapper> dest_mapper;
     };
-        
-    static void
-    GetSupportedContexts(
-        std::vector<std::string>& ); 
+    typedef std::map<CSeq_id_Handle, SMapper> TMapperCache;
+    TMapperCache m_Cache;
 
-protected:
-    virtual void
-    InitializeCache();
-    
-    void
-    AddMapEntry(
-        const std::string&,
-        int );
+    IErrorContainer* m_pErrors;
 };
 
 
@@ -198,103 +140,163 @@ protected:
 ///
 /// The internal mapping table will be initialized during IdMapper construction
 /// from a given input stream (typically, an open configuration file).
-///  
+///
 class NCBI_XOBJREAD_EXPORT CIdMapperConfig: public CIdMapper
 {
 
 public:
-    /// Constructor specifying the content of the mapping table, mapping context, 
-    /// direction, and error handling.
+    /// Constructor specifying the content of the mapping table, mapping
+    /// context, direction, and error handling.
+    ///
+    /// The configuration-file-based mapper uses a config file to indicate how
+    /// mapping should be performed.  Configuration-based mapping is suitable
+    /// for simple id -> id mapping, and cannot generally be used to indicate
+    /// mapping through a complex location, as would be needed when handling
+    /// things such as mapping to UCSC chrRandom.
+    ///
+    /// The format of the configuration file is as a standard Windows .ini
+    /// file, and it should be structured as follows:
+    ///
+    /// \code
+    ///     [hg18]
+    ///     map_from = UCSC HG18
+    ///     map_to = NCBI Human build 36
+    ///     89161185 = chr1 1
+    ///     89161199 = chr2 2
+    ///     89161205 = chr3 3
+    ///     89161207 = chr4 4
+    ///     51511721 = chr5 5
+    /// \endcode
+    ///
+    /// Note that the config file appears backwards!  This is intentional, and
+    /// is structured so as to capture a many-to-one synonymy that we often see
+    /// in IDs.  The snippet above implies:
+    ///   - We are mapping from UCSC build HG18 -> NCBI Human build 36
+    ///   - The chromosomes are defined by bare integers, which represent gis
+    ///   - The primary aliases all begin 'chr', as 'chr1', 'chr2', etc.
+    ///   - Each chromosome is represented by multiple input aliases (chr1, 1,
+    ///     etc)
+    ///   - We map implicitly from lcl|chr1 -> 89161185, lcl|1 -> 89161185
+    ///   - Because of a limitation in processing .ini files, we cannot use a
+    ///     full FASTA representation for the key (the gi).  We can use one for
+    ///     the aliases.  Since bare integers are interpreted as gis, it is
+    ///     necessary to qualify bare integers as local IDs if you wish to have
+    ///     a representation as something other than a gi
+    ///
     /// @param istr
-    ///   open input stream containing tabbed data specifying map sources and 
+    ///   open input stream containing tabbed data specifying map sources and
     ///   targets.
     /// @param strContext
-    ///   the mapping context or genome source IDs will belong to. Something like
-    ///   "mm6" or "hg18".
+    ///   the mapping context or genome source IDs will belong to. Something
+    ///   like "mm6" or "hg18".
     /// @param bInvert
     ///   Mapping direction. "true" will map in reverse direction.
     /// @param pErrors
-    ///   Optional error container. If specified, mapping errors will be passed to
-    ///   the error container for further processing. If not specified, mapping
-    ///   errors result in exceptions that need to be handled.
-    CIdMapperConfig(
-        CNcbiIstream& istr,
-        const std::string& strContext = "",
-        bool bInvert = false,
-        IErrorContainer* pErrors = 0)
-        : CIdMapper(strContext, bInvert, pErrors), m_Istr(istr)
-    {
-        InitializeCache();
-    };
-    
-protected:
-    virtual void
-    InitializeCache();
-    
-    void
-    AddMapEntry(
-        const std::string& );
+    ///   Optional error container. If specified, mapping errors will be passed
+    ///   to the error container for further processing. If not specified,
+    ///   mapping errors result in exceptions that need to be handled.
+    CIdMapperConfig(CNcbiIstream& istr,
+                    const std::string& strContext = "",
+                    bool bInvert = false,
+                    IErrorContainer* pErrors = 0);
 
-    void
-    SetCurrentContext(
-        const std::string&,
-        std::string& );
-    
-    CSeq_id_Handle
-    SourceHandle(
-        const std::string& );
-        
-    CSeq_id_Handle
-    TargetHandle(
-        const std::string& );
-            
-    CNcbiIstream& m_Istr;
+    CIdMapperConfig(const std::string& strContext = "",
+                    bool bInvert = false,
+                    IErrorContainer* pErrors = 0);
+
+    void Initialize(CNcbiIstream& istr);
+    static void DescribeContexts(CNcbiIstream& istr,
+                                 list<SMappingContext>& contexts);
+
+protected:
+
+    void AddMapEntry(const std::string& );
+
+    void SetCurrentContext(const std::string&,
+                           std::string& );
+
+    CSeq_id_Handle SourceHandle(const std::string& );
+
+    CSeq_id_Handle TargetHandle(const std::string& );
 };
+
+
+/// IdMapper implementation using hardcoded values
+///
+/// Mapping targets are fixed at compile time and cannot be modified later.
+/// Useful for self contained applications that should work without external
+/// configuration files or databases.
+///
+class NCBI_XOBJREAD_EXPORT CIdMapperBuiltin: public CIdMapperConfig
+{
+
+public:
+    /// Constructor specifying the mapping context, direction, and error
+    /// handling.
+    /// @param strContext
+    ///   the mapping context or genome source IDs will belong to. Something
+    ///   like "mm6" or "hg18".
+    /// @param bInvert
+    ///   Mapping direction. "true" will map in reverse direction.
+    /// @param pErrors
+    ///   Optional error container. If specified, mapping errors will be passed
+    ///   to the error container for further processing. If not specified,
+    ///   mapping errors result in exceptions that need to be handled.
+    CIdMapperBuiltin(const std::string& strContext,
+                     bool bInvert = false,
+                     IErrorContainer* pErrors = 0 );
+
+    void Initialize();
+
+protected:
+    void AddMapEntry(const std::string&, int);
+};
+
 
 
 /// IdMapper implementation using an external database
 ///
 /// Mappings will be retrived from an external database, then cached internally
 /// for future reuse.
-///  
+///
 class NCBI_XOBJREAD_EXPORT CIdMapperDatabase: public CIdMapper
 {
 public:
-    /// Constructor specifying a database containing the actual mapping, the mapping 
-    /// context, direction, and error handling.
+    /// Constructor specifying a database containing the actual mapping, the
+    /// mapping context, direction, and error handling.
     /// @param strServer
     ///   server on which the mapping database resides.
     /// @param strDatabase
     ///   the actual database on the specified server.
     /// @param strContext
-    ///   the mapping context or genome source IDs will belong to. Something like
-    ///   "mm6" or "hg18".
+    ///   the mapping context or genome source IDs will belong to. Something
+    ///   like "mm6" or "hg18".
     /// @param bInvert
     ///   Mapping direction. "true" will map in reverse direction.
     /// @param pErrors
-    ///   Optional error container. If specified, mapping errors will be passed to
-    ///   the error container for further processing. If not specified, mapping
-    ///   errors result in exceptions that need to be handled.
+    ///   Optional error container. If specified, mapping errors will be passed
+    ///   to the error container for further processing. If not specified,
+    ///   mapping errors result in exceptions that need to be handled.
     CIdMapperDatabase(
         const std::string& strServer,
         const std::string& strDatabase,
         const std::string& strContext,
         bool bInvert = false,
         IErrorContainer* pErrors = 0)
-        : CIdMapper(strContext, bInvert, pErrors), 
-          m_strServer(strServer), 
+        : CIdMapper(strContext, bInvert, pErrors),
+          m_strServer(strServer),
           m_strDatabase(strDatabase)
     {};
-        
+
     virtual CSeq_id_Handle
     Map(
         const CSeq_id_Handle& from );
-        
+
 protected:
     const std::string m_strServer;
     const std::string m_strDatabase;
 };
-           
+
 END_objects_SCOPE
 END_NCBI_SCOPE
 

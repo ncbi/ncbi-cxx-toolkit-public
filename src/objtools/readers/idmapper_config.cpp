@@ -30,12 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
-//#include <corelib/ncbistd.hpp>
-//#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbireg.hpp>
 
 // Objects includes
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
@@ -45,31 +45,135 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-//  ============================================================================
-void
-CIdMapperConfig::InitializeCache()
-//  ============================================================================
+CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
+                                 const std::string& strContext,
+                                 bool bInvert,
+                                 IErrorContainer* pErrors)
+    : CIdMapper(strContext, bInvert, pErrors)
 {
-    string strLine( "" );
-    string strCurrentContext( m_strContext );
-    
-    while( !m_Istr.eof() ) {
-        NcbiGetlineEOL( m_Istr, strLine );
-        NStr::TruncateSpacesInPlace( strLine );
-        if ( strLine.empty() || NStr::StartsWith( strLine, "#" ) ) {
-            //comment
+    Initialize(istr);
+}
+
+
+CIdMapperConfig::CIdMapperConfig(const std::string& strContext,
+                                 bool bInvert,
+                                 IErrorContainer* pErrors)
+    : CIdMapper(strContext, bInvert, pErrors)
+{
+}
+
+
+void CIdMapperConfig::Initialize(CNcbiIstream& istr)
+{
+    string buffer;
+    {{
+         CNcbiOstrstream os;
+         NcbiStreamCopy(os, istr);
+         buffer = string(CNcbiOstrstreamToString(os));
+     }}
+
+    CMemoryRegistry reg;
+    try {
+        CNcbiIstrstream is(buffer.data(), buffer.size());
+        reg.Read(is);
+    }
+    catch (CException& e) {
+        //
+        // older config file support
+        // consider dropping this
+        //
+        CNcbiIstrstream is(buffer.data(), buffer.size());
+
+        string strLine( "" );
+        string strCurrentContext( m_strContext );
+
+        while( !is.eof() ) {
+            NcbiGetlineEOL( is, strLine );
+            NStr::TruncateSpacesInPlace( strLine );
+            if ( strLine.empty() || NStr::StartsWith( strLine, "#" ) ) {
+                //comment
+                continue;
+            }
+            if ( NStr::StartsWith( strLine, "[" ) ) {
+                //start of new build section
+                SetCurrentContext( strLine, strCurrentContext );
+                continue;
+            }
+            if ( m_strContext == strCurrentContext ) {
+                AddMapEntry( strLine );
+            }
+        }
+
+        /// done here
+        return;
+    }
+
+    ///
+    /// enumerate the fields required for the mapping
+    ///
+    list<string> entries;
+    reg.EnumerateEntries(m_strContext, &entries);
+    NON_CONST_ITERATE (list<string>, iter, entries) {
+        if (*iter == "map_from"  ||
+            *iter == "map_to") {
+            /// reserved keys
             continue;
         }
-        if ( NStr::StartsWith( strLine, "[" ) ) {
-            //start of new build section
-            SetCurrentContext( strLine, strCurrentContext );
-            continue;
+        string id_set = reg.Get(m_strContext, *iter);
+        list<string> ids;
+        NStr::Split(id_set, " \t\n\r", ids);
+
+        ///
+        /// id_from and id_to are naturally reversed, since we use a format
+        /// that contains 'gi| -> aliases' mapping
+        ///
+
+        CSeq_id id_to;
+        try {
+            id_to.Set(*iter);
         }
-        if ( m_strContext == strCurrentContext ) {
-            AddMapEntry( strLine );
+        catch (CException&) {
+            id_to.SetLocal().SetStr(*iter);
+        }
+        CSeq_id_Handle idh_to = CSeq_id_Handle::GetHandle(id_to);
+
+        ITERATE (list<string>, id_iter, ids) {
+            CSeq_id id_from;
+            try {
+                id_from.Set(*id_iter);
+            }
+            catch (CException&) {
+                id_from.SetLocal().SetStr(*id_iter);
+            }
+            CSeq_id_Handle idh_from = CSeq_id_Handle::GetHandle(id_from);
+
+            AddMapping(idh_from, idh_to);
+            if (m_bInvert) {
+                /// inversion honors *ONLY* the first token to preserve 1:1
+                /// mapping
+                break;
+            }
         }
     }
 };
+
+
+void CIdMapperConfig::DescribeContexts(CNcbiIstream& istr,
+                                       list<SMappingContext>& contexts)
+{
+    CMemoryRegistry reg;
+    reg.Read(istr);
+
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+    ITERATE (list<string>, iter, sections) {
+        SMappingContext ctx;
+        ctx.context = *iter;
+        ctx.map_from = reg.Get(*iter, "map_from");
+        ctx.map_to   = reg.Get(*iter, "map_to");
+        contexts.push_back(ctx);
+    }
+}
 
 //  ============================================================================
 void

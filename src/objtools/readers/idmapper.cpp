@@ -43,130 +43,174 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
+
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-//  ============================================================================
-bool
-s_HandlesAreEqual(
-    CSeq_id_Handle handle1,
-    CSeq_id_Handle handle2 )
-//  ============================================================================
+
+CIdMapper::CIdMapper(const std::string& strContext,
+                     bool bInvert,
+                     IErrorContainer* pErrors)
+    : m_strContext(strContext),
+      m_bInvert(bInvert),
+      m_pErrors( pErrors )
 {
-    if ( handle1.operator==( handle2 ) ) {
-        return true;
-    }
-    
-    CConstRef<CSeq_id> id1 = handle1.GetSeqId();
-    CConstRef<CSeq_id> id2 = handle2.GetSeqId();
-    if ( (id1->Which() != CSeq_id::e_Local) || (id2->Which() != CSeq_id::e_Local) ) {
-        return false;
-    }
-    
-    string str1 = id1->GetLocal().GetStr();
-    NStr::ToLower( str1 );
-    string str2 = id2->GetLocal().GetStr();
-    NStr::ToLower( str2 );
-    
-    if ( str1 == str2 ) {
-        return true;
-    }
-    if ( string( "chr" ) + str1 == str2 ) {
-        return true;
-    }
-    if ( string( "chr" ) + str2 == str1 ) {
-        return true;
-    }
-    return false;
-};
+}
 
 
-//  ============================================================================
-CSeq_id_Handle
-CIdMapper::Map(
-    const CSeq_id_Handle& from )
-//  ============================================================================
+void CIdMapper::AddMapping(const CSeq_id_Handle& from,
+                           const CSeq_id_Handle& to )
 {
-    for ( CACHE::iterator it = m_Cache.begin(); it != m_Cache.end(); ++it ) {
-        if ( s_HandlesAreEqual( from, it->first ) ) {
-            return it->second;
+    CSeq_id_Handle key = from;
+    CSeq_id_Handle val = to;
+    if (m_bInvert) {
+        std::swap(key, val);
+    }
+
+    TMapperCache::iterator it =
+        m_Cache.insert(TMapperCache::value_type(key, SMapper())).first;
+    it->second.dest_idh = to;
+    it->second.dest_mapper.Reset();
+}
+
+
+void CIdMapper::AddMapping(const CSeq_loc& loc_from,
+                           const CSeq_loc& loc_to)
+{
+    CConstRef<CSeq_id> id1(loc_from.GetId());
+    CConstRef<CSeq_id> id2(loc_to.GetId());
+    CSeq_id_Handle idh1;
+    CSeq_id_Handle idh2;
+    if (id1) {
+        idh1 = CSeq_id_Handle::GetHandle(*id1);
+    }
+    if (id2) {
+        idh2 = CSeq_id_Handle::GetHandle(*id2);
+    }
+
+    CSeq_id_Handle key = idh1;
+    CRef<CSeq_loc_Mapper> mapper;
+    if (m_bInvert) {
+        key = idh2;
+        mapper.Reset(new CSeq_loc_Mapper(loc_to, loc_from));
+    } else {
+        mapper.Reset(new CSeq_loc_Mapper(loc_from, loc_to));
+    }
+
+    TMapperCache::iterator it =
+        m_Cache.insert(TMapperCache::value_type(key, SMapper())).first;
+    it->second.dest_idh = CSeq_id_Handle();
+    it->second.dest_mapper = mapper;
+}
+
+
+CSeq_id_Handle CIdMapper::Map(const CSeq_id_Handle& from )
+{
+    TMapperCache::iterator it = m_Cache.find(from);
+    if (it != m_Cache.end()) {
+        if (it->second.dest_idh) {
+            return it->second.dest_idh;
+        } else if (it->second.dest_mapper) {
+            CRef<CSeq_loc> loc_from(new CSeq_loc);
+            loc_from->SetWhole().Assign(*from.GetSeqId());
+            CRef<CSeq_loc> loc_to = it->second.dest_mapper->Map(*loc_from);
+            CConstRef<CSeq_id> id(loc_to->GetId());
+            if (id) {
+                CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
+                return idh;
+            }
         }
     }
 
     //
     //  Cannot map this ID. We will treat this as an error.
     //
-    CObjReaderLineException MapError( eDiag_Error, 0, 
-        MapErrorString( from ) );
+    CObjReaderLineException MapError( eDiag_Error, 0,
+                                      MapErrorString( from ) );
 
     if ( !m_pErrors || !m_pErrors->PutError( MapError ) ) {
         throw MapError;
     }
-    return CSeq_id_Handle();  
+    return from;
 };
 
-/*
-//  ============================================================================
-CRef<CSeq_loc>
-CIdMapper::MapLocation(
-    const CSeq_id_Handle& idhFrom,
-    const CSeq_loc& locFrom )
-//  ============================================================================
+
+CRef<CSeq_loc> CIdMapper::Map(const CSeq_loc& from )
 {
-    CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+    CConstRef<CSeq_id> id(from.GetId());
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
+    TMapperCache::iterator it = m_Cache.find(idh);
+    if (it != m_Cache.end()) {
+        CRef<CSeq_loc> loc_to;
+        if (it->second.dest_idh) {
+            loc_to.Reset(new CSeq_loc);
+            loc_to->Assign(from);
+            loc_to->SetId(*it->second.dest_idh.GetSeqId());
+        } else if (it->second.dest_mapper) {
+            loc_to = it->second.dest_mapper->Map(from);
+            if (loc_to->IsNull()) {
+                loc_to.Reset();
+            }
+        }
+        if (loc_to) {
+            return loc_to;
+        }
+    }
 
-    CScope scope(*pOm);
-    scope.AddDefaults();
+    //
+    //  Cannot map this ID. We will treat this as an error.
+    //
+    CObjReaderLineException MapError( eDiag_Error, 0,
+                                      MapErrorString( from ) );
 
-    CBioseq_Handle hbsFrom = scope.GetBioseqHandle( idhFrom );
+    if ( !m_pErrors || !m_pErrors->PutError( MapError ) ) {
+        throw MapError;
+    }
 
-    CRef<CSeq_loc_Mapper> mapper;
-    mapper.Reset( new CSeq_loc_Mapper( hbsFrom, CSeq_loc_Mapper::eSeqMap_Down ) );
-    return mapper->Map( locFrom );
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->Assign(from);
+    return loc;
 };
-*/
+
+
 
 //  ============================================================================
-string
-CIdMapper::MapErrorString(
-    const CSeq_id_Handle& idh )
-//  ============================================================================
+string CIdMapper::MapErrorString(const CSeq_id_Handle& idh )
 {
     string strId = idh.AsString();
-    string strMsg( 
+    string strMsg(
         string("IdMapper: Unable to resolve local ID \"") + strId + string("\"") );
     return strMsg;
 };
 
-//  ============================================================================
-void
-CIdMapper::MapObject(
-    CSerialObject& object )
-//  ============================================================================
+
+string CIdMapper::MapErrorString(const CSeq_loc& loc )
+{
+    string strId;
+    loc.GetLabel(&strId);
+    string strMsg(
+        string("IdMapper: Unable to resolve local ID \"") + strId + string("\"") );
+    return strMsg;
+};
+
+
+void CIdMapper::MapObject(CSerialObject& object)
 {
     CTypeIterator< CSeq_id > idit( object );
-    for ( /*0*/; idit; ++idit ) {
+    for ( ;  idit;  ++idit ) {
         CSeq_id& id = *idit;
-        if ( id.Which() != CSeq_id::e_Local ) {
+        CSeq_id_Handle idh = Map( CSeq_id_Handle::GetHandle(id) );
+        if ( !idh ) {
             continue;
         }
-        const CSeq_id::TLocal& locid = id.GetLocal();
-        if ( ! locid.IsStr() ) {
-            continue;
-        }
-        CSeq_id_Handle hMappedHandle = Map( CSeq_id_Handle::GetHandle(id) );
-        if ( !hMappedHandle ) {
-            continue;
-        }
-        id.Set( hMappedHandle.Which(), 
-            hMappedHandle.GetSeqId()->GetSeqIdString() );
+        id.Assign(*idh.GetSeqId());
     }
 };
+
 
 END_NCBI_SCOPE
 

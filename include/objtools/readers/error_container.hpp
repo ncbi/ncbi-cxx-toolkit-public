@@ -45,6 +45,7 @@ class IErrorContainer
 //  ============================================================================
 {
 public:
+    virtual ~IErrorContainer() {}
     //
     //  return true if the error was added to the container, false if not. In the
     //  second case, the caller should terminate all further processing
