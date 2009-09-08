@@ -835,6 +835,7 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                                  &identities, &mismatches, &pct_identity);
             align.SetNamedScore(CSeq_align::eScore_PercentIdentity, pct_identity);
             align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
+            align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
         }}
         break;
     case eScore_PercentCoverage:

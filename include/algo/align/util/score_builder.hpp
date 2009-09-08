@@ -74,7 +74,7 @@ public:
         eScore_MismatchCount,
 
         //< percent identity as 'pct_identity', range 0.0-100.0
-        //< this will also create 'num_ident'
+        //< this will also create 'num_ident' and 'num_mismatch'
         eScore_PercentIdentity,
 
         //< percent coverage of query as 'pct_coverage', range 0.0-100.0
