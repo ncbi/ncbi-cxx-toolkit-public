@@ -628,7 +628,8 @@ void
 CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
-    // composition based statistics
+    // composition based statistics, keep in sync with ECompoAdjustModes
+    // documentation in composition_constants.h
     arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
                       "Use composition-based statistics for blastp / tblastn:\n"
                       "    D or d: default (equivalent to 2)\n"

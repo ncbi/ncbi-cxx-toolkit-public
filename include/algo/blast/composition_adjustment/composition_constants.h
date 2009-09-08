@@ -46,12 +46,22 @@
     structures that are statically allocated. */
 #define COMPO_LARGEST_ALPHABET 28
 
+/* NOTE: Please keep these comments in sync with argument descriptions in
+ * CCompositionBasedStatsArgs::SetArgumentDescriptions()
+ */
+
 /** An collection of constants that specify all permissible
  * modes of composition adjustment */
 typedef enum ECompoAdjustModes {
-    eNoCompositionBasedStats       = 0,
-    eCompositionBasedStats         = 1,
-    eCompositionMatrixAdjust       = 2,
+    /** Don't use composition based statistics */
+    eNoCompositionBasedStats       = 0, 
+    /** Composition-based statistics as in NAR 29:2994-3005, 2001 */
+    eCompositionBasedStats         = 1, 
+    /** Composition-based score adjustment as in Bioinformatics 21:902-911,
+     * 2005, conditioned on sequence properties. Cannot be applied to PSSMs. */
+    eCompositionMatrixAdjust       = 2, 
+    /** Composition-based score adjustment as in Bioinformatics 21:902-911,
+     * 2005, unconditionally. Cannot be applied to PSSMs. */
     eCompoForceFullMatrixAdjust    = 3,
     eNumCompoAdjustModes
 } ECompoAdjustModes;
