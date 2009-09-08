@@ -1,5 +1,5 @@
-#ifndef TEST_ASSERT_IMPL__H
-#define TEST_ASSERT_IMPL__H
+#ifndef COMMON__TEST_ASSERT_IMPL__H
+#define COMMON__TEST_ASSERT_IMPL__H
 
 /*  $Id$
  * ===========================================================================
@@ -134,9 +134,10 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #  undef _ASSERT
 #endif
 #define  _ASSERT assert
-#ifdef _DEBUG_ARG
-#  undef _DEBUG_ARG
-#endif
-#define _DEBUG_ARG(arg) arg
 
-#endif  /* TEST_ASSERT_IMPL__H */
+#ifdef   _TROUBLE
+#  undef _TROUBLE
+#endif
+#define  _TROUBLE assert(0)
+
+#endif  /* COMMON__TEST_ASSERT_IMPL__H */
