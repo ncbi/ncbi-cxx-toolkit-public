@@ -44,6 +44,10 @@
 
 #ifndef _DEBUG
 # define _DEBUG 1
+# ifdef _DEBUG_ARG
+#  undef _DEBUG_ARG
+# endif
+# define _DEBUG_ARG(x) x
 #endif
 #include <util/static_map.hpp>
 #include <util/static_set.hpp>
