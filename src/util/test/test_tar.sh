@@ -11,6 +11,7 @@ test -x "$tar"  ||  exit 0
 
 # Figure out whether the API is lf64 clean, also exclude notoriously slow platforms
 okay=false
+what='not supported'
 case ${CHECK_SIGNATURE:-Unknown} in
 
   GCC* )
@@ -22,6 +23,7 @@ case ${CHECK_SIGNATURE:-Unknown} in
     # Although 64-bit build should be okay, it is very slow (because RTL
     # has a file positioning bug, the archive has to be read out seqentially,
     # which prevents from using faster direct access file seeks)...
+    what='slow'
     ;;
 
   * )
@@ -41,7 +43,7 @@ if [ -f "$huge_tar" ]; then
     test_tar -T -f "$huge_tar"  ||  exit 1
   else
     echo
-    echo "`date` *** LF64 not supported, skipping data compatibility test"
+    echo "`date` *** LF64 ${what}, skipping data compatibility test"
   fi
 fi
 
