@@ -3,4 +3,5 @@
 ASN_DEP = seq seqset
 
 LIB = xobjreadex
-SRC = glimmer_reader
+SRC = glimmer_reader idmapper idmapper_builtin idmapper_config \
+	  idmapper_database

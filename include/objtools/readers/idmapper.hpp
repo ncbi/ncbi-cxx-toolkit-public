@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_IDMAPPER___IDMAPPER__HPP
-#define OBJTOOLS_IDMAPPER___IDMAPPER__HPP
+#ifndef OBJTOOLS_IDMAPPER___IDMAPPER_IMPL__HPP
+#define OBJTOOLS_IDMAPPER___IDMAPPER_IMPL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -34,34 +34,12 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/seq/seq_id_handle.hpp>
+#include <objtools/readers/iidmapper.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objtools/readers/error_container.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-/// General IdMapper interface
-///
-/// This interface should suffice for typical IdMapper use, regardless of the
-/// actual inplementation.
-///
-class NCBI_XOBJREAD_EXPORT IIdMapper
-{
-public:
-    virtual ~IIdMapper() {};
-
-    /// Map a single given CSeq_id_Handle to another.
-    /// @return
-    ///   the mapped handle, or an invalid handle if a mapping is not possible.
-    virtual CSeq_id_Handle Map(const CSeq_id_Handle& id) = 0;
-
-    virtual CRef<CSeq_loc> Map(const CSeq_loc& loc) = 0;
-
-    /// Map all embedded IDs in a given object at once.
-    virtual void MapObject(CSerialObject&) = 0;
-};
-
 
 /// IdMapper base class implementation
 ///
@@ -300,4 +278,4 @@ protected:
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_IDMAPPER___IDMAPPER__HPP
+#endif // OBJTOOLS_IDMAPPER___IDMAPPER_IMPL__HPP

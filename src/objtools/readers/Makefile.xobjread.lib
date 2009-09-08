@@ -3,9 +3,10 @@
 ASN_DEP = seq seqset
 
 LIB = xobjread
-SRC = fasta readfeat gff_reader agp_util agp_read aln_reader cigar getfeature phrap \
-      fasta_aln_builder reader_base bed_reader microarray_reader rm_reader acc_pattern \
-      wiggle_reader wiggle_data gff3_reader multireader\
-      idmapper idmapper_builtin idmapper_config idmapper_database
+SRC = acc_pattern agp_read agp_util aln_reader bed_reader cigar fasta \
+	  fasta_aln_builder getfeature gff3_reader gff_reader microarray_reader \
+	  multireader phrap reader_base readfeat rm_reader wiggle_data \
+	  wiggle_reader
+
 DLL_LIB = creaders
 
