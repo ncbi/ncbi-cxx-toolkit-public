@@ -219,6 +219,8 @@ public:
 	void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
     bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
+    bool IsOrganelle (const int genome);
+    bool IsOrganelle (CBioseq_Handle seq);
 	bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
         const string& prefix, const CSerialObject& obj);

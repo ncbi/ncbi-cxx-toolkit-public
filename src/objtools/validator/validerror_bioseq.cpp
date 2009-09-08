@@ -4594,6 +4594,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     bool has_chromosome = false;
     bool is_prokaryote = false;
+    bool is_organelle = false;
 
     for ( CSeqdesc_CI di(bsh); di; ++ di ) {
         const CSeqdesc& desc = *di;
@@ -4708,6 +4709,10 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     }
                 }
                 
+                // check for organelle
+                if (source.IsSetGenome()) {
+                    is_organelle = m_Imp.IsOrganelle(source.GetGenome());
+                }
 
             }
             break;
@@ -4835,7 +4840,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         }
     }
 
-    if (!has_chromosome && !is_prokaryote) {
+    if (!has_chromosome && !is_prokaryote && !is_organelle) {
         bool is_nc = false;
         bool is_ac = false;
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {

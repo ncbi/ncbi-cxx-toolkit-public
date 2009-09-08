@@ -1659,41 +1659,6 @@ void CValidError_feat::ValidateCdConflict
 }
 
 
-static bool s_IsOrganelle (int genome)
-{
-    bool rval = false;
-    switch (genome) {
-        case CBioSource::eGenome_chloroplast:
-        case CBioSource::eGenome_chromoplast:
-        case CBioSource::eGenome_kinetoplast:
-        case CBioSource::eGenome_mitochondrion:
-        case CBioSource::eGenome_cyanelle:
-        case CBioSource::eGenome_nucleomorph:
-        case CBioSource::eGenome_apicoplast:
-        case CBioSource::eGenome_leucoplast:
-        case CBioSource::eGenome_proplastid:
-        case CBioSource::eGenome_hydrogenosome:
-            rval = true;
-            break;
-        default:
-            rval = false;
-            break;
-    }
-    return rval;
-}
-
-
-static bool s_IsOrganelleBioseq (CBioseq_Handle seq)
-{
-    bool rval = false;
-    CSeqdesc_CI sd(seq, CSeqdesc::e_Source);
-    if (sd && sd->GetSource().IsSetGenome() && s_IsOrganelle(sd->GetSource().GetGenome())) {
-        rval = true;
-    }
-    return rval;
-}
-
-
 static bool s_RareConsensusNotExpected (CBioseq_Handle seq)
 
 {
@@ -1758,7 +1723,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
 
     // skip if organelle
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
-    if (s_IsOrganelleBioseq(bsh)) {
+    if (m_Imp.IsOrganelle(bsh)) {
         return;
     }
 
@@ -1860,7 +1825,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     
     // skip if organelle
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
-    if (s_IsOrganelleBioseq(bsh)) {
+    if (m_Imp.IsOrganelle(bsh)) {
         return;
     }
     
@@ -4146,14 +4111,23 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
          && cds->GetLocation().IsPartialStart(eExtreme_Biological) 
          && pos1 == 0) {
         mod1 = 0;
+    } else if (pos1 < frame) {
+        // start is out of frame - it's before the coding region begins
+        mod1 = 1;
     }
+
     if ( mod2 != 0 && loc.IsPartialStop(eExtreme_Biological) 
          && cds->GetLocation().IsPartialStop(eExtreme_Biological) 
          && pos2 == GetLength (cds->GetLocation(), m_Scope)) {
         mod2 = 0;
+    } else if (pos2 <= frame) {
+        // stop is out of frame - it's before the coding region begins
+        mod2 = 1;
     }
 
-    if ( (mod1 != 0)  &&  (mod2 != 0) ) {
+    if (pos1 < frame && pos2 <= frame && NStr::Equal(key, "sig_peptide")) {
+        // ignore sig_peptide that is completely before coding region
+    } else if ( (mod1 != 0)  &&  (mod2 != 0) ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
             "Start and stop of " + key + " are out of frame with CDS codons",
             feat);
