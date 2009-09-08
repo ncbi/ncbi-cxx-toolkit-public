@@ -12,8 +12,8 @@ SRC = unit_test_idmapper
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = test_boost xobjread xobjutil $(OBJMGR_LIBS) $(COMPRESS_LIBS)
-LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB = test_boost xobjread xobjutil $(SOBJMGR_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
