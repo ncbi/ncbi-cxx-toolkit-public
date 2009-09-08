@@ -2821,7 +2821,7 @@ bool CFile::CompareTextContents(const string& file, ECompareText mode,
     char* buf1  = new char[buf_size];
     char* buf2  = new char[buf_size];
     streamsize size1=0, size2=0;
-    char *pos1, *pos2;
+    char *pos1=0, *pos2=0;
     bool  equal = true;
     while ( equal ) {
         char c1 = x_GetChar(f1,mode,buf1,buf_size,pos1,size1);
