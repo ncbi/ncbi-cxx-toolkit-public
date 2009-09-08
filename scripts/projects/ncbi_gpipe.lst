@@ -1,7 +1,7 @@
 algo
 app
-build-system
 bdb
+build-system
 cgi
 connect
 corelib
@@ -10,6 +10,7 @@ db
 dbapi
 hello
 html
+gui
 internal/align_model$
 internal/align_model/am2gff3
 internal/align_model/loader
@@ -19,6 +20,7 @@ internal/algo/align/prosplign
 internal/algo/align/pipeline-tools
 internal/algo/align/gpipe-wnodes
 internal/gnomon
+internal/blast
 internal/gpipe
 internal/gnomon
 internal/ID/utils$
