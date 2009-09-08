@@ -40,7 +40,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 
-#include <internal/gpipe/common/align_filter.hpp>
+#include <algo/align/util/align_filter.hpp>
 
 
 
