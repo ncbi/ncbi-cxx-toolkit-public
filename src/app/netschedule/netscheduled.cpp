@@ -121,7 +121,13 @@ struct SJS_Request
                 continue;
             }
 
-            if (val.size() > kNetScheduleMaxDBDataSize - 1) {
+            if (val.size() > kNetScheduleMaxDBDataSize - 1  &&
+                key != "input"   &&
+                key != "output"  &&
+                key != "tags"    &&  // These 3 cases are not critical but
+                key != "where"   &&  // input and output sizes are controlled
+                key != "fields")     // in more intelligent manner.
+            {
                 val.resize(kNetScheduleMaxDBDataSize - 1);
             }
             switch (key[0]) {
