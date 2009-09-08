@@ -87,7 +87,8 @@ void CSoapServerApplication::Storage::push_back(TWebMethod value)
 CSoapServerApplication::CSoapServerApplication(
     const string& wsdl_filename, const string& namespace_name)
     : CCgiApplication(), m_DefNamespace(namespace_name), m_Wsdl(wsdl_filename),
-      m_OmitScopePrefixes(false)
+      m_OmitScopePrefixes(false),
+      m_FaultPostFlags(eDPF_Prefix | eDPF_Severity)
 {
 }
 
@@ -160,17 +161,22 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     }
 // read request
     if (request.GetInputStream()) {
-        try {            
+        try {
             auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
             if (m_OmitScopePrefixes) {
                 dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
             }
             *is >> soap_in;
         }
+        catch (CException& e) {
+            input_ok = false;
+            ERR_POST(e);
+            fault_text = e.ReportAll(m_FaultPostFlags);
+        }
         catch (exception& e) {
             input_ok = false;
             fault_text = e.what();
-        }            
+        }
     }
 #if 1
     else {
@@ -180,7 +186,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 #else
 // for debugging only!
     else {
-        try {            
+        try {
 #if 0
             auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"-",eSerial_StdWhenDash));
 #else
@@ -191,10 +197,15 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
             }
             *is >> soap_in;
         }
+        catch (CException& e) {
+            input_ok = false;
+            ERR_POST(e);
+            fault_text = e.ReportAll(m_FaultPostFlags);
+        }
         catch (exception& e) {
             input_ok = false;
             fault_text = e.what();
-        }            
+        }
     }
 #endif
 

@@ -88,6 +88,9 @@ public:
                             const string& message_name,
                             const string& namespace_name = kEmptyStr);
 
+    TDiagPostFlags GetFaultPostFlags(void) const { return m_FaultPostFlags; }
+    void SetFaultPostFlags(TDiagPostFlags flags) { m_FaultPostFlags = flags; }
+
 protected:
     // These methods exist to provide compatibility with data object classes
     // generated from ASN.1 specification.
@@ -118,6 +121,7 @@ private:
     vector< TTypeInfoGetter >  m_Types;
     multimap<string, pair<string, TListeners > > m_Listeners;
     bool m_OmitScopePrefixes;
+    TDiagPostFlags m_FaultPostFlags;
 };
 
 END_NCBI_SCOPE
