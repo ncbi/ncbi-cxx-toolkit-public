@@ -42,8 +42,6 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <common/test_assert.h>
-
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -62,6 +60,8 @@
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
 #include <objtools/alnmgr/aln_serial.hpp>
+
+#include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
 using namespace objects;
