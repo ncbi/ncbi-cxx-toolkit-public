@@ -191,5 +191,40 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
 }
 
 
-END_SCOPE(ncbi)
 
+CBlastListAligner::CBlastListAligner(const list<string>& Params, int Threshold)
+                    : m_Threshold(Threshold)
+{
+    ITERATE(list<string>, ParamIter, Params) {
+        CRef<CBlastOptionsHandle> Options;
+        Options = CBlastArgs::s_CreateBlastOptions(*ParamIter);
+        m_BlastOptions.push_back(Options);
+    }
+}
+
+
+TAlignResultsRef CBlastListAligner::GenerateAlignments(CScope& Scope,
+                                                       ISequenceSet* QuerySet,
+                                                       ISequenceSet* SubjectSet,
+                                                       TAlignResultsRef AccumResults)
+{
+    TAlignResultsRef Results(new CAlignResultsSet);
+
+    CRef<IQueryFactory> Querys;
+    CRef<CLocalDbAdapter> Subjects;
+
+    ITERATE(TBlastOptionsList, OptIter, m_BlastOptions) {
+        Querys = QuerySet->CreateQueryFactory(Scope, **OptIter, *AccumResults, m_Threshold);
+        Subjects = SubjectSet->CreateLocalDbAdapter(Scope, **OptIter);
+        CLocalBlast Blast(Querys, *OptIter, Subjects);
+        CRef<CSearchResultSet> BlastResults = Blast.Run();
+        Results->Insert(*BlastResults);
+    }
+
+    return Results;
+}
+
+
+
+END_SCOPE(ncbi)
+//end

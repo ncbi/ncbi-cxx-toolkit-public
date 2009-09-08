@@ -335,13 +335,15 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     QueryIdFile = TestCases->Get(Case, "queryfile");
     BlastDbStr = TestCases->Get(Case, "blastdb");
 
-    string BlastParams = TestCases->Get("consts", "blast");
     string Filter0Str = TestCases->Get("consts", "filter0");
     string Filter1Str = TestCases->Get("consts", "filter1");
     string Filter2Str = TestCases->Get("consts", "filter2");
     string Filter3Str = TestCases->Get("consts", "filter3");
     string NMerFile = TestCases->Get("consts", "nmer");
     string Operation = TestCases->Get(Case, "operation");
+    list<string> BlastParams;
+    BlastParams.push_back(TestCases->Get("consts", "blast"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
 
     if(Operation == "skip")
         return;
@@ -358,7 +360,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     CRef<CQueryFilter> QueryFilter1(new CQueryFilter(1, Filter1Str));
     CRef<CQueryFilter> QueryFilter2(new CQueryFilter(2, Filter2Str));
     CRef<CQueryFilter> QueryFilter3(new CQueryFilter(3, Filter3Str));
-    CRef<CBlastAligner> BlastAligner(new CBlastAligner(BlastParams));
+    CRef<CBlastListAligner> BlastListAligner(new CBlastListAligner(BlastParams, 1));
     CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
@@ -400,7 +402,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter2.GetPointer()));
     Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter3.GetPointer()));
 
-    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastAligner.GetPointer()));
+    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
     Aligner.AddAligner(CRef<IAlignmentFactory>(InstancedAligner.GetPointer()));
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));

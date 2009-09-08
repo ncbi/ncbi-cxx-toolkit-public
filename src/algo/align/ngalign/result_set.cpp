@@ -165,9 +165,49 @@ bool CQuerySet::x_AlreadyContains(const CSeq_align_set& Set, const CSeq_align& N
 }
 
 
+
+
+
 CAlignResultsSet::CAlignResultsSet(const blast::CSearchResultSet& BlastResults)
 {
     Insert(BlastResults);
+}
+
+
+bool CAlignResultsSet::QueryExists(const CSeq_id& Id) const
+{
+    string IdString = Id.AsFastaString();
+    TQueryToSubjectSet::const_iterator Found;
+    Found = m_QueryMap.find(IdString);
+    if(Found == m_QueryMap.end()) {
+        return false;
+    }
+    return true;
+}
+
+
+CRef<CQuerySet> CAlignResultsSet::GetQuerySet(const CSeq_id& Id)
+{
+    string IdString = Id.AsFastaString();
+    TQueryToSubjectSet::iterator Found;
+    Found = m_QueryMap.find(IdString);
+    if(Found == m_QueryMap.end()) {
+        return CRef<CQuerySet>();
+    }
+    return Found->second;
+}
+
+
+
+CConstRef<CQuerySet> CAlignResultsSet::GetQuerySet(const CSeq_id& Id) const
+{
+    string IdString = Id.AsFastaString();
+    TQueryToSubjectSet::const_iterator Found;
+    Found = m_QueryMap.find(IdString);
+    if(Found == m_QueryMap.end()) {
+        return CRef<CQuerySet>();
+    }
+    return Found->second;
 }
 
 

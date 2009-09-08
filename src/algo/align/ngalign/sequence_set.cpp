@@ -83,6 +83,17 @@ CBlastDbSet::CreateQueryFactory(CScope& Scope,
 }
 
 
+CRef<blast::IQueryFactory>
+CBlastDbSet::CreateQueryFactory(CScope& Scope,
+                                const CBlastOptionsHandle& BlastOpts,
+                                const CAlignResultsSet& Alignments, int Threshold)
+{
+    NCBI_THROW(CException, CException::eInvalid,
+                    "CreateQueryFactory is not supported for type BlastDb");
+    return CRef<IQueryFactory>();
+}
+
+
 CRef<CLocalDbAdapter>
 CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
                                   const CBlastOptionsHandle& BlastOpts)
@@ -208,6 +219,55 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
 }
 
 
+CRef<blast::IQueryFactory>
+CSeqIdListSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts,
+                                  const CAlignResultsSet& Alignments, int Threshold)
+{
+    if(m_SeqIdList.empty()) {
+        NCBI_THROW(CException, CException::eInvalid, "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
+    }
+
+
+    TSeqLocVector FastaLocVec;
+    ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
+
+        if(Alignments.QueryExists(**IdIter)) {
+            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(**IdIter);
+            int BestRank = QuerySet->GetBestRank();
+            if(BestRank != -1 && BestRank <= Threshold) {
+                continue;
+            }
+        }
+
+        if(m_SeqMasker == NULL) {
+            CRef<CSeq_loc> WholeLoc(new CSeq_loc);
+            WholeLoc->SetWhole().Assign(**IdIter);
+            SSeqLoc WholeSLoc(*WholeLoc, Scope);
+            FastaLocVec.push_back(WholeSLoc);
+        } else {
+
+            CRef<CSeq_loc> WholeLoc(new CSeq_loc), MaskLoc;
+            WholeLoc->SetWhole().Assign(**IdIter);
+
+            MaskLoc = s_GetMaskLoc(**IdIter, m_SeqMasker, Scope);
+
+            if(MaskLoc.IsNull()) {
+                SSeqLoc WholeSLoc(*WholeLoc, Scope);
+                FastaLocVec.push_back(WholeSLoc);
+            } else {
+                SSeqLoc MaskSLoc(*WholeLoc, Scope, *MaskLoc);
+                FastaLocVec.push_back(MaskSLoc);
+            }
+        }
+    }
+
+    CRef<IQueryFactory> Result(new CObjMgr_QueryFactory(FastaLocVec));
+    return Result;
+}
+
+
+
 CRef<CLocalDbAdapter>
 CSeqIdListSet::CreateLocalDbAdapter(CScope& Scope,
                                     const CBlastOptionsHandle& BlastOpts)
@@ -263,6 +323,54 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
     CBlastInput Input(&FastaSource, GetQueryBatchSize(kProgram));
 
     TSeqLocVector FastaLocVec = Input.GetAllSeqLocs(Scope);
+
+    m_FastaStream->clear();
+    m_FastaStream->seekg(0, std::ios::beg);
+
+    CRef<IQueryFactory> Result(new CObjMgr_QueryFactory(FastaLocVec));
+    return Result;
+}
+
+
+CRef<blast::IQueryFactory>
+CFastaFileSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts,
+                                  const CAlignResultsSet& Alignments, int Threshold)
+{
+    if(m_FastaStream == NULL) {
+        NCBI_THROW(CException, CException::eInvalid, "CFastaFileSet::CreateQueryFactory: Fasta Stream is NULL.");
+    }
+
+    m_FastaStream->clear();
+    m_FastaStream->seekg(0, std::ios::beg);
+    CFastaReader FastaReader(*m_FastaStream);
+    Scope.AddTopLevelSeqEntry(*(FastaReader.ReadSet()));
+
+    SDataLoaderConfig LoaderConfig(false);
+    CBlastInputSourceConfig InputConfig(LoaderConfig);
+    InputConfig.SetLowercaseMask(m_LowerCaseMasking);
+    InputConfig.SetBelieveDeflines(true);
+
+    m_FastaStream->clear();
+    m_FastaStream->seekg(0, std::ios::beg);
+    CBlastFastaInputSource FastaSource(*m_FastaStream, InputConfig);
+    const EProgram kProgram = eBlastn;
+    CBlastInput Input(&FastaSource, GetQueryBatchSize(kProgram));
+
+    TSeqLocVector FastaLocVec = Input.GetAllSeqLocs(Scope);
+
+    TSeqLocVector::iterator Curr;
+    for(Curr = FastaLocVec.begin(); Curr != FastaLocVec.end(); ) {
+        if(Alignments.QueryExists(*Curr->seqloc->GetId())) {
+            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(*Curr->seqloc->GetId());
+            int BestRank = QuerySet->GetBestRank();
+            if(BestRank != -1 && BestRank <= Threshold) {
+                Curr = FastaLocVec.erase(Curr);
+                continue;
+            }
+        }
+        ++Curr;
+    }
 
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);

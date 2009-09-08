@@ -104,6 +104,31 @@ private:
 
 
 
+class CBlastListAligner : public IAlignmentFactory
+{
+public:
+    typedef list<CRef<blast::CBlastOptionsHandle> > TBlastOptionsList;
+
+    CBlastListAligner(TBlastOptionsList& Options, int Threshold)
+        : m_BlastOptions(Options), m_Threshold(Threshold) { ; }
+
+    CBlastListAligner(const list<string>& Params, int Threshold);
+
+
+    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                        ISequenceSet* QuerySet,
+                                        ISequenceSet* SubjectSet,
+                                        TAlignResultsRef AccumResults);
+
+private:
+
+    TBlastOptionsList m_BlastOptions;
+    int m_Threshold;
+
+};
+
+
+
 END_NCBI_SCOPE
 
 #endif

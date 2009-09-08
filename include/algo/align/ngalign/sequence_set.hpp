@@ -84,6 +84,10 @@ public:
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope,
             const blast::CBlastOptionsHandle& BlastOpts);
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope,
+            const blast::CBlastOptionsHandle& BlastOpts,
+            const CAlignResultsSet& Alignments, int Threshold);
     CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
             objects::CScope& Scope,
             const blast::CBlastOptionsHandle& BlastOpts);
@@ -104,6 +108,9 @@ public:
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts,
+            const CAlignResultsSet& Alignments, int Threshold);
     CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
 
@@ -123,6 +130,10 @@ public:
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope,
+            const blast::CBlastOptionsHandle& BlastOpts,
+            const CAlignResultsSet& Alignments, int Threshold);
     CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
 

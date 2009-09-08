@@ -105,6 +105,11 @@ public:
     TQueryToSubjectSet& Get() { return m_QueryMap; }
     const TQueryToSubjectSet& Get() const { return m_QueryMap; }
 
+    bool QueryExists(const objects::CSeq_id& Id) const;
+    CRef<CQuerySet> GetQuerySet(const objects::CSeq_id& Id);
+    CConstRef<CQuerySet> GetQuerySet(const objects::CSeq_id& Id) const;
+
+
     CRef<objects::CSeq_align_set> ToSeqAlignSet() const;
     CRef<objects::CSeq_align_set> ToBestSeqAlignSet() const;
 
