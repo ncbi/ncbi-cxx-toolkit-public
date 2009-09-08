@@ -36,6 +36,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/scope.hpp>
 
 #include <algo/blast/api/blast_results.hpp>
@@ -43,10 +44,10 @@
 
 #include <algo/align/ngalign/alignment_filterer.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
+
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 
 CQueryFilter::CQueryFilter(int Rank, const string& Query)
@@ -89,5 +90,5 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
     }
 }
 
+END_SCOPE(ncbi)
 
-//end

@@ -56,11 +56,9 @@
 
 #include <algo/dustmask/symdust.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
-
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 
 CBlastDbSet::CBlastDbSet(const string& BlastDb) : m_BlastDb(BlastDb)
@@ -75,8 +73,9 @@ CSearchDatabase::TFilteringAlgorithms& CBlastDbSet::SetSoftFiltering()
 }
 
 
-CRef<IQueryFactory> CBlastDbSet::CreateQueryFactory(
-            CRef<CScope> Scope, CConstRef<CBlastOptionsHandle> BlastOpts)
+CRef<IQueryFactory>
+CBlastDbSet::CreateQueryFactory(CScope& Scope,
+                                const CBlastOptionsHandle& BlastOpts)
 {
     NCBI_THROW(CException, CException::eInvalid,
                     "CreateQueryFactory is not supported for type BlastDb");
@@ -84,8 +83,9 @@ CRef<IQueryFactory> CBlastDbSet::CreateQueryFactory(
 }
 
 
-CRef<CLocalDbAdapter> CBlastDbSet::CreateLocalDbAdapter(
-            CRef<CScope> Scope, CConstRef<CBlastOptionsHandle> BlastOpts)
+CRef<CLocalDbAdapter>
+CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts)
 {
     if(m_BlastDb.empty()) {
         NCBI_THROW(CException, CException::eInvalid, "CBLastDb::CreateLocalDbAdapter: BlastDb is empty.");
@@ -95,7 +95,8 @@ CRef<CLocalDbAdapter> CBlastDbSet::CreateLocalDbAdapter(
     SearchDb.Reset(new CSearchDatabase(m_BlastDb, CSearchDatabase::eBlastDbIsNucleotide));
 
     if(!m_Filters.empty()) {
-        SearchDb->SetFilteringAlgorithm(m_Filters.front());
+        //SearchDb->SetFilteringAlgorithm(m_Filters.front());
+        SearchDb->SetFilteringAlgorithms(m_Filters);
     }
 
     CRef<CLocalDbAdapter> Result;
@@ -123,11 +124,13 @@ void CSeqIdListSet::SetSeqMasker(CSeqMasker* SeqMasker)
 }
 
 
-CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id, CSeqMasker* SeqMasker, CRef<CScope> Scope)
+CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
+                            CSeqMasker* SeqMasker,
+                            CScope& Scope)
 {
     auto_ptr<CSeqMasker::TMaskList> Masks, DustMasks;
 
-    CBioseq_Handle Handle = Scope->GetBioseqHandle(Id);
+    CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
     CSeqVector Vector = Handle.GetSeqVector(Handle.eCoding_Iupac, Handle.eStrand_Plus);
 
 
@@ -159,14 +162,16 @@ CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id, CSeqMasker* SeqMasker, CRef<CScop
         MaskLoc->Add(IntLoc);
     }
 
-    MaskLoc = sequence::Seq_loc_Merge(*MaskLoc, CSeq_loc::fSortAndMerge_All, Scope);
+    MaskLoc = sequence::Seq_loc_Merge(*MaskLoc, CSeq_loc::fSortAndMerge_All,
+                                      &Scope);
     MaskLoc->ChangeToPackedInt();
 
     return MaskLoc;
 }
 
-CRef<IQueryFactory> CSeqIdListSet::CreateQueryFactory(
-            CRef<CScope> Scope, CConstRef<CBlastOptionsHandle> BlastOpts)
+CRef<IQueryFactory>
+CSeqIdListSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts)
 {
     if(m_SeqIdList.empty()) {
         NCBI_THROW(CException, CException::eInvalid, "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
@@ -179,7 +184,7 @@ CRef<IQueryFactory> CSeqIdListSet::CreateQueryFactory(
         if(m_SeqMasker == NULL) {
             CRef<CSeq_loc> WholeLoc(new CSeq_loc);
             WholeLoc->SetWhole().Assign(**IdIter);
-            SSeqLoc WholeSLoc(*WholeLoc, *Scope);
+            SSeqLoc WholeSLoc(*WholeLoc, Scope);
             FastaLocVec.push_back(WholeSLoc);
         } else {
 
@@ -189,10 +194,10 @@ CRef<IQueryFactory> CSeqIdListSet::CreateQueryFactory(
             MaskLoc = s_GetMaskLoc(**IdIter, m_SeqMasker, Scope);
 
             if(MaskLoc.IsNull() /* || Vec.size() < 100*/ ) {
-                SSeqLoc WholeSLoc(*WholeLoc, *Scope);
+                SSeqLoc WholeSLoc(*WholeLoc, Scope);
                 FastaLocVec.push_back(WholeSLoc);
             } else {
-                SSeqLoc MaskSLoc(*WholeLoc, *Scope, *MaskLoc);
+                SSeqLoc MaskSLoc(*WholeLoc, Scope, *MaskLoc);
                 FastaLocVec.push_back(MaskSLoc);
             }
         }
@@ -203,8 +208,9 @@ CRef<IQueryFactory> CSeqIdListSet::CreateQueryFactory(
 }
 
 
-CRef<CLocalDbAdapter> CSeqIdListSet::CreateLocalDbAdapter(
-            CRef<CScope> Scope, CConstRef<CBlastOptionsHandle> BlastOpts)
+CRef<CLocalDbAdapter>
+CSeqIdListSet::CreateLocalDbAdapter(CScope& Scope,
+                                    const CBlastOptionsHandle& BlastOpts)
 {
     if(m_SeqIdList.empty()) {
         NCBI_THROW(CException, CException::eInvalid, "CSeqIdListSet::CreateLocalDbAdapter: Id List is empty.");
@@ -212,7 +218,8 @@ CRef<CLocalDbAdapter> CSeqIdListSet::CreateLocalDbAdapter(
 
     CRef<CLocalDbAdapter> Result;
     CRef<IQueryFactory> QueryFactory = CreateQueryFactory(Scope, BlastOpts);
-    Result.Reset(new CLocalDbAdapter(QueryFactory, BlastOpts));
+    Result.Reset(new CLocalDbAdapter(QueryFactory,
+                                     CConstRef<CBlastOptionsHandle>(&BlastOpts)));
     return Result;
 }
 
@@ -231,8 +238,9 @@ void CFastaFileSet::EnableLowerCaseMasking(bool LowerCaseMasking)
 }
 
 
-CRef<IQueryFactory> CFastaFileSet::CreateQueryFactory(
-            CRef<CScope> Scope, CConstRef<CBlastOptionsHandle> BlastOpts)
+CRef<IQueryFactory>
+CFastaFileSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts)
 {
     if(m_FastaStream == NULL) {
         NCBI_THROW(CException, CException::eInvalid, "CFastaFileSet::CreateQueryFactory: Fasta Stream is NULL.");
@@ -241,7 +249,7 @@ CRef<IQueryFactory> CFastaFileSet::CreateQueryFactory(
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);
     CFastaReader FastaReader(*m_FastaStream);
-    Scope->AddTopLevelSeqEntry(*(FastaReader.ReadSet()));
+    Scope.AddTopLevelSeqEntry(*(FastaReader.ReadSet()));
 
     SDataLoaderConfig LoaderConfig(false);
     CBlastInputSourceConfig InputConfig(LoaderConfig);
@@ -254,7 +262,7 @@ CRef<IQueryFactory> CFastaFileSet::CreateQueryFactory(
     const EProgram kProgram = eBlastn;
     CBlastInput Input(&FastaSource, GetQueryBatchSize(kProgram));
 
-    TSeqLocVector FastaLocVec = Input.GetAllSeqLocs(*Scope);
+    TSeqLocVector FastaLocVec = Input.GetAllSeqLocs(Scope);
 
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);
@@ -264,19 +272,16 @@ CRef<IQueryFactory> CFastaFileSet::CreateQueryFactory(
 }
 
 
-CRef<CLocalDbAdapter> CFastaFileSet::CreateLocalDbAdapter(
-            CRef<CScope> Scope, CConstRef<CBlastOptionsHandle> BlastOpts)
+CRef<CLocalDbAdapter>
+CFastaFileSet::CreateLocalDbAdapter(CScope& Scope,
+                                    const CBlastOptionsHandle& BlastOpts)
 {
     CRef<CLocalDbAdapter> Result;
     CRef<IQueryFactory> QueryFactory = CreateQueryFactory(Scope, BlastOpts);
-    Result.Reset(new CLocalDbAdapter(QueryFactory, BlastOpts));
+    Result.Reset(new CLocalDbAdapter(QueryFactory, CConstRef<CBlastOptionsHandle>(&BlastOpts)));
     return Result;
 }
 
 
+END_SCOPE(ncbi)
 
-
-
-
-
-//end

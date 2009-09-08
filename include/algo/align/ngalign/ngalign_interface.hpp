@@ -68,9 +68,9 @@ class ISequenceSet : public CObject
 {
 public:
     virtual CRef<blast::IQueryFactory> CreateQueryFactory(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts) = 0;
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts) = 0;
     virtual CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts) = 0;
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts) = 0;
 };
 
 
@@ -78,9 +78,9 @@ public:
 class IAlignmentFactory : public CObject
 {
 public:
-    virtual TAlignResultsRef GenerateAlignments(CRef<objects::CScope> Scope,
-                                                CRef<ISequenceSet> Querys,
-                                                CRef<ISequenceSet> Subjects,
+    virtual TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                                ISequenceSet* Querys,
+                                                ISequenceSet* Subjects,
                                                 TAlignResultsRef AccumResults) = 0;
 };
 
@@ -89,8 +89,9 @@ public:
 class IAlignmentFilter : public CObject
 {
 public:
-    virtual void FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out) = 0;
-    virtual unsigned int GetFilterRank() = 0;
+    virtual void FilterAlignments(TAlignResultsRef In,
+                                  TAlignResultsRef Out) = 0;
+    virtual unsigned int GetFilterRank() const = 0;
 
     const static string KFILTER_SCORE;
 };
@@ -100,7 +101,8 @@ public:
 class IAlignmentScorer : public CObject
 {
 public:
-    virtual void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope) = 0;
+    virtual void ScoreAlignments(TAlignResultsRef Alignments,
+                                 objects::CScope& Scope) = 0;
 };
 
 

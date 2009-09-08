@@ -62,10 +62,10 @@
 #include <algo/align/util/compartment_finder.hpp>
 #include <algo/sequence/align_cleanup.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
+
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 
 
@@ -131,21 +131,23 @@ TSeqPos s_CalcCoverageCount(TAlignSetRef Alignments, int Row, CScope& Scope)
 
 
 
-TAlignResultsRef CSimpleBandedAligner::GenerateAlignments(CRef<objects::CScope> Scope,
-                                                    CRef<ISequenceSet> QuerySet,
-                                                    CRef<ISequenceSet> SubjectSet,
-                                                    TAlignResultsRef AccumResults)
+TAlignResultsRef
+CSimpleBandedAligner::GenerateAlignments(CScope& Scope,
+                                         ISequenceSet* QuerySet,
+                                         ISequenceSet* SubjectSet,
+                                         TAlignResultsRef AccumResults)
 {
     TAlignResultsRef NewResults(new CAlignResultsSet);
 
-    ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AccumResults->Get()) {
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet,
+                      QueryIter, AccumResults->Get()) {
 
         int BestRank = QueryIter->second->GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
                 ERR_POST(Info << "Determined ID: "
                           << QueryIter->second->GetQueryId()->AsFastaString()
                           << " needs Instanced NW Aligner.");
-            x_RunBanded(Scope, QueryIter->second, NewResults);
+            x_RunBanded(Scope, *QueryIter->second, NewResults);
         }
 /*        CAlignResultsSet::TQueryToSubjectSet::iterator ResultsFound;
         ResultsFound = GoodResults->Get().find(QueryIter->first);
@@ -164,9 +166,9 @@ TAlignResultsRef CSimpleBandedAligner::GenerateAlignments(CRef<objects::CScope> 
 
 
 
-void CSimpleBandedAligner::x_RunBanded(CRef<objects::CScope> Scope,
-                                CRef<CQuerySet> QueryAligns,
-                                TAlignResultsRef Results)
+void CSimpleBandedAligner::x_RunBanded(objects::CScope& Scope,
+                                       CQuerySet& QueryAligns,
+                                       TAlignResultsRef Results)
 {
 
     unsigned int Diag = 0;
@@ -176,11 +178,11 @@ void CSimpleBandedAligner::x_RunBanded(CRef<objects::CScope> Scope,
     TAlignSetRef HighestCoverageSet;
     TSeqPos HighestCoverage = 0;
     CSeq_id Query, Subject;
-    Query.Assign(*QueryAligns->GetQueryId());
+    Query.Assign(*QueryAligns.GetQueryId());
 
-    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns->Get()) {
+    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
         TSeqPos CurrCoverage;
-        CurrCoverage = s_CalcCoverageCount(SubjectIter->second, 0, *Scope);
+        CurrCoverage = s_CalcCoverageCount(SubjectIter->second, 0, Scope);
         if(CurrCoverage > HighestCoverage) {
             HighestCoverage = CurrCoverage;
             HighestCoverageSet = SubjectIter->second;
@@ -197,18 +199,18 @@ void CSimpleBandedAligner::x_RunBanded(CRef<objects::CScope> Scope,
                       << " from " << HighestCoverageSet->Get().size() << " alignments.");
     }
 
-    CContigAssembly::FindDiagFromAlignSet(*HighestCoverageSet, *Scope,
-                                        DiagFindingWindow,
-                                        Strand, Diag);
+    CContigAssembly::FindDiagFromAlignSet(*HighestCoverageSet, Scope,
+                                          DiagFindingWindow,
+                                          Strand, Diag);
     ERR_POST(Info << "Banded plans to use Strand: " << Strand << " and Diag: " << Diag);
 
 
     CRef<CDense_seg> GlobalDs;
     GlobalDs = x_RunBandedGlobal(//CContigAssembly::BandedGlobalAlignment
-                Query, Subject, Strand, Diag, m_BandWidth/2, *Scope);
+                Query, Subject, Strand, Diag, m_BandWidth/2, Scope);
 
     CRef<CDense_seg> LocalDs;
-    LocalDs = CContigAssembly::BestLocalSubAlignment(*GlobalDs, *Scope);
+    LocalDs = CContigAssembly::BestLocalSubAlignment(*GlobalDs, Scope);
 
     CRef<CSeq_align> Result(new CSeq_align);
     Result->SetSegs().SetDenseg().Assign(*LocalDs);
@@ -324,20 +326,21 @@ CRef<CDense_seg> CSimpleBandedAligner::x_RunBandedGlobal(CSeq_id& QueryId,
 
 
 
-TAlignResultsRef CInstancedAligner::GenerateAlignments(CRef<objects::CScope> Scope,
-                                                    CRef<ISequenceSet> QuerySet,
-                                                    CRef<ISequenceSet> SubjectSet,
-                                                    TAlignResultsRef AccumResults)
+TAlignResultsRef CInstancedAligner::GenerateAlignments(objects::CScope& Scope,
+                                                       ISequenceSet* QuerySet,
+                                                       ISequenceSet* SubjectSet,
+                                                       TAlignResultsRef AccumResults)
 {
     TAlignResultsRef NewResults(new CAlignResultsSet);
 
-    ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AccumResults->Get()) {
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter,
+                      AccumResults->Get()) {
         int BestRank = QueryIter->second->GetBestRank();
         if(BestRank > m_Threshold || BestRank == -1) {
             ERR_POST(Info << "Determined ID: "
                           << QueryIter->second->GetQueryId()->AsFastaString()
                           << " needs Instanced MM Aligner.");
-            x_RunAligner(Scope, QueryIter->second, NewResults);
+            x_RunAligner(Scope, *QueryIter->second, NewResults);
         }
     }
 
@@ -347,15 +350,15 @@ TAlignResultsRef CInstancedAligner::GenerateAlignments(CRef<objects::CScope> Sco
 
 
 
-void CInstancedAligner::x_RunAligner(CRef<objects::CScope> Scope,
-                                     CRef<CQuerySet> QueryAligns,
+void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
+                                     CQuerySet& QueryAligns,
                                      TAlignResultsRef Results)
 {
     CRef<CSeq_align_set> ResultSet(new CSeq_align_set);
 
-    CRef<CSeq_align_set> Instances = x_GetInstances(QueryAligns, *Scope);
+    CRef<CSeq_align_set> Instances = x_GetInstances(QueryAligns, Scope);
     if(Instances->Get().empty()) {
-        ERR_POST(Info << " No instances of " << QueryAligns->GetQueryId()->AsFastaString() << " found.");
+        ERR_POST(Info << " No instances of " << QueryAligns.GetQueryId()->AsFastaString() << " found.");
     }
 
 
@@ -391,7 +394,7 @@ void CInstancedAligner::x_RunAligner(CRef<objects::CScope> Scope,
                             Inst.GetSeqStrand(0),
                             Inst.GetSeqStart(0), Inst.GetSeqStop(0),
                             Inst.GetSeqStart(1), Inst.GetSeqStop(1),
-                            *Scope);
+                            Scope);
         } catch(CException& e) {
             ERR_POST(Error << e.ReportAll());
             ERR_POST(Error << "CInstancedBandedAligner failed.");
@@ -415,7 +418,7 @@ void CInstancedAligner::x_RunAligner(CRef<objects::CScope> Scope,
         // So, (see below) if this function changes the Denseg, we return both, the
         //  trimmed and the untrimmed.
         CRef<CDense_seg> LocalDs;
-        LocalDs = CContigAssembly::BestLocalSubAlignment(*GlobalDs, *Scope);
+        LocalDs = CContigAssembly::BestLocalSubAlignment(*GlobalDs, Scope);
 
         Result->SetSegs().SetDenseg().Assign(*LocalDs);
         Result->SetType() = CSeq_align::eType_partial;
@@ -543,13 +546,15 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
 
 
 
-CRef<CSeq_align_set> CInstancedAligner::x_GetInstances(CRef<CQuerySet> QueryAligns, CScope& Scope)
+CRef<CSeq_align_set>
+CInstancedAligner::x_GetInstances(CQuerySet& QueryAligns, CScope& Scope)
 {
     CRef<CSeq_align_set> Instances(new CSeq_align_set);
     CAlignCleanup Cleaner(Scope);
     //Cleaner.FillUnaligned(true);
 
-    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns->Get()) {
+    NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter,
+                      QueryAligns.Get()) {
 
         CRef<CSeq_align_set> Set = SubjectIter->second;
         list<CConstRef<CSeq_align> > In;
@@ -589,4 +594,5 @@ CRef<CSeq_align_set> CInstancedAligner::x_GetInstances(CRef<CQuerySet> QueryAlig
     return Instances;
 }
 
+END_SCOPE(ncbi)
 

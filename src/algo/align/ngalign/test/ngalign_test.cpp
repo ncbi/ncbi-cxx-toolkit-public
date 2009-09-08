@@ -185,7 +185,7 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
         Subject->SetSeqMasker(SeqMasker.get());
     }
 
-    CUberAlign Aligner(*m_Scope);
+    CNgAligner Aligner(*m_Scope);
     Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
     Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
 
@@ -281,7 +281,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     Subject->SetSoftFiltering().push_back(30);
 
 
-    CUberAlign Aligner(*m_Scope);
+    CNgAligner Aligner(*m_Scope);
     Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
     Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
 
@@ -391,7 +391,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
 
     Subject->SetSoftFiltering().push_back(30);
 
-    CUberAlign Aligner(*m_Scope);
+    CNgAligner Aligner(*m_Scope);
     Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
     Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
 

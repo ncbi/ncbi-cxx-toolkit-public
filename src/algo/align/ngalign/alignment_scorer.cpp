@@ -59,11 +59,9 @@
 
 #include <algo/align/ngalign/alignment_scorer.hpp>
 
-
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 
 
@@ -216,4 +214,5 @@ bool CCommonComponentScorer::x_CompareCompLists(list<CRef<CSeq_id> >& QueryIds,
 }
 
 
-//end
+END_SCOPE(ncbi)
+

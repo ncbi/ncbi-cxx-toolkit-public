@@ -55,11 +55,9 @@
 #include <algo/blast/blastinput/blastn_args.hpp>
 
 
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
-
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 
 
@@ -154,9 +152,9 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_CreateBlastOptions(const string& Params)
 
 
 
-TAlignResultsRef CBlastAligner::GenerateAlignments(CRef<CScope> Scope,
-                                                   CRef<ISequenceSet> QuerySet,
-                                                   CRef<ISequenceSet> SubjectSet,
+TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
+                                                   ISequenceSet* QuerySet,
+                                                   ISequenceSet* SubjectSet,
                                                    TAlignResultsRef AccumResults)
 {
     TAlignResultsRef Results(new CAlignResultsSet);
@@ -164,8 +162,8 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CRef<CScope> Scope,
     CRef<IQueryFactory> Querys;
     CRef<CLocalDbAdapter> Subjects;
 
-    Querys = QuerySet->CreateQueryFactory(Scope, m_BlastOptions);
-    Subjects = SubjectSet->CreateLocalDbAdapter(Scope, m_BlastOptions);
+    Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions);
+    Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
 
     CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
 
@@ -193,7 +191,5 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CRef<CScope> Scope,
 }
 
 
+END_SCOPE(ncbi)
 
-
-
-//end

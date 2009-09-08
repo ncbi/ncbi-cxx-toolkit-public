@@ -84,16 +84,16 @@ public:
 class CBlastAligner : public IAlignmentFactory
 {
 public:
-    CBlastAligner(CRef<blast::CBlastOptionsHandle> Options)
-        : m_BlastOptions(Options) { ; }
+    CBlastAligner(blast::CBlastOptionsHandle& Options)
+        : m_BlastOptions(&Options) { ; }
 
     CBlastAligner(const string& Params)
         : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params)) { ; }
 
 
-    TAlignResultsRef GenerateAlignments(CRef<objects::CScope> Scope,
-                                        CRef<ISequenceSet> QuerySet,
-                                        CRef<ISequenceSet> SubjectSet,
+    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                        ISequenceSet* QuerySet,
+                                        ISequenceSet* SubjectSet,
                                         TAlignResultsRef AccumResults);
 
 private:

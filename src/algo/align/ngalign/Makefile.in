@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = xngalign
-SUB_PROJ = test
+EXPENDABLE_SUB_PROJ = test
 
 REQUIRES = objects
 

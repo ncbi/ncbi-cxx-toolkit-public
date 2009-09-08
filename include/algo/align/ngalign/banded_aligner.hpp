@@ -75,11 +75,12 @@ class CSimpleBandedAligner : public IAlignmentFactory
 {
 public:
 
-    CSimpleBandedAligner(int Threshold, unsigned int BandWidth) : m_Threshold(Threshold), m_BandWidth(BandWidth) { ; }
+    CSimpleBandedAligner(int Threshold, unsigned int BandWidth)
+        : m_Threshold(Threshold), m_BandWidth(BandWidth) { ; }
 
-    TAlignResultsRef GenerateAlignments(CRef<objects::CScope> Scope,
-                                        CRef<ISequenceSet> QuerySet,
-                                        CRef<ISequenceSet> SubjectSet,
+    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                        ISequenceSet* QuerySet,
+                                        ISequenceSet* SubjectSet,
                                         TAlignResultsRef AccumResults);
 
 protected:
@@ -90,7 +91,9 @@ private:
     int m_Threshold;
     unsigned int m_BandWidth;
 
-    void x_RunBanded(CRef<objects::CScope> Scope, CRef<CQuerySet> QueryAligns, TAlignResultsRef Results);
+    void x_RunBanded(objects::CScope& Scope,
+                     CQuerySet& QueryAligns,
+                     TAlignResultsRef Results);
 
     CRef<objects::CDense_seg> x_RunBandedGlobal(objects::CSeq_id& QueryId,
                                                 objects::CSeq_id& SubjectId,
@@ -110,9 +113,9 @@ public:
 
     CInstancedAligner(int Threshold) : m_Threshold(Threshold) { ; }
 
-    TAlignResultsRef GenerateAlignments(CRef<objects::CScope> Scope,
-                                        CRef<ISequenceSet> QuerySet,
-                                        CRef<ISequenceSet> SubjectSet,
+    TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
+                                        ISequenceSet* QuerySet,
+                                        ISequenceSet* SubjectSet,
                                         TAlignResultsRef AccumResults);
 
 protected:
@@ -122,7 +125,9 @@ private:
 
     int m_Threshold;
 
-    void x_RunAligner(CRef<objects::CScope> Scope, CRef<CQuerySet> QueryAligns, TAlignResultsRef Results);
+    void x_RunAligner(objects::CScope& Scope,
+                      CQuerySet& QueryAligns,
+                      TAlignResultsRef Results);
 
     CRef<objects::CDense_seg> x_RunMMGlobal(const objects::CSeq_id& QueryId,
                                             const objects::CSeq_id& SubjectId,
@@ -133,7 +138,8 @@ private:
                                             TSeqPos SubjectStop,
                                             objects::CScope& Scope);
 
-    CRef<objects::CSeq_align_set> x_GetInstances(CRef<CQuerySet> QueryAligns, objects::CScope& Scope);
+    CRef<objects::CSeq_align_set> x_GetInstances(CQuerySet& QueryAligns,
+                                                 objects::CScope& Scope);
 };
 
 

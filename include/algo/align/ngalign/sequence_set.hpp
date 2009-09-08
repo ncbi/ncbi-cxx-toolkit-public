@@ -82,9 +82,11 @@ public:
     blast::CSearchDatabase::TFilteringAlgorithms& SetSoftFiltering();
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts);
+            objects::CScope& Scope,
+            const blast::CBlastOptionsHandle& BlastOpts);
     CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts);
+            objects::CScope& Scope,
+            const blast::CBlastOptionsHandle& BlastOpts);
 
 protected:
     string m_BlastDb;
@@ -101,9 +103,9 @@ public:
     void SetSeqMasker(CSeqMasker* SeqMasker);
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts);
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
     CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts);
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
 
 protected:
     list<CRef<objects::CSeq_id> > m_SeqIdList;
@@ -120,9 +122,9 @@ public:
     void EnableLowerCaseMasking(bool LowerCaseMasking);
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts);
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
     CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
-            CRef<objects::CScope> Scope, CConstRef<blast::CBlastOptionsHandle> BlastOpts);
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
 
 protected:
     CNcbiIstream* m_FastaStream;

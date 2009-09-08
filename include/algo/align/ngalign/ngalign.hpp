@@ -66,21 +66,19 @@ END_SCOPE(blast)
 
 
 
-class CUberAlign
+class CNgAligner
 {
 public:
 
+    CNgAligner(objects::CScope& Scope);
+    virtual ~CNgAligner();
 
-    CUberAlign(objects::CScope& Scope)
-            : m_Scope(&Scope) { ; }
-    virtual ~CUberAlign() { ; }
+    void SetQuery(ISequenceSet* Set);
+    void SetSubject(ISequenceSet* Set);
 
-    void SetQuery(CRef<ISequenceSet> Set) { m_Query = Set; }
-    void SetSubject(CRef<ISequenceSet> Set) { m_Subject = Set; }
-
-    void AddFilter(CRef<IAlignmentFilter> Filter) { m_Filters.push_back(Filter); }
-    void AddAligner(CRef<IAlignmentFactory> Aligner) { m_Aligners.push_back(Aligner); }
-    void AddScorer(CRef<IAlignmentScorer> Scorer) { m_Scorers.push_back(Scorer); }
+    void AddFilter(IAlignmentFilter* Filter);
+    void AddAligner(IAlignmentFactory* Aligner);
+    void AddScorer(IAlignmentScorer* Scorer);
 
     TAlignSetRef Align();
 
@@ -93,15 +91,17 @@ private:
 
     CRef<objects::CScope> m_Scope;
 
-    CRef<ISequenceSet> m_Query, m_Subject;
-    list<CRef<IAlignmentFilter> > m_Filters;
-    list<CRef<IAlignmentFactory> > m_Aligners;
-    list<CRef<IAlignmentScorer> > m_Scorers;
+    CIRef<ISequenceSet> m_Query;
+    CIRef<ISequenceSet> m_Subject;
 
-
+    typedef list<CIRef<IAlignmentFilter> > TFilters;
+    typedef list<CIRef<IAlignmentFactory> > TFactories;
+    typedef list<CIRef<IAlignmentScorer> > TScorers;
+    TFilters m_Filters;
+    TFactories m_Aligners;
+    TScorers m_Scorers;
 
 };
-
 
 
 END_NCBI_SCOPE

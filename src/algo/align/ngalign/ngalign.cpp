@@ -54,39 +54,79 @@
 #include <algo/blast/blastinput/blastn_args.hpp>
 
 
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
+
+CNgAligner::CNgAligner(objects::CScope& Scope)
+    : m_Scope(&Scope)
+{
+}
+
+CNgAligner::~CNgAligner()
+{
+}
+
+void CNgAligner::SetQuery(ISequenceSet* Set)
+{
+    m_Query = Set;
+}
+
+
+void CNgAligner::SetSubject(ISequenceSet* Set)
+{
+    m_Subject = Set;
+}
+
+
+void CNgAligner::AddFilter(IAlignmentFilter* Filter)
+{
+    m_Filters.push_back(CIRef<IAlignmentFilter>(Filter));
+}
+
+
+void CNgAligner::AddAligner(IAlignmentFactory* Aligner)
+{
+    m_Aligners.push_back(CIRef<IAlignmentFactory>(Aligner));
+}
+
+
+void CNgAligner::AddScorer(IAlignmentScorer* Scorer)
+{
+    m_Scorers.push_back(CIRef<IAlignmentScorer>(Scorer));
+}
+
+
+
 
 const string IAlignmentFilter::KFILTER_SCORE = "filter_score";
 
-TAlignSetRef CUberAlign::Align()
+TAlignSetRef CNgAligner::Align()
 {
     return x_Align_Impl();
 }
 
 
-TAlignSetRef CUberAlign::x_Align_Impl()
+TAlignSetRef CNgAligner::x_Align_Impl()
 {
 
     TAlignResultsRef FilterResults(new CAlignResultsSet),
                      AccumResults(new CAlignResultsSet);
 
-    NON_CONST_ITERATE(list<CRef<IAlignmentFactory> >, AlignIter, m_Aligners) {
+    NON_CONST_ITERATE(TFactories, AlignIter, m_Aligners) {
 
         TAlignResultsRef CurrResults;
-        CurrResults = (*AlignIter)->GenerateAlignments(m_Scope, m_Query, m_Subject,
+        CurrResults = (*AlignIter)->GenerateAlignments(*m_Scope, m_Query, m_Subject,
                                                        AccumResults);
 
-        NON_CONST_ITERATE(list<CRef<IAlignmentScorer> >, ScorerIter, m_Scorers) {
+        NON_CONST_ITERATE(TScorers, ScorerIter, m_Scorers) {
             (*ScorerIter)->ScoreAlignments(CurrResults, *m_Scope);
         }
 
 //cerr << MSerial_AsnText << *CurrResults->ToSeqAlignSet();
 //        AccumResults->Insert(CurrResults);
-        NON_CONST_ITERATE(list<CRef<IAlignmentFilter> >, FilterIter, m_Filters) {
+        NON_CONST_ITERATE(TFilters, FilterIter, m_Filters) {
             (*FilterIter)->FilterAlignments(CurrResults, FilterResults);
         }
         AccumResults->Insert(CurrResults);
@@ -96,14 +136,5 @@ TAlignSetRef CUberAlign::x_Align_Impl()
 }
 
 
+END_SCOPE(ncbi)
 
-
-
-
-
-
-
-
-
-
-//end

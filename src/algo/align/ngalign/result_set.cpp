@@ -46,11 +46,10 @@
 #include <algo/align/ngalign/result_set.hpp>
 #include <algo/align/ngalign/ngalign_interface.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace blast;
-using namespace std;
 
+BEGIN_SCOPE(ncbi)
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 
 CQuerySet::CQuerySet(const CSearchResults& Results)
@@ -237,5 +236,5 @@ void CAlignResultsSet::Insert(const blast::CSearchResultSet& BlastResults)
     }
 }
 
+END_SCOPE(ncbi)
 
-//end
