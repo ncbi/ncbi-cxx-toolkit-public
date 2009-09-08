@@ -35,7 +35,6 @@
 #include <corelib/test_boost.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
-#include <common/test_assert.h> /* This header must go last */
 
 #include <corelib/ncbi_limits.hpp>
 
@@ -91,6 +90,8 @@
 #include <objects/seq/seqport_util.hpp>
 
 #include "test_objmgr.hpp"
+
+#include <common/test_assert.h> /* This header must go last */
 
 using namespace std;
 using namespace ncbi;
