@@ -811,7 +811,7 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 /// GET_FIELD base macro
 
 #define GET_FIELD(Var, Fld) \
-    ((Var).Set##Fld())
+    ((Var).Get##Fld())
 
 /// SET_FIELD base macro
 
@@ -822,12 +822,12 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 /// STRING_FIELD_MATCH base macro
 
 #define STRING_FIELD_MATCH(Var, Fld, Str) \
-    ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Set##Fld(), Str))
+    ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Get##Fld(), Str))
 
 /// STRING_SET_MATCH base macro (for list or vectors)
 
 #define STRING_SET_MATCH(Var, Fld, Str) \
-    ((Var).IsSet##Fld() && NStr::FindNoCase((Var).Set##Fld(), Str) != NULL)
+    ((Var).IsSet##Fld() && NStr::FindNoCase((Var).Get##Fld(), Str) != NULL)
 
 
 ///
