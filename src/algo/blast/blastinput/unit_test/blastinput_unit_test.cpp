@@ -599,10 +599,9 @@ BOOST_AUTO_TEST_CASE(ReadInvalidSeqId)
     blast::SSeqLoc ssl;
     bool caught_exception(false);
     try { ssl = source->GetNextSeqLocBatch(scope).front(); }
-    catch (const CInputException& e) {
+    catch (const CSeqIdException& e) {
         string msg(e.what());
-        BOOST_REQUIRE(msg.find("Sequence ID not found: ") != NPOS);
-        BOOST_REQUIRE_EQUAL(CInputException::eSeqIdNotFound, e.GetErrCode());
+        BOOST_REQUIRE_EQUAL(CSeqIdException::eFormat, e.GetErrCode());
         caught_exception = true;
     }
     BOOST_REQUIRE(caught_exception);

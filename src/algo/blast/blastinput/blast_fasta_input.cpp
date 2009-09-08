@@ -50,9 +50,6 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 
-#include <util/xregexp/regexp.hpp>
-
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
@@ -137,33 +134,17 @@ public:
         const string line = NStr::TruncateSpaces(*++GetLineReader());
         if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {
             try {
-                static const int kConvFlags
-                    (NStr::fAllowLeadingSpaces|NStr::fAllowTrailingSpaces);
-
-                // Test for GI only
-                if (s_Regex_Gi.IsMatch(line)) {
-                    int gi = NStr::StringToLong(line, kConvFlags);
-                    return x_PrepareBioseqWithGi(gi);
-                // Test for Trace ID
-                } else if (s_Regex_Ti.IsMatch(line)) {
-                    static const string kTiPrefix("gnl|ti|");
-                    int ti = NStr::StringToLong(line.substr(kTiPrefix.size()),
-                                                kConvFlags);
-                    return x_PrepareBioseqWithTi(ti);
-                // Test for accession
-                } else if (x_MatchKnownAccessions(line) ||
-                           s_Regex_Accession.IsMatch(line) ||
-                           s_Regex_PdbWithDash.IsMatch(line) ||
-                           s_Regex_Prf.IsMatch(line) ||
-                           s_Regex_SpWithVersion.IsMatch(line)) {
-                    return x_PrepareBioseqWithAccession(line);
-                }
-            } catch (const CInputException&) { 
-                throw; 
+                CRef<CSeq_id> id(new CSeq_id(line));
+                CRef<CBioseq> bioseq(x_CreateBioseq(id));
+                CRef<CSeq_entry> retval(new CSeq_entry());
+                retval->SetSeq(*bioseq);
+                return retval;
             } catch (const CSeqIdException& e) {
-                if (e.GetErrCode() == CSeqIdException::eFormat) {
-                    NCBI_THROW(CInputException, eSeqIdNotFound,
-                               "Sequence ID not found: '" + line + "'");
+                if (NStr::Find(e.GetMsg(), "Malformatted ID") != NPOS) {
+                    // This is probably just plain fasta, so just
+                    // defer to CFastaReader
+                } else {
+                    throw;
                 }
             } catch (const exception&) {
                 throw;
@@ -237,93 +218,7 @@ private:
         return m_BioseqMaker->CreateBioseqFromId(id, m_RetrieveSeqData);
     }
 
-    /// Create a Bioseq with a gi and save it in a Seq-entry object
-    /// @param gi Gi which identifies Bioseq [in]
-    CRef<CSeq_entry> x_PrepareBioseqWithGi(int gi) {
-        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi));
-        CRef<CBioseq> bioseq(x_CreateBioseq(id));
-        CRef<CSeq_entry> retval(new CSeq_entry());
-        retval->SetSeq(*bioseq);
-        return retval;
-    }
-
-    /// Create a Bioseq with a Trace ID and save it in a Seq-entry object
-    /// @param ti Trace ID which identifies Bioseq [in]
-    CRef<CSeq_entry> x_PrepareBioseqWithTi(int ti) {
-        CRef<CDbtag> general_id(new CDbtag());
-        general_id->SetDb("ti");
-        general_id->SetTag().SetId(ti);
-        CRef<CSeq_id> id(new CSeq_id());
-        id->SetGeneral(*general_id);
-        CRef<CBioseq> bioseq(x_CreateBioseq(id));
-        CRef<CSeq_entry> retval(new CSeq_entry());
-        retval->SetSeq(*bioseq);
-        return retval;
-    }
-
-    /// Create a Bioseq with an accession and save it in a Seq-entry object
-    /// @param line accession which identifies Bioseq [in]
-    CRef<CSeq_entry> x_PrepareBioseqWithAccession(const string& line) {
-        CRef<CSeq_id> id(new CSeq_id(line));
-        CRef<CBioseq> bioseq(x_CreateBioseq(id));
-        CRef<CSeq_entry> retval(new CSeq_entry());
-        retval->SetSeq(*bioseq);
-        return retval;
-    }
-    
-    /// Check whether an input line qualifies as a known accession type.
-    /// @param str The input line.
-    /// @return True iff the input line is a known accession, as identified by
-    /// CSeq_id::IdentifyAccession
-    inline bool x_MatchKnownAccessions(const string & str) const
-    {
-        // try matching untagged accessions first...
-        switch (CSeq_id::IdentifyAccession(str)) {
-        case CSeq_id::eAcc_pdb:
-        case CSeq_id::eAcc_swissprot:
-        case CSeq_id::eAcc_prf:
-            return true;
-        default:
-            break;
-        }
-        return false;
-    }
-
-    /* BEGIN : regular expression machinery to try to detect types of input */
-
-    /// The default compilation flag for regular expressions
-    static const CRegexp::TCompile s_REFlags = static_cast<CRegexp::TCompile>
-        (CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline);
-
-    /// Regular expression for GIs
-    static CRegexp s_Regex_Gi;
-    /// Regular expression for TIs
-    static CRegexp s_Regex_Ti;
-    /// Regular expression for Accessions
-    static CRegexp s_Regex_Accession;
-    // The following are not matched by CSeq_id::IdentifyAccession
-    /// Regular expression for PDB accessions with a dash
-    static CRegexp s_Regex_PdbWithDash;
-    /// Regular expression for PRF accessions
-    static CRegexp s_Regex_Prf;
-    /// Regular expression for Swissprot accessions with version
-    static CRegexp s_Regex_SpWithVersion;
-
-    /* END : regular expression machinery to try to detect types of input */
 };
-
-CRegexp CBlastInputReader::s_Regex_Gi("^[0-9]+$", 
-                                      CBlastInputReader::s_REFlags);
-CRegexp CBlastInputReader::s_Regex_Ti("^gnl\\|ti\\|[0-9]+$", 
-                                      CBlastInputReader::s_REFlags);
-CRegexp CBlastInputReader::s_Regex_Accession("^[a-z].*[0-9]+$", 
-                                             CBlastInputReader::s_REFlags);
-CRegexp CBlastInputReader::s_Regex_PdbWithDash("^pdb\\|[a-z0-9-]+$", 
-                                               CBlastInputReader::s_REFlags);
-CRegexp CBlastInputReader::s_Regex_Prf("^prf\\|{1,2}[a-z0-9]+$", 
-                                       CBlastInputReader::s_REFlags);
-CRegexp CBlastInputReader::s_Regex_SpWithVersion("^sp\\|[a-z0-9]+.[0-9]+$", 
-                                                 CBlastInputReader::s_REFlags);
 
 CBlastFastaInputSource::CBlastFastaInputSource(CNcbiIstream& infile,
                                        const CBlastInputSourceConfig& iconfig)
