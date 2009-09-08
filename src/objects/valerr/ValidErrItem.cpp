@@ -294,6 +294,12 @@ the whole of a sequence.")),
    TErrTypStrs ( eErr_SEQ_INST_DSmRNA,
    TErrStrs( "DSmRNA",
 "This mRNA Bioseq is not single stranded.")),
+   TErrTypStrs ( eErr_SEQ_INST_HighNContentStretch,
+   TErrStrs( "HighNContentStretch",
+"This sequence contains long stretches of Ns.")),
+   TErrTypStrs ( eErr_SEQ_INST_HighNContentPercent,
+   TErrStrs( "HighNContentPercent",
+"This sequence contains a high percentage of Ns.")),
 
 /* SEQ_DESCR */
 
@@ -528,6 +534,12 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_BadKeyword,
    TErrStrs( "BadKeyword",
 "The keyword is not appropriate in this record.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_NoOrganismInTitle,
+   TErrStrs( "NoOrganismInTitle",
+"A RefSeq record should have the organism name at the beginning of a nucleotide title and bracketed at the end of a protein title.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_MissingChromosome,
+   TErrStrs( "MissingChromosome",
+"An NC or AC RefSeq record should have a chromosome annotated.")),
 
 /* SEQ_GENERIC */
 

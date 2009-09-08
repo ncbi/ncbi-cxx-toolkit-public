@@ -217,6 +217,8 @@ public:
 	void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
+    bool IsSyntheticConstruct (const CBioSource& src);
+    bool IsArtificial (const CBioSource& src);
 	bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
         const string& prefix, const CSerialObject& obj);
@@ -304,6 +306,7 @@ public:
     bool IsNucAcc(const string& acc);
     bool IsFarLocation(const CSeq_loc& loc);
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
+    CConstRef<CSeq_feat> GetmRNAGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
     bool IsSerialNumberInComment(const string& comment);
 
@@ -412,8 +415,6 @@ private:
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
     vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
-    // Bioseqs without pubs (should be considered only if m_NoPubs is false)
-    vector< CConstRef<CBioseq> >    m_BioseqWithNoPubs;
     // Bioseqs without source (should be considered only if m_NoSource is false)
     vector< CConstRef<CBioseq> >    m_BioseqWithNoSource;
 
@@ -728,6 +729,7 @@ private:
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
 
+    bool SplicingNotExpected(const CSeq_feat& feat);
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
@@ -936,7 +938,6 @@ public:
 private:
 	vector <CPCRSet *> m_SetList;
 };
-
 
 END_SCOPE(validator)
 END_SCOPE(objects)

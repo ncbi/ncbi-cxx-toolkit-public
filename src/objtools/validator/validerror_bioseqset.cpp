@@ -289,7 +289,7 @@ void CValidError_bioseqset::ValidateNucProtSet
 
             PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtNotSegSet,
                      "Nuc-prot Bioseq-set contains wrong Bioseq-set, "
-                     "its class is \"" + set_class + "\"", set);
+                     "its class is \"" + set_class + "\".", set);
             break;
         }
     }
@@ -397,7 +397,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
                 
                 PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetNotParts,
                     "Segmented set contains wrong Bioseq-set, "
-                    "its class is \"" + set_class_str + "\"", set);
+                    "its class is \"" + set_class_str + "\".", set);
                 break;
             }
         } // else if
@@ -452,7 +452,6 @@ void CValidError_bioseqset::ValidateGenbankSet(const CBioseq_set& seqset)
 void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
     const CBioSource*   biosrc  = 0;
-    const string        *first_taxname = 0;
     static const string influenza = "Influenza virus ";
     static const string sp = " sp. ";
 
@@ -462,6 +461,8 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 	}
 
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
+    string first_taxname = "";
+    bool is_first = true;
     for (; seqit; ++seqit) {
         
         biosrc = 0;
@@ -480,21 +481,22 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname()) {
             taxname = biosrc->GetOrg().GetTaxname();
         }
-        if (first_taxname == 0) {
-            first_taxname = &taxname;
+        if (is_first) {
+            first_taxname = taxname;
+            is_first = false;
             continue;
         }
         
         // Make sure all the taxnames in the set are the same.
-        if ( NStr::CompareNocase(*first_taxname, taxname) == 0 ) {
+        if ( NStr::CompareNocase(first_taxname, taxname) == 0 ) {
             continue;
         }
         
         // if the names differ issue an error with the exception of Influenza
         // virus, where we allow different types of it in the set.
         if ( NStr::StartsWith(taxname, influenza, NStr::eNocase)         &&
-            NStr::StartsWith(*first_taxname, influenza, NStr::eNocase)  &&
-            NStr::CompareNocase(*first_taxname, 0, influenza.length() + 1, taxname) == 0 ) {
+            NStr::StartsWith(first_taxname, influenza, NStr::eNocase)  &&
+            NStr::CompareNocase(first_taxname, 0, influenza.length() + 1, taxname) == 0 ) {
             continue;
         }
         
@@ -503,7 +505,7 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
         SIZE_TYPE pos = NStr::Find(taxname, sp);
         if ( pos != NPOS ) {
             SIZE_TYPE len = pos + sp.length();
-            if ( NStr::strncasecmp(first_taxname->c_str(), 
+            if ( NStr::strncasecmp(first_taxname.c_str(), 
                                    taxname.c_str(),
                                    len) == 0 ) {
                 sev = eDiag_Warning;
@@ -557,9 +559,9 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
                     try {
                         const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);
                         id_type = id.Which();
-					} catch (CException &x1) {
+					} catch (CException ) {
                         id_no_good = true;
-					} catch (std::exception &x2) {
+					} catch (std::exception ) {
                         id_no_good = true;
                     }
                     

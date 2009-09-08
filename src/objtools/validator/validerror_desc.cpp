@@ -76,7 +76,7 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Mol_type:
         case CSeqdesc::e_Method:
             PostErr(eDiag_Info, eErr_SEQ_DESCR_InvalidForType,
-                desc.SelectionName(desc.Which()) + " is obsolete", *m_Ctx, desc);
+                desc.SelectionName(desc.Which()) + " descriptor is obsolete", *m_Ctx, desc);
             break;
 
         case CSeqdesc::e_Comment:
@@ -153,7 +153,7 @@ void CValidError_desc::ValidateSeqDesc
             break;
         case CSeqdesc::e_Create_date:
             {
-                int rval = CheckDate (desc.GetCreate_date());
+                int rval = CheckDate (desc.GetCreate_date(), true);
                 if (rval != eDateValid_valid) {
                     m_Imp.PostBadDateError (eDiag_Error, "Create date has error", rval, desc, &ctx);
                 }
@@ -161,7 +161,7 @@ void CValidError_desc::ValidateSeqDesc
             break;
         case CSeqdesc::e_Update_date:
             {
-                int rval = CheckDate (desc.GetUpdate_date());
+                int rval = CheckDate (desc.GetUpdate_date(), true);
                 if (rval != eDateValid_valid) {
                     m_Imp.PostBadDateError (eDiag_Error, "Update date has error", rval, desc, &ctx);
                 }
@@ -219,14 +219,12 @@ void CValidError_desc::ValidateUser
                 if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
                     has_ref_track_status = true;
 					if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
-#if 0
 						if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
 							PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
 									"RefGeneTracking object has illegal Status '" 
 									+ (*field)->GetData().GetStr() + "'",
 									*m_Ctx, desc);
 						}
-#endif
 					}
                 }
             }
@@ -238,7 +236,7 @@ void CValidError_desc::ValidateUser
     } else if ( NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
         if (!usr.IsSetData() || usr.GetData().size() == 0) {
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
-                     "Structured Comment user object descriptor is empty", desc);
+                     "Structured Comment user object descriptor is empty", *m_Ctx, desc);
         }
     }
 }

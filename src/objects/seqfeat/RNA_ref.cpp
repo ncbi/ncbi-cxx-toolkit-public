@@ -52,6 +52,38 @@ CRNA_ref::~CRNA_ref(void)
 }
 
 
+typedef pair<const string, CRNA_ref::TType> TRnaTypePair;
+static const TRnaTypePair sc_rna_type_map[] = {
+    TRnaTypePair("mRNA", CRNA_ref::eType_mRNA),
+    TRnaTypePair("misc_RNA", CRNA_ref::eType_other),
+    TRnaTypePair("ncRNA", CRNA_ref::eType_ncRNA),
+    TRnaTypePair("precursor_RNA", CRNA_ref::eType_premsg),
+    TRnaTypePair("rRNA", CRNA_ref::eType_rRNA),
+    TRnaTypePair("scRNA", CRNA_ref::eType_scRNA),
+    TRnaTypePair("snRNA", CRNA_ref::eType_snRNA),
+    TRnaTypePair("snoRNA", CRNA_ref::eType_snoRNA),
+    TRnaTypePair("tRNA", CRNA_ref::eType_tRNA),
+    TRnaTypePair("tmRNA", CRNA_ref::eType_tmRNA)
+};
+
+typedef CStaticArrayMap<const string, CRNA_ref::TType> TRnaTypeMap;
+DEFINE_STATIC_ARRAY_MAP(TRnaTypeMap, sc_RnaTypeMap, sc_rna_type_map);
+
+string CRNA_ref::GetRnaTypeName (const CRNA_ref::EType rna_type)
+{
+    string rna_type_name = "";
+    TRnaTypeMap::const_iterator rna_type_it = sc_RnaTypeMap.begin();
+    while (rna_type_it != sc_RnaTypeMap.end() && rna_type_it->second != rna_type) {
+        ++rna_type_it;
+    }
+    if (rna_type_it != sc_RnaTypeMap.end()) {
+        rna_type_name = rna_type_it->first;
+    }
+    return rna_type_name;
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

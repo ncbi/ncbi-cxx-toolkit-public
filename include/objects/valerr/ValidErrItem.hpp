@@ -137,6 +137,8 @@ enum EErrType {
     eErr_SEQ_INST_HighNContent,
     eErr_SEQ_INST_SeqLitDataLength0,
 	eErr_SEQ_INST_DSmRNA,
+    eErr_SEQ_INST_HighNContentStretch,
+    eErr_SEQ_INST_HighNContentPercent,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,
@@ -205,6 +207,8 @@ enum EErrType {
     eErr_SEQ_DESCR_UserObjectProblem,
     eErr_SEQ_DESCR_TitleHasPMID,
     eErr_SEQ_DESCR_BadKeyword,
+    eErr_SEQ_DESCR_NoOrganismInTitle,
+    eErr_SEQ_DESCR_MissingChromosome,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,

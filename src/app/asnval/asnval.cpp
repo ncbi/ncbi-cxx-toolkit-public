@@ -274,6 +274,7 @@ void CAsnvalApp::ReadClassMember
                 // Validate Seq-entry
                 CValidator validator(*m_ObjMgr);
                 CScope scope(*m_ObjMgr);
+                scope.AddDefaults();
                 if ( m_OnlyAnnots ) {
                     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
                     for (CSeq_annot_CI ni(seh); ni; ++ni) {
@@ -367,6 +368,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
     CScope scope(*m_ObjMgr);
+    scope.AddDefaults();
     if ( m_OnlyAnnots ) {
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
@@ -448,6 +450,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
     // Validae Seq-submit
     CValidator validator(*m_ObjMgr);
     CScope scope(*m_ObjMgr);
+    scope.AddDefaults();
     return validator.Validate(*ss, &scope, m_Options);
 }
 
@@ -462,6 +465,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
     // Validae Seq-annot
     CValidator validator(*m_ObjMgr);
     CScope scope(*m_ObjMgr);
+    scope.AddDefaults();
     CSeq_annot_Handle sah = scope.AddSeq_annot(*sa);
     return validator.Validate(sah, m_Options);
 }

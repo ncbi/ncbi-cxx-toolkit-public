@@ -618,8 +618,8 @@ void CValidError_feat::ValidateSeqFeatProduct
                         if ( !tsid->IsSetAccession()  &&  tsid->IsSetName() ) {
                             if ( ValidateAccessionString (tsid->GetName(), false) == eAccessionFormat_valid) {
                                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
-                                    "Protein bioseq has Textseq-id 'name' that"
-                                    "looks like it is derived from a nucleotide"
+                                    "Protein bioseq has Textseq-id 'name' that "
+                                    "looks like it is derived from a nucleotide "
                                     "accession", feat);
                             } else {
                                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
@@ -971,6 +971,41 @@ string CValidError_feat::MapToNTCoords
 }
 
 
+bool CValidError_feat::SplicingNotExpected(const CSeq_feat& feat)
+{
+    if (!m_Scope) {
+        return false;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if (!bsh) {
+        return false;
+    }
+
+    CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
+    if (!diter) {
+        return false;
+    }
+    if (!diter->GetSource().IsSetOrg() || !diter->GetSource().GetOrg().IsSetOrgname()) {
+        return false;
+    }
+
+    if (diter->GetSource().GetOrg().GetOrgname().IsSetDiv()) {
+        string div = diter->GetSource().GetOrg().GetOrgname().GetDiv();
+        if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
+            return true;
+        }
+    }
+    if (diter->GetSource().GetOrg().GetOrgname().IsSetLineage()) {
+        string lineage = diter->GetSource().GetOrg().GetOrgname().GetLineage();
+        if (NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase)
+            || NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 {
     static const string parterr[2] = { "PartialProduct", "PartialLocation" };
@@ -1072,9 +1107,25 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                         // supress warning
                     } else if ( i == 1  &&  j < 2  &&
                         IsPartialAtSpliceSite(feat.GetLocation(), errtype) ) {
-                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
-                            parterr[i] + ": " + parterrs[j] + 
-                            " (but is at consensus splice site)", feat);
+                        if (!feat.GetData().IsCdregion() || SplicingNotExpected (feat)) {
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                                parterr[i] + ": " + parterrs[j] + 
+                                " (but is at consensus splice site)", feat);
+                        } else if (feat.GetData().IsCdregion()) {
+                            if (m_Scope) {
+                                CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+                                if (bsh) {
+                                    CSeqdesc_CI diter (bsh, CSeqdesc::e_Molinfo);
+                                    if (diter && diter->GetMolinfo().IsSetBiomol()
+                                        && diter->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                                        PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
+                                            parterr[i] + ": " + parterrs[j] + 
+                                            " (but is at consensus splice site, but is on an mRNA that is already spliced)",
+                                            feat);
+                                    }
+                                }
+                            }
+                        }
                     } else if ( i == 1  &&  j < 2  &&
                         (feat.GetData().Which() == CSeqFeatData::e_Gene  ||
                         feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
@@ -1134,8 +1185,8 @@ static int s_GetStrictGenCode(const CBioSource& src)
                     break;
             }
         }
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
+	} catch (CException ) {
+	} catch (std::exception ) {
     }
     return gencode;
 }
@@ -1284,6 +1335,8 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                 if (NStr::EqualCase((*it)->GetVal(), locus_tag)) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
                             "old_locus_tag has same value as gene locus_tag", feat);
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem, 
+                            "Gene locus_tag and old_locus_tag '" + locus_tag + "' match", feat);
                 }
                 if (NStr::Find ((*it)->GetVal(), ",") != string::npos) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem,
@@ -1347,7 +1400,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 	FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
 		if (ContainsSgml(*it)) {
 			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					 "gene synonym " + gene.GetDesc() + " has SGML", feat);
+					 "gene synonym " + *it + " has SGML", feat);
 		}
 	}
 
@@ -1518,7 +1571,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
         }
         if ( prev_cbr != 0 ) {
             if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope) == eSame ) {
-                string msg = "Multiple code-breaks at same location";
+                string msg = "Multiple code-breaks at same location ";
                 string str;
                 cbr_loc.GetLabel(&str);
                 if ( !str.empty() ) {
@@ -1754,7 +1807,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             }
         } 
     }
-    if (partial3) {
+    if (!partial3) {
         TSeqPos end = loc.GetStop (eExtreme_Biological);
         if (vec.IsInGap (end)) {
             //is ok
@@ -1766,7 +1819,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             } else if (end == 0) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                           "Splice acceptor consensus (AG) not found at end of terminal intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
+                          + NStr::IntToString (end + 1) + " of " + label + ", but at end of sequence",
                           feat);
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -1782,7 +1835,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             } else if (end == seq_len - 1) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
                           "Splice acceptor consensus (AG) not found at end of terminal intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
+                          + NStr::IntToString (end + 1) + " of " + label + ", but at end of sequence",
                           feat);
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -2050,8 +2103,8 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                         }
                     }
                 }
-			} catch (CException &x1) {
-			} catch (std::exception &x2) {
+			} catch (CException ) {
+			} catch (std::exception ) {
                 // could get errors from CSeqVector
             }
         }
@@ -2064,9 +2117,10 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 }
 
 
+// note - list bad protein names in lower case, as search term is converted to lower case
+// before looking for exact match
 static const string sc_BadProtNameText [] = {
   "'hypothetical protein",
-  "HLA",
   "alpha",
   "alternative",
   "alternatively spliced",
@@ -2121,6 +2175,7 @@ static const string sc_BadProtNameText [] = {
   "duplicated hypothetical protein",
   "epsilon",
   "gamma",
+  "hla",
   "homeodomain",
   "homeodomain protein",
   "homolog",
@@ -2157,8 +2212,8 @@ static const string sc_BadProtNameText [] = {
   "hypothetical transmembrane protein",
   "hypothetoical protein",
   "hypothteical protein",
-  "identified by sequence similarity; putative; ORF located~using Blastx/FrameD",
-  "identified by sequence similarity; putative; ORF located~using Blastx/Glimmer/Genemark",
+  "identified by sequence similarity; putative; orf located~using blastx/framed",
+  "identified by sequence similarity; putative; orf located~using blastx/glimmer/genemark",
   "ion channel",
   "membrane protein, putative",
   "mouse",
@@ -2219,7 +2274,7 @@ static const string sc_BadProtNameText [] = {
   "unique hypothetical",
   "unique hypothetical protein",
   "unknown",
-  "unknown CDS",
+  "unknown cds",
   "unknown function",
   "unknown gene",
   "unknown protein",
@@ -2322,7 +2377,9 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
             }
         }
 
-        if (sc_BadProtName.find (*it) != sc_BadProtName.end()) {
+        string search = *it;
+        search = NStr::ToLower(search);
+        if (sc_BadProtName.find (search) != sc_BadProtName.end()) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredProteinName, 
                      "Uninformative protein name '" + *it + "'",
                      feat);
@@ -2385,7 +2442,7 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
 				    break;
 				case CProt_ref::eEC_replaced:
 					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-						     "EC_number " + ec_number + " was replaced",
+						     "EC_number " + ec_number + " was transferred and is no longer valid",
 							 feat);
 					break;
 				case CProt_ref::eEC_unknown:
@@ -2519,7 +2576,20 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 					"rRNA name " + rna_name + " has SGML", feat);
 			}
         }
-    }        
+    }
+
+    if (rna_type == CRNA_ref::eType_rRNA
+        || rna_type == CRNA_ref::eType_snRNA
+        || rna_type == CRNA_ref::eType_scRNA
+        || rna_type == CRNA_ref::eType_snoRNA) {
+        if (!rna.IsSetExt() || !rna.GetExt().IsName() || NStr::IsBlank(rna.GetExt().GetName())) {
+            if (!pseudo) {
+                string rna_typename = CRNA_ref::GetRnaTypeName(rna_type);
+				PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
+                         rna_typename + " has no name", feat);
+            }
+        }
+    }
 
     if ( feat.IsSetProduct() ) {
         ValidateRnaProductType(rna, feat);
@@ -2613,17 +2683,19 @@ void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_f
         }
     }
     if (!trans_splice) {
+        string loc_lbl = "";
+        anticodon.GetLabel(&loc_lbl);
         if (mixed_strand) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
-                "Mixed strands in Anticodon", feat);
+                "Mixed strands in Anticodon [" + loc_lbl + "]", feat);
         }
         if (unmarked_strand) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
-                "Mixed plus and unknown strands in Anticodon", feat);
+                "Mixed plus and unknown strands in Anticodon [" + loc_lbl + "]", feat);
         }
         if (!ordered) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqLocOrder,
-                "Intervals out of order in Anticodon", feat);
+                "Intervals out of order in Anticodon [" + loc_lbl + "]", feat);
         }
     }
 }
@@ -2696,9 +2768,9 @@ const char* GetAAName(unsigned char aa, bool is_ascii)
                 (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
         }
         return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
-	} catch (CException &x1) {
+	} catch (CException ) {
         return "OTHER";
-	} catch (std::exception &x2) {
+	} catch (std::exception ) {
         return "OTHER";
     }
 }
@@ -2720,9 +2792,11 @@ static string GetGeneticCodeName (int gcode)
 void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
 {
     if (!trna.IsSetAa()) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, "Missing tRNA amino acid", feat);
         return;
     }
 
+    unsigned char aa = 0;
     vector<char> seqData;
     string str = "";
     
@@ -2730,23 +2804,26 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
         case CTrna_ext::C_Aa::e_Iupacaa:
             str = trna.GetAa().GetIupacaa();
             CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            aa = seqData[0];
             break;
         case CTrna_ext::C_Aa::e_Ncbi8aa:
             str = trna.GetAa().GetNcbi8aa();
             CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            aa = seqData[0];
             break;
         case CTrna_ext::C_Aa::e_Ncbistdaa:
             str = trna.GetAa().GetNcbi8aa();
             CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            aa = seqData[0];
             break;
         case CTrna_ext::C_Aa::e_Ncbieaa:
             seqData.push_back(trna.GetAa().GetNcbieaa());
+            aa = seqData[0];
             break;
         default:
             NCBI_THROW (CCoreException, eCore, "Unrecognized tRNA aa coding");
             break;
     }
-    unsigned char aa = seqData[0];
 
     // make sure the amino acid is valid
     bool found = false;
@@ -2757,8 +2834,6 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
         }
     }
     if ( !found ) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, 
-            "Invalid tRNA amino acid (" + NStr::IntToString(aa) + ")", feat);
         aa = ' ';
     }
 
@@ -2822,7 +2897,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
                     NStr::ReplaceInPlace (codon, "T", "U");
 
                     PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
-                      "tRNA codon (" + codon + ") does not match amino acid (" 
+                      "Codon recognized by tRNA (" + codon + ") does not match amino acid (" 
                        + aaname + ") specified by genetic code ("
                        + NStr::IntToString (gcode) + "/" + codename + ")", feat);
                 }
@@ -2889,8 +2964,8 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
             if (anticodon.length() > 3) {
                 anticodon = anticodon.substr(0, 3);
             }
-		} catch (CException &x1) {
-		} catch (std::exception &x2) {
+		} catch (CException ) {
+		} catch (std::exception ) {
         }
     }
 
@@ -2970,8 +3045,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
                              feat);
                     return;
                 }
-			} catch (CException &x1) {
-			} catch (std::exception &x2) {
+			} catch (CException ) {
+			} catch (std::exception ) {
             }
         }
     }
@@ -3021,8 +3096,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
             }
         }
 
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
+	} catch (CException ) {
+	} catch (std::exception ) {
     }
 
 }
@@ -3148,7 +3223,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, 
             if ( imp_loc != temp_loc ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpFeatBadLoc,
                     "ImpFeat loc " + imp_loc + " does not equal feature location " +
-                    temp_loc + "for feature " + key, feat);
+                    temp_loc + " for feature " + key, feat);
             }
         }
     }
@@ -3310,9 +3385,9 @@ static bool s_RptUnitIsBaseRange (string str, int& from, int& to)
     try {
         from = NStr::StringToInt (str.substr(0, pos));
         to = NStr::StringToInt (str.substr (pos + 2));
-	} catch (CException &x1) {
+	} catch (CException ) {
         return false;
-	} catch (std::exception &x2) {
+	} catch (std::exception ) {
         return false;
     }
     if (from < 0 || to < 0) {
@@ -3439,7 +3514,7 @@ void CValidError_feat::ValidateRptUnitSeqVal (const string& val, const string& k
 
     // do the validation specific to rpt_unit_seq
     const char *cp = val.c_str();
-    bool badchars = true;
+    bool badchars = false;
     while (*cp != 0 && !badchars) {
         if (*cp < ' ') {
             badchars = true;
@@ -3520,10 +3595,13 @@ int CValidError_feat::x_SeqIdToGiNumber(
     int gi = 0;
     try {
         CRef<CSeq_id> id(new CSeq_id(seq_id));
+        if (id->IsGenbank()) {
+            gi = 1;
+        }
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
         gi = m_Scope->GetGi (idh);
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
+	} catch (CException ) {
+	} catch (std::exception ) {
     }
     return gi;
 };
@@ -3768,21 +3846,21 @@ void CValidError_feat::ValidateImpGbquals
     }
 
     FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
+
         const string& qual_str = (*qual)->GetQual();
 
-        if ( qual_str == "gsdb_id" ) {
+        if ( NStr::Equal (qual_str, "gsdb_id")) {
             continue;
         }
-
         CGbqualType::EType gbqual = CGbqualType::GetType(qual_str);
         
         if ( gbqual == CGbqualType::e_Bad ) {
-            if ( !qual_str.empty() ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
-                    "Unknown qualifier " + qual_str, feat);
-            } else {
+            if (!(*qual)->IsSetVal() || NStr::IsBlank((*qual)->GetVal())) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
                     "Empty qualifier", feat);
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
+                    "Unknown qualifier " + qual_str, feat);
             }
         } else {
             if ( ftype != CSeqFeatData::eSubtype_bad && !CFeatQualAssoc::IsLegalGbqual(ftype, gbqual) ) {
@@ -3860,9 +3938,6 @@ void CValidError_feat::ValidateImpGbquals
                         if (!has_fuzz && val.length() == GetLength (feat.GetLocation(), m_Scope)) {
                             try {
                                 CSeqVector nuc_vec(feat.GetLocation(), *m_Scope, CBioseq_Handle::eCoding_Iupac);
-                                if (bh.GetInst().IsSetSeq_data() && bh.GetInst().GetSeq_data().IsIupacaa()) {
-                                    nuc_vec.SetCoding(CSeq_data::e_Ncbieaa);
-                                }
                                 string bases = "";
                                 nuc_vec.GetSeqData(0, nuc_vec.size(), bases);
                                 if (NStr::EqualNocase(val, bases)) {
@@ -3870,8 +3945,8 @@ void CValidError_feat::ValidateImpGbquals
                                              "/replace already matches underlying sequence (" + val + ")",
                                              feat);
                                 }
-							} catch (CException &x1) {
-							} catch (std::exception &x2) {
+							} catch (CException ) {
+							} catch (std::exception ) {
                             }
                         }
                     }
@@ -4181,8 +4256,10 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 if (m_Imp.IsFarFetchMRNAproducts()) {
                     rna = m_Scope->GetBioseqHandle(feat.GetProduct());
                     if (!rna) {
+                        string label;
+                        product_id->GetLabel(&label);
                         PostErr (eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
-                                 "Unable to fetch mRNA transcript", feat);
+                                 "Unable to fetch mRNA transcript '" + label + "'", feat);
                     }
                 }
                 if (!rna) {
@@ -4232,7 +4309,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                         if (report_errors) {
                             PostErr (eDiag_Info, eErr_SEQ_FEAT_PolyATail, 
                                      "Transcript length [" + NStr::IntToString(nuc_len)
-                                     + "] less than + " + farstr + "product length ["
+                                     + "] less than " + farstr + "product length ["
                                      + NStr::IntToString (rna_len) + "], but tail is 100% polyA",
                                      feat);
                         }
@@ -4283,8 +4360,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 }
             }
         }
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
+	} catch (CException ) {
+	} catch (std::exception ) {
     }
 
     if (!report_errors) {
@@ -4320,10 +4397,16 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
     if ( !bsh ) {
         const CSeq_id& sid = GetId(feat.GetProduct(), m_Scope);
         if ( sid.IsLocal() ) {
-            if ( m_Imp.IsGPS()  ||  m_Imp.IsRefSeq() ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
-                    "Product Bioseq of mRNA feature is not "
-                    "packaged in the record", feat);
+            bsh = m_Scope->GetBioseqHandle(sid);
+            if (bsh) {
+                CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
+                if (seh.IsSet() && seh.GetSet().IsSetClass()
+                    && (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set
+                        || seh.GetSet().GetClass() == CBioseq_set::eClass_other)) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
+                        "Product Bioseq of mRNA feature is not "
+                        "packaged in the record", feat);
+                }
             }
         }
     } else {
@@ -4334,18 +4417,10 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
         } 
         // } DEBUG
 
-        CFeat_CI mrna(
-            bsh, SAnnotSelector(CSeqFeatData::e_Rna)
-            .SetOverlapTotalRange()
-            .SetResolveNone()
-            .SetByProduct());
-        while ( mrna ) {
-            if ( &(mrna->GetOriginalFeature()) != &feat ) {
-                PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
+        CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(bsh.GetCompleteBioseq()));
+        if (mrna.GetPointer() != &feat) {
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
                     "Same product Bioseq from multiple mRNA features", feat);
-                break;
-            }
-            ++mrna;
         }
     }
 }
@@ -4826,7 +4901,7 @@ void CValidError_feat::ValidateExcept(const CSeq_feat& feat)
 {
     if (feat.IsSetExcept_text() && !NStr::IsBlank (feat.GetExcept_text()) && !feat.IsSetExcept()) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
-            "Exception text is set, but exception flag is not set", feat);
+            "Exception text is present, but exception flag is not set", feat);
     } else if (feat.IsSetExcept() && (!feat.IsSetExcept_text() || NStr::IsBlank (feat.GetExcept_text()))) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
             "Exception flag is set, but exception text is empty", feat);
@@ -4861,9 +4936,23 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
         if ( find(except_begin, except_end, str) != except_end ) {
             found = true;
         }
-        if ( !found  &&  (m_Imp.IsGPS() || m_Imp.IsRefSeq()) ) {
-            if ( find(refseq_begin, refseq_end, str) != refseq_end ) {
-               found = true;
+        if ( !found) {
+            if (m_Scope) {
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+                bool check_refseq = false;
+                if (GetGenProdSetParent (bsh)) {
+                    check_refseq = true;
+                } else {
+                    FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+                        if ((*id_it)->IsOther()) {
+                            check_refseq = true;
+                            break;
+                        }
+                    }
+                }
+                if (check_refseq && find(refseq_begin, refseq_end, str) != refseq_end ) {
+                    found = true;
+                }
             }
         }
         if ( !found ) {
@@ -5128,14 +5217,19 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     string transl_prot;   // translated protein
     bool alt_start = false;
     try {
-        CCdregion_translate::TranslateCdregion(
-            transl_prot, 
-            feat, 
-            *m_Scope,
-            true,   // include stop codons
-            false,  // do not remove trailing X/B/Z
-            &alt_start,
-            CCdregion_translate::eTruncate);
+        if (m_Scope) {
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+            if (bsh 
+                && (feat.GetLocation().GetStart(eExtreme_Positional) > bsh.GetInst_Length() - 1
+                    || feat.GetLocation().GetStop(eExtreme_Positional) > bsh.GetInst_Length() - 1)) {
+                // don't translate
+            } else {
+                CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
+                                            true,   // include stop codons
+                                            false,  // do not remove trailing X/B/Z
+                                            &alt_start);
+            }
+        }
     } catch (CException&) {
     }
     if (transl_prot.empty()) {
@@ -5191,27 +5285,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         other_than_mismatch = true;
     }
     
-    if (cdregion.GetFrame() > CCdregion::eFrame_one) {
-        has_errors = true;
-        other_than_mismatch = true;
-        EDiagSev sev = s_IsLocRefSeqMrna(feat.GetLocation(), *m_Scope) ?
-            eDiag_Error : eDiag_Warning;
-        if (!(part_loc & eSeqlocPartial_Start)) {
-            if (report_errors) {
-                PostErr(sev, eErr_SEQ_FEAT_PartialProblem, 
-                    "Suspicious CDS location - frame > 1 but not 5' partial",
-                    feat);
-            }
-        } else if ((part_loc & eSeqlocPartial_Nostart)  &&
-            !IsPartialAtSpliceSite(location, eSeqlocPartial_Nostart)) {
-            if (report_errors) {
-                PostErr(sev, eErr_SEQ_FEAT_PartialProblem, 
-                    "Suspicious CDS location - frame > 1 and not at consensus splice site",
-                    feat);
-            }
-        }
-    }
-    
     bool no_beg = 
         (part_loc & eSeqlocPartial_Start)  ||  (part_prod & eSeqlocPartial_Start);
 
@@ -5252,13 +5325,15 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             if (got_dash) {
                 if (report_errors  ||  unclassified_except) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                        "Illegal start codon and " + 
+                        "Illegal start codon (and " + 
                         NStr::IntToString(internal_stop_count) +
-                        " internal stops. Probably wrong genetic code [" +
+                        " internal stops). Probably wrong genetic code [" +
                         gccode + "]", feat);
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
+                        NStr::IntToString(internal_stop_count) + 
+                        " internal stops (and illegal start codon). Genetic code [" + gccode + "]", feat);
                 }
-            } 
-            if (report_errors  ||  unclassified_except) {
+            } else if (report_errors  ||  unclassified_except) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
                     NStr::IntToString(internal_stop_count) + 
                     " internal stops. Genetic code [" + gccode + "]", feat);
@@ -5361,7 +5436,10 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         vector<TSeqPos> mismatches;
         if (len == prot_len)  {                // could be identical
             for (TSeqPos i = 0; i < len; ++i) {
-                if (transl_prot[i] != prot_vec[i]) {
+                CSeqVectorTypes::TResidue p_res = prot_vec[i];
+                CSeqVectorTypes::TResidue t_res = transl_prot[i];
+
+                if (t_res != p_res) {
                     has_errors = true;
                     mismatches.push_back(i);
                     prot_ok = false;
@@ -5431,15 +5509,19 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             for (size_t i = 0; i < mismatches.size(); ++i) {
                 nuclocstr = MapToNTCoords(feat, feat.GetProduct(), mismatches[i]);
                 prot_res = prot_vec[mismatches[i]];
-                transl_res = Residue(transl_prot[mismatches[i]]);
-                msg = farstr + "Residue " + NStr::IntToString(mismatches[i] + 1) +
-                    " in protein [" + prot_res + "]" +
-                    " != translation [" + transl_res + "]";
-                if (!nuclocstr.empty()) {
-                    msg += " at " + nuclocstr;
-                }
-                if (report_errors  &&  !mismatch_except) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+                transl_res = transl_prot[mismatches[i]];
+                if (mismatches[i] == 0 && transl_res == '-') {
+                    // skip - dash is expected to differ
+                } else {
+                    msg = farstr + "Residue " + NStr::IntToString(mismatches[i] + 1) +
+                        " in protein [" + prot_res + "]" +
+                        " != translation [" + transl_res + "]";
+                    if (!nuclocstr.empty()) {
+                        msg += " at " + nuclocstr;
+                    }
+                    if (report_errors  &&  !mismatch_except) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+                    }
                 }
             }
         }
@@ -5463,12 +5545,17 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         if (!transl_prot.empty()) {
             // look for discrepancy in number of terminal Xs between product and translation
             size_t transl_terminal_x = 0;
-            ITERATE(string, it, transl_prot) {
-                if ( *it == 'X' ) {
+            size_t i = len;
+            while (i > 0) {
+                if (transl_prot[i] == 'X') {
                     transl_terminal_x++;
                 } else {
-                    transl_terminal_x = 0;
+                    break;
                 }
+                i--;
+            }
+            if (i == 0 && transl_prot[0] == 'X') {
+                transl_terminal_x++;
             }
             size_t prod_terminal_x = 0;
             size_t prod_len = prot_vec.size() - 1;
@@ -5533,9 +5620,19 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
     bool has_errors = false;
 
     FOR_EACH_CODEBREAK_ON_CDREGION (cbr, cdregion) {
+        if (!(*cbr)->IsSetLoc()) {
+            continue;
+        }
+        // if the code break is outside the coding region, skip
+		ECompare comp = Compare((*cbr)->GetLoc(), feat.GetLocation(), m_Scope);
+        if ( (comp != eContained) && (comp != eSame)) {
+            continue;
+        }
+
         size_t codon_length = GetLength((*cbr)->GetLoc(), m_Scope);
         TSeqPos from = LocationOffset(loc, (*cbr)->GetLoc(), 
             eOffset_FromStart, m_Scope);
+        
         TSeqPos to = from + codon_length - 1;
         
         // check for code break not on a codon
@@ -5561,13 +5658,17 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                 has_errors = true;
             } else if ((*cbr)->IsSetAa()) {
                 size_t prot_pos = from / 3;
+                char ex = (*cbr)->GetAa().GetNcbieaa();
                 string except_char = "";
-                except_char[0] = (*cbr)->GetAa().GetNcbieaa();
+                except_char += ex;
                 if (prot_pos % 3 < transl_prot.length()) {
                     if (!NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
+                        string msg = "Unnecessary transl_except ";
+                        msg += ex;
+                        msg += " at position ";
+                        msg += NStr::IntToString (prot_pos + 1);
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                 "Unnecessary transl_except " + except_char
-                                 + " at position " + NStr::IntToString (prot_pos + 1),
+                                 msg,
                                  feat);
                     } else if (prot_pos == transl_prot.length()) {
                         if (!NStr::Equal (except_char, "*")) {
@@ -5684,13 +5785,13 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
                              "Feature overlapped by "
                              + NStr::IntToString(num_genes)
-                             + " identical-length equivalent genes but has no cross-references",
+                             + " identical-length equivalent genes but has no cross-reference",
                              feat);
                 } else {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
                              "Feature overlapped by "
                              + NStr::IntToString(num_genes)
-                             + " identical-length genes but has no cross-references",
+                             + " identical-length genes but has no cross-reference",
                              feat);
                 }
             }
@@ -5836,25 +5937,25 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                              feat);
                 }
             }
+        }
 
-            // make sure overlapping gene and gene xref do not conflict
-            if (gene_xref->IsSetAllele() && !NStr::IsBlank(gene_xref->GetAllele())) {
-                const string& allele = gene_xref->GetAllele();
+        // make sure overlapping gene and gene xref do not conflict
+        if (gene_xref->IsSetAllele() && !NStr::IsBlank(gene_xref->GetAllele())) {
+            const string& allele = gene_xref->GetAllele();
 
-                FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, feat) {
-                    const CGb_qual& qual = **qual_iter;
-                    if ( qual.CanGetQual()  &&
-                         NStr::Compare(qual.GetQual(), "allele") == 0 ) {
-                        if ( qual.CanGetVal()  &&
-                             NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                "Redundant allele qualifier (" + allele + 
-                                ") on gene and feature", feat);
-                        } else if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                "Mismatched allele qualifier on gene (" + allele + 
-                                ") and feature (" + qual.GetVal() +")", feat);
-                        }
+            FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, feat) {
+                const CGb_qual& qual = **qual_iter;
+                if ( qual.CanGetQual()  &&
+                     NStr::Compare(qual.GetQual(), "allele") == 0 ) {
+                    if ( qual.CanGetVal()  &&
+                         NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "Redundant allele qualifier (" + allele + 
+                            ") on gene and feature", feat);
+                    } else if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "Mismatched allele qualifier on gene (" + allele + 
+                            ") and feature (" + qual.GetVal() +")", feat);
                     }
                 }
             }
@@ -6324,7 +6425,9 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
             }            
 
             // look for features inside gaps, crossing unknown gaps, or starting or ending in gaps
-            if (bsh.IsNa()) {
+            // ignore gap features for this
+            if ((!feat.GetData().IsImp() || !feat.GetData().GetImp().IsSetKey() || !NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap"))
+                && bsh.IsNa()) {
                 try {
                     int num_n = 0;
                     int num_real = 0;
@@ -6338,7 +6441,9 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         if ( !vec.empty() ) {
                             CBioseq_Handle ph = m_Scope->GetBioseqHandle (loc_it.GetSeq_loc());
                             TSeqPos offset = loc_it.GetSeq_loc().GetStart (eExtreme_Positional);
-                            string vec_data = GetSequenceStringFromLoc (loc, *m_Scope);
+                            string vec_data;
+                            vec.GetSeqData(0, vec.size(), vec_data);
+
                             int pos = 0;
                             string::iterator it = vec_data.begin();
                             while (it != vec_data.end()) {
@@ -6400,8 +6505,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
                                  "Feature crosses gap of unknown length", feat);
                     }            
-		        } catch (CException &x1) {
-		        } catch (std::exception &x2) {
+		        } catch (CException ) {
+		        } catch (std::exception ) {
                 }
             }
         }
@@ -6461,9 +6566,9 @@ void CValidError_feat::ValidateCitations (const CSeq_entry_Handle& seh)
                     }
                     if (!found) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
-                                 "Citation on feature refers to uid "
+                                 "Citation on feature refers to uid ["
                                  + NStr::IntToString((*cit_it)->GetPmid())
-                                 + " not on a publication in the record",
+                                 + "] not on a publication in the record",
                                  f->GetOriginalFeature());
                     }
                 } else if ((*cit_it)->IsMuid()) {
@@ -6476,9 +6581,9 @@ void CValidError_feat::ValidateCitations (const CSeq_entry_Handle& seh)
                     }
                     if (!found) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
-                                 "Citation on feature refers to uid "
+                                 "Citation on feature refers to uid ["
                                  + NStr::IntToString((*cit_it)->GetMuid())
-                                 + " not on a publication in the record",
+                                 + "] not on a publication in the record",
                                  f->GetOriginalFeature());
                     }
                 } else if ((*cit_it)->IsEquiv()) {

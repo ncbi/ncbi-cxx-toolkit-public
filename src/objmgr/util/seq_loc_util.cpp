@@ -114,7 +114,9 @@ TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope)
 
     ITERATE( CSeq_loc_mix::Tdata, i, mix.Get() ) {
         TSeqPos ret = GetLength((**i), scope);
-        length += ret;
+        if (ret < numeric_limits<TSeqPos>::max()) {
+            length += ret;
+        }
     }
     return length;
 }

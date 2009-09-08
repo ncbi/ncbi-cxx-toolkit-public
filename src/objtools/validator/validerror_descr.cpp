@@ -141,11 +141,11 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
 
     if ( num_sources > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleBioSources,
-            "Undesired multiple source descriptors (reporting last one)", ctx, *last_source);
+            "Undesired multiple source descriptors", ctx, *last_source);
     }
     if ( num_titles > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTitles,
-            "Multiple Title blocks (reporting last one)", ctx, *last_title);
+            "Undesired multiple title descriptors", ctx, *last_title);
     }
 }
 

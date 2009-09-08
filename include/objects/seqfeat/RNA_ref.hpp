@@ -59,6 +59,8 @@ public:
     // destructor
     ~CRNA_ref(void);
 
+    static string GetRnaTypeName (const CRNA_ref::EType rna_type);
+
 private:
     // Prohibit copy constructor and assignment operator
     CRNA_ref(const CRNA_ref& value);
