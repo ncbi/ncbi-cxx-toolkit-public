@@ -33,7 +33,6 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <math.h>
-#include <hash_map.h>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>

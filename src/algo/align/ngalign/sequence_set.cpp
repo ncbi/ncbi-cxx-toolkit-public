@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <math.h>
-#include <hash_map.h>
 #include <algo/align/ngalign/sequence_set.hpp>
 
 #include <objmgr/scope.hpp>

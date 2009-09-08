@@ -33,7 +33,6 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <math.h>
-#include <hash_map.h>
 #include <algo/align/ngalign/banded_aligner.hpp>
 //#include "align_instance.hpp"
 
