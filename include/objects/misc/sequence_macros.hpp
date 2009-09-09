@@ -803,6 +803,11 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 ///
 /// Generic FIELD macros
 
+/// FIELD_IS base macro
+
+#define FIELD_IS(Var, Fld) \
+    ((Var).Is##Fld())
+
 /// FIELD_IS_SET base macro
 
 #define FIELD_IS_SET(Var, Fld) \
@@ -813,10 +818,20 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define GET_FIELD(Var, Fld) \
     ((Var).Get##Fld())
 
+/// GET_MUTABLE base macro
+
+#define GET_MUTABLE(Var, Fld) \
+    ((Var).Set##Fld())
+
 /// SET_FIELD base macro
 
 #define SET_FIELD(Var, Fld, Val) \
     ((Var).Set##Fld(Val))
+
+/// RESET_FIELD base macro
+
+#define RESET_FIELD(Var, Fld) \
+    ((Var).Reset##Fld())
 
 
 /// STRING_FIELD_MATCH base macro
