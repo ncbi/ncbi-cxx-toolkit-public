@@ -77,11 +77,8 @@ CRef<CBioseq_set> CMakeCdrProds::MakeCdrProds(CRef<CSeq_annot> annot,
             continue;
         }
 
-        const CSeq_loc& loc = (*feat)->GetLocation();
-        const CCdregion& cdr = (*feat)->GetData().GetCdregion();
-
         string prot;
-        CCdregion_translate::TranslateCdregion(prot, handle, loc, cdr);
+        CSeqTranslator::Translate(**feat, handle.GetScope(), prot);
         CRef<CSeq_data> seq_data(new CSeq_data(prot,
                                                CSeq_data::e_Iupacaa));
         CRef<CSeq_inst> seq_inst(new CSeq_inst);
