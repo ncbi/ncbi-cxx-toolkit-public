@@ -143,6 +143,11 @@ CEffectiveSearchSpaceCalculator::GetEffSearchSpaceForContext(size_t ctx_index) c
     return m_QueryInfo->contexts[ctx_index].eff_searchsp;
 }
 
+BlastQueryInfo* CEffectiveSearchSpaceCalculator::GetQueryInfo() const
+{
+    return m_QueryInfo;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

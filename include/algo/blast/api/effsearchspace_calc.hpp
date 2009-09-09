@@ -75,6 +75,11 @@ public:
     /// @param ctx_index index of the query sequence of interest
     Int8 GetEffSearchSpaceForContext(size_t ctx_index) const;
 
+    /// Retrieve the BlastQueryInfo structure that stores the effective
+    /// search spaces for all queries. This function is intended only
+    /// for internal use by Blast routines.
+    BlastQueryInfo* GetQueryInfo() const;
+
 private:
     CRef<IQueryFactory> m_QueryFactory; ///< source of query sequence(s)
     EBlastProgramType m_Program;        ///< BLAST program
