@@ -76,8 +76,8 @@ CRef<IQueryFactory>
 CBlastDbSet::CreateQueryFactory(CScope& Scope,
                                 const CBlastOptionsHandle& BlastOpts)
 {
-    NCBI_THROW(CException, CException::eInvalid,
-                    "CreateQueryFactory is not supported for type BlastDb");
+    NCBI_THROW(CException, eInvalid,
+               "CreateQueryFactory is not supported for type BlastDb");
     return CRef<IQueryFactory>();
 }
 
@@ -87,8 +87,8 @@ CBlastDbSet::CreateQueryFactory(CScope& Scope,
                                 const CBlastOptionsHandle& BlastOpts,
                                 const CAlignResultsSet& Alignments, int Threshold)
 {
-    NCBI_THROW(CException, CException::eInvalid,
-                    "CreateQueryFactory is not supported for type BlastDb");
+    NCBI_THROW(CException, eInvalid,
+               "CreateQueryFactory is not supported for type BlastDb");
     return CRef<IQueryFactory>();
 }
 
@@ -98,7 +98,8 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
                                   const CBlastOptionsHandle& BlastOpts)
 {
     if(m_BlastDb.empty()) {
-        NCBI_THROW(CException, CException::eInvalid, "CBLastDb::CreateLocalDbAdapter: BlastDb is empty.");
+        NCBI_THROW(CException, eInvalid,
+                   "CBLastDb::CreateLocalDbAdapter: BlastDb is empty.");
     }
 
     CRef<CSearchDatabase> SearchDb;
@@ -184,7 +185,8 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
                                   const CBlastOptionsHandle& BlastOpts)
 {
     if(m_SeqIdList.empty()) {
-        NCBI_THROW(CException, CException::eInvalid, "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
+        NCBI_THROW(CException, eInvalid,
+                   "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
     }
 
 
@@ -224,7 +226,8 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
                                   const CAlignResultsSet& Alignments, int Threshold)
 {
     if(m_SeqIdList.empty()) {
-        NCBI_THROW(CException, CException::eInvalid, "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
+        NCBI_THROW(CException, eInvalid,
+                   "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
     }
 
 
@@ -272,7 +275,8 @@ CSeqIdListSet::CreateLocalDbAdapter(CScope& Scope,
                                     const CBlastOptionsHandle& BlastOpts)
 {
     if(m_SeqIdList.empty()) {
-        NCBI_THROW(CException, CException::eInvalid, "CSeqIdListSet::CreateLocalDbAdapter: Id List is empty.");
+        NCBI_THROW(CException, eInvalid,
+                   "CSeqIdListSet::CreateLocalDbAdapter: Id List is empty.");
     }
 
     CRef<CLocalDbAdapter> Result;
@@ -302,7 +306,8 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
                                   const CBlastOptionsHandle& BlastOpts)
 {
     if(m_FastaStream == NULL) {
-        NCBI_THROW(CException, CException::eInvalid, "CFastaFileSet::CreateQueryFactory: Fasta Stream is NULL.");
+        NCBI_THROW(CException, eInvalid,
+                   "CFastaFileSet::CreateQueryFactory: Fasta Stream is NULL.");
     }
 
     m_FastaStream->clear();
@@ -337,7 +342,8 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
                                   const CAlignResultsSet& Alignments, int Threshold)
 {
     if(m_FastaStream == NULL) {
-        NCBI_THROW(CException, CException::eInvalid, "CFastaFileSet::CreateQueryFactory: Fasta Stream is NULL.");
+        NCBI_THROW(CException, eInvalid,
+                   "CFastaFileSet::CreateQueryFactory: Fasta Stream is NULL.");
     }
 
     m_FastaStream->clear();
