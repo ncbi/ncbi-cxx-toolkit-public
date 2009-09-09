@@ -279,7 +279,7 @@ public:
     inline bool IsNW(void) const { return m_IsNW; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
-    inline bool IsCuratedRefSeq(void) const;
+    bool IsCuratedRefSeq(void) const;
     inline bool IsGenbank(void) const { return m_IsGB; }
     inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
     inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }

@@ -1610,7 +1610,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     }
     // supress in case of the appropriate exception
     if ( feat.CanGetExcept()  &&  feat.CanGetExcept_text()  &&
-         !IsBlankString(feat.GetExcept_text()) ) {
+         !NStr::IsBlank(feat.GetExcept_text()) ) {
         if ( NStr::Find(feat.GetExcept_text(),
             "rearrangement required for product") != NPOS ) {
            return;
