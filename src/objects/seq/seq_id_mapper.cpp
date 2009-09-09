@@ -134,52 +134,7 @@ bool CSeq_id_Mapper::HaveMatchingHandles(const CSeq_id_Handle& idh)
 void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id_Handle& idh,
                                         TSeq_id_HandleSet& h_set)
 {
-    TSeq_id_HandleRangeSet match_ranges;
-    idh.GetMatchingHandleRanges(match_ranges);
-    ITERATE ( TSeq_id_HandleRangeSet, it, match_ranges ) {
-        if ( IsSingleHandle(*it) ) {
-            h_set.insert(it->first);
-        }
-        else {
-            it->first.x_GetInfo()->GetRangeHandles(it->first.GetPacked(),
-                                                   h_set);
-        }
-    }
-}
-
-/*
-void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
-                                           TSeq_id_HandleSet& h_set)
-{
-    if (sid.find('|') != string::npos) {
-        NCBI_THROW(CIdMapperException, eSymbolError,
-                   "Symbol \'|\' is not supported here");
-    }
-
-    ITERATE(TTrees, tree_it, m_Trees) {
-        (*tree_it)->FindMatchStr(sid, h_set);
-    }
-}
-*/
-
-void CSeq_id_Mapper::GetMatchingHandleRanges(const CSeq_id_Handle& idh,
-                                             TSeq_id_HandleRangeSet& h_set)
-{
-    x_GetTree(idh).FindMatch2(idh, h_set);
-}
-
-
-void CSeq_id_Mapper::GetMatchingHandleRangesStr(string sid,
-                                                TSeq_id_HandleRangeSet& h_set)
-{
-    if (sid.find('|') != string::npos) {
-        NCBI_THROW(CIdMapperException, eSymbolError,
-                   "Symbol \'|\' is not supported here");
-    }
-
-    ITERATE(TTrees, tree_it, m_Trees) {
-        (*tree_it)->FindMatch2Str(sid, h_set);
-    }
+    x_GetTree(idh).FindMatch(idh, h_set);
 }
 
 
@@ -193,6 +148,20 @@ void CSeq_id_Mapper::GetReverseMatchingHandles(const CSeq_id_Handle& idh,
                                                TSeq_id_HandleSet& h_set)
 {
     x_GetTree(idh).FindReverseMatch(idh, h_set);
+}
+
+
+void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
+                                           TSeq_id_HandleSet& h_set)
+{
+    if (sid.find('|') != string::npos) {
+        NCBI_THROW(CIdMapperException, eSymbolError,
+                   "Symbol \'|\' is not supported here");
+    }
+
+    ITERATE(TTrees, tree_it, m_Trees) {
+        (*tree_it)->FindMatchStr(sid, h_set);
+    }
 }
 
 

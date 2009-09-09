@@ -244,8 +244,6 @@ protected:
 
     SSeqMatch_Scope x_GetSeqMatch(const CSeq_id_Handle& idh);
     SSeqMatch_Scope x_FindBestTSE(const CSeq_id_Handle& idh);
-    void x_FindBestTSE(SSeqMatch_Scope& ret,
-                       const CSeq_id_HandleRange& id_range);
     void x_SetMatch(SSeqMatch_Scope& match,
                     CTSE_ScopeInfo& tse,
                     const CSeq_id_Handle& idh) const;
@@ -255,8 +253,6 @@ protected:
     void x_IndexTSE(CTSE_ScopeInfo& tse);
     void x_UnindexTSE(const CTSE_ScopeInfo& tse);
     TTSE_ScopeInfo x_FindBestTSEInIndex(const CSeq_id_Handle& idh) const;
-    pair<CSeq_id_Handle, TTSE_ScopeInfo>
-    x_FindBestTSEInIndex(const CSeq_id_HandleRange& id_range) const;
     static bool x_IsBetter(const CSeq_id_Handle& idh,
                            const CTSE_ScopeInfo& tse1,
                            const CTSE_ScopeInfo& tse2);
@@ -313,7 +309,6 @@ public:
     bool LockedMoreThanOnce(void) const;
 
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
-    bool ContainsBioseq(const CSeq_id_HandleRange& id_range) const;
     bool ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
 
     bool x_SameTSE(const CTSE_Info& tse) const;

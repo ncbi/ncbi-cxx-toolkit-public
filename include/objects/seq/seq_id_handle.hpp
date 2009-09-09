@@ -62,22 +62,21 @@ class CSeq_id_Handle;
 class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
 
-class NCBI_SEQ_EXPORT CSeq_id_Info : public CObject
+
+class CSeq_id_Info : public CObject
 {
 public:
-    CSeq_id_Info(CSeq_id::E_Choice type,
-                 CSeq_id_Mapper* mapper);
-    CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
-                 CSeq_id_Mapper* mapper);
-    ~CSeq_id_Info(void);
+    NCBI_SEQ_EXPORT CSeq_id_Info(CSeq_id::E_Choice type,
+                                 CSeq_id_Mapper* mapper);
+    NCBI_SEQ_EXPORT CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
+                                 CSeq_id_Mapper* mapper);
+    NCBI_SEQ_EXPORT ~CSeq_id_Info(void);
 
     CConstRef<CSeq_id> GetSeqId(void) const
         {
             return m_Seq_id;
         }
-    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
-    virtual void GetRangeHandles(int packed,
-                                 set<CSeq_id_Handle>& matches) const;
+    NCBI_SEQ_EXPORT virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
 
     // locking
     void AddLock(void) const
@@ -103,12 +102,12 @@ public:
         {
             return *m_Mapper;
         }
-    CSeq_id_Which_Tree& GetTree(void) const;
+    NCBI_SEQ_EXPORT CSeq_id_Which_Tree& GetTree(void) const;
 
 protected:
     friend class CSeq_id_Which_Tree;
 
-    void x_RemoveLastLock(void) const;
+    NCBI_SEQ_EXPORT void x_RemoveLastLock(void) const;
 
     mutable CAtomicCounter_WithAutoInit m_LockCounter;
     CSeq_id::E_Choice            m_Seq_id_Type;
@@ -150,14 +149,14 @@ public:
         : m_Info(null), m_Packed(0)
         {
         }
-    CSeq_id_Handle(ENull /*null*/)
-        : m_Info(null), m_Packed(0)
-        {
-        }
     explicit CSeq_id_Handle(const CSeq_id_Info* info, int packed = 0)
         : m_Info(info), m_Packed(packed)
         {
             _ASSERT(info);
+        }
+    CSeq_id_Handle(ENull /*null*/)
+        : m_Info(null), m_Packed(0)
+        {
         }
 
     /// Normal way of getting a handle, works for any seq-id.
@@ -183,7 +182,14 @@ public:
         {
             return m_Packed != handle.m_Packed || m_Info != handle.m_Info;
         }
-    bool NCBI_SEQ_EXPORT operator<  (const CSeq_id_Handle& handle) const;
+    bool operator<  (const CSeq_id_Handle& handle) const
+        {
+            // Packed (m_Packed != 0) first:
+            // zeroes are converted to a highest unsigned value by decrement.
+            unsigned p1 = unsigned(m_Packed-1);
+            unsigned p2 = unsigned(handle.m_Packed-1);
+            return p1 < p2 || (p1 == p2 && m_Info < handle.m_Info);
+        }
     bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 
     /// Check if the handle is a valid or an empty one
@@ -202,12 +208,8 @@ public:
 
     //
     typedef set<CSeq_id_Handle> TMatches;
-    typedef pair<CSeq_id_Handle, CSeq_id_Handle> CSeq_id_HandleRange;
-    typedef set<CSeq_id_HandleRange> TMatchRanges;
-    NCBI_DEPRECATED // use GetMatchingHandleRanges
     void NCBI_SEQ_EXPORT GetMatchingHandles(TMatches& matches) const;
     void NCBI_SEQ_EXPORT GetReverseMatchingHandles(TMatches& matches) const;
-    void NCBI_SEQ_EXPORT GetMatchingHandleRanges(TMatchRanges& matches) const;
 
     /// True if *this matches to h.
     /// This mean that *this is either the same as h,
@@ -275,6 +277,7 @@ public:
         {
             return m_Info->GetMapper();
         }
+
     void Swap(CSeq_id_Handle& idh)
         {
             m_Info.Swap(idh.m_Info);
@@ -288,22 +291,12 @@ public:
 
 private:
     friend class CSeq_id_Mapper;
+    friend class CSeq_id_Which_Tree;
 
     // Seq-id info
     CConstRef<CSeq_id_Info, CSeq_id_InfoLocker> m_Info;
     int m_Packed;
 };
-
-/// range of handles: range.first <= id <= range.second
-/// single handle if range.first == range.second
-typedef pair<CSeq_id_Handle, CSeq_id_Handle> CSeq_id_HandleRange;
-
-inline
-bool IsSingleHandle(const CSeq_id_HandleRange& id_range)
-{
-    return !id_range.second;
-}
-
 
 /// Get CConstRef<CSeq_id> from a seq-id handle (for container
 /// searching template functions)

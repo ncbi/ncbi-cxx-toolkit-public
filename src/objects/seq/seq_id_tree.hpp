@@ -97,18 +97,13 @@ public:
     virtual void DropInfo(const CSeq_id_Info* info);
 
     typedef set<CSeq_id_Handle> TSeq_id_MatchList;
-    typedef set<CSeq_id_HandleRange> TSeq_id_MatchList2;
 
     // Get the list of matching seq-id.
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    //virtual void FindMatch(const CSeq_id_Handle& id,
-    //                       TSeq_id_MatchList& id_list) const;
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const = 0;
-    virtual void FindMatch2(const CSeq_id_Handle& id,
-                            TSeq_id_MatchList2& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const = 0;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const = 0;
 
     // returns true if FindMatch(h1, id_list) will put h2 in id_list.
     virtual bool Match(const CSeq_id_Handle& h1,
@@ -127,6 +122,10 @@ protected:
     CSeq_id_Info* CreateInfo(CSeq_id::E_Choice type);
     CSeq_id_Info* CreateInfo(const CSeq_id& id);
 
+    static const CSeq_id_Info* GetInfo(const CSeq_id_Handle& id)
+        {
+            return id.m_Info;
+        }
     virtual void x_Unindex(const CSeq_id_Info* info) = 0;
 
 /*
@@ -165,14 +164,10 @@ public:
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
-    //virtual void FindMatch(const CSeq_id_Handle& id,
-    //                       TSeq_id_MatchList& id_list) const;
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2(const CSeq_id_Handle& id,
-                            TSeq_id_MatchList2& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
 
@@ -197,10 +192,8 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -271,10 +264,8 @@ public:
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -293,8 +284,52 @@ protected:
 
 class CSeq_id_Textseq_Info : public CSeq_id_Info {
 public:
-    typedef pair<int, string> TKey;
+    struct TKey {
+        TKey(void)
+            : m_Hash(0), m_Version(0)
+            {
+            }
 
+        unsigned m_Hash;
+        int m_Version;
+        string m_Prefix;
+
+        DECLARE_OPERATOR_BOOL(m_Hash != 0);
+
+        bool operator==(const TKey& b) const {
+            return m_Hash == b.m_Hash && m_Version == b.m_Version &&
+                m_Prefix == b.m_Prefix;
+        }
+        bool operator!=(const TKey& b) const {
+            return m_Hash != b.m_Hash || m_Version != b.m_Version ||
+                m_Prefix != b.m_Prefix;
+        }
+        bool operator<(const TKey& b) const {
+            return m_Hash < b.m_Hash || m_Hash == b.m_Hash &&
+                (m_Version < b.m_Version || m_Version == b.m_Version &&
+                 m_Prefix < b.m_Prefix);
+        }
+
+        bool EqualAcc(const TKey& b) const {
+            return ((m_Hash ^ b.m_Hash) & ~1) == 0 && m_Prefix == b.m_Prefix;
+        }
+
+        bool IsSetVersion(void) const {
+            return (m_Hash & 1) != 0;
+        }
+        int GetVersion(void) const {
+            _ASSERT(IsSetVersion());
+            return m_Version;
+        }
+        void ResetVersion(void) {
+            m_Hash &= ~1;
+            m_Version = 0;
+        }
+        void SetVersion(int version) {
+            m_Hash |= 1;
+            m_Version = version;
+        }
+    };
     CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
                          CSeq_id_Mapper* mapper,
                          const TKey& key);
@@ -304,31 +339,27 @@ public:
         return m_Key;
     }
     const string& GetAccPrefix(void) const {
-        return m_Key.second;
+        return m_Key.m_Prefix;
     }
     int GetAccDigits(void) const {
-        return m_Key.first & 0xff;
+        return (m_Key.m_Hash & 0xff) >> 1;
     }
-    int GetMaxVersion(void) const {
-        return m_MaxVersion;
+    bool IsSetVersion(void) const {
+        return m_Key.IsSetVersion();
+    }
+    int GetVersion(void) const {
+        return m_Key.GetVersion();
     }
     void Restore(CTextseq_id& id, int param) const;
 
     static TKey ParseAcc(const string& acc, const CTextseq_id* tid);
     int ParseAccNumber(const string& acc) const;
     int Pack(const CTextseq_id& id) const;
-    int UnpackVersion(int param) const;
-    static int GetVersionMul(int acc_digits);
-    int GetVersionMul(void) const;
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
-    virtual void GetRangeHandles(int packed,
-                                 set<CSeq_id_Handle>& matches) const;
     
 private:
     TKey m_Key;
-    int  m_MaxVersion;
-    int  m_MaxCount;
 };
 
 
@@ -344,14 +375,10 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    //virtual void FindMatch(const CSeq_id_Handle& id,
-    //                       TSeq_id_MatchList& id_list) const;
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2(const CSeq_id_Handle& id,
-                            TSeq_id_MatchList2& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
     virtual bool Match(const CSeq_id_Handle& h1,
                        const CSeq_id_Handle& h2) const;
@@ -365,8 +392,9 @@ protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
     virtual bool x_Check(const CSeq_id& id) const = 0;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const = 0;
-    CSeq_id_Info* x_FindInfo(CSeq_id::E_Choice type,
-                             const CTextseq_id& tid) const;
+    CSeq_id_Info* x_FindStrInfo(CSeq_id::E_Choice type,
+                                const CTextseq_id& tid) const;
+    bool x_GetVersion(int& version, const CSeq_id_Handle& id) const;
 
 private:
     struct PNocase_Hash {
@@ -390,32 +418,35 @@ private:
     typedef pair<TStringMapCI, TStringMapCI> TVersions;
     typedef CSeq_id_Textseq_Info::TKey TPackedKey;
     typedef map<TPackedKey, CConstRef<CSeq_id_Textseq_Info> > TPackedMap;
+    typedef TPackedMap::value_type TPackedMapValue;
+    typedef TPackedMap::iterator TPackedMap_I;
+    typedef TPackedMap::const_iterator TPackedMap_CI;
     
     static bool x_Equals(const CTextseq_id& id1, const CTextseq_id& id2);
     static void x_Erase(TStringMap& str_map,
                         const string& key,
                         const CSeq_id_Info* info);
-    CSeq_id_Info* x_FindVersionEqual(const TVersions& ver_list,
-                                     CSeq_id::E_Choice type,
-                                     const CTextseq_id& tid) const;
 
-    void x_FindVersionMatch(TSeq_id_MatchList2& id_list,
-                            bool by_accession,
-                            const TVersions& ver_list,
-                            CSeq_id::E_Choice which,
-                            const CTextseq_id* tid) const;
-    void x_FindByAccession(TSeq_id_MatchList2& id_list,
+    CSeq_id_Info* x_FindStrInfo(const TStringMap& str_map,
+                                const string& str,
+                                CSeq_id::E_Choice type,
+                                const CTextseq_id& tid) const;
+    void x_FindStrMatch(TSeq_id_MatchList& id_list,
+                        bool by_accession,
+                        const TStringMap& str_map,
+                        const string& str,
+                        CSeq_id::E_Choice which,
+                        const CTextseq_id* tid) const;
+    void x_FindMatchByAcc(TSeq_id_MatchList& id_list,
+                          const string& str,
+                          CSeq_id::E_Choice which,
+                          const CTextseq_id* tid) const;
+    void x_FindMatchByName(TSeq_id_MatchList& id_list,
                            const string& str,
                            CSeq_id::E_Choice which,
                            const CTextseq_id* tid) const;
-    void x_FindByName(TSeq_id_MatchList2& id_list,
-                      const string& str,
-                      CSeq_id::E_Choice which,
-                      const CTextseq_id* tid) const;
 
-    bool x_GetVersion(int& version, const CSeq_id_Handle& id) const;
-
-    TStringMap m_ByAccession;
+    TStringMap m_ByAcc;
     TStringMap m_ByName; // Used for searching by string
     TPackedMap m_PackedMap;
 };
@@ -576,10 +607,8 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -620,7 +649,6 @@ public:
     
 private:
     TKey m_Key;
-    int  m_MaxCount;
 };
 
 
@@ -684,7 +712,6 @@ public:
     
 private:
     TKey m_Key;
-    int  m_MaxCount;
 };
 
 
@@ -699,10 +726,8 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -744,10 +769,8 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -776,10 +799,8 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -816,14 +837,10 @@ public:
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    //virtual void FindMatch(const CSeq_id_Handle& id,
-    //                       TSeq_id_MatchList& id_list) const;
-    //virtual void FindMatchStr(const string& sid,
-    //                          TSeq_id_MatchList& id_list) const;
-    virtual void FindMatch2(const CSeq_id_Handle& id,
-                            TSeq_id_MatchList2& id_list) const;
-    virtual void FindMatch2Str(const string& sid,
-                               TSeq_id_MatchList2& id_list) const;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
+    virtual void FindMatchStr(const string& sid,
+                              TSeq_id_MatchList& id_list) const;
     
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);

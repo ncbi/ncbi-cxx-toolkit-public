@@ -214,8 +214,6 @@ public:
     typedef vector<SSeqMatch_DS> TSeqMatches;
     TSeqMatches GetMatches(const CSeq_id_Handle& idh,
                            const TTSE_LockSet& locks);
-    TSeqMatches GetMatches(const CSeq_id_HandleRange& id_range,
-                           const TTSE_LockSet& locks);
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
@@ -360,7 +358,7 @@ private:
     // The best bioseq is the bioseq from the live TSE or from the
     // only one TSE containing the ID (no matter live or dead).
     // If no matches were found, return 0.
-    TTSE_Lock x_FindBestTSE(const CSeq_id_Handle& id,
+    TTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle,
                             const TTSE_LockSet& locks);
     SSeqMatch_DS x_GetSeqMatch(const CSeq_id_Handle& idh,
                                const TTSE_LockSet& locks);

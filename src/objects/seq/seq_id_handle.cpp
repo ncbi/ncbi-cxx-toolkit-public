@@ -91,14 +91,6 @@ CConstRef<CSeq_id> CSeq_id_Info::GetPackedSeqId(int /*packed*/) const
 }
 
 
-void CSeq_id_Info::GetRangeHandles(int /*packed*/,
-                                   set<CSeq_id_Handle>& /*id_list*/) const
-{
-    NCBI_THROW(CIdMapperException, eTypeError,
-               "CSeq_id_Handle is not packed");
-}
-
-
 void CSeq_id_Info::x_RemoveLastLock(void) const
 {
     GetTree().DropInfo(this);
@@ -144,23 +136,7 @@ bool CSeq_id_Handle::HaveReverseMatch(void) const
 
 void CSeq_id_Handle::GetMatchingHandles(TMatches& matches) const
 {
-    TMatchRanges match_ranges;
-    GetMatchingHandleRanges(match_ranges);
-    ITERATE ( TMatchRanges, it, match_ranges ) {
-        if ( IsSingleHandle(*it) ) {
-            matches.insert(it->first);
-        }
-        else {
-            it->first.x_GetInfo()->GetRangeHandles(it->first.GetPacked(),
-                                                   matches);
-        }
-    }
-}
-
-
-void CSeq_id_Handle::GetMatchingHandleRanges(TMatchRanges& matches) const
-{
-    GetMapper().GetMatchingHandleRanges(*this, matches);
+    GetMapper().GetMatchingHandles(*this, matches);
 }
 
 
@@ -185,24 +161,9 @@ bool CSeq_id_Handle::MatchesTo(const CSeq_id_Handle& h) const
 bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 {
     if ( IsGi() ) {
-        return id.IsGi() && id.GetGi() == GetGi();
+        return id.IsGi() && id.GetGi() == m_Packed;
     }
     return *this == GetMapper().GetHandle(id);
-}
-
-
-bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
-{
-    // packed first
-    bool packed1 = m_Packed != 0;
-    bool packed2 = handle.m_Packed != 0;
-    if ( packed1 != packed2 ) {
-        return packed1;
-    }
-    if ( m_Info != handle.m_Info ) {
-        return m_Info < handle.m_Info;
-    }
-    return m_Packed < handle.m_Packed;
 }
 
 
@@ -210,7 +171,7 @@ string CSeq_id_Handle::AsString() const
 {
     CNcbiOstrstream os;
     if ( IsGi() ) {
-        os << "gi|" << GetGi();
+        os << "gi|" << m_Packed;
     }
     else if ( m_Info ) {
         GetSeqId()->WriteAsFasta(os);
@@ -353,7 +314,7 @@ string GetLabel(const vector<CRef<CSeq_id> >& ids)
 CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_id_Handle& idh)
 {
     if ( idh.IsGi() ) {
-        out << "gi|"<<idh.GetGi();
+        out << "gi|"<<idh.GetPacked();
     }
     else {
         idh.GetSeqId()->WriteAsFasta(out);

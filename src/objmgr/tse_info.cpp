@@ -681,38 +681,17 @@ bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 }
 
 
-bool CTSE_Info::ContainsBioseq(const CSeq_id_HandleRange& id_range) const
-{
-    {{
-        CFastMutexGuard guard(m_BioseqsMutex);
-        TBioseqs::const_iterator it = m_Bioseqs.lower_bound(id_range.first);
-        if ( it != m_Bioseqs.end() && !(id_range.second < it->first) ) {
-            return true;
-        }
-    }}
-    if ( m_Split ) {
-        return m_Split->ContainsBioseq(id_range);
-    }
-    return false;
-}
-
-
 bool CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
 {
     if ( ContainsBioseq(id) ) {
         return true;
     }
     else if ( id.HaveMatchingHandles() ) {
-        CSeq_id_Handle::TMatchRanges ids;
-        id.GetMatchingHandleRanges(ids);
-        ITERATE ( CSeq_id_Handle::TMatchRanges, it, ids ) {
-            if ( IsSingleHandle(*it) ) {
-                if ( it->first != id && ContainsBioseq(it->first) ) {
-                    return true;
-                }
-            }
-            else {
-                if ( ContainsBioseq(*it) ) {
+        CSeq_id_Handle::TMatches ids;
+        id.GetMatchingHandles(ids);
+        ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
+            if ( *match_it != id ) {
+                if ( ContainsBioseq(*match_it) ) {
                     return true;
                 }
             }
@@ -752,32 +731,14 @@ SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
         ret.m_Seq_id = id;
     }
     else if ( id.HaveMatchingHandles() ) {
-        CSeq_id_Handle::TMatchRanges ids;
-        id.GetMatchingHandleRanges(ids);
-        ITERATE ( CSeq_id_Handle::TMatchRanges, match_it, ids ) {
-            if ( IsSingleHandle(*match_it) ) {
-                const CSeq_id_Handle& mid = match_it->first;
-                if ( mid != id ) {
-                    ret.m_Bioseq = FindBioseq(mid);
-                    if ( ret.m_Bioseq ) {
-                        ret.m_Seq_id = mid;
-                        break;
-                    }
-                }
-            }
-            else {
-                x_GetRecords(*match_it, true);
-                CFastMutexGuard guard(m_BioseqsMutex);
-                for ( TBioseqs::const_iterator it =
-                          m_Bioseqs.lower_bound(match_it->first);
-                      it != m_Bioseqs.end() && !(match_it->second < it->first);
-                      ++it ) {
-                    const CSeq_id_Handle& mid = it->first;
-                    ret.m_Bioseq = FindBioseq(mid);
-                    if ( ret.m_Bioseq ) {
-                        ret.m_Seq_id = mid;
-                        break;
-                    }
+        CSeq_id_Handle::TMatches ids;
+        id.GetMatchingHandles(ids);
+        ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
+            if ( *match_it != id ) {
+                ret.m_Bioseq = FindBioseq(*match_it);
+                if ( ret.m_Bioseq ) {
+                    ret.m_Seq_id = *match_it;
+                    break;
                 }
             }
         }
@@ -790,14 +751,6 @@ void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
     if ( m_Split ) {
         m_Split->x_GetRecords(id, bioseq);
-    }
-}
-
-
-void CTSE_Info::x_GetRecords(const CSeq_id_HandleRange& id_range,
-                             bool bioseq) const {
-    if ( m_Split ) {
-        m_Split->x_GetRecords(id_range, bioseq);
     }
 }
 

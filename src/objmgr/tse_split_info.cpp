@@ -310,18 +310,6 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 }
 
 
-// load requests
-void CTSE_Split_Info::x_GetRecords(const CSeq_id_HandleRange& id_range,
-                                   bool bioseq) const
-{
-    for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id_range.first);
-          iter != m_SeqIdToChunks.end() && !(id_range.second < iter->first);
-          ++iter ) {
-        GetChunk(iter->second).x_GetRecords(iter->first, bioseq);
-    }
-}
-
-
 void CTSE_Split_Info::GetBioseqsIds(TSeqIds& ids) const
 {
     ITERATE ( TChunks, it, m_Chunks ) {
@@ -335,19 +323,6 @@ bool CTSE_Split_Info::ContainsBioseq(const CSeq_id_Handle& id) const
     for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
           iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
         if ( GetChunk(iter->second).ContainsBioseq(id) ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool CTSE_Split_Info::ContainsBioseq(const CSeq_id_HandleRange& id_range) const
-{
-    for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id_range.first);
-          iter != m_SeqIdToChunks.end() && !(id_range.second < iter->first);
-          ++iter ) {
-        if ( GetChunk(iter->second).ContainsBioseq(iter->first) ) {
             return true;
         }
     }

@@ -126,11 +126,9 @@ public:
 
     // bioseq lookup
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
-    bool ContainsBioseq(const CSeq_id_HandleRange& id_range) const;
 
     // loading requests
     void x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
-    void x_GetRecords(const CSeq_id_HandleRange& id_range, bool bioseq) const;
     void x_LoadChunk(TChunkId chunk_id) const;
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
