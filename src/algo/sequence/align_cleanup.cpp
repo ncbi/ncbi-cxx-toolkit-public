@@ -194,7 +194,6 @@ void CAlignCleanup::CreatePairwiseFromMultiple(const CSeq_align& multiple,
 CAlignCleanup::CAlignCleanup(CScope& scope)
     : m_Scope(&scope)
     , m_SortByScore(true)
-    , m_AllowTransloc(true)
     , m_PreserveRows(false)
     , m_FillUnaligned(false)
 {
@@ -233,16 +232,17 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
         try {
             ++count;
             CConstRef<CSeq_align> aln = *iter;
+
+            ///
+            /// validation is optional!
+            aln->Validate(true);
+
             if (aln->GetSegs().IsDenseg()  &&
                 aln->GetSegs().GetDenseg().GetDim() != 2) {
                 all_pairwise = false;
             }
 
             aln_container.insert(*aln);
-
-            ///
-            /// validation is optional!
-            aln->Validate(true);
         }
         catch (CException& e) {
             LOG_POST(Error
@@ -315,10 +315,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     /// we default to truncating overlaps
     CAlnUserOptions::TMergeFlags flags = CAlnUserOptions::fTruncateOverlaps;
 
-    /// we may allow translocations
-    if (m_AllowTransloc) {
-        flags |= CAlnUserOptions::fAllowTranslocation;
-    }
     /// we may disable soring by scores
     if ( !m_SortByScore ) {
         flags |= CAlnUserOptions::fSkipSortByScore;
@@ -391,9 +387,6 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                                        CAlnMix::fMinGap;
     if (m_SortByScore) {
         merge_flags |= CAlnMix::fSortInputByScore;
-    }
-    if (m_AllowTransloc) {
-        merge_flags |= CAlnMix::fAllowTranslocation;
     }
 
     /// next, merge each sublist independently, if needed

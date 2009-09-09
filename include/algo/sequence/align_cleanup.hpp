@@ -74,7 +74,9 @@ public:
 
     /// Permit off-diagonal high-scoring items (particularly ones on
     /// the opposite strand)
-    void AllowTranslocations(bool b)    { m_AllowTransloc = b; }
+    ///
+    /// NB: this is a no-op, as it is no longer necessary
+    NCBI_DEPRECATED void AllowTranslocations(bool b)    { ; }
 
     /// Assume that the alignments contains alignments of a sequence to itself
     void PreserveRows(bool b)    { m_PreserveRows = b; }
@@ -88,7 +90,6 @@ public:
 private:
     CRef<CScope> m_Scope;
     bool m_SortByScore;
-    bool m_AllowTransloc;
     bool m_PreserveRows;
     bool m_FillUnaligned;
 
