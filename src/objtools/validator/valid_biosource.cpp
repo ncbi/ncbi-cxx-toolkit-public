@@ -469,13 +469,6 @@ void CValidError_imp::ValidateBioSource
 
 	const COrg_ref& orgref = bsrc.GetOrg();
   
-	// Organism must have a name.
-	if ( (!orgref.IsSetTaxname()  ||  orgref.GetTaxname().empty())  &&
-         (!orgref.IsSetCommon()   ||  orgref.GetCommon().empty()) ) {
-		  PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-            "No organism name has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
-	}
-
 	// validate legal locations.
 	if ( bsrc.GetGenome() == CBioSource::eGenome_transposon  ||
 		 bsrc.GetGenome() == CBioSource::eGenome_insertion_seq ) {
@@ -532,6 +525,7 @@ void CValidError_imp::ValidateBioSource
 	bool iso_source = false;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
+        ValidateSubSource (**ssit, obj, ctx);
 		if (!(*ssit)->IsSetSubtype()) {
 			continue;
 		}
@@ -540,78 +534,27 @@ void CValidError_imp::ValidateBioSource
         switch ( subtype ) {
             
         case CSubSource::eSubtype_country:
-            {
-				++country_count;
-                if (!NStr::IsBlank (countryname)) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode, 
-                                "Multiple country names on BioSource", obj, ctx);
-                }
+			++country_count;
+            if (!NStr::IsBlank (countryname)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode, 
+                            "Multiple country names on BioSource", obj, ctx);
                 countryname = (**ssit).GetName();
-                bool is_miscapitalized = false;
-                if ( CCountries::IsValid(countryname, is_miscapitalized) ) {
-                    if (is_miscapitalized) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCapitalization, 
-                                    "Bad country capitalization [" + countryname + "]",
-                                    obj, ctx);
-                    }
-                } else {
-                    if ( countryname.empty() ) {
-                        countryname = "?";
-                    }
-                    if ( CCountries::WasValid(countryname) ) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
-                                "Replaced country name [" + countryname + "]", obj, ctx);
-                    } else {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
-                                "Bad country name [" + countryname + "]", obj, ctx);
-                    }
-                }
             }
             break;
 
 		case CSubSource::eSubtype_lat_lon:
-			{
-				bool format_correct = false, lat_in_range = false, lon_in_range = false;
-				if ((*ssit)->IsSetName()) {
-					lat_lon = (*ssit)->GetName();
-				}
-				s_IsCorrectLatLonFormat (lat_lon, format_correct, 
-					                     lat_in_range, lon_in_range,
-										 lat_value, lon_value);
-				if (!format_correct) {
-					size_t pos = NStr::Find(lat_lon, ",");
-					if (pos != string::npos) {
-						s_IsCorrectLatLonFormat (lat_lon.substr(0, pos - 1), format_correct, lat_in_range, lon_in_range, lat_value, lon_value);
-						if (format_correct) {
-							PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
-								       "lat_lon format has extra text after correct dd.dd N|S ddd.dd E|W format",
-									   obj, ctx);
-						}
-					}
-				}
+			if ((*ssit)->IsSetName()) {
+				lat_lon = (*ssit)->GetName();
+			    bool format_correct = false, lat_in_range = false, lon_in_range = false;
+    			s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+	                     lat_in_range, lon_in_range,
+						 lat_value, lon_value);
+			}
 
-				if (!format_correct) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
-					            "lat_lon format is incorrect - should be dd.dd N|S ddd.dd E|W",
-                                obj, ctx);
-				} else {
-					if (!lat_in_range) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonRange, 
-							        "latitude value is out of range - should be between 90.00 N and 90.00 S",
-									obj, ctx);
-					}
-					if (!lon_in_range) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonRange, 
-							        "longitude value is out of range - should be between 180.00 E and 180.00 W",
-									obj, ctx);
-					}
-				}
-
-				++lat_lon_count;
-				if (lat_lon_count > 1) {
-					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonProblem, 
-						       "Multiple lat_lon on BioSource", obj, ctx);
-				}
+			++lat_lon_count;
+			if (lat_lon_count > 1) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonProblem, 
+					       "Multiple lat_lon on BioSource", obj, ctx);
 			}
 			break;
             
@@ -628,90 +571,39 @@ void CValidError_imp::ValidateBioSource
 
 		case CSubSource::eSubtype_fwd_primer_name:
 			if ((*ssit)->IsSetName()) {
-				string name = (*ssit)->GetName();
-				char bad_ch;
-				if (name.length() > 10
-					&& s_IsValidPrimerSequence(name, bad_ch)) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
-								"PCR primer name appears to be a sequence",
-								obj, ctx);
-				}
-				pcr_set_list.AddFwdName(name);
+				pcr_set_list.AddFwdName((*ssit)->GetName());
 			}
 			++fwd_primer_name_count;
 			break;
 
 		case CSubSource::eSubtype_rev_primer_name:
 			if ((*ssit)->IsSetName()) {
-				string name = (*ssit)->GetName();
-				char bad_ch;
-				if (name.length() > 10
-					&& s_IsValidPrimerSequence(name, bad_ch)) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
-								"PCR primer name appears to be a sequence",
-								obj, ctx);
-				}
-				pcr_set_list.AddRevName(name);
+				pcr_set_list.AddRevName((*ssit)->GetName());
 			}
-			++rev_primer_name_count;
 			break;
             
 		case CSubSource::eSubtype_fwd_primer_seq:
-			{
-				char bad_ch;
-				if (!(*ssit)->IsSetName() || !s_IsValidPrimerSequence((*ssit)->GetName(), bad_ch)) {
-					if (bad_ch < ' ' || bad_ch > '~') {
-						bad_ch = '?';
-					}
-
-					string msg = "PCR forward primer sequence format is incorrect, first bad character is '";
-					msg += bad_ch;
-					msg += "'";
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
-								msg, obj, ctx);
-				}
-				if ((*ssit)->IsSetName()) {
-					pcr_set_list.AddFwdSeq((*ssit)->GetName());
-				}
-				++fwd_primer_seq_count;
+			if ((*ssit)->IsSetName()) {
+				pcr_set_list.AddFwdSeq((*ssit)->GetName());
 			}
+			++fwd_primer_seq_count;
 			break;
 
 		case CSubSource::eSubtype_rev_primer_seq:
-			{
-				char bad_ch;
-				if (!(*ssit)->IsSetName() || !s_IsValidPrimerSequence((*ssit)->GetName(), bad_ch)) {
-					if (bad_ch < ' ' || bad_ch > '~') {
-						bad_ch = '?';
-					}
-
-					string msg = "PCR reverse primer sequence format is incorrect, first bad character is '";
-					msg += bad_ch;
-					msg += "'";
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
-								msg, obj, ctx);
-				}
-				if ((*ssit)->IsSetName()) {
-					pcr_set_list.AddRevSeq((*ssit)->GetName());
-				}
-				++rev_primer_seq_count;
+			if ((*ssit)->IsSetName()) {
+				pcr_set_list.AddRevSeq((*ssit)->GetName());
 			}
+			++rev_primer_seq_count;
 			break;
 
 		case CSubSource::eSubtype_transposon_name:
         case CSubSource::eSubtype_insertion_seq_name:
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
-                "Transposon name and insertion sequence name are no "
-                "longer legal qualifiers", obj, ctx);
             break;
             
         case 0:
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
-                "Unknown subsource subtype 0", obj, ctx);
             break;
             
         case CSubSource::eSubtype_other:
-            ValidateSourceQualTags((**ssit).GetName(), obj, ctx);
             break;
 
         case CSubSource::eSubtype_germline:
@@ -828,114 +720,14 @@ void CValidError_imp::ValidateBioSource
 			break;
 
 		case CSubSource::eSubtype_frequency:
-			if ((*ssit)->IsSetName() && !NStr::IsBlank((*ssit)->GetName())) {
-				const string& frequency = (*ssit)->GetName();
-				if (NStr::Equal(frequency, "0")) {
-					//ignore
-				} else if (NStr::Equal(frequency, "1")) {
-					PostObjErr(eDiag_Info, eErr_SEQ_DESCR_BioSourceInconsistency, 
-							   "bad frequency qualifier value " + frequency,
-							   obj, ctx);
-				} else {
-					string::const_iterator sit = frequency.begin();
-					bool bad_frequency = false;
-					if (*sit == '0') {
-						++sit;
-					}
-					if (sit != frequency.end() && *sit == '.') {
-                        ++sit;
-						if (sit == frequency.end()) {
-							bad_frequency = true;
-						}
-						while (sit != frequency.end() && isdigit (*sit)) {
-							++sit;
-						}
-						if (sit != frequency.end()) {
-							bad_frequency = true;
-						}
-					} else {
-						bad_frequency = true;
-					}
-					if (bad_frequency) {
-						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-							       "bad frequency qualifier value " + frequency,
-								   obj, ctx);
-					}
-				}
-			}
 			break;
+
 		case CSubSource::eSubtype_collection_date:
-			if (!(*ssit)->IsSetName()) {
-				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-					        "Collection_date format is not in DD-Mmm-YYYY format",
-							obj, ctx);
-			} else {
-				try {
-                    CRef<CDate> coll_date = CSubSource::DateFromCollectionDate ((*ssit)->GetName());
-
-					struct tm *tm;
-					time_t t;
-
-					time(&t);
-					tm = localtime(&t);
-
-					if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
-						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-							       "Collection_date is in the future",
-								   obj, ctx);
-					} else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
-						       && coll_date->GetStd().IsSetMonth()) {
-						if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
-							PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-									   "Collection_date is in the future",
-									   obj, ctx);
-						} else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
-							       && coll_date->GetStd().IsSetDay()) {
-						    if (coll_date->GetStd().GetDay() > tm->tm_mday) {
-								PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-										   "Collection_date is in the future",
-										   obj, ctx);
-							}
-						}
-					}
-				} catch (CException ) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-								"Collection_date format is not in DD-Mmm-YYYY format",
-								obj, ctx);
-				}
-			} 
 			break;
 
         default:
             break;
         }
-
-		if ((*ssit)->IsSetName()) {
-			if (CSubSource::NeedsNoText(subtype)) {
-				if ((*ssit)->IsSetName() && !NStr::IsBlank((*ssit)->GetName())) {
-					string subname = CSubSource::GetSubtypeName (subtype);
-					if (subname.length() > 0) {
-						subname[0] = toupper(subname[0]);
-					}
-                    NStr::ReplaceInPlace(subname, "-", "_");
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-						        subname + " qualifier should not have descriptive text",
-								obj, ctx);
-				}
-			} else {
-				const string& subname = (*ssit)->GetName();
-				if (s_UnbalancedParentheses(subname)) {
-					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
-							   "Unbalanced parentheses in '" + subname + "'",
-							   obj, ctx);
-				}
-				if (ContainsSgml(subname)) {
-					PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-							   "subsource " + subname + " has SGML", 
-							   obj, ctx);
-				}
-			}
-		}
     }
     if ( germline  &&  rearranged ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
@@ -1151,6 +943,314 @@ void CValidError_imp::ValidateBioSource
 }
 
 
+void CValidError_imp::ValidateSubSource
+(const CSubSource&    subsrc,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
+    if (!subsrc.IsSetSubtype()) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+            "Unknown subsource subtype 0", obj, ctx);
+        return;
+    }
+
+	int subtype = subsrc.GetSubtype();
+    switch ( subtype ) {
+        
+    case CSubSource::eSubtype_country:
+        {
+			string countryname = subsrc.GetName();
+            bool is_miscapitalized = false;
+            if ( CCountries::IsValid(countryname, is_miscapitalized) ) {
+                if (is_miscapitalized) {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCapitalization, 
+                                "Bad country capitalization [" + countryname + "]",
+                                obj, ctx);
+                }
+            } else {
+                if ( countryname.empty() ) {
+                    countryname = "?";
+                }
+                if ( CCountries::WasValid(countryname) ) {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
+                            "Replaced country name [" + countryname + "]", obj, ctx);
+                } else {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                            "Bad country name [" + countryname + "]", obj, ctx);
+                }
+            }
+        }
+        break;
+
+	case CSubSource::eSubtype_lat_lon:
+        if (subsrc.IsSetName()) {
+			bool format_correct = false, lat_in_range = false, lon_in_range = false;
+	        double lat_value = 0.0, lon_value = 0.0;
+			string lat_lon = subsrc.GetName();
+			s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+				                     lat_in_range, lon_in_range,
+									 lat_value, lon_value);
+			if (!format_correct) {
+				size_t pos = NStr::Find(lat_lon, ",");
+				if (pos != string::npos) {
+					s_IsCorrectLatLonFormat (lat_lon.substr(0, pos - 1), format_correct, lat_in_range, lon_in_range, lat_value, lon_value);
+					if (format_correct) {
+						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
+							       "lat_lon format has extra text after correct dd.dd N|S ddd.dd E|W format",
+								   obj, ctx);
+					}
+				}
+			}
+
+			if (!format_correct) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
+				            "lat_lon format is incorrect - should be dd.dd N|S ddd.dd E|W",
+                            obj, ctx);
+			} else {
+				if (!lat_in_range) {
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonRange, 
+						        "latitude value is out of range - should be between 90.00 N and 90.00 S",
+								obj, ctx);
+				}
+				if (!lon_in_range) {
+					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonRange, 
+						        "longitude value is out of range - should be between 180.00 E and 180.00 W",
+								obj, ctx);
+				}
+			}
+		}
+		break;
+        
+    case CSubSource::eSubtype_chromosome:
+        break;
+
+	case CSubSource::eSubtype_fwd_primer_name:
+		if (subsrc.IsSetName()) {
+			string name = subsrc.GetName();
+			char bad_ch;
+			if (name.length() > 10
+				&& s_IsValidPrimerSequence(name, bad_ch)) {
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
+							"PCR primer name appears to be a sequence",
+							obj, ctx);
+			}
+		}
+		break;
+
+	case CSubSource::eSubtype_rev_primer_name:
+		if (subsrc.IsSetName()) {
+			string name = subsrc.GetName();
+			char bad_ch;
+			if (name.length() > 10
+				&& s_IsValidPrimerSequence(name, bad_ch)) {
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
+							"PCR primer name appears to be a sequence",
+							obj, ctx);
+			}
+		}
+		break;
+        
+	case CSubSource::eSubtype_fwd_primer_seq:
+		{
+			char bad_ch;
+			if (!subsrc.IsSetName() || !s_IsValidPrimerSequence(subsrc.GetName(), bad_ch)) {
+				if (bad_ch < ' ' || bad_ch > '~') {
+					bad_ch = '?';
+				}
+
+				string msg = "PCR forward primer sequence format is incorrect, first bad character is '";
+				msg += bad_ch;
+				msg += "'";
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
+							msg, obj, ctx);
+			}
+		}
+		break;
+
+	case CSubSource::eSubtype_rev_primer_seq:
+		{
+			char bad_ch;
+			if (!subsrc.IsSetName() || !s_IsValidPrimerSequence(subsrc.GetName(), bad_ch)) {
+				if (bad_ch < ' ' || bad_ch > '~') {
+					bad_ch = '?';
+				}
+
+				string msg = "PCR reverse primer sequence format is incorrect, first bad character is '";
+				msg += bad_ch;
+				msg += "'";
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
+							msg, obj, ctx);
+			}
+		}
+		break;
+
+	case CSubSource::eSubtype_transposon_name:
+    case CSubSource::eSubtype_insertion_seq_name:
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ObsoleteSourceQual,
+            "Transposon name and insertion sequence name are no "
+            "longer legal qualifiers", obj, ctx);
+        break;
+        
+    case 0:
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+            "Unknown subsource subtype 0", obj, ctx);
+        break;
+        
+    case CSubSource::eSubtype_other:
+        ValidateSourceQualTags(subsrc.GetName(), obj, ctx);
+        break;
+
+    case CSubSource::eSubtype_germline:
+        break;
+
+    case CSubSource::eSubtype_rearranged:
+        break;
+
+    case CSubSource::eSubtype_transgenic:
+        break;
+
+    case CSubSource::eSubtype_metagenomic:
+        break;
+
+	case CSubSource::eSubtype_environmental_sample:
+        break;
+
+	case CSubSource::eSubtype_isolation_source:
+		break;
+
+	case CSubSource::eSubtype_sex:
+		break;
+
+	case CSubSource::eSubtype_mating_type:
+		break;
+
+	case CSubSource::eSubtype_plasmid_name:
+		break;
+
+	case CSubSource::eSubtype_plastid_name:
+		break;
+	
+	case CSubSource::eSubtype_cell_line:
+		break;
+
+	case CSubSource::eSubtype_cell_type:
+		break;
+
+	case CSubSource::eSubtype_tissue_type:
+		break;
+
+	case CSubSource::eSubtype_frequency:
+		if (subsrc.IsSetName() && !NStr::IsBlank(subsrc.GetName())) {
+			const string& frequency = subsrc.GetName();
+			if (NStr::Equal(frequency, "0")) {
+				//ignore
+			} else if (NStr::Equal(frequency, "1")) {
+				PostObjErr(eDiag_Info, eErr_SEQ_DESCR_BioSourceInconsistency, 
+						   "bad frequency qualifier value " + frequency,
+						   obj, ctx);
+			} else {
+				string::const_iterator sit = frequency.begin();
+				bool bad_frequency = false;
+				if (*sit == '0') {
+					++sit;
+				}
+				if (sit != frequency.end() && *sit == '.') {
+                    ++sit;
+					if (sit == frequency.end()) {
+						bad_frequency = true;
+					}
+					while (sit != frequency.end() && isdigit (*sit)) {
+						++sit;
+					}
+					if (sit != frequency.end()) {
+						bad_frequency = true;
+					}
+				} else {
+					bad_frequency = true;
+				}
+				if (bad_frequency) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+						       "bad frequency qualifier value " + frequency,
+							   obj, ctx);
+				}
+			}
+		}
+		break;
+	case CSubSource::eSubtype_collection_date:
+		if (!subsrc.IsSetName()) {
+			PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+				        "Collection_date format is not in DD-Mmm-YYYY format",
+						obj, ctx);
+		} else {
+			try {
+                CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (subsrc.GetName());
+
+				struct tm *tm;
+				time_t t;
+
+				time(&t);
+				tm = localtime(&t);
+
+				if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
+					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+						       "Collection_date is in the future",
+							   obj, ctx);
+				} else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
+					       && coll_date->GetStd().IsSetMonth()) {
+					if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
+						PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+								   "Collection_date is in the future",
+								   obj, ctx);
+					} else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
+						       && coll_date->GetStd().IsSetDay()) {
+					    if (coll_date->GetStd().GetDay() > tm->tm_mday) {
+							PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+									   "Collection_date is in the future",
+									   obj, ctx);
+						}
+					}
+				}
+			} catch (CException ) {
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
+							"Collection_date format is not in DD-Mmm-YYYY format",
+							obj, ctx);
+			}
+		} 
+		break;
+
+    default:
+        break;
+    }
+
+	if (subsrc.IsSetName()) {
+		if (CSubSource::NeedsNoText(subtype)) {
+			if (subsrc.IsSetName() && !NStr::IsBlank(subsrc.GetName())) {
+				string subname = CSubSource::GetSubtypeName (subtype);
+				if (subname.length() > 0) {
+					subname[0] = toupper(subname[0]);
+				}
+                NStr::ReplaceInPlace(subname, "-", "_");
+				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+					        subname + " qualifier should not have descriptive text",
+							obj, ctx);
+			}
+		} else {
+			const string& subname = subsrc.GetName();
+			if (s_UnbalancedParentheses(subname)) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
+						   "Unbalanced parentheses in '" + subname + "'",
+						   obj, ctx);
+			}
+			if (ContainsSgml(subname)) {
+				PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+						   "subsource " + subname + " has SGML", 
+						   obj, ctx);
+			}
+		}
+	}
+}
+
+
 static bool s_FindWholeName (string taxname, string value)
 {
 	if (NStr::IsBlank(taxname) || NStr::IsBlank(value)) {
@@ -1176,6 +1276,13 @@ void CValidError_imp::ValidateOrgRef
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
+	// Organism must have a name.
+	if ( (!orgref.IsSetTaxname()  ||  orgref.GetTaxname().empty())  &&
+         (!orgref.IsSetCommon()   ||  orgref.GetCommon().empty()) ) {
+		  PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+            "No organism name has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
+	}
+
     if ( orgref.IsSetDb() ) {
         ValidateDbxref(orgref.GetDb(), obj, true, ctx);
     }

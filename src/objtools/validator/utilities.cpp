@@ -102,20 +102,10 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
 
 
 // Check if string is either empty or contains just white spaces
-bool IsBlankString(const string& str)
-{
-    if (NStr::IsBlank (str)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 bool IsBlankStringList(const list< string >& str_list)
 {
     ITERATE( list< string >, str, str_list ) {
-        if ( !IsBlankString(*str) ) {
+        if ( !NStr::IsBlank(*str) ) {
             return false;
         }
     }

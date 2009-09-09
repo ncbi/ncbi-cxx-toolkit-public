@@ -213,13 +213,14 @@ public:
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidateSubSource(const CSubSource& subsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 	void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateOrgName(const COrgName& orgname, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
 	void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
     bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
-    bool IsOrganelle (const int genome);
+    bool IsOrganelle (int genome);
     bool IsOrganelle (CBioseq_Handle seq);
 	bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
