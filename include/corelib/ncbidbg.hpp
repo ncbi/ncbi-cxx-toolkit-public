@@ -75,9 +75,8 @@ BEGIN_NCBI_SCOPE
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
 
-#  define _TRACE_X(err_subcode, message)                  \
-    ( (NCBI_CHECK_ERR_SUBCODE_X(err_subcode)),            \
-      _TRACE_EX(NCBI_ERRCODE_X, err_subcode, message) )
+#  define _TRACE_X(err_subcode, message)                    \
+    _TRACE_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 #  define _TRACE_XX(error_name, err_subcode, message)                      \
     ( (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode)),            \

@@ -437,13 +437,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, ERR_POST_X
 #define STD_CATCH_X(err_subcode, message)                     \
-    catch (NCBI_NS_STD::exception& e) {                       \
-        NCBI_CHECK_ERR_SUBCODE_X(err_subcode);                \
-        NCBI_NS_NCBI::CNcbiDiag()                             \
-            << ErrCode(NCBI_ERRCODE_X, err_subcode)           \
-            << NCBI_NS_NCBI::Error                            \
-            << "[" << message << "] Exception: " << e.what(); \
-    }
+    STD_CATCH_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 /// Standard handling of "exception"-derived exceptions; catches non-standard
 /// exceptions and generates "unknown exception" for all other exceptions.
@@ -451,30 +445,18 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 ///
 /// @sa STD_CATCH_X, NCBI_DEFINE_ERRCODE_X, ERR_POST_X
 #define STD_CATCH_ALL_X(err_subcode, message)                 \
-    STD_CATCH_X(err_subcode, message)                         \
-    catch (...) {                                             \
-        NCBI_NS_NCBI::CNcbiDiag()                             \
-           << ErrCode(NCBI_ERRCODE_X, err_subcode)            \
-           << NCBI_NS_NCBI::Error                             \
-           << "[" << message << "] Unknown exception";        \
-    }
+    STD_CATCH_ALL_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 /// Catch CExceptions as well
 /// with default error code and given error subcode placed in diagnostics
 ///
 /// @sa STD_CATCH_X, NCBI_DEFINE_ERRCODE_X, ERR_POST_X
 #define NCBI_CATCH_X(err_subcode, message)                    \
-    catch (NCBI_NS_NCBI::CException& e) {                     \
-        NCBI_REPORT_EXCEPTION_X(err_subcode, message, e);     \
-    }                                                         \
-    STD_CATCH_X(err_subcode, message)
+    NCBI_CATCH_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 /// @sa STD_CATCH_ALL_X, NCBI_DEFINE_ERRCODE_X, ERR_POST_X
 #define NCBI_CATCH_ALL_X(err_subcode, message)                \
-    catch (NCBI_NS_NCBI::CException& e) {                     \
-        NCBI_REPORT_EXCEPTION_X(err_subcode, message, e);     \
-    }                                                         \
-    STD_CATCH_ALL_X(err_subcode, message)
+    NCBI_CATCH_ALL_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 
 /// Standard handling of "exception"-derived exceptions
@@ -591,9 +573,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Generate a report on the exception with default error code and
 /// given subcode.
 #define NCBI_REPORT_EXCEPTION_X(err_subcode, title, ex)                  \
-    NCBI_CHECK_ERR_SUBCODE_X(err_subcode);                               \
-    CExceptionReporter::ReportDefaultEx(NCBI_ERRCODE_X, err_subcode,     \
-                            DIAG_COMPILE_INFO, title, ex, eDPF_Default)
+    NCBI_REPORT_EXCEPTION_XX(NCBI_USE_ERRCODE_X, err_subcode, title, ex)
 
 /// Generate a report on the exception with default error code and
 /// given subcode.

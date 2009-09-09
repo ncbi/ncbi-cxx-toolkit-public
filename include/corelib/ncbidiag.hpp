@@ -230,13 +230,19 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message << NCBI_NS_NCBI::Endm )
 
 
-/// Defines global error code name with given value (err_code) and given
+/// Define global error code name with given value (err_code) and given
 /// maximum value of error subcode within this code. To use defined error
 /// code you need to define symbol NCBI_USE_ERRCODE_X with name as its value.
 /// This error code is used only in macros LOG_POST_X and ERR_POST_X. Maximum
-/// value of error subcode is being checked only in Debug configuration and
+/// value of error subcode is being checked during compilation and
 /// exists for developers to know what code they can use in next inserted
-/// ERR_POST_X call.
+/// ERR_POST_X call (i.e. when one want to insert new ERR_POST_X call he has
+/// to find definition of error code used in the source file, increase value
+/// of maximum subcode and put result in ERR_POST_X call).
+/// Definition of error code and its maximum subcode can be split into 2
+/// independent macros to avoid recompilation of everything that includes
+/// header with error code definition. For more information about it see
+/// NCBI_DEFINE_ERR_SUBCODE_X.
 /// Macro MUST be used inside ncbi scope.
 ///
 /// Example:
@@ -248,15 +254,75 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 ///
 /// @sa
-///   LOG_POST_X, ERR_POST_X, NCBI_ERRCODE_X, NCBI_MAX_ERR_SUBCODE_X
+///   NCBI_DEFINE_ERR_SUBCODE_X, LOG_POST_X, ERR_POST_X,
+///   NCBI_ERRCODE_X, NCBI_MAX_ERR_SUBCODE_X
 #define NCBI_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)  \
     namespace err_code_x {                                      \
-        enum enum##name {                                       \
+        enum {                                                  \
             eErrCodeX_##name     = err_code,                    \
             eErrCodeX_Max_##name = max_err_subcode              \
         };                                                      \
+        template <bool dummy>                                   \
+        struct SErrCodeX_Max_##name {                           \
+            enum {                                              \
+                value = max_err_subcode,                        \
+                dumm_dumm = int(dummy)                          \
+            };                                                  \
+        };                                                      \
     }                                                           \
     extern void err_code_x__dummy_for_semicolon(void)
+
+/// Define maximum value of subcode for the error code currently in use.
+/// Currently used error code is defined by macro NCBI_USE_ERRCODE_X. This
+/// macro is a simplified version of NCBI_DEFINE_ERR_SUBCODE_XX and can be
+/// handy to use when some error code is used only in one source file and no
+/// other error code is used in the same source file.
+/// To use this macro you must put 0 as max_err_subcode in
+/// NCBI_DEFINE_ERRCODE_X macro. Otherwise compilation error will occur.
+/// Macro MUST be used inside ncbi scope.
+///
+/// Example:
+/// NCBI_DEFINE_ERRCODE_X(Corelib_Util, 110, 0);
+/// ...
+/// #define NCBI_USE_ERRCODE_X   Corelib_Util
+/// NCBI_DEFINE_ERR_SUBCODE_X(5);
+/// ...
+/// ERR_POST_X(3, "My error message with variables " << var);
+///
+///
+/// @sa
+///   NCBI_DEFINE_ERRCODE_X, NCBI_DEFINE_ERR_SUBCODE_XX
+#define NCBI_DEFINE_ERR_SUBCODE_X(max_err_subcode)              \
+    NCBI_DEFINE_ERR_SUBCODE_XX(NCBI_USE_ERRCODE_X, max_err_subcode)
+
+/// Define maximum value of subcode for particular error code name.
+/// To use this macro you must put 0 as max_err_subcode in
+/// NCBI_DEFINE_ERRCODE_X macro. Otherwise compilation error will occur.
+/// Macro can be used only once per compilation unit.
+/// Macro MUST be used inside ncbi scope.
+///
+/// Example:
+/// NCBI_DEFINE_ERRCODE_X(Corelib_Util, 110, 0);
+/// ...
+/// NCBI_DEFINE_ERR_SUBCODE_XX(Corelib_Util, 5);
+/// ...
+/// #define NCBI_USE_ERRCODE_X   Corelib_Util
+/// ...
+/// ERR_POST_X(3, "My error message with variables " << var);
+///
+///
+/// @sa
+///   NCBI_DEFINE_ERRCODE_X
+#define NCBI_DEFINE_ERR_SUBCODE_XX(name, max_err_subcode)       \
+    NCBI_CHECK_ERRCODE_USAGE(name)                              \
+    namespace err_code_x {                                      \
+        template <>                                             \
+        struct NCBI_NAME2(SErrCodeX_Max_, name)<true> {         \
+            enum {                                              \
+                value = max_err_subcode                         \
+            };                                                  \
+        };                                                      \
+    }
 
 
 /// Returns value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
@@ -275,7 +341,7 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X
 #define NCBI_MAX_ERR_SUBCODE_X_NAME(name)   \
-    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(eErrCodeX_Max_, name)
+    NCBI_NS_NCBI::err_code_x::NCBI_NAME2(SErrCodeX_Max_, name)<true>::value
 
 /// Returns maximum value of error subcode within current default error code.
 ///
@@ -284,26 +350,54 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
     NCBI_MAX_ERR_SUBCODE_X_NAME(NCBI_USE_ERRCODE_X)
 
 
-/// Template structure that used to point out wrong error subcode in
-/// ERR_POST_X, STD_CATCH_X and alike macros. When error subcode that is greater
-/// than maximum defined in NCBI_DEFINE_ERRCODE_X will be used compiler
-/// will give an error and in text of this error you'll see the name
-/// of this structure. In parameters of template instantiation (that will be
-/// also shown in error message) you'll see error code currently active,
-/// error subcode used in *_POST_X macro and maximum error subcode valid for
-/// active error code.
+/// Template structure used to point out wrong error subcode in
+/// ERR_POST_X, STD_CATCH_X and alike macros. When error subcode that is
+/// greater than maximum defined in NCBI_DEFINE_ERRCODE_X or
+/// NCBI_DEFINE_ERR_SUBCODE_X will be used compiler will give an error and in
+/// text of this error you'll see the name of this structure. In parameters of
+/// template instantiation (that will be also shown in error message) you'll
+/// see error code currently active, error subcode used in *_POST_X macro and
+/// maximum error subcode valid for active error code.
 ///
-/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_X, ERR_POST_X
+/// @sa
+///   NCBI_DEFINE_ERRCODE_X, NCBI_DEFINE_ERR_SUBCODE_X, LOG_POST_X, ERR_POST_X
 template <int errorCode, int errorSubcode, int maxErrorSubcode, bool isWrong>
 struct WRONG_ERROR_SUBCODE_IN_POST_MACRO;
 
-/// Specialization of template: when error subcode is valid existance
+/// Specialization of template: when error subcode is valid existence
 /// of this specialization will be valuable for not issuing compiler error.
 template <int errorCode, int errorSubcode, int maxErrorSubcode>
 struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
             <errorCode, errorSubcode, maxErrorSubcode, false> {
     enum {valid = 1};
 };
+
+/// Template structure used to point out incorrect usage of
+/// NCBI_DEFINE_ERR_SUBCODE_X macro i.e. when it's used for error code defined
+/// with non-zero maximum subcode in NCBI_DEFINE_ERRCODE_X macro.
+///
+/// @sa
+///   NCBI_DEFINE_ERRCODE_X, NCBI_DEFINE_ERR_SUBCODE_X
+template <int errorCode, bool isWrong>
+struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO;
+
+/// Specialization of template: when usage of NCBI_DEFINE_ERR_SUBCODE_X is
+/// correct existence of this specialization will be valuable for not issuing
+/// compiler error.
+template <int errorCode>
+struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, false> {
+    enum {valid = 1};
+};
+
+/// Check that NCBI_DEFINE_ERR_SUBCODE_X is used for correctly defined error
+/// code.
+#define NCBI_CHECK_ERRCODE_USAGE(name)                              \
+    inline void NCBI_NAME2(s_ErrCodeCheck_, name) (                 \
+        NCBI_NS_NCBI::WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO <     \
+              NCBI_ERRCODE_X_NAME(name),                            \
+              NCBI_NS_NCBI::err_code_x::eErrCodeX_Max_##name != 0>  \
+                                                   err_subcode)     \
+    {}
 
 
 /// Additional dummy function for use in NCBI_CHECK_ERR_SUBCODE_X macro
@@ -370,7 +464,24 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO_2;
 template <int errorCode, int errorSubcode, int maxErrorSubcode>
 struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
             <errorCode, errorSubcode, maxErrorSubcode, true> {
-    typedef char type[sizeof(WRONG_ERROR_SUBCODE_IN_POST_MACRO_2<errorCode>)];
+    typedef char t[sizeof(WRONG_ERROR_SUBCODE_IN_POST_MACRO_2<errorCode>)];
+};
+
+/// Additional not implemented template structure for use in
+/// WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO structure specialization
+template <int x>
+struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO_2;
+
+/// Specialization of template structure used for ICC and MIPSpro
+/// If this specialization doesn't exist these compilers doesn't show name
+/// of unimplemented structure in error message. But when this specialization
+/// exists and uses recursively another not implemented template structure
+/// then WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO appears in error message and
+/// it becomes clearer.
+template <int errorCode>
+struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
+    typedef char t[sizeof(
+                       WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO_2<errorCode>)];
 };
 
 #endif  // if defined(NCBI_COMPILER_ICC) || defined(NCBI_COMPILER_MIPSPRO)
@@ -413,8 +524,7 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_EX
 #define ERR_POST_X(err_subcode, message)                  \
-    ( (NCBI_CHECK_ERR_SUBCODE_X(err_subcode)),            \
-      ERR_POST_EX(NCBI_ERRCODE_X, err_subcode, message) )
+    ERR_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 /// Log posting with default error code and given error subcode. See comments
 /// to ERR_POST_X for clarifying the way of use and details of behaviour
@@ -422,8 +532,7 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_X, LOG_POST_EX
 #define LOG_POST_X(err_subcode, message)                  \
-    ( (NCBI_CHECK_ERR_SUBCODE_X(err_subcode)),            \
-      LOG_POST_EX(NCBI_ERRCODE_X, err_subcode, message) )
+    LOG_POST_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
 /// Error posting with error code having given name and with given error
 /// subcode. Macro must be placed in headers instead of ERR_POST_X to not
