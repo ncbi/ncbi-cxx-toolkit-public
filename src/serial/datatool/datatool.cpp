@@ -59,8 +59,6 @@
 #include <serial/objostrxml.hpp>
 #include <serial/error_codes.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 #define NCBI_USE_ERRCODE_X   Serial_DataTool
 
