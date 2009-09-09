@@ -97,7 +97,7 @@ private:
 };
 
 const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
-"This application has two modes of operation:\n\n"
+"This application has three modes of operation:\n\n"
 "1) Gi file conversion:\n"
 "   Converts a text file containing GIs (one per line) to a more efficient\n"
 "   binary format. This can be provided as an argument to the -gilist option\n"
