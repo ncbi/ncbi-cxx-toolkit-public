@@ -45,6 +45,12 @@
 
 // generated classes
 
+// other includes
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
+#include <serial/iterator.hpp>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -115,6 +121,182 @@ public:
     
 private:
 };
+
+// =============================================================================
+//                           Enumeration of GBQual types
+// =============================================================================
+
+class NCBI_SEQFEAT_EXPORT CGbqualType
+{
+public:
+    enum EType {
+        e_Bad = 0,
+        e_Allele,
+        e_Anticodon,
+        e_Bio_material,
+        e_Bound_moiety,
+        e_Cell_line,
+        e_Cell_type,
+        e_Chromosome,
+        e_Chloroplast,
+        e_Chromoplast,
+        e_Citation,
+        e_Clone,
+        e_Clone_lib,
+        e_Codon,
+        e_Codon_start,
+        e_Collected_by,
+        e_Collection_date,
+        e_Compare,
+        e_Cons_splice,
+        e_Country,
+        e_Cultivar,
+        e_Culture_collection,
+        e_Cyanelle,
+        e_Cyt_map,
+        e_Direction,
+        e_EC_number,
+        e_Ecotype,
+        e_Environmental_sample,
+        e_Db_xref,
+        e_Dev_stage,
+        e_Estimated_length,
+        e_Evidence,
+        e_Exception,
+        e_Experiment,
+        e_Focus,
+        e_Frequency,
+        e_Function,
+        e_Gen_map,
+        e_Gene,
+        e_Gene_synonym,
+        e_Gdb_xref,
+        e_Germline,
+        e_Haplotype,
+        e_Host,
+        e_Identified_by,
+        e_Inference,
+        e_Insertion_seq,
+        e_Isolate,
+        e_Isolation_source,
+        e_Kinetoplast,
+        e_Label,
+        e_Lab_host,
+        e_Lat_lon,
+        e_Locus_tag,
+        e_Macronuclear,
+        e_Map,
+        e_Mating_type,
+        e_Metagenomic,
+        e_Mitochondrion,
+        e_Mobile_element,
+        e_Mod_base,
+        e_Mol_type,
+        e_NcRNA_class,
+        e_Note,
+        e_Number,
+        e_Old_locus_tag,
+        e_Operon,
+        e_Organelle,
+        e_Organism,
+        e_Partial,
+        e_PCR_conditions,
+        e_PCR_primers,
+        e_Phenotype,
+        e_Plasmid,
+        e_Pop_variant,
+        e_Product,
+        e_Protein_id,
+        e_Proviral,
+        e_Pseudo,
+        e_Rad_map,
+        e_Rearranged,
+        e_Replace,
+        e_Ribosomal_slippage,
+        e_Rpt_family,
+        e_Rpt_type,
+        e_Rpt_unit,
+        e_Rpt_unit_range,
+        e_Rpt_unit_seq,
+        e_Satellite,
+        e_Segment,
+        e_Sequenced_mol,
+        e_Serotype,
+        e_Serovar,
+        e_Sex,
+        e_Site,
+        e_Site_type,
+        e_Specimen_voucher,
+        e_Standard_name,
+        e_Strain,
+        e_Sub_clone,
+        e_Sub_species,
+        e_Sub_strain,
+        e_Tag_peptide,
+        e_Tissue_lib,
+        e_Tissue_type,
+        e_Transcript_id,
+        e_Transgenic,
+        e_Transl_except,
+        e_Transl_table,
+        e_Translation,
+        e_Transposon,
+        e_Trans_splicing,
+        e_Usedin,
+        e_Variety,
+        e_Virion
+    };
+
+    // Conversions to enumerated type:
+    static EType GetType(const string& qual);
+    static EType GetType(const CGb_qual& qual);
+    
+    // Conversion from enumerated to string:
+    static const string& GetString(EType gbqual);
+
+private:
+    CGbqualType(void);
+    DECLARE_INTERNAL_ENUM_INFO(EType);
+};
+
+
+// =============================================================================
+//                        Associating Features and GBQuals
+// =============================================================================
+
+
+class NCBI_SEQFEAT_EXPORT CFeatQualAssoc
+{
+public:
+    typedef vector<CGbqualType::EType> TGBQualTypeVec;
+    typedef map<CSeqFeatData::ESubtype, TGBQualTypeVec > TFeatQualMap;
+
+    // Check to see is a certain gbqual is legal within the context of 
+    // the specified feature
+    static bool IsLegalGbqual(CSeqFeatData::ESubtype ftype,
+                              CGbqualType::EType gbqual);
+
+    // Retrieve the mandatory gbquals for a specific feature type.
+    static const TGBQualTypeVec& GetMandatoryGbquals(CSeqFeatData::ESubtype ftype);
+
+private:
+
+    CFeatQualAssoc(void);
+    void PoplulateLegalGbquals(void);
+    void Associate(CSeqFeatData::ESubtype, CGbqualType::EType);
+    void PopulateMandatoryGbquals(void);
+    bool IsLegal(CSeqFeatData::ESubtype ftype, CGbqualType::EType gbqual);
+    const TGBQualTypeVec& GetMandatoryQuals(CSeqFeatData::ESubtype ftype);
+    
+    static CFeatQualAssoc* Instance(void);
+
+    static auto_ptr<CFeatQualAssoc> sm_Instance;
+    // list of feature and their associated gbquals
+    TFeatQualMap                    m_LegalGbquals;
+    // list of features and their mandatory gbquals
+    TFeatQualMap                    m_MandatoryGbquals;
+};
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
