@@ -2707,6 +2707,8 @@ static EIO_Status s_Close(SOCK sock, int abort)
                 break;
             }
 #endif /*NCBI_OS_MSWIN*/
+            if (x_error == SOCK_ENOTCONN)
+                break;
             if (abort  ||  x_error != SOCK_EINTR) {
                 CORE_LOGF_ERRNO_EXX(21, abort > 1 ? eLOG_Error : eLOG_Warning,
                                     x_error, SOCK_STRERROR(x_error),
