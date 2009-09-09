@@ -24,9 +24,7 @@
 #endif
 
 #include <corelib/ncbifile.hpp>
-#define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
-#include <common/test_assert.h>  /* This header must go last */
 
 /////////////////////////////////////////////////////////////////////////////
 // TestHooks
