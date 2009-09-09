@@ -138,6 +138,10 @@ namespace {
 // Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 {
+    if(m_terminate) {
+        return 0;
+    }
+
     /*
     // use the banded version if there is no space for introns
     const int len_dif (data->m_len2 - data->m_len1);
@@ -160,6 +164,16 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
     const size_t N1 (data->m_len1 + 1);
     const size_t N2 (data->m_len2 + 1);
+
+    if(m_prg_callback) {
+        m_prg_info.m_iter_total = N1*N2;
+        m_prg_info.m_iter_done = 0;
+        if(m_terminate = m_prg_callback(&m_prg_info)) {
+	  return 0;
+	}
+    }
+
+
     vector<TScore> stl_rowV (N2), stl_rowF (N2);
     TScore * rowV (&stl_rowV.front());
     TScore * rowF (&stl_rowF.front());
@@ -481,10 +495,19 @@ NW_DON_EVAL(2)
             wg1 = m_Wg;
             ws1 = m_Ws;
         }
+
+        if(m_prg_callback) {
+            m_prg_info.m_iter_done = k;
+            if(m_terminate = m_prg_callback(&m_prg_info)) {
+                break;
+            }
+        }
     }
 
     try {
-        x_DoBackTrace(backtrace_matrix, data, i_global_max, j_global_max);
+        if(!m_terminate) {
+            x_DoBackTrace(backtrace_matrix, data, i_global_max, j_global_max);
+        }
     }
     catch(exception&) { // GCC hack
         throw;

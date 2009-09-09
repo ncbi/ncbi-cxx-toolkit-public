@@ -211,8 +211,6 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
     const TNCBIScore (* sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
-    m_terminate = false;
-
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
@@ -373,6 +371,8 @@ CNWAligner::TScore CNWAligner::x_Run()
 {
     try {
     
+        m_terminate = false;
+
         if(m_guides.size() == 0) {
 
             SAlignInOut data (0, m_SeqLen1, m_esf_L1, m_esf_R1,
