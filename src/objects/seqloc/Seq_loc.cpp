@@ -2522,6 +2522,19 @@ public:
 };
 
 
+class CDummyLengthGetter : public ILengthGetter
+{
+public:
+    CDummyLengthGetter(void) {}
+    virtual ~CDummyLengthGetter(void) {}
+
+    virtual TSeqPos GetLength(const CSeq_id& id)
+        {
+            return CSeq_loc::TRange::GetWholeToOpen();
+        }
+};
+
+
 CRef<CSeq_loc> CSeq_loc::Merge(TOpFlags        flags,
                                ISynonymMapper* syn_mapper) const
 {
@@ -2582,6 +2595,11 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
         p_mapper.reset(new CDummySynonymMapper);
         syn_mapper = p_mapper.get();
     }
+    auto_ptr<CDummyLengthGetter> p_getter;
+    if ( !len_getter ) {
+        p_getter.reset(new CDummyLengthGetter);
+        len_getter = p_getter.get();
+    }
 
     CRef<CSeq_loc> ret(new CSeq_loc);
 
@@ -2633,6 +2651,19 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
     }
 
     return ret;
+}
+
+
+CRef<CSeq_loc> CSeq_loc::Intersect(const CSeq_loc& other,
+                                   TOpFlags        flags,
+                                   ISynonymMapper* syn_mapper) const
+{
+    auto_ptr<CDummyLengthGetter> len_getter(new CDummyLengthGetter);
+    CRef<CSeq_loc> tmp = Subtract(other,
+        // This flag should be used only in the second subtraction
+        flags & ~fMerge_SingleRange,
+        syn_mapper, len_getter.get());
+    return Subtract(*tmp, flags, syn_mapper, len_getter.get());
 }
 
 

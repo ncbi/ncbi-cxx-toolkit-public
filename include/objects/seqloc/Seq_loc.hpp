@@ -265,6 +265,11 @@ public:
                             ISynonymMapper* syn_mapper,
                             ILengthGetter*  len_getter) const;
 
+    /// Find the intersection with the seq-loc, merge/sort resulting
+    /// ranges depending on flags. Return a new seq-loc object.
+    CRef<CSeq_loc> Intersect(const CSeq_loc& other,
+                             TOpFlags        flags,
+                             ISynonymMapper* syn_mapper) const;
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
