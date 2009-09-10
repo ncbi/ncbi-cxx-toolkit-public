@@ -436,21 +436,30 @@ bool CProcess::Kill(unsigned long timeout) const
     }
 
     // Check process termination within the timeout
+    unsigned long x_timeout = timeout;
     for (;;) {
-        waitpid(pid, 0, WNOHANG);
-        if (kill(pid, 0) < 0) {
-            return true;
+        TPid reap = waitpid(pid, 0, WNOHANG);
+        if (reap) {
+            if (reap != (TPid)(-1)) {
+                _ASSERT(reap == pid);
+                return true;
+            }
+            if (errno != ECHILD)
+                return false;
+            if (kill(pid, 0) < 0)
+                return true;
         }
         unsigned long x_sleep = kWaitPrecision;
-        if (x_sleep > timeout) {
-            x_sleep = timeout;
+        if (x_sleep > x_timeout) {
+            x_sleep = x_timeout;
         }
         if ( !x_sleep ) {
              break;
         }
         SleepMilliSec(x_sleep);
-        timeout    -= x_sleep;
+        x_timeout  -= x_sleep;
     }
+    _ASSERT(!x_timeout);
 
     // Try harder to kill the stubborn process -- SIGKILL may not be caught!
     int res = kill(pid, SIGKILL);
@@ -460,8 +469,8 @@ bool CProcess::Kill(unsigned long timeout) const
     SleepMilliSec(kWaitPrecision);
     // Reap the zombie (if child) up from the system
     waitpid(pid, 0, WNOHANG);
-    // Check whether the process cannot be killed (most likely due
-    // to a kernel problem)
+    // Check whether the process cannot be killed
+    // (most likely due to a kernel problem)
     return kill(pid, 0) < 0;
 
 #elif defined(NCBI_OS_MSWIN)
@@ -472,7 +481,7 @@ bool CProcess::Kill(unsigned long timeout) const
     // Try to kill current process?
     if ( m_Type == ePid  &&  (TPid)m_Process == GetCurrentPid() ) {
         ExitProcess(-1);
-        // should not reached
+        // NOTREACHED
         return false;
     }
 
@@ -707,7 +716,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
 #if defined(NCBI_OS_UNIX)
 
     TPid pgid = getpgid((TPid)m_Process);
-    if (pgid == -1) {
+    if (pgid == (TPid)(-1)) {
         // TRUE if PID does not match any process
         return errno == ESRCH;
     }
@@ -765,30 +774,42 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
     if (kill(-pgid, SIGTERM) < 0  &&  errno == EPERM) {
         return false;
     }
-    // Check process termination within the timeout 
+
+    // Check process group termination within the timeout 
+    unsigned long x_timeout = timeout;
     for (;;) {
-        // Rip the zombie (if group leader is a child) up from the system
-        waitpid(pgid, 0, WNOHANG);
-        if (kill(-pgid, 0) < 0) {
-            return true;
+        // Reap the zombie (if group leader is a child) up from the system
+        TPid reap = waitpid(pgid, 0, WNOHANG);
+        if (reap) {
+            if (reap != (TPid)(-1)) {
+                _ASSERT(reap == pgid);
+                return true;
+            }
+            if (errno != ECHILD)
+                return false;
+            if (kill(-pgid, 0) < 0) {
+                return true;
+            }
         }
         unsigned long x_sleep = kWaitPrecision;
-        if (x_sleep > timeout) {
-            x_sleep = timeout;
+        if (x_sleep > x_timeout) {
+            x_sleep = x_timeout;
         }
         if ( !x_sleep ) {
              break;
         }
         SleepMilliSec(x_sleep);
-        timeout    -= x_sleep;
+        x_timeout  -= x_sleep;
     }
+    _ASSERT(!x_timeout);
+
     // Try harder to kill the stubborn processes -- SIGKILL may not be caught!
     int res = kill(-pgid, SIGKILL);
     if ( !timeout ) {
         return res <= 0;
     }
     SleepMilliSec(kWaitPrecision);
-    // Rip the zombie (if group leader is a child) up from the system
+    // Reap the zombie (if group leader is a child) up from the system
     waitpid(pgid, 0, WNOHANG);
     // Check whether the process cannot be killed
     // (most likely due to a kernel problem)
