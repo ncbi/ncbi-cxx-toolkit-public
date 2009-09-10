@@ -307,6 +307,11 @@ version  1 # of file format
 2+6  HB  embl_patent
 2+6  HC  embl_patent
 2+6  HD  embl_patent
+2+6  HE  embl_dirsub
+2+6  HF  embl_dirsub
+2+6  HG  embl_dirsub
+2+6  HH  embl_dirsub
+2+6  HI  embl_dirsub
 2+6  ??  unreserved_nuc
 
 # SPECIAL CASES
