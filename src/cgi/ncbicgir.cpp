@@ -272,19 +272,19 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
            << "; boundary=" << m_Boundary << HTTP_EOL;
         break;
     }
-    
+
     if (m_Session) {
-        const CCgiCookie * const scookie = m_Session->GetSessionCookie();
+        const CCgiCookie* const scookie = m_Session->GetSessionCookie();
         if (scookie) {
-            const_cast<CCgiResponse*>(this)->Cookies().Add(*scookie);
+            const_cast<CCgiResponse*>(this)->m_Cookies.Add(*scookie);
         }
     }
     if (m_TrackingCookie.get()) {
-        const_cast<CCgiResponse*>(this)->Cookies().Add(*m_TrackingCookie);
+        const_cast<CCgiResponse*>(this)->m_Cookies.Add(*m_TrackingCookie);
     }
-    
+
     // Cookies (if any)
-    if ( !Cookies().Empty() ) {
+    if ( !m_Cookies.Empty() ) {
         os << m_Cookies;
     }
 
