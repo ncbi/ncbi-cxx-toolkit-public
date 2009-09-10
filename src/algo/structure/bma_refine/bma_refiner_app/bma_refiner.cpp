@@ -101,13 +101,16 @@ void CAlignmentRefiner::Init(void)
     argDescr->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Alignment Refinement w/ 'Leave One Out'");
 
-    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun | fHideXmlHelp);
 
-     // input/output CD
+    //  *Mandatory*  
+     // input CD/Fasta file name
     argDescr->AddKey("i", "CdFilenameIn", "full filename of input CD w/ alignment to refine (ascii or binary)", argDescr->eString);
+
+    //  base name for output CD file
     argDescr->AddDefaultKey("o", "CdBasenameOut", "basename of output CD(s) containing refined alignment; output saved to 'basename_<number>.cn3'; ascii text by default", argDescr->eString, "refiner");
 
-    // output binary
+    // output binary?
     argDescr->AddFlag("ob", "output binary data");
 
     // File for data from the refinement process
@@ -116,9 +119,8 @@ void CAlignmentRefiner::Init(void)
          "create a file to save refinenment process details",
          CArgDescriptions::eOutputFile,
          CArgDescriptions::fPreOpen);
-    // quiet reporting of details (only at end of temp steps and trials)
 
-    // quiet reporting (only 'Error' level messages)
+    // quiet reporting of details (only at end of temp steps and trials)
     argDescr->AddFlag("q", "shortened report; only Error level messages");
 
 
@@ -128,10 +130,6 @@ void CAlignmentRefiner::Init(void)
     //  The alignment is NOT reset after a cycle; alignment IS reset after a trial.
     argDescr->AddDefaultKey("nc", "integer", "number of cycles per trial; a cycle consists of one leave-one-out (LOO) phase, followed by a block editing phase.  Either, but not both, of the phases in a cycle may be turned off.\n(Note:  alignments do NOT reset between cycles)\n", argDescr->eInteger, "1");
     argDescr->SetConstraint("nc", new CArgAllow_Integers(1, N_MAX_CYCLES));
-
-    //  Row selection order for LOO: randomly or based on the self-hit to the initial alignment.
-    argDescr->AddDefaultKey("selection_order", "integer", "Method for row selection in LOO phase:\n0 == randomly (default)\n1 == increasing self-hit row score to input alignment's PSSM\n2 == decreasing self-hit row score to input alignment's PSSM\n", argDescr->eInteger, "1");
-    argDescr->SetConstraint("selection_order", new CArgAllow_Integers(0, 2));
 
     // Convergence criteria
     argDescr->AddDefaultKey("convSameScore", "double", "when >= this % of LOO attempts fail to change the score, stop further cycles", argDescr->eDouble, "0.95");
@@ -148,6 +146,13 @@ void CAlignmentRefiner::Init(void)
 
     //  disable LOO phase
     argDescr->AddFlag("no_LOO", "do not perform the LOO phase of each cycle", true);
+    argDescr->SetDependency("no_LOO", CArgDescriptions::eExcludes, "selection_order");
+
+    //  *Mandatory*  
+    //  Row selection order for LOO: randomly or based on the self-hit to the initial alignment.
+    argDescr->AddKey("selection_order", "integer", "Method for row selection in LOO phase:\n0 == randomly (use -n option to specify the number of separate trials)\n1 == increasing self-hit row score to input alignment's PSSM\n2 == decreasing self-hit row score to input alignment's PSSM\n", argDescr->eInteger);
+    argDescr->SetConstraint("selection_order", new CArgAllow_Integers(0, 2));
+    argDescr->AddAlias("so", "selection_order");
 
     //  switch from 'leave-one-out' to 'leave-N-out':  recompute PSSM only after
     //  lno rows refined.
@@ -197,6 +202,29 @@ void CAlignmentRefiner::Init(void)
     argDescr->SetCurrentGroup("");
 
 
+    //
+    //  Random selection order related options
+    //
+
+    argDescr->SetCurrentGroup("  Random selection order specific options  ");
+
+    //  Number of trials
+    argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)\nNOTE:  only relevant if use random selection order of rows; ignored if deterministic selection order used (see 'selection_order')", argDescr->eInteger, "3");
+    argDescr->SetConstraint("n", new CArgAllow_Integers(1, N_MAX_TRIALS));
+
+    argDescr->AddDefaultKey("nout", "integer", "number of output CDs; save CDs from the top 'nout' trials", argDescr->eInteger, "1");
+    argDescr->SetConstraint("nout", new CArgAllow_Integers(1, N_MAX_TRIALS));
+
+    argDescr->AddDefaultKey("convScoreChange", "double", "when avg. deviation <= this % of mean score for M trials, stop further trials", argDescr->eDouble, "0.001");
+    argDescr->SetConstraint("convScoreChange", new CArgAllow_Doubles(0, 1.0));
+
+    // Specify seed to RNG
+    argDescr->AddOptionalKey("seed", "positive_integer", "specify the seed for random number generation\n", argDescr->eInteger);
+    argDescr->SetConstraint("seed", new CArgAllow_Integers(1000, kMax_Int-1));
+
+
+    argDescr->SetCurrentGroup("");
+
 
     //
     //  Block editing options
@@ -243,25 +271,6 @@ void CAlignmentRefiner::Init(void)
     argDescr->SetCurrentGroup("");
 
 
-
-    argDescr->SetCurrentGroup("  Random selection order specific options  ");
-
-    //  Number of trials
-    argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)\nNOTE:  only relevant if use random selection order of rows; ignored if deterministic selection order used (see 'selection_order' below)", argDescr->eInteger, "1");
-    argDescr->SetConstraint("n", new CArgAllow_Integers(1, N_MAX_TRIALS));
-
-    argDescr->AddDefaultKey("nout", "integer", "number of output CDs; save CDs from the top 'nout' trials", argDescr->eInteger, "1");
-    argDescr->SetConstraint("nout", new CArgAllow_Integers(1, N_MAX_TRIALS));
-
-    argDescr->AddDefaultKey("convScoreChange", "double", "when avg. deviation <= this % of mean score for M trials, stop further trials", argDescr->eDouble, "0.001");
-    argDescr->SetConstraint("convScoreChange", new CArgAllow_Doubles(0, 1.0));
-
-    // Specify seed to RNG
-    argDescr->AddOptionalKey("seed", "positive_integer", "specify the seed for random number generation\n", argDescr->eInteger);
-    argDescr->SetConstraint("seed", new CArgAllow_Integers(1000, kMax_Int-1));
-
-
-    argDescr->SetCurrentGroup("");
 
     // argDescr->AddFlag("qd", "shortened details report; only report details at end of cycles and trials.  Has an affect only if '-details' is provided");
 
@@ -449,18 +458,20 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
     m_loo.extrasAreRows = (!args["extras_are_blocks"]);
 
 
-    //  Anything unrecognized is treated as 'random' ordering.
-    selectionOrder = args["selection_order"].AsInteger();
+    //  "selection_order" is mandatory (unless -no_LOO is present) and constrained to {0, 1, 2}.
+    //  number of trials is only relevant for a random selection order.
+    selectionOrder = (m_loo.doLOO) ? args["selection_order"].AsInteger() : 0;
     switch (selectionOrder) {
+    case 0:
+        m_loo.selectorCode = eRandomSelectionOrder;
+        break;
     case 1:
+        m_nTrials = 1;
         m_loo.selectorCode = eWorstScoreFirst;
         break;
     case 2:
+        m_nTrials = 1;
         m_loo.selectorCode = eBestScoreFirst;
-        break;
-    case 0:
-    default:
-        m_loo.selectorCode = eRandomSelectionOrder;
         break;
     };
 
@@ -701,20 +712,22 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
         echoStream << "Leave-One_Out parameters:" << endl;
         echoStream << "=================================" << endl;
         echoStream << "LOO on?  " << ((m_loo.doLOO) ? yes : no) << endl;
-        echoStream << "Row selection order:  " << RefinerRowSelectorCodeToStr(m_loo.selectorCode) << endl;
-        echoStream << "Number left out between PSSM recomputation = " << m_loo.lno << endl;
+        if (m_loo.doLOO) {
+            echoStream << "Row selection order:  " << RefinerRowSelectorCodeToStr(m_loo.selectorCode) << endl;
+            echoStream << "Number left out between PSSM recomputation = " << m_loo.lno << endl;
 
-        echoStream << "Freeze alignment of rows with structure?  " << ((m_loo.fixStructures) ? yes : no) << endl;
-        echoStream << "Use full sequence or aligned footprint?  " << ((m_loo.fullSequence) ? "Full" : "Aligned") << endl;
-        echoStream << "N-terminal extension allowed = " << m_loo.nExt << endl;
-        echoStream << "C-terminal extension allowed = " << m_loo.cExt << endl;
+            echoStream << "Freeze alignment of rows with structure?  " << ((m_loo.fixStructures) ? yes : no) << endl;
+            echoStream << "Use full sequence or aligned footprint?  " << ((m_loo.fullSequence) ? "Full" : "Aligned") << endl;
+            echoStream << "N-terminal extension allowed = " << m_loo.nExt << endl;
+            echoStream << "C-terminal extension allowed = " << m_loo.cExt << endl;
 
-        echoStream << "Converged after fraction of rows left out do not change score = " << m_loo.sameScoreThreshold << endl;
-        echoStream << "Random number generator seed = " << m_loo.seed << endl;
+            echoStream << "Converged after fraction of rows left out do not change score = " << m_loo.sameScoreThreshold << endl;
+            echoStream << "Random number generator seed = " << m_loo.seed << endl;
 
-        echoStream << "LOO loop percentile:  longest loop allowed = max initial loop * " << m_loo.percentile << endl;
-        echoStream << "LOO extension to longest loop allowed = " << m_loo.extension << endl;
-        echoStream << "LOO absolute maximum longest loop (zero == no max) = " << m_loo.cutoff << endl;
+            echoStream << "LOO loop percentile:  longest loop allowed = max initial loop * " << m_loo.percentile << endl;
+            echoStream << "LOO extension to longest loop allowed = " << m_loo.extension << endl;
+            echoStream << "LOO absolute maximum longest loop (zero == no max) = " << m_loo.cutoff << endl;
+        }
         echoStream << endl;
 }
 
