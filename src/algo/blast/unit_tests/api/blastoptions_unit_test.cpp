@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffs )
 static BlastScoreBlk*
 s_FillScoreBlkWithBadKbp(BlastQueryInfo* query_info) {
   
-    ASSERT(query_info);
+    BOOST_REQUIRE(query_info);
     BlastScoreBlk* sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 2);
 
     sbp->kbp = sbp->kbp_std;
@@ -668,7 +668,7 @@ static void MakeSomeInvalidKBP(Blast_KarlinBlk** kbp_array,
 {
      Int4 index;
  
-     ASSERT(num > good_one);
+     BOOST_REQUIRE(num > good_one);
      
      for (index=0; index<num; index++)
      {

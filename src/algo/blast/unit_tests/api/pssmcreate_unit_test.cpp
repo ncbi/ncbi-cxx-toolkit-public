@@ -389,7 +389,7 @@ static const Uint1 kQuery[kQueryLength];
                 retval = i;
             }
         }
-        ASSERT(retval != AMINOACID_TO_NCBISTDAA[(int)'-']);
+        BOOST_REQUIRE(retval != AMINOACID_TO_NCBISTDAA[(int)'-']);
         return retval;
     }
 
