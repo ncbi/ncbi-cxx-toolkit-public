@@ -182,20 +182,33 @@ TSeqPos CDense_seg::GetSeqStop(TDim row) const
 
 ENa_strand CDense_seg::GetSeqStrand(TDim row) const
 {
-    if (row < 0  ||  row >= GetDim()) {
-        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                   "CDense_seg::GetSeqStrand():"
-                   " Invalid row number");
+    const size_t& strands_size = GetStrands().size();
+    
+    if ( !strands_size ) {
+        return eNa_strand_plus;
+    } else {
+        TDim dim = CheckNumRows();
+        
+        if (strands_size < (size_t) dim) {
+            // The ASN.1 spec technically requires numrows x numsegs
+            // strands, however in practice NCBI assumes that
+            // Dense-seg's strands are fixed per row.  Since we will
+            // obtain the strand from the first segment (assuming they
+            // are fixed) and for efficiency (to eliminate unnecessary
+            // multiplication) we don't check for the full numrows x
+            // numsegs size here
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "Invalid strands size");
+        }
+        
+        if (row < 0  ||  row >= dim) {
+            NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                       "CDense_seg::GetSeqStrand():"
+                       " Invalid row number");
+        }
+        
+        return GetStrands()[row];
     }
-
-
-    if (!CanGetStrands()  ||  (int)GetStrands().size() <= row) {
-        NCBI_THROW(CSeqalignException, eInvalidInputData,
-                   "CDense_seg::GetSeqStrand():"
-                   " Strand doesn't exist for this row.");
-    }
-
-    return GetStrands()[row];
 }
 
 
