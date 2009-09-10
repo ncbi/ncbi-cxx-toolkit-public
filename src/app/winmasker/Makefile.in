@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = winmasker
+USR_PROJ = windowmasker_2.2.22_adapter
 
 REQUIRES = objects
 
