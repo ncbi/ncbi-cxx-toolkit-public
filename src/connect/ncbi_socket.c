@@ -2576,7 +2576,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 }
 
 
-/* Close the socket (orderly or abrupt)
+/* Close the socket (either orderly or abruptly)
  */
 static EIO_Status s_Close(SOCK sock, int abort)
 {
@@ -2592,7 +2592,11 @@ static EIO_Status s_Close(SOCK sock, int abort)
         /* set the close()'s linger period be equal to the close timeout */
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
-        if (sock->w_status != eIO_Closed) {
+        if (sock->w_status != eIO_Closed
+#  ifdef NCBI_OS_UNIX
+            &&  !sock->path[0]
+#  endif /*NCBI_OS_UNIX*/
+            ) {
             const struct timeval* tv = sock->c_timeout;
             struct linger lgr;
 
@@ -2640,7 +2644,11 @@ static EIO_Status s_Close(SOCK sock, int abort)
         }
 #endif /*(NCBI_OS_UNIX && !NCBI_OS_BEOS) || NCBI_OS_MSWIN*/
 
-        if (!abort) {
+        if (!abort
+#ifdef NCBI_OS_UNIX
+            &&  !sock->path[0]
+#endif /*NCBI_OS_UNIX*/
+            ) {
             /* orderly shutdown in both directions */
             s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
         } else
