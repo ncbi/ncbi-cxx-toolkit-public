@@ -1145,15 +1145,14 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
 EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 {    
-    EIO_Status status     = eIO_Unknown;
-    int        x_exitcode = -1;
+    EIO_Status status;
+    int        x_exitcode;
 
-    if (m_Pid == (pid_t)(-1)) {
-        status = eIO_Closed;
-    } else {
+    if (m_Pid != (pid_t)(-1)) {
         int           x_options;
         unsigned long x_timeout;
 
+        status = eIO_Unknown;
         if ( timeout ) {
             // If timeout is not infinite
             x_timeout = NcbiTimeoutToMs(timeout);
@@ -1178,7 +1177,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
                     break;
                 }
                 status = eIO_Timeout;
-                if ( !timeout->sec  &&  !timeout->usec ) {
+                if ( !(timeout->sec | timeout->usec) ) {
                     break;
                 }
                 unsigned long x_sleep = kWaitPrecision;
@@ -1191,8 +1190,11 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
                 break;
             }
         }
-    }
-    if (status != eIO_Success) {
+        if (status != eIO_Success) {
+            x_exitcode = -1;
+        }
+    } else {
+        status = eIO_Closed;
         x_exitcode = -1;
     }
 
@@ -1208,7 +1210,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             } else {
                 killed = CProcess(m_Pid, CProcess::ePid).Kill(x_timeout);
             }
-            status = (killed ? eIO_Success : eIO_Unknown);
+            status = killed ? eIO_Success : eIO_Unknown;
         }
     }
     if (status != eIO_Timeout) {

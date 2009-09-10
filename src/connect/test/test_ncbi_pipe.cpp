@@ -82,7 +82,8 @@ static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
     } while (status == eIO_Success  &&  total < size);    
     
     *n_read = total;
-    cerr << "Total read from pipe: " << total << " bytes." << endl;
+    cerr << "Total read from pipe: " << total << " byte(s) ["
+         << IO_StatusStr(status) << ']' << endl;
     return status;
 }
 
@@ -106,7 +107,8 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
     } while (status == eIO_Success  &&  total < size);
     
     *n_written = total;
-    cerr << "Total written to pipe: " << total << " byte(s)." << endl;
+    cerr << "Total written to pipe: " << total << " byte(s) ["
+         << IO_StatusStr(status) << ']' << endl;
     return status;
 }
 
@@ -229,6 +231,7 @@ int CTest::Run(void)
     assert(pipe.SetTimeout(eIO_Write, &io_timeout)    == eIO_Success);
     assert(pipe.SetTimeout(eIO_Close, &close_timeout) == eIO_Success);
 
+
     // Pipe for reading (direct from pipe)
 #if defined(NCBI_OS_UNIX)
     cmd = "ls";
@@ -250,14 +253,21 @@ int CTest::Run(void)
     } while (status == eIO_Success);
     assert(status == eIO_Closed);
     assert(total > 0);
-    assert(pipe.Close(&exitcode) == eIO_Success);
-    assert(exitcode == 0);
+
+    status = pipe.Close(&exitcode);
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Success  &&  exitcode == 0);
+
 
     // Pipe for reading (iostream)
     CConn_PipeStream ios(cmd.c_str(), args, CPipe::fStdIn_Close);
     s_ReadStream(ios);
-    assert(ios.GetPipe().Close(&exitcode) == eIO_Success);
-    assert(exitcode == 0);
+
+    status = ios.GetPipe().Close(&exitcode);
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Success  &&  exitcode == 0);
 
 
     // Pipe for writing (direct to pipe)
@@ -273,8 +283,11 @@ int CTest::Run(void)
     assert(s_WritePipe(pipe, str.c_str(), str.length(),
                        &n_written) == eIO_Success);
     assert(n_written == str.length());
-    assert(pipe.Close(&exitcode) == eIO_Success);
-    assert(exitcode == kTestResult);
+
+    status = pipe.Close(&exitcode); 
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
     // Bidirectional pipe (direct from pipe)
@@ -296,8 +309,12 @@ int CTest::Run(void)
     assert(memcmp(buf, str.c_str(), str.length()) == 0);
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == 0);
-    assert(pipe.Close(&exitcode) == eIO_Success);
-    assert(exitcode == kTestResult);
+
+    status = pipe.Close(&exitcode); 
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
+
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == 0);
     assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Closed);
@@ -326,8 +343,11 @@ int CTest::Run(void)
     ps >> str;
     cout << str << endl;
     assert(str == "Done");
-    assert(ps.GetPipe().Close(&exitcode) == eIO_Success);
-    assert(exitcode == kTestResult);
+
+    status = ps.GetPipe().Close(&exitcode); 
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
     // f*OnClose flags test
@@ -339,8 +359,11 @@ int CTest::Run(void)
 
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
-    assert(pipe.Close(&exitcode) == eIO_Timeout);
-    assert(exitcode == -1 );
+
+    status = pipe.Close(&exitcode); 
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Timeout  &&  exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
@@ -352,8 +375,11 @@ int CTest::Run(void)
                      CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
-    assert(pipe.Close(&exitcode) == eIO_Success);
-    assert(exitcode == -1);
+
+    status = pipe.Close(&exitcode); 
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Success  &&  exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(!process.IsAlive());
@@ -363,8 +389,11 @@ int CTest::Run(void)
 
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
-    assert(pipe.Close(&exitcode) == eIO_Timeout);
-    assert(exitcode == -1);
+
+    status = pipe.Close(&exitcode); 
+    cerr << "Command completed with code " << exitcode << " and status "
+         << IO_StatusStr(status) << endl;
+    assert(status == eIO_Timeout  &&  exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
