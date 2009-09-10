@@ -112,6 +112,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         product_idref->Assign( sps.GetProduct_id() );
         product_idlist.push_back(product_idref);
 
+/*
         int id  = GetCompartmentNum(seq_align);
         if (id != 0) {
             product_idref.Reset(new CSeq_id(CSeq_id::e_Local, id));
@@ -131,6 +132,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
             product_idlist.push_back(product_idref);
         }
+*/
         SetTargetIds(product_idlist);
     }
 
