@@ -58,6 +58,8 @@ public:
         x_Cleanup();
     }
 
+    /// Compartmentization parameters - see CCompartmentFinder for details
+
     void   SetPenalty(const double & penalty) { m_Penalty = penalty; }
     double GetPenalty(void) const { return m_Penalty; }
 
@@ -67,16 +69,34 @@ public:
     void   SetMinSingletonIdty(const double & idty) { m_MinSingletonIdty = idty; }
     double GetMinSingletonIdty(void) const { return m_MinSingletonIdty; }
 
-    void   SetHitsOnly(bool ho) { m_HitsOnly = ho; }
+    /// Set or clear the "hits only" mode.
+    /// @param hits_only
+    ///    When true, no compartmentization occurs and only hits are reported.
+
+    void   SetHitsOnly(bool hits_only) { m_HitsOnly = hits_only; }
+
+    /// Controls the max size of an index volume.
+    /// Only decrease this if getting an out-ofspace error because of
+    /// too many hits per volume.
 
     void   SetMaxVolSize(size_t max_vol_size) { m_MaxVolSize = max_vol_size; }
 
+    /// Sets the length cut-off for cDNA (query) sequences.
+
     void   SetMinQueryLength(size_t min_qlen) { m_MinQueryLength = min_qlen; }
+
+    /// In "hits only" mode, sets the min length of hits to report.
+    /// No effect in "compartments" mode.
+
+    void   SetMinHitLength(size_t min_hit_len) { m_MinHitLength = min_hit_len; }
+
+    /// Controls the drop-off parameter used to extend hits over possible defects.
 
     void   SetDropOff(int dropoff) { m_XDropOff = dropoff; }
     int    GetDropOff(void) const { return m_XDropOff; }
     static int s_GetDefaultDropOff(void) { return 5; }
     
+
     void Run(void);
     
 private:
@@ -249,6 +269,7 @@ private:
 
     size_t                    m_MaxVolSize;
     size_t                    m_MinQueryLength;
+    size_t                    m_MinHitLength;
 
     string                    m_qdb, m_sdb;
 
@@ -256,6 +277,9 @@ private:
 
     CBoolVector               m_Mers;
 
+
+    // explicit default construction not supported
+    CElementaryMatching(void) {}
 
     void   x_InitBasic(void);
     void   x_Cleanup(void);

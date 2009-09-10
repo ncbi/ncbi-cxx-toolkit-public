@@ -50,7 +50,7 @@ void CCompartApp::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Compart v.1.34. Unless -qdb and -sdb are specified, "
+                              "Compart v.1.35. Unless -qdb and -sdb are specified, "
                               "the tool expects tabular blast hits at stdin collated "
                               "by query and subject, e.g. with 'sort -k 1,1 -k 2,2'");
 
@@ -89,6 +89,11 @@ void CCompartApp::Init()
     argdescr->AddDefaultKey("min_query_len", "min_query_len", 
                             "Minimum length for individual cDNA sequences.",
                             CArgDescriptions::eInteger, "50");
+
+    argdescr->AddDefaultKey("min_hit_len", "min_hit_len", 
+                            "Minimum length for reported hits in hits-only mode. "
+                            "No effect in compartments mode.",
+                            CArgDescriptions::eInteger, "16");
   
     argdescr->AddDefaultKey ("maxvol", "maxvol", 
                              "Maximum index volume size in MB (approximate)",
@@ -121,6 +126,8 @@ void CCompartApp::Init()
     CArgAllow_Integers* constrain_minqlen (new CArgAllow_Integers(21,99999));
     argdescr->SetConstraint("min_query_len", constrain_minqlen);
 
+    CArgAllow_Integers* constrain_minhitlen (new CArgAllow_Integers(1,99999));
+    argdescr->SetConstraint("min_hit_len", constrain_minhitlen);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -223,6 +230,7 @@ int CCompartApp::Run()
         matcher->SetMinSingletonIdty(m_min_singleton_idty);
 
         matcher->SetHitsOnly(args["ho"]);
+        matcher->SetMinHitLength(args["min_hit_len"].AsInteger());
         matcher->SetMaxVolSize(1024 * 1024 * (args["maxvol"].AsInteger()));
 
         matcher->SetDropOff(args["dropoff"].AsInteger());

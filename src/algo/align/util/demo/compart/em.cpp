@@ -1595,6 +1595,8 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
             THit& h (**ii);
 
+            if(h.GetLength() < m_MinHitLength) continue;
+
             h.SetQueryId (m_cDNASeqIds[m_ii_cdna->m_Oid]);
             h.SetSubjId  (m_GenomicSeqIds[m_ii_genomic->m_Oid]);
             
@@ -1738,6 +1740,7 @@ void CElementaryMatching::x_InitBasic(void)
     m_MaxVolSize = 512 * 1024 * 1024;
 
     m_MinQueryLength = 50;
+    m_MinHitLength = 1;
 }
 
 
