@@ -45,9 +45,6 @@
 #include <util/sequtil/sequtil_convert.hpp>
 
 #include <corelib/test_boost.hpp>
-#include <common/test_assert.h>  /* This header must go last */
-
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;

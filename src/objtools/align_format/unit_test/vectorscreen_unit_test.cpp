@@ -47,7 +47,6 @@
 
 #include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align_format/vectorscreen.hpp>
-#include <common/test_assert.h> /* This header must go last */
 
 using namespace std;
 using namespace ncbi;

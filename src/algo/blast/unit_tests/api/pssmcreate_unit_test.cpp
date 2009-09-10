@@ -91,8 +91,6 @@
 
 #include "test_objmgr.hpp"
 
-#include <common/test_assert.h> /* This header must go last */
-
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;

@@ -35,7 +35,6 @@
 #include <corelib/test_boost.hpp>
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
-#include <common/test_assert.h> /* This header must go last */
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/blast_exception.hpp>

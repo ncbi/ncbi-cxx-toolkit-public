@@ -45,9 +45,6 @@
 #include <corelib/test_boost.hpp>
 #include <boost/current_function.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;

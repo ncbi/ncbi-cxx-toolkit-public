@@ -39,9 +39,6 @@
 #include <objects/entrez2/entrez2_client.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
-
 #if defined(NCBI_COMPILER_WORKSHOP) && defined(NDEBUG) && defined(NCBI_WITHOUT_MT) && defined(__i386) && NCBI_COMPILER_VERSION == 550
 #  define BUGGY_COMPILER
 #endif
