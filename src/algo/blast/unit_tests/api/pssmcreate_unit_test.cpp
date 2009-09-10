@@ -305,8 +305,7 @@ public:
 
         PSIBlastOptionsNew(&m_options);
         if (opts) {
-            std::memcpy((void*)&m_options, (void*)opts, 
-                        sizeof(PSIBlastOptions));
+            memcpy((void*)&m_options, (void*)opts, sizeof(PSIBlastOptions));
         }
 
         switch (type) {
