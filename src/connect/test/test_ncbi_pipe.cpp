@@ -283,6 +283,7 @@ int CTest::Run(void)
     assert(s_WritePipe(pipe, str.c_str(), str.length(),
                        &n_written) == eIO_Success);
     assert(n_written == str.length());
+    assert(pipe.CloseHandle(CPipe::eStdIn) == eIO_Success);
 
     status = pipe.Close(&exitcode); 
     cerr << "Command completed with code " << exitcode << " and status "
