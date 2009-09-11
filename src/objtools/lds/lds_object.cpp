@@ -61,6 +61,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objectio.hpp>
+#include <serial/iterator.hpp>
 
 #define TRY_FAST_TITLE 1
 #define CREATE_SCOPES 1
@@ -1188,6 +1189,13 @@ void CLDS_Object::GetAnnotInfo(const CLDS_CoreObjectsReader::SObjectDetails& obj
                     }
 
             } // ITERATE
+        }
+        else {
+            for (CTypeConstIterator<CSeq_id> it(ConstBegin(annot)); it; ++it) {
+                const CSeq_id& id = *it;
+                string str_id = id.AsFastaString();
+                ref_seq_ids.insert(NStr::ToUpper(str_id));
+            }
         }
     }
 
