@@ -76,7 +76,7 @@ const size_t kDefaultPipeBufSize = (size_t)CNamedPipe::eDefaultBufSize;
 // Auxiliary functions
 //
 
-static STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
+static const STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 {
     if ( !from ) {
         return const_cast<STimeout*> (kInfiniteTimeout);
@@ -93,12 +93,13 @@ static string s_FormatErrorMessage(const string& where, const string& what)
 }
 
 
-inline void s_AdjustPipeBufSize(size_t* bufsize)
+inline void s_AdjustPipeBufSize(size_t& bufsize)
 {
-    if (*bufsize == 0)
-        *bufsize = kDefaultPipeBufSize;
-    else if (*bufsize == (size_t)kMax_Int)
-        *bufsize = 0 /* use system default buffer size */;
+    if (!bufsize) {
+        bufsize = kDefaultPipeBufSize;
+    } else if (bufsize == (size_t)kMax_Int) {
+        bufsize = 0 /* use system default buffer size */;
+    }
 }
 
 
@@ -176,7 +177,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 {
     try {
         if (m_Pipe != INVALID_HANDLE_VALUE) {
-            throw string("Pipe is already open");
+            throw string("Named pipe already open");
         }
         // Save parameters
         m_PipeName    = pipename;
@@ -235,7 +236,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 {
     try {
         if (m_Pipe != INVALID_HANDLE_VALUE) {
-            throw string("Pipe is already open");
+            throw string("Named pipe already open");
         }
         // Save parameters
         m_PipeName    = pipename;
@@ -259,7 +260,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                  &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            throw "Create named pipe \"" + m_PipeName + "\" failed";
+            throw "Failed to create named pipe \"" + m_PipeName + '\'';
         }
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
@@ -284,7 +285,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             status = eIO_Closed;
-            throw string("Pipe is closed");
+            throw string("Named pipe closed");
         }
         do {
             BOOL connected = ConnectNamedPipe(m_Pipe, NULL);
@@ -294,8 +295,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                 // If client closed connection before we serve it
                 if (error == ERROR_NO_DATA) {
                     if (Disconnect() != eIO_Success) {
-                        throw string("Listening pipe: failed to close broken "
-                                     "client session");
+                        throw string("Failed to close broken client session");
                     } 
                 }
             }
@@ -328,7 +328,7 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             status = eIO_Closed;
-            throw string("Pipe is already closed");
+            throw string("Named pipe already closed");
         }
         FlushFileBuffers(m_Pipe); 
         if (!DisconnectNamedPipe(m_Pipe)) {
@@ -366,7 +366,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             status = eIO_Closed;
-            throw string("Pipe is closed");
+            throw string("Named pipe closed");
         }
         if ( !count ) {
             m_ReadStatus = eIO_Success;
@@ -386,7 +386,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                     m_ReadStatus = eIO_Closed;
                     return m_ReadStatus;
                 }
-                throw string("Cannot peek data from the named pipe");
+                throw string("Cannot peek data from named pipe");
             }
             if ( bytes_avail ) {
                 break;
@@ -412,7 +412,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             bytes_avail = count;
         }
         if (!ReadFile(m_Pipe, buf, count, &bytes_avail, NULL)) {
-            throw string("Failed to read data from the named pipe");
+            throw string("Failed to read data from named pipe");
         }
         if ( n_read ) {
             *n_read = bytes_avail;
@@ -436,7 +436,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             status = eIO_Closed;
-            throw string("Pipe is closed");
+            throw string("Named pipe closed");
         }
         if ( !count ) {
             return eIO_Success;
@@ -453,7 +453,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                 if ( n_written ) {
                     *n_written = bytes_written;
                 }
-                throw string("Failed to write data into the named pipe");
+                throw string("Failed to write data into named pipe");
             }
             if ( bytes_written ) {
                 break;
@@ -584,11 +584,11 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
     try {
         if (m_LSocket >= 0  ||  m_IoSocket) {
-            throw string("Pipe is already open");
+            throw string("Named pipe already open");
         }
         if (sizeof(addr.sun_path) <= pipename.length()) {
             status = eIO_InvalidArg;
-            throw "Pipe name too long: \"" + pipename + '"';
+            throw "Named pipe name too long: \"" + pipename + '"';
         }
         m_PipeBufSize = pipebufsize;
 
@@ -710,7 +710,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             x_CloseSocket(sock);
         }
         Close();
-        ERR_POST_X(16, s_FormatErrorMessage("Open", what));
+        ERR_POST_X(10, s_FormatErrorMessage("Open", what));
         return status;
     }
     return eIO_Success;
@@ -725,11 +725,11 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 
     try {
         if (m_LSocket >= 0  ||  m_IoSocket) {
-            throw string("Pipe is already open");
+            throw string("Named pipe already open");
         }
         if (sizeof(addr.sun_path) <= pipename.length()) {
             status = eIO_InvalidArg;
-            throw "Pipe name too long: \"" + pipename + '"';
+            throw "Named pipe name too long: \"" + pipename + '"';
         }
         m_PipeBufSize = pipebufsize;
 
@@ -775,7 +775,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
     }
     catch (string& what) {
         Close();
-        ERR_POST_X(17, s_FormatErrorMessage("Create", what));
+        ERR_POST_X(11, s_FormatErrorMessage("Create", what));
         return status;
     }
     return eIO_Success;
@@ -790,7 +790,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
     try {
         if (m_LSocket < 0) {
             status = eIO_Closed;
-            throw string("Pipe is closed");
+            throw string("Named pipe closed");
         }
 
         // Wait for the client to connect
@@ -858,7 +858,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             x_CloseSocket(sock);
         }
         Close();
-        ERR_POST_X(18, s_FormatErrorMessage("Listen", what));
+        ERR_POST_X(12, s_FormatErrorMessage("Listen", what));
         return status;
     }
     return eIO_Success;
@@ -868,6 +868,8 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 EIO_Status CNamedPipeHandle::Disconnect(void)
 {
     if ( !m_IoSocket ) {
+        ERR_POST_X(13, s_FormatErrorMessage("Disconnect",
+                                            "Named pipe already closed"));
         return eIO_Closed;
     }
     // Close I/O socket
@@ -884,11 +886,7 @@ EIO_Status CNamedPipeHandle::Close(void)
 
     // Close listening socket
     if (m_LSocket >= 0) {
-        if ( !x_CloseSocket(m_LSocket) ) {
-            ERR_POST_X(19, s_FormatErrorMessage
-                       ("Close", string("UNIX socket close() failed: ") +
-                        strerror(errno)));
-        }
+        x_CloseSocket(m_LSocket);
         m_LSocket = -1;
     }
     return status;
@@ -902,7 +900,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
     try {
         if ( !m_IoSocket ) {
-            throw string("Pipe is closed");
+            throw string("Named pipe closed");
         }
         if ( !count ) {
             // *n_read == 0
@@ -914,7 +912,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         }
     }
     catch (string& what) {
-        ERR_POST_X(20, s_FormatErrorMessage("Read", what));
+        ERR_POST_X(14, s_FormatErrorMessage("Read", what));
     }
     return status;
 }
@@ -928,7 +926,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
 
     try {
         if ( !m_IoSocket ) {
-            throw string("Pipe is closed");
+            throw string("Named pipe closed");
         }
         if ( !count ) {
             // *n_written == 0
@@ -941,7 +939,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         }
     }
     catch (string& what) {
-        ERR_POST_X(21, s_FormatErrorMessage("Write", what));
+        ERR_POST_X(15, s_FormatErrorMessage("Write", what));
     }
     return status;
 }
@@ -951,7 +949,7 @@ EIO_Status CNamedPipeHandle::Wait(EIO_Event event, const STimeout* timeout)
 {
     if ( m_IoSocket )
         return SOCK_Wait(m_IoSocket, event, timeout);
-    ERR_POST_X(22, s_FormatErrorMessage("Wait", "Pipe is closed"));
+    ERR_POST_X(16, s_FormatErrorMessage("Wait", "Named pipe closed"));
     return eIO_Closed;
 }
 
@@ -1128,7 +1126,7 @@ const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
     case eIO_Write:
         return m_WriteTimeout;
     default:
-        ;
+        break;
     }
     return kDefaultTimeout;
 }
@@ -1196,7 +1194,7 @@ EIO_Status CNamedPipeClient::Open(const string&    pipename,
     if ( !m_NamedPipeHandle ) {
         return eIO_Unknown;
     }
-    s_AdjustPipeBufSize(&pipebufsize);
+    s_AdjustPipeBufSize(pipebufsize);
     x_SetName(pipename);
     m_PipeBufSize = pipebufsize;
 
@@ -1240,7 +1238,7 @@ EIO_Status CNamedPipeServer::Create(const string&   pipename,
     if ( !m_NamedPipeHandle ) {
         return eIO_Unknown;
     }
-    s_AdjustPipeBufSize(&pipebufsize);
+    s_AdjustPipeBufSize(pipebufsize);
     x_SetName(pipename);
     m_PipeBufSize = pipebufsize;
 

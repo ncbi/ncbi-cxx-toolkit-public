@@ -205,9 +205,9 @@ protected:
     bool              m_IsClientSide;      ///< client/server-side pipe
 
     /// Timeouts
-    STimeout*         m_OpenTimeout;       ///< eIO_Open
-    STimeout*         m_ReadTimeout;       ///< eIO_Read
-    STimeout*         m_WriteTimeout;      ///< eIO_Write
+    const STimeout*   m_OpenTimeout;       ///< eIO_Open
+    const STimeout*   m_ReadTimeout;       ///< eIO_Read
+    const STimeout*   m_WriteTimeout;      ///< eIO_Write
     STimeout          m_OpenTimeoutValue;  ///< storage for m_OpenTimeout
     STimeout          m_ReadTimeoutValue;  ///< storage for m_ReadTimeout
     STimeout          m_WriteTimeoutValue; ///< storage for m_WriteTimeout
