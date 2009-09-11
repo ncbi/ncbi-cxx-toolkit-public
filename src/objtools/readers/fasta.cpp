@@ -511,7 +511,7 @@ void CFastaReader::ParseTitle(const TStr& s)
 bool CFastaReader::IsValidLocalID(const string& s)
 {
     static const char* const kLegal =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.";
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:";
     return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
 }
 
@@ -1158,7 +1158,7 @@ static SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
 static bool s_IsValidLocalID(const string& s)
 {
     static const char* const kLegal =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.";
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:";
     return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
 }
 
