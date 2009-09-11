@@ -117,10 +117,13 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
     const int kQueryId(0);
     const int kSubjectId(1);
     const TSeqPos kSeqLength(129189614);
+    const int kPadSize = CSubjectRangesSet::kHspExpandSize;
     TSeqRange range1(500, 2000), range2(10000, 12000), range3(130000, 400000);
+    TSeqRange range4(kSeqLength - kPadSize - 10, kSeqLength - kPadSize - 1);
     srs.AddRange(kQueryId, kSubjectId, range1.GetFrom(), range1.GetTo());
     srs.AddRange(kQueryId+1, kSubjectId, range2.GetFrom(), range2.GetTo());
     srs.AddRange(kQueryId, kSubjectId, range3.GetFrom(), range3.GetTo());
+    srs.AddRange(kQueryId, kSubjectId, range4.GetFrom(), range4.GetTo());
     srs.ApplyRanges(db);
     BOOST_REQUIRE(true);    // everything should be fine, no-op
 
@@ -132,7 +135,6 @@ BOOST_AUTO_TEST_CASE(TestCSubjectRangesSetApplyRanges)
     BOOST_REQUIRE(buf[0] != kSentinel);
     BOOST_REQUIRE(buf[len-1] != kSentinel);
     // verify that the 'fence' sentinels are placed in the right locations
-    const int kPadSize = CSubjectRangesSet::kHspExpandSize;
     BOOST_REQUIRE_EQUAL(kSentinel, buf[range1.GetToOpen()+kPadSize]);
     BOOST_REQUIRE_EQUAL(kSentinel, buf[range2.GetFrom()-kPadSize]);
     BOOST_REQUIRE_EQUAL(kSentinel, buf[range2.GetToOpen()+kPadSize]);
