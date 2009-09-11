@@ -292,7 +292,8 @@ public:
                 }
             }
 
-            // create additional markers for potential 'hot dogs'
+            // Create additional markers for potential 'hot dogs'.
+            // A hot dog is a higher-scoring hit within a lower scoring one.
             THitEnds hit_mids;
             typename THit::TId id;
             id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
@@ -325,18 +326,24 @@ public:
                         const float curscore = (*hitrefptr)->GetScore();
                         ITERATE(typename TOpenHits, iis2, open_hits) {
                             
-                            bool hd_score = ((*(iis2->first))->GetScore() < curscore);
-                            bool hd_xr = margin + (*hitrefptr)->GetMax(where)
-                                < (*(iis2->first))->GetMax(iis2->second);
-                            bool hd_xl = (*hitrefptr)->GetMin(where) > margin
-                                + (*(iis2->first))->GetMin(iis2->second);
-                            if(hd_score && hd_xr && hd_xl) {
+                            bool hd_score (((*(iis2->first))->GetScore() < curscore));
+                            // In large-scale alignments, the 'hot dogs' can be 
+                            // numerous and increase the size of hit_mids 
+                            // significantly. This is addressed by using the margin,
+                            // which reduces the number of mid-points stored,
+                            // but requires to scan through endpoints in a larger
+                            // vicinity of a current best hit.
+                            bool hd_xl (margin + (*(iis2->first))->GetMin(iis2->second)
+                                        < (*hitrefptr)->GetMin(where));
+                            bool hd_xr (margin + (*hitrefptr)->GetMax(where)
+                                        < (*(iis2->first))->GetMax(iis2->second));
+                            if(hd_score && hd_xl && hd_xr) {
                                 
                                 THitEnd hm;
                                 hm.m_Point = iis2->second * 2;
                                 hm.m_Ptr = iis2->first;
-                                hm.m_X = ( (*hitrefptr)->GetMin(where) 
-                                           + (*hitrefptr)->GetMax(where) ) / 2;
+                                hm.m_X = ( (*hitrefptr)->GetStart(where) 
+                                           + (*hitrefptr)->GetStop(where) ) / 2;
                                 hit_mids.insert(hm);
                             }
                         }
@@ -417,10 +424,26 @@ public:
                     phe_hi->m_X += margin;
 
                     typedef typename THitEnds::iterator THitEndsIter;
-                    THitEndsIter ii0 = hit_ends.lower_bound(*phe_lo);
-                    THitEndsIter ii1 = hit_ends.upper_bound(*phe_hi);
+                    THitEndsIter ii0 (hit_ends.lower_bound(*phe_lo));
+                    THitEndsIter ii1 (hit_ends.upper_bound(*phe_hi));
 
-                    for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
+                    // special case: if X is zero, go left as long as it's the same id
+                    if(phe_lo->m_X == 0) {
+                        THitRef hitref (*(ii0->m_Ptr));
+                        const typename THit::TId& id (hitref->GetId(ii0->m_Point/2));
+                        for(THitEndsIter ii_start(hit_ends.begin()); 
+                            ii0 != ii_start; --ii0)
+                        {
+                            THitRef hr (*(ii0->m_Ptr));
+                            const typename THit::TId & id2 (hr->GetId(ii0->m_Point/2));
+                            if(0 != id->CompareOrdered(*id2)) {
+                                ++ii0;
+                                break;
+                            }
+                        }
+                    }
+
+                    for(typename THitEnds::iterator ii (ii0); ii != ii1; ++ii) {
                     
                         const THitEnd& he = *ii;                   
 
@@ -495,15 +518,16 @@ public:
 
                                     // TODO: add midpoints for potential 
                                     // hot dogs as above
-                                }
-                            }
-                        }
-                    }
-                }
+
+                                } // if(new_hit.NotEmpty())
+                            } // if(newpos >= 0) 
+                        } // if(alive && !self)
+                    } // for(ii ...
+                } // for(where ...
 
                 skip[&hc - hitref_firstptr] = true;
-            }
-        }
+            } // while(restart == false)
+        } // while(restart)
 
         // execute any pending deletions
         typename THitRefs::iterator all_beg = all.begin(), ii = all_beg;
