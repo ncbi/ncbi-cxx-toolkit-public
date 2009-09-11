@@ -1149,10 +1149,9 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     int        x_exitcode;
 
     if (m_Pid != (pid_t)(-1)) {
-        int           x_options;
         unsigned long x_timeout;
+        int           x_options;
 
-        status = eIO_Unknown;
         if ( timeout ) {
             // If timeout is not infinite
             x_timeout = NcbiTimeoutToMs(timeout);
@@ -1162,15 +1161,11 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             x_options = 0;
         }
 
+        status = eIO_Unknown;
         // Retry if interrupted by signal
         for (;;) {
             pid_t ws = waitpid(m_Pid, &x_exitcode, x_options);
-            if (ws > 0) {
-                // Process has terminated
-                assert(ws == m_Pid);
-                status = eIO_Success;
-                break;
-            } else if (ws == 0) {
+            if (!ws) {
                 // Process is still running
                 assert(timeout);
                 if ( !x_timeout  &&  status == eIO_Timeout ) {
@@ -1186,7 +1181,13 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
                 }
                 SleepMilliSec(x_sleep);
                 x_timeout -= x_sleep;
+            } else if (ws != (pid_t)(-1)) {
+                // Process has terminated
+                assert(ws == m_Pid);
+                status = eIO_Success;
+                break;
             } else if (errno != EINTR) {
+                status = eIO_Unknown;
                 break;
             }
         }
@@ -1200,10 +1201,13 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
     // Is the process still running?
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
-        unsigned long x_timeout = 
-            timeout ? NcbiTimeoutToMs(timeout) : CProcess::kDefaultKillTimeout;
-        status = eIO_Success;
         if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
+            unsigned long x_timeout;
+            if (!timeout  ||  (timeout->sec | timeout->usec)) {
+                x_timeout = CProcess::kDefaultKillTimeout;
+            } else {
+                x_timeout = 0/*fast but unsafe*/;
+            }
             bool killed;
             if ( IS_SET(m_Flags, CPipe::fNewGroup) ) {
                 killed = CProcess(m_Pid, CProcess::ePid).KillGroup(x_timeout);
@@ -1211,6 +1215,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
                 killed = CProcess(m_Pid, CProcess::ePid).Kill(x_timeout);
             }
             status = killed ? eIO_Success : eIO_Unknown;
+        } else {
+            status = eIO_Success;
         }
     }
     if (status != eIO_Timeout) {
