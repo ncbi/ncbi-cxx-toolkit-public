@@ -1778,31 +1778,6 @@ s_SeqEntropy(SSequence* seq, Int4 window, Int4 maxbogus)
    return(H);
 }
 
-/** Appends second arg to end of first one.
- * @param segs structure to be appended to [in]
- * @param seg structure to append [in]
- */
-static void
-s_AppendSeg(SSeg* segs, SSeg* seg)
-{
-   SSeg* temp = segs;
-
-   while (TRUE)
-   {
-      if (temp->next==NULL)
-      {
-         temp->next = seg;
-         break;
-      }
-      else
-      {
-         temp = temp->next;
-      }
-   }
-
-   return;
-}
-
 /*---------------------------------------------------------------(s_FindLow)---*/
 
 /** Finds the first element above hicut, looks from i to limit.
@@ -2119,8 +2094,7 @@ static void
 s_MergeSegs(SSequence* seq, SSeg* segs)
 {
    SSeg* seg,* nextseg;
-   Int4 hilenmin;		/* hilenmin yet unset */
-   Int4 len;
+   Int4 hilenmin;              /* hilenmin yet unset */
 
    hilenmin = 0;               /* hilenmin - temporary default */
 
@@ -2132,33 +2106,15 @@ s_MergeSegs(SSequence* seq, SSeg* segs)
    seg = segs;
    nextseg = seg->next;
 
-   while (nextseg!=NULL)
-     {
-      if (seg->begin<=nextseg->begin)             /* contained segments */
-        {
+   while (nextseg!=NULL) {
+      if (seg->begin - nextseg->end - 1 < hilenmin) {
+         if (seg->end < nextseg->end) seg->end = nextseg->end;
+         if (seg->begin > nextseg->begin) seg->begin = nextseg->begin;
          seg->next = nextseg->next;
          sfree(nextseg);
-         nextseg = seg->next;
-         continue;
-        }
-      if (seg->begin<=nextseg->end)               /* overlapping segments */
-        {
-         seg->begin = nextseg->begin;
-         seg->next = nextseg->next;
-         sfree(nextseg);
-         nextseg = seg->next;
-         continue;
-        }
-      len = seg->begin - nextseg->end - 1;
-      if (len<hilenmin)                            /* short hient segment */
-        {
-         seg->begin = nextseg->begin;
-         seg->next = nextseg->next;
-         sfree(nextseg);
-         nextseg = seg->next;
-         continue;
-        }
-      seg = nextseg;
+      } else {
+         seg = nextseg;
+      }
       nextseg = seg->next;
    }
 
