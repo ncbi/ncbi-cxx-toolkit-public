@@ -162,6 +162,8 @@ SplitQuery_CalculateNumChunks(EBlastProgramType program,
     size_t overlap_size = SplitQuery_GetOverlapChunkSize(program);
     Uint4 num_chunks = 0;
 
+    _DEBUG_ARG(size_t target_chunk_size = *chunk_size);
+
     // For translated queries the chunk size should be divisible by CODON_LENGTH
     if (Blast_QueryIsTranslated(program)) {
         size_t chunk_size_delta = ((*chunk_size) % CODON_LENGTH);
