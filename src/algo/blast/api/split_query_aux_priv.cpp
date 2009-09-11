@@ -171,12 +171,22 @@ SplitQuery_CalculateNumChunks(EBlastProgramType program,
         _ASSERT((*chunk_size % CODON_LENGTH) == 0);
     }
 
-    num_chunks = (concatenated_query_length - overlap_size) / ((*chunk_size) - overlap_size);
+    // Fix for small query size
+    if ((*chunk_size) > overlap_size) {
+       num_chunks = concatenated_query_length / ((*chunk_size) - overlap_size);
+    }
 
     // Only one chunk, just return;
     if (num_chunks <= 1) {
        *chunk_size = concatenated_query_length;
        return 1;
+    }
+
+    // Re-adjust the chunk_size to make load even
+    if (!Blast_QueryIsTranslated(program)) {
+       *chunk_size = (concatenated_query_length + (num_chunks - 1) * overlap_size) / num_chunks;
+       // Round up only if this will not decrease the number of chunks
+       if (num_chunks < (*chunk_size) - overlap_size ) (*chunk_size)++;
     }
 
     _TRACE("Number of chunks: " << num_chunks << "; "
