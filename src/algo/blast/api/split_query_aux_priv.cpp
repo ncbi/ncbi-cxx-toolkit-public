@@ -159,26 +159,22 @@ SplitQuery_CalculateNumChunks(EBlastProgramType program,
         return 1;
     }
 
-    size_t target_chunk_size = *chunk_size;
-    Uint4 num_chunks = concatenated_query_length / (target_chunk_size - SplitQuery_GetOverlapChunkSize(program));
-    // Only one chunk, just return;
-    if (num_chunks <= 1)
-    {
-       *chunk_size = concatenated_query_length;
-       return 1;
-    }
-
-    // Takes into account num_chunks-1 overlaps "between" chunks.
-    // Also rounds up.
-    *chunk_size = 1 + (concatenated_query_length + SplitQuery_GetOverlapChunkSize(program)*(num_chunks-1))/ num_chunks;
+    size_t overlap_size = SplitQuery_GetOverlapChunkSize(program);
+    Uint4 num_chunks = 0;
 
     // For translated queries the chunk size should be divisible by CODON_LENGTH
     if (Blast_QueryIsTranslated(program)) {
         size_t chunk_size_delta = ((*chunk_size) % CODON_LENGTH);
         *chunk_size -= chunk_size_delta;
-        // Add one more if we have a lot of chunks, otherwise it goes on the end of the last one.
-        num_chunks += num_chunks*chunk_size_delta/(target_chunk_size - SplitQuery_GetOverlapChunkSize(program));
         _ASSERT((*chunk_size % CODON_LENGTH) == 0);
+    }
+
+    num_chunks = (concatenated_query_length - overlap_size) / ((*chunk_size) - overlap_size);
+
+    // Only one chunk, just return;
+    if (num_chunks <= 1) {
+       *chunk_size = concatenated_query_length;
+       return 1;
     }
 
     _TRACE("Number of chunks: " << num_chunks << "; "
