@@ -3449,7 +3449,9 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*HAVE_SIN_LEN*/
         SOCK_HostPortToString(host, port, s, sizeof(s));
         c = s;
+#ifdef NCBI_OS_UNIX
         u = 0/*dummy*/;
+#endif /*NCBI_OS_UNIX*/
     }
     x_error = bind(x_lsock, &addr.sa, addrlen) != 0 ? SOCK_ERRNO : 0;
 #ifdef NCBI_OS_UNIX
