@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -38,10 +38,10 @@
 
 #define NCBI_USE_ERRCODE_X   Corelib_System
 
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
 #  if defined(NCBI_OS_SOLARIS)
 #    include <corelib/ncbifile.hpp>
-#  endif
+#  endif //NCBI_OS_SOLARIS
 #  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
@@ -50,27 +50,27 @@
 #  include <unistd.h>
 #  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
 #    include <sys/sysctl.h>
-#  endif
+#  endif //NCBI_OS_BSD || NCBI_OS_DARWIN
 #  if defined(NCBI_OS_IRIX)
 #    include <sys/sysmp.h>
-#  endif
+#  endif //NCBI_OS_IRIX
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
-#endif
+#endif //NCBI_OS_UNIX
 
-#if defined(NCBI_OS_DARWIN)
+#ifdef NCBI_OS_DARWIN
 extern "C" {
 #  include <mach/mach.h>
 #  include <mach/mach_host.h>
 #  include <mach/host_info.h>
 } /* extern "C" */
-#endif
+#endif //NCBI_OS_DARWIN
 
-#if defined(USE_SETCPULIMIT)
+#ifdef USE_SETCPULIMIT
 #  include <signal.h>
-#endif
+#endif //USE_SETCPULIMIT
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 #  include <corelib/ncbidll.hpp>
 #  include <crtdbg.h>
 #  include <stdlib.h>
@@ -90,7 +90,7 @@ struct SProcessMemoryCounters
     SIZE_T peak_pagefile_usage;
 };
 
-#endif
+#endif //NCBI_OS_MSWIN
 
 
 BEGIN_NCBI_SCOPE
@@ -106,7 +106,7 @@ extern "C" {
     static void s_ExitHandler(void);
     static void s_SignalHandler(int sig);
 }
-#endif  /* NCBI_COMPILER_MIPSPRO */
+#endif //NCBI_COMPILER_MIPSPRO
 
 
 #ifdef NCBI_OS_UNIX
@@ -183,7 +183,7 @@ static void s_ExitHandler(void)
 #ifdef CLK_TCK
             if (!tick  ||  tick == (clock_t)(-1))
                 tick = CLK_TCK;
-#endif /*CLK_TCK*/
+#endif //CLK_TCK
             if (tick == (clock_t)(-1))
                 tick = 0;
             LOG_POST_X(4, "\tuser CPU time   : " << 
@@ -239,7 +239,7 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
     return true;
 }
     
-#endif /* NCBI_OS_UNIX */
+#endif //NCBI_OS_UNIX
 
 
 
@@ -297,7 +297,7 @@ bool SetHeapLimit(size_t max_heap_size,
   return false;
 }
 
-#endif /* USE_SETHEAPLIMIT */
+#endif //USE_SETHEAPLIMIT
 
 
 
@@ -365,7 +365,7 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
     return false;
 }
 
-#endif /* USE_SETCPULIMIT */
+#endif //USE_SETCPULIMIT
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -406,11 +406,11 @@ unsigned int GetCpuCount(void)
     mib[1] = HW_NCPU;
     if (sysctl(mib, 2, &nproc, &len, 0, 0) < 0 || len != sizeof(nproc))
         nproc = -1;
-# endif /*UNIX_FLAVOR*/
+# endif //UNIX_FLAVOR
     return nproc <= 0 ? 1 : (unsigned int) nproc;
 #else
     return 1;
-#endif /*OS_TYPE*/
+#endif //NCBI_OS_...
 }
 
 
@@ -451,7 +451,7 @@ unsigned long GetVirtualMemoryPageSize(void)
             return 0;
         }
         ps = x;
-#endif /*OS_TYPE*/
+#endif //NCBI_OS_...
     }
     return ps;
 }
@@ -518,7 +518,7 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
     if ( !total )    { total    = &scratch; }
     if ( !resident ) { resident = &scratch; }
     if ( !shared )   { shared   = &scratch; }
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     try {
         // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
         CDll psapi_dll("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
@@ -531,8 +531,8 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
             SProcessMemoryCounters counters;
             dllGetProcessMemoryInfo(GetCurrentProcess(), counters,
                                     sizeof(counters));
-            *total    = counters.quota_paged_pool_usage
-                        + counters.quota_nonpaged_pool_usage;
+            *total    = counters.quota_paged_pool_usage +
+                        counters.quota_nonpaged_pool_usage;
             *resident = counters.working_set_size;
             *shared   = 0;
             return true;
@@ -541,9 +541,9 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
         // Just catch all exceptions from CDll
     }
 #elif defined(NCBI_OS_LINUX)
-    static unsigned long page_size = GetVirtualMemoryPageSize();
     CNcbiIfstream statm("/proc/self/statm");
     if (statm) {
+        unsigned long page_size = GetVirtualMemoryPageSize();
         statm >> *total >> *resident >> *shared;
         *total    *= page_size;
         *resident *= page_size;
@@ -559,15 +559,22 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
         return true;
     }
 #elif defined(HAVE_GETRUSAGE)
+#  define _DIV0(a, b) ((a) / ((b) ? (b) : 1))
+    // BIG FAT NOTE:  getrusage() seems to use different size units
     struct rusage ru;
-    memset(&ru, '0', sizeof(ru));
-    if (getrusage(RUSAGE_SELF, &ru) >= 0  &&  ru.ru_maxrss > 0) {
-        // XXX - account for "ticks of execution"?
-        *total = ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss;
-        *resident = ru.ru_maxrss;
-        *shared = ru.ru_ixrss;
-        return true;
+    memset(&ru, '\0', sizeof(ru));
+    if (getrusage(RUSAGE_SELF, &ru) == 0  &&  ru.ru_maxrss > 0) {
+        struct tms t;
+        memset(&t, '\0', sizeof(t));
+        if (times(&t) != (clock_t)(-1)) {
+            clock_t ticks = t.tms_utime + t.tms_stime;
+            *total    = _DIV0(ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss, ticks);
+            *resident = _DIV0(ru.ru_idrss,                             ticks);
+            *shared   = _DIV0(ru.ru_ixrss,                             ticks);
+            return true;
+        }
     }
+#  undef _DIV0
 #endif
     return false;
 }
@@ -582,11 +589,13 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 {
 #if defined(NCBI_OS_MSWIN)
 
-    if (mc_sec < 500){
-        mc_sec = 500;
-    }
+    // Unlike some of its (buggy) Unix counterparts, MS-Win's Sleep() is safe
+    // to use with 0, which causes the current thread to sleep at most until
+    // the end of the current timeslice (and only if the CPU is not idle).
     Sleep((mc_sec + 500) / 1000);
+
 #elif defined(NCBI_OS_UNIX)
+
 #  if defined(HAVE_NANOSLEEP)
     struct timespec delay, unslept;
     delay.tv_sec  =  mc_sec / kMicroSecondsPerSecond;
@@ -596,11 +605,22 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
             break;
         delay = unslept;
     }
+#  elif defined(HAVE_USLEEP)
+    unsigned int sec  = mc_sec / kMicroSecondsPerSecond;
+    unsigned int usec = mc_sec % kMicroSecondsPerSecond;
+    if (sec) {
+        while ((sec = sleep(sec)) > 0) {
+            if (onsignal == eInterruptOnSignal)
+                return;
+        }
+    }
+    usleep(usec);
 #  else
     // Portable but ugly.
-    // Most implementations of select() do not modifies timeout to reflect
-    // the amount of time not slept; but some do this. Also, on some
-    // platforms it can be interrupted by a signal, on other not.
+    // Most implementations of select() do not modify timeout to reflect
+    // the amount of time unslept;  but some (e.g. Linux) do.  Also, on
+    // some platforms it can be interrupted by a signal, but not on others.
+    // OTOH, we don't want to sandwich this with gettimeofday(), either.
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
@@ -610,9 +630,9 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 #    endif
             break;
     }
-#  endif /*HAVE_NANOSLEEP*/
+#  endif //HAVE FINE SLEEP API
 
-#endif /*NCBI_OS_...*/
+#endif //NCBI_OS_...
 }
 
 
@@ -622,7 +642,7 @@ void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
     Sleep(ml_sec);
 #elif defined(NCBI_OS_UNIX)
     SleepMicroSec(ml_sec * 1000, onsignal);
-#endif
+#endif //NCBI_OS_...
 }
 
 
@@ -635,10 +655,10 @@ void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Suppress Diagnostic Popup Messages
+/// Suppress Diagnostic Popup Messages (all MS-Win specific)
 ///
 
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
 
 static bool s_EnableSuppressSystemMessageBox = true;
 static bool s_DoneSuppressSystemMessageBox   = false;
@@ -650,11 +670,11 @@ static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
-#endif
+#endif //NCBI_OS_MSWIN
 
 extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
 {
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     if ( !s_EnableSuppressSystemMessageBox ) {
         return;
     }
@@ -681,22 +701,18 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
         SetUnhandledExceptionFilter(_SEH_Handler);
     }
     s_DoneSuppressSystemMessageBox = true;
-#else
-    // not implemented
-#endif
+#endif //NCBI_OS_MSWIN
 }
 
 
-extern void DisableSuppressSystemMessageBox()
+extern void DisableSuppressSystemMessageBox(void)
 {
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     if ( s_DoneSuppressSystemMessageBox ) {
-        ERR_POST_X(9, Critical << "SuppressSystemMessageBox() was already called");
+        ERR_POST_X(9, Critical << "SuppressSystemMessageBox() already called");
     }
     s_EnableSuppressSystemMessageBox = false;
-#else
-    // not implemented
-#endif
+#endif //NCBI_OS_MSWIN
 }
 
 
