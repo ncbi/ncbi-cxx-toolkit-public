@@ -88,7 +88,7 @@ ln -s $test_base.1/1234567890123456789012345678901234567890123456789012345678901
 echo "`date` *** Creating test archive using native tar utility"
 echo
 
-(cd $test_base.1  &&  $tar cvf $test_base.tar .)
+( cd $test_base.1  &&  $tar cvf $test_base.tar . )                    ||  exit
 
 rm -rf $test_base.1
 mkdir  $test_base.1                                                   ||  exit 1
