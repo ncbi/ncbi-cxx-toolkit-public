@@ -251,10 +251,10 @@ void CTest::Server(void)
 {
     LOG_POST("\nStart server...\n");
 
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
     // Remove the pipe if it is already exists
     CFile(m_PipeName).Remove();
-#endif  
+#endif //NCBI_OS_UNIX
 
     char buf[kSubBlobSize];
     size_t   n_read    = 0;
@@ -312,7 +312,7 @@ void CTest::Server(void)
                 free(blob);
                 LOG_POST("Blob test is OK...");
             }}
-            LOG_POST("Disconnect client...");
+            LOG_POST("Client disconnected...");
             assert(pipe.Disconnect() == eIO_Success);
             break;
 
