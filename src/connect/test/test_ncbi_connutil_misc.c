@@ -273,7 +273,7 @@ static void TEST_ConnNetInfo(void)
     printf("HTTP User Header:\n\"%s\"\n",
            net_info->http_user_header ? net_info->http_user_header : "<NONE>");
     ConnNetInfo_AppendUserHeader(net_info,
-                                 "My-Tag1: Value1\r\n"
+                                 "My-Tag1:Value1\r\n"
                                  "My-Tag2: Value2\r\n"
                                  "My-Tag3: Value3\r\n");
     printf("HTTP User Header after append:\n\"%s\"\n",
@@ -290,8 +290,10 @@ static void TEST_ConnNetInfo(void)
                                  "My-Tag5: \t \r\n"
                                  "My-Tag6: Value 6\r\n");
     ConnNetInfo_ExtendUserHeader(net_info,
+                                 "My-Tag4: Value 4.1\r\n"
                                  "My-Tag6: Value 6\r\n");
     ConnNetInfo_ExtendUserHeader(net_info,
+                                 "My-Tag4:Value 4\r\n"
                                  "My-Tag6:Value 6\r\n");
     printf("HTTP User Header after extend:\n\"%s\"\n",
            net_info->http_user_header ? net_info->http_user_header : "<NONE>");
