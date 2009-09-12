@@ -41,14 +41,11 @@
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  include <errno.h>
-#  include <fcntl.h>
 #  include <errno.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>
 #  include <sys/types.h>
-#  include <sys/time.h>
-#  include <sys/un.h>
-#  include <connect/ncbi_socket.h>
+#  include <connect/ncbi_socket_unix.h>
 #else
 #  error "Class CNamedPipe is supported only on Windows and Unix"
 #endif
@@ -140,8 +137,8 @@ public:
     // common
 
     EIO_Status Close(void);
-    EIO_Status Read(void* buf, size_t count, size_t* n_read,
-                    const STimeout* timeout);
+    EIO_Status Read (void*       buf, size_t count, size_t* n_read,
+                     const STimeout* timeout);
     EIO_Status Write(const void* buf, size_t count, size_t* n_written,
                      const STimeout* timeout);
     EIO_Status Wait(EIO_Event event, const STimeout* timeout);
@@ -189,12 +186,12 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         attr.bInheritHandle = TRUE;
         attr.lpSecurityDescriptor = NULL;
 
-        // Waits until either a time-out interval elapses or an instance of
+        // Wait until either a time-out interval elapses or an instance of
         // the specified named pipe is available for connection (that is, the
         // pipe's server process has a pending Listen() operation on the pipe).
 
-        // NOTE: We do not use here a WaitNamedPipe() because it works
-        //       incorrectly in some cases.
+        // NOTE:  We do not use here WaitNamedPipe() because it works
+        //        incorrectly in some cases.
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
@@ -224,7 +221,6 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         return eIO_Timeout;
     }
     catch (string& what) {
-        Close();
         ERR_POST_X(10, s_FormatErrorMessage("Open", what));
         return eIO_Unknown;
     }
@@ -260,14 +256,13 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                  &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            throw "Failed to create named pipe \"" + m_PipeName + '\'';
+            throw "CreateNamedPipe(\"" + m_PipeName + "\") failed";
         }
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
         return eIO_Success;
     }
     catch (string& what) {
-        Close();
         ERR_POST_X(11, s_FormatErrorMessage("Create", what));
         return eIO_Unknown;
     }
@@ -279,7 +274,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
     EIO_Status status = eIO_Unknown;
 
     // Wait for the client to connect, or time out.
-    // NOTE: The function WaitForSingleObject() do not work with pipes.
+    // NOTE:  WaitForSingleObject() does not work with pipes.
     DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
     try {
@@ -369,15 +364,14 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             throw string("Named pipe closed");
         }
         if ( !count ) {
-            m_ReadStatus = eIO_Success;
-            return m_ReadStatus;
+            return eIO_Success;
         }
 
         DWORD x_timeout   = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_avail = 0;
 
         // Wait for data from the pipe with timeout.
-        // NOTE:  The function WaitForSingleObject() does not work with pipes.
+        // NOTE:  WaitForSingleObject() does not work with pipes.
 
         do {
             if ( !PeekNamedPipe(m_Pipe, NULL, 0, NULL, &bytes_avail, NULL) ) {
@@ -446,7 +440,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         DWORD bytes_written = 0;
 
         // Wait for data from the pipe with timeout.
-        // NOTE:  The function WaitForSingleObject() does not work with pipes.
+        // NOTE:  WaitForSingleObject() does not work with pipes.
 
         do {
             if (!WriteFile(m_Pipe, (char*)buf, count, &bytes_written, NULL)) {
@@ -549,20 +543,20 @@ public:
     EIO_Status Status(EIO_Event direction) const;
 
 private:
-    // Close socket persistently
-    bool x_CloseSocket(int sock);
     // Set socket i/o buffer size (dir: SO_SNDBUF, SO_RCVBUF)
     bool x_SetSocketBufSize(int sock, size_t pipebufsize, int dir);
+    // Disconnect implementation
+    EIO_Status x_Disconnect(void);
 
 private:
-    int     m_LSocket;      // listening socket
+    LSOCK   m_LSocket;      // listening socket
     SOCK    m_IoSocket;     // I/O socket
     size_t  m_PipeBufSize;  // pipe buffer size
 };
 
 
 CNamedPipeHandle::CNamedPipeHandle()
-    : m_LSocket(-1), m_IoSocket(0), m_PipeBufSize(0)
+    : m_LSocket(0), m_IoSocket(0), m_PipeBufSize(0)
 {
     return;
 }
@@ -579,137 +573,34 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                                   size_t          pipebufsize)
 {
     EIO_Status status = eIO_Unknown;
-    struct sockaddr_un addr;
-    int sock = -1;
 
     try {
-        if (m_LSocket >= 0  ||  m_IoSocket) {
+        if (m_LSocket  ||  m_IoSocket) {
             throw string("Named pipe already open");
         }
-        if (sizeof(addr.sun_path) <= pipename.length()) {
-            status = eIO_InvalidArg;
-            throw "Named pipe name too long: \"" + pipename + '"';
+
+        status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
+                                 NULL, 0, 0/*flags*/);
+        if (status != eIO_Success) {
+            throw string("Named pipe SOCK_CreateUNIX failed: ")
+                + IO_StatusStr(status);
         }
+
         m_PipeBufSize = pipebufsize;
 
-        // Create a UNIX socket
-        if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-            throw string("UNIX socket() failed: ")
-                + strerror(errno);
-        }
-
         // Set buffer size
-        if ( m_PipeBufSize ) {
-            if ( !x_SetSocketBufSize(sock, m_PipeBufSize, SO_SNDBUF)  ||
-                 !x_SetSocketBufSize(sock, m_PipeBufSize, SO_RCVBUF) ) {
-                throw string("UNIX socket set buffer size failed: ")
-                    + strerror(errno);
-            }
-        }
-
-        // Set non-blocking mode
-        if (fcntl(sock, F_SETFL,
-                  fcntl(sock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-            throw string("UNIX socket set to non-blocking failed: ")
-                + strerror(errno);
-        }
-        
-        // Connect to server
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-#ifdef HAVE_SIN_LEN
-        addr.sun_len = (SOCK_socklen_t) sizeof(addr);
-#endif
-        strcpy(addr.sun_path, pipename.c_str());
-        
-        int n;
-        int x_errno = 0;
-        // Auto-resume if interrupted by a signal
-        for (n = 0; ; n = 1) {
-            if (connect(sock, (struct sockaddr*) &addr,
-                        (SOCK_socklen_t) sizeof(addr)) == 0) {
-                break;
-            }
-            x_errno = errno;
-            if (x_errno != EINTR) { 
-                break;
-            }
-        }
-        // If not connected
-        if ( x_errno ) {
-            if ((n != 0  ||  x_errno != EINPROGRESS)  &&
-                (n == 0  ||  x_errno != EALREADY)     &&
-                x_errno != EWOULDBLOCK) {
-                if (x_errno == EINTR) {
-                    status = eIO_Interrupt;
-                }
-                throw "UNIX socket connect(\"" + pipename + "\") failed: "
-                    + strerror(x_errno);
-            }
-
-            if (!timeout  ||  timeout->sec  ||  timeout->usec) {
-                // Wait for socket to connect (if timeout is set or infinite)
-                for (;;) { // Auto-resume if interrupted by a signal
-                    struct timeval* tmp;
-                    struct timeval  tm;
-
-                    if ( !timeout ) {
-                        // NB: Timeout has been normalized already
-                        tm.tv_sec  = timeout->sec;
-                        tm.tv_usec = timeout->usec;
-                        tmp = &tm;
-                    } else {
-                        tmp = 0;
-                    }
-                    fd_set wfds;
-                    fd_set efds;
-                    FD_ZERO(&wfds);
-                    FD_ZERO(&efds);
-                    FD_SET(sock, &wfds);
-                    FD_SET(sock, &efds);
-                    n = select(sock + 1, 0, &wfds, &efds, tmp);
-                    if (n == 0) {
-                        x_CloseSocket(sock);
-                        Close();
-                        return eIO_Timeout;
-                    }
-                    if (n > 0) {
-                        if ( FD_ISSET(sock, &wfds) ) {
-                            break;
-                        }
-                        assert( FD_ISSET(sock, &efds) );
-                    }
-                    if (n < 0  &&  errno == EINTR) {
-                        continue;
-                    }
-                    throw string("UNIX socket select() failed: ")
+        if (m_PipeBufSize) {
+            int fd;
+            if (SOCK_GetOSHandle(m_IoSocket, &fd, sizeof(fd)) == eIO_Success) {
+                if (!x_SetSocketBufSize(fd, m_PipeBufSize, SO_SNDBUF)  ||
+                    !x_SetSocketBufSize(fd, m_PipeBufSize, SO_RCVBUF)) {
+                    throw string("UNIX socket set buffer size failed: ")
                         + strerror(errno);
                 }
-                // Check connection
-                x_errno = 0;
-                SOCK_socklen_t x_len = (SOCK_socklen_t) sizeof(x_errno);
-                if ((getsockopt(sock, SOL_SOCKET, SO_ERROR, &x_errno, 
-                                &x_len) != 0  ||  x_errno != 0)) {
-                    throw string("UNIX socket getsockopt() failed: ")
-                        + strerror(x_errno ? x_errno : errno);
-                }
-                if (x_errno == ECONNREFUSED) {
-                    status = eIO_Closed;
-                    throw "Connection refused in \"" + pipename + '"';
-                }
             }
-        }
-
-        // Create I/O socket
-        if (SOCK_CreateOnTop(&sock, sizeof(sock), &m_IoSocket) != eIO_Success){
-            throw string("UNIX socket cannot convert to SOCK");
         }
     }
     catch (string& what) {
-        if (sock >= 0) {
-            x_CloseSocket(sock);
-        }
-        Close();
         ERR_POST_X(10, s_FormatErrorMessage("Open", what));
         return status;
     }
@@ -721,60 +612,23 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                                     size_t        pipebufsize)
 {
     EIO_Status status = eIO_Unknown;
-    struct sockaddr_un addr;
 
     try {
-        if (m_LSocket >= 0  ||  m_IoSocket) {
+        if (m_LSocket  ||  m_IoSocket) {
             throw string("Named pipe already open");
         }
-        if (sizeof(addr.sun_path) <= pipename.length()) {
-            status = eIO_InvalidArg;
-            throw "Named pipe name too long: \"" + pipename + '"';
+
+        status = LSOCK_CreateUNIX(pipename.c_str(),
+                                  kListenQueueSize,
+                                  &m_LSocket, 0);
+        if (status != eIO_Success) {
+            throw string("Named pipe LSOCK_CreateUNIX failed: ")
+                + IO_StatusStr(status);
         }
+
         m_PipeBufSize = pipebufsize;
-
-        // Create a UNIX socket
-        if ((m_LSocket = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-            throw string("UNIX socket() failed: ")
-                + strerror(errno);
-        }
-        // Remove any pre-existing socket (or other file)
-        if (unlink(pipename.c_str()) != 0  &&  errno != ENOENT) {
-            throw "UNIX socket unlink(\"" + pipename + "\") failed: "
-                + strerror(errno);
-        }
-
-        // Bind socket
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-#ifdef HAVE_SIN_LEN
-        addr.sun_len = (SOCK_socklen_t) sizeof(addr);
-#endif
-        strcpy(addr.sun_path, pipename.c_str());
-        mode_t u = umask(0);
-        if (bind(m_LSocket, (struct sockaddr*) &addr,
-                 (SOCK_socklen_t) sizeof(addr)) != 0) {
-            umask(u);
-            throw "UNIX socket bind(\"" + pipename + "\") failed: "
-                + strerror(errno);
-        }
-        umask(u);
-#ifndef NCBI_OS_IRIX
-        fchmod(m_LSocket, S_IRWXU | S_IRWXG | S_IRWXO);
-#endif
-        // Listen for connections on a socket
-        if (listen(m_LSocket, kListenQueueSize) != 0) {
-            throw "UNIX socket listen(\"" + pipename + "\") failed: "
-                + strerror(errno);
-        }
-        if (fcntl(m_LSocket, F_SETFL,
-                  fcntl(m_LSocket, F_GETFL, 0) | O_NONBLOCK) == -1) {
-            throw string("UNIX socket set to non-blocking failed: ")
-                + strerror(errno);
-        }
     }
     catch (string& what) {
-        Close();
         ERR_POST_X(11, s_FormatErrorMessage("Create", what));
         return status;
     }
@@ -785,83 +639,45 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 {
     EIO_Status status = eIO_Unknown;
-    int        sock   = -1;
 
     try {
-        if (m_LSocket < 0) {
+        if (!m_LSocket  ||  m_IoSocket) {
             status = eIO_Closed;
-            throw string("Named pipe closed");
+            throw string("Named pipe not listening");
         }
 
-        // Wait for the client to connect
-        for (;;) { // Auto-resume if interrupted by a signal
-            struct timeval* tmp;
-            struct timeval  tm;
+        status = LSOCK_Accept(m_LSocket, timeout, &m_IoSocket);
+        if (status != eIO_Success)
+            throw string("Named pipe LSOCK_Accept() failed: ")
+                + IO_StatusStr(status);
 
-            if (timeout) {
-                // NB: Timeout has been normalized already
-                tm.tv_sec  = timeout->sec;
-                tm.tv_usec = timeout->usec;
-                tmp = &tm;
-            } else {
-                tmp = 0;
-            }
-            fd_set rfds;
-            fd_set efds;
-            FD_ZERO(&rfds);
-            FD_ZERO(&efds);
-            FD_SET(m_LSocket, &rfds);
-            FD_SET(m_LSocket, &efds);
-
-            int n = select(m_LSocket + 1, &rfds, 0, &efds, tmp);
-            if (n == 0) {
-                return eIO_Timeout;
-            }
-            if (n > 0) {
-                if ( FD_ISSET(m_LSocket, &rfds) )
-                    break;
-                assert( FD_ISSET(m_LSocket, &efds) );
-            }
-            if (n < 0  &&  errno == EINTR) {
-                continue;
-            }
-            throw string("UNIX socket select() failed: ")
-                + strerror(errno);
-        }
-
-        // Can accept next connection from the list of waiting ones
-        struct sockaddr_un addr;
-        socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
-        memset(&addr, 0, sizeof(addr));
-#  ifdef HAVE_SIN_LEN
-        addr.sun_len = sizeof(addr);
-#  endif
-        if ((sock = accept(m_LSocket, (struct sockaddr*)&addr, &addrlen)) < 0){
-            throw string("UNIX socket accept() failed: ")
-                + strerror(errno);
-        }
         // Set buffer size
-        if ( m_PipeBufSize ) {
-            if ( !x_SetSocketBufSize(sock, m_PipeBufSize, SO_SNDBUF)  ||
-                 !x_SetSocketBufSize(sock, m_PipeBufSize, SO_RCVBUF) ) {
-                throw string("UNIX socket set buffer size failed: ")
-                    + strerror(errno);
+        if (m_PipeBufSize) {
+            int fd;
+            if (SOCK_GetOSHandle(m_IoSocket, &fd, sizeof(fd)) == eIO_Success) {
+                if (!x_SetSocketBufSize(fd, m_PipeBufSize, SO_SNDBUF)  ||
+                    !x_SetSocketBufSize(fd, m_PipeBufSize, SO_RCVBUF)) {
+                    throw string("UNIX socket set buffer size failed: ")
+                        + strerror(errno);
+                }
             }
-        }
-        // Create new I/O socket
-        if (SOCK_CreateOnTop(&sock, sizeof(sock), &m_IoSocket) != eIO_Success){
-            throw string("UNIX socket cannot convert to SOCK");
         }
     }
     catch (string& what) {
-        if (sock >= 0) {
-            x_CloseSocket(sock);
-        }
-        Close();
         ERR_POST_X(12, s_FormatErrorMessage("Listen", what));
         return status;
     }
     return eIO_Success;
+}
+
+
+EIO_Status CNamedPipeHandle::x_Disconnect(void)
+{
+    // Close I/O socket
+    _ASSERT(m_IoSocket);
+    EIO_Status status = SOCK_Close(m_IoSocket);
+    m_IoSocket = 0;
+    return status;
 }
 
 
@@ -872,22 +688,19 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
                                             "Named pipe already closed"));
         return eIO_Closed;
     }
-    // Close I/O socket
-    EIO_Status status = SOCK_Close(m_IoSocket);
-    m_IoSocket = 0;
-    return status;
+    return x_Disconnect();
 }
 
 
 EIO_Status CNamedPipeHandle::Close(void)
 {
     // Disconnect current client
-    EIO_Status status = Disconnect();
+    EIO_Status status = m_IoSocket ? x_Disconnect() : eIO_Closed;
 
     // Close listening socket
-    if (m_LSocket >= 0) {
-        x_CloseSocket(m_LSocket);
-        m_LSocket = -1;
+    if (m_LSocket) {
+        LSOCK_Close(m_LSocket);
+        m_LSocket = 0;
     }
     return status;
 }
@@ -960,22 +773,6 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
         return eIO_Closed;
     }
     return SOCK_Status(m_IoSocket, direction);
-}
-
-
-bool CNamedPipeHandle::x_CloseSocket(int sock)
-{
-    if (sock >= 0) {
-        for (;;) { // Close persistently
-            if (close(sock) == 0) {
-                break;
-            }
-            if (errno != EINTR) {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 
@@ -1195,8 +992,8 @@ EIO_Status CNamedPipeClient::Open(const string&    pipename,
         return eIO_Unknown;
     }
     s_AdjustPipeBufSize(pipebufsize);
-    x_SetName(pipename);
     m_PipeBufSize = pipebufsize;
+    x_SetName(pipename);
 
     SetTimeout(eIO_Open, timeout);
     return m_NamedPipeHandle->Open(m_PipeName, m_OpenTimeout, m_PipeBufSize);
@@ -1239,8 +1036,8 @@ EIO_Status CNamedPipeServer::Create(const string&   pipename,
         return eIO_Unknown;
     }
     s_AdjustPipeBufSize(pipebufsize);
-    x_SetName(pipename);
     m_PipeBufSize = pipebufsize;
+    x_SetName(pipename);
 
     SetTimeout(eIO_Open, timeout);
     return m_NamedPipeHandle->Create(m_PipeName, pipebufsize);
