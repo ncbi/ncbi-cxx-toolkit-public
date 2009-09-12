@@ -429,7 +429,8 @@ extern char* LOG_ComposeMessage
 
     if (call_data->raw_size) {
         data_len = (sizeof(kRawData_Begin) + 20
-                    + UTIL_PrintableStringSize(call_data->raw_data,
+                    + UTIL_PrintableStringSize((const char*)
+                                               call_data->raw_data,
                                                call_data->raw_size) +
                     sizeof(kRawData_End));
     }
@@ -474,7 +475,8 @@ extern char* LOG_ComposeMessage
                      (unsigned long) call_data->raw_size,
                      &"s"[call_data->raw_size == 1]);
 
-        s = UTIL_PrintableString(call_data->raw_data,
+        s = UTIL_PrintableString((const char*)
+                                 call_data->raw_data,
                                  call_data->raw_size,
                                  s, format_flags & fLOG_FullOctal);
 

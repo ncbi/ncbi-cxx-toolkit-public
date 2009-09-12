@@ -262,7 +262,7 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
         status = s_Pull(sock, buf, size, &x_read, s_GnuTlsLogLevel > 7);
         if (x_read > 0  ||  status == eIO_Success) {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
-            gnutls_transport_set_errno(sock->session, 0);
+            gnutls_transport_set_errno((gnutls_session_t) sock->session, 0);
 #  endif /*LIBGNUTLS_VERSION_NUMBER*/
             return x_read;
         }
@@ -272,7 +272,7 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
     x_error = x_GnuTlsStatusToError(status, sock->r_timeout);
     if (x_error) {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
-        gnutls_transport_set_errno(sock->session, x_error);
+        gnutls_transport_set_errno((gnutls_session_t) sock->session, x_error);
 #  else
         errno = x_error;
 #  endif /*LIBGNUTLS_VERSION_NUMBER*/
@@ -293,7 +293,7 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
         status = s_Push(sock, data, size, &x_written, s_GnuTlsLogLevel > 7);
         if (x_written  ||  (!size  &&  status == eIO_Success)) {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
-            gnutls_transport_set_errno(sock->session, 0);
+            gnutls_transport_set_errno((gnutls_session_t) sock->session, 0);
 #  endif /*LIBGNUTLS_VERSION_NUMBER*/
             return x_written;
         }
@@ -303,7 +303,7 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
     x_error = x_GnuTlsStatusToError(status, sock->w_timeout);
     if (x_error) {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
-        gnutls_transport_set_errno(sock->session, x_error);
+        gnutls_transport_set_errno((gnutls_session_t) sock->session, x_error);
 #  else
         errno = x_error;
 #  endif /*LIBGNUTLS_VERSION_NUMBER*/
