@@ -2812,9 +2812,9 @@ static EIO_Status s_Connect(SOCK            sock,
         addrlen = (SOCK_socklen_t) sizeof(addr.un);
         addr.un.sun_family = AF_UNIX;
         memcpy(addr.un.sun_path, sock->path, pathlen);
-#ifdef HAVE_SIN_LEN
+#  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
-#endif /*HASE_SIN_LEN*/
+#  endif /*HASE_SIN_LEN*/
     } else
 #endif /*NCBI_OS_UNIX*/
     {
@@ -3386,10 +3386,12 @@ static EIO_Status s_CreateListening(const char*    path,
 
     if (path) {
 #ifdef NCBI_OS_UNIX
+        if (sizeof(addr.un.sun_path) <= strlen(path))
+            return eIO_InvalidArg;
         addr.sa.sa_family = AF_UNIX;
 #else
         return eIO_NotSupported;
-#endif
+#endif /*NCBI_OS_UNIX*/
     } else
         addr.sa.sa_family = AF_INET;
 
@@ -3429,7 +3431,7 @@ static EIO_Status s_CreateListening(const char*    path,
     if (path) {
         addrlen = (SOCK_socklen_t) sizeof(addr.un);
         addr.un.sun_family = AF_UNIX;
-        strncpy0(addr.un.sun_path, path, sizeof(addr.un.sun_path) - 1);
+        strcpy(addr.un.sun_path, path);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
