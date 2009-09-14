@@ -37,8 +37,6 @@
 #include <cgi/cgictx.hpp>
 #include <stdlib.h>
 
-#include <common/test_assert.h>  // This header must go last
-
 
 BEGIN_NCBI_SCOPE
 
