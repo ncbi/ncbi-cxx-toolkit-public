@@ -55,7 +55,7 @@ class CTreeIterator;
 
 /// Class holding information about root of non-modifiable object hierarchy
 /// Do not use it directly
-class NCBI_XSERIAL_EXPORT CBeginInfo : public pair<TObjectPtr, TTypeInfo>
+class CBeginInfo : public pair<TObjectPtr, TTypeInfo>
 {
     typedef pair<TObjectPtr, TTypeInfo> CParent;
 public:
@@ -83,7 +83,7 @@ public:
 
 /// Class holding information about root of non-modifiable object hierarchy
 /// Do not use it directly
-class NCBI_XSERIAL_EXPORT CConstBeginInfo : public pair<TConstObjectPtr, TTypeInfo>
+class CConstBeginInfo : public pair<TConstObjectPtr, TTypeInfo>
 {
     typedef pair<TConstObjectPtr, TTypeInfo> CParent;
 public:
