@@ -35,8 +35,6 @@
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include "dbapi_unit_test.hpp"
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 BEGIN_NCBI_SCOPE
 
@@ -87,7 +85,7 @@ static void s_HugeTableSelect(IConnection& conn)
     // Preparation ...
     {
         string sql;
-        
+
         // Create table ...
         {
             sql  = " CREATE TABLE " + table_name + "( \n";

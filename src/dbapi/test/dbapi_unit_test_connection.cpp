@@ -45,8 +45,6 @@
 #  include <connect/ext/ncbi_crypt.h>
 #endif
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 BEGIN_NCBI_SCOPE
 
