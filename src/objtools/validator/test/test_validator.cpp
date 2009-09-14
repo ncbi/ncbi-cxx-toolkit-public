@@ -173,13 +173,6 @@ void CTest_validatorApplication::Init(void)
     arg_desc->SetConstraint("r", constraint);
 
 
-    // !!!
-    // { DEBUG
-    // This flag should be removed once testing is done. It is intended for
-    // performance testing.
-    arg_desc->AddFlag("debug", "Disable suspected performance bottlenecks");
-    // }
-
     // Program description
     string prog_description = "Test driver for Validate()\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -428,10 +421,6 @@ void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
     m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta  : 0;
     m_Options |= args["g"]        ? CValidator::eVal_remote_fetch : 0;
 
-    // !!!  DEBUG {
-    // For testing only. Should be removed in the future
-    m_Options |= args["debug"].HasValue() ? CValidator::eVal_perf_bottlenecks : 0;
-    // }
 }
 
 
