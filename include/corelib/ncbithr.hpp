@@ -204,7 +204,7 @@ public:
 
 #if NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
 template<class TValue>
-class CStaticTls : CSafeStaticRef< CTls<TValue> >
+class CStaticTls : private CSafeStaticRef< CTls<TValue> >
 {
 private:
     typedef CSafeStaticRef< CTls<TValue> > TParent;
