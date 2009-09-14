@@ -1825,11 +1825,17 @@ static Int4 s_FindHigh(Int4 i, Int4 limit, double hicut, double* H)
    return(j-1);
   }
 
+/** calculate log(n!) using either tabulated data or Sterling's formula
+ * @param n [in]
+ * @return log(n!)
+ */
 static double
 s_lnfact(Int4 n) {
-	if(n<10000) return lnfact[n];
-	return n*log(n)-n;
+  if (n < sizeof(lnfact)/sizeof(*lnfact))
+     return lnfact[n];
+  else return (n*log(n) - n + 5.524117);
 }
+
 /** calculate "K2" entropy per equation 3 of Wootton and Federhen
  * (Comput. Chem. 17, 149 (1993).
  * @param sv state vector [in]
