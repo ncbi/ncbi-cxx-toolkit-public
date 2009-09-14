@@ -154,12 +154,17 @@ void CBDB_Env::SetCacheSize(Uint8 cache_size,
     BDB_CHECK(ret, 0);
 }
 
+void CBDB_Env::SetLogRegionMax(unsigned size)
+{
+    int ret = m_Env->set_lg_regionmax(m_Env, size);
+    BDB_CHECK(ret, 0);
+}
+
 void CBDB_Env::SetLogBSize(unsigned lg_bsize)
 {
     int ret = m_Env->set_lg_bsize(m_Env, lg_bsize);
     BDB_CHECK(ret, 0);
 }
-
 
 void CBDB_Env::Open(const string& db_home, int flags)
 {

@@ -188,6 +188,9 @@ public:
     /// Set maximum size of LOG files
     void SetLogFileMax(unsigned int lg_max);
 
+    /// Set logging region size
+    void SetLogRegionMax(unsigned size);
+
     /// Set the size of the in-memory log buffer, in bytes.
     void SetLogBSize(unsigned lg_bsize);
 
