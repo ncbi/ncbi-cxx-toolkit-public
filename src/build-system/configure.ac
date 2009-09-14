@@ -2670,10 +2670,6 @@ if test "$ac_cv_func_localtime_r" = "yes" ; then
    fi
 fi
 
-AC_SEARCH_LIBS(sched_yield, rt,
-   [AC_DEFINE(HAVE_SCHED_YIELD, 1,
-              [Define to 1 if you have the `sched_yield' function.])])
-
 AC_CACHE_CHECK([whether pthread mutexes are available],
    ncbi_cv_func_pthread_mutex,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -2692,7 +2688,7 @@ fi
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getpagesize \
                getpass getpassphrase getpwuid getrusage gettimeofday \
-               getuid readpassphrase readv nanosleep usleep \
+               getuid readpassphrase readv usleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
                sysmp timegm utimes lutimes writev)
@@ -3258,10 +3254,14 @@ case "$host_os:$libnsl" in
 esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
-# Add to orig_LIBS if present, as corelib will use it.
-if test -n "$DEMANGLE_LIBS"; then
-    orig_LIBS="$DEMANGLE_LIBS $orig_LIBS"
+# Add to (orig_)LIBS if present for the sake of corelib and the
+# following call to AC_CHECK_FUNCS.
+if test -n "$DEMANGLE_LIBS$RT_LIBS"; then
+    LIBS="$DEMANGLE_LIBS $RT_LIBS $LIBS"
+    orig_LIBS="$DEMANGLE_LIBS $RT_LIBS $orig_LIBS"
 fi
+AC_CHECK_FUNCS([nanosleep sched_yield])
+
 dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
 # This logic adapted from Bruno Haible's iconv.m4.
