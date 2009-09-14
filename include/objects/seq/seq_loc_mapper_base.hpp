@@ -232,11 +232,11 @@ public:
 
     /// options for interpretations of locations
     enum EMapOptions {
-        //< ignore internal dense-seg structure - map each
-        //< dense-seg according to the total ranges involved
+        /// Ignore internal dense-seg structure - map each
+        /// dense-seg according to the total ranges involved
         fAlign_Dense_seg_TotalRange = 0x01,
-        fAlign_Sparse_ToFirst       = 0x00, ///< map to first-id
-        fAlign_Sparse_ToSecond      = 0x02  ///< map to second-id
+        fAlign_Sparse_ToFirst       = 0x00, ///< Map to first-id
+        fAlign_Sparse_ToSecond      = 0x02  ///< Map to second-id
     };
     typedef int TMapOptions;
 
@@ -302,6 +302,12 @@ public:
     /// checked and a range will be mapped even if its strand does not
     /// correspond to the strand of the mapping source.
     CSeq_loc_Mapper_Base& SetCheckStrand(bool value = true);
+
+    /// Include source ranges in the mapped location. If turned
+    /// on, the resulting seq-loc will contain a set of equivs
+    /// each linking a range on the source to a range on the
+    /// destination.
+    CSeq_loc_Mapper_Base& IncludeSourceLocs(bool value = true);
 
     /// Map seq-loc
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
@@ -507,6 +513,10 @@ private:
                            const TRange&         range,
                            const TRangeFuzz&     fuzz,
                            int                   group);
+    void x_PushSourceRange(const CSeq_id_Handle& idh,
+                           size_t                src_strand,
+                           size_t                dst_strand,
+                           const TRange&         range);
 
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,
@@ -515,6 +525,7 @@ private:
                                     TRangeFuzz            rg_fuzz);
 
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
+    void x_OptimizeSeq_loc(CRef<CSeq_loc>& loc) const;
 
     bool x_ReverseRangeOrder(void) const;
 
@@ -525,8 +536,10 @@ private:
     EGapFlags            m_GapFlag;
     bool                 m_KeepNonmapping;
     bool                 m_CheckStrand; // Check strands before mapping
+    bool                 m_IncludeSrcLocs;
 
     mutable TRangesById  m_MappedLocs;
+    CRef<CSeq_loc>       m_SrcLocs;
 
     // Collecting ranges for mapped graph
     CRef<CGraphRanges>   m_GraphRanges;
@@ -696,6 +709,14 @@ inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::TruncateNonmappingRanges(void)
 {
     m_KeepNonmapping = false;
+    return *this;
+}
+
+
+inline
+CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::IncludeSourceLocs(bool value)
+{
+    m_IncludeSrcLocs = value;
     return *this;
 }
 
