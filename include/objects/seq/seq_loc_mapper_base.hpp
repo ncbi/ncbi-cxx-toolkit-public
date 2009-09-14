@@ -304,9 +304,10 @@ public:
     CSeq_loc_Mapper_Base& SetCheckStrand(bool value = true);
 
     /// Include source ranges in the mapped location. If turned
-    /// on, the resulting seq-loc will contain a set of equivs
-    /// each linking a range on the source to a range on the
-    /// destination.
+    /// on, the resulting seq-loc will be an equiv with the
+    /// first sub-loc containing the usual mapped seq-loc, and
+    /// the second one - the set of source locations used in the
+    /// mapping.
     CSeq_loc_Mapper_Base& IncludeSourceLocs(bool value = true);
 
     /// Map seq-loc
