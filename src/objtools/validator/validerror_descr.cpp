@@ -46,7 +46,7 @@ BEGIN_SCOPE(validator)
 
 
 CValidError_descr::CValidError_descr(CValidError_imp& imp) :
-    CValidError_base(imp)
+    CValidError_base(imp), m_DescValidator(imp)
 {
 }
 
@@ -65,6 +65,8 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
 
     FOR_EACH_DESCRIPTOR_ON_DESCR (dt, descr) {
         const CSeqdesc& desc = **dt;
+
+        m_DescValidator.ValidateSeqDesc (desc, ctx);
 
         switch ( desc.Which() ) {
         case CSeqdesc::e_Mol_type:

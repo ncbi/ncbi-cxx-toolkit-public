@@ -69,7 +69,7 @@ using namespace sequence;
 
 
 CValidError_bioseqset::CValidError_bioseqset(CValidError_imp& imp) :
-    CValidError_base(imp)
+    CValidError_base(imp) , m_AnnotValidator(imp) , m_DescrValidator(imp) , m_BioseqValidator(imp)
 {
 }
 
@@ -87,33 +87,42 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     
     // Validate Set Contents
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        if ( (*se_list_it)->IsSet() 
-             && (*se_list_it)->GetSet().IsSetClass() 
-             && (*se_list_it)->GetSet().GetClass() == CBioseq_set::eClass_genbank ) {
+        if ( (*se_list_it)->IsSet() ) {
+            const CBioseq_set& set = (*se_list_it)->GetSet();
+            // validate member set
+            ValidateBioseqSet (set);
 
-            PostErr(eDiag_Error, eErr_SEQ_PKG_InternalGenBankSet,
-                     "Bioseq-set contains internal GenBank Bioseq-set",
-                     seqset);
+            // look for internal genbank sets
+            if ( set.IsSetClass() 
+                 && set.GetClass() == CBioseq_set::eClass_genbank ) {
+
+                PostErr(eDiag_Error, eErr_SEQ_PKG_InternalGenBankSet,
+                         "Bioseq-set contains internal GenBank Bioseq-set",
+                         seqset);
+            }
+        } else if ((*se_list_it)->IsSeq()) {
+            const CBioseq& seq = (*se_list_it)->GetSeq();
+
+            // Validate Member Seq
+            m_BioseqValidator.ValidateBioseq(seq);
         }
     }
-    
 
+    // note - need to do this with an iterator, so that we count sequences in subsets
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {
-        
+
         if ( seqit->IsAa() ) {
             protcnt++;
         } else if ( seqit->IsNa() ) {
             nuccnt++;
         }
-        
+
         if (seqit->GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
             segcnt++;
         }
-
-
     }
-    
+
     switch ( seqset.GetClass() ) {
 	case CBioseq_set::eClass_not_set:
         PostErr(eDiag_Warning, eErr_SEQ_PKG_BioseqSetClassNotSet, 
@@ -169,17 +178,17 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         break;
     }
 
-    // if a feature is packaged on a set, the bioseqs in the locations should be in the set
-    CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle(seqset);
+    // validate annots
     FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
-        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
-            if ((*feat_it)->IsSetLocation()) {
-                for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
-                    if (!IsBioseqWithIdInSet(loc_it.GetSeq_id(), bssh)) {
-                        m_Imp.IncrementMisplacedFeatureCount();
-                        break;
-                    }
-                }
+        m_AnnotValidator.ValidateSeqAnnot (**annot_it);
+        m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
+    }
+    if (seqset.IsSetDescr()) {
+        CBioseq_set_Handle bsh = m_Scope->GetBioseq_setHandle(seqset);
+        if (bsh) {
+            CSeq_entry_Handle ctx = bsh.GetParentEntry();
+            if (ctx) {
+                m_DescrValidator.ValidateSeqDescr (seqset.GetDescr(), *(ctx.GetCompleteSeq_entry()));
             }
         }
     }

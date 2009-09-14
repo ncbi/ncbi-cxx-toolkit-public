@@ -136,14 +136,41 @@ USING_SCOPE(feature);
 
 
 CValidError_bioseq::CValidError_bioseq(CValidError_imp& imp) :
-    CValidError_base(imp),
-    m_TpaWithHistory(0), m_TpaWithoutHistory(0)
+    CValidError_base(imp), m_AnnotValidator(imp), m_DescrValidator(imp)
 {
 }
 
 
-CValidError_bioseq::~CValidError_bioseq(void)
+CValidError_bioseq::~CValidError_bioseq()
 {
+}
+
+
+void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
+{
+    try {
+        ValidateSeqIds(seq);
+        ValidateInst(seq);
+        ValidateBioseqContext(seq);
+        ValidateHistory(seq);
+        FOR_EACH_ANNOT_ON_BIOSEQ (annot, seq) {
+            m_AnnotValidator.ValidateSeqAnnot(**annot);
+            m_AnnotValidator.ValidateSeqAnnotContext(**annot, seq);
+        }
+        if (seq.IsSetDescr()) {
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+            if (bsh) {
+                CSeq_entry_Handle ctx = bsh.GetSeq_entry_Handle();
+                if (ctx) {
+                    m_DescrValidator.ValidateSeqDescr (seq.GetDescr(), *(ctx.GetCompleteSeq_entry()));
+                }
+            }
+        }
+    } catch ( const exception& e ) {
+        m_Imp.PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+            string("Exeption while validating bioseq. EXCEPTION: ") +
+            e.what(), seq);
+    }
 }
 
 
@@ -4637,8 +4664,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     string current_str;
                     current.GetDate(&current_str);
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
-                        "Inconsistent create_date [" + create_str +
-                        "] and update_date [" + current_str + "]", ctx, desc);
+                        "Inconsistent create_dates [" + current_str +
+                        "] and [" + create_str + "]", ctx, desc);
                 }
             } else {
                 create_date = &(desc.GetCreate_date());
@@ -6119,9 +6146,9 @@ void CValidError_bioseq::CheckTpaHistory(const CBioseq& seq)
     if ( seq.CanGetInst()  &&  
          seq.GetInst().CanGetHist()  &&
          !seq.GetInst().GetHist().GetAssembly().empty() ) {
-        ++m_TpaWithHistory;
+        m_Imp.IncrementTpaWithHistoryCount();
     } else {
-        ++m_TpaWithoutHistory;
+        m_Imp.IncrementTpaWithoutHistoryCount();
     }
 }
 

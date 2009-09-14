@@ -583,6 +583,35 @@ int CheckDate (const CDate& date, bool require_full_date)
 }
 
 
+string GetDateErrorDescription (int flags)
+{
+    string reasons = "";
+
+    if (flags & eDateValid_empty_date) {
+        reasons += "EMPTY_DATE ";
+    }
+    if (flags & eDateValid_bad_str) {
+        reasons += "BAD_STR ";
+    }
+    if (flags & eDateValid_bad_year) {
+        reasons += "BAD_YEAR ";
+    }
+    if (flags & eDateValid_bad_month) {
+        reasons += "BAD_MONTH ";
+    }
+    if (flags & eDateValid_bad_day) {
+        reasons += "BAD_DAY ";
+    }
+    if (flags & eDateValid_bad_season) {
+        reasons += "BAD_SEASON ";
+    }
+    if (flags & eDateValid_bad_other) {
+        reasons += "BAD_OTHER ";
+    }
+    return reasons;
+}
+
+
 bool IsBioseqTSA (const CBioseq& seq, CScope* scope) 
 {
     if (!scope) {
@@ -600,6 +629,67 @@ bool IsBioseqTSA (const CBioseq& seq, CScope* scope)
         }
     }
     return is_tsa;
+}
+
+
+static string s_GetAuthorsString (const CAuth_list& auth_list)
+{
+    string auth_str = "";
+
+    if (!auth_list.IsSetNames()) {
+        return auth_str;
+    }
+
+    vector<string> name_list;
+
+    if (auth_list.GetNames().IsStd()) {
+        ITERATE (CAuth_list::TNames::TStd, auth_it, auth_list.GetNames().GetStd()) {
+            if ((*auth_it)->IsSetName()) {
+                string label;
+                (*auth_it)->GetName().GetLabel(&label);
+                name_list.push_back(label);
+            }
+        }
+    } else if (auth_list.GetNames().IsMl()) {
+        ITERATE (CAuth_list::TNames::TMl, auth_it, auth_list.GetNames().GetMl()) {
+            name_list.push_back((*auth_it));
+        }
+    } else if (auth_list.GetNames().IsStr()) {
+        ITERATE (CAuth_list::TNames::TStr, auth_it, auth_list.GetNames().GetStr()) {
+            name_list.push_back((*auth_it));
+        }
+    }
+
+    auth_str = name_list.back();
+    name_list.pop_back();
+    if (name_list.size() > 0) {
+        auth_str = "and " + auth_str;
+        if (name_list.size() == 1) {
+            auth_str = name_list.front() + auth_str;
+        } else {        
+            while (name_list.size() > 0) {
+                string this_name = name_list.back();
+                name_list.pop_back();
+                auth_str = this_name + ", " + auth_str;
+            }
+        }
+    }
+
+    return auth_str;
+}
+
+
+static string s_GetAuthorsString (const CPubdesc& pd) 
+{
+    string authors_string = "";
+
+    FOR_EACH_PUB_ON_PUBDESC (pub, pd) {
+        if ((*pub)->IsSetAuthors()) {
+            authors_string = s_GetAuthorsString ((*pub)->GetAuthors());
+            break;
+        }
+    }
+    return authors_string;
 }
 
 
@@ -639,6 +729,7 @@ void GetPubdescLabels
         if (need_label && NStr::IsBlank(label)) {
             // create unique label
             (*it)->GetLabel(&label, CPub::eContent, true);
+            label += "; " + s_GetAuthorsString (pd);
         }
     }
     if (!NStr::IsBlank(label)) {

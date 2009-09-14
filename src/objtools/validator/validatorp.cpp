@@ -153,7 +153,6 @@ CValidError_imp::CValidError_imp
       m_LocusTagGeneralMatch = (options & CValidator::eVal_locus_tag_general_match) != 0;
       m_DoRubiscoText = (options & CValidator::eVal_do_rubisco_test) != 0;
       m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
-      m_PerfBottlenecks = (options & CValidator::eVal_perf_bottlenecks) != 0;
 	  m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
       m_IsStandaloneAnnot = false;
       m_NoPubs = false;
@@ -178,6 +177,7 @@ CValidError_imp::CValidError_imp
       m_ProductLocHasGI = false;
       m_GeneHasLocusTag = false;
       m_ProteinHasGeneralID = false;
+      m_IsINSDInSep = false;
       m_PrgCallback = 0;
       m_NumAlign = 0;
       m_NumAnnot = 0;
@@ -188,6 +188,9 @@ CValidError_imp::CValidError_imp
       m_NumFeat = 0;
       m_NumGraph = 0;
       m_NumMisplacedFeatures = 0;
+      m_NumMisplacedGraphs = 0;
+      m_NumGenes = 0;
+      m_NumGeneXrefs = 0;
       m_IsTbl2Asn = false;
 
     if ( m_SourceQualTags.get() == 0 ) {
@@ -620,35 +623,6 @@ void CValidError_imp::PostObjErr
 }
 
 
-static string s_GetDateErrorDescription (int flags)
-{
-    string reasons = "";
-
-    if (flags & eDateValid_empty_date) {
-        reasons += "EMPTY_DATE ";
-    }
-    if (flags & eDateValid_bad_str) {
-        reasons += "BAD_STR ";
-    }
-    if (flags & eDateValid_bad_year) {
-        reasons += "BAD_YEAR ";
-    }
-    if (flags & eDateValid_bad_month) {
-        reasons += "BAD_MONTH ";
-    }
-    if (flags & eDateValid_bad_day) {
-        reasons += "BAD_DAY ";
-    }
-    if (flags & eDateValid_bad_season) {
-        reasons += "BAD_SEASON ";
-    }
-    if (flags & eDateValid_bad_other) {
-        reasons += "BAD_OTHER ";
-    }
-    return reasons;
-}
-
-
 void CValidError_imp::PostBadDateError 
 (EDiagSev             sv,
  const string&        msg,
@@ -656,7 +630,7 @@ void CValidError_imp::PostBadDateError
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
-    string reasons = s_GetDateErrorDescription(flags);
+    string reasons = GetDateErrorDescription(flags);
 
     NStr::TruncateSpacesInPlace (reasons);
     reasons = msg + " - " + reasons;
@@ -803,11 +777,16 @@ bool CValidError_imp::Validate
 
     // Iterate thru components of record and validate each
 
-    // Features:
-
     // before validating, need to know if we have insd seq in seq-entry
-    bool is_insd_in_sep = false;
-    for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); bi && !is_insd_in_sep; ++bi) {
+    m_IsINSDInSep = false;
+    // also want to know if we have gi
+    bool has_gi = false;
+    // also want to know if there are any nucleotide sequences
+    bool has_nucleotide_sequence = false;
+
+    for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); 
+         bi && (!m_IsINSDInSep || !has_gi || !has_nucleotide_sequence);
+         ++bi) {
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
             if ((*it)->IsGenbank()
                 || (*it)->IsEmbl()
@@ -815,48 +794,31 @@ bool CValidError_imp::Validate
                 || (*it)->IsTpg()
                 || (*it)->IsTpe()
                 || (*it)->IsTpd()) {
-                is_insd_in_sep = true;
+                m_IsINSDInSep = true;
+            } else if ((*it)->IsGi()) {
+                has_gi = true;
             }
+        }
+        if (bi->IsNa()) {
+            has_nucleotide_sequence = true;
         }
     }
 
-	if (is_insd_in_sep && IsRefSeq()) {
+	if (m_IsINSDInSep && IsRefSeq()) {
 		PostErr (eDiag_Error, eErr_SEQ_PKG_INSDRefSeqPackaging,
 		         "INSD and RefSeq records should not be present in the same set", *seq);
 	}
 
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Feat;
-        m_PrgInfo.m_Current = m_NumFeat;
-        m_PrgInfo.m_CurrentDone = 0;
-        if ( m_PrgCallback(&m_PrgInfo) ) {
-            return false;
-        }
-    }
-    CValidError_feat feat_validator(*this);
+
+    // look for colliding feature IDs
     vector < int > feature_ids;
     for (CFeat_CI fi(GetTSEH()); fi; ++fi) {
         const CSeq_feat& sf = fi->GetOriginalFeature();
-        try {
-            if (sf.IsSetId() && sf.GetId().IsLocal() && sf.GetId().GetLocal().IsId()) {
-                feature_ids.push_back(sf.GetId().GetLocal().GetId());
-            }
-            feat_validator.ValidateSeqFeat(sf, is_insd_in_sep);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating feature. EXCEPTION: ") +
-                e.what(), sf);
-            return true;
+        if (sf.IsSetId() && sf.GetId().IsLocal() && sf.GetId().GetLocal().IsId()) {
+            feature_ids.push_back(sf.GetId().GetLocal().GetId());
         }
     }
-    // look for colliding feature IDs
+
     if (feature_ids.size() > 0) {
         const CTSE_Handle& tse = seh.GetTSE_Handle ();
         stable_sort (feature_ids.begin(), feature_ids.end());
@@ -884,130 +846,22 @@ bool CValidError_imp::Validate
         }
     }
 
-        
-    if ( feat_validator.GetNumGenes() == 0  &&  
-         feat_validator.GetNumGeneXrefs() > 0 ) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
-            "There are " + NStr::IntToString(feat_validator.GetNumGeneXrefs()) +
-            " gene xrefs and no gene features in this record.", *m_TSE);
-    }
-
-    feat_validator.ValidateCitations (seh);
-
-    // Descriptors:
-
-    if (!ValidateDescriptorInSeqEntry (*(GetTSEH().GetCompleteSeq_entry()))) {
-        return false;
-    }
-    
-    // Bioseqs:
-
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Bioseq;
-        m_PrgInfo.m_Current = m_NumBioseq;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
-    CValidError_bioseq bioseq_validator(*this);
-    bool has_nucleotide_sequence = false;
-    for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); bi; ++bi) {
-        const CBioseq& bs = *bi->GetCompleteBioseq();
-
-        if (bs.IsNa()) {
-            has_nucleotide_sequence = true;
-        }
-        try {
-            bioseq_validator.ValidateSeqIds(bs);
-            bioseq_validator.ValidateInst(bs);
-            bioseq_validator.ValidateBioseqContext(bs);
-            bioseq_validator.ValidateHistory(bs);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating bioseq. EXCEPTION: ") +
-                e.what(), bs);
-            return true;
-        }
-    }
-    if ( bioseq_validator.GetTpaWithHistory() > 0  &&
-         bioseq_validator.GetTpaWithoutHistory() > 0 ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssmeblyProblem,
-            "There are " +
-            NStr::IntToString(bioseq_validator.GetTpaWithHistory()) +
-            " TPAs with history and " + 
-            NStr::IntToString(bioseq_validator.GetTpaWithoutHistory()) +
-            " without history in this record.", *m_TSE);
-    }
-    if ( bioseq_validator.GetTpaWithoutHistory() > 0) {
-        bool has_gi = false;
-        for (CBioseq_CI bi(GetTSEH()); bi && !has_gi; ++bi) {
-            // will only report sequences with TPA Assembly user objects and no Seq-hist if at least one sequence
-            // has a gi.
-            FOR_EACH_SEQID_ON_BIOSEQ (it, *((*bi).GetCompleteBioseq())) {
-                if ((*it)->IsGi()) {
-                    has_gi = true;
-                }
-            }
-        }             
-
-        if (has_gi) {
-            PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssmeblyProblem,
-                "There are " +
-                NStr::IntToString(bioseq_validator.GetTpaWithoutHistory()) +
-                " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
-        }
-    }
-    if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
-        PostErr (eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID, 
-                 "INDEXER_ONLY - Protein bioseqs have general seq-id.",
-                 *(seh.GetCompleteSeq_entry()));
-    }
-        
-    // Bioseq sets:
-
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Bioseq_set;
-        m_PrgInfo.m_Current = m_NumBioseq_set;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
+    // look for mixed gps and non-gps sets
 	bool has_nongps = false;
 	bool has_gps = false;
-    CValidError_bioseqset bioseqset_validator(*this);
-    for (CTypeConstIterator<CBioseq_set> si(*m_TSE); si; ++si) {
-        try {
-            bioseqset_validator.ValidateBioseqSet(*si);
-			if (si->IsSetClass()) {
-				if (si->GetClass() == CBioseq_set::eClass_mut_set
-				    || si->GetClass() == CBioseq_set::eClass_pop_set
-				    || si->GetClass() == CBioseq_set::eClass_phy_set
-				    || si->GetClass() == CBioseq_set::eClass_eco_set
-				    || si->GetClass() == CBioseq_set::eClass_wgs_set) {
-				    has_nongps = true;
-				} else if (si->GetClass() == CBioseq_set::eClass_gen_prod_set) {
-					has_gps = true;
-				}
+    
+    for (CTypeConstIterator<CBioseq_set> si(*m_TSE); si && (!has_nongps || !has_gps); ++si) {
+		if (si->IsSetClass()) {
+			if (si->GetClass() == CBioseq_set::eClass_mut_set
+			    || si->GetClass() == CBioseq_set::eClass_pop_set
+			    || si->GetClass() == CBioseq_set::eClass_phy_set
+			    || si->GetClass() == CBioseq_set::eClass_eco_set
+			    || si->GetClass() == CBioseq_set::eClass_wgs_set) {
+			    has_nongps = true;
+			} else if (si->GetClass() == CBioseq_set::eClass_gen_prod_set) {
+				has_gps = true;
 			}
-
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating bioseq set. EXCEPTION: ") +
-                e.what(), *si);
-            return true;
-        }
+		}
     }
 
 	if (has_nongps && has_gps) {
@@ -1016,86 +870,57 @@ bool CValidError_imp::Validate
 			*seq);
 	}
 
-    // Alignments:
 
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Align;
-        m_PrgInfo.m_Current = m_NumAlign;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
-    CValidError_align align_validator(*this);
-    for (CAlign_CI ai(GetTSEH()); ai; ++ai) {
-        const CSeq_align& sa = ai.GetOriginalSeq_align();
+    // validate the main data
+    if (seh.IsSeq()) {
+        const CBioseq& seq = seh.GetCompleteSeq_entry()->GetSeq();
+        CValidError_bioseq bioseq_validator(*this);
         try {
-            align_validator.ValidateSeqAlign(sa);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
+            bioseq_validator.ValidateBioseq(seq);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating alignment. EXCEPTION: ") +
-                e.what(), sa);
+                string("Exeption while validating bioseq. EXCEPTION: ") +
+                e.what(), seq);
+            return true;
+        }
+    } else if (seh.IsSet()) {
+        const CBioseq_set& set = seh.GetCompleteSeq_entry()->GetSet();
+        CValidError_bioseqset bioseqset_validator(*this);
+        try {
+            bioseqset_validator.ValidateBioseqSet(set);
+        } catch ( const exception& e ) {
+            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+                string("Exeption while validating bioseq set. EXCEPTION: ") +
+                e.what(), set);
             return true;
         }
     }
 
-    // Graphs:
 
-    CValidError_graph graph_validator(*this);
-    try {
-        graph_validator.ValidateSeqGraph (GetTSEH());
-    } catch ( const exception& e ) {
-        PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-            string("Exeption while validating graph. EXCEPTION: ") +
-            e.what(), *(GetTSEH().GetCompleteSeq_entry()));
-        return true;
-    }
-    SIZE_TYPE misplaced = graph_validator.GetNumMisplacedGraphs();
-    if ( misplaced > 0 ) {
-        string num = NStr::IntToString(misplaced);
-        PostErr(eDiag_Critical, eErr_SEQ_PKG_GraphPackagingProblem,
-            string("There ") + ((misplaced > 1) ? "are " : "is ") + num + 
-            " mispackaged graph" + ((misplaced > 1) ? "s" : "") + " in this record.",
-            *m_TSE);
-    }
-
-    // Annotation:
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Annot;
-        m_PrgInfo.m_Current = m_NumAnnot;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
-    CValidError_annot annot_validator(*this);
-    for (CSeq_annot_CI ni(GetTSEH()); ni; ++ni) {
-        const CSeq_annot& sn = *ni->GetCompleteSeq_annot();
-        try {
-            annot_validator.ValidateSeqAnnot(*ni);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating annotation. EXCEPTION: ") +
-                e.what(), sn);
-            return true;
-        }
-    }
-
-    // Descriptor lists:
-    if (!ValidateSeqDescrInSeqEntry (*(GetTSEH().GetCompleteSeq_entry()))) {
-        return false;
-    }
+    // validation from data collected during previous step
     
+    if ( m_NumTpaWithHistory > 0  &&
+         m_NumTpaWithoutHistory > 0 ) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssmeblyProblem,
+            "There are " +
+            NStr::IntToString(m_NumTpaWithHistory) +
+            " TPAs with history and " + 
+            NStr::IntToString(m_NumTpaWithoutHistory) +
+            " without history in this record.", *m_TSE);
+    }
+    if ( m_NumTpaWithoutHistory > 0 && has_gi) {
+        PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssmeblyProblem,
+            "There are " +
+            NStr::IntToString(m_NumTpaWithoutHistory) +
+            " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
+    }
+    if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
+        PostErr (eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID, 
+                 "INDEXER_ONLY - Protein bioseqs have general seq-id.",
+                 *(seh.GetCompleteSeq_entry()));
+    }
+        
+
     ReportMissingPubs(*m_TSE, cs);
     ReportMissingBiosource(*m_TSE);
 
@@ -1108,6 +933,23 @@ bool CValidError_imp::Validate
                  "There is 1 mispackaged feature in this record.",
                  *(seh.GetCompleteSeq_entry()));
     }
+    if ( m_NumGenes == 0  &&  
+         m_NumGeneXrefs > 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
+            "There are " + NStr::IntToString(m_NumGeneXrefs) +
+            " gene xrefs and no gene features in this record.", *m_TSE);
+    }
+    ValidateCitations (seh);
+
+
+    if ( m_NumMisplacedGraphs > 0 ) {
+        string num = NStr::IntToString(m_NumMisplacedGraphs);
+        PostErr(eDiag_Critical, eErr_SEQ_PKG_GraphPackagingProblem,
+            string("There ") + ((m_NumMisplacedGraphs > 1) ? "are " : "is ") + num + 
+            " mispackaged graph" + ((m_NumMisplacedGraphs > 1) ? "s" : "") + " in this record.",
+            *m_TSE);
+    }
+
 
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
     FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
@@ -1154,7 +996,7 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
             // for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
             for (CFeat_CI fi (sah); fi; ++fi) {
                 const CSeq_feat& sf = fi->GetOriginalFeature();
-                feat_validator.ValidateSeqFeat(sf, false);
+                feat_validator.ValidateSeqFeat(sf);
             }
         }
         break;
@@ -1191,7 +1033,7 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
 void CValidError_imp::Validate(const CSeq_feat& feat)
 {
     CValidError_feat feat_validator(*this);
-    feat_validator.ValidateSeqFeat(feat, false);
+    feat_validator.ValidateSeqFeat(feat);
     if (feat.IsSetData() && feat.GetData().IsBiosrc()) {
         const CBioSource& src = feat.GetData().GetBiosrc();
         if (src.IsSetOrg()) {
@@ -1883,6 +1725,120 @@ bool CValidError_imp::IsSequenceAvaliable(const CSeqVector& vec)
     }
 
     return true;
+}
+
+
+static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
+                                          vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+                                          vector<string>& published_labels, vector<string>& unpublished_labels)
+{
+    FOR_EACH_SEQDESC_ON_SEQENTRY (it, se) {
+        if ((*it)->IsPub()) {
+            GetPubdescLabels ((*it)->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+        }
+    }
+
+    if (se.IsSet()) {
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
+            s_CollectPubDescriptorLabels (**it, pmids, muids, serials, published_labels, unpublished_labels);
+        }
+    }
+}
+
+
+void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
+{
+    vector<int> pmids;
+    vector<int> muids;
+    vector<int> serials;
+    vector<string> published_labels;
+    vector<string> unpublished_labels;
+
+    // collect labels for pubs on record
+    s_CollectPubDescriptorLabels (*(seh.GetCompleteSeq_entry()), pmids, muids, serials, published_labels, unpublished_labels);
+                
+    CFeat_CI feat (seh, SAnnotSelector(CSeqFeatData::e_Pub));
+    while (feat) {
+        GetPubdescLabels (feat->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+        ++feat;
+    }
+
+    // now examine citations to determine whether they match a pub on the record
+    CFeat_CI f (seh);
+    while (f) {
+        if (f->IsSetCit() && f->GetCit().IsPub()) {            
+            ITERATE (CPub_set::TPub, cit_it, f->GetCit().GetPub()) {
+                bool found = false;
+
+                if ((*cit_it)->IsPmid()) {
+                    vector<int>::iterator it = pmids.begin();    
+                    while (it != pmids.end() && !found) {
+                        if (*it == (*cit_it)->GetPmid()) {
+                            found = true;
+                        }
+                        ++it;
+                    }
+                    if (!found) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
+                                 "Citation on feature refers to uid ["
+                                 + NStr::IntToString((*cit_it)->GetPmid())
+                                 + "] not on a publication in the record",
+                                 f->GetOriginalFeature());
+                    }
+                } else if ((*cit_it)->IsMuid()) {
+                    vector<int>::iterator it = muids.begin();    
+                    while (it != muids.end() && !found) {
+                        if (*it == (*cit_it)->GetMuid()) {
+                            found = true;
+                        }
+                        ++it;
+                    }
+                    if (!found) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
+                                 "Citation on feature refers to uid ["
+                                 + NStr::IntToString((*cit_it)->GetMuid())
+                                 + "] not on a publication in the record",
+                                 f->GetOriginalFeature());
+                    }
+                } else if ((*cit_it)->IsEquiv()) {
+                    continue;
+                } else {                    
+                    string label;
+                    (*cit_it)->GetLabel(&label, CPub::eContent, true);
+                    if (NStr::EndsWith (label, ">")) {
+                        label = label.substr(0, label.length() - 2);
+                    }
+                    size_t len = label.length();
+                    vector<string>::iterator unpub_it = unpublished_labels.begin();
+                    while (unpub_it != unpublished_labels.end() && !found) {
+                        size_t it_len =(*unpub_it).length();
+                        if (NStr::EqualNocase (*unpub_it, 0, it_len > len ? len : it_len, label)) {
+                            found = true;
+                        }
+                        ++unpub_it;
+                    }
+                    vector<string>::iterator pub_it = published_labels.begin();
+
+                    while (pub_it != published_labels.end() && !found) {
+                        size_t it_len =(*pub_it).length();
+                        if (NStr::EqualNocase (*pub_it, 0, it_len > len ? len : it_len, label)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
+                                     "Citation on feature needs to be updated to published uid",
+                                     f->GetOriginalFeature());
+                            found = true;
+                        }
+                        ++pub_it;
+                    }
+                    if (!found) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
+                                 "Citation on feature refers to a publication not in the record",
+                                 f->GetOriginalFeature());
+                    }
+                }
+            }
+        }
+        ++f;
+    }
 }
 
 

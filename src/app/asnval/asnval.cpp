@@ -514,10 +514,6 @@ void CAsnvalApp::SetupValidatorOptions(const CArgs& args)
 		  | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
 		  | CValidator::eVal_use_entrez;
 
-    // !!!  DEBUG {
-    // For testing only. Should be removed in the future
-    m_Options |= args["debug"].HasValue() ? CValidator::eVal_perf_bottlenecks : 0;
-    // }
 }
 
 

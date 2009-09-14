@@ -234,6 +234,7 @@ public:
 	void ValidateTaxonomy(const CSeq_entry& se);
 	void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
+    void ValidateCitations (const CSeq_entry_Handle& seh);
 
         
     // getters
@@ -256,10 +257,6 @@ public:
     bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
     bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
 	bool UseEntrez(void)              const { return m_UseEntrez; }
-
-    // !!! DEBUG {
-    inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
-    // }
 
     // flags calculated by examining data in record
     inline bool IsStandaloneAnnot(void) const { return m_IsStandaloneAnnot; }
@@ -286,12 +283,33 @@ public:
     inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }
     inline bool DoesAnyGeneHaveLocusTag(void) const { return m_GeneHasLocusTag; }
     inline bool DoesAnyProteinHaveGeneralID(void) const { return m_ProteinHasGeneralID; }
+    inline bool IsINSDInSep(void) const { return m_IsINSDInSep; }
 
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
     inline void IncrementMisplacedFeatureCount (void) { m_NumMisplacedFeatures++; }
     inline void AddToMisplacedFeatureCount (SIZE_TYPE num) { m_NumMisplacedFeatures += num; }
 
+    // counting number of misplaced graphs
+    inline void ResetMisplacedGraphCount (void) { m_NumMisplacedGraphs = 0; }
+    inline void IncrementMisplacedGraphCount (void) { m_NumMisplacedGraphs++; }
+    inline void AddToMisplacedGraphCount (SIZE_TYPE num) { m_NumMisplacedGraphs += num; }
+
+    // counting number of genes and gene xrefs
+    inline void ResetGeneCount (void) { m_NumGenes = 0; }
+    inline void IncrementGeneCount (void) { m_NumGenes++; }
+    inline void AddToGeneCount (SIZE_TYPE num) { m_NumGenes += num; }
+    inline void ResetGeneXrefCount (void) { m_NumGeneXrefs = 0; }
+    inline void IncrementGeneXrefCount (void) { m_NumGeneXrefs++; }
+    inline void AddToGeneXrefCount (SIZE_TYPE num) { m_NumGeneXrefs += num; }
+
+    // counting sequences with and without TPA history
+    inline void ResetTpaWithHistoryCount (void) { m_NumTpaWithHistory = 0; }
+    inline void IncrementTpaWithHistoryCount (void) { m_NumTpaWithHistory++; }
+    inline void AddToTpaWithHistoryCount (SIZE_TYPE num) { m_NumTpaWithHistory += num; }
+    inline void ResetTpaWithoutHistoryCount (void) { m_NumTpaWithoutHistory = 0; }
+    inline void IncrementTpaWithoutHistoryCount (void) { m_NumTpaWithoutHistory++; }
+    inline void AddToTpaWithoutHistoryCount (SIZE_TYPE num) { m_NumTpaWithoutHistory += num; }
 
     const CSeq_entry& GetTSE(void) { return *m_TSE; }
     CSeq_entry_Handle GetTSEH(void) { return m_TSEH; }
@@ -384,10 +402,6 @@ private:
     bool m_IndexerVersion;
 	bool m_UseEntrez;
 
-    // !!! DEBUG {
-    bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
-    // }
-
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;
     bool m_NoPubs;                  // Suppress no pub error if true
@@ -412,6 +426,7 @@ private:
     bool m_ProductLocHasGI;
     bool m_GeneHasLocusTag;
     bool m_ProteinHasGeneralID;
+    bool m_IsINSDInSep;
 
     bool m_IsTbl2Asn;
 
@@ -444,7 +459,12 @@ private:
     SIZE_TYPE   m_NumGraph;
 
     SIZE_TYPE   m_NumMisplacedFeatures;
+    SIZE_TYPE   m_NumMisplacedGraphs;
+    SIZE_TYPE   m_NumGenes;
+    SIZE_TYPE   m_NumGeneXrefs;
 
+    size_t      m_NumTpaWithHistory;
+    size_t      m_NumTpaWithoutHistory;
 };
 
 
@@ -495,30 +515,262 @@ protected:
 };
 
 
-// ===========================  Validate Bioseq_set  ===========================
+// ============================  Validate SeqGraph  ============================
 
 
-class CValidError_bioseqset : private CValidError_base
+class CValidError_graph : private CValidError_base
 {
 public:
-    CValidError_bioseqset(CValidError_imp& imp);
-    virtual ~CValidError_bioseqset(void);
+    CValidError_graph(CValidError_imp& imp);
+    virtual ~CValidError_graph(void);
 
-    void ValidateBioseqSet(const CBioseq_set& seqset);
+    void ValidateSeqGraph(const CSeq_graph& graph);
+    void ValidateSeqGraph(CSeq_entry_Handle seh);
+    void ValidateSeqGraph(const CBioseq& seq);
+    void ValidateSeqGraph(const CBioseq_set& set);
+
+    void ValidateSeqGraphContext (const CSeq_graph& graph, const CBioseq_set& set);
+    void ValidateSeqGraphContext (const CSeq_graph& graph, const CBioseq& seq);
+   
 
 private:
 
-    void ValidateNucProtSet(const CBioseq_set& seqset, int nuccnt, int protcnt, int segcnt);
-    void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
-    void ValidatePartsSet(const CBioseq_set& seqset);
-    void ValidateGenbankSet(const CBioseq_set& seqset);
-    void ValidatePopSet(const CBioseq_set& seqset);
-    void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
-    void ValidateGenProdSet(const CBioseq_set& seqset);
-    void CheckForInconsistentBiomols (const CBioseq_set& seqset);
+};
 
-    bool IsMrnaProductInGPS(const CBioseq& seq); 
-    bool IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps); 
+
+// ============================  Validate SeqAlign  ============================
+
+
+class CValidError_align : private CValidError_base
+{
+public:
+    CValidError_align(CValidError_imp& imp);
+    virtual ~CValidError_align(void);
+
+    void ValidateSeqAlign(const CSeq_align& align);
+
+private:
+    typedef CSeq_align::C_Segs::TDendiag    TDendiag;
+    typedef CSeq_align::C_Segs::TDenseg     TDenseg;
+    typedef CSeq_align::C_Segs::TPacked     TPacked;
+    typedef CSeq_align::C_Segs::TStd        TStd;
+    typedef CSeq_align::C_Segs::TDisc       TDisc;
+
+    void x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps);
+    void x_ValidateDendiag(const TDendiag& dendiags, const CSeq_align& align);
+    void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);
+    void x_ValidatePacked(const TPacked& packed, const CSeq_align& align);
+    size_t x_CountBits(const CPacked_seg::TPresent& present);
+
+    // Check if dimension is valid
+    template <typename T>
+    bool x_ValidateDim(T& obj, const CSeq_align& align, size_t part = 0);
+
+    // Check if the  strand is consistent in SeqAlignment of global 
+    // or partial type
+    void x_ValidateStrand(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateStrand(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateStrand(const TStd& std_segs, const CSeq_align& align);
+
+    // Check if an alignment is FASTA-like. 
+    // Alignment is FASTA-like if all gaps are at the end with dimensions > 2.
+    void x_ValidateFastaLike(const TDenseg& denseg, const CSeq_align& align);
+
+    // Check if there is a gap for all sequences in a segment.
+    void x_ValidateSegmentGap(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateSegmentGap(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateSegmentGap(const TStd& std_segs, const CSeq_align& align);
+    void x_ValidateSegmentGap(const TDendiag& dendiags, const CSeq_align& align);
+
+    // Validate SeqId in sequence alignment.
+    void x_ValidateSeqId(const CSeq_align& align);
+    void x_GetIds(const CSeq_align& align, vector< CRef< CSeq_id > >& ids);
+
+    // Check segment length, start and end point in Dense_seg, Dense_diag 
+    // and Std_seg
+    void x_ValidateSeqLength(const TDenseg& denseg, const CSeq_align& align);
+    void x_ValidateSeqLength(const TPacked& packed, const CSeq_align& align);
+    void x_ValidateSeqLength(const TStd& std_segs, const CSeq_align& align);
+    void x_ValidateSeqLength(const CDense_diag& dendiag, size_t dendiag_num,
+        const CSeq_align& align);
+};
+
+
+// =============================  Validate SeqFeat  ============================
+
+
+class CValidError_feat : private CValidError_base
+{
+public:
+    CValidError_feat(CValidError_imp& imp);
+    virtual ~CValidError_feat(void);
+
+    void ValidateSeqFeat(const CSeq_feat& feat);
+
+    enum EInferenceValidCode {
+        eInferenceValidCode_valid = 0,
+        eInferenceValidCode_empty,
+        eInferenceValidCode_bad_prefix,
+        eInferenceValidCode_bad_body,
+        eInferenceValidCode_single_field,
+        eInferenceValidCode_spaces,
+        eInferenceValidCode_same_species_misused,
+        eInferenceValidCode_bad_accession,
+        eInferenceValidCode_bad_accession_version,
+        eInferenceValidCode_accession_version_not_public,
+        eInferenceValidCode_bad_accession_type
+    };
+
+    EInferenceValidCode ValidateInferenceAccession (string accession, string separator, bool fetch_accession);
+    EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
+
+    // functions expected to be used in Discrepancy Report
+    bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
+    bool IsIntronShort(const CSeq_feat& feat);
+
+private:
+    void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
+    void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
+    void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
+    void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
+    void ValidateGeneXRef(const CSeq_feat& feat);
+    void ValidateOperon(const CSeq_feat& feat);
+
+    void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
+    void ValidateCdTrans(const CSeq_feat& feat);
+    void ValidateCdsProductId(const CSeq_feat& feat);
+    void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
+    void ReportCdTransErrors(const CSeq_feat& feat,
+        bool show_stop, bool got_stop, bool no_end, int ragged,
+        bool report_errors, bool& has_errors);
+    void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
+    void ValidateBothStrands(const CSeq_feat& feat);
+    void ValidateCommonCDSProduct(const CSeq_feat& feat);
+    void ValidateBadMRNAOverlap(const CSeq_feat& feat);
+    void ValidateBadGeneOverlap(const CSeq_feat& feat);
+    void ValidateCDSPartial(const CSeq_feat& feat);
+    bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
+        const CCdregion& cdregion, const string& transl_prot, bool report_erros);
+    void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
+
+    void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
+
+    void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
+    void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
+    void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
+    void ValidateMrnaTrans(const CSeq_feat& feat);
+    void ValidateCommonMRNAProduct(const CSeq_feat& feat);
+    void ValidatemRNAGene (const CSeq_feat &feat);
+    void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
+    void ValidateIntron(const CSeq_feat& feat);
+
+    void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
+    void ValidateNonImpFeat (const CSeq_feat& feat);
+    void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat);
+    void ValidateNonImpFeatGbquals(const CSeq_feat& feat);
+
+    // these functions are for validating individual genbank qualifier values
+    void ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat);
+    void ValidateRptUnitSeqVal (const string& val, const string& key, const CSeq_feat& feat);
+    void ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat);
+    void ValidateLabelVal (const string& val, const CSeq_feat& feat);
+    void ValidateCompareVal (const string& val, const CSeq_feat& feat);
+
+    void ValidateGapFeature (const CSeq_feat& feat);
+
+    void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
+        const string& key);
+
+    bool SplicingNotExpected(const CSeq_feat& feat);
+    void ValidateFeatPartialness(const CSeq_feat& feat);
+    void ValidateExcept(const CSeq_feat& feat);
+    void ValidateExceptText(const string& text, const CSeq_feat& feat);
+    void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat, CTSE_Handle tse);
+    void ValidateExtUserObject (const CUser_object& user_object, const CSeq_feat& feat);
+    void ValidateGoTerms (CUser_object::TData field_list, const CSeq_feat& feat, vector<pair<string, string> >& id_terms);
+
+    void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
+    void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
+    void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
+
+    bool IsPlastid(int genome);
+    bool IsOverlappingGenePseudo(const CSeq_feat& feat);
+    unsigned char Residue(unsigned char res);
+    int  CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr);
+    bool SuppressCheck(const string& except_text);
+    string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
+        TSeqPos pos);
+
+    bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
+    bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
+    bool IsSameAsCDS(const CSeq_feat& feat);
+    bool IsCDDFeat(const CSeq_feat& feat) const;
+
+    int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
+
+    void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
+
+};
+
+
+// ============================  Validate SeqAnnot  ============================
+
+
+class CValidError_annot : private CValidError_base
+{
+public:
+    CValidError_annot(CValidError_imp& imp);
+    virtual ~CValidError_annot(void);
+
+    void ValidateSeqAnnot(const CSeq_annot_Handle& annot);
+
+    void ValidateSeqAnnot (const CSeq_annot& annot);
+    void ValidateSeqAnnotContext(const CSeq_annot& annot, const CBioseq& seq);
+    void ValidateSeqAnnotContext(const CSeq_annot& annot, const CBioseq_set& set);
+
+private:
+    CValidError_graph m_GraphValidator;
+    CValidError_align m_AlignValidator;
+    CValidError_feat m_FeatValidator;
+
+};
+
+
+// =============================  Validate SeqDesc  ============================
+
+class CValidError_desc : private CValidError_base
+{
+public:
+    CValidError_desc(CValidError_imp& imp);
+    virtual ~CValidError_desc(void);
+
+    void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
+
+    void ResetModifCounters(void);
+private:
+
+    void ValidateComment(const string& comment, const CSeqdesc& desc);
+    void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
+    void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
+
+    CConstRef<CSeq_entry> m_Ctx;
+};
+
+
+// ============================  Validate SeqDescr  ============================
+
+
+class CValidError_descr : private CValidError_base
+{
+public:
+    CValidError_descr(CValidError_imp& imp);
+    virtual ~CValidError_descr(void);
+
+    void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
+private:
+
+    CValidError_desc m_DescValidator;
 };
 
 
@@ -531,13 +783,11 @@ public:
     CValidError_bioseq(CValidError_imp& imp);
     virtual ~CValidError_bioseq(void);
 
+    void ValidateBioseq(const CBioseq& seq);
     void ValidateSeqIds(const CBioseq& seq);
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
-
-    size_t GetTpaWithHistory(void)    const { return m_TpaWithHistory;    }
-    size_t GetTpaWithoutHistory(void) const { return m_TpaWithoutHistory; }
 
 private:
     typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
@@ -637,264 +887,41 @@ private:
     
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 
-    // data
-    size_t m_TpaWithHistory;
-    size_t m_TpaWithoutHistory;
+    //internal validators
+    CValidError_annot m_AnnotValidator;
+    CValidError_descr m_DescrValidator;
 };
 
 
-// =============================  Validate SeqFeat  ============================
+// ===========================  Validate Bioseq_set  ===========================
 
 
-class CValidError_feat : private CValidError_base
+class CValidError_bioseqset : private CValidError_base
 {
 public:
-    CValidError_feat(CValidError_imp& imp);
-    virtual ~CValidError_feat(void);
+    CValidError_bioseqset(CValidError_imp& imp);
+    virtual ~CValidError_bioseqset(void);
 
-    void ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_sep);
-    void ValidateCitations (const CSeq_entry_Handle& seh);
-
-    size_t GetNumGenes    (void) const { return m_NumGenes; }
-    size_t GetNumGeneXrefs(void) const { return m_NumGeneXrefs; }
-
-    enum EInferenceValidCode {
-        eInferenceValidCode_valid = 0,
-        eInferenceValidCode_empty,
-        eInferenceValidCode_bad_prefix,
-        eInferenceValidCode_bad_body,
-        eInferenceValidCode_single_field,
-        eInferenceValidCode_spaces,
-        eInferenceValidCode_same_species_misused,
-        eInferenceValidCode_bad_accession,
-        eInferenceValidCode_bad_accession_version,
-        eInferenceValidCode_accession_version_not_public,
-        eInferenceValidCode_bad_accession_type
-    };
-
-    EInferenceValidCode ValidateInferenceAccession (string accession, string separator, bool fetch_accession);
-    EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
-
-    // functions expected to be used in Discrepancy Report
-    bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
-    bool IsIntronShort(const CSeq_feat& feat);
-
-private:
-    void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
-    void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat, bool is_insd_in_sep);
-    void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
-    void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
-    void ValidateGeneXRef(const CSeq_feat& feat);
-    void ValidateOperon(const CSeq_feat& feat);
-
-    void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
-    void ValidateCdTrans(const CSeq_feat& feat);
-    void ValidateCdsProductId(const CSeq_feat& feat);
-    void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
-    void ReportCdTransErrors(const CSeq_feat& feat,
-        bool show_stop, bool got_stop, bool no_end, int ragged,
-        bool report_errors, bool& has_errors);
-    void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
-    void ValidateBothStrands(const CSeq_feat& feat);
-    void ValidateCommonCDSProduct(const CSeq_feat& feat);
-    void ValidateBadMRNAOverlap(const CSeq_feat& feat);
-    void ValidateBadGeneOverlap(const CSeq_feat& feat);
-    void ValidateCDSPartial(const CSeq_feat& feat);
-    bool x_ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
-        const CCdregion& cdregion, const string& transl_prot, bool report_erros);
-    void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
-
-    void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
-
-    void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
-    void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
-    void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
-    void ValidateMrnaTrans(const CSeq_feat& feat);
-    void ValidateCommonMRNAProduct(const CSeq_feat& feat);
-    void ValidatemRNAGene (const CSeq_feat &feat);
-    void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
-    void ValidateIntron(const CSeq_feat& feat);
-
-    void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
-    void ValidateNonImpFeat (const CSeq_feat& feat, bool is_insd_in_sep);
-    void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep);
-    void ValidateNonImpFeatGbquals(const CSeq_feat& feat, bool is_insd_in_sep);
-
-    // these functions are for validating individual genbank qualifier values
-    void ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat);
-    void ValidateRptUnitSeqVal (const string& val, const string& key, const CSeq_feat& feat);
-    void ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat);
-    void ValidateLabelVal (const string& val, const CSeq_feat& feat);
-    void ValidateCompareVal (const string& val, const CSeq_feat& feat, bool is_insd_in_sep);
-
-    void ValidateGapFeature (const CSeq_feat& feat);
-
-    void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
-        const string& key);
-
-    bool SplicingNotExpected(const CSeq_feat& feat);
-    void ValidateFeatPartialness(const CSeq_feat& feat);
-    void ValidateExcept(const CSeq_feat& feat);
-    void ValidateExceptText(const string& text, const CSeq_feat& feat);
-    void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat, CTSE_Handle tse);
-    void ValidateExtUserObject (const CUser_object& user_object, const CSeq_feat& feat);
-    void ValidateGoTerms (CUser_object::TData field_list, const CSeq_feat& feat, vector<pair<string, string> >& id_terms);
-
-    void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
-    void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
-    void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
-
-    bool IsPlastid(int genome);
-    bool IsOverlappingGenePseudo(const CSeq_feat& feat);
-    unsigned char Residue(unsigned char res);
-    int  CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr);
-    bool SuppressCheck(const string& except_text);
-    string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
-        TSeqPos pos);
-
-    bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
-    bool ArePartialsAtSpliceSitesOrGaps(const CSeq_loc& loc);
-    bool IsSameAsCDS(const CSeq_feat& feat);
-    bool IsCDDFeat(const CSeq_feat& feat) const;
-
-    int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
-
-    void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
-
-    // data
-    size_t m_NumGenes;
-    size_t m_NumGeneXrefs;
-};
-
-
-// =============================  Validate SeqDesc  ============================
-
-class CValidError_desc : private CValidError_base
-{
-public:
-    CValidError_desc(CValidError_imp& imp);
-    virtual ~CValidError_desc(void);
-
-    void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
-
-    void ResetModifCounters(void);
-private:
-
-    void ValidateComment(const string& comment, const CSeqdesc& desc);
-    void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
-    void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
-
-    CConstRef<CSeq_entry> m_Ctx;
-};
-
-
-// ============================  Validate SeqAlign  ============================
-
-
-class CValidError_align : private CValidError_base
-{
-public:
-    CValidError_align(CValidError_imp& imp);
-    virtual ~CValidError_align(void);
-
-    void ValidateSeqAlign(const CSeq_align& align);
-
-private:
-    typedef CSeq_align::C_Segs::TDendiag    TDendiag;
-    typedef CSeq_align::C_Segs::TDenseg     TDenseg;
-    typedef CSeq_align::C_Segs::TPacked     TPacked;
-    typedef CSeq_align::C_Segs::TStd        TStd;
-    typedef CSeq_align::C_Segs::TDisc       TDisc;
-
-    void x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps);
-    void x_ValidateDendiag(const TDendiag& dendiags, const CSeq_align& align);
-    void x_ValidateDenseg(const TDenseg& denseg, const CSeq_align& align);
-    void x_ValidateStd(const TStd& stdsegs, const CSeq_align& align);
-    void x_ValidatePacked(const TPacked& packed, const CSeq_align& align);
-    size_t x_CountBits(const CPacked_seg::TPresent& present);
-
-    // Check if dimension is valid
-    template <typename T>
-    bool x_ValidateDim(T& obj, const CSeq_align& align, size_t part = 0);
-
-    // Check if the  strand is consistent in SeqAlignment of global 
-    // or partial type
-    void x_ValidateStrand(const TDenseg& denseg, const CSeq_align& align);
-    void x_ValidateStrand(const TPacked& packed, const CSeq_align& align);
-    void x_ValidateStrand(const TStd& std_segs, const CSeq_align& align);
-
-    // Check if an alignment is FASTA-like. 
-    // Alignment is FASTA-like if all gaps are at the end with dimensions > 2.
-    void x_ValidateFastaLike(const TDenseg& denseg, const CSeq_align& align);
-
-    // Check if there is a gap for all sequences in a segment.
-    void x_ValidateSegmentGap(const TDenseg& denseg, const CSeq_align& align);
-    void x_ValidateSegmentGap(const TPacked& packed, const CSeq_align& align);
-    void x_ValidateSegmentGap(const TStd& std_segs, const CSeq_align& align);
-    void x_ValidateSegmentGap(const TDendiag& dendiags, const CSeq_align& align);
-
-    // Validate SeqId in sequence alignment.
-    void x_ValidateSeqId(const CSeq_align& align);
-    void x_GetIds(const CSeq_align& align, vector< CRef< CSeq_id > >& ids);
-
-    // Check segment length, start and end point in Dense_seg, Dense_diag 
-    // and Std_seg
-    void x_ValidateSeqLength(const TDenseg& denseg, const CSeq_align& align);
-    void x_ValidateSeqLength(const TPacked& packed, const CSeq_align& align);
-    void x_ValidateSeqLength(const TStd& std_segs, const CSeq_align& align);
-    void x_ValidateSeqLength(const CDense_diag& dendiag, size_t dendiag_num,
-        const CSeq_align& align);
-};
-
-
-// ============================  Validate SeqGraph  ============================
-
-
-class CValidError_graph : private CValidError_base
-{
-public:
-    CValidError_graph(CValidError_imp& imp);
-    virtual ~CValidError_graph(void);
-
-    void ValidateSeqGraph(const CSeq_graph& graph);
-    void ValidateSeqGraph(CSeq_entry_Handle seh);
-    void ValidateSeqGraph(const CBioseq& seq);
-    void ValidateSeqGraph (const CBioseq_set& set);
-
-
-    SIZE_TYPE GetNumMisplacedGraphs(void) const { return m_NumMisplaced; }
+    void ValidateBioseqSet(const CBioseq_set& seqset);
 
 private:
 
-    SIZE_TYPE   m_NumMisplaced;
-};
+    void ValidateNucProtSet(const CBioseq_set& seqset, int nuccnt, int protcnt, int segcnt);
+    void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
+    void ValidatePartsSet(const CBioseq_set& seqset);
+    void ValidateGenbankSet(const CBioseq_set& seqset);
+    void ValidatePopSet(const CBioseq_set& seqset);
+    void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
+    void ValidateGenProdSet(const CBioseq_set& seqset);
+    void CheckForInconsistentBiomols (const CBioseq_set& seqset);
 
+    bool IsMrnaProductInGPS(const CBioseq& seq); 
+    bool IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps); 
 
-// ============================  Validate SeqAnnot  ============================
-
-
-class CValidError_annot : private CValidError_base
-{
-public:
-    CValidError_annot(CValidError_imp& imp);
-    virtual ~CValidError_annot(void);
-
-    void ValidateSeqAnnot(const CSeq_annot_Handle& annot);
-private:
-};
-
-
-// ============================  Validate SeqDescr  ============================
-
-
-class CValidError_descr : private CValidError_base
-{
-public:
-    CValidError_descr(CValidError_imp& imp);
-    virtual ~CValidError_descr(void);
-
-    void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
-private:
+    //internal validators
+    CValidError_annot m_AnnotValidator;
+    CValidError_descr m_DescrValidator;
+    CValidError_bioseq m_BioseqValidator;
 };
 
 

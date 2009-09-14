@@ -343,6 +343,14 @@ void CValidError_imp::ValidatePubArticle
             "Journal title missing", obj, ctx);
         }
 
+        ITERATE (CTitle::Tdata, item, jour.GetTitle().Get() ) {
+            if ((*item)->Which() == CTitle::C_E::e_Name
+                && NStr::StartsWith((*item)->GetName(), "(er)")) {
+                is_electronic_journal = true;
+                break;
+            }
+        }
+
         if ( jour.CanGetImp() ) {
             const CImprint& imp = jour.GetImp();
 
@@ -408,7 +416,7 @@ void CValidError_imp::ValidatePubArticle
                          "Electronic-only publication should not also be in-press", obj, ctx);
             }
         }
-        if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA() && !is_electronic_journal) ) {
+        if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA()) && !is_electronic_journal ) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
                 "ISO journal title abbreviation missing", obj, ctx);
         }

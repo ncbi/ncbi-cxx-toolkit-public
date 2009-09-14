@@ -45,7 +45,7 @@ BEGIN_SCOPE(validator)
 
 
 CValidError_graph::CValidError_graph(CValidError_imp& imp) :
-    CValidError_base(imp), m_NumMisplaced(0)
+    CValidError_base(imp)
 {
 }
 
@@ -71,11 +71,11 @@ void CValidError_graph::ValidateSeqGraph(const CBioseq& seq)
         if ((*it)->IsGraph()) {
             FOR_EACH_GRAPH_ON_ANNOT (graph, **it) {
                 if (!(*graph)->IsSetLoc()) {
-                    ++m_NumMisplaced;
+                    m_Imp.IncrementMisplacedGraphCount(); 
                 } else {
                     CBioseq_Handle bsh = m_Scope->GetBioseqHandle((*graph)->GetLoc());
                     if (m_Scope->GetBioseqHandle(seq) != bsh) {
-                        ++m_NumMisplaced;
+                        m_Imp.IncrementMisplacedGraphCount(); 
                     }
                 }
                 ValidateSeqGraph (**graph);
@@ -90,7 +90,7 @@ void CValidError_graph::ValidateSeqGraph (const CBioseq_set& set)
     FOR_EACH_ANNOT_ON_SEQSET (it, set) {
         if ((*it)->IsGraph()) {
             FOR_EACH_GRAPH_ON_ANNOT (graph, **it) {
-                ++m_NumMisplaced;
+                m_Imp.IncrementMisplacedGraphCount(); 
                 ValidateSeqGraph (**graph);
             }
         }
@@ -107,6 +107,25 @@ void CValidError_graph::ValidateSeqGraph (const CBioseq_set& set)
 
 void CValidError_graph::ValidateSeqGraph(const CSeq_graph& graph)
 {
+}
+
+
+void CValidError_graph::ValidateSeqGraphContext(const CSeq_graph& graph, const CBioseq_set& set)
+{
+    m_Imp.IncrementMisplacedGraphCount(); 
+}
+
+
+void CValidError_graph::ValidateSeqGraphContext(const CSeq_graph& graph, const CBioseq& seq)
+{
+    if (!graph.IsSetLoc()) {
+        m_Imp.IncrementMisplacedGraphCount(); 
+    } else {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(graph.GetLoc());
+        if (m_Scope->GetBioseqHandle(seq) != bsh) {
+            m_Imp.IncrementMisplacedGraphCount(); 
+        }
+    }
 }
 
 

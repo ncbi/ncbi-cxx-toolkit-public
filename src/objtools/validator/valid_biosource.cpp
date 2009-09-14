@@ -538,8 +538,8 @@ void CValidError_imp::ValidateBioSource
             if (!NStr::IsBlank (countryname)) {
                 PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode, 
                             "Multiple country names on BioSource", obj, ctx);
-                countryname = (**ssit).GetName();
             }
+            countryname = (**ssit).GetName();
             break;
 
 		case CSubSource::eSubtype_lat_lon:

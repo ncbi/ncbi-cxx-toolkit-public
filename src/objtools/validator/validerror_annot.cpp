@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include "validatorp.hpp"
+#include "utilities.hpp"
 
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
@@ -47,7 +48,10 @@ BEGIN_SCOPE(validator)
 
 
 CValidError_annot::CValidError_annot(CValidError_imp& imp) :
-    CValidError_base(imp)
+    CValidError_base(imp),
+    m_GraphValidator(imp),
+    m_AlignValidator(imp),
+    m_FeatValidator(imp)
 {
 }
 
@@ -60,18 +64,19 @@ CValidError_annot::~CValidError_annot(void)
 void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 {
     if ( annot.IsAlign() ) {
-        if ( !annot.Seq_annot_IsSetDesc() ) return;
+        if ( annot.Seq_annot_IsSetDesc() ) {
     
-        ITERATE( list< CRef< CAnnotdesc > >, iter, annot.Seq_annot_GetDesc().Get() ) {
-        
-            if ( (*iter)->IsUser() ) {
-                const CObject_id& oid = (*iter)->GetUser().GetType();
-                if ( oid.IsStr() ) {
-                    if ( oid.GetStr() == "Blast Type" ) {
-                        PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
-                            "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
+            ITERATE( list< CRef< CAnnotdesc > >, iter, annot.Seq_annot_GetDesc().Get() ) {
+            
+                if ( (*iter)->IsUser() ) {
+                    const CObject_id& oid = (*iter)->GetUser().GetType();
+                    if ( oid.IsStr() ) {
+                        if ( oid.GetStr() == "Blast Type" ) {
+                            PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
+                                "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
 
-                        break;
+                            break;
+                        }
                     }
                 }
             }
@@ -85,6 +90,80 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
     }
 }
 
+
+void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
+{
+    if ( annot.IsAlign() ) {
+        if ( annot.IsSetDesc() ) {
+    
+            ITERATE( list< CRef< CAnnotdesc > >, iter, annot.GetDesc().Get() ) {
+            
+                if ( (*iter)->IsUser() ) {
+                    const CObject_id& oid = (*iter)->GetUser().GetType();
+                    if ( oid.IsStr() ) {
+                        if ( oid.GetStr() == "Blast Type" ) {
+                            PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
+                                "Record contains BLAST alignments", annot); // !!!
+
+                            break;
+                        }
+                    }
+                }
+            }
+        } // iterate
+        FOR_EACH_ALIGN_ON_ANNOT (align, annot) {
+            m_AlignValidator.ValidateSeqAlign (**align);
+        }
+    } else if ( annot.IsIds() ) {
+        PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotIDs,
+                "Record contains Seq-annot.data.ids", annot);
+    } else if ( annot.IsLocs() ) {
+        PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotLOCs,
+                "Record contains Seq-annot.data.locs", annot);
+    } else if ( annot.IsGraph()) {
+        FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
+            m_GraphValidator.ValidateSeqGraph(**graph);
+        }
+    } else if ( annot.IsFtable() ) {
+        FOR_EACH_FEATURE_ON_ANNOT (feat, annot) {
+            m_FeatValidator.ValidateSeqFeat(**feat);
+        }
+    }
+}
+
+
+void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const CBioseq& seq)
+{
+    if (annot.IsGraph()) {
+        FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
+            m_GraphValidator.ValidateSeqGraphContext (**graph, seq);
+        }
+    }
+}
+
+
+void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const CBioseq_set& set)
+{
+    if (annot.IsGraph()) {
+        FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
+            m_GraphValidator.ValidateSeqGraphContext (**graph, set);
+        }
+    } else if (annot.IsFtable()) {
+        // if a feature is packaged on a set, the bioseqs in the locations should be in the set
+        CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle(set);
+        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
+            if ((*feat_it)->IsSetLocation()) {
+                for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
+                    if (!IsBioseqWithIdInSet(loc_it.GetSeq_id(), bssh)) {
+                        m_Imp.IncrementMisplacedFeatureCount();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+}
 
 
 END_SCOPE(validator)

@@ -102,9 +102,7 @@ using namespace sequence;
 
 
 CValidError_feat::CValidError_feat(CValidError_imp& imp) :
-    CValidError_base(imp),
-    m_NumGenes(0),
-    m_NumGeneXrefs(0)
+    CValidError_base(imp)
 {
 }
 
@@ -189,7 +187,7 @@ const string kInferenceMessage[] = {
 };
 
 
-void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_sep)
+void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 {
     if ( !feat.CanGetLocation() ) {
         PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
@@ -223,7 +221,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat, bool is_insd_in_se
         }
     }
 
-    ValidateSeqFeatData(feat.GetData(), feat, is_insd_in_sep);
+    ValidateSeqFeatData(feat.GetData(), feat);
   
     ValidateBothStrands (feat);
     
@@ -407,8 +405,7 @@ static bool s_IsLocGEDL(const CSeq_loc& loc, CScope& scope)
 
 void CValidError_feat::ValidateSeqFeatData
 (const CSeqFeatData& data,
- const CSeq_feat& feat,
- bool is_insd_in_sep)
+ const CSeq_feat& feat)
 {
     switch ( data.Which () ) {
     case CSeqFeatData::e_Gene:
@@ -434,7 +431,7 @@ void CValidError_feat::ValidateSeqFeatData
         break;
     case CSeqFeatData::e_Imp:
         // Validate CPubdesc
-        ValidateImp(data.GetImp (), feat, is_insd_in_sep);
+        ValidateImp(data.GetImp (), feat);
         break;
     case CSeqFeatData::e_Biosrc:
         // Validate CBioSource
@@ -503,7 +500,7 @@ void CValidError_feat::ValidateSeqFeatData
     }
     
     if ( !data.IsImp() ) {
-        ValidateNonImpFeat (feat, is_insd_in_sep);
+        ValidateNonImpFeat (feat);
     }
 }
 
@@ -863,13 +860,6 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     if ( grp  ) {
         return (grp->CanGetPseudo()  &&  grp->GetPseudo());
     }
-
-    // !!! DEBUG {
-    // For testing purposes. Remove when test is done.
-    if ( m_Imp.AvoidPerfBottlenecks() ) {
-        return false;
-    }
-    // }
 
     // check overlapping gene
     CConstRef<CSeq_feat> overlap = 
@@ -1290,7 +1280,7 @@ DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BadGeneSyn, sc_BadGeneSynTex
 
 void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat)
 {
-    ++m_NumGenes;
+    m_Imp.IncrementGeneCount();
 
     if ( (! gene.IsSetLocus()      ||  gene.GetLocus().empty())   &&
          (! gene.IsSetAllele()     ||  gene.GetAllele().empty())  &&
@@ -3068,7 +3058,7 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
 }
 
 
-void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, bool is_insd_in_sep)
+void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
 {
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
     const string& key = imp.GetKey();
@@ -3109,7 +3099,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, 
             CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
             if ( range.GetFrom() == range.GetTo() ) {
                 EDiagSev sev = eDiag_Warning;
-                if (is_insd_in_sep) {
+                if (m_Imp.IsINSDInSep()) {
                     sev = eDiag_Error;
                 }
                 PostErr (sev, eErr_SEQ_FEAT_PolyAsignalNotRange, "PolyA_signal should be a range", feat);
@@ -3194,7 +3184,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, 
     }
 
     if ( feat.CanGetQual() ) {
-        ValidateImpGbquals(imp, feat, is_insd_in_sep);
+        ValidateImpGbquals(imp, feat);
     }
     
     // Make sure a feature has its mandatory qualifiers
@@ -3243,13 +3233,13 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat, 
 }
 
 
-void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat, bool is_insd_in_sep)
+void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
 {
     string key = feat.GetData().GetKey();
 
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
 
-    ValidateNonImpFeatGbquals (feat, is_insd_in_sep);
+    ValidateNonImpFeatGbquals (feat);
 
     if (NStr::EqualNocase (key, "mat_peptide")
         || NStr::EqualNocase (key, "sig_peptide")
@@ -3258,7 +3248,7 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat, bool is_insd_i
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());
         if (bsh.IsNa()) {
             EDiagSev sev = eDiag_Warning;
-            if (is_insd_in_sep) {
+            if (m_Imp.IsINSDInSep()) {
                 sev = eDiag_Error;
             }
             PostErr (sev, eErr_SEQ_FEAT_InvalidForType, 
@@ -3271,7 +3261,7 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat, bool is_insd_i
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation());
         if (bsh.IsNa()) {
             EDiagSev sev = eDiag_Warning;
-            if (is_insd_in_sep) {
+            if (m_Imp.IsINSDInSep()) {
                 sev = eDiag_Error;
             }
             PostErr (sev, eErr_SEQ_FEAT_InvalidForType, 
@@ -3532,7 +3522,7 @@ void CValidError_feat::ValidateLabelVal (const string& val, const CSeq_feat& fea
 }
 
 
-void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& feat, bool is_insd_in_sep)
+void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& feat)
 {
     if (!NStr::StartsWith (val, "(")) {
         EAccessionFormatError valid_accession = ValidateAccessionString (val, true);  
@@ -3545,7 +3535,7 @@ void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& f
         } else if (valid_accession != eAccessionFormat_valid) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                      val + " is not a legal accession for qualifier compare", feat);
-        } else if (is_insd_in_sep && NStr::Find (val, "_") == string::npos) {
+        } else if (m_Imp.IsINSDInSep() && NStr::Find (val, "_") == string::npos) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                      "RefSeq accession " + val + " cannot be used for qualifier compare", feat);
         }
@@ -3795,8 +3785,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
 
 void CValidError_feat::ValidateImpGbquals
 (const CImp_feat& imp,
- const CSeq_feat& feat,
- bool is_insd_in_sep)
+ const CSeq_feat& feat)
 {
     CSeqFeatData::ESubtype ftype = feat.GetData().GetSubtype();
     const string& key = imp.GetKey();
@@ -3952,7 +3941,7 @@ void CValidError_feat::ValidateImpGbquals
 
             case CGbqualType::e_Compare:
                 {{
-                    ValidateCompareVal (val, feat, is_insd_in_sep);
+                    ValidateCompareVal (val, feat);
                 }}
                 break;
 
@@ -3979,7 +3968,7 @@ void CValidError_feat::ValidateImpGbquals
 }
 
 
-void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat, bool is_insd_in_sep)
+void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
 {
     string key = feat.GetData().GetKey();
 
@@ -4055,7 +4044,7 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat, bool is
                     break;
                 case CGbqualType::e_Compare:
                     {{
-                        ValidateCompareVal (val, feat, is_insd_in_sep);
+                        ValidateCompareVal (val, feat);
                     }}
                     break;
 
@@ -4075,12 +4064,6 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
  const string& key)
 {
     const CSeq_loc& loc = feat.GetLocation();
-
-    // !!! DEBUG {
-    if( m_Imp.AvoidPerfBottlenecks() ) {
-        return;
-    } 
-    // } DEBUG
 
     CConstRef<CSeq_feat> cds = GetOverlappingCDS(loc, *m_Scope);
     if ( !cds ) {
@@ -4384,12 +4367,6 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             }
         }
     } else {
-
-        // !!! DEBUG {
-        if( m_Imp.AvoidPerfBottlenecks() ) {
-            return;
-        } 
-        // } DEBUG
 
         CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(bsh.GetCompleteBioseq()));
         if (mrna.GetPointer() != &feat) {
@@ -4717,12 +4694,6 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 {
     const CSeq_loc& loc = feat.GetLocation();
 
-    // !!! DEBUG {
-    if( m_Imp.AvoidPerfBottlenecks() ) {
-        return;
-    } 
-    // } DEBUG
-
     CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
         loc,
         CSeqFeatData::eSubtype_mRNA,
@@ -4803,12 +4774,6 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
         return;
     }
 
-    // !!! DEBUG {
-    if( m_Imp.AvoidPerfBottlenecks() ) {
-        return;
-    } 
-    // } DEBUG
-    
     // look for overlapping genes
     if (GetOverlappingGene(feat.GetLocation(), *m_Scope)) {
         return;
@@ -5636,7 +5601,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                 string except_char = "";
                 except_char += ex;
                 if (prot_pos % 3 < transl_prot.length()) {
-                    if (!NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
+                    if (NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
                         string msg = "Unnecessary transl_except ";
                         msg += ex;
                         msg += " at position ";
@@ -5699,12 +5664,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     }
     const CGene_ref* gene_xref = feat.GetGeneXref();
 
-    // !!! DEBUG {
-    if( m_Imp.AvoidPerfBottlenecks() ) {
-        return;
-    } 
-    // } DEBUG
- 
     // get the list of overlapping genes
     TFeatScores overlapping_genes;
 
@@ -5793,7 +5752,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         }
     } else if ( !gene_xref->IsSuppressed() ) {
         // we are counting features with gene xrefs
-        ++m_NumGeneXrefs;
+        m_Imp.IncrementGeneXrefCount();
 
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
 
@@ -6484,120 +6443,6 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                 }
             }
         }
-    }
-}
-
-
-static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
-                                          vector<int>& pmids, vector<int>& muids, vector<int>& serials,
-                                          vector<string>& published_labels, vector<string>& unpublished_labels)
-{
-    FOR_EACH_SEQDESC_ON_SEQENTRY (it, se) {
-        if ((*it)->IsPub()) {
-            GetPubdescLabels ((*it)->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
-        }
-    }
-
-    if (se.IsSet()) {
-        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
-            s_CollectPubDescriptorLabels (**it, pmids, muids, serials, published_labels, unpublished_labels);
-        }
-    }
-}
-
-
-void CValidError_feat::ValidateCitations (const CSeq_entry_Handle& seh)
-{
-    vector<int> pmids;
-    vector<int> muids;
-    vector<int> serials;
-    vector<string> published_labels;
-    vector<string> unpublished_labels;
-
-    // collect labels for pubs on record
-    s_CollectPubDescriptorLabels (*(seh.GetCompleteSeq_entry()), pmids, muids, serials, published_labels, unpublished_labels);
-                
-    CFeat_CI feat (seh, SAnnotSelector(CSeqFeatData::e_Pub));
-    while (feat) {
-        GetPubdescLabels (feat->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
-        ++feat;
-    }
-
-    // now examine citations to determine whether they match a pub on the record
-    CFeat_CI f (seh);
-    while (f) {
-        if (f->IsSetCit() && f->GetCit().IsPub()) {            
-            ITERATE (CPub_set::TPub, cit_it, f->GetCit().GetPub()) {
-                bool found = false;
-
-                if ((*cit_it)->IsPmid()) {
-                    vector<int>::iterator it = pmids.begin();    
-                    while (it != pmids.end() && !found) {
-                        if (*it == (*cit_it)->GetPmid()) {
-                            found = true;
-                        }
-                        ++it;
-                    }
-                    if (!found) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
-                                 "Citation on feature refers to uid ["
-                                 + NStr::IntToString((*cit_it)->GetPmid())
-                                 + "] not on a publication in the record",
-                                 f->GetOriginalFeature());
-                    }
-                } else if ((*cit_it)->IsMuid()) {
-                    vector<int>::iterator it = muids.begin();    
-                    while (it != muids.end() && !found) {
-                        if (*it == (*cit_it)->GetMuid()) {
-                            found = true;
-                        }
-                        ++it;
-                    }
-                    if (!found) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
-                                 "Citation on feature refers to uid ["
-                                 + NStr::IntToString((*cit_it)->GetMuid())
-                                 + "] not on a publication in the record",
-                                 f->GetOriginalFeature());
-                    }
-                } else if ((*cit_it)->IsEquiv()) {
-                    continue;
-                } else {                    
-                    string label;
-                    (*cit_it)->GetLabel(&label, CPub::eContent, true);
-                    if (NStr::EndsWith (label, ">")) {
-                        label = label.substr(0, label.length() - 2);
-                    }
-                    size_t len = label.length();
-                    vector<string>::iterator unpub_it = unpublished_labels.begin();
-                    while (unpub_it != unpublished_labels.end() && !found) {
-                        size_t it_len =(*unpub_it).length();
-                        if (NStr::EqualNocase (*unpub_it, 0, it_len > len ? len : it_len, label)) {
-                            found = true;
-                        }
-                        ++unpub_it;
-                    }
-                    vector<string>::iterator pub_it = published_labels.begin();
-
-                    while (pub_it != published_labels.end() && !found) {
-                        size_t it_len =(*pub_it).length();
-                        if (NStr::EqualNocase (*pub_it, 0, it_len > len ? len : it_len, label)) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
-                                     "Citation on feature needs to be updated to published uid",
-                                     f->GetOriginalFeature());
-                            found = true;
-                        }
-                        ++pub_it;
-                    }
-                    if (!found) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
-                                 "Citation on feature refers to a publication not in the record",
-                                 f->GetOriginalFeature());
-                    }
-                }
-            }
-        }
-        ++f;
     }
 }
 
