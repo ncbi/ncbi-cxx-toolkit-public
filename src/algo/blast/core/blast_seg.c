@@ -1833,7 +1833,7 @@ static double
 s_lnfact(Int4 n) {
   if (n < sizeof(lnfact)/sizeof(*lnfact))
      return lnfact[n];
-  else return (n*log(n) - n + 5.524117);
+  else return ((n+0.5)*log(n) - n + 0.9189385332);
 }
 
 /** calculate "K2" entropy per equation 3 of Wootton and Federhen
