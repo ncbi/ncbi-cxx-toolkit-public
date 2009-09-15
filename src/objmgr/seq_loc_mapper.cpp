@@ -448,7 +448,7 @@ CSeq_align_Mapper_Base*
 CSeq_loc_Mapper::InitAlignMapper(const CSeq_align& src_align)
 {
     return new CSeq_align_Mapper(src_align, m_UseWidth,
-        m_Scope.IsNull() ? NULL : (CScope*)(m_Scope));
+        m_Scope.GetScopeOrNull());
 }
 
 
