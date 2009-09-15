@@ -2113,7 +2113,7 @@ case "$compiler" in
    AC_CACHE_CHECK([whether $CC supports -Wl,--no-allow-shlib-undefined],
       ncbi_cv_prog_cc_wl_no_asu,
       [orig_LDFLAGS=$LDFLAGS
-       LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
+       LDFLAGS="$CXXFLAGS_DLL -shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
           [ncbi_cv_prog_cc_wl_no_asu=yes], [ncbi_cv_prog_cc_wl_no_asu=no])
        LDFLAGS=$orig_LDFLAGS])
