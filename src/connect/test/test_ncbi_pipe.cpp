@@ -398,14 +398,18 @@ int CTest::Run(void)
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
-        CExitInfo exitinfo;
+        CProcess::CExitInfo exitinfo;
         int exitcode = process.Wait(6000/*6 sec*/, &exitinfo);
         cerr << "Command completed with code " << exitcode << ", state "
-            (exitinfo.state == CProcess::eExitInfo_Terminated
-             ? "Terminated" :
-             exitinfo.state == CProcess::eExitInfo_Alive
-             ? "Alive" : "Unknown")
-             << ", and raw status " << exitinfo.status << endl;
+             << (!exitinfo.IsPresent() ? "Inexistent" :
+                 exitinfo.IsExited()   ? "Terminated" :
+                 exitinfo.IsAlive()    ? "Alive"      :
+                 exitinfo.IsSignaled() ? "Signaled"   : "Unknown") << ": "
+             << (exitinfo.IsPresent()
+                 ? (exitinfo.IsSignaled() ? exitinfo.GetSignal()   :
+                    exitinfo.IsExited()   ? exitinfo.GetExitCode() : -1)
+                 : -1)
+             << endl;
         assert(exitcode == kTestResult);
         assert(!process.IsAlive());
     }}
