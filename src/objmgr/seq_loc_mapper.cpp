@@ -447,7 +447,8 @@ TSeqPos CSeq_loc_Mapper::GetSequenceLength(const CSeq_id& id)
 CSeq_align_Mapper_Base*
 CSeq_loc_Mapper::InitAlignMapper(const CSeq_align& src_align)
 {
-    return new CSeq_align_Mapper(src_align, m_UseWidth, m_Scope);
+    return new CSeq_align_Mapper(src_align, m_UseWidth,
+        m_Scope.IsNull() ? NULL : (CScope*)(m_Scope));
 }
 
 
