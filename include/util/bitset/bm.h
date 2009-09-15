@@ -30,6 +30,7 @@ For more information please visit:  http://bmagic.sourceforge.net
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdio.h>
 
 // define BM_NO_STL if you use BM in "STL free" environment and want
 // to disable any references to STL headers
