@@ -350,6 +350,7 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     string err_file = m_Path + "err" + string(m_Name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
+    m_Env->SetLogRegionMax(512 * 1024);
     if (params.log_mem_size) {
         m_Env->SetLogInMemory(true);
         m_Env->SetLogBSize(params.log_mem_size);

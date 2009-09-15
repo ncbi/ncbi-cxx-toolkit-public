@@ -54,45 +54,69 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
     pos = pos_;
     string prefix = string("jsq_") + NStr::IntToString(pos);
     allocated = false;
+    bool group_tables_for_queue = false;
     try {
         string fname = prefix + ".db";
+        string tname = "";
         job_db.SetEnv(env);
         // TODO: RevSplitOff make sense only for long living queues,
         // for dynamic ones it slows down the process, but because queue
         // if eventually is disposed of, it does not make sense to save
         // space here
         job_db.RevSplitOff();
-        job_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        if (group_tables_for_queue) tname = "job";
+        job_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_jobinfo.db";
+        if (group_tables_for_queue)
+            tname = "jobinfo";
+        else
+            fname = prefix + "_jobinfo.db";
         job_info_db.SetEnv(env);
-        job_info_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        job_info_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_runs.db";
+        if (group_tables_for_queue)
+            tname = "runs";
+        else
+            fname = prefix + "_runs.db";
         runs_db.SetEnv(env);
-        runs_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        runs_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_deleted.db";
+        if (group_tables_for_queue)
+            tname = "deleted";
+        else
+            fname = prefix + "_deleted.db";
         deleted_jobs_db.SetEnv(env);
-        deleted_jobs_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        deleted_jobs_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_affid.idx";
+        if (group_tables_for_queue)
+            tname = "affid";
+        else
+            fname = prefix + "_affid.idx";
         affinity_idx.SetEnv(env);
-        affinity_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        affinity_idx.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_affdict.db";
+        if (group_tables_for_queue)
+            tname = "affdict";
+        else
+            fname = prefix + "_affdict.db";
         aff_dict_db.SetEnv(env);
-        aff_dict_db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        aff_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_affdict_token.idx";
+        if (group_tables_for_queue)
+            tname = "affdict_token";
+        else
+            fname = prefix + "_affdict_token.idx";
         aff_dict_token_idx.SetEnv(env);
-        aff_dict_token_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+        aff_dict_token_idx.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
-        fname = prefix + "_tag.idx";
+        if (group_tables_for_queue)
+            tname = "tag";
+        else
+            fname = prefix + "_tag.idx";
         tag_db.SetEnv(env);
         tag_db.SetPageSize(32*1024);
         tag_db.RevSplitOff();
-        tag_db.Open(fname, CBDB_RawFile::eReadWriteCreate);
+        tag_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
     } catch (CBDB_ErrnoException&) {
         throw;
