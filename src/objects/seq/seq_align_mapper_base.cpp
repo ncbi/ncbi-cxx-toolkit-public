@@ -1309,30 +1309,33 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                 if (last_id  &&  last_id != row.m_Id) {
                     break;
                 }
-                last_id = row.m_Id;
-                CRef<CSeq_id> id(new CSeq_id);
-                id.Reset(&const_cast<CSeq_id&>(*row.m_Id.GetSeqId()));
-                dseg.SetIds().push_back(id);
-                if ( m_HaveWidths ) {
-                    dseg.SetWidths().push_back(row.m_Width);
-                }
-                have_prots = have_prots  ||  (row.m_Width == 3);
-                if ( have_scores ) {
-                    CRef<CScore> score(new CScore);
-                    score->Assign(*m_Segs.front().m_Scores[r]);
-                    dseg.SetScores().push_back(score);
+                if ( !last_id ) {
+                    // push id, width and scores only once
+                    last_id = row.m_Id;
+                    CRef<CSeq_id> id(new CSeq_id);
+                    id.Reset(&const_cast<CSeq_id&>(*row.m_Id.GetSeqId()));
+                    dseg.SetIds().push_back(id);
+                    if ( m_HaveWidths ) {
+                        dseg.SetWidths().push_back(row.m_Width);
+                    }
+                    have_prots = have_prots  ||  (row.m_Width == 3);
+                    if ( have_scores ) {
+                        CRef<CScore> score(new CScore);
+                        score->Assign(*m_Segs.front().m_Scores[r]);
+                        dseg.SetScores().push_back(score);
+                    }
                 }
             }
             cur_seg++;
+            if (cur_seg - start_seg >= num_seg) break;
         }
-        if (cur_seg < num_seg) {
-            num_seg = cur_seg - start_seg;
-        }
+        num_seg = cur_seg - start_seg;
     }
     dseg.SetNumseg(num_seg);
     TStrands strands;
     x_FillKnownStrands(strands);
     cur_seg = 0;
+    int non_empty_segs = 0;
     ITERATE(TSegments, seg_it, m_Segs) {
         if (cur_seg < start_seg) {
             cur_seg++;
@@ -1353,6 +1356,14 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
         }
         dseg.SetLens().push_back(new_len);
         size_t str_idx = 0;
+        bool only_gaps = true;
+        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+            if (row->m_Start != kInvalidSeqPos) {
+                only_gaps = false;
+            }
+        }
+        if (only_gaps) continue;
+        non_empty_segs++;
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             dseg.SetStarts().push_back(row->GetSegStart());
             if (m_HaveStrands) { // per-alignment strands
@@ -1364,6 +1375,10 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
             }
             str_idx++;
         }
+    }
+    if (non_empty_segs == 0) {
+        // The sub-align contains only gaps in all rows, ignore it
+        dst.Reset();
     }
     return start_seg + num_seg;
 }
@@ -1774,6 +1789,7 @@ void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
     while (size_t(seg) < m_Segs.size()) {
         CRef<CSeq_align> dseg(new CSeq_align);
         seg = x_GetPartialDenseg(dseg, seg);
+        if (!dseg) continue; // The sub-align had only gaps
         data.push_back(dseg);
     }
 }
