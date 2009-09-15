@@ -270,7 +270,8 @@ int CTest::Run(void)
     assert(status == eIO_Success  &&  exitcode == 0);
 
 
-    // Pipe for writing (direct to pipe)
+    // Unidirectional pipe (direct to pipe)
+    // NB: a race condition on child's cerr closure
 
     args.clear();
     args.push_back("1");
