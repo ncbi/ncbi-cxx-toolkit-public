@@ -252,9 +252,9 @@ void CBDB_RawFile::SetCompressor(ICompression* compressor, EOwnership own)
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 {
-    LOG_POST_X(1, Info << "Closing: " << m_FileName);
     if (m_FileName.empty())
         return;
+    LOG_POST_X(1, Info << "Closing: " << m_FileName);
 
     if (m_DB_Attached) {
         m_DB = 0;
