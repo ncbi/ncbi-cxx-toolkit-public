@@ -341,10 +341,12 @@ int CTest::Run(void)
         assert(ps.good());
         assert(value == i*i);
     }
-    ps.GetPipe().SetReadHandle(CPipe::eStdErr);
     ps >> str;
     cout << str << endl;
     assert(str == "Done");
+    ps.GetPipe().SetReadHandle(CPipe::eStdErr);
+    ps >> str;
+    assert(!str.empty());
 
     status = ps.GetPipe().Close(&exitcode); 
     cerr << "Command completed with code " << exitcode << " and status "
@@ -472,7 +474,7 @@ int main(int argc, const char* argv[])
     // Spawned process for bidirectional test (iostream)
     case 3:
     {
-        //cerr << endl << "--- CPipe bidirectional test (iostream) ---"<<endl;
+        cerr << endl << "--- CPipe bidirectional test (iostream) ---" << endl;
         for (int i = 5; i <= 10; ++i) {
             int value;
             cin >> value;
@@ -480,7 +482,7 @@ int main(int argc, const char* argv[])
             cout << value * value << endl;
             cout.flush();
         }
-        cerr << "Done" << endl;
+        cout << "Done" << endl;
         exit(kTestResult);
     }
     // Test for fKeepOnClose && fKillOnClose flags
