@@ -170,11 +170,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
 
-    if (m_ProcHandle != INVALID_HANDLE_VALUE) {
-        ERR_POST(6, "Pipe already open");
-        return eIO_InvalidArg;
-    }
-
     x_Clear();
     m_Flags = create_flags;
 
@@ -935,11 +930,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
-
-    if (m_Pid != (pid_t)(-1)) {
-        ERR_POST_X(6, "Pipe already open");
-        return eIO_InvalidArg;
-    }
 
     x_Clear();
     m_Flags = create_flags;
