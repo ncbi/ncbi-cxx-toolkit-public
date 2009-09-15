@@ -1721,13 +1721,21 @@ fi
 if test "$with_distcc" = "yes" ; then
    AC_CHECK_PROG(DISTCC, distcc, distcc, [])
    if test -n "$DISTCC" ; then
-      # distcc is too clever and special-cases conftest.*, so use an
-      # alternate name.
-      echo 'int f() { return 0; }' > distcctest.c
+      # Test distcc reasonably thoroughly to avoid possible gotchas.
+      cat > distcctest.c << EOF
+#include <stddef.h>
+#if !defined(__GNUC__)  &&  !defined(offsetof)
+#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
+#endif
+struct S { int x; };
+int f() { return offsetof(struct S, x); }
+EOF
+      DISTCC_FALLBACK=0
+      export DISTCC_FALLBACK
       AC_CACHE_CHECK([whether any distcc servers are available],
          ncbi_cv_prog_distcc_servers,
          [if test -x /usr/bin/cc; then testcc=/usr/bin/cc; else testcc=$CC; fi
-          if DISTCC_FALLBACK=0 $DISTCC $testcc -c distcctest.c \
+          if $DISTCC $testcc -c distcctest.c \
               2>&AS_MESSAGE_LOG_FD ; then
              ncbi_cv_prog_distcc_servers=yes
           else

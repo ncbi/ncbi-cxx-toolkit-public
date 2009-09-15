@@ -5922,16 +5922,24 @@ echo "${ECHO_T}no" >&6
 fi
 
    if test -n "$DISTCC" ; then
-      # distcc is too clever and special-cases conftest.*, so use an
-      # alternate name.
-      echo 'int f() { return 0; }' > distcctest.c
+      # Test distcc reasonably thoroughly to avoid possible gotchas.
+      cat > distcctest.c << EOF
+#include <stddef.h>
+#if !defined(__GNUC__)  &&  !defined(offsetof)
+#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
+#endif
+struct S { int x; };
+int f() { return offsetof(struct S, x); }
+EOF
+      DISTCC_FALLBACK=0
+      export DISTCC_FALLBACK
       echo "$as_me:$LINENO: checking whether any distcc servers are available" >&5
 echo $ECHO_N "checking whether any distcc servers are available... $ECHO_C" >&6
 if test "${ncbi_cv_prog_distcc_servers+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test -x /usr/bin/cc; then testcc=/usr/bin/cc; else testcc=$CC; fi
-          if DISTCC_FALLBACK=0 $DISTCC $testcc -c distcctest.c \
+          if $DISTCC $testcc -c distcctest.c \
               2>&5 ; then
              ncbi_cv_prog_distcc_servers=yes
           else
