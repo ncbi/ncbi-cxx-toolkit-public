@@ -41,6 +41,7 @@
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
 #elif defined(NCBI_OS_UNIX)
+#  include <signal.h>
 #  include <unistd.h>
 #else
 #   error "Pipe tests configured for Windows and Unix only."
@@ -114,50 +115,49 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
 
 
 // Read from file stream
-// CAUTION:  read(2) can short read
 static string s_ReadLine(FILE* fs) 
 {
     string str;
     for (;;) {
-        char    c;
-        ssize_t cnt = read(fileno(fs), &c, 1);
-        cerr << (cnt > 0 ? cnt : 0) << " byte(s) read from file:" << endl;
-        if (cnt > 0) {
-            assert(cnt == 1);
-            cerr.write(&c, cnt);
-            cerr << endl;
-            if (c == '\n')
-                break;
-            str += c;
-        } else {
+        char   buf[80];
+        char*  res = fgets(buf, sizeof(buf)-1, fs);
+        size_t len = res ? strlen(res) : 0;
+        cerr << (int) len << " byte(s) read from file:" << endl;
+        if (!len) {
             break;
         }
+        cerr.write(res, len);
+        cerr << endl;
+        if (res[len - 1] == '\n') {
+            str += string(res, len - 1);
+            break;
+        }
+        str += string(res, len);
     }
     return str;
 }
 
 
 // Write to file stream
-// CAUTION:  write(2) can short write
-static void s_WriteLine(FILE* fs, string str)
+static void s_WriteLine(FILE* fs, const string& str)
 {
     size_t      written = 0;
     size_t      size = str.size();
     const char* data = str.c_str();
-    do { 
-        ssize_t cnt = write(fileno(fs), data + written, size - written);
-        cerr << (cnt > 0 ? cnt : 0) << " byte(s) written to file:" << endl;
-        if (cnt > 0) {
-            cerr.write(data, cnt);
-            cerr << endl;
-            written += cnt;
-        } else {
+    do {
+        size_t cnt = fwrite(data + written, 1, size - written, fs);
+        cerr << (int) cnt << " byte(s) written to file:" << endl;
+        if (!cnt) {
             break;
         }
+        cerr.write(data + written, cnt);
+        cerr << endl;
+        written += cnt;
     } while (written < size);
     if (written == size) {
         static const char eol[] = { '\n' };
-        write(fileno(fs), eol, sizeof(eol));
+        fwrite(eol, 1, 1, fs);
+        fflush(fs);
     }
 }
 
@@ -447,6 +447,11 @@ int main(int argc, const char* argv[])
     // Spawned process for unidirectional test
     case 1:
     {
+        // NB: cout closed in this test; cerr may close early (race)
+#ifdef NCBI_OS_UNIX
+        // Ignore pipe signals, convert them to errors
+        ::signal(SIGPIPE, SIG_IGN);
+#endif /*NCBI_OS_UNIX*/
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
         command = s_ReadLine(stdin);
         _TRACE("read back >>" << command << "<<");
@@ -467,11 +472,11 @@ int main(int argc, const char* argv[])
     case 3:
     {
         //cerr << endl << "--- CPipe bidirectional test (iostream) ---"<<endl;
-        for (int i = 5; i<=10; i++) {
+        for (int i = 5; i <= 10; ++i) {
             int value;
             cin >> value;
             assert(value == i);
-            cout << value*value << endl;
+            cout << value * value << endl;
             cout.flush();
         }
         cerr << "Done" << endl;
