@@ -836,7 +836,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 #if defined(NCBI_OS_UNIX)
 
     TPid pid     = (TPid)m_Process;
-    int  options = (timeout == kInfiniteTimeoutMs) ? 0 : WNOHANG;
+    int  options = timeout == kInfiniteTimeoutMs ? 0 : WNOHANG;
     int  status;
 
     // Check process termination within timeout (or infinite)
@@ -853,19 +853,19 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         } else if (ws == 0) {
             // Process is still running
             _ASSERT(timeout != kInfiniteTimeoutMs);
-            unsigned long x_sleep = kWaitPrecision;
-            if (x_sleep > timeout) {
-                x_sleep = timeout;
-            }
-            if ( !x_sleep ) {
+            if ( !timeout ) {
                 if (info) {
                     info->state = eExitInfo_Alive;
                 }
                 break;
             }
+            unsigned long x_sleep = kWaitPrecision;
+            if (x_sleep > timeout) {
+                x_sleep = timeout;
+            }
             SleepMilliSec(x_sleep);
             timeout    -= x_sleep;
-        } else if (errno != EINTR ) {
+        } else if (errno != EINTR) {
             // Some error
             break;
         }
