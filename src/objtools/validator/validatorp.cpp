@@ -191,6 +191,8 @@ CValidError_imp::CValidError_imp
       m_NumMisplacedGraphs = 0;
       m_NumGenes = 0;
       m_NumGeneXrefs = 0;
+      m_NumTpaWithHistory = 0;
+      m_NumTpaWithoutHistory = 0;
       m_IsTbl2Asn = false;
 
     if ( m_SourceQualTags.get() == 0 ) {
