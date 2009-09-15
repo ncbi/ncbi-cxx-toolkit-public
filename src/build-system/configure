@@ -33040,14 +33040,14 @@ done
 # test -f "$status_dir"/LocalBZ2.enabled  ||  \
 #    touch -t 197001010000 $status_dir/.bz2.dep
 
-find "$srcdir/src" -name .svn -prune -o -name 'Makefile.*.mk' -print \
+find "$srcdir"/src/* -name .svn -prune -o -name 'Makefile.*.mk' -print \
    | while read x; do
       echo
       echo "### Extra macro definitions from $x"
       echo
       cat "$x"
    done >> "$builddir/Makefile.mk"
-find "$srcdir/src" -name .svn -prune -o -name 'ncbiconf.*.h' -print \
+find "$srcdir"/src/* -name .svn -prune -o -name 'ncbiconf.*.h' -print \
    | while read x; do
       echo
       echo "/*** Extra macro definitions from $x ***/"

@@ -6395,14 +6395,14 @@ dnl This is a stopgap measure, and fails for installations in non-system dirs.
 #    touch -t 197001010000 $status_dir/.bz2.dep
 
 dnl Incorporate any Makefile.*.mk and ncbiconf.*.h files found in the tree.
-find "$srcdir/src" -name .svn -prune -o -name 'Makefile.*.mk' -print \
+find "$srcdir"/src/* -name .svn -prune -o -name 'Makefile.*.mk' -print \
    | while read x; do
       echo
       echo "### Extra macro definitions from $x"
       echo
       cat "$x"
    done >> "$builddir/Makefile.mk"
-find "$srcdir/src" -name .svn -prune -o -name 'ncbiconf.*.h' -print \
+find "$srcdir"/src/* -name .svn -prune -o -name 'ncbiconf.*.h' -print \
    | while read x; do
       echo
       echo "/*** Extra macro definitions from $x ***/"
