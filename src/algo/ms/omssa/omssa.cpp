@@ -1254,10 +1254,12 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                                   Peaks,
                                                   MassPeak)
                                ) {
-                                {{
-                                    CFastMutexGuard guard(PeaksExaminedMutex);
-                                    if (!UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
-                                }}
+                                if (!UseRankScore) {
+                                    {{
+                                        CFastMutexGuard guard(PeaksExaminedMutex);
+                                        Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+                                    }}
+                                }
                                 CompareLadders(iMod, 
                                                Peaks,
                                                false,
