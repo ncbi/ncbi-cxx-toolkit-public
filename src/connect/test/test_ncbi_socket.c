@@ -258,8 +258,6 @@ static void TEST__server_1(SOCK sock)
 
     /* Receive a very big binary blob, and write data back */
     {{
-#define DO_LOG_SIZE    300
-#define DONT_LOG_SIZE  BIG_BLOB_SIZE - DO_LOG_SIZE
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
         int i;
         for (i = 0;  i < 10;  i++) {
@@ -300,13 +298,13 @@ static void TEST__server_1(SOCK sock)
  *      "TEST__server_2(SOCK sock)"
  */
 
-static void s_DoubleTimeout(STimeout *to) {
-    if (!to->sec  &&  !to->usec) {
-        to->usec = 1;
-    } else {
-        to->sec   = 2 * to->sec + (2 * to->usec) / 1000000;
+static void s_DoubleTimeout(STimeout *to)
+{
+    if (to->sec | to->usec) {
+        to->sec  = (2 * to->usec) / 1000000 + 2 * to->sec;
         to->usec = (2 * to->usec) % 1000000;
-    }
+    } else
+        to->usec = 1;
 }
 
 
