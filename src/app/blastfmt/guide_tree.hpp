@@ -53,12 +53,19 @@
 
 USING_NCBI_SCOPE;
 
-
 /// Wrapper around libw_phylo_tree.a classes: CPhloTreeDataSource,
 /// IPhyloTreeRenderer, etc, used for manipulation of phylogenetic tree
 class CGuideTree
 {
 public:
+
+    typedef CGuideTreeCalc::TBlastNameColorMap TBlastNameColorMap;
+
+    /// Information about tree leaves
+    typedef struct STreeInfo {
+        TBlastNameColorMap blastname_color_map;
+        vector<string> seq_ids;
+    } STreeInfo;
 
     /// Tree rendering formats
     enum ETreeRenderer {
@@ -182,6 +189,10 @@ public:
     ///
     void SetImageFormat(CImageIO::EType format) {m_ImageFormat = format;}
 
+    /// Set Blast Name to color map
+    /// @return Reference to Blast Name to color map
+    ///
+    TBlastNameColorMap& SetBlastNameColorMap(void) {return m_BlastNameColorMap;}
 
 
     // --- Getters ---
@@ -210,6 +221,19 @@ public:
     /// @return tree simplifcation mode
     ///
     ETreeSimplifyMode GetSimplifyMode(void) const {return m_SimplifyMode;}
+
+    /// Get seq_ids for all sequences in a subtree
+    /// @param node_id Node id of subtree root [in]
+    /// @param seqids List of seq_ids [out]
+    ///
+    void GetSubtreeSeqIds(int node_id, vector<string>& seqids);
+
+    /// Get information about leaves (such as seqids, blast name to color map,
+    /// usually used for auxilary information on the web) for selected subtree
+    /// @param node_id Node id of subtree root [in]
+    /// @return Tree information
+    ///
+    auto_ptr<STreeInfo> GetTreeInfo(int node_id);
 
 
     // --- Generating output ---
@@ -362,6 +386,16 @@ protected:
     /// @return Pointer to the node with desired id or NULL of node not found
     ///
     CPhyloTreeNode* x_GetNode(int id, CPhyloTreeNode* root = NULL);
+
+    inline static TBioTreeFeatureId x_GetFeatureId(const string& tag);
+
+    /// Get feature value by tag of selected node
+    /// @param node Node [in]
+    /// @param feature_tag Feature tag from tree feature dictionary [in]
+    /// @return Feature value
+    ///
+    inline static string x_GetNodeFeature(const CPhyloTreeNode* node,
+                                   TBioTreeFeatureId fid);
 
     /// Create layout for image rendering
     ///
@@ -528,6 +562,34 @@ private:
     };
 
 
+    /// Tree visitor, finds pointers to all leaves in a subtree
+    class CLeaveFinder
+    {
+    public:
+        /// Get list of pointers to leave nodes
+        /// @return List of pointers to leave nodes
+        vector<CPhyloTreeNode*>& GetLeaves(void) {return m_Leaves;}
+
+        /// Examine node, find leave nodes and save pointers to them
+        /// @param node Tree node [in]
+        /// @param delta Direction of traversal [in]
+        ETreeTraverseCode operator()(CPhyloTreeNode& node, int delta)
+        {
+            if (delta == 0 || delta == 1) {
+                if (node.IsLeaf()) {
+                    m_Leaves.push_back(&node);
+                }
+            }
+            return eTreeTraverse;
+        }
+
+
+    private:
+        /// List of pointers to leave nodes
+        vector<CPhyloTreeNode*> m_Leaves;
+    };
+
+
 protected:
 
     /// Contains tree structure
@@ -572,6 +634,9 @@ protected:
     /// Current tree simplification mode
     ///
     ETreeSimplifyMode m_SimplifyMode;
+
+    /// Blast Name to color map
+    TBlastNameColorMap m_BlastNameColorMap;
 };
 
 
@@ -582,6 +647,7 @@ public:
 
     /// Error code
     enum EErrCode {
+        eInvalid,
         eInvalidOptions,    ///< Invalid parameter values
         eNodeNotFound,      ///< Node with desired id not found
         eTraverseProblem    ///< Problem in one of the tree visitor classes

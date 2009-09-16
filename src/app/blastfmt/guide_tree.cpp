@@ -72,6 +72,12 @@ CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc)
     m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
 
     m_QueryNodeId = guide_tree_calc.GetQueryNodeId();
+    const CGuideTreeCalc::TBlastNameColorMap map
+        = guide_tree_calc.GetBlastNameColorMap();
+
+    // copy blast name to color map
+    m_BlastNameColorMap.resize(map.size());
+    copy(map.begin(), map.end(), m_BlastNameColorMap.begin());
 }
 
 CGuideTree::CGuideTree(const CBioTreeContainer& btc)
@@ -396,6 +402,40 @@ bool CGuideTree::IsSingleBlastName(void)
 }
 
 
+auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
+{
+    CPhyloTreeNode* node = x_GetNode(node_id);
+
+    // find all subtree leaves
+    CLeaveFinder leave_finder = TreeDepthFirstTraverse(*node, CLeaveFinder());
+    vector<CPhyloTreeNode*>& leaves = leave_finder.GetLeaves();
+
+    TBioTreeFeatureId fid_blast_name = x_GetFeatureId(kBlastNameTag);
+    TBioTreeFeatureId fid_node_color = x_GetFeatureId(kNodeColorTag);
+    TBioTreeFeatureId fid_seqid = x_GetFeatureId(kSeqIDTag);
+
+    auto_ptr<STreeInfo> info(new STreeInfo);
+    hash_set<string> found_blast_names;
+
+    // for each leave get feature values
+    ITERATE (vector<CPhyloTreeNode*>, it, leaves) {
+        string blast_name = x_GetNodeFeature(*it, fid_blast_name);
+        string color = x_GetNodeFeature(*it, fid_node_color);
+        string seqid = x_GetNodeFeature(*it, fid_seqid);
+        
+	// only one entry per blast name for color map
+        if (found_blast_names.find(blast_name) == found_blast_names.end()) {
+            info->blastname_color_map.push_back(make_pair(blast_name, color));
+            found_blast_names.insert(blast_name);
+        }
+
+        info->seq_ids.push_back(seqid);
+    }
+
+    return info;
+}
+
+
 void CGuideTree::x_Init(void)
 {
     m_Width = 800;
@@ -422,6 +462,30 @@ CPhyloTreeNode* CGuideTree::x_GetNode(int id, CPhyloTreeNode* root)
 
     return node_finder.GetNode();
 }
+
+inline
+TBioTreeFeatureId CGuideTree::x_GetFeatureId(const string& tag)
+{
+    const CBioTreeFeatureDictionary& fdict = CPhyTreeNode::GetDictionary();
+    if (!fdict.HasFeature(tag)) {
+        NCBI_THROW(CGuideTreeException, eInvalid, "Feature " + tag
+                   + " not present");
+    }
+
+    return fdict.GetId(tag);
+}
+
+inline
+string CGuideTree::x_GetNodeFeature(const CPhyloTreeNode* node,
+                                    TBioTreeFeatureId fid)
+{
+    _ASSERT(node);
+
+    const CBioTreeFeatureList& flist = node->GetValue().GetBioTreeFeatureList();
+    return flist.GetFeatureValue(fid);
+}
+
+
 
 void CGuideTree::x_CreateLayout(void)
 {
