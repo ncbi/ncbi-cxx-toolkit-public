@@ -51,25 +51,26 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type)
-    : m_DbName(dbname), m_MolType(mol_type)
+    : m_DbName(dbname), m_MolType(mol_type), m_FilteringAlgorithmId(-1)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const string& entrez_query)
     : m_DbName(dbname), m_MolType(mol_type),
-      m_EntrezQueryLimitation(entrez_query)
+      m_EntrezQueryLimitation(entrez_query), m_FilteringAlgorithmId(-1)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const TGiList& gilist)
     : m_DbName(dbname), m_MolType(mol_type),
-      m_GiListLimitation(gilist) 
+      m_GiListLimitation(gilist), m_FilteringAlgorithmId(-1)
 {}
 
 CSearchDatabase::CSearchDatabase(const string& dbname, EMoleculeType mol_type,
                const string& entrez_query, const TGiList& gilist)
     : m_DbName(dbname), m_MolType(mol_type),
-      m_EntrezQueryLimitation(entrez_query), m_GiListLimitation(gilist)
+      m_EntrezQueryLimitation(entrez_query), m_GiListLimitation(gilist),
+      m_FilteringAlgorithmId(-1)
 {}
 
 void 
@@ -133,32 +134,13 @@ CSearchDatabase::GetGiListLimitation() const
 void 
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id)
 {
-    m_FilteringAlgs.clear();
-    m_FilteringAlgs.push_back(filt_algorithm_id);
+    m_FilteringAlgorithmId = filt_algorithm_id;
 }
 
 int 
 CSearchDatabase::GetFilteringAlgorithm() const
 {
-    return (m_FilteringAlgs.empty() ? -1 : m_FilteringAlgs.front());
-}
-
-void 
-CSearchDatabase::SetFilteringAlgorithms(const TFilteringAlgorithms& flist) 
-{
-    m_FilteringAlgs = flist; 
-}
-
-CSearchDatabase::TFilteringAlgorithms& 
-CSearchDatabase::SetFilteringAlgorithms()
-{ 
-    return m_FilteringAlgs; 
-}
-
-const CSearchDatabase::TFilteringAlgorithms& 
-CSearchDatabase::GetFilteringAlgorithms() const 
-{ 
-    return m_FilteringAlgs; 
+    return m_FilteringAlgorithmId;
 }
 
 void 

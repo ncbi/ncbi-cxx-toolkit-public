@@ -72,14 +72,6 @@ public:
     CLocalDbAdapter(CRef<CSeqDB> seqdb, int filtering_algorithm = -1);
 
     /// Constructor
-    /// @param seqdb 
-    ///     CSeqDB object for an already opened BLAST database
-    NCBI_DEPRECATED_CTOR(CLocalDbAdapter(CRef<CSeqDB> seqdb, 
-                                         const
-                                         CSearchDatabase::TFilteringAlgorithms&
-                                         filt_algs));
-    
-    /// Constructor
     /// @param subject_sequences
     ///     Set of sequences which should be used as subjects
     /// @param opts_handle
@@ -120,8 +112,6 @@ public:
     /// Retrieve the database filtering algorithm
     /// @returns -1 if not none was used, otherwise the filtering algorithm ID
     int GetFilteringAlgorithm() const;
-    /// Retrieve the database filtering algorithms
-    NCBI_DEPRECATED const CSearchDatabase::TFilteringAlgorithms GetFilteringAlgorithms() const;
 
     /// Returns true if this object represents protein or nucleotide sequences
     bool IsProtein() const;
@@ -177,12 +167,6 @@ inline int
 CLocalDbAdapter::GetFilteringAlgorithm() const
 {
     return m_FilteringAlg;
-}
-
-inline const CSearchDatabase::TFilteringAlgorithms
-CLocalDbAdapter::GetFilteringAlgorithms() const
-{
-    return vector<int>(1, m_FilteringAlg);
 }
 
 END_SCOPE(BLAST)

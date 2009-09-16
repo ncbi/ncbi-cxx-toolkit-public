@@ -108,8 +108,6 @@ class NCBI_XBLAST_EXPORT CSearchDatabase : public CObject {
 public:
     /// Define a list of gis
     typedef vector<int> TGiList;
-    /// Define a list of filtering algorithms to apply to the database
-    typedef vector<int> TFilteringAlgorithms;
 
     /// Molecule of the BLAST database
     enum EMoleculeType {
@@ -180,18 +178,6 @@ public:
     /// Accessor for the filtering algorithm ID
     int GetFilteringAlgorithm() const;
 
-    /** BLAST only supports a single filtering algorithm for soft masking the
-     * BLAST Database. The 3 methods below will be deprecated in BLAST 2.2.22
-     */
-
-    /// Mutator for the list of filtering algorithms
-    /// @param flist list of filtering algorithms [in]
-    NCBI_DEPRECATED void SetFilteringAlgorithms(const TFilteringAlgorithms& flist);
-    /// Mutator for the list of filtering algorithms
-    NCBI_DEPRECATED TFilteringAlgorithms& SetFilteringAlgorithms();
-    /// Accessor for the list of filtering algorithms
-    NCBI_DEPRECATED const TFilteringAlgorithms& GetFilteringAlgorithms() const;
-
     /// Mutator for the negative gi list
     /// @param gilist list of gis [in]
     void SetNegativeGiListLimitation(const TGiList& gilist);
@@ -208,7 +194,7 @@ private:
     TGiList         m_GiListLimitation;         ///< gi list
     TGiList         m_NegativeGiListLimitation; ///< negative gi list
     /// filtering to apply to database sequences
-    TFilteringAlgorithms m_FilteringAlgs;       
+    int             m_FilteringAlgorithmId;       
 };
 
 
