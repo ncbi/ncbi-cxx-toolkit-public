@@ -222,12 +222,6 @@ public:
     ///
     ETreeSimplifyMode GetSimplifyMode(void) const {return m_SimplifyMode;}
 
-    /// Get seq_ids for all sequences in a subtree
-    /// @param node_id Node id of subtree root [in]
-    /// @param seqids List of seq_ids [out]
-    ///
-    void GetSubtreeSeqIds(int node_id, vector<string>& seqids);
-
     /// Get information about leaves (such as seqids, blast name to color map,
     /// usually used for auxilary information on the web) for selected subtree
     /// @param node_id Node id of subtree root [in]
