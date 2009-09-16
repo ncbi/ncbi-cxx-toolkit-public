@@ -43,7 +43,6 @@
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
 /// Class containing information needed for tabular formatting of BLAST 
@@ -79,18 +78,18 @@ public:
 
     /// Destructor
     ~CBlastTabularInfo();
-    /// Set query id from a CSeq_id
+    /// Set query id from a objects::CSeq_id
     /// @param id List of Seq-ids to use [in]
-    void SetQueryId(list<CRef<CSeq_id> >& id);
+    void SetQueryId(list<CRef<objects::CSeq_id> >& id);
     /// Set query id from a Bioseq handle
     /// @param bh Bioseq handle to get Seq-ids from
-    void SetQueryId(const CBioseq_Handle& bh);
-    /// Set subject id from a CSeq_id
+    void SetQueryId(const objects::CBioseq_Handle& bh);
+    /// Set subject id from a objects::CSeq_id
     /// @param id List of Seq-ids to use [in]
-    void SetSubjectId(list<CRef<CSeq_id> >& id);
+    void SetSubjectId(list<CRef<objects::CSeq_id> >& id);
     /// Set subject id from a Bioseq handle
     /// @param bh Bioseq handle to get Seq-ids from
-    void SetSubjectId(const CBioseq_Handle& bh);
+    void SetSubjectId(const objects::CBioseq_Handle& bh);
     /// Set the HSP scores
     /// @param score Raw score [in]
     /// @param bit_score Bit score [in]
@@ -117,8 +116,8 @@ public:
     /// @param scope Scope for Bioseq retrieval [in]
     /// @param matrix Matrix to calculate positives; NULL if not applicable. [in]
     /// @return 0 on success, 1 if query or subject Bioseq is not found.
-    virtual int SetFields(const CSeq_align& sal, 
-                          CScope& scope, 
+    virtual int SetFields(const objects::CSeq_align& sal, 
+                          objects::CScope& scope, 
                           CNcbiMatrix<int>* matrix=0);
 
     /// Print one line of tabular output
@@ -133,14 +132,14 @@ public:
     /// parameter value when not applicable [in]
     /// @param align_set All alignments for this query [in]
     virtual void PrintHeader(const string& program, 
-                             const CBioseq& bioseq, 
+                             const objects::CBioseq& bioseq, 
                              const string& dbname, 
                              const string& rid = kEmptyStr,
                              unsigned int iteration = 
                                 numeric_limits<unsigned int>::max(),
-                             const CSeq_align_set* align_set=0,
-                             CConstRef<CBioseq> subj_bioseq
-                                = CConstRef<CBioseq>()); 
+                             const objects::CSeq_align_set* align_set=0,
+                             CConstRef<objects::CBioseq> subj_bioseq
+                                = CConstRef<objects::CBioseq>()); 
 
      /// Prints number of queries processed.
      /// @param num_queries number of queries processed [in]
@@ -235,9 +234,9 @@ protected:
 
 private:
 
-    list<CRef<CSeq_id> > m_QueryId;  ///< List of query ids for this HSP
+    list<CRef<objects::CSeq_id> > m_QueryId;  ///< List of query ids for this HSP
     /// All subject sequence ids for this HSP
-    vector<list<CRef<CSeq_id> > > m_SubjectIds;
+    vector<list<CRef<objects::CSeq_id> > > m_SubjectIds;
     CNcbiOstream& m_Ostream; ///< Stream to write output to
     int m_Score;             ///< Raw score of this HSP
     string m_BitScore;       ///< Bit score of this HSP, in appropriate format

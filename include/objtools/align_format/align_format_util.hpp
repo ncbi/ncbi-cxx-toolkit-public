@@ -50,7 +50,6 @@
 
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
 ///blast related url
@@ -355,12 +354,12 @@ public:
     /// @param cbs Bioseq object [in]
     /// @param believe_local_id Should local ids be parsed? [in]
     static string 
-    GetSeqIdString(const CBioseq& cbs, bool believe_local_id=true);
+    GetSeqIdString(const objects::CBioseq& cbs, bool believe_local_id=true);
     
     /// Returns a full description for a Bioseq, concatenating all available 
     /// titles.
     /// @param cbs Bioseq object [in]
-    static string GetSeqDescrString(const CBioseq& cbs);
+    static string GetSeqDescrString(const objects::CBioseq& cbs);
 
     ///Print out blast query info
     /// @param cbs bioseq of interest
@@ -371,7 +370,7 @@ public:
     /// @param tabular Is this done for tabular formatting? [in]
     /// @param rid the RID to acknowledge (if not empty) [in]
     ///
-    static void AcknowledgeBlastQuery(const CBioseq& cbs, size_t line_len,
+    static void AcknowledgeBlastQuery(const objects::CBioseq& cbs, size_t line_len,
                                       CNcbiOstream& out, bool believe_query,
                                       bool html, bool tabular=false,
                                       const string& rid = kEmptyStr);
@@ -384,11 +383,11 @@ public:
     /// @param html in html format or not [in]
     /// @param tabular Is this done for tabular formatting? [in]
     ///
-    static void AcknowledgeBlastSubject(const CBioseq& cbs, size_t line_len,
+    static void AcknowledgeBlastSubject(const objects::CBioseq& cbs, size_t line_len,
                                         CNcbiOstream& out, bool believe_query,
                                         bool html, bool tabular=false);
 private:
-    static void x_AcknowledgeBlastSequence(const CBioseq& cbs, 
+    static void x_AcknowledgeBlastSequence(const objects::CBioseq& cbs, 
                                            size_t line_len,
                                            CNcbiOstream& out,
                                            bool believe_query,
@@ -412,21 +411,22 @@ public:
     ///Get blast defline
     ///@param handle: bioseq handle to extract blast defline from
     ///
-    static CRef<CBlast_def_line_set> 
-    GetBlastDefline (const CBioseq_Handle& handle);
+    static CRef<objects::CBlast_def_line_set> 
+    GetBlastDefline (const objects::CBioseq_Handle& handle);
 
     ///Get linkout membership
     ///@param bdl: blast defline to get linkout membership from
     ///@return the value representing the membership bits set
     ///
-    static int GetLinkout(const CBlast_def_line& bdl);
+    static int GetLinkout(const objects::CBlast_def_line& bdl);
     
     ///Get linkout membership for this bioseq, this id only
     ///@param handle: bioseq handle
     ///@param id: the id to be matched
     ///@return the value representing the membership bits set
     ///
-    static int GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id);	
+    static int GetLinkout(const objects::CBioseq_Handle& handle, const
+                          objects::CSeq_id& id);	
     
     ///Extract score info from blast alingment
     ///@param aln: alignment to extract score info from
@@ -437,7 +437,7 @@ public:
     ///@param num_ident: place to extract the num_ident to
     ///@param use_this_gi: place to extract use_this_gi to
     ///
-    static void GetAlnScores(const CSeq_align& aln,
+    static void GetAlnScores(const objects::CSeq_align& aln,
                              int& score, 
                              double& bits, 
                              double& evalue,
@@ -456,7 +456,7 @@ public:
     ///@param use_this_gi: place to extract use_this_gi to
     ///@param comp_adj_method: composition based statistics method [out]
     ///
-    static void GetAlnScores(const CSeq_align& aln,
+    static void GetAlnScores(const objects::CSeq_align& aln,
                              int& score, 
                              double& bits, 
                              double& evalue,
@@ -474,13 +474,13 @@ public:
 
     ///Return ID for GNL label
     ///@param dtg: dbtag to build label from
-    static string GetGnlID(const CDbtag& dtg);
+    static string GetGnlID(const objects::CDbtag& dtg);
 
     ///Return a label for an ID
     /// Tries to recreate behavior of GetLabel before a change that 
     /// prepends "ti|" to trace IDs
     ///@param id CSeqId: to build label from
-    static string GetLabel(CConstRef<CSeq_id> id);
+    static string GetLabel(CConstRef<objects::CSeq_id> id);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
@@ -502,8 +502,8 @@ public:
     ///@param new_aln: the new alnset
     ///@param num: the specified number
     ///
-    static void PruneSeqalign(const CSeq_align_set& source_aln, 
-                              CSeq_align_set& new_aln,
+    static void PruneSeqalign(const objects::CSeq_align_set& source_aln, 
+                              objects::CSeq_align_set& new_aln,
                               unsigned int num = kDfltArgNumAlignments);
 
     ///Fill new alignset containing the specified number of alignments 
@@ -515,8 +515,8 @@ public:
     ///@param new_aln: the new alnset
     ///@param num: the specified number
     ///
-    static void PruneSeqalignAll(const CSeq_align_set& source_aln, 
-                                     CSeq_align_set& new_aln,
+    static void PruneSeqalignAll(const objects::CSeq_align_set& source_aln, 
+                                     objects::CSeq_align_set& new_aln,
                                      unsigned int number);
 
     /// Count alignment length, number of gap openings and total number of gaps
@@ -526,7 +526,7 @@ public:
     /// @param num_gaps Total number of insertions and deletions in this 
     ///                 alignment [out]
     /// @param num_gap_opens Number of gap segments in the alignment [out]
-    static void GetAlignLengths(CAlnVec& salv, int& align_length, 
+    static void GetAlignLengths(objects::CAlnVec& salv, int& align_length, 
                                 int& num_gaps, int& num_gap_opens);
 
     /// If a Seq-align-set contains Seq-aligns with discontinuous type segments, 
@@ -534,19 +534,19 @@ public:
     /// Seq-align-set.
     /// @param source Original Seq-align-set
     /// @param target Resulting Seq-align-set
-    static void ExtractSeqalignSetFromDiscSegs(CSeq_align_set& target,
-                                               const CSeq_align_set& source);
+    static void ExtractSeqalignSetFromDiscSegs(objects::CSeq_align_set& target,
+                                               const objects::CSeq_align_set& source);
 
     ///Create denseseg representation for densediag seqalign
     ///@param aln: the input densediag seqalign
     ///@return: the new denseseg seqalign
-    static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
+    static CRef<objects::CSeq_align> CreateDensegFromDendiag(const objects::CSeq_align& aln);
 
     ///return the tax id for a seqid
     ///@param id: seq id
     ///@param scope: scope to fetch this sequence
     ///
-    static int GetTaxidForSeqid(const CSeq_id& id, CScope& scope);
+    static int GetTaxidForSeqid(const objects::CSeq_id& id, objects::CScope& scope);
     
     ///return the frame for a given strand
     ///Note that start is zero bases.  It returns frame +/-(1-3).
@@ -556,33 +556,33 @@ public:
     ///@param id: the seqid
     ///@return: the frame
     ///
-    static int GetFrame (int start, ENa_strand strand, const CBioseq_Handle& handle); 
+    static int GetFrame (int start, objects::ENa_strand strand, const objects::CBioseq_Handle& handle); 
 
     ///return the comparison result: 1st >= 2nd => true, false otherwise
     ///@param info1
     ///@param info2
     ///@return: the result
     ///
-    static bool SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
-                                    CRef<CSeq_align_set> const& info2);
+    static bool SortHitByTotalScoreDescending(CRef<objects::CSeq_align_set> const& info1,
+                                    CRef<objects::CSeq_align_set> const& info2);
 
     static bool 
-    SortHitByMasterCoverageDescending(CRef<CSeq_align_set> const& info1,
-                                     CRef<CSeq_align_set> const& info2);
+    SortHitByMasterCoverageDescending(CRef<objects::CSeq_align_set> const& info1,
+                                     CRef<objects::CSeq_align_set> const& info2);
     
 
     ///group hsp's with the same id togeter
     ///@param target: the result list
     ///@param source: the source list
     ///
-    static void HspListToHitList(list< CRef<CSeq_align_set> >& target,
-                                 const CSeq_align_set& source); 
+    static void HspListToHitList(list< CRef<objects::CSeq_align_set> >& target,
+                                 const objects::CSeq_align_set& source); 
 
     ///extract all nested hsp's into a list
     ///@param source: the source list
     ///@return the list of hsp's
     ///
-    static CRef<CSeq_align_set> HitListToHspList(list< CRef<CSeq_align_set> >& source);
+    static CRef<objects::CSeq_align_set> HitListToHspList(list< CRef<objects::CSeq_align_set> >& source);
 
     ///return the custom url (such as mapview)
     ///@param ids: the id list
@@ -594,7 +594,7 @@ public:
     ///@param query_number: the blast query number.
     ///@param for_alignment: is the URL generated for an alignment or a top defline?
     ///
-    static string BuildUserUrl(const CBioseq::TId& ids, int taxid, string user_url,
+    static string BuildUserUrl(const objects::CBioseq::TId& ids, int taxid, string user_url,
                                string database, bool db_is_na, string rid,
                                int query_number, bool for_alignment);
 
@@ -603,7 +603,7 @@ public:
     ///@param user_url: the URL of SRA cgi
     ///@return newly constructed SRA URL pointing to the identified spot
     ///
-    static string BuildSRAUrl(const CBioseq::TId& ids, string user_url);
+    static string BuildSRAUrl(const objects::CBioseq::TId& ids, string user_url);
     
  
     ///calculate the percent identity for a seqalign
@@ -612,7 +612,7 @@ public:
     ///@do_translation: is this a translated nuc to nuc alignment?
     ///@return: the identity 
     ///
-    static double GetPercentIdentity(const CSeq_align& aln, CScope& scope,
+    static double GetPercentIdentity(const objects::CSeq_align& aln, objects::CScope& scope,
                                      bool do_translation);
 
     ///get the alignment length
@@ -620,13 +620,13 @@ public:
     ///@do_translation: is this a translated nuc to nuc alignment?
     ///@return: the alignment length
     ///
-    static int GetAlignmentLength(const CSeq_align& aln, bool do_translation);
+    static int GetAlignmentLength(const objects::CSeq_align& aln, bool do_translation);
 
     ///sort a list of seqalign set by alignment identity
     ///@param seqalign_hit_list: list to be sorted.
     ///@param do_translation: is this a translated nuc to nuc alignment?
     ///
-    static void SortHitByPercentIdentityDescending(list< CRef<CSeq_align_set> >&
+    static void SortHitByPercentIdentityDescending(list< CRef<objects::CSeq_align_set> >&
                                                    seqalign_hit_list,
                                                    bool do_translation);
 
@@ -636,8 +636,8 @@ public:
     ///@return: info1 >= info2?
     ///
     static bool SortHitByPercentIdentityDescendingEx
-        (const CRef<CSeq_align_set>& info1,
-         const CRef<CSeq_align_set>& info2);
+        (const CRef<objects::CSeq_align_set>& info1,
+         const CRef<objects::CSeq_align_set>& info2);
     
     ///sorting function for sorting a list of seqalign by descending identity
     ///@param info1: the first element 
@@ -645,8 +645,8 @@ public:
     ///@return: info1 >= info2?
     ///
     static bool SortHspByPercentIdentityDescending 
-    (const CRef<CSeq_align>& info1,
-     const CRef<CSeq_align>& info2);
+    (const CRef<objects::CSeq_align>& info1,
+     const CRef<objects::CSeq_align>& info2);
     
     ///sorting function for sorting a list of seqalign by ascending mater 
     ///start position
@@ -654,19 +654,19 @@ public:
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHspByMasterStartAscending(const CRef<CSeq_align>& info1,
-                                              const CRef<CSeq_align>& info2);
+    static bool SortHspByMasterStartAscending(const CRef<objects::CSeq_align>& info1,
+                                              const CRef<objects::CSeq_align>& info2);
 
-    static bool SortHspBySubjectStartAscending(const CRef<CSeq_align>& info1,
-                                               const CRef<CSeq_align>& info2);
+    static bool SortHspBySubjectStartAscending(const CRef<objects::CSeq_align>& info1,
+                                               const CRef<objects::CSeq_align>& info2);
 
     static bool SortHitByScoreDescending
-    (const CRef<CSeq_align_set>& info1,
-     const CRef<CSeq_align_set>& info2);
+    (const CRef<objects::CSeq_align_set>& info1,
+     const CRef<objects::CSeq_align_set>& info2);
     
 
-    static bool SortHspByScoreDescending(const CRef<CSeq_align>& info1,
-                                         const CRef<CSeq_align>& info2);
+    static bool SortHspByScoreDescending(const CRef<objects::CSeq_align>& info1,
+                                         const CRef<objects::CSeq_align>& info2);
 
     ///sorting function for sorting a list of seqalign set by ascending mater 
     ///start position
@@ -674,38 +674,38 @@ public:
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
-                                              CRef<CSeq_align_set>& info2);
+    static bool SortHitByMasterStartAscending(CRef<objects::CSeq_align_set>& info1,
+                                              CRef<objects::CSeq_align_set>& info2);
 
     ///sort a list of seqalign set by molecular type
     ///@param seqalign_hit_list: list to be sorted.
     ///@param scope: scope to fetch sequence
     ///
     static void 
-    SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
-                           CScope& scope);
+    SortHitByMolecularType(list< CRef<objects::CSeq_align_set> >& seqalign_hit_list,
+                           objects::CScope& scope);
     
     ///actual sorting function for SortHitByMolecularType
     ///@param info1: the first element 
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& info1,
-                                          const CRef<CSeq_align_set>& info2);
+    static bool SortHitByMolecularTypeEx (const CRef<objects::CSeq_align_set>& info1,
+                                          const CRef<objects::CSeq_align_set>& info2);
 
     static void 
-    SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
-            bool do_translation, CScope& scope, int sort_method);
+    SortHit(list< CRef<objects::CSeq_align_set> >& seqalign_hit_list,
+            bool do_translation, objects::CScope& scope, int sort_method);
     
-    static void SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >& 
+    static void SplitSeqalignByMolecularType(vector< CRef<objects::CSeq_align_set> >& 
                                              target,
                                              int sort_method,
-                                             const CSeq_align_set& source,
-                                             CScope& scope);
-    static CRef<CSeq_align_set> 
+                                             const objects::CSeq_align_set& source,
+                                             objects::CScope& scope);
+    static CRef<objects::CSeq_align_set> 
     SortSeqalignForSortableFormat(CCgiContext& ctx,
-                               CScope& scope,
-                               CSeq_align_set& aln_set,
+                               objects::CScope& scope,
+                               objects::CSeq_align_set& aln_set,
                                bool nuc_to_nuc_translation,
                                int db_order,
                                int hit_order,
@@ -720,7 +720,7 @@ public:
     /// double max expect value
     ///@return
     /// CRef<CSeq_align_set> - filtered seq align
-    static CRef<CSeq_align_set> FilterSeqalignByEval(CSeq_align_set& source_aln,                                      
+    static CRef<objects::CSeq_align_set> FilterSeqalignByEval(objects::CSeq_align_set& source_aln,                                      
                                      double evalueLow,
                                      double evalueHigh);
 
@@ -734,7 +734,7 @@ public:
     /// double max number of Hsps (for all qeuries)    
     ///@return
     /// CRef<CSeq_align_set> - filtered seq align
-    static CRef<CSeq_align_set> LimitSeqalignByHsps(CSeq_align_set& source_aln,
+    static CRef<objects::CSeq_align_set> LimitSeqalignByHsps(objects::CSeq_align_set& source_aln,
                                                     int maxAligns,
                                                     int maxHsps); 
 
@@ -745,7 +745,7 @@ public:
     /// int query number ,starts from 1, 0 means return all queries    
     ///@return
     /// CRef<CSeq_align_set> - seq align set for queryNumber, if invalid queryNumber return empty  CSeq_align_set
-    static CRef<CSeq_align_set> ExtractQuerySeqAlign(CRef<CSeq_align_set>& source_aln,
+    static CRef<objects::CSeq_align_set> ExtractQuerySeqAlign(CRef<objects::CSeq_align_set>& source_aln,
                                                      int queryNumber);
     
     static void BuildFormatQueryString (CCgiContext& ctx, 
@@ -755,10 +755,10 @@ public:
                                         map< string, string>& parameters_to_change,
                                         string& cgi_query);
 
-    static bool IsMixedDatabase(const CSeq_align_set& alnset, 
-                                CScope& scope); 
+    static bool IsMixedDatabase(const objects::CSeq_align_set& alnset, 
+                                objects::CScope& scope); 
 
-    static list<string> GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
+    static list<string> GetLinkoutUrl(int linkout, const objects::CBioseq::TId& ids, 
                                       const string& rid, 
                                       const string& cdd_rid, 
                                       const string& entrez_term,
@@ -767,7 +767,7 @@ public:
                                       bool structure_linkout_as_group,
                                       bool for_alignment, int cur_align);
 
-    static int GetMasterCoverage(const CSeq_align_set& alnset);
+    static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 
     ///retrieve URL from .ncbirc file combining host/port and format strings values.
     ///consult blastfmtutil.hpp

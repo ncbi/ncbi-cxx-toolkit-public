@@ -52,10 +52,9 @@
 #include <cgi/cgictx.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
-/// Auxiliary type to embed a CConstRef<CSeq_id> in STL containers that require
+/// Auxiliary type to embed a CConstRef<objects::CSeq_id> in STL containers that require
 /// operator< to be defined
 struct SSeqIdKey {
     /// Constructor
@@ -109,7 +108,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
 
     ///structure for store feature display info
     struct FeatureInfo : public CObject {
-        CConstRef < CSeq_loc > seqloc;  // must be seqloc int
+        CConstRef < objects::CSeq_loc > seqloc;  // must be seqloc int
         char feature_char;               // Character for feature
         string feature_id;               // ID for feature
     };
@@ -200,8 +199,8 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///@param matrix_name: scoring matrix name [in]
     ///@param scope: scope to fetch your sequence 
     ///
-    CDisplaySeqalign(const CSeq_align_set & seqalign,
-                     CScope & scope,
+    CDisplaySeqalign(const objects::CSeq_align_set & seqalign,
+                     objects::CScope & scope,
                      list < CRef<CSeqLocInfo> >* mask_seqloc = NULL,
                      list < FeatureInfo * >* external_feature = NULL,
                      const char* matrix_name = BLAST_DEFAULT_MATRIX);
@@ -351,8 +350,8 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///@param alnset: input alnset
     ///@return processed alnset
     ///
-    static CRef < CSeq_align_set >
-    PrepareBlastUngappedSeqalign(const CSeq_align_set & alnset);
+    static CRef < objects::CSeq_align_set >
+    PrepareBlastUngappedSeqalign(const objects::CSeq_align_set & alnset);
     
 private:
 
@@ -372,7 +371,7 @@ private:
     
     /// store alnvec and score info
     struct SAlnInfo : public CObject {               
-        CRef < CAlnVec > alnvec;
+        CRef < objects::CAlnVec > alnvec;
         int score;
         double bits;
         double evalue;
@@ -399,22 +398,22 @@ private:
     /// List of SAlnSeqlocInfo structures
     typedef list< CRef<SAlnSeqlocInfo> > TSAlnSeqlocInfoList;
 
-    /// Definition of std::map of CSeq_ids to masks
+    /// Definition of std::map of objects::CSeq_ids to masks
     typedef map< SSeqIdKey, TMaskedQueryRegions > TSubjectMaskMap;
 
     /// Map of subject masks
     TSubjectMaskMap m_SubjectMasks;
 
     /// reference to seqalign set
-    CConstRef < CSeq_align_set > m_SeqalignSetRef; 
+    CConstRef < objects::CSeq_align_set > m_SeqalignSetRef; 
     
     /// display character option for list of seqloc         
     list < CRef<CSeqLocInfo>  >* m_Seqloc; 
 
     /// external feature such as phiblast
     list < FeatureInfo * >* m_QueryFeature; 
-    CScope & m_Scope;
-    CAlnVec *m_AV;                  // current aln vector
+    objects::CScope & m_Scope;
+    objects::CAlnVec *m_AV;                  // current aln vector
     int **m_Matrix;                 // matrix used to compute the midline
     int m_AlignOption;              // Display options
     AlignType m_AlignType;          // alignment type, used for displaying
@@ -433,12 +432,12 @@ private:
     int m_QueryNumber;
     CNcbiIfstream *m_ConfigFile;
     CNcbiRegistry *m_Reg;
-    CGetFeature* m_DynamicFeature;
+    objects::CGetFeature* m_DynamicFeature;
     map < string, string > m_Segs;
     map < string, int > m_HspNumber;
        
-    CRef < CObjectManager > m_FeatObj;  // used for fetching feature
-    CRef < CScope > m_featScope;        // used for fetching feature
+    CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
+    CRef < objects::CScope > m_featScope;        // used for fetching feature
     MiddleLineStyle m_MidLineStyle;
     int m_MasterGeneticCode;
     int m_SlaveGeneticCode;
@@ -460,7 +459,7 @@ private:
     ///@param use_this_gi: display this gi instead
     ///@param out: output stream
     ///
-    void x_PrintDefLine(const CBioseq_Handle& bsp_handle, 
+    void x_PrintDefLine(const objects::CBioseq_Handle& bsp_handle, 
                         list<int>& use_this_gi, string& id_label,
                               CNcbiOstream& out) const;
 
@@ -475,7 +474,7 @@ private:
     ///@param loc_list: seqlocs to be shown as specified in constructor
     ///@param out: output stream
     ///
-    void x_OutputSeq(string& sequence, const CSeq_id& id, int start, 
+    void x_OutputSeq(string& sequence, const objects::CSeq_id& id, int start, 
                      int len, int frame, int row, bool color_mismatch, 
                      const TSAlnSeqlocInfoList& loc_list, 
                      CNcbiOstream& out) const;
@@ -491,7 +490,7 @@ private:
     ///@param row: the current row
     ///@param taxid: taxid
     ///
-    string x_GetUrl(const list < CRef < CSeq_id > >&ids, int gi,
+    string x_GetUrl(const list < CRef < objects::CSeq_id > >&ids, int gi,
                     int row, int taxid, int linkout) const;
 
     ///get dumpgnl url to sequence record
@@ -500,7 +499,7 @@ private:
     ///@param alternative_url: user specified url or empty string
     ///@param taxid: taxid
     ///
-    string x_GetDumpgnlLink(const list < CRef < CSeq_id > >&ids, int row,
+    string x_GetDumpgnlLink(const list < CRef < objects::CSeq_id > >&ids, int row,
                             const string & alternative_url, int taxid) const;
     
     ///get feature info
@@ -513,11 +512,11 @@ private:
     ///@param feat_seq_strand: strand to be filled corresponding to feat_seq_range
     ///@param fill_feat_range: to fill feat_seq_range?
     ///
-    void x_GetFeatureInfo(TSAlnFeatureInfoList& feature, CScope & scope,
-                          CSeqFeatData::E_Choice choice, int row,
+    void x_GetFeatureInfo(TSAlnFeatureInfoList& feature, objects::CScope & scope,
+                          objects::CSeqFeatData::E_Choice choice, int row,
                           string& sequence,
                           list<list<CRange<TSeqPos> > >& feat_seq_range,
-                          list<ENa_strand>& feat_seq_strand,
+                          list<objects::ENa_strand>& feat_seq_strand,
                           bool fill_feat_range) const;
     
     ///get inserts info
@@ -528,7 +527,7 @@ private:
     ///@param insert_pos_string: string to indicate the start of insert
     ///@param insert_list: information containing the insert info
     ///
-    void x_FillInserts(int row, CAlnMap::TSignedRange& aln_range, 
+    void x_FillInserts(int row, objects::CAlnMap::TSignedRange& aln_range, 
                        int aln_start, list < string >& inserts, 
                        string& insert_pos_string,
                        TSInsertInformationList& insert_list) const;
@@ -540,7 +539,7 @@ private:
     ///@param insert_list: information containing the insert info
     ///@param inserts: inserts strings to be inserted
     ///
-    void x_DoFills(int row, CAlnMap::TSignedRange& aln_range, int aln_start,
+    void x_DoFills(int row, objects::CAlnMap::TSignedRange& aln_range, int aln_start,
                    TSInsertInformationList& insert_list,
                    list < string > &inserts) const;
     
@@ -572,7 +571,7 @@ private:
     ///@param pattern_id: the pattern id to show
     ///@param alternative_feat_str: use this as feature string instead
     ///
-    void x_SetFeatureInfo(CRef<SAlnFeatureInfo> feat_info, const CSeq_loc& seqloc,
+    void x_SetFeatureInfo(CRef<SAlnFeatureInfo> feat_info, const objects::CSeq_loc& seqloc,
                           int aln_from, int aln_to, int aln_stop,
                           char pattern_char,  string pattern_id,
                           string& alternative_feat_str) const;
@@ -580,7 +579,7 @@ private:
     ///Set the database as gi type
     ///@param actual_aln_list: the alignment
     ///
-    DbType x_GetDbType(const CSeq_align_set& actual_aln_list);
+    DbType x_GetDbType(const objects::CSeq_align_set& actual_aln_list);
 
     ///get insert information
     ///@param insert_list: list to be filled
@@ -590,9 +589,9 @@ private:
     ///@param line_aln_stop: alignment stop for this row
     ///
     void x_GetInserts(TSInsertInformationList& insert_list,
-                      CAlnMap::TSeqPosList& insert_aln_start,
-                      CAlnMap::TSeqPosList& insert_seq_start,
-                      CAlnMap::TSeqPosList& insert_length, 
+                      objects::CAlnMap::TSeqPosList& insert_aln_start,
+                      objects::CAlnMap::TSeqPosList& insert_seq_start,
+                      objects::CAlnMap::TSeqPosList& insert_length, 
                       int line_aln_stop);
 
     ///check if Gene info is enabled and a Gene link is present for a hit
@@ -650,7 +649,7 @@ private:
     ///
     void x_PrintFeatures(TSAlnFeatureInfoList& feature,
                          int row, 
-                         CAlnMap::TSignedRange alignment_range,
+                         objects::CAlnMap::TSignedRange alignment_range,
                          int aln_start,
                          int line_length, 
                          int id_length,
@@ -659,7 +658,7 @@ private:
                          string& master_feat_str,
                          CNcbiOstream& out);
 
-    CRef<CAlnVec> x_GetAlnVecForSeqalign(const CSeq_align& align); 
+    CRef<objects::CAlnVec> x_GetAlnVecForSeqalign(const objects::CSeq_align& align); 
 
 };
 

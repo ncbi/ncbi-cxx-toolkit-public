@@ -44,7 +44,6 @@
 struct CShowBlastDeflineTest;  //For internal test only
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
 /**
@@ -73,8 +72,8 @@ public:
     ///@param line_length: length of defline desired
     ///@param deflines_to_show: number of seqalign hits to show
     ///
-    CShowBlastDefline(const CSeq_align_set& seqalign,                       
-                      CScope& scope,
+    CShowBlastDefline(const objects::CSeq_align_set& seqalign,                       
+                      objects::CScope& scope,
                       size_t line_length = 65,
                       size_t deflines_to_show = kDfltArgNumDescriptions,
                       bool translated_nuc_alignment = false,
@@ -98,7 +97,7 @@ public:
 
     ///Data Representing each defline
     struct SDeflineInfo {
-        CConstRef<CSeq_id> id;         //best accession type id
+        CConstRef<objects::CSeq_id> id;         //best accession type id
         int gi;                        //gi 
         string defline;                //defline
         list<string> linkout_list;     //linkout urls
@@ -217,7 +216,7 @@ public:
     static string GetSeqIdListString(const list<CRef<objects::CSeq_id> >& id,
                                      bool show_gi);
 
-    /// Converts a Bioseq handle's sequence id type into a list of CSeq_id 
+    /// Converts a Bioseq handle's sequence id type into a list of objects::CSeq_id 
     /// references, substituting an artificial gnl|BL_ORD_ID identifier by a 
     /// corresponding first token of the title. 
     /// @param bh Bioseq handle [in]
@@ -239,7 +238,7 @@ public:
     /// that the  first element in the list is the requested gi
     ///
     static void
-    GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
+    GetBioseqHandleDeflineAndId(const objects::CBioseq_Handle& handle,
                                 list<int>& use_this_gi, string& seqid, 
                                 string& defline, bool show_gi=true,
                                 int this_gi_first = -1);
@@ -263,10 +262,10 @@ public:
     bool HasStructureLinkout(void){return m_StructureLinkout;}
         
     ///Get defline info for the set of seqIds
-    ///@param seqIds: vector of CConstRef<CSeq_id>
+    ///@param seqIds: vector of CConstRef<objects::CSeq_id>
     ///@return: vector of SDeflineInfo
     vector <CShowBlastDefline::SDeflineInfo*> 
-            GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds);
+            GetDeflineInfo(vector< CConstRef<objects::CSeq_id> > &seqIds);
 
 protected:
     /// Internal data with score information for each defline.
@@ -279,18 +278,18 @@ protected:
         int match;                     //number of matches for the top hsp with the hit
         int master_covered_length;     //total length covered by alignment
         int align_length;              //length of alignment
-        CConstRef<CSeq_id> id;
+        CConstRef<objects::CSeq_id> id;
         int blast_rank;                // "Rank" of defline.
     };
 
     ///Seqalign 
-    CConstRef<CSeq_align_set> m_AlnSetRef;   
+    CConstRef<objects::CSeq_align_set> m_AlnSetRef;   
 
     ///Database name
     string m_Database;
 
     ///Scope to fetch sequence
-    CRef<CScope> m_ScopeRef;
+    CRef<objects::CScope> m_ScopeRef;
 
     ///Line length
     size_t  m_LineLen;
@@ -360,24 +359,24 @@ protected:
     ///@param aln seq-align we are working with [in]
     ///@param blast_rank ordinal nubmer of defline [in]
     ///@return score info
-    SScoreInfo* x_GetScoreInfo(const CSeq_align& aln, int blast_rank);
+    SScoreInfo* x_GetScoreInfo(const objects::CSeq_align& aln, int blast_rank);
 
     ///Internal function to return score info
     ///@param aln seq-align-set we are working with [in]
     ///@param blast_rank ordinal nubmer of defline [in]
     ///@return score info
-    SScoreInfo* x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_rank);
+    SScoreInfo* x_GetScoreInfoForTable(const objects::CSeq_align_set& aln, int blast_rank);
 
     ///Internal function to return defline info
     ///@param id: seq-id we are working with [in]
     ///@param use_this_gi: list of GI's to limit formatting by [in]
     ///@return defline info
-    SDeflineInfo* x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank);
+    SDeflineInfo* x_GetDeflineInfo(CConstRef<objects::CSeq_id> id, list<int>& use_this_gi, int blast_rank);
    
     ///Internal function to return defline info
     ///@param aln: seqalign we are working on
     ///@return defline info
-    SDeflineInfo* x_GetHitDeflineInfo(const CSeq_align_set& aln);
+    SDeflineInfo* x_GetHitDeflineInfo(const objects::CSeq_align_set& aln);
 
     /// Checks the first X deflines (currently X is 200) for a structure link.
     /// If one is not found there it is assumed one is not in the results.
@@ -391,8 +390,8 @@ protected:
     ///@param aln_id: seqid from current seqalign
     ///@param use_this_gi: gi from use_this_gi in seqalign
     ///@param sdl: this is where is info is filled to
-    void x_FillDeflineAndId(const CBioseq_Handle& handle,
-                            const CSeq_id& aln_id,
+    void x_FillDeflineAndId(const objects::CBioseq_Handle& handle,
+                            const objects::CSeq_id& aln_id,
                             list<int>& use_this_gi,
                             SDeflineInfo* sdl,
                             int blast_rank);

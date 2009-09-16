@@ -42,7 +42,6 @@
 #include <objtools/align_format/align_format_util.hpp>
 
 BEGIN_NCBI_SCOPE 
-USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
 /**
@@ -50,7 +49,7 @@ BEGIN_SCOPE(align_format)
  * @code
  * CVecscreen vec(align_set, master_length);
  * vec.SetImagePath("images/");
- * CRef<CSeq_align_set> temp_aln = vec.ProcessSeqAlign();
+ * CRef<objects::CSeq_align_set> temp_aln = vec.ProcessSeqAlign();
  * vec.VecscreenPrint(out);
  * @endcode
  */
@@ -77,7 +76,7 @@ public:
     ///@param seqalign: alignment to show
     ///@param master_length: master seq length
     ///
-    CVecscreen(const CSeq_align_set& seqalign, TSeqPos master_length);
+    CVecscreen(const objects::CSeq_align_set& seqalign, TSeqPos master_length);
     
     ///Destructor
     ~CVecscreen();
@@ -105,7 +104,7 @@ public:
     ///Process alignment to show    
     ///@return: the processed seqalign ref
     /// 
-    CRef<CSeq_align_set> ProcessSeqAlign(void);
+    CRef<objects::CSeq_align_set> ProcessSeqAlign(void);
 
     ///return alignment info list
     ///@return: the info list
@@ -123,9 +122,9 @@ protected:
     
     
     ///the current seqalign
-    CConstRef<CSeq_align_set> m_SeqalignSetRef;
+    CConstRef<objects::CSeq_align_set> m_SeqalignSetRef;
     ///the processed seqalign
-    CRef<CSeq_align_set> m_FinalSeqalign;
+    CRef<objects::CSeq_align_set> m_FinalSeqalign;
     ///gif image file path
     string m_ImagePath;
     ///help url
@@ -154,32 +153,32 @@ protected:
     ///merge overlapping seqalign
     ///@param seqalign: the seqalign to merge
     ///
-    void x_MergeSeqalign(CSeq_align_set& seqalign);
+    void x_MergeSeqalign(objects::CSeq_align_set& seqalign);
    
     ///merge a seqalign if its range is in another seqalign
     ///@param seqalign: the seqalign to merge
     ///
-    void x_MergeInclusiveSeqalign(CSeq_align_set& seqalign);
+    void x_MergeInclusiveSeqalign(objects::CSeq_align_set& seqalign);
 
     ///merge a seqalign if its range is in another higher ranked seqalign
     ///@param seqalign_higher: higher-ranked seqalign
     ///@param seqalign_lower: lower-ranked seqalign
     ///
-    void x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
-                                  CSeq_align_set& seqalign_lower);
+    void x_MergeLowerRankSeqalign(objects::CSeq_align_set& seqalign_higher,
+                                  objects::CSeq_align_set& seqalign_lower);
 
     ///Get match type
     ///@param seqalign: the seqalign
     ///@param master_len: the master seq length
     ///@return: the type
     ///
-    MatchType x_GetMatchType(const CSeq_align& seqalign,
+    MatchType x_GetMatchType(const objects::CSeq_align& seqalign,
                              TSeqPos master_len);
 
     ///Build non overlapping internal match list
     ///@param seqalign_vec: a vecter of catagorized seqalign set
     ///
-    void x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> > seqalign_vec);
+    void x_BuildNonOverlappingRange(vector<CRef<objects::CSeq_align_set> > seqalign_vec);
 
     ///get align info
     ///@param from: align from

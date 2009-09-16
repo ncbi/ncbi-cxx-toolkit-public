@@ -46,7 +46,6 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
 /// CSeqAlignFilter
@@ -135,9 +134,9 @@ public:
     /// @param filtered_aln
     ///   Output: filtered set of alignments.
     ///
-    void FilterByGiListFromFile(const CSeq_align_set& full_aln,
+    void FilterByGiListFromFile(const objects::CSeq_align_set& full_aln,
                                 const string& fname_gis_to_filter,
-                                CSeq_align_set& filtered_aln);
+                                objects::CSeq_align_set& filtered_aln);
 
     /// Filter Seqaligns using a list of integers as the gi-list.
     ///
@@ -148,9 +147,9 @@ public:
     /// @param filtered_aln
     ///   Output: filtered set of alignments.
     ///
-    void FilterByGiList(const CSeq_align_set& full_aln,
+    void FilterByGiList(const objects::CSeq_align_set& full_aln,
                         const list<int>& list_gis,
-                        CSeq_align_set& filtered_aln);
+                        objects::CSeq_align_set& filtered_aln);
 
     /// Filter Seqaligns using a SeqDB object.
     ///
@@ -161,9 +160,9 @@ public:
     /// @param filtered_aln
     ///   Output: filtered set of alignments.
     ///
-    void FilterBySeqDB(const CSeq_align_set& full_aln,
+    void FilterBySeqDB(const objects::CSeq_align_set& full_aln,
                         CRef<CSeqDB> db,
-                        CSeq_align_set& filtered_aln);
+                        objects::CSeq_align_set& filtered_aln);
 
     //--- Auxiliary methods used for seqalign filtering ---//
 
@@ -172,10 +171,10 @@ public:
                                 const string& fname_gis_to_filter);
 
     /// Read a seqalign set from file.
-    void ReadSeqalignSet(const string& fname, CSeq_align_set& aln);
+    void ReadSeqalignSet(const string& fname, objects::CSeq_align_set& aln);
 
     /// Write a seqalign to a file.
-    void WriteSeqalignSet(const string& fname, const CSeq_align_set& aln);
+    void WriteSeqalignSet(const string& fname, const objects::CSeq_align_set& aln);
 
     /// Read a gi list from a file and, optionally, sort it.
     void ReadGiList(const string& fname, list<int>& list_gis, bool sorted = false);
@@ -188,8 +187,8 @@ private:
 
     /// Create one or more seqalign objects for output, based on the given
     /// input seqalign and the list of gi's to be included in the output.
-    void x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, int in_gi,
-                                CSeq_align_set& out_aln, const vector<int>& out_gi_vec);
+    void x_CreateOusputSeqaligns(CConstRef<objects::CSeq_align> in_aln, int in_gi,
+                                objects::CSeq_align_set& out_aln, const vector<int>& out_gi_vec);
 
     /// Generate the list of gi's based on the old list and the newly available gi's.
     void x_GenerateNewGis(int main_old_gi,                        // in: main gi stored before filtering
@@ -199,20 +198,20 @@ private:
                         vector<int>& vec_new_extra_gis);        // out: extra gi's after filtering
 
     /// Change the gi of one of the sequences referenced in the seqalign object.
-    CRef<CSeq_align> x_UpdateGiInSeqalign(CConstRef<CSeq_align> sa, unsigned int n_row,
+    CRef<objects::CSeq_align> x_UpdateGiInSeqalign(CConstRef<objects::CSeq_align> sa, unsigned int n_row,
                                         int old_gi, int new_gi, bool& success);
 
     /// Read the "use_this_gi" entries from a seqalign object.
-    void x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<int>& vec_extra_gis);
+    void x_ReadExtraGis(CConstRef<objects::CSeq_align> sa, vector<int>& vec_extra_gis);
 
     // Write new "use_this_gi" entries to a seqalign object.
-    void x_WriteExtraGis(CRef<CSeq_align> sa, const vector<int>& vec_extra_gis);
+    void x_WriteExtraGis(CRef<objects::CSeq_align> sa, const vector<int>& vec_extra_gis);
 
     // Remove all the "use_this_gi" entries from a seqalign object.
-    void x_RemoveExtraGis(CRef<CSeq_align> sa);
+    void x_RemoveExtraGis(CRef<objects::CSeq_align> sa);
 
     // Add one new "use_this_gi" entry to a seqalign object.
-    bool x_AddUseGiEntryInSeqalign(CRef<CSeq_align> sa, int new_gi);
+    bool x_AddUseGiEntryInSeqalign(CRef<objects::CSeq_align> sa, int new_gi);
 
     //--- Internal data ---//
 

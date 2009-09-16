@@ -125,7 +125,7 @@ public:
 ///             produce a BLAST XML report. 
 /// @param out_stream for incremental output [out]
 NCBI_XBLASTFORMAT_EXPORT
-void BlastXML_FormatReport(CBlastOutput& bxmlout, 
+void BlastXML_FormatReport(objects::CBlastOutput& bxmlout, 
                            const IBlastXMLReportData* data,
 			   CNcbiOstream *out_stream = NULL);
 
