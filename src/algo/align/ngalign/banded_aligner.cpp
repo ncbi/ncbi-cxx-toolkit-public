@@ -358,6 +358,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
     CRef<CSeq_align_set> Instances = x_GetInstances(QueryAligns, Scope);
     if(Instances->Get().empty()) {
         ERR_POST(Info << " No instances of " << QueryAligns.GetQueryId()->AsFastaString() << " found.");
+        return;
     }
 
 
@@ -399,6 +400,11 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
             ERR_POST(Error << "CInstancedBandedAligner failed.");
             continue;
         }
+
+        GetDiagContext().Extra()
+            .Print("instance_query", Inst.GetSeq_id(0).AsFastaString())
+            .Print("instance_subject", Inst.GetSeq_id(1).AsFastaString())
+            .Print("instance_align", (GlobalDs.IsNull() ? "false" : "true"));
 
         if(GlobalDs.IsNull())
             continue;
