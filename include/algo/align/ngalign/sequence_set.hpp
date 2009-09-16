@@ -78,7 +78,7 @@ class CBlastDbSet : public ISequenceSet
 public:
     CBlastDbSet(const string& BlastDb);
 
-    blast::CSearchDatabase::TFilteringAlgorithms& SetSoftFiltering();
+    void SetSoftFiltering(int Filter) { m_Filter = Filter; }
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope,
@@ -93,7 +93,7 @@ public:
 
 protected:
     string m_BlastDb;
-    blast::CSearchDatabase::TFilteringAlgorithms m_Filters;
+    int m_Filter;
 };
 
 

@@ -278,7 +278,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     //    Subject->SetSoftFiltering().push_back(1);
     }
 
-    Subject->SetSoftFiltering().push_back(30);
+    Subject->SetSoftFiltering(30);
 
 
     CNgAligner Aligner(*m_Scope);
@@ -391,7 +391,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
         Query->SetSeqMasker(SeqMasker.get());
     }
 
-    Subject->SetSoftFiltering().push_back(30);
+    Subject->SetSoftFiltering(30);
 
     CNgAligner Aligner(*m_Scope);
     Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
