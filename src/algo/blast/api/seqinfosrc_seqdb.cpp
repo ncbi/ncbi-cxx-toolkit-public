@@ -105,6 +105,18 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
     if (m_FilteringAlgoId == -1 || target == TSeqRange::GetEmpty()) {
         return false;
     }
+    vector<TSeqRange> targets;
+    targets.push_back(target);
+    return GetMasks(index, targets, retval);
+}
+
+bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
+                                const vector<TSeqRange>& target,
+                                TMaskedSubjRegions& retval) const
+{
+    if (m_FilteringAlgoId == -1 || target.empty()) {  
+        return false;
+    }
 
     CRef<CSeq_id> id(GetId(index).front());
     const CSeqLocInfo::ETranslationFrame kFrame = CSeqLocInfo::eFrameNotSet;
@@ -115,11 +127,15 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
     vector<int> filt_algo_ids(1, m_FilteringAlgoId);
     m_iSeqDb->GetMaskData(index, filt_algo_ids, ranges);
     ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
-        if (target.IntersectingWith(*itr)) {
-            CRef<CSeq_interval> si
-                (new CSeq_interval(*id, itr->first, itr->second-1));
-            CRef<CSeqLocInfo> sli(new CSeqLocInfo(si, kFrame));
-            retval.push_back(sli);
+        for (int it=0; it<target.size(); it++) {
+            if (target[it] != TSeqRange::GetEmpty() &&
+                target[it].IntersectingWith(*itr)) {
+                CRef<CSeq_interval> si
+                    (new CSeq_interval(*id, itr->first, itr->second-1));
+                CRef<CSeqLocInfo> sli(new CSeqLocInfo(si, kFrame));
+                retval.push_back(sli);
+                break;
+            }
         }
     }
 #endif

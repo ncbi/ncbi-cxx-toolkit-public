@@ -112,16 +112,20 @@ bool CSeqVecSeqInfoSrc::HasGiList() const
 
 static void 
 s_SeqIntervalToSeqLocInfo(CRef<CSeq_interval> interval,
-                          const TSeqRange& target_range,
+                          const vector <TSeqRange>& target_ranges,
                           const CSeqLocInfo::ETranslationFrame frame,
                           TMaskedSubjRegions& retval)
 {
     TSeqRange loc(interval->GetFrom(), 0);
     loc.SetToOpen(interval->GetTo());
 
-    if (loc.IntersectingWith(target_range)) {
-        CRef<CSeqLocInfo> sli(new CSeqLocInfo(interval, frame));
-        retval.push_back(sli);
+    for (int ir=0; ir< target_ranges.size(); ir++) {
+        if (target_ranges[ir] != TSeqRange::GetEmpty() &&  
+           loc.IntersectingWith(target_ranges[ir])) {
+           CRef<CSeqLocInfo> sli(new CSeqLocInfo(interval, frame));
+           retval.push_back(sli);
+           return;
+        }
     }
 }
 
@@ -129,19 +133,31 @@ bool CSeqVecSeqInfoSrc::GetMasks(Uint4 index,
                                  const TSeqRange& target_range,
                                  TMaskedSubjRegions& retval) const
 {
+    if (target_range == TSeqRange::GetEmpty()) {
+        return false;
+    }
+    vector<TSeqRange> ranges;
+    ranges.push_back(target_range);
+    return GetMasks(index, ranges, retval);
+}
+    
+bool CSeqVecSeqInfoSrc::GetMasks(Uint4 index,
+                                 const vector<TSeqRange>& target_ranges,
+                                 TMaskedSubjRegions& retval) const
+{
     const CSeqLocInfo::ETranslationFrame kFrame = CSeqLocInfo::eFrameNotSet;
 
     CRef<CSeq_loc> mask = m_SeqVec[index].mask;
-    if (mask.Empty() || target_range == TSeqRange::GetEmpty()) {
+    if (mask.Empty() || target_ranges.empty()) {
         return false;
     }
 
     if (mask->IsInt()) {
         s_SeqIntervalToSeqLocInfo(CRef<CSeq_interval>(&mask->SetInt()),
-                                  target_range, kFrame, retval);
+                                  target_ranges, kFrame, retval);
     } else if (mask->IsPacked_int()) {
         ITERATE(CPacked_seqint::Tdata, itr, mask->GetPacked_int().Get()) {
-            s_SeqIntervalToSeqLocInfo(*itr, target_range, kFrame, retval);
+            s_SeqIntervalToSeqLocInfo(*itr, target_ranges, kFrame, retval);
         }
     } else {
         NCBI_THROW(CBlastException, eInvalidArgument, 

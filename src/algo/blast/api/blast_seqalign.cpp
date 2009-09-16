@@ -1322,9 +1322,19 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         CRef<CSeq_id> subject_id;
         GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
         
+        // Union subject sequence ranges
+        vector <TSeqRange> ranges;
+        for (int i=0; i<hsp_list->hspcnt; i++) {
+            const BlastHSP* hsp = hsp_list->hsp_array[i];
+            TSeqRange rg;
+            rg.SetFrom(hsp->subject.offset);
+            rg.SetTo(hsp->subject.end);
+            ranges.push_back(rg);
+        }
+
         // Extract subject masks
         TMaskedSubjRegions masks;
-        if (seqinfo_src->GetMasks(kOid, s_GetSubjRanges(hsp_list), masks)) {
+        if (!ranges.empty() && seqinfo_src->GetMasks(kOid, ranges, masks)) {
             subj_masks.push_back(masks);
         }
 
@@ -1526,9 +1536,20 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             vector<int> gi_list;
             GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
 
+            // Union subject sequence ranges
+            vector <TSeqRange> ranges;
+            for (int i=0; i<hsp_list->hspcnt; i++) {
+                const BlastHSP* hsp = hsp_list->hsp_array[i];
+                TSeqRange rg;
+                rg.SetFrom(hsp->subject.offset);
+                rg.SetTo(hsp->subject.end);
+                ranges.push_back(rg);
+            }
+
+            // Extract subject masks
             TMaskedSubjRegions masks;
-            if (seqinfo_src.GetMasks(subj_idx, 
-                                      s_GetSubjRanges(hsp_list), masks)) {
+            if (!ranges.empty() && 
+                seqinfo_src.GetMasks(subj_idx, ranges, masks)) {
                 subj_masks[qindex].push_back(masks);
             }
             

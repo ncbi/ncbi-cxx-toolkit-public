@@ -89,6 +89,17 @@ public:
                           const TSeqRange& target_range,
                           TMaskedSubjRegions& retval) const = 0;
 
+    /// Retrieves the subject masks for the corresponding index
+    /// @param index the ordinal number to retrieve [in]
+    /// @param target_ranges ranges for which to return masks for. Empty ranges
+    /// indicate that no masks should be retrieved, whole ranges mean that
+    /// masks for the whole sequence should be retrieved [in]
+    /// @param retval the masks will be returned through this parameter [out]
+    /// @return true if there were masks returned in retval, otherwise false.
+    virtual bool GetMasks(Uint4 index, 
+                          const vector<TSeqRange>& target_ranges,
+                          TMaskedSubjRegions& retval) const = 0;
+
     /// Allow implementations to provide a facility to release memory
     virtual void GarbageCollect() {};
 };
