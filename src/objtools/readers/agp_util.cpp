@@ -81,12 +81,12 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "gap line missing column 9 (null)",
     "missing line separator at the end of file",
     "extra text in the column 9 of the gap line",
+    "object_id-s appear sorted, but not in a numerical order",
     "component_id looks like a WGS accession, component_type is not W",
-    "component_id looks like a non-WGS accession, yet component_type is W",
 
+    "component_id looks like a non-WGS accession, yet component_type is W",
     // ? "component_id looks like a protein accession"
     kEmptyCStr, // W_Last
-    kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,

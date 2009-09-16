@@ -366,10 +366,12 @@ public:
         W_GapLineMissingCol9,   // CAgpRow
         W_NoEolAtEof,           // CAgpReader
         W_GapLineIgnoredCol9,   // CAgpRow
+        W_ObjOrderNotNumerical, // -- agp_validate --
         // NOTE: "Wgs" warnings must come last so that  "Use -g..." hint
         //        printed in CAgpValidateReader::x_PrintTotals()
         //        comes right after the "Wgs" warning counts.
         W_CompIsWgsTypeIsNot,   // -- agp_validate --
+
         W_CompIsNotWgsTypeIs,   // -- agp_validate --
 
         W_Last, W_First = 21,
@@ -577,7 +579,8 @@ class CPatternStats; // internal for CAccPatternCounter
 class NCBI_XOBJREAD_EXPORT CAccPatternCounter : public map<string, CPatternStats*>
 {
 public:
-    void AddName(const string& name);
+    typedef vector<double> TDoubleVec;
+    iterator AddName(const string& name, TDoubleVec* runsOfDigits=NULL);
 
     // Replace "0"s in a simple pattern like BCM_Spur_v0.0_Scaffold0
     // (which is a key in this map) with real numbers or [ranges].

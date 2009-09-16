@@ -97,7 +97,7 @@ public:
     }
 
     int i=s.size();
-    if(i<min_len) min_len=1;
+    if(i<min_len) min_len=1; // replace 1 with i to allow ACCP01000[001..497].1 instead of ACCP[01000001..01000497].1
     if(i>max_len) max_len=i;
   }
 
@@ -181,7 +181,7 @@ public:
 
 
 //// class CAccPatternCounter --------------------------
-void CAccPatternCounter::AddName(const string& name)
+CAccPatternCounter::iterator CAccPatternCounter::AddName(const string& name, TDoubleVec* runsOfDigits)
 {
   string s;
   s.reserve(name.size());
@@ -215,13 +215,21 @@ void CAccPatternCounter::AddName(const string& name)
   CPatternStats* ps;
   if(it==end()) {
     ps = new CPatternStats( digrun.size() );
-    insert( value_type(s, ps) );
+    it = insert( value_type(s, ps) ).first;
   }
   else {
     ps = it->second;
   }
 
   ps->AddAccRuns(digrun);
+
+  if(runsOfDigits) {
+    runsOfDigits->clear();
+    for(vector<string>::iterator it = digrun.begin();  it != digrun.end(); ++it) {
+      runsOfDigits->push_back(NStr::StringToDouble(*it));
+    }
+  }
+  return it;
 }
 
 // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#

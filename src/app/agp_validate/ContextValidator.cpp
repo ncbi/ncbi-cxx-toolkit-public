@@ -69,7 +69,20 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
 
   memset(m_CompOri, 0, sizeof(m_CompOri));
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
+
+  // for W_ObjOrderNotNumerical
+  m_obj_id_digits  = new CAccPatternCounter::TDoubleVec();
+  m_prev_id_digits = new CAccPatternCounter::TDoubleVec();
+  // m_obj_id_sorted = 0; - not necessary, will be set to 0 on the first object_id
 }
+
+/* not necessary - there is only one object of this class
+CAgpValidateReader::~CAgpValidateReader()
+{
+  delete m_obj_id_digits;
+  delete m_prev_id_digits;
+}
+*/
 
 bool CAgpValidateReader::OnError()
 {
@@ -292,6 +305,45 @@ void CAgpValidateReader::OnObjectChange()
       agpErr.Msg(CAgpErrEx::E_DuplicateObj, m_this_row->GetObject(),
         CAgpErr::fAtThisLine);
     }
+    else {
+      // m_objNamePatterns report + W_ObjOrderNotNumerical (JIRA: GP-773)
+
+      // swap pointers: m_prev_id_digits <-> m_obj_id_digits
+      CAccPatternCounter::TDoubleVec* t=m_prev_id_digits;
+      m_prev_id_digits=m_obj_id_digits;
+      m_obj_id_digits=t;
+
+      CAccPatternCounter::iterator it=m_objNamePatterns.AddName( m_this_row->GetObject(), m_obj_id_digits );
+      if(m_at_beg || m_obj_id_pattern!=it->first) {
+        m_obj_id_pattern=it->first;
+        m_obj_id_sorted=0;
+      }
+      else if(m_obj_id_sorted>=0) {
+        if(m_prev_row->GetObject() > m_this_row->GetObject()) {
+          // not literally sorted: turn off W_ObjOrderNotNumerical for the current m_obj_id_pattern
+          m_obj_id_sorted = -1;
+        }
+        else {
+          if(m_obj_id_sorted>0) {
+            if( m_prev_row->GetObject().size() > m_this_row->GetObject().size() &&
+                m_prev_id_digits->size() == m_obj_id_digits->size()
+            ) {
+              for( int i=0; i<m_prev_id_digits->size(); i++ ) {
+                if((*m_prev_id_digits)[i]<(*m_obj_id_digits)[i]) break;
+                if((*m_prev_id_digits)[i]>(*m_obj_id_digits)[i]) {
+                  // literally sorted, but not numerically
+                  agpErr.Msg(CAgpErr::W_ObjOrderNotNumerical,
+                    " ("+m_prev_row->GetObject()+" before "+m_this_row->GetObject()+")",
+                    CAgpErr::fAtThisLine);
+                  break;
+                }
+              }
+            }
+          }
+          m_obj_id_sorted++;
+        }
+      }
+    }
 
     if( m_comp2len.size() ) {
       // save expected object length (and the fact that we do expect it) for the future checks
@@ -462,17 +514,7 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
   cout << "\n";
 
   if(m_ObjCount) {
-    {
-      CAccPatternCounter objNamePatterns;
-      //objNamePatterns.AddNames(m_ObjIdSet);
-      for(TObjSet::const_iterator it = m_ObjIdSet.begin();
-          it != m_ObjIdSet.end(); ++it
-      ) {
-        objNamePatterns.AddName(*it);
-      }
-
-      x_PrintPatterns(objNamePatterns, "Object names");
-    }
+    x_PrintPatterns(m_objNamePatterns, "Object names");
   }
 
   if(m_CompId2Spans.size()) {
@@ -591,6 +633,13 @@ static int GetNameCategory(const string& s)
   int pos=numLetters;
   string sd1, sd2; // strings of digits
   if( !ReadNumberOrRange(s, pos, sd1, sd2) ) return fUnknownFormat;
+  if(sd2.size()==0 && s[pos]=='[') {
+    // 111[222...333] => [111222...111333]
+    string ssd1, ssd2;
+    if( !ReadNumberOrRange(s, pos, ssd1, ssd2) || ssd2.size()==0 ) return fUnknownFormat;
+    sd2 =sd1+ssd2;
+    sd1+=ssd1;
+  }
 
   //// optional .version or .[range of versions]
   string ver1, ver2; // string of digits

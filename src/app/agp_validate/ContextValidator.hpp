@@ -129,6 +129,7 @@ class CAgpValidateReader : public CAgpReader
 {
 public:
   CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
+  //virtual ~CAgpValidateReader();
   void PrintTotals();
   bool m_CheckCompNames;
 
@@ -152,7 +153,14 @@ protected:
     m_CommentLineCount++;
   }
 
-  CMapCompLen& m_comp2len; // for optinal check of component lengths (or maybe object lengths)
+  // for W_ObjOrderNotNumerical (JIRA: GP-773)
+  string m_obj_id_pattern; // object_id with each run of conseq digits replaced with '#'
+  // >0 number of sorted literally so far - 1 (for the same current m_obj_id_pattern)
+  int m_obj_id_sorted; // 0 not established yet <0 sort order violated
+  CAccPatternCounter::TDoubleVec* m_obj_id_digits;
+  CAccPatternCounter::TDoubleVec* m_prev_id_digits;
+
+  CMapCompLen& m_comp2len; // for optional check of component lengths (or maybe object lengths)
   int m_expected_obj_len;
   int m_comp_name_matches;
   int m_obj_name_matches;
@@ -185,6 +193,8 @@ protected:
   typedef set<string> TObjSet;
   typedef pair<TObjSet::iterator, bool> TObjSetResult;
   TObjSet m_ObjIdSet;
+
+  CAccPatternCounter m_objNamePatterns;
 
   // keep track of the component and object ids used
   //  in the AGP. Used to detect duplicates and
