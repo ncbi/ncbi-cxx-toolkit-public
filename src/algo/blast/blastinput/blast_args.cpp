@@ -535,10 +535,12 @@ void
 CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                    CBlastOptions& options)
 {
-    if (cmd_line_args[kArgMismatch])
+    if (cmd_line_args[kArgMismatch]) {
         options.SetMismatchPenalty(cmd_line_args[kArgMismatch].AsInteger());
-    if (cmd_line_args[kArgMatch])
+    }
+    if (cmd_line_args[kArgMatch]) {
         options.SetMatchReward(cmd_line_args[kArgMatch].AsInteger());
+    }
 
     if (cmd_line_args[kArgNoGreedyExtension]) {
         options.SetGapExtnAlgorithm(eDynProgScoreOnly);
@@ -1813,6 +1815,7 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         if (CBlastDatabaseArgs::HasBeenSet(args)) {
             m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
         }
+        m_HspFilteringArgs->ExtractAlgorithmOptions(args, opts);
         m_IsUngapped = !opts.GetGappedMode();
         try { m_OptsHandle->Validate(); }
         catch (const CBlastException& e) {

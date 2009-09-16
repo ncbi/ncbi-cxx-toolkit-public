@@ -145,6 +145,8 @@ CBlast4Field::TFieldMap CBlast4Field::m_Fields;
 
 typedef CBlast4Field TField;
 
+TField B4Param_BestHitScoreEdge      ("BestHitScoreEdge",      CBlast4_value::e_Real);
+TField B4Param_BestHitOverhang       ("BestHitOverhang",       CBlast4_value::e_Real);
 TField B4Param_CompositionBasedStats ("CompositionBasedStats", CBlast4_value::e_Integer);
 TField B4Param_Culling               ("Culling",               CBlast4_value::e_Boolean);
 TField B4Param_CullingLimit          ("Culling",               CBlast4_value::e_Integer);

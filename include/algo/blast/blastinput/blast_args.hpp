@@ -1004,6 +1004,8 @@ protected:
     CRef<CSearchStrategyArgs> m_SearchStrategyArgs;
     /// Debugging arguments
     CRef<CDebugArgs> m_DebugArgs;
+    /// HSP filtering arguments
+    CRef<CHspFilteringArgs> m_HspFilteringArgs;
     /// The BLAST options handle, only non-NULL if assigned via
     /// SetOptionsHandle, i.e.: from a saved search strategy
     CRef<CBlastOptionsHandle> m_OptsHandle;

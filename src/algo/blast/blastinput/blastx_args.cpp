@@ -90,7 +90,8 @@ CBlastxAppArgs::CBlastxAppArgs()
     arg.Reset(new CWordThresholdArg);
     m_Args.push_back(arg);
 
-    arg.Reset(new CHspFilteringArgs);
+    m_HspFilteringArgs.Reset(new CHspFilteringArgs);
+    arg.Reset(m_HspFilteringArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);

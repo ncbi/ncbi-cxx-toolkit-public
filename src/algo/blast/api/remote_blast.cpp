@@ -1325,6 +1325,9 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
 
 void CRemoteBlast::SetDbFilteringAlgorithmId(int algo_id)
 {
+    if (algo_id == -1) 
+        return;
+
     x_SetOneParam(B4Param_DbFilteringAlgorithmId, &algo_id);
     m_DbFilteringAlgorithmId = algo_id;
 }
@@ -1695,7 +1698,8 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
             m_GiList = bob.GetGiList();
         }
 
-        if (bob.HasDbFilteringAlgorithmId()) {
+        if (bob.HasDbFilteringAlgorithmId() &&
+            bob.GetDbFilteringAlgorithmId() != -1) {
             m_DbFilteringAlgorithmId = bob.GetDbFilteringAlgorithmId();
         }
 

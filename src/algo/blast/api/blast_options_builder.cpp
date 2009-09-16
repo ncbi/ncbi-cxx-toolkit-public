@@ -147,6 +147,16 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
     pair<bool, string> indexed_mb_settings(false, kEmptyStr);
     
     switch(nm[0]) {
+    case 'B':
+        if (B4Param_BestHitScoreEdge.Match(p)) {
+            bo.SetBestHitScoreEdge(v.GetReal());
+        } else if (B4Param_BestHitOverhang.Match(p)) {
+            bo.SetBestHitOverhang(v.GetReal());
+        } else {
+            found = false;
+        }
+        break;
+
     case 'C':
         if (B4Param_CompositionBasedStats.Match(p)) {
             ECompoAdjustModes adjmode = (ECompoAdjustModes) v.GetInteger();

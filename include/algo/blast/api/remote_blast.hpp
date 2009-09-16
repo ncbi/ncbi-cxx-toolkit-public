@@ -137,7 +137,7 @@ public:
     
     /// Sets the filtering algorithm ID to be applied to the BLAST database
     /// (not supported by server yet)
-    /// @param algo_id algorithm ID to use
+    /// @param algo_id algorithm ID to use (ignored if -1)
     void SetDbFilteringAlgorithmId(int algo_id);
 
     /// Set the name of the database to search against.

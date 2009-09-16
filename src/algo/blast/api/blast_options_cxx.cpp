@@ -120,7 +120,9 @@ enum EBlastOptIdx {
     eBlastOpt_WindowMaskerDatabase,
     eBlastOpt_WindowMaskerTaxId,
     eBlastOpt_ForceMbIndex,         // corresponds to -use_index flag
-    eBlastOpt_MbIndexName           // corresponds to -index_name flag
+    eBlastOpt_MbIndexName,          // corresponds to -index_name flag
+    eBlastOpt_BestHitScoreEdge,
+    eBlastOpt_BestHitOverhang
 };
 
 /// Encapsulates all blast input parameters
@@ -641,6 +643,14 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
 
     case eBlastOpt_GapTrigger:
         x_SetParam(B4Param_GapTrigger, v);
+        return;
+
+    case eBlastOpt_BestHitScoreEdge:
+        x_SetParam(B4Param_BestHitScoreEdge, v);
+        return;
+
+    case eBlastOpt_BestHitOverhang:
+        x_SetParam(B4Param_BestHitOverhang, v);
         return;
 
     default:
@@ -1672,10 +1682,9 @@ CBlastOptions::SetBestHitOverhang(double overhang)
     if (m_Local) {
         m_Local->SetBestHitOverhang(overhang);
     }
-    // N/A for the time being
-    //if (m_Remote) {
-    //    m_Remote->SetValue(eBlastOpt_BestHitOverhangLimit, overhang);
-    //}
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_BestHitOverhang, overhang);
+    }
 }
 
 double 
@@ -1692,10 +1701,9 @@ CBlastOptions::SetBestHitScoreEdge(double score_edge)
     if (m_Local) {
         m_Local->SetBestHitScoreEdge(score_edge);
     }
-    // N/A for the time being
-    //if (m_Remote) {
-    //    m_Remote->SetValue(eBlastOpt_BestHitScoreEdgeLimit, ScoreEdge);
-    //}
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_BestHitScoreEdge, score_edge);
+    }
 }
 
 double 

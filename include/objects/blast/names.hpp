@@ -115,6 +115,8 @@ private:
     static TFieldMap m_Fields;
 };
 
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_BestHitScoreEdge;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_BestHitOverhang;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CompositionBasedStats;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Culling;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CullingLimit;
