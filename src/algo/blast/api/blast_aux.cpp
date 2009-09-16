@@ -234,6 +234,24 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("percent_identity", m_Ptr->percent_identity);
     ddc.Log("do_sum_stats", m_Ptr->do_sum_stats);
     ddc.Log("longest_intron", m_Ptr->longest_intron);
+    ddc.Log("min_hit_length", m_Ptr->min_hit_length);
+    ddc.Log("min_diag_separation", m_Ptr->min_diag_separation);
+    if (m_Ptr->hsp_filt_opt) {
+        ddc.Log("hsp_filt_opt->best_hit_stage",
+                m_Ptr->hsp_filt_opt->best_hit_stage);
+        if (m_Ptr->hsp_filt_opt->best_hit) {
+            ddc.Log("hsp_filt_opt->best_hit->overhang",
+                    m_Ptr->hsp_filt_opt->best_hit->overhang);
+            ddc.Log("hsp_filt_opt->best_hit->score_edge",
+                    m_Ptr->hsp_filt_opt->best_hit->score_edge);
+        }
+        ddc.Log("hsp_filt_opt->culling_stage",
+                m_Ptr->hsp_filt_opt->culling_stage);
+        if (m_Ptr->hsp_filt_opt->culling_opts) {
+            ddc.Log("hsp_filt_opt->culling_opts->max_hits",
+                    m_Ptr->hsp_filt_opt->culling_opts->max_hits);
+        }
+    }
 }
 void
 CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
