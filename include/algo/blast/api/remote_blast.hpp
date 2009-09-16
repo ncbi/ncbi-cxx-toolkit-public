@@ -139,10 +139,6 @@ public:
     /// (not supported by server yet)
     /// @param algo_id algorithm ID to use
     void SetDbFilteringAlgorithmId(int algo_id);
-    /// Sets the filtering algorithm IDs to be applied to the BLAST database
-    /// (not supported by server yet)
-    /// @param algo_ids algorithm IDs to use
-    NCBI_DEPRECATED void SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids);
 
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
@@ -425,10 +421,6 @@ public:
     /// Returns the filtering algorithm ID used in the database
     Int4 GetDbFilteringAlgorithmId() const {
         return m_DbFilteringAlgorithmId;
-    }
-    /// Returns the list of filtering algorithm IDs for the database
-    NCBI_DEPRECATED list<int> GetDbFilteringAlgorithmIds() const {
-        return list<int>(1, m_DbFilteringAlgorithmId);
     }
 
     /// Returns the task used to create the remote search (if any)

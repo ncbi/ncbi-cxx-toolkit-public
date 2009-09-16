@@ -1329,16 +1329,6 @@ void CRemoteBlast::SetDbFilteringAlgorithmId(int algo_id)
     m_DbFilteringAlgorithmId = algo_id;
 }
 
-void CRemoteBlast::SetDbFilteringAlgorithmIds(const list<Int4> & algo_ids)
-{
-    if (algo_ids.empty()) {
-        return;
-    }
-    x_SetOneParam(B4Param_DbFilteringAlgorithmIds, & algo_ids);
-    
-    m_DbFilteringAlgorithmId = algo_ids.front();
-}
-
 void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
 {
     if (gi_list.empty()) {

@@ -176,8 +176,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         } else if (B4Param_DustFilteringLinker.Match(p)) {
             bo.SetDustFilteringLinker(v.GetInteger());
         } else if (B4Param_DbFilteringAlgorithmId.Match(p)) {
-            m_DbFilteringAlgorithmIds.Get().clear();
-            m_DbFilteringAlgorithmIds.Get().push_back(v.GetInteger());
+            m_DbFilteringAlgorithmId = v.GetInteger();
         } else {
             found = false;
         }
@@ -577,22 +576,12 @@ list<int> CBlastOptionsBuilder::GetGiList()
 
 bool CBlastOptionsBuilder::HasDbFilteringAlgorithmId()
 {
-    return m_DbFilteringAlgorithmIds.Have();
+    return m_DbFilteringAlgorithmId.Have();
 }
 
 int CBlastOptionsBuilder::GetDbFilteringAlgorithmId()
 {
-    return m_DbFilteringAlgorithmIds.Get().front();
-}
-
-bool CBlastOptionsBuilder::HaveDbFilteringAlgorithmIds()
-{
-    return m_DbFilteringAlgorithmIds.Have();
-}
-
-list<int> CBlastOptionsBuilder::GetDbFilteringAlgorithmIds()
-{
-    return m_DbFilteringAlgorithmIds.Get();
+    return m_DbFilteringAlgorithmId.Get();
 }
 
 bool CBlastOptionsBuilder::HaveNegativeGiList()

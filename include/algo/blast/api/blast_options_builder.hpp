@@ -116,19 +116,10 @@ public:
     /// Get the negative GI list.
     list<int> GetNegativeGiList();
 
-    /** BLAST only supports a single filtering algorithm for soft masking the
-     * BLAST Database. The 3 methods below will be deprecated in BLAST 2.2.22
-     */
-
     /// Check whether a database filtering algorithm ID is specified
     bool HasDbFilteringAlgorithmId();
     /// Get the database filtering algorithm ID
     int GetDbFilteringAlgorithmId();
-
-    /// Check whether a GI list is specified.
-    NCBI_DEPRECATED bool HaveDbFilteringAlgorithmIds();
-    /// Get the GI list.
-    NCBI_DEPRECATED list<int> GetDbFilteringAlgorithmIds();
 
     /// Check whether query masks are specified.
     bool HaveQueryMasks();
@@ -285,7 +276,7 @@ private:
     SOptional< list<int> > m_NegativeGiList;
 
     /// The GI list (or none).
-    SOptional< list<int> > m_DbFilteringAlgorithmIds;
+    SOptional<int> m_DbFilteringAlgorithmId;
 
     /// The query masking locations
     SOptional< TMaskList > m_QueryMasks;

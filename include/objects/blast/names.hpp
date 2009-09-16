@@ -137,7 +137,6 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapOpeningCost;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapTracebackAlgorithm;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GiList;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbFilteringAlgorithmId;
-NCBI_DEPRECATED NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbFilteringAlgorithmIds;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_NegativeGiList;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_HitlistSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_HspRangeMax;
