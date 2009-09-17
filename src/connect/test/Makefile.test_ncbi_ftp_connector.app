@@ -7,6 +7,6 @@ LIB = connect $(NCBIATOMIC_LIB)
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
-CHECK_CMD =
+CHECK_CMD = test_ncbi_ftp_connector.sh
 
 WATCHERS = lavr
