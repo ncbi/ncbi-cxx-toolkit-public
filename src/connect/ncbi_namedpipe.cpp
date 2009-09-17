@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe.hpp>
 #include <connect/error_codes.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <assert.h>
 
@@ -626,6 +627,18 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
     try {
         if (m_LSocket  ||  m_IoSocket) {
             throw string("Named pipe already open");
+        }
+
+        CDirEntry pipe(pipename);
+        switch (pipe.GetType()) {
+        case CDirEntry::eSocket:
+            pipe.Remove();
+            /*FALLTHRU*/
+        case CDirEntry::eUnknown:
+            // File does not exist
+            break;
+        default:
+            throw "Named pipe path \"" + pipename + "\" already exists";
         }
 
         status = LSOCK_CreateUNIX(pipename.c_str(),
