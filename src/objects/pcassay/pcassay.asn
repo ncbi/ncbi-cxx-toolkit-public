@@ -195,8 +195,9 @@ PC-AssayDescription ::= SEQUENCE {
                                                                 -- before hand so it is not necessary to update the descriptions of
                                                                 -- related assays when new group member submitted to PubChem 
 
-    panel-info        PC-AssayPanel     OPTIONAL                -- for 'panel' type of bioassay only
+    panel-info        PC-AssayPanel     OPTIONAL,                -- for 'panel' type of bioassay only
                                                                 -- store assay panel member information
+    is-mlp-late-stage       BOOLEAN OPTIONAL                    -- verification for 'late-stage-data' deposition
 }
  
 -- Description for Panel Assay
