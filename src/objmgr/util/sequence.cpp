@@ -2761,10 +2761,16 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
                                          &scope);
             seq_pos -= frame;
             string::size_type i = seq_pos / 3;
-            if (i >= 0  &&  i < protlen) {
+            if (i < protlen) {
                 const CCode_break::C_Aa& c_aa = brk->GetAa ();
                 if (c_aa.IsNcbieaa ()) {
                     prot [i] = c_aa.GetNcbieaa ();
+                }
+            } else if (i == protlen) {
+                // add terminal exception
+                const CCode_break::C_Aa& c_aa = brk->GetAa ();
+                if (c_aa.IsNcbieaa () && c_aa.GetNcbieaa () == 42) {
+                    prot += c_aa.GetNcbieaa ();
                 }
             }
         }
