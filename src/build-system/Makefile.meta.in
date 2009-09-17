@@ -70,7 +70,7 @@ USRP_KET = || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i" ; \
               exit 1 $(NOTK_KET) ; \
       else \
          echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-      fi; \
+      fi 2>&1 | tee make_$$i.log; \
    done ; \
    test -s requirements  ||  rm -f requirements ; \
 fi
@@ -82,8 +82,8 @@ ASNP_BRA = \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_ASN)
-ASNP_KET = ) || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
-                exit 6 $(NOTK_KET) ; \
+ASNP_KET = || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
+                exit 6 $(NOTK_KET)) 2>&1 | tee make_$$i.log ; \
    done ; \
 fi
 
@@ -94,8 +94,8 @@ DTDP_BRA = \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_DTD)
-DTDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
-                 exit 6 $(NOTK_KET) ; \
+DTDP_KET = || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
+                 exit 6 $(NOTK_KET)) 2>&1 | tee make_$$i.log ; \
    done ; \
 fi
 
@@ -106,8 +106,8 @@ XSDP_BRA = \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
        && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_XSD)
-XSDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
-                 exit 6 $(NOTK_KET) ; \
+XSDP_KET = || $(NOTK_BRA) echo "FAILED: $(srcdir)/Makefile.$$i.lib" ; \
+                 exit 6 $(NOTK_KET)) 2>&1 | tee make_$$i.log ; \
    done ; \
 fi
 
@@ -132,7 +132,7 @@ LIBP_KET = && continue ; \
         exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-     fi; \
+     fi 2>&1 | tee make_$$i.log; \
    done ; \
 fi
 
@@ -154,7 +154,7 @@ APPP_KET = && continue ; \
         exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-     fi; \
+     fi 2>&1 | tee make_$$i.log; \
    done ; \
    test -s requirements  ||  rm -f requirements ; \
 fi
