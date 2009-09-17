@@ -303,35 +303,19 @@ CNetServerConnection CNetServer::Connect()
 
     // Check if the socket is already connected.
     if (conn_socket.GetStatus(eIO_Open) == eIO_Success) {
-        STimeout old_timeout;
-
-        const STimeout* old_timeout_ptr = conn_socket.GetTimeout(eIO_Read);
-
-        if (old_timeout_ptr != NULL) {
-            old_timeout = *old_timeout_ptr;
-            old_timeout_ptr = &old_timeout;
-        }
-
         static const STimeout zero_timeout = {0, 0};
 
-        if (conn_socket.SetTimeout(eIO_Read, &zero_timeout) == eIO_Success) {
-            switch (conn_socket.Read(NULL, 1, NULL)) {
-            case eIO_Success:
-                ERR_POST_X(8, "Protocol error: a socket from the pool "
-                    "still has input data in it, reconnecting");
-                break;
+        SSOCK_Poll conn_socket_poll_struct = {
+            /* sock     */ conn_socket.GetSOCK(),
+            /* event    */ eIO_ReadWrite
+            /* revent   */ // [out]
+        };
 
-            case eIO_Timeout:
-                if (conn_socket.SetTimeout(eIO_Read,
-                        old_timeout_ptr) == eIO_Success)
-                    return conn;
-                /* FALL THROUGH */
+        if (SOCK_Poll(1, &conn_socket_poll_struct, &zero_timeout, NULL) ==
+                eIO_Success && conn_socket_poll_struct.revent == eIO_Write)
+            return conn;
 
-            default:
-                break;
-            }
-        }
-
+        // The socket is already closed on the server side.
         conn_socket.Close();
     }
 
