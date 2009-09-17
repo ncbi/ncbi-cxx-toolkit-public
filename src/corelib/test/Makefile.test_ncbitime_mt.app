@@ -6,3 +6,5 @@ LIB = xncbi test_mt
 
 CHECK_CMD =
 
+
+WATCHERS = ivanov

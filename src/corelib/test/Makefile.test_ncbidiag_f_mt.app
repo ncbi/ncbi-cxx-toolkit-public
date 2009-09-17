@@ -39,3 +39,5 @@ CHECK_CMD = test_ncbidiag_f_mt 32
 CHECK_CMD = test_ncbidiag_f_mt 33
 CHECK_CMD = test_ncbidiag_f_mt 34
 CHECK_CMD = test_ncbidiag_f_mt 35
+
+WATCHERS = grichenk

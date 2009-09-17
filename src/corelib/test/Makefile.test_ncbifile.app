@@ -5,3 +5,5 @@ SRC = test_ncbifile
 LIB = xncbi
 
 CHECK_CMD =
+
+WATCHERS = ivanov

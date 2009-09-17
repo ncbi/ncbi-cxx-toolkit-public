@@ -6,3 +6,5 @@ LIB = xncbi test_mt
 
 CHECK_CMD = test_ncbidiag_mt -format old
 CHECK_CMD = test_ncbidiag_mt -format new
+
+WATCHERS = grichenk

@@ -10,3 +10,5 @@ LIB = test_boost xncbi
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
+
+WATCHERS = joukovv

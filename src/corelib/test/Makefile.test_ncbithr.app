@@ -8,3 +8,5 @@ REQUIRES = MT
 
 CHECK_CMD = test_ncbithr
 CHECK_CMD = test_ncbithr -favorwriters
+
+WATCHERS = grichenk

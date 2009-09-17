@@ -5,3 +5,5 @@ SRC = test_ncbireg_mt
 LIB = xncbi test_mt
 
 CHECK_CMD =
+
+WATCHERS = ucko

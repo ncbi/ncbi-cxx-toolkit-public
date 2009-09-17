@@ -7,3 +7,5 @@ LIB = xncbi
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD =
+
+WATCHERS = ivanovp

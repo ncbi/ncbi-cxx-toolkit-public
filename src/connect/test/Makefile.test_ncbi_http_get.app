@@ -9,3 +9,5 @@ LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_ncbi_http_get.sh
 CHECK_COPY = test_ncbi_http_get.sh
+
+WATCHERS = lavr

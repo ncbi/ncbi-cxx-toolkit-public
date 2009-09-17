@@ -12,3 +12,5 @@ REQUIRES = Sybase
 
 CHECK_COPY = ctl_sp_who.ini
 CHECK_CMD = run_sybase_app.sh ctl_sp_who /CHECK_NAME=ctl_sp_who
+
+WATCHERS = ivanovp

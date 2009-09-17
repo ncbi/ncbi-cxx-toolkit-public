@@ -9,3 +9,5 @@ LINK = $(C_LINK)
 #LINK = purify $(C_LINK)
 
 CHECK_CMD =
+
+WATCHERS = lavr

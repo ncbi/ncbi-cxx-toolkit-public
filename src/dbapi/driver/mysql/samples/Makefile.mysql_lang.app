@@ -9,3 +9,5 @@ LIBS = $(MYSQL_LIBS) $(Z_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(MYSQL_INCLUDE) $(Z_INCLUDE) $(ORIG_CPPFLAGS)
 
 # CHECK_CMD = mysql_lang -S mysql-dev.ncbi.nlm.nih.gov -U cppcore -P chan8me -D cppcore
+
+WATCHERS = ivanovp

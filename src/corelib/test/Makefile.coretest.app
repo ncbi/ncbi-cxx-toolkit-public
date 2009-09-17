@@ -11,3 +11,5 @@ SRC = coretest
 LIB = xncbi
 
 CHECK_CMD =
+
+WATCHERS = vakatov

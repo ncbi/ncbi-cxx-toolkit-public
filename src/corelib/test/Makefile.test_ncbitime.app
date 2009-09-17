@@ -5,3 +5,5 @@ SRC = test_ncbitime
 LIB = xncbi
 
 CHECK_CMD =
+
+WATCHERS = ivanov

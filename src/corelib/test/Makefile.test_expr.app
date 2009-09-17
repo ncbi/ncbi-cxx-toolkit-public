@@ -13,3 +13,5 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
+
+WATCHERS = ivanovp

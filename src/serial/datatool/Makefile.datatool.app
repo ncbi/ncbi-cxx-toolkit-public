@@ -23,3 +23,5 @@ CHECK_CMD = datatool.sh
 CHECK_CMD = datatool_xml.sh
 CHECK_COPY = datatool.sh datatool_xml.sh testdata
 CHECK_TIMEOUT = 600
+
+WATCHERS = gouriano

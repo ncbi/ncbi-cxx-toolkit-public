@@ -9,3 +9,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_ncbi_dsock.sh
 CHECK_COPY = test_ncbi_dsock.sh
+
+WATCHERS = lavr

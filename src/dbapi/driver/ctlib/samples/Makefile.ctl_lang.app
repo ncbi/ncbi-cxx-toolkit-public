@@ -12,3 +12,5 @@ REQUIRES = Sybase
 
 CHECK_COPY = ctl_lang.ini
 CHECK_CMD = run_sybase_app.sh ctl_lang /CHECK_NAME=ctl_lang
+
+WATCHERS = ivanovp

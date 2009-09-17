@@ -5,3 +5,5 @@ SRC = test_ncbidiag_p test_ncbidiag_py test_ncbidiag_pn
 LIB = xncbi test_mt
 
 CHECK_CMD =
+
+WATCHERS = grichenk

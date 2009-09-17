@@ -11,3 +11,5 @@ SRC = test_hash
 LIB = xncbi
 
 CHECK_CMD = test_hash
+
+WATCHERS = grichenk

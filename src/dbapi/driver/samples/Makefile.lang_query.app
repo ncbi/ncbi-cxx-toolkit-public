@@ -12,3 +12,5 @@ STATIC_LIBS = $(SYBASE_LIBS) $(ODBC_LIBS) $(FTDS_LIBS) $(LIBS)
 CHECK_CMD  = test_lang_query.sh
 CHECK_COPY = test_lang_query.sh
 CHECK_TIMEOUT = 400
+
+WATCHERS = ivanovp

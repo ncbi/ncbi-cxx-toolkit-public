@@ -9,3 +9,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
+
+WATCHERS = ivanov

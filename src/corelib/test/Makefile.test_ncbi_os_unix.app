@@ -9,3 +9,5 @@ REQUIRES = unix -Cygwin
 CHECK_CMD  = test_ncbi_os_unix.sh
 CHECK_COPY = test_ncbi_os_unix.sh
 
+
+WATCHERS = lavr

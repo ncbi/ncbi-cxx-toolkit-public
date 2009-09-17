@@ -21,3 +21,5 @@ LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
 
 CHECK_CMD  =
 CHECK_COPY = webenv.ent webenv.bin ctest_serial.asn cpptest_serial.asn ctest_serial.asb cpptest_serial.asb
+
+WATCHERS = gouriano

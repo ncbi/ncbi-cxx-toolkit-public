@@ -33,3 +33,5 @@ CHECK_CMD = dbapi_unit_test -d ftds       -S Sybase
 CHECK_CMD = dbapi_unit_test -d odbc       -S Sybase
 
 CHECK_CMD = dbapi_unit_test -d ftds -S MsSql --run_test=Test_Authentication
+
+WATCHERS = ivanovp

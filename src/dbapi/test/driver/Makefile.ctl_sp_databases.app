@@ -11,3 +11,5 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)
 REQUIRES = Sybase
 
 CHECK_CMD = run_sybase_app.sh ctl_sp_databases /CHECK_NAME=ctl_sp_databases
+
+WATCHERS = ivanovp

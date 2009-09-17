@@ -12,3 +12,5 @@ CPPFLAGS = $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)
 
 CHECK_COPY = odbc_lang.ini
 CHECK_CMD =
+
+WATCHERS = ivanovp

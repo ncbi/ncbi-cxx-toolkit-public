@@ -9,3 +9,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_ncbi_connutil_hit www.ncbi.nlm.nih.gov 80 /Service/bounce.cgi "" test_ncbi_connutil_hit.dat /CHECK_NAME=test_ncbi_connutil_hit
 CHECK_COPY = test_ncbi_connutil_hit.dat
+
+WATCHERS = lavr
