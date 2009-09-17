@@ -6,4 +6,4 @@ LIB = xncbi
 
 CHECK_CMD =
 
-WATCHERS = ivanovp
+WATCHERS = ivanov
