@@ -57,6 +57,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("AFTOL", CDbtag::eDbtagType_AFTOL),
+    TDbxrefPair("APHIDBASE", CDbtag::eDbtagType_APHIDBASE),
     TDbxrefPair("ASAP", CDbtag::eDbtagType_ASAP),
     TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
     TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
@@ -397,6 +398,7 @@ typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_AFTOL, "http://aftol.biology.duke.edu/pub/displayTaxonInfo?aftol_id="), 
     TDbtUrl(CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID="),
+    TDbtUrl(CDbtag::eDbtagType_ATCC, "http://www.atcc.org/SearchCatalogs/linkin?id="),
     TDbtUrl(CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q="), 
     TDbtUrl(CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
@@ -434,6 +436,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:"),
     TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id="),
+    TDbtUrl(CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec="),
     TDbtUrl(CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id="),
     TDbtUrl(CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk="),
@@ -469,6 +472,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
     TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
     TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
+    TDbtUrl(CDbtag::eDbtagType_APHIDBASE, "http://webapps1.genouest.org/grs-1.0/grs?reportID=chado_genome_report&objectID="), 
     // RefSeq-only types last, and not quite in order, per the enum's
     // definition.
     TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),

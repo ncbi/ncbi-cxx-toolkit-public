@@ -161,6 +161,7 @@ public:
 		eDbtagType_NBRC,
 		eDbtagType_UNILIB,
 		eDbtagType_BioHealthBase,
+        eDbtagType_APHIDBASE,
 
         // only approved for RefSeq
         eDbtagType_GenBank,
