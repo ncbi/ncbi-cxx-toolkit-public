@@ -590,7 +590,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
                                  NULL, 0, 0/*flags*/);
         if (status != eIO_Success) {
-            throw string("Named pipe SOCK_CreateUNIX failed: ")
+            throw string("Named pipe SOCK_CreateUNIX() failed: ")
                 + IO_StatusStr(status);
         }
 
@@ -645,7 +645,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                                   kListenQueueSize,
                                   &m_LSocket, 0);
         if (status != eIO_Success) {
-            throw string("Named pipe LSOCK_CreateUNIX failed: ")
+            throw string("Named pipe LSOCK_CreateUNIX() failed: ")
                 + IO_StatusStr(status);
         }
 
