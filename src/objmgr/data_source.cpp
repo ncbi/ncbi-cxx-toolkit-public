@@ -42,6 +42,7 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -1547,6 +1548,26 @@ void CDataSource::x_ReleaseLastLock(CTSE_Lock& lock)
 void CDataSource::x_ReleaseLastLoadLock(CTSE_LoadLock& lock)
 {
     CRef<CTSE_Info> info = lock.m_Info;
+    if ( info->m_LoadState == CTSE_Info::eNotLoaded ) {
+        // reset TSE info into empty state
+        info->m_Bioseq_sets.clear();
+        info->m_Bioseqs.clear();
+        info->m_Removed_Bioseq_sets.clear();
+        info->m_Removed_Bioseqs.clear();
+        info->m_Split.Reset();
+        info->m_SetObjectInfo.Reset();
+        info->m_NamedAnnotObjs.clear();
+        info->m_IdAnnotInfoMap.clear();
+        info->m_FeatIdIndex.clear();
+        info->m_BaseTSE.reset();
+        info->m_EditSaver.Reset();
+        info->m_InternalBioObjNumber = 0;
+        info->m_BioObjects.clear();
+            
+        info->m_Object.Reset();
+        info->m_Which = CSeq_entry::e_not_set;
+        info->m_Contents.Reset();
+    }
     lock.m_Info.Reset();
     lock.m_DataSource.Reset();
     x_ReleaseLastTSELock(info);
