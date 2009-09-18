@@ -1684,7 +1684,8 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 
 CDirEntry::EType CDirEntry::GetType(const struct stat& st)
 {
-    unsigned int mode = (unsigned int)st.st_mode;;
+    unsigned int mode = (unsigned int)st.st_mode;
+
 #ifdef S_ISDIR
     if (S_ISDIR(mode))
 #else
