@@ -263,7 +263,9 @@ CMaskingDataExtractor::GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
     }
     retval.Reset(new CSeq_loc);
     ITERATE(CSeqDB::TSequenceRanges, itr, masked_ranges) {
-        CRef<CSeq_loc> mask(new CSeq_loc(*seqid, itr->first, itr->second));
+        // CSeq_loc assumes closed range while TSeqRange assumes half open
+        // therefore, translation is necessary here.
+        CRef<CSeq_loc> mask(new CSeq_loc(*seqid, itr->first, itr->second -1));
         retval->SetMix().Set().push_back(mask);
     }
     return CConstRef<CSeq_loc>(retval.GetPointer());

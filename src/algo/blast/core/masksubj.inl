@@ -55,7 +55,7 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
         }
 
         /* if s_first is in a masked region, try the next one. */
-        if (range[1] + lut_word_length >= subject->seq_ranges[range[0]].left) {
+        if (range[1] + lut_word_length > subject->seq_ranges[range[0]].left) {
             range[1] = subject->seq_ranges[range[0]].right + word_length - lut_word_length;
             range[3] = range[1] - word_length + lut_word_length;
             range[2] = subject->length - word_length;
