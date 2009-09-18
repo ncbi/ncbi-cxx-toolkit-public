@@ -1,7 +1,7 @@
 #ifndef COMMON__TEST_ASSERT_IMPL__H
 #define COMMON__TEST_ASSERT_IMPL__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -91,7 +91,7 @@ static int _SuppressDiagPopupMessages(void)
  * base RTL init, which happens at preceding levels in alphabetical order.
  */
 #  if _MSC_VER >= 1400
-#    pragma section( ".CRT$XIV", read)
+#    pragma section(".CRT$XIV", read)
 #  endif
 #  pragma data_seg(".CRT$XIV")
 static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
@@ -140,4 +140,4 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #endif
 #define  _TROUBLE assert(0)
 
-#endif  /* COMMON__TEST_ASSERT_IMPL__H */
+#endif /* COMMON__TEST_ASSERT_IMPL__H */
