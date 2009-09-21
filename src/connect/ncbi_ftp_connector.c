@@ -409,14 +409,15 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
 
     if ((status = s_FTPAbort(xxx, timeout, 0/*!quit*/)) != eIO_Success)
         return status;
-    verify((size = BUF_Size(xxx->wbuf)) != 0);
+    verify((size = BUF_Size(xxx->wbuf)) > 0);
     if (!(s = (char*) malloc(size + 1)))
         return eIO_Unknown;
     if (BUF_Read(xxx->wbuf, s, size) == size) {
         const char* c;
         assert(!memchr(s, '\n', size));
         if (s[size - 1] == '\r')
-            s[--size] = '\0';
+            --size;
+        s[size] = '\0';
         if (!(c = (const char*) memchr(s, ' ', size)))
             c = s + size;
         else
