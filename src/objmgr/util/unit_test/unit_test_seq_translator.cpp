@@ -74,6 +74,7 @@ extern const char* sc_TestEntry_5prime_partial;
 extern const char* sc_TestEntry_3prime_partial;
 extern const char* sc_TestEntry_5prime_partial_minus;
 extern const char* sc_TestEntry_TerminalTranslExcept;
+extern const char* sc_TestEntry_ShortCDS;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 {
@@ -739,6 +740,38 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_TerminalTranslExcept)
                                       scope, tmp,
                                       true, true);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_ShortCDS)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_ShortCDS);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    for (CBioseq_CI bs_iter(seh);  bs_iter;  ++bs_iter) {
+        CFeat_CI feat_iter(*bs_iter,
+                           SAnnotSelector().IncludeFeatSubtype
+                           (CSeqFeatData::eSubtype_cdregion));
+        for ( ;  feat_iter;  ++feat_iter) {
+
+            ///
+            /// translate the CDRegion directly
+            ///
+            string tmp;
+
+            /// use CSeqTranslator::Translate()
+            tmp.clear();
+            CSeqTranslator::Translate(feat_iter->GetOriginalFeature(),
+                                      scope, tmp,
+                                      false, true);
+            BOOST_CHECK_EQUAL("-", tmp);
         }
     }
 }
@@ -1674,3 +1707,46 @@ EAVPLEHFENWSSLMLEDA\" } ,\
                         accession \"GQ409967\" } } } } } } }\
 ";
 
+const char *sc_TestEntry_ShortCDS = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"ShortCDS\" } ,\
+          descr {\
+            molinfo {\
+              biomol mRNA } } ,\
+          inst {\
+            repr raw ,\
+            mol rna ,\
+            length 20 ,\
+            seq-data\
+              iupacna \"ATGTTTAAACATGTTTAAAC\" } ,\
+          annot {\
+            {\
+              data\
+                ftable {\
+                  {\
+                    data\
+                      cdregion {\
+                         } ,\
+                    location\
+                      int {\
+                        from 12 ,\
+                        to 13 ,\
+                        strand plus ,\
+                        id\
+                          local\
+                            str \"ShortCDS\" } } ,\
+                  {\
+                    data\
+                      cdregion {\
+                         } ,\
+                    location\
+                      int {\
+                        from 12 ,\
+                        to 13 ,\
+                        strand minus ,\
+                        id\
+                          local\
+                            str \"ShortCDS\" } } } } } }\
+";
