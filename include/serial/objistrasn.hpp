@@ -119,7 +119,7 @@ public:
     virtual void ReadBitString(CBitString& obj);
     virtual void SkipBitString(void);
 
-    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
             m_FixMethod = how;

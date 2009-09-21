@@ -91,7 +91,7 @@ public:
                            TEnumValueType value);
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in);
-    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
             m_FixMethod = how;

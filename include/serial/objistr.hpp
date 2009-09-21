@@ -322,6 +322,11 @@ public:
     /// Update skip unknown variants option to non-default value
     ESerialSkipUnknown UpdateSkipUnknownVariants(void);
 
+    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        return how;
+    }
+
 //---------------------------------------------------------------------------
 // Stream state
 

@@ -172,6 +172,11 @@ public:
     ///   Data verification parameter
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
+    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        return how;
+    }
+
 //---------------------------------------------------------------------------
 // Formatting of the output
 
