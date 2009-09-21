@@ -102,6 +102,21 @@ public:
     TSeqPos ExtractLength(CBlastDBSeqId& id, CSeqDB& blastdb);
 };
 
+/// Computes the sequence hash value for a given sequence id
+/// (CSeqFormatter associates this with %h)
+class NCBI_BLASTDB_FORMAT_EXPORT CHashExtractor : public IBlastDBExtract {
+public:
+    /** @inheritDoc */
+    virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
+
+    /// Extracts the sequence hash value and returns it as an integer (as opposed
+    /// to a string)
+    /// so that other *Extractor classes can use this.
+    /// @param id sequence identifier [in]
+    /// @param blastdb source from which to extract the data [in]
+    int ExtractHash(CBlastDBSeqId& id, CSeqDB& blastdb);
+};
+
 /// Extracts the taxonomy ID for a given sequence id
 /// (CSeqFormatter associates this with %T)
 class NCBI_BLASTDB_FORMAT_EXPORT CTaxIdExtractor : public IBlastDBExtract {

@@ -119,6 +119,10 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
             m_DataExtractors.push_back(new CTitleExtractor(config.m_TargetOnly));
             break;
 
+        case 'h':
+            m_DataExtractors.push_back(new CHashExtractor());
+            break;
+
         case 'l':
             m_DataExtractors.push_back(new CSeqLenExtractor());
             break;

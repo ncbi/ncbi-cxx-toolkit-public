@@ -426,6 +426,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%o means ordinal id (OID)\n"
             "\t\t%t means sequence title\n"
             "\t\t%l means sequence length\n"
+            "\t\t%h means sequence hash value\n"
             "\t\t%T means taxid\n"
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
