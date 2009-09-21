@@ -1028,16 +1028,21 @@ void CSearch_Base< LEGACY, NHITS, derived_t >::ExtendLeft(
         Uint1 sbyte = *spos--;
         Uint1 qbyte = 0;
         unsigned int i = 0;
+        bool ambig( false );
 
         for( ; i < CR; ++i ) {
             qbyte = qbyte + ((*--qpos)<<(2*i));
 
             if( *qpos > 3 ) {
-                ++qpos;
-                sbyte = qbyte + 1;
+                ++spos;
+                qpos += i + 1;
+                nmax = i;
+                ambig = true;
                 break;
             }
         }
+
+        if( ambig ) break;
 
         if( sbyte != qbyte ){
             ++spos;
@@ -1091,11 +1096,21 @@ void CSearch_Base< LEGACY, NHITS, derived_t >::ExtendRight(
     while( nmax >= CR ) {
         Uint1 sbyte = *spos++;
         Uint1 qbyte = 0;
+        bool ambig( false );
 
         for( unsigned int i = 0; i < CR; ++i ) {
-            if( *qpos > 3 ) return;
+            if( *qpos > 3 ) {
+                nmax = i;
+                qpos -= i;
+                --spos;
+                ambig = true;
+                break;
+            }
+
             qbyte = (qbyte<<2) + *qpos++;
         }
+
+        if( ambig ) break;
 
         if( sbyte != qbyte ) {
             --spos;
