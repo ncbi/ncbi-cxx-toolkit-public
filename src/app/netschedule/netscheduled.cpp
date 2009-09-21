@@ -3041,9 +3041,34 @@ int CNetScheduleDApp::Run(void)
         NcbiCout << "Mounting database at " << bdb_params.db_path << NcbiEndl;
         LOG_POST(Info << "Mounting database at " << bdb_params.db_path);
 
-        if (!qdb->Open(bdb_params, reinit)) {
-            return 1;
-        }
+        {{
+#if defined(NCBI_OS_UNIX)
+            // To be able to open pollable sockets we need to allocate
+            // all of file descriptors < 1024 before opening the database.
+            int fds[1024];
+            int fd = 0;
+            int n = 0;
+            do {
+                fd = dup(0);
+                if (fd < 0) break;
+                fds[n++] = fd;
+            } while (n < 1024  &&  fd < 1024);
+            if (fd < 0) {
+                for (int i = 0; i < n; ++i) close(fds[i]);
+                ERR_POST("Too few file descriptors, use \"ulimit -n\""
+                         " to expand the number");
+                return 1;
+            }
+#endif
+
+            bool res = qdb->Open(bdb_params, reinit);
+
+#if defined(NCBI_OS_UNIX)
+            for (int i = 0; i < n; ++i) close(fds[i]);
+#endif
+
+            if (!res) return 1;
+        }}
 
         if (params.udp_port > 0) {
             qdb->SetUdpPort(params.udp_port);
