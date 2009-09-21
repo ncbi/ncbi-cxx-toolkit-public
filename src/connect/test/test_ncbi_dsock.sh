@@ -17,10 +17,10 @@ outlog()
 }
 
 exit_code=0
-client_log=test_ncbi_dsock_client.log
 server_log=test_ncbi_dsock_server.log
+client_log=test_ncbi_dsock_client.log
 
-rm -f $client_log $server_log
+rm -f $server_log $client_log
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
@@ -32,19 +32,19 @@ if [ -x /sbin/ifconfig ]; then
   fi
 fi
 
-test_ncbi_dsock server $port $mtu >>$server_log 2>&1 &
+test_ncbi_dsock server $port $mtu >$server_log 2>&1 &
 spid=$!
 trap 'kill -9 $spid' 0 1 2 15
 
 sleep 1
-$CHECK_EXEC test_ncbi_dsock client $port $mtu >>$client_log 2>&1  ||  exit_code=1
+$CHECK_EXEC test_ncbi_dsock client $port $mtu >$client_log 2>&1  ||  exit_code=1
 
 kill $spid  ||  exit_code=2
 ( kill -9 $spid ) >/dev/null 2>&1
 
 if [ $exit_code != 0 ]; then
-  outlog "$client_log"
   outlog "$server_log"
+  outlog "$client_log"
 fi
 
 exit $exit_code

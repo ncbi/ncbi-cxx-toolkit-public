@@ -26,10 +26,11 @@ CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
 port="595`expr $$ % 100`"
 
-test_ncbi_trigger -delay 20000 -port $port server >>$server_log 2>&1 &
+test_ncbi_trigger -delay 20000 -port $port server >$server_log 2>&1 &
 spid=$!
+
 sleep 1
-test_ncbi_trigger              -port $port client >>$client_log 2>&1 &
+test_ncbi_trigger              -port $port client >$client_log 2>&1 &
 cpid=$!
 trap 'kill -9 $spid $cpid' 0 1 2 15
 
