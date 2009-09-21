@@ -33,10 +33,12 @@
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/gnomon.hpp>
 #include "gnomon_seq.hpp"
+#include <algo/gnomon/id_handler.hpp>
 #include <set>
 #include <functional>
 #include <corelib/ncbiutil.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objtools/align_format/showdefline.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -45,41 +47,13 @@ BEGIN_SCOPE(gnomon)
 USING_SCOPE(objects);
 
 
-CRef<CSeq_id> CreateSeqid(const string& name, int score_func(const CRef<CSeq_id>&))
-{
-    int int_id = NStr::StringToInt(name, NStr::fConvErr_NoThrow);
-    if (int_id) {
-        return CreateSeqid(int_id);
-    }
-
-    CRef<CSeq_id> ps;
-    
-    try {
-        CBioseq::TId ids;
-        CSeq_id::ParseFastaIds(ids, name);
-        ps = FindBestChoice(ids, score_func); 
-
-        if(!ps) ps = new CSeq_id(CSeq_id::e_Local, name);
-    } catch(CException) {
-        ps.Reset (new CSeq_id(CSeq_id::e_Local, name)); 
-    }
-    return ps;
-}
-
-CRef<CSeq_id> CreateSeqid(int local_id)
-{
-    CRef<CSeq_id> ps(new CSeq_id(CSeq_id::e_Local, local_id)); 
-    return ps;
-}
-
 CAlignMap CGeneModel::GetAlignMap() const { return CAlignMap(Exons(), FrameShifts(), Strand()); }
 
 string CAlignModel::TargetAccession() const {
-    _ASSERT( !GetTargetIds().empty() );
-    if (GetTargetIds().empty())
+    _ASSERT( !GetTargetId().Empty() );
+    if (GetTargetId().Empty())
         return "UnknownTarget";
-    const CSeq_id* id = FindBestChoice(GetTargetIds(), CSeq_id::Score); 
-    return id->GetSeqIdString(true);
+    return CIdHandler::ToString(*GetTargetId());
 }
 
 void CGeneModel::Remap(const CRangeMapper& mapper)
@@ -1131,6 +1105,7 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
                 rec.tend = NStr::StringToUInt(tt[2])-1;
                 if(tt.size() > 3 && tt[3] == "-")
                     rec.tstrand = '-';
+                rec.attributes[key] = tt[0];
             } else
                 rec.attributes[key] = value;
         }
@@ -1211,24 +1186,16 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     attributes["ID"] = NStr::IntToString(a.ID());
     if (a.GeneID()!=0)
         attributes["Parent"] = "gene"+NStr::IntToString(a.GeneID());
-    if (!a.GetTargetIds().empty()) {
-        vector<string> fasta_strings;
-        ITERATE(TSeqidList, id, a.GetTargetIds()) {
-            fasta_strings.push_back((*id)->AsFastaString());
-        }
-        string fasta_defline = NStr::Join(fasta_strings, "|");
-        attributes["support"] = NStr::Replace(fasta_defline," ","%20");
-    } else {
-        ITERATE(CSupportInfoSet, i, a.Support()) {
-            attributes["support"] += ",";
-            if(i->IsCore()) 
-                attributes["support"] += "*";
-        
-            attributes["support"] += NStr::IntToString(i->GetId());
-        }
 
-        attributes["support"].erase(0,1);
+    ITERATE(CSupportInfoSet, i, a.Support()) {
+        attributes["support"] += ",";
+        if(i->IsCore()) 
+            attributes["support"] += "*";
+        
+        attributes["support"] += NStr::IntToString(i->GetId());
     }
+    attributes["support"].erase(0,1);
+
     ITERATE(CVectorSet<int>, i, a.EntrezProt()) {
         if(!attributes["EntrezProt"].empty())
             attributes["EntrezProt"] += ",";
@@ -1318,19 +1285,19 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
 
     if (NStr::StartsWith(attributes["Parent"],"gene"))
         a.SetGeneID(NStr::StringToInt(attributes["Parent"],NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols));
+
+    if (!attributes["Target"].empty()) {
+        string target = NStr::Replace(attributes["Target"], "%20", " ");
+        CRef<CSeq_id> target_id = CIdHandler::ToSeq_id(target);
+        a.SetTargetId(*target_id);
+    }
+
     vector<string> support;
     NStr::Tokenize(attributes["support"], ",", support);
-    if (support.size()==1 && !isdigit(support[0][0]) && support[0][0] != '*') {
-        string id = NStr::Replace(support[0], "%20", " ");
-        CBioseq::TId target_ids;
-        CSeq_id::ParseFastaIds(target_ids, id);
-        a.SetTargetIds(target_ids);
-    } else {
-        ITERATE(vector<string>, s, support) {
-            bool core = (*s)[0] == '*';
-            int id = NStr::StringToInt(core ? s->substr(1) : *s);
-            a.AddSupport(CSupportInfo(id, core));
-        }
+    ITERATE(vector<string>, s, support) {
+        bool core = (*s)[0] == '*';
+        int id = NStr::StringToInt(core ? s->substr(1) : *s);
+        a.AddSupport(CSupportInfo(id, core));
     }
     
     vector<string> entrezmrna;
@@ -1482,9 +1449,9 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
 
         string target;
         if((a.Type() & CGeneModel::eGnomon)!=0 || (a.Type() & CGeneModel::eChain)!=0) {
-            target = "hmm." + NStr::IntToString(a.ID()) + ".m";
+            target = CIdHandler::ToString(*CIdHandler::GnomonMRNA(a.ID()));
         } else {
-            target = NStr::Replace(a.TargetAccession(), " ", "%20");
+            target = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
         }
         
         TSignedSeqRange transcript_exon = a.TranscriptExon(i);
@@ -1631,6 +1598,8 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             if(texon.NotEmpty())
                 transcript_exons.push_back(texon);
             readGFF3Gap(r->attributes["Gap"],r->start,r->end,inserter(indels,indels.end()));
+            if(!r->attributes["Target"].empty())
+                attributes["Target"] = r->attributes["Target"];
         } else if (r->type == "CDS") {
             TSignedSeqRange cds_exon(r->start,r->end);
             if (r->strand=='+') {

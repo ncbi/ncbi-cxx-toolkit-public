@@ -105,13 +105,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) 
         Status() |= CGeneModel::eReversed;
 
+    SetTargetId(sps.GetProduct_id());
+
     { // set support
-        TSeqidList product_idlist;
-
-        CRef<CSeq_id> product_idref(new CSeq_id);
-        product_idref->Assign( sps.GetProduct_id() );
-        product_idlist.push_back(product_idref);
-
 /*
         int id  = GetCompartmentNum(seq_align);
         if (id != 0) {
@@ -133,7 +129,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             product_idlist.push_back(product_idref);
         }
 */
-        SetTargetIds(product_idlist);
     }
 
     bool is_product_reversed = sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus;

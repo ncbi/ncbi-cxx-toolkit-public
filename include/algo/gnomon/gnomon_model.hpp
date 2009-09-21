@@ -71,8 +71,6 @@ inline bool Include(TSignedSeqRange big, TSignedSeqRange small) { return (big.Ge
 inline bool Include(TSignedSeqRange r, TSignedSeqPos p) { return (r.GetFrom()<=p && p<=r.GetTo()); }
 inline bool Enclosed(TSignedSeqRange big, TSignedSeqRange small) { return (big != small && Include(big, small)); }
 
-typedef list<CRef<objects::CSeq_id> > TSeqidList;
-
 class CSupportInfo
 {
 public:
@@ -92,9 +90,6 @@ private:
 
 typedef CVectorSet<CSupportInfo> CSupportInfoSet;
 
-
-NCBI_XALGOGNOMON_EXPORT CRef<objects::CSeq_id> CreateSeqid(const string& name,int score_func(const CRef<objects::CSeq_id>&)=objects::CSeq_id::Score); // creates local id if not an accession
-NCBI_XALGOGNOMON_EXPORT CRef<objects::CSeq_id> CreateSeqid(int local_id);
 
 class NCBI_XALGOGNOMON_EXPORT CInDelInfo
 {
@@ -665,15 +660,15 @@ public:
     virtual CAlignMap GetAlignMap() const { return m_alignmap; }
 
     string TargetAccession() const;
-    void SetTargetIds(const TSeqidList& ids) { m_target_ids = ids; }
-    const TSeqidList& GetTargetIds() const { return m_target_ids; }
+    void SetTargetId(const objects::CSeq_id& id) { m_target_id.Reset(&id); }
+    CConstRef<objects::CSeq_id> GetTargetId() const { return m_target_id; }
     int TargetLen() const { return m_alignmap.TargetLen(); }
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
     int PolyALen() const;
 private:
     CAlignMap m_alignmap;
-    TSeqidList m_target_ids;
+    CConstRef<objects::CSeq_id> m_target_id;
 };
 
 

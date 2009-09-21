@@ -39,6 +39,7 @@
 #include <objects/seq/seq__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include "gnomon_seq.hpp"
+#include <algo/gnomon/id_handler.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -74,17 +75,12 @@ struct SModelData {
     bool is_ncrna;
 };
 
-string ModelName(int id, bool mrna = true)
-{
-    return "hmm." + NStr::IntToString(id) + (mrna? ".m" : ".p");
-}
-
 SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq) : model(m)
 {
     m.GetAlignMap().EditedSequence(contig_seq, mrna_seq, true);
 
-    prot_sid = new CSeq_id(CSeq_id::e_Local, ModelName(model.ID(), false));  
-    mrna_sid = new CSeq_id(CSeq_id::e_Local, ModelName(model.ID()));
+    prot_sid->Assign(*CIdHandler::GnomonProtein(model.ID()));  
+    mrna_sid->Assign(*CIdHandler::GnomonMRNA(model.ID()));
 
     is_ncrna = m.ReadingFrame().Empty();
 }
@@ -137,7 +133,7 @@ private:
 CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc) :
     main_seq_entry(new CSeq_entry),
     contig_name(a_contig_name),
-    contig_sid(CreateSeqid(a_contig_name)), contig_seq(seq),
+    contig_sid(CIdHandler::ToSeq_id(a_contig_name)), contig_seq(seq),
     evidence(evdnc)
 {
     Convert(contig_seq, contig_ds_seq);
@@ -462,8 +458,8 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
     CRef<CSeq_annot> seq_annot(new CSeq_annot);
     main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
     CSeq_annot::C_Data::TAlign* aligns = &seq_annot->SetData().SetAlign();
-    seq_annot->AddName("Evidence for "+md.mrna_sid->GetSeqIdString());
-    seq_annot->SetTitle("Evidence for "+md.mrna_sid->GetSeqIdString());
+    seq_annot->AddName("Evidence for "+CIdHandler::ToString(*md.mrna_sid));
+    seq_annot->SetTitle("Evidence for "+CIdHandler::ToString(*md.mrna_sid));
     
     
     ITERATE(CSupportInfoSet, s, model.Support()) {
@@ -489,7 +485,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
             CreateModelProducts(*smd);
             DumpEvidence(*smd);
         } else {
-            smd->mrna_sid.Reset( FindBestChoice(m->GetTargetIds(), CSeq_id::Score) ); 
+            smd->mrna_sid->Assign(*m->GetTargetId()); 
         }
         aligns->push_back(model2spliced_seq_align(*smd));
     }
@@ -591,9 +587,9 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_mrna_feature(SModel
 
             string accession;
             if (m == NULL || (m->Type()&CGeneModel::eChain)) {
-                accession = NStr::IntToString(id);
+                accession = CIdHandler::ToString(*CIdHandler::GnomonMRNA(id));
             } else {
-                accession = m->TargetAccession();
+                accession = CIdHandler::ToString(*m->GetTargetId());
             }
 
             if (s->IsCore())
@@ -674,10 +670,13 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
 
     TAttributes attributes;
     CollectAttributes(model, attributes);
+    if (model.GetTargetId().NotEmpty())
+        attributes["Target"] = CIdHandler::ToString(*model.GetTargetId());
     ITERATE (TAttributes, a, attributes) {
         if (!a->second.empty())
             user->AddField(a->first, a->second);
     }
+   
     if (model.Score() != BadScore())
         user->AddField("cds_score", model.Score());
 
@@ -1171,7 +1170,6 @@ void RestoreModelAttributes(const CSeq_feat_Handle& feat_handle, CAlignModel& mo
             attributes["cds_score"] = NStr::DoubleToString(fld.GetData().GetReal());
     }
 
-    model.SetTargetIds(TSeqidList()); // Will be populated later from internal feature user object
     ParseAttributes(attributes, model);
 
     if (attributes.find("cds_score") != attributes.end()) {
@@ -1187,7 +1185,7 @@ void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
     if (feat.GetFeatType() == CSeqFeatData::e_Cdregion) {
         TSeqRange cds_range = feat.GetLocation().GetTotalRange();
         TSignedSeqRange rf = TSignedSeqRange(cds_range.GetFrom(), cds_range.GetTo());
-        if (feat.GetLocation().GetId()->GetSeqIdString() != ModelName(model.ID())) {
+        if (feat.GetLocation().GetId() != CIdHandler::GnomonMRNA(model.ID())) {
             rf =  model.GetAlignMap().MapRangeOrigToEdited(rf, false);
         }
 
@@ -1267,8 +1265,8 @@ CAlignModel* RestoreModelFromInternalGnomonFeature(const CSeq_feat_Handle& feat)
     int id = feat.GetOriginalSeq_feat()->GetIds().front()->GetLocal().GetId();
 
     CScope& scope = feat.GetScope();
-    CSeq_id mrna_seq_id(CSeq_id::e_Local, ModelName(id));
-    CBioseq_Handle mrna_handle = scope.GetBioseqHandle(mrna_seq_id);
+    CConstRef<CSeq_id> mrna_seq_id = CIdHandler::GnomonMRNA(id);
+    CBioseq_Handle mrna_handle = scope.GetBioseqHandle(*mrna_seq_id);
     if (!mrna_handle)
         return NULL;
     CConstRef<CBioseq> mrna = mrna_handle.GetCompleteBioseq();
@@ -1299,7 +1297,7 @@ void ExtractSupportModels(int model_id,
                           set<int>& processed_ids)
 {
     SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
-    map<string, CSeq_annot_Handle>::const_iterator annot = seq_annot_map.find("Evidence for "+ModelName(model_id));
+    map<string, CSeq_annot_Handle>::const_iterator annot = seq_annot_map.find("Evidence for "+CIdHandler::ToString(*CIdHandler::GnomonMRNA(model_id)));
     if (annot == seq_annot_map.end())
         return;
     CAlign_CI align_ci(annot->second, sel);
@@ -1359,7 +1357,7 @@ string CAnnotationASN1::ExtractModels(const objects::CSeq_entry& seq_entry,
 
     string contig;
     if (feat_ci) {
-        contig = feat_ci->GetLocation().GetId()->GetSeqIdString(true);
+        contig = CIdHandler::ToString(*feat_ci->GetLocation().GetId());
     }
 
     set<int> processed_ids;
