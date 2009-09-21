@@ -37,57 +37,20 @@
 
 #include <ncbiconf.h>
 
-#if defined(NCBI_OS_MSWIN)
+/* To avoid code duplication reuse code from <common/test_assert[_impl].h>.
+   This preprocessor macro turn OFF all assert-related tune-ups and turn ON 
+   suppress popup messages code. Environment variable DIAG_SILENT_ABORT
+   must be set to "Y" or "y" to suppress popup messages.
+*/
+#define NCBI_MSWIN_NO_POPUP
 
-#  include <crtdbg.h>
-#  include <windows.h>
+/* In case anyone needs to always disable the popup messages (regardless of DIAG_SILENT_ABDORT)
+   another pre-processor macro can be defined before #include’ing either 
+   <corelib/mswin_no_popup.h> (or <common/test_assert.h>).
+*/
+/* #define NCBI_MSWIN_NO_POPUP_NEVER */
+ 
+#include <common/test_assert.h>
 
-/* Suppress popup messages on execution errors.
- * NOTE: Windows-specific, suppresses all error message boxes in both runtime
- * and in debug libraries, as well as all General Protection Fault messages.
- * Environment variable DIAG_SILENT_ABORT must be set to "Y" or "y".
- */
-
-/* Handler for "Unhandled" exceptions */
-static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
-{
-    /* Always terminate a program */
-    return EXCEPTION_EXECUTE_HANDLER;
-}
-
-static int _SuppressDiagPopupMessages(void)
-{
-    /* Windows GPF errors */
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
-                 SEM_NOOPENFILEERRORBOX);
-
-    /* Runtime library */
-    _set_error_mode(_OUT_TO_STDERR);
-
-    /* Debug library */
-    _CrtSetReportFile(_CRT_WARN,   _CRTDBG_FILE_STDERR);
-    _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_ERROR,  _CRTDBG_FILE_STDERR);
-    _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-
-    /* Exceptions */
-    SetUnhandledExceptionFilter(_SEH_Handler);
-
-    return 0;
-}
-
-/* Put this function at startup init level 'V', far enough not to mess up with
- * base RTL init, which happens at preceding levels in alphabetical order.
- */
-#  if _MSC_VER >= 1400
-#    pragma section( ".CRT$XIV", read)
-#  endif
-#  pragma data_seg(".CRT$XIV")
-static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
-#  pragma data_seg()
-
-#endif /*defined(NCBI_OS_...)*/
 
 #endif  /* CORELIB___MSWIN_NO_POPUP__H */
