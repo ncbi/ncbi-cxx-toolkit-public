@@ -2627,11 +2627,19 @@ void x_Translate(const Container& seq,
             state = tbl.NextCodonState(state, 'N');
         }
 
+        if (first_time) {
+            start_state = state;
+        }
+
         // save translated amino acid
         char c = tbl.GetCodonResidue(state);
         if (c != 'X') {
-            // if padding was needed, trim ambiguous last residue
-            prot.append(1, tbl.GetCodonResidue(state));
+            if (first_time  &&  check_start) {
+                prot.append(1, tbl.GetStartResidue(state));
+            } else {
+                // if padding was needed, trim ambiguous last residue
+                prot.append(1, tbl.GetCodonResidue(state));
+            }
         }
     }
 
