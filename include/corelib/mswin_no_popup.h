@@ -48,7 +48,7 @@
    another pre-processor macro can be defined before #include’ing either 
    <corelib/mswin_no_popup.h> (or <common/test_assert.h>).
 */
-/* #define NCBI_MSWIN_NO_POPUP_NEVER */
+/* #define NCBI_MSWIN_NO_POPUP_EVER */
  
 #include <common/test_assert.h>
 

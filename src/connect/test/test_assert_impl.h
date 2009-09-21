@@ -67,7 +67,7 @@ static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
 
 static int _SuppressDiagPopupMessages(void)
 {
-#ifndef NCBI_MSWIN_NO_POPUP_NEVER
+#ifndef NCBI_MSWIN_NO_POPUP_EVER
     /* Check environment variable for silent abort app at error */
     const char* value = getenv("DIAG_SILENT_ABORT");
     if (value  &&  (*value == 'Y'  ||  *value == 'y')) {
@@ -89,7 +89,7 @@ static int _SuppressDiagPopupMessages(void)
 
         /* Exceptions */
         SetUnhandledExceptionFilter(_SEH_Handler);
-#ifndef NCBI_MSWIN_NO_POPUP_NEVER
+#ifndef NCBI_MSWIN_NO_POPUP_EVER
     }
 #endif
     return 0;
