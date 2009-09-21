@@ -1260,33 +1260,6 @@ s_RemapToSubjectLoc(CRef<CSeq_align> & subj_aligns, const CSeq_loc& subj_loc)
     subj_aligns.Reset(RemapAlignToLoc(*subj_aligns, kSubjDimension, subj_loc));
 }
 
-/// Retrieve the minimum and maximum subject offsets that span all HSPs in the
-/// hitlist.
-/// @param hsp_list HSP list to examine [in]
-/// @return empty TSeqRange if hsp_list is NULL, otherwise the advertised
-/// return value
-static TSeqRange s_GetSubjRanges(const BlastHSPList* hsp_list)
-{
-    TSeqRange retval;
-
-    if ( ! hsp_list ) {
-        return retval;
-    }
-
-    TSeqPos min = numeric_limits<TSeqPos>::max();
-    TSeqPos max = numeric_limits<TSeqPos>::min();
-
-    for (int i = 0; i < hsp_list->hspcnt; i++) {
-        const BlastHSP* hsp = hsp_list->hsp_array[i];
-        min = MIN(min, static_cast<TSeqPos>(hsp->subject.offset));
-        max = MAX(max, static_cast<TSeqPos>(hsp->subject.end));
-    }
-
-    retval.SetFrom(min);
-    retval.SetTo(max);
-    return retval;
-}
-
 CRef<CSeq_align_set>
 BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           EBlastProgramType        prog,
