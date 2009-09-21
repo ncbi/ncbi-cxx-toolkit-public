@@ -251,11 +251,6 @@ void CTest::Server(void)
 {
     LOG_POST("\nStart server...\n");
 
-#ifdef NCBI_OS_UNIX
-    // Remove the pipe if it is already exists
-    CFile(m_PipeName).Remove();
-#endif //NCBI_OS_UNIX
-
     char buf[kSubBlobSize];
     size_t   n_read    = 0;
     size_t   n_written = 0;
