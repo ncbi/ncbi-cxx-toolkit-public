@@ -9,10 +9,8 @@ SUB_PROJ =  \
     ncbi_xdbapi_dblib \
     ncbi_xdbapi_ftds \
     ncbi_xdbapi_ftds64 \
-    ncbi_xdbapi_msdblib \
     ncbi_xdbapi_mysql \
-    ncbi_xdbapi_odbc \
-    ncbi_xdbapi_sqlite3
+    ncbi_xdbapi_odbc
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

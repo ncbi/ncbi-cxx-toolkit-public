@@ -6,7 +6,6 @@ HOSTED_LIBS    = _ncbi
 
 DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  ncbi_xdbapi_dblib    \
-                 ncbi_xdbapi_msdblib  \
                  ncbi_xdbapi_mysql    \
                  ncbi_xdbapi_odbc     \
                  ncbi_algo             \
@@ -46,6 +45,4 @@ DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  \
                  gui_objects gui_core gui_utils gui_config gui_graph \
                  \
-                 ncbi_xdbapi_ftds64 \
-                 ncbi_xdbapi_sqlite3
-
+                 ncbi_xdbapi_ftds64

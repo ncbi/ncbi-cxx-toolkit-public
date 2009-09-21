@@ -38,7 +38,7 @@ import python_ncbi_dbapi
 
 # 2) Connect to a database
 # Parameters: connect(driver_name, db_type, server_name, db_name, user_name, user_pswd, use_std_interface)
-# driver_name: ctlib, dblib, ftds, odbc, mysql, msdblib
+# driver_name: ctlib, dblib, ftds, odbc, mysql
 # db_type (case insensitive): SYBASE, MSSQL, MYSQL
 # server_name: database server name
 # db_name: default database name

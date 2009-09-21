@@ -162,11 +162,11 @@ bool CommonInit(void)
 #ifdef HAVE_LIBSYBASE
     DBAPI_RegisterDriver_CTLIB();
 #endif
-
+/*
 #ifdef HAVE_LIBSQLITE3
     DBAPI_RegisterDriver_SQLITE3();
 #endif
-
+*/
 #ifdef HAVE_ODBC
     DBAPI_RegisterDriver_ODBC();
 #endif
