@@ -86,7 +86,7 @@ static const STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 
 static string s_FormatErrorMessage(const string& where, const string& what)
 {
-    return "[NamedPipe::" + where + "]  " + what + ".";
+    return "[NamedPipe::" + where + "]  " + what;
 }
 
 
@@ -109,7 +109,38 @@ inline void s_AdjustPipeBufSize(size_t& bufsize)
 
 #if defined(NCBI_OS_MSWIN)
 
-const DWORD kSleepTime = 100;  // sleep time for timeouts
+const DWORD kSleepTime = 100;  // sleep time for timeouts (milliseconds)
+
+
+static string s_WinError(DWORD error, string& message)
+{
+    char* errstr = NULL;
+	DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                               FORMAT_MESSAGE_FROM_SYSTEM     |
+                               FORMAT_MESSAGE_MAX_WIDTH_MASK  |
+                               FORMAT_MESSAGE_IGNORE_INSERTS,
+                               NULL, error, 0, (LPTSTR) &errstr, 0, NULL);
+	if (!rv  &&  errstr) {
+		::LocalFree(errstr);
+		errstr = NULL;
+	}
+    int dynamic = 0/*false*/;
+    const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
+                                                (int) error, errstr);
+    if (errstr) {
+        ::LocalFree(errstr);
+    }
+    string retval;
+    if (result) {
+        retval.assign(result);
+        if (dynamic) {
+            free(result);
+        }
+    } else {
+        retval.swap(message);
+    }
+    return retval;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -145,6 +176,8 @@ public:
     EIO_Status Status(EIO_Event direction) const;
 
 private:
+    EIO_Status x_Disconnect(bool reconnect = false);
+
     HANDLE      m_Pipe;         // pipe I/O handle
     string      m_PipeName;     // pipe name 
     size_t      m_PipeBufSize;  // pipe buffer size
@@ -259,7 +292,9 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
              &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            throw "CreateNamedPipe(\"" + m_PipeName + "\") failed";
+            DWORD error = ::GetLastError();
+            string message("CreateNamedPipe(\"" + m_PipeName + "\") failed");
+            throw s_WinError(error, message),
         }
 
         m_ReadStatus  = eIO_Success;
@@ -294,7 +329,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                 connected = error == ERROR_PIPE_CONNECTED ? TRUE : FALSE;
                 // If client closed connection before we serve it
                 if (error == ERROR_NO_DATA) {
-                    if (Disconnect() != eIO_Success) {
+                    if (x_Disconnect(true) != eIO_Success) {
                         throw string("Failed to close broken client session");
                     } 
                 }
@@ -322,7 +357,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 }
 
 
-EIO_Status CNamedPipeHandle::Disconnect(void)
+EIO_Status CNamedPipeHandle::x_Disconnect(bool reconnect)
 {
     EIO_Status status = eIO_Unknown;
 
@@ -333,16 +368,24 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
         }
         ::FlushFileBuffers(m_Pipe); 
         if (!::DisconnectNamedPipe(m_Pipe)) {
-            throw string("DisconnectNamedPipe() failed");
+            DWORD error = ::GetLastError();
+            string message("DisconnectNamedPipe() failed");
+            throw s_WinError(error, message);
         } 
         Close();
-        return Create(m_PipeName, m_PipeBufSize);
+        return reconnect ? Create(m_PipeName, m_PipeBufSize) : eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(13, s_FormatErrorMessage("Disconnect", what));
     }
 
     return status;
+}
+
+
+EIO_Status CNamedPipeHandle::Disconnect(void)
+{
+    return x_Disconnect();
 }
 
 
@@ -638,6 +681,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
             // File does not exist
             break;
         default:
+            status = eIO_Closed;
             throw "Named pipe path \"" + pipename + "\" already exists";
         }
 
