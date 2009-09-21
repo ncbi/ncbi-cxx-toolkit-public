@@ -2334,11 +2334,18 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
 
         string search = *it;
         search = NStr::ToLower(search);
-        if (sc_BadProtName.find (search) != sc_BadProtName.end()) {
+        if (sc_BadProtName.find (search) != sc_BadProtName.end()
+            || NStr::Find(search, "=") != string::npos
+            || NStr::Find(search, "~") != string::npos
+            || NStr::FindNoCase(search, "uniprot") != string::npos
+            || NStr::FindNoCase(search, "uniprotkb") != string::npos
+            || NStr::FindNoCase(search, "pmid") != string::npos
+            || NStr::FindNoCase(search, "dbxref") != string::npos) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredProteinName, 
                      "Uninformative protein name '" + *it + "'",
                      feat);
         }
+
 
         ValidateCharactersInField (*it, "Protein name", feat);
 		if (ContainsSgml(*it)) {
@@ -2924,31 +2931,33 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
         }
     }
 
-    // check that codons predicted from anticodon can transfer indicated amino acid
-    bool ok = false;
-    for (int i = 0; i < codon_values.size(); i++) {
-        if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
-            ok = true;
+    if (codon_values.size() > 0) {
+        // check that codons predicted from anticodon can transfer indicated amino acid
+        bool ok = false;
+        for (int i = 0; i < codon_values.size(); i++) {
+            if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
+                ok = true;
+            }
         }
-    }
-    if (!ok) {
-        if (aa == 'U' && NStr::Equal (anticodon, "UCA")) {
-            // ignore TGA codon for selenocysteine
-        } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
-            // ignore TAG codon for pyrrolysine
-        } else if (!feat.IsSetExcept_text()
-                  || (NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") == string::npos 
-                      &&NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") == string::npos)) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonAA,
-                      "Codons predicted from anticodon (" + anticodon
-                      + ") cannot produce amino acid (" + aaname + ")",
-                      feat);
+        if (!ok) {
+            if (aa == 'U' && NStr::Equal (anticodon, "UCA")) {
+                // ignore TGA codon for selenocysteine
+            } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
+                // ignore TAG codon for pyrrolysine
+            } else if (!feat.IsSetExcept_text()
+                      || (NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") == string::npos 
+                          &&NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") == string::npos)) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonAA,
+                          "Codons predicted from anticodon (" + anticodon
+                          + ") cannot produce amino acid (" + aaname + ")",
+                          feat);
+            }
         }
     }
 
     // check that codons recognized match codons predicted from anticodon
     if (codon_values.size() > 0 && recognized_codon_values.size() > 0) {
-        ok = false;
+        bool ok = false;
         for (int i = 0; i < codon_values.size() && !ok; i++) {
             for (int j = 0; j < recognized_codon_values.size() && !ok; j++) {
                 if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
@@ -3188,15 +3197,15 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     }
     
     // Make sure a feature has its mandatory qualifiers
-    ITERATE (CFeatQualAssoc::TGBQualTypeVec, required, CFeatQualAssoc::GetMandatoryGbquals(subtype)) {
+    ITERATE (CSeqFeatData::TQualifiers, required, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
         bool found = false;
         FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
-            if (CGbqualType::GetType(**qual) == *required) {
+            if ((*qual)->IsSetQual() && CSeqFeatData::GetQualifierType((*qual)->GetQual()) == *required) {
                 found = true;
                 break;
             }
         }
-        if (!found && *required == CGbqualType::e_Citation) {
+        if (!found && *required == CSeqFeatData::eQual_citation) {
             if (feat.IsSetCit()) {
                 found = true;
             } else if (feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
@@ -3216,7 +3225,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                     || NStr::EqualNocase (key, "old_sequence"))) {
                 // compare qualifier can now substitute for citation qualifier for conflict and old_sequence
                 FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
-                    if (CGbqualType::GetType(**qual) == CGbqualType::e_Compare) {
+                    if ((*qual)->IsSetQual() && CSeqFeatData::GetQualifierType((*qual)->GetQual()) == CSeqFeatData::eQual_compare) {
                         found = true;
                         break;
                     }
@@ -3226,7 +3235,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
 
         if (!found) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
-                "Missing qualifier " + CGbqualType::GetString(*required) +
+                "Missing qualifier " + CSeqFeatData::GetQualifierAsString(*required) +
                 " for feature " + key, feat);
         }
     }
@@ -3273,17 +3282,17 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
     // look for mandatory qualifiers
     EDiagSev sev = eDiag_Warning;
 
-    ITERATE (CFeatQualAssoc::TGBQualTypeVec, required, CFeatQualAssoc::GetMandatoryGbquals(subtype)) {
+    ITERATE (CSeqFeatData::TQualifiers, required, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
         bool found = false;
         FOR_EACH_GBQUAL_ON_FEATURE (qual, feat) {
-            if (CGbqualType::GetType(**qual) == *required) {
+            if ((*qual)->IsSetQual() && CSeqFeatData::GetQualifierType((*qual)->GetQual()) == *required) {
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            if (*required == CGbqualType::e_Citation) {
+            if (*required == CSeqFeatData::eQual_citation) {
                 if (feat.IsSetCit()) {
                     found = true;
                 } else if (feat.IsSetComment() && NStr::EqualNocase (key, "conflict")) {
@@ -3307,7 +3316,7 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
                 }
             }
         }
-        if (!found && *required == CGbqualType::e_NcRNA_class) {
+        if (!found && *required == CSeqFeatData::eQual_ncRNA_class) {
             sev = eDiag_Error;
             if (feat.GetData().IsRna() && feat.GetData().GetRna().IsSetExt()
                 && feat.GetData().GetRna().GetExt().IsGen()
@@ -3319,7 +3328,7 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
 
         if (!found) {
             PostErr(sev, eErr_SEQ_FEAT_MissingQualOnFeature,
-                "Missing qualifier " + CGbqualType::GetString(*required) +
+                "Missing qualifier " + CSeqFeatData::GetQualifierAsString(*required) +
                 " for feature " + key, feat);
         }
     }
@@ -3806,9 +3815,9 @@ void CValidError_feat::ValidateImpGbquals
         if ( NStr::Equal (qual_str, "gsdb_id")) {
             continue;
         }
-        CGbqualType::EType gbqual = CGbqualType::GetType(qual_str);
+        CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
         
-        if ( gbqual == CGbqualType::e_Bad ) {
+        if ( gbqual == CSeqFeatData::eQual_bad ) {
             if (!(*qual)->IsSetVal() || NStr::IsBlank((*qual)->GetVal())) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
                     "Empty qualifier", feat);
@@ -3817,7 +3826,7 @@ void CValidError_feat::ValidateImpGbquals
                     "Unknown qualifier " + qual_str, feat);
             }
         } else {
-            if ( ftype != CSeqFeatData::eSubtype_bad && !CFeatQualAssoc::IsLegalGbqual(ftype, gbqual) ) {
+            if ( ftype != CSeqFeatData::eSubtype_bad && !CSeqFeatData::IsLegalQualifier(ftype, gbqual) ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
                     "Wrong qualifier " + qual_str + " for feature " + 
                     key, feat);
@@ -3827,35 +3836,35 @@ void CValidError_feat::ValidateImpGbquals
             
             bool error = false;
             switch ( gbqual ) {
-            case CGbqualType::e_Rpt_type:
+            case CSeqFeatData::eQual_rpt_type:
                 {{
                     error = !s_IsValidRpt_typeQual(val);
                 }}
                 break;
                 
-            case CGbqualType::e_Rpt_unit:
+            case CSeqFeatData::eQual_rpt_unit:
                 {{
                     ValidateRptUnitVal (val, key, feat);
                 }}
                 break;
 
-            case CGbqualType::e_Rpt_unit_seq:
+            case CSeqFeatData::eQual_rpt_unit_seq:
                 {{
                     ValidateRptUnitSeqVal (val, key, feat);
                 }}
                 break;
 
-            case CGbqualType::e_Rpt_unit_range:
+            case CSeqFeatData::eQual_rpt_unit_range:
                 {{
                     ValidateRptUnitRangeVal (val, feat);
                 }}
                 break;
-            case CGbqualType::e_Label:
+            case CSeqFeatData::eQual_label:
                 {{
                     ValidateLabelVal (val, feat);
                 }}
                 break;
-            case CGbqualType::e_Replace:
+            case CSeqFeatData::eQual_replace:
                 {{
                     CBioseq_Handle bh = m_Scope->GetBioseqHandle(feat.GetLocation());
                     if (bh) {
@@ -3907,7 +3916,7 @@ void CValidError_feat::ValidateImpGbquals
                 }}
                 break;
 
-            case CGbqualType::e_Mobile_element:
+            case CSeqFeatData::eQual_mobile_element:
                 {{
                     bool found = false;
                     for (size_t i = 0; 
@@ -3939,13 +3948,13 @@ void CValidError_feat::ValidateImpGbquals
                 }}
                 break;
 
-            case CGbqualType::e_Compare:
+            case CSeqFeatData::eQual_compare:
                 {{
                     ValidateCompareVal (val, feat);
                 }}
                 break;
 
-            case CGbqualType::e_Standard_name:
+            case CSeqFeatData::eQual_standard_name:
                 {{
                     if (ftype == CSeqFeatData::eSubtype_misc_feature
                         && NStr::EqualCase (val, "Vector Contamination")) {
@@ -3990,9 +3999,9 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
             continue;
         }
 
-        CGbqualType::EType gbqual = CGbqualType::GetType(qual_str);
+        CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
 
-        if ( gbqual == CGbqualType::e_Bad ) {
+        if ( gbqual == CSeqFeatData::eQual_bad ) {
             if (ftype == CSeqFeatData::eSubtype_gene) {
                 if (NStr::Equal (qual_str, "gen_map")
                     || NStr::Equal (qual_str, "cyt_map")
@@ -4001,8 +4010,8 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
                 }
             }
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnknownFeatureQual, "Unknown qualifier " + qual_str, feat);
-        } else if (ftype != CSeqFeatData::eSubtype_bad) {        
-            if (!CFeatQualAssoc::IsLegalGbqual(ftype, gbqual) ) {
+        } else if (ftype != CSeqFeatData::eSubtype_bad) { 
+            if (!feat.GetData().IsLegalQualifier(gbqual)) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                     "Wrong qualifier " + qual_str + " for feature " + 
                     key, feat);
@@ -4011,7 +4020,7 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
             if ((*qual)->IsSetVal() && !NStr::IsBlank ((*qual)->GetVal())) {
                 const string& val = (*qual)->GetVal();
                 switch ( gbqual ) {
-                case CGbqualType::e_Rpt_type:
+                case CSeqFeatData::eQual_rpt_type:
                     {{
                         if (!s_IsValidRpt_typeQual(val)) {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue, 
@@ -4019,30 +4028,30 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
                         }
                     }}
                     break;
-                case CGbqualType::e_Rpt_unit:
+                case CSeqFeatData::eQual_rpt_unit:
                     {{
                         ValidateRptUnitVal (val, key, feat);
                     }}
                     break;
 
-                case CGbqualType::e_Rpt_unit_seq:
+                case CSeqFeatData::eQual_rpt_unit_seq:
                     {{
                         ValidateRptUnitSeqVal (val, key, feat);
                     }}
                     break;
 
-                case CGbqualType::e_Rpt_unit_range:
+                case CSeqFeatData::eQual_rpt_unit_range:
                     {{
                         ValidateRptUnitRangeVal (val, feat);
                     }}
                     break;
 
-                case CGbqualType::e_Label:
+                case CSeqFeatData::eQual_label:
                     {{
                         ValidateLabelVal (val, feat);
                     }}
                     break;
-                case CGbqualType::e_Compare:
+                case CSeqFeatData::eQual_compare:
                     {{
                         ValidateCompareVal (val, feat);
                     }}
@@ -5045,6 +5054,94 @@ static bool s_LocIsNmAccession (const CSeq_loc& loc, CScope& scope)
 }
 
 
+bool CValidError_feat::ValidateCdRegionTranslation 
+(const CSeq_feat& feat,
+ const string& transl_prot,
+ bool report_errors, 
+ bool unclassified_except,
+ bool& has_errors,
+ bool& other_than_mismatch,
+ bool& reported_bad_start_codon,
+ bool& prot_ok)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
+        return false;
+    }
+
+    if (NStr::IsBlank(transl_prot)) {
+        return true;
+    }
+
+    int gc = 0;
+    if ( feat.GetData().GetCdregion().IsSetCode() ) {
+        // We assume that the id is set for all Genetic_code
+        gc = feat.GetData().GetCdregion().GetCode().GetId();
+    }
+    string gccode = NStr::IntToString(gc);
+
+    // count internal stops and Xs
+    size_t internal_stop_count = 0;
+
+    bool got_dash = (transl_prot[0] == '-');
+    size_t num_x = 0, num_nonx = 0;
+
+    ITERATE(string, it, transl_prot) {
+        if ( *it == '*' ) {
+            ++internal_stop_count;
+        }
+        if ( *it == 'X' ) {
+            num_x++;
+        } else {
+            num_nonx++;
+        }
+    }
+    // if stop at end, reduce count by one (since one of the stops counted isn't internal)
+    if (transl_prot[transl_prot.length() - 1] == '*') {
+        --internal_stop_count;
+    }
+
+    // report too many Xs
+    if (num_x > num_nonx) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDShasTooManyXs, "CDS translation consists of more than 50% X residues", feat);
+    }
+
+    if (internal_stop_count > 0) {
+        has_errors = true;
+        other_than_mismatch = true;
+        if (got_dash) {
+            if (report_errors  ||  unclassified_except) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                    "Illegal start codon (and " + 
+                    NStr::IntToString(internal_stop_count) +
+                    " internal stops). Probably wrong genetic code [" +
+                    gccode + "]", feat);
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
+                    NStr::IntToString(internal_stop_count) + 
+                    " internal stops (and illegal start codon). Genetic code [" + gccode + "]", feat);
+            }
+        } else if (report_errors  ||  unclassified_except) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
+                NStr::IntToString(internal_stop_count) + 
+                " internal stops. Genetic code [" + gccode + "]", feat);
+        }
+        prot_ok = false;
+        if (internal_stop_count > 5) {
+            return false;
+        }
+    } else if (got_dash) {
+        has_errors = true;
+        other_than_mismatch = true;
+        if (report_errors) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, 
+                "Illegal start codon used. Wrong genetic code [" +
+                gccode + "] or protein should be partial", feat);
+            reported_bad_start_codon = true;
+        }
+    }
+    return true;
+}
+
+
 void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 {
     // bail if not CDS
@@ -5154,7 +5251,10 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     string gccode = NStr::IntToString(gc);
 
     string transl_prot;   // translated protein
+    bool got_stop = false;
     bool alt_start = false;
+    bool show_stop = false;
+
     try {
         if (m_Scope) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
@@ -5167,6 +5267,12 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                                             true,   // include stop codons
                                             false,  // do not remove trailing X/B/Z
                                             &alt_start);
+                if (!NStr::IsBlank(transl_prot)) {
+                    if (NStr::EndsWith(transl_prot, "*")) {
+                        got_stop = true;
+                    }
+                    show_stop = true;
+                }
             }
         }
     } catch (CException&) {
@@ -5183,7 +5289,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     if (alt_start  &&  gc == 1) {
         EDiagSev sev = eDiag_Warning;
         if (s_IsLocRefSeqMrna(feat.GetLocation(), *m_Scope)) {
-            sev = eDiag_Error;
+            sev = eDiag_Info;
         } else if (s_IsLocGEDL(feat.GetLocation(), *m_Scope)) {
             sev = eDiag_Info;
         }
@@ -5229,72 +5335,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     bool reported_bad_start_codon = false;
 
-    // count internal stops and Xs
-    size_t internal_stop_count = 0;
-
-    bool got_stop = false;
-    if (!transl_prot.empty()) {
-        bool got_dash = (transl_prot[0] == '-');
-        got_stop = (transl_prot[transl_prot.length() - 1] == '*');
-        size_t num_x = 0, num_nonx = 0;
-   
-        ITERATE(string, it, transl_prot) {
-            if ( *it == '*' ) {
-                ++internal_stop_count;
-            }
-            if ( *it == 'X' ) {
-                num_x++;
-            } else {
-                num_nonx++;
-            }
-        }
-        // if stop at end, reduce count by one (since one of the stops counted isn't internal)
-        if (got_stop) {
-            --internal_stop_count;
-        }
-
-        // report too many Xs
-        if (num_x > num_nonx) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDShasTooManyXs, "CDS translation consists of more than 50% X residues", feat);
-        }
-    
-        if (internal_stop_count > 0) {
-            has_errors = true;
-            other_than_mismatch = true;
-            if (got_dash) {
-                if (report_errors  ||  unclassified_except) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                        "Illegal start codon (and " + 
-                        NStr::IntToString(internal_stop_count) +
-                        " internal stops). Probably wrong genetic code [" +
-                        gccode + "]", feat);
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
-                        NStr::IntToString(internal_stop_count) + 
-                        " internal stops (and illegal start codon). Genetic code [" + gccode + "]", feat);
-                }
-            } else if (report_errors  ||  unclassified_except) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
-                    NStr::IntToString(internal_stop_count) + 
-                    " internal stops. Genetic code [" + gccode + "]", feat);
-            }
-            prot_ok = false;
-            if (internal_stop_count > 5) {
-                return;
-            }
-        } else if (got_dash) {
-            has_errors = true;
-            other_than_mismatch = true;
-            if (report_errors) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, 
-                    "Illegal start codon used. Wrong genetic code [" +
-                    gccode + "] or protein should be partial", feat);
-                reported_bad_start_codon = true;
-            }
-        }
+    if (!ValidateCdRegionTranslation (feat, transl_prot, report_errors, unclassified_except, has_errors, 
+        other_than_mismatch, reported_bad_start_codon, prot_ok)) {
+        return;
     }
     
-    bool show_stop = true;
-
     const CSeq_id* protid = 0;
     CBioseq_Handle prot_handle;
     if (feat.IsSetProduct()) {
@@ -5600,8 +5645,10 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                 char ex = (*cbr)->GetAa().GetNcbieaa();
                 string except_char = "";
                 except_char += ex;
-                if (prot_pos % 3 < transl_prot.length()) {
-                    if (NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
+                if (prot_pos < transl_prot.length()) {
+                    if (len - from < 2 && NStr::Equal (except_char, "*")) {
+                        // this is a necessary terminal transl_except
+                    } else if (NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
                         string msg = "Unnecessary transl_except ";
                         msg += ex;
                         msg += " at position ";
@@ -5609,13 +5656,13 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
                                  msg,
                                  feat);
-                    } else if (prot_pos == transl_prot.length()) {
-                        if (!NStr::Equal (except_char, "*")) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                     "Unexpected transl_except " + except_char
-                                     + " at position " + NStr::IntToString (prot_pos + 1),
-                                     feat);
-                        }
+                    }
+                } else if (prot_pos == transl_prot.length()) {
+                    if (!NStr::Equal (except_char, "*")) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                 "Unexpected transl_except " + except_char
+                                 + " at position " + NStr::IntToString (prot_pos + 1),
+                                 feat);
                     }
                 }
             }

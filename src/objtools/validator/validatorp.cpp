@@ -433,6 +433,7 @@ void CValidError_imp::PostErr
     string desc("DESCRIPTOR: ");
     ds.GetLabel(&desc, CSeqdesc::eBoth);
 
+    desc += " ";
     if (ctx.IsSeq()) {
         s_AppendBioseqLabel(desc, ctx.GetSeq(), m_SuppressContext);
     } else {
@@ -1500,19 +1501,23 @@ bool CValidError_imp::IsWGSIntermediate(const CBioseq& seq)
 		return false;
 	}
 
-	bool is_intermediate = true;
+    bool is_other = false;
+    bool has_gi = false;
 
 	FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
 		if ((*it)->IsOther()) {
-			is_intermediate = false;
+			is_other = true;
 			break;
 		} else if ((*it)->IsGi()) {
-			is_intermediate = false;
+			has_gi = true;
 			break;
 		}
 	}
+    if (!is_other || has_gi) {
+        return false;
+    }
 
-	return is_intermediate;
+	return true;
 }
 
 
@@ -1544,21 +1549,10 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
     
     size_t num_no_source = m_BioseqWithNoSource.size();
     
-    if ( num_no_source == 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, 
-            "No organism name has been applied to this Bioseq.",
-            *(m_BioseqWithNoSource[0]));
-    } else if ( num_no_source > 10 ) {
-    } else {
-        string msg;
-        for ( size_t i = 0; i < num_no_source; ++i ) {
-            msg = NStr::IntToString(i + 1) + " of " + 
-                NStr::IntToString(num_no_source) + 
-                " Bioseqs without organism name";
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
-                    "No organism name has been applied to this Bioseq.  Other qualifiers may exist.",
-                    *(m_BioseqWithNoSource[i]));
-        }
+    for ( size_t i = 0; i < num_no_source; ++i ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+                "No organism name has been applied to this Bioseq.  Other qualifiers may exist.",
+                *(m_BioseqWithNoSource[i]));
     }
 }
 
@@ -1997,7 +1991,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     }
                     break;
                 case CSeq_id::e_General:
-                    if ((*bi).IsAa()) {
+                    if ((*bi).IsAa() && !sid.GetGeneral().IsSkippable()) {
                         m_ProteinHasGeneralID = true;
                     }
                     break;

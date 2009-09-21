@@ -118,12 +118,15 @@ void CValidError_desc::ValidateSeqDesc
                              "Title descriptor has internal PMID", ctx, desc);
                 }
                 NStr::TruncateSpacesInPlace (title);
-                if (NStr::EndsWith (title, "...")) {
-                    // ok - ends with ellipsis
-                } else if (NStr::EndsWith (title, ",")
-					       || NStr::EndsWith(title, ".")
-                           || NStr::EndsWith (title, ";")
-                           || NStr::EndsWith (title, ":")) {
+                char end = title.c_str()[title.length() - 1];
+                
+                if (end == '.' && title.length() > 4) {
+                    end = title.c_str()[title.length() - 2];
+                }
+                if (end == ','
+                    || end == '.'
+                    || end == ';'
+                    || end == ':') {
                     PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadPunctuation, 
                              "Title descriptor ends in bad punctuation", ctx, desc);
                 }

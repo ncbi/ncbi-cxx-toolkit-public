@@ -2364,6 +2364,23 @@ const string& CSeqFeatData::GetQualifierAsString(EQualifier qual)
     return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;
 }
 
+
+const CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual)
+{
+    CSeqFeatData::EQualifier type = CSeqFeatData::eQual_bad;;
+
+    TQualsMap::const_iterator iter = sc_QualPairs.begin();
+    while (iter != sc_QualPairs.end() && !NStr::EqualNocase(qual, iter->second)) {
+        ++iter;
+    }
+    if (iter != sc_QualPairs.end()) {
+        type = iter->first;
+    }
+
+    return type;
+}
+
+
 /////////////////// end of CSeqFeatData methods
 
 

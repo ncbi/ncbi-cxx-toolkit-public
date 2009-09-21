@@ -348,6 +348,9 @@ public:
     /// Convert a qualifier from an enumerated value to a string representation.
     static const string& GetQualifierAsString(EQualifier qual);
 
+    // convert string to enumerated value
+    static const EQualifier GetQualifierType(const string& qual);
+
     NCBI_DEPRECATED
     static const string& GetQulifierAsString(EQualifier qual)
     { return GetQualifierAsString(qual); }

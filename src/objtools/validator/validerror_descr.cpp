@@ -60,8 +60,7 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
 {
     size_t  num_sources = 0,
             num_titles = 0;
-    CConstRef<CSeqdesc> last_source,
-                        last_title;
+    CConstRef<CSeqdesc> last_source;
 
     FOR_EACH_DESCRIPTOR_ON_DESCR (dt, descr) {
         const CSeqdesc& desc = **dt;
@@ -79,9 +78,11 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
             break;
         case CSeqdesc::e_Title:
             num_titles++;
-            last_title = &desc;
-            break;
-        
+            if (num_titles > 1) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTitles,
+                    "Undesired multiple title descriptors", ctx, desc);
+            }
+            break;        
 
         case CSeqdesc::e_Comment:
             break;
@@ -144,10 +145,6 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
     if ( num_sources > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleBioSources,
             "Undesired multiple source descriptors", ctx, *last_source);
-    }
-    if ( num_titles > 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTitles,
-            "Undesired multiple title descriptors", ctx, *last_title);
     }
 }
 

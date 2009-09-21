@@ -580,6 +580,7 @@ void CValidError_imp::ValidateBioSource
 			if ((*ssit)->IsSetName()) {
 				pcr_set_list.AddRevName((*ssit)->GetName());
 			}
+            ++rev_primer_name_count;
 			break;
             
 		case CSubSource::eSubtype_fwd_primer_seq:
@@ -780,8 +781,10 @@ void CValidError_imp::ValidateBioSource
 
 	if ((fwd_primer_seq_count > 0 && rev_primer_seq_count == 0)
 		|| (fwd_primer_seq_count == 0 && rev_primer_seq_count > 0)) {
-		PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence, 
-			       "PCR primer does not have both sequences", obj, ctx);
+        if (fwd_primer_name_count == 0 && rev_primer_name_count == 0) {
+		    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence, 
+			           "PCR primer does not have both sequences", obj, ctx);
+        }
 	}
 
 	if (!pcr_set_list.AreSetsUnique()) {
@@ -1238,7 +1241,7 @@ void CValidError_imp::ValidateSubSource
 			const string& subname = subsrc.GetName();
 			if (s_UnbalancedParentheses(subname)) {
 				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
-						   "Unbalanced parentheses in '" + subname + "'",
+						   "Unbalanced parentheses in subsource '" + subname + "'",
 						   obj, ctx);
 			}
 			if (ContainsSgml(subname)) {
@@ -1282,6 +1285,19 @@ void CValidError_imp::ValidateOrgRef
 		  PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
             "No organism name has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
 	}
+
+    if (orgref.IsSetTaxname()) {
+        string taxname = orgref.GetTaxname();
+        if (s_UnbalancedParentheses (taxname)) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
+                       "Unbalanced parentheses in taxname '" + orgref.GetTaxname() + "'", obj, ctx);
+        }
+        if (ContainsSgml(taxname)) {
+			PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+					   "taxname " + taxname + " has SGML", 
+					   obj, ctx);
+        }
+    }
 
     if ( orgref.IsSetDb() ) {
         ValidateDbxref(orgref.GetDb(), obj, true, ctx);
@@ -1436,7 +1452,7 @@ void CValidError_imp::ValidateOrgName
 
 				if (s_UnbalancedParentheses(subname)) {
 					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
-							   "Unbalanced parentheses in '" + subname + "'",
+							   "Unbalanced parentheses in orgmod '" + subname + "'",
 							   obj, ctx);
 				}
 				if (ContainsSgml(subname)) {
