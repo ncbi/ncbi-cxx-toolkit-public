@@ -43,7 +43,7 @@
 
 #include <common/ncbi_package_ver.h>
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/mswin_no_popup.h>
 
 #define NETCACHE_CHECK_VERSION_MAJOR 1
 #define NETCACHE_CHECK_VERSION_MINOR 0
@@ -82,8 +82,8 @@ void CNetCacheCheckApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetCache check.");
 
-    arg_desc->AddDefaultPositional("service_address", 
-        "NetCache host or service name: { host:port | lb_service_name }.", 
+    arg_desc->AddDefaultPositional("service_address",
+        "NetCache host or service name: { host:port | lb_service_name }.",
         CArgDescriptions::eString,
         "");
     arg_desc->AddFlag("check-health", "Return server health percentage");

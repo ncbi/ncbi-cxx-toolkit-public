@@ -42,7 +42,7 @@
 
 #include <common/ncbi_package_ver.h>
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/mswin_no_popup.h>
 
 #define NETSCHEDULE_CHECK_VERSION_MAJOR 1
 #define NETSCHEDULE_CHECK_VERSION_MINOR 0
@@ -101,8 +101,8 @@ int CNetScheduleCheck::Run(void)
     const string& service  = args["service"].AsString();
 
     string queue = "test";
-    if (args["qclass"]) {  
-        queue = args["qclass"].AsString(); 
+    if (args["qclass"]) {
+        queue = args["qclass"].AsString();
     }
 
     CNetScheduleAPI cln1(service, "netschedule_admin", queue);
@@ -155,7 +155,7 @@ int CNetScheduleCheck::Run(void)
 
     queue = "netschedule_check_queue";
     admin.CreateQueue(queue, qclass);
-    
+
     CNetScheduleAPI cln(service, "netschedule_admin", queue);
 
     int ret = Run(cln);
