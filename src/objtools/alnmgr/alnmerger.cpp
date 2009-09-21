@@ -166,6 +166,13 @@ CAlnMixMerger::x_Merge()
     x_SetTaskTotal(m_Matches.size());
 
     while (true) {
+
+        // need to cancel?
+        if (x_InterruptTask()) {
+            Reset();
+            return;
+        }
+        
         // reached the end?
         if (first_refseq ?
             match_i == m_Matches.end()  &&  m_Matches.size() :
