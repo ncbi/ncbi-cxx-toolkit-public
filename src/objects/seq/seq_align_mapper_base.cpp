@@ -1295,7 +1295,6 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     CDense_seg::TNumseg num_seg = m_Segs.size();
 
     bool have_prots = false;
-    bool have_scores = !m_Segs.front().m_Scores.empty();
 
     // Find first non-gap in each row, get its seq-id, detect the first
     // one which is different.
@@ -1319,11 +1318,6 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                         dseg.SetWidths().push_back(row.m_Width);
                     }
                     have_prots = have_prots  ||  (row.m_Width == 3);
-                    if ( have_scores ) {
-                        CRef<CScore> score(new CScore);
-                        score->Assign(*m_Segs.front().m_Scores[r]);
-                        dseg.SetScores().push_back(score);
-                    }
                 }
             }
             cur_seg++;
@@ -1791,6 +1785,10 @@ void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
         seg = x_GetPartialDenseg(dseg, seg);
         if (!dseg) continue; // The sub-align had only gaps
         data.push_back(dseg);
+    }
+    if ( !m_Segs.front().m_Scores.empty() ) {
+        CloneContainer<CScore, CSeq_align::TScore>(
+            m_Segs.front().m_Scores, dst->SetScore());
     }
 }
 
