@@ -183,7 +183,7 @@ string CIdMapper::MapErrorString(const CSeq_id_Handle& idh )
 {
     string strId = idh.AsString();
     string strMsg(
-        string("IdMapper: Unable to resolve local ID \"") + strId + string("\"") );
+        string("IdMapper: Unable to resolve ID \"") + strId + string("\"") );
     return strMsg;
 };
 
@@ -193,16 +193,20 @@ string CIdMapper::MapErrorString(const CSeq_loc& loc )
     string strId;
     loc.GetLabel(&strId);
     string strMsg(
-        string("IdMapper: Unable to resolve local ID \"") + strId + string("\"") );
+        string("IdMapper: Unable to resolve ID \"") + strId + string("\"") );
     return strMsg;
 };
 
 
 void CIdMapper::MapObject(CSerialObject& object)
 {
+    set< CRef<CSeq_id> > ids;
     CTypeIterator< CSeq_id > idit( object );
     for ( ;  idit;  ++idit ) {
         CSeq_id& id = *idit;
+        if (ids.insert(CRef<CSeq_id>(&id)).second == false) {
+            continue;
+        }
         CSeq_id_Handle idh = Map( CSeq_id_Handle::GetHandle(id) );
         if ( !idh ) {
             continue;
