@@ -803,6 +803,7 @@ bool CObjectIStreamXml::ReadBool(void)
     } else {
         ReadTagData(sValue);
     }
+    NStr::TruncateSpacesInPlace(sValue);
 
 // http://www.w3.org/TR/xmlschema11-2/#boolean
     bool value;
