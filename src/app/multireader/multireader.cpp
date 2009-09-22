@@ -308,12 +308,11 @@ void CMultiReaderApp::MapObject(
     CSerialObject& object )
 //  ============================================================================
 {
-    CIdMapper* pMapper = GetMapper();
-    if ( !pMapper ) {
+    auto_ptr<CIdMapper> pMapper(GetMapper());
+    if ( !pMapper.get() ) {
         return;
     }
     pMapper->MapObject( object );
-    delete pMapper;
 }
     
 //  ============================================================================
