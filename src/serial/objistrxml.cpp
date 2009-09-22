@@ -859,6 +859,9 @@ double CObjectIStreamXml::ReadDouble(void)
     ReadTagData(s);
     char* endptr;
     double data = strtod(s.c_str(), &endptr);
+    while (IsWhiteSpace(*endptr)) {
+        ++endptr;
+    }
     if ( *endptr != 0 )
         ThrowError(fFormatError, "invalid float number");
     return data;
