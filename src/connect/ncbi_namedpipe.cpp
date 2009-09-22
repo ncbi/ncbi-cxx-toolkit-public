@@ -133,9 +133,9 @@ static string s_WinError(DWORD error, string& message)
     }
     string retval;
     if (result) {
-        retval.assign(result);
+        retval = result;
         if (dynamic) {
-            free((char*) result);
+            free((void*) result);
         }
     } else {
         retval.swap(message);
