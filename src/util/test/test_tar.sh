@@ -185,9 +185,9 @@ cat "$test_exe" "$test_base.out.temp" "$test_base.2/newdir/datefile" > "$test_ba
 cmp -l "$test_base.out.1" "$test_base.out.2"                                                             ||  exit 1
 
 if [ "`uname`" = "Linux" ]; then
-  prebs="`expr $$ % 10000`"
-  spabs="`expr $$ % 1000`"
-  posbs="`expr $$ % 10240`"
+  prebs="`expr $$ % 10000 + 1`"
+  spabs="`expr $$ % 1000  + 1`"
+  posbs="`expr $$ % 10240 + 1`"
   nseek="`expr 1024000 / $spabs`"
   size="`expr $nseek '*' $spabs + $spabs`"
 
@@ -201,7 +201,7 @@ if [ "`uname`" = "Linux" ]; then
 
   ( cd $test_base.1/newdir  &&  $tar -Srvf $test_base.tar pre-sparse sparse-file post-sparse )                         ||  exit 1
 
-  test_tar -T -f $test_base.tar                                                                                     ||  exit 1
+  test_tar -T -f $test_base.tar                                                                                        ||  exit 1
   test_tar -X -f $test_base.tar                                      sparse-file > $test_base.2/newdir/sparse-file     ||  exit 1
 
   real="`ls -l $test_base.1/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
