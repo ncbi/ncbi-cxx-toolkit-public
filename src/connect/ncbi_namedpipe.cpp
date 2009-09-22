@@ -38,14 +38,15 @@
 #include <assert.h>
 
 #if defined(NCBI_OS_MSWIN)
+#  include <connect/ncbi_util.h>
 
 #elif defined(NCBI_OS_UNIX)
+#  include <connect/ncbi_socket_unix.h>
 #  include <errno.h>
 #  include <unistd.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>
 #  include <sys/types.h>
-#  include <connect/ncbi_socket_unix.h>
 #else
 #  error "Class CNamedPipe is supported only on Windows and Unix"
 #endif
@@ -134,7 +135,7 @@ static string s_WinError(DWORD error, string& message)
     if (result) {
         retval.assign(result);
         if (dynamic) {
-            free(result);
+            free((char*) result);
         }
     } else {
         retval.swap(message);
@@ -294,7 +295,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             DWORD error = ::GetLastError();
             string message("CreateNamedPipe(\"" + m_PipeName + "\") failed");
-            throw s_WinError(error, message),
+            throw s_WinError(error, message);
         }
 
         m_ReadStatus  = eIO_Success;
