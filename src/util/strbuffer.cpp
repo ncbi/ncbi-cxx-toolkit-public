@@ -532,11 +532,19 @@ void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
     }
 }
 
+char CIStreamBuffer::SkipWs(void)
+{
+    char c;
+    while (isspace((unsigned char)(c = GetChar())))
+    ;
+    return c;
+}
+
 Int4 CIStreamBuffer::GetInt4(void)
     THROWS1((CIOException,CUtilException))
 {
     bool sign;
-    char c = GetChar();
+    char c = SkipWs();
     switch ( c ) {
     case '-':
         sign = true;
@@ -580,7 +588,7 @@ Int4 CIStreamBuffer::GetInt4(void)
 Uint4 CIStreamBuffer::GetUint4(void)
     THROWS1((CIOException,CUtilException))
 {
-    char c = GetChar();
+    char c = SkipWs();
     if ( c == '+' )
         c = GetChar();
 
@@ -611,7 +619,7 @@ Int8 CIStreamBuffer::GetInt8(void)
     THROWS1((CIOException,CUtilException))
 {
     bool sign;
-    char c = GetChar();
+    char c = SkipWs();
     switch ( c ) {
     case '-':
         sign = true;
@@ -655,7 +663,7 @@ Int8 CIStreamBuffer::GetInt8(void)
 Uint8 CIStreamBuffer::GetUint8(void)
     THROWS1((CIOException))
 {
-    char c = GetChar();
+    char c = SkipWs();
     if ( c == '+' )
         c = GetChar();
     Uint1 d = c - '0';

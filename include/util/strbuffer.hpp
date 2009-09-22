@@ -139,6 +139,7 @@ public:
     size_t ReadLine(char* buff, size_t size)
         THROWS1((CIOException));
 
+    char SkipWs(void);
     Int4 GetInt4(void)
         THROWS1((CIOException,CUtilException));
     Uint4 GetUint4(void)
