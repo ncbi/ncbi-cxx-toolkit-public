@@ -172,6 +172,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("HPRD", CDbtag::eDbtagType_HPRD),
     TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
+    TDbxrefPair("SK-FST", CDbtag::eDbtagType_SK_FST),
     TDbxrefPair("TAIR", CDbtag::eDbtagType_TAIR),
     TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC),
     TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
@@ -481,6 +482,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/"),
     TDbtUrl(CDbtag::eDbtagType_miRBase, "http://microrna.sanger.ac.uk/cgi-bin/sequences/mirna_entry.pl?acc="),
     TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/query.asp?web_id="),
+    TDbtUrl(CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/"),
     TDbtUrl(CDbtag::eDbtagType_TAIR, "http://www.arabidopsis.org/servlets/TairObject?type=locus&name="),
     TDbtUrl(CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=")
 };
@@ -565,6 +567,10 @@ string CDbtag::GetUrl(void) const
             } else if (NStr::Find(tag, "HIX")) {
                 prefix = &kHInvDbHIX;
             }
+            break;
+
+        case eDbtagType_SK_FST:
+            return *prefix;
             break;
 
         case CDbtag::eDbtagType_taxon:

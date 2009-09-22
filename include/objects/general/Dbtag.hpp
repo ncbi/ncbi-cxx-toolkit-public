@@ -175,6 +175,7 @@ public:
         eDbtagType_HPRD,
         eDbtagType_miRBase,
         eDbtagType_PBR,
+        eDbtagType_SK_FST,
         eDbtagType_TAIR,
         eDbtagType_VBRC
     };
