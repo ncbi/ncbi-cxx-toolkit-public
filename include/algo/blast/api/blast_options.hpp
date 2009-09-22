@@ -49,7 +49,7 @@
 // Forward declarations of classes that need to be declared friend 
 // (mostly unit test classes)
 class CTracebackTestFixture; 
-class CBlastSetupTest;
+class CBlastSetupTestFixture;
 class CUniformSearchTest; 
 class CTracebackSearchTestFixture;
 
@@ -478,7 +478,7 @@ private:
 
     /// @todo Strive to remove these classes
     friend class ::CTracebackTestFixture;    // unit test class
-    friend class ::CBlastSetupTest;        // unit test class
+    friend class ::CBlastSetupTestFixture;        // unit test class
     friend class ::CUniformSearchTest;     // unit test class
     friend class ::CTracebackSearchTestFixture;   // unit test class
 };
