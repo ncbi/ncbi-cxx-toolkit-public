@@ -271,6 +271,9 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgUseIndex;
 /// Megablast database index name.
 NCBI_BLASTINPUT_EXPORT extern const string kArgIndexName;
 
+/// Entrez query.
+NCBI_BLASTINPUT_EXPORT extern const string kArgEntrezQuery;
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

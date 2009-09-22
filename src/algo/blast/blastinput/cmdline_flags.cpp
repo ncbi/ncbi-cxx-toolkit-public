@@ -294,6 +294,8 @@ const string kArgOutputSearchStrategy("export_search_strategy");
 const string kArgUseIndex("use_index");
 const string kArgIndexName("index_name");
 
+const string kArgEntrezQuery("entrez_query");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

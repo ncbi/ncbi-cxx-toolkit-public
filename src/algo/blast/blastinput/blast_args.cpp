@@ -1210,12 +1210,20 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         CArgDescriptions::eString);
     arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
                            kArgNegativeGiList);
+    // Entrez Query
+    arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
+                            "Restrict search with the given Entrez query",
+                            CArgDescriptions::eString);
 
     // For now, disable pairing -remote with either -gilist or
     // -negative_gilist as this is not implemented in the BLAST server
     arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
                            kArgRemote);
     arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
+                           kArgRemote);
+
+    // Entrez query currently requires the -remote option
+    arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
                            kArgRemote);
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1313,6 +1321,9 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                 m_NegativeGiListFileName, gis);
         if ( !gis.empty() ) 
             m_SearchDb->SetNegativeGiListLimitation(gis);
+
+        if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
+            m_SearchDb->SetEntrezQueryLimitation(args[kArgEntrezQuery].AsString());
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
