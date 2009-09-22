@@ -83,11 +83,12 @@ public:
 class CBlastAligner : public IAlignmentFactory
 {
 public:
-    CBlastAligner(blast::CBlastOptionsHandle& Options)
-        : m_BlastOptions(&Options) { ; }
+    CBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)
+        : m_BlastOptions(&Options), m_Threshold(Threshold) { ; }
 
-    CBlastAligner(const string& Params)
-        : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params)) { ; }
+    CBlastAligner(const string& Params, int Threshold)
+        : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
+        , m_Threshold(Threshold) { ; }
 
 
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
@@ -95,10 +96,16 @@ public:
                                         ISequenceSet* SubjectSet,
                                         TAlignResultsRef AccumResults);
 
+    typedef CRef<blast::CBlastOptionsHandle> TBlastOptionsRef;
+    typedef CRef<CBlastAligner> TBlastAlignerRef;
+
+    static list<TBlastAlignerRef> CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshold);
+    static list<TBlastAlignerRef> CreateBlastAligners(const list<string>& Params, int Threshold);
+
 private:
 
     CRef<blast::CBlastOptionsHandle> m_BlastOptions;
-
+    int m_Threshold;
 };
 
 

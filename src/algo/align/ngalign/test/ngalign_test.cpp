@@ -169,7 +169,7 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     CRef<CQueryFilter> QueryFilter1(new CQueryFilter(1, Filter1Str));
     CRef<CQueryFilter> QueryFilter2(new CQueryFilter(2, Filter2Str));
     CRef<CQueryFilter> QueryFilter3(new CQueryFilter(3, Filter3Str));
-    CRef<CBlastAligner> BlastAligner(new CBlastAligner(BlastParams));
+    CRef<CBlastAligner> BlastAligner(new CBlastAligner(BlastParams, 1));
     CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
@@ -263,7 +263,7 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     CRef<CQueryFilter> QueryFilter1(new CQueryFilter(1, Filter1Str));
     CRef<CQueryFilter> QueryFilter2(new CQueryFilter(2, Filter2Str));
     CRef<CQueryFilter> QueryFilter3(new CQueryFilter(3, Filter3Str));
-    CRef<CBlastAligner> BlastAligner(new CBlastAligner(BlastParams));
+    CRef<CBlastAligner> BlastAligner(new CBlastAligner(BlastParams, 1));
     CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
@@ -360,7 +360,8 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     CRef<CQueryFilter> QueryFilter1(new CQueryFilter(1, Filter1Str));
     CRef<CQueryFilter> QueryFilter2(new CQueryFilter(2, Filter2Str));
     CRef<CQueryFilter> QueryFilter3(new CQueryFilter(3, Filter3Str));
-    CRef<CBlastListAligner> BlastListAligner(new CBlastListAligner(BlastParams, 1));
+    list<CRef<CBlastAligner> > BlastAligners;
+    BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
     CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
@@ -402,7 +403,10 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter2.GetPointer()));
     Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter3.GetPointer()));
 
-    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
+//    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
+    NON_CONST_ITERATE(list<CRef<CBlastAligner> >, BlastIter, BlastAligners) {
+        Aligner.AddAligner(&**BlastIter);
+    }
     Aligner.AddAligner(CRef<IAlignmentFactory>(InstancedAligner.GetPointer()));
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));

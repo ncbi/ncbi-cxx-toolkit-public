@@ -161,7 +161,7 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     CRef<IQueryFactory> Querys;
     CRef<CLocalDbAdapter> Subjects;
 
-    Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions);
+    Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
     Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
 
     CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
@@ -190,37 +190,29 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
 }
 
 
-
-CBlastListAligner::CBlastListAligner(const list<string>& Params, int Threshold)
-                    : m_Threshold(Threshold)
+list<CBlastAligner::TBlastAlignerRef>
+CBlastAligner::CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshold)
 {
-    ITERATE(list<string>, ParamIter, Params) {
-        CRef<CBlastOptionsHandle> Options;
-        Options = CBlastArgs::s_CreateBlastOptions(*ParamIter);
-        m_BlastOptions.push_back(Options);
+    list<TBlastAlignerRef> Aligners;
+    NON_CONST_ITERATE(list<TBlastOptionsRef>, OptionsIter, Options) {
+        TBlastAlignerRef CurrAligner;
+        CurrAligner.Reset(new CBlastAligner(**OptionsIter, Threshold));
     }
+    return Aligners;
 }
 
 
-TAlignResultsRef CBlastListAligner::GenerateAlignments(CScope& Scope,
-                                                       ISequenceSet* QuerySet,
-                                                       ISequenceSet* SubjectSet,
-                                                       TAlignResultsRef AccumResults)
+list<CBlastAligner::TBlastAlignerRef>
+CBlastAligner::CreateBlastAligners(const list<string>& Params, int Threshold)
 {
-    TAlignResultsRef Results(new CAlignResultsSet);
-
-    CRef<IQueryFactory> Querys;
-    CRef<CLocalDbAdapter> Subjects;
-
-    ITERATE(TBlastOptionsList, OptIter, m_BlastOptions) {
-        Querys = QuerySet->CreateQueryFactory(Scope, **OptIter, *AccumResults, m_Threshold);
-        Subjects = SubjectSet->CreateLocalDbAdapter(Scope, **OptIter);
-        CLocalBlast Blast(Querys, *OptIter, Subjects);
-        CRef<CSearchResultSet> BlastResults = Blast.Run();
-        Results->Insert(*BlastResults);
+    list<TBlastOptionsRef> BlastOptions;
+    ITERATE(list<string>, ParamsIter, Params) {
+        TBlastOptionsRef CurrOptions;
+        CurrOptions = CBlastArgs::s_CreateBlastOptions(*ParamsIter);
+        BlastOptions.push_back(CurrOptions);
     }
 
-    return Results;
+    return CBlastAligner::CreateBlastAligners(BlastOptions, Threshold);
 }
 
 
