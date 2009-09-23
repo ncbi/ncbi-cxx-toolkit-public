@@ -444,6 +444,60 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
 }
 
 
+struct SCallbackData
+{
+    CTime   StartTime;
+    int     TimeOutSeconds;
+    size_t  PreviousCount;
+    bool    TimedOut;
+};
+
+
+bool s_ProgressCallback(CNWAligner::SProgressInfo* ProgressInfo)
+{
+    SCallbackData* CallbackData = (SCallbackData*)ProgressInfo->m_data;
+    CTime CurrTime(CTime::eCurrent);
+    CTimeSpan Span = (CurrTime-CallbackData->StartTime);
+
+    if(CallbackData->TimedOut) {
+        return true;
+    }
+
+    if(CallbackData->PreviousCount == ProgressInfo->m_iter_done ||
+       Span.GetAsDouble() < 1.0) {
+        CallbackData->PreviousCount = ProgressInfo->m_iter_done;
+        return false;
+    }
+
+    CallbackData->PreviousCount = ProgressInfo->m_iter_done;
+
+//    ERR_POST(Info << "Counts: " << ProgressInfo->m_iter_done << " of " << ProgressInfo->m_iter_total);
+
+    double PercentComplete = (double(ProgressInfo->m_iter_done)/ProgressInfo->m_iter_total);
+    double PercentRemaining = 1.0-PercentComplete;
+
+    double Factor = PercentRemaining/PercentComplete;
+
+
+    if( Span.GetCompleteSeconds() > CallbackData->TimeOutSeconds) {
+        ERR_POST(Error << " Instanced Aligner took over 5 minutes. Timed out.");
+        CallbackData->TimedOut = true;
+        return true;
+    }
+
+    double TimeEstimated = Span.GetAsDouble() * Factor;
+
+    if(TimeEstimated > CallbackData->TimeOutSeconds) {
+        ERR_POST(Error << " Instanced Aligner expected to take " << TimeEstimated
+                       << " seconds. More than 5 minutes. Terminating Early.");
+        CallbackData->TimedOut = true;
+        return true;
+    }
+
+
+    return false;
+}
+
 
 
 CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
@@ -507,6 +561,12 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
     ERR_POST(Info << " Subject " << SubjectStart << " to " << SubjectStop);
 */
 
+    SCallbackData CallbackData;
+    CallbackData.StartTime = CTime(CTime::eCurrent);
+    CallbackData.TimeOutSeconds = m_TimeOutSeconds;
+    CallbackData.PreviousCount = 0;
+    CallbackData.TimedOut = false;
+
     TSeqPos ExtractQueryStart = ((Strand == eNa_strand_plus) ? 0 : QuerySeq.size()-1);
     CRef<CDense_seg> ResultDenseg;
 
@@ -516,6 +576,7 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
     Aligner.SetWg(-100);
     Aligner.SetWs(-1);
     Aligner.SetScoreMatrix(NULL);
+    Aligner.SetProgressCallback(s_ProgressCallback, (void*)&CallbackData);
     try {
         int Score;
         Score = Aligner.Run();
@@ -525,7 +586,9 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
         ResultDenseg = Aligner.GetDense_seg(ExtractQueryStart, Strand, QueryId,
                                             0, eNa_strand_plus, SubjectId);
     } catch(CException& e) {
-        ERR_POST(Error << "MMAligner: " << e.ReportAll());
+        if(!CallbackData.TimedOut) {
+            ERR_POST(Error << "MMAligner: " << e.ReportAll());
+        }
         return CRef<CDense_seg>();
     }
 

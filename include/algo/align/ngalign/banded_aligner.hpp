@@ -110,7 +110,8 @@ class CInstancedAligner : public IAlignmentFactory
 {
 public:
 
-    CInstancedAligner(int Threshold) : m_Threshold(Threshold) { ; }
+    CInstancedAligner(int TimeOutSeconds, int Threshold)
+        : m_TimeOutSeconds(TimeOutSeconds), m_Threshold(Threshold) { ; }
 
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,
@@ -122,7 +123,9 @@ protected:
 
 private:
 
+    int m_TimeOutSeconds;
     int m_Threshold;
+
 
     void x_RunAligner(objects::CScope& Scope,
                       CQuerySet& QueryAligns,
