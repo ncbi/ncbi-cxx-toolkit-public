@@ -54,6 +54,8 @@
 #include <algo/blast/blastinput/blastn_args.hpp>
 
 
+#include <algo/sequence/align_cleanup.hpp>
+
 BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
 USING_SCOPE(blast);
@@ -197,6 +199,7 @@ CBlastAligner::CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshol
     NON_CONST_ITERATE(list<TBlastOptionsRef>, OptionsIter, Options) {
         TBlastAlignerRef CurrAligner;
         CurrAligner.Reset(new CBlastAligner(**OptionsIter, Threshold));
+        Aligners.push_back(CurrAligner);
     }
     return Aligners;
 }
@@ -214,6 +217,9 @@ CBlastAligner::CreateBlastAligners(const list<string>& Params, int Threshold)
 
     return CBlastAligner::CreateBlastAligners(BlastOptions, Threshold);
 }
+
+
+
 
 
 
