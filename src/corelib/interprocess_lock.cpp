@@ -198,7 +198,10 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
         } else {
             // Timeout > 0
             unsigned long ms_gran;
-            if ( granularity <= CTimeout(0,0) ) {
+            if ( granularity.IsInfinite()  ||
+                 granularity.IsDefault()    ||
+                 granularity <= CTimeout(0,0) ) 
+            {
                 ms_gran = min(ms/5, (unsigned long)500);
             } else {
                 ms_gran = granularity.GetAsMilliSeconds();
