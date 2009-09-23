@@ -12,4 +12,4 @@ REQUIRES = MT
 CHECK_CMD = test_ncbi_trigger.sh
 CHECK_COPY = test_ncbi_trigger.sh
 
-WATCHERS = ivanov
+WATCHERS = lavr
