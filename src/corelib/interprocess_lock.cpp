@@ -187,7 +187,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
     
     int x_errno = 0;
     
-    if (timeout == kInfiniteTimeout  ||  timeout == kDefaultTimeout) {
+    if (timeout.IsInfinite()  ||  timeout.IsDefault()) {
         x_errno = s_UnixLock(fd);
 
     } else {
@@ -233,7 +233,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
                            "The lock could not be acquired in the time allotted");
             }
         } // if (!ms)
-    } // if (timeout == kInfiniteTimeout)
+    } // if (timeout.IsInfinite())
     
     // Error
     if ( x_errno ) {
@@ -273,7 +273,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
         if (errcode == ERROR_ALREADY_EXISTS) {
             // Wait
             DWORD res;
-            if (timeout == kInfiniteTimeout  ||  timeout == kDefaultTimeout) {
+            if (timeout.IsInfinite()  ||  timeout.IsDefault()) {
                 res = WaitForSingleObject(handle, INFINITE);
             } else {
                 res = WaitForSingleObject(handle, timeout.GetAsMilliSeconds());

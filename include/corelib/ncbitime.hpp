@@ -1348,7 +1348,7 @@ public:
     /// Get number of nanoseconds.
     long GetNanoSecondsAfterSecond(void) const;
 
-    /// Return span time as number of seconds.
+    /// Return time span as number of seconds.
     ///
     /// @return
     ///   Return representative of time span as type double.
@@ -1358,6 +1358,16 @@ public:
 
     /// Return TRUE is an object keep zero time span.
     bool IsEmpty(void) const;
+
+    //
+    // Set time span
+    //
+
+    /// Set time span in seconds and nanoseconds.
+    void Set(long seconds, long nanoseconds = 0);
+
+    /// Set time span from number of seconds (fractional value).
+    void Set(double seconds);
 
     //
     // Arithmetic
@@ -1394,7 +1404,7 @@ public:
     /// Operator to test if time span is greater.
     bool operator>  (const CTimeSpan& t) const;
 
-    /// Operator to test if time is less.
+    /// Operator to test if time span is less.
     bool operator<  (const CTimeSpan& t) const;
 
     /// Operator to test if time span is greater or equal.
@@ -1431,62 +1441,107 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CTimeout --
+/// CTimeout -- Timeout interval for various I/O etc activity.
 ///
-/// Timeout interval for various I/O etc activity.
+/// CTimeout is a simplifyed version of CTimeSpan with adding some
+/// additional functionality.
 ///
-/// Next special constant can be used in the constructor, Set() method or 
-/// comparison of CTimeout objects:
-///   - kDefaultTimeout
-///   - kInfiniteTimeout.
+/// Throw exception of type CTimeException on errors.
+
 
 class NCBI_XNCBI_EXPORT CTimeout
 {
 public:
-    /// Create default timeout.
-    CTimeout(void) : m_Ptr(kDefaultTimeout) {}
+    /// Type of timeouts.
+    enum EType {
+        eDefault,   ///< Default timeout (depends from implementation).
+        eInfinite,  ///< Infinite timeout.
+        eValue      ///< Timeout have some numeric value.
+    };
+
+    /// Create timeout of specified type.
+    ///
+    /// @param type
+    ///   Only eDefault or eInfinite is alowed here.
+    explicit CTimeout(EType type = eDefault);
+
+    /// Initialize timeout from CTimeSpan.
+    CTimeout(const CTimeSpan& ts);
+
     /// Initialize timeout in seconds and microseconds.
     CTimeout(unsigned int sec, unsigned int usec);
+
     /// Initialize timeout from number of seconds (fractional value).
-    CTimeout(double sec);
-    /// Create timeout from STimeout*.
-    CTimeout(const STimeout* t);
+    explicit CTimeout(double sec);
+
     /// Copy constructor.
     CTimeout(const CTimeout& t);
+
     /// Destructor.
     ~CTimeout(void) {}
+
+    /// Assignment operator.
+    const CTimeout& operator= (const CTimeout& t);
+
+    // Check on special timeout values.
+    bool IsDefault()  const { return m_Type == eDefault;  };
+    bool IsInfinite() const { return m_Type == eInfinite; };
 
     //
     // Get timeout
     //
-    /// Convert to const STimeout*.
-    operator const STimeout*(void) const { return Get(); }
-    /// Get STimeout*.
-    const STimeout* Get(void) const { return m_Ptr; }
-
     /// Get as number of milliseconds.
-    unsigned long GetAsMilliSeconds(void) const;
+    unsigned long   GetAsMilliSeconds(void) const;
+
     /// Convert as number of seconds (fractional value).
-    double GetAsDouble(void) const;
+    double          GetAsDouble(void) const;
+
+    /// Convert to CTimeSpan.
+    const CTimeSpan& GetAsTimeSpan(void) const;
 
     //
     // Set timeout
     //
+
+    /// Set special value.
+    ///
+    /// @param type
+    ///   Only eDefault or eInfinite is alowed here.
+    void Set(EType type);
     /// Set timeout in seconds and microseconds.
     void Set(unsigned int sec, unsigned int usec);
     /// Set timeout from number of seconds (fractional value).
     void Set(double sec);
-    /// Set timeout from STimeout.
-    void Set(const STimeout* t);
+    /// Set from CTimeSpan.
+    void Set(const CTimeSpan& ts);
 
-    /// Assignment operator.
-    const CTimeout& operator= (const CTimeout& t);
-    /// Copy timeout from STimeout*.
-    const CTimeout& operator=(const STimeout* t);
+    //
+    // Comparison.
+    // Equal special values can be compared only in == operator.
+    // And even here we cannot compare eDefault and eInfinite.
+    //
 
-private:
-    const STimeout* m_Ptr;      ///< Pointer to m_Timeout, or special value.
-    STimeout        m_Timeout;  ///< Storage for timeout value.
+    /// Operator to test equality of timeouts.
+    bool operator== (const CTimeout& t) const;
+
+    /// Operator to test in-equality of timeouts.
+    bool operator!= (const CTimeout& t) const;
+
+    /// Operator to test if timeout is greater.
+    bool operator>  (const CTimeout& t) const;
+
+    /// Operator to test if timeout is less.
+    bool operator<  (const CTimeout& t) const;
+
+    /// Operator to test if timeout is greater or equal.
+    bool operator>= (const CTimeout& t) const;
+
+    /// Operator to test if timeout is less or equal.
+    bool operator<= (const CTimeout& t) const;
+
+protected:
+    EType      m_Type;      ///< Type of timeout.
+    CTimeSpan  m_TimeSpan;  ///< Storage for timeout value.
 };
 
 
@@ -1659,7 +1714,7 @@ private:
 ///
 /// CTimeException --
 ///
-/// Define exceptions generated by CTime.
+/// Define exceptions generated by Time API.
 ///
 /// CTimeException inherits its basic functionality from CCoreException
 /// and defines additional error codes.
@@ -1669,9 +1724,10 @@ class NCBI_XNCBI_EXPORT CTimeException : public CCoreException
 public:
     /// Error types that CTime can generate.
     enum EErrCode {
-        eInvalid,       ///< Invalid time value
-        eArgument,      ///< Bad function argument
-        eFormat         ///< Incorrect format
+        eArgument,      ///< Bad function argument.
+        eConvert,       ///< Error convert value.
+        eInvalid,       ///< Invalid time value.
+        eFormat,        ///< Incorrect format.
     };
 
     /// Translate from the error code value to its string representation.
@@ -2108,18 +2164,13 @@ CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
 inline
 CTimeSpan::CTimeSpan(long seconds, long nanoseconds)
 {
-    m_Sec = seconds + nanoseconds/kNanoSecondsPerSecond;
-    m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
-    x_Normalize();
+    Set(seconds, nanoseconds);
 }
 
 inline
 CTimeSpan::CTimeSpan(double seconds)
 {
-    m_Sec = long(seconds);
-    m_NanoSec = long((seconds - m_Sec) * kNanoSecondsPerSecond);
-    x_Normalize();
-    return;
+    Set(seconds);
 }
 
 inline
@@ -2176,6 +2227,22 @@ inline
 double CTimeSpan::GetAsDouble(void) const
 {
     return m_Sec + double(m_NanoSec) / kNanoSecondsPerSecond;
+}
+
+inline
+void CTimeSpan::Set(long seconds, long nanoseconds)
+{
+    m_Sec = seconds + nanoseconds/kNanoSecondsPerSecond;
+    m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
+    x_Normalize();
+}
+
+inline
+void CTimeSpan::Set(double seconds)
+{
+    m_Sec = long(seconds);
+    m_NanoSec = long((seconds - m_Sec) * kNanoSecondsPerSecond);
+    x_Normalize();
 }
 
 inline
@@ -2299,28 +2366,167 @@ bool CTimeSpan::operator<= (const CTimeSpan& t) const
 //
 
 inline
-CTimeout::CTimeout(unsigned int sec, unsigned int usec)
-{ 
-    Set(sec, usec);
+CTimeout::CTimeout(EType type) { Set(type); }
+
+inline
+CTimeout::CTimeout(const CTimeSpan& ts) { Set(ts); }
+
+inline
+CTimeout::CTimeout(unsigned int sec, unsigned int usec) { Set(sec, usec); }
+
+inline
+CTimeout::CTimeout(double sec) { Set(sec); }
+
+inline
+CTimeout::CTimeout(const CTimeout& t)
+{
+    m_Type     = t.m_Type;
+    m_TimeSpan = t.m_TimeSpan;
 }
 
 inline
-CTimeout::CTimeout(double sec)
+const CTimeout& CTimeout::operator= (const CTimeout& t)
 {
-    Set(sec);
-}
-
-inline
-CTimeout::CTimeout(const STimeout* t)
-{
-    Set(t);
-}
-
-inline
-const CTimeout& CTimeout::operator=(const STimeout* t)
-{
-    Set(t);
+    if ( &t == this ) {
+        return *this;
+    }
+    m_Type     = t.m_Type;
+    m_TimeSpan = t.m_TimeSpan;
     return *this;
+}
+
+inline
+unsigned long CTimeout::GetAsMilliSeconds(void) const
+{ 
+    if (m_Type != eValue) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout:  Cannot convert from special timeout value");
+    }
+    return m_TimeSpan.GetCompleteSeconds() * kMilliSecondsPerSecond + 
+           (unsigned long)m_TimeSpan.GetNanoSecondsAfterSecond() /
+           (unsigned long)(kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+}
+
+inline
+double CTimeout::GetAsDouble(void) const
+{
+    if (m_Type != eValue) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout:  Cannot convert from special timeout value");
+    }
+    return m_TimeSpan.GetCompleteSeconds() + 
+           double(m_TimeSpan.GetNanoSecondsAfterSecond()) / kNanoSecondsPerSecond;
+}
+
+inline
+const CTimeSpan& CTimeout::GetAsTimeSpan(void) const
+{
+    if (m_Type != eValue) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout:  Cannot convert from special timeout value");
+    }
+    return m_TimeSpan;
+}
+
+inline
+void CTimeout::Set(EType type)
+{
+    switch(type) {
+    case eDefault:
+    case eInfinite:
+        m_Type = type;
+        break;
+    default:
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout(type) can be used with eDefault or eInfinite values only");
+    }
+}
+
+inline
+void CTimeout::Set(unsigned int sec, unsigned int usec)
+{
+    m_Type = eValue;
+    m_TimeSpan.Set((long)sec, (long)(usec * (kNanoSecondsPerSecond / kMicroSecondsPerSecond)));
+}
+
+inline
+void CTimeout::Set(double sec)
+{
+    if (sec < 0) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Cannot set negative value");
+    }
+    m_Type = eValue;
+    m_TimeSpan.Set(sec);
+}
+
+inline
+void CTimeout::Set(const CTimeSpan& ts)
+{
+    if (ts.GetSign() == eNegative) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Cannot convert from negative CTimeStamp");
+    }
+    m_Type     = eValue;
+    m_TimeSpan = ts;
+}
+
+inline
+bool CTimeout::operator== (const CTimeout& t) const
+{
+    if (m_Type == eValue  &&  t.m_Type == eValue) {
+        return m_TimeSpan == t.m_TimeSpan;
+    }
+    if (m_Type != t.m_Type) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Cannot compare different special values");
+    }
+    return true;
+}
+
+inline
+bool CTimeout::operator!= (const CTimeout& t) const
+{
+    if (m_Type == eValue  &&  t.m_Type == eValue) {
+        return m_TimeSpan != t.m_TimeSpan;
+    }
+    if (m_Type != t.m_Type) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Cannot compare different special values");
+    }
+    return false;
+}
+
+inline
+bool CTimeout::operator> (const CTimeout& t) const
+{
+    if (m_Type != eValue  ||  t.m_Type != eValue) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Cannot compare special value");
+    }
+    return m_TimeSpan > t.m_TimeSpan;
+}
+
+inline
+bool CTimeout::operator< (const CTimeout& t) const
+{
+    if (m_Type != eValue  ||  t.m_Type != eValue) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Cannot compare special value");
+    }
+    return m_TimeSpan < t.m_TimeSpan;
+}
+
+inline
+bool CTimeout::operator>= (const CTimeout& t) const
+{
+    return !(*this < t);
+}
+
+inline
+bool CTimeout::operator<= (const CTimeout& t) const
+{
+    return !(*this > t);
 }
 
 

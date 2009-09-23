@@ -131,8 +131,8 @@ public:
     ///  If the lock object (such as file on UNIX or system mutex on Windows)
     ///  doesn't exist it will be created.
     /// @sa TryLock, SetLockTimeout
-    void Lock(const CTimeout& timeout     = CTimeout(kInfiniteTimeout),
-              const CTimeout& granularity = CTimeout(kInfiniteTimeout));
+    void Lock(const CTimeout& timeout     = CTimeout(CTimeout::eInfinite),
+              const CTimeout& granularity = CTimeout(CTimeout::eInfinite));
 
     /// Release the lock.
     /// On any error (including when the lock is not held by the process),
@@ -208,7 +208,7 @@ public:
     typedef CInterProcessLock resource_type;
 
     PInterProcessLock(const CTimeout& timeout,
-                      const CTimeout& granularity = CTimeout(kInfiniteTimeout))
+                      const CTimeout& granularity = CTimeout(CTimeout::eInfinite))
         : m_Timeout(timeout),
           m_Granularity(granularity)
     {

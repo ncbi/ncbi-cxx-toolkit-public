@@ -2302,73 +2302,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 //=============================================================================
 
 
-CTimeout::CTimeout(const CTimeout& t)
-{
-    m_Timeout = t.m_Timeout;
-    if (t.m_Ptr == &t.m_Timeout) {
-        m_Ptr = &m_Timeout;
-    } else {
-        m_Ptr = t.m_Ptr; // special value
-    }
-}
-
-
-unsigned long CTimeout::GetAsMilliSeconds(void) const
-{ 
-    if (m_Ptr == kDefaultTimeout  ||  m_Ptr == kInfiniteTimeout) {
-        return kMax_ULong;
-    }
-    return m_Timeout.sec * kMilliSecondsPerSecond + m_Timeout.usec/1000;
-}
-
-
-double CTimeout::GetAsDouble(void) const
-{
-    if (m_Ptr == kDefaultTimeout  ||  m_Ptr == kInfiniteTimeout) {
-        return kMax_Double;
-    }
-    return m_Timeout.sec + double(m_Timeout.usec) / kMicroSecondsPerSecond;
-}
-
-
-const CTimeout& CTimeout::operator= (const CTimeout& t)
-{
-    m_Timeout = t.m_Timeout;
-    if (t.m_Ptr == &t.m_Timeout) {
-        m_Ptr = &m_Timeout;
-    } else {
-        m_Ptr = t.m_Ptr; // special value
-    }
-    return *this;
-}
-
-
-void CTimeout::Set(const STimeout* t)
-{
-    if (t == kDefaultTimeout  ||  t == kInfiniteTimeout) {
-        m_Ptr = t;
-    } else {
-        m_Timeout = *t;
-        m_Ptr = &m_Timeout;
-    }
-}
-
-
-void CTimeout::Set(unsigned int sec, unsigned int usec)
-{
-    m_Timeout.sec  = sec;
-    m_Timeout.usec = usec;
-    m_Ptr = &m_Timeout;
-}
-
-
-void CTimeout::Set(double sec)
-{
-    m_Timeout.sec  = (unsigned int)sec;
-    m_Timeout.usec = (unsigned int)((sec - m_Timeout.sec) * kMicroSecondsPerSecond);
-    m_Ptr = &m_Timeout;
-    return;
-}
+// ... see ncbitime.hpp
 
 
 
@@ -2639,6 +2573,7 @@ void TuneupFastLocalTime(void)
 const char* CTimeException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
+    case eConvert:   return "eConvert";
     case eInvalid:   return "eInvalid";
     case eFormat:    return "eFormat";
     default:         return CException::GetErrCodeString();

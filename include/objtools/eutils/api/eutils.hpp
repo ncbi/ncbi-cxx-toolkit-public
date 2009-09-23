@@ -68,10 +68,9 @@ public:
     virtual ~CEUtils_ConnContext(void) {}
 
     /// Get timeout
-    const CTimeout& GetTimeout(void) const { return m_Timeout; }
+    const CConnTimeout& GetTimeout(void) const { return m_Timeout; }
     /// Set timeout
-    void SetTimeout(const CTimeout& tmo) { m_Timeout = tmo; }
-
+    void SetTimeout(const CConnTimeout& tmo) { m_Timeout = tmo; }
     /// Get WebEnv
     const string& GetWebEnv(void) const { return m_WebEnv; }
     /// Set WebEnv
@@ -92,11 +91,11 @@ public:
     void SetEmail(const string& email) { m_Email = email; }
 
 private:
-    CTimeout m_Timeout;
-    string   m_WebEnv;
-    string   m_QueryKey;
-    string   m_Tool;
-    string   m_Email;
+    CConnTimeout m_Timeout;
+    string       m_WebEnv;
+    string       m_QueryKey;
+    string       m_Tool;
+    string       m_Email;
 };
 
 
@@ -106,7 +105,6 @@ private:
 ///
 ///  Base class for all EUtils requests
 ///
-
 
 class NCBI_EUTILS_EXPORT CEUtils_Request
 {
