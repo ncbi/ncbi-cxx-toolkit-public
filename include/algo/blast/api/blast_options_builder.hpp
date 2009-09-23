@@ -292,6 +292,11 @@ private:
 
     /// Should this class quietly ignore unsupported options
     bool m_IgnoreUnsupportedOptions;
+
+    /// Should loading of the megablast BLAST DB index be required?
+    bool m_ForceMbIndex;
+    /// Which megablast BLAST DB index name to load
+    string m_MbIndexName;
 };
 
 END_SCOPE(blast)

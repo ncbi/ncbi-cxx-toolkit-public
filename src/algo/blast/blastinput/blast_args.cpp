@@ -1652,6 +1652,16 @@ CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup( "" );
 }
 
+bool
+CMbIndexArgs::HasBeenSet(const CArgs& args)
+{
+    if ( (args.Exist(kArgUseIndex) && args[kArgUseIndex].HasValue()) ||
+         (args.Exist(kArgIndexName) && args[kArgIndexName].HasValue()) ) {
+        return true;
+    }
+    return false;
+}
+
 void
 CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opts)
@@ -1825,6 +1835,13 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
         if (CBlastDatabaseArgs::HasBeenSet(args)) {
             m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
+        }
+        if (CMbIndexArgs::HasBeenSet(args)) {
+            NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
+                if (dynamic_cast<CMbIndexArgs*>(arg->GetPointer()) != NULL) {
+                    (*arg)->ExtractAlgorithmOptions(args, opts);
+                }
+            }
         }
         m_HspFilteringArgs->ExtractAlgorithmOptions(args, opts);
         m_IsUngapped = !opts.GetGappedMode();

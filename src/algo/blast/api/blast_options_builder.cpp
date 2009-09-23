@@ -53,7 +53,8 @@ CBlastOptionsBuilder(const string                & program,
       m_PerformCulling (false),
       m_HspRangeMax    (0),
       m_QueryRange     (TSeqRange::GetEmpty()),
-      m_Locality       (locality)
+      m_Locality       (locality),
+      m_ForceMbIndex   (false)
 {
 }
 
@@ -142,10 +143,6 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
     
     CBlastOptions & bo = opts.SetOptions();
 
-    // Indexed megablast settings
-    bool indexed_mb_settings_set = false;
-    pair<bool, string> indexed_mb_settings(false, kEmptyStr);
-    
     switch(nm[0]) {
     case 'B':
         if (B4Param_BestHitScoreEdge.Match(p)) {
@@ -220,8 +217,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         } else if (B4Param_FirstDbSeq.Match(p)) {
             m_FirstDbSeq = v.GetInteger();
         } else if (B4Param_ForceMbIndex.Match(p)) {
-            indexed_mb_settings_set = true;
-            indexed_mb_settings.first = v.GetBoolean();
+            m_ForceMbIndex = v.GetBoolean();
         } else {
             found = false;
         }
@@ -307,8 +303,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         } else if (B4Param_MaskAtHash.Match(p)) {
             bo.SetMaskAtHash(v.GetBoolean());
         } else if (B4Param_MbIndexName.Match(p)) {
-            indexed_mb_settings_set = true;
-            indexed_mb_settings.second = v.GetString();
+            m_MbIndexName = v.GetString();
         } else {
             found = false;
         }
@@ -417,11 +412,6 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         found = false;
     }
 
-    if (indexed_mb_settings_set && indexed_mb_settings.first) {
-        bo.SetUseIndex(true, indexed_mb_settings.second,
-                       indexed_mb_settings.first);
-    }
-    
     if (! found) {
         if (m_IgnoreUnsupportedOptions)
             return;
@@ -458,6 +448,9 @@ void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
     
     if (m_PerformCulling) {
         bo.SetCullingLimit(m_HspRangeMax);
+    }
+    if (m_ForceMbIndex) {
+        bo.SetUseIndex(true, m_MbIndexName, m_ForceMbIndex);
     }
 }
 

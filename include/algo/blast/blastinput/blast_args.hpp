@@ -873,6 +873,10 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& args, 
                                          CBlastOptions& opts);
+
+    /// Auxiliary function to determine if the megablast database indexing
+    /// options have been set
+    static bool HasBeenSet(const CArgs& args);
 };
 
 /// Type definition of a container of IBlastCmdLineArgs

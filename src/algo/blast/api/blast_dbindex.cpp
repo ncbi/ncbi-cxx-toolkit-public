@@ -565,8 +565,9 @@ CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
     }
 
     if( index_names_.empty() ) {
-        NCBI_THROW(CDbIndex_Exception, eBadOption, 
-                   "no index file specified or index not found.");
+        string msg("no index file specified or index '");
+        msg += indexnames + "*' not found.";
+        NCBI_THROW(CDbIndex_Exception, eBadOption, msg);
     }
 
     PreSearchFn = &IndexedDbPreSearch;
