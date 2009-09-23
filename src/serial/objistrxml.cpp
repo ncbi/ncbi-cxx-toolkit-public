@@ -1163,6 +1163,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
             if (m_Attlist) {
                 string valueName;
                 ReadAttributeValue(valueName);
+                NStr::TruncateSpacesInPlace(valueName);
                 value = values.FindValue(valueName);
             } else {
                 CTempString attr;
@@ -1180,6 +1181,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
                 }
                 string valueName;
                 ReadAttributeValue(valueName);
+                NStr::TruncateSpacesInPlace(valueName);
                 value = values.FindValue(valueName);
                 if ( !EndOpeningTagSelfClosed() && values.IsInteger() ) {
                     // read integer value
