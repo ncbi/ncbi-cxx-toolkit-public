@@ -765,9 +765,6 @@ class NCBI_XOBJUTIL_EXPORT CSeqTranslator
 {
 public:
 
-    /// @name Deprecated old static interface
-    /// @{
-
     /// translate a string using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
     static void Translate(const string& seq,
@@ -812,8 +809,6 @@ public:
                           bool include_stop = true,
                           bool remove_trailing_X = false,
                           bool* alt_start = 0);
-
-    /// @}
 };
 
 
