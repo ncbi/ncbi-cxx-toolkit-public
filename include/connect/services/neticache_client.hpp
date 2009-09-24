@@ -38,9 +38,7 @@
 ///
 
 #include <connect/services/netservice_api.hpp>
-#include <connect/services/srv_discovery.hpp>
 
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
 #include <util/resource_pool.hpp>
@@ -60,17 +58,17 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+struct SNetICacheClientImpl;
+
 /// Client to NetCache server (implements ICache interface)
 ///
 /// @note This implementation is thread safe and synchronized
 ///
-class NCBI_NET_CACHE_EXPORT CNetICacheClient : virtual protected CConnIniter,
-                                               public ICache
+class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 {
-public:
-    /// Construct the client without connecting to any particular
-    /// server. Actual server (host and port) will be extracted from the
-    /// blob key.
+    NET_COMPONENT_ALLOW_DEFAULT_CONSTRUCTOR(NetICacheClient);
+
+    // Construct an instance with default connection parameters.
     CNetICacheClient();
 
     CNetICacheClient(const string&  host,
@@ -82,23 +80,6 @@ public:
                      const string& cache_name,
                      const string& client_name,
                      const string& lbsm_affinity_name = kEmptyStr);
-
-    virtual ~CNetICacheClient();
-
-    void SetConnectionParams(const string&  host,
-                             unsigned short port,
-                             const string&  cache_name,
-                             const string&  client_name);
-
-    void SetConnectionParams(CNetServiceDiscovery* service_discovery,
-                             IRebalanceStrategy* rebalance_strategy,
-                             const string& cache_name,
-                             const string& client_name);
-
-    /// Return socket to the socket pool
-    /// @note thread sync. method
-    virtual
-    void ReturnSocket(CSocket* sock, const string& blob_comments);
 
     /// Send session registration command
     void RegisterSession(unsigned pid);
@@ -170,92 +151,6 @@ public:
     /// Set communication timeout
     void SetCommunicationTimeout(const STimeout& to);
     STimeout  GetCommunicationTimeout() const;
-
-    /// Detach and return current socket.
-    /// Caller is responsible for deletion.
-    CSocket* DetachSocket();
-
-    const string& GetClientName() const { return m_ClientName; }
-
-    const string& GetHost() const { return m_Host; }
-    unsigned short GetPort() const { return m_Port; }
-
-protected:
-    bool ReadStr(CSocket& sock, string* str);
-    void WriteStr(const char* str, size_t len);
-    void CreateSocket(const string& hostname, unsigned port);
-    void WaitForServer(unsigned wait_sec=0);
-
-    /// @internal
-    class CSockGuard
-    {
-    public:
-        CSockGuard(CSocket& sock) : m_Sock(&sock) {}
-        CSockGuard(CSocket* sock) : m_Sock(sock) {}
-        ~CSockGuard() { if (m_Sock) m_Sock->Close(); }
-        /// Dismiss the guard (no disconnect)
-        void Release() { m_Sock = 0; }
-    private:
-        CSockGuard(const CSockGuard&);
-        CSockGuard& operator=(const CSockGuard&);
-    private:
-        CSocket*    m_Sock;
-    };
-
-protected:
-    CSocket*                m_Sock;
-    string                  m_Host;
-    unsigned short          m_Port;
-    EOwnership              m_OwnSocket;
-    string                  m_ClientName;
-    STimeout                m_Timeout;
-    string                  m_Tmp;                 ///< Temporary string
-
-private:
-    CResourcePool<CSocket>  m_SockPool;
-    CFastMutex              m_SockPool_Lock;
-
-protected:
-    /// Connect to server
-    /// Function returns true if connection has been re-established
-    /// false if connection has been established before and
-    /// throws an exception if it cannot establish connection
-    bool CheckConnect();
-
-    string MakeCommandPacket(const string& cmd_str,
-                             bool          connected) const;
-    void AddKVS(string*          out_str,
-                const string&    key,
-                int              version,
-                const string&    subkey) const;
-
-    virtual
-    void TrimPrefix(string* str) const;
-    virtual
-    void CheckOK(string* str) const;
-
-    IReader* GetReadStream_NoLock(const string&  key,
-                                  int            version,
-                                  const string&  subkey);
-
-private:
-    /// Check if server output starts with "ERR:", throws an exception
-    /// "OK:", "ERR:" prefixes are getting trimmed
-    ///
-    /// @return false if Blob not found error detected
-    static bool x_CheckErrTrim(string& answer);
-
-    CNetICacheClient(const CNetICacheClient&);
-    CNetICacheClient& operator=(const CNetICacheClient&);
-
-protected:
-    CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
-    CNetObjectRef<CNetServiceDiscovery> m_ServiceDiscovery;
-
-    string              m_CacheName;
-    size_t              m_BlobSize;
-    CRequestRateControl m_Throttler;
-    mutable CFastMutex  m_Lock;     ///< Client access lock
 };
 
 extern NCBI_NET_CACHE_EXPORT const char* kNetICacheDriverName;

@@ -29,11 +29,12 @@
  * Authors:  Dmitry Kazimirov, Maxim Didenko
  *
  * File Description:
- *   Network client for ICache (NetCache).
+ *   Helper classes for client APIs of network services
+ *   like NetCache and NetSchedule.
  *
  */
 
-#include "srv_discovery.hpp"
+#include "balancing.hpp"
 
 BEGIN_NCBI_SCOPE
 

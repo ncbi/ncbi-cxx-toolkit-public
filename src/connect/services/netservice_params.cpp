@@ -45,6 +45,7 @@ NCBI_PARAM_DEF(double, netservice_api, communication_timeout, 12.0);
 NCBI_PARAM_DEF(int, netservice_api, max_find_lbname_retries, 3);
 NCBI_PARAM_DEF(string, netcache_api, fallback_server, kEmptyStr);
 NCBI_PARAM_DEF(string, netcache_client, fallback_servers, kEmptyStr);
+NCBI_PARAM_DEF(bool, netcache_api, use_hasb_fallback, false);
 NCBI_PARAM_DEF(int, netservice_api, max_connection_pool_size, 0); // unlimited
 NCBI_PARAM_DEF(bool, server, stop_on_job_errors, true);
 NCBI_PARAM_DEF(bool, server, allow_implicit_job_return, false);

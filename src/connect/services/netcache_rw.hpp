@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
  *   Net cache client API.
@@ -39,7 +39,7 @@
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_conn_reader_writer.hpp>
-#include <connect/services/netcache_api.hpp>
+#include <connect/services/srv_connections.hpp>
 
 #include <util/transmissionrw.hpp>
 
@@ -73,10 +73,7 @@ private:
     CNetServerConnection m_Connection;
     auto_ptr<CSocketReaderWriter> m_Reader;
     /// Remaining BLOB size to be read
-    size_t              m_BlobBytesToRead;
-
-    CNetCacheReader(const CNetCacheReader&);
-    CNetCacheReader& operator= (const CNetCacheReader&);
+    size_t m_BlobBytesToRead;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -85,10 +82,7 @@ private:
 class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
-    CNetCacheWriter(CNetCacheAPI::TInstance api,
-        CNetServerConnection::TInstance connection,
-        CTransmissionWriter::ESendEofPacket send_eof =
-            CTransmissionWriter::eDontSendEofPacket);
+    CNetCacheWriter(CNetServerConnection::TInstance connection);
 
     virtual ~CNetCacheWriter();
 
@@ -102,16 +96,12 @@ public:
     void Close();
 
 private:
-    CNetCacheAPI m_API;
     CNetServerConnection m_Connection;
     auto_ptr<CTransmissionWriter> m_Writer;
     string m_LastError;
 
     bool x_IsStreamOk();
     void x_Shutdown();
-
-    CNetCacheWriter(const CNetCacheWriter&);
-    CNetCacheWriter& operator= (const CNetCacheWriter&);
 };
 
 

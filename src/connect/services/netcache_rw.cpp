@@ -33,8 +33,8 @@
 #include <ncbi_pch.hpp>
 
 #include "netservice_api_impl.hpp"
+#include "netcache_rw.hpp"
 
-#include <connect/services/netcache_rw.hpp>
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -91,9 +91,7 @@ ERW_Result CNetCacheReader::Read(void*   buf,
         *bytes_read = nn_read;
     }
     m_BlobBytesToRead -= nn_read;
-    //if (m_BlobBytesToRead == 0) {
-    //    FinishTransmission();
-    //}
+
     return res;
 }
 
@@ -111,15 +109,12 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
 
 
 /////////////////////////////////////////////////
-CNetCacheWriter::CNetCacheWriter(CNetCacheAPI::TInstance api,
-    CNetServerConnection::TInstance connection,
-    CTransmissionWriter::ESendEofPacket send_eof) :
-        m_API(api),
-        m_Connection(connection)
+CNetCacheWriter::CNetCacheWriter(CNetServerConnection::TInstance connection) :
+    m_Connection(connection)
 {
     m_Writer.reset(new CTransmissionWriter(
         new CSocketReaderWriter(&m_Connection->m_Socket),
-            eTakeOwnership, send_eof));
+            eTakeOwnership, CTransmissionWriter::eSendEofPacket));
 }
 
 CNetCacheWriter::~CNetCacheWriter()
@@ -160,11 +155,8 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
         return eRW_Error;
 
     ERW_Result res = m_Writer->Write(buf, count, bytes_written);
-    if (res == eRW_Success) {
-        if ( !x_IsStreamOk() )
-            return eRW_Error;
-    }
-    return res;
+
+    return res != eRW_Success || x_IsStreamOk() ? res : eRW_Error;
 }
 
 ERW_Result CNetCacheWriter::Flush(void)
@@ -173,11 +165,8 @@ ERW_Result CNetCacheWriter::Flush(void)
         return eRW_Error;
 
     ERW_Result res = m_Writer->Flush();
-    if (res == eRW_Success) {
-        if ( !x_IsStreamOk() )
-            return eRW_Error;
-    }
-    return res;
+
+    return res != eRW_Success || x_IsStreamOk() ? res : eRW_Error;
 }
 
 bool CNetCacheWriter::x_IsStreamOk()
@@ -197,7 +186,6 @@ bool CNetCacheWriter::x_IsStreamOk()
                     msg = NStr::ParseEscapes(msg);
                 }
                 m_LastError = msg;
-            } else {
             }
         }
         break;

@@ -33,68 +33,11 @@
 
 #include <ncbi_pch.hpp>
 
-#include "../ncbi_lbsmd.h"
-#include "../ncbi_servicep.h"
-
-#include <connect/services/srv_discovery.hpp>
-#include <connect/services/srv_connections_expt.hpp>
+#include <connect/services/balancing.hpp>
 
 #include <corelib/ncbi_config.hpp>
-#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
-
-CNetServiceDiscovery::~CNetServiceDiscovery()
-{
-    if (m_LBSMAffinityValue != NULL)
-        free((void*) m_LBSMAffinityValue);
-}
-
-CNetServiceDiscovery::CNetServiceDiscovery(
-        const string& service_name,
-        const string& lbsm_affinity_name) :
-    m_ServiceName(service_name),
-    m_LBSMAffinityName(lbsm_affinity_name)
-{
-    // Get affinity value from the local LBSM configuration file.
-    m_LBSMAffinityValue = lbsm_affinity_name.empty() ? NULL :
-        LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinityName.c_str());
-}
-
-#define LBSMD_IS_PENALIZED_RATE(rate) (rate <= -0.01)
-
-void CNetServiceDiscovery::QueryLoadBalancer(TDiscoveredServers& servers,
-    bool include_penalized)
-{
-    SConnNetInfo* net_info = ConnNetInfo_Create(m_ServiceName.c_str());
-
-    SERV_ITER srv_it = SERV_OpenP(m_ServiceName.c_str(),
-        include_penalized ?
-            fSERV_Standalone | fSERV_IncludeSuppressed :
-            fSERV_Standalone,
-        SERV_LOCALHOST, 0, 0.0, net_info, NULL, 0, 0 /*false*/,
-        m_LBSMAffinityName.c_str(), m_LBSMAffinityValue);
-
-    ConnNetInfo_Destroy(net_info);
-
-    if (srv_it == 0) {
-        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-            "Load balancer cannot find service name " + m_ServiceName + ".");
-    }
-
-    const SSERV_Info* sinfo;
-
-    while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
-        if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
-            (sinfo->rate > 0.0 ||
-                (include_penalized && LBSMD_IS_PENALIZED_RATE(sinfo->rate)))) {
-            servers.push_back(SServerAddress(
-                CSocketAPI::ntoa(sinfo->host), sinfo->port));
-        }
-    }
-
-    SERV_Close(srv_it);
-}
 
 class CSimpleRebalanceStrategy : public IRebalanceStrategy
 {

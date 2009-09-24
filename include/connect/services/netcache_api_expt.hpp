@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *   Net cache client API.
@@ -69,19 +69,25 @@ public:
         eBlobNotFound,
         ///< The requested command is (yet) unknown
         eUnknownCommand,
+        ///< The requested command is not implemented
+        eNotImplemented,
+        ///< Invalid response from the server
+        eInvalidServerResponse,
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString() const
     {
-        switch (GetErrCode())
-        {
-        case eAuthenticationError: return "eAuthenticationError";
-        case eKeyFormatError:      return "eKeyFormatError";
-        case eServerError:         return "eServerError";
-        case eBlobLocked:          return "eBlobLocked";
-        case eUnknnownCache:       return "eUnknnownCache";
-        case eBlobNotFound:        return "eBlobNotFound";
-        default:                   return CException::GetErrCodeString();
+        switch (GetErrCode()) {
+        case eAuthenticationError:      return "eAuthenticationError";
+        case eKeyFormatError:           return "eKeyFormatError";
+        case eServerError:              return "eServerError";
+        case eBlobLocked:               return "eBlobLocked";
+        case eUnknnownCache:            return "eUnknnownCache";
+        case eBlobNotFound:             return "eBlobNotFound";
+        case eUnknownCommand:           return "eUnknownCommand";
+        case eNotImplemented:           return "eNotImplemented";
+        case eInvalidServerResponse:    return "eInvalidServerResponse";
+        default:                        return CException::GetErrCodeString();
         }
     }
 

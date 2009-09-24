@@ -42,53 +42,53 @@ BEGIN_NCBI_SCOPE
 void CNetCacheAdmin::ShutdownServer()
 {
     m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
-        m_Impl->m_API->x_MakeCommand("SHUTDOWN"));
+        SNetCacheAPIImpl::AddClientIPSessionID("SHUTDOWN"));
 }
 
 void CNetCacheAdmin::Logging(bool on_off) const
 {
     m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
-        m_Impl->m_API->x_MakeCommand(on_off ? "LOG ON" : "LOG OFF"));
+        SNetCacheAPIImpl::AddClientIPSessionID(on_off ? "LOG ON" : "LOG OFF"));
 }
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
-        m_Impl->m_API->x_MakeCommand("GETCONF"),
+        SNetCacheAPIImpl::AddClientIPSessionID("GETCONF"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
-        m_Impl->m_API->x_MakeCommand("GETSTAT"),
+        SNetCacheAPIImpl::AddClientIPSessionID("GETSTAT"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintHealth(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
-        m_Impl->m_API->x_MakeCommand("HEALTH"),
+        SNetCacheAPIImpl::AddClientIPSessionID("HEALTH"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(
-        m_Impl->m_API->x_MakeCommand("VERSION"),
+        SNetCacheAPIImpl::AddClientIPSessionID("VERSION"),
         output_stream, CNetService::eSingleLineOutput);
 }
 
 void CNetCacheAdmin::DropStat() const
 {
     m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
-        m_Impl->m_API->x_MakeCommand("DROPSTAT"));
+        SNetCacheAPIImpl::AddClientIPSessionID("DROPSTAT"));
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream& out) const
 {
     m_Impl->m_API->m_Service->Monitor(out,
-        m_Impl->m_API->x_MakeCommand("MONI"));
+        SNetCacheAPIImpl::AddClientIPSessionID("MONI"));
 }
 
 

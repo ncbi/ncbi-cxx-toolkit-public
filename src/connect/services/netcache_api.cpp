@@ -73,40 +73,12 @@ static SServerAddress* s_GetFallbackServer()
     return s_FallbackServer->get();
 }
 
-
-CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
-{
-    CNetCacheKey key(bid);
-    return m_Service->GetServer(key.GetHost(), key.GetPort()).Connect();
-}
-
-SNetCacheAPIImpl::CNetCacheServerListener::CNetCacheServerListener(
-    const string& client_name)
-{
-    m_Auth = client_name;
-}
-
-void SNetCacheAPIImpl::CNetCacheServerListener::OnConnected(
-    CNetServerConnection::TInstance conn)
+void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
 {
     conn->WriteLine(m_Auth);
 }
 
-string SNetCacheAPIImpl::x_MakeCommand(const string& cmd) const
-{
-    string command(cmd);
-
-    CRequestContext& req = CDiagContext::GetRequestContext();
-    command += " \"";
-    command += req.GetClientIP();
-    command += "\" \"";
-    command += req.GetSessionID();
-    command += "\"";
-
-    return command;
-}
-
-void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
+void CNetCacheServerListener::OnError(
     const string& err_msg, SNetServerImpl* server)
 {
     string message = server->m_Address.AsString();
@@ -114,10 +86,14 @@ void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
     message += ": ";
     message += err_msg;
 
-    if (NStr::strncmp(err_msg.c_str(), "BLOB not found", 14) == 0)
+    static const char s_BlobNotFoundMsg[] = "BLOB not found";
+    if (NStr::strncmp(err_msg.c_str(), s_BlobNotFoundMsg,
+        sizeof(s_BlobNotFoundMsg) - 1) == 0)
         NCBI_THROW(CNetCacheException, eBlobNotFound, message);
 
-    if (NStr::strncmp(err_msg.c_str(), "BLOB locked", 11) == 0)
+    static const char s_BlobLockedMsg[] = "BLOB locked";
+    if (NStr::strncmp(err_msg.c_str(), s_BlobLockedMsg,
+        sizeof(s_BlobLockedMsg) - 1) == 0)
         NCBI_THROW(CNetCacheException, eBlobLocked, message);
 
     static const char s_UnknownCommandMsg[] = "Unknown command";
@@ -125,7 +101,34 @@ void SNetCacheAPIImpl::CNetCacheServerListener::OnError(
         sizeof(s_UnknownCommandMsg) - 1) == 0)
         NCBI_THROW(CNetCacheException, eUnknownCommand, message);
 
+    if (err_msg.find("Cache unknown") != string::npos)
+        NCBI_THROW(CNetCacheException, eUnknnownCache, message);
+
     NCBI_THROW(CNetServiceException, eCommunicationError, message);
+}
+
+
+CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
+{
+    CNetCacheKey key(bid);
+    return m_Service->GetServer(key.GetHost(), key.GetPort()).Connect();
+}
+
+void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    cmd->append(" \"");
+    cmd->append(req.GetClientIP());
+    cmd->append("\" \"");
+    cmd->append(req.GetSessionID());
+    cmd->append("\"");
+}
+
+string SNetCacheAPIImpl::AddClientIPSessionID(const string& cmd)
+{
+    string result(cmd);
+    AppendClientIPSessionID(&result);
+    return result;
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :
@@ -142,7 +145,6 @@ CNetCacheAPI::CNetCacheAPI(const string& service_name,
 }
 
 
-
 string CNetCacheAPI::PutData(const void*  buf,
                                 size_t       size,
                                 unsigned int time_to_live)
@@ -151,9 +153,8 @@ string CNetCacheAPI::PutData(const void*  buf,
 }
 
 
-
-CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
-    string*   key, unsigned  time_to_live)
+CNetServerConnection SNetCacheAPIImpl::InitiatePutCmd(
+    string* key, unsigned time_to_live)
 {
     _ASSERT(key);
 
@@ -186,7 +187,9 @@ CNetServerConnection SNetCacheAPIImpl::x_PutInitiate(
         }
     }
 
-    *key = conn.Exec(x_MakeCommand(request));
+    AppendClientIPSessionID(&request);
+
+    *key = conn.Exec(request);
 
     if (NStr::FindCase(*key, "ID:") != 0) {
         // Answer is not in "ID:....." format
@@ -211,47 +214,49 @@ string  CNetCacheAPI::PutData(const string& key,
 {
     string k(key);
 
-    CNetServerConnection conn = m_Impl->x_PutInitiate(&k, time_to_live);
-    CNetCacheWriter writer(*this, conn, CTransmissionWriter::eSendEofPacket);
-
-    const char* buf_ptr = (const char*)buf;
-    size_t size_to_write = size;
-    while (size_to_write) {
-        size_t n_written;
-        ERW_Result io_res =
-            writer.Write(buf_ptr, size_to_write, &n_written);
-        NCBI_IO_CHECK_RW(io_res);
-
-        size_to_write -= n_written;
-        buf_ptr       += n_written;
-    } // while
-    writer.Flush();
-    writer.Close();
+    m_Impl->WriteBuffer(m_Impl->InitiatePutCmd(&k, time_to_live),
+        (const char*) buf, size);
 
     return k;
+}
+
+void SNetCacheAPIImpl::WriteBuffer(
+    SNetServerConnectionImpl* conn_impl, const char* buf_ptr, size_t buf_size)
+{
+    CNetCacheWriter writer(conn_impl);
+
+    size_t bytes_written;
+
+    while (buf_size > 0) {
+        ERW_Result io_res = writer.Write(buf_ptr, buf_size, &bytes_written);
+        if (io_res != eRW_Success) {
+            NCBI_THROW(CNetServiceException, eCommunicationError,
+                "Communication error");
+        }
+        buf_ptr += bytes_written;
+        buf_size -= bytes_written;
+    }
+    writer.Flush();
+    writer.Close();
 }
 
 
 IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live)
 {
-    CNetServerConnection conn = m_Impl->x_PutInitiate(key, time_to_live);
-    return new CNetCacheWriter(*this, conn, CTransmissionWriter::eSendEofPacket);
+    return new CNetCacheWriter(m_Impl->InitiatePutCmd(key, time_to_live));
 }
 
 
 bool CNetCacheAPI::HasBlob(const string& key)
 {
-    if (m_Impl->m_NoHasBlob)
-        return !GetOwner(key).empty();
-    string request = "HASB " + key;
     try {
-        return m_Impl->x_GetConnection(key).
-            Exec(m_Impl->x_MakeCommand(request))[0] == '1';
+        return m_Impl->x_GetConnection(key).Exec(
+            SNetCacheAPIImpl::AddClientIPSessionID("HASB " + key))[0] == '1';
     } catch (CNetServiceException& e) {
-        if (e.GetErrCode() != CNetServiceException::eCommunicationError ||
-            e.GetMsg() != "Unknown request")
+        if (!TCGI_NetCacheUseHasbFallback::GetDefault() ||
+                e.GetErrCode() != CNetServiceException::eCommunicationError ||
+                e.GetMsg() != "Unknown request")
             throw;
-        m_Impl->m_NoHasBlob = true;
         return !GetOwner(key).empty();
     }
 }
@@ -260,7 +265,7 @@ bool CNetCacheAPI::HasBlob(const string& key)
 size_t CNetCacheAPI::GetBlobSize(const string& key)
 {
     return (size_t) NStr::StringToULong(m_Impl->x_GetConnection(key).
-        Exec(m_Impl->x_MakeCommand("GSIZ " + key)));
+        Exec(SNetCacheAPIImpl::AddClientIPSessionID("GSIZ " + key)));
 }
 
 
@@ -270,9 +275,12 @@ void CNetCacheAPI::Remove(const string& key)
 
     CNetServerConnection conn = m_Impl->x_GetConnection(key);
     try {
-        conn.Exec(m_Impl->x_MakeCommand(request));
+        SNetCacheAPIImpl::AppendClientIPSessionID(&request);
+        conn.Exec(request);
+    } catch (std::exception& e) {
+        ERR_POST("Could not remove blob \"" << key << "\": " << e.what());
     } catch (...) {
-        // TODO log the error
+        ERR_POST("Could not remove blob \"" << key << "\"");
     }
 }
 
@@ -285,7 +293,8 @@ bool CNetCacheAPI::IsLocked(const string& key)
     CNetServerConnection conn = m_Impl->x_GetConnection(key);
 
     try {
-        return conn.Exec(m_Impl->x_MakeCommand(request))[0] == '1';
+        SNetCacheAPIImpl::AppendClientIPSessionID(&request);
+        return conn.Exec(request)[0] == '1';
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return false;
@@ -300,7 +309,8 @@ string CNetCacheAPI::GetOwner(const string& key)
 
     CNetServerConnection conn = m_Impl->x_GetConnection(key);
     try {
-        return conn.Exec(m_Impl->x_MakeCommand(request));
+        SNetCacheAPIImpl::AppendClientIPSessionID(&request);
+        return conn.Exec(request);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return kEmptyStr;
@@ -312,25 +322,23 @@ IReader* CNetCacheAPI::GetData(const string& key,
                                   size_t*       blob_size,
                                   ELockMode     lock_mode)
 {
-    string request = "GET2 " + key;
+    string cmd = "GET2 " + key;
 
-    switch (lock_mode) {
-    case eLockNoWait:
-        request += " NW";  // no-wait mode
-        break;
-    case eLockWait:
-        break;
-    default:
-        _ASSERT(0);
-        break;
-    }
+    if (lock_mode == eLockNoWait)
+        cmd += " NW";  // no-wait mode
 
-    size_t bsize = 0;
-    CNetServerConnection conn = m_Impl->x_GetConnection(key);
+    SNetCacheAPIImpl::AppendClientIPSessionID(&cmd);
 
+    return m_Impl->GetReadStream(m_Impl->x_GetConnection(key), cmd, blob_size);
+}
+
+IReader* SNetCacheAPIImpl::GetReadStream(
+    CNetServerConnection conn, const string& cmd, size_t* blob_size)
+{
     string answer;
+
     try {
-        answer = conn.Exec(m_Impl->x_MakeCommand(request));
+        answer = conn.Exec(cmd);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return NULL;
@@ -338,17 +346,19 @@ IReader* CNetCacheAPI::GetData(const string& key,
     }
 
     string::size_type pos = answer.find("SIZE=");
-    if (pos != string::npos) {
-        const char* ch = answer.c_str() + pos + 5;
-        bsize = (size_t)atoi(ch);
 
-        if (blob_size) {
-            *blob_size = bsize;
-        }
+    if (pos == string::npos) {
+        NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+            "No SIZE field in reply to a blob reading command");
     }
+
+    size_t bsize = (size_t) atoi(answer.c_str() + pos + sizeof("SIZE=") - 1);
+
+    if (blob_size)
+        *blob_size = bsize;
+
     return new CNetCacheReader(conn, bsize);
 }
-
 
 CNetCacheAPI::EReadResult
 CNetCacheAPI::GetData(const string&  key,
@@ -368,8 +378,8 @@ CNetCacheAPI::GetData(const string&  key,
     if (blob_size)
         *blob_size = x_blob_size;
 
-    return m_Impl->x_ReadBuffer(*reader,
-        buf, buf_size, n_read, x_blob_size);
+    return m_Impl->ReadBuffer(*reader,
+        (unsigned char*) buf, buf_size, n_read, x_blob_size);
 }
 
 CNetCacheAPI::EReadResult
@@ -382,7 +392,7 @@ CNetCacheAPI::GetData(const string& key, CSimpleBuffer& buffer)
         return eNotFound;
 
     buffer.resize_mem(x_blob_size);
-    return m_Impl->x_ReadBuffer(*reader,
+    return m_Impl->ReadBuffer(*reader,
         buffer.data(), x_blob_size, NULL, x_blob_size);
 }
 
@@ -397,39 +407,34 @@ CNetService CNetCacheAPI::GetService()
 }
 
 /* static */
-CNetCacheAPI::EReadResult SNetCacheAPIImpl::x_ReadBuffer(
+CNetCacheAPI::EReadResult SNetCacheAPIImpl::ReadBuffer(
     IReader& reader,
-    void* buf,
+    unsigned char* buf_ptr,
     size_t buf_size,
     size_t* n_read,
     size_t blob_size)
 {
-    size_t x_read = 0;
-    size_t buf_avail = buf_size;
-    unsigned char* buf_ptr = (unsigned char*) buf;
-
     size_t bytes_read;
-    while (buf_avail) {
-        ERW_Result rw_res = reader.Read(buf_ptr, buf_avail, &bytes_read);
-        switch (rw_res) {
-        case eRW_Success:
-            x_read += bytes_read;
-            buf_avail -= bytes_read;
-            buf_ptr   += bytes_read;
+    size_t total_bytes_read = 0;
+
+    while (buf_size > 0) {
+        ERW_Result rw_res = reader.Read(buf_ptr, buf_size, &bytes_read);
+        if (rw_res == eRW_Success) {
+            total_bytes_read += bytes_read;
+            buf_ptr += bytes_read;
+            buf_size -= bytes_read;
+        } else if (rw_res == eRW_Eof) {
             break;
-        case eRW_Eof:
-            buf_avail = 0; // stop the loop
-            break;
-        default:
+        } else {
             NCBI_THROW(CNetServiceException, eCommunicationError,
                        "Error while reading BLOB");
-        } // switch
-    } // while
+        }
+    }
 
-    if (n_read)
-        *n_read = x_read;
+    if (n_read != NULL)
+        *n_read = total_bytes_read;
 
-    return x_read == blob_size ?
+    return total_bytes_read == blob_size ?
         CNetCacheAPI::eReadComplete : CNetCacheAPI::eReadPart;
 }
 

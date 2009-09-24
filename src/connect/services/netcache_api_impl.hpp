@@ -32,55 +32,64 @@
  */
 
 #include "netservice_api_impl.hpp"
+#include "netcache_rw.hpp"
 
-#include <connect/services/netcache_rw.hpp>
+#include <connect/services/netcache_api.hpp>
 
 BEGIN_NCBI_SCOPE
 
-struct SNetCacheAPIImpl : public CNetObject
+class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
+    public INetServerConnectionListener
+{
+public:
+    CNetCacheServerListener(const string& client_name) : m_Auth(client_name) {}
+
+private:
+    virtual void OnConnected(CNetServerConnection::TInstance conn);
+    virtual void OnError(const string& err_msg, SNetServerImpl* server);
+
+private:
+    string m_Auth;
+};
+
+struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
 {
     SNetCacheAPIImpl(const string& service,
         const string& client_name,
         const string& lbsm_affinity_name);
 
-    class CNetCacheServerListener : public INetServerConnectionListener
-    {
-    public:
-        CNetCacheServerListener(const string& client_name);
+    IReader* GetReadStream(
+        CNetServerConnection conn_impl,
+        const string& cmd,
+        size_t* blob_size);
 
-    private:
-        virtual void OnConnected(CNetServerConnection::TInstance conn);
-        virtual void OnError(const string& err_msg, SNetServerImpl* server);
-
-    private:
-        string m_Auth;
-    };
-
-    static CNetCacheAPI::EReadResult x_ReadBuffer(
+    static CNetCacheAPI::EReadResult ReadBuffer(
         IReader& reader,
-        void* buf,
+        unsigned char* buf_ptr,
         size_t buf_size,
         size_t* n_read,
         size_t blob_size);
 
     CNetServerConnection x_GetConnection(const string& bid);
-    CNetServerConnection x_PutInitiate(
-        string*  key, unsigned  time_to_live);
+    CNetServerConnection InitiatePutCmd(string* key, unsigned time_to_live);
 
-    string x_MakeCommand(const string& cmd) const;
+    void WriteBuffer(
+        SNetServerConnectionImpl* conn_impl,
+        const char* buf_ptr,
+        size_t buf_size);
+
+    static void AppendClientIPSessionID(string* cmd);
+    static string AddClientIPSessionID(const string& cmd);
 
     CNetService m_Service;
 
     CNetObjectRef<CNetCacheServerListener> m_Listener;
-
-    bool m_NoHasBlob;
 };
 
 inline SNetCacheAPIImpl::SNetCacheAPIImpl(const string& service,
     const string& client_name,
     const string& lbsm_affinity_name) :
-    m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name)),
-    m_NoHasBlob(false)
+    m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name))
 {
     m_Listener = new CNetCacheServerListener(m_Service.GetClientName());
 
