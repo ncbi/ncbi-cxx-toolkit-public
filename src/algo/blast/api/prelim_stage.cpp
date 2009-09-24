@@ -42,6 +42,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_mtlock.hpp>
 #include <algo/blast/core/gencode_singleton.h>
 #include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_stat.h>
 
 #include "prelim_search_runner.hpp"
 #include "blast_aux_priv.hpp"
@@ -306,6 +307,14 @@ CBlastPrelimSearch::Run()
     }
 
     return m_InternalData;
+}
+
+int
+CBlastPrelimSearch::CheckInternalData()
+{
+    int retval = 0;
+    retval = BlastScoreBlkCheck(m_InternalData->m_ScoreBlk->GetPointer()); 
+    return retval;
 }
 
 BlastHSPResults*

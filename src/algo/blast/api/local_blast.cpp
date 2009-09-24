@@ -120,6 +120,33 @@ CLocalBlast::Run()
     // Note: we need to pass the search messages ...
     // filtered query regions should be masked in the BLAST_SequenceBlk
     // already.
+
+    int status = m_PrelimSearch->CheckInternalData();
+
+    if (status != 0)
+    {
+         // Search was not run, but we send back an empty CSearchResultSet.
+         CRef<ILocalQueryData> local_query_data = m_QueryFactory->MakeLocalQueryData(m_Opts);
+         // TSeqLocVector slv = m_QueryFactory.GetTSeqLocVector();
+         vector< CConstRef<objects::CSeq_id> > seqid_vec;
+         vector< CRef<CBlastAncillaryData> > ancill_vec;
+         TSeqAlignVector sa_vec;
+         size_t index;
+         for (index=0; index<local_query_data->GetNumQueries(); index++)
+         {
+              CConstRef<objects::CSeq_id> query_id(local_query_data->GetSeq_loc(index)->GetId());
+              seqid_vec.push_back(query_id);
+              CRef<objects::CSeq_align_set> tmp_align;
+              sa_vec.push_back(tmp_align);
+              pair<double, double> tmp_pair(-1.0, -1.0);
+              CRef<CBlastAncillaryData>  tmp_ancillary_data(new CBlastAncillaryData(tmp_pair, tmp_pair, tmp_pair, 0));
+              ancill_vec.push_back(tmp_ancillary_data);
+         }
+         TSearchMessages msg_vec;
+         local_query_data->GetMessages(msg_vec);
+         CRef<CSearchResultSet> result_set(new CSearchResultSet(seqid_vec, sa_vec, msg_vec, ancill_vec));
+         return result_set;
+    }
     
     m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
     m_InternalData = m_PrelimSearch->Run();

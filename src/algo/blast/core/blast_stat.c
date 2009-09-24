@@ -776,6 +776,34 @@ SPsiBlastScoreMatrixNew(size_t ncols)
     return retval;
 }
 
+int
+BlastScoreBlkCheck(BlastScoreBlk* sbp)
+{
+    int retval = 0;
+    int index = 0;
+    Boolean found = FALSE;
+
+    if (sbp == NULL)
+       return -1;
+    
+    if (sbp->kbp == NULL || sbp->sfp == NULL)
+      return 1;
+
+    for (index=0; index<sbp->number_of_contexts; index++)
+    {
+       if (sbp->kbp[index] || sbp->sfp[index])
+       {
+           found = TRUE;
+           break;
+       }
+    }
+
+    if (found)
+	return 0;
+    else
+        return 1;
+}
+
 /*
    Allocates memory for the BlastScoreBlk*.
 */

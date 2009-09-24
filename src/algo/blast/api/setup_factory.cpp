@@ -154,7 +154,6 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
             msg = "BLAST_MainSetUp failed (" + NStr::IntToString(status) + 
             " error code)";
         }
-        NCBI_THROW(CBlastException, eCoreBlastError, msg);
     }
 
     if (masked_query_regions) {
