@@ -36,6 +36,7 @@
 #include <connect/services/balancing.hpp>
 
 #include <corelib/ncbi_config.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
