@@ -4,7 +4,8 @@ ASN_DEP = xnetblast blastdb
 
 ###  BASIC PROJECT SETTINGS
 LIB = align_format
-SRC = format_flags align_format_util showdefline showalign tabular vectorscreen seqalignfilter
+SRC = format_flags align_format_util showdefline showalign tabular vectorscreen seqalignfilter \
+      aln_printer
 # OBJ =
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
