@@ -209,6 +209,14 @@ typedef struct Blast_ResFreq {
     double* prob0;            /**< probs, zero offset. */
 } Blast_ResFreq;
 
+/** 
+ * Check that score blk is valid, returns zero if it is.
+ * @param sbp ScoreBlk to check [in]
+ * @return zero if valid
+*/
+NCBI_XBLAST_EXPORT
+int BlastScoreBlkCheck(BlastScoreBlk* sbp);
+
 /**
  *   Allocates and initializes BlastScoreBlk
  * @param alphabet either BLASTAA_SEQ_CODE or BLASTNA_SEQ_CODE [in]

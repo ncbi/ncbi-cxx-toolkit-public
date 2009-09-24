@@ -81,6 +81,13 @@ public:
     /** @inheritDoc */
     virtual void SetNumberOfThreads(size_t nthreads);
 
+    /// Checks that internal data is valid.  Used to know whether or not
+    /// run should proceed or just print statistics for user.  This
+    /// would most often be called if the problems in constructor are not bad enough to throw
+    /// but there is no need to scan subject sequences.
+    int CheckInternalData();
+
+
     /// Return HSPs in a structure other than the HSPStream? Provide
     /// conversion? How to combine this with CBlastTracebackStage?
     BlastHSPResults* ComputeBlastHSPResults(BlastHSPStream* stream,
