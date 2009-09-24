@@ -17,10 +17,10 @@ outlog()
 }
 
 exit_code=0
-client_log=test_ncbi_trigger_client.log
 server_log=test_ncbi_trigger_server.log
+client_log=test_ncbi_trigger_client.log
 
-rm -f $client_log $server_log
+rm -f $server_log $client_log
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
@@ -55,8 +55,8 @@ test $server_exit_code != 0  &&  exit_code=$server_exit_code
 test $client_exit_code != 0  &&  exit_code=$client_exit_code
 
 if [ $exit_code != 0 ]; then
-  outlog "$client_log"
   outlog "$server_log"
+  outlog "$client_log"
 fi
 
 exit $exit_code
