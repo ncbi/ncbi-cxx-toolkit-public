@@ -72,7 +72,8 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
     do {
         status = pipe.Read((char*)buf + n_read_total,
                            size - n_read_total, &x_read);
-        LOG_POST("Read from pipe: " + NStr::UIntToString(x_read) + " bytes");
+        ERR_POST(Info <<
+                 "Read from pipe: " + NStr::UIntToString(x_read) + " bytes");
         n_read_total += x_read;
     } while (status == eIO_Success  &&  n_read_total < size);
     
@@ -95,7 +96,8 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
     do {
         status = pipe.Write((char*)buf + n_written_total,
                            size - n_written_total, &x_written);
-        LOG_POST("Write to pipe: " + NStr::UIntToString(x_written) + " bytes");
+        ERR_POST(Info <<
+                 "Write to pipe: " + NStr::UIntToString(x_written) + " bytes");
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
     
@@ -165,7 +167,7 @@ int CTest::Run(void)
     if ( !args["postfix"].AsString().empty() ) {
         m_PipeName += "_" + args["postfix"].AsString();
     }
-    LOG_POST("Using pipe name: " + m_PipeName);
+    ERR_POST(Info << "Using pipe name: " + m_PipeName);
 
     if (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
@@ -190,8 +192,8 @@ int CTest::Run(void)
 
 void CTest::Client(int num)
 {
-    LOG_POST("\nStart client " + NStr::IntToString(num) + "...\n");
-    STimeout timeout = {2,0};
+    ERR_POST(Info << "Start client " + NStr::IntToString(num) + "...");
+    STimeout timeout = {2, 0};
 
     CNamedPipeClient pipe;
     assert(pipe.IsClientSide());
@@ -238,7 +240,7 @@ void CTest::Client(int num)
             assert(blob[i] == (unsigned char)i);
         }
         free(blob);
-        LOG_POST("Blob test is OK...");
+        ERR_POST(Info << "Blob test is OK...");
     }}
 }
 
@@ -249,13 +251,13 @@ void CTest::Client(int num)
 
 void CTest::Server(void)
 {
-    LOG_POST("\nStart server...\n");
+    ERR_POST(Info << "Start server...");
 
     char buf[kSubBlobSize];
     size_t   n_read    = 0;
     size_t   n_written = 0;
 
-    STimeout timeout   = {30,0};
+    STimeout timeout   = {30, 0};
     CNamedPipeServer pipe(m_PipeName, &timeout, kSubBlobSize + 512);
 
     assert(pipe.IsServerSide());
@@ -263,12 +265,12 @@ void CTest::Server(void)
     assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
 
     for (;;) {
-        LOG_POST("Listening pipe...");
+        ERR_POST(Info << "Listening pipe...");
 
         EIO_Status status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            LOG_POST("Client connected...");
+            ERR_POST(Info << "Client connected...");
 
             // "Hello" test
             {{
@@ -305,14 +307,14 @@ void CTest::Server(void)
                 }
                 memset(blob, 0, kBlobSize);
                 free(blob);
-                LOG_POST("Blob test is OK...");
+                ERR_POST(Info << "Blob test is OK...");
             }}
-            LOG_POST("Client disconnected...");
+            ERR_POST(Info << "Client disconnected...");
             assert(pipe.Disconnect() == eIO_Success);
             break;
 
         case eIO_Timeout:
-            LOG_POST("Timeout detected...");
+            ERR_POST(Info << "Timeout...");
             break;
 
         default:
