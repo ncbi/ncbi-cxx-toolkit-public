@@ -177,7 +177,7 @@ public:
     EIO_Status Status(EIO_Event direction) const;
 
 private:
-    EIO_Status x_Disconnect(bool reconnect = false);
+    EIO_Status x_Disconnect(bool abort = true);
 
     HANDLE      m_Pipe;         // pipe I/O handle
     string      m_PipeName;     // pipe name 
@@ -284,7 +284,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         // Create pipe
         m_Pipe = ::CreateNamedPipe
             (m_PipeName.c_str(),            // pipe name 
-             PIPE_ACCESS_DUPLEX,            //  read/write access 
+             PIPE_ACCESS_DUPLEX,            // read/write access 
              PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 
              1,                             // one instance only 
              pipebufsize,                   // output buffer size 
@@ -329,10 +329,8 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                 DWORD error = ::GetLastError();
                 connected = error == ERROR_PIPE_CONNECTED ? TRUE : FALSE;
                 // If client closed connection before we serve it
-                if (error == ERROR_NO_DATA) {
-                    if (x_Disconnect(true) != eIO_Success) {
-                        throw string("Failed to close broken client session");
-                    } 
+                if (error == ERROR_NO_DATA  &&  x_Disconnect() != eIO_Success){
+                    throw string("Failed to close broken client session");
                 }
             }
             if ( connected ) {
@@ -358,7 +356,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 }
 
 
-EIO_Status CNamedPipeHandle::x_Disconnect(bool reconnect)
+EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
 {
     EIO_Status status = eIO_Unknown;
 
@@ -367,14 +365,16 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool reconnect)
             status = eIO_Closed;
             throw string("Named pipe already closed");
         }
-        ::FlushFileBuffers(m_Pipe); 
+        if (!abort) {
+            ::FlushFileBuffers(m_Pipe);
+        }
         if (!::DisconnectNamedPipe(m_Pipe)) {
             DWORD error = ::GetLastError();
             string message("DisconnectNamedPipe() failed");
             throw s_WinError(error, message);
-        } 
-        Close();
-        return reconnect ? Create(m_PipeName, m_PipeBufSize) : eIO_Success;
+        }
+        // Per documentation, another client can now connect again
+        return eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(13, s_FormatErrorMessage("Disconnect", what));
@@ -386,7 +386,7 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool reconnect)
 
 EIO_Status CNamedPipeHandle::Disconnect(void)
 {
-    return x_Disconnect();
+    return x_Disconnect(false/*orderly*/);
 }
 
 
