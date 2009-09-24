@@ -1920,7 +1920,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     id_label = NStr::IntToString(gi);
                 } else {
                     out<<"<a name="<<wid->GetSeqIdString()<<"></a>";
-                    id_label = wid->GetSeqIdString();
+                    id_label = CAlignFormatUtil::GetLabel(wid).c_str();
                 }
             }
             out <<" ";
@@ -2012,7 +2012,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                             id_label = NStr::IntToString(gi);
                         } else {
                             out<<"<a name="<<wid2->GetSeqIdString()<<"></a>";
-                            id_label = wid2->GetSeqIdString();
+                            id_label = CAlignFormatUtil::GetLabel(wid2).c_str();
                         }
                         if(m_AlignOption&eLinkout){
                             
@@ -3307,14 +3307,14 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                             = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                              GetBioseqCore()->GetId(), 
                                              CSeq_id::WorstRank);
-                        id=wid->GetSeqIdString();
+                        id = CAlignFormatUtil::GetLabel(wid).c_str();
                     }
                 } else {
                     const CRef<CSeq_id> wid 
                         = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                          GetBioseqCore()->GetId(), 
                                          CSeq_id::WorstRank);
-                    id=wid->GetSeqIdString();
+                    id = CAlignFormatUtil::GetLabel(wid).c_str();
                 }           
             }
         }
@@ -3335,14 +3335,14 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                     = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                      GetBioseqCore()->GetId(),
                                      CSeq_id::WorstRank);
-                id=wid->GetSeqIdString();
+                id = CAlignFormatUtil::GetLabel(wid).c_str();
             }
         } else {
             const CRef<CSeq_id> wid 
                 = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                  GetBioseqCore()->GetId(), 
                                  CSeq_id::WorstRank);
-            id=wid->GetSeqIdString();
+            id = CAlignFormatUtil::GetLabel(wid).c_str();
         }     
     }
 }
