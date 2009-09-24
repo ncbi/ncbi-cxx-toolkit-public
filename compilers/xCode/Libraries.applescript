@@ -95,7 +95,7 @@ property blast : {name:"blast", path:"algo:blast:core"}
 property blast_composition : {name:"blast_composition", path:"algo:blast:composition_adjustment"}
 property xblast : {name:"xblast", path:"algo:blast:api"}
 property xblast_dbindex : {name:"xblast_dbindex", path:"algo:blast:dbindex"}
-property xalgognomon : {name:"xalgognomon", path:"algo:gnomon", inc:{"gnomon__.cpp", "gnomon___.cpp", "gnomon_engine.cpp", "gnomon_objmgr.cpp", "score.cpp", "gnomon_model.cpp", "parse.cpp", "hmm.cpp", "gnomon_seq.cpp", "asn1.cpp"}, asn1:true}
+property xalgognomon : {name:"xalgognomon", path:"algo:gnomon", inc:{"gnomon__.cpp", "gnomon___.cpp", "gnomon_engine.cpp", "gnomon_objmgr.cpp", "score.cpp", "gnomon_model.cpp", "parse.cpp", "hmm.cpp", "gnomon_seq.cpp", "id_handler.cpp", "asn1.cpp"}, asn1:true}
 property xalgowinmask : {name:"xalgowinmask", path:"algo:winmask"}
 property xalgodustmask : {name:"xalgodustmask", path:"algo:dustmask"}
 property xalgophytree : {name:"xalgophytree", path:"algo:phy_tree"}
