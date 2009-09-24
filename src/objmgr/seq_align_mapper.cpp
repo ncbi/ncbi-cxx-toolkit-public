@@ -219,7 +219,13 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
     mseg.m_PartType = old_it->m_PartType;
     if (!dl  &&  !dr) {
         // copy scores if there's no truncation
-        mseg.SetScores(old_it->m_Scores);
+        mseg.m_Scores = old_it->m_Scores;
+        mseg.m_ScoresGroupIdx = old_it->m_ScoresGroupIdx;
+    }
+    else {
+        // Invalidate all scores related to the segment (this
+        // includes alignment-level scores).
+        x_InvalidateScores(&(*old_it));
     }
     for (size_t r = 0; r < old_it->m_Rows.size(); ++r) {
         SAlignment_Segment::SAlignment_Row& mrow =
@@ -354,7 +360,13 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
-            mseg.SetScores(seg.m_Scores);
+            mseg.m_Scores = seg.m_Scores;
+            mseg.m_ScoresGroupIdx = seg.m_ScoresGroupIdx;
+        }
+        else {
+            // Invalidate all scores related to the segment (this
+            // includes alignment-level scores).
+            x_InvalidateScores(&seg);
         }
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& mrow =

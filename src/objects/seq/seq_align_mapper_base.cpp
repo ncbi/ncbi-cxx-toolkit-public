@@ -52,6 +52,7 @@ SAlignment_Segment::SAlignment_Segment(int len, size_t dim)
     : m_Len(len),
       m_Rows(dim),
       m_HaveStrands(false),
+      m_ScoresGroupIdx(-1),
       m_PartType(CSpliced_exon_chunk::e_not_set)
 {
     return;
@@ -117,18 +118,13 @@ SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow
 }
 
 
-void SAlignment_Segment::SetScores(const TScores& scores)
-{
-    m_Scores = scores;
-}
-
-
 CSeq_align_Mapper_Base::CSeq_align_Mapper_Base(void)
     : m_OrigAlign(0),
       m_HaveStrands(false),
       m_HaveWidths(false),
       m_OnlyNucs(true),
       m_Dim(0),
+      m_ScoresInvalidated(false),
       m_DstAlign(0),
       m_MapWidths(false),
       m_AlignFlags(eAlign_Normal)
@@ -143,6 +139,7 @@ CSeq_align_Mapper_Base::CSeq_align_Mapper_Base(const CSeq_align& align,
       m_HaveWidths(false),
       m_OnlyNucs(true),
       m_Dim(0),
+      m_ScoresInvalidated(false),
       m_DstAlign(0),
       m_MapWidths(map_widths == eWidth_Map),
       m_AlignFlags(eAlign_Normal)
@@ -156,9 +153,35 @@ CSeq_align_Mapper_Base::~CSeq_align_Mapper_Base(void)
 }
 
 
+// Copy each element from source to destination
+template<class T, class C1, class C2>
+void CloneContainer(const C1& src, C2& dst)
+{
+    ITERATE(typename C1, it, src) {
+        CRef<T> elem(new T);
+        elem->Assign(**it);
+        dst.push_back(elem);
+    }
+}
+
+
+// Copy pointers from source to destination
+template<class C1, class C2>
+void CopyContainer(const C1& src, C2& dst)
+{
+    ITERATE(typename C1, it, src) {
+        dst.push_back(*it);
+    }
+}
+
+
 void CSeq_align_Mapper_Base::x_Init(const CSeq_align& align)
 {
     m_OrigAlign.Reset(&align);
+    if (align.IsSetScore()  &&  !align.GetScore().empty()) {
+        CopyContainer<CSeq_align::TScore, TScores>(
+            align.GetScore(), m_AlignScores);
+    }
     switch ( align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
         x_Init(align.GetSegs().GetDendiag());
@@ -239,7 +262,8 @@ void CSeq_align_Mapper_Base::x_Init(const TDendiag& diags)
         SAlignment_Segment& seg = x_PushSeg(diag.GetLen(), dim);
         ENa_strand strand = eNa_strand_unknown;
         if ( diag.IsSetScores() ) {
-            seg.SetScores(diag.GetScores());
+            CopyContainer<CDense_diag::TScores, TScores>(
+                diag.GetScores(), seg.m_Scores);
         }
         for (size_t row = 0; row < dim; ++row) {
             if ( m_HaveStrands ) {
@@ -281,16 +305,16 @@ void CSeq_align_Mapper_Base::x_Init(const CDense_seg& denseg)
         ERR_POST_X(7, Warning << "Invalid 'strands' size in denseg");
         m_Dim = min(m_Dim*numseg, denseg.GetStrands().size()) / numseg;
     }
+    if ( denseg.IsSetScores() ) {
+        CopyContainer<CDense_seg::TScores, TScores>(
+            denseg.GetScores(), m_SegsScores);
+    }
     m_HaveWidths = denseg.IsSetWidths();
     m_MapWidths &= m_HaveWidths;
     m_OnlyNucs &= m_MapWidths;
     ENa_strand strand = eNa_strand_unknown;
     for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg = x_PushSeg(denseg.GetLens()[seg], m_Dim);
-        if ( seg == 0  &&  denseg.IsSetScores() ) {
-            // Set scores for the first segment only to avoid multiple copies
-            alnseg.SetScores(denseg.GetScores());
-        }
         for (unsigned int row = 0;  row < m_Dim;  row++) {
             if ( m_HaveStrands ) {
                 strand = denseg.GetStrands()[seg*m_Dim + row];
@@ -331,7 +355,8 @@ void CSeq_align_Mapper_Base::x_Init(const TStd& sseg)
         }
         SAlignment_Segment& seg = x_PushSeg(0, dim);
         if ( stdseg.IsSetScores() ) {
-            seg.SetScores(stdseg.GetScores());
+            CopyContainer<CStd_seg::TScores, TScores>(
+                stdseg.GetScores(), seg.m_Scores);
         }
         int seg_len = 0;
         bool multi_width = false;
@@ -480,18 +505,22 @@ void CSeq_align_Mapper_Base::x_Init(const CPacked_seg& pseg)
         ERR_POST_X(12, Warning << "Invalid 'starts' size in packed-seg");
         m_Dim = min(m_Dim*numseg, pseg.GetStarts().size()) / numseg;
     }
+    if (m_Dim*numseg != pseg.GetPresent().size()) {
+        ERR_POST_X(20, Warning << "Invalid 'present' size in packed-seg");
+        m_Dim = min(m_Dim*numseg, pseg.GetPresent().size()) / numseg;
+    }
     m_HaveStrands = pseg.IsSetStrands();
     if (m_HaveStrands && m_Dim*numseg != pseg.GetStrands().size()) {
         ERR_POST_X(13, Warning << "Invalid 'strands' size in packed-seg");
         m_Dim = min(m_Dim*numseg, pseg.GetStrands().size()) / numseg;
     }
+    if ( pseg.IsSetScores() ) {
+        CopyContainer<CPacked_seg::TScores, TScores>(
+            pseg.GetScores(), m_SegsScores);
+    }
     ENa_strand strand = eNa_strand_unknown;
     for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg = x_PushSeg(pseg.GetLens()[seg], m_Dim);
-        if ( seg == 0  &&  pseg.IsSetScores() ) {
-            // Set scores for the first segment only to avoid multiple copies
-            alnseg.SetScores(pseg.GetScores());
-        }
         for (unsigned int row = 0;  row < m_Dim;  row++) {
             if ( m_HaveStrands ) {
                 strand = pseg.GetStrands()[seg*m_Dim + row];
@@ -532,6 +561,11 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
         &spliced.GetProduct_id() : 0;
 
     m_Dim = 2;
+
+    if ( exon.IsSetScores() ) {
+        CopyContainer<CScore_set::Tdata, TScores>(
+            exon.GetScores(), m_SegsScores);
+    }
 
     bool is_prot_prod =
         spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
@@ -676,9 +710,14 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
         NCBI_THROW(CAnnotMapperException, eBadAlignment,
                 "Sparse-segs with multiple rows are not supported");
     }
-    if ( sparse.GetRows().size() == 0) {
+    if ( sparse.GetRows().empty() ) {
         return;
     }
+    if ( sparse.IsSetRow_scores() ) {
+        CopyContainer<CSparse_seg::TRow_scores, TScores>(
+            sparse.GetRow_scores(), m_SegsScores);
+    }
+
     const CSparse_align& row = *sparse.GetRows().front();
     m_Dim = 2;
 
@@ -704,11 +743,6 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
             "Invalid 'second-strands' size in sparse-align");
         numseg = min(numseg, row.GetSecond_strands().size());
     }
-    if (row.IsSetSeg_scores()  &&  numseg != row.GetSeg_scores().size()) {
-        ERR_POST_X(20, Warning <<
-            "Invalid 'seg-scores' size in sparse-align");
-        numseg = min(numseg, row.GetSeg_scores().size());
-    }
 
     int first_width = GetSeqWidth(row.GetFirst_id());
     int second_width = GetSeqWidth(row.GetSecond_id());
@@ -719,11 +753,16 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
         first_width = 1;
         second_width = 1;
     }
+    int scores_group = -1;
+    if ( row.IsSetSeg_scores() ) {
+        scores_group = m_GroupScores.size();
+        m_GroupScores.resize(m_GroupScores.size() + 1);
+        CopyContainer<CSparse_align::TSeg_scores, TScores>(
+            row.GetSeg_scores(), m_GroupScores[scores_group]);
+    }
     for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg = x_PushSeg(row.GetLens()[seg], m_Dim);
-        if ( row.IsSetSeg_scores() ) {
-            alnseg.m_Scores.push_back(row.GetSeg_scores()[seg]);
-        }
+        alnseg.m_ScoresGroupIdx = scores_group;
         alnseg.AddRow(0, row.GetFirst_id(),
             row.GetFirst_starts()[seg],
             m_HaveStrands,
@@ -746,9 +785,12 @@ void CSeq_align_Mapper_Base::Convert(CSeq_loc_Mapper_Base& mapper)
 {
     m_DstAlign.Reset();
 
-    if (m_SubAligns.size() > 0) {
+    if ( !m_SubAligns.empty() ) {
         NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
             (*it)->Convert(mapper);
+            if ( (*it)->m_ScoresInvalidated ) {
+                x_InvalidateScores();
+            }
         }
         return;
     }
@@ -761,9 +803,12 @@ void CSeq_align_Mapper_Base::Convert(CSeq_loc_Mapper_Base& mapper,
 {
     m_DstAlign.Reset();
 
-    if (m_SubAligns.size() > 0) {
+    if ( !m_SubAligns.empty() ) {
         NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
             (*it)->Convert(mapper, row);
+            if ( (*it)->m_ScoresInvalidated ) {
+                x_InvalidateScores();
+            }
         }
         return;
     }
@@ -774,7 +819,7 @@ void CSeq_align_Mapper_Base::Convert(CSeq_loc_Mapper_Base& mapper,
 void CSeq_align_Mapper_Base::x_ConvertAlign(CSeq_loc_Mapper_Base& mapper,
                                             size_t*               row)
 {
-    if (m_Segs.size() == 0) {
+    if ( m_Segs.empty() ) {
         return;
     }
     if ( row ) {
@@ -955,7 +1000,13 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
-            mseg.SetScores(seg.m_Scores);
+            mseg.m_Scores = seg.m_Scores;
+            mseg.m_ScoresGroupIdx = seg.m_ScoresGroupIdx;
+        }
+        else {
+            // Invalidate all scores related to the segment (this
+            // includes alignment-level scores).
+            x_InvalidateScores(&seg);
         }
         ENa_strand dst_strand = eNa_strand_unknown;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
@@ -1069,17 +1120,6 @@ void CSeq_align_Mapper_Base::x_FillKnownStrands(TStrands& strands) const
 }
 
 
-template<class T, class C>
-void CloneContainer(const C& src, C& dst)
-{
-    ITERATE(typename C, it, src) {
-        CRef<T> elem(new T);
-        elem->Assign(**it);
-        dst.push_back(elem);
-    }
-}
-
-
 void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
 {
     TDendiag& diags = dst->SetSegs().SetDendiag();
@@ -1115,8 +1155,9 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
             }
         }
         diag->SetLen(new_len);
-        if ( seg.m_Scores.size() ) {
-            diag->SetScores() = seg.m_Scores;
+        if ( !seg.m_Scores.empty() ) {
+            CloneContainer<CScore, TScores, CDense_diag::TScores>(
+                seg.m_Scores, diag->SetScores());
         }
         diags.push_back(diag);
     }
@@ -1128,8 +1169,9 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
     dseg.SetDim(m_Segs.front().m_Rows.size());
     dseg.SetNumseg(m_Segs.size());
-    if ( m_Segs.front().m_Scores.size() ) {
-        dseg.SetScores() = m_Segs.front().m_Scores;
+    if ( !m_SegsScores.empty() ) {
+        CloneContainer<CScore, TScores, CDense_seg::TScores>(
+            m_SegsScores, dseg.SetScores());
     }
     bool have_prots = false;
     // Find first non-gap in each row, get its seq-id
@@ -1190,8 +1232,9 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
     ITERATE(TSegments, seg_it, m_Segs) {
         CRef<CStd_seg> std_seg(new CStd_seg);
         std_seg->SetDim(seg_it->m_Rows.size());
-        if ( seg_it->m_Scores.size() ) {
-            std_seg->SetScores() = seg_it->m_Scores;
+        if ( !seg_it->m_Scores.empty() ) {
+            CloneContainer<CScore, TScores, CStd_seg::TScores>(
+                seg_it->m_Scores, std_seg->SetScores());
         }
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             CRef<CSeq_id> id(new CSeq_id);
@@ -1228,8 +1271,9 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
     CPacked_seg& pseg = dst->SetSegs().SetPacked();
     pseg.SetDim(m_Segs.front().m_Rows.size());
     pseg.SetNumseg(m_Segs.size());
-    if ( m_Segs.front().m_Scores.size() ) {
-        pseg.SetScores() = m_Segs.front().m_Scores;
+    if ( !m_SegsScores.empty() ) {
+        CloneContainer<CScore, TScores, CPacked_seg::TScores>(
+            m_SegsScores, pseg.SetScores());
     }
     TStrands strands;
     x_FillKnownStrands(strands);
@@ -1283,98 +1327,6 @@ void CSeq_align_Mapper_Base::x_GetDstDisc(CRef<CSeq_align>& dst) const
             // Skip invalid sub-alignments (e.g. containing empty rows)
         }
     }
-}
-
-
-int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
-                                               int start_seg) const
-{
-    CDense_seg& dseg = dst->SetSegs().SetDenseg();
-    dst->SetType(CSeq_align::eType_partial);
-    dseg.SetDim(m_Segs.front().m_Rows.size());
-    CDense_seg::TNumseg num_seg = m_Segs.size();
-
-    bool have_prots = false;
-
-    // Find first non-gap in each row, get its seq-id, detect the first
-    // one which is different.
-    CDense_seg::TDim cur_seg;
-    for (size_t r = 0; r < m_Segs.front().m_Rows.size(); r++) {
-        cur_seg = 0;
-        CSeq_id_Handle last_id;
-        ITERATE(TSegments, seg, m_Segs) {
-            if (cur_seg >= start_seg) {
-                const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
-                if (last_id  &&  last_id != row.m_Id) {
-                    break;
-                }
-                if ( !last_id ) {
-                    // push id, width and scores only once
-                    last_id = row.m_Id;
-                    CRef<CSeq_id> id(new CSeq_id);
-                    id.Reset(&const_cast<CSeq_id&>(*row.m_Id.GetSeqId()));
-                    dseg.SetIds().push_back(id);
-                    if ( m_HaveWidths ) {
-                        dseg.SetWidths().push_back(row.m_Width);
-                    }
-                    have_prots = have_prots  ||  (row.m_Width == 3);
-                }
-            }
-            cur_seg++;
-            if (cur_seg - start_seg >= num_seg) break;
-        }
-        num_seg = cur_seg - start_seg;
-    }
-    dseg.SetNumseg(num_seg);
-    TStrands strands;
-    x_FillKnownStrands(strands);
-    cur_seg = 0;
-    int non_empty_segs = 0;
-    ITERATE(TSegments, seg_it, m_Segs) {
-        if (cur_seg < start_seg) {
-            cur_seg++;
-            continue;
-        }
-        if (cur_seg >= start_seg + num_seg) {
-            break;
-        }
-        cur_seg++;
-        int new_len = seg_it->m_Len;
-        if ( m_MapWidths ) {
-            if ( m_OnlyNucs  &&  have_prots ) {
-                new_len /= 3;
-            }
-            if ( !m_OnlyNucs  &&  !have_prots ) {
-                new_len *= 3;
-            }
-        }
-        dseg.SetLens().push_back(new_len);
-        size_t str_idx = 0;
-        bool only_gaps = true;
-        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
-            if (row->m_Start != kInvalidSeqPos) {
-                only_gaps = false;
-            }
-        }
-        if (only_gaps) continue;
-        non_empty_segs++;
-        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
-            dseg.SetStarts().push_back(row->GetSegStart());
-            if (m_HaveStrands) { // per-alignment strands
-                // For gaps use the strand of the first mapped row
-                dseg.SetStrands().
-                    push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
-                    (row->m_Strand != eNa_strand_unknown ?
-                    row->m_Strand : eNa_strand_plus): strands[str_idx]);
-            }
-            str_idx++;
-        }
-    }
-    if (non_empty_segs == 0) {
-        // The sub-align contains only gaps in all rows, ignore it
-        dst.Reset();
-    }
-    return start_seg + num_seg;
 }
 
 
@@ -1583,12 +1535,12 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
         }
     }
     // scores should be copied from the original exon
-    if ( m_OrigExon->IsSetScores() ) {
-        CloneContainer<CScore, CScore_set::Tdata>(
-            m_OrigExon->GetScores().Get(), exon->SetScores().Set());
+    if ( !m_SegsScores.empty() ) {
+        CloneContainer<CScore, TScores, CScore_set::Tdata>(
+            m_SegsScores, exon->SetScores().Set());
     }
     if ( m_OrigExon->IsSetExt() ) {
-        CloneContainer<CUser_object, CSpliced_exon::TExt>(
+        CloneContainer<CUser_object, CSpliced_exon::TExt, CSpliced_exon::TExt>(
             m_OrigExon->GetExt(), exon->SetExt());
     }
     spliced.SetExons().push_back(exon);
@@ -1699,6 +1651,10 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
 void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
 {
     CSparse_seg& sparse = dst->SetSegs().SetSparse();
+    if ( !m_SegsScores.empty() ) {
+        CloneContainer<CScore, TScores, CSparse_seg::TRow_scores>(
+            m_SegsScores, sparse.SetRow_scores());
+    }
     CRef<CSparse_align> aln(new CSparse_align);
     sparse.SetRows().push_back(aln);
     aln->SetNumseg(m_Segs.size());
@@ -1706,6 +1662,7 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
     CSeq_id_Handle first_idh;
     CSeq_id_Handle second_idh;
     size_t s = 0;
+    int scores_group = -2;
     ITERATE(TSegments, seg, m_Segs) {
         if (seg->m_Rows.size() > 2) {
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
@@ -1769,15 +1726,117 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
                 ? second_strand : Reverse(second_strand));
         }
 
-        if ( !seg->m_Scores.empty() ) {
-            aln->SetSeg_scores().push_back(seg->m_Scores[0]);
+        if (scores_group == -2) {
+            scores_group = seg->m_ScoresGroupIdx;
+        }
+        else if (scores_group != seg->m_ScoresGroupIdx) {
+            scores_group = -1;
         }
     }
+    if (scores_group >= 0) {
+        CloneContainer<CScore, TScores, CSparse_align::TSeg_scores>(
+            m_GroupScores[scores_group], aln->SetSeg_scores());
+    }
+}
+
+
+int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
+                                               int start_seg) const
+{
+    CDense_seg& dseg = dst->SetSegs().SetDenseg();
+    dst->SetType(CSeq_align::eType_partial);
+    dseg.SetDim(m_Segs.front().m_Rows.size());
+    CDense_seg::TNumseg num_seg = m_Segs.size();
+
+    bool have_prots = false;
+
+    // Find first non-gap in each row, get its seq-id, detect the first
+    // one which is different.
+    CDense_seg::TDim cur_seg;
+    for (size_t r = 0; r < m_Segs.front().m_Rows.size(); r++) {
+        cur_seg = 0;
+        CSeq_id_Handle last_id;
+        ITERATE(TSegments, seg, m_Segs) {
+            if (cur_seg >= start_seg) {
+                const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
+                if (last_id  &&  last_id != row.m_Id) {
+                    break;
+                }
+                if ( !last_id ) {
+                    // push id, width and scores only once
+                    last_id = row.m_Id;
+                    CRef<CSeq_id> id(new CSeq_id);
+                    id.Reset(&const_cast<CSeq_id&>(*row.m_Id.GetSeqId()));
+                    dseg.SetIds().push_back(id);
+                    if ( m_HaveWidths ) {
+                        dseg.SetWidths().push_back(row.m_Width);
+                    }
+                    have_prots = have_prots  ||  (row.m_Width == 3);
+                }
+            }
+            cur_seg++;
+            if (cur_seg - start_seg >= num_seg) break;
+        }
+        num_seg = cur_seg - start_seg;
+    }
+    dseg.SetNumseg(num_seg);
+    TStrands strands;
+    x_FillKnownStrands(strands);
+    cur_seg = 0;
+    int non_empty_segs = 0;
+    ITERATE(TSegments, seg_it, m_Segs) {
+        if (cur_seg < start_seg) {
+            cur_seg++;
+            continue;
+        }
+        if (cur_seg >= start_seg + num_seg) {
+            break;
+        }
+        cur_seg++;
+        int new_len = seg_it->m_Len;
+        if ( m_MapWidths ) {
+            if ( m_OnlyNucs  &&  have_prots ) {
+                new_len /= 3;
+            }
+            if ( !m_OnlyNucs  &&  !have_prots ) {
+                new_len *= 3;
+            }
+        }
+        dseg.SetLens().push_back(new_len);
+        size_t str_idx = 0;
+        bool only_gaps = true;
+        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+            if (row->m_Start != kInvalidSeqPos) {
+                only_gaps = false;
+            }
+        }
+        if (only_gaps) continue;
+        non_empty_segs++;
+        ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+            dseg.SetStarts().push_back(row->GetSegStart());
+            if (m_HaveStrands) { // per-alignment strands
+                // For gaps use the strand of the first mapped row
+                dseg.SetStrands().
+                    push_back((TSeqPos)row->GetSegStart() != kInvalidSeqPos ?
+                    (row->m_Strand != eNa_strand_unknown ?
+                    row->m_Strand : eNa_strand_plus): strands[str_idx]);
+            }
+            str_idx++;
+        }
+    }
+    if (non_empty_segs == 0) {
+        // The sub-align contains only gaps in all rows, ignore it
+        dst.Reset();
+    }
+    return start_seg + num_seg;
 }
 
 
 void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
 {
+    // Ignore m_SegsScores -- if we are here, they are probably not valid.
+    // Anyway, there's no place to put them in.
+    // m_AlignScores may be still used though. (?)
     CSeq_align_set::Tdata& data = dst->SetSegs().SetDisc().Set();
     int seg = 0;
     while (size_t(seg) < m_Segs.size()) {
@@ -1785,10 +1844,6 @@ void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
         seg = x_GetPartialDenseg(dseg, seg);
         if (!dseg) continue; // The sub-align had only gaps
         data.push_back(dseg);
-    }
-    if ( !m_Segs.front().m_Scores.empty() ) {
-        CloneContainer<CScore, CSeq_align::TScore>(
-            m_Segs.front().m_Scores, dst->SetScore());
     }
 }
 
@@ -1804,16 +1859,16 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
     if (m_OrigAlign->IsSetDim()) {
         dst->SetDim(m_OrigAlign->GetDim());
     }
-    if (m_OrigAlign->IsSetScore()) {
-        CloneContainer<CScore, CSeq_align::TScore>(
-            m_OrigAlign->GetScore(), dst->SetScore());
+    if ( !m_AlignScores.empty() ) {
+        CloneContainer<CScore, TScores, CSeq_align::TScore>(
+            m_AlignScores, dst->SetScore());
     }
     if (m_OrigAlign->IsSetBounds()) {
-        CloneContainer<CSeq_loc, CSeq_align::TBounds>(
+        CloneContainer<CSeq_loc, CSeq_align::TBounds, CSeq_align::TBounds>(
             m_OrigAlign->GetBounds(), dst->SetBounds());
     }
     if (m_OrigAlign->IsSetExt()) {
-        CloneContainer<CUser_object, CSeq_align::TExt>(
+        CloneContainer<CUser_object, CSeq_align::TExt, CSeq_align::TExt>(
             m_OrigAlign->GetExt(), dst->SetExt());
     }
     switch ( m_OrigAlign->GetSegs().Which() ) {
@@ -1912,6 +1967,21 @@ const CSeq_id_Handle& CSeq_align_Mapper_Base::GetRowId(size_t idx) const
                    "Invalid row index");
     }
     return m_Segs.begin()->m_Rows[idx].m_Id;
+}
+
+
+void CSeq_align_Mapper_Base::
+x_InvalidateScores(SAlignment_Segment* seg)
+{
+    m_ScoresInvalidated = true;
+    // Invalidate all global scores
+    m_AlignScores.clear();
+    m_SegsScores.clear();
+    if ( seg ) {
+        // Invalidate segment-related scores
+        seg->m_Scores.clear();
+        seg->m_ScoresGroupIdx = -1;
+    }
 }
 
 

@@ -94,12 +94,12 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
     typedef vector< CRef<CScore> > TScores;
     typedef CSpliced_exon_chunk::E_Choice TPartType;
 
-    void SetScores(const TScores& scores);
-
     int       m_Len;
     TRows     m_Rows;
     bool      m_HaveStrands;
     TScores   m_Scores;
+    int       m_ScoresGroupIdx; // -1 = unassigned
+
     // Used only for spliced exon parts
     TPartType m_PartType;
 };
@@ -149,6 +149,7 @@ protected:
     SAlignment_Segment& x_InsertSeg(TSegments::iterator& where,
                                     int                  len,
                                     size_t               dim);
+    void x_InvalidateScores(SAlignment_Segment* seg = NULL);
 
 private:
 
@@ -201,6 +202,20 @@ private:
     bool                         m_HaveWidths;
     bool                         m_OnlyNucs;
     size_t                       m_Dim;
+
+    // Alignment scores
+    typedef SAlignment_Segment::TScores TScores;
+    typedef vector<TScores>             TScoresGroups;
+
+    // Seq-align scores
+    TScores                      m_AlignScores;
+    // Seq-align.segs scores
+    TScores                      m_SegsScores;
+    // Group scores (e.g. per-exon)
+    TScoresGroups                m_GroupScores;
+    // Flag used to invalidate parent's scores if any of the children
+    // is invalidated.
+    bool                         m_ScoresInvalidated;
 
 protected:
     // Used for e_Disc alignments
