@@ -224,8 +224,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         // the specified named pipe is available for connection (that is, the
         // pipe's server process has a pending Listen() operation on the pipe).
 
-        // NOTE:  We do not use here WaitNamedPipe() because it works
-        //        incorrectly in some cases.
+        // NOTE:  We do not use WaitNamedPipe() here because it works
+        //        incorrectly in some cases!
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
