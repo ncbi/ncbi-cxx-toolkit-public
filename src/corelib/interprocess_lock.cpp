@@ -98,10 +98,12 @@ CInterProcessLock::CInterProcessLock(const string& name)
 
 CInterProcessLock::~CInterProcessLock()
 {
-    try {
-        Unlock();
+    if (m_Handle != kInvalidLockHandle) {
+        try {
+           Unlock();
+        }
+        catch (exception&) {}
     }
-    catch (exception&) {}
 }
 
 
