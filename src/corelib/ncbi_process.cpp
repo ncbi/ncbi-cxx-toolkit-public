@@ -827,6 +827,8 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 
 int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 {
+    int  status;
+
     // Reset extended information
     if (info) {
         info->state  = eExitInfo_Unknown;
@@ -837,13 +839,12 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 
     TPid pid     = (TPid)m_Process;
     int  options = timeout == kInfiniteTimeoutMs ? 0 : WNOHANG;
-    int  status;
 
-    // Check process termination within timeout (or infinite)
+    // Check process termination (with timeout or indefinitely)
     for (;;) {
         TPid ws = waitpid(pid, &status, options);
         if (ws > 0) {
-            // Process has terminated.
+            // terminated
             _ASSERT(ws == pid);
             if (info) {
                 info->state  = eExitInfo_Terminated;
@@ -851,7 +852,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
             }
             return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         } else if (ws == 0) {
-            // Process is still running
+            // still running
             _ASSERT(timeout != kInfiniteTimeoutMs);
             if ( !timeout ) {
                 if (info) {
@@ -866,7 +867,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
             SleepMilliSec(x_sleep);
             timeout    -= x_sleep;
         } else if (errno != EINTR) {
-            // Some error
+            // error
             break;
         }
     }
@@ -876,6 +877,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 
     HANDLE hProcess;
     bool   enable_sync = true;
+
     // Get process handle
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
@@ -889,60 +891,63 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         }
     } else {
         hProcess = (TProcessHandle)m_Process;
-    }
-    int status = -1;
-    DWORD x_status = STILL_ACTIVE;
-    try {
-        // Is process still running?
         if (!hProcess  ||  hProcess == INVALID_HANDLE_VALUE) {
-            throw -1;
+            return -1;
         }
-        if (GetExitCodeProcess(hProcess, &x_status)  &&
-            x_status != STILL_ACTIVE) {
-            throw (int)x_status;
-        }
-        if (info  &&  x_status == STILL_ACTIVE) {
-            info->state = eExitInfo_Alive;
-        }
-        // Wait for process termination, or timeout expired
-        if (enable_sync  &&  timeout) {
-            DWORD tv = (timeout == kInfiniteTimeoutMs) ? INFINITE : 
-                                                         (DWORD)timeout;
-            DWORD ws = WaitForSingleObject(hProcess, tv);
-            switch(ws) {
-                case WAIT_OBJECT_0:
-                    // Get exit code below
-                    break;
+    }
+
+    status = -1;
+    DWORD x_status;
+    // Is process still running?
+    if (GetExitCodeProcess(hProcess, &x_status)) {
+        if (x_status == STILL_ACTIVE) {
+            if (enable_sync  &&  timeout) {
+                DWORD tv = (timeout == kInfiniteTimeoutMs
+                            ? INFINITE
+                            : (DWORD)timeout);
+                DWORD ws = WaitForSingleObject(hProcess, tv);
+                switch(ws) {
                 case WAIT_TIMEOUT:
-                    throw (int)STILL_ACTIVE;
+                    // still running
+                    _ASSERT(x_status == STILL_ACTIVE);
+                    break;
+                case WAIT_OBJECT_0:
+                    if (GetExitCodeProcess(hProcess, &x_status)) {
+                        if (x_status != STILL_ACTIVE) {
+                            // terminated
+                            status = 0;
+                        } // else still running
+                        break;
+                    }
+                    /*FALLTHRU*/
                 default:
-                    throw -1;
-            }
-            // Get process exit code
-            if (GetExitCodeProcess(hProcess, &x_status)) {
-                throw (int)x_status;
-            }
-            throw -1;
+                    // error
+                    x_status = 0;
+                    break;
+                }
+            } // else still running
+        } else {
+            // terminated
+            status = 0;
         }
-        status = (int)x_status;
+    } else {
+        // error
+        x_status = 0;
     }
-    catch (int e) {
-        status = e;
+
+    if (status < 0) {
+        if (info  &&  x_status == STILL_ACTIVE) {
+            info->state  = eExitInfo_Alive;
+        }
+    } else {
         if (info) {
-            info->status = status;
-            if (status < 0) {
-                info->state = eExitInfo_Unknown;
-            } else if (status == STILL_ACTIVE) {
-                info->state = eExitInfo_Alive;
-            } else {
-                info->state = eExitInfo_Terminated;
-            }
+            info->state  = eExitInfo_Terminated;
+            info->status = x_status;
         }
-        if (status == STILL_ACTIVE) {
-            status = -1;
-        }
+        status = x_status;
     }
-    if (m_Type == ePid ) {
+
+    if (m_Type == ePid) {
         CloseHandle(hProcess);
     }
     return status;
