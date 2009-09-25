@@ -346,6 +346,7 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
     case eUseAlnSeqString:
         {
             TSeqPos aln_pos = 0;
+            TSeqPos aln_stop = m_AlnVec.GetAlnStop();
             CAlnMap::TSignedRange rng;
             
             string identities_str;
@@ -353,7 +354,7 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
 
             do {
                 // create range
-                rng.Set(aln_pos, aln_pos + scrn_width - 1);
+                rng.Set(aln_pos, min(aln_pos + scrn_width - 1, aln_stop));
                 
                 string aln_seq_str;
                 aln_seq_str.reserve(scrn_width + 1);
