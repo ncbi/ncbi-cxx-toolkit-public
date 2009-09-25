@@ -35,21 +35,24 @@
 #include <connect/ncbi_util.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
-#include <assert.h>
 #include <memory>
 #include <stdio.h>
 
 #ifdef NCBI_OS_MSWIN
+
 #  include <windows.h>
 #  include <corelib/ncbiexec.hpp>
+
 #elif defined NCBI_OS_UNIX
-#  include <unistd.h>
+
 #  include <errno.h>
+#  include <fcntl.h>
+#  include <signal.h>
+#  include <unistd.h>
 #  include <sys/time.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
-#  include <signal.h>
-#  include <fcntl.h>
+
 #else
 #  error "Class CPipe is supported only on Windows and Unix"
 #endif
@@ -327,7 +330,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         attr.lpSecurityDescriptor = NULL;
 
         // Create pipe for child's stdin
-        assert(CPipe::fStdIn_Close);
+        _ASSERT(CPipe::fStdIn_Close);
         if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
             if ( !::CreatePipe(&child_stdin, &m_ChildStdIn, &attr, 0) ) {
                 PIPE_THROW(::GetLastError(), "CreatePipe(stdin) failed");
@@ -337,7 +340,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stdout
-        assert(CPipe::fStdOut_Close);
+        _ASSERT(CPipe::fStdOut_Close);
         if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
             if ( !::CreatePipe(&m_ChildStdOut, &child_stdout, &attr, 0)) {
                 PIPE_THROW(::GetLastError(), "CreatePipe(stdout) failed");
@@ -347,7 +350,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stderr
-        assert(CPipe::fStdErr_Open);
+        _ASSERT(CPipe::fStdErr_Open);
         if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
             if ( !::CreatePipe(&m_ChildStdErr, &child_stderr, &attr, 0)) {
                 PIPE_THROW(::GetLastError(), "CreatePipe(stderr) failed");
@@ -396,7 +399,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         status = eIO_Success;
     }
     catch (string& what) {
-        const STimeout kZeroZimeout = {0, 0};
+        static const STimeout kZeroZimeout = {0, 0};
         Close(0, &kZeroZimeout);
         ERR_POST_X(1, what);
         x_Clear();
@@ -979,7 +982,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         ::fflush(stderr);
 
         // Create pipe for child's stdin
-        assert(CPipe::fStdIn_Close);
+        _ASSERT(CPipe::fStdIn_Close);
         if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
             if (::pipe(pipe_in) < 0) {
                 pipe_in[0] = -1;
@@ -990,7 +993,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stdout
-        assert(CPipe::fStdOut_Close);
+        _ASSERT(CPipe::fStdOut_Close);
         if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
             if (::pipe(pipe_out) < 0) {
                 pipe_out[1] = -1;
@@ -1001,7 +1004,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stderr
-        assert(CPipe::fStdErr_Open);
+        _ASSERT(CPipe::fStdErr_Open);
         if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
             if (::pipe(pipe_err) < 0 ) {
                 pipe_err[1] = -1;
@@ -1038,7 +1041,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             ::close(status_pipe[0]);
 
             // Bind child's standard I/O file handles to pipes
-            if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
+            if ( !IS_SET(create_flags, CPipe::fStdIn_Close)  ) {
                 if (pipe_in[0] != STDIN_FILENO) {
                     if (::dup2(pipe_in[0], STDIN_FILENO) < 0) {
                         s_Exit(-1, status_pipe[1]);
@@ -1060,7 +1063,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             } else {
                 ::freopen("/dev/null", "w", stdout);
             }
-            if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
+            if (  IS_SET(create_flags, CPipe::fStdErr_Open)  ) {
                 if (pipe_err[1] != STDERR_FILENO) {
                     if (::dup2(pipe_err[1], STDERR_FILENO) < 0) {
                         s_Exit(-1, status_pipe[1]);
@@ -1111,17 +1114,18 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Close unused pipe handles
         if ( !IS_SET(create_flags, CPipe::fStdIn_Close)  ) {
             ::close(pipe_in[0]);
-            pipe_in[0] = -1;
+            pipe_in[0]  = -1;
         }
         if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
             ::close(pipe_out[1]);
             pipe_out[1] = -1;
         }
-        if ( IS_SET(create_flags, CPipe::fStdErr_Open)  ) {
+        if (  IS_SET(create_flags, CPipe::fStdErr_Open)  ) {
             ::close(pipe_err[1]);
             pipe_err[1] = -1;
         }
         ::close(status_pipe[1]);
+        status_pipe[1] = -1;
 
         // Check status pipe:
         // if it has some data, this is an errno from the child process;
@@ -1136,6 +1140,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 break;
         }
         ::close(status_pipe[0]);
+        status_pipe[0] = -1;
 
         if (n > 0) {
             // Child could not run -- reap it and exit with error
@@ -1166,7 +1171,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         if ( status_pipe[1] != -1 ) {
             ::close(status_pipe[1]);
         }
-        const STimeout kZeroZimeout = {0, 0};
+        static const STimeout kZeroZimeout = {0, 0};
         Close(0, &kZeroZimeout);
         ERR_POST_X(1, what);
         x_Clear();

@@ -31,22 +31,23 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_namedpipe.hpp>
 #include <connect/error_codes.hpp>
+#include <connect/ncbi_namedpipe.hpp>
+#include <connect/ncbi_util.h>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <assert.h>
 
 #if defined(NCBI_OS_MSWIN)
-#  include <connect/ncbi_util.h>
 
 #elif defined(NCBI_OS_UNIX)
+
 #  include <connect/ncbi_socket_unix.h>
 #  include <errno.h>
 #  include <unistd.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>
 #  include <sys/types.h>
+
 #else
 #  error "Class CNamedPipe is supported only on Windows and Unix"
 #endif
@@ -110,7 +111,12 @@ inline void s_AdjustPipeBufSize(size_t& bufsize)
 
 #if defined(NCBI_OS_MSWIN)
 
-const DWORD kSleepTime = 100;  // sleep time for timeouts (milliseconds)
+#define NAMEDPIPE_THROW(err, errtxt)            \
+    {                                           \
+        DWORD _err = err;                       \
+        string _errstr(errtxt);                 \
+        throw s_WinError(_err, _errstr);        \
+    }
 
 
 static string s_WinError(DWORD error, string& message)
@@ -148,6 +154,8 @@ static string s_WinError(DWORD error, string& message)
 //
 // CNamedPipeHandle -- MS Windows version
 //
+
+const DWORD kSleepTime = 100;  // sleep time for timeouts (milliseconds)
 
 class CNamedPipeHandle
 {
@@ -293,9 +301,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
              &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            DWORD error = ::GetLastError();
-            string message("CreateNamedPipe(\"" + m_PipeName + "\") failed");
-            throw s_WinError(error, message);
+            NAMEDPIPE_THROW(::GetLastError(),
+                            "CreateNamedPipe(\"" + m_PipeName + "\") failed");
         }
 
         m_ReadStatus  = eIO_Success;
@@ -369,9 +376,7 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
             ::FlushFileBuffers(m_Pipe);
         }
         if (!::DisconnectNamedPipe(m_Pipe)) {
-            DWORD error = ::GetLastError();
-            string message("DisconnectNamedPipe() failed");
-            throw s_WinError(error, message);
+            NAMEDPIPE_THROW(::GetLastError(), "DisconnectNamedPipe() failed");
         }
         // Per documentation, another client can now connect again
         return eIO_Success;
@@ -427,11 +432,12 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         do {
             if ( !::PeekNamedPipe(m_Pipe, NULL, 0, NULL, &bytes_avail, NULL) ){
                 // Peer has been closed the connection?
-                if (::GetLastError() == ERROR_BROKEN_PIPE) {
+                DWORD error = ::GetLastError();
+                if (error == ERROR_BROKEN_PIPE) {
                     m_ReadStatus = eIO_Closed;
                     return m_ReadStatus;
                 }
-                throw string("Cannot peek data from named pipe");
+                NAMEDPIPE_THROW(error, "PeekNamedPipe() failed");
             }
             if ( bytes_avail ) {
                 break;
@@ -456,7 +462,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             bytes_avail = count;
         }
         if ( !::ReadFile(m_Pipe, buf, count, &bytes_avail, NULL) ) {
-            throw string("Failed to read data from named pipe");
+            NAMEDPIPE_THROW(::GetLastError(),
+                            "Failed to read data from named pipe");
         }
         if ( n_read ) {
             *n_read = bytes_avail;
@@ -498,7 +505,8 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                 if ( n_written ) {
                     *n_written = bytes_written;
                 }
-                throw string("Failed to write data into named pipe");
+                NAMEDPIPE_THROW(::GetLastError(),
+                                "Failed to write data into named pipe");
             }
             if ( bytes_written ) {
                 break;
@@ -545,7 +553,7 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
         return m_WriteStatus;
     default:
         // Should never get here
-        assert(0);
+        _ASSERT(0);
         break;
     }
     return eIO_InvalidArg;
@@ -555,6 +563,34 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
 
 #elif defined(NCBI_OS_UNIX)
 
+#define NAMEDPIPE_THROW(err, errtxt)                  \
+    {                                                 \
+        int _err = err;                               \
+        string _errstr(errtxt);                       \
+        throw s_UnixError(_err, _errstr);             \
+    }
+
+
+static string s_UnixError(int error, string& message)
+{
+    const char* errstr = error ? strerror(error) : 0;
+    if (!errstr) {
+        errstr = "";
+    }
+    int dynamic = 0/*false*/;
+    const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
+                                                (int) error, errstr);
+    string retval;
+    if (result) {
+        retval = result;
+        if (dynamic) {
+            free((void*) result);
+        }
+    } else {
+        retval.swap(message);
+    }
+    return retval;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -562,10 +598,8 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction) const
 // CNamedPipeHandle -- Unix version
 //
 
-
 // The maximum length the queue of pending connections may grow to
 const int kListenQueueSize = 32;
-
 
 class CNamedPipeHandle
 {
@@ -646,9 +680,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             if (SOCK_GetOSHandle(m_IoSocket, &fd, sizeof(fd)) == eIO_Success) {
                 if (!x_SetSocketBufSize(fd, m_PipeBufSize, SO_SNDBUF)  ||
                     !x_SetSocketBufSize(fd, m_PipeBufSize, SO_RCVBUF)) {
-                    int error = errno;
-                    throw string("UNIX socket set buffer size failed: ")
-                        + strerror(error);
+                    NAMEDPIPE_THROW(errno,
+                                    "UNIX socket set buffer size failed");
                 }
             }
         }
@@ -727,9 +760,8 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             if (SOCK_GetOSHandle(m_IoSocket, &fd, sizeof(fd)) == eIO_Success) {
                 if (!x_SetSocketBufSize(fd, m_PipeBufSize, SO_SNDBUF)  ||
                     !x_SetSocketBufSize(fd, m_PipeBufSize, SO_RCVBUF)) {
-                    int error = errno;
-                    throw string("UNIX socket set buffer size failed: ")
-                        + strerror(error);
+                    NAMEDPIPE_THROW(errno,
+                                    "UNIX socket set buffer size failed");
                 }
             }
         }

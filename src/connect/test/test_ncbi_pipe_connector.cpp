@@ -62,6 +62,24 @@ const STimeout kTimeout     = {2, 0};  // I/O timeout
 // Auxiliary functions
 //
 
+
+static void x_SetupDiag(const char* who)
+{
+    // Set error posting and tracing on maximum
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+    SetDiagPostLevel(eDiag_Info);
+
+    SetDiagPostPrefix(who);
+
+    // Log and data log streams
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+}
+
+
 // Read from file stream
 // CAUTION:  read(2) can short read
 static string s_ReadLine(FILE* fs) 
@@ -115,13 +133,7 @@ public:
 
 void CTest::Init(void)
 {
-    // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
-    SetDiagPostLevel(eDiag_Info);
-
-    // Log and data log streams
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    x_SetupDiag("Parent");
 }
 
 
@@ -135,7 +147,7 @@ int CTest::Run(void)
     EIO_Status  status;
 
     // Run the test
-    LOG_POST("Starting the PIPE CONNECTOR test...\n");
+    ERR_POST(Info << "Starting PIPE CONNECTOR test...");
 
     const string app = GetArguments().GetProgramName();
     string cmd, str;
@@ -150,14 +162,15 @@ int CTest::Run(void)
     args.push_back("/c");
     args.push_back("dir *.*");
 #endif
-    connector = PIPE_CreateConnector(cmd, args, CPipe::fStdIn_Close);
+    connector = PIPE_CreateConnector(cmd, args, (CPipe::fStdIn_Close |
+                                                 CPipe::fStdErr_Share));
     assert(connector);
 
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Write(conn, buf, kBufferSize, &n_written, eIO_WritePersist);
-    assert(status == eIO_Unknown);
+    assert(status == eIO_Closed);
     assert(n_written == 0);
 
     size_t total = 0;
@@ -176,14 +189,15 @@ int CTest::Run(void)
     // Pipe connector for writing
     args.clear();
     args.push_back("one");
-    connector = PIPE_CreateConnector(app, args, CPipe::fStdOut_Close);
+    connector = PIPE_CreateConnector(app, args, (CPipe::fStdOut_Close |
+                                                 CPipe::fStdErr_Share));
     assert(connector);
 
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Write, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
-    assert(status == eIO_Unknown);
+    assert(status == eIO_Closed);
     assert(n_read == 0);
 
     str = "Child, are you ready?";
@@ -198,7 +212,7 @@ int CTest::Run(void)
     args.clear();
     args.push_back("one");
     args.push_back("two");
-    connector = PIPE_CreateConnector(app, args);
+    connector = PIPE_CreateConnector(app, args, CPipe::fStdErr_Share);
     assert(connector);
 
     assert(CONN_Create(connector, &conn) == eIO_Success);
@@ -225,7 +239,7 @@ int CTest::Run(void)
     assert(n_read == 0);
     assert(CONN_Close(conn) == eIO_Success);
 
-    LOG_POST("\nTEST completed successfully.\n");
+    ERR_POST(Info << "TEST completed successfully");
     CORE_SetLOG(0);
 
     return 0;
@@ -243,25 +257,33 @@ int main(int argc, const char* argv[])
         exit(1);
     }
 
+    if (argc == 1) {
+        // Execute main application function
+        return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    }
+
+    x_SetupDiag("Child");
+
     // Spawned process for unidirectional test
     if (argc == 2) {
-        cerr << endl << "--- CPipe unidirectional test ---" << endl;
+        ERR_POST(Info << "--- PIPE CONNECTOR unidirectional test ---");
         string command = s_ReadLine(stdin);
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
         NcbiCout << "Ok. Test 1 running." << endl;
+        ERR_POST(Info << "--- PIPE CONNECTOR unidirectional test done ---");
         exit(0);
     }
 
-    // Spawned process for bidirectional test (direct from pipe)
+    // Spawned process for bidirectional test
     if (argc == 3) {
-        cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
+        ERR_POST(Info << "--- PIPE CONNECTOR bidirectional test ---");
         string command = s_ReadLine(stdin);
         assert(command == "Child, are you ready again?");
         s_WriteLine(stdout, "Ok. Test 2 running.");
+        ERR_POST(Info << "--- PIPE CONNECTOR bidirectional test done ---");
         exit(0);
     }
 
-    // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return -1;
 }

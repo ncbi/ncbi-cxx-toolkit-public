@@ -232,6 +232,9 @@ int CTest::Run(void)
     EIO_Status     status;
     TProcessHandle handle;
 
+    // Run the test
+    ERR_POST(Info << "Starting CPipe test...");
+
     // Create pipe object
     CPipe pipe;
 

@@ -65,10 +65,10 @@ static void Client(STimeout timeout)
     assert(data_file);
 
     // Tests for NAMEDPIPE CONNECTOR
-    LOG_POST(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
-             kPipeName + ", timeout = " +
-             NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)+
-             " sec.\n");
+    ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR test ...");
+    ERR_POST(Info << string(kPipeName) + ", timeout = "
+             + NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)
+             + " sec.");
 
     connector = NAMEDPIPE_CreateConnector(kPipeName);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
@@ -93,10 +93,10 @@ static void Server(STimeout timeout, int n_cycle)
     CFile(kPipeName).Remove();
 #endif  
 
-    LOG_POST(string("Starting the NAMEDPIPE CONNECTOR bouncer ...\n\n") +
-             kPipeName + ", timeout = " +
-             NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)+
-             ", n_cycle = " + NStr::UIntToString(n_cycle) + "\n");
+    ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR bouncer");
+    ERR_POST(Info << string(kPipeName) + ", timeout = "
+             + NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)
+             + "sec., n_cycle = " + NStr::UIntToString(n_cycle));
 
     // Create listening named pipe
     CNamedPipeServer pipe;
@@ -109,20 +109,21 @@ static void Server(STimeout timeout, int n_cycle)
         size_t  n_read, n_written;
         char    buf[kBufferSize];
 
-        LOG_POST("Server(n_cycle = " + NStr::UIntToString(n_cycle) + ")");
+        ERR_POST(Info << "n_cycle = " + NStr::UIntToString(n_cycle));
 
         // Listening pipe
         status = pipe.Listen();
         switch (status) {
         case eIO_Success:
-            LOG_POST("Client connected...");
+            ERR_POST(Info << "Client connected...");
 
             // Bounce all incoming data back to the client
             do {
                 status = pipe.Read(buf, kBufferSize, &n_read);
 
                 // Dump received data
-                LOG_POST(NStr::UIntToString(n_read) + " byte(s) read: " +
+                ERR_POST(Info <<
+                         NStr::UIntToString(n_read) + " byte(s) read: " +
                          (n_read ? "" : IO_StatusStr(status)));
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
@@ -135,14 +136,15 @@ static void Server(STimeout timeout, int n_cycle)
                                         &n_written);
                     if (!n_written) {
                         assert(status != eIO_Success);
-                        LOG_POST("Failed to write "
+                        ERR_POST(Info << "Failed to write "
                                  + NStr::UIntToString(n_read)
                                  + " byte(s): "
                                  + IO_StatusStr(status));
                         break;
                     }
                     n_total += n_written;
-                    LOG_POST(NStr::UIntToString(n_written)
+                    ERR_POST(Info <<
+                             NStr::UIntToString(n_written)
                              + " byte(s) written, "
                              + NStr::UIntToString(n_read - n_total)
                              + " remaining (status: "
@@ -152,12 +154,12 @@ static void Server(STimeout timeout, int n_cycle)
             } while (status == eIO_Success);
             assert(status == eIO_Timeout  ||  status == eIO_Closed);
 
-            LOG_POST("Disconnect client...");
+            ERR_POST(Info << "Client disconnected...");
             assert(pipe.Disconnect() == eIO_Success);
             break;
 
         case eIO_Timeout:
-            LOG_POST("Timeout detected...");
+            ERR_POST(Info << "Timeout...");
             break;
 
         default:
@@ -185,10 +187,10 @@ public:
 void CTest::Init(void)
 {
     // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagPostLevel(eDiag_Info);
 
