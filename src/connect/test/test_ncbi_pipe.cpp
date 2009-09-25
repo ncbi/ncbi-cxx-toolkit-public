@@ -64,27 +64,41 @@ const size_t kBufferSize = 1234;
 // Auxiliary functions
 //
 
+static void x_SetupDiag(const char* who)
+{
+    // Set error posting and tracing on maximum
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+    SetDiagPostLevel(eDiag_Info);
+
+    SetDiagPostPrefix(who);
+}
+
+
 // Read from pipe (up to "size" bytes)
 static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
                              size_t* n_read)
 {
     size_t     total = 0;
     EIO_Status status;
-    
+
     do {
         size_t cnt;
         status = pipe.Read((char*) buf + total, size - total, &cnt);
-        cerr << cnt << " byte(s) read from pipe:" << endl;
+        ERR_POST(Info << cnt << " byte(s) read from pipe:");
         if ( cnt ) {
             cerr.write((char*) buf + total, cnt);
             cerr << endl;
         }
         total += cnt;
     } while (status == eIO_Success  &&  total < size);    
-    
+
     *n_read = total;
-    cerr << "Total read from pipe: " << total << " byte(s) ["
-         << IO_StatusStr(status) << ']' << endl;
+    ERR_POST(Info << "Total read from pipe: " << total << " byte(s) ["
+             << IO_StatusStr(status) << ']');
     return status;
 }
 
@@ -95,21 +109,21 @@ static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
 {
     size_t     total = 0;
     EIO_Status status;
-    
+
     do {
         size_t cnt;
         status = pipe.Write((char*) buf + total, size - total, &cnt);
-        cerr << cnt << " byte(s) written to pipe:" << endl;
+        ERR_POST(Info << cnt << " byte(s) written to pipe:");
         if ( cnt ) {
             cerr.write((char*) buf + total, cnt);
             cerr << endl;
         }
         total += cnt;
     } while (status == eIO_Success  &&  total < size);
-    
+
     *n_written = total;
-    cerr << "Total written to pipe: " << total << " byte(s) ["
-         << IO_StatusStr(status) << ']' << endl;
+    ERR_POST(Info << "Total written to pipe: " << total << " byte(s) ["
+             << IO_StatusStr(status) << ']');
     return status;
 }
 
@@ -122,7 +136,7 @@ static string s_ReadLine(FILE* fs)
         char   buf[80];
         char*  res = fgets(buf, sizeof(buf)-1, fs);
         size_t len = res ? strlen(res) : 0;
-        cerr << (int) len << " byte(s) read from file:" << endl;
+        ERR_POST(Info << (int) len << " byte(s) read from file:");
         if (!len) {
             break;
         }
@@ -146,7 +160,7 @@ static void s_WriteLine(FILE* fs, const string& str)
     const char* data = str.c_str();
     do {
         size_t cnt = fwrite(data + written, 1, size - written, fs);
-        cerr << (int) cnt << " byte(s) written to file:" << endl;
+        ERR_POST(Info << (int) cnt << " byte(s) written to file:");
         if (!cnt) {
             break;
         }
@@ -171,7 +185,7 @@ static void s_ReadStream(istream& ios)
         char   buf[kBufferSize];
         ios.read(buf, sizeof(buf));
         size_t cnt = ios.gcount();
-        cerr << "Read from istream: " << cnt << " byte(s):" << endl;
+        ERR_POST(Info << "Read from istream: " << cnt << " byte(s):");
         cerr.write(buf, cnt);
         if ( cnt ) {
             cerr << endl;
@@ -182,7 +196,7 @@ static void s_ReadStream(istream& ios)
         }
         ios.clear();
     }
-    cerr << "Total read from istream " << total << " byte(s)." << endl;
+    ERR_POST(Info << "Total read from istream " << total << " byte(s)");
 }
 
 
@@ -200,10 +214,7 @@ public:
 
 void CTest::Init(void)
 {
-    // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
-    SetDiagPostLevel(eDiag_Info);
+    x_SetupDiag("Parent");
 }
 
 
@@ -224,15 +235,20 @@ int CTest::Run(void)
     // Create pipe object
     CPipe pipe;
 
-    STimeout io_timeout    = {2,0};
-    STimeout close_timeout = {1,0};
+    STimeout io_timeout    = {2, 0};
+    STimeout close_timeout = {1, 0};
+
+    const CPipe::TCreateFlags share = CPipe::fStdErr_Share;
 
     assert(pipe.SetTimeout(eIO_Read,  &io_timeout)    == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &io_timeout)    == eIO_Success);
     assert(pipe.SetTimeout(eIO_Close, &close_timeout) == eIO_Success);
 
 
-    // Pipe for reading (direct from pipe)
+    // Check bad executable
+    assert(pipe.Open("blahblahblah", args) != eIO_Success);
+
+
 #if defined(NCBI_OS_UNIX)
     cmd = "ls";
     args.push_back("-l");
@@ -242,10 +258,19 @@ int CTest::Run(void)
     args.push_back("dir *.*");
 #endif
 
-    assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close) == eIO_Success);
 
-    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Unknown);
+    // Unidirectional pipe (read from pipe)
+
+    assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close | share)
+           == eIO_Success);
+
+    assert(pipe.SetReadHandle(CPipe::eStdIn) == eIO_InvalidArg);
+    assert(pipe.SetReadHandle(CPipe::eStdErr) == eIO_Success);
+    assert(pipe.Read(buf, sizeof(buf), NULL) == eIO_Closed);
+    assert(pipe.SetReadHandle(CPipe::eStdOut) == eIO_Success);
+    assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Closed);
     assert(n_written == 0);
+
     total = 0;
     do {
         status = s_ReadPipe(pipe, buf, kBufferSize, &n_read);
@@ -255,30 +280,31 @@ int CTest::Run(void)
     assert(total > 0);
 
     status = pipe.Close(&exitcode);
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == 0);
 
 
-    // Pipe for reading (iostream)
-    CConn_PipeStream ios(cmd.c_str(), args, CPipe::fStdIn_Close);
+    // Unidirectional pipe (read from iostream)
+
+    CConn_PipeStream ios(cmd.c_str(), args, CPipe::fStdIn_Close | share);
     s_ReadStream(ios);
 
     status = ios.GetPipe().Close(&exitcode);
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == 0);
 
 
-    // Unidirectional pipe (direct to pipe)
-    // NB: a race condition on child's cerr closure
+    // Unidirectional pipe (write to pipe)
 
     args.clear();
     args.push_back("1");
 
-    assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close) == eIO_Success);
+    assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close | share)
+           == eIO_Success);
 
-    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
+    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == 0);
     str = "Child, are you ready?";
     assert(s_WritePipe(pipe, str.c_str(), str.length(),
@@ -287,17 +313,17 @@ int CTest::Run(void)
     assert(pipe.CloseHandle(CPipe::eStdIn) == eIO_Success);
 
     status = pipe.Close(&exitcode); 
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
-    // Bidirectional pipe (direct from pipe)
+    // Bidirectional pipe (pipe)
 
     args.clear();
     args.push_back("2");
 
-    assert(pipe.Open(app.c_str(), args) == eIO_Success);
+    assert(pipe.Open(app.c_str(), args, share) == eIO_Success);
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Timeout);
     assert(n_read == 0);
@@ -305,7 +331,7 @@ int CTest::Run(void)
     assert(s_WritePipe(pipe, str.c_str(), str.length(),
                        &n_written) == eIO_Success);
     assert(n_written == str.length());
-    str = "Ok. Test 2 running.";
+    str = "Ok.";
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read >= str.length());  // do not count EOL in
     assert(memcmp(buf, str.c_str(), str.length()) == 0);
@@ -313,8 +339,8 @@ int CTest::Run(void)
     assert(n_read == 0);
 
     status = pipe.Close(&exitcode); 
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
@@ -328,7 +354,7 @@ int CTest::Run(void)
     args.clear();
     args.push_back("3");
 
-    CConn_PipeStream ps(app.c_str(), args, CPipe::fStdErr_Open);
+    CConn_PipeStream ps(app.c_str(), args, share);
 
     cout << endl;
     for (int i = 5; i<=10; i++) {
@@ -343,30 +369,31 @@ int CTest::Run(void)
     }
     ps >> str;
     cout << str << endl;
-    assert(str == "Done");
+    assert(str == "Done.");
     ps.GetPipe().SetReadHandle(CPipe::eStdErr);
     ps >> str;
     assert(!str.empty());
 
     status = ps.GetPipe().Close(&exitcode); 
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
-    // f*OnClose flags test
+    // f*OnClose flags tests
 
     args.clear();
     args.push_back("4");
-    
-    assert(pipe.Open(app.c_str(), args, CPipe::fKeepOnClose) == eIO_Success);
 
+    assert(pipe.Open(app.c_str(), args,
+                     CPipe::fStdIn_Close | CPipe::fStdOut_Close
+                     | CPipe::fKeepOnClose) == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
     status = pipe.Close(&exitcode); 
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Timeout  &&  exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
@@ -376,53 +403,56 @@ int CTest::Run(void)
     }}
 
     assert(pipe.Open(app.c_str(), args,
-                     CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
+                     CPipe::fStdIn_Close | CPipe::fStdOut_Close
+                     | CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
     status = pipe.Close(&exitcode); 
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Success  &&  exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(!process.IsAlive());
     }}
 
-    assert(pipe.Open(app.c_str(), args, CPipe::fKeepOnClose) == eIO_Success);
-
+    assert(pipe.Open(app.c_str(), args,
+                     CPipe::fStdIn_Close | CPipe::fStdOut_Close
+                     | CPipe::fKeepOnClose) == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
     status = pipe.Close(&exitcode); 
-    cerr << "Command completed with code " << exitcode << " and status "
-         << IO_StatusStr(status) << endl;
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
     assert(status == eIO_Timeout  &&  exitcode == -1);
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         CProcess::CExitInfo exitinfo;
         int exitcode = process.Wait(6000/*6 sec*/, &exitinfo);
-        cerr << "Command completed with code " << exitcode << ", state "
-             << (!exitinfo.IsPresent() ? "Inexistent" :
-                 exitinfo.IsExited()   ? "Terminated" :
-                 exitinfo.IsAlive()    ? "Alive"      :
-                 exitinfo.IsSignaled() ? "Signaled"   : "Unknown") << ": "
-             << (exitinfo.IsPresent()
-                 ? (exitinfo.IsSignaled() ? exitinfo.GetSignal()   :
-                    exitinfo.IsExited()   ? exitinfo.GetExitCode() : -1)
-                 : -1)
-             << endl;
+        ERR_POST(Info << "Command completed with exit code " << exitcode
+                 << " and state "
+                 << (!exitinfo.IsPresent() ? "Inexistent" :
+                     exitinfo.IsExited()   ? "Terminated" :
+                     exitinfo.IsAlive()    ? "Alive"      :
+                     exitinfo.IsSignaled() ? "Signaled"   : "Unknown") << ": "
+                 << (exitinfo.IsPresent()
+                     ? (exitinfo.IsSignaled() ? exitinfo.GetSignal()   :
+                        exitinfo.IsExited()   ? exitinfo.GetExitCode() : -1)
+                     : -1));
         assert(exitcode == kTestResult);
         assert(!process.IsAlive());
     }}
 
 
     // Done
-    cout << "\nTEST completed successfully." << endl;
+    ERR_POST(Info << "TEST completed successfully");
 
     return 0;
 }
+
 
 
 ///////////////////////////////////
@@ -431,8 +461,6 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    string command;
-
     // Check arguments
     if (argc > 2) {
         // Invalid arguments
@@ -444,37 +472,34 @@ int main(int argc, const char* argv[])
     }
 
     // Internal tests
+    x_SetupDiag("Child");
     int test_num = NStr::StringToInt(argv[1]);
 
     switch ( test_num ) {
     // Spawned process for unidirectional test
     case 1:
     {
-        // NB: cout closed in this test; cerr may close early (race)
-#ifdef NCBI_OS_UNIX
-        // Ignore pipe signals, convert them to errors
-        ::signal(SIGPIPE, SIG_IGN);
-#endif /*NCBI_OS_UNIX*/
-        cerr << endl << "--- CPipe unidirectional test ---" << endl;
-        command = s_ReadLine(stdin);
+        ERR_POST(Info << "--- CPipe unidirectional test ---");
+        string command = s_ReadLine(stdin);
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
-        cerr << "Ok. Test 1 running." << endl;
+        ERR_POST(Info << "--- CPipe unidirectional test done ---");
         exit(kTestResult);
     }
     // Spawned process for bidirectional test (direct from pipe)
     case 2:
     {
-        cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
-        command = s_ReadLine(stdin);
+        ERR_POST(Info << "--- CPipe bidirectional test (pipe) ---");
+        string command = s_ReadLine(stdin);
         assert(command == "Child, are you ready again?");
-        s_WriteLine(stdout, "Ok. Test 2 running.");
+        s_WriteLine(stdout, "Ok.");
+        ERR_POST(Info << "--- CPipe bidirectional test (pipe) done ---");
         exit(kTestResult);
     }
     // Spawned process for bidirectional test (iostream)
     case 3:
     {
-        cerr << endl << "--- CPipe bidirectional test (iostream) ---" << endl;
+        ERR_POST(Info << "--- CPipe bidirectional test (iostream) ---");
         for (int i = 5; i <= 10; ++i) {
             int value;
             cin >> value;
@@ -482,13 +507,20 @@ int main(int argc, const char* argv[])
             cout << value * value << endl;
             cout.flush();
         }
-        cout << "Done" << endl;
+        cout << "Done." << endl;
+        ERR_POST(Info << "--- CPipe bidirectional test (iostream) done ---");
         exit(kTestResult);
     }
     // Test for fKeepOnClose && fKillOnClose flags
     case 4:
     {
+#ifdef NCBI_OS_UNIX
+        // Ignore pipe signals, convert them to errors
+        ::signal(SIGPIPE, SIG_IGN);
+#endif /*NCBI_OS_UNIX*/
+        ERR_POST(Info << "--- CPipe sleeping test ---");
         SleepSec(3);
+        ERR_POST(Info << "--- CPipe sleeping test done ---");
         exit(kTestResult);
     }}
 

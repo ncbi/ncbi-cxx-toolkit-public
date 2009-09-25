@@ -84,35 +84,36 @@ public:
     /// Default is 0 
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
     enum ECreateFlags {
-        fStdIn_Open      =    0,  ///< Do     open child's stdin (default).
-        fStdIn_Close     = 0x01,  ///< Do not open child's stdin.
-        fStdOut_Open     =    0,  ///< Do     open child's stdout (default).
-        fStdOut_Close    = 0x02,  ///< Do not open child's stdout.
-        fStdErr_Open     = 0x04,  ///< Do     open child's stderr.
-        fStdErr_Close    =    0,  ///< Do not open child's stderr (default).
-        fKeepOnClose     = 0x08,  ///< Close(): just return eIO_Timeout
+        fStdIn_Open      =     0, ///< Do     open child's stdin (default).
+        fStdIn_Close     = 0x001, ///< Do not open child's stdin.
+        fStdOut_Open     =     0, ///< Do     open child's stdout (default).
+        fStdOut_Close    = 0x002, ///< Do not open child's stdout.
+        fStdErr_Open     = 0x004, ///< Do     open child's stderr.
+        fStdErr_Close    =     0, ///< Do not open child's stderr (default).
+        fStdErr_Share    = 0x008, ///< Keep stderr (share it with child).
+        fKeepOnClose     = 0x010, ///< Close(): just return eIO_Timeout
                                   ///< if Close() cannot complete within
                                   ///< the allotted time;  don't close any
                                   ///< pipe handles nor signal the child.
         fCloseOnClose    =    0,  ///< Close(): always close all pipe handles
                                   ///< but do not send any signal to running
                                   ///< process if Close()'s timeout expired.
-        fKillOnClose     = 0x10,  ///< Close(): kill child process if it hasn't
+        fKillOnClose     = 0x020, ///< Close(): kill child process if it hasn't
                                   ///< terminated within the allotted time.
                                   ///< NOTE:  If both fKeepOnClose and
                                   ///< fKillOnClose are set, the safer
                                   ///< fKeepOnClose takes the effect.
-        fNewGroup        = 0x20,  ///< UNIX: new process group will be
+        fResetPipeSignal =     0, ///< Do not keep SIGPIPE signal
+                                  ///< processing for child process.
+        fKeepPipeSignal  = 0x040, ///< Keep SIGPIPE signal processing
+                                  ///< for child process.
+        fNewGroup        = 0x100  ///< UNIX: new process group will be
                                   ///< created and child become the leader
                                   ///< of the new process group.
                                   ///< The fKillOnClose flag kills child
                                   ///< and all its spawned processes.
-        fResetPipeSignal =    0,  ///< Do not keep SIGPIPE signal
-                                  ///< processing for child process.
-        fKeepPipeSignal  = 0x40   ///< Keep SIGPIPE signal processing
-                                  ///< for child process.
     };
-    typedef unsigned int TCreateFlags;    ///< bit-wise OR of "ECreateFlags"
+    typedef unsigned int TCreateFlags;  ///< bitwise OR of "ECreateFlags"
 
     /// Which of the child I/O handles to use.
     enum EChildIOHandle {
@@ -237,6 +238,17 @@ public:
     ///   Close
     EIO_Status CloseHandle(EChildIOHandle handle);
 
+    /// Set standard output handle to read data from.
+    ///
+    /// @from_handle
+    ///   Handle which used to read data (eStdOut/eStdErr).
+    /// @return
+    ///   Return eIO_Success if new handler is eStdOut or eStdErr.
+    ///   Return eIO_InvalidArg otherwise.
+    /// @sa
+    ///   Read
+    EIO_Status SetReadHandle(EChildIOHandle from_handle);
+
     /// Read data from pipe. 
     ///
     /// @param buf
@@ -257,17 +269,6 @@ public:
                     size_t         count, 
                     size_t*        read = 0,
                     EChildIOHandle from_handle = eDefault);
-
-    /// Set standard output handle to read data from.
-    ///
-    /// @from_handle
-    ///   Handle which used to read data (eStdOut/eStdErr).
-    /// @return
-    ///   Return eIO_Success if new handler is eStdOut or eStdErr.
-    ///   Return eIO_Unknown otherwise.
-    /// @sa
-    ///   Read
-    EIO_Status SetReadHandle(EChildIOHandle from_handle);
 
     /// Write data to pipe. 
     ///
