@@ -2,7 +2,7 @@ corelib$
 serial$
 serial/impl$
 serial/datatool
-# algo$
+algo$
 algo/blast
 algo/dustmask$
 algo/winmask$
@@ -10,8 +10,6 @@ algo/blast/api/unit_test
 algo/blast/blastinput/unit_test
 -algo/blast/blastinput/demo
 objects
--objects/Makefile.sources
--objects/Makefile.in
 cgi$
 cgi/impl$
 html$
@@ -28,6 +26,7 @@ util/bitset$
 util/math$
 util/cache$
 util/impl$
+objtools$
 objtools/alnmgr$
 objtools/readers$
 objtools/seqmasks_io$
@@ -51,6 +50,7 @@ objmgr
 -objmgr/test
 objtools/data_loaders/genbank
 -objtools/data_loaders/genbank/test
+objtools/data_loaders$
 objtools/data_loaders/blastdb$
 app$
 app/blast
