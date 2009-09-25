@@ -31,10 +31,7 @@
  * Unit test module for creation of PSSMs from frequency ratios
  */
 #include <ncbi_pch.hpp>
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
-#include <boost/test/auto_unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 
 // ASN.1 object includes
 #include <objects/scoremat/PssmWithParameters.hpp>

@@ -36,7 +36,6 @@
 #include <algo/blast/core/gencode_singleton.h>
 #include <algo/blast/api/blast_aux.hpp>
 
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 #ifndef SKIP_DOXYGEN_PROCESSING
 

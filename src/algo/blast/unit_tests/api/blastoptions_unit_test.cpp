@@ -32,7 +32,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 #include "blast_setup.hpp"

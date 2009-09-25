@@ -36,7 +36,6 @@
 #include <algo/blast/core/blast_util.h> // for FENCE_SENTRY
 #include <algo/blast/api/subj_ranges_set.hpp>
 
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING

@@ -34,7 +34,6 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/msa_pssm_input.hpp>
 
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
 using namespace std;

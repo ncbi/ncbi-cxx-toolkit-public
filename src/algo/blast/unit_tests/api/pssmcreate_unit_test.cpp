@@ -31,10 +31,7 @@
  * Unit test module for creation of PSSMs from multiple sequence alignments.
  */
 #include <ncbi_pch.hpp>
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
-#include <boost/test/auto_unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 
 #include <corelib/ncbi_limits.hpp>
 

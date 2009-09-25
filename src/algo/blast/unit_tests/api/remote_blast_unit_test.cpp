@@ -32,8 +32,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <boost/test/auto_unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include <corelib/test_boost.hpp>
 #include <objtools/blast/services/blast_services.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include "test_objmgr.hpp"

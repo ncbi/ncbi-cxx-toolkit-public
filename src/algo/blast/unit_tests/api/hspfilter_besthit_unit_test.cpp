@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <algo/blast/core/hspfilter_besthit.h>
 
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING

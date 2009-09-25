@@ -34,7 +34,6 @@
 // force include of C++ toolkit; necessary for Mac OS X build
 // to prevent duplicate Handle typedef
 #include <ncbi_pch.hpp>
-#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
 #include <algo/blast/core/blast_hspstream.h>
