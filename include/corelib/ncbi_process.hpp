@@ -290,19 +290,19 @@ public:
 
     /// Wait until process terminates.
     ///
-    /// Wait until the process has terminates or timeout expired.
-    /// Return immediately if specifed process has already terminated.
+    /// Wait until a process terminates or timeout expires.
+    /// Return immediately if the specifed process has already terminated.
     /// @param timeout
     ///   Time-out interval in milliceconds. By default it is infinite.
     /// @param info
     ///   Extended exit information for terminated process.
-    ///   Note, that if CProcess:Kill() was used to terminate a process
-    ///   that extended information is not available in most cases.
+    ///   Note, that if CProcess:Kill() was used to terminate the process
+    ///   then the extended information may not be available.
     /// @return
-    ///   - Exit code of the process, if no errors.
-    ///   - (-1), if error has occurred or impossible to get exit code
-    ///     of the process. If 'info' parameter is specified that it is
-    ///     possible to get additional information about the process.
+    ///   - Exit code of the process, if the call completed without errors.
+    ///   - (-1), if error has occurred or it is impossible to get an exit
+    ///     code of the process. If 'info' parameter is specified, it is
+    ///     filled with additional information about the process.
     /// @sa
     ///   IsAlive, CExitInfo
     int Wait(unsigned long timeout = kInfiniteTimeoutMs,

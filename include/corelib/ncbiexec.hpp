@@ -69,7 +69,7 @@ public:
     /// Also, they don't work for eOverlay/eDetach modes.
     enum EModeFlags {
         /// After fork() move a process to new group (assign new PGID).
-        /// This can be useful if new created process also spawn child
+        /// This can be useful if new created process also spawns child
         /// processes and you wish to control it using signals, or,
         /// for example, terminate the whole process group at once.
         fNewGroup  = (1 << 8),
