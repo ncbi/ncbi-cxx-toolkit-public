@@ -2,7 +2,7 @@ corelib$
 serial$
 serial/impl$
 serial/datatool
-algo$
+# algo$
 algo/blast
 algo/dustmask$
 algo/winmask$
