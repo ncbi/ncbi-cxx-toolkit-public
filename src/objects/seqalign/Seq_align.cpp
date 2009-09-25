@@ -81,25 +81,27 @@ CSeq_align::TDim CSeq_align::CheckNumRows(void) const
 
     case C_Segs::e_Disc:
         {{
-            TSegs::TDisc::Tdata::const_iterator iter = GetSegs().GetDisc().Get().begin();
-            TSegs::TDisc::Tdata::const_iterator end  = GetSegs().GetDisc().Get().end();
-            TDim num_rows = (*iter)->CheckNumRows();
-            for (++iter;  iter != end;  ++iter) {
-                TDim tmp = (*iter)->CheckNumRows();
-                if (tmp != num_rows) {
-                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                               "CSeq_align::CheckNumRows(): Number of rows "
-                               "is not the same for each std seg.");
+            TDim numrows = 0;
+            ITERATE (C_Segs::TDisc::Tdata, std_i, GetSegs().GetDisc().Get()) {
+                TDim seg_numrows = (*std_i)->CheckNumRows();
+                if (numrows) {
+                    if ( seg_numrows != numrows ) {
+                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                                   "CSeq_align::CheckNumRows(): Number of rows "
+                                   "is not the same for each disc seg.");
+                    }
+                } else {
+                    numrows = seg_numrows;
                 }
             }
-            return num_rows;
+            return numrows;
         }}
 
     case C_Segs::e_Std:
         {{
             TDim numrows = 0;
             ITERATE (C_Segs::TStd, std_i, GetSegs().GetStd()) {
-                const TDim& seg_numrows = (*std_i)->CheckNumRows();
+                TDim seg_numrows = (*std_i)->CheckNumRows();
                 if (numrows) {
                     if (seg_numrows != numrows) {
                         NCBI_THROW(CSeqalignException, eInvalidAlignment,
