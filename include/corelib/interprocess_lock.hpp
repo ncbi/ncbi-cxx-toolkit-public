@@ -41,6 +41,7 @@
 
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/guard.hpp>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
 #  error "CInterProcessLock is not implemented on this platform"
