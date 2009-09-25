@@ -48,7 +48,6 @@ dbapi/driver/odbc/unix_odbc$
 dbapi/driver/util$ update-only
 objmgr
 -objmgr/test
-objtools/data_loaders$
 objtools/data_loaders/genbank
 -objtools/data_loaders/genbank/test
 objtools/data_loaders/blastdb$
