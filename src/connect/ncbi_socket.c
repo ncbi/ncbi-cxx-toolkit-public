@@ -886,25 +886,29 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 #elif defined(NCBI_OS_UNIX)
     return fcntl(sock, F_SETFL,
                  nonblock ?
-                 fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
+                 fcntl(sock, F_GETFL, 0) |        O_NONBLOCK :
                  fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1;
 #else
 #   error "Unsupported platform"
-#endif /*platform-specific ioctl*/
+#endif /*NCBI_OS*/
 }
 
 
-#ifdef NCBI_OS_UNIX
 /* Set close-on-exec flag
  */
-static int/*bool*/ s_SetCloexec(int fd, int/*bool*/ cloexec)
+static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 {
-    return fcntl(fd, F_SETFD,
+#if defined(NCBI_OS_UNIX)
+    return fcntl(x_sock, F_SETFD,
                  cloexec ?
-                 fcntl(fd, F_GETFD, 0) | FD_CLOEXEC :
-                 fcntl(fd, F_GETFD, 0) & (int) ~FD_CLOEXEC) != -1;
+                 fcntl(x_sock, F_GETFD, 0) |        FD_CLOEXEC :
+                 fcntl(x_sock, F_GETFD, 0) & (int) ~FD_CLOEXEC) != -1;
+#elif defined(NCBI_OS_MSWIN)
+    return SetHandleInformation((HANDLE)x_sock,HANDLE_FLAG_INHERIT,!cloexec);
+#else
+#   error "Unsupported platform"
+#endif /*NCBI_OS*/
 }
-#endif /*NCBI_OS_UNIX*/
 
 
 /*ARGSUSED*/
@@ -3017,17 +3021,27 @@ static EIO_Status s_Connect(SOCK            sock,
         }
     }
 
-#ifdef NCBI_OS_UNIX
     if ((!sock->crossexec  ||  sock->session)
-        &&  !s_SetCloexec(x_sock, 1/*true*/)){
-        x_error = SOCK_ERRNO;
+        &&  !s_SetCloexec(x_sock, 1/*true*/)) {
+        const char* errstr;
+#ifdef NCBI_OS_MSWIN
+        DWORD err = GetLastError();
+        errstr = s_WinStrerror(err);
+        x_error = err;
+#else
+        x_error = errno;
+        errstr = SOCK_STRERROR(x_error);
+#endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(129, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
+                            x_error, errstr ? errstr : "",
                             ("%s[SOCK::Connect] "
                              " Cannot set socket close-on-exec mode",
                              s_ID(sock, _id)));
+#ifdef NCBI_OS_MSWIN
+        if (errstr)
+            LocalFree((char*) errstr);
+#endif /*NCBI_OS_MSWIN*/
     }
-#endif /*NCBI_OS_UNIX*/
 
     /* success: do not change any timeouts */
     sock->w_len = BUF_Size(sock->w_buf);
@@ -3559,16 +3573,26 @@ static EIO_Status s_CreateListening(const char*    path,
     }
 #endif /*NCBI_OS_MSWIN*/
 
-#ifdef NCBI_OS_UNIX
     if (!(flags & fSOCK_KeepOnExec)  &&  !s_SetCloexec(x_lsock, 1/*true*/)) {
-        x_error = SOCK_ERRNO;
+        const char* errstr;
+#ifdef NCBI_OS_MSWIN
+        DWORD err = GetLastError();
+        errstr = s_WinStrerror(err);
+        x_error = err;
+#else
+        x_error = errno;
+        errstr = SOCK_STRERROR(x_error);
+#endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(110, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
+                            x_error, errstr ? errstr : "",
                             ("LSOCK#%u[%u]: [LSOCK::Create] "
                              " Cannot set socket close-on-exec mode",
                              x_id, (unsigned int) x_lsock));
+#ifdef NCBI_OS_MSWIN
+        if (errstr)
+            LocalFree((char*) errstr);
+#endif /*NCBI_OS_MSWIN*/
     }
-#endif /*NCBI_OS_UNIX*/
 
     /* listen */
     if (listen(x_lsock, backlog) != 0) {
@@ -3860,16 +3884,26 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
 #endif /*SO_OOBINLINE*/
 
-#ifdef NCBI_OS_UNIX
     if (!(*sock)->crossexec  &&  !s_SetCloexec(x_sock, 1/*true*/)) {
-        x_error = SOCK_ERRNO;
+        const char* errstr;
+#ifdef NCBI_OS_MSWIN
+        DWORD err = GetLastError();
+        errstr = s_WinStrerror(err);
+        x_error = err;
+#else
+        x_error = errno;
+        errstr = SOCK_STRERROR(x_error);
+#endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(128, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
+                            x_error, errstr ? errstr : "",
                             ("%s[LSOCK::Accept] "
                              " Cannot set socket close-on-exec mode",
                              s_ID(*sock, _id)));
+#ifdef NCBI_OS_MSWIN
+        if (errstr)
+            LocalFree((char*) errstr);
+#endif /*NCBI_OS_MSWIN*/
     }
-#endif /*NCBI_OS_UNIX*/
 
     /* statistics & logging */
     if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))
@@ -4247,16 +4281,26 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     }
 #endif /*SO_OOBINLINE*/
 
-#ifdef NCBI_OS_UNIX
     if (!s_SetCloexec(fd, !x_sock->crossexec  ||  x_sock->session)) {
-        x_error = SOCK_ERRNO;
+        const char* errstr;
+#ifdef NCBI_OS_MSWIN
+        DWORD err = GetLastError();
+        errstr = s_WinStrerror(err);
+        x_error = err;
+#else
+        x_error = errno;
+        errstr = SOCK_STRERROR(x_error);
+#endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(124, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
+                            x_error, errstr ? errstr : "",
                             ("%s[SOCK::CreateOnTop] "
                              " Cannot modify socket close-on-exec mode",
                              s_ID(x_sock, _id)));
+#ifdef NCBI_OS_MSWIN
+        if (errstr)
+            LocalFree((char*) errstr);
+#endif /*NCBI_OS_MSWIN*/
     }
-#endif /*NCBI_OS_UNIX*/
  
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
@@ -5235,17 +5279,27 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     BUF_SetChunkSize(&(*sock)->w_buf, SOCK_BUF_CHUNK_SIZE);
 
-#ifdef NCBI_OS_UNIX
     if (!(*sock)->crossexec  &&  !s_SetCloexec(x_sock, 1/*true*/)) {
+        const char* errstr;
         char _id[32];
-        x_error = SOCK_ERRNO;
+#ifdef NCBI_OS_MSWIN
+        DWORD err = GetLastError();
+        errstr = s_WinStrerror(err);
+        x_error = err;
+#else
+        x_error = errno;
+        errstr = SOCK_STRERROR(x_error);
+#endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(130, eLOG_Warning,
-                            x_error, SOCK_STRERROR(x_error),
+                            x_error, errstr ? errstr : "",
                             ("%s[DSOCK::Create]  Cannot set"
                              " socket close-on-exec mode",
                              s_ID(*sock, _id)));
+#ifdef NCBI_OS_MSWIN
+        if (errstr)
+            LocalFree((char*) errstr);
+#endif /*NCBI_OS_MSWIN*/
     }
-#endif /*NCBI_OS_UNIX*/
 
     /* statistics & logging */
     if ((*sock)->log == eOn  ||  ((*sock)->log == eDefault  &&  s_Log == eOn))

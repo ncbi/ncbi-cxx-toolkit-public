@@ -257,11 +257,11 @@ typedef struct SOCK_tag {
     unsigned        readable:1; /* =1 if known to be readable                */
     unsigned        closeing:1; /* =1 if FD_CLOSE posted (as ugly as spelled)*/
     unsigned        writable:1; /* =1 if known to be writeable               */
-    unsigned        reserved:4; /* MBZ                                       */
+    unsigned        reserved:3; /* MBZ                                       */
 #else
     unsigned        reserved:6; /* MBZ                                       */
-    unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
 #endif /*NCBI_OS_MSWIN*/
+    unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
 
 #ifdef NCBI_OS_MSWIN
 	WSAEVENT         event;     /* event bound to I/O                        */
