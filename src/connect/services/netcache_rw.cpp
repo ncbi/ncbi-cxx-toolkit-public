@@ -109,8 +109,10 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
 
 
 /////////////////////////////////////////////////
-CNetCacheWriter::CNetCacheWriter(CNetServerConnection::TInstance connection) :
-    m_Connection(connection)
+CNetCacheWriter::CNetCacheWriter(CNetServerConnection::TInstance connection,
+    EServerResponseType response_type) :
+        m_Connection(connection),
+        m_ResponseType(response_type)
 {
     m_Writer.reset(new CTransmissionWriter(
         new CSocketReaderWriter(&m_Connection->m_Socket),
@@ -133,15 +135,17 @@ void CNetCacheWriter::Close()
     if (!m_Writer.get())
         return;
 
-    try {
-        m_Writer.reset();
-        m_Connection->WaitForServer();
-        string dummy;
-        m_Connection->ReadCmdOutputLine(dummy);
-    } catch (...) {
-        m_Connection->Abort();
-        x_Shutdown();
-        throw;
+    if (m_ResponseType == eNetCache_Wait) {
+        try {
+            m_Writer.reset();
+            m_Connection->WaitForServer();
+            string dummy;
+            m_Connection->ReadCmdOutputLine(dummy);
+        } catch (...) {
+            m_Connection->Abort();
+            x_Shutdown();
+            throw;
+        }
     }
 
     x_Shutdown();

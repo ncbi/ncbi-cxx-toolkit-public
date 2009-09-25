@@ -75,6 +75,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
 
     void WriteBuffer(
         SNetServerConnectionImpl* conn_impl,
+        CNetCacheWriter::EServerResponseType response_type,
         const char* buf_ptr,
         size_t buf_size);
 

@@ -225,8 +225,9 @@ void CNetICacheClient::Store(const string&  key,
                              unsigned int   time_to_live,
                              const string&  /*owner*/)
 {
-    m_Impl->WriteBuffer(m_Impl->InitiateStoreCmd(key,
-        version, subkey, time_to_live), (const char*) data, size);
+    m_Impl->WriteBuffer(
+        m_Impl->InitiateStoreCmd(key, version, subkey, time_to_live),
+        CNetCacheWriter::eICache_NoWait, (const char*) data, size);
 }
 
 
@@ -319,7 +320,8 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
                                           const string&    /*owner*/)
 {
     return new CNetCacheWriter(
-        m_Impl->InitiateStoreCmd(key, version, subkey, time_to_live));
+        m_Impl->InitiateStoreCmd(key, version, subkey, time_to_live),
+            CNetCacheWriter::eICache_NoWait);
 }
 
 

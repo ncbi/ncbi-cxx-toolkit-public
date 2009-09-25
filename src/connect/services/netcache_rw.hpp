@@ -82,7 +82,13 @@ private:
 class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
-    CNetCacheWriter(CNetServerConnection::TInstance connection);
+    enum EServerResponseType {
+        eNetCache_Wait,
+        eICache_NoWait,
+    };
+
+    CNetCacheWriter(CNetServerConnection::TInstance connection,
+        EServerResponseType response_type);
 
     virtual ~CNetCacheWriter();
 
@@ -99,6 +105,7 @@ private:
     CNetServerConnection m_Connection;
     auto_ptr<CTransmissionWriter> m_Writer;
     string m_LastError;
+    EServerResponseType m_ResponseType;
 
     bool x_IsStreamOk();
     void x_Shutdown();

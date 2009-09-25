@@ -215,15 +215,16 @@ string  CNetCacheAPI::PutData(const string& key,
     string k(key);
 
     m_Impl->WriteBuffer(m_Impl->InitiatePutCmd(&k, time_to_live),
-        (const char*) buf, size);
+        CNetCacheWriter::eNetCache_Wait, (const char*) buf, size);
 
     return k;
 }
 
-void SNetCacheAPIImpl::WriteBuffer(
-    SNetServerConnectionImpl* conn_impl, const char* buf_ptr, size_t buf_size)
+void SNetCacheAPIImpl::WriteBuffer(SNetServerConnectionImpl* conn_impl,
+    CNetCacheWriter::EServerResponseType response_type,
+    const char* buf_ptr, size_t buf_size)
 {
-    CNetCacheWriter writer(conn_impl);
+    CNetCacheWriter writer(conn_impl, response_type);
 
     size_t bytes_written;
 
@@ -243,7 +244,8 @@ void SNetCacheAPIImpl::WriteBuffer(
 
 IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live)
 {
-    return new CNetCacheWriter(m_Impl->InitiatePutCmd(key, time_to_live));
+    return new CNetCacheWriter(m_Impl->InitiatePutCmd(key, time_to_live),
+        CNetCacheWriter::eNetCache_Wait);
 }
 
 
