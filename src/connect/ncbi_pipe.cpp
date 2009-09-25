@@ -362,7 +362,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 HANDLE current_process = ::GetCurrentProcess();
                 if ( !::DuplicateHandle(current_process, stderr_handle,
                                         current_process, &child_stderr,
-                                        0, FALSE, DUPLICATE_SAME_ACCESS)) {
+                                        0, TRUE, DUPLICATE_SAME_ACCESS)) {
                     PIPE_THROW(::GetLastError(),
                                "DuplicateHandle(stderr) failed");
                 }
