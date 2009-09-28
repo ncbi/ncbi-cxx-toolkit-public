@@ -902,6 +902,9 @@ private:
     
     /// Tokenized version of DBLIST
     vector<CSeqDB_BasePath> m_DBList;
+
+    /// Should we skip local DB search for this DBLIST?
+    vector<bool> m_SkipLocal;
     
     /// Combined alias files.
     CSeqDBAliasSets & m_AliasSets;
