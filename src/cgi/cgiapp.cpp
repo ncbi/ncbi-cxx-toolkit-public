@@ -584,28 +584,33 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
         }
     }
 
-    // HTTP header
-    os << "Status: " << status_str << HTTP_EOL;
-    os << "Content-Type: text/plain" HTTP_EOL HTTP_EOL;
+    try {
+        // HTTP header
+        os << "Status: " << status_str << HTTP_EOL;
+        os << "Content-Type: text/plain" HTTP_EOL HTTP_EOL;
 
-    // Message
-    os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
-    os << e.what();
+        // Message
+        os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
+        os << e.what();
 
-    if ( dynamic_cast<CArgException*> (&e) ) {
-        string ustr;
-        const CArgDescriptions* descr = GetArgDescriptions();
-        if (descr) {
-            os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
+        if ( dynamic_cast<CArgException*> (&e) ) {
+            string ustr;
+            const CArgDescriptions* descr = GetArgDescriptions();
+            if (descr) {
+                os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
+            }
+        }
+
+
+        // Check for problems in sending the response
+        if ( !os.good() ) {
+            ERR_POST_X(4, "CCgiApplication::OnException() failed to send error page"
+                          " back to the client");
+            return -1;
         }
     }
-
-
-    // Check for problems in sending the response
-    if ( !os.good() ) {
-        ERR_POST_X(4, "CCgiApplication::OnException() failed to send error page"
-                      " back to the client");
-        return -1;
+    catch (exception& e) {
+        NCBI_REPORT_EXCEPTION_X(14, "(CGI) CCgiApplication::Run", e);
     }
     return 0;
 }
@@ -1131,7 +1136,7 @@ string CCgiApplication::GetDefaultLogPath(void) const
 
 void CCgiApplication::SetHTTPStatus(int status)
 {
-    GetDiagContext().GetRequestContext().SetRequestStatus(status);
+    CDiagContext::GetRequestContext().SetRequestStatus(status);
 }
 
 
