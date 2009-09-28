@@ -74,13 +74,10 @@ int main(int argc, char* argv[])
     assert((net_info = ConnNetInfo_Create(0)) != 0);
     if (net_info->debug_printout == eDebugPrintout_Some)
         flag |= fFCDC_LogControl;
-    else if (net_info->debug_printout == eDebugPrintout_Data)
-        flag |= fFCDC_LogData;
-    else {
+    else if (net_info->debug_printout == eDebugPrintout_Data) {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
-        if (strcasecmp(val, "ALL") == 0)
-            flag |= fFCDC_LogAll;
+        flag |= strcasecmp(val, "ALL") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
 
     if (TEST_PORT) {

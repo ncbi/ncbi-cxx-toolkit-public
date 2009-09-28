@@ -66,7 +66,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "5.0");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
+    //reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
     return reg;
 }
 
@@ -220,13 +220,10 @@ int main(int argc, const char* argv[])
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
         flag |= fFCDC_LogControl;
-    else if (net_info->debug_printout == eDebugPrintout_Data)
-        flag |= fFCDC_LogData;
     else {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
-        if (strcasecmp(val, "ALL") == 0)
-            flag |= fFCDC_LogAll;
+        flag |= strcasecmp(val, "ALL") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
                                 "Misc/test_ncbi_conn_stream.FTP.data",

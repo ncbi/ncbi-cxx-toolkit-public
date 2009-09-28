@@ -507,6 +507,9 @@ static EIO_Status s_VT_Open
     EIO_Status status;
 
     assert(!xxx->data  &&  !xxx->cntl);
+    /* only clean state reopen is allowed */
+    if (xxx->r_status != eIO_Success  ||  xxx->w_status != eIO_Success)
+        return eIO_Closed;
     status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->cntl, 0, 0,
                            xxx->flag & fFCDC_LogControl
                            ? fSOCK_LogOn : fSOCK_LogDefault);
@@ -521,10 +524,9 @@ static EIO_Status s_VT_Open
             SOCK_Close(xxx->cntl);
             xxx->cntl = 0;
         }
-    } else {
-        xxx->r_status = eIO_Success;
-        xxx->w_status = eIO_Success;
     }
+    xxx->r_status = status;
+    xxx->w_status = status;
     return status;
 }
  
@@ -667,6 +669,11 @@ static EIO_Status s_VT_Close
             SOCK_Close(xxx->cntl);
         xxx->cntl = 0;
     }
+    /* NB: connector is going to be killed, anyways;
+     * but for consistency, allow reuse only of properly closed ones
+     */
+    xxx->r_status = eIO_Success;
+    xxx->w_status = eIO_Success;
     return status != eIO_Closed ? status : eIO_Success;
 }
 
@@ -725,23 +732,26 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 
     assert(!(flag & ~fFCDC_LogAll));
 
-    xxx->data    = 0;
-    xxx->cntl    = 0;
-    xxx->wbuf    = 0;
-    xxx->host    = strdup(host);
-    xxx->port    = port ? port : 21;
-    xxx->user    = strdup(user ? user : "ftp");
-    xxx->pass    = strdup(pass ? pass : "-none");
-    xxx->path    = path  &&  *path ? strdup(path) : 0;
-    xxx->name    = 0;
-    xxx->flag    = flag;
+    xxx->data     = 0;
+    xxx->cntl     = 0;
+    xxx->wbuf     = 0;
+    xxx->host     = strdup(host);
+    xxx->port     = port ? port : 21;
+    xxx->user     = strdup(user ? user : "ftp");
+    xxx->pass     = strdup(pass ? pass : "-none");
+    xxx->path     = path  &&  *path ? strdup(path) : 0;
+    xxx->name     = 0;
+    xxx->flag     = flag;
+    /* allow reuse only in clean state */
+    xxx->r_status = eIO_Success;
+    xxx->w_status = eIO_Success;
 
     /* initialize connector data */
-    ccc->handle  = xxx;
-    ccc->next    = 0;
-    ccc->meta    = 0;
-    ccc->setup   = s_Setup;
-    ccc->destroy = s_Destroy;
+    ccc->handle   = xxx;
+    ccc->next     = 0;
+    ccc->meta     = 0;
+    ccc->setup    = s_Setup;
+    ccc->destroy  = s_Destroy;
 
     return ccc;
 }
