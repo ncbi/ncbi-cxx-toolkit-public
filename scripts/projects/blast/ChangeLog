@@ -1,3 +1,17 @@
+Sep 27, 2009
+* 2.2.22 release
+* Added entrez_query command line option for restricting BLAST databases.
+* Added support for psi-tblastn to the tblastn command line application via
+  the -in_pssm option.
+* Improved documentation for subject masking feature in user manual.
+* User interface improvements to windowmasker.
+* Made the specification of BLAST databases to resolve GIs/accessions
+  configurable.
+* update_blastdb.pl downloads and checks BLAST database MD5 checksum files.
+* Added support for overriding megablast index when importing search strategy
+  files.
+* Added support for best-hit algorithm parameters in strategy files.
+* Bug fixes in tblastn, subject masking, blastdbcheck, and the SEG filtering algorithm.
 
 May 27, 2009
 * First 2.2.21 release
