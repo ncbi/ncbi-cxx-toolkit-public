@@ -834,7 +834,8 @@ CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool is
 
   for(iterator it = begin();  it != end(); ++it) {
     // A high priority warning
-    if( it->beg <= span_beg && span_beg <= it->end )
+    if( it->beg <= span_beg && span_beg <= it->end ||
+        it->beg <= span_end && span_end <= it->end )
       return TCheckSpan(it, CAgpErrEx::W_SpansOverlap);
 
     // A lower priority warning (to be ignored for draft seqs)
