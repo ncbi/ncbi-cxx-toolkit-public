@@ -96,7 +96,7 @@ static void Server(STimeout timeout, int n_cycle)
     ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR bouncer");
     ERR_POST(Info << string(kPipeName) + ", timeout = "
              + NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)
-             + "sec., n_cycle = " + NStr::UIntToString(n_cycle));
+             + " sec., n_cycle = " + NStr::UIntToString(n_cycle));
 
     // Create listening named pipe
     CNamedPipeServer pipe;
@@ -226,7 +226,7 @@ int CTest::Run(void)
                            fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CArgs args = GetArgs();
-    STimeout timeout = {1, 123456};
+    STimeout timeout = {5, 123456};
 
     if (args["timeout"].HasValue()) {
         double tv = args["timeout"].AsDouble();
