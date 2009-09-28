@@ -1,4 +1,5 @@
-May 27, 2009 (SVN revision: 161402)
+
+May 27, 2009
 * First 2.2.21 release
 * Added support for Best-Hit algorithm.
 * Added support for -in_msa psiblast option. 
@@ -31,14 +32,14 @@ makeblastdb.
 automatic resolution of sequence identifiers, and a description of how the 
 BLAST databases are searched.
 
-November 3, 2008 (SVN revision: 144798)
+November 3, 2008
 * First 2.2.19 release
 * Made sequence ID/title display uniform in sequence filtering applications.
 * Fixed incorrect display of filtering options in XML output.
 * Fixed handling of empty sequences in BLAST input. 
 * Fixed negative strand handling for tblastn/tblastx.
 
-October 14, 2008 (SVN revision: 143045)
+October 14, 2008
 * Added update_blastdb.pl script to distribution of BLAST+ command line 
   applications.
 * Changed a few PSI-BLAST constants for pseudo-counts.
@@ -46,7 +47,7 @@ October 14, 2008 (SVN revision: 143045)
 * Bug fix to display BLAST database information remotely from outside NCBI for
   XML output. 
 
-September 24, 2008 (SVN revision: 141260) 
+September 24, 2008
 * Fix to prevent initial seed extension from going beyond context boundary.
 * Improvements to reduce memory usage when query splitting is applied.
 * Print the accession and version for blastdbcmd's %a output format.
@@ -61,5 +62,5 @@ September 24, 2008 (SVN revision: 141260)
   a BLAST database as its data source.
 * Bug fix for merging masking locations.
 
-August 21, 2008 (SVN revision: 138123)
+August 21, 2008
 * First internal release
