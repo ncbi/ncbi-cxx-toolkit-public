@@ -115,8 +115,11 @@ static int s_UnixLock(int fd)
 {
     int x_errno = 0;
 #  if defined(F_TLOCK)
-    if ( lockf(fd, F_TLOCK, 0) < 0) {
+    while (lockf(fd, F_TLOCK, 0) < 0) {
         x_errno = errno;
+        if (x_errno != EINTR  &&  x_errno != EAGAIN) {
+            break;
+        }
     }
 #  elif defined(F_SETLK)
     struct flock lockparam;
@@ -126,7 +129,7 @@ static int s_UnixLock(int fd)
     lockparam.l_len    = 0;  /* whole file */
     while (fcntl(fd, F_SETLK, &lockparam) < 0) {
         x_errno = errno;
-        if (x_errno != EINTR) {
+        if (x_errno != EINTR  &&  x_errno != EAGAIN) {
             break;
         }
     }
