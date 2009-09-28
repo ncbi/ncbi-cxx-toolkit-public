@@ -92,9 +92,14 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
+    // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostFlag(eDPF_All);
     reg = s_CreateRegistry();
     CONNECT_Init(reg);
 

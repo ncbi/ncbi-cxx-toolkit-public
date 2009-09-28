@@ -67,6 +67,7 @@ const size_t kBufferSize = 1234;
 static void x_SetupDiag(const char* who)
 {
     // Set error posting and tracing on maximum
+    //SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);

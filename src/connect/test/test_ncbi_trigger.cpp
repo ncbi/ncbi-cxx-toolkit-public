@@ -79,10 +79,15 @@ private:
 CTest::CTest()
     : m_Port(DEFAULT_PORT), m_Delay(0)
 {
+    // Set error posting and tracing on maximum
     //SetDiagTrace(eDT_Enable);
+    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_Location);
+    UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
-                        eDPF_OmitInfoSev | eDPF_ErrorID);
+
     DisableArgDescriptions(fDisableStdArgs);
     HideStdArgs(-1/*everything*/);
 }

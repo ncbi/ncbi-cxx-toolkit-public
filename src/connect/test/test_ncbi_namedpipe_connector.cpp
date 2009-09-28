@@ -190,6 +190,7 @@ public:
 void CTest::Init(void)
 {
     // Set error posting and tracing on maximum
+    //SetDiagTrace(eDT_Enable);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
