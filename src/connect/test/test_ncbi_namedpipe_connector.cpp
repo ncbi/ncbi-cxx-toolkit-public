@@ -163,6 +163,9 @@ static void Server(STimeout timeout, int n_cycle)
             break;
 
         default:
+            ERR_POST(string("Cannot listen (status: ")
+                     + IO_StatusStr(status)
+                     + ')');
             _TROUBLE;
         }
     } while (--n_cycle > 0);
