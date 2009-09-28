@@ -38,7 +38,7 @@ objtools/cleanup$
 objtools/format$
 objtools/format/items$
 objtools/blast/seqdb_writer
-objtools/blast_format
+objtools/align_format
 dbapi$
 dbapi/driver$
 dbapi/cache$
