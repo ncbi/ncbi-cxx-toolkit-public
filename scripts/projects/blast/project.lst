@@ -34,10 +34,12 @@ objtools/blast$
 objtools/blast/seqdb_reader
 objtools/blast/gene_info_reader
 objtools/blast/services
+objtools/blast/blast_format
+objtools/blast/blastdb_format
+objtools/blast/seqdb_writer
 objtools/cleanup$
 objtools/format$
 objtools/format/items$
-objtools/blast/seqdb_writer
 objtools/align_format
 dbapi$
 dbapi/driver$
