@@ -333,9 +333,6 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 
 	global_start = start = GetTimeMark();
 
-    tv.tv_usec = 0;
-    tv.tv_sec = 1;
-
 	while (buflen > 0) {
 
 		int len;
@@ -349,7 +346,12 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
         FD_ZERO(&efds);
         FD_SET(tds->s, &efds);
 
-		if ((len = select(tds->s + 1, &rfds, NULL, &efds, &tv)) > 0) {
+        /* tv structure is modified inside select() on Linux, so we need to
+           reinitialize it every time. */
+        tv.tv_usec = 0;
+        tv.tv_sec = 1;
+
+        if ((len = select(tds->s + 1, &rfds, NULL, &efds, &tv)) > 0) {
 
 			len = 0;
             if (FD_ISSET(tds->s, &efds)) {
