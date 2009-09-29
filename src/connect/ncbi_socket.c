@@ -1275,8 +1275,9 @@ static EIO_Status s_Select(size_t                n,
                             ready = 1;
                             break;
                         }
+                        mask |= FD_READ/*at least SHUT_WR @ remote end*/;
                         sock->readable = 1/*true*/;
-                        sock->closeing = 1/*true*/;
+                        sock->closing  = 1/*true*/;
                     } else {
                         if (mask & (FD_CONNECT | FD_WRITE)) {
                             assert(sock->type & eSocket);
@@ -1788,7 +1789,7 @@ static EIO_Status s_Recv(SOCK    sock,
 
 #ifdef NCBI_OS_MSWIN
         /* recv() resets IO event recording */
-        sock->readable = sock->closeing;
+        sock->readable = sock->closing;
 #endif /*NCBI_OS_MSWIN*/
 
         /* success/EOF? */
@@ -1821,6 +1822,9 @@ static EIO_Status s_Recv(SOCK    sock,
                     break;
                     /*return eIO_Unknown;*/
                 }
+#ifdef NCBI_OS_MSWIN
+                sock->closing = 1/*true*/;
+#endif /*NCBI_OS_MSWIN*/
             }
             sock->r_status = eIO_Success;
             break;
@@ -2956,8 +2960,8 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->connected = 0;
 #ifdef NCBI_OS_MSWIN
     sock->readable = 0;
-    sock->closeing = 0;
     sock->writable = 0;
+    sock->closing  = 0;
 #endif /*NCBI_OS_MSWIN*/
     for (n = 0; ; n = 1) { /* optionally auto-resume if interrupted */
         if (connect(x_sock, &addr.sa, addrlen) == 0) {
@@ -3077,9 +3081,8 @@ static EIO_Status s_Create(const char*     hostpath,
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
-
-#ifdef NCBI_OS_UNIX
     x_sock->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
+#ifdef NCBI_OS_UNIX
     if (!port)
         strcpy(x_sock->path, hostpath);
 #endif /*NCBI_OS_UNIX*/
@@ -3847,9 +3850,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     (*sock)->writable  = 1/*true*/;
 	(*sock)->event     = event;
 #endif /*NCBI_OS_MSWIN*/
-#ifdef NCBI_OS_UNIX
     (*sock)->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
-#endif /*NCBI_OS_UNIX*/
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     /* w_buf is unused for accepted sockets */
@@ -4223,9 +4224,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->r_status  = eIO_Success;
     x_sock->w_status  = eIO_Success;
     x_sock->pending   = 1/*have to check at the nearest I/O*/;
-#ifdef NCBI_OS_UNIX
     x_sock->crossexec = flags * fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
-#endif /*NCBI_OS_UNIX*/
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf     = w_buf;
@@ -5272,9 +5271,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     (*sock)->event     = event;
     (*sock)->writable  = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
-#ifdef NCBI_OS_UNIX
     (*sock)->crossexec = flags & fSOCK_KeepOnExec ? 1/*true*/ : 0/*false*/;
-#endif /*NCBI_OS_UNIX*/
     /* all timeouts cleared - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     BUF_SetChunkSize(&(*sock)->w_buf, SOCK_BUF_CHUNK_SIZE);

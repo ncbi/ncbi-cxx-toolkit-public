@@ -199,17 +199,15 @@ typedef struct LSOCK_tag {
     EBIO_Status     w_status:3; /* MBZ (NB: eIO_Success)                     */
     unsigned/*bool*/ pending:1; /* MBZ                                       */
 
-    unsigned          unused:1; /* MBZ                                       */
-#ifdef NCBI_OS_MSWIN
-    unsigned        readable:1; /* =1 if known to have a pending accept      */
-    unsigned        reserved:6; /* MBZ                                       */
+#ifndef NCBI_OS_MSWIN
+    unsigned        reserved:8; /* MBZ                                       */
 #else
     unsigned        reserved:7; /* MBZ                                       */
-#endif /*NCBI_OS_MSWIN*/
+    unsigned        readable:1; /* =1 if known to have a pending accept      */
+    unsigned          unused:2; /* MBZ                                       */
 
-#ifdef NCBI_OS_MSWIN
 	WSAEVENT         event;     /* event bound to I/O                        */
-#endif /*NCBI_OS_MSWIN*/
+#endif /*!NCBI_OS_MSWIN*/
 
     void*            context;   /* per-server credentials                    */
 
@@ -252,20 +250,18 @@ typedef struct SOCK_tag {
     EBIO_Status     w_status:3; /* write status:  eIO_Closed if was shut down*/
     unsigned/*bool*/ pending:1; /* =1 if connection is still initing         */
 
-    unsigned       connected:1; /* =1 if remote end-point is fully connected */
-#ifdef NCBI_OS_MSWIN
-    unsigned        readable:1; /* =1 if known to be readable                */
-    unsigned        closeing:1; /* =1 if FD_CLOSE posted (as ugly as spelled)*/
-    unsigned        writable:1; /* =1 if known to be writeable               */
-    unsigned        reserved:3; /* MBZ                                       */
-#else
-    unsigned        reserved:6; /* MBZ                                       */
-#endif /*NCBI_OS_MSWIN*/
     unsigned       crossexec:1; /* =1 if close-on-exec must NOT be set       */
+    unsigned       connected:1; /* =1 if remote end-point is fully connected */
+#ifndef NCBI_OS_MSWIN
+    unsigned        reserved:6; /* MBZ                                       */
+#else
+    unsigned        reserved:3; /* MBZ                                       */
+    unsigned        readable:1; /* =1 if known to be readable                */
+    unsigned        writable:1; /* =1 if known to be writeable               */
+    unsigned         closing:1; /* =1 if FD_CLOSE posted                     */
 
-#ifdef NCBI_OS_MSWIN
 	WSAEVENT         event;     /* event bound to I/O                        */
-#endif /*NCBI_OS_MSWIN*/
+#endif /*!NCBI_OS_MSWIN*/
 
     void*            session;   /* secure session id if secure, else 0       */
 
