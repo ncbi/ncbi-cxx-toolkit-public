@@ -92,6 +92,13 @@ extern "C" {
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #endif
 
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 300  &&  \
+  defined(__cplusplus)
+/* Determine libstdc++ version, which may not entirely correlate with
+   the compiler's own version(!) */
+#  include <bits/c++config.h>
+#endif
+
 /**
  * Define platform specific atomic-operations macros/values.
  *
@@ -107,7 +114,11 @@ extern "C" {
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
-#elif defined(NCBI_COMPILER_GCC) && ((defined(__sparc) && !defined(__sparcv9))  ||  ((NCBI_COMPILER_VERSION < 300 || NCBI_COMPILER_VERSION >= 340)  &&  (defined(__i386) || defined(__sparc) || defined(__x86_64)))) && (!defined(NCBI_TCHECK) || (!defined(__GLIBCPP__) && !defined(__GLIBCXX__)))
+#elif defined(NCBI_COMPILER_GCC)  &&  \
+  ((defined(__sparc) && !defined(__sparcv9))  ||  \
+   ((defined(__i386) || defined(__sparc) || defined(__x86_64))  &&  \
+    !defined(__GLIBCPP__) /* < 3.0 or >= 3.4 */)  &&  \
+   (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_USE_ASM 1
@@ -181,13 +192,13 @@ extern "C" {
 }
 #  endif
 #elif (defined(NCBI_COMPILER_GCC) && defined(__cplusplus)) || defined(__GLIBCPP__) || defined(__GLIBCXX__)
-#  if (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 420) || (defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514)
+#  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514 /* 4.2 */
 #    include <ext/atomicity.h>
 #  else
 #    include <bits/atomicity.h>
 #  endif
    typedef _Atomic_word TNCBIAtomicValue;
-#  if (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 340) || (defined(__GLIBCXX__) && __GLIBCXX__ >= 20040419)
+#  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20040419 /* 3.4; redundant? */
 #    define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
 #  else
 #    define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
