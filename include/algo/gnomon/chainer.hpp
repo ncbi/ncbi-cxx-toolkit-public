@@ -26,29 +26,44 @@
  *
  * ===========================================================================
  *
- * Authors:  Vyacheslav Chetvernin
+ * Authors:  Alexandre Souvorov
  *
  * File Description:
  *
  */
 
-#include <corelib/ncbiobj.hpp>
-
 #include <algo/gnomon/gnomon_model.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-    class CGnomon_params;
-END_SCOPE(objects)
-BEGIN_SCOPE(gnomon)
+BEGIN_SCOPE(ncbi);
+BEGIN_SCOPE(gnomon);
+
+
+struct SMinScor {
+    double m_min;
+    double m_i5p_penalty;
+    double m_i3p_penalty;
+    double m_cds_bonus;
+    double m_length_penalty;
+    double m_minprotfrac;
+    double m_endprotfrac;
+    int m_prot_cds_len;
+};
+
+
+TGeneModelList NCBI_XALGOGNOMON_EXPORT MakeChains(TAlignModelList& alignments,
+                          CGnomonEngine& gnomon, const SMinScor& minscor,
+                          int intersect_limit, int trim, size_t alignlimit,
+                          const map<string,TSignedSeqRange>& mrnaCDS, 
+                          map<string, pair<bool,bool> >& prot_complet,
+                          double mininframefrac);
 
 class NCBI_XALGOGNOMON_EXPORT CChainer {
 public:
     CChainer();
 };
 
-
 END_SCOPE(gnomon)
-END_NCBI_SCOPE
+END_SCOPE(ncbi)
+
 
 #endif  // ALGO_GNOMON___CHAINER__HPP

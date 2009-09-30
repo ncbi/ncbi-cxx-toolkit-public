@@ -12,6 +12,7 @@ SRC = test_chainer
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = xalgognomon xobjutil test_boost $(SOBJMGR_LIBS)
+LIBS = $(DL_LIBS)
 
 REQUIRES = Boost.Test.Included
 
