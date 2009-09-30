@@ -543,16 +543,15 @@ EIO_Status CUNIXListeningSocket::Listen(const string&  path,
 
 
 EIO_Status CListeningSocket::Accept(CSocket*&       sock,
-                                    const STimeout* timeout) const
+                                    const STimeout* timeout,
+                                    TSOCK_Flags     flags) const
 {
     if ( !m_Socket )
         return eIO_Closed;
 
     SOCK x_sock;
-    EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
-    if (status != eIO_Success) {
-        sock = 0;
-    } else {
+    EIO_Status status = LSOCK_AcceptEx(m_Socket, timeout, &x_sock, flags);
+    if (status == eIO_Success) {
         try {
             sock = new CSocket;
         } catch (...) {
@@ -561,19 +560,21 @@ EIO_Status CListeningSocket::Accept(CSocket*&       sock,
             throw;
         }
         sock->Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
-    }
+    } else
+        sock = 0;
     return status;
 }
 
 
 EIO_Status CListeningSocket::Accept(CSocket&        sock,
-                                    const STimeout* timeout) const
+                                    const STimeout* timeout,
+                                    TSOCK_Flags     flags) const
 {
     if ( !m_Socket )
         return eIO_Closed;
 
     SOCK x_sock;
-    EIO_Status status = LSOCK_Accept(m_Socket, timeout, &x_sock);
+    EIO_Status status = LSOCK_AcceptEx(m_Socket, timeout, &x_sock, flags);
     if (status == eIO_Success)
         sock.Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
     return status;

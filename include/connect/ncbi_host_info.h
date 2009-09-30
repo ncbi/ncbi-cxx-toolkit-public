@@ -58,6 +58,12 @@ struct SHostInfoTag;  /*forward declaration of an opaque private structure*/
 typedef struct SHostInfoTag* HOST_INFO; /*handle for the user code use*/
 
 
+/* Return official host address or 0 if unknown.
+ */
+extern NCBI_XCONNECT_EXPORT
+unsigned int HINFO_HostAddr(const HOST_INFO host_info);
+
+
 /* Return CPU count or -1 if an error occurred.
  */
 extern NCBI_XCONNECT_EXPORT

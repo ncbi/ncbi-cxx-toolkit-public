@@ -529,8 +529,23 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
  *  all I/O timeouts are infinite by default.
  * @param sock
  *  [out] handle of the accepted socket
+ * @param flags
+ *  [in]  properties for the accepted socket to have
  * @sa
- *  SOCK_Create, SOCK_Close
+ *  SOCK_Create, SOCK_Close, TSOCK_Flags
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_AcceptEx
+(LSOCK           lsock,    
+ const STimeout* timeout, 
+ SOCK*           sock,
+ TSOCK_Flags     flags
+ );
+
+
+/** [SERVER-side]  Accept connection from a client.
+ * Same as LSOCK_AcceptEx(.,.,.,fSOCK_LogDefault)
+ * @sa
+ *  LSOCK_AcceptEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Accept
 (LSOCK           lsock,    

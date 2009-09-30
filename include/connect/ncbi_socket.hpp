@@ -564,14 +564,16 @@ public:
     /// @param timeout
     ///
     EIO_Status Accept(CSocket*&       sock,
-                      const STimeout* timeout = kInfiniteTimeout) const;
+                      const STimeout* timeout = kInfiniteTimeout,
+                      TSOCK_Flags     flags   = fSOCK_LogDefault) const;
 
     /// @param sock
     ///
     /// @param timeout
     ///
     EIO_Status Accept(CSocket&        sock,
-                      const STimeout* timeout = kInfiniteTimeout) const;
+                      const STimeout* timeout = kInfiniteTimeout,
+                      TSOCK_Flags     flags   = fSOCK_LogDefault) const;
 
     /// @li <b>NOTE:</b>  closes the undelying LSOCK only if it is owned by
     /// this object!
