@@ -66,12 +66,12 @@ USRP_BRA = \
          x_mfile="$(srcdir)/Makefile.$$i" ; \
       fi ; \
       if NCBICXX_TESTING_REQS=1 $(MAKE_USR) -q requirements ; then \
-         $(RWL) -base "make_$$i" $(MAKE_USR)
+         $(RWL) -base "make_$$i" -log "make_$$i.log" $(MAKE_USR)
 USRP_KET = || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i" ; \
               exit 1 $(NOTK_KET) ; \
       else \
          echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-      fi 2>&1 | tee make_$$i.log; \
+      fi; \
    done ; \
    test -s requirements  ||  rm -f requirements ; \
 fi
@@ -79,36 +79,42 @@ fi
 MAKE_ASN = $(builddir)/new_module.sh "$$i"
 ASNP_BRA = \
 +if test ! -z "$(ASN_PROJ)" ; then \
+   here=`pwd` ; \
    x_project="$(ASN_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
-       && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_ASN)
-ASNP_KET = || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
-                exit 6 $(NOTK_KET)) 2>&1 | tee make_$$i.log ; \
+       && MAKE="$(MAKE) $(MFLAGS_NR)" \
+          $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_ASN)
+ASNP_KET = ) || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
+                exit 6 $(NOTK_KET) ; \
    done ; \
 fi
 
 MAKE_DTD = $(builddir)/new_module.sh --dtd "$$i"
 DTDP_BRA = \
 +if test ! -z "$(DTD_PROJ)" ; then \
+   here=`pwd` ; \
    x_project="$(DTD_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
-       && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_DTD)
-DTDP_KET = || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
-                 exit 6 $(NOTK_KET)) 2>&1 | tee make_$$i.log ; \
+       && MAKE="$(MAKE) $(MFLAGS_NR)" \
+          $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_DTD)
+DTDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
+                 exit 6 $(NOTK_KET) ; \
    done ; \
 fi
 
 MAKE_XSD = $(builddir)/new_module.sh --xsd "$$i"
 XSDP_BRA = \
 +if test ! -z "$(XSD_PROJ)" ; then \
+   here=`pwd` ; \
    x_project="$(XSD_PROJ)" ; \
    for i in $$x_project ; do \
       (cd $(abs_srcdir) \
-       && MAKE="$(MAKE) $(MFLAGS_NR)" $(RWL) -base make_asn $(MAKE_XSD)
-XSDP_KET = || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
-                 exit 6 $(NOTK_KET)) 2>&1 | tee make_$$i.log ; \
+       && MAKE="$(MAKE) $(MFLAGS_NR)" \
+          $(RWL) -base make_asn -log "$$here/make_$$i.log" $(MAKE_XSD)
+XSDP_KET = ) || $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
+                 exit 6 $(NOTK_KET) ; \
    done ; \
 fi
 
@@ -126,14 +132,14 @@ LIBP_BRA = \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_LIB) -q requirements ; then \
-        $(RWL) -base "make_$$i" $(MAKE_LIB)
+        $(RWL) -base "make_$$i" -log "make_$$i.log" $(MAKE_LIB)
 LIBP_KET = && continue ; \
         $(MAKE_LIB) $(deactivate) ; \
         $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.lib" ; \
         exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-     fi 2>&1 | tee make_$$i.log; \
+     fi; \
    done ; \
 fi
 
@@ -148,14 +154,14 @@ APPP_BRA = \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements ; then \
-        $(RWL) -base "make_$$i" $(MAKE_APP)
+        $(RWL) -base "make_$$i" -log "make_$$i.log" $(MAKE_APP)
 APPP_KET = && continue ; \
         $(MAKE_APP) unlink ; \
         $(NOTK_BRA) echo "FAILED: $(rel_srcdir)/Makefile.$$i.app" ; \
         exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
-     fi 2>&1 | tee make_$$i.log; \
+     fi; \
    done ; \
    test -s requirements  ||  rm -f requirements ; \
 fi
