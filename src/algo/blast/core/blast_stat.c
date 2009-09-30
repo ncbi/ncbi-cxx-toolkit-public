@@ -779,7 +779,6 @@ SPsiBlastScoreMatrixNew(size_t ncols)
 int
 BlastScoreBlkCheck(BlastScoreBlk* sbp)
 {
-    int retval = 0;
     int index = 0;
     Boolean found = FALSE;
 
