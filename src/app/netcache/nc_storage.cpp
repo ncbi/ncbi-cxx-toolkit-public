@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Pavel Ivanov
+ * Author: Pavel Ivanov
  */
 
 #include <ncbi_pch.hpp>
@@ -127,7 +127,7 @@ CNCBlobStorage::x_ParseTimestampParam(const string& timestamp)
             m_Flags |= fChangeTimeOnRead;
             continue;
         }
-        ERR_POST_X(2, Warning 
+        ERR_POST_X(2, Warning
                       << "Unknown timeout policy parameter: '"
                       << opt_value << "'");
     }
@@ -620,7 +620,7 @@ inline void
 CNCBlobStorage::x_CheckStopped(void)
 {
     if (m_Stopped) {
-        throw new CNCStorage_StoppedException();
+        throw CNCStorage_StoppedException();
     }
 }
 

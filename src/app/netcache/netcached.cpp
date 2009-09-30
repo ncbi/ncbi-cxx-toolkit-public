@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Victor Joukov
+ * Author: Pavel Ivanov
  *
  * File Description: Network cache daemon
  *
@@ -332,9 +332,9 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     SetParameters(params);
     AddListener(new CNCMsgHndlFactory_Proxy(this), m_Port);
 
-    CNCDBCacheManager::Initialize();
+    CNCMemManager::InitializeApp();
     try {
-        CNCDBCacheManager::SetMaxSize(size_t(NStr::StringToUInt8_DataSize(
+        CNCMemManager::SetLimit(size_t(NStr::StringToUInt8_DataSize(
                               x_RegReadString(reg, kNCReg_MemLimit, "1Gb"))));
     }
     catch (CStringException& ex) {
@@ -342,6 +342,7 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     }
 
     CSQLITE_Global::Initialize();
+    CSQLITE_Global::EnableSharedCache();
     x_CreateStorages(reg, do_reinit);
 
     // Start session management
@@ -383,14 +384,9 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
           << "Maximum # of connections  - "
                         << params.max_connections << endl
           << "Command execution timeout - " << m_CmdTimeout << endl
-          << "DB cache size limit       - "
-                        << CNCDBCacheManager::GetMaxSize() << endl
-          << "DB cache usage            - "
-                        << CNCDBCacheManager::GetCurrentSize() << " bytes, "
-                        << int(CNCDBCacheManager::GetHitRatio() * 100)
-                                                            << "% hit" << endl
           << endl;
-
+    CNCMemManager::PrintStats(proxy);
+    proxy << endl;
     m_Stat.Print(proxy);
 
     ITERATE(TStorageMap, it, m_StorageMap) {

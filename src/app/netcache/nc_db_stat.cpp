@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Pavel Ivanov
+ * Author: Pavel Ivanov
  */
 
 #include <ncbi_pch.hpp>
@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 /// Initial shift of size value that should be done in
 /// CNCDBStat::x_GetSizeIndex() to respect kMinSizeInChart properly.
 /// Variable is initialized in CNCDBStat constructor.
-static int s_MinChartSizeShift = 0;
+static unsigned int s_MinChartSizeShift = 0;
 
 
 CNCDBStat::CNCDBStat(void)
@@ -68,46 +68,21 @@ CNCDBStat::CNCDBStat(void)
 {
     // No concurrent construction -> no race
     if (s_MinChartSizeShift == 0) {
-        s_MinChartSizeShift = x_GetSizeIndex(kMinSizeInChart) - 1;
+        s_MinChartSizeShift = x_GetSizeIndex(kMinSizeInChart);
     }
 }
 
-int
+unsigned int
 CNCDBStat::x_GetSizeIndex(size_t size)
 {
-    if (size == 0)
+    if (size <= 1)
         return 0;
     --size;
-    size >>= s_MinChartSizeShift;
-    if (size == 0)
+    unsigned int result = g_GetLogBase2(size);
+    if (result >= s_MinChartSizeShift)
+        return result - s_MinChartSizeShift;
+    else
         return 0;
-
-    int index = 1;
-#if SIZEOF_SIZE_T > 4
-    if (size > 0xFFFFFFFF) {
-        size >>= 32;
-        index += 32;
-    }
-#endif
-    if (size > 0xFFFF) {
-        size >>= 16;
-        index += 16;
-    }
-    if (size > 0xFF) {
-        size >>= 8;
-        index += 8;
-    }
-    if (size > 0xF) {
-        size >>= 4;
-        index += 4;
-    }
-    if (size > 0x3) {
-        size >>= 2;
-        index += 2;
-    }
-    if (size > 0x1)
-        ++index;
-    return index;
 }
 
 inline int

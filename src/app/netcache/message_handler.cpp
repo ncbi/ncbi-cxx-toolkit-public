@@ -23,9 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Pavel Ivanov
- *
- * File Description: Network cache daemon
+ * Author: Pavel Ivanov
  *
  */
 
@@ -488,7 +486,7 @@ CNCMessageHandler::GetEventsToPollFor(const CTime** alarm_time) const
     if (alarm_time  &&  x_IsFlagSet(fCommandStarted)) {
         *alarm_time = &m_MaxCmdTime;
     }
-    if (x_GetState() == eWriteBlobData 
+    if (x_GetState() == eWriteBlobData
         ||  m_SockBuffer.IsWriteDataPending())
     {
         return eIO_Write;

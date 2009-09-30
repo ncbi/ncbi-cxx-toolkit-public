@@ -498,7 +498,7 @@ CNCDBFile::CNCDBFile(CTempString     file_name,
       m_Stat(stat)
 {
     _ASSERT(stat);
-    SetCacheSize(2048);
+    SetCacheSize(32768);
 }
 
 inline

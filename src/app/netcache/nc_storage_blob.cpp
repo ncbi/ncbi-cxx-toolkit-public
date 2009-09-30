@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Pavel Ivanov
+ * Author: Pavel Ivanov
  */
 
 #include <ncbi_pch.hpp>

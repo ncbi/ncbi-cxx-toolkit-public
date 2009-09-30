@@ -36,6 +36,7 @@
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -132,6 +133,94 @@ private:
 };
 
 
+/// Synonyms for TLS-related functions on different platforms
+#ifdef NCBI_OS_MSWIN
+   typedef DWORD          TNCTlsKey;
+#  define  NCTlsGet       TlsGetValue
+#  define  NCTlsSet       TlsSetValue
+#  define  NCTlsFree      TlsFree
+/// Special define for creation of the TLS key. Parameter 'key' must be a
+/// variable.
+#  define  NCTlsCreate(key, destr)  key = TlsAlloc()
+#else
+   typedef pthread_key_t  TNCTlsKey;
+#  define  NCTlsGet       pthread_getspecific
+#  define  NCTlsSet       pthread_setspecific
+#  define  NCTlsFree      pthread_key_delete
+/// Special define for creation of the TLS key. Parameter 'key' must be a
+/// variable.
+#  define  NCTlsCreate(key, destr)  pthread_key_create(&key, destr)
+#endif
+
+/// Type for index of the current thread.
+/// @sa g_GetNCThreadIndex
+typedef unsigned int  TNCThreadIndex;
+
+
+/// Base class for the object specific for each thread.
+/// CTls<> is not suitable here because it has the following "bad" features:
+/// * It cannot be destroyed until the application is finished.
+/// * It cannot be used from memory manager because it uses operator new
+///   intensively during initialization.
+/// CNCTlsObject can be used only as a base class for some another one like
+/// this:
+/// class CClassName : public CNCTlsObject<CClassName, ...>
+/// Derived class will be responsible for actual creation and deletion of
+/// objects for each thread. It should implement the following methods:
+///
+/// ObjType* CreateTlsObject(void);
+/// static void DeleteTlsObject(void* obj_ptr);
+///
+/// First will be used to create object when new thread is created and the
+/// latter will be used on Unix systems to delete object when thread has
+/// finished its execution. Windows doesn't provide such functionality and
+/// thus DeleteTlsObject() will never be called there.
+///
+/// @param Derived                                      
+///   Class derived from this base class. 
+/// @param ObjType
+///   Type of object pointer to which will be stored in TLS.
+template <class Derived, class ObjType>
+class CNCTlsObject
+{
+public:
+    /// Empty constructor - necessary to avoid problems at least in ICC
+    CNCTlsObject(void);
+    /// Initialize TLS key
+    void     Initialize(void);
+    /// Free TLS key, make it available for other TLS objects
+    void     Finalize  (void);
+    /// Get specific object for the current thread
+    ObjType* GetObjPtr (void);
+
+private:
+    CNCTlsObject(const CNCTlsObject&);
+    CNCTlsObject& operator= (const CNCTlsObject&);
+
+    /// TLS key used to store specific object for each thread
+    TNCTlsKey m_ObjKey;
+};
+
+
+/// Special equivalent of SSystemFastMutex that exposes necessary method to
+/// public.
+struct SNCFastMutex : public SSystemFastMutex
+{
+    using SSystemFastMutex::InitializeDynamic;
+};
+
+
+/// Initialize system that will acquire thread indexes for each thread.
+/// This function must be called before g_GetNCThreadIndex() is used.
+void
+g_InitNCThreadIndexes(void);
+/// Get index of the current thread. All threads are indexed with incrementing
+/// numbers starting from 1. Thread is indexed only when this function is
+/// called and if it wasn't indexed yet.
+TNCThreadIndex
+g_GetNCThreadIndex(void);
+
+
 
 /// Utility function to safely do division even if divisor is 0
 template <class TLeft, class TRight>
@@ -140,7 +229,80 @@ TLeft g_SafeDiv(TLeft left, TRight right)
     return right == 0? 0: left / right;
 }
 
+/// Get integer part of the logarithm with base 2.
+/// In other words function returns index of the greatest bit set when bits
+/// are indexed from lowest to highest starting with 0 (e.g. for binary number
+/// 10010001 it will return 7).
+inline unsigned int
+g_GetLogBase2(size_t value)
+{
+    unsigned int result = 0;
+#if SIZEOF_SIZE_T > 4
+    if (value > 0xFFFFFFFF) {
+        value >>= 32;
+        result += 32;
+    }
+#endif
+    if (value > 0xFFFF) {
+        value >>= 16;
+        result += 16;
+    }
+    if (value > 0xFF) {
+        value >>= 8;
+        result += 8;
+    }
+    if (value > 0xF) {
+        value >>= 4;
+        result += 4;
+    }
+    if (value > 0x3) {
+        value >>= 2;
+        result += 2;
+    }
+    if (value > 0x1)
+        ++result;
+    return result;
+}
 
+/// Get number of least bit set.
+/// For instance for the binary number 10010100 it will return 2.
+inline unsigned int
+g_GetLeastSetBit(size_t value)
+{
+    value ^= value - 1;
+    value >>= 1;
+    ++value;
+    return g_GetLogBase2(value);
+}
+
+/// Get number of bits set.
+/// Implementation uses minimum number of operations without using additional
+/// variables or memory. Trick was taken from
+/// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel.
+inline unsigned int
+g_GetBitsCnt(size_t value)
+{
+#if SIZEOF_SIZE_T == 8
+    value = value - ((value >> 1) & 0x5555555555555555);
+    value = (value & 0x3333333333333333) + ((value >> 2) & 0x3333333333333333);
+    value = (value + (value >> 4)) & 0x0F0F0F0F0F0F0F0F;
+    value = (value * 0x0101010101010101) >> 56;
+    return static_cast<unsigned int>(value);
+#elif SIZEOF_SIZE_T == 4
+    value = value - ((value >> 1) & 0x55555555);
+    value = (value & 0x33333333) + ((value >> 2) & 0x33333333);
+    value = (value + (value >> 4)) & 0x0F0F0F0F;
+    value = (value * 0x01010101) >> 24;
+    return value;
+#else
+# error "Cannot compile with this size_t"
+#endif
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// Inline methods
+//////////////////////////////////////////////////////////////////////////
 
 inline void
 CQuickStrStream::Clear(void)
@@ -303,6 +465,38 @@ CPrintTextProxy::operator<< (TEndlType)
     m_LineStream.Clear();
 
     return *this;
+}
+
+
+template <class Derived, class ObjType>
+inline
+CNCTlsObject<Derived, ObjType>::CNCTlsObject(void)
+{}
+
+template <class Derived, class ObjType>
+inline void
+CNCTlsObject<Derived, ObjType>::Initialize(void)
+{
+    NCTlsCreate(m_ObjKey, &Derived::DeleteTlsObject);
+}
+
+template <class Derived, class ObjType>
+inline void
+CNCTlsObject<Derived, ObjType>::Finalize(void)
+{
+    NCTlsFree(m_ObjKey);
+}
+
+template <class Derived, class ObjType>
+inline ObjType*
+CNCTlsObject<Derived, ObjType>::GetObjPtr(void)
+{
+    ObjType* object = static_cast<ObjType*>(NCTlsGet(m_ObjKey));
+    if (!object) {
+        object = static_cast<Derived*>(this)->CreateTlsObject();
+        NCTlsSet(m_ObjKey, object);
+    }
+    return object;
 }
 
 END_NCBI_SCOPE

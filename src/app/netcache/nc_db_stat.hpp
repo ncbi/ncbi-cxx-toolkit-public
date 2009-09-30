@@ -134,7 +134,7 @@ private:
     };
 
     /// Get index of chart element for given size
-    int x_GetSizeIndex(size_t size);
+    unsigned int x_GetSizeIndex(size_t size);
     /// Calculate percentage for given time out of total time spent in locks
     int x_CalcTimePercent(double time);
 
