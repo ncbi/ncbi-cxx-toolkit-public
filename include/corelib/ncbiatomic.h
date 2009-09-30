@@ -53,10 +53,10 @@
      inline
 #elif defined(NCBI_COMPILER_WORKSHOP)
      static
+#elif defined(__GNUC__)
+     static __inline__
 #elif __STDC_VERSION__ >= 199901
      inline
-#elif defined(__GNUC__)
-     __inline__
 #elif defined(_MSC_VER)  ||  defined(__sgi)  ||  defined(HPUX)
      __inline
 #else
