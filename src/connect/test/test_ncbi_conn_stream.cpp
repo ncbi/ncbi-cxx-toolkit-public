@@ -66,7 +66,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "5.0");
-    //reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
     return reg;
 }
 
