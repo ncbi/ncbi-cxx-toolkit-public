@@ -493,7 +493,6 @@ START_SUBTYPE(gene)
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
-    ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -948,7 +947,6 @@ START_SUBTYPE(conflict)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
@@ -996,6 +994,7 @@ END_SUBTYPE
 
 START_SUBTYPE(enhancer)
     ADD_QUAL(allele);
+    ADD_QUAL(bound_moiety);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
@@ -1126,7 +1125,6 @@ START_SUBTYPE(LTR)
     ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
-    ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
@@ -1150,7 +1148,6 @@ START_SUBTYPE(mat_peptide)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
-    ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -1234,7 +1231,6 @@ START_SUBTYPE(misc_recomb)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
-    ADD_QUAL(organism);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1323,7 +1319,6 @@ END_SUBTYPE
 //END_SUBTYPE
 
 START_SUBTYPE(N_region)
-    ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
@@ -1352,7 +1347,6 @@ START_SUBTYPE(old_sequence)
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
-    ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
@@ -1458,6 +1452,7 @@ END_SUBTYPE
 
 START_SUBTYPE(promoter)
     ADD_QUAL(allele);
+    ADD_QUAL(bound_moiety);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
@@ -1494,6 +1489,7 @@ START_SUBTYPE(protein_bind)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1645,7 +1641,6 @@ START_SUBTYPE(sig_peptide)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
-    ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -1809,7 +1804,6 @@ END_SUBTYPE
 START_SUBTYPE(unsure)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
-    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
@@ -2231,6 +2225,7 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
     table[eSubtype_modified_base].push_back(eQual_mod_base);
     table[eSubtype_old_sequence].push_back(eQual_citation);
     table[eSubtype_operon].push_back(eQual_operon);
+    table[eSubtype_source].push_back(eQual_organism);
 
     // sort for binary_search
     NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
@@ -2370,7 +2365,7 @@ const CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual
     CSeqFeatData::EQualifier type = CSeqFeatData::eQual_bad;;
 
     TQualsMap::const_iterator iter = sc_QualPairs.begin();
-    while (iter != sc_QualPairs.end() && !NStr::EqualNocase(qual, iter->second)) {
+    while (iter != sc_QualPairs.end() && !NStr::Equal(qual, iter->second)) {
         ++iter;
     }
     if (iter != sc_QualPairs.end()) {
