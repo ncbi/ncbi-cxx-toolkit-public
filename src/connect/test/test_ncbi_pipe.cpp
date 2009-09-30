@@ -221,9 +221,10 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    const string app = GetArguments().GetProgramName();
+    const string& app = GetArguments().GetProgramName();
 
-    string         cmd, str;
+    string         cmd;
+    string         str;
     vector<string> args;
     char           buf[kBufferSize];
     size_t         total;
@@ -233,23 +234,23 @@ int CTest::Run(void)
     EIO_Status     status;
     TProcessHandle handle;
 
-    // Run the test
     ERR_POST(Info << "Starting CPipe test...");
 
+
     // Create pipe object
+
     CPipe pipe;
-
-    STimeout io_timeout    = {2, 0};
-    STimeout close_timeout = {1, 0};
-
     const CPipe::TCreateFlags share = CPipe::fStdErr_Share;
 
-    assert(pipe.SetTimeout(eIO_Read,  &io_timeout)    == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &io_timeout)    == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Close, &close_timeout) == eIO_Success);
+    static const STimeout io_timeout = {2, 0};
+
+    assert(pipe.SetTimeout(eIO_Read,  &io_timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &io_timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Close, &io_timeout) == eIO_Success);
 
 
     // Check bad executable
+
     assert(pipe.Open("blahblahblah", args) != eIO_Success);
 
 
@@ -265,8 +266,8 @@ int CTest::Run(void)
 
     // Unidirectional pipe (read from pipe)
 
-    assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close | share)
-           == eIO_Success);
+    assert(pipe.Open(cmd.c_str(), args,
+                     CPipe::fStdIn_Close | share) == eIO_Success);
 
     assert(pipe.SetReadHandle(CPipe::eStdIn) == eIO_InvalidArg);
     assert(pipe.SetReadHandle(CPipe::eStdErr) == eIO_Success);
@@ -291,7 +292,8 @@ int CTest::Run(void)
 
     // Unidirectional pipe (read from iostream)
 
-    CConn_PipeStream ios(cmd.c_str(), args, CPipe::fStdIn_Close | share);
+    CConn_PipeStream ios(cmd.c_str(), args,
+                         CPipe::fStdIn_Close | share, &io_timeout);
     s_ReadStream(ios);
 
     status = ios.GetPipe().Close(&exitcode);
@@ -305,8 +307,8 @@ int CTest::Run(void)
     args.clear();
     args.push_back("1");
 
-    assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close | share)
-           == eIO_Success);
+    assert(pipe.Open(app.c_str(), args,
+                     CPipe::fStdOut_Close | share) == eIO_Success);
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == 0);
@@ -358,7 +360,7 @@ int CTest::Run(void)
     args.clear();
     args.push_back("3");
 
-    CConn_PipeStream ps(app.c_str(), args, share);
+    CConn_PipeStream ps(app.c_str(), args, share, &io_timeout);
 
     cout << endl;
     for (int i = 5; i<=10; i++) {
@@ -523,7 +525,7 @@ int main(int argc, const char* argv[])
         ::signal(SIGPIPE, SIG_IGN);
 #endif /*NCBI_OS_UNIX*/
         ERR_POST(Info << "--- CPipe sleeping test ---");
-        SleepSec(3);
+        SleepSec(4);
         ERR_POST(Info << "--- CPipe sleeping test done ---");
         exit(kTestResult);
     }}
