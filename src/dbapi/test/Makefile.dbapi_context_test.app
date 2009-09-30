@@ -23,7 +23,6 @@ CHECK_TIMEOUT = 60
 CHECK_CMD = dbapi_context_test -d ftds       -S MsSql
 CHECK_CMD = dbapi_context_test -d odbc       -S MsSql
 CHECK_CMD = dbapi_context_test -d ctlib      -S Sybase
-CHECK_CMD = dbapi_context_test -d dblib      -S Sybase
 CHECK_CMD = dbapi_context_test -d ftds       -S Sybase
 
 WATCHERS = ivanovp
