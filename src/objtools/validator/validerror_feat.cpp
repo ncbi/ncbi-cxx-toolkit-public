@@ -4513,7 +4513,6 @@ void CValidError_feat::ValidateCommonCDSProduct
     CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( nuc ) {
         bool is_nt = false;
-        bool is_wgs = false;
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(nuc.GetBioseqCore())) {
             if ((*it)->IsOther() && (*it)->GetTextseq_Id()->IsSetAccession()
                 && NStr::StartsWith ((*it)->GetTextseq_Id()->GetAccession(), "NT_")) {

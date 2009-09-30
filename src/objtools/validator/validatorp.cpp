@@ -1102,10 +1102,6 @@ void CValidError_imp::ValidateDbxref
 	}
 
     CDbtag::EDbtagType db_type = xref.GetType();
-    bool is_pid = db_type == CDbtag::eDbtagType_PID   ||
-                  db_type == CDbtag::eDbtagType_PIDd  ||
-                  db_type == CDbtag::eDbtagType_PIDe  ||
-                  db_type == CDbtag::eDbtagType_PIDg;
 
     bool refseq = IsRefSeq();
 

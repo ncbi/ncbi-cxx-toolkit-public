@@ -3681,7 +3681,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
 
         bool featid_matched = false;
 
-        bool match_intervals = false;
         if (cds->IsSetExcept_text()
             && (NStr::FindNoCase (cds->GetExcept_text(), "ribosomal slippage") != string::npos
                 || NStr::FindNoCase (cds->GetExcept_text(), "trans-splicing") != string::npos)) {
@@ -4630,7 +4629,7 @@ bool CValidError_bioseq::IsFlybaseDbxrefs(const TDbtags& dbxrefs)
 
 static bool s_IsTPAAssemblyOkForBioseq (const CBioseq& seq)
 {
-    bool is_ok = false, has_local = false, has_genbank = false, has_refseq = false;
+    bool has_local = false, has_genbank = false, has_refseq = false;
     bool has_gi = false, has_tpa = false, has_bankit = false, has_smart = false;
 
     FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
