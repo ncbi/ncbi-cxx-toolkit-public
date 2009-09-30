@@ -688,7 +688,7 @@ void CGFF3_Formatter::x_AddGeneID(list<string>& attr_list,
 
 CNcbiOstream& CGFF3_Formatter::x_AppendEncoded(CNcbiOstream& os,
                                                const string& s,
-                                               char* space)
+                                               const char* space)
 {
     // Encode space as %20 rather than +, whose status is ambiguous.
     // Officially, [a-zA-Z0-9.:^*$@!+_?-|] are okay, but we punt [*+?]

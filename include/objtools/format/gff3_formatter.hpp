@@ -124,7 +124,7 @@ private:
     ///        one of "+" (default), " ", or "%09".
     static CNcbiOstream& x_AppendEncoded(CNcbiOstream& os,
                                          const string& s,
-                                         char* space = "%09");
+                                         const char* space = "%09");
 
     /// Formats any pairwise alignment into GFF3 format with CIGAR notation.
     ///
