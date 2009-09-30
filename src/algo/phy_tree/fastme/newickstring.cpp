@@ -86,7 +86,7 @@ meNode *decodeNewickSubtree(char *treeString, meTree *T, int *uCount)
   int j;
   int left,right;
   int parcount;
-  sprintf(label,"Default Label");
+  strcpy(label,"Default Label");
   left = right = 0;
   parcount = 0;
   state = ReadOpenParenthesis;
@@ -260,7 +260,7 @@ meTree *loadNewickTree(FILE *ifile, int numLeaves)
 	{
 	  i++;
 	  if(';' == nextString[i])
-	    sprintf(rootLabel,"URoot");  
+	    strcpy(rootLabel,"URoot");  
 	  else
 	    {
 	      while(';' != nextString[i]) 
@@ -277,7 +277,7 @@ meTree *loadNewickTree(FILE *ifile, int numLeaves)
 	}
     }
   centerNode = decodeNewickSubtree(nextString,T,&uCount);
-  sprintf(centerNode->label,rootLabel);
+  strcpy(centerNode->label,rootLabel);
   T->root = centerNode;
   free(nextString);
   return(T);
