@@ -298,16 +298,15 @@ public:
 
         bool operator==(const TKey& b) const {
             return m_Hash == b.m_Hash && m_Version == b.m_Version &&
-                m_Prefix == b.m_Prefix;
+                NStr::EqualNocase(m_Prefix, b.m_Prefix);
         }
         bool operator!=(const TKey& b) const {
-            return m_Hash != b.m_Hash || m_Version != b.m_Version ||
-                m_Prefix != b.m_Prefix;
+            return !(*this == b);
         }
         bool operator<(const TKey& b) const {
             return m_Hash < b.m_Hash || m_Hash == b.m_Hash &&
                 (m_Version < b.m_Version || m_Version == b.m_Version &&
-                 m_Prefix < b.m_Prefix);
+                 NStr::CompareNocase(m_Prefix, b.m_Prefix) < 0);
         }
 
         bool EqualAcc(const TKey& b) const {
@@ -397,21 +396,6 @@ protected:
     bool x_GetVersion(int& version, const CSeq_id_Handle& id) const;
 
 private:
-    struct PNocase_Hash {
-        size_t operator()(const string& s) const {
-            size_t hash = 0;
-            ITERATE ( string, i, s )
-                hash = 5*hash + toupper(*i & 0xff);
-            return hash;
-        }
-    };
-    struct PNocase_Equals : PNocase {
-        bool operator()(const string& a, const string& b) const {
-            return Equals(a, b);
-        }
-    };
-    //typedef hash_multimap<string, CSeq_id_Info*,
-    //                      PNocase_Hash, PNocase_Equals> TStringMap;
     typedef multimap<string, CSeq_id_Info*, PNocase> TStringMap;
     typedef TStringMap::value_type TStringMapValue;
     typedef TStringMap::const_iterator TStringMapCI;
@@ -661,12 +645,13 @@ public:
         string m_StrPrefix;
         string m_StrSuffix;
         bool operator==(const TKey& b) const {
-            return m_Key == b.m_Key && m_Db == b.m_Db &&
-                m_StrPrefix == b.m_StrPrefix && m_StrSuffix == b.m_StrSuffix;
+            return m_Key == b.m_Key &&
+                NStr::EqualNocase(m_Db, b.m_Db) &&
+                NStr::EqualNocase(m_StrPrefix, b.m_StrPrefix) &&
+                NStr::EqualNocase(m_StrSuffix, b.m_StrSuffix);
         }
         bool operator!=(const TKey& b) const {
-            return m_Key != b.m_Key || m_Db != b.m_Db ||
-                m_StrPrefix != b.m_StrPrefix || m_StrSuffix != b.m_StrSuffix;
+            return !(*this == b);
         }
     };
     struct PKeyLess {
@@ -674,13 +659,14 @@ public:
             if ( a.m_Key != b.m_Key ) {
                 return a.m_Key < b.m_Key;
             }
-            if ( int diff = NStr::Compare(a.m_Db, b.m_Db) ) {
-                return diff < 0;
+            int diff = NStr::CompareNocase(a.m_Db, b.m_Db);
+            if ( diff == 0 ) {
+                diff = NStr::CompareNocase(a.m_StrPrefix, b.m_StrPrefix);
+                if ( diff == 0 ) {
+                    diff = NStr::CompareNocase(a.m_StrSuffix, b.m_StrSuffix);
+                }
             }
-            if ( int diff = NStr::Compare(a.m_StrPrefix, b.m_StrPrefix) ) {
-                return diff < 0;
-            }
-            return NStr::Compare(a.m_StrSuffix, b.m_StrSuffix) < 0;
+            return diff < 0;
         }
     };
 

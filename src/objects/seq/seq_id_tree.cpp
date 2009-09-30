@@ -575,16 +575,6 @@ void CSeq_id_Gi_Tree::FindMatchStr(const string& sid,
 /////////////////////////////////////////////////////////////////////////////
 
 
-NCBI_PARAM_DECL(int, OBJECTS, LOG_TEXTID);
-NCBI_PARAM_DEF_EX(int, OBJECTS, LOG_TEXTID, 0,
-                  eParam_NoThread, OBJECTS_LOG_TEXTID);
-static NCBI_PARAM_TYPE(OBJECTS, LOG_TEXTID) s_LogTextid;
-
-NCBI_PARAM_DECL(int, OBJECTS, LOG_GENERAL);
-NCBI_PARAM_DEF_EX(int, OBJECTS, LOG_GENERAL, 0,
-                  eParam_NoThread, OBJECTS_LOG_GENERAL);
-static NCBI_PARAM_TYPE(OBJECTS, LOG_GENERAL) s_LogGeneral;
-
 NCBI_PARAM_DECL(int, OBJECTS, PACK_TEXTID);
 NCBI_PARAM_DEF_EX(int, OBJECTS, PACK_TEXTID, 1,
                   eParam_NoThread, OBJECTS_PACK_TEXTID);
@@ -627,31 +617,11 @@ CSeq_id_Textseq_Info::CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
     : CSeq_id_Info(type, mapper),
       m_Key(key)
 {
-    if ( s_LogTextid.Get() ) {
-        if ( IsSetVersion() ) {
-            LOG_POST("New id: "<<this<<": "<<
-                     GetAccPrefix()<<"["<<GetAccDigits()<<"]."<<GetVersion());
-        }
-        else {
-            LOG_POST("New id: "<<this<<": "<<
-                     GetAccPrefix()<<"["<<GetAccDigits()<<"]");
-        }
-    }
 }
 
 
 CSeq_id_Textseq_Info::~CSeq_id_Textseq_Info(void)
 {
-    if ( s_LogTextid.Get() ) {
-        if ( IsSetVersion() ) {
-            LOG_POST("Del id: "<<this<<": "<<
-                     GetAccPrefix()<<"["<<GetAccDigits()<<"]."<<GetVersion());
-        }
-        else {
-            LOG_POST("Del id: "<<this<<": "<<
-                     GetAccPrefix()<<"["<<GetAccDigits()<<"]");
-        }
-    }
 }
 
 
@@ -696,10 +666,10 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
         acc_digits = max(6, real_digits);
         prefix_len = len - acc_digits;
     }
-    NStr::ToUpper(key.m_Prefix = acc.substr(0, prefix_len));
+    key.m_Prefix = acc.substr(0, prefix_len);
     unsigned hash = 0;
     for ( int i = 0; i < 3 && i < prefix_len; ++i ) {
-        hash = (hash << 8) | (key.m_Prefix[i] & 0xff);
+        hash = (hash << 8) | toupper(key.m_Prefix[i] & 0xff);
     }
     hash = (hash << 8) | (acc_digits << 1);
     key.m_Hash = hash;
@@ -1602,17 +1572,11 @@ CSeq_id_General_Id_Info::CSeq_id_General_Id_Info(CSeq_id_Mapper* mapper,
     : CSeq_id_Info(CSeq_id::e_General, mapper),
       m_Key(key)
 {
-    if ( s_LogGeneral.Get() ) {
-        LOG_POST("New general "<<this<<": gnl|"<<GetDbtag());
-    }
 }
 
 
 CSeq_id_General_Id_Info::~CSeq_id_General_Id_Info(void)
 {
-    if ( s_LogGeneral.Get() ) {
-        LOG_POST("Del general "<<this<<": gnl|"<<GetDbtag());
-    }
 }
 
 
@@ -1672,19 +1636,11 @@ CSeq_id_General_Str_Info::CSeq_id_General_Str_Info(CSeq_id_Mapper* mapper,
     : CSeq_id_Info(CSeq_id::e_General, mapper),
       m_Key(key)
 {
-    if ( s_LogGeneral.Get() ) {
-        LOG_POST("New general "<<this<<": gnl|"<<GetDbtag()<<"|"<<
-                 GetStrPrefix()<<"["<<GetStrDigits()<<"]"<<GetStrSuffix());
-    }
 }
 
 
 CSeq_id_General_Str_Info::~CSeq_id_General_Str_Info(void)
 {
-    if ( s_LogGeneral.Get() ) {
-        LOG_POST("Del general "<<this<<": gnl|"<<GetDbtag()<<"|"<<
-                 GetStrPrefix()<<"["<<GetStrDigits()<<"]"<<GetStrSuffix());
-    }
 }
 
 
@@ -1714,16 +1670,16 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
         prefix_len += str_digits - 9;
         str_digits = 9;
     }
-    NStr::ToUpper(key.m_Db = dbtag.GetDb());
+    key.m_Db = dbtag.GetDb();
     if ( prefix_len > 0 ) {
-        NStr::ToUpper(key.m_StrPrefix = str.substr(0, prefix_len));
+        key.m_StrPrefix = str.substr(0, prefix_len);
     }
     if ( SIZE_TYPE(prefix_len + str_digits) < str.size() ) {
-        NStr::ToUpper(key.m_StrSuffix = str.substr(prefix_len+str_digits));
+        key.m_StrSuffix = str.substr(prefix_len+str_digits);
     }
     int hash = 1;
     for ( int i = 0; i < 3 && i < prefix_len; ++i ) {
-        hash = (hash << 8) | (key.m_StrPrefix[prefix_len-1-i] & 0xff);
+        hash = (hash << 8) | toupper(key.m_StrPrefix[prefix_len-1-i] & 0xff);
     }
     key.m_Key = (hash << 8) | str_digits;
     return key;
@@ -1884,9 +1840,6 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
             TPackedStrKey key = CSeq_id_General_Str_Info::Parse(dbid);
             TPackedStrMap::iterator it = m_PackedStrMap.lower_bound(key);
             if ( it == m_PackedStrMap.end() || it->first != key ) {
-                if ( s_LogGeneral.Get() ) {
-                    LOG_POST("New general: "<<id.AsFastaString());
-                }
                 CConstRef<CSeq_id_General_Str_Info> info
                     (new CSeq_id_General_Str_Info(m_Mapper, key));
                 it = m_PackedStrMap.insert
