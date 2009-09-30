@@ -302,7 +302,7 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
        LIBS="[$]$2_LIBS $6 $orig_LIBS"
        [AC_LINK_IFELSE($4, [ncbi_cv_lib_$1=yes], [ncbi_cv_lib_$1=no])])
     if test "$ncbi_cv_lib_$1" = "no"; then
-       with_$1="no"
+       NCBI_MISSING_PACKAGE($1)
     fi
  fi
  if test "$with_$1" = "no"; then
@@ -318,6 +318,11 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
  AC_SUBST($2_INCLUDE)
  AC_SUBST($2_LIBS)
 ])
+
+AC_DEFUN(NCBI_MISSING_PACKAGE,
+   [if test "${[with_]m4_translit($1, [-], [_]):=no}" != no; then
+       AC_MSG_ERROR([--with-$1 explicitly specified, but no usable version found.])
+    fi])
 
 AC_DEFUN(NCBI_CHECK_PYTHON,
 [_NCBI_CHECK_PYTHON([PYTHON]patsubst($1, [\.], []), $@)])

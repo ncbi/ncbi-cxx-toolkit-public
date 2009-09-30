@@ -3692,7 +3692,7 @@ if test "$with_sybase" != "no" ; then
          NETWORK_LIBS="$SYBASE_LPATH $SYBASE_NETWORK_LIBS"
       fi
    else
-      with_sybase=no
+      NCBI_MISSING_PACKAGE(sybase)
    fi
 fi # with_sybase != no?
 
@@ -3719,7 +3719,7 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
    case "$with_ftds" in
       64 | yes | '' )
-         with_ftds=64
+         ftds_ver=64
          ftds64=ftds
          ;;
       * )
@@ -3732,14 +3732,14 @@ if test "$with_ftds" != "no" ; then
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(64)
    if test -n "$freetds" ; then
-      FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
-      FTDS_LIBS="\$(FTDS${with_ftds}_LIBS)"
-      FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
+      FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
+      FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
+      FTDS_INCLUDE="\$(FTDS${ftds_ver}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then
           AC_DEFINE(NCBI_FTDS_RENAME_SYBDB, 1,
                     [Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB.])
       fi
-      AC_MSG_NOTICE([Using bundled FreeTDS (version $with_ftds) from $FTDS_PATH])
+      AC_MSG_NOTICE([Using bundled FreeTDS (version $ftds_ver) from $FTDS_PATH])
    else
       FTDS_LIBS="$FTDS_CTLIBS"
       AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
@@ -3759,7 +3759,8 @@ if test "$with_ftds" != "no" ; then
             ]])],
             [ncbi_cv_lib_freetds=yes], [ncbi_cv_lib_freetds=no])])
       if test "$ncbi_cv_lib_freetds" = "no"; then
-         with_ftds=no
+         # Don't panic when using partial trees lacking dbapi/driver/ftdsN.
+         NCBI_MISSING_PACKAGE(ftds)
       fi
    fi
 fi
@@ -3814,10 +3815,10 @@ if test "$with_mysql" != "no" ; then
           [[MYSQL *p;  p = mysql_init(p);]])],
           [ncbi_cv_lib_mysql=yes], [ncbi_cv_lib_mysql=no])])
       if test "$ncbi_cv_lib_mysql" = no; then
-         with_mysql=no
+         NCBI_MISSING_PACKAGE(mysql)
       fi
    else
-      with_mysql=no
+      NCBI_MISSING_PACKAGE(mysql)
    fi
 fi
 if test "$with_mysql" = "no" ; then
@@ -3883,10 +3884,7 @@ if test "$with_bdb" != "no" ; then
           [[ DB* dbp;  db_create(&dbp, NULL, 0);  dbp->app_private = 0; ]])],
           [ncbi_cv_lib_berkeley_db=yes], [ncbi_cv_lib_berkeley_db=no])])
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
-      if test -n "$with_bdb"; then
-         AC_MSG_ERROR([--with-bdb:  Berkeley DB library is missing])
-      fi
-      with_bdb="no"
+      NCBI_MISSING_PACKAGE(bdb)
    else
       AC_CACHE_CHECK([Berkeley DB version (4.3 or newer required)],
          ncbi_cv_lib_berkeley_db_version,
@@ -3983,8 +3981,9 @@ case "$ODBC_PATH" in
             SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);]])],
           [ncbi_cv_lib_odbc=yes], [ncbi_cv_lib_odbc=no])])
    if test "$ncbi_cv_lib_odbc" = "no"; then
-      ODBC_PATH=dbapi/driver/odbc/unix_odbc
-      AC_MSG_WARN([Falling back to internal FreeTDS-specific ODBC implementation.])
+      dnl ODBC_PATH=dbapi/driver/odbc/unix_odbc
+      dnl AC_MSG_WARN([Falling back to internal FreeTDS-specific ODBC implementation.])
+      NCBI_MISSING_PACKAGE(odbc)
    else
       # odbcss.h isn't self-contained :-/
       AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
@@ -4052,6 +4051,8 @@ if test "$with_python" != "no" ; then
       if test -n "$PYTHON_LIBS"; then
          NCBI_PACKAGE(PYTHON)
          AC_DEFINE(HAVE_PYTHON, 1)
+      else
+         NCBI_MISSING_PACKAGE(python)
       fi
    fi
 fi
@@ -4097,7 +4098,7 @@ if test "$with_cppunit" != "no" ; then
           ncbi_cv_lib_cppunit=no
        fi])
    if test "$ncbi_cv_lib_cppunit" = "no"; then
-      with_cppunit="no"
+      NCBI_MISSING_PACKAGE(cppunit)
    fi
 fi
 
@@ -4431,7 +4432,7 @@ if test "$with_ncbi_c" != "no" ; then
           [[ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ]])],
           [ncbi_cv_lib_ctools=yes], [ncbi_cv_lib_ctools=no])])
    if test "$ncbi_cv_lib_ctools" = no; then
-      with_ncbi_c=no
+      NCBI_MISSING_PACKAGE(ncbi-c)
    fi
 fi
 if test "$with_ncbi_c" = "no" ; then
@@ -4528,7 +4529,7 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OSMESA_STATIC_LIBS=
    GLUT_INCLUDE=
    GLUT_LIBS=
-   with_opengl="no"
+   NCBI_MISSING_PACKAGE(opengl)
 else
    NCBI_PACKAGE(OpenGL)
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
@@ -4539,13 +4540,13 @@ else
    fi
    : ${OSMESA_PATH=$OPENGL_PATH}
    if test "$with_mesa" != "no"; then
-      if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
-         with_mesa=$OSMESA_PATH
+      if test "${with_mesa-yes}" != "yes"; then
+         OSMESA_PATH=$with_mesa
       fi
-      if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
-         OSMESA_INCLUDE=-I$with_mesa/include
-         if test "$with_mesa" != "$OPENGL_PATH"; then
-            NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib${bit64_sfx})
+      if test -d "$OSMESA_PATH"; then
+         OSMESA_INCLUDE=-I$OSMESA_PATH/include
+         if test "$OSMESA_PATH" != "$OPENGL_PATH"; then
+            NCBI_RPATHIFY(OSMESA_LDFLAGS, $OSMESA_PATH/lib${bit64_sfx})
          fi
       fi
       LDFLAGS="$orig_LDFLAGS $OSMESA_LDFLAGS $OPENGL_LIBPATH"
@@ -4556,19 +4557,21 @@ else
          [OSMESA_LIBS=],
          $OPENGL_LIBS)
    fi
-   if test -f "$OSMESA_PATH/lib${bit64_sfx}/libOSMesa-static.a"; then
+   if test -z "$OSMESA_LIBS"; then
+      NCBI_MISSING_PACKAGE(mesa)
+   elif test -f "$OSMESA_PATH/lib${bit64_sfx}/libOSMesa-static.a"; then
       OSMESA_STATIC_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa-static -lGLU-static -lGL-static $X_ALL_LIBS"
    else
       OSMESA_STATIC_LIBS=$OSMESA_LIBS
    fi
    : ${GLUT_PATH=$NCBI/glut}
    if test "$with_glut" != "no"; then
-      if test "${with_glut-yes}" = "yes" -a -d "$GLUT_PATH"; then
-         with_glut=$GLUT_PATH
+      if test "${with_glut-yes}" != "yes"; then
+         GLUT_PATH=$with_glut
       fi
-      if test -n "$with_glut" -a "$with_glut" != "yes"; then
-         GLUT_INCLUDE=-I$with_glut/include
-         NCBI_RPATHIFY(GLUT_LDFLAGS, $with_glut/lib${bit64_sfx})
+      if test -d "GLUT_PATH"; then
+         GLUT_INCLUDE=-I$GLUT_PATH/include
+         NCBI_RPATHIFY(GLUT_LDFLAGS, $GLUT_PATH/lib${bit64_sfx})
       fi
       LDFLAGS="$orig_LDFLAGS $GLUT_LDFLAGS $OPENGL_LIBPATH"
       AC_CHECK_LIB(glut, glutInit,
@@ -4577,6 +4580,9 @@ else
           AC_DEFINE(HAVE_LIBGLUT, 1, [Define to 1 if you have libglut.])],
          [GLUT_LIBS=],
          $OPENGL_LIBS)
+      if test -z "$GLUT_LIBS"; then
+         NCBI_MISSING_PACKAGE(glut)
+      fi
    fi
 fi
 
@@ -4621,7 +4627,7 @@ if test "$with_fltk" != "no"; then
           ncbi_cv_lib_fltk=no
        fi])
    if test "$ncbi_cv_lib_fltk" = "no"; then
-      with_fltk="no"
+      NCBI_MISSING_PACKAGE(fltk)
    fi
 fi
 
@@ -4706,7 +4712,7 @@ if test "$with_wxwin" != "no" ; then
           ncbi_cv_lib_wxwindows=no
        fi])
    if test "$ncbi_cv_lib_wxwindows" = "no"; then
-      with_wxwin="no"
+      NCBI_MISSING_PACKAGE(wxwin)
    fi
 fi
 
@@ -4825,7 +4831,7 @@ if test "$with_wxwidgets" != "no" ; then
           ncbi_cv_lib_wxwidgets=no
        fi])
    if test "$ncbi_cv_lib_wxwidgets" = "no"; then
-      with_wxwidgets="no"
+      NCBI_MISSING_PACKAGE(wxwidgets)
    fi
 fi
 
@@ -4893,7 +4899,7 @@ if test "$with_fastcgi" != "no" ; then
           [[ (void) FCGX_IsCGI(); ]])],
           [ncbi_cv_lib_fcgi=yes], [ncbi_cv_lib_fcgi=no])])
    if test "$ncbi_cv_lib_fcgi" = "no"; then
-      with_fastcgi="no"
+      NCBI_MISSING_PACKAGE(fastcgi)
    fi
    AC_CHECK_FUNCS(FCGX_Accept_r)
 fi
@@ -4910,12 +4916,8 @@ fi
 
 
 ## NCBI SSS libraries
-with_sss=${with_sss:="yes"}
-with_sssutils=${with_sssutils:="yes"}
-with_sssdb=${with_sssdb:="yes"}
-
 if test "$with_sybase" = "no" ; then
-   with_sssdb="no"
+   NCBI_MISSING_PACKAGE(sssdb)
 fi
 
 case "$host_os:$compiler:$compiler_version" in
@@ -4956,15 +4958,15 @@ if test "$with_sss" != "no" ; then
       AC_MSG_RESULT([yes]) # duh
    elif test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
       AC_MSG_RESULT([no])
-      with_sss="no"
+      NCBI_MISSING_PACKAGE(sss)
    else
       AC_MSG_RESULT([yes])
    fi
 fi
 
 if test "$with_sss" = "no" ; then
-   with_sssutils="no"
-   with_sssdb="no"
+   NCBI_MISSING_PACKAGE(sssutils)
+   NCBI_MISSING_PACKAGE(sssdb)
    NCBI_SSS_INCLUDE=
    NCBI_SSS_LIBPATH=
    LIBSSSUTILS=
@@ -4994,8 +4996,8 @@ else
                    [Define to 1 if the NCBI SSS UTILS library is available.])
          NCBI_PACKAGE(SSSUTILS)
       else
-         with_sssutils="no"
-         with_sss="no"
+         NCBI_MISSING_PACKAGE(sssutils)
+         NCBI_MISSING_PACKAGE(sss)
          LIBSSSUTILS=""
       fi
    fi
@@ -5019,8 +5021,8 @@ else
                    [Define to 1 if the NCBI SSS DB library is available.])
          NCBI_PACKAGE(SSSDB)
       else
-         with_sssdb="no"
-         with_sss="no"
+         NCBI_MISSING_PACKAGE(sssdb)
+         NCBI_MISSING_PACKAGE(sss)
          LIBSSSDB=""
       fi
    fi
@@ -5028,8 +5030,6 @@ fi
 
 
 # SP
-with_sp=${with_sp:="yes"}
-
 if test "$with_sp" != "no" ; then
    SP_PATH=${SP_PATH:="$NCBI/SP"}
    if test -n "$SP_INCLUDE"; then
@@ -5044,7 +5044,7 @@ if test "$with_sp" != "no" ; then
    AC_MSG_CHECKING([for SP directories in $SP_PATH])
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
       AC_MSG_RESULT([no])
-      with_sp="no"
+      NCBI_MISSING_PACKAGE(sp)
    else
       AC_MSG_RESULT([yes])
    fi
@@ -5065,7 +5065,7 @@ if test "$with_sp" != "no" ; then
           [[ SP_API::SGMLApplication app; ]])],
           [ncbi_cv_lib_sp=yes], [ncbi_cv_lib_sp=no])])
    if test "$ncbi_cv_lib_sp" = "no"; then
-      with_sp="no"
+      NCBI_MISSING_PACKAGE(sp)
    fi
 fi
 
@@ -5128,7 +5128,7 @@ if test "$with_orbacus" != no; then
           ]])],
           [ncbi_cv_lib_orbacus=yes], [ncbi_cv_lib_orbacus=no])])
    if test "$ncbi_cv_lib_orbacus" = "no"; then
-      with_orbacus="no"
+      NCBI_MISSING_PACKAGE(orbacus)
    fi
 fi
 if test "$with_orbacus" = no; then
@@ -5185,7 +5185,7 @@ if test "$with_icu" != "no" ; then
           ncbi_cv_lib_icu=no
        fi])
    if test "$ncbi_cv_lib_icu" = "no"; then
-      with_icu="no"
+      NCBI_MISSING_PACKAGE(icu)
    fi
 fi
 
@@ -5282,7 +5282,7 @@ if test "$with_libxml" != "no"; then
              [xmlDocPtr doc = xmlParseFile("foo.xml");])],
       [ncbi_cv_lib_libxml=yes], [ncbi_cv_lib_libxml=no])])
    if test "$ncbi_cv_lib_libxml" = "no"; then
-      with_libxml="no"
+      NCBI_MISSING_PACKAGE(libxml)
    fi
 fi
 if test "$with_libxml" = "no"; then
@@ -5366,7 +5366,7 @@ if test "$with_xerces" != no; then
          XERCES_STATIC_LIBS=$XERCES_LIBS
       fi
    else
-      with_xerces=no
+      NCBI_MISSING_PACKAGE(xerces)
    fi
 fi
 if test "$with_xerces" != no; then
@@ -5426,7 +5426,7 @@ if test "$with_xalan" != no; then
          XALAN_STATIC_LIBS=$XALAN_LIBS
       fi
    else
-      with_xalan=no
+      NCBI_MISSING_PACKAGE(xalan)
    fi
 fi
 if test "$with_xalan" != no; then
@@ -5650,10 +5650,10 @@ if test "$with_freetype" != "no" ; then
                  [[FT_Select_Charmap(NULL, ft_encoding_unicode);]])],
              [ncbi_cv_lib_freetype=yes], [ncbi_cv_lib_freetype=no])])
       if test "$ncbi_cv_lib_freetype" = no; then
-         with_freetype=no
+         NCBI_MISSING_PACKAGE(freetype)
       fi
    else
-      with_freetype=no
+      NCBI_MISSING_PACKAGE(freetype)
    fi
 fi
 if test "$with_freetype" = "no" ; then
@@ -5681,7 +5681,9 @@ CPPFLAGS="$orig_CPPFLAGS"
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 
 ## requires semaphores (lacking on older versions of Cygwin and Darwin)
-test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
+if test $ncbi_cv_sys_semaphores = no; then
+    NCBI_MISSING_PACKAGE(local-lbsm)
+fi
 ## disable by default even on newer Cygwin, as its semaphores don't
 ## actually work very well
 test $OSTYPE = cygwin  &&  : ${with_local_lbsm=no}

@@ -19906,7 +19906,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_z" >&5
 echo "${ECHO_T}$ncbi_cv_lib_z" >&6
     if test "$ncbi_cv_lib_z" = "no"; then
-       with_z="no"
+       if test "${with_z:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-z explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-z explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_z" = "no"; then
@@ -20057,7 +20061,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_bz2" >&5
 echo "${ECHO_T}$ncbi_cv_lib_bz2" >&6
     if test "$ncbi_cv_lib_bz2" = "no"; then
-       with_bz2="no"
+       if test "${with_bz2:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-bz2 explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-bz2 explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_bz2" = "no"; then
@@ -20228,7 +20236,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_lzo" >&5
 echo "${ECHO_T}$ncbi_cv_lib_lzo" >&6
     if test "$ncbi_cv_lib_lzo" = "no"; then
-       with_lzo="no"
+       if test "${with_lzo:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-lzo explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-lzo explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_lzo" = "no"; then
@@ -20370,7 +20382,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_pcre" >&5
 echo "${ECHO_T}$ncbi_cv_lib_pcre" >&6
     if test "$ncbi_cv_lib_pcre" = "no"; then
-       with_pcre="no"
+       if test "${with_pcre:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-pcre explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-pcre explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_pcre" = "no"; then
@@ -20624,7 +20640,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_gnutls" >&5
 echo "${ECHO_T}$ncbi_cv_lib_gnutls" >&6
     if test "$ncbi_cv_lib_gnutls" = "no"; then
-       with_gnutls="no"
+       if test "${with_gnutls:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-gnutls explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-gnutls explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_gnutls" = "no"; then
@@ -20789,7 +20809,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_openssl" >&5
 echo "${ECHO_T}$ncbi_cv_lib_openssl" >&6
     if test "$ncbi_cv_lib_openssl" = "no"; then
-       with_openssl="no"
+       if test "${with_openssl:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-openssl explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-openssl explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_openssl" = "no"; then
@@ -21231,7 +21255,11 @@ _ACEOF
          NETWORK_LIBS="$SYBASE_LPATH $SYBASE_NETWORK_LIBS"
       fi
    else
-      with_sybase=no
+      if test "${with_sybase:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sybase explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sybase explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi # with_sybase != no?
 
@@ -21258,7 +21286,7 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
    case "$with_ftds" in
       64 | yes | '' )
-         with_ftds=64
+         ftds_ver=64
          ftds64=ftds
          ;;
       * )
@@ -21305,9 +21333,9 @@ if test "$with_ftds" != "no" ; then
       FTDS64_INCLUDE='$(FTDS64_CTLIB_INCLUDE)'
 
    if test -n "$freetds" ; then
-      FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
-      FTDS_LIBS="\$(FTDS${with_ftds}_LIBS)"
-      FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
+      FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
+      FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
+      FTDS_INCLUDE="\$(FTDS${ftds_ver}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -21315,8 +21343,8 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
       fi
-      { echo "$as_me:$LINENO: Using bundled FreeTDS (version $with_ftds) from $FTDS_PATH" >&5
-echo "$as_me: Using bundled FreeTDS (version $with_ftds) from $FTDS_PATH" >&6;}
+      { echo "$as_me:$LINENO: Using bundled FreeTDS (version $ftds_ver) from $FTDS_PATH" >&5
+echo "$as_me: Using bundled FreeTDS (version $ftds_ver) from $FTDS_PATH" >&6;}
    else
       FTDS_LIBS="$FTDS_CTLIBS"
       echo "$as_me:$LINENO: checking for FreeTDS in $FTDS_PATH" >&5
@@ -21385,7 +21413,12 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_freetds" >&5
 echo "${ECHO_T}$ncbi_cv_lib_freetds" >&6
       if test "$ncbi_cv_lib_freetds" = "no"; then
-         with_ftds=no
+         # Don't panic when using partial trees lacking dbapi/driver/ftdsN.
+         if test "${with_ftds:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-ftds explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-ftds explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
       fi
    fi
 fi
@@ -21557,10 +21590,18 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_mysql" >&5
 echo "${ECHO_T}$ncbi_cv_lib_mysql" >&6
       if test "$ncbi_cv_lib_mysql" = no; then
-         with_mysql=no
+         if test "${with_mysql:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-mysql explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-mysql explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
       fi
    else
-      with_mysql=no
+      if test "${with_mysql:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-mysql explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-mysql explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_mysql" = "no" ; then
@@ -21712,12 +21753,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db" >&5
 echo "${ECHO_T}$ncbi_cv_lib_berkeley_db" >&6
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
-      if test -n "$with_bdb"; then
-         { { echo "$as_me:$LINENO: error: --with-bdb:  Berkeley DB library is missing" >&5
-echo "$as_me: error: --with-bdb:  Berkeley DB library is missing" >&2;}
+      if test "${with_bdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-bdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-bdb explicitly specified, but no usable version found." >&2;}
    { (exit 1); exit 1; }; }
-      fi
-      with_bdb="no"
+    fi
    else
       echo "$as_me:$LINENO: checking Berkeley DB version (4.3 or newer required)" >&5
 echo $ECHO_N "checking Berkeley DB version (4.3 or newer required)... $ECHO_C" >&6
@@ -21970,9 +22010,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_odbc" >&5
 echo "${ECHO_T}$ncbi_cv_lib_odbc" >&6
    if test "$ncbi_cv_lib_odbc" = "no"; then
-      ODBC_PATH=dbapi/driver/odbc/unix_odbc
-      { echo "$as_me:$LINENO: WARNING: Falling back to internal FreeTDS-specific ODBC implementation." >&5
-echo "$as_me: WARNING: Falling back to internal FreeTDS-specific ODBC implementation." >&2;}
+                  if test "${with_odbc:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-odbc explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-odbc explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    else
       # odbcss.h isn't self-contained :-/
 
@@ -22920,6 +22962,12 @@ _ACEOF
 #define HAVE_PYTHON 1
 _ACEOF
 
+      else
+         if test "${with_python:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-python explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-python explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
       fi
    fi
 fi
@@ -23037,7 +23085,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_cppunit" >&5
 echo "${ECHO_T}$ncbi_cv_lib_cppunit" >&6
    if test "$ncbi_cv_lib_cppunit" = "no"; then
-      with_cppunit="no"
+      if test "${with_cppunit:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-cppunit explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-cppunit explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 
@@ -23700,7 +23752,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_ctools" >&5
 echo "${ECHO_T}$ncbi_cv_lib_ctools" >&6
    if test "$ncbi_cv_lib_ctools" = no; then
-      with_ncbi_c=no
+      if test "${with_ncbi_c:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-ncbi-c explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-ncbi-c explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_ncbi_c" = "no" ; then
@@ -25474,7 +25530,11 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OSMESA_STATIC_LIBS=
    GLUT_INCLUDE=
    GLUT_LIBS=
-   with_opengl="no"
+   if test "${with_opengl:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-opengl explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-opengl explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 else
              WithPackages="$WithPackages${WithPackagesSep}OpenGL"; WithPackagesSep=" "
 
@@ -25489,16 +25549,16 @@ _ACEOF
    fi
    : ${OSMESA_PATH=$OPENGL_PATH}
    if test "$with_mesa" != "no"; then
-      if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
-         with_mesa=$OSMESA_PATH
+      if test "${with_mesa-yes}" != "yes"; then
+         OSMESA_PATH=$with_mesa
       fi
-      if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
-         OSMESA_INCLUDE=-I$with_mesa/include
-         if test "$with_mesa" != "$OPENGL_PATH"; then
+      if test -d "$OSMESA_PATH"; then
+         OSMESA_INCLUDE=-I$OSMESA_PATH/include
+         if test "$OSMESA_PATH" != "$OPENGL_PATH"; then
             ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $with_mesa/lib${bit64_sfx}; do
+    for x in $OSMESA_PATH/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25506,7 +25566,7 @@ _ACEOF
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $with_mesa/lib${bit64_sfx}; do
+    for x in $OSMESA_PATH/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25595,22 +25655,28 @@ else
 fi
 
    fi
-   if test -f "$OSMESA_PATH/lib${bit64_sfx}/libOSMesa-static.a"; then
+   if test -z "$OSMESA_LIBS"; then
+      if test "${with_mesa:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-mesa explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-mesa explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+   elif test -f "$OSMESA_PATH/lib${bit64_sfx}/libOSMesa-static.a"; then
       OSMESA_STATIC_LIBS="$OSMESA_LDFLAGS $OPENGL_LIBPATH -lOSMesa-static -lGLU-static -lGL-static $X_ALL_LIBS"
    else
       OSMESA_STATIC_LIBS=$OSMESA_LIBS
    fi
    : ${GLUT_PATH=$NCBI/glut}
    if test "$with_glut" != "no"; then
-      if test "${with_glut-yes}" = "yes" -a -d "$GLUT_PATH"; then
-         with_glut=$GLUT_PATH
+      if test "${with_glut-yes}" != "yes"; then
+         GLUT_PATH=$with_glut
       fi
-      if test -n "$with_glut" -a "$with_glut" != "yes"; then
-         GLUT_INCLUDE=-I$with_glut/include
+      if test -d "GLUT_PATH"; then
+         GLUT_INCLUDE=-I$GLUT_PATH/include
          ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $with_glut/lib${bit64_sfx}; do
+    for x in $GLUT_PATH/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25618,7 +25684,7 @@ fi
  else
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $with_glut/lib${bit64_sfx}; do
+    for x in $GLUT_PATH/lib${bit64_sfx}; do
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25705,6 +25771,13 @@ else
   GLUT_LIBS=
 fi
 
+      if test -z "$GLUT_LIBS"; then
+         if test "${with_glut:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-glut explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-glut explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+      fi
    fi
 fi
 
@@ -25821,7 +25894,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_fltk" >&5
 echo "${ECHO_T}$ncbi_cv_lib_fltk" >&6
    if test "$ncbi_cv_lib_fltk" = "no"; then
-      with_fltk="no"
+      if test "${with_fltk:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-fltk explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-fltk explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 
@@ -26142,7 +26219,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_wxwindows" >&5
 echo "${ECHO_T}$ncbi_cv_lib_wxwindows" >&6
    if test "$ncbi_cv_lib_wxwindows" = "no"; then
-      with_wxwin="no"
+      if test "${with_wxwin:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-wxwin explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-wxwin explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 
@@ -26375,7 +26456,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_wxwidgets" >&5
 echo "${ECHO_T}$ncbi_cv_lib_wxwidgets" >&6
    if test "$ncbi_cv_lib_wxwidgets" = "no"; then
-      with_wxwidgets="no"
+      if test "${with_wxwidgets:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-wxwidgets explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-wxwidgets explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 
@@ -26551,7 +26636,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_fcgi" >&5
 echo "${ECHO_T}$ncbi_cv_lib_fcgi" >&6
    if test "$ncbi_cv_lib_fcgi" = "no"; then
-      with_fastcgi="no"
+      if test "${with_fastcgi:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-fastcgi explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-fastcgi explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 
 for ac_func in FCGX_Accept_r
@@ -26672,12 +26761,12 @@ fi
 
 
 ## NCBI SSS libraries
-with_sss=${with_sss:="yes"}
-with_sssutils=${with_sssutils:="yes"}
-with_sssdb=${with_sssdb:="yes"}
-
 if test "$with_sybase" = "no" ; then
-   with_sssdb="no"
+   if test "${with_sssdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sssdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sssdb explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 fi
 
 case "$host_os:$compiler:$compiler_version" in
@@ -26721,7 +26810,11 @@ echo "${ECHO_T}yes" >&6 # duh
    elif test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
       echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-      with_sss="no"
+      if test "${with_sss:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sss explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sss explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    else
       echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -26729,8 +26822,16 @@ echo "${ECHO_T}yes" >&6
 fi
 
 if test "$with_sss" = "no" ; then
-   with_sssutils="no"
-   with_sssdb="no"
+   if test "${with_sssutils:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sssutils explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sssutils explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+   if test "${with_sssdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sssdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sssdb explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    NCBI_SSS_INCLUDE=
    NCBI_SSS_LIBPATH=
    LIBSSSUTILS=
@@ -26812,8 +26913,16 @@ _ACEOF
 
                    WithPackages="$WithPackages${WithPackagesSep}SSSUTILS"; WithPackagesSep=" "
       else
-         with_sssutils="no"
-         with_sss="no"
+         if test "${with_sssutils:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sssutils explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sssutils explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+         if test "${with_sss:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sss explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sss explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
          LIBSSSUTILS=""
       fi
    fi
@@ -26889,8 +26998,16 @@ _ACEOF
 
                    WithPackages="$WithPackages${WithPackagesSep}SSSDB"; WithPackagesSep=" "
       else
-         with_sssdb="no"
-         with_sss="no"
+         if test "${with_sssdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sssdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sssdb explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+         if test "${with_sss:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sss explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sss explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
          LIBSSSDB=""
       fi
    fi
@@ -26898,8 +27015,6 @@ fi
 
 
 # SP
-with_sp=${with_sp:="yes"}
-
 if test "$with_sp" != "no" ; then
    SP_PATH=${SP_PATH:="$NCBI/SP"}
    if test -n "$SP_INCLUDE"; then
@@ -26916,7 +27031,11 @@ echo $ECHO_N "checking for SP directories in $SP_PATH... $ECHO_C" >&6
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
       echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-      with_sp="no"
+      if test "${with_sp:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sp explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sp explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    else
       echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -26987,7 +27106,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sp" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sp" >&6
    if test "$ncbi_cv_lib_sp" = "no"; then
-      with_sp="no"
+      if test "${with_sp:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sp explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sp explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 
@@ -27158,7 +27281,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_orbacus" >&5
 echo "${ECHO_T}$ncbi_cv_lib_orbacus" >&6
    if test "$ncbi_cv_lib_orbacus" = "no"; then
-      with_orbacus="no"
+      if test "${with_orbacus:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-orbacus explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-orbacus explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_orbacus" = no; then
@@ -27291,7 +27418,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_icu" >&5
 echo "${ECHO_T}$ncbi_cv_lib_icu" >&6
    if test "$ncbi_cv_lib_icu" = "no"; then
-      with_icu="no"
+      if test "${with_icu:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-icu explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-icu explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 
@@ -27463,7 +27594,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_expat" >&5
 echo "${ECHO_T}$ncbi_cv_lib_expat" >&6
     if test "$ncbi_cv_lib_expat" = "no"; then
-       with_expat="no"
+       if test "${with_expat:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-expat explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-expat explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_expat" = "no"; then
@@ -27624,7 +27759,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sablot" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sablot" >&6
     if test "$ncbi_cv_lib_sablot" = "no"; then
-       with_sablot="no"
+       if test "${with_sablot:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sablot explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sablot explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_sablot" = "no"; then
@@ -27778,7 +27917,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_libxml" >&5
 echo "${ECHO_T}$ncbi_cv_lib_libxml" >&6
    if test "$ncbi_cv_lib_libxml" = "no"; then
-      with_libxml="no"
+      if test "${with_libxml:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-libxml explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-libxml explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_libxml" = "no"; then
@@ -27923,7 +28066,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_libxslt" >&5
 echo "${ECHO_T}$ncbi_cv_lib_libxslt" >&6
     if test "$ncbi_cv_lib_libxslt" = "no"; then
-       with_libxslt="no"
+       if test "${with_libxslt:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-libxslt explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-libxslt explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_libxslt" = "no"; then
@@ -28133,7 +28280,11 @@ echo "${ECHO_T}$ncbi_cv_lib_xerces_c" >&6
          XERCES_STATIC_LIBS=$XERCES_LIBS
       fi
    else
-      with_xerces=no
+      if test "${with_xerces:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-xerces explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-xerces explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_xerces" != no; then
@@ -28330,7 +28481,11 @@ echo "${ECHO_T}$ncbi_cv_lib_xalan_c" >&6
          XALAN_STATIC_LIBS=$XALAN_LIBS
       fi
    else
-      with_xalan=no
+      if test "${with_xalan:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-xalan explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-xalan explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_xalan" != no; then
@@ -28484,7 +28639,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sqlite" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sqlite" >&6
     if test "$ncbi_cv_lib_sqlite" = "no"; then
-       with_sqlite="no"
+       if test "${with_sqlite:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sqlite explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sqlite explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_sqlite" = "no"; then
@@ -28671,7 +28830,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sqlite3" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sqlite3" >&6
     if test "$ncbi_cv_lib_sqlite3" = "no"; then
-       with_sqlite3="no"
+       if test "${with_sqlite3:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sqlite3 explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sqlite3 explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_sqlite3" = "no"; then
@@ -29072,7 +29235,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_oechem" >&5
 echo "${ECHO_T}$ncbi_cv_lib_oechem" >&6
     if test "$ncbi_cv_lib_oechem" = "no"; then
-       with_oechem="no"
+       if test "${with_oechem:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-oechem explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-oechem explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_oechem" = "no"; then
@@ -29253,7 +29420,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sge" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sge" >&6
     if test "$ncbi_cv_lib_sge" = "no"; then
-       with_sge="no"
+       if test "${with_sge:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sge explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sge explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_sge" = "no"; then
@@ -29420,7 +29591,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_muparser" >&5
 echo "${ECHO_T}$ncbi_cv_lib_muparser" >&6
     if test "$ncbi_cv_lib_muparser" = "no"; then
-       with_muparser="no"
+       if test "${with_muparser:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-muparser explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-muparser explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_muparser" = "no"; then
@@ -29587,7 +29762,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_hdf5" >&5
 echo "${ECHO_T}$ncbi_cv_lib_hdf5" >&6
     if test "$ncbi_cv_lib_hdf5" = "no"; then
-       with_hdf5="no"
+       if test "${with_hdf5:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-hdf5 explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-hdf5 explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_hdf5" = "no"; then
@@ -29736,7 +29915,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_jpeg" >&5
 echo "${ECHO_T}$ncbi_cv_lib_jpeg" >&6
     if test "$ncbi_cv_lib_jpeg" = "no"; then
-       with_jpeg="no"
+       if test "${with_jpeg:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-jpeg explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-jpeg explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_jpeg" = "no"; then
@@ -29877,7 +30060,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_png" >&5
 echo "${ECHO_T}$ncbi_cv_lib_png" >&6
     if test "$ncbi_cv_lib_png" = "no"; then
-       with_png="no"
+       if test "${with_png:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-png explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-png explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_png" = "no"; then
@@ -30016,7 +30203,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_tiff" >&5
 echo "${ECHO_T}$ncbi_cv_lib_tiff" >&6
     if test "$ncbi_cv_lib_tiff" = "no"; then
-       with_tiff="no"
+       if test "${with_tiff:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-tiff explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-tiff explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_tiff" = "no"; then
@@ -30159,7 +30350,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_ungif" >&5
 echo "${ECHO_T}$ncbi_cv_lib_ungif" >&6
     if test "$ncbi_cv_lib_ungif" = "no"; then
-       with_ungif="no"
+       if test "${with_ungif:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-ungif explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-ungif explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_ungif" = "no"; then
@@ -30299,7 +30494,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_gif" >&5
 echo "${ECHO_T}$ncbi_cv_lib_gif" >&6
     if test "$ncbi_cv_lib_gif" = "no"; then
-       with_gif="no"
+       if test "${with_gif:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-gif explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-gif explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_gif" = "no"; then
@@ -30448,7 +30647,11 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_xpm" >&5
 echo "${ECHO_T}$ncbi_cv_lib_xpm" >&6
     if test "$ncbi_cv_lib_xpm" = "no"; then
-       with_xpm="no"
+       if test "${with_xpm:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-xpm explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-xpm explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
     fi
  fi
  if test "$with_xpm" = "no"; then
@@ -30658,10 +30861,18 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_freetype" >&5
 echo "${ECHO_T}$ncbi_cv_lib_freetype" >&6
       if test "$ncbi_cv_lib_freetype" = no; then
-         with_freetype=no
+         if test "${with_freetype:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-freetype explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-freetype explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
       fi
    else
-      with_freetype=no
+      if test "${with_freetype:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-freetype explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-freetype explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
    fi
 fi
 if test "$with_freetype" = "no" ; then
@@ -30693,7 +30904,13 @@ CPPFLAGS="$orig_CPPFLAGS"
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 
 ## requires semaphores (lacking on older versions of Cygwin and Darwin)
-test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
+if test $ncbi_cv_sys_semaphores = no; then
+    if test "${with_local_lbsm:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-local-lbsm explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-local-lbsm explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+fi
 ## disable by default even on newer Cygwin, as its semaphores don't
 ## actually work very well
 test $OSTYPE = cygwin  &&  : ${with_local_lbsm=no}
