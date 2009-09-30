@@ -120,11 +120,14 @@ void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
 
 
 /// Create an anchored alignment from Seq-align using hints
+/// Optionally, choose the anchor row explicitly (this overrides options.GetAnchorId())
+/// NB: Potentially, this "shrinks" the alignment vertically in case some row was not aligned to the anchor.
 NCBI_XALNMGR_EXPORT
 CRef<CAnchoredAln> 
 CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,      ///< input
                          size_t aln_idx,                  ///< which input alignment
-                         const CAlnUserOptions& options); ///< user options
+                         const CAlnUserOptions& options,  ///< user options
+                         objects::CSeq_align::TDim explicit_anchor_row = -1); ///< optional anchor row
 
 
 NCBI_XALNMGR_EXPORT
