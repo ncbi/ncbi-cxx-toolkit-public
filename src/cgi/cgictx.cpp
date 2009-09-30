@@ -425,7 +425,9 @@ string CCgiContext::RetrieveTrackingId() const
     if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_2, tid))
         return tid;
 
-    return CDiagContext::GetRequestContext().SetSessionID();
+    return CDiagContext::GetRequestContext().IsSetSessionID() ?
+        CDiagContext::GetRequestContext().GetSessionID() :
+        CDiagContext::GetRequestContext().SetSessionID();
 }
 
 
