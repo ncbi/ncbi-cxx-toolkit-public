@@ -80,6 +80,7 @@ public:
         return true;
     }
     void ReportTime(const string& msg);
+    void PrintAnchoredAln(const CAnchoredAln& anchored_aln);
 
 private:
     mutable CRef<CObjectManager> m_ObjMgr;
@@ -110,6 +111,13 @@ void CAlnBuildApp::Init(void)
         // Also used to calc scores and determine the type of molecule
          "Skip ObjMgr in identifying sequences, calculating scores, etc.",
          CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("single", "bool",
+         "Create a single AnchoredAln in addition to building/merging all alignments.\n"
+         "If input contains more than one aligmnent the first one will be used only.\n",
+         CArgDescriptions::eBoolean, "f");
+
 
     arg_desc->AddDefaultKey
         ("print", "bool",
@@ -234,6 +242,66 @@ void CAlnBuildApp::ReportTime(const string& msg)
 }
 
 
+void CAlnBuildApp::PrintAnchoredAln(const CAnchoredAln& anchored_aln)
+{
+    CSparseAln sparse_aln(anchored_aln, GetScope());
+    ReportTime("CSparseAln");
+    if (GetArgs()["print"].AsBoolean()) {
+        for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
+            cout << "Row " << row << ": "
+                 << sparse_aln.GetSeqId(row).AsFastaString() << endl;
+            try {
+                string sequence;
+                sparse_aln.GetAlnSeqString
+                    (row, 
+                     sequence, 
+                     sparse_aln.GetSeqAlnRange(row));
+                cout << sequence << endl;
+            } catch (...) {
+                // if sequence is not in scope,
+                // the above is impossible
+            }
+                
+            auto_ptr<IAlnSegmentIterator> sparse_ci
+                (sparse_aln.CreateSegmentIterator(row,
+                                                  sparse_aln.GetAlnRange(),
+                                                  IAlnSegmentIterator::eSkipInserts/*eAllSegments*/));
+                
+            while (*sparse_ci) {
+                cout << **sparse_ci << endl;
+#if 0
+                {{
+                        /// Demonstrate/verify usage of GetSeqPosFromAlnPos:
+                        const IAlnSegment& aln_seg = **sparse_ci;
+                        cout << "GetSeqPosFromAlnPos(" << row << ", " << aln_seg.GetAlnRange().GetFrom() << ", IAlnExplorer::eLeft): "
+                             << sparse_aln.GetSeqPosFromAlnPos(row,
+                                                               aln_seg.GetAlnRange().GetFrom(),
+                                                               IAlnExplorer::eLeft)
+                             << endl;
+                        cout << "Expected: " << (aln_seg.GetType() == IAlnSegment::fGap ?
+                                                 aln_seg.GetRange().GetFrom() - 1 :
+                                                 aln_seg.GetRange().GetFrom())
+                             << endl;
+                        cout << "GetSeqPosFromAlnPos(" << row << ", " << aln_seg.GetAlnRange().GetTo() << ", IAlnExplorer::eRight): "
+                             << sparse_aln.GetSeqPosFromAlnPos(row,
+                                                               aln_seg.GetAlnRange().GetTo(),
+                                                               IAlnExplorer::eRight)
+                             << endl;
+                        cout << "Expected: " << (aln_seg.GetType() == IAlnSegment::fGap ?
+                                                 aln_seg.GetRange().GetTo() + 1 :
+                                                 aln_seg.GetRange().GetTo())
+                             << endl;
+                    }}
+#endif
+                ++(*sparse_ci);
+            }            
+        }
+        ReportTime("GetAlnSeqString");
+        cout << endl;
+    }
+}
+
+
 int CAlnBuildApp::Run(void)
 {
     // Setup application registry, error log, and MT-lock for CONNECT library
@@ -310,7 +378,20 @@ int CAlnBuildApp::Run(void)
         cout << "Anchor will be automatically set.";
     }
     cout << endl << endl;
-    
+
+
+    /// Construct a single anchored alignment
+    if (GetArgs()["single"].AsBoolean()) {
+        CRef<CAnchoredAln> single_anchored_aln = 
+            CreateAnchoredAlnFromAln(aln_stats,
+                                     0,
+                                     aln_user_options,
+                                     GetArgs()["anchor"] ? GetArgs()["anchor"].AsInteger() : -1);
+        cout << "Single anchored alignment" << endl;
+        cout << *single_anchored_aln;
+        PrintAnchoredAln(*single_anchored_aln);
+    }
+
 
     /// Construct a vector of anchored alignments
     TAnchoredAlnVec anchored_aln_vec;
@@ -356,62 +437,8 @@ int CAlnBuildApp::Run(void)
     }
         
         
-    /// Get sequence:
-    CSparseAln sparse_aln(out_anchored_aln, GetScope());
-    ReportTime("CSparseAln");
-    if (GetArgs()["print"].AsBoolean()) {
-        for (CSparseAln::TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
-            cout << "Row " << row << ": "
-                 << sparse_aln.GetSeqId(row).AsFastaString() << endl;
-            try {
-                string sequence;
-                sparse_aln.GetAlnSeqString
-                    (row, 
-                     sequence, 
-                     sparse_aln.GetSeqAlnRange(row));
-                cout << sequence << endl;
-            } catch (...) {
-                // if sequence is not in scope,
-                // the above is impossible
-            }
-                
-            auto_ptr<IAlnSegmentIterator> sparse_ci
-                (sparse_aln.CreateSegmentIterator(row,
-                                                  sparse_aln.GetAlnRange(),
-                                                  IAlnSegmentIterator::eSkipInserts/*eAllSegments*/));
-                
-            while (*sparse_ci) {
-                cout << **sparse_ci << endl;
-#if 0
-                {{
-                        /// Demonstrate/verify usage of GetSeqPosFromAlnPos:
-                        const IAlnSegment& aln_seg = **sparse_ci;
-                        cout << "GetSeqPosFromAlnPos(" << row << ", " << aln_seg.GetAlnRange().GetFrom() << ", IAlnExplorer::eLeft): "
-                             << sparse_aln.GetSeqPosFromAlnPos(row,
-                                                               aln_seg.GetAlnRange().GetFrom(),
-                                                               IAlnExplorer::eLeft)
-                             << endl;
-                        cout << "Expected: " << (aln_seg.GetType() == IAlnSegment::fGap ?
-                                                 aln_seg.GetRange().GetFrom() - 1 :
-                                                 aln_seg.GetRange().GetFrom())
-                             << endl;
-                        cout << "GetSeqPosFromAlnPos(" << row << ", " << aln_seg.GetAlnRange().GetTo() << ", IAlnExplorer::eRight): "
-                             << sparse_aln.GetSeqPosFromAlnPos(row,
-                                                               aln_seg.GetAlnRange().GetTo(),
-                                                               IAlnExplorer::eRight)
-                             << endl;
-                        cout << "Expected: " << (aln_seg.GetType() == IAlnSegment::fGap ?
-                                                 aln_seg.GetRange().GetTo() + 1 :
-                                                 aln_seg.GetRange().GetTo())
-                             << endl;
-                    }}
-#endif
-                ++(*sparse_ci);
-            }            
-        }
-        ReportTime("GetAlnSeqString");
-    }
-
+    /// Print the sequences:
+    PrintAnchoredAln(out_anchored_aln);
         
         
     /// Create a Seq-align
