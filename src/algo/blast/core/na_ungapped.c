@@ -666,9 +666,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     return hit_ready;
 }
 
-/** Check that word just found is not part of a soft-masked region.
- * This check only happens for soft masking for certain word sizes
- * @param locations not masked regions [in]
+/** Check the mini-extended word against masked query regions.
+ * @param locations of the masked query regions [in]
  * @param query query sequence [in]
  * @param subject subject sequence [in]
  * @param q_off query start [in]
@@ -685,32 +684,33 @@ s_IsWordSeedMasked(BlastSeqLoc* locations,
                    Uint4 s_end,
                    Uint4 max_ext)
 {
+    Int4 right;
     Int4 q_end = q_off + word_length;
-    while (locations) {
-       if (q_end-1 >= locations->ssr->left && q_end-1 <= locations->ssr->right) {
-          /* since we have exhausted left extension, this hit is hopeless */
-          return TRUE;
-       } 
-       if (q_off >= locations->ssr->left && q_off <= locations->ssr->right) {
-          /* determine the right boundary for extension*/
-          if (locations->next) {
-              max_ext = MIN (max_ext, locations->next->ssr->left - q_end);
-          } 
-          if (locations->ssr->right+1 - q_off > max_ext) {
-              /*  query range too short to contain a word  */
-              return TRUE;
-          }
-          /* try to extend to the right */
-          max_ext = locations->ssr->right+1 - q_off;
-          if (s_BlastRightExtend(query, subject, q_end, s_end, NULL, max_ext) < max_ext) {
-              return TRUE;
-          }
-          /* extension sucessful, (TODO should we update new q_off? )*/
-          return FALSE;
-       }
-       locations = locations->next;
+    /* search for the overlapping mask */
+    while (locations && q_off >= locations->ssr->right) {
+        locations = locations->next;
     }
-    return FALSE;
+    if (!locations || q_end <= locations->ssr->left) {
+        return FALSE;
+    }
+    /* if we get here, this mask must overlap with the hit,
+       try if the hit can be right extended out of the masked region */
+    right = locations->ssr->right;
+    if (q_end > right) {
+        if (locations->next) {
+            max_ext = MIN (max_ext, locations->next->ssr->left - q_end);
+        } 
+        if (right - q_off > max_ext) {
+            /* query/subject range too short to contain a word */
+            return TRUE;
+        }
+        max_ext = right - q_off;
+        if (s_BlastRightExtend(query, subject, q_end, s_end, NULL, max_ext) == max_ext) {
+            /* extension sucessful, (TODO should we update the q_off? )*/
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 
 /** Perform ungapped extensions on the hits retrieved from
