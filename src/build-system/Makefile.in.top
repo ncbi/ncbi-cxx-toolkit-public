@@ -19,7 +19,9 @@ llibdir      = $(build_root)/lib
 PROJECTS     = @PROJECTS@
 
 all: $(PROJECTS)
-	if test -s "$(PROJECTS)"; then \
+	if test -f $(builddir)/Makefile.flat; then \
+	    cd $(builddir) && $(MAKE) -f Makefile.flat; \
+	elif test -s "$(PROJECTS)"; then \
 	    cd $(builddir) && $(MAKE) $(MFLAGS) all_p; \
 	else \
 	    cd $(builddir) && $(MAKE) $(MFLAGS) all_r; \
