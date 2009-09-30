@@ -175,6 +175,7 @@ CRef<CSeq_entry> LDS_LoadTSE(CLDS_Database& lds_db,
 CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
                                const CLDS_Query::SObjectDescr& obj_descr)
 {
+    CRef<CSeq_annot> annot;
     CNcbiIfstream in(obj_descr.file_name.c_str(), IOS_BASE::binary);
     if (!in.is_open()) {
         string msg = "Cannot open file:";
@@ -195,25 +196,22 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
             // If object is a bare Bioseq: read it and
             // construct a Seq_entry on it
             //
-            CRef<CSeq_annot> annot(new CSeq_annot());
+            annot.Reset(new CSeq_annot());
             is->Read(ObjectInfo(*annot));
-            return annot;
         }
         else if (obj_descr.type_str == "Seq-align") {
             CRef<CSeq_align> align(new CSeq_align());
             is->Read(ObjectInfo(*align));
-            CRef<CSeq_annot> annot(new CSeq_annot());
+            annot.Reset(new CSeq_annot());
             annot->SetData().SetAlign().push_back(align);
-            return annot;
         }
         else if (obj_descr.type_str == "Seq-align-set") {
             CRef<CSeq_align_set> align_set(new CSeq_align_set());
             is->Read(ObjectInfo(*align_set));
-            CRef<CSeq_annot> annot(new CSeq_annot());
+            annot.Reset(new CSeq_annot());
             NON_CONST_ITERATE ( CSeq_align_set::Tdata, it, align_set->Set() ) {
                 annot->SetData().SetAlign().push_back(*it);
             }
-            return annot;
         }
         else {
             LDS_THROW(eInvalidDataType,
@@ -224,7 +222,7 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
     default:
         LDS_THROW(eNotImplemented, "Invalid file format");
     }
-
+    return annot;
 }
 
 END_SCOPE(objects)

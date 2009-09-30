@@ -197,7 +197,7 @@ void CBDB_Volumes::SortVolumes() {
             NCBI_THROW(CBDB_VolumesException, eVolumeNotFound,
                 string("Cannot find volume=") + NStr::UIntToString(iter->second));
         }
-        unsigned volume_id = m_VolumesDB->Append();
+        m_VolumesDB->Append();
     }
     trans.Commit();
 
