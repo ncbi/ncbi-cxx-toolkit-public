@@ -803,7 +803,8 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
 
         // Always check local copy first unless full path is given
         if (!m_SkipLocal[i]) {
-            CSeqDB_BasePath local_base(CSeqDB_DirName(CDir::GetCwd()), 
+            // GCC 3.0.4 requires the extra parentheses below.
+            CSeqDB_BasePath local_base((CSeqDB_DirName(CDir::GetCwd())),
                                    CSeqDB_BaseName(m_DBList[i].FindBaseName()));
             CSeqDB_Path new_local_vol_path(local_base, prot_nucl, 'i', 'n' );
             if (m_Atlas.DoesFileExist(new_local_vol_path, locked)) {
