@@ -4941,11 +4941,11 @@ void CValidError_feat::ValidateExcept(const CSeq_feat& feat)
 static bool s_IsNcOrNt(const string& accession)
 {
     if (NStr::StartsWith(accession, "NC_", NStr::eNocase)) {
-        return TRUE;
+        return true;
     } else if (NStr::StartsWith(accession, "NT_", NStr::eNocase)) {
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -4956,24 +4956,24 @@ static bool s_IsNcOrNt (const CSeq_loc& loc, CScope *scope)
     if (id != NULL && id->IsOther() 
         && id->GetOther().IsSetAccession()
         && s_IsNcOrNt(id->GetOther().GetAccession())) {
-        return TRUE;
+        return true;
     }        
 
     if (!scope) {
-        return FALSE;
+        return false;
     }
     CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
     if (!bsh) {
-        return FALSE;
+        return false;
     }
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
         if ((*id_it)->IsOther() 
             && (*id_it)->GetOther().IsSetAccession()
             && s_IsNcOrNt((*id_it)->GetOther().GetAccession())) {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 
