@@ -79,7 +79,9 @@ SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq) : m
 {
     m.GetAlignMap().EditedSequence(contig_seq, mrna_seq, true);
 
-    prot_sid->Assign(*CIdHandler::GnomonProtein(model.ID()));  
+    prot_sid.Reset(new CSeq_id);
+    prot_sid->Assign(*CIdHandler::GnomonProtein(model.ID())); 
+    mrna_sid.Reset(new CSeq_id);
     mrna_sid->Assign(*CIdHandler::GnomonMRNA(model.ID()));
 
     is_ncrna = m.ReadingFrame().Empty();
