@@ -23,14 +23,12 @@ CHECK_COPY = dbapi_unit_test.ini
 
 CHECK_TIMEOUT = 600
 
-CHECK_CMD = dbapi_unit_test -d ctlib      -S MsSql
 CHECK_CMD = dbapi_unit_test -d dblib      -S MsSql
 CHECK_CMD = dbapi_unit_test -d ftds       -S MsSql
 CHECK_CMD = dbapi_unit_test -d odbc       -S MsSql
 CHECK_CMD = dbapi_unit_test -d ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -d dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -d ftds       -S Sybase
-CHECK_CMD = dbapi_unit_test -d odbc       -S Sybase
 
 CHECK_CMD = dbapi_unit_test -d ftds -S MsSql --run_test=Test_Authentication
 
