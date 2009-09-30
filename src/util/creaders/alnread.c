@@ -714,7 +714,7 @@ s_ReportASN1Error
         eip->category = eAlnErr_BadData;
         eip->message = (char *) malloc (strlen (msg) + 1);
         if (eip->message != NULL) {
-            sprintf (eip->message, msg);
+            sprintf (eip->message, "%s", msg);
         }
         errfunc (eip, errdata);
     }
