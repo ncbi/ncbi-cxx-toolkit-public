@@ -453,7 +453,7 @@ void CValidError_imp::ValidateBioSource
 
     if (is_synthetic_construct) {
         if (!is_artificial) {
-            PostObjErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, 
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
                         "synthetic construct should have artificial origin", obj, ctx);
         }
     } else if (is_artificial) {
@@ -900,7 +900,7 @@ void CValidError_imp::ValidateBioSource
 						   "Bacterial source should not have organelle location",
 						   obj, ctx);
 			} else if (NStr::EqualCase(div, "ENV") && !env_sample) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, 
 					       "BioSource with ENV division is missing environmental sample subsource",
 						   obj, ctx);
 			}
@@ -952,7 +952,7 @@ void CValidError_imp::ValidateSubSource
  const CSeq_entry *ctx)
 {
     if (!subsrc.IsSetSubtype()) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+        PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BadSubSource,
             "Unknown subsource subtype 0", obj, ctx);
         return;
     }
@@ -975,7 +975,7 @@ void CValidError_imp::ValidateSubSource
                     countryname = "?";
                 }
                 if ( CCountries::WasValid(countryname) ) {
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_ReplacedCountryCode,
+                    PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ReplacedCountryCode,
                             "Replaced country name [" + countryname + "]", obj, ctx);
                 } else {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
@@ -1095,7 +1095,7 @@ void CValidError_imp::ValidateSubSource
         break;
         
     case 0:
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+        PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BadSubSource,
             "Unknown subsource subtype 0", obj, ctx);
         break;
         
@@ -1240,7 +1240,7 @@ void CValidError_imp::ValidateSubSource
 		} else {
 			const string& subname = subsrc.GetName();
 			if (s_UnbalancedParentheses(subname)) {
-				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
+				PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
 						   "Unbalanced parentheses in subsource '" + subname + "'",
 						   obj, ctx);
 			}
@@ -1400,13 +1400,21 @@ void CValidError_imp::ValidateOrgName
         FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
             const COrgMod& omd = **omd_itr;
             int subtype = omd.GetSubtype();
+            bool has_strain = false;
             
 			switch (subtype) {
 				case 0:
 				case 1:
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                    PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BadOrgMod, 
                                "Unknown orgmod subtype " + NStr::IntToString(subtype), obj, ctx);
 					break;
+                case COrgMod::eSubtype_strain:
+                    if (has_strain) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                                   "Multiple strain qualifiers on the same BioSource", obj, ctx);
+                    }
+                    has_strain = true;
+                    break;
 				case COrgMod::eSubtype_variety:
 					if ( (!orgname.IsSetDiv() || !NStr::EqualNocase( orgname.GetDiv(), "PLN" ))
 						&& (!orgname.IsSetLineage() ||
@@ -1451,7 +1459,7 @@ void CValidError_imp::ValidateOrgName
 				const string& subname = omd.GetSubname();
 
 				if (s_UnbalancedParentheses(subname)) {
-					PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_UnbalancedParentheses,
+					PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
 							   "Unbalanced parentheses in orgmod '" + subname + "'",
 							   obj, ctx);
 				}

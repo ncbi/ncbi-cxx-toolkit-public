@@ -588,6 +588,9 @@ data.")),
    TErrTypStrs ( eErr_GENERIC_SgmlPresentInText,
    TErrStrs( "SgmlPresentInText",
 "SGML markup is embedded in text.")),
+   TErrTypStrs ( eErr_GENERIC_UnexpectedPubStatusComment,
+   TErrStrs( "UnexpectedPubStatusComment",
+"An unexpected publication status exists for a print, online-only, or ahead-of-print article : Content-Of-Pubdesc.comment-String.")),
 
 /* SEQ_PKG */
 

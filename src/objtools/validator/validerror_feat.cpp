@@ -1325,7 +1325,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                 if (NStr::EqualCase((*it)->GetVal(), locus_tag)) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
                             "old_locus_tag has same value as gene locus_tag", feat);
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem, 
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
                             "Gene locus_tag and old_locus_tag '" + locus_tag + "' match", feat);
                 }
                 if (NStr::Find ((*it)->GetVal(), ",") != string::npos) {
@@ -1418,7 +1418,7 @@ void CValidError_feat::ValidateCdregion (
                         "Exception flag should be set in coding region", feat);
                 }
             } else if ( NStr::EqualNocase(key, "codon") ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CodonQualifierUsed,
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_CodonQualifierUsed,
                     "Use the proper genetic code, if available, "
                     "or set transl_excepts on specific codons", feat);
             } else if ( NStr::EqualNocase(key, "protein_id") ) {
@@ -1608,7 +1608,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     }
     
     // non-pseudo CDS must have /product
-    PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
+    PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
         "Expected CDS product absent", feat);
 }
 
@@ -1671,6 +1671,11 @@ static bool s_RareConsensusNotExpected (CBioseq_Handle seq)
 
 void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
 {
+    if (IsIntronShort(feat)) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
+                 "Introns should be at least 10 nt long", feat);
+    }
+
     if (feat.IsSetExcept() && feat.IsSetExcept_text()
         && NStr::FindNoCase (feat.GetExcept_text(), "nonconsensus splice site") != string::npos) {
         return;
@@ -1799,10 +1804,6 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
                           feat);
             }
         }
-    }
-    if (IsIntronShort(feat)) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
-                 "Introns should be at least 10 nt long", feat);
     }
 }
 
@@ -2278,7 +2279,7 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
     }
 
     FOR_EACH_NAME_ON_PROTREF (it, prot) {
-        if (NStr::EndsWith (*it, "]")) {
+        if (NStr::EndsWith (*it, "]") && !NStr::StartsWith (*it, "[NAD")) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
                     "Protein name ends with bracket and may contain organism name",
                     feat);
@@ -2519,7 +2520,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                 "Unparsed product qualifier in tRNA", feat);
         } else if (!rna.CanGetExt() || rna.GetExt().Which() == CRNA_ref::C_Ext::e_not_set ) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_MissingTrnaAA,
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingTrnaAA,
                 "Missing encoded amino acid qualifier in tRNA", feat);
         }
     }
@@ -3097,7 +3098,11 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         {
             CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
             if ( range.GetFrom() != range.GetTo() ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PolyAsiteNotPoint,
+                EDiagSev sev = eDiag_Warning;
+                if (m_Imp.IsINSDInSep()) {
+                    sev = eDiag_Error;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PolyAsiteNotPoint,
                     "PolyA_site should be a single point", feat);
             }
         }
@@ -3119,7 +3124,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     case CSeqFeatData::eSubtype_mat_peptide:
     case CSeqFeatData::eSubtype_sig_peptide:
     case CSeqFeatData::eSubtype_transit_peptide:
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
+        PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
             "Peptide processing feature should be converted to the "
             "appropriate protein feature subtype", feat);
         ValidatePeptideOnCodonBoundry(feat, key);
@@ -3160,7 +3165,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         }
         break;
     case CSeqFeatData::eSubtype_imp:
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_UnknownImpFeatKey,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatKey,
             "Unknown feature key " + key, feat);
         break;
     case CSeqFeatData::eSubtype_gap:
@@ -4611,6 +4616,63 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 }
 
 
+static bool s_CDS3primePartialTest (const CSeq_feat& feat, CScope *scope)
+{
+    if (!scope) {
+        return false;
+    }
+
+    CBioseq_Handle bsh = scope->GetBioseqHandle (feat.GetLocation());
+    if (!bsh) {
+        return false;
+    }
+    CSeq_loc_CI last;
+    for ( CSeq_loc_CI sl_iter(feat.GetLocation()); sl_iter; ++sl_iter ) { 
+        last = sl_iter;
+    }
+
+    if (last) {
+        if (last.GetStrand() == eNa_strand_minus) {
+            if (last.GetRange().GetFrom() == 0) {
+                return true;
+            }
+        } else {
+            if (last.GetRange().GetTo() == bsh.GetInst_Length() - 1) {
+                return true;
+            }
+        }
+    }
+    return false;    
+}
+
+
+static bool s_CDS5primePartialTest (const CSeq_feat& feat, CScope *scope)
+{
+    if (!scope) {
+        return false;
+    }
+
+    CBioseq_Handle bsh = scope->GetBioseqHandle (feat.GetLocation());
+    if (!bsh) {
+        return false;
+    }
+    CSeq_loc_CI first(feat.GetLocation());
+
+    if (first) {
+        if (first.GetStrand() == eNa_strand_minus) {
+            if (first.GetRange().GetTo() == bsh.GetInst_Length() - 1) {
+                return true;
+            }
+        } else {
+            if (first.GetRange().GetFrom() == 0) {
+                return true;
+            }
+        }
+    }
+    return false;    
+}
+
+
 void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
 {
     if ( !feat.CanGetProduct()  ||  !feat.CanGetLocation() ) {
@@ -4653,7 +4715,11 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
                     "CDS is 5' complete but protein is NH2 partial", feat);
             }
             if ( partial3 ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                EDiagSev sev = eDiag_Error;
+                if (s_CDS3primePartialTest(feat, m_Scope)) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is 3' partial but protein is NH2 partial", feat);
             }
             break;
@@ -4664,7 +4730,11 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
                     "CDS is 3' complete but protein is CO2 partial", feat);
             }
             if (partial5) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                EDiagSev sev = eDiag_Error;
+                if (s_CDS5primePartialTest) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is 5' partial but protein is CO2 partial", feat);
             }
             break;
@@ -4672,10 +4742,19 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
         case CMolInfo::eCompleteness_no_ends:
             if ( partial5 && partial3 ) {
             } else if ( partial5 ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                EDiagSev sev = eDiag_Error;
+                if (s_CDS5primePartialTest) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is 5' partial but protein has neither end", feat);
             } else if ( partial3 ) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                EDiagSev sev = eDiag_Error;
+                if (s_CDS3primePartialTest(feat, m_Scope)) {
+                    sev = eDiag_Warning;
+                }
+
+                PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is 3' partial but protein has neither end", feat);
             } else {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
@@ -4860,6 +4939,45 @@ void CValidError_feat::ValidateExcept(const CSeq_feat& feat)
 }
 
 
+static bool s_IsNcOrNt(const string& accession)
+{
+    if (NStr::StartsWith(accession, "NC_", NStr::eNocase)) {
+        return TRUE;
+    } else if (NStr::StartsWith(accession, "NT_", NStr::eNocase)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+
+static bool s_IsNcOrNt (const CSeq_loc& loc, CScope *scope)
+{
+    const CSeq_id *id = loc.GetId();
+    if (id != NULL && id->IsOther() 
+        && id->GetOther().IsSetAccession()
+        && s_IsNcOrNt(id->GetOther().GetAccession())) {
+        return TRUE;
+    }        
+
+    if (!scope) {
+        return FALSE;
+    }
+    CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
+    if (!bsh) {
+        return FALSE;
+    }
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+        if ((*id_it)->IsOther() 
+            && (*id_it)->GetOther().IsSetAccession()
+            && s_IsNcOrNt((*id_it)->GetOther().GetAccession())) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+
 void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& feat)
 {
     if ( text.empty() ) return;
@@ -4904,7 +5022,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             }
         }
         if ( !found ) {
-            if ( m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
+            if ( s_IsNcOrNt (feat.GetLocation(), m_Scope) ) {
                 sev = eDiag_Warning;
             }
             PostErr(sev, eErr_SEQ_FEAT_ExceptionProblem,

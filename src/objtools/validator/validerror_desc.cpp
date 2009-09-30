@@ -75,7 +75,7 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Modif:
         case CSeqdesc::e_Mol_type:
         case CSeqdesc::e_Method:
-            PostErr(eDiag_Info, eErr_SEQ_DESCR_InvalidForType,
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                 desc.SelectionName(desc.Which()) + " descriptor is obsolete", *m_Ctx, desc);
             break;
 

@@ -225,6 +225,7 @@ enum EErrType {
     eErr_GENERIC_EmbeddedScript,
     eErr_GENERIC_PublicationInconsistency,
 	eErr_GENERIC_SgmlPresentInText,
+    eErr_GENERIC_UnexpectedPubStatusComment,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,

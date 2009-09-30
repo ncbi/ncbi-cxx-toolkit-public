@@ -224,6 +224,23 @@ void CValidError_imp::ValidatePubdesc
             if ( ! pubdesc.IsSetFig()  ||  NStr::IsBlank(pubdesc.GetFig()) ) {
                 // ValidateArticleHasJournal(pub.GetArticle(), obj);
             }
+            if (pubdesc.IsSetComment() && !NStr::IsBlank(pubdesc.GetComment())
+                && pub.GetArticle().IsSetFrom() && pub.GetArticle().GetFrom().IsJournal()
+                && pub.GetArticle().GetFrom().GetJournal().IsSetImp()
+                && pub.GetArticle().GetFrom().GetJournal().GetImp().IsSetPubstatus()) {
+                CImprint::TPubstatus pubstatus = pub.GetArticle().GetFrom().GetJournal().GetImp().GetPubstatus();
+                const string& comment = pubdesc.GetComment();
+                if ((pubstatus == ePubStatus_epublish 
+                     || pubstatus == ePubStatus_ppublish
+                     || pubstatus == ePubStatus_aheadofprint)
+                    && (NStr::Find(comment, "Publication Status") != string::npos
+                        || NStr::Find(comment, "Publication-Status") != string::npos
+                        || NStr::Find(comment, "Publication_Status") != string::npos)) {
+                    PostObjErr(eDiag_Error, eErr_GENERIC_UnexpectedPubStatusComment,
+                               "Publication status is in comment for pmid " + NStr::IntToString (uid),
+                               obj, ctx);
+                }
+            }
             break;
 
         case CPub::e_Equiv:
@@ -405,15 +422,18 @@ void CValidError_imp::ValidatePubArticle
                                 "Publication date missing", obj, ctx);
                 }
             }
-            if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_aheadofprint
-                && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
-                PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
-                         "Ahead-of-print without in-press", obj, ctx);
-            }  
-            if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_epublish 
-                && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
-                PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
-                         "Electronic-only publication should not also be in-press", obj, ctx);
+            if (imp.IsSetPubstatus()) {
+                CImprint::TPubstatus pubstatus = imp.GetPubstatus();
+                if (pubstatus == ePubStatus_aheadofprint
+                    && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
+                    PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                             "Ahead-of-print without in-press", obj, ctx);
+                }  
+                if (pubstatus == ePubStatus_epublish 
+                    && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
+                    PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                             "Electronic-only publication should not also be in-press", obj, ctx);
+                }
             }
         }
         if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA()) && !is_electronic_journal ) {
@@ -1039,17 +1059,33 @@ static bool s_IsNoncuratedRefSeq (const CBioseq& seq)
 }
 
 
-bool CValidError_imp::IsCuratedRefSeq(void) const {
-    return !(IsNM()  ||  IsNP()  || IsNG()  ||  IsNR());
+bool CValidError_imp::IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev)
+{
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+        if ((*id_it)->IsOther()
+            && (*id_it)->GetOther().IsSetAccession()) {
+            const string& accession = (*id_it)->GetOther().GetAccession();
+            if (NStr::StartsWith (accession, "NM_")
+                || NStr::StartsWith(accession, "NP_")
+                || NStr::StartsWith(accession, "NG_")
+                || NStr::StartsWith(accession, "NR_")) {
+                sev = eDiag_Warning;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
 void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
+    EDiagSev sev = eDiag_Error;
     if (!m_NoPubs 
-        && !s_IsNoncuratedRefSeq (seq)
+        && !IsNoncuratedRefSeq (seq, sev)
         && !IsWGSIntermediate(seq)) {
-        EDiagSev sev = IsCuratedRefSeq() ? eDiag_Error : eDiag_Warning;
 
         PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
     }

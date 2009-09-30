@@ -277,7 +277,7 @@ public:
     inline bool IsNW(void) const { return m_IsNW; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
-    bool IsCuratedRefSeq(void) const;
+    bool IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev);
     inline bool IsGenbank(void) const { return m_IsGB; }
     inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
     inline bool DoesAnyProductLocHaveGI(void) const { return m_ProductLocHasGI; }
@@ -808,7 +808,7 @@ private:
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateSeqFeatContext(const CBioseq& seq);
-    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly);
+    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool same_annot, bool same_label);
     void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, const CBioseq& bioseq);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);

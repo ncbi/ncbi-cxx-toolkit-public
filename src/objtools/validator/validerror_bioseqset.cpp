@@ -96,7 +96,7 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
             if ( set.IsSetClass() 
                  && set.GetClass() == CBioseq_set::eClass_genbank ) {
 
-                PostErr(eDiag_Error, eErr_SEQ_PKG_InternalGenBankSet,
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_InternalGenBankSet,
                          "Bioseq-set contains internal GenBank Bioseq-set",
                          seqset);
             }
@@ -172,7 +172,7 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     */
     default:
         if ( nuccnt == 0  &&  protcnt == 0 )  {
-            PostErr(eDiag_Error, eErr_SEQ_PKG_EmptySet, 
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_EmptySet, 
                 "No Bioseqs in this set", seqset);
         }
         break;
@@ -248,7 +248,7 @@ void CValidError_bioseqset::ValidateNucProtSet
         PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtProblem,
                  "No nucleotides in nuc-prot set", seqset);
     } else if ( nuccnt > 1 && segcnt != 1) {
-        PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_PKG_NucProtProblem,
                  "Multiple unsegmented nucleotides in nuc-prot set", seqset);
     }
     if ( protcnt == 0 ) {
@@ -296,7 +296,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                 CBioseq_set::GetTypeInfo_enum_EClass();
             const string& set_class = tv->FindName(set.GetClass(), true);
 
-            PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtNotSegSet,
+            PostErr(eDiag_Critical, eErr_SEQ_PKG_NucProtNotSegSet,
                      "Nuc-prot Bioseq-set contains wrong Bioseq-set, "
                      "its class is \"" + set_class + "\".", set);
             break;
@@ -445,7 +445,7 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
             const string& set_class_str = 
                 tv->FindName(set.GetClass(), true);
 
-            PostErr(eDiag_Error, eErr_SEQ_PKG_PartsSetHasSets,
+            PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetHasSets,
                     "Parts set contains unwanted Bioseq-set, "
                     "its class is \"" + set_class_str + "\".", set);
         } // else if
@@ -543,7 +543,7 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
     
     // genprodset should not have annotations directly on set
     if (seqset.IsSetAnnot()) {
-        PostErr(eDiag_Error,
+        PostErr(eDiag_Critical,
             eErr_SEQ_PKG_GenomicProductPackagingProblem,
             "Seq-annot packaged directly on genomic product set", seqset);
     }
@@ -583,7 +583,7 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
                             loc_label = "?";
                         }
                         
-                        PostErr(eDiag_Error,
+                        PostErr(eDiag_Warning,
                             eErr_SEQ_PKG_GenomicProductPackagingProblem,
                             "Product of mRNA feature (" + loc_label +
                             ") not packaged in genomic product set", seq);

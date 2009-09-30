@@ -238,7 +238,7 @@ void CValidError_bioseq::ValidateSeqIds
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
             if ( IsHistAssemblyMissing(seq)  &&  seq.IsNa() ) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_HistAssemblyMissing,
+                PostErr(eDiag_Info, eErr_SEQ_INST_HistAssemblyMissing,
                     "TPA record " + (*k)->AsFastaString() +
                     " should have Seq-hist.assembly for PRIMARY block", 
                     seq);
@@ -272,7 +272,7 @@ void CValidError_bioseq::ValidateSeqIds
                     (**k).IsGenbank()  ||  (**k).IsEmbl()  ||  (**k).IsDdbj();
 
                 if ( letter_after_digit || bad_id_chars ) {
-                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, seq);
                 } else if (num_letters == 1 && num_digits == 5 && seq.IsNa()) {
                 } else if (num_letters == 2 && num_digits == 6 && seq.IsNa()) {
@@ -347,7 +347,7 @@ void CValidError_bioseq::ValidateSeqIds
                     }
 
                     if ( letter_after_digit  ||  bad_id_chars ) {
-                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Bad accession " + acc, seq);
                     } else if ( is_NZ  &&  num_letters == 4  && 
                         num_digits == 8  &&  num_underscores == 0 ) {
@@ -1716,9 +1716,15 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             }
 
             bool is_patent = false;
+            bool is_nc = false;
             FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
                 if ((*id_it)->IsPatent()) {
                     is_patent = true;
+                } else if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
+                    && NStr::StartsWith ((*id_it)->GetOther().GetAccession(), "NC_")) {
+                    is_nc = true;
+                }
+                if (is_patent && is_nc) {
                     break;
                 }
             }
@@ -1733,7 +1739,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                 // if 10 or more Ns flag as error (except for NC, patent, or circular), 
                 // otherwise just warning
                 vec.GetSeqData(0, 10, sequence);
-                if (m_Imp.IsNC() || is_patent) {
+                if (is_nc || is_patent) {
                     sev = eDiag_Warning;
                 } else if (seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
                     sev = eDiag_Warning;
@@ -1757,7 +1763,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                 // if 10 or more Ns flag as error (except for NC, patent, or circular), 
                 // otherwise just warning
                 vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
-                if (m_Imp.IsNC() || is_patent) {
+                if (is_nc || is_patent) {
                     sev = eDiag_Warning;
                 } else if (seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
                     sev = eDiag_Warning;
@@ -2574,6 +2580,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 }
             } else {
                 if ( first ) {
+                    sev = eDiag_Error;
+                    if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1
+                        || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
+                        sev = eDiag_Warning;
+                    }
                     PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
                         "First delta seq component is a gap", seq);
                 }
@@ -2625,6 +2636,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
     }
     if ( last_is_gap ) {
+        sev = eDiag_Error;
+        if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1
+            || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
+            sev = eDiag_Warning;
+        }
         PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
             "Last delta seq component is a gap", seq);
     }
@@ -2760,7 +2776,7 @@ bool CValidError_bioseq::ValidateRepr
         if (!inst.IsSetSeq_data() ||
           inst.GetSeq_data().Which() == CSeq_data::e_not_set)
         {
-            PostErr(eDiag_Error, eErr_SEQ_INST_SeqDataNotFound, err2, seq);
+            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataNotFound, err2, seq);
             rtn = false;
         }
         break;
@@ -3297,7 +3313,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
                 if ( LocOnSeg(seq, fi->GetOriginalFeature().GetLocation()) ) {
                     if ( !IsDeltaOrFarSeg(fi->GetLocation(), m_Scope) ) {
-                        EDiagSev sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
+                        EDiagSev sev = is_nc ? eDiag_Warning : eDiag_Error;
                         PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
                             "Feature location on segmented bioseq, not on parts",
                             feat);
@@ -4275,53 +4291,26 @@ static bool s_AreGBQualsIdentical(const CSeq_feat& feat1, const CSeq_feat& feat2
 }
 
 
-EDiagSev CValidError_bioseq::x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly)
+static bool s_SpecialFlybaseIDs (const CBioseq& seq)
 {
-    EDiagSev severity = eDiag_Error;
-    CSeqFeatData::ESubtype curr_subtype = curr.GetData().GetSubtype();
-
-    // lower severity for some cases
-    if ( curr_subtype == CSeqFeatData::eSubtype_pub          ||
-         curr_subtype == CSeqFeatData::eSubtype_region       ||
-         curr_subtype == CSeqFeatData::eSubtype_misc_feature ||
-         curr_subtype == CSeqFeatData::eSubtype_STS          ||
-         curr_subtype == CSeqFeatData::eSubtype_variation ) {
-        severity = eDiag_Warning;
-    } else if ( !(m_Imp.IsGPS() || 
-                  m_Imp.IsNT()  ||
-                  m_Imp.IsNC()) ) {
-        severity = eDiag_Warning;
-    } else if ( is_fruitfly ) {
-        // curated fly source still has duplicate features
-        severity = eDiag_Warning;
-    }
-    
-    // if different CDS frames, lower to warning
-    if (curr_subtype == CSeqFeatData::eSubtype_cdregion) {
-        CCdregion::EFrame       curr_frame, prev_frame;
-        curr_frame = curr.GetData().GetCdregion().GetFrame();
-        prev_frame = prev.GetData().GetCdregion().GetFrame();
-        
-        if ( (curr_frame != CCdregion::eFrame_not_set  &&
-            curr_frame != CCdregion::eFrame_one)     ||
-            (prev_frame != CCdregion::eFrame_not_set  &&
-            prev_frame != CCdregion::eFrame_one) ) {
-            if ( curr_frame != prev_frame ) {
-                severity = eDiag_Warning;
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+        if ((*id_it)->IsOther()) {
+            if ((*id_it)->GetOther().IsSetAccession()) {
+                const string& accession = (*id_it)->GetOther().GetAccession();
+                if (NStr::StartsWith(accession, "NT_")
+                    || NStr::StartsWith(accession, "NC_")
+                    || NStr::StartsWith(accession, "NG_")
+                    || NStr::StartsWith(accession, "NW_")) {
+                    return true;
+                }
+            }
+        } else if ((*id_it)->IsGeneral()) {
+            if (!(*id_it)->GetGeneral().IsSkippable()) {
+                return true;
             }
         }
     }
-    if (m_Imp.IsGPS()  ||  m_Imp.IsNT()  ||  m_Imp.IsNC() ) {
-        severity = eDiag_Warning;
-    }
-
-    if ( (prev.IsSetDbxref()  &&
-          IsFlybaseDbxrefs(prev.GetDbxref()))  || 
-         (curr.IsSetDbxref()  && 
-          IsFlybaseDbxrefs(curr.GetDbxref())) ) {
-        severity = eDiag_Error;
-    }
-    return severity;
+    return false;
 }
 
 
@@ -4369,6 +4358,132 @@ static bool s_PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2)
 }
 
 
+static CConstRef <CSeq_feat> s_GetGeneForFeature (const CSeq_feat& f1, CScope *scope)
+{
+    const CGene_ref * g1 = f1.GetGeneXref();
+    CConstRef <CSeq_feat> gene;
+
+    if (g1) {
+        if (g1->IsSuppressed()) {
+            return gene;
+        }
+        string ref_label;
+        g1->GetLabel(&ref_label);
+
+        CBioseq_Handle bsh = scope->GetBioseqHandle(f1.GetLocation());
+        SAnnotSelector sel(CSeqFeatData::e_Gene);
+        CFeat_CI gene_it(bsh, sel);
+        while (gene_it) {
+            string feat_label;
+            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label, feature::eContent, scope);
+            if (NStr::EqualCase(ref_label, feat_label)) {
+                gene.Reset (&(gene_it->GetOriginalFeature()));
+                return gene;
+            }
+            ++gene_it;
+        }
+        return gene;
+    }
+
+    return GetOverlappingGene (f1.GetLocation(), *scope);
+}
+
+
+static bool s_GeneXrefsDiffer (const CSeq_feat& f1, const CSeq_feat& f2, CScope *scope)
+{
+    CConstRef <CSeq_feat> g1 = s_GetGeneForFeature (f1, scope);
+    CConstRef <CSeq_feat> g2 = s_GetGeneForFeature (f2, scope);
+
+    if (!g1 && !g2) {
+        return false;
+    } else if (!g1 || !g2) {
+        return true;
+    } else if (g1 != g2) {
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+
+EDiagSev CValidError_bioseq::x_DupFeatSeverity 
+(const CSeq_feat& curr,
+ const CSeq_feat& prev, 
+ bool is_fruitfly, 
+ bool same_annot,
+ bool same_label)
+{
+    EDiagSev severity = eDiag_Error;
+    CSeqFeatData::ESubtype curr_subtype = curr.GetData().GetSubtype();
+
+    if ( curr_subtype == CSeqFeatData::eSubtype_pub          ||
+         curr_subtype == CSeqFeatData::eSubtype_region       ||
+         curr_subtype == CSeqFeatData::eSubtype_misc_feature ||
+         curr_subtype == CSeqFeatData::eSubtype_STS          ||
+         curr_subtype == CSeqFeatData::eSubtype_variation ) {
+        // lower severity for some features
+        severity = eDiag_Warning;
+    }
+
+    // if different CDS frames, lower to warning
+    if (curr_subtype == CSeqFeatData::eSubtype_cdregion) {
+        CCdregion::EFrame       curr_frame, prev_frame;
+        curr_frame = curr.GetData().GetCdregion().GetFrame();
+        prev_frame = prev.GetData().GetCdregion().GetFrame();
+        
+        if ( (curr_frame != CCdregion::eFrame_not_set  &&
+            curr_frame != CCdregion::eFrame_one)     ||
+            (prev_frame != CCdregion::eFrame_not_set  &&
+            prev_frame != CCdregion::eFrame_one) ) {
+            if ( curr_frame != prev_frame ) {
+                severity = eDiag_Warning;
+            }
+        }
+    }
+
+    if (same_annot) {
+        // lower severity for some sequences
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(curr.GetLocation());
+
+        CBioseq_set_Handle gps = GetGenProdSetParent (bsh);
+        if (gps || s_SpecialFlybaseIDs(*(bsh.GetCompleteBioseq()))) {
+            if (is_fruitfly) {
+                // curated fly source still has duplicate features
+                severity = eDiag_Warning;
+            }
+        } else {
+            severity = eDiag_Warning;
+        }
+        
+        if ( (prev.IsSetDbxref()  &&
+              IsFlybaseDbxrefs(prev.GetDbxref()))  || 
+             (curr.IsSetDbxref()  && 
+              IsFlybaseDbxrefs(curr.GetDbxref())) ) {
+            severity = eDiag_Error;
+        }
+        if (same_label) {
+            if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
+                severity = eDiag_Warning;
+            }
+        } else {
+            severity = eDiag_Warning;
+        }
+    } else {
+        /* not same annot */
+        if (same_label) {
+            if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
+                severity = eDiag_Warning;
+            }
+        } else {
+            severity = eDiag_Warning;
+        }
+    }
+
+    return severity;
+}
+
+
 void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, bool fruit_fly, const CBioseq& bioseq)
 {
     const CSeq_feat& feat1 = *(f1.GetSeq_feat());
@@ -4386,19 +4501,23 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, CSe
         if (s_IsSameStrand(feat1_loc, feat2_loc, *m_Scope)  &&
             Compare(feat1_loc, feat2_loc, m_Scope) == eSame) {
 
-            // get severity to use for this pair
-            EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly);
+            // same annot?
+            bool same_annot = s_IsSameSeqAnnot(f1, f2);
 
             // compare labels and comments
             bool same_label = s_AreFeatureLabelsSame (feat1, feat2, m_Scope);
+
+            // get severity to use for this pair
+            EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, same_annot, same_label);
 
             // Report duplicates
             if ( feat1_subtype == CSeqFeatData::eSubtype_region  &&
                 IsDifferentDbxrefs(feat1.GetDbxref(), feat2.GetDbxref()) ) {
                 // do not report if both have dbxrefs and they are 
                 // different.
-            } else if ( s_IsSameSeqAnnot(f1, f2) ) {
+            } else if ( same_annot ) {
                 if (same_label) {
+                    
                     PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                         "Duplicate feature", feat2);
                 } else if ( feat1_subtype != CSeqFeatData::eSubtype_pub ) {
@@ -4855,8 +4974,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                 }
             }
         }
-        if (is_nc || is_ac) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_MissingChromosome, "Missing chromosome qualifier on NC or AC RefSeq record",
+        if ((is_nc || is_ac) && ! is_prokaryote && ! is_organelle && ! has_chromosome) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingChromosome, "Missing chromosome qualifier on NC or AC RefSeq record",
 					 seq);
         }
     }
@@ -4947,7 +5066,7 @@ void CValidError_bioseq::ValidateMolInfoContext
         }
         if (is_synthetic_construct) {
             if (biomol != CMolInfo::eBiomol_other_genetic && !seq.IsAa()) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
+                PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
             }
         }
         if (is_artificial) {
@@ -5013,7 +5132,7 @@ void CValidError_bioseq::ValidateMolInfoContext
     } else {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType, "Molinfo-biomol unknown used", ctx, desc);
         if (is_synthetic_construct && !seq.IsAa()) {
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
         }
     }
 
