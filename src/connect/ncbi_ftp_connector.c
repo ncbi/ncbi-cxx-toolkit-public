@@ -583,7 +583,8 @@ static EIO_Status s_VT_Read
                 ||  (code != 225  &&  code != 226)) {
                 status = eIO_Unknown;
             }
-        } else if (status != eIO_Timeout)
+        }
+        if (status != eIO_Timeout)
             xxx->r_status = status;
     }
     return status;
