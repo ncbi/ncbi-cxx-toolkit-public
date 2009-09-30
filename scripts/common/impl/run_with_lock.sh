@@ -1,10 +1,17 @@
 #!/bin/sh
-if [ "x$1" = "x-base" ]; then
-    command=$2
-    shift 2
-else
-    command=`basename $1`
-fi
+# $Id$
+
+command=
+logfile=
+
+while :; do
+    case "$1" in
+        -base ) command=$2; shift 2 ;;
+        -log  ) logfile=$2; shift 2 ;;
+        *     ) break ;;
+    esac
+done
+: ${command=`basename "$1"`}
 
 clean_up () {
     rm -rf "$command.lock"
@@ -17,8 +24,18 @@ esac
 
 if "$get_lock" "$command" $$; then
     trap 'clean_up' 1 2 15
-    "$@"
-    status=$?
+    if [ -n "$logfile" ]; then
+        status_file=$command.lock/status
+        ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile"
+        if [ -s "$status_file" ]; then
+            status=`cat "$status_file"`
+        else
+            status=1
+        fi
+    else
+        "$@"
+        status=$?
+    fi
     clean_up
     exit $status
 else
