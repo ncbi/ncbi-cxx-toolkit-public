@@ -132,6 +132,7 @@ inline void CSparse_CI::x_InitSegment()
 void CSparse_CI::x_InitIterator()
 {
     _ASSERT(m_Coll);
+    _ASSERT( !m_Coll->empty() );
 
     bool first_gap = false, last_gap = false;
     if(m_Clip)   {
@@ -161,6 +162,7 @@ void CSparse_CI::x_InitIterator()
         } else {
             // pos is in the gap
             if(res.first == m_Coll->end())   {
+                _ASSERT(res.first != m_Coll->begin());
                 m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first - 1;
             } else {
                 m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first;

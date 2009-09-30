@@ -373,21 +373,28 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     buffer.erase();
 
     if(aln_range.GetLength() > 0)   {
+        const CPairwiseAln& pairwise_aln = *m_PairwiseAlns[row];
+        _ASSERT( !pairwise_aln.empty() );
+        if (pairwise_aln.empty()) {
+            string errstr = "Invalid (empty) row (" + NStr::IntToString(row) + ").  Seq id \"" +
+                GetSeqId(row).AsFastaString() + "\".";
+            NCBI_THROW(CAlnException, eInvalidRequest, errstr);
+        }
+
         CSeqVector& seq_vector = x_GetSeqVector(row);
         TSeqPos vec_size = seq_vector.size();
 
-        const int base_width = m_PairwiseAlns[row]->GetSecondBaseWidth();
+        const int base_width = pairwise_aln.GetSecondBaseWidth();
 
         // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
         size_t size = aln_range.GetLength();
         buffer.resize(size, ' ');
 
         // check whether we have a gap at start position
-        const CPairwiseAln& coll = *m_PairwiseAlns[row];
-        size_t prev_to_open = (coll.GetFirstFrom() > aln_range.GetFrom()) ? string::npos : 0;
+        size_t prev_to_open = (pairwise_aln.GetFirstFrom() > aln_range.GetFrom()) ? string::npos : 0;
 
         string s;
-        CSparse_CI it(coll, IAlnSegmentIterator::eSkipGaps, aln_range);
+        CSparse_CI it(pairwise_aln, IAlnSegmentIterator::eSkipGaps, aln_range);
 
         //LOG_POST_X(1, "GetAlnSeqString(" << row << ") ==========================================" );
         while (it)   {
@@ -448,7 +455,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
             ++it;
         }
         int fill_len = size - prev_to_open;
-        if(prev_to_open != string::npos  &&  fill_len > 0  &&  coll.GetFirstTo() > aln_range.GetTo()) {
+        if(prev_to_open != string::npos  &&  fill_len > 0  &&  pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
             // there is gap on the right
             buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
         }
@@ -464,7 +471,12 @@ CSparseAln::CreateSegmentIterator(TNumrow row,
                                   IAlnSegmentIterator::EFlags flag) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-
+    _ASSERT( !m_PairwiseAlns[row]->empty() );
+    if (m_PairwiseAlns[row]->empty()) {
+        string errstr = "Invalid (empty) row (" + NStr::IntToString(row) + ").  Seq id \"" +
+            GetSeqId(row).AsFastaString() + "\".";
+        NCBI_THROW(CAlnException, eInvalidRequest, errstr);
+    }
     return new CSparse_CI(*m_PairwiseAlns[row], flag, range);
 }
 
