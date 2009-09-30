@@ -45,32 +45,26 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
                            Int4  lut_word_length,
                            Int4* range)
 {
-    Int4 start = range[1];
-    /* for masked db, we use (length - word_length) instead */
-    for (; range[0] < subject->num_seq_ranges; (range[0])++) {
-        /* handle case where s_last is beyond a masked region */
-        if (range[2] + word_length > subject->seq_ranges[range[0]].left) {
-            range[2] = subject->seq_ranges[range[0]].left - word_length;
-            range[4] = range[2] + word_length;
-        }
-
-        /* if s_first is in a masked region, try the next one. */
-        if (range[1] + lut_word_length > subject->seq_ranges[range[0]].left) {
-            range[1] = subject->seq_ranges[range[0]].right + word_length - lut_word_length;
-            range[3] = range[1] - word_length + lut_word_length;
-            range[2] = subject->length - word_length;
-            range[4] = range[2] + word_length;
-            continue;
-        }
-
-        break;
-    } /* end for */
-
-    if (range[1] < start) range[1] = start;
-
-    if (range[1] + lut_word_length > subject->length) {
-        return FALSE;
+    /* no mask, or the last NA mask has been checked previously */
+    if (range[0] >= subject->num_seq_ranges) return (range[1] <= range[2]);
+      
+    /* the same range has not been consumed yet*/
+    if (range[1] + lut_word_length <= subject->seq_ranges[range[0]].left) {
+        range[3] = (range[0])? subject->seq_ranges[range[0]-1].right : 0;
+        range[4] = subject->seq_ranges[range[0]].left;
+        range[2] = range[4] - lut_word_length;
+        return TRUE;
     }
 
-    return TRUE;
+    range[0]++;
+    while (range[0] < subject->num_seq_ranges && 
+           subject->seq_ranges[range[0]-1].right + word_length > subject->seq_ranges[range[0]].left) {
+        range[0]++;
+    }
+    range[3] = subject->seq_ranges[range[0]-1].right;
+    range[4] = (range[0]<subject->num_seq_ranges)? subject->seq_ranges[range[0]].left : subject->length;
+    range[1] = range[3] + word_length - lut_word_length;
+    range[2] = range[4] - lut_word_length;
+
+    return (range[1] <= range[2]);
 }
