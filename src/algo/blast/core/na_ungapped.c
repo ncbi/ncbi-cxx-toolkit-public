@@ -874,7 +874,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         Int4 context = BSearchContextInfo(q_offset, query_info);
         Int4 context_i = query_info->contexts[context].query_offset;
         Int4 context_f = context_i + query_info->contexts[context].query_length;
-        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset - range[0]));
+        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset));
         q = q_start + q_offset;
         s = s_start + s_offset / COMPRESSION_RATIO;
         s_off = s_offset;
@@ -1034,7 +1034,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         Int4 context = BSearchContextInfo(q_offset, query_info);
         Int4 context_i = query_info->contexts[context].query_offset;
         Int4 context_f = context_i + query_info->contexts[context].query_length;
-        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset - range[0]));
+        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset));
         q = q_start + q_offset;
         s = s_start + s_offset / COMPRESSION_RATIO;
 
@@ -1349,7 +1349,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            of the query has extra pad bytes before q[0] */
 
         extra_bases = MIN(word_length - lut_word_length + extra_bases, 
-                          MIN(q_off - context_i, s_off - range[0]));
+                          MIN(q_off - context_i, s_off));
         s_start = s_off;
         q_start = q_off;
         while (extended_left < extra_bases) {
@@ -1486,8 +1486,8 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                     ? s_BlastSmallNaExtend
                     : s_BlastNaExtend;
         }
+        /* generic scanner permits any (non-aligned) starting offset */
         scan_range[1] = word_length - lut_word_length;
-        scan_range[2] = subject->length - word_length; 
     }
 
     ASSERT(scansub);
