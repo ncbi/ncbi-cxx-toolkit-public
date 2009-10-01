@@ -1173,7 +1173,7 @@ static bool s_ByAccVerLen(const CAlignModel& a, const CAlignModel& b)
         return a.ID() < b.ID(); // to make sort deterministic
     }
 
-static int ExonLen(const CGeneModel& a)
+static int s_ExonLen(const CGeneModel& a)
     {
         int len = 0;
         ITERATE(CGeneModel::TExons, e, a.Exons())
