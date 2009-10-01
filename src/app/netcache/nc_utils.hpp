@@ -133,6 +133,114 @@ private:
 };
 
 
+/// Type to use for bit masks
+typedef size_t  TNCBitMaskElem;
+/// Number of bits in one element of type TNCBitMaskElem
+static const unsigned int kNCMaskElemSize = SIZEOF_SIZE_T * 8;
+
+/// Base class for bit masks of any size.
+/// Bit mask is a set of bits with indexes starting with 0.
+/// General template class implements functionality suitable for working with
+/// bit masks of any size although for special cases of 1 or 2 elements it can
+/// be optimized (see template's specializations) and for now only
+/// 1- and 2-elements specializations are used in NetCache.
+///
+/// @param num_elems
+///   Number of elements of type TNCBitMaskElem that class should contain.
+template <int num_elems>
+class CNCBitMaskBase
+{
+public:
+    /// Empty constructor.
+    /// All initialization is made via Initialize() method.
+    CNCBitMaskBase            (void);
+    /// Initialize bit mask with all zeros.
+    void         Initialize   (void);
+    /// Check if bit with given number is set.
+    bool         IsBitSet     (unsigned int bit_num);
+    /// Invert value of bits_cnt bits starting from start_bit.
+    void         InvertBits   (unsigned int start_bit, unsigned int bits_cnt);
+    /// Get number of bits set in the mask
+    unsigned int GetCntSet    (void);
+    /// Get index of lowest set bit with index greater or equal to bit_num.
+    /// If there's no such bit in the mask then return -1.
+    int          GetClosestSet(unsigned int bit_num);
+
+private:
+    /// Calculate coordinates of the bit with index bit_index (calculate index
+    /// of byte it located in and index of bit in that byte.
+    void x_CalcCoords(unsigned int  bit_index,
+                      unsigned int& byte_num,
+                      unsigned int& bit_num);
+
+    /// Bit mask itself
+    TNCBitMaskElem m_Mask[num_elems];
+};
+
+/// Optimized specialization of bit mask that fits entirely in 1 element of
+/// type TNCBitMaskElem.
+template <>
+class CNCBitMaskBase<1>
+{
+public:
+    CNCBitMaskBase            (void);
+    void         Initialize   (void);
+    bool         IsBitSet     (unsigned int bit_num);
+    void         InvertBits   (unsigned int start_bit, unsigned int bits_cnt);
+    unsigned int GetCntSet    (void);
+    int          GetClosestSet(unsigned int bit_num);
+
+private:
+    TNCBitMaskElem m_Mask;
+};
+
+/// Optimized specialization of bit mask that fits entirely in 2 elements of
+/// type TNCBitMaskElem.
+template <>
+class CNCBitMaskBase<2>
+{
+public:
+    CNCBitMaskBase            (void);
+    void         Initialize   (void);
+    bool         IsBitSet     (unsigned int bit_num);
+    void         InvertBits   (unsigned int start_bit, unsigned int bits_cnt);
+    unsigned int GetCntSet    (void);
+    int          GetClosestSet(unsigned int bit_num);
+
+private:
+    TNCBitMaskElem m_Mask[2];
+};
+
+/// Class for working with bit masks containing given number of bits.
+template <int num_bits>
+class CNCBitMask : public CNCBitMaskBase<(num_bits + kNCMaskElemSize - 1)
+                                         / kNCMaskElemSize>
+{
+    // Expression here should be a copy of expression in declaration.
+    typedef CNCBitMaskBase<(num_bits + kNCMaskElemSize - 1)
+                           / kNCMaskElemSize>                  TBase;
+
+public:
+    /// Empty constructor.
+    /// All initialization happens in Initialize().
+    CNCBitMask                (void);
+    /// Initialize bit mask.
+    ///
+    /// @param init_value
+    ///   Value for initialization of all bits. If this value is 0 then all
+    ///   bits are initialized with 0, otherwise all bits are initialized
+    ///   with 1.
+    void         Initialize   (unsigned int init_value);
+
+    // Redirections to methods of base class performing additional checks in
+    // Debug mode.
+    bool         IsBitSet     (unsigned int bit_num);
+    void         InvertBits   (unsigned int start_bit, unsigned int bits_cnt);
+    unsigned int GetCntSet    (void);
+    int          GetClosestSet(unsigned int bit_num);
+};
+
+
 /// Synonyms for TLS-related functions on different platforms
 #ifdef NCBI_OS_MSWIN
    typedef DWORD          TNCTlsKey;
@@ -465,6 +573,255 @@ CPrintTextProxy::operator<< (TEndlType)
     m_LineStream.Clear();
 
     return *this;
+}
+
+
+template <int num_elems>
+inline
+CNCBitMaskBase<num_elems>::CNCBitMaskBase(void)
+{}
+
+template <int num_elems>
+inline void
+CNCBitMaskBase<num_elems>::Initialize(void)
+{
+    memset(m_Mask, 0, sizeof(m_Mask));
+}
+
+template <int num_elems>
+inline void
+CNCBitMaskBase<num_elems>::x_CalcCoords(unsigned int  bit_index,
+                                        unsigned int& byte_num,
+                                        unsigned int& bit_num)
+{
+    byte_num = bit_index / kNCMaskElemSize;
+    bit_num  = bit_index - byte_num * kNCMaskElemSize;
+}
+
+template <int num_elems>
+inline bool
+CNCBitMaskBase<num_elems>::IsBitSet(unsigned int bit_num)
+{
+    unsigned int byte_num, bit_index;
+    x_CalcCoords(bit_num, byte_num, bit_index);
+    return (m_Mask[byte_num] & (TNCBitMaskElem(1) << bit_index)) != 0;
+}
+
+template <int num_elems>
+inline void
+CNCBitMaskBase<num_elems>::InvertBits(unsigned int start_bit,
+                                      unsigned int bits_cnt)
+{
+    unsigned int byte_num, bit_num;
+    x_CalcCoords(start_bit, byte_num, bit_num);
+    do {
+        TNCBitMaskElem inv_mask;
+        if (bits_cnt >= kNCMaskElemSize)
+            inv_mask = TNCBitMaskElem(-1);
+        else
+            inv_mask = (TNCBitMaskElem(1) << bits_cnt) - 1;
+        m_Mask[byte_num] ^= inv_mask << bit_num;
+        unsigned int num_inved = kNCMaskElemSize - bit_num;
+        bits_cnt = (bits_cnt > num_inved? bits_cnt - num_inved: 0);
+        ++byte_num;
+        bit_num = 0;
+    }
+    while (bits_cnt != 0);
+}
+
+template <int num_elems>
+inline unsigned int
+CNCBitMaskBase<num_elems>::GetCntSet(void)
+{
+    unsigned int cnt_set = 0;
+    for (unsigned int i = 0; i < num_elems; ++i) {
+        cnt_set += g_GetBitsCnt(m_Mask[i]);
+    }
+    return cnt_set;
+}
+
+template <int num_elems>
+inline int
+CNCBitMaskBase<num_elems>::GetClosestSet(unsigned int bit_num)
+{
+    unsigned int byte_num, bit_index;
+    x_CalcCoords(bit_num, byte_num, bit_index);
+    TNCBitMaskElem mask = 0;
+    if (bit_index < kNCMaskElemSize - 1) {
+        mask = m_Mask[byte_num] & ~((TNCBitMaskElem(1) << bit_index) - 1);
+    }
+    if (mask == 0) {
+        ++byte_num;
+        while (byte_num < kNCMaskElemSize  &&  (mask = m_Mask[byte_num]) == 0)
+        {
+            ++byte_num;
+        }
+    }
+    if (mask == 0) {
+        return -1;
+    }
+    else {
+        return g_GetLeastSetBit(mask) + byte_num * kNCMaskElemSize;
+    }
+}
+
+
+inline
+CNCBitMaskBase<1>::CNCBitMaskBase(void)
+{}
+
+inline void
+CNCBitMaskBase<1>::Initialize(void)
+{
+    m_Mask = 0;
+}
+
+inline bool
+CNCBitMaskBase<1>::IsBitSet(unsigned int bit_num)
+{
+    return (m_Mask & (TNCBitMaskElem(1) << bit_num)) != 0;
+}
+
+inline void
+CNCBitMaskBase<1>::InvertBits(unsigned int start_bit,
+                              unsigned int bits_cnt)
+{
+    TNCBitMaskElem inv_mask = (TNCBitMaskElem(1) << bits_cnt) - 1;
+    m_Mask ^= inv_mask << start_bit;
+}
+
+inline unsigned int
+CNCBitMaskBase<1>::GetCntSet(void)
+{
+    return g_GetBitsCnt(m_Mask);
+}
+
+inline int
+CNCBitMaskBase<1>::GetClosestSet(unsigned int bit_num)
+{
+    TNCBitMaskElem mask = m_Mask & ~((TNCBitMaskElem(1) << bit_num) - 1);
+    if (mask == 0) {
+        return -1;
+    }
+    else {
+        return g_GetLeastSetBit(mask);
+    }
+}
+
+
+inline
+CNCBitMaskBase<2>::CNCBitMaskBase(void)
+{}
+
+inline void
+CNCBitMaskBase<2>::Initialize(void)
+{
+    m_Mask[0] = m_Mask[1] = 0;
+}
+
+inline bool
+CNCBitMaskBase<2>::IsBitSet(unsigned int bit_num)
+{
+    unsigned int byte_num = (bit_num >= kNCMaskElemSize? 1: 0);
+    return (m_Mask[byte_num] & (TNCBitMaskElem(1) << bit_num)) != 0;
+}
+
+inline void
+CNCBitMaskBase<2>::InvertBits(unsigned int start_bit,
+                              unsigned int bits_cnt)
+{
+    TNCBitMaskElem inv_mask;
+    if (start_bit < kNCMaskElemSize) {
+        if (bits_cnt >= kNCMaskElemSize)
+            inv_mask = TNCBitMaskElem(-1);
+        else
+            inv_mask = (TNCBitMaskElem(1) << bits_cnt) - 1;
+        m_Mask[0] ^= inv_mask << start_bit;
+        unsigned int last_bit = start_bit + bits_cnt;
+        if (last_bit > kNCMaskElemSize) {
+            inv_mask = (TNCBitMaskElem(1) << (last_bit - kNCMaskElemSize)) - 1;
+            m_Mask[1] ^= inv_mask;
+        }
+    }
+    else {
+        inv_mask = (TNCBitMaskElem(1) << bits_cnt) - 1;
+        m_Mask[1] ^= inv_mask << (start_bit - kNCMaskElemSize);
+    }
+}
+
+inline unsigned int
+CNCBitMaskBase<2>::GetCntSet(void)
+{
+    return g_GetBitsCnt(m_Mask[0]) + g_GetBitsCnt(m_Mask[1]);
+}
+
+inline int
+CNCBitMaskBase<2>::GetClosestSet(unsigned int bit_num)
+{
+    TNCBitMaskElem mask;
+    if (bit_num < kNCMaskElemSize) {
+        mask = m_Mask[0] & ~((TNCBitMaskElem(1) << bit_num) - 1);
+        if (mask != 0)
+            return g_GetLeastSetBit(mask);
+        mask = m_Mask[1];
+    }
+    else {
+        unsigned int second_num = bit_num - kNCMaskElemSize;
+        mask = m_Mask[1] & ~((TNCBitMaskElem(1) << (second_num)) - 1);
+    }
+    if (mask == 0) {
+        return -1;
+    }
+    else {
+        return g_GetLeastSetBit(mask) + kNCMaskElemSize;
+    }
+}
+
+
+template <int num_bits>
+inline
+CNCBitMask<num_bits>::CNCBitMask(void)
+{}
+
+template <int num_bits>
+inline void
+CNCBitMask<num_bits>::Initialize(unsigned int init_value)
+{
+    TBase::Initialize();
+    if (init_value)
+        InvertBits(0, num_bits);
+}
+
+template <int num_bits>
+inline bool
+CNCBitMask<num_bits>::IsBitSet(unsigned int bit_num)
+{
+    _ASSERT(bit_num < num_bits);
+    return TBase::IsBitSet(bit_num);
+}
+
+template <int num_bits>
+inline void
+CNCBitMask<num_bits>::InvertBits(unsigned int start_bit,
+                                 unsigned int bits_cnt)
+{
+    _ASSERT(start_bit + bits_cnt <= num_bits);
+    TBase::InvertBits(start_bit, bits_cnt);
+}
+
+template <int num_bits>
+inline unsigned int
+CNCBitMask<num_bits>::GetCntSet(void)
+{
+    return TBase::GetCntSet();
+}
+
+template <int num_bits>
+inline int
+CNCBitMask<num_bits>::GetClosestSet(unsigned int bit_num)
+{
+    _ASSERT(bit_num < num_bits);
+    return TBase::GetClosestSet(bit_num);
 }
 
 

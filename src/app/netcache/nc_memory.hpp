@@ -97,11 +97,6 @@ static const size_t kNCMMAlignMask           = ~(kNCMMAlignSize - 1);
 /// contention between threads for internal data structures.
 static const unsigned int kNCMMMaxThreadsCnt = 25;
 
-/// Type to use for bit masks
-typedef size_t  TNCMMBitMask;
-/// Number of bits in one element of type TNCMMBitMask
-static const unsigned int kNCMMCntBitsInMask = SIZEOF_SIZE_T * 8;
-
 
 /// Object with one page from database. It contains page data managed by
 /// SQLite along with meta-information to support LRU list of database cache
@@ -453,6 +448,8 @@ struct SNCMMChainInfo
     /// Emptiness grade of the slab where chain is located
     unsigned int    slab_grade;
 
+    /// Initialize data with zeros
+    void Initialize(void);
     /// Copy information about chain from the chain itself
     void AssignFromChain(CNCMMFreeChunk* chain);
 };
@@ -463,10 +460,6 @@ static const size_t kNCMMSlabSize = kNCMMAlignSize;
 /// Number of memory chunks that will fit inside one slab.
 static const unsigned int kNCMMCntChunksInSlab =
                     static_cast<unsigned int>(kNCMMSlabSize / kNCMMChunkSize);
-/// Number of TNCMMBitMask elements that will be able to contain bits for all
-/// chunks inside one slab.
-static const unsigned int kNCMMSlabMaskSize    =
-         (kNCMMCntChunksInSlab + kNCMMCntBitsInMask - 1) / kNCMMCntBitsInMask;
 
 
 /// Base class for memory slab containing all meta-information about it.
@@ -484,7 +477,7 @@ protected:
     CFastMutex   m_ObjLock;
     /// Bit mask showing which chunks in the slab are free
     /// (1 - free, 0 - occupied).
-    TNCMMBitMask m_FreeMask[kNCMMSlabMaskSize];
+    CNCBitMask<kNCMMCntChunksInSlab> m_FreeMask;
     /// Emptiness grade of the slab: the more chunks is occupied the less this
     /// number with 0 meaning that all chunks are occupied.
     unsigned int m_EmptyGrade;
@@ -534,11 +527,6 @@ private:
     unsigned int x_GetChunkIndex(void* mem_ptr);
     /// Calculate new emptiness grade for the slab
     unsigned int x_CalcEmptyGrade(void);
-    /// Invert bits in the mask of free chunks. bits_cnt bits are inverted
-    /// starting from start_index bit.
-    void x_InvertFreeMask(unsigned int start_index, unsigned int bits_cnt);
-    /// Check if chunk with the specified index is free.
-    bool x_IsChunkFree(unsigned int chunk_index);
 
 
     /// Data of the slab - set of chunks it consists of.
@@ -623,14 +611,9 @@ public:
     /// Set the pool this set will belong to
     void SetPool(CNCMMSizePool* pool);
 
-    /// Check if this set is in the pool's list of sets with given list head
-    bool IsInPoolList(CNCMMBlocksSet*& list_head);
-    /// Remove this set from the pool's list of sets with given list head
-    void RemoveFromPoolList(CNCMMBlocksSet*& list_head);
-    /// Add this set to the pool's list of sets with given list head
-    void AddToPoolList(CNCMMBlocksSet*& list_head);
-
 private:
+    friend class CNCMMSizePool;
+
     /// Prohibit accidental use of non-implemented methods.
     CNCMMBlocksSet(const CNCMMBlocksSet&);
     CNCMMBlocksSet& operator= (const CNCMMBlocksSet&);
@@ -933,10 +916,6 @@ private:
     /// Initialize storage object.
     /// Method should be called only once at the very beginning.
     void x_InitInstance(void);
-    /// Get the index of the available chain which index is nearest to the
-    /// given one. Return TRUE if some available chain was found, FALSE if no
-    /// chains are available for such index.
-    bool x_CalcNearestFree(unsigned int& chain_index);
     /// Find free chain with size equal or greater than the given min_size.
     /// Information about chain is filled into given structure. TRUE is
     /// returned if chain is found, FALSE otherwise.
@@ -996,10 +975,10 @@ private:
     /// Mutex protecting access to the object
     SNCFastMutex    m_ObjLock;
     /// Bit mask containing information about chain sizes that exist in the
-    /// storage. If bit with index n is set then chain with size n + 1 exists.
-    TNCMMBitMask    m_ExistMask[kNCMMSlabMaskSize];
+    /// storage. If bit with index n is set then chain with size n exists.
+    CNCBitMask<kNCMMCntChunksInSlab + 1> m_ExistMask;
     /// Lists of chains grouped by size (number of chunks in them).
-    CNCMMFreeChunk* m_Chains[kNCMMCntChunksInSlab];
+    CNCMMFreeChunk* m_Chains[kNCMMCntChunksInSlab + 1];
 
     /// Instances of storage for each value of slab's emptiness grade.
     static CNCMMReserve sm_Instances[kNCMMSlabEmptyGrades];
@@ -1088,6 +1067,10 @@ private:
     /// Deallocate block belonging to given blocks set from this instance
     /// of blocks pool
     void x_DeallocateBlock(void* mem_ptr, CNCMMBlocksSet* bl_set);
+    /// Add blocks set to the pool's list of sets with given index
+    void x_AddSetToList(CNCMMBlocksSet* bl_set, unsigned int list_grade);
+    /// Remove set from the pool's list of sets with given index
+    void x_RemoveSetFromList(CNCMMBlocksSet* bl_set, unsigned int list_grade);
     /// Check if emptiness grade of the given blocks set is changed and is
     /// different from given old value. If grade is changed then move the set
     /// to appropriate place in m_Sets array.
@@ -1109,6 +1092,10 @@ private:
     /// Each element of the array is double-linked list of sets with the same
     /// emptiness grade.
     CNCMMBlocksSet* m_Sets[kNCMMTotalEmptyGrades + 1];
+    /// Mask for non-empty lists in m_Sets.
+    /// If bit with some index in the mask is 1 then there are some blocks
+    /// sets with emptiness grade equal to this index in m_Sets.
+    CNCBitMask<kNCMMTotalEmptyGrades> m_ExistMask;
 
     /// Getter providing pools on thread-by-thread basis
     static CNCMMSizePool_Getter sm_Getter;

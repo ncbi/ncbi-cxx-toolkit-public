@@ -202,17 +202,6 @@ s_GetGradeValue(unsigned int cur_cnt, unsigned int cnt_per_grade)
     return (cur_cnt + cnt_per_grade - 1) / cnt_per_grade;
 }
 
-/// Get coordinates of the bit (byte number and bit number in that byte) when
-/// given total index of the bit in the mask.
-static inline void
-s_CalcMaskCoords(unsigned int  bit_index,
-                 unsigned int& byte_num,
-                 unsigned int& bit_num)
-{
-    byte_num = bit_index / kNCMMCntBitsInMask;
-    bit_num  = bit_index - byte_num * kNCMMCntBitsInMask;
-}
-
 
 inline void
 CNCMMCentral::SetMemLimit(size_t mem_size)
@@ -563,11 +552,22 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
               << m_SetsCreated[i]   << " (+sets), "
               << m_SetsDeleted[i]   << " (-sets)" << endl;
     }
+    Uint8 other_alloced = 0, other_freed = 0;
     for (unsigned int i = 1; i <= kNCMMCntChunksInSlab; ++i) {
-        proxy << (i * kNCMMChunkSize - kNCMMSetBaseSize) << " - "
-              << m_ChainsAlloced[i] << " (+blocks), "
-              << m_ChainsFreed[i]   << " (-blocks)" << endl;
+        // A bit of hard coding - NetCache doesn't allocate other chain sizes
+        // anyway.
+        if (i == 1  ||  i == 2  ||  i == kNCMMCntChunksInSlab - 2) {
+            proxy << (i * kNCMMChunkSize - kNCMMSetBaseSize) << " - "
+                  << m_ChainsAlloced[i] << " (+blocks), "
+                  << m_ChainsFreed[i]   << " (-blocks)" << endl;
+        }
+        else {
+            other_alloced += m_ChainsAlloced[i];
+            other_freed   += m_ChainsFreed  [i];
+        }
     }
+    proxy << "other - " << other_alloced << " (+blocks), "
+                        << other_freed   << " (-blocks)" << endl;
 }
 
 
@@ -877,6 +877,14 @@ CNCMMFreeChunk::ConstructChain(void* mem_ptr, unsigned int chain_size)
     return chain_start;
 }
 
+
+inline void
+SNCMMChainInfo::Initialize(void)
+{
+    start      = NULL;
+    size       = 0;
+    slab_grade = 0;
+}
 
 inline void
 SNCMMChainInfo::AssignFromChain(CNCMMFreeChunk* chain)
@@ -1300,41 +1308,6 @@ CNCMMBlocksSet::SetPool(CNCMMSizePool* pool)
     m_Pool = pool;
 }
 
-inline bool
-CNCMMBlocksSet::IsInPoolList(CNCMMBlocksSet*& list_head)
-{
-    return m_PrevInPool  ||  list_head == this;
-}
-
-inline void
-CNCMMBlocksSet::RemoveFromPoolList(CNCMMBlocksSet*& list_head)
-{
-    if (!IsInPoolList(list_head))
-        return;
-
-    if (m_PrevInPool) {
-        m_PrevInPool->m_NextInPool = m_NextInPool;
-    }
-    else {
-        list_head = m_NextInPool;
-    }
-    if (m_NextInPool) {
-        m_NextInPool->m_PrevInPool = m_PrevInPool;
-    }
-    m_PrevInPool = m_NextInPool = NULL;
-}
-
-inline void
-CNCMMBlocksSet::AddToPoolList(CNCMMBlocksSet*& list_head)
-{
-    _ASSERT(!IsInPoolList(list_head));
-
-    m_NextInPool = list_head;
-    if (list_head)
-        list_head->m_PrevInPool = this;
-    list_head = this;
-}
-
 inline void**
 CNCMMBlocksSet::x_GetFirstFreePtr(void)
 {
@@ -1466,43 +1439,6 @@ CNCMMSlab::x_CalcEmptyGrade(void)
     return m_EmptyGrade;
 }
 
-inline void
-CNCMMSlab::x_InvertFreeMask(unsigned int start_index, unsigned int bits_cnt)
-{
-    _ASSERT(start_index + bits_cnt <= kNCMMCntChunksInSlab);
-    unsigned int byte_num, bit_num;
-    s_CalcMaskCoords(start_index, byte_num, bit_num);
-    do {
-        TNCMMBitMask inv_mask;
-        if (bits_cnt >= kNCMMCntBitsInMask)
-            inv_mask = TNCMMBitMask(-1);
-        else
-            inv_mask = (TNCMMBitMask(1) << bits_cnt) - 1;
-        m_FreeMask[byte_num] ^= inv_mask << bit_num;
-        unsigned int num_inved = kNCMMCntBitsInMask - bit_num;
-        bits_cnt = (bits_cnt > num_inved? bits_cnt - num_inved: 0);
-        ++byte_num;
-        bit_num = 0;
-    }
-    while (bits_cnt != 0);
-
-#ifdef _DEBUG
-    unsigned int cnt_free = 0;
-    for (unsigned int i = 0; i < kNCMMSlabMaskSize; ++i) {
-        cnt_free += g_GetBitsCnt(m_FreeMask[i]);
-    }
-    _ASSERT(m_CntFree == cnt_free);
-#endif
-}
-
-inline bool
-CNCMMSlab::x_IsChunkFree(unsigned int chunk_index)
-{
-    unsigned int byte_num, bit_num;
-    s_CalcMaskCoords(chunk_index, byte_num, bit_num);
-    return (m_FreeMask[byte_num] & (TNCMMBitMask(1) << bit_num)) != 0;
-}
-
 inline unsigned int
 CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
 {
@@ -1511,7 +1447,7 @@ CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
     _ASSERT(m_CntFree >= chain.size);
     m_CntFree -= chain.size;
     x_CalcEmptyGrade();
-    x_InvertFreeMask(x_GetChunkIndex(chain.start), chain.size);
+    m_FreeMask.InvertBits(x_GetChunkIndex(chain.start), chain.size);
     return m_EmptyGrade;
 }
 
@@ -1529,13 +1465,15 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
     chain->start->MarkChain(chain->size, chain->slab_grade);
 
     unsigned int chain_index = x_GetChunkIndex(chain->start);
-    x_InvertFreeMask(chain_index, chain->size);
+    m_FreeMask.InvertBits(chain_index, chain->size);
 
-    if (chain_index != 0  &&  x_IsChunkFree(chain_index - 1)) {
+    if (chain_index != 0  &&  m_FreeMask.IsBitSet(chain_index - 1)) {
         chain_left->AssignFromChain(&m_Chunks[chain_index - 1]);
     }
     unsigned int next_index = chain_index + chain->size;
-    if (next_index < kNCMMCntChunksInSlab  &&  x_IsChunkFree(next_index)) {
+    if (next_index < kNCMMCntChunksInSlab
+        &&  m_FreeMask.IsBitSet(next_index))
+    {
         chain_right->AssignFromChain(&m_Chunks[next_index]);
     }
 }
@@ -1545,8 +1483,7 @@ CNCMMSlab::CNCMMSlab(void)
 {
     m_CntFree    = kNCMMCntChunksInSlab;
     m_EmptyGrade = kNCMMSlabEmptyGrades - 1;
-    memset(m_FreeMask, 0, sizeof(m_FreeMask));
-    x_InvertFreeMask(0, kNCMMCntChunksInSlab);
+    m_FreeMask.Initialize(1);
     CNCMMReserve::IntroduceChain(&m_Chunks[0], kNCMMCntChunksInSlab);
     CNCMMStats::SlabCreated();
 }
@@ -1731,7 +1668,7 @@ inline void
 CNCMMReserve::x_InitInstance(void)
 {
     m_ObjLock.InitializeDynamic();
-    memset(m_ExistMask, 0, sizeof(m_ExistMask));
+    m_ExistMask.Initialize(0);
     memset(m_Chains, 0, sizeof(m_Chains));
 }
 
@@ -1743,37 +1680,11 @@ CNCMMReserve::Initialize(void)
     }
 }
 
-inline bool
-CNCMMReserve::x_CalcNearestFree(unsigned int& chain_index)
-{
-    unsigned int byte_num, bit_num;
-    s_CalcMaskCoords(chain_index, byte_num, bit_num);
-    TNCMMBitMask mask = 0;
-    if (bit_num < kNCMMCntBitsInMask - 1) {
-        mask = m_ExistMask[byte_num] & ~((TNCMMBitMask(1) << bit_num) - 1);
-    }
-    if (mask == 0) {
-        ++byte_num;
-        while (byte_num < kNCMMSlabMaskSize
-               &&  (mask = m_ExistMask[byte_num]) == 0)
-        {
-            ++byte_num;
-        }
-    }
-    if (mask != 0) {
-        chain_index = g_GetLeastSetBit(mask) + byte_num * kNCMMCntBitsInMask;
-        return true;
-    }
-    return false;
-}
-
 inline void
 CNCMMReserve::x_MarkListIfEmpty(unsigned int list_index)
 {
     if (!m_Chains[list_index]) {
-        unsigned int byte_num, bit_num;
-        s_CalcMaskCoords(list_index, byte_num, bit_num);
-        m_ExistMask[byte_num] ^= (TNCMMBitMask(1) << bit_num);
+        m_ExistMask.InvertBits(list_index, 1);
     }
 }
 
@@ -1782,9 +1693,8 @@ CNCMMReserve::Link(const SNCMMChainInfo& chain)
 {
     CFastMutexGuard guard(m_ObjLock);
 
-    unsigned int chain_index = chain.size - 1;
-    x_MarkListIfEmpty(chain_index);
-    CNCMMFreeChunk*& list_head = m_Chains[chain_index];
+    x_MarkListIfEmpty(chain.size);
+    CNCMMFreeChunk*& list_head = m_Chains[chain.size];
 
     chain.start->m_NextChain = list_head;
     if (list_head)
@@ -1795,8 +1705,7 @@ CNCMMReserve::Link(const SNCMMChainInfo& chain)
 inline void
 CNCMMReserve::x_Unlink(const SNCMMChainInfo& chain)
 {
-    unsigned int chain_index        = chain.size - 1;
-    CNCMMFreeChunk*& list_head      = m_Chains[chain_index];
+    CNCMMFreeChunk*& list_head = m_Chains[chain.size];
     _ASSERT(chain.start->m_PrevChain  ||  list_head == chain.start);
 
     if (chain.start->m_PrevChain) {
@@ -1804,7 +1713,7 @@ CNCMMReserve::x_Unlink(const SNCMMChainInfo& chain)
     }
     else {
         list_head = chain.start->m_NextChain;
-        x_MarkListIfEmpty(chain_index);
+        x_MarkListIfEmpty(chain.size);
     }
     if (chain.start->m_NextChain)
         chain.start->m_NextChain->m_PrevChain = chain.start->m_PrevChain;
@@ -1816,7 +1725,7 @@ CNCMMReserve::UnlinkIfExist(const SNCMMChainInfo& chain)
 {
     CFastMutexGuard guard(m_ObjLock);
 
-    CNCMMFreeChunk* chain_in_pool = m_Chains[chain.size - 1];
+    CNCMMFreeChunk* chain_in_pool = m_Chains[chain.size];
     while (chain_in_pool  &&  chain_in_pool != chain.start) {
         chain_in_pool = chain_in_pool->m_NextChain;
     }
@@ -1829,17 +1738,19 @@ CNCMMReserve::UnlinkIfExist(const SNCMMChainInfo& chain)
 
 inline bool
 CNCMMReserve::x_FindFreeChain(unsigned int    min_size,
-                                   SNCMMChainInfo* chain)
+                              SNCMMChainInfo* chain)
 {
-    unsigned int chain_index = min_size - 1;
-    if (!m_Chains[chain_index]) {
-        if (!x_CalcNearestFree(chain_index)) {
+    unsigned int chain_size = min_size;
+    if (!m_Chains[chain_size]) {
+        int new_size = m_ExistMask.GetClosestSet(chain_size);
+        if (new_size == -1) {
             return false;
         }
+        chain_size = static_cast<unsigned int>(new_size);
     }
-    _ASSERT(m_Chains[chain_index]);
-    chain->start = m_Chains[chain_index];
-    chain->size = chain_index + 1;
+    _ASSERT(m_Chains[chain_size]);
+    chain->start = m_Chains[chain_size];
+    chain->size = chain_size;
     return true;
 }
 
@@ -1912,7 +1823,9 @@ CNCMMReserve::FillChunksFromChains(CNCMMFreeChunk** chunk_ptrs,
     unsigned int cnt_chains = 0, cnt_chunks = 0;
     while (max_cnt > 0  &&  cur_chain.start != NULL) {
         CNCMMFreeChunk* next_start = cur_chain.start->m_NextChain;
-        chain_ptrs[cnt_chains++] = cur_chain;
+        SNCMMChainInfo& saved_chain = chain_ptrs[cnt_chains++];
+        saved_chain.start = cur_chain.start;
+        saved_chain.size  = cur_chain.size;
         CNCMMFreeChunk* chunk = cur_chain.start;
         unsigned int cnt_in_chain = 0;
         while (cnt_in_chain < cur_chain.size  &&  max_cnt > 0) {
@@ -1928,8 +1841,8 @@ CNCMMReserve::FillChunksFromChains(CNCMMFreeChunk** chunk_ptrs,
     if (cur_chain.start) {
         cur_chain.start->m_PrevChain = NULL;
     }
-    m_Chains[cur_chain.size - 1] = cur_chain.start;
-    x_MarkListIfEmpty(cur_chain.size - 1);
+    m_Chains[cur_chain.size] = cur_chain.start;
+    x_MarkListIfEmpty(cur_chain.size);
     return cnt_chunks;
 }
 
@@ -1939,6 +1852,7 @@ CNCMMReserve::GetChain(unsigned int chain_size)
     for (;;) {
         for (unsigned int i = 1; i < kNCMMSlabEmptyGrades; ++i) {
             SNCMMChainInfo chain;
+            chain.Initialize();
             if (sm_Instances[i].x_GetChain(chain_size, &chain)) {
                 x_OccupyChain(chain, chain_size);
                 chain.start->DestroyChain(chain_size);
@@ -1975,9 +1889,10 @@ CNCMMReserve::DumpChain(void* chain_ptr, unsigned int chain_size)
     _ASSERT(chain_size <= kNCMMCntChunksInSlab);
 
     SNCMMChainInfo chain, chain_left, chain_right;
-    chain_left.start = chain_right.start = NULL;
-    chain.size       = chain_size;
-    chain.start      = CNCMMFreeChunk::ConstructChain(chain_ptr, chain_size);
+    chain_left .Initialize();
+    chain_right.Initialize();
+    chain.size  = chain_size;
+    chain.start = CNCMMFreeChunk::ConstructChain(chain_ptr, chain_size);
     x_MarkChainFree(&chain, &chain_left, &chain_right);
     if (chain_left.start) {
         x_MergeChainIfValid(chain_left, chain);
@@ -2150,9 +2065,9 @@ inline
 CNCMMBigBlockSlab::CNCMMBigBlockSlab(size_t big_block_size)
     : m_BlockSet(big_block_size)
 {
-    m_CntFree         = 0;
-    m_EmptyGrade      = 0;
-    memset(m_FreeMask, 0, sizeof(m_FreeMask));
+    m_CntFree    = 0;
+    m_EmptyGrade = 0;
+    m_FreeMask.Initialize(0);
     CNCMMStats::BigBlockAlloced(big_block_size);
 }
 
@@ -2200,10 +2115,49 @@ CNCMMSizePool_Getter::GetMainPool(unsigned int size_index)
 
 
 inline void
+CNCMMSizePool::x_RemoveSetFromList(CNCMMBlocksSet* bl_set,
+                                   unsigned int    list_grade)
+{
+    CNCMMBlocksSet*& list_head = m_Sets[list_grade];
+    if (!bl_set->m_PrevInPool  &&  list_head != bl_set)
+        return;
+
+    if (bl_set->m_PrevInPool) {
+        bl_set->m_PrevInPool->m_NextInPool = bl_set->m_NextInPool;
+    }
+    else {
+        list_head = bl_set->m_NextInPool;
+        if (!list_head)
+            m_ExistMask.InvertBits(list_grade, 1);
+    }
+    if (bl_set->m_NextInPool) {
+        bl_set->m_NextInPool->m_PrevInPool = bl_set->m_PrevInPool;
+    }
+    bl_set->m_PrevInPool = bl_set->m_NextInPool = NULL;
+}
+
+inline void
+CNCMMSizePool::x_AddSetToList(CNCMMBlocksSet* bl_set,
+                              unsigned int    list_grade)
+{
+    CNCMMBlocksSet*& list_head = m_Sets[list_grade];
+    _ASSERT(!bl_set->m_PrevInPool  &&  list_head != bl_set);
+
+    bl_set->m_NextInPool = list_head;
+    if (list_head) {
+        list_head->m_PrevInPool = bl_set;
+    }
+    else {
+        m_ExistMask.InvertBits(list_grade, 1);
+    }
+    list_head = bl_set;
+}
+
+inline void
 CNCMMSizePool::x_AddBlocksSet(CNCMMBlocksSet* bl_set, unsigned int grade)
 {
     bl_set->SetPool(this);
-    bl_set->AddToPoolList(m_Sets[grade]);
+    x_AddSetToList(bl_set, grade);
 }
 
 inline
@@ -2213,6 +2167,7 @@ CNCMMSizePool::CNCMMSizePool(unsigned int size_index)
 {
     m_ObjLock.InitializeDynamic();
     memset(m_Sets, 0, sizeof(m_Sets));
+    m_ExistMask.Initialize(0);
 }
 
 inline
@@ -2225,9 +2180,12 @@ CNCMMSizePool::~CNCMMSizePool(void)
     for (unsigned int grade = 0; grade < kNCMMTotalEmptyGrades; ++grade) {
         CNCMMBlocksSet* bl_set;
         while ((bl_set = m_Sets[grade]) != NULL) {
-            bl_set->RemoveFromPoolList(m_Sets[grade]);
+            x_RemoveSetFromList(bl_set, grade);
             main_pool->x_AddBlocksSet(bl_set, grade);
         }
+    }
+    if (m_EmptySet) {
+        delete m_EmptySet;
     }
 }
 
@@ -2311,14 +2269,14 @@ CNCMMSizePool_Getter::DeleteTlsObject(void* obj_ptr)
 }
 
 
-void
+inline void
 CNCMMSizePool::x_CheckGradeChange(CNCMMBlocksSet* bl_set,
                                   unsigned int    old_grade)
 {
     unsigned int new_grade = bl_set->GetEmptyGrade();
     if (old_grade != new_grade) {
-        bl_set->RemoveFromPoolList(m_Sets[old_grade]);
-        bl_set->AddToPoolList(m_Sets[new_grade]);
+        x_RemoveSetFromList(bl_set, old_grade);
+        x_AddSetToList(bl_set, new_grade);
     }
 }
 
@@ -2329,15 +2287,9 @@ CNCMMSizePool::x_AllocateBlock(void)
 
     CNCMMStats::MemBlockAlloced(m_SizeIndex);
 
-    unsigned int grade = 1;
-    CNCMMBlocksSet* bl_set = NULL;
-    for (; grade < kNCMMTotalEmptyGrades; ++grade) {
-        bl_set = m_Sets[grade];
-        if (bl_set  &&  bl_set->CountFreeBlocks() != 0) {
-            break;
-        }
-    }
-    if (grade >= kNCMMTotalEmptyGrades) {
+    CNCMMBlocksSet* bl_set;
+    int grade = m_ExistMask.GetClosestSet(1);
+    if (grade == -1) {
         if (m_EmptySet) {
             bl_set = m_EmptySet;
             m_EmptySet = NULL;
@@ -2350,9 +2302,19 @@ CNCMMSizePool::x_AllocateBlock(void)
             bl_set = new CNCMMBlocksSet(this, m_SizeIndex);
             guard.Guard(m_ObjLock);
         }
+        grade = kNCMMTotalEmptyGrades;
+    }
+    else {
+        bl_set = m_Sets[grade];
     }
     void* block = bl_set->GetBlock();
-    x_CheckGradeChange(bl_set, grade);
+    if (bl_set->CountFreeBlocks() == 0) {
+        x_RemoveSetFromList(bl_set, grade);
+        x_AddSetToList(bl_set, 0);
+    }
+    else {
+        x_CheckGradeChange(bl_set, grade);
+    }
     return block;
 }
 
@@ -2365,6 +2327,8 @@ CNCMMSizePool::x_DeallocateBlock(void* block, CNCMMBlocksSet* bl_set)
 
     CNCMMStats::MemBlockFreed(m_SizeIndex);
     int old_grade = bl_set->GetEmptyGrade();
+    if (bl_set->CountFreeBlocks() == 0)
+        old_grade = 0;
     bl_set->ReleaseBlock(block);
     if (bl_set->CountFreeBlocks() == kNCMMBlocksPerSet[m_SizeIndex]) {
         if (m_EmptySet) {
@@ -2373,7 +2337,7 @@ CNCMMSizePool::x_DeallocateBlock(void* block, CNCMMBlocksSet* bl_set)
         else {
             CNCMMStats::ReservedMemCreated(kNCMMChunkSize);
         }
-        bl_set->RemoveFromPoolList(m_Sets[old_grade]);
+        x_RemoveSetFromList(bl_set, old_grade);
         m_EmptySet = bl_set;
     }
     else {
