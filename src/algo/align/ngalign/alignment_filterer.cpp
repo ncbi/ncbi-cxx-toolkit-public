@@ -64,7 +64,6 @@ void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
     NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, In->Get()) {
         NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
 
-
             TAlignSetRef Filtered(new CSeq_align_set);
             m_Filter->Filter(*SubjectIter->second, *Filtered);
 

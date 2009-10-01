@@ -104,7 +104,11 @@ private:
 };
 
 
-
+class CInstance : public CObject {
+public:
+    objects::CSeq_interval Query;
+    objects::CSeq_interval Subject;
+};
 
 class CInstancedAligner : public IAlignmentFactory
 {
@@ -140,8 +144,11 @@ private:
                                             TSeqPos SubjectStop,
                                             objects::CScope& Scope);
 
-    CRef<objects::CSeq_align_set> x_GetInstances(CQuerySet& QueryAligns,
-                                                 objects::CScope& Scope);
+    void x_GetCleanupInstances(CQuerySet& QueryAligns, objects::CScope& Scope,
+                        vector<CRef<CInstance> >& Instances);
+    void x_GetDistanceInstances(CQuerySet& QueryAligns, objects::CScope& Scope,
+                        vector<CRef<CInstance> >& Instances);
+
 };
 
 

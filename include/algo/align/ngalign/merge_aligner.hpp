@@ -1,5 +1,5 @@
-#ifndef NGALIGN_BLAST_ALIGNER__HPP
-#define NGALIGN_BLAST_ALIGNER__HPP
+#ifndef NGALIGN_MERGE_ALIGNER__HPP
+#define NGALIGN_MERGE_ALIGNER__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -63,52 +63,24 @@ BEGIN_SCOPE(objects)
     class CDense_seg;
 END_SCOPE(objects)
 
-BEGIN_SCOPE(blast)
-    class SSeqLoc;
-    class CBlastOptionsHandle;
-END_SCOPE(blast)
 
 
-
-
-class CBlastArgs
+class CMergeAligner : public IAlignmentFactory
 {
 public:
-    static void s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc);
-    static CRef<blast::CBlastOptionsHandle> s_ExtractBlastArgs(CArgs& Args);
-    static CRef<blast::CBlastOptionsHandle> s_CreateBlastOptions(const string& Params);
-};
-
-
-class CBlastAligner : public IAlignmentFactory
-{
-public:
-    CBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)
-        : m_BlastOptions(&Options), m_Threshold(Threshold), m_Filter(0) { ; }
-
-    CBlastAligner(const string& Params, int Threshold)
-        : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
-        , m_Threshold(Threshold), m_Filter(0) { ; }
-
+    CMergeAligner(int Threshold) : m_Threshold(Threshold) { ; }
 
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,
                                         ISequenceSet* SubjectSet,
                                         TAlignResultsRef AccumResults);
 
-    void SetSoftFiltering(int Filter) { m_Filter = Filter; }
-
-    typedef CRef<blast::CBlastOptionsHandle> TBlastOptionsRef;
-    typedef CRef<CBlastAligner> TBlastAlignerRef;
-
-    static list<TBlastAlignerRef> CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshold);
-    static list<TBlastAlignerRef> CreateBlastAligners(const list<string>& Params, int Threshold);
-
 private:
 
-    CRef<blast::CBlastOptionsHandle> m_BlastOptions;
+    CRef<objects::CSeq_align_set>
+    x_MergeAlignments(CQuerySet& QueryAligns, objects::CScope& Scope);
+
     int m_Threshold;
-    int m_Filter;
 };
 
 

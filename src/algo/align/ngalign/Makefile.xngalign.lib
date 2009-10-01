@@ -4,7 +4,7 @@ ASN_DEP = seq blast xnetblast
 
 SRC = result_set  sequence_set   \
       alignment_filterer  alignment_scorer  \
-      blast_aligner  banded_aligner   \
+      blast_aligner  banded_aligner  merge_aligner  \
       ngalign
 
 LIB = xngalign

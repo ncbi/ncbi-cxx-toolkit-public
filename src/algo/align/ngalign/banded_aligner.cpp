@@ -355,45 +355,47 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
 {
     CRef<CSeq_align_set> ResultSet(new CSeq_align_set);
 
-    CRef<CSeq_align_set> Instances = x_GetInstances(QueryAligns, Scope);
-    if(Instances->Get().empty()) {
+    vector<CRef<CInstance> > Instances;
+//    x_GetCleanupInstances(QueryAligns, Scope, Instances);
+    x_GetDistanceInstances(QueryAligns, Scope, Instances);
+    if(Instances.empty()) {
         ERR_POST(Info << " No instances of " << QueryAligns.GetQueryId()->AsFastaString() << " found.");
         return;
     }
 
 
     TSeqPos LongestInstance = 0;
-    ITERATE(CSeq_align_set::Tdata, InstIter, Instances->Get()) {
-        const CSeq_align& Inst = **InstIter;
-        TSeqPos CurrLength = (Inst.GetSeqStop(0) - Inst.GetSeqStart(0));
+    ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
+        const CInstance& Inst = **InstIter;
+        TSeqPos CurrLength = (Inst.Query.GetTo() - Inst.Query.GetFrom());
         LongestInstance = max(CurrLength, LongestInstance);
     }
 
     CRef<CSeq_align> Result(new CSeq_align);
-    ITERATE(CSeq_align_set::Tdata, InstIter, Instances->Get()) {
+    ITERATE(vector<CRef<CInstance> >, InstIter, Instances) {
 
-        const CSeq_align& Inst = **InstIter;
+        const CInstance& Inst = **InstIter;
 
-        if( (Inst.GetSeqStop(0) - Inst.GetSeqStart(0)) <= (LongestInstance*0.5)) {
+        if( (Inst.Query.GetTo() - Inst.Query.GetFrom()) <= (LongestInstance*0.5)) {
             continue;
         }
 
-        ERR_POST(Info << " Aligning " << Inst.GetSeq_id(0).AsFastaString() << " to "
-                                     << Inst.GetSeq_id(1).AsFastaString());
-        ERR_POST(Info << "  q:" << Inst.GetSeqStart(0) << ":"
-                                << Inst.GetSeqStop(0) << ":"
-                                << (Inst.GetSeqStrand(0) == eNa_strand_plus ? "+" : "-")
-                      << " and s: " << Inst.GetSeqStart(1) << ":"
-                                    << Inst.GetSeqStop(1) << ":"
-                                    << (Inst.GetSeqStrand(1) == eNa_strand_plus ? "+" : "-"));
+        ERR_POST(Info << " Aligning " << Inst.Query.GetId().AsFastaString() << " to "
+                                     << Inst.Subject.GetId().AsFastaString());
+        ERR_POST(Info << "  q:" << Inst.Query.GetFrom() << ":"
+                                << Inst.Query.GetTo() << ":"
+                                << (Inst.Query.GetStrand() == eNa_strand_plus ? "+" : "-")
+                      << " and s: " << Inst.Subject.GetFrom() << ":"
+                                    << Inst.Subject.GetTo() << ":"
+                                    << (Inst.Subject.GetStrand() == eNa_strand_plus ? "+" : "-"));
 
         CRef<CDense_seg> GlobalDs;
         try {
             GlobalDs = x_RunMMGlobal(
-                            Inst.GetSeq_id(0), Inst.GetSeq_id(1),
-                            Inst.GetSeqStrand(0),
-                            Inst.GetSeqStart(0), Inst.GetSeqStop(0),
-                            Inst.GetSeqStart(1), Inst.GetSeqStop(1),
+                            Inst.Query.GetId(), Inst.Subject.GetId(),
+                            Inst.Query.GetStrand(),
+                            Inst.Query.GetFrom(), Inst.Query.GetTo(),
+                            Inst.Subject.GetFrom(), Inst.Subject.GetTo(),
                             Scope);
         } catch(CException& e) {
             ERR_POST(Error << e.ReportAll());
@@ -402,8 +404,8 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
         }
 
         GetDiagContext().Extra()
-            .Print("instance_query", Inst.GetSeq_id(0).AsFastaString())
-            .Print("instance_subject", Inst.GetSeq_id(1).AsFastaString())
+            .Print("instance_query", Inst.Query.GetId().AsFastaString())
+            .Print("instance_subject", Inst.Subject.GetId().AsFastaString())
             .Print("instance_align", (GlobalDs.IsNull() ? "false" : "true"));
 
         if(GlobalDs.IsNull())
@@ -614,10 +616,9 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
 
 
 
-CRef<CSeq_align_set>
-CInstancedAligner::x_GetInstances(CQuerySet& QueryAligns, CScope& Scope)
+void CInstancedAligner::x_GetCleanupInstances(CQuerySet& QueryAligns, CScope& Scope,
+                                       vector<CRef<CInstance> >& Instances)
 {
-    CRef<CSeq_align_set> Instances(new CSeq_align_set);
     CAlignCleanup Cleaner(Scope);
     //Cleaner.FillUnaligned(true);
 
@@ -655,12 +656,130 @@ CInstancedAligner::x_GetInstances(CQuerySet& QueryAligns, CScope& Scope)
         }
 
         ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
-            Instances->Set().push_back(*AlignIter);
+            CRef<CInstance> Inst(new CInstance);
+            Inst->Query.SetId().Assign((*AlignIter)->GetSeq_id(0));
+            Inst->Query.SetFrom((*AlignIter)->GetSeqStart(0));
+            Inst->Query.SetTo((*AlignIter)->GetSeqStop(0));
+            Inst->Query.SetStrand((*AlignIter)->GetSeqStrand(0));
+            Inst->Subject.SetId().Assign((*AlignIter)->GetSeq_id(1));
+            Inst->Subject.SetFrom((*AlignIter)->GetSeqStart(1));
+            Inst->Subject.SetTo((*AlignIter)->GetSeqStop(1));
+            Inst->Subject.SetStrand((*AlignIter)->GetSeqStrand(1));
+            Instances.push_back(Inst);
+            //Instances->Set().push_back(*AlignIter);
         }
     }
 
-    return Instances;
+    //return Instances;
 }
+
+
+
+CRef<CInstance> s_AlignToInstance(const CSeq_align& Align)
+{
+    CRef<CInstance> Inst(new CInstance);
+
+    Inst->Query.SetId().Assign(Align.GetSeq_id(0));
+    Inst->Subject.SetId().Assign(Align.GetSeq_id(1));
+
+    Inst->Query.SetStrand() = Align.GetSeqStrand(0);
+    Inst->Subject.SetStrand() = Align.GetSeqStrand(1);
+
+    Inst->Query.SetFrom() = Align.GetSeqStart(0);
+    Inst->Subject.SetFrom() = Align.GetSeqStart(1);
+
+    Inst->Query.SetTo() = Align.GetSeqStop(0);
+    Inst->Subject.SetTo() = Align.GetSeqStop(1);
+
+    return Inst;
+}
+
+CRef<CInstance> s_AlignSetToInstance(const CSeq_align_set& AlignSet)
+{
+    if(AlignSet.Get().empty())
+        return CRef<CInstance>();
+
+    CRef<CInstance> Inst(new CInstance);
+
+    Inst->Query.SetId().Assign(AlignSet.Get().front()->GetSeq_id(0));
+    Inst->Subject.SetId().Assign(AlignSet.Get().front()->GetSeq_id(1));
+
+    Inst->Query.SetStrand() = AlignSet.Get().front()->GetSeqStrand(0);
+    Inst->Subject.SetStrand() = AlignSet.Get().front()->GetSeqStrand(1);
+
+    Inst->Query.SetFrom() = numeric_limits<TSeqPos>::max();
+    Inst->Subject.SetFrom() = numeric_limits<TSeqPos>::max();
+
+    Inst->Query.SetTo() = numeric_limits<TSeqPos>::min();
+    Inst->Subject.SetTo() = numeric_limits<TSeqPos>::min();
+
+    ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet.Get()) {
+        Inst->Query.SetFrom(min(Inst->Query.GetFrom(), (*AlignIter)->GetSeqStart(0)));
+        Inst->Subject.SetFrom(min(Inst->Subject.GetFrom(), (*AlignIter)->GetSeqStart(1)));
+
+        Inst->Query.SetTo(max(Inst->Query.GetTo(), (*AlignIter)->GetSeqStop(0)));
+        Inst->Subject.SetTo(max(Inst->Subject.GetTo(), (*AlignIter)->GetSeqStop(1)));
+    }
+
+    return Inst;
+}
+
+bool s_CanMergeInstances(CScope& Scope, const CInstance& Inst, const CSeq_align& Align)
+{
+    if(Inst.Subject.GetStrand() != Align.GetSeqStrand(1))
+        return false;
+
+    TSeqPos QueryLength = Scope.GetBioseqHandle(Inst.Query.GetId()).GetInst_Length();
+
+    TSeqPos SubjInstLength;
+
+    SubjInstLength = max(Inst.Subject.GetTo(), Align.GetSeqStop(1))
+                   - min(Inst.Subject.GetFrom(), Align.GetSeqStart(1))
+                   + 1;
+
+    if(SubjInstLength > (QueryLength*2) )
+        return false;
+
+    return true;
+}
+
+void s_MergeInstances(CInstance& Inst, const CSeq_align& Align)
+{
+    Inst.Query.SetFrom(min(Inst.Query.GetFrom(), Align.GetSeqStart(0)));
+    Inst.Subject.SetFrom(min(Inst.Subject.GetFrom(), Align.GetSeqStart(1)));
+
+    Inst.Query.SetTo(max(Inst.Query.GetTo(), Align.GetSeqStop(0)));
+    Inst.Subject.SetTo(max(Inst.Subject.GetTo(), Align.GetSeqStop(1)));
+}
+
+void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& Scope,
+                                       vector<CRef<CInstance> >& Instances)
+{
+    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
+
+        vector<CRef<CInstance> > SubjInstances;
+
+        CRef<CSeq_align_set> Set = SubjectIter->second;
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
+            bool Inserted = false;
+            NON_CONST_ITERATE(vector<CRef<CInstance> >, InstIter, SubjInstances) {
+                if(s_CanMergeInstances(Scope, **InstIter, **AlignIter)) {
+                    s_MergeInstances(**InstIter, **AlignIter);
+                    Inserted = true;
+                }
+            }
+            if(!Inserted) {
+                CRef<CInstance> Inst;
+                Inst = s_AlignToInstance(**AlignIter);
+                SubjInstances.push_back(Inst);
+            }
+        }
+
+        copy(SubjInstances.begin(), SubjInstances.end(),
+            insert_iterator<vector<CRef<CInstance> > >(Instances, Instances.end()));
+    }
+}
+
 
 END_SCOPE(ncbi)
 

@@ -114,7 +114,6 @@ TAlignSetRef CNgAligner::x_Align_Impl()
                      AccumResults(new CAlignResultsSet);
 
     NON_CONST_ITERATE(TFactories, AlignIter, m_Aligners) {
-
         TAlignResultsRef CurrResults;
         CurrResults = (*AlignIter)->GenerateAlignments(*m_Scope, m_Query, m_Subject,
                                                        AccumResults);

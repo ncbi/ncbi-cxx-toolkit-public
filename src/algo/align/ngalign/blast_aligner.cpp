@@ -53,8 +53,7 @@
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
 
-
-#include <algo/sequence/align_cleanup.hpp>
+#include <algo/align/ngalign/sequence_set.hpp>
 
 BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
@@ -152,7 +151,6 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_CreateBlastOptions(const string& Params)
 
 
 
-
 TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
                                                    ISequenceSet* QuerySet,
                                                    ISequenceSet* SubjectSet,
@@ -162,6 +160,11 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
 
     CRef<IQueryFactory> Querys;
     CRef<CLocalDbAdapter> Subjects;
+
+    if(dynamic_cast<CBlastDbSet*>(SubjectSet)) {
+        CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
+        BlastSubjectSet->SetSoftFiltering(m_Filter);
+    }
 
     Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
     Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
@@ -217,8 +220,6 @@ CBlastAligner::CreateBlastAligners(const list<string>& Params, int Threshold)
 
     return CBlastAligner::CreateBlastAligners(BlastOptions, Threshold);
 }
-
-
 
 
 

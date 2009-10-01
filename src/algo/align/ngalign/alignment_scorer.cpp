@@ -88,6 +88,7 @@ void CBlastScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
             }
         }
     }
+
 }
 
 
