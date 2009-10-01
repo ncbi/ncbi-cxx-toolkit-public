@@ -148,7 +148,7 @@ public:
     /// Get serial tree
     /// @return Tree
     ///
-    const CBioTreeContainer& GetSerialTree(void) const {return *m_TreeContainer;}
+    const CBioTreeContainer& GetSerialTree(void) const;
 
 
     /// Get tree
@@ -367,6 +367,7 @@ public:
     enum EErrCode {
         eInvalidOptions,
         eTreeComputationProblem,
+        eNoTree,
         eTaxonomyError
     };
 

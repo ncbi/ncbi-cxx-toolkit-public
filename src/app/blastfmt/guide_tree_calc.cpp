@@ -94,6 +94,15 @@ CGuideTreeCalc::CGuideTreeCalc(const CSeq_align& seq_aln,
     x_InitAlignDS(seq_aln);
 }
 
+const CBioTreeContainer& CGuideTreeCalc::GetSerialTree(void) const
+{
+    if (m_TreeContainer.Empty()) {
+        NCBI_THROW(CGuideTreeCalcException, eNoTree,
+                   "Tree was not constructed");
+    }
+    return *m_TreeContainer;
+}
+
 
 auto_ptr<CBioTreeDynamic> CGuideTreeCalc::GetTree(void)
 {
