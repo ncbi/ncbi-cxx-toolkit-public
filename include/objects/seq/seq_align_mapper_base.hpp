@@ -98,6 +98,7 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
     TRows     m_Rows;
     bool      m_HaveStrands;
     TScores   m_Scores;
+    int       m_GroupIdx;       // Group of segments
     int       m_ScoresGroupIdx; // -1 = unassigned
 
     // Used only for spliced exon parts
@@ -190,6 +191,11 @@ private:
                       ENa_strand& gen_strand,
                       ENa_strand& prod_strand,
                       bool& partial) const;
+    void x_PushExonPart(CRef<CSpliced_exon_chunk>& last_part,
+                        CSpliced_exon_chunk::E_Choice part_type,
+                        int part_len,
+                        bool reverse,
+                        CSpliced_exon& exon) const;
 
     // Special case: have to convert multi-id alignments to disc.
     void x_ConvToDstDisc(CRef<CSeq_align>& dst) const;

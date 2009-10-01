@@ -52,6 +52,7 @@ SAlignment_Segment::SAlignment_Segment(int len, size_t dim)
     : m_Len(len),
       m_Rows(dim),
       m_HaveStrands(false),
+      m_GroupIdx(0),
       m_ScoresGroupIdx(-1),
       m_PartType(CSpliced_exon_chunk::e_not_set)
 {
@@ -902,7 +903,9 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         dst_width = 1;
         if (aln_row.m_Width == 3) {
             start *= 3;
-            len_wid = 3;
+            if ( !m_OrigExon ) {
+                len_wid = 3;
+            }
             if ( aln_row.m_Frame ) {
                 start += aln_row.m_Frame - 1;
             }
@@ -911,13 +914,16 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
     else if (!width_flag  &&  aln_row.m_Width == 3) {
         dst_width = 3;
         start *= 3;
-        len_wid = 3;
+        if ( !m_OrigExon ) {
+            len_wid = 3;
+        }
         if ( aln_row.m_Frame ) {
             start += aln_row.m_Frame - 1;
         }
     }
     TSeqPos stop = start + seg.m_Len*len_wid - 1;
     TSeqPos left_shift = 0;
+    int group_idx = 0;
     for (size_t map_idx = 0; map_idx < mappings.size(); ++map_idx) {
         CRef<CMappingRange> mapping(mappings[map_idx]);
         // Adjust mapping coordinates according to width
@@ -953,6 +959,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         }
         dst_id = mapping->m_Dst_id_Handle;
 
+        group_idx = mapping->m_Group;
+
         // At least part of the interval was converted. Calculate
         // trimming coords, trim each row.
         TSeqPos dl = mapping->m_Src_from <= start ?
@@ -963,6 +971,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
             // Add segment for the skipped range
             SAlignment_Segment& lseg = x_InsertSeg(seg_it,
                 dl/len_wid, seg.m_Rows.size());
+            lseg.m_GroupIdx = group_idx;
             lseg.m_PartType = old_it->m_PartType;
             for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
                 SAlignment_Segment::SAlignment_Row& lrow =
@@ -997,6 +1006,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         // At least part of the interval was converted.
         SAlignment_Segment& mseg = x_InsertSeg(seg_it,
             (stop - dr - start + 1)/len_wid, seg.m_Rows.size());
+        mseg.m_GroupIdx = group_idx;
         mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
@@ -1073,6 +1083,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator&  seg_it,
         // Add the remaining unmapped range
         SAlignment_Segment& rseg = x_InsertSeg(seg_it,
             (stop - start + 1)/len_wid, seg.m_Rows.size());
+        rseg.m_GroupIdx = group_idx;
         rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =
@@ -1356,6 +1367,32 @@ void SetPartLength(CSpliced_exon_chunk&          part,
 }
 
 
+void CSeq_align_Mapper_Base::x_PushExonPart(
+    CRef<CSpliced_exon_chunk>& last_part,
+    CSpliced_exon_chunk::E_Choice part_type,
+    int part_len,
+    bool reverse,
+    CSpliced_exon& exon) const
+{
+    if (last_part  &&  last_part->Which() == part_type) {
+        SetPartLength(*last_part, part_type,
+            CSeq_loc_Mapper_Base::
+            sx_GetExonPartLength(*last_part) + part_len);
+    }
+    else {
+        last_part.Reset(new CSpliced_exon_chunk);
+        SetPartLength(*last_part, part_type, part_len);
+        // Parts order depend on the genomic strand
+        if ( !reverse ) {
+            exon.SetParts().push_back(last_part);
+        }
+        else {
+            exon.SetParts().push_front(last_part);
+        }
+    }
+}
+
+
 void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
                                           TSegments::const_iterator& seg,
                                           CSeq_id_Handle& gen_id,
@@ -1379,8 +1416,15 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
     bool prod_protein = true;
     bool ex_partial = false;
     CRef<CSpliced_exon_chunk> last_part;
-
+    int group_idx = -1;
     for ( ; seg != m_Segs.end(); ++seg) {
+        if (group_idx != -1  &&  seg->m_GroupIdx != group_idx) {
+            // New exon
+            ex_partial = true;
+            break;
+        }
+        group_idx = seg->m_GroupIdx;
+
         const SAlignment_Segment::SAlignment_Row& gen_row = seg->m_Rows[0];
         const SAlignment_Segment::SAlignment_Row& prod_row = seg->m_Rows[1];
         if (seg->m_Rows.size() > 2) {
@@ -1396,33 +1440,9 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
 
         int gstart = gen_row.GetSegStart();
         int pstart = prod_row.GetSegStart();
-        if (gstart < 0) {
-            if (pstart < 0) {
-                // Both gen and prod are missing - start new exon
-                ex_partial = true;
-                seg++;
-                break;
-            }
-            else {
-                ptype = CSpliced_exon_chunk::e_Product_ins;
-            }
-        }
-        else {
-            if (gen_start < 0  ||  gen_start > gstart) {
-                gen_start = gstart;
-            }
-            if (gen_end < gstart + seg->m_Len) {
-                gen_end = gstart + seg->m_Len;
-            }
-        }
 
-        if (pstart < 0) {
-            if (gstart >= 0) {
-                ptype = CSpliced_exon_chunk::e_Genomic_ins;
-            }
-        }
-        else {
-            int pend;
+        int pend;
+        if (pstart >= 0) {
             if (prod_row.m_Width == 3) {
                 int pframe = prod_row.m_Frame ? prod_row.m_Frame - 1 : 0;
                 pend = pstart*3 + pframe + seg->m_Len;
@@ -1449,15 +1469,11 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
                 prod_protein = false;
                 pend = pstart + seg->m_Len;
             }
-            if (prod_start < 0  ||  prod_start > pstart) {
-                prod_start = pstart;
-            }
-            if (prod_end < pend) {
-                prod_end = pend;
-            }
         }
 
         // Check strands consistency
+        bool gen_reverse = false;
+        bool prod_reverse = false;
         if (gstart >= 0  &&  gen_row.m_IsSetStrand) {
             if ( !gstrand_set ) {
                 gen_strand = gen_row.m_Strand;
@@ -1468,6 +1484,7 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
                         "Can not construct spliced-seg "
                         "with different genomic strands in the same exon");
             }
+            gen_reverse = IsReverse(gen_strand);
         }
         if (pstart >= 0  &&  prod_row.m_IsSetStrand) {
             if ( !pstrand_set ) {
@@ -1479,24 +1496,102 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
                         "Can not construct spliced-seg "
                         "with different product strands in the same exon");
             }
+            prod_reverse = IsReverse(prod_strand);
         }
 
-        if (last_part  &&  last_part->Which() == ptype) {
-            SetPartLength(*last_part, ptype,
-                CSeq_loc_Mapper_Base::
-                sx_GetExonPartLength(*last_part) + seg->m_Len);
-        }
-        else {
-            last_part.Reset(new CSpliced_exon_chunk);
-            SetPartLength(*last_part, ptype, seg->m_Len);
-            // Parts order depend on the genomic strand
-            if ( !IsReverse(gen_strand) ) {
-                exon->SetParts().push_back(last_part);
+        int gins_len = 0;
+        int pins_len = 0;
+        if (gstart < 0) {
+            if (pstart < 0) {
+                // Both gen and prod are missing - start new exon
+                ex_partial = true;
+                seg++;
+                break;
             }
             else {
-                exon->SetParts().push_front(last_part);
+                ptype = CSpliced_exon_chunk::e_Product_ins;
             }
         }
+        else {
+            int gend = gstart + seg->m_Len;
+            if (gen_start >= 0  &&  gen_end > 0) {
+                if (!gen_reverse) {
+                    if (gstart < gen_end) {
+                        // The order of starts is not correct, break the exon
+                        ex_partial = true;
+                        break;
+                    }
+                    else if (gstart > gen_end) {
+                        // Add genomic insertion
+                        gins_len = gstart - gen_end;
+                    }
+                }
+                else if (gen_start >= 0) {
+                    if (gend > gen_start) {
+                        // The order of starts is not correct, break the exon
+                        ex_partial = true;
+                        break;
+                    }
+                    else if (gend < gen_start) {
+                        // Add genomic insertion
+                        gins_len = gen_start - gend;
+                    }
+                }
+            }
+            if (gen_start < 0  ||  gen_start > gstart) {
+                gen_start = gstart;
+            }
+            if (gen_end < gend) {
+                gen_end = gend;
+            }
+        }
+
+        if (pstart < 0) {
+            _ASSERT(gstart >= 0); // Already checked above
+            ptype = CSpliced_exon_chunk::e_Genomic_ins;
+        }
+        else {
+            if (prod_start >= 0  &&  prod_end > 0) {
+                if ( !prod_reverse ) {
+                    if (pstart < prod_end) {
+                        // The order of starts is not correct, break the exon
+                        ex_partial = true;
+                        break;
+                    }
+                    else if (pstart > prod_end) {
+                        // Add product insertion
+                        pins_len = pstart - prod_end;
+                    }
+                }
+                else {
+                    if (pend > prod_start) {
+                        // The order of starts is not correct, break the exon
+                        ex_partial = true;
+                        break;
+                    }
+                    else if (pend < prod_start) {
+                        // Add product insertion
+                        pins_len = prod_start - pend;
+                    }
+                }
+            }
+            if (prod_start < 0  ||  prod_start > pstart) {
+                prod_start = pstart;
+            }
+            if (prod_end < pend) {
+                prod_end = pend;
+            }
+        }
+
+        if (gins_len > 0) {
+            x_PushExonPart(last_part, CSpliced_exon_chunk::e_Genomic_ins,
+                gins_len, gen_reverse, *exon);
+        }
+        if (pins_len > 0) {
+            x_PushExonPart(last_part, CSpliced_exon_chunk::e_Product_ins,
+                pins_len, gen_reverse, *exon);
+        }
+        x_PushExonPart(last_part, ptype, seg->m_Len, gen_reverse, *exon);
     }
     partial |= ex_partial;
     if ( exon->GetParts().empty() ) {
@@ -1524,8 +1619,8 @@ void CSeq_align_Mapper_Base::x_GetDstExon(CSpliced_seg& spliced,
     if ( prod_protein ) {
         exon->SetProduct_start().SetProtpos().SetAmin(prod_start/3);
         exon->SetProduct_start().SetProtpos().SetFrame(prod_start%3 + 1);
-        exon->SetProduct_end().SetProtpos().SetAmin(prod_end/3);
-        exon->SetProduct_end().SetProtpos().SetFrame(prod_end%3 + 1);
+        exon->SetProduct_end().SetProtpos().SetAmin((prod_end - 1)/3);
+        exon->SetProduct_end().SetProtpos().SetFrame((prod_end - 1)%3 + 1);
     }
     else {
         exon->SetProduct_start().SetNucpos(prod_start);
