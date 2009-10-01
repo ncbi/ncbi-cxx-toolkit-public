@@ -731,7 +731,7 @@ class NCBI_XALGOGNOMON_EXPORT CModelClusterSet : public set<Cluster> {
     void Insert(const typename Cluster::TModel& a) {
         Cluster clust;
         clust.Insert(a);
-        pair<Titerator,Titerator> lim = equal_range(clust);
+        pair<Titerator,Titerator> lim = set<Cluster>::equal_range(clust);
         for(Titerator it = lim.first; it != lim.second;) {
             clust.Splice(const_cast<Cluster&>(*it));
             erase(it++);
