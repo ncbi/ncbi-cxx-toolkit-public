@@ -185,15 +185,13 @@ struct NumOrder
     }
 };
 
-struct SBySizePosition {
-    bool operator()(const CGeneModel& a, const CGeneModel& b)
+static bool s_BySizePosition(const CGeneModel& a, const CGeneModel& b)
     {
         if (a.Exons().size() != b.Exons().size()) return a.Exons().size() < b.Exons().size();
         if (a.Strand() != b.Strand()) return a.Strand() < b.Strand();
         if (a.Limits() != b.Limits()) return a.Limits() < b.Limits();
         return a.ID() < b.ID(); // to make sort deterministic
     }
-};
 
 struct ScoreOrder
 {
@@ -204,14 +202,15 @@ struct ScoreOrder
         else
             return (ap->m_align->Score() > bp->m_align->Score());
     }
-    bool operator()(const CGeneModel& a, const CGeneModel& b)
+};
+
+static bool s_ScoreOrder(const CGeneModel& a, const CGeneModel& b)
     {
         if (a.Score() == b.Score())
             return a.ID() < b.ID(); // to make sort deterministic
         else
             return a.Score() > b.Score();
     }
-};
 
 template <class C>
 void uniq(C& container)
@@ -1153,9 +1152,9 @@ pair<string,int> GetAccVer(const string& ident)
     return make_pair(accession,version);
 }
 
-struct SByAccVerLen {
-    SByAccVerLen() {}
-    bool operator()(const CAlignModel& a, const CAlignModel& b) const
+static int s_ExonLen(const CGeneModel& a);
+
+static bool s_ByAccVerLen(const CAlignModel& a, const CAlignModel& b)
     {
         pair<string,int> a_acc = GetAccVer(a.TargetAccession());
         pair<string,int> b_acc = GetAccVer(b.TargetAccession());
@@ -1165,22 +1164,22 @@ struct SByAccVerLen {
         if (a_acc.second != b_acc.second)
             return a_acc.second > b_acc.second;
         
-        int a_len = ExonLen(a);
-        int b_len = ExonLen(b);
+        int a_len = s_ExonLen(a);
+        int b_len = s_ExonLen(b);
         if (a_len!=b_len)
             return a_len > b_len;
         if (a.ConfirmedStart() != b.ConfirmedStart())
             return a.ConfirmedStart();
         return a.ID() < b.ID(); // to make sort deterministic
     }
-    int ExonLen(const CGeneModel& a) const
+
+static int ExonLen(const CGeneModel& a)
     {
         int len = 0;
         ITERATE(CGeneModel::TExons, e, a.Exons())
             len += e->Limits().GetLength();
         return len;
     }
-};
 
 typedef map<int,CAlignModel*> TOrigAligns;
 
@@ -1192,7 +1191,7 @@ void SkipReason(CGeneModel* orig_align, const string& comment)
 
 void FilterOverlappingSameAccessionAlignment(TGeneModelList& clust, TOrigAligns& orig_aligns)
 {
-    //    clust.sort(SByAccVerLen());  this is moved up
+    //    clust.sort(s_ByAccVerLen);  this is moved up
 
     TGeneModelList::iterator first = clust.begin();
     TGeneModelList::iterator current = first; ++current;
@@ -1223,7 +1222,7 @@ void FilterOutPoorAlignments(TGeneModelList& clust,
                             const CGnomonEngine& gnomon, const SMinScor& minscor,
                              TOrigAligns& orig_aligns)
 {
-    clust.sort(SBySizePosition());
+    clust.sort(s_BySizePosition);
 
     static CGeneModel dummy_align;
     CGeneModel* prev_align = &dummy_align;
@@ -1405,7 +1404,7 @@ bool FsTouch(const TSignedSeqRange& lim, const CInDelInfo& fs) {
 
 void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust, TOrigAligns& orig_aligns)
 {
-    clust.sort(ScoreOrder());
+    clust.sort(s_ScoreOrder);
     set<SFShiftsCluster> fshift_clusters;
 
     for (TGeneModelList::iterator itcl=clust.begin(); itcl != clust.end(); ) {
@@ -1811,7 +1810,7 @@ TGeneModelList MakeChains(TAlignModelList& alignments, CGnomonEngine& gnomon, co
     //    int align_counter = 0;
     bool skipest = (alignments.size() > alignlimit);
 
-    alignments.sort(SByAccVerLen());    // used in FilterOverlappingSameAccessionAlignment
+    alignments.sort(s_ByAccVerLen);    // used in FilterOverlappingSameAccessionAlignment
 
     NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
         if(skipest && (i->Type() & CGeneModel::eEST)!=0)
