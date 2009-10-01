@@ -1408,12 +1408,28 @@ static void s_TestTimeout(void)
         assert(t3.IsInfinite());
     }}
     {{
+        CTimeSpan ts;
         CTimeSpan ts1(1,200);
-        CTimeSpan ts2(-1,200);
+        CTimeSpan ts2(1,200000);
+        CTimeSpan ts3(-1,200);
+
         CTimeout t(ts1);
-        assert(t.GetAsTimeSpan() == ts1);
+        // Nanoseconds truncatated to 0
+        ts = t.GetAsTimeSpan();
+        assert(ts.GetCompleteSeconds() == 1);
+        assert(ts.GetNanoSecondsAfterSecond() == 0); 
+        assert(ts != ts1);
+
+        // Microseconds correcly converts to nanoseconds
+        t = ts2;
+        ts = t.GetAsTimeSpan();
+        assert(ts.GetCompleteSeconds() == 1);
+        assert(ts.GetNanoSecondsAfterSecond() == 200000); 
+        assert(ts == ts2);
+
+        // Cannot copy from negative time span
         try {
-            t = ts2;
+            t = ts3;
             _TROUBLE;
         }
         catch (CTimeException&) {}
