@@ -235,7 +235,6 @@ s_BlastHSPCollectorRun_RPS(void* data, BlastHSPList* hsplist_in)
    BlastHSPCollectorData * col_data = data;
    BlastHSPResults* results = col_data->results;
    BlastHSPCollectorParams* params = col_data->params;
-   EBlastProgramType program = params->program;
 
    if (!hsplist_in || hsplist_in->hspcnt == 0)
       return 0;
@@ -244,7 +243,7 @@ s_BlastHSPCollectorRun_RPS(void* data, BlastHSPList* hsplist_in)
    ASSERT(hsplist_in->query_index < results->num_queries);
 
    /* Check that program is indeed RPS Blast */
-   ASSERT(Blast_ProgramIsRpsBlast(program));
+   ASSERT(Blast_ProgramIsRpsBlast(params->program));
 
    /* If hit list for this query has not yet been allocated, do it here. */
    hit_list = results->hitlist_array[hsplist_in->query_index];

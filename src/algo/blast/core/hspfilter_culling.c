@@ -67,14 +67,14 @@ typedef struct LinkedHSP {
 /** functions to manipulate LinkedHSPs */
 
 /** copy x to y */
-LinkedHSP * s_HSPCopy(LinkedHSP *x) {
+static LinkedHSP * s_HSPCopy(LinkedHSP *x) {
     LinkedHSP * y = malloc(sizeof(LinkedHSP));
     memcpy(y,x, sizeof(LinkedHSP));
     return y;
 }
 
 /** free x */
-LinkedHSP * s_HSPFree(LinkedHSP *x) {
+static LinkedHSP * s_HSPFree(LinkedHSP *x) {
     Blast_HSPFree(x->hsp);
     sfree(x);
     return NULL;
