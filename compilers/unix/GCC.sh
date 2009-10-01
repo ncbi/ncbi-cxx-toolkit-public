@@ -26,6 +26,9 @@ case "$1" in
      if /usr/local/gcc-$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=/usr/local/gcc-$1/bin/$CXX
        CC=/usr/local/gcc-$1/bin/$CC
+     elif /usr/local/gcc/$1/bin/$CXX -dumpversion >/dev/null 2>&1; then
+       CXX=/usr/local/gcc/$1/bin/$CXX
+       CC=/usr/local/gcc/$1/bin/$CC
      elif /netopt/gcc/$1/$platform/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=/netopt/gcc/$1/$platform/bin/$CXX
        CC=/netopt/gcc/$1/$platform/bin/$CC
