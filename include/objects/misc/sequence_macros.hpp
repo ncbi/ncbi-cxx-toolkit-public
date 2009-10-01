@@ -277,6 +277,24 @@ typedef CSeqFeatData::E_Choice TSEQFEAT_CHOICE;
 //   Region       Comment             Bond         Site
 //   Rsite        User                Txinit       Num
 //   Psec_str     Non_std_residue     Het          Biosrc
+//   Clone
+
+
+/// CProt_ref definitions
+
+#define NCBI_PROTREF(Type) CProt_ref::eProcessed_##Type
+typedef CProt_ref::EProcessed TPROTREF_PROCESSED;
+
+//   preprotein     mature     signal_peptide     transit_peptide
+
+
+/// CRNA_ref definitions
+
+#define NCBI_RNAREF(Type) CRNA_ref::EType##Type
+typedef CRNA_ref::EType TRNAREF_TYPE;
+
+//   premsg     mRNA      tRNA      rRNA        snRNA     scRNA
+//   snoRNA     ncRNA     tmRNA     miscRNA     other
 
 
 
