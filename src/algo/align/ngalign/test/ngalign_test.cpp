@@ -359,7 +359,8 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     string Operation = TestCases->Get(Case, "operation");
     list<string> BlastParams;
     BlastParams.push_back(TestCases->Get("consts", "blast"));
- //   BlastParams.push_back(TestCases->Get("consts", "blast2"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
+    BlastParams.push_back(TestCases->Get("consts", "blast3"));
 
     if(Operation == "skip")
         return;
@@ -427,10 +428,15 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
         Aligner.AddFilter(&**FilterIter);
     }
 
-
 //    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
+    bool First = true;
     NON_CONST_ITERATE(list<CRef<CBlastAligner> >, BlastIter, BlastAligners) {
-        (*BlastIter)->SetSoftFiltering(30);
+        if(First) {
+            (*BlastIter)->SetSoftFiltering(30);
+            First = false;
+        } else {
+            (*BlastIter)->SetSoftFiltering(-1);
+        }
         Aligner.AddAligner(&**BlastIter);
     }
     Aligner.AddAligner(InstancedAligner.GetPointer());

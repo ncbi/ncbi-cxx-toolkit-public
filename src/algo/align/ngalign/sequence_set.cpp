@@ -100,9 +100,9 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
     CRef<CSearchDatabase> SearchDb;
     SearchDb.Reset(new CSearchDatabase(m_BlastDb, CSearchDatabase::eBlastDbIsNucleotide));
 
-    if(m_Filter != -1) {
+    //if(m_Filter != -1) {
         SearchDb->SetFilteringAlgorithm(m_Filter);
-    }
+    //}
 
     CRef<CLocalDbAdapter> Result;
     Result.Reset(new CLocalDbAdapter(*SearchDb));
@@ -209,7 +209,9 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
         }
     }
 
-    CRef<IQueryFactory> Result(new CObjMgr_QueryFactory(FastaLocVec));
+    CRef<IQueryFactory> Result;
+    if(!FastaLocVec.empty())
+        Result.Reset(new CObjMgr_QueryFactory(FastaLocVec));
     return Result;
 }
 
@@ -258,7 +260,9 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
         }
     }
 
-    CRef<IQueryFactory> Result(new CObjMgr_QueryFactory(FastaLocVec));
+    CRef<IQueryFactory> Result;
+    if(!FastaLocVec.empty())
+        Result.Reset(new CObjMgr_QueryFactory(FastaLocVec));
     return Result;
 }
 

@@ -71,6 +71,7 @@ void CBlastArgs::s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc)
     blast::CGappedArgs gapped_args;
     blast::CHspFilteringArgs cull_args;
     blast::CBlastDatabaseArgs blastdb_args;
+    blast::CWindowSizeArg window_args;
 
     search_args.SetArgumentDescriptions(ArgDesc);
     filter_args.SetArgumentDescriptions(ArgDesc);
@@ -78,6 +79,7 @@ void CBlastArgs::s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc)
     gapped_args.SetArgumentDescriptions(ArgDesc);
     cull_args.SetArgumentDescriptions(ArgDesc);
     blastdb_args.SetArgumentDescriptions(ArgDesc);
+    window_args.SetArgumentDescriptions(ArgDesc);
 }
 
 
@@ -92,6 +94,7 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_ExtractBlastArgs(CArgs& Args)
     blast::CGappedArgs gapped_args;
     blast::CHspFilteringArgs cull_args;
     blast::CBlastDatabaseArgs blastdb_args;
+    blast::CWindowSizeArg window_args;
 
     CRef<CBlastNucleotideOptionsHandle> NucOptions(new CBlastNucleotideOptionsHandle);
     CRef<CBlastOptionsHandle> Options(&*NucOptions);
@@ -113,6 +116,7 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_ExtractBlastArgs(CArgs& Args)
     nucl_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
     gapped_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
     cull_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
+    window_args.ExtractAlgorithmOptions(Args, Options->SetOptions());
 
     //cout << "GetEvalueThreshold: " << Options->GetEvalueThreshold() << endl;
     //cout << "GetEffectiveSearchSpace: " << Options->GetEffectiveSearchSpace() << endl;
@@ -127,8 +131,8 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_CreateBlastOptions(const string& Params)
 {
 
     vector<string> Tokens;
-    Tokens.push_back("blastn");
-    NStr::Tokenize(Params, " \n\r\t", Tokens, NStr::eMergeDelims);
+    Tokens.push_back("megablast");
+    x_ParseOptionsString(Params, Tokens);
 
     CArgDescriptions ArgDesc;
     CBlastArgs::s_CreateBlastArgDescriptions(ArgDesc);
@@ -150,6 +154,48 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_CreateBlastOptions(const string& Params)
 }
 
 
+void CBlastArgs::x_ParseOptionsString(const string& Params, vector<string>& Tokens)
+{
+    string Delims = " \n\r\t";
+    string Quotes = "'\"";
+
+    string Curr;
+    bool InQuotes = false;
+
+    Curr.reserve(32);
+
+    for(unsigned int Index = 0; Index < Params.length(); Index++) {
+        if(InQuotes) {
+            if(Quotes.find(Params[Index]) != NPOS) {
+                if(!Curr.empty())
+                    Tokens.push_back(Curr);
+                Curr.clear();
+                InQuotes = false;
+            }
+            else {
+                Curr.push_back(Params[Index]);
+            }
+        }
+        else { // !InQuotes
+            if(Delims.find(Params[Index]) != NPOS) {
+                if(!Curr.empty())
+                    Tokens.push_back(Curr);
+                Curr.clear();
+            }
+            else if(Quotes.find(Params[Index]) != NPOS) {
+                if(!Curr.empty())
+                    Tokens.push_back(Curr);
+                Curr.clear();
+                InQuotes = true;
+            }
+            else {
+                Curr.push_back(Params[Index]);
+            }
+        }
+    }
+
+}
+
 
 TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
                                                    ISequenceSet* QuerySet,
@@ -169,6 +215,12 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
     Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
 
+    if(Querys.IsNull()) {
+        ERR_POST(Info << "Blast Warning: Empty Query Set");
+        return Results;
+    }
+
+    ERR_POST(Info << "Running Blast");
     CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
 
     CRef<CSearchResultSet> BlastResults = Blast.Run();

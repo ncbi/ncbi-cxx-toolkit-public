@@ -77,6 +77,8 @@ public:
     static void s_CreateBlastArgDescriptions(CArgDescriptions& ArgDesc);
     static CRef<blast::CBlastOptionsHandle> s_ExtractBlastArgs(CArgs& Args);
     static CRef<blast::CBlastOptionsHandle> s_CreateBlastOptions(const string& Params);
+private:
+    static void x_ParseOptionsString(const string& Params, vector<string>& Tokens);
 };
 
 
