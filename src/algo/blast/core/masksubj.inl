@@ -50,9 +50,7 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
       
     /* the same range has not been consumed yet*/
     if (range[1] + lut_word_length <= subject->seq_ranges[range[0]].left) {
-        range[3] = (range[0])? subject->seq_ranges[range[0]-1].right : 0;
-        range[4] = subject->seq_ranges[range[0]].left;
-        range[2] = range[4] - lut_word_length;
+        range[2] = subject->seq_ranges[range[0]].left - lut_word_length;
         return TRUE;
     }
 
@@ -61,10 +59,10 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
            subject->seq_ranges[range[0]-1].right + word_length > subject->seq_ranges[range[0]].left) {
         range[0]++;
     }
-    range[3] = subject->seq_ranges[range[0]-1].right;
-    range[4] = (range[0]<subject->num_seq_ranges)? subject->seq_ranges[range[0]].left : subject->length;
-    range[1] = range[3] + word_length - lut_word_length;
-    range[2] = range[4] - lut_word_length;
+    range[1] = subject->seq_ranges[range[0]-1].right + word_length - lut_word_length;
+    range[2] = ((range[0]<subject->num_seq_ranges)? 
+                 subject->seq_ranges[range[0]].left 
+               : subject->length) - lut_word_length;
 
     return (range[1] <= range[2]);
 }

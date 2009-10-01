@@ -424,14 +424,13 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     BlastUngappedData *ungapped_data;
     BlastUngappedData dummy_ungapped_data;
     Int4 window_size = word_params->options->window_size;
-    Int4 scan_range = word_params->options->scan_range;
     Int4 hit_ready = 1;
     Int4 last_hit, hit_saved;
     DiagStruct *hit_level_array;
     BlastUngappedCutoffs *cutoffs = NULL;
     Boolean two_hits = (window_size > 0);
     Boolean found = FALSE;
-    Int4 Delta = MIN(scan_range, window_size - word_length);
+    Int4 Delta = MIN(word_params->options->scan_range, window_size - word_length);
 
     hit_level_array = diag_table->hit_level_array;
     ASSERT(hit_level_array);
@@ -562,13 +561,12 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     BlastUngappedData *ungapped_data;
     BlastUngappedData dummy_ungapped_data;
     Int4 window_size = word_params->options->window_size;
-    Int4 scan_range = word_params->options->scan_range;
     Int4 hit_ready = 1; 
     Int4 last_hit, hit_saved = 0;
     BlastUngappedCutoffs *cutoffs = NULL;
     Boolean two_hits = (window_size > 0);
     Boolean found = FALSE;
-    Int4 Delta = MIN(scan_range, window_size - word_length);
+    Int4 Delta = MIN(word_params->options->scan_range, window_size - word_length);
     Int4 rc;
 
     diag = s_off - q_off;
@@ -727,7 +725,7 @@ s_IsWordSeedMasked(BlastSeqLoc* locations,
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range the subject range [in]
+ * @param range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -739,7 +737,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                       BlastQueryInfo * query_info,
                       Blast_ExtendWord * ewp,
                       BlastInitHitList * init_hitlist,
-                      Int4 * range)
+                      Uint4 range)
 {
     Int4 index;
     Int4 hits_extended = 0;
@@ -812,7 +810,7 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range
+ * @param range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -824,7 +822,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                 BlastQueryInfo * query_info,
                 Blast_ExtendWord * ewp,
                 BlastInitHitList * init_hitlist,
-                Int4 * range)
+                Uint4 range)
 {
     Int4 index;
     Uint1 *q_start = query->sequence;
@@ -896,7 +894,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         q_off = q_offset + lut_word_length;
         s_off = s_offset + lut_word_length;
-        max_ext = MIN(context_f - q_off, range[1] - s_off);
+        max_ext = MIN(context_f - q_off, range - s_off);
 
         if (extended_left < extra_bases) {
             q = q_start + q_off;
@@ -982,7 +980,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                        Int4 ** matrix, BlastQueryInfo * query_info,
                        Blast_ExtendWord * ewp,
                        BlastInitHitList * init_hitlist,
-                       Int4 * range)
+                       Uint4 range)
 {
     Int4 index;
     Uint1 *q_start = query->sequence;
@@ -1066,8 +1064,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             q = q_start + q_off;
             s = s_start + s_off / COMPRESSION_RATIO;
             max_bases_right = MIN(extra_bases - extended_left,
-                                  MIN(context_f - q_off,
-                                      range[1]  - s_off));
+                              MIN(context_f - q_off, range - s_off));
 
             for (; extended_right < max_bases_right;
                  s++, q += 4, extended_right++) {
@@ -1094,7 +1091,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         q_off = q_offset - extended_left;
         s_off = s_offset - extended_left;
-        max_ext = MIN(context_f - q_off, range[1] - s_off) - word_length;
+        max_ext = MIN(context_f - q_off, range - s_off) - word_length;
         /* Check that the exact match was not masked out. */
         if (word_length > lut_word_length && 
             s_IsWordSeedMasked(masked_locations, query, subject, q_off,
@@ -1180,7 +1177,7 @@ static const Uint1 s_ExactMatchExtendRight[256] = {
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
  *                     Must be allocated outside of this function [in] [out]
- * @param range The subject range
+ * @param range The subject range [in]
  * @return Number of hits extended. 
  */
 static Int4
@@ -1192,7 +1189,7 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                        Int4 ** matrix, BlastQueryInfo * query_info,
                        Blast_ExtendWord * ewp,
                        BlastInitHitList * init_hitlist,
-                       Int4 * range)
+                       Uint4 range)
 {
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
     Int4 i;
@@ -1312,7 +1309,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                      BlastQueryInfo * query_info,
                      Blast_ExtendWord * ewp,
                      BlastInitHitList * init_hitlist,
-                     Int4 * range)
+                     Uint4 range)
 {
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
     Int4 i;
@@ -1369,7 +1366,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         extra_bases = word_length - extended_left;
         extra_bases = MIN(extra_bases, context_f - q_off);
-        extra_bases = MIN(extra_bases, range[1] - s_off);
+        extra_bases = MIN(extra_bases, range - s_off);
         s_start = s_off;
         q_start = q_off;
         while (extended_right < extra_bases) {
@@ -1389,7 +1386,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         q_off -= extended_left;
         s_off -= extended_left;
-        max_ext = MIN(context_f - q_off, range[1] - s_off) - word_length;
+        max_ext = MIN(context_f - q_off, range - s_off) - word_length;
         /* Check that the exact match was not masked out. */
         if (word_length > lut_word_length && 
             s_IsWordSeedMasked(lut->masked_locations, query, subject, q_off,
@@ -1437,7 +1434,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     Int4 hits_extended = 0;
     TNaScanSubjectFunction scansub = NULL;
     TNaExtendFunction extend = NULL;
-    Int4 scan_range[5];
+    Int4 scan_range[3];
     Int4 word_length;
     Int4 lut_word_length;
 
@@ -1474,8 +1471,6 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     scan_range[0] = 0;  /* subject seq mask index */
     scan_range[1] = 0;	/* start pos of scan */
     scan_range[2] = subject->length - lut_word_length; /*end pos of scan*/
-    scan_range[3] = 0;  /* current subject seq range start */
-    scan_range[4] = subject->length;  /* current subject seq range end */
 
     /* if sequence is masked, fall back to generic scanner and extender */
     if (subject->num_seq_ranges) {
@@ -1494,21 +1489,16 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
     ASSERT(extend);
 
     while(s_DetermineScanningOffsets(subject, word_length, lut_word_length, scan_range)) {
-        Int4 next_start;
 
-        /* Pass the last word ending offset */
-        next_start = scan_range[2];
+        hitsfound = scansub(lookup_wrap, subject, offset_pairs, max_hits, &scan_range[1]);
 
-        hitsfound = scansub(lookup_wrap, subject, scan_range[1], 
-                            offset_pairs, max_hits, &next_start);
-        scan_range[1] = next_start;
         if (hitsfound == 0)
             continue;
 
         total_hits += hitsfound;
         hits_extended += extend(offset_pairs, hitsfound, word_params,
                                 lookup_wrap, query, subject, matrix, 
-                                query_info, ewp, init_hitlist, &scan_range[3]);
+                                query_info, ewp, init_hitlist, scan_range[2] + lut_word_length);
     }
 
     Blast_ExtendWordExit(ewp, subject->length);

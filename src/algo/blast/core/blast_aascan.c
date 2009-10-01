@@ -61,7 +61,7 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
     Uint1 *s = NULL;
     Uint1 *s_first = NULL;
     Uint1 *s_last = NULL;
-    Int4 s_range[5]; 
+    Int4 s_range[3]; 
     Int4 numhits = 0;           /* number of hits found for a given subject
                                    offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
@@ -82,8 +82,6 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
     s_range[0] = 0;
     s_range[1] = *offset;
     s_range[2] = subject->length - word_length;
-    s_range[3] = 0;
-    s_range[4] = subject->length;
 
     while (s_DetermineScanningOffsets(subject, word_length, word_length, s_range)) {
     s_first=subject->sequence + s_range[1];
@@ -156,7 +154,7 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
     Uint1 *s = NULL;
     Uint1 *s_first = NULL;
     Uint1 *s_last = NULL;
-    Int4 s_range[5];
+    Int4 s_range[3];
     Int4 numhits = 0;           /* number of hits found for a given subject
                                    offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
@@ -177,8 +175,6 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
     s_range[0] = 0;
     s_range[1] = *offset;
     s_range[2] = subject->length - word_length;
-    s_range[3] = 0;
-    s_range[4] = subject->length;
 
     while (s_DetermineScanningOffsets(subject, word_length, word_length, s_range)) {
     s_first=subject->sequence + s_range[1];
@@ -267,7 +263,7 @@ static Int4 s_BlastCompressedAaScanSubject(
     Uint1 *s = NULL;
     Uint1 *s_first = NULL;
     Uint1 *s_last = NULL;
-    Int4 s_range[5];
+    Int4 s_range[3];
     Int4 numhits = 0;     /* number of hits found for one subject offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
     PV_ARRAY_TYPE *pv;
@@ -289,8 +285,6 @@ static Int4 s_BlastCompressedAaScanSubject(
     s_range[0] = 0;
     s_range[1] = *offset;
     s_range[2] = subject->length - word_length;
-    s_range[3] = 0;
-    s_range[4] = subject->length;
 
     while (s_DetermineScanningOffsets(subject, word_length, word_length, s_range)) {
     s_first=subject->sequence + s_range[1];

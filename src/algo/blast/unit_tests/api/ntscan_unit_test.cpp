@@ -352,11 +352,9 @@ struct TestFixture {
         TearDownLookupTable();
     }
 
-    Int4 RunScanSubject(Int4 first_word_start, 
-                        Int4 *next_word_start,
+    Int4 RunScanSubject(Int4 *scan_range,
                         Int4 max_hits) 
     {
-
         BOOST_REQUIRE(lookup_wrap_ptr->lut_type == eSmallNaLookupTable ||
                        lookup_wrap_ptr->lut_type == eMBLookupTable);
 
@@ -373,16 +371,16 @@ struct TestFixture {
             callback = (TNaScanSubjectFunction)na_lt->scansub_callback;
         }
         BOOST_REQUIRE(callback != NULL);
-        return callback(lookup_wrap_ptr, subject_blk, first_word_start,
-                        offset_pairs, max_hits, next_word_start);
+        return callback(lookup_wrap_ptr, subject_blk, 
+                        offset_pairs, max_hits, scan_range);
     }
 
     // Gets called first
     void ScanOffsetTestCore(EDiscWordType disco_type)
     {
         Int4 query_bases, subject_bases;
-        Int4 first_word_start, next_word_start;
-        Int4 last_word_start, last_lut_word_end;
+        Int4 scan_range[2];
+        Int4 last_lut_word_end;
         Int4 bases_per_lut_word;
         Int4 hits;
         Uint4 last_s_off = 0;
@@ -390,7 +388,7 @@ struct TestFixture {
         BlastMBLookupTable *mb_lt = NULL;
         Boolean discontig = FALSE;
 
-        first_word_start = 0;
+        scan_range[0] = 0;
 
         BOOST_REQUIRE(query_blk != NULL);
         BOOST_REQUIRE(subject_blk != NULL);
@@ -409,25 +407,23 @@ struct TestFixture {
 
             last_lut_word_end = subject_bases;
             if (discontig) {
-                last_word_start = subject_bases - mb_lt->template_length;
+                scan_range[1] = subject_bases - mb_lt->template_length;
             }
             else {
-                last_word_start = subject_bases - bases_per_lut_word;
+                scan_range[1] = subject_bases - bases_per_lut_word;
             }
         }
         else {
             na_lt = (BlastSmallNaLookupTable *)lookup_wrap_ptr->lut;
             bases_per_lut_word = na_lt->lut_word_length;
-            last_word_start = subject_bases - bases_per_lut_word;
+            scan_range[1] = subject_bases - bases_per_lut_word;
             last_lut_word_end = subject_bases - bases_per_lut_word;
         }
 
-        while (first_word_start <= last_word_start)
+        while (scan_range[0] <= scan_range[1])
         {
-            next_word_start = last_word_start;
-            hits = RunScanSubject(first_word_start, &next_word_start, 
+            hits = RunScanSubject(scan_range,
                                   GetOffsetArraySize(lookup_wrap_ptr));
-            first_word_start = next_word_start;
 
             // check number of reported hits
             BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
@@ -492,14 +488,14 @@ struct TestFixture {
     {
         Int4 subject_bases;
         Int4 hits, found_hits, expected_hits;
-        Int4 first_word_start, next_word_start;
-        Int4 last_word_start, last_lut_word_end;
+        Int4 scan_range[2];
+        Int4 last_lut_word_end;
         Int4 new_max_size;
         BlastSmallNaLookupTable *na_lt = NULL;
         BlastMBLookupTable *mb_lt = NULL;
         Boolean discontig = FALSE;
 
-        first_word_start = 0;
+        scan_range[0] = 0;
         found_hits = expected_hits = 0;
 
         BOOST_REQUIRE(query_blk != NULL);
@@ -517,32 +513,30 @@ struct TestFixture {
 
             last_lut_word_end = subject_bases;
             if (discontig) {
-                last_word_start = subject_bases - mb_lt->template_length;
+                scan_range[1] = subject_bases - mb_lt->template_length;
             }
             else {
-                last_word_start = subject_bases - mb_lt->lut_word_length;
+                scan_range[1] = subject_bases - mb_lt->lut_word_length;
             }
         }
         else {
             na_lt = (BlastSmallNaLookupTable *)lookup_wrap_ptr->lut;
-            last_word_start = subject_bases - na_lt->lut_word_length;
+            scan_range[1] = subject_bases - na_lt->lut_word_length;
             last_lut_word_end = subject_bases - na_lt->lut_word_length;
         }
 
-        while (first_word_start <= last_word_start)
+        while (scan_range[0] <= scan_range[1])
         {
-            next_word_start = last_word_start;
-            hits = RunScanSubject(first_word_start, &next_word_start, 
+            hits = RunScanSubject(scan_range,
                                   GetOffsetArraySize(lookup_wrap_ptr));
             BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
-            first_word_start = next_word_start;
             expected_hits += hits;
         }
 
         // Verify that the number of collected hits does
         // not change if the hit list size changes
 
-        first_word_start = 0;
+        scan_range[0] = 0;
         if (mb_lt)
             new_max_size = MAX(GetOffsetArraySize(lookup_wrap_ptr)/5,
                                mb_lt->longest_chain);
@@ -550,13 +544,11 @@ struct TestFixture {
             new_max_size = MAX(GetOffsetArraySize(lookup_wrap_ptr)/5,
                                na_lt->longest_chain);
 
-        while (first_word_start <= last_word_start)
+        while (scan_range[0] <= scan_range[1])
         {
-            next_word_start = last_word_start;
-            hits = RunScanSubject(first_word_start, &next_word_start, 
+            hits = RunScanSubject(scan_range,
                                   new_max_size);
             BOOST_REQUIRE(hits <= new_max_size);
-            first_word_start = next_word_start;
             found_hits += hits;
         }
 
@@ -568,14 +560,14 @@ struct TestFixture {
     {
         Int4 subject_bases;
         Int4 hits, found_hits, expected_hits;
-        Int4 first_word_start, next_word_start;
-        Int4 last_word_start, last_lut_word_end;
+        Int4 scan_range[2];
+        Int4 last_lut_word_end;
         Int4 bases_per_lut_word;
         BlastSmallNaLookupTable *na_lt = NULL;
         BlastMBLookupTable *mb_lt = NULL;
         Boolean discontig = FALSE;
 
-        first_word_start = 0;
+        scan_range[0] = 0;
         found_hits = expected_hits = 0;
 
         BOOST_REQUIRE(query_blk != NULL);
@@ -594,27 +586,25 @@ struct TestFixture {
 
             last_lut_word_end = subject_bases;
             if (discontig) {
-                last_word_start = subject_bases - mb_lt->template_length;
+                scan_range[1] = subject_bases - mb_lt->template_length;
             }
             else {
-                last_word_start = subject_bases - bases_per_lut_word;
+                scan_range[1] = subject_bases - bases_per_lut_word;
             }
         }
         else {
             na_lt = (BlastSmallNaLookupTable *)lookup_wrap_ptr->lut;
             bases_per_lut_word = na_lt->lut_word_length;
-            last_word_start = subject_bases - bases_per_lut_word;
+            scan_range[1] = subject_bases - bases_per_lut_word;
             last_lut_word_end = subject_bases - bases_per_lut_word;
         }
 
-        while (first_word_start <= last_word_start)
+        while (scan_range[0] <= scan_range[1])
         {
-            next_word_start = last_word_start;
-            hits = RunScanSubject(first_word_start, &next_word_start, 
+            hits = RunScanSubject(scan_range,
                                   GetOffsetArraySize(lookup_wrap_ptr));
             BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
             found_hits += hits;
-            first_word_start = next_word_start;
 
             for (int i = 0; i < hits; i++)
             {
@@ -806,8 +796,8 @@ BOOST_FIXTURE_TEST_SUITE( ntscan, TestFixture )
 BOOST_AUTO_TEST_CASE( DiscontigTwoSubjects )
 {
     Int4 subject_bases;
-    Int4 first_word_start, next_word_start;
-    Int4 last_word_start, last_lut_word_end;
+    Int4 scan_range[2];
+    Int4 last_lut_word_end;
     Int4 hits;
     Int4 i;
     BlastMBLookupTable *mb_lt = NULL;
@@ -822,32 +812,28 @@ BOOST_AUTO_TEST_CASE( DiscontigTwoSubjects )
     //mb_lt->scan_step = 1;
 
     SetUpSubject(313959);
-    first_word_start = 0;
+    scan_range[0] = 0;
     subject_bases = subject_blk->length;
-    last_word_start = subject_bases - mb_lt->template_length;
+    scan_range[1] = subject_bases - mb_lt->template_length;
     last_lut_word_end = subject_bases;
 
-    while (first_word_start <= last_word_start)
+    while (scan_range[0] <= scan_range[1])
     {
-        next_word_start = last_word_start;
-        hits = RunScanSubject(first_word_start, &next_word_start, 
+        hits = RunScanSubject(scan_range,
                               GetOffsetArraySize(lookup_wrap_ptr));
-        first_word_start = next_word_start;
     }
 
     TearDownSubject();
     SetUpSubject(271065);  // smaller subject sequence
-    first_word_start = 0;
+    scan_range[0] = 0;
     subject_bases = subject_blk->length;
-    last_word_start = subject_bases - mb_lt->template_length;
+    scan_range[1] = subject_bases - mb_lt->template_length;
     last_lut_word_end = subject_bases;
 
-    while (first_word_start <= last_word_start)
+    while (scan_range[0] <= scan_range[1])
     {
-        next_word_start = last_word_start;
-        hits = RunScanSubject(first_word_start, &next_word_start, 
+        hits = RunScanSubject(scan_range,
                               GetOffsetArraySize(lookup_wrap_ptr));
-        first_word_start = next_word_start;
 
         // verify that none of the lookup table hits are 'reused'
         // from the last subject sequence
