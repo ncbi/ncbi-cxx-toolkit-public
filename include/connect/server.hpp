@@ -165,6 +165,17 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  Error codes for OnOverflow method in IServer_ConnectionHandler
+enum EOverflowReason
+{
+    eOR_Unknown = 0,
+    eOR_ConnectionPoolFull,
+    eOR_RequestQueueFull,
+    eOR_UnpollableSocket
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -236,9 +247,14 @@ public:
 
     /// Runs when there are insufficient resources to queue a
     /// connection, prior to closing it.
-    /// Specifically, now it can only mean that connection limit is reached.
     // See comment for CAcceptRequest::Process and CServer::CreateRequest
     virtual void OnOverflow(void) { }
+
+    /// More informative version of former OnOverflow, has a reason why the
+    /// connection is being close, which can be reported back to the client.
+    virtual void OnOverflow(EOverflowReason) {
+        OnOverflow();
+    }
 
     /// Get underlying socket
     CSocket& GetSocket(void) { return *m_Socket; }

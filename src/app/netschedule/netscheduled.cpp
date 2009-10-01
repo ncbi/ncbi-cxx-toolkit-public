@@ -279,7 +279,7 @@ public:
     virtual void OnWrite(void);
     virtual void OnCloseExt(IServer_ConnectionHandler::EClosePeer peer);
     virtual void OnTimeout(void);
-    virtual void OnOverflow(void);
+    virtual void OnOverflow(EOverflowReason reason);
     virtual void OnMessage(BUF buffer);
 
     void WriteMsg(const char*   prefix,
@@ -911,9 +911,19 @@ void CNetScheduleHandler::OnTimeout()
 }
 
 
-void CNetScheduleHandler::OnOverflow()
+void CNetScheduleHandler::OnOverflow(EOverflowReason reason)
 {
 //    ERR_POST("OnOverflow!");
+    switch (reason) {
+    case eOR_ConnectionPoolFull:
+        WriteErr("eCommunicationError:Connection pool full");
+        break;
+    case eOR_UnpollableSocket:
+        WriteErr("eCommunicationError:Unpollable connection");
+        break;
+    default:
+        break;
+    }
 }
 
 class CRequestContextGuard
@@ -1097,9 +1107,9 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
                 .Print("cmd", m_Request);
             ;
 
-            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
-                << lmsg
-                << NCBI_NS_NCBI::Endm;
+//            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
+//                << lmsg
+//                << NCBI_NS_NCBI::Endm;
         }
         if (IsMonitoring()) {
             lmsg += "\n";

@@ -162,6 +162,24 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
         new CServer_Connection(listener->m_Factory->Create()));
     if (listener->Accept(*conn, &kZeroTimeout) != eIO_Success)
         return;
+#if defined(NCBI_OS_UNIX)
+    int fd;
+    if (conn->GetOSHandle(&fd, sizeof(fd)) != eIO_Success) {
+        ERR_POST(Error << "Can not get OS handle from CSocket,"
+                       << " closing connection");
+        // We can't be sure here that connection is usable at all,
+        // so we better not even report it through OnOverflow.
+        conn->Abort();
+        return;
+    }
+    if (fd >= 1024) {
+        ERR_POST(Error << "Got unpollable file descriptor " << fd <<
+                          " during Accept, closing connection");
+        conn->OnOverflow(eOR_UnpollableSocket);
+        conn->Abort();
+        return;
+    }
+#endif
     conn->SetTimeout(eIO_ReadWrite, m_IdleTimeout);
     m_Connection = conn.release();
     _TRACE("Connection accepted " << m_Connection);
@@ -184,7 +202,10 @@ void CAcceptRequest::Process(void)
         } else {
             // The connection pool is full
             // This place is the only one which can call OnOverflow now
-            m_Connection->OnOverflow();
+            m_Connection->OnOverflow(eOR_ConnectionPoolFull);
+            // Abort connection here to prevent it sitting in TIME_WAIT state
+            // on the server.
+            m_Connection->Abort();
             delete m_Connection;
             _TRACE("Connection dropped - pool full");
         }
@@ -195,7 +216,7 @@ void CAcceptRequest::Cancel(void)
 {
     // As of now, Cancel can not be called.
     // See comment at CServer::CreateRequest
-    m_Connection->OnOverflow();
+    m_Connection->OnOverflow(eOR_RequestQueueFull);
     delete m_Connection;
 }
 
@@ -243,7 +264,7 @@ void CServerConnectionRequest::Cancel(void)
 {
     // As of now, Cancel can not be called.
     // See comment at CServer::CreateRequest
-    m_Connection->OnOverflow();
+    m_Connection->OnOverflow(eOR_RequestQueueFull);
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection,
                            CServer_ConnectionPool::eInactiveSocket);

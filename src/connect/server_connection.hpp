@@ -60,7 +60,7 @@ public:
     virtual bool IsReadyToProcess(void) { return true; }
     virtual void OnTimeout(void) { }
     virtual void OnTimer(void) { }
-    virtual void OnOverflow(void) { }
+    virtual void OnOverflow(EOverflowReason) { }
     virtual void Activate(void) { }
     virtual void Passivate(void) { }
 };
@@ -79,8 +79,12 @@ public:
                                        const STimeout* timeout,
                                        int request_id);
     virtual void OnTimeout(void) { m_Handler->OnTimeout(); }
-    virtual void OnOverflow(void) { m_Handler->OnOverflow(); }
-    virtual bool IsReadyToProcess(void) { return m_Handler->IsReadyToProcess(); }
+    virtual void OnOverflow(EOverflowReason reason) {
+        m_Handler->OnOverflow(reason);
+    }
+    virtual bool IsReadyToProcess(void) {
+        return m_Handler->IsReadyToProcess();
+    }
     virtual bool IsOpen(void);
     // connection-specific methods
     void OnSocketEvent(EServIO_Event event);
