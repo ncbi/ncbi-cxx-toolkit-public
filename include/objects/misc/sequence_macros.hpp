@@ -290,11 +290,16 @@ typedef CProt_ref::EProcessed TPROTREF_PROCESSED;
 
 /// CRNA_ref definitions
 
-#define NCBI_RNAREF(Type) CRNA_ref::EType##Type
+#define NCBI_RNAREF(Type) CRNA_ref::eType_##Type
 typedef CRNA_ref::EType TRNAREF_TYPE;
 
 //   premsg     mRNA      tRNA      rRNA        snRNA     scRNA
 //   snoRNA     ncRNA     tmRNA     miscRNA     other
+
+#define NCBI_RNAEXT(Type) CRNA_ref::C_Ext::e_##Type
+typedef CRNA_ref::C_Ext::E_Choice TRNAREF_EXT;
+
+//   Name     TRNA      Gen
 
 
 
