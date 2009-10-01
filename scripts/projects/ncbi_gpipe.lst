@@ -11,6 +11,7 @@ dbapi
 hello
 html
 gui
+internal/asn_cache
 internal/align_model$
 internal/align_model/am2gff3
 internal/align_model/loader
