@@ -38,7 +38,7 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <util/tables/raw_scoremat.h>
-#include "data4xmlformat.hpp"       /* NCBI_FAKE_WARNING */
+#include <algo/blast/format/data4xmlformat.hpp>       /* NCBI_FAKE_WARNING */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;

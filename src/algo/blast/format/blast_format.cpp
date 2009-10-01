@@ -46,7 +46,7 @@ Author: Jason Papadopoulos
 #include <corelib/ncbiutil.hpp>                 // for FindBestChoice
 
 #include <algo/blast/format/blastxml_format.hpp>
-#include "data4xmlformat.hpp"       /* NCBI_FAKE_WARNING */
+#include <algo/blast/format/data4xmlformat.hpp>       /* NCBI_FAKE_WARNING */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
