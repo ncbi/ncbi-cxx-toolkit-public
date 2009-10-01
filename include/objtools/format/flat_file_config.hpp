@@ -311,27 +311,27 @@ public:
     // getters
     bool GffGenerateIdTags   (void) const 
     { 
-        return m_GffOptions & fGffGenerateIdTags;
+        return (0 != (m_GffOptions & fGffGenerateIdTags));
     };
 
     bool GffGTFCompat        (void) const 
     { 
-        return m_GffOptions & fGffGTFCompat;
+        return (0 != (m_GffOptions & fGffGTFCompat));
     };
 
     bool GffGTFOnly          (void) const 
     { 
-        return m_GffOptions & fGffGTFOnly;
+        return (0 != (m_GffOptions & fGffGTFOnly));
     };
 
     bool GffShowSeq          (void) const 
     { 
-        return m_GffOptions & fGffShowSeq;
+        return (0 != (m_GffOptions & fGffShowSeq));
     };
 
     bool GffForFlybase       (void) const 
     { 
-        return m_GffOptions & fGffForFlybase;
+        return (0 != (m_GffOptions & fGffForFlybase));
     };
 
     // setters

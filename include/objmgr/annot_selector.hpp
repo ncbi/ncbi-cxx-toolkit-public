@@ -248,7 +248,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
     bool IsSetFeatComparator(void) const
         {
-            return m_FeatComparator;
+            return (0 != m_FeatComparator);
         }
     IFeatComparator* GetFeatComparator(void) const
         {
