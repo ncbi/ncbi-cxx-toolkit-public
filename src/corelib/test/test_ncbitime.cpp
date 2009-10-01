@@ -1435,6 +1435,21 @@ static void s_TestTimeout(void)
         catch (CTimeException&) {}
     }}
 
+    // Check Get()
+    {{
+        CTimeout t(123, 456);
+        unsigned int sec, usec;
+        t.Get(&sec, &usec);
+        assert(sec  == 123);
+        assert(usec == 456);
+        t.Set(CTimeout::eInfinite);
+        try {
+            t.Get(&sec); // special value
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+    }}
+
     // Comparison
     {{
         CTimeout t0;

@@ -1505,7 +1505,7 @@ public:
     const CTimeSpan GetAsTimeSpan(void) const;
 
     /// Get timeout in seconds and microseconds.
-    void Get(unsigned int& sec, unsigned int& usec) const;
+    void Get(unsigned int *sec, unsigned int *usec = 0) const;
 
 
     //
@@ -2452,10 +2452,16 @@ const CTimeSpan CTimeout::GetAsTimeSpan(void) const
 
 
 inline
-void CTimeout::Get(unsigned int& sec, unsigned int& usec) const
+void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
 {
-    sec  = m_sec;
-    usec = m_usec;
+    if (m_Type != eValue) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout:  Cannot convert from special timeout value");
+    }
+    if ( sec )
+        *sec  = m_sec;
+    if ( usec )
+        *usec = m_usec;
 }
 
 
@@ -2488,6 +2494,10 @@ void CTimeout::Set(double sec)
         NCBI_THROW(CTimeException, eArgument, 
                    "CTimeout:  Cannot set negative value");
     }
+    if (sec > kMax_UInt) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  Timeout value is too big");
+    }
     m_Type = eValue;
     m_sec  = (unsigned int)sec;
     m_usec = (unsigned int)((sec - m_sec) * kMicroSecondsPerSecond);
@@ -2499,6 +2509,12 @@ void CTimeout::Set(const CTimeSpan& ts)
     if (ts.GetSign() == eNegative) {
         NCBI_THROW(CTimeException, eArgument, 
                    "CTimeout:  Cannot convert from negative CTimeStamp");
+    }
+    if (ts.GetCompleteSeconds() > kMax_UInt) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout:  CTimeStamp value is too big");
+        // We don't need to check nanoseconds, because CTimeSpan alwys have
+        // normalized value and its value can be safely converted to microseconds.
     }
     m_Type = eValue;
     m_sec  = (unsigned int)ts.GetCompleteSeconds();
