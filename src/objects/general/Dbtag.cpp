@@ -342,8 +342,6 @@ bool CDbtag::GetDBFlags (bool& is_refseq, bool& is_src, string& correct_caps) co
     }
     const string& db = GetDb();
     
-    const char* retval = 0;
-
     ITERATE (TDbxrefTypeMap, it, sc_ApprovedSrcDb) {
         if ( NStr::EqualNocase(db, it->first) ) {
 			correct_caps = it->first;
