@@ -70,6 +70,7 @@
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_process.hpp>
 # include <signal.h>
+# include <unistd.h>
 #endif
 
 
