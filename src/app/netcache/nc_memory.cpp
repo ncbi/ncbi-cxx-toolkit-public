@@ -753,7 +753,9 @@ CNCMMCentral::SysFree(void* ptr, size_t size)
 #ifdef NCBI_OS_MSWIN
     VirtualFree(ptr, 0, kNCVirtFreeType);
 #else
-    munmap(ptr, aligned_size);
+    // Cast to char* is necessary for WorkShop and harmless for other
+    // platforms.
+    munmap(static_cast<char*>(ptr), aligned_size);
 #endif
 
     sm_Stats.SysMemFreed(aligned_size, size);
