@@ -202,7 +202,7 @@ typedef struct LSOCK_tag {
 #ifndef NCBI_OS_MSWIN
     unsigned        reserved:8; /* MBZ                                       */
 #else
-    unsigned        reserved:7; /* MBZ                                       */
+    unsigned        reserved:5; /* MBZ                                       */
     unsigned        readable:1; /* =1 if known to have a pending accept      */
     unsigned          unused:2; /* MBZ                                       */
 
