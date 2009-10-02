@@ -32,6 +32,7 @@
 #include <db/sqlite/sqlitewrapp.hpp>
 
 #include "nc_db_info.hpp"
+#include "nc_utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -407,8 +408,11 @@ public:
 /// @param TFile
 ///   Type of file connection to create by this factory.
 template <class TFile>
-class CNCDBFileObjFactory : public CObjFactory_New<TFile>
+class CNCDBFileObjFactory : public CNCTlsObject<CNCDBFileObjFactory<TFile>,
+                                                TFile>
 {
+    typedef CNCTlsObject<CNCDBFileObjFactory<TFile>, TFile>  TBase;
+
 public:
     /// Empty constructor for convenience - factory created in such way can
     /// only delete objects and cannot create them.
@@ -417,21 +421,35 @@ public:
     /// create and delete objects. Both parameters are passed unchanged to
     /// file connection constructor.
     CNCDBFileObjFactory(const string& file_name, CNCDBStat* stat);
+    /// Destructor cleans up all file objects that it created in all threads.
+    ~CNCDBFileObjFactory(void);
 
     /// Create new object.
-    /// Part of ObjFactory interface for CObjPool.
-    TFile* CreateObject(void);
+    /// Part of the interface required by CNCTlsObject.
+    TFile* CreateTlsObject(void);
+    /// Delete object.
+    /// Part of the interface required by CNCTlsObject.
+    static void DeleteTlsObject(void* obj_ptr);
     /// Delete object.
     /// Part of Deleter interface for AutoPtr.
     /// For now it's simple delete but for consistency and possible future
     /// changes it's extracted as though deletion happens in some other way.
     void Delete(TFile* file);
 
+    /// Get one file object and forget about it - it will be destroyed by
+    /// caller.
+    TFile* ReleaseFile(void);
+
 private:
     /// Name of the database file all objects will connect to
-    string     m_FileName;
+    string       m_FileName;
     /// Object for gathering database statistics
-    CNCDBStat* m_Stat;
+    CNCDBStat*   m_Stat;
+    /// Mutex for creation of new file objects (actually for work with
+    /// m_AllFiles).
+    CFastMutex   m_CreateLock;
+    /// List of all file objects created by this factory.
+    list<TFile*> m_AllFiles;
 };
 
 /// Factories for database files with meta-information and with actual data
@@ -440,9 +458,6 @@ typedef CNCDBFileObjFactory<CNCDBDataFile>           TNCDataFileFactory;
 /// Smart pointers to database file connections
 typedef AutoPtr<CNCDBMetaFile, TNCMetaFileFactory>   TNCMetaFilePtr;
 typedef AutoPtr<CNCDBDataFile, TNCDataFileFactory>   TNCDataFilePtr;
-/// Pools of database files connections
-typedef CObjPool<CNCDBMetaFile, TNCMetaFileFactory>  TNCMetaFilePool;
-typedef CObjPool<CNCDBDataFile, TNCDataFileFactory>  TNCDataFilePool;
 
 
 /// Central pool of connections to database files belonging to one database
@@ -468,10 +483,12 @@ public:
     /// compile calls to such template method.
     void GetFile   (CNCDBMetaFile** file_ptr);
     void GetFile   (CNCDBDataFile** file_ptr);
-    /// Get meta file from pool
-    CNCDBMetaFile* GetMetaFile(void);
-    /// Get data file from pool
-    CNCDBDataFile* GetDataFile(void);
+    /// Get meta file from pool and forget about it - it will be destroyed
+    /// by caller.
+    CNCDBMetaFile* ReleaseMetaFile(void);
+    /// Get data file from pool and forget about it - it will be destroyed
+    /// by caller.
+    CNCDBDataFile* ReleaseDataFile(void);
     /// Return file to the pool
     void ReturnFile(CNCDBMetaFile*  file);
     void ReturnFile(CNCDBDataFile*  file);
@@ -480,10 +497,10 @@ private:
     CNCDBFilesPool(const CNCDBFilesPool&);
     CNCDBFilesPool& operator= (const CNCDBFilesPool&);
 
-    /// Pool of meta file connections
-    TNCMetaFilePool m_MetaPool;
-    /// Pool of data file connections
-    TNCDataFilePool m_DataPool;
+    /// Factory for per-thread meta file connections
+    TNCMetaFileFactory m_Metas;
+    /// Factory for per-thread data file connections
+    TNCDataFileFactory m_Datas;
 };
 
 
@@ -726,7 +743,10 @@ template <class TFile>
 inline
 CNCDBFileObjFactory<TFile>::CNCDBFileObjFactory(void)
     : m_Stat(NULL)
-{}
+{
+    // No base initialization because with this constructor we're created only
+    // for AutoPtr.
+}
 
 template <class TFile>
 inline
@@ -734,21 +754,67 @@ CNCDBFileObjFactory<TFile>::CNCDBFileObjFactory(const string& file_name,
                                                 CNCDBStat*    stat)
     : m_FileName(file_name),
       m_Stat(stat)
-{}
+{
+    TBase::Initialize();
+}
+
+template <class TFile>
+inline
+CNCDBFileObjFactory<TFile>::~CNCDBFileObjFactory(void)
+{
+    ITERATE(typename list<TFile*>, it, m_AllFiles) {
+        delete *it;
+    }
+    m_AllFiles.clear();
+    TBase::Finalize();
+}
 
 template <class TFile>
 inline TFile*
-CNCDBFileObjFactory<TFile>::CreateObject(void)
+CNCDBFileObjFactory<TFile>::CreateTlsObject(void)
 {
     _ASSERT(!m_FileName.empty()  &&  m_Stat);
-    return new TFile(m_FileName, m_Stat);
+    // Make it a unique object for each thread for now. If it changes then
+    // CNCDBFilesPool::GetFile and CNCDBFilesPool::ReturnFile should be
+    // changed too.
+    TFile* file = new TFile(m_FileName, m_Stat);
+
+    CFastMutexGuard guard(m_CreateLock);
+    m_AllFiles.push_back(file);
+
+    return file;
+}
+
+template <class TFile>
+inline void
+CNCDBFileObjFactory<TFile>::DeleteTlsObject(void* obj_ptr)
+{
+    // Nothing to do now because it's static
 }
 
 template <class TFile>
 inline void
 CNCDBFileObjFactory<TFile>::Delete(TFile* file)
 {
-    DeleteObject(file);
+    delete file;
+}
+
+template <class TFile>
+inline TFile*
+CNCDBFileObjFactory<TFile>::ReleaseFile(void)
+{
+    TFile* file = NULL;
+    {{
+        CFastMutexGuard guard(m_CreateLock);
+        if (!m_AllFiles.empty()) {
+            file = m_AllFiles.front();
+            m_AllFiles.pop_front();
+        }
+    }}
+    if (!file)
+        file = new TFile(m_FileName, m_Stat);
+
+    return file;
 }
 
 
@@ -757,44 +823,46 @@ inline
 CNCDBFilesPool::CNCDBFilesPool(const string& meta_name,
                                const string& data_name,
                                CNCDBStat*    stat)
-    : m_MetaPool(TNCMetaFileFactory(meta_name, stat)),
-      m_DataPool(TNCDataFileFactory(data_name, stat))
+    : m_Metas(meta_name, stat),
+      m_Datas(data_name, stat)
 {}
 
 inline CNCDBMetaFile*
-CNCDBFilesPool::GetMetaFile(void)
+CNCDBFilesPool::ReleaseMetaFile(void)
 {
-    return m_MetaPool.Get();
+    return m_Metas.ReleaseFile();
 }
 
 inline CNCDBDataFile*
-CNCDBFilesPool::GetDataFile(void)
+CNCDBFilesPool::ReleaseDataFile(void)
 {
-    return m_DataPool.Get();
+    return m_Datas.ReleaseFile();
 }
 
 inline void
 CNCDBFilesPool::GetFile(CNCDBMetaFile** file_ptr)
 {
-    *file_ptr = GetMetaFile();
+    *file_ptr = m_Metas.GetObjPtr();
 }
 
 inline void
 CNCDBFilesPool::GetFile(CNCDBDataFile** file_ptr)
 {
-    *file_ptr = GetDataFile();
+    *file_ptr = m_Datas.GetObjPtr();
 }
 
 inline void
 CNCDBFilesPool::ReturnFile(CNCDBMetaFile* file)
 {
-    m_MetaPool.Return(file);
+    // Nothing to be done for now until file objects are re-used for different
+    // threads.
 }
 
 inline void
 CNCDBFilesPool::ReturnFile(CNCDBDataFile* file)
 {
-    m_DataPool.Return(file);
+    // Nothing to be done for now until file objects are re-used for different
+    // threads.
 }
 
 END_NCBI_SCOPE

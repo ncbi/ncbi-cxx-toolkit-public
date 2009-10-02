@@ -414,8 +414,6 @@ private:
 
     /// NetCache server this handler created for
     CNetCacheServer*          m_Server;
-    /// Object gathering server statistics
-    CNCServer_Stat*           m_Stat;
     /// Monitor of the NetCache server
     CServer_Monitor*          m_Monitor;
     /// Socket handler attached to

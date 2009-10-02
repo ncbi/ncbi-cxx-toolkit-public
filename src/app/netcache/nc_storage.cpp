@@ -1052,8 +1052,8 @@ CNCBlobStorage::x_GC_DeleteDBPart(TNCDBPartsList::iterator part_it)
     try {
         // Save exactly one connection of each type to delete
         // database files.
-        TNCMetaFilePtr metafile(pool->GetMetaFile());
-        TNCDataFilePtr datafile(pool->GetDataFile());
+        TNCMetaFilePtr metafile(pool->ReleaseMetaFile());
+        TNCDataFilePtr datafile(pool->ReleaseDataFile());
         // All the rest should be gone before deleting.
         pool.reset();
         // Now we can delete

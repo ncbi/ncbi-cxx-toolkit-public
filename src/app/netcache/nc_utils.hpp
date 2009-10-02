@@ -42,6 +42,16 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Maximum number of threads when NetCache will most effectively avoid
+/// contention between threads for some internal data structures.
+/// This constant was made different from kNCMMMaxThreadsCnt (though with
+/// similar meaning) because in memory manager changing in number of threads
+/// can result in pretty significant change in memory consumption when in all
+/// other parts of NetCache it's not so significant. So this constant is much
+/// more flexible for changes than kNCMMMaxThreadsCnt.
+static const unsigned int kNCMaxThreadsCnt = 25;
+
+
 /// Stream-like class to accumulate all in one string without actual
 /// streams-related overhead. Can be automatically converted to string or
 /// CTempString.

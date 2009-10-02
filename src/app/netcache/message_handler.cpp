@@ -372,7 +372,6 @@ CBufferedSockReaderWriter::WriteMessage(CTempString prefix, CTempString msg)
 // CNCMessageHandler implementation
 CNCMessageHandler::CNCMessageHandler(CNetCacheServer* server)
     : m_Server(server),
-      m_Stat(server->GetStat()),
       m_Monitor(server->GetServerMonitor()),
       m_Socket(NULL),
       m_State(eSocketClosed),
@@ -399,7 +398,7 @@ CNCMessageHandler::OnOpen(void)
     x_SetState(ePreAuthenticated);
 
     x_MonitorPost("Connection is opened");
-    m_Stat->AddOpenedConnection();
+    CNCServerStat::AddOpenedConnection();
 }
 
 void
@@ -419,7 +418,7 @@ CNCMessageHandler::OnTimer(void)
     CDiagnosticsGuard guard(this);
 
     LOG_POST("Command execution timed out. Closing connection.");
-    m_Stat->AddTimedOutCommand();
+    CNCServerStat::AddTimedOutCommand();
     m_DiagContext->SetRequestStatus(eStatus_CmdTimeout);
     x_CloseConnection();
 }
@@ -429,7 +428,7 @@ CNCMessageHandler::OnOverflow(void)
 {
     // Max connection overflow
     ERR_POST("Max number of connections reached, closing connection");
-    m_Stat->AddOverflowConnection();
+    CNCServerStat::AddOverflowConnection();
 }
 
 void
@@ -455,12 +454,12 @@ CNCMessageHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
     x_FinishCommand();
 
     if (x_GetState() == ePreAuthenticated) {
-        m_Stat->RemoveOpenedConnection();
+        CNCServerStat::RemoveOpenedConnection();
     }
     else {
         double conn_span
                      = (m_Server->GetFastTime() - m_ConnTime).GetAsDouble();
-        m_Stat->AddClosedConnection(conn_span);
+        CNCServerStat::AddClosedConnection(conn_span);
     }
 
     x_SetState(eSocketClosed);
@@ -732,7 +731,7 @@ CNCMessageHandler::x_FinishCommand(void)
     x_UnsetFlag(fReadExactBlobSize);
 
     double cmd_span = (m_Server->GetFastTime() - m_CmdStartTime).GetAsDouble();
-    m_Stat->AddFinishedCmd(m_CurCmd, cmd_span, m_StateSpanStats);
+    CNCServerStat::AddFinishedCmd(m_CurCmd, cmd_span, m_StateSpanStats);
 
     ResetDiagnostics();
 }

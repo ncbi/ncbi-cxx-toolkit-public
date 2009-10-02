@@ -87,6 +87,10 @@ static const char* kNCReg_SessMngTimeout     = "session_shutdown_timeout";
 static const char* kNCReg_MemLimit           = "memory_limit";
 
 
+CNCServerStat_Getter  CNCServerStat::sm_Getter;
+CNCServerStat         CNCServerStat::sm_Instances[kNCMaxThreadsCnt];
+
+
 static CNetCacheServer* s_NetcacheServer     = NULL;
 
 
@@ -100,7 +104,7 @@ void NCSignalHandler(int sig)
 
 
 
-CNCServer_Stat::CNCServer_Stat(void)
+CNCServerStat::CNCServerStat(void)
     : m_MaxConnSpan(0),
       m_ClosedConns(0),
       m_OpenedConns(0),
@@ -113,50 +117,86 @@ CNCServer_Stat::CNCServer_Stat(void)
 {}
 
 void
-CNCServer_Stat::AddFinishedCmd(const char*           cmd,
-                               double                cmd_span,
-                               const vector<double>& state_spans)
+CNCServerStat::AddFinishedCmd(const char*           cmd,
+                              double                cmd_span,
+                              const vector<double>& state_spans)
 {
-    CFastMutexGuard guard(m_ObjMutex);
+    CNCServerStat* stat = sm_Getter.GetObjPtr();
+    CFastMutexGuard guard(stat->m_ObjLock);
 
-    ++m_CntCmds;
-    ++m_CntCmdsByCmd[cmd];
-    m_CmdSpans           += cmd_span;
-    m_CmdSpansByCmd[cmd] += cmd_span;
-    m_MaxCmdSpan          = max(m_MaxCmdSpan, cmd_span);
-    double& max_by_cmd    = m_MaxCmdSpanByCmd[cmd];
-    max_by_cmd            = max(max_by_cmd, cmd_span);
+    ++stat->m_CntCmds;
+    ++stat->m_CntCmdsByCmd[cmd];
+    stat->m_CmdSpans           += cmd_span;
+    stat->m_CmdSpansByCmd[cmd] += cmd_span;
+    stat->m_MaxCmdSpan          = max(stat->m_MaxCmdSpan, cmd_span);
+    double& max_by_cmd          = stat->m_MaxCmdSpanByCmd[cmd];
+    max_by_cmd                  = max(max_by_cmd, cmd_span);
 
-    if (m_StatesSpansSums.size() < state_spans.size()) {
-        m_StatesSpansSums.resize(state_spans.size(), 0);
+    if (stat->m_StatesSpansSums.size() < state_spans.size()) {
+        stat->m_StatesSpansSums.resize(state_spans.size(), 0);
     }
     for (size_t i = 0; i < state_spans.size(); ++i) {
-        m_StatesSpansSums[i] += state_spans[i];
+        stat->m_StatesSpansSums[i] += state_spans[i];
     }
 }
 
-void
-CNCServer_Stat::Print(CPrintTextProxy& proxy)
+inline void
+CNCServerStat::x_CollectTo(CNCServerStat* other)
 {
-    CFastMutexGuard guard(m_ObjMutex);
+    CFastMutexGuard guard(m_ObjLock);
 
-    proxy << "Number of connections opened      - " << m_OpenedConns << endl
-          << "Number of connections closed      - " << m_ClosedConns << endl
-          << "Number of connections overflowed  - " << m_OverflowConns << endl
-          << "Maximum time connection was alive - " << m_MaxConnSpan << endl
+    other->m_MaxConnSpan = max(other->m_MaxConnSpan, m_MaxConnSpan);
+    other->m_ClosedConns += m_ClosedConns;
+    other->m_OpenedConns += m_OpenedConns;
+    other->m_OverflowConns += m_OverflowConns;
+    other->m_ConnsSpansSum += m_ConnsSpansSum;
+    other->m_MaxCmdSpan = max(other->m_MaxCmdSpan, m_MaxCmdSpan);
+    ITERATE(TCmdsSpansMap, it, m_MaxCmdSpanByCmd) {
+        double& other_val = other->m_MaxCmdSpanByCmd[it->first];
+        other_val = max(other_val, it->second);
+    }
+    other->m_CntCmds += m_CntCmds;
+    ITERATE(TCmdsCountsMap, it, m_CntCmdsByCmd) {
+        other->m_CntCmdsByCmd[it->first] += it->second;
+    }
+    other->m_CmdSpans += m_CmdSpans;
+    ITERATE(TCmdsSpansMap, it, m_CmdSpansByCmd) {
+        other->m_CmdSpansByCmd[it->first] += it->second;
+    }
+    if (other->m_StatesSpansSums.size() < m_StatesSpansSums.size()) {
+        other->m_StatesSpansSums.resize(m_StatesSpansSums.size(), 0);
+    }
+    for (size_t i = 0; i < m_StatesSpansSums.size(); ++i) {
+        other->m_StatesSpansSums[i] += m_StatesSpansSums[i];
+    }
+    other->m_TimedOutCmds += m_TimedOutCmds;
+}
+
+void
+CNCServerStat::Print(CPrintTextProxy& proxy)
+{
+    CNCServerStat stat;
+    for (unsigned int i = 0; i < kNCMaxThreadsCnt; ++i) {
+        sm_Instances[i].x_CollectTo(&stat);
+    }
+
+    proxy << "Number of connections opened      - " << stat.m_OpenedConns << endl
+          << "Number of connections closed      - " << stat.m_ClosedConns << endl
+          << "Number of connections overflowed  - " << stat.m_OverflowConns << endl
+          << "Maximum time connection was alive - " << stat.m_MaxConnSpan << endl
           << "Average time connection was alive - "
-                          << g_SafeDiv(m_ConnsSpansSum, m_ClosedConns) << endl
+                          << g_SafeDiv(stat.m_ConnsSpansSum, stat.m_ClosedConns) << endl
           << endl
-          << "Number of commands received   - " << m_CntCmds << endl
-          << "Number of commands timed out  - " << m_TimedOutCmds << endl
-          << "Maximum time command executed - " << m_MaxCmdSpan << endl
+          << "Number of commands received   - " << stat.m_CntCmds << endl
+          << "Number of commands timed out  - " << stat.m_TimedOutCmds << endl
+          << "Maximum time command executed - " << stat.m_MaxCmdSpan << endl
           << "Average time command executed - "
-                          << g_SafeDiv(m_CmdSpans, m_CntCmds) << endl
+                          << g_SafeDiv(stat.m_CmdSpans, stat.m_CntCmds) << endl
           << "Commands by type:" << endl;
-    TCmdsCountsMap::iterator it_cnt  = m_CntCmdsByCmd   .begin();
-    TCmdsSpansMap::iterator  it_span = m_CmdSpansByCmd  .begin();
-    TCmdsSpansMap::iterator  it_max  = m_MaxCmdSpanByCmd.begin();
-    for (; it_cnt != m_CntCmdsByCmd.end(); ++it_cnt, ++it_span, ++it_max) {
+    TCmdsCountsMap::iterator it_cnt  = stat.m_CntCmdsByCmd   .begin();
+    TCmdsSpansMap::iterator  it_span = stat.m_CmdSpansByCmd  .begin();
+    TCmdsSpansMap::iterator  it_max  = stat.m_MaxCmdSpanByCmd.begin();
+    for (; it_cnt != stat.m_CntCmdsByCmd.end(); ++it_cnt, ++it_span, ++it_max) {
         _ASSERT(!SConstCharCompare()(it_cnt->first, it_span->first)
                 &&  !SConstCharCompare()(it_span->first, it_cnt->first));
         _ASSERT(!SConstCharCompare()(it_cnt->first, it_max->first)
@@ -169,10 +209,10 @@ CNCServer_Stat::Print(CPrintTextProxy& proxy)
 
     proxy << endl
           << "Average times of handlers' states:" << endl;
-    for (size_t i = 0; i < m_StatesSpansSums.size(); ++i) {
+    for (size_t i = 0; i < stat.m_StatesSpansSums.size(); ++i) {
         proxy << CNCMessageHandler::GetStateName(int(i)) << " - "
-              << g_SafeDiv(m_StatesSpansSums[i], m_CntCmds) << " ("
-              << int(g_SafeDiv(m_StatesSpansSums[i], m_CmdSpans) * 100)
+              << g_SafeDiv(stat.m_StatesSpansSums[i], stat.m_CntCmds) << " ("
+              << int(g_SafeDiv(stat.m_StatesSpansSums[i], stat.m_CmdSpans) * 100)
                                                   << "% of total)" << endl;
     }
 }
@@ -319,7 +359,15 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
 
     SServer_Parameters params;
     params.max_connections = x_RegReadInt(reg, kNCReg_MaxConnections, 100);
-    params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     25);
+    params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     20);
+    // A bit of hard coding but it's really not necessary to create more than
+    // 25 threads in server's thread pool.
+    if (params.max_threads >= 25) {
+        ERR_POST(Warning << "NetCache configuration is not optimal. "
+                            "Maximum optimal number of threads is 25, "
+                            "maximum number given - " << params.max_threads
+                         << ".");
+    }
     params.init_threads    = x_RegReadInt(reg, kNCReg_InitThreads,    10);
     if (params.init_threads > params.max_threads) {
         params.init_threads = params.max_threads;
@@ -387,7 +435,7 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
           << endl;
     CNCMemManager::PrintStats(proxy);
     proxy << endl;
-    m_Stat.Print(proxy);
+    CNCServerStat::Print(proxy);
 
     ITERATE(TStorageMap, it, m_StorageMap) {
         proxy << endl;

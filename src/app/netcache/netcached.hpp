@@ -48,6 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 
+class CNCServerStat;
 class CNetCacheDApp;
 class CNCMessageHandler;
 
@@ -58,11 +59,26 @@ struct SConstCharCompare
 };
 
 
-class CNCServer_Stat
+/// Helper class to maintain different instances of server statistics in
+/// different threads.
+class CNCServerStat_Getter : public CNCTlsObject<CNCServerStat_Getter,
+                                                 CNCServerStat>
+{
+    typedef CNCTlsObject<CNCServerStat_Getter, CNCServerStat>  TBase;
+
+public:
+    CNCServerStat_Getter(void);
+    ~CNCServerStat_Getter(void);
+
+    /// Part of interface required by CNCTlsObject<>
+    CNCServerStat* CreateTlsObject(void);
+    static void DeleteTlsObject(void* obj_ptr);
+};
+
+/// Class collecting statistics about whole server.
+class CNCServerStat
 {
 public:
-    CNCServer_Stat(void);
-
     /// Add finished command
     ///
     /// @param cmd
@@ -72,33 +88,41 @@ public:
     ///   Time command was executed
     /// @param state_spans
     ///   Array of times spent in each handler state during command execution
-    void AddFinishedCmd(const char*           cmd,
-                        double                cmd_span,
-                        const vector<double>& state_spans);
+    static void AddFinishedCmd(const char*           cmd,
+                               double                cmd_span,
+                               const vector<double>& state_spans);
     /// Add closed connection
     ///
     /// @param conn_span
     ///   Time which connection stayed opened
-    void AddClosedConnection(double conn_span);
+    static void AddClosedConnection(double conn_span);
     /// Add opened connection
-    void AddOpenedConnection(void);
+    static void AddOpenedConnection(void);
     /// Remove opened connection (after OnOverflow was called)
-    void RemoveOpenedConnection(void);
+    static void RemoveOpenedConnection(void);
     /// Add connection that will be closed because of maximum number of
     /// connections exceeded.
-    void AddOverflowConnection(void);
+    static void AddOverflowConnection(void);
     /// Add command terminated because of timeout
-    void AddTimedOutCommand(void);
+    static void AddTimedOutCommand(void);
 
     /// Print statistics
-    void Print(CPrintTextProxy& proxy);
+    static void Print(CPrintTextProxy& proxy);
 
 private:
-    typedef map<const char*, int, SConstCharCompare>     TCmdsCountsMap;
+    friend class CNCServerStat_Getter;
+
+    typedef map<const char*, Uint8,  SConstCharCompare>  TCmdsCountsMap;
     typedef map<const char*, double, SConstCharCompare>  TCmdsSpansMap;
 
+
+    CNCServerStat(void);
+    /// Collect all statistics from this instance to another
+    void x_CollectTo(CNCServerStat* other);
+
+
     /// Mutex for working with statistics
-    CFastMutex     m_ObjMutex;
+    CFastMutex     m_ObjLock;
     /// Maximum time connection was opened
     double         m_MaxConnSpan;
     /// Number of connections closed
@@ -126,6 +150,11 @@ private:
     vector<double> m_StatesSpansSums;
     /// Number of commands terminated because of command timeout
     Uint8          m_TimedOutCmds;
+
+    /// Object differentiating statistics instances over threads
+    static CNCServerStat_Getter sm_Getter;
+    /// All instances of statistics used in application
+    static CNCServerStat        sm_Instances[kNCMaxThreadsCnt];
 };
 
 /// Netcache server 
@@ -158,8 +187,6 @@ public:
     /// Unregister session
     void UnregisterSession(const string& host, unsigned int pid);
 
-    /// Get object gathering server statistics
-    CNCServer_Stat* GetStat(void);
     /// Get monitor for the server
     CServer_Monitor* GetServerMonitor(void);
     /// Get storage for the given cache name.
@@ -244,8 +271,6 @@ private:
     CRef<CSessionManagementThread> m_SessionMngThread;
     /// Server monitor
     CServer_Monitor                m_Monitor;
-    /// Object gathering server statistics
-    CNCServer_Stat                 m_Stat;
 };
 
 
@@ -266,41 +291,70 @@ SConstCharCompare::operator() (const char* left, const char* right) const
 }
 
 
-inline void
-CNCServer_Stat::AddClosedConnection(double conn_span)
+inline
+CNCServerStat_Getter::CNCServerStat_Getter(void)
 {
-    CFastMutexGuard guard(m_ObjMutex);
-    ++m_ClosedConns;
-    m_ConnsSpansSum += conn_span;
-    m_MaxConnSpan = max(m_MaxConnSpan, conn_span);
+    TBase::Initialize();
+}
+
+inline
+CNCServerStat_Getter::~CNCServerStat_Getter(void)
+{
+    TBase::Finalize();
+}
+
+inline CNCServerStat*
+CNCServerStat_Getter::CreateTlsObject(void)
+{
+    return &CNCServerStat::sm_Instances[
+                                     g_GetNCThreadIndex() % kNCMaxThreadsCnt];
 }
 
 inline void
-CNCServer_Stat::AddOpenedConnection(void)
+CNCServerStat_Getter::DeleteTlsObject(void* obj_ptr)
+{}
+
+
+inline void
+CNCServerStat::AddClosedConnection(double conn_span)
 {
-    CFastMutexGuard guard(m_ObjMutex);
-    ++m_OpenedConns;
+    CNCServerStat* stat = sm_Getter.GetObjPtr();
+    CFastMutexGuard guard(stat->m_ObjLock);
+    ++stat->m_ClosedConns;
+    stat->m_ConnsSpansSum += conn_span;
+    stat->m_MaxConnSpan    = max(stat->m_MaxConnSpan, conn_span);
 }
 
 inline void
-CNCServer_Stat::RemoveOpenedConnection(void)
+CNCServerStat::AddOpenedConnection(void)
 {
-    CFastMutexGuard guard(m_ObjMutex);
-    --m_OpenedConns;
+    CNCServerStat* stat = sm_Getter.GetObjPtr();
+    CFastMutexGuard guard(stat->m_ObjLock);
+    ++stat->m_OpenedConns;
 }
 
 inline void
-CNCServer_Stat::AddOverflowConnection(void)
+CNCServerStat::RemoveOpenedConnection(void)
 {
-    CFastMutexGuard guard(m_ObjMutex);
-    ++m_OverflowConns;
+    CNCServerStat* stat = sm_Getter.GetObjPtr();
+    CFastMutexGuard guard(stat->m_ObjLock);
+    --stat->m_OpenedConns;
 }
 
 inline void
-CNCServer_Stat::AddTimedOutCommand(void)
+CNCServerStat::AddOverflowConnection(void)
 {
-    CFastMutexGuard guard(m_ObjMutex);
-    ++m_TimedOutCmds;
+    CNCServerStat* stat = sm_Getter.GetObjPtr();
+    CFastMutexGuard guard(stat->m_ObjLock);
+    ++stat->m_OverflowConns;
+}
+
+inline void
+CNCServerStat::AddTimedOutCommand(void)
+{
+    CNCServerStat* stat = sm_Getter.GetObjPtr();
+    CFastMutexGuard guard(stat->m_ObjLock);
+    ++stat->m_TimedOutCmds;
 }
 
 
@@ -360,12 +414,6 @@ CNetCacheServer::UnregisterSession(const string& host, unsigned int pid)
         return;
 
     m_SessionMngThread->UnregisterSession(host, pid);
-}
-
-inline CNCServer_Stat*
-CNetCacheServer::GetStat(void)
-{
-    return &m_Stat;
 }
 
 inline CServer_Monitor*
