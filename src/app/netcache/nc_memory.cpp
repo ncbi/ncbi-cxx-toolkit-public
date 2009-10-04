@@ -684,7 +684,7 @@ CNCMMCentral::x_AllocAlignedLongWay(void*& mem_ptr, size_t size)
 #else
 
     // Release what we've already obtained
-    munmap(mem_ptr, size);
+    munmap(static_cast<char*>(mem_ptr), size);
 
     // Get address space where there's aligned block for sure
     mem_ptr = x_DoCallMmap(size + kNCMMAlignSize);
@@ -694,12 +694,12 @@ CNCMMCentral::x_AllocAlignedLongWay(void*& mem_ptr, size_t size)
     size_t before_size = static_cast<char*>(aligned_ptr)
                          - static_cast<char*>(mem_ptr);
     if (before_size != 0)
-        munmap(mem_ptr, before_size);
+        munmap(static_cast<char*>(mem_ptr), before_size);
 
     size_t after_size = kNCMMAlignSize - before_size;
     if (after_size != 0) {
         void* after_ptr = static_cast<char*>(aligned_ptr) + size;
-        munmap(after_ptr, after_size);
+        munmap(static_cast<char*>(after_ptr), after_size);
     }
 
     mem_ptr = aligned_ptr;
