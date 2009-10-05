@@ -232,6 +232,15 @@ CNCBlobLockHolder::x_ValidateLock(void)
     m_BlobExists = m_Storage->ReadBlobKey(&m_BlobInfo);
     // If there's no need to create then we're valid anyway
     if (m_BlobExists  ||  m_BlobAccess != eCreate) {
+        if (m_BlobAccess == eCreate  &&  m_BlobExists
+            &&  m_BlobInfo.part_id != m_CreateCoords.part_id)
+        {
+            m_Storage->DeleteBlob(m_BlobInfo);
+            m_BlobInfo.AssignCoords(m_CreateCoords);
+            m_RWHolder = m_CreateHolder;
+            m_CreateHolder.Reset();
+            _VERIFY(m_Storage->CreateBlob(m_BlobInfo, NULL));
+        }
         x_OnLockValidated();
     }
     return m_LockValid;
@@ -304,9 +313,12 @@ CNCBlobLockHolder::x_InitLock(void)
 
             // Assume that in majority of cases "Create" means new blob, thus
             // optimize performance for this case.
-            m_Storage->GetNextBlobCoords(&m_BlobInfo);
-            m_RWHolder = m_Storage->LockBlobId(m_BlobInfo.blob_id, eCreate);
-            _ASSERT(m_RWHolder->IsLockAcquired());
+            m_Storage->GetNextBlobCoords(&m_CreateCoords);
+            m_CreateHolder = m_Storage->LockBlobId(m_CreateCoords.blob_id,
+                                                   eCreate);
+            _ASSERT(m_CreateHolder->IsLockAcquired());
+            m_BlobInfo.AssignCoords(m_CreateCoords);
+            m_RWHolder = m_CreateHolder;
 
             x_RetakeCreateLock();
         }

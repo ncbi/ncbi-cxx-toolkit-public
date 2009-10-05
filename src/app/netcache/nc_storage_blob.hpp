@@ -331,6 +331,14 @@ private:
     mutable CNCBlob*         m_Blob;
     /// Holder of blob id lock
     TRWLockHolderRef         m_RWHolder;
+    /// Coordinates of the blob used for creation.
+    /// The same coordinates will be used if blob exists and needs to be moved
+    /// to newer database part.
+    SNCBlobCoords            m_CreateCoords;
+    /// Holder of lock for blob id used for creation.
+    /// It is saved to hold lock in case we will move blob to newer database
+    /// part and so will need to make it our main lock.
+    TRWLockHolderRef         m_CreateHolder;
     /// Timer to measure time while lock was waited for and while lock
     /// persisted before releasing
     CStopWatch               m_LockTimer;
