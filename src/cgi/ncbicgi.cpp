@@ -442,7 +442,45 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             continue;
         }
 
-        SIZE_TYPE pos_end = str.find_first_of(';', pos_mid);
+        bool quoted_value = false;
+        SIZE_TYPE pos_end = str.find(';', pos_mid);
+        // Check for quoted value
+        if (pos_mid + 1 < str.length()  &&  str[pos_mid + 1] == '"') {
+            quoted_value = true;
+            // Find the closing quote
+            SIZE_TYPE pos_q = str.find('"', pos_mid + 2);
+            // Skip any escaped quotes
+            while (pos_q != NPOS  &&  str[pos_q - 1] == '\\') {
+                pos_q = str.find('"', pos_q + 1);
+            }
+            if (pos_q != NPOS) {
+                pos_end = str.find(';', pos_q + 1);
+            }
+            else {
+                // Error - missing closing quote
+                switch ( on_bad_cookie ) {
+                case eOnBadCookie_ThrowException:
+                    NCBI_THROW2(CCgiCookieException, eValue,
+                        "Missing closing quote in cookie value: " +
+                        NStr::PrintableString(str.substr(pos_mid + 1)), pos_mid + 1);
+                case eOnBadCookie_SkipAndError:
+                    ERR_POST_X(9, "Missing closing quote in cookie value: " +
+                        NStr::PrintableString(str.substr(pos_mid + 1)));
+                    // Do not break, proceed to the next case
+                case eOnBadCookie_Skip:
+                    return;
+                case eOnBadCookie_StoreAndError:
+                    ERR_POST_X(10, "Missing closing quote in cookie value: " +
+                        NStr::PrintableString(str.substr(pos_mid + 1)));
+                    // Do not break, proceed to the next case
+                case eOnBadCookie_Store:
+                    pos_end = NPOS; // Use the whole string
+                    break;
+                default:
+                    _TROUBLE;
+                }
+            }
+        }
         if (pos_end != NPOS) {
             pos = pos_end + 1;
             pos_end--;
@@ -451,11 +489,12 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             _ASSERT(pos_end != NPOS);
             pos = NPOS; // about to finish
         }
-
         string name = str.substr(pos_beg, pos_mid - pos_beg);
+        NStr::TruncateSpacesInPlace(name, NStr::eTrunc_End);
         string val = str.substr(pos_mid + 1, pos_end - pos_mid);
         ECheckResult valid_name = x_CheckField(name, " ,;=", on_bad_cookie);
-        ECheckResult valid_value = x_CheckField(val, " ;", on_bad_cookie);
+        ECheckResult valid_value = quoted_value ? eCheck_Valid :
+            x_CheckField(val, ";", on_bad_cookie);
         if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
             Add(NStr::URLDecode(name,
                 m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
@@ -892,6 +931,19 @@ CCgiRequest::CCgiRequest
 }
 
 
+NCBI_PARAM_ENUM_ARRAY(CCgiCookies::EOnBadCookie, CGI, On_Bad_Cookie)
+{
+    {"Throw",         CCgiCookies::eOnBadCookie_ThrowException},
+    {"SkipAndError",  CCgiCookies::eOnBadCookie_SkipAndError},
+    {"Skip",          CCgiCookies::eOnBadCookie_Skip},
+    {"StoreAndError", CCgiCookies::eOnBadCookie_StoreAndError},
+    {"Store",         CCgiCookies::eOnBadCookie_Store}
+};
+NCBI_PARAM_ENUM_DEF_EX(CCgiCookies::EOnBadCookie, CGI, On_Bad_Cookie,
+                       CCgiCookies::eOnBadCookie_SkipAndError,
+                       eParam_NoThread, CGI_ON_BAD_COOKIE);
+typedef NCBI_PARAM_TYPE(CGI, On_Bad_Cookie) TOnBadCookieParam;
+
 void CCgiRequest::x_Init
 (const CNcbiArguments*   args,
  const CNcbiEnvironment* env,
@@ -926,7 +978,8 @@ void CCgiRequest::x_Init
         m_Cookies.SetUrlEncodeFlag(eUrlEncode_PercentOnly);
     }
     try {
-        m_Cookies.Add(GetProperty(eCgi_HttpCookie));
+        m_Cookies.Add(GetProperty(eCgi_HttpCookie),
+            TOnBadCookieParam::GetDefault());
     } catch (CCgiCookieException& e) {
         NCBI_RETHROW(e, CCgiRequestException, eCookie,
                      "Error in parsing HTTP request cookies");

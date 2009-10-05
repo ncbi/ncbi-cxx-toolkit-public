@@ -311,6 +311,13 @@ private:
 };
 
 
+/// Parameter to control error handling of incoming cookies.
+/// Does not affect error handling of outgoing cookies set by the
+/// application.
+NCBI_PARAM_ENUM_DECL_EXPORT(NCBI_XCGI_EXPORT,
+                            CCgiCookies::EOnBadCookie,
+                            CGI, On_Bad_Cookie);
+
 /* @} */
 
 

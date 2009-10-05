@@ -73,7 +73,7 @@ static void TestCgi_Cookies(void)
     assert( !cookies.Find("BAD COOKIE") );
     assert(  cookies.Find("Coo11") );
     assert(  cookies.Find("Coo2") );
-    assert( !cookies.Find("Coo3") );
+    assert( cookies.Find("Coo3") );
     assert( !cookies.Find("B COO") );
     assert( !cookies.Find("X C") );
     assert( !cookies.Find("X C ") );
