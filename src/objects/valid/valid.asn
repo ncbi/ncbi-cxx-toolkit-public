@@ -10,20 +10,39 @@
 NCBI-Structured-comment-validation DEFINITIONS ::=
 BEGIN
 
-EXPORTS Field-rule, Field-set, Comment-rule, Comment-set;
+EXPORTS Severity-level, Field-rule, Field-set, Dependent-field-rule , Dependent-field-set ,Comment-rule, Comment-set;
+
+Severity-level ::= ENUMERATED {
+    none (0) ,
+    info (1) ,
+    warning (2) ,
+    error (3) ,
+    reject (4) ,
+    fatal (5)
+}
 
 Field-rule ::= SEQUENCE {
     field-name VisibleString ,
     match-expression VisibleString OPTIONAL ,
-    required BOOLEAN DEFAULT FALSE
+    required BOOLEAN DEFAULT FALSE ,
+    severity Severity-level DEFAULT warning
 }
 
 Field-set ::= SET OF Field-rule
 
+Dependent-field-rule ::= SEQUENCE {
+    match-name VisibleString ,
+    value-constraint VisibleString OPTIONAL ,
+    other-fields Field-set
+}
+
+Dependent-field-set ::= SET OF Dependent-field-rule    
+
 Comment-rule ::= SEQUENCE {
     prefix VisibleString ,
     updated BOOLEAN DEFAULT FALSE ,
-    fields Field-set
+    fields Field-set ,
+    dependent-rules Dependent-field-set OPTIONAL
 }
 
 Comment-set ::= SET OF Comment-rule
