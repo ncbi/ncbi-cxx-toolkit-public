@@ -411,6 +411,23 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             ds->FromTranscript(h.GetQueryStart(), query_strand,
                               h.GetSubjStart(), subj_strand,
                               xcript);
+                
+            bool is_gap = false;
+            if (ds->GetNumseg() == 1) {
+                for (int i = 0; i < ds->GetDim(); i++) {
+                    if (ds->GetStarts()[i] == -1) {
+                        is_gap = true;
+                        break;
+                    }
+                }
+                if (is_gap) {
+                    continue;
+                }
+            }
+            else if (ds->GetNumseg() == 0) {
+                continue;
+            }
+                
 
             bool keep_strands = args["keep_strands"].HasValue();
             if(!keep_strands && query_strand == eNa_strand_plus  && subj_strand == eNa_strand_plus) {
