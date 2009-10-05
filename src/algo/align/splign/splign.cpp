@@ -2316,7 +2316,7 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
     USING_SCOPE(objects);
 
 
-    if(flags & (eSF_BasicNonCds | eSF_BasicCds)) {
+    if(!(flags & (eSF_BasicNonCds | eSF_BasicCds))) {
         NCBI_THROW(CException, eUnknown,
                    "CSplign::s_ComputeStats(): mode not yet supported.");
     }
@@ -2424,43 +2424,46 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
     CRef<CScore_set> ss (new CScore_set);
     CScore_set::Tdata & scores (ss->Set());
         
-    {
-        CRef<CScore> score_matches (new CScore());
-        score_matches->SetId().SetId(eCS_Matches);
-        score_matches->SetValue().SetInt(matches);
-        scores.push_back(score_matches);
-    }
-    {
-        CRef<CScore> score_overall_identity (new CScore());
-        score_overall_identity->SetId().SetId(eCS_OverallIdentity);
-        score_overall_identity->SetValue().
-            SetReal(double(matches)/(aln_length_exons + aln_length_gaps));
-        scores.push_back(score_overall_identity);
-    }
-    {
-        CRef<CScore> score_splices (new CScore());
-        score_splices->SetId().SetId(eCS_Splices);
-        score_splices->SetValue().SetInt(splices_total);
-        scores.push_back(score_splices);
-    }
-    {
-        CRef<CScore> score_splices_consensus (new CScore());
-        score_splices_consensus->SetId().SetId(eCS_ConsensusSplices);
-        score_splices_consensus->SetValue().SetInt(splices_consensus);
-        scores.push_back(score_splices_consensus);
-    }
-    {
-        CRef<CScore> score_coverage (new CScore());
-        score_coverage->SetId().SetId(eCS_ProductCoverage);
-        score_coverage->SetValue().
-            SetReal(double(aligned_query_bases) / prod_length_no_polya);
-        scores.push_back(score_coverage);
-    }
-    {
-        CRef<CScore> score_exon_identity (new CScore());
-        score_exon_identity->SetId().SetId(eCS_ExonIdentity);
-        score_exon_identity->SetValue().SetReal(double(matches) / aln_length_exons);
-        scores.push_back(score_exon_identity);
+    if(flags & eSF_BasicNonCds) {
+        {
+            CRef<CScore> score_matches (new CScore());
+            score_matches->SetId().SetId(eCS_Matches);
+            score_matches->SetValue().SetInt(matches);
+            scores.push_back(score_matches);
+        }
+        {
+            CRef<CScore> score_overall_identity (new CScore());
+            score_overall_identity->SetId().SetId(eCS_OverallIdentity);
+            score_overall_identity->SetValue().
+                SetReal(double(matches)/(aln_length_exons + aln_length_gaps));
+            scores.push_back(score_overall_identity);
+        }
+        {
+            CRef<CScore> score_splices (new CScore());
+            score_splices->SetId().SetId(eCS_Splices);
+            score_splices->SetValue().SetInt(splices_total);
+            scores.push_back(score_splices);
+        }
+        {
+            CRef<CScore> score_splices_consensus (new CScore());
+            score_splices_consensus->SetId().SetId(eCS_ConsensusSplices);
+            score_splices_consensus->SetValue().SetInt(splices_consensus);
+            scores.push_back(score_splices_consensus);
+        }
+        {
+            CRef<CScore> score_coverage (new CScore());
+            score_coverage->SetId().SetId(eCS_ProductCoverage);
+            score_coverage->SetValue().
+                SetReal(double(aligned_query_bases) / prod_length_no_polya);
+            scores.push_back(score_coverage);
+        }
+        {
+            CRef<CScore> score_exon_identity (new CScore());
+            score_exon_identity->SetId().SetId(eCS_ExonIdentity);
+            score_exon_identity->SetValue().
+                SetReal(double(matches) / aln_length_exons);
+            scores.push_back(score_exon_identity);
+        }
     }
 
     if(cds_stats) {
