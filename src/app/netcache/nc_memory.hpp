@@ -1218,11 +1218,9 @@ public:
     ///
     /// @param data
     ///   Pointer to page data
-    /// @param old_key
-    ///   Old key of the page
     /// @param new_key
     ///   New key of the page
-    void ChangePageKey(void* data, unsigned int old_key, unsigned int new_key);
+    void ChangePageKey(void* data, unsigned int new_key);
     /// Delete from cache all pages with keys greater or equal to min_key
     void DeleteAllPages(unsigned int min_key);
 

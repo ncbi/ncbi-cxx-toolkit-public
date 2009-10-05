@@ -311,7 +311,7 @@ CNCServerStat_Getter::CreateTlsObject(void)
 }
 
 inline void
-CNCServerStat_Getter::DeleteTlsObject(void* obj_ptr)
+CNCServerStat_Getter::DeleteTlsObject(void*)
 {}
 
 

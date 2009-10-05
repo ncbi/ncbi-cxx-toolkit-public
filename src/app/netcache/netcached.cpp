@@ -65,7 +65,7 @@
 
 
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X  NetCache_Main
 
@@ -274,8 +274,7 @@ CNetCacheServer::x_CreateStorages(const IRegistry& reg, bool do_reinit)
         }
         NStr::ToLower(cache_name);
 
-        CNCBlobStorage* storage = new CNCBlobStorage(reg, section_name,
-                                                     reinit);
+        storage = new CNCBlobStorage(reg, section_name, reinit);
         storage->SetMonitor(&m_Monitor);
         m_StorageMap[cache_name] = storage;
     }
@@ -492,7 +491,7 @@ CNetCacheDApp::Run(void)
     return 0;
 }
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE
 
 
 USING_NCBI_SCOPE;

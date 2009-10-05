@@ -287,8 +287,10 @@ CNCBlobStorage::x_CheckDBInitialized(bool        guard_existed,
                           << " at " << m_Path);
 
             ITERATE(TNCDBPartsList, it, m_DBParts) {
-                CSQLITE_Connection(it->meta_file).DeleteDatabase();
-                CSQLITE_Connection(it->data_file).DeleteDatabase();
+                CSQLITE_Connection meta_conn(it->meta_file);
+                meta_conn.DeleteDatabase();
+                CSQLITE_Connection data_conn(it->data_file);
+                data_conn.DeleteDatabase();
             }
             m_DBParts.clear();
             m_IndexDB->DeleteAllDBParts();
@@ -943,9 +945,10 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
                     << parts.back().part_id - parts.front().part_id << ")" << endl
           << "List of database parts:" << endl;
     NON_CONST_ITERATE(TNCDBPartsList, it, parts) {
-        proxy << it->part_id << " - "
-              << CTime(time_t(it->create_time)).ToLocalTime() << " created, "
-              << it->min_blob_id << " blob id" << endl;
+        CTime create_time(time_t(it->create_time));
+        create_time.ToLocalTime();
+        proxy << it->part_id << " - " << create_time << " created, "
+                                      << it->min_blob_id << " blob id" << endl;
     }
     proxy << endl;
     m_Stat.Print(proxy);

@@ -787,7 +787,7 @@ CNCDBFileObjFactory<TFile>::CreateTlsObject(void)
 
 template <class TFile>
 inline void
-CNCDBFileObjFactory<TFile>::DeleteTlsObject(void* obj_ptr)
+CNCDBFileObjFactory<TFile>::DeleteTlsObject(void*)
 {
     // Nothing to do now because it's static
 }
@@ -852,14 +852,14 @@ CNCDBFilesPool::GetFile(CNCDBDataFile** file_ptr)
 }
 
 inline void
-CNCDBFilesPool::ReturnFile(CNCDBMetaFile* file)
+CNCDBFilesPool::ReturnFile(CNCDBMetaFile*)
 {
     // Nothing to be done for now until file objects are re-used for different
     // threads.
 }
 
 inline void
-CNCDBFilesPool::ReturnFile(CNCDBDataFile* file)
+CNCDBFilesPool::ReturnFile(CNCDBDataFile*)
 {
     // Nothing to be done for now until file objects are re-used for different
     // threads.

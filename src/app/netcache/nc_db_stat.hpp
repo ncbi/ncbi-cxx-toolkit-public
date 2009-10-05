@@ -539,7 +539,7 @@ CNCDBStat::CreateTlsObject(void)
 }
 
 inline void
-CNCDBStat::DeleteTlsObject(void* obj_ptr)
+CNCDBStat::DeleteTlsObject(void*)
 {}
 
 

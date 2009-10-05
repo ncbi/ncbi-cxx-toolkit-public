@@ -45,6 +45,42 @@
 BEGIN_NCBI_SCOPE
 
 
+// Define all empty inline constructors used in static variables here.
+inline
+CNCMMStats::CNCMMStats(void)
+{}
+
+inline
+CNCMMStats_Getter::CNCMMStats_Getter(void)
+{}
+
+inline
+CNCMMChunksPool::CNCMMChunksPool(void)
+{}
+
+inline
+CNCMMChunksPool_Getter::CNCMMChunksPool_Getter(void)
+{}
+
+inline
+CNCMMChainsPool::CNCMMChainsPool(void)
+{}
+
+inline
+CNCMMChainsPool_Getter::CNCMMChainsPool_Getter(void)
+{}
+
+inline
+CNCMMReserve::CNCMMReserve(void)
+{}
+
+inline
+CNCMMSizePool_Getter::CNCMMSizePool_Getter(void)
+{}
+
+
+
+
 /// Default global limit on memory consumption
 static const size_t kNCMMDefMemoryLimit        = 1024 * 1024 * 1024;
 /// Maximum size of small block (which is less than size of memory chunk)
@@ -221,10 +257,6 @@ CNCMMCentral::GetStats(void)
     return sm_Stats;
 }
 
-
-inline
-CNCMMStats::CNCMMStats(void)
-{}
 
 inline void
 CNCMMStats::InitInstance(void)
@@ -571,10 +603,6 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
 }
 
 
-inline
-CNCMMStats_Getter::CNCMMStats_Getter(void)
-{}
-
 inline void
 CNCMMStats_Getter::Initialize(void)
 {
@@ -600,7 +628,7 @@ CNCMMStats_Getter::CreateTlsObject(void)
 }
 
 void
-CNCMMStats_Getter::DeleteTlsObject(void* mem_ptr)
+CNCMMStats_Getter::DeleteTlsObject(void*)
 {}
 
 
@@ -899,6 +927,41 @@ SNCMMChainInfo::AssignFromChain(CNCMMFreeChunk* chain)
 }
 
 
+inline
+CNCMMSlabBase::CNCMMSlabBase(void)
+{}
+
+
+inline void*
+CNCMMSlab::operator new(size_t _DEBUG_ARG(size))
+{
+    _ASSERT(size <= kNCMMSlabSize);
+    return CNCMMCentral::SysAllocAligned(kNCMMSlabSize);
+}
+
+inline void
+CNCMMSlab::operator delete(void* mem_ptr)
+{
+    CNCMMCentral::SysFree(mem_ptr, kNCMMSlabSize);
+}
+
+inline
+CNCMMSlab::CNCMMSlab(void)
+{
+    m_CntFree    = kNCMMCntChunksInSlab;
+    m_EmptyGrade = kNCMMSlabEmptyGrades - 1;
+    m_FreeMask.Initialize(1);
+    CNCMMReserve::IntroduceChain(&m_Chunks[0], kNCMMCntChunksInSlab);
+    CNCMMStats::SlabCreated();
+}
+
+inline
+CNCMMSlab::~CNCMMSlab(void)
+{
+    CNCMMStats::SlabDeleted();
+}
+
+
 inline void
 CNCMMChunksPool::InitInstance(void)
 {
@@ -923,10 +986,6 @@ CNCMMChunksPool::ReleaseRef(void)
     return ref_cnt;
 }
 
-
-inline
-CNCMMChunksPool_Getter::CNCMMChunksPool_Getter(void)
-{}
 
 inline void
 CNCMMChunksPool_Getter::Initialize(void)
@@ -986,10 +1045,6 @@ CNCMMChunksPool::Initialize(void)
 {
     sm_Getter.Initialize();
 }
-
-inline
-CNCMMChunksPool::CNCMMChunksPool(void)
-{}
 
 inline CNCMMFreeChunk**
 CNCMMChunksPool::x_AdvanceChunkPtr(CNCMMFreeChunk** chunk_ptr)
@@ -1403,24 +1458,6 @@ CNCMMBlocksSet::operator delete(void* mem_ptr)
 }
 
 
-inline
-CNCMMSlabBase::CNCMMSlabBase(void)
-{}
-
-
-inline void*
-CNCMMSlab::operator new(size_t _DEBUG_ARG(size))
-{
-    _ASSERT(size <= kNCMMSlabSize);
-    return CNCMMCentral::SysAllocAligned(kNCMMSlabSize);
-}
-
-inline void
-CNCMMSlab::operator delete(void* mem_ptr)
-{
-    CNCMMCentral::SysFree(mem_ptr, kNCMMSlabSize);
-}
-
 inline unsigned int
 CNCMMSlab::x_GetChunkIndex(void* mem_ptr)
 {
@@ -1482,22 +1519,6 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
     }
 }
 
-inline
-CNCMMSlab::CNCMMSlab(void)
-{
-    m_CntFree    = kNCMMCntChunksInSlab;
-    m_EmptyGrade = kNCMMSlabEmptyGrades - 1;
-    m_FreeMask.Initialize(1);
-    CNCMMReserve::IntroduceChain(&m_Chunks[0], kNCMMCntChunksInSlab);
-    CNCMMStats::SlabCreated();
-}
-
-inline
-CNCMMSlab::~CNCMMSlab(void)
-{
-    CNCMMStats::SlabDeleted();
-}
-
 
 inline void
 CNCMMChainsPool::InitInstance(void)
@@ -1523,10 +1544,6 @@ CNCMMChainsPool::ReleaseRef(void)
     return ref_cnt;
 }
 
-
-inline
-CNCMMChainsPool_Getter::CNCMMChainsPool_Getter(void)
-{}
 
 inline void
 CNCMMChainsPool_Getter::Initialize(void)
@@ -1589,10 +1606,6 @@ CNCMMChainsPool::Initialize(void)
 {
     sm_Getter.Initialize();
 }
-
-inline
-CNCMMChainsPool::CNCMMChainsPool(void)
-{}
 
 inline void*
 CNCMMChainsPool::x_GetChain(unsigned int chain_size)
@@ -1663,10 +1676,6 @@ CNCMMChainsPool::PutChain(void* mem_ptr, unsigned int chain_size)
     sm_Getter.GetObjPtr()->x_PutChain(mem_ptr, chain_size);
 }
 
-
-inline
-CNCMMReserve::CNCMMReserve(void)
-{}
 
 inline void
 CNCMMReserve::x_InitInstance(void)
@@ -2203,10 +2212,6 @@ inline void
 CNCMMSizePool::operator delete(void*, void*)
 {}
 
-
-inline
-CNCMMSizePool_Getter::CNCMMSizePool_Getter(void)
-{}
 
 inline void
 CNCMMSizePool_Getter::Initialize(void)
@@ -2794,7 +2799,6 @@ CNCMMDBCache::UnpinPage(void* data, bool must_delete)
 
 inline void
 CNCMMDBCache::ChangePageKey(void*        data,
-                            unsigned int old_key,
                             unsigned int new_key)
 {
     CFastMutexGuard guard(m_ObjLock);
@@ -2905,10 +2909,10 @@ s_SQLITE_PCache_UnpinPage(sqlite3_pcache* pcache, void* page, int discard)
 static void
 s_SQLITE_PCache_RekeyPage(sqlite3_pcache* pcache,
                           void*           page,
-                          unsigned int    oldKey,
+                          unsigned int /* oldKey */,
                           unsigned int    newKey)
 {
-    reinterpret_cast<CNCMMDBCache*>(pcache)->ChangePageKey(page, oldKey, newKey);
+    reinterpret_cast<CNCMMDBCache*>(pcache)->ChangePageKey(page, newKey);
 }
 
 /// Truncate cache, delete all pages with keys greater or equal to given limit
