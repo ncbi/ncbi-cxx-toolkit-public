@@ -24,7 +24,7 @@ fi
 
 Usage()
 {
-  cat << EOF
+  fmt -sw80 << EOF
 USAGE:   $script_name <action> [-q] <f1> <f2> ... <fN> <dest_dir>
          $script_name <action> [-q] <src_file> <dest_file>
 EXAMPLE: $script_name "cp -p" abc.o ../def.a /tmp
@@ -42,18 +42,27 @@ EOF
   exit 1
 }
 
+ExecHelper()
+{
+  dest_file=$1
+  $rm "$dest_file"
+  shift
+  cmd="$* $dest_file"
+  test "$quiet" = yes || echo "$cmd"
+  "$@" "$dest"
+}
+
 ExecAction()
 {
   src_file="$1"
   dest_file="$2"
-  cmd="$action $src_file $dest_file"
   cmp -s "$src_file" "$dest_file"  ||
-  ( $rm "$dest_file" ;  test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
+  ExecHelper "$dest_file" $action "$src_file"  ||
   case "`basename \"$action\"`" in
     ln | ln\ -f )
       test "$quiet" = yes || echo "failed; trying \"cp -p ...\" instead"
       cmd="cp -p $src_file $dest_file"
-      ( $rm "$dest_file" ;  test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
+      ExecHelper "$dest_file" cp -p "$src_file"  ||
       Usage "\"$cmd\" failed"
       ;;
     *) Usage "\"$cmd\" failed" ;;
@@ -61,46 +70,37 @@ ExecAction()
 }
 
 
-test $# -lt 1  &&  Usage "too few cmd.-line parameters"
+test $# -lt 1  &&  Usage "too few command-line parameters"
 if test $# -lt 2 ; then
   if test "$quiet" = "yes"  &&  test -d "$1" ; then
     exit 0
   fi
-  Usage "too few cmd.-line parameters"
+  Usage "too few command-line parameters"
 fi
 
 
-args=
-i=0
-for f in $* ; do
-  i=`expr $i + 1`
-  if test $i -eq $# ; then
-    dest="$f"
-  else
-    args="$args $f"  
-  fi
+for f in "$@" ; do
+  dest=$f
 done
 
 if test ! -d "$dest" ; then
-  test -f "$1"  ||
-    Usage "the destination is not a directory, and the source is not a file"
-  test $# -lt 3  ||
-    Usage "the destination is not a directory, and too many arguments"
+  err_base="the destination ($dest) is not a directory, but"
+  test $# -lt 3  ||  Usage "$err_base multiple sources were specified"
+  test -f "$1"   ||  Usage "$err_base the source ($1) is absent or not a file"
   ExecAction "$1" "$dest"
   exit 0
 fi
 
-
-test -d "$dest"  ||  Usage "destination is neither file nor directory"
-
-i=2
-for f in $args ; do
-  i=`expr $i + 1`
-  test -f "$f"  ||  Usage "\"$f\"(field #$i) is not a file"
+i=1
+for f in "$@" ; do
+  test $i -eq $# -o -f "$f"  ||  Usage "source $i ($f) is absent or not a file"
+  i=`expr $i + 1`  
 done
 
-for f in $args ; do
-  ExecAction $f "$dest/`basename $f`"
+i=1
+for f in "$@" ; do
+  test $i -ge $#  ||  ExecAction $f "$dest/`basename $f`"
+  i=`expr $i + 1`  
 done
 
 exit 0
