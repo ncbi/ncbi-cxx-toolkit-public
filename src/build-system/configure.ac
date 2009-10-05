@@ -3260,6 +3260,8 @@ case "$host_os:$libnsl" in
      solaris2.[[89]]:* ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
      solaris*:-lnsl    ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
+dnl NCBI_CHECK_LIBS(FUSE, fuse, fuse_loop)
+AC_SEARCH_LIBS(fuse_loop, fuse, [NCBI_PACKAGE(FUSE)])
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
 # Add to (orig_)LIBS if present for the sake of corelib and the
