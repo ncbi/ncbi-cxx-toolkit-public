@@ -4575,11 +4575,12 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
 bool s_CanOpenLogFile(const string& file_name)
 {
     CDirEntry entry(CDirEntry::CreateAbsolutePath(file_name));
-    if ( !entry.Exists() ) {
-        // Use directory instead, must be writable
+    CDirEntry::TMode mode = 0;
+    if ( !entry.GetMode(&mode) ) {
+        // GetMode() failed, use directory instead, must be writable
         string dir = entry.GetDir();
         entry = CDirEntry(dir.empty() ? "." : dir);
-        if ( !entry.Exists() ) {
+        if ( !entry.GetMode(&mode) ) {
             return false;
         }
     }
@@ -4591,8 +4592,7 @@ bool s_CanOpenLogFile(const string& file_name)
     }
     catch (CException) {
     }
-    CDirEntry::TMode mode = 0;
-    return entry.GetMode(&mode)  &&  (mode & CDirEntry::fWrite) != 0;
+    return (mode & CDirEntry::fWrite) != 0;
 }
 
 
