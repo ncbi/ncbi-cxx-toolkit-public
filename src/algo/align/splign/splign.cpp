@@ -2301,6 +2301,13 @@ size_t CSplign::s_ComputeStats(CRef<objects::CSeq_align_set> sas,
 }
 
 
+namespace {
+    const int kFrame_not_set (-10);
+    const int kFrame_end     (-5);
+    const int kFrame_lost    (-20);
+}
+
+
 CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
                                                   bool embed_scoreset,
                                                   TOrf cds,
@@ -2308,7 +2315,8 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
 {
     USING_SCOPE(objects);
 
-    if(flags != eSF_BasicNonCds) {
+
+    if(flags & (eSF_BasicNonCds | eSF_BasicCds)) {
         NCBI_THROW(CException, eUnknown,
                    "CSplign::s_ComputeStats(): mode not yet supported.");
     }
@@ -2318,6 +2326,17 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
     if(spliced.GetProduct_type() != CSpliced_seg::eProduct_type_transcript) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "CSplign::s_ComputeStats(): Unsupported product type");
+    }
+
+    const bool cds_stats ((flags & eSF_BasicCds) && (cds.first + cds.second > 0));
+    const bool qstrand (spliced.GetProduct_strand() != eNa_strand_minus);
+    if(cds_stats) {
+        const bool cds_strand (cds.first < cds.second);
+        if(qstrand ^ cds_strand) {
+            NCBI_THROW(CAlgoAlignException, eBadParameter,
+                       "CSplign::s_ComputeStats(): Transcript orientation not "
+                       "matching specified CDS orientation.");
+        }
     }
 
     typedef TSpliced::TExons TExons;
@@ -2330,7 +2349,6 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
         splices_total (0),        // twice the number of introns
         splices_consensus (0);
 
-    const bool  qstrand (spliced.GetProduct_strand() != eNa_strand_minus);
     const TSeqPos  qlen (spliced.GetProduct_length());
     const TSeqPos polya (spliced.CanGetPoly_a()?
                          spliced.GetPoly_a(): (qstrand? qlen: TSeqPos(-1)));
@@ -2339,6 +2357,7 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
     typedef CSpliced_exon TExon;
     TSeqPos qprev (qstrand? TSeqPos(-1): qlen);
     bool cons_dnr (false);
+    string xcript;
     ITERATE(TExons, ii2, exons) {
 
         const TExon & exon (**ii2);
@@ -2350,6 +2369,7 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
         if(qgap > 0) {
             aln_length_gaps += qgap;
             cons_dnr = false;
+            if(cds_stats) xcript.append(qgap, 'X');
         }
         else if (ii2 != exons.begin()) {
             splices_total += 2;
@@ -2368,17 +2388,21 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
                 len = part.GetMatch();
                 matches += len;
                 aligned_query_bases += len;
+                if(cds_stats) xcript.append(len, 'M');
                 break;
             case CSpliced_exon_chunk::e_Mismatch:
                 len = part.GetMismatch();
                 aligned_query_bases += len;
+                if(cds_stats) xcript.append(len, 'R');
                 break;
             case CSpliced_exon_chunk::e_Product_ins:
                 len = part.GetProduct_ins();
                 aligned_query_bases += len;
+                if(cds_stats) xcript.append(len, 'D');
                 break;
             case CSpliced_exon_chunk::e_Genomic_ins:
                 len = part.GetGenomic_ins();
+                if(cds_stats) xcript.append(len, 'I');
                 break;
             default:
                 errmsg = "Unexpected spliced exon chunk part: "
@@ -2394,6 +2418,7 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
 
     const TSeqPos qgap (qstrand? polya - qprev - 1: qprev - polya - 1);
     aln_length_gaps += qgap;
+    if(cds_stats) xcript.append(qgap, 'X');
 
     // set individual scores
     CRef<CScore_set> ss (new CScore_set);
@@ -2437,6 +2462,89 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
         score_exon_identity->SetValue().SetReal(double(matches) / aln_length_exons);
         scores.push_back(score_exon_identity);
     }
+
+    if(cds_stats) {
+
+        if(!qstrand && qlen <= 0) {
+            NCBI_THROW(CAlgoAlignException, eBadParameter,
+                       "CSplign::s_ComputeStats(): Cannot compute "
+                       "inframe stats - transcript length not set.");
+        }
+
+        int qpos (qstrand? -1: int(qlen));
+        int qinc (qstrand? +1: -1);
+        int frame (kFrame_not_set);
+        size_t aln_length_cds (0);
+        size_t matches_frame[] = {0, 0, 0, 0, 0};
+        const int cds_start (cds.first), cds_stop (cds.second);
+        for(string::const_iterator ie (xcript.end()), ii(xcript.begin());
+            ii != ie && frame != kFrame_end; ++ii)
+        {
+
+            switch(*ii) {
+
+            case 'M':
+                qpos += qinc;
+                if(frame == kFrame_not_set && qpos == cds_start) frame = 0;
+                if(qpos == cds_stop) frame = kFrame_end;
+                if(frame >= -2) {
+                    ++aln_length_cds;
+                    ++matches_frame[frame + 2];
+                }
+                break;
+
+            case 'R':
+                qpos += qinc;
+                if(frame == kFrame_not_set && qpos == cds_start) frame = 0;
+                if(qpos == cds_stop) frame = kFrame_end;
+                if(frame >= -2) ++aln_length_cds;
+                break;
+
+            case 'D':
+                qpos += qinc;
+                if(frame == kFrame_not_set && qpos == cds_start) frame = 0;
+                if(qpos == cds_stop) frame = kFrame_end;
+                if(frame >= -2) {
+                    ++aln_length_cds;
+                    frame = (frame + 1) % 3;
+                }
+                break;
+
+            case 'I':
+                if(frame >= -2) {
+                    ++aln_length_cds;
+                    frame = (frame - 1) % 3;
+                }
+                break;
+
+            case 'X':
+                qpos += qinc;
+                if( qstrand && cds_start <= qpos && qpos < cds_stop ||
+                    !qstrand && cds_start >= qpos && qpos > cds_stop )
+                {
+                    frame = kFrame_lost;
+                    ++aln_length_cds;
+                }
+                break;
+            }
+        }
+
+        {
+            CRef<CScore> score_matches_inframe (new CScore());
+            score_matches_inframe->SetId().SetId(eCS_InframeMatches);
+            score_matches_inframe->SetValue().SetInt(matches_frame[2]);
+            scores.push_back(score_matches_inframe);
+        }
+
+        {
+            CRef<CScore> score_inframe_identity (new CScore());
+            score_inframe_identity->SetId().SetId(eCS_InframeIdentity);
+            score_inframe_identity->SetValue().
+                SetReal(double(matches_frame[2]) / aln_length_cds);
+            scores.push_back(score_inframe_identity);
+        }
+    }
+
 
     if(embed_scoreset) {
         CSeq_align::TScore & sa_score (sa->SetScore());
