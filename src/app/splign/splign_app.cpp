@@ -56,7 +56,7 @@
 
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
-#include <objtools/lds/lds_admin.hpp>
+#include <objtools/lds/lds_manager.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
@@ -653,13 +653,24 @@ int CSplignApp::Run()
             }
             fa_dir = curdir + fa_dir;
         }
-        const string lds_db_dir = GetLdsDbDir(fa_dir);
+
+        const string lds_db_dir (GetLdsDbDir(fa_dir));
+
+// #define  CPPTOOLKIT_LDS_MANAGEMENT
+#ifdef   CPPTOOLKIT_LDS_MANAGEMENT
+
         CLDS_Database ldsdb (lds_db_dir, kSplignLdsDb);
         CLDS_Management ldsmgt (ldsdb);
         ldsmgt.Create();
         ldsmgt.SyncWithDir(fa_dir,
                            CLDS_Management::eRecurseSubDirs,
                            CLDS_Management::eNoControlSum);
+#else
+        CLDS_Manager ldsmgr (fa_dir, lds_db_dir, kSplignLdsDb);
+        ldsmgr.Index(CLDS_Manager::eRecurseSubDirs,
+                     CLDS_Manager::eNoControlSum);
+#endif
+
         return 0;
     }
 
