@@ -33,7 +33,7 @@
 
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/lds/lds_admin.hpp>
+#include <objtools/lds/lds_manager.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
@@ -72,12 +72,9 @@ static const size_t kNumTestIds
 
 BOOST_AUTO_TEST_CASE(build_lds_index)
 {
-    CLDS_Database ldsdb (kLdsDbDirName, kLdsDbName);
-    CLDS_Management ldsmgt (ldsdb);
-    ldsmgt.Create();
-    ldsmgt.SyncWithDir(kDataDir,
-                        CLDS_Management::eRecurseSubDirs,
-                        CLDS_Management::eNoControlSum);
+    CLDS_Manager ldsmgr (kDataDir, kLdsDbDirName, kLdsDbName);
+    ldsmgr.Index(CLDS_Manager::eRecurseSubDirs,
+                 CLDS_Manager::eNoControlSum);
 }
 
 

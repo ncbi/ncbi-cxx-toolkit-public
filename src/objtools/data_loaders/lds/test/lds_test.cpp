@@ -36,7 +36,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/lds/lds_admin.hpp>
+#include <objtools/lds/lds_manager.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
@@ -107,12 +107,9 @@ int CTestApplication::Run(void)
             fa_dir = curdir + fa_dir;
         }
         const string lds_db_dir (GetLdsDbDir(fa_dir));
-        CLDS_Database ldsdb (lds_db_dir, kSplignLdsDb);
-        CLDS_Management ldsmgt (ldsdb);
-        ldsmgt.Create();
-        ldsmgt.SyncWithDir(fa_dir,
-                           CLDS_Management::eRecurseSubDirs,
-                           CLDS_Management::eNoControlSum);
+        CLDS_Manager ldsmgr (fa_dir, lds_db_dir, kSplignLdsDb);
+        ldsmgr.Index(CLDS_Manager::eRecurseSubDirs,
+                     CLDS_Manager::eNoControlSum);
         return 0;
     }
     
