@@ -852,7 +852,8 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
             CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
         if ( key ) {
             TPackedMap_I it = m_PackedMap.lower_bound(key);
-            if ( it == m_PackedMap.end() || it->first != key ) {
+            if ( it == m_PackedMap.end() ||
+                 m_PackedMap.key_comp()(key, it->first) ) {
                 CConstRef<CSeq_id_Textseq_Info> info
                     (new CSeq_id_Textseq_Info(id.Which(), m_Mapper, key));
                 it = m_PackedMap.insert(it, TPackedMapValue(key, info));
@@ -1839,7 +1840,8 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
         {
             TPackedStrKey key = CSeq_id_General_Str_Info::Parse(dbid);
             TPackedStrMap::iterator it = m_PackedStrMap.lower_bound(key);
-            if ( it == m_PackedStrMap.end() || it->first != key ) {
+            if ( it == m_PackedStrMap.end() ||
+                 m_PackedStrMap.key_comp()(key, it->first) ) {
                 CConstRef<CSeq_id_General_Str_Info> info
                     (new CSeq_id_General_Str_Info(m_Mapper, key));
                 it = m_PackedStrMap.insert

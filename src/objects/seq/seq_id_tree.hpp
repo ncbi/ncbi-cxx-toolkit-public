@@ -310,7 +310,8 @@ public:
         }
 
         bool EqualAcc(const TKey& b) const {
-            return ((m_Hash ^ b.m_Hash) & ~1) == 0 && m_Prefix == b.m_Prefix;
+            return ((m_Hash ^ b.m_Hash) & ~1) == 0 &&
+                NStr::EqualNocase(m_Prefix, b.m_Prefix);
         }
 
         bool IsSetVersion(void) const {
