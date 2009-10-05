@@ -683,7 +683,9 @@ CNCMMCentral::x_AllocAlignedLongWay(void*& mem_ptr, size_t size)
 
 #else
 
-    // Release what we've already obtained
+    // Release what we've already obtained.
+    // Cast to char* in all unmap()s is necessary for WorkShop and harmless
+    // for other compilers.
     munmap(static_cast<char*>(mem_ptr), size);
 
     // Get address space where there's aligned block for sure
@@ -754,7 +756,7 @@ CNCMMCentral::SysFree(void* ptr, size_t size)
     VirtualFree(ptr, 0, kNCVirtFreeType);
 #else
     // Cast to char* is necessary for WorkShop and harmless for other
-    // platforms.
+    // compilers.
     munmap(static_cast<char*>(ptr), aligned_size);
 #endif
 
