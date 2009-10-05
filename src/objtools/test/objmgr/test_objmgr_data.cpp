@@ -743,7 +743,15 @@ bool CTestOM::TestApp_Init(void)
             }
             else {
                 CNcbiOstrstream str;
-                str << "AA" << setfill('0') << setw(6) << (i/3+g_acc_from);
+                if ( i & 1 )
+                    str << "A";
+                else
+                    str << "a";
+                if ( i & 2 )
+                    str << "A";
+                else
+                    str << "a";
+                str << setfill('0') << setw(6) << (i/3+g_acc_from);
                 string acc = CNcbiOstrstreamToString(str);
                 CSeq_id seq_id(acc);
                 m_Ids.push_back(CSeq_id_Handle::GetHandle(seq_id));

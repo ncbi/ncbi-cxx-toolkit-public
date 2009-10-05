@@ -160,8 +160,8 @@ void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
         ERR_POST("Inconsistent "<<name<<" on "<<
                  key.first.AsString()<<" "<<key.second<<
                  " was "<<old_value->ToString()<<" now "<<value.ToString());
+        failed = true;
     }
-    _ASSERT(*old_value == value);
 }
 
 
@@ -179,8 +179,8 @@ void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
         ERR_POST("Inconsistent "<<name<<" on "<<
                  key.first.AsString()<<" "<<key.second<<
                  " was "<<old_value<<" now "<<value);
+        failed = true;
     }
-    _ASSERT(old_value == value);
 }
 
 
@@ -227,8 +227,8 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
             s << " new: " << MSerial_AsnText << **it;
         }
         ERR_POST(string(CNcbiOstrstreamToString(s)));
+        failed = true;
     }
-    _ASSERT(*old_str == new_str);
 }
 
 
@@ -616,7 +616,15 @@ bool CTestOM::TestApp_Init(void)
             }
             else {
                 CNcbiOstrstream str;
-                str << "AA" << setfill('0') << setw(6) << (i/3+g_acc_from);
+                if ( i & 1 )
+                    str << "A";
+                else
+                    str << "a";
+                if ( i & 2 )
+                    str << "A";
+                else
+                    str << "a";
+                str << setfill('0') << setw(6) << (i/3+g_acc_from);
                 string acc = CNcbiOstrstreamToString(str);
                 CSeq_id seq_id(acc);
                 m_Ids.push_back(CSeq_id_Handle::GetHandle(seq_id));
@@ -658,23 +666,12 @@ bool CTestOM::TestApp_Exit(void)
 {
     if ( failed ) {
         NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
+        return false;
     }
     else {
         NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
+        return true;
     }
-
-/*
-    map<int, int>::iterator it;
-    for (it = m_DescMap.begin(); it != m_DescMap.end(); ++it) {
-        LOG_POST(
-            "gi = "         << it->first
-            << ": desc = "  << it->second
-            << ", feat0 = " << m_Feat0Map[it->first]
-            << ", feat1 = " << m_Feat1Map[it->first]
-            );
-    }
-*/
-    return true;
 }
 END_NCBI_SCOPE
 
