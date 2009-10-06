@@ -666,47 +666,60 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
 
 /** Check the mini-extended word against masked query regions.
  * @param locations of the masked query regions [in]
+ * @param query_info of the masked query regions [in]
+ * @param s_range the open bound of subject region [in]
  * @param query query sequence [in]
  * @param subject subject sequence [in]
  * @param q_off query start [in]
  * @param word_length length of word [in]
  * @param s_end subject end (starting pos to extend) [in]
- * @param max_ext maxium possible right extension [in]
  */
 static Boolean 
 s_IsWordSeedMasked(BlastSeqLoc* locations, 
+                   BlastQueryInfo * query_info,
+                   Uint4 s_range,
                    BLAST_SequenceBlk * query,
                    BLAST_SequenceBlk * subject,
                    Uint4 q_off, 
                    Uint4 word_length,
-                   Uint4 s_end,
-                   Uint4 max_ext)
+                   Uint4 s_end)
 {
-    Int4 right;
-    Int4 q_end = q_off + word_length;
+    Int4 q_end, new_off, new_end, q_range, need_ext, context;
+
+    if (s_end >= s_range) return TRUE;
+
+    q_end = q_off + word_length;
+    context = BSearchContextInfo(q_end, query_info);
+
+    new_off = query_info->contexts[context].query_offset;
+    new_end = 0;
+    q_range = new_off + query_info->contexts[context].query_length;
+
     /* search for the overlapping mask */
-    while (locations && q_off >= locations->ssr->right) {
+    while (locations && q_off >= new_off) {
+        new_off = locations->ssr->right;
+        new_end = locations->ssr->left;
         locations = locations->next;
     }
-    if (!locations || q_end <= locations->ssr->left) {
-        return FALSE;
-    }
+    ASSERT(q_end - new_off >= lut_word_length);
+
+    /* valid hits */
+    if (q_off >= new_off || q_end <= new_end) return FALSE;
+
+    if (locations) q_range = locations->ssr->left; 
+    ASSERT(q_range >= q_end);
+
     /* if we get here, this mask must overlap with the hit,
        try if the hit can be right extended out of the masked region */
-    right = locations->ssr->right;
-    if (q_end > right) {
-        if (locations->next) {
-            max_ext = MIN (max_ext, locations->next->ssr->left - q_end);
-        } 
-        if (right - q_off > max_ext) {
-            /* query/subject range too short to contain a word */
-            return TRUE;
-        }
-        max_ext = right - q_off;
-        if (s_BlastRightExtend(query, subject, q_end, s_end, NULL, max_ext) == max_ext) {
-            /* extension sucessful, (TODO should we update the q_off? )*/
-            return FALSE;
-        }
+
+    need_ext = new_off - q_off;
+
+    /* query/subject range too short to contain a word */
+    if (MIN(q_range - q_end, s_range - s_end) < need_ext) return TRUE;
+
+    if (s_BlastRightExtend(query, subject, q_end, s_end, NULL, need_ext) == need_ext) {
+        /* extension sucessful, (TODO should we update the q_off? )*/
+        return FALSE;
     }
     return TRUE;
 }
@@ -835,7 +848,6 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Uint1 *q, *s;
     Int4 hits_extended = 0;
     BlastSeqLoc* masked_locations = NULL;
-    Int4 max_ext;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
@@ -869,10 +881,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            faster. Point to the first base of the lookup table hit and
            work backwards */
 
-        Int4 context = BSearchContextInfo(q_offset, query_info);
-        Int4 context_i = query_info->contexts[context].query_offset;
-        Int4 context_f = context_i + query_info->contexts[context].query_length;
-        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset));
+        max_bases_left = MIN(extra_bases, s_offset);
         q = q_start + q_offset;
         s = s_start + s_offset / COMPRESSION_RATIO;
         s_off = s_offset;
@@ -894,12 +903,11 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         q_off = q_offset + lut_word_length;
         s_off = s_offset + lut_word_length;
-        max_ext = MIN(context_f - q_off, range - s_off);
 
         if (extended_left < extra_bases) {
             q = q_start + q_off;
             s = s_start + s_off / COMPRESSION_RATIO;
-            max_bases_right = MIN(extra_bases - extended_left, max_ext);
+            max_bases_right = extra_bases - extended_left;
 
             for (extended_right = 0; extended_right < max_bases_right;
                  extended_right++) {
@@ -916,13 +924,12 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
             if (extended_left + extended_right < extra_bases)
                 continue;
-            max_ext -= extended_right;
         }
         
         /* Check that the exact match was not masked out. */
         if (word_length > lut_word_length && 
-            s_IsWordSeedMasked(masked_locations, query, subject, q_offset-extended_left,
-                               word_length, s_off, max_ext)) {
+            s_IsWordSeedMasked(masked_locations, query_info, range, query, subject, 
+                               q_offset-extended_left, word_length, s_off)) {
             continue; 
         }
 
@@ -993,7 +1000,6 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Uint1 *q, *s;
     Int4 hits_extended = 0;
     BlastSeqLoc* masked_locations = NULL;
-    Int4 max_ext;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
@@ -1029,10 +1035,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            and s points to the first four bases of the hit (which is
            guaranteed to be aligned on a byte boundary) */
 
-        Int4 context = BSearchContextInfo(q_offset, query_info);
-        Int4 context_i = query_info->contexts[context].query_offset;
-        Int4 context_f = context_i + query_info->contexts[context].query_length;
-        max_bases_left = MIN(extra_bases, MIN(q_offset - context_i, s_offset));
+        max_bases_left = MIN(extra_bases, s_offset);
         q = q_start + q_offset;
         s = s_start + s_offset / COMPRESSION_RATIO;
 
@@ -1063,8 +1066,7 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             q_off = q_offset + lut_word_length;
             q = q_start + q_off;
             s = s_start + s_off / COMPRESSION_RATIO;
-            max_bases_right = MIN(extra_bases - extended_left,
-                              MIN(context_f - q_off, range - s_off));
+            max_bases_right = extra_bases - extended_left;
 
             for (; extended_right < max_bases_right;
                  s++, q += 4, extended_right++) {
@@ -1091,11 +1093,10 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         q_off = q_offset - extended_left;
         s_off = s_offset - extended_left;
-        max_ext = MIN(context_f - q_off, range - s_off) - word_length;
         /* Check that the exact match was not masked out. */
         if (word_length > lut_word_length && 
-            s_IsWordSeedMasked(masked_locations, query, subject, q_off,
-                               word_length, s_off + word_length, max_ext)) {
+            s_IsWordSeedMasked(masked_locations, query_info, range, query, subject, 
+                               q_off, word_length, s_off + word_length)) {
             continue; 
         }
 
@@ -1193,14 +1194,12 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
 {
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
     Int4 i;
-    Int4 subject_length = subject->length;
     Uint1 *q = query->compressed_nuc_seq;
     Uint1 *s = subject->sequence;
     Int4 lut_word_length = lut->lut_word_length;
     Int4 word_length = lut->word_length;
     Int4 extra_bases = word_length - lut_word_length;
     Int4 hits_extended = 0;
-    Int4 max_ext;
 
     for (i = 0; i < num_hits; i++) {
         Int4 s_off = offset_pairs[i].qs_offsets.s_off;
@@ -1214,15 +1213,11 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
            technically be negative, but the compressed version
            of the query has extra pad bytes before q[0] */
 
-        Int4 context = BSearchContextInfo(q_off, query_info);
-        Int4 context_i = query_info->contexts[context].query_offset;
-        Int4 context_f = context_i + query_info->contexts[context].query_length;
-        if (q_off > context_i  && s_off > 0) {
+        if (s_off > 0) {
             Uint1 q_byte = q[q_off - 4];
             Uint1 s_byte = s[s_off / COMPRESSION_RATIO - 1];
             extended_left = s_ExactMatchExtendLeft[q_byte ^ s_byte];
             extended_left = MIN(extended_left, extra_bases);
-            extended_left = MIN(extended_left, q_off - context_i);
         }
 
         /* look for up to 4 exact matches to the right of the seed */
@@ -1232,27 +1227,20 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
             Int4 s_end = s_off + lut_word_length;
             Uint1 q_byte, s_byte;
 
-            if (q_end == context_f || s_end == subject_length)
-                continue;
-
             q_byte = q[q_end];
             s_byte = s[s_end / COMPRESSION_RATIO];
             extended_right = s_ExactMatchExtendRight[q_byte ^ s_byte];
-            extended_right = MIN(extended_right, 
-                                 extra_bases - extended_left);
-            extended_right = MIN(extended_right, context_f - q_end);
-            extended_right = MIN(extended_right, subject_length - s_end);
+            extended_right = MIN(extended_right, extra_bases - extended_left);
             if (extended_left + extended_right < extra_bases)
                 continue;
         }
 
         q_off -= extended_left;
         s_off -= extended_left;
-        max_ext = MIN(context_f - q_off, subject_length - s_off) - word_length;
         /* Check that the exact match was not masked out. */
         if (word_length > lut_word_length && 
-            s_IsWordSeedMasked(lut->masked_locations, query, subject, q_off,
-                               word_length, s_off + word_length, max_ext)) {
+            s_IsWordSeedMasked(lut->masked_locations, query_info, range, query, subject, 
+                               q_off, word_length, s_off + word_length)) {
                 continue; 
         }
         
@@ -1318,15 +1306,10 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Int4 word_length = lut->word_length; 
     Int4 lut_word_length = lut->lut_word_length; 
     Int4 hits_extended = 0;
-    Int4 max_ext;
 
     for (i = 0; i < num_hits; i++) {
         Int4 s_off = offset_pairs[i].qs_offsets.s_off;
         Int4 q_off = offset_pairs[i].qs_offsets.q_off;
-
-        Int4 context = BSearchContextInfo(q_off, query_info);
-        Int4 context_i = query_info->contexts[context].query_offset;
-        Int4 context_f = context_i + query_info->contexts[context].query_length;
 
         Int4 s_start;
         Int4 q_start;
@@ -1345,8 +1328,7 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            technically be negative, but the compressed version
            of the query has extra pad bytes before q[0] */
 
-        extra_bases = MIN(word_length - lut_word_length + extra_bases, 
-                          MIN(q_off - context_i, s_off));
+        extra_bases = MIN(word_length - lut_word_length + extra_bases, s_off);
         s_start = s_off;
         q_start = q_off;
         while (extended_left < extra_bases) {
@@ -1365,8 +1347,6 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            base not examined by the left extension */
 
         extra_bases = word_length - extended_left;
-        extra_bases = MIN(extra_bases, context_f - q_off);
-        extra_bases = MIN(extra_bases, range - s_off);
         s_start = s_off;
         q_start = q_off;
         while (extended_right < extra_bases) {
@@ -1386,11 +1366,10 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 
         q_off -= extended_left;
         s_off -= extended_left;
-        max_ext = MIN(context_f - q_off, range - s_off) - word_length;
         /* Check that the exact match was not masked out. */
         if (word_length > lut_word_length && 
-            s_IsWordSeedMasked(lut->masked_locations, query, subject, q_off,
-                               word_length, s_off + word_length, max_ext)) {
+            s_IsWordSeedMasked(lut->masked_locations, query_info, range, query, subject, 
+                               q_off, word_length, s_off + word_length)) {
             continue; 
         }
         
@@ -1470,7 +1449,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
 
     scan_range[0] = 0;  /* subject seq mask index */
     scan_range[1] = 0;	/* start pos of scan */
-    scan_range[2] = subject->length - lut_word_length; /*end pos of scan*/
+    scan_range[2] = subject->length - lut_word_length; /*end pos (inclusive) of scan*/
 
     /* if sequence is masked, fall back to generic scanner and extender */
     if (subject->num_seq_ranges) {
