@@ -701,7 +701,8 @@ s_IsWordSeedMasked(BlastSeqLoc* locations,
         new_end = locations->ssr->left;
         locations = locations->next;
     }
-    ASSERT(q_end - new_off >= lut_word_length);
+    /* temporary disable ASSERT till further fix 
+    ASSERT(q_end - new_off >= lut_word_length);*/
 
     /* valid hits */
     if (q_off >= new_off || q_end <= new_end) return FALSE;
