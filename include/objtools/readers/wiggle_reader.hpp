@@ -114,6 +114,7 @@ protected:
     void x_ParseGraphData(
         ILineReader&,
         string&,
+        vector<string>& parts,
         CWiggleRecord& );
     /* throws CObjReaderLineException */
 
@@ -131,7 +132,8 @@ protected:
         string& );
 
     unsigned int x_GetLineType(
-        const string& );
+        const string&,
+        const vector<string>& parts);
     /* throws CObjReaderLineException */
 
     void x_UpdateWiggleSet();

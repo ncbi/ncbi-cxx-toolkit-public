@@ -47,10 +47,9 @@ class CWiggleData;
 
 typedef std::map<string,CWiggleTrack*> TrackMap;
 typedef std::map<string,CWiggleTrack*>::iterator TrackIter;
-typedef std::map<int,CWiggleData*> DataStore;
-typedef std::map<int,CWiggleData*>::iterator DataIter;
-typedef std::map<int,CWiggleData*>::const_iterator DataCiter;
-typedef std::vector<CWiggleData*> DataVector;
+typedef std::vector<CWiggleData> DataVector;
+typedef DataVector::iterator DataIter;
+typedef DataVector::const_iterator DataCiter;
 
 class CIdMapper;
 
@@ -61,7 +60,6 @@ class CWiggleData
     friend class CWiggleTrack;
 public:
     CWiggleData(
-        const string&,
         unsigned int,
         unsigned int,
         double );
@@ -73,6 +71,10 @@ public:
     unsigned int SeqStart() const { return m_uSeqStart; };
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };
+
+    bool operator<(const CWiggleData& d) const {
+        return m_uSeqStart < d.m_uSeqStart;
+    }
     
 protected:
     void FillGraphsReal(
@@ -82,9 +84,9 @@ protected:
         CSeq_graph& );
         
     void FillGraphsByte(
-        CSeq_graph& );
+        CSeq_graph&,
+        const CWiggleTrack&);
 
-    string m_strChrom;        
     unsigned int m_uSeqStart;
     unsigned int m_uSeqSpan;
     double m_dValue;
@@ -146,8 +148,8 @@ public:
     void MakeGraphs(
         CSeq_annot::TData::TGraph& );
         
-    const char* Chrom() const { return m_strChrom.c_str(); };
-    size_t Count() const { return m_Entries.size(); };
+    const string& Chrom() const { return m_strChrom; };
+    size_t Count() const { return m_Data.size(); };
     unsigned int SeqStart() const;
     unsigned int SeqStop() const;
     unsigned int SeqSpan() const { return m_uSeqSpan; };
@@ -183,7 +185,7 @@ protected:
     double m_dMaxValue;
     double m_dMinValue;
     bool m_bEvenlySpaced;
-    DataStore m_Entries;
+    //DataStore m_Entries;
     DataVector m_Data;
 };
 
@@ -221,9 +223,9 @@ public:
         const std::vector<std::string>& );
     /* throws CObjReaderLineException */
 
-    const char* Chrom() const { return m_strChrom.c_str(); };
-    const char* Build() const { return m_strBuild.c_str(); };
-    const char* Name() const { return m_strName.c_str(); };
+    const string& Chrom() const { return m_strChrom; };
+    const string& Build() const { return m_strBuild; };
+    const string& Name() const { return m_strName; };
     unsigned int SeqStart() const { return m_uSeqStart; };
     unsigned int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };

@@ -137,6 +137,7 @@ CWiggleReader::ReadSeqAnnot(
     
     CRef< CSeq_annot > annot( new CSeq_annot );
     string pending;
+    vector<string> parts;
     CWiggleRecord record;
     
     CSeq_annot::TData::TGraph& graphset = annot->SetData().SetGraph();
@@ -148,7 +149,7 @@ CWiggleReader::ReadSeqAnnot(
             if ( x_ParseTrackData( pending, annot, record ) ) {
                 continue;
             }
-            x_ParseGraphData( lr, pending, record );
+            x_ParseGraphData( lr, pending, parts, record );
             m_pSet->AddRecord( record );
         }
         catch( CObjReaderLineException& err ) {
@@ -165,6 +166,8 @@ CWiggleReader::ReadSeqAnnot(
     return annot; 
 }
     
+static string s_WiggleDelim = " \t";
+
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::x_ParseTrackData(
     const string& pending,
@@ -179,7 +182,7 @@ bool CWiggleReader::x_ParseTrackData(
         return false;
     }
     vector<string> parts;
-    Tokenize( pending, " \t", parts );
+    Tokenize( pending, s_WiggleDelim, parts );
     record.ParseTrackDefinition( parts );
     return true;
 }
@@ -188,6 +191,7 @@ bool CWiggleReader::x_ParseTrackData(
 void CWiggleReader::x_ParseGraphData(
     ILineReader& lr,
     string& pending,
+    vector<string>& parts,
     CWiggleRecord& record )
 //
 //  Note:   Several possibilities here for the pending line:
@@ -203,10 +207,10 @@ void CWiggleReader::x_ParseGraphData(
 //              last "fixedStep" declaration.
 //  ----------------------------------------------------------------------------
 {
-    vector<string> parts;
-    Tokenize( pending, " \t", parts );
+    parts.clear();
+    Tokenize( pending, s_WiggleDelim, parts );
     
-    switch ( x_GetLineType( pending ) ) {
+    switch ( x_GetLineType( pending, parts ) ) {
 
         default: {
             CObjReaderLineException err( 
@@ -220,14 +224,14 @@ void CWiggleReader::x_ParseGraphData(
             m_uCurrentRecordType = TYPE_DATA_VARSTEP;
             record.ParseDeclarationVarstep( parts );
             x_ReadLine( lr, pending );
-            x_ParseGraphData( lr, pending, record );
+            x_ParseGraphData( lr, pending, parts, record );
             break;
 
         case TYPE_DECLARATION_FIXEDSTEP:
             m_uCurrentRecordType = TYPE_DATA_FIXEDSTEP;
             record.ParseDeclarationFixedstep( parts );
             x_ReadLine( lr, pending );
-            x_ParseGraphData( lr, pending, record );
+            x_ParseGraphData( lr, pending, parts, record );
             break;
 
         case TYPE_DATA_BED:
@@ -281,35 +285,43 @@ bool CWiggleReader::x_IsCommentLine(
     const string& line )
 //  ----------------------------------------------------------------------------
 {
-    if ( line.empty() ) {
-        return true;
-    }
-    if ( NStr::StartsWith( line, "#" ) ) {
+    return line.empty() || line[0] == '#';
+}
+
+namespace {
+template<size_t blen>
+inline bool s_HasPrefix(const string& line, const char (&prefix)[blen])
+{
+    size_t len = blen-1;
+    if ( line.size() > len &&
+         NStr::StartsWith(line.c_str(), prefix) &&
+         (line[len] == ' ' || line[len] == '\t') ) {
         return true;
     }
     return false;
 }
+}
 
 //  ----------------------------------------------------------------------------
 unsigned int CWiggleReader::x_GetLineType(
-    const string& line )
+    const string& line,
+    const vector<string>& parts)
 //  ----------------------------------------------------------------------------
 {
     //
     //  Note: blank lines and comments should have been weeded out before we
     //  we even get here ...
     //
-    vector<string> parts;
-    Tokenize( line, " \t", parts );
-    if ( parts[0] == "track" ) {
+    if ( s_HasPrefix(line, "track") ) {
         return TYPE_TRACK;
     }
-    if ( parts[0] == "variableStep" ) {
+    if ( s_HasPrefix(line, "variableStep") ) {
         return TYPE_DECLARATION_VARSTEP;
     }
-    if ( parts[0] == "fixedStep" ) {
+    if ( s_HasPrefix(line, "fixedStep") ) {
         return TYPE_DECLARATION_FIXEDSTEP;
     }
+
     if ( parts.size() == 4 ) {
         return TYPE_DATA_BED;
     }
@@ -327,16 +339,16 @@ unsigned int CWiggleReader::x_GetLineType(
 //  ----------------------------------------------------------------------------
 void CWiggleReader::Tokenize(
     const string& str,
-    const string& delims,
+    const string& delim,
     vector< string >& parts )
 //  ----------------------------------------------------------------------------
 {
-    string temp( str );
+    string temp;
     bool in_quote( false );
     const char joiner( '#' );
 
-    for ( size_t i=0; i < temp.size(); ++i ) {
-        switch( temp[i] ) {
+    for ( size_t i=0; i < str.size(); ++i ) {
+        switch( str[i] ) {
 
             default:
                 break;
@@ -346,16 +358,23 @@ void CWiggleReader::Tokenize(
 
             case ' ':
                 if ( in_quote ) {
+                    if ( temp.empty() )
+                        temp = str;
                     temp[i] = joiner;
                 }
                 break;
         }
     }
-    NStr::Tokenize( temp, delims, parts, NStr::eMergeDelims );
-    for ( size_t j=0; j < parts.size(); ++j ) {
-        for ( size_t i=0; i < parts[j].size(); ++i ) {
-            if ( parts[j][i] == joiner ) {
-                parts[j][i] = ' ';
+    if ( temp.empty() ) {
+        NStr::Tokenize(str, delim, parts, NStr::eMergeDelims);
+    }
+    else {
+        NStr::Tokenize(temp, delim, parts, NStr::eMergeDelims);
+        for ( size_t j=0; j < parts.size(); ++j ) {
+            for ( size_t i=0; i < parts[j].size(); ++i ) {
+                if ( parts[j][i] == joiner ) {
+                    parts[j][i] = ' ';
+                }
             }
         }
     }

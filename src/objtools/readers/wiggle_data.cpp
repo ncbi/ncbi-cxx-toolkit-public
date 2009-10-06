@@ -59,12 +59,10 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ===========================================================================
 CWiggleData::CWiggleData(
-    const string& strChrom,
     unsigned int seq_start,
     unsigned int seq_span,
     double value ):
 //  ===========================================================================
-    m_strChrom( strChrom ),
     m_uSeqStart( seq_start ),
     m_uSeqSpan( seq_span ),
     m_dValue( value )
@@ -306,10 +304,9 @@ CWiggleTrack::CWiggleTrack(
     m_uSeqLength( 0 ),
     m_bEvenlySpaced( true )
 {
-    CWiggleData* pData = new CWiggleData( record.Chrom(), 
-        record.SeqStart(), record.SeqSpan(), record.Value() );
-    m_Entries[ pData->SeqStart() ] = pData;
-    /**/ m_Data.push_back( pData );
+    m_Data.push_back(CWiggleData(record.SeqStart(),
+                                 record.SeqSpan(),
+                                 record.Value()));
     m_uSeqSpan = record.SeqSpan();
     m_dMaxValue = (record.Value() > 0) ? record.Value() : 0;
     m_dMinValue = (record.Value() < 0) ? record.Value() : 0;
@@ -327,9 +324,6 @@ CWiggleTrack::CWiggleTrack(
 CWiggleTrack::~CWiggleTrack()
 //  ===========================================================================
 {
-    for ( DataIter it = m_Entries.begin(); it != m_Entries.end(); ++it ) {
-        delete it->second;
-    }
 }
 
 //  ===========================================================================
@@ -350,10 +344,9 @@ void CWiggleTrack::AddRecord(
     if ( 0 != (record.SeqStart() - m_uSeqStart) % SeqSpan() ) {
         m_bEvenlySpaced = false;
     }
-    CWiggleData* pData = new CWiggleData( record.Chrom(), 
-        record.SeqStart(), record.SeqSpan(), record.Value() );        
-    m_Entries[ record.SeqStart() ] = pData;
-    m_Data.push_back( pData );
+    m_Data.push_back(CWiggleData(record.SeqStart(),
+                                 record.SeqSpan(),
+                                 record.Value()));
     
     if ( m_uSeqLength == 0 ) {
         if ( m_uSeqStart > record.SeqStart() ) {
@@ -452,6 +445,7 @@ void CWiggleTrack::MakeGraph(
     CSeq_annot::TData::TGraph& graphset )
 //  ===========================================================================
 {
+    sort(m_Data.begin(), m_Data.end());
     if ( m_bEvenlySpaced ) {
         CRef<CSeq_graph> graph( new CSeq_graph );
         graph->SetTitle( m_strName );
@@ -491,15 +485,15 @@ void CWiggleTrack::MakeGraph(
             switch( GetGraphType() ) {
                     
                 default:
-                    m_Data[u]->FillGraphsByte( *graph );
+                    m_Data[u].FillGraphsByte( *graph, *this );
                     break;
             
                 case GRAPH_REAL:
-                    m_Data[u]->FillGraphsReal( *graph );
+                    m_Data[u].FillGraphsReal( *graph );
                     break;
                     
                 case GRAPH_INT:
-                    m_Data[u]->FillGraphsInt( *graph );
+                    m_Data[u].FillGraphsInt( *graph );
                     break;
             }                
             graphset.push_back( graph );
@@ -520,17 +514,17 @@ void CWiggleTrack::MakeGraphs(
                 
             default:
 //                FillGraphsByte( graph->SetGraph().SetByte() );
-                m_Data[u]->FillGraphsByte( *graph );
+                m_Data[u].FillGraphsByte( *graph, *this );
                 break;
         
             case GRAPH_REAL:
 //                m_Data[u]->FillGraphsReal( graph->SetGraph().SetReal() );
-                m_Data[u]->FillGraphsReal( *graph );
+                m_Data[u].FillGraphsReal( *graph );
                 break;
                 
             case GRAPH_INT:
 //                m_Data[u]->FillGraphsInt( graph->SetGraph().SetInt() );
-                m_Data[u]->FillGraphsInt( *graph );
+                m_Data[u].FillGraphsInt( *graph );
                 break;
         }                
         graphset.push_back( graph );
@@ -612,14 +606,15 @@ void CWiggleTrack::FillGraphsByte(
 
 //  ===========================================================================
 void CWiggleData::FillGraphsByte(
-    CSeq_graph& graph )
+    CSeq_graph& graph,
+    const CWiggleTrack& track)
 //
 //  Idea:   Scale the set of values found linearly to the interval 1 (lowest)
 //          to 255 (highest). Gap "values" are set to 0.
 //  ===========================================================================
 {
     CSeq_interval& loc = graph.SetLoc().SetInt();
-    loc.SetId().Set( CSeq_id::e_Local, m_strChrom );
+    loc.SetId().Set( CSeq_id::e_Local, track.Chrom() );
     loc.SetFrom( SeqStart() );
     loc.SetTo( SeqStart() + SeqSpan() );
 
@@ -645,11 +640,12 @@ bool CWiggleTrack::DataValue(
     if ( GRAPH_UNKNOWN == m_uGraphType ) {
         m_uGraphType = GetGraphType();
     }
-    DataIter it = m_Entries.find( uStart );
-    if ( it == m_Entries.end() ) {
+    CWiggleData key(uStart, 0, 0);
+    DataIter it = lower_bound(m_Data.begin(), m_Data.end(), key);
+    if ( it == m_Data.end() || it->SeqStart() != uStart ) {
         return false;
     }
-    dValue = it->second->Value();
+    dValue = it->Value();
     return true;
 }
 
@@ -708,8 +704,8 @@ void CWiggleTrack::Dump(
 {
     Out << "track chrom=" << Chrom() << " seqstart=" << SeqStart()
         << " seqstop=" << SeqStop() << " count=" << Count() << endl;
-    for (DataIter it = m_Entries.begin(); it != m_Entries.end(); ++it ) {
-        it->second->Dump( Out );
+    for (DataIter it = m_Data.begin(); it != m_Data.end(); ++it ) {
+        it->Dump( Out );
     }
     Out << endl;
 }
