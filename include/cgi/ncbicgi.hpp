@@ -488,9 +488,9 @@ public:
     void          SetContentType(const string& f)
         { x_ForceUnique(); m_Data->m_ContentType = f; }
 
-    operator const string&() const     { return GetValue(); }
-    operator       string&()           { return SetValue(); }
-    operator const CTempString() const { return CTempString(GetValue()); }
+    operator const string&() const       { return GetValue(); }
+    operator       string&()             { return SetValue(); }
+    operator const CTempStringEx() const { return CTempStringEx(GetValue()); }
 
     /// commonly-requested string:: operations...
     SIZE_TYPE size() const             { return GetValue().size(); }
