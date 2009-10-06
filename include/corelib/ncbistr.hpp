@@ -233,8 +233,12 @@ public:
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
-    static double StringToDouble(const CTempString& str,
+    static double StringToDouble(const CTempStringEx& str,
                                  TStringToNumFlags  flags = 0);
+
+    /// This version accepts zero-terminated string
+    static double StringToDoubleEx(const char* str, size_t size,
+                                   TStringToNumFlags  flags = 0);
 
     /// Convert string to Int8.
     ///
@@ -1224,6 +1228,18 @@ public:
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
     static bool StartsWith(const string& str, const string& start,
+                           ECase use_case = eCase);
+
+    /// Check if a string starts with a specified prefix value.
+    ///
+    /// @param str
+    ///   String to check.
+    /// @param start
+    ///   Prefix value to check for.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking.
+    static bool StartsWith(const string& str, const char* start,
                            ECase use_case = eCase);
 
     /// Check if a string starts with a specified character value.
@@ -3466,6 +3482,14 @@ bool NStr::StartsWith(const string& str, const string& start, ECase use_case)
 {
     return str.size() >= start.size()  &&
         Compare(str, 0, start.size(), start, use_case) == 0;
+}
+
+inline
+bool NStr::StartsWith(const string& str, const char* start, ECase use_case)
+{
+    size_t start_size = strlen(start);
+    return str.size() >= start_size  &&
+        Compare(str, 0, start_size, start, use_case) == 0;
 }
 
 inline

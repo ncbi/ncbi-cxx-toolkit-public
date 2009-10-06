@@ -481,15 +481,14 @@ void s_SkipAllowedSymbols(const CTempString& str,
         pos = str.length();
         return;
     }
-    unsigned char ch = str[pos];
-    while ( ch ) {
+    for ( SIZE_TYPE len = str.length(); pos < len; ++pos ) {
+        unsigned char ch = str[pos];
         if ( isdigit(ch)  ||  ch == '+' ||  ch == '-'  ||  ch == '.' ) {
             break;
         }
         if ( (skip_mode == eSkipSpacesOnly)  &&  !isspace(ch) ) {
             break;
         }
-        ch = str[++pos];
     }
 }
 
@@ -679,9 +678,11 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
 }
 
 
-double NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
+double NStr::StringToDoubleEx(const char* str, size_t size,
+                              TStringToNumFlags flags)
 {
     _ASSERT(flags == 0  ||  flags > 32);
+    _ASSERT(str[size] == '\0');
 
     // Current position in the string
     SIZE_TYPE pos  = 0;
@@ -689,7 +690,7 @@ double NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
         bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
-        s_SkipAllowedSymbols(str, pos,
+        s_SkipAllowedSymbols(CTempString(str, size), pos,
                              spaces ? eSkipSpacesOnly : eSkipAllAllowed);
     }
     // Check mandatory sign
@@ -712,10 +713,8 @@ double NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     }
 
     // Conversion
-    string s;
-    str.Copy(s, 0, str.size());
     char* endptr = 0;
-    const char* begptr = s.c_str() + pos;
+    const char* begptr = str + pos;
 
     errno = 0;
     double n = strtod(begptr, &endptr);
@@ -741,6 +740,25 @@ double NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     return n;
 }
 
+
+double NStr::StringToDouble(const CTempStringEx& str, TStringToNumFlags flags)
+{
+    size_t size = str.size();
+    if ( str.HasZeroAtEnd() ) {
+        // string has zer at the end already
+        return StringToDoubleEx(str.data(), size, flags);
+    }
+    char buf[256]; // small temporary buffer in stack for appending zero char
+    if ( size < sizeof(buf) ) {
+        memcpy(buf, str.data(), size);
+        buf[size] = '\0';
+        return StringToDoubleEx(buf, size, flags);
+    }
+    else {
+        // use std::string() to allocate memory for appending zero char
+        return StringToDoubleEx(string(str).c_str(), size, flags);
+    }
+}
 
 /// @internal
 static Uint8 s_DataSizeConvertQual(const CTempString&      str,

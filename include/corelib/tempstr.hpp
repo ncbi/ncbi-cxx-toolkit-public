@@ -628,6 +628,77 @@ bool CTempString::operator<(const CTempString& str) const
 }
 
 
+class CTempStringEx : public CTempString
+{
+public:
+    CTempStringEx(void)
+        : m_HasZeroAtEnd(false)
+        {
+        }
+    CTempStringEx(const char* str)
+        : CTempString(str),
+          m_HasZeroAtEnd(true)
+        {
+        }
+    CTempStringEx(const char* str, size_type len)
+        : CTempString(str, len),
+          m_HasZeroAtEnd(false)
+        {
+        }
+    CTempStringEx(const string& str)
+        : CTempString(str.c_str(), str.size()),
+          m_HasZeroAtEnd(true)
+        {
+        }
+    CTempStringEx(const string& str, size_type pos, size_type len)
+        : CTempString(str, pos, len),
+          m_HasZeroAtEnd(false)
+        {
+        }
+    CTempStringEx(const CTempString& str)
+        : CTempString(str),
+          m_HasZeroAtEnd(false)
+        {
+        }
+    CTempStringEx(const CTempString& str, size_type pos)
+        : CTempString(str, pos),
+          m_HasZeroAtEnd(false)
+        {
+        }
+    CTempStringEx(const CTempString& str, size_type pos, size_type len)
+        : CTempString(str, pos, len),
+          m_HasZeroAtEnd(false)
+        {
+        }
+
+    /// Assign new values to the content of the a string
+    CTempString& assign(const char* src_str, size_type len)
+        {
+            m_HasZeroAtEnd = false;
+            return CTempString::assign(src_str, len);
+        }
+    CTempString& assign(const CTempString& src_str)
+        {
+            m_HasZeroAtEnd = false;
+            return CTempString::assign(src_str);
+        }
+    CTempString& assign(const CTempString& src_str,
+                        size_type          off, 
+                        size_type          count)
+        {
+            m_HasZeroAtEnd = false;
+            return CTempString::assign(src_str, off, count);
+        }
+
+    bool HasZeroAtEnd(void) const
+        {
+            return m_HasZeroAtEnd;
+        }
+
+private:
+    bool m_HasZeroAtEnd;
+};
+
 END_NCBI_SCOPE
 
 #endif  // CORELIB___TEMPSTR__HPP
