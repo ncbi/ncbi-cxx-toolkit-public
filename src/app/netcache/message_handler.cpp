@@ -457,8 +457,7 @@ CNCMessageHandler::OnCloseExt(IServer_ConnectionHandler::EClosePeer peer)
         CNCServerStat::RemoveOpenedConnection();
     }
     else {
-        double conn_span
-                     = (m_Server->GetFastTime() - m_ConnTime).GetAsDouble();
+        double conn_span = (m_Server->GetFastTime() - m_ConnTime).GetAsDouble();
         CNCServerStat::AddClosedConnection(conn_span);
     }
 
@@ -613,7 +612,9 @@ CNCMessageHandler::x_StartCommand(const SParsedCmd& cmd)
             &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_HasBlob)
     {
         CDiagContext_Extra diag_extra = GetDiagContext().PrintRequestStart();
-        diag_extra.Print("cmd", cmd.command->cmd);
+        diag_extra.Print("cmd",  cmd.command->cmd);
+        diag_extra.Print("auth", m_ClientName);
+        diag_extra.Print("peer", m_ClientAddress);
         typedef map<string, string> TStringMap;
         ITERATE(TStringMap, it, cmd.params) {
             diag_extra.Print(it->first, it->second);
