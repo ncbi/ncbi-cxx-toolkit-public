@@ -123,13 +123,13 @@ static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
 const char kFormatEscapeSymbol = '$';
 
 // Error messages
-static const string kMsgInvalidTime = "CTime:  invalid";
+static const string kMsgInvalidTime = "CTime: invalid";
 
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
 {
     if ( date.IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     unsigned d = date.Day();
     unsigned m = date.Month();
@@ -811,11 +811,11 @@ int CTime::YearDayNumber(void) const
 int CTime::YearWeekNumber(EDayOfWeek first_day_of_week) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if (first_day_of_week > eSaturday) {
         NCBI_THROW(CTimeException, eArgument,
-                   "CTime:  first day of week parameter is incorrect");
+                   "CTime: first day of week parameter is incorrect");
     }
 
     int week_num = 0;
@@ -852,7 +852,7 @@ int CTime::MonthWeekNumber(EDayOfWeek first_day_of_week) const
 int CTime::DayOfWeek(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     int y = Year();
     int m = Month();
@@ -865,7 +865,7 @@ int CTime::DayOfWeek(void) const
 int CTime::DaysInMonth(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     int n_days = s_DaysInMonth[Month()-1];
     if (n_days == 0) {
@@ -886,7 +886,7 @@ int CTime::MonthNameToNum(const string& month)
     // Always throw exceptions here.
     // Next if statements avoid compilation warnings.
     if ( name ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid month name");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: invalid month name");
     }
     return -1;
 }
@@ -895,7 +895,7 @@ int CTime::MonthNameToNum(const string& month)
 string CTime::MonthNumToName(int month, ENameFormat format)
 {
     if (month < 1  ||  month > 12) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid month number");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: invalid month number");
     }
     month--;
     return format == eFull ? kMonthFull[month] : kMonthAbbr[month];
@@ -913,7 +913,7 @@ int CTime::DayOfWeekNameToNum(const string& day)
     // Always throw exceptions here.
     // Next if statements avoid compilation warnings.
     if ( name ) {
-        NCBI_THROW(CTimeException,eInvalid,"CTime:  invalid day of week name");
+        NCBI_THROW(CTimeException,eInvalid,"CTime: invalid day of week name");
     }
     return -1;
 }
@@ -1039,16 +1039,16 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   ERR_POST_X(5, "Format symbol 'z' is unsupported on this platform");
 #else
                   str += "GMT";
-                    if (IsGmtTime()) {
-                        break;
-                    }
-                    TSeconds tz = (out_tz == eCurrentTimeZone) ?
-                        TimeZone() : out_tz;
-                    str += (tz > 0) ? '-' : '+';
-                    if (tz < 0) tz = -tz;
-                    int tzh = int(tz / 3600);
-                    s_AddZeroPadInt(str, tzh);
-                    s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
+                  if (IsGmtTime()) {
+                      break;
+                  }
+                  TSeconds tz = (out_tz == eCurrentTimeZone) ?
+                                TimeZone() : out_tz;
+                  str += (tz > 0) ? '-' : '+';
+                  if (tz < 0) tz = -tz;
+                  int tzh = int(tz / 3600);
+                  s_AddZeroPadInt(str, tzh);
+                  s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
 #endif
                   break;
                   }
@@ -1069,7 +1069,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 time_t CTime::GetTimeT(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     // MT-Safe protect
     CFastMutexGuard LOCK(s_TimeMutex);
@@ -1277,7 +1277,7 @@ static void s_GetTimeT(time_t& timer, long& ns)
     ns = 0;
 #endif
     if (timer == (time_t)(-1)) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  Unable to get time value");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: unable to get time value");
     }
 }
 
@@ -1309,7 +1309,9 @@ CTime& CTime::x_SetTime(const time_t* value)
     t = ( GetTimeZone() == eLocal ) ? localtime(&timer) : gmtime(&timer);
     if ( !t ) {
         // Error was detected: incorrect timer value or system error
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  localtime/gmtime error, possible incorrect time_t value");
+        NCBI_THROW(CTimeException, eInvalid, 
+                   "CTime: localtime/gmtime error, " \
+                   "possible incorrect time_t value");
     }
 #endif
     m_Data.adjTimeDiff = 0;
@@ -1328,7 +1330,7 @@ CTime& CTime::x_SetTime(const time_t* value)
 CTime& CTime::AddMonth(int months, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( !months ) {
         return *this;
@@ -1359,7 +1361,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
 CTime& CTime::AddDay(int days, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( !days ) {
         return *this;
@@ -1374,7 +1376,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
         aflag = true;
     }
 
-    // Make nesessary object
+    // Make necessary object
     *this = s_Number2Date(s_Date2Number(*this) + days, *this);
 
     // If need, make adjustment time specially
@@ -1391,7 +1393,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
 CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( !hours ) {
         return *this;
@@ -1421,7 +1423,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 CTime& CTime::AddMinute(int minutes, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( !minutes ) {
         return *this;
@@ -1451,7 +1453,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( !seconds ) {
         return *this;
@@ -1467,7 +1469,7 @@ CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 CTime& CTime::AddNanoSecond(long ns)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( !ns ) {
         return *this;
@@ -1612,7 +1614,7 @@ bool CTime::IsValid(void) const
 CTime CTime::GetLocalTime(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( IsLocalTime() ) {
         return *this;
@@ -1625,7 +1627,7 @@ CTime CTime::GetLocalTime(void) const
 CTime CTime::GetGmtTime(void) const
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if ( IsGmtTime() ) {
         return *this;
@@ -1638,7 +1640,7 @@ CTime CTime::GetGmtTime(void) const
 CTime& CTime::ToTime(ETimeZone tz)
 {
     if ( IsEmptyDate() ) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+        NCBI_THROW(CTimeException, eInvalid, "CTime: the date is empty");
     }
     if (GetTimeZone() != tz) {
         struct tm* t;
@@ -1662,7 +1664,9 @@ CTime& CTime::ToTime(ETimeZone tz)
         t = ( tz == eLocal ) ? localtime(&timer) : gmtime(&timer);
         if ( !t ) {
             // Error was detected: incorrect timer value or system error
-            NCBI_THROW(CTimeException, eInvalid, "CTime:  localtime/gmtime error, possible incorrect time_t value");
+            NCBI_THROW(CTimeException, eInvalid, 
+                       "CTime: localtime/gmtime error, " \
+                       "possible incorrect time_t value");
         }
 #endif
         m_Data.year  = t->tm_year + 1900;
@@ -1816,6 +1820,30 @@ TSeconds CTime::DiffSecond(const CTime& from) const
 }
 
 
+CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
+{
+    TSeconds sec = DiffSecond(t);
+    if (sec < kMin_Long  || sec > kMax_Long) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTime: difference in time is too big to convert " \
+                   "to CTimeSpan");
+    }
+    return CTimeSpan((long)sec , NanoSecond() - t.NanoSecond());
+}
+
+
+void CTimeSpan::Set(double seconds)
+{
+    if (seconds < kMin_Long  || seconds > kMax_Long) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeSpan: value is too big to convert to CTimeSpan");
+    }
+    m_Sec = long(seconds);
+    m_NanoSec = long((seconds - m_Sec) * kNanoSecondsPerSecond);
+    x_Normalize();
+}
+
+
 void CTime::x_AdjustDay()
 {
     int n_days = DaysInMonth();
@@ -1911,6 +1939,22 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
 //
 //=============================================================================
 
+
+CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
+                     long nanoseconds)
+{
+    TSeconds sec = (((TSeconds)days*24 + hours)*60 + minutes)*60 +
+                   seconds + nanoseconds/kNanoSecondsPerSecond;        
+    if (sec < kMin_Long  || seconds > kMax_Long) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeSpan: value is too big to convert to CTimeSpan");
+    }
+    m_Sec     = (long)sec;
+    m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
+    x_Normalize();
+}
+
+
 CTimeSpan::CTimeSpan(const string& str, const CTimeFormat& format)
 {
     if (format.IsEmpty()) {
@@ -2000,7 +2044,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             break;
         default:
             NCBI_THROW(CTimeException, eFormat,
-                       "CTimeSpan:  format is incorrect");
+                       "CTimeSpan: format is incorrect");
         }
     }
     // Normalize time span
@@ -2010,13 +2054,15 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
     x_Normalize();
 
     // Check on errors
-    if (*fff != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
+    if (*fff != '\0'  &&  
+        !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
         NCBI_THROW(CTimeException, eFormat, 
-                   "CTime: time string is too short for specified time format");
+            "CTime: time string is too short for specified time format");
     }
-    if (*sss != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
+    if (*sss != '\0'  && 
+        !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
         NCBI_THROW(CTimeException, eFormat,
-                   "CTime: time string is too long for specified time format");
+            "CTime: time string is too long for specified time format");
     }
 }
 
@@ -2302,7 +2348,203 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 //=============================================================================
 
 
-// ... see ncbitime.hpp
+const CTimeout& CTimeout::operator= (const CTimeout& t)
+{
+    if ( &t == this ) {
+        return *this;
+    }
+    m_Type      = t.m_Type;
+    m_HaveValue = t.m_HaveValue;
+    m_Sec       = t.m_Sec;
+    m_MicroSec  = t.m_MicroSec;
+    return *this;
+}
+
+
+unsigned long CTimeout::GetAsMilliSeconds(void) const
+{ 
+    if ( !m_HaveValue ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: cannot convert from special timeout value");
+    }
+    // Roughly calculate maximum number of seconds that can be safely converted
+    // to milliseconds without overflow.
+    if (m_Sec > (kMax_ULong/1000 - 1)) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: timeout value is too big to convert " \
+                   "to 'unsigned long'");
+    }
+    return m_Sec * kMilliSecondsPerSecond + m_MicroSec / 1000;
+}
+
+
+double CTimeout::GetAsDouble(void) const
+{
+    if ( !m_HaveValue ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: cannot convert from special timeout value");
+    }
+    return m_Sec + double(m_MicroSec) / kMicroSecondsPerSecond;
+}
+
+
+CTimeSpan CTimeout::GetAsTimeSpan(void) const
+{
+    if ( !m_HaveValue ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: cannot convert from special timeout value");
+    }
+    if ( m_Sec > (long)kMax_Long ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: timeout value is too big to convert " \
+                   "to CTimeSpan");
+        // We don't need to check microseconds here, because it always have
+        // normalized value and can be safely converted to nanoseconds.
+    }
+    CTimeSpan ts(m_Sec, long(m_MicroSec)*1000);
+    return ts;
+}
+
+
+void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
+{
+    if ( !m_HaveValue ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: cannot convert from special timeout value");
+    }
+    if ( sec )
+        *sec  = m_Sec;
+    if ( usec )
+        *usec = m_MicroSec;
+}
+
+
+void CTimeout::Set(EType type)
+{
+    switch(type) {
+    case eDefault:
+    case eInfinite:
+        m_Type = type;
+        m_HaveValue = false;
+        break;
+    default:
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout(type) can be used with eDefault " \
+                   "or eInfinite values only");
+    }
+}
+
+void CTimeout::Set(unsigned int sec, unsigned int usec)
+{
+    m_HaveValue = true;
+    m_Sec       = sec + usec / kMicroSecondsPerSecond;
+    m_MicroSec  = usec % kMicroSecondsPerSecond;
+}
+
+void CTimeout::Set(double sec)
+{
+    if (sec < 0) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout: cannot set negative value");
+    }
+    if (sec > kMax_UInt) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: timeout value is too big");
+    }
+    m_HaveValue = true;
+    m_Sec       = (unsigned int)sec;
+    m_MicroSec  = (unsigned int)((sec - m_Sec) * kMicroSecondsPerSecond);
+}
+
+
+void CTimeout::Set(const CTimeSpan& ts)
+{
+    if (ts.GetSign() == eNegative) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "CTimeout: cannot convert from negative CTimeStamp");
+    }
+    if ((Uint8)ts.GetCompleteSeconds() > kMax_UInt) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout: CTimeStamp value is too big");
+        // We don't need to check nanoseconds, because CTimeSpan always have
+        // normalized value and its value can be safely converted
+        // to microseconds.
+    }
+    m_HaveValue = true;
+    m_Sec       = (unsigned int)ts.GetCompleteSeconds();
+    m_MicroSec  = (unsigned int)((ts.GetNanoSecondsAfterSecond()+500)/1000);
+}
+
+
+inline
+int s_TimeoutCompareHash(const CTimeout& t)
+{
+    if ( t.IsInfinite() )
+        return 2;
+    if ( t.IsDefault() )
+        return 3;
+    return 1;
+}
+
+
+bool CTimeout::operator== (const CTimeout& t) const
+{
+    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
+    switch (h) {
+        case 11:
+            return m_Sec == t.m_Sec  &&  m_MicroSec == t.m_MicroSec;
+        case 22:
+            return true;  // infinite == infinite
+        case 12:
+        case 21:
+            return false; // infinite != value
+        default:
+            NCBI_THROW(CTimeException, eArgument, 
+                       "CTimeout: cannot compare with eDefault timeout");
+    }
+}
+
+
+bool CTimeout::operator> (const CTimeout& t) const
+{
+    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
+    switch (h) {
+        case 11:
+            if (m_Sec == t.m_Sec) {
+                return m_MicroSec > t.m_MicroSec;
+            }
+            return m_Sec > t.m_Sec;
+        case 21:
+            return true;  // infinite > value
+        case 12:
+        case 22:
+            return false;
+        default:
+            NCBI_THROW(CTimeException, eArgument, 
+                       "CTimeout: cannot compare with eDefault timeout");
+    }
+}
+
+
+bool CTimeout::operator< (const CTimeout& t) const
+{
+    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
+    switch (h) {
+        case 11:
+            if (m_Sec == t.m_Sec) {
+                return m_MicroSec < t.m_MicroSec;
+            }
+            return m_Sec < t.m_Sec;
+        case 12:
+            return true;  // value < infinite
+        case 21:
+        case 22:
+            return false;
+        default:
+            NCBI_THROW(CTimeException, eArgument, 
+                       "CTimeout: cannot compare with eDefault timeout");
+    }
+}
 
 
 

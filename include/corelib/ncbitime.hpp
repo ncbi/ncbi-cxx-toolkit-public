@@ -227,6 +227,7 @@ public:
     ///   A time format object.
     /// @sa EPredefined, SetFormat
     static CTimeFormat GetPredefined(EPredefined fmt, TFlags flags = fDefault);
+
 public:
     /// Return time format as string.
     /// Note: This method added temporarely, and will be deleted soon.
@@ -966,7 +967,7 @@ public:
     CTime operator- (const CTimeSpan& ts) const;
 
     /// Operator to subtract times.
-    CTimeSpan operator- (const CTime& t);
+    CTimeSpan operator- (const CTime& t) const;
 
     //
     // Time comparison ('>' means "later", '<' means "earlier")
@@ -1441,14 +1442,10 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CTimeout -- Timeout interval for various I/O etc activity.
+/// CTimeout -- Timeout interval
 ///
-/// CTimeout is a simplifyed version of CTimeSpan with adding some
-/// additional functionality. Note, that CTimeout store seconds and
-/// microsecond, instead of seconds and nanoseconds in CTimeSpan.
-///
-/// Throw exception of type CTimeException on errors.
-
+/// @sa STimeout, CConnTimeout, CTimeSpan
+/// @note Throw exception of type CTimeException on errors.
 
 class NCBI_XNCBI_EXPORT CTimeout
 {
@@ -1456,14 +1453,10 @@ public:
     /// Type of timeouts.
     enum EType {
         eDefault,   ///< Default timeout (depends from implementation).
-        eInfinite,  ///< Infinite timeout.
-        eValue      ///< Timeout have some numeric value.
+        eInfinite   ///< Infinite timeout.
     };
 
     /// Create timeout of specified type.
-    ///
-    /// @param type
-    ///   Only eDefault or eInfinite is alowed here.
     explicit CTimeout(EType type = eDefault);
 
     /// Initialize timeout from CTimeSpan.
@@ -1476,7 +1469,7 @@ public:
     CTimeout(unsigned int sec, unsigned int usec);
 
     /// Initialize timeout from number of seconds (fractional value).
-    explicit CTimeout(double sec);
+    CTimeout(double sec);
 
     /// Copy constructor.
     CTimeout(const CTimeout& t);
@@ -1488,8 +1481,8 @@ public:
     const CTimeout& operator= (const CTimeout& t);
 
     // Check on special timeout values.
-    bool IsDefault()  const { return m_Type == eDefault;  };
-    bool IsInfinite() const { return m_Type == eInfinite; };
+    bool IsDefault()  const;
+    bool IsInfinite() const;
 
     //
     // Get timeout
@@ -1502,10 +1495,10 @@ public:
     double GetAsDouble(void) const;
 
     /// Convert to CTimeSpan.
-    const CTimeSpan GetAsTimeSpan(void) const;
+    CTimeSpan GetAsTimeSpan(void) const;
 
     /// Get timeout in seconds and microseconds.
-    void Get(unsigned int *sec, unsigned int *usec = 0) const;
+    void Get(unsigned int *sec, unsigned int *usec) const;
 
 
     //
@@ -1513,9 +1506,6 @@ public:
     //
 
     /// Set special value.
-    ///
-    /// @param type
-    ///   Only eDefault or eInfinite is alowed here.
     void Set(EType type);
 
     /// Set timeout in seconds and microseconds.
@@ -1532,8 +1522,7 @@ public:
 
     //
     // Comparison.
-    // Equal special values can be compared only in == operator.
-    // And even here we cannot compare eDefault and eInfinite.
+    // eDefault special value cannot be compared with any value.
     //
 
     /// Operator to test equality of timeouts.
@@ -1555,9 +1544,10 @@ public:
     bool operator<= (const CTimeout& t) const;
 
 private:
-    EType         m_Type;  ///< Type of timeout.
-    unsigned int  m_sec;   ///< Seconds part of the timeout.
-    unsigned int  m_usec;  ///< Microseconds part of the timeout.
+    EType         m_Type;       ///< Type of timeout.
+    bool          m_HaveValue;  ///< Timeout have numeric value.
+    unsigned int  m_Sec;        ///< Seconds part of the timeout.
+    unsigned int  m_MicroSec;   ///< Microseconds part of the timeout.
 };
 
 
@@ -1740,10 +1730,10 @@ class NCBI_XNCBI_EXPORT CTimeException : public CCoreException
 public:
     /// Error types that CTime can generate.
     enum EErrCode {
-        eArgument,      ///< Bad function argument.
-        eConvert,       ///< Error convert value.
-        eInvalid,       ///< Invalid time value.
-        eFormat,        ///< Incorrect format.
+        eArgument,     ///< Bad function argument.
+        eConvert,      ///< Error converting value from one format to another.
+        eInvalid,      ///< Invalid time value.
+        eFormat,       ///< Incorrect format.
     };
 
     /// Translate from the error code value to its string representation.
@@ -1992,7 +1982,7 @@ CTime CTime::operator- (const CTimeSpan& ts) const
 }
 
 inline
-CTimeSpan CTime::operator- (const CTime& t)
+CTimeSpan CTime::operator- (const CTime& t) const
 {
     return DiffTimeSpan(t);
 }
@@ -2084,12 +2074,6 @@ double CTime::DiffNanoSecond(const CTime& t) const
 }
 
 inline
-CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
-{
-    return CTimeSpan((long) DiffSecond(t), NanoSecond() - t.NanoSecond());
-}
-
-inline
 bool CTime::IsLocalTime(void) const { return m_Data.tz == eLocal; }
 
 inline
@@ -2168,16 +2152,6 @@ CTimeSpan::CTimeSpan(void)
 }
 
 inline
-CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
-                     long nanoseconds)
-{
-    m_Sec = ((days*24 + hours)*60 + minutes)*60 +
-            seconds + nanoseconds/kNanoSecondsPerSecond;
-    m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
-    x_Normalize();
-}
-
-inline
 CTimeSpan::CTimeSpan(long seconds, long nanoseconds)
 {
     Set(seconds, nanoseconds);
@@ -2250,14 +2224,6 @@ void CTimeSpan::Set(long seconds, long nanoseconds)
 {
     m_Sec = seconds + nanoseconds/kNanoSecondsPerSecond;
     m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
-    x_Normalize();
-}
-
-inline
-void CTimeSpan::Set(double seconds)
-{
-    m_Sec = long(seconds);
-    m_NanoSec = long((seconds - m_Sec) * kNanoSecondsPerSecond);
     x_Normalize();
 }
 
@@ -2396,181 +2362,28 @@ CTimeout::CTimeout(double sec) { Set(sec); }
 inline
 CTimeout::CTimeout(const CTimeout& t)
 {
-    m_Type = t.m_Type;
-    m_sec  = t.m_sec;
-    m_usec = t.m_usec;
+    m_Type      = t.m_Type;
+    m_HaveValue = t.m_HaveValue;
+    m_Sec       = t.m_Sec;
+    m_MicroSec  = t.m_MicroSec;
 }
 
 inline
-const CTimeout& CTimeout::operator= (const CTimeout& t)
-{
-    if ( &t == this ) {
-        return *this;
-    }
-    m_Type = t.m_Type;
-    m_sec  = t.m_sec;
-    m_usec = t.m_usec;
-    return *this;
-}
-
-inline
-unsigned long CTimeout::GetAsMilliSeconds(void) const
+bool CTimeout::IsDefault() const
 { 
-    if (m_Type != eValue) {
-        NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout:  Cannot convert from special timeout value");
-    }
-    // Roughly calculate maximum number of seconds that can be safely converted
-    // to milliseconds without overflow.
-    if (m_sec > (kMax_ULong/1000 - 1)) {
-        NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout:  Timeout value is too big to convert to 'unsigned long'");
-    }
-    return m_sec * kMilliSecondsPerSecond + m_usec / 1000;
+    return m_Type == eDefault  &&  !m_HaveValue;
 }
 
 inline
-double CTimeout::GetAsDouble(void) const
+bool CTimeout::IsInfinite() const
 {
-    if (m_Type != eValue) {
-        NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout:  Cannot convert from special timeout value");
-    }
-    return m_sec + double(m_usec) / kMicroSecondsPerSecond;
-}
-
-inline
-const CTimeSpan CTimeout::GetAsTimeSpan(void) const
-{
-    if (m_Type != eValue) {
-        NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout:  Cannot convert from special timeout value");
-    }
-    CTimeSpan ts(m_sec, long(m_usec)*1000);
-    return ts;
-}
-
-
-inline
-void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
-{
-    if (m_Type != eValue) {
-        NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout:  Cannot convert from special timeout value");
-    }
-    if ( sec )
-        *sec  = m_sec;
-    if ( usec )
-        *usec = m_usec;
-}
-
-
-inline
-void CTimeout::Set(EType type)
-{
-    switch(type) {
-    case eDefault:
-    case eInfinite:
-        m_Type = type;
-        break;
-    default:
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout(type) can be used with eDefault or eInfinite values only");
-    }
-}
-
-inline
-void CTimeout::Set(unsigned int sec, unsigned int usec)
-{
-    m_Type = eValue;
-    m_sec  = sec + usec / kMicroSecondsPerSecond;
-    m_usec = usec % kMicroSecondsPerSecond;
-}
-
-inline
-void CTimeout::Set(double sec)
-{
-    if (sec < 0) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Cannot set negative value");
-    }
-    if (sec > kMax_UInt) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Timeout value is too big");
-    }
-    m_Type = eValue;
-    m_sec  = (unsigned int)sec;
-    m_usec = (unsigned int)((sec - m_sec) * kMicroSecondsPerSecond);
-}
-
-inline
-void CTimeout::Set(const CTimeSpan& ts)
-{
-    if (ts.GetSign() == eNegative) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Cannot convert from negative CTimeStamp");
-    }
-    if (ts.GetCompleteSeconds() > kMax_UInt) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  CTimeStamp value is too big");
-        // We don't need to check nanoseconds, because CTimeSpan alwys have
-        // normalized value and its value can be safely converted to microseconds.
-    }
-    m_Type = eValue;
-    m_sec  = (unsigned int)ts.GetCompleteSeconds();
-    m_usec = (unsigned int)((ts.GetNanoSecondsAfterSecond()+500)/1000);
-}
-
-inline
-bool CTimeout::operator== (const CTimeout& t) const
-{
-    if (m_Type == eValue  &&  t.m_Type == eValue) {
-        return m_sec == t.m_sec  &&  m_usec == t.m_usec;
-    }
-    if (m_Type != t.m_Type) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Cannot compare different special values");
-    }
-    return true;
+    return m_Type == eInfinite  &&  !m_HaveValue;
 }
 
 inline
 bool CTimeout::operator!= (const CTimeout& t) const
 {
-    if (m_Type == eValue  &&  t.m_Type == eValue) {
-        return m_sec != t.m_sec  ||  m_usec != t.m_usec;
-    }
-    if (m_Type != t.m_Type) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Cannot compare different special values");
-    }
-    return false;
-}
-
-inline
-bool CTimeout::operator> (const CTimeout& t) const
-{
-    if (m_Type != eValue  ||  t.m_Type != eValue) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Cannot compare special value");
-    }
-    if (m_sec == t.m_sec) {
-        return m_usec > t.m_usec;
-    }
-    return m_sec > t.m_sec;
-}
-
-inline
-bool CTimeout::operator< (const CTimeout& t) const
-{
-    if (m_Type != eValue  ||  t.m_Type != eValue) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "CTimeout:  Cannot compare special value");
-    }
-    if (m_sec == t.m_sec) {
-        return m_usec < t.m_usec;
-    }
-    return m_sec < t.m_sec;
+    return !(*this == t);
 }
 
 inline

@@ -1414,7 +1414,7 @@ static void s_TestTimeout(void)
         CTimeSpan ts3(-1,200);
 
         CTimeout t(ts1);
-        // Nanoseconds truncatated to 0
+        // Nanoseconds truncates to 0 here
         ts = t.GetAsTimeSpan();
         assert(ts.GetCompleteSeconds() == 1);
         assert(ts.GetNanoSecondsAfterSecond() == 0); 
@@ -1444,7 +1444,7 @@ static void s_TestTimeout(void)
         assert(usec == 456);
         t.Set(CTimeout::eInfinite);
         try {
-            t.Get(&sec); // special value
+            t.Get(&sec, &usec);
             _TROUBLE;
         }
         catch (CTimeException&) {}
@@ -1458,8 +1458,7 @@ static void s_TestTimeout(void)
         CTimeout t2(123.45);
         CTimeout t3(123.4);
 
-        assert(t0 == tmo_default);
-        assert(ti == tmo_infinite);
+        // Compare finite timeouts
         assert(t1 != t2);
         assert(t1 == t3);
         assert(t1 <  t2);
@@ -1467,8 +1466,24 @@ static void s_TestTimeout(void)
         assert(t1 <= t2);
         assert(t2 >= t2);
 
-        assert(tmo_default  == tmo_default);
+        // Compare infinite timeout
+        assert(t1 <  tmo_infinite);
+        assert(t1 <= tmo_infinite);
+        assert(!(t1 > tmo_infinite));
+        assert(ti == tmo_infinite);
         assert(tmo_infinite == tmo_infinite);
+
+        // We cannot compare defasult timeout
+        try {
+            assert(t0 == tmo_default);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+        try {
+            assert(tmo_default == tmo_default);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
         try {
             (tmo_default == tmo_infinite);
             _TROUBLE;
@@ -1476,11 +1491,6 @@ static void s_TestTimeout(void)
         catch (CTimeException&) {}
         try {
             (tmo_default != tmo_infinite);
-            _TROUBLE;
-        }
-        catch (CTimeException&) {}
-        try {
-            (t1 < tmo_infinite);
             _TROUBLE;
         }
         catch (CTimeException&) {}
@@ -1498,7 +1508,7 @@ static void s_TestTimeout(void)
         t1 = t2;
         assert(t1 == t2);
         t1 = tmo_default;
-        assert(t1 == tmo_default);
+        assert(t1.IsDefault());
         try {
             // assert(t1 != t2);
             (t1 != t2);
