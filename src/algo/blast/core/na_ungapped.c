@@ -389,7 +389,7 @@ s_TypeOfWord(BLAST_SequenceBlk * query,
     q_range = new_off + query_info->contexts[context].query_length;
 
     while (locations && locations->ssr->left < q_end) {
-        new_off = locations->ssr->right;
+        new_off = locations->ssr->right + 1; /* right bound is inclusive*/
         locations = locations->next;
     }
 
