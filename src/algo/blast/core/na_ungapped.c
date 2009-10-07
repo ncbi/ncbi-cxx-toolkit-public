@@ -769,18 +769,13 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                       BlastInitHitList * init_hitlist,
                       Uint4 range)
 {
-    Int4 index;
+    Int4 index = 0;
     Int4 hits_extended = 0;
     Int4 word_length;
-    Boolean contiguous = TRUE;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
         BlastMBLookupTable *lut = (BlastMBLookupTable *) lookup_wrap->lut;
-        word_length = lut->word_length;
-        if (lut->discontiguous) {
-            word_length = lut->template_length;
-            contiguous = FALSE;
-        }
+        word_length = (lut->discontiguous) ? lut->template_length : lut->word_length;
         ASSERT(word_length == lut->lut_word_length || lut->discontiguous);
     } 
     else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
@@ -794,9 +789,9 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     }
 
     if (word_params->container_type == eDiagHash) {
-        for (index = 0; index < num_hits; ++index) {
-            Uint4 s_offset = offset_pairs[index].qs_offsets.s_off;
-            Uint4 q_offset = offset_pairs[index].qs_offsets.q_off;
+        for (; index < num_hits; ++index) {
+            Int4 s_offset = offset_pairs[index].qs_offsets.s_off;
+            Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
 
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
@@ -809,9 +804,9 @@ s_BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         }
     } 
     else {
-        for (index = 0; index < num_hits; ++index) {
-            Uint4 s_offset = offset_pairs[index].qs_offsets.s_off;
-            Uint4 q_offset = offset_pairs[index].qs_offsets.q_off;
+        for (; index < num_hits; ++index) {
+            Int4 s_offset = offset_pairs[index].qs_offsets.s_off;
+            Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
 
             hits_extended += s_BlastnDiagTableExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
@@ -856,16 +851,9 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                 BlastInitHitList * init_hitlist,
                 Uint4 range)
 {
-    Int4 index;
-    Uint1 *q_start = query->sequence;
-    Uint1 *s_start = subject->sequence;
-    Uint4 word_length, lut_word_length;
-    Uint4 q_off, s_off;
-    Uint4 max_bases_left, max_bases_right;
-    Uint4 extended_left, extended_right;
-    Uint4 extra_bases;
-    Uint1 *q, *s;
+    Int4 index = 0;
     Int4 hits_extended = 0;
+    Int4 word_length, lut_word_length, ext_to;
     BlastSeqLoc* masked_locations = NULL;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
@@ -880,7 +868,7 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         lut_word_length = lut->lut_word_length;
         masked_locations = lut->masked_locations;
     }
-    extra_bases = word_length - lut_word_length;
+    ext_to = word_length - lut_word_length;
 
     /* We trust that the bases of the hit itself are exact matches, 
        and look only for exact matches before and after the hit.
@@ -892,21 +880,20 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
        is critical to reduce as much as possible all work that is not the 
        actual examination of sequence data */
 
-    for (index = 0; index < num_hits; ++index) {
-        Uint4 s_offset = offset_pairs[index].qs_offsets.s_off;
-        Uint4 q_offset = offset_pairs[index].qs_offsets.q_off;
+    for (; index < num_hits; ++index) {
+        Int4 s_offset = offset_pairs[index].qs_offsets.s_off;
+        Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
 
         /* begin with the left extension; the initialization is slightly
            faster. Point to the first base of the lookup table hit and
            work backwards */
 
-        max_bases_left = MIN(extra_bases, s_offset);
-        q = q_start + q_offset;
-        s = s_start + s_offset / COMPRESSION_RATIO;
-        s_off = s_offset;
+        Int4 ext_left = 0;
+        Int4 s_off = s_offset;
+        Uint1 *q = query->sequence + q_offset;
+        Uint1 *s = subject->sequence + s_off / COMPRESSION_RATIO;
 
-        for (extended_left = 0; extended_left < max_bases_left;
-             extended_left++) {
+        for (; ext_left < MIN(ext_to, s_offset); ++ext_left) {
             s_off--;
             q--;
             if (s_off % COMPRESSION_RATIO == 3)
@@ -920,16 +907,13 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            the bases required. Begin at the first base beyond the lookup
            table hit and move forwards */
 
-        q_off = q_offset + lut_word_length;
-        s_off = s_offset + lut_word_length;
+        if (ext_left < ext_to) {
+            Int4 ext_right = 0;
+            s_off = s_offset + lut_word_length;
+            q = query->sequence + q_offset + lut_word_length;
+            s = subject->sequence + s_off / COMPRESSION_RATIO;
 
-        if (extended_left < extra_bases) {
-            q = q_start + q_off;
-            s = s_start + s_off / COMPRESSION_RATIO;
-            max_bases_right = extra_bases - extended_left;
-
-            for (extended_right = 0; extended_right < max_bases_right;
-                 extended_right++) {
+            for (; ext_right < ext_to - ext_left; ++ext_right) {
                 if (((Uint1) (*s << (2 * (s_off % COMPRESSION_RATIO))) >>
                      6) != *q)
                     break;
@@ -940,16 +924,15 @@ s_BlastNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             }
 
             /* check if enough extra matches were found */
-
-            if (extended_left + extended_right < extra_bases)
+            if (ext_left + ext_right < ext_to)
                 continue;
         }
         
+        q_offset -= ext_left;
+        s_offset -= ext_left;
         /* check the diagonal on which the hit lies. The boundaries
            extend from the first match of the hit to one beyond the last
            match */
-        q_offset -= extended_left;
-        s_offset -= extended_left;
 
         if (word_params->container_type == eDiagHash) {
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
@@ -1003,16 +986,9 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                        BlastInitHitList * init_hitlist,
                        Uint4 range)
 {
-    Int4 index;
-    Uint1 *q_start = query->sequence;
-    Uint1 *s_start = subject->sequence;
-    Uint4 word_length, lut_word_length;
-    Uint4 q_off, s_off;
-    Uint4 max_bases_left, max_bases_right;
-    Uint4 extended_left, extended_right;
-    Uint4 extra_bases;
-    Uint1 *q, *s;
+    Int4 index = 0;
     Int4 hits_extended = 0;
+    Int4 word_length, lut_word_length, ext_to;
     BlastSeqLoc* masked_locations = NULL;
 
     if (lookup_wrap->lut_type == eMBLookupTable) {
@@ -1022,13 +998,12 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
         masked_locations = lut->masked_locations;
     } 
     else {
-        BlastNaLookupTable *lut = 
-                             (BlastNaLookupTable *) lookup_wrap->lut;
+        BlastNaLookupTable *lut = (BlastNaLookupTable *) lookup_wrap->lut;
         word_length = lut->word_length;
         lut_word_length = lut->lut_word_length;
         masked_locations = lut->masked_locations;
     }
-    extra_bases = word_length - lut_word_length;
+    ext_to = word_length - lut_word_length;
 
     /* We trust that the bases of the hit itself are exact matches, 
        and look only for exact matches before and after the hit.
@@ -1040,30 +1015,28 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
        is critical to reduce as much as possible all work that is not the 
        actual examination of sequence data */
 
-    for (index = 0; index < num_hits; ++index) {
-        Uint4 s_offset = offset_pairs[index].qs_offsets.s_off;
-        Uint4 q_offset = offset_pairs[index].qs_offsets.q_off;
+    for (; index < num_hits; ++index) {
+        Int4 s_offset = offset_pairs[index].qs_offsets.s_off;
+        Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
 
         /* begin with the left extension; the initialization is slightly
            faster. q below points to the first base of the lookup table hit
            and s points to the first four bases of the hit (which is
            guaranteed to be aligned on a byte boundary) */
 
-        max_bases_left = MIN(extra_bases, s_offset);
-        q = q_start + q_offset;
-        s = s_start + s_offset / COMPRESSION_RATIO;
+        Int4 ext_left = 0;
+        Int4 ext_max = MIN(ext_to, s_offset);
+        Uint1 *q = query->sequence + q_offset;
+        Uint1 *s = subject->sequence + s_offset / COMPRESSION_RATIO;
 
-        for (extended_left = 0; extended_left < max_bases_left;
-             s--, q -= 4, extended_left++) {
+        for (; ext_left < ext_max; s--, q -= 4, ++ext_left) {
             Uint1 byte = s[-1];
 
-            if ((byte & 3) != q[-1] || ++extended_left == max_bases_left)
+            if ((byte & 3) != q[-1] || ++ext_left == ext_max)
                 break;
-            if (((byte >> 2) & 3) != q[-2]
-                || ++extended_left == max_bases_left)
+            if (((byte >> 2) & 3) != q[-2] || ++ext_left == ext_max)
                 break;
-            if (((byte >> 4) & 3) != q[-3]
-                || ++extended_left == max_bases_left)
+            if (((byte >> 4) & 3) != q[-3] || ++ext_left == ext_max)
                 break;
             if ((byte >> 6) != q[-4])
                 break;
@@ -1073,40 +1046,32 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            bases required. Begin at the first base past the lookup table hit 
            and move forwards */
 
-        s_off = s_offset + lut_word_length;
-        extended_right = 0;
+        if (ext_left < ext_to) {
+            Int4 ext_right = 0;
+            ext_max = ext_to -ext_left;
+            q = query->sequence + q_offset + lut_word_length;
+            s = subject->sequence + (s_offset + lut_word_length) / COMPRESSION_RATIO;
 
-        if (extended_left < extra_bases) {
-            q_off = q_offset + lut_word_length;
-            q = q_start + q_off;
-            s = s_start + s_off / COMPRESSION_RATIO;
-            max_bases_right = extra_bases - extended_left;
-
-            for (; extended_right < max_bases_right;
-                 s++, q += 4, extended_right++) {
+            for (; ext_right < ext_max; s++, q += 4, ++ext_right) {
                 Uint1 byte = s[0];
 
-                if ((byte >> 6) != q[0]
-                    || ++extended_right == max_bases_right)
+                if ((byte >> 6) != q[0] || ++ext_right == ext_max)
                     break;
-                if (((byte >> 4) & 3) != q[1]
-                    || ++extended_right == max_bases_right)
+                if (((byte >> 4) & 3) != q[1] || ++ext_right == ext_max)
                     break;
-                if (((byte >> 2) & 3) != q[2]
-                    || ++extended_right == max_bases_right)
+                if (((byte >> 2) & 3) != q[2] || ++ext_right == ext_max)
                     break;
                 if ((byte & 3) != q[3])
                     break;
             }
 
             /* check if enough extra matches were found */
-
-            if (extended_left + extended_right < extra_bases)
+            if (ext_left + ext_right < ext_to)
                 continue;
         }
 
-        q_offset -= extended_left;
-        s_offset -= extended_left;
+        q_offset -= ext_left;
+        s_offset -= ext_left;
 
         /* check the diagonal on which the hit lies. The boundaries extend
            from the first match of the hit to one beyond the last match */
@@ -1199,20 +1164,19 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
                        BlastInitHitList * init_hitlist,
                        Uint4 range)
 {
+    Int4 index = 0;
+    Int4 hits_extended = 0;
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
-    Int4 i;
+    Int4 word_length = lut->word_length;
+    Int4 lut_word_length = lut->lut_word_length;
+    Int4 ext_to = word_length - lut_word_length;
     Uint1 *q = query->compressed_nuc_seq;
     Uint1 *s = subject->sequence;
-    Int4 lut_word_length = lut->lut_word_length;
-    Int4 word_length = lut->word_length;
-    Int4 extra_bases = word_length - lut_word_length;
-    Int4 hits_extended = 0;
 
-    for (i = 0; i < num_hits; i++) {
-        Int4 s_offset = offset_pairs[i].qs_offsets.s_off;
-        Int4 q_offset = offset_pairs[i].qs_offsets.q_off;
-        Int4 extended_left = 0;
-        Int4 extended_right = 0;
+    for (; index < num_hits; ++index) {
+        Int4 s_offset = offset_pairs[index].qs_offsets.s_off;
+        Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
+        Int4 ext_left = 0;
 
         /* the seed is assumed to start on a multiple of 4 bases
            in the subject sequence. Look for up to 4 exact matches
@@ -1223,27 +1187,22 @@ s_BlastSmallNaExtendAlignedOneByte(const BlastOffsetPair * offset_pairs,
         if (s_offset > 0) {
             Uint1 q_byte = q[q_offset - 4];
             Uint1 s_byte = s[s_offset / COMPRESSION_RATIO - 1];
-            extended_left = s_ExactMatchExtendLeft[q_byte ^ s_byte];
-            extended_left = MIN(extended_left, extra_bases);
+            ext_left = s_ExactMatchExtendLeft[q_byte ^ s_byte];
+            ext_left = MIN(ext_left, ext_to);
         }
 
         /* look for up to 4 exact matches to the right of the seed */
 
-        if (extended_left < extra_bases) {
-            Int4 q_end = q_offset + lut_word_length;
-            Int4 s_end = s_offset + lut_word_length;
-            Uint1 q_byte, s_byte;
-
-            q_byte = q[q_end];
-            s_byte = s[s_end / COMPRESSION_RATIO];
-            extended_right = s_ExactMatchExtendRight[q_byte ^ s_byte];
-            extended_right = MIN(extended_right, extra_bases - extended_left);
-            if (extended_left + extended_right < extra_bases)
+        if (ext_left < ext_to) {
+            Uint1 q_byte = q[q_offset + lut_word_length];
+            Uint1 s_byte = s[(s_offset + lut_word_length) / COMPRESSION_RATIO];
+            Int4 ext_right = s_ExactMatchExtendRight[q_byte ^ s_byte];
+            if (ext_left + ext_right < ext_to)
                 continue;
         }
 
-        q_offset -= extended_left;
-        s_offset -= extended_left;
+        q_offset -= ext_left;
+        s_offset -= ext_left;
         
         if (word_params->container_type == eDiagHash) {
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject,
@@ -1300,26 +1259,22 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                      BlastInitHitList * init_hitlist,
                      Uint4 range)
 {
+    Int4 index = 0;
+    Int4 hits_extended = 0;
     BlastSmallNaLookupTable *lut = (BlastSmallNaLookupTable *) lookup_wrap->lut;
-    Int4 i;
-    Uint1 *q = query->compressed_nuc_seq;
-    Uint1 *s = subject->sequence;
     Int4 word_length = lut->word_length; 
     Int4 lut_word_length = lut->lut_word_length; 
-    Int4 hits_extended = 0;
+    Uint1 *q = query->compressed_nuc_seq;
+    Uint1 *s = subject->sequence;
 
-    for (i = 0; i < num_hits; i++) {
-        Int4 s_offset = offset_pairs[i].qs_offsets.s_off;
-        Int4 q_offset = offset_pairs[i].qs_offsets.q_off;
-
-        Int4 s_start;
-        Int4 q_start;
-        Int4 extended_left = 0;
-        Int4 extended_right = 0;
-        Int4 extra_bases = COMPRESSION_RATIO - (s_offset % COMPRESSION_RATIO);
-
-        s_offset += extra_bases;
-        q_offset += extra_bases;
+    for (; index < num_hits; ++index) {
+        Int4 s_offset = offset_pairs[index].qs_offsets.s_off;
+        Int4 q_offset = offset_pairs[index].qs_offsets.q_off;
+        Int4 s_off;
+        Int4 q_off;
+        Int4 ext_left = 0;
+        Int4 ext_right = 0;
+        Int4 ext_max = MIN(word_length - lut_word_length, s_offset);
 
         /* Start the extension at the first multiple of 4 bases in
            the subject sequence to the right of the seed.
@@ -1329,46 +1284,49 @@ s_BlastSmallNaExtend(const BlastOffsetPair * offset_pairs, Int4 num_hits,
            technically be negative, but the compressed version
            of the query has extra pad bytes before q[0] */
 
-        extra_bases = MIN(word_length - lut_word_length + extra_bases, s_offset);
-        s_start = s_offset;
-        q_start = q_offset;
-        while (extended_left < extra_bases) {
-            Uint1 q_byte = q[q_start - 4];
-            Uint1 s_byte = s[s_start / COMPRESSION_RATIO - 1];
+        Int4 rsdl = COMPRESSION_RATIO - (s_offset % COMPRESSION_RATIO);
+        s_offset += rsdl;
+        q_offset += rsdl;
+
+        ext_max += rsdl;
+        s_off = s_offset;
+        q_off = q_offset;
+
+        while (ext_left < ext_max) {
+            Uint1 q_byte = q[q_off - 4];
+            Uint1 s_byte = s[s_off / COMPRESSION_RATIO - 1];
             Uint1 bases = s_ExactMatchExtendLeft[q_byte ^ s_byte];
-            extended_left += bases;
+            ext_left += bases;
             if (bases < 4)
                 break;
-            q_start -= 4;
-            s_start -= 4;
+            q_off -= 4;
+            s_off -= 4;
         }
-        extended_left = MIN(extended_left, extra_bases);
+        ext_left = MIN(ext_left, ext_max);
 
         /* extend to the right. The extension begins at the first
            base not examined by the left extension */
 
-        extra_bases = word_length - extended_left;
-        s_start = s_offset;
-        q_start = q_offset;
-        while (extended_right < extra_bases) {
-            Uint1 q_byte = q[q_start];
-            Uint1 s_byte = s[s_start / COMPRESSION_RATIO];
+        ext_max = word_length - ext_left;
+        s_off = s_offset;
+        q_off = q_offset;
+        while (ext_right < ext_max) {
+            Uint1 q_byte = q[q_off];
+            Uint1 s_byte = s[s_off / COMPRESSION_RATIO];
             Uint1 bases = s_ExactMatchExtendRight[q_byte ^ s_byte];
-            extended_right += bases;
+            ext_right += bases;
             if (bases < 4)
                 break;
-            q_start += 4;
-            s_start += 4;
+            q_off += 4;
+            s_off += 4;
         }
-        extended_right = MIN(extended_right, extra_bases);
 
-        if (extended_left + extended_right < word_length)
+        if (ext_left + ext_right < word_length)
             continue;
 
-        q_offset -= extended_left;
-        s_offset -= extended_left;
+        q_offset -= ext_left;
+        s_offset -= ext_left;
         
-
         if (word_params->container_type == eDiagHash) {
             hits_extended += s_BlastnDiagHashExtendInitialHit(query, subject, 
                                                 q_offset, s_offset,  
