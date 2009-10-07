@@ -577,11 +577,11 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
 
     NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("taxon", 9606)));
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("taxon", 9606, true)));
-    BOOST_CHECK(id->IsGeneral());
+    BOOST_CHECK_EQUAL(id->IdentifyAccession(), CSeq_id::eAcc_general);
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("asdf", "jkl")));
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("asdf", "jkl", true)));
-    BOOST_CHECK(id->IsGeneral());
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("TRACE_ASSM", "992")));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("TRACE_ASSM", "992", true)));
+    BOOST_CHECK_EQUAL(id->IdentifyAccession(), CSeq_id::eAcc_general_nuc);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromInt)

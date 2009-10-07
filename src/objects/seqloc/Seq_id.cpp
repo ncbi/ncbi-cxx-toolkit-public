@@ -576,6 +576,8 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     TAccInfoMapEntry("gb_wgs_nuc",              CSeq_id::eAcc_gb_wgs_nuc),
     TAccInfoMapEntry("gb_wgs_prot",             CSeq_id::eAcc_gb_wgs_prot),
     TAccInfoMapEntry("general",                 CSeq_id::eAcc_general),
+    TAccInfoMapEntry("general_nuc",             CSeq_id::eAcc_general_nuc),
+    TAccInfoMapEntry("general_prot",            CSeq_id::eAcc_general_prot),
     TAccInfoMapEntry("gi",                      CSeq_id::eAcc_gi),
     TAccInfoMapEntry("gibbmt",                  CSeq_id::eAcc_gibbmt),
     TAccInfoMapEntry("gibbsq",                  CSeq_id::eAcc_gibbsq),
@@ -647,6 +649,7 @@ struct SAccGuide
 
     unsigned int count;
     TMainMap     rules;
+    TPrefixes    general;
 };
 
 void SAccGuide::AddRule(const CTempString& rule)
@@ -739,6 +742,24 @@ void SAccGuide::AddRule(const CTempString& rule)
                 rules[fmt].specials[tmp2] = TPair(tmp1, value);
             }
         }
+    } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
+        NStr::ToUpper(tokens[1]);
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
+        if (it == sc_AccInfoMap.end()) {
+            TPrefixes::const_iterator it2 = general.find(tokens[1]);
+            if (it2 == general.end()) {
+                ERR_POST_X(3, "SAccGuide::AddRule: " << count
+                           << ": unrecognized accession type " << tokens[2]
+                           << " for " << tokens[1]);
+            } else {
+                ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
+                           << ": ignoring refinement of " << tokens[1]
+                           << " from " << it2->second
+                           << " to unrecognized accession type " << tokens[2]);
+            }
+        } else {
+            general[tokens[1]] = it->second;
+        }
     } else {
         ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << count
                       << ": ignoring invalid line: " << rule);
@@ -818,6 +839,18 @@ static void s_LoadGuide(void)
             guide.AddRule(kBuiltInGuide[i]);
         }
         swap(guide, s_Guide);
+    }
+
+    if (s_Guide.general.empty()) {
+        // Populate with a hard-coded list by default; there are only
+        // a few tags to worry about, but listing them in accguide.txt
+        // right away would yield warnings from old Toolkit versions.
+        static const char* const kNucDBs[] = {
+            "SRA", "TI", "TR_ASSM_CH", "TRACE_ASSM", "TRACE_CHGR", NULL
+        };
+        for (const char* const* p = kNucDBs;  *p;  ++p) {
+            s_Guide.general[*p] = CSeq_id::eAcc_general_nuc;
+        }
     }
 }
 
@@ -902,6 +935,14 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
         } else {
             return type;
         }
+    }
+
+    case e_General:
+    {
+        string db = GetGeneral().GetDb();
+        NStr::ToUpper(db);
+        SAccGuide::TPrefixes::const_iterator it = s_Guide.general.find(db);
+        return it == s_Guide.general.end() ? eAcc_general : it->second;
     }
 
     default:

@@ -274,8 +274,11 @@ public:
         eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted, //XM_
         eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted, //XR_
 
-        eAcc_general = e_General | eAcc_other,
-        eAcc_gi      = e_Gi      | eAcc_other,
+        eAcc_general      = e_General | eAcc_other,
+        eAcc_general_nuc  = e_General | eAcc_other | fAcc_nuc, // TRACE_ASSM
+        eAcc_general_prot = e_General | eAcc_other | fAcc_prot,
+
+        eAcc_gi = e_Gi | eAcc_other,
 
         eAcc_ddbj_prot      = e_Ddbj | eAcc_other      | fAcc_prot, // BAA
         eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other      | fAcc_nuc,  // N00028
