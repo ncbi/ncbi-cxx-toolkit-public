@@ -105,7 +105,7 @@ private:
     void RestoreTrimmedEnds(int trim);
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon);
     void RemoveFshiftsFromUTRs();
-    void ClipToCapsAndPolyAs();
+    void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
 public:
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor);
     void CollectEntrezmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
@@ -196,7 +196,7 @@ struct NumOrder
     }
 };
 
-static bool s_BySizePosition(const CGeneModel& a, const CGeneModel& b)
+static bool s_ByExonNumberAndLocation(const CGeneModel& a, const CGeneModel& b)
     {
         if (a.Exons().size() != b.Exons().size()) return a.Exons().size() < b.Exons().size();
         if (a.Strand() != b.Strand()) return a.Strand() < b.Strand();
@@ -503,18 +503,9 @@ void FindContainedAlignments(vector<SChainMember*>& pointers, CGnomonEngine& gno
                 continue;    // avoid including UTR copy
             else if(mi.m_type != eCDS && mj.m_type == eCDS)
                 continue;   // avoid including CDS into UTR because that will change m_type
-            //            else if(mi.m_type == eCDS && !ai.HasStop() && (aj.Status()&CGeneModel::ePolyA) != 0)
-            //                continue;   // awoid including PolyA if there is no 3' UTR 
             else if(aj.IsSubAlignOf(ai) && CodingCompatible(aj, ai, seq))
                 IncludeWithIdenticals(mi, mj, cds);
         }
-        /*
-        if(mi.m_type == eCDS && initial_reading_frame != cds.ReadingFrame())  {
-            ai.CombineCdsInfo(cds, false);
-            gnomon.GetScore(ai);
-            _ASSERT(ai.Score() != BadScore());
-        }
-        */
     }
 }
 
@@ -564,16 +555,6 @@ void LeftRight(vector<SChainMember*>& pointers, int intersect_limit, CGnomonEngi
                     continue;
                 case 1:              // no introns in intersection
                 {
-                    /*
-                    if(mi.m_type == eCDS && mj.m_type == eCDS && ai.MaxCdsLimits().IntersectingWith(aj.MaxCdsLimits()))
-                        break;
-
-                    if(mi.m_type != eCDS && mi.m_align->Exons().size() > 1)
-                        continue;     // no connection of multiexon UTRs without common splices
-                    if(mj.m_type != eCDS && mj.m_align->Exons().size() > 1)
-                        continue;     // no connection of multiexon UTRs without common splices
-                    */
-
                     int intersection_len = (ai_limits & aj.Limits()).GetLength(); 
                     if (intersection_len < intersect_limit) continue;
                     break;
@@ -645,16 +626,6 @@ void RightLeft(vector<SChainMember*>& pointers, int intersect_limit, CGnomonEngi
                     continue;
                 case 1:              // no introns in intersection
                 {
-                    /*
-                    if(mi.m_type == eCDS && mj.m_type == eCDS && ai.MaxCdsLimits().IntersectingWith(aj.MaxCdsLimits()))
-                        break;
-
-                    if(mi.m_type != eCDS && mi.m_align->Exons().size() > 1)
-                        continue;     // no connection of multiexon UTRs without common splices
-                    if(mj.m_type != eCDS && mj.m_align->Exons().size() > 1)
-                        continue;     // no connection of multiexon UTRs without common splices
-                    */
-
                     int intersect = (ai_limits & aj.Limits()).GetLength(); 
                     if(intersect < intersect_limit) continue;
                     break;
@@ -971,13 +942,11 @@ CChain::CChain(const set<SChainMember*>& chain_alignments, const CGnomonEngine& 
     ITERATE(vector<CSupportInfo>, s, support)
         AddSupport(*s);
 
-
     RestoreTrimmedEnds(trim);
 
     gnomon.GetScore(*this);
 
     RestoreReasonableConfirmedStart(gnomon);
-
 
     _ASSERT(ReadingFrame().Empty() || Score() != BadScore());
 
@@ -987,7 +956,8 @@ CChain::CChain(const set<SChainMember*>& chain_alignments, const CGnomonEngine& 
 
     RemoveFshiftsFromUTRs();
 
-    ClipToCapsAndPolyAs();
+    ClipToCompleteAlignment(CGeneModel::eCap);
+    ClipToCompleteAlignment(CGeneModel::ePolyA);
 
     _ASSERT( FShiftedLen(GetCdsInfo().Start()+ReadingFrame()+GetCdsInfo().Stop(), false)%3==0 );
 }
@@ -1073,98 +1043,87 @@ void CChain::RemoveFshiftsFromUTRs()
     FrameShifts() = fs;
 }
 
-void CChain::ClipToCapsAndPolyAs()
+void CChain::ClipToCompleteAlignment(EStatus determinant)
 {
-    int polya = Strand() == ePlus ? 0 : numeric_limits<int>::max();
-    int cap = Strand() == eMinus ? 0 : numeric_limits<int>::max();
-    bool foundpolya = false;
-    bool foundcap = false;
+    string  name;
+    EStrand right_end_strand;
+    bool complete;
+
+    if (determinant == CGeneModel::ePolyA) {
+        name  = "polya";
+        right_end_strand = ePlus;
+        complete = HasStop();
+    } else if (determinant == CGeneModel::eCap) {
+        name = "cap";
+        right_end_strand = eMinus;
+        complete = HasStart();
+    } else {
+        _ASSERT( false );
+    }
+
+    int pos = Strand() == right_end_strand ? -1 : numeric_limits<int>::max();
+    bool found = false;
+
     ITERATE (vector<CGeneModel*>, it, m_members) {
         const CGeneModel& align = **it;
-        if((align.Status()&CGeneModel::ePolyA) != 0) {
-            foundpolya = true;
-            if(Strand() == ePlus) {
-                polya = max(polya, align.Limits().GetTo());
+        if((align.Status()&determinant) != 0) {
+            found = true;
+            if(Strand() == right_end_strand) {
+                pos = max(pos, align.Limits().GetTo());
             } else {
-                polya = min(polya,align.Limits().GetFrom()); 
-            }
-        }
-        if((align.Status()&CGeneModel::eCap) != 0) {
-            foundcap = true;
-            if(Strand() == eMinus) {
-                cap = max(cap, align.Limits().GetTo());
-            } else {
-                cap = min(cap,align.Limits().GetFrom()); 
+                pos = min(pos,align.Limits().GetFrom()); 
             }
         }
     }
-  
-    vector<CGeneModel*> left_end_order(m_members);
-    sort(left_end_order.begin(),left_end_order.end(),LeftEndOrder());
 
-    vector<CGeneModel*> right_end_order(m_members);
-    sort(right_end_order.begin(),right_end_order.end(),RightEndOrder());
+    if (!found)
+        return;
+
+    TSignedSeqRange clip_range;
+
+    const int num = m_members.size();
+    const int fuzz = 25;
+
+    if (Strand() == right_end_strand &&
+        Include(Exons().back().Limits(), pos) &&
+        (ReadingFrame().Empty() || (complete && pos > RealCdsLimits().GetTo()))) {   // complete in the right exon and not in cds
+
+        vector<CGeneModel*> right_end_order(m_members);
+        sort(right_end_order.begin(),right_end_order.end(),RightEndOrder());
     
-    int num = m_members.size();
-    int polya_fuzz = 25;
-    int cap_fuzz = 25;
-    if(foundpolya) {
-        if(Strand() == ePlus && Include(Exons().back().Limits(),polya) && (ReadingFrame().Empty() || (HasStop() && polya > RealCdsLimits().GetTo()))) {   // polya in the last exon and not in cds
-            int i = num-1;
-            for ( ; i >= 0 && right_end_order[i]->Exons().size() == 1 && polya < right_end_order[i]->Limits().GetTo(); --i) ;    // only single-exon alignments extend polya
-            if(polya > right_end_order[i]->Limits().GetTo()-polya_fuzz){
-                Status() |= CGeneModel::ePolyA;
-                if(right_end_order[i]->Limits().GetTo() < Limits().GetTo()) {
-                    AddComment("polyaclip");
-                    CutExons(TSignedSeqRange(polya+1,Limits().GetTo()));
-                    RecalculateLimits();
-                }
-            } else {
-                AddComment("lostpolya");
-            }
-        } else if(Strand() == eMinus && Include(Exons().front().Limits(),polya) && (ReadingFrame().Empty() || (HasStop() && polya < RealCdsLimits().GetFrom()))) {   // polya in the last exon and not in cds
-            int i = 0;
-            for ( ; i < num && left_end_order[i]->Exons().size() == 1 && polya > left_end_order[i]->Limits().GetFrom(); ++i) ;    // only single-exon alignments extend polya
-            if(polya < left_end_order[i]->Limits().GetFrom()+polya_fuzz){
-                Status() |= CGeneModel::ePolyA;
-                if(left_end_order[i]->Limits().GetFrom() > Limits().GetFrom()){
-                    AddComment("polyaclip");
-                    CutExons(TSignedSeqRange(Limits().GetFrom(),polya-1));
-                    RecalculateLimits();
-                }
-            } else {
-                AddComment("lostpolya");
-            }
+        int i = num-1;
+        while (i >= 0 && right_end_order[i]->Exons().size() == 1 && pos < right_end_order[i]->Limits().GetTo())
+            --i;    // only single-exon alignments extend complete alignments
+        
+        if (right_end_order[i]->Limits().GetTo()-fuzz < pos &&
+            right_end_order[i]->Limits().GetTo() < Limits().GetTo()) {
+            clip_range.Set(pos+1, Limits().GetTo());
         }
-    } 
-    if(foundcap) {
-        if(Strand() == ePlus && Include(Exons().front().Limits(),cap) && (ReadingFrame().Empty() || (HasStart() && cap < RealCdsLimits().GetFrom()))) {   // cap in the first exon and not in cds        
-            int i = 0;
-            for ( ; i < num && left_end_order[i]->Exons().size() == 1 && cap > left_end_order[i]->Limits().GetFrom(); ++i) ;    // only single-exon alignments extend cap
-            if(cap < left_end_order[i]->Limits().GetFrom()+cap_fuzz){
-                Status() |= CGeneModel::eCap;
-                if(left_end_order[i]->Limits().GetFrom() > Limits().GetFrom()){
-                    AddComment("capclip");
-                    CutExons(TSignedSeqRange(Limits().GetFrom(),cap-1));
-                    RecalculateLimits();
-                }
-            } else {
-                AddComment("lostcap");
-            }
-        } else if(Strand() == eMinus && Include(Exons().back().Limits(),cap) && (ReadingFrame().Empty() || (HasStart() && cap > RealCdsLimits().GetTo()))) {   // cap in the first exon and not in cds   
-            int i = num-1;
-            for ( ; i >= 0 && right_end_order[i]->Exons().size() == 1 && cap < right_end_order[i]->Limits().GetTo(); --i) ;    // only single-exon alignments extend cap
-            if(cap > right_end_order[i]->Limits().GetTo()-cap_fuzz){
-                Status() |= CGeneModel::eCap;
-                if(right_end_order[i]->Limits().GetTo() < Limits().GetTo()){
-                    AddComment("capclip");
-                    CutExons(TSignedSeqRange(cap+1,Limits().GetTo()));
-                    RecalculateLimits();
-                }
-            } else {
-                AddComment("lostcap");
-            }
+    } else
+    if (Strand() != right_end_strand &&
+        Include(Exons().front().Limits(), pos) &&
+        (ReadingFrame().Empty() || (complete && pos < RealCdsLimits().GetFrom()))) {   // complete in the right exon and not in cds
+
+        vector<CGeneModel*> left_end_order(m_members);
+        sort(left_end_order.begin(),left_end_order.end(),LeftEndOrder());
+
+        int i = 0;
+        while (i < num && left_end_order[i]->Exons().size() == 1 && pos > left_end_order[i]->Limits().GetFrom())
+            ++i ;    // only single-exon alignments extend complete alignments
+        
+        if (pos < left_end_order[i]->Limits().GetFrom()+fuzz &&
+            left_end_order[i]->Limits().GetFrom() > Limits().GetFrom()) {
+            clip_range.Set(Limits().GetFrom(), pos-1);
         }
+    }
+
+    if (clip_range.NotEmpty()) {
+        Status() |= determinant;
+        AddComment(name+"clip");
+        CutExons(clip_range);
+        RecalculateLimits();
+    } else {
+        AddComment("lost"+name);
     }
 }        
 
@@ -1324,11 +1283,46 @@ bool HasShortIntron(const CGeneModel& algn, const CGnomonEngine& gnomon)
     }
     return false;
 }
+
+string FindMultiplyIncluded(CGeneModel& algn, TGeneModelList& clust, TOrigAligns& orig_aligns)
+{
+    if ((algn.Type() & CGeneModel::eProt)!=0 && !algn.Continuous()) {
+        set<string> compatible_evidence;
+        int len = algn.AlignLen();
+        
+        static CGeneModel dummy_align;
+        const CGeneModel* prev_alignp = &dummy_align;
+
+        bool prev_is_compatible = false;
+        NON_CONST_ITERATE(TGeneModelList, jtcl, clust) {
+            CGeneModel& algnj = *jtcl;
+            if (&algn == &algnj)
+                continue;
+            if (algnj.AlignLen() < len/4)
+                continue;
+            
+            bool same_as_prev = algnj.IdenticalAlign(*prev_alignp);
+            if (!same_as_prev)
+                prev_alignp = &algnj;
+                        
+            if (same_as_prev && prev_is_compatible || !same_as_prev && algn.Strand()==algnj.Strand() && algn.isCompatible(algnj)) {
+                prev_is_compatible = true;
+                if (!compatible_evidence.insert(orig_aligns[algnj.ID()]->TargetAccession()).second) {
+                    return orig_aligns[algnj.ID()]->TargetAccession();
+                }
+            } else {
+                prev_is_compatible = false;
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
 void FilterOutPoorAlignments(TGeneModelList& clust,
                             const CGnomonEngine& gnomon, const SMinScor& minscor,
                              TOrigAligns& orig_aligns)
 {
-    clust.sort(s_BySizePosition);
+    clust.sort(s_ByExonNumberAndLocation);
 
     static CGeneModel dummy_align;
     CGeneModel* prev_align = &dummy_align;
@@ -1355,32 +1349,7 @@ void FilterOutPoorAlignments(TGeneModelList& clust,
                 continue;
             }
             
-            string found_multiple;
-            if((algn.Type() & CGeneModel::eProt)!=0 && !algn.Continuous()) {
-                set<string> compatible_evidence;
-                int len = algn.AlignLen();
-
-                const CGeneModel* prev_alignp = &dummy_align;
-                bool prev_is_compatible = false;
-                NON_CONST_ITERATE(TGeneModelList, jtcl, clust) {
-                    if(jtcl == itcl) continue;
-                    CGeneModel& algnj = *jtcl;
-                    if(algnj.AlignLen() < len/4) continue;
-                        
-                    bool same_as_prev = algnj.IdenticalAlign(*prev_alignp);
-                    if (!same_as_prev)
-                        prev_alignp = &algnj;
-                        
-                    if (same_as_prev && prev_is_compatible || !same_as_prev && algn.Strand()==algnj.Strand() && algn.isCompatible(algnj)) {
-                        prev_is_compatible = true;
-                        if(!compatible_evidence.insert(orig_aligns[algnj.ID()]->TargetAccession()).second) {
-                            found_multiple = orig_aligns[algnj.ID()]->TargetAccession();
-                            break;
-                        }
-                    } else
-                        prev_is_compatible = false;
-                }
-            }
+            string found_multiple = FindMultiplyIncluded(algn, clust, orig_aligns);
             if (!found_multiple.empty()) {
                 SkipReason(prev_align = orig, "Multiple inclusion "+found_multiple);
                 itcl = clust.erase(itcl);
@@ -1416,21 +1385,6 @@ void FilterOutPoorAlignments(TGeneModelList& clust,
                 itcl = clust.erase(itcl);
                 continue;
             }
-
-            /*
-            if((algn.Type() & CAlignModel::eProt)==0) { // mRNA with confirmed start - convert to noncoding if poor score
-                RemovePoorCds(algn,ms);
-            } else if(algn.Score() < ms) {             // protein - delete if poor score
-                CNcbiOstrstream ost;
-                if(algn.AlignLen() <= 75)
-                    ost << "Short alignment " << algn.AlignLen();
-                else
-                    ost << "Low score " << algn.Score();
-                SkipReason(prev_align = orig_aligns[algn.ID()], CNcbiOstrstreamToString(ost));
-                itcl = clust.erase(itcl);
-                continue;
-            }
-            */
         }
         prev_align = &algn;
         ++itcl;
@@ -1661,8 +1615,42 @@ void SplitAlignmentsByStrand(const TGeneModelList& clust, TGeneModelList& clust_
 //     }
 // } 
 
+double InframeFraction(const CGeneModel& a, TSignedSeqPos left, TSignedSeqPos right)
+{
+    if(a.FrameShifts().empty())
+        return 1.0;
 
-void ProjectCDS_ConvertToGeneModel(const map<string,TSignedSeqRange>& mrnaCDS, const CResidueVec& seq, CAlignModel& align, double mininframefrac) {
+    CAlignMap cdsmap(a.GetAlignMap());
+    int inframelength = 0;
+    int outframelength = 0;
+    int frame = 0;
+    TSignedSeqPos prev = left;
+    ITERATE(TInDels, fs, a.FrameShifts()) {
+        int len = cdsmap.FShiftedLen(cdsmap.ShrinkToRealPoints(TSignedSeqRange(prev,fs->Loc()-1)),false);
+        if(frame == 0) {
+            inframelength += len;
+        } else {
+            outframelength += len;
+        }
+        
+        if(fs->IsDeletion()) {
+            frame = (frame+fs->Len())%3;
+        } else {
+            frame = (3+frame-fs->Len()%3)%3;
+        }
+        prev = fs->Loc();    //  ShrinkToRealPoints will take care if it in insertion or intron  
+    }
+    int len = cdsmap.FShiftedLen(cdsmap.ShrinkToRealPoints(TSignedSeqRange(prev,right)),false);
+    if(frame == 0) {
+        inframelength += len;
+    } else {
+        outframelength += len;
+    }
+    return double(inframelength)/(inframelength + outframelength);
+}
+
+void ProjectCDS_ConvertToGeneModel(const map<string,TSignedSeqRange>& mrnaCDS, const CResidueVec& seq, CAlignModel& align, double mininframefrac)
+{
     if ((align.Type()&CAlignModel::eProt)!=0)
         return;
         
@@ -1692,36 +1680,8 @@ void ProjectCDS_ConvertToGeneModel(const map<string,TSignedSeqRange>& mrnaCDS, c
             //                if(fs->Len()%3 != 0) return;          // there is a frameshift    
             //            }
 
-            if(!a.FrameShifts().empty()) {
-                CAlignMap cdsmap(a.GetAlignMap());
-                int inframelength = 0;
-                int outframelength = 0;
-                int frame = 0;
-                TSignedSeqPos prev = left;
-                ITERATE(TInDels, fs, a.FrameShifts()) {
-                    int len = cdsmap.FShiftedLen(cdsmap.ShrinkToRealPoints(TSignedSeqRange(prev,fs->Loc()-1)),false);
-                    if(frame == 0) {
-                        inframelength += len;
-                    } else {
-                        outframelength += len;
-                    }
-
-                    if(fs->IsDeletion()) {
-                        frame = (frame+fs->Len())%3;
-                    } else {
-                        frame = (3+frame-fs->Len()%3)%3;
-                    }
-                    prev = fs->Loc();    //  ShrinkToRealPoints will take care if it in insertion or intron  
-                }
-                int len = cdsmap.FShiftedLen(cdsmap.ShrinkToRealPoints(TSignedSeqRange(prev,right)),false);
-                if(frame == 0) {
-                    inframelength += len;
-                } else {
-                    outframelength += len;
-                }
-                if(outframelength > (1.- mininframefrac)*(inframelength + outframelength))
-                    return;
-            }
+            if (InframeFraction(a, left, right) < mininframefrac)
+                return;
             
             a.FrameShifts().clear();                       // clear notshifted indels   
             CAlignMap cdsmap(a.GetAlignMap());
@@ -1818,81 +1778,91 @@ public:
         CAlignMap alignmap(align.GetAlignMap());
 
         if ((align.Type() & CAlignModel::eProt)!=0) {
-            for (CAlignModel::TExons::const_iterator piece_begin = align.Exons().begin(); piece_begin != align.Exons().end(); ++piece_begin) {
-                _ASSERT( !piece_begin->m_fsplice );
-
-                CAlignModel::TExons::const_iterator piece_end;
-                for (piece_end = piece_begin; piece_end != align.Exons().end() && piece_end->m_ssplice; ++piece_end) ;
-                _ASSERT( piece_end != align.Exons().end() );
-
-                TSignedSeqPos a;
-                if (piece_begin == align.Exons().begin() && align.LeftComplete())
-                    a = align.Limits().GetFrom();
-                else
-                    a = piece_begin->GetFrom()+trim;
-
-                TSignedSeqPos b;
-                if (piece_end->GetTo() >= align.Limits().GetTo() && align.RightComplete())
-                    b = align.Limits().GetTo();
-                else
-                    b = piece_end->GetTo()-trim;
-
-                if(a != piece_begin->GetFrom() || b != piece_end->GetTo()) {
-                    TSignedSeqRange newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),true);
-                    _ASSERT(newlimits.NotEmpty() && piece_begin->GetTo() >= newlimits.GetFrom() && piece_end->GetFrom() <= newlimits.GetTo());
-                    align.Clip(newlimits, CAlignModel::eDontRemoveExons);
-                }
-
-                piece_begin = piece_end;
-            }
+            TrimProtein(align, alignmap);
         } else {
-            int a = align.Limits().GetFrom();
-            int b = align.Limits().GetTo();
-            if(align.Strand() == ePlus) {
-                if((align.Status()&CGeneModel::eCap) == 0)
-                    a += trim;
-                if((align.Status()&CGeneModel::ePolyA) == 0)
-                    b -= trim;
-            } else {
-                if((align.Status()&CGeneModel::ePolyA) == 0)
-                    a += trim;
-                if((align.Status()&CGeneModel::eCap) == 0)
-                    b -= trim;
-            }
-
-            TSignedSeqRange newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
-            _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
-
-            string accession = align.TargetAccession();
-            map<string,TSignedSeqRange>::const_iterator pos = mrnaCDS.find(accession);
-            if(pos != mrnaCDS.end() && alignmap.MapEditedToOrig(pos->second.GetFrom()) >= 0 && alignmap.MapEditedToOrig(pos->second.GetTo()) >= 0) {  // avoid trimming confirmed CDSes
-                TSignedSeqRange cds_on_mrna = pos->second;
-                CResidueVec mrna;
-                alignmap.EditedSequence(seq, mrna, true);
-                if(IsStartCodon(&mrna[cds_on_mrna.GetFrom()]) && IsStopCodon(&mrna[cds_on_mrna.GetTo()-2]) )  {  // start and stop on genome are right
-                    TSignedSeqRange cds_on_genome = alignmap.MapRangeEditedToOrig(cds_on_mrna, false);
-                    if(cds_on_genome.GetFrom() < newlimits.GetFrom()) {
-                        a = align.Limits().GetFrom();
-                        newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
-                        _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
-                    }
-                    if(cds_on_genome.GetTo() > newlimits.GetTo()) {
-                        b = align.Limits().GetTo();
-                        newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
-                        _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
-                    }
-                }
-            }
-
-            if(newlimits != align.Limits()) {
-                align.Clip(newlimits,CAlignModel::eDontRemoveExons);    // Clip doesn't change AlignMap
-            }
+            TrimTranscript(align, alignmap);
         }
 
         if(align.Limits().GetFrom() > limits.GetFrom()) align.Status() |= CAlignModel::eLeftTrimmed;
         if(align.Limits().GetTo() < limits.GetTo()) align.Status() |= CAlignModel::eRightTrimmed;
 
         return align;
+    }
+
+    void TrimProtein(CAlignModel& align, CAlignMap& alignmap)
+    {
+        for (CAlignModel::TExons::const_iterator piece_begin = align.Exons().begin(); piece_begin != align.Exons().end(); ++piece_begin) {
+            _ASSERT( !piece_begin->m_fsplice );
+            
+            CAlignModel::TExons::const_iterator piece_end;
+            for (piece_end = piece_begin; piece_end != align.Exons().end() && piece_end->m_ssplice; ++piece_end) ;
+            _ASSERT( piece_end != align.Exons().end() );
+            
+            TSignedSeqPos a;
+            if (piece_begin == align.Exons().begin() && align.LeftComplete())
+                a = align.Limits().GetFrom();
+            else
+                a = piece_begin->GetFrom()+trim;
+            
+            TSignedSeqPos b;
+            if (piece_end->GetTo() >= align.Limits().GetTo() && align.RightComplete())
+                b = align.Limits().GetTo();
+            else
+                b = piece_end->GetTo()-trim;
+            
+            if(a != piece_begin->GetFrom() || b != piece_end->GetTo()) {
+                TSignedSeqRange newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),true);
+                _ASSERT(newlimits.NotEmpty() && piece_begin->GetTo() >= newlimits.GetFrom() && piece_end->GetFrom() <= newlimits.GetTo());
+                align.Clip(newlimits, CAlignModel::eDontRemoveExons);
+            }
+            
+            piece_begin = piece_end;
+        }
+    }
+
+    void TrimTranscript(CAlignModel& align, CAlignMap& alignmap)
+    {
+        int a = align.Limits().GetFrom();
+        int b = align.Limits().GetTo();
+        if(align.Strand() == ePlus) {
+            if((align.Status()&CGeneModel::eCap) == 0)
+                a += trim;
+            if((align.Status()&CGeneModel::ePolyA) == 0)
+                b -= trim;
+        } else {
+            if((align.Status()&CGeneModel::ePolyA) == 0)
+                a += trim;
+            if((align.Status()&CGeneModel::eCap) == 0)
+                b -= trim;
+        }
+        
+        TSignedSeqRange newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
+        _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
+        
+        string accession = align.TargetAccession();
+        map<string,TSignedSeqRange>::const_iterator pos = mrnaCDS.find(accession);
+        if(pos != mrnaCDS.end() && alignmap.MapEditedToOrig(pos->second.GetFrom()) >= 0 && alignmap.MapEditedToOrig(pos->second.GetTo()) >= 0) {  // avoid trimming confirmed CDSes
+            TSignedSeqRange cds_on_mrna = pos->second;
+            CResidueVec mrna;
+            alignmap.EditedSequence(seq, mrna, true);
+            if(IsStartCodon(&mrna[cds_on_mrna.GetFrom()]) && IsStopCodon(&mrna[cds_on_mrna.GetTo()-2]) )  {  // start and stop on genome are right
+                TSignedSeqRange cds_on_genome = alignmap.MapRangeEditedToOrig(cds_on_mrna, false);
+                if(cds_on_genome.GetFrom() < newlimits.GetFrom()) {
+                    a = align.Limits().GetFrom();
+                    newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
+                    _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
+                }
+                if(cds_on_genome.GetTo() > newlimits.GetTo()) {
+                    b = align.Limits().GetTo();
+                    newlimits = alignmap.ShrinkToRealPoints(TSignedSeqRange(a,b),false);
+                    _ASSERT(newlimits.NotEmpty() && align.Exons().front().GetTo() >= newlimits.GetFrom() && align.Exons().back().GetFrom() <= newlimits.GetTo());
+                }
+            }
+        }
+        
+        if(newlimits != align.Limits()) {
+            align.Clip(newlimits,CAlignModel::eDontRemoveExons);    // Clip doesn't change AlignMap
+        }
     }
 };
 
@@ -1906,7 +1876,6 @@ TGeneModelList MakeChains(TAlignModelList& alignments, CGnomonEngine& gnomon, co
     TGeneModelList chains;
     TGeneModelList models;
     TOrigAligns orig_aligns;
-    //    int align_counter = 0;
     bool skipest = (alignments.size() > alignlimit);
 
     alignments.sort(s_ByAccVerLen);    // used in FilterOverlappingSameAccessionAlignment
@@ -1934,18 +1903,6 @@ TGeneModelList MakeChains(TAlignModelList& alignments, CGnomonEngine& gnomon, co
 
     AddFShiftsAndScoreCdnas(models, fshifts, gnomon, minscor, orig_aligns);
 
-
-//     set<int> orig_ids;
-//     ITERATE(TGeneModelList, ia, models) {
-//         int oid = orig_aligns[ia->ID()]->ID();
-//         if(orig_ids.insert(oid).second) {   // don't output duplicates
-//             CGeneModel a = *ia;
-//             a.SetID(oid);
-//             processed_evidence_out << a;
-//         }
-//     }
-
- 
     TGeneModelList clust_plus, clust_minus;
 
     SplitAlignmentsByStrand(models, clust_plus, clust_minus);
