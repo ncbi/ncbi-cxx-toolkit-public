@@ -6,7 +6,7 @@ ASN_DEP = seq submit seqset biblio
 
 LIB = lds
 SRC = lds lds_reader lds_query \
-      lds_admin lds_coreobjreader lds_files lds_object lds_manager
+      lds_coreobjreader lds_files lds_object lds_manager
 
 # Dependencies for shared library
 DLL_LIB = bdb
