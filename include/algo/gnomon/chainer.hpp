@@ -50,16 +50,24 @@ struct SMinScor {
 };
 
 
-TGeneModelList NCBI_XALGOGNOMON_EXPORT MakeChains(TAlignModelList& alignments,
-                          CGnomonEngine& gnomon, const SMinScor& minscor,
-                          int intersect_limit, int trim, size_t alignlimit,
-                          const map<string,TSignedSeqRange>& mrnaCDS, 
-                          map<string, pair<bool,bool> >& prot_complet,
-                          double mininframefrac);
-
 class NCBI_XALGOGNOMON_EXPORT CChainer {
 public:
     CChainer();
+    ~CChainer();
+
+    TGeneModelList MakeChains(TAlignModelList& alignments,
+                              CGnomonEngine& gnomon, const SMinScor& minscor,
+                              int intersect_limit, int trim, size_t alignlimit,
+                              const map<string,TSignedSeqRange>& mrnaCDS, 
+                              map<string, pair<bool,bool> >& prot_complet,
+                              double mininframefrac);
+private:
+    // Prohibit copy constructor and assignment operator
+    CChainer(const CChainer& value);
+    CChainer& operator= (const CChainer& value);
+
+    class CChainerImpl;
+    auto_ptr<CChainerImpl> m_data;
 };
 
 END_SCOPE(gnomon)
