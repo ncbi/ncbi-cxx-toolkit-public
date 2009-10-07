@@ -190,7 +190,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
     int x_errno = 0;
     
     if (timeout.IsInfinite()  ||  timeout.IsDefault()) {
-        while ((x_errno = s_UnixLock(fd)) < 0) {
+        while ((x_errno = s_UnixLock(fd))) {
             if (errno != EAGAIN)
                 break;
         }
