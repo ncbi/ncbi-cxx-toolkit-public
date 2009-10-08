@@ -1267,7 +1267,6 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd)
 }
 
 
-/*
 BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd_Nuc2Prot)
 {
     CSeq_loc src, dst;
@@ -1404,7 +1403,6 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse_SplicedProd_Nuc2Prot_MinusProd)
     BOOST_CHECK((*part)->IsMismatch());
     BOOST_CHECK_EQUAL((*part)->GetMismatch(), 40);
 }
-*/
 
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
