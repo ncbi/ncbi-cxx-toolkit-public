@@ -845,8 +845,9 @@ void CChainMembers::FillGapsInAlignments(const CResidueVec& seq)
         if ((ai.Type()&CGeneModel::eProt)==0 && ai.Continuous())
             continue;
 
-        bool was_filled = false;
+        bool was_filled;
         do {
+            was_filled = false;
             for (unsigned j = 0; j < size(); ++j) {
                 if (i == j) continue;
                 SChainMember& mj = *(*this)[j];
