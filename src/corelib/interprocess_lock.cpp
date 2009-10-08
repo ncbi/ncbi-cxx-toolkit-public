@@ -205,8 +205,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
             // Timeout > 0
             unsigned long ms_gran;
             if ( granularity.IsInfinite()  ||
-                 granularity.IsDefault()   ||
-                 granularity.IsZero() ) 
+                 granularity.IsDefault() ) 
             {
                 ms_gran = min(ms/5, (unsigned long)500);
             } else {
