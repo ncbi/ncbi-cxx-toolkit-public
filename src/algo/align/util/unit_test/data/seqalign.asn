@@ -917,7 +917,7 @@ Seq-align ::= {
     },
     {
       id str "pct_coverage",
-      value real { 997035939236754, 10, -13 }
+      value real { 1, 10, 2}
     }
   },
   segs spliced {

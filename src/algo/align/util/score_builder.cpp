@@ -545,12 +545,18 @@ static size_t s_GetCoveredBases(const CSeq_align& align,
 static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                                  double* pct_coverage)
 {
-    size_t covered_bases;
-    covered_bases = s_GetCoveredBases(align, 0);
-    CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+    size_t covered_bases = s_GetCoveredBases(align, 0);
+    size_t seq_len = 0;
+    if (align.GetSegs().IsSpliced()  &&
+        align.GetSegs().GetSpliced().IsSetPoly_a()) {
+        seq_len = align.GetSegs().GetSpliced().GetPoly_a();
+    } else {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+        seq_len = bsh.GetBioseqLength();
+    }
+
     if (covered_bases) {
-        *pct_coverage =
-            100.0f * double(covered_bases) / double(bsh.GetBioseqLength());
+        *pct_coverage = 100.0f * double(covered_bases) / double(seq_len);
     } else {
         *pct_coverage = 0;
     }
