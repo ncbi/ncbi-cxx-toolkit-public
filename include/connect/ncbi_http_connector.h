@@ -141,8 +141,9 @@ extern "C" {
  *       do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
  *
- * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "net_info->args")
- *       is performed by URL_Encode() and URL_Decode() -- see "ncbi_connutil.[ch]".
+ * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and
+ *       "net_info->args") is performed by URL_Encode() and URL_Decode()
+ *       -- see "ncbi_connutil.[ch]".
  *
  * @sa
  *  SConnNetInfo, ConnNetInfo_OverriderUserHeader, URL_Encode, URL_Decode

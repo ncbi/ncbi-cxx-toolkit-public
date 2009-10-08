@@ -103,12 +103,12 @@ class NCBI_XCONNECT_EXPORT CConnTimeout
 {
 public:
     /// Create default timeout
-    CConnTimeout(void) : m_Ptr(kDefaultTimeout) {}
+    CConnTimeout(void) : m_Ptr(kDefaultTimeout) { }
     /// Create timeout from STimeout*
     CConnTimeout(const STimeout* tmo) { Set(tmo); }
     /// Initialize timeout in seconds and microseconds
     CConnTimeout(unsigned int sec, unsigned int usec) { Set(sec, usec); }
-    ~CConnTimeout(void) {}
+    ~CConnTimeout() { }
 
     /// Get STimeout*
     const STimeout* Get(void) const { return m_Ptr; }
@@ -120,7 +120,8 @@ public:
     /// Set timeout in seconds and microseconds
     void Set(unsigned int sec, unsigned int usec);
     /// Copy timeout from STimeout*
-    const CConnTimeout& operator=(const STimeout* tmo) { Set(tmo); return *this; }
+    const CConnTimeout& operator=(const STimeout* tmo)
+    { Set(tmo); return *this; }
 
 private:
     const STimeout* m_Ptr;

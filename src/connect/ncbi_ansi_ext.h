@@ -57,7 +57,8 @@ extern "C" {
  * Return an identical malloc'ed string, which must be explicitly freed 
  * by free() when no longer needed.
  */
-extern NCBI_XCONNECT_EXPORT char* strdup(const char* str);
+extern NCBI_XCONNECT_EXPORT
+char* strdup(const char* str);
 
 #endif /*HAVE_STRDUP*/
 
@@ -73,7 +74,8 @@ extern NCBI_XCONNECT_EXPORT char* strdup(const char* str);
  * Return a malloc'ed and '\0'-terminated string, which must be
  * explicitly freed by free() when no longer needed.
  */
-extern NCBI_XCONNECT_EXPORT char* strndup(const char* str, size_t n);
+extern NCBI_XCONNECT_EXPORT
+char* strndup(const char* str, size_t n);
 
 #endif /*HAVE_STRNDUP*/
 
@@ -91,13 +93,15 @@ extern NCBI_XCONNECT_EXPORT char* strndup(const char* str, size_t n);
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-extern NCBI_XCONNECT_EXPORT int strcasecmp(const char* s1, const char* s2);
+extern NCBI_XCONNECT_EXPORT
+int strcasecmp(const char* s1, const char* s2);
 
 /* Compare not more than "n" characters of "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-extern NCBI_XCONNECT_EXPORT int strncasecmp(const char* s1, const char* s2, size_t n);
+extern NCBI_XCONNECT_EXPORT
+int strncasecmp(const char* s1, const char* s2, size_t n);
 
 #endif/*HAVE_STRCASECMP*/
 
@@ -113,13 +117,15 @@ extern NCBI_XCONNECT_EXPORT int strncasecmp(const char* s1, const char* s2, size
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-extern NCBI_XCONNECT_EXPORT char* strupr(char* s);
+extern NCBI_XCONNECT_EXPORT
+char* strupr(char* s);
 
 /* Convert a string to lowercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-extern NCBI_XCONNECT_EXPORT char* strlwr(char* s);
+extern NCBI_XCONNECT_EXPORT
+char* strlwr(char* s);
 
 
 /* Copy not more than "n" characters from string "s2" into "s1"
@@ -128,7 +134,8 @@ extern NCBI_XCONNECT_EXPORT char* strlwr(char* s);
  * that the result is always null-terminated and that the function does not
  * pad "s1" with null bytes should "s2" be shorter than "n" characters.
  */
-extern NCBI_XCONNECT_EXPORT char* strncpy0(char* s1, const char* s2, size_t n);
+extern NCBI_XCONNECT_EXPORT
+char* strncpy0(char* s1, const char* s2, size_t n);
 
 
 #ifdef __cplusplus
