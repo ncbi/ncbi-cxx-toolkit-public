@@ -506,10 +506,9 @@ void CMsvc7RegSettings::IdentifyPlatform()
 */
 //    sm_RequestedArchs = sm_MsvcPlatformName;
 
-    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    const CArgValue& ide = args["ide"];
-    if ((bool)ide) {
-        int i = ide.AsInteger();
+    int ide = GetApp().m_Ide;
+    if (ide != 0) {
+        int i = ide;
         if (i == 30) {
             sm_MsvcVersion = eXCode30;
             sm_MsvcVersionName = "30";
@@ -517,19 +516,17 @@ void CMsvc7RegSettings::IdentifyPlatform()
             NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
         }
     }    
-    const CArgValue& arch = args["arch"];
-    if ((bool)arch) {
-        string a = arch.AsString();
+    if (!GetApp().m_Arch.empty()) {
+        string a = GetApp().m_Arch;
         sm_MsvcPlatform = eXCode;
         sm_RequestedArchs = a;
         string tmp;
         NStr::SplitInTwo(a, " ", sm_MsvcPlatformName, tmp);
     }
 #elif defined(NCBI_COMPILER_MSVC)
-    CArgs args = CNcbiApplication::Instance()->GetArgs();
-    const CArgValue& ide = args["ide"];
-    if ((bool)ide) {
-        switch (ide.AsInteger()) {
+    int ide = GetApp().m_Ide;
+    if (ide != 0) {
+        switch (ide) {
         case 710:
             sm_MsvcVersion = eMsvc710;
             sm_MsvcVersionName = "710";
@@ -547,9 +544,8 @@ void CMsvc7RegSettings::IdentifyPlatform()
             break;
         }
     }    
-    const CArgValue& arch = args["arch"];
-    if ((bool)arch) {
-        string a = arch.AsString();
+    if (!GetApp().m_Arch.empty()) {
+        string a = GetApp().m_Arch;
         if (a == "Win32") {
             sm_MsvcPlatform = eMsvcWin32;
             sm_RequestedArchs = sm_MsvcPlatformName = "Win32";

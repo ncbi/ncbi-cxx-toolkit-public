@@ -987,6 +987,11 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         }
     }
 
+    k = makefile.m_Contents.find("PROJ_TAG");
+    if ( k != makefile.m_Contents.end() ) {
+        project.m_ProjTags = k->second;
+    }
+
     CProjKey proj_key(CProjKey::eApp, proj_id);
     tree->m_Projects[proj_key] = project;
 
@@ -1216,6 +1221,10 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("WATCHERS");
     if ( k != m->second.m_Contents.end() && !k->second.empty() ) {
         tree->m_Projects[proj_key].m_Watchers = NStr::Join(k->second, " ");
+    }
+    k = m->second.m_Contents.find("PROJ_TAG");
+    if ( k != m->second.m_Contents.end() ) {
+        tree->m_Projects[proj_key].m_ProjTags = k->second;
     }
 
     if (!dll_host.empty() && GetApp().GetBuildType().GetType() == CBuildType::eDll) {
@@ -1751,6 +1760,11 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            maketype,
         IdentifySlnGUID(vcproj_file, proj_key));
 //                                           project_makefile.GetGUID());
+
+    k = m->second.m_Contents.find("PROJ_TAG");
+    if ( k != m->second.m_Contents.end() ) {
+        tree->m_Projects[proj_key].m_ProjTags = k->second;
+    }
     return proj_key;
 }
 //-----------------------------------------------------------------------------
@@ -1795,6 +1809,16 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
     // Build subtree
     CProjectItemsTree target_tree;
     BuildOneProjectTree(filter, root_src_path, &target_tree);
+
+    if (!GetApp().IsScanningWholeTree()) {
+        if ( GetApp().m_InteractiveCfg &&
+            !GetApp().Gui_ConfirmProjects(target_tree))
+        {
+            GetApp().SetFail();
+            return;
+        }
+        GetApp().ExcludeUnrequestedProjects(target_tree);
+    }
 
     // Analyze subtree dependencies
     list<CProjKey> external_depends;

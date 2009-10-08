@@ -79,6 +79,8 @@ public:
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
     void AddDefinition( const string& key, const string& value);
     bool HasDefinition( const string& key) const;
+    bool DoesValueContain(const string& key, string& value, bool ifnokey=true) const;
+    bool GetPathValue(const string& key, string& value) const;
     bool GetValue(const string& key, string& value) const;
     
     EMakeFileType GetMakeType(void) const
@@ -88,7 +90,7 @@ public:
 
     void Save(const string& filename) const;
     /// Debug dump
-    void Dump(CNcbiOfstream& ostr) const;
+    void Dump(CNcbiOstream& ostr, const list<string>* skip=0) const;
 
 private:
     void Clear(void);

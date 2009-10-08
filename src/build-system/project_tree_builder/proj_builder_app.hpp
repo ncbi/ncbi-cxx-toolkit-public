@@ -129,6 +129,9 @@ public:
     string m_ProjTags;
     bool m_ConfirmCfg;
     bool m_AllDllBuild;
+    bool m_InteractiveCfg;
+    int m_Ide;
+    string m_Arch;
 
     string m_CustomConfFile;
     CSimpleMakeFileContents m_CustomConfiguration;
@@ -188,6 +191,7 @@ public:
     void RegisterGeneratedFile( const string& file);
     void RegisterProjectWatcher(
         const string& project, const string& dir,  const string& watcher);
+    void ExcludeUnrequestedProjects(CProjectItemsTree& tree) const;
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
@@ -205,7 +209,12 @@ private:
                             CProjectItemsTree& projects_tree);
     void    ReportGeneratedFiles(void);
     void    ReportProjectWatchers(void);
+
     bool    ConfirmConfiguration(void);
+    bool    Gui_ConfirmConfiguration(void);
+
+public:
+    bool    Gui_ConfirmProjects(CProjectItemsTree& projects_tree);
 };
 
 

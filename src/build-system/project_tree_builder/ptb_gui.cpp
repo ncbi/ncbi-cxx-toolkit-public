@@ -162,4 +162,108 @@ bool  CProjBulderApp::ConfirmConfiguration(void)
 #endif
 }
 
+bool  CProjBulderApp::Gui_ConfirmConfiguration(void)
+{
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        return true;
+    }
+
+    cout << "*PTBGUI{* custom" << endl;
+    list<string> skip;
+    skip.push_back("__AllowedProjects");
+    m_CustomConfiguration.Dump(cout, &skip);
+    cout << "*PTBGUI}* custom" << endl;
+    
+    bool started = false;
+    char buf[512];
+    for (;;) {
+        cin.getline(buf, sizeof(buf));
+        string s(buf);
+        if (NStr::StartsWith(s, "*PTBGUI{*")) {
+            started = true;
+            continue;
+        }
+        if (NStr::StartsWith(s, "*PTBGUIabort*")) {
+            return false;
+        }
+        if (NStr::StartsWith(s, "*PTBGUI}*")) {
+            started = false;
+            break;;
+        }
+        if (started) {
+            string s1, s2;
+            if (NStr::SplitInTwo(s,"=", s1, s2)) {
+                NStr::TruncateSpacesInPlace(s1);
+                NStr::TruncateSpacesInPlace(s2);
+                m_CustomConfiguration.AddDefinition(s1, s2);
+            }
+        }
+    }
+//    m_CustomConfiguration.Save(m_CustomConfFile);
+    return true;
+}
+
+bool CProjBulderApp::Gui_ConfirmProjects(CProjectItemsTree& projects_tree)
+{
+    string prjid;
+    cout << "*PTBGUI{* projects" << endl;
+    ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        if (p->second.m_MakeType == eMakeType_Excluded ||
+            p->second.m_MakeType == eMakeType_ExcludedByReq) {
+            continue;
+        }
+        if (p->first.Type() == CProjKey::eDll) {
+            continue;
+        }
+        prjid = CreateProjectName(p->first);
+        cout << prjid << ",";
+        if (p->first.Type() == CProjKey::eLib ||
+            p->first.Type() == CProjKey::eDll) {
+            cout << "lib";
+        } else if (p->first.Type() == CProjKey::eApp) {
+            cout << "app";
+        } else {
+            cout << "other";
+        }
+        cout << ",";
+
+        if (m_CustomConfiguration.DoesValueContain( "__AllowedProjects", prjid)) {
+            cout << "select";
+        } else {
+            cout << "unselect";
+        }
+        cout << "," << NStr::Replace(p->second.m_SourcesBaseDir,"\\","/");
+        cout << "," << NStr::Join(p->second.m_ProjTags,"/");
+        cout << endl;
+    }
+    cout << "*PTBGUI}* projects" << endl;
+
+    bool started = false;
+    char buf[512];
+    list<string> prj;
+    for (;;) {
+        cin.getline(buf, sizeof(buf));
+        string s(buf);
+        if (NStr::StartsWith(s, "*PTBGUI{*")) {
+            started = true;
+            continue;
+        }
+        if (NStr::StartsWith(s, "*PTBGUIabort*")) {
+            return false;
+        }
+        if (NStr::StartsWith(s, "*PTBGUI}*")) {
+            started = false;
+            break;;
+        }
+        if (started) {
+            NStr::TruncateSpacesInPlace(s);
+            prj.push_back(s);
+        }
+    }
+    m_CustomConfiguration.AddDefinition("__AllowedProjects", NStr::Join(prj," "));
+    m_CustomConfiguration.Save(m_CustomConfFile);
+    return true;
+}
+
+
 END_NCBI_SCOPE

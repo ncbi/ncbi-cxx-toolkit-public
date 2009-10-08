@@ -135,8 +135,30 @@ bool CSimpleMakeFileContents::HasDefinition( const string& key) const
     return m_Contents.find(key) != m_Contents.end();
 }
 
+bool CSimpleMakeFileContents::DoesValueContain(
+    const string& key, string& value, bool ifnokey /*=true*/) const
+{
+    TContents::const_iterator k = m_Contents.find(key);
+    if (k != m_Contents.end()) {
+        return find(k->second.begin(), k->second.end(), value) != k->second.end();
+    }
+    return ifnokey;
+}
+
+bool CSimpleMakeFileContents::GetPathValue(const string& key, string& value) const
+{
+    if (GetValue(key,value)) {
+        string separator;
+        separator += CDirEntry::GetPathSeparator();
+        NStr::ReplaceInPlace(value,"/",separator);
+        return true;
+    }
+    return false;
+}
+
 bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
 {
+    value.erase();
     TContents::const_iterator k = m_Contents.find(key);
     if (k == m_Contents.end()) {
         return false;
@@ -184,14 +206,24 @@ void CSimpleMakeFileContents::Save(const string& filename) const
     }
 }
 
-void CSimpleMakeFileContents::Dump(CNcbiOfstream& ostr) const
+void CSimpleMakeFileContents::Dump(CNcbiOstream& ostr, const list<string>* skip /*=0*/) const
 {
+    size_t len=0;
     ITERATE(TContents, p, m_Contents) {
+	    if (skip != 0 && find(skip->begin(), skip->end(), p->first) != skip->end()) {
+	        continue;
+	    }
 	    ostr << p->first << " = ";
 	    ITERATE(list<string>, m, p->second) {
-		    ostr << *m << " ";
+		    if (len > 60) {
+        	    ostr << '\\' << endl << "    ";
+		        len = 0;
+		    }
+		    ostr << NStr::Replace(*m,"\\","/") << " ";
+		    len += m->size() + 1;
 	    }
 	    ostr << endl;
+	    len=0;
     }
 }
 

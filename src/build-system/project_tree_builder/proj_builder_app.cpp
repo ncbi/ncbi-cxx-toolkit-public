@@ -325,6 +325,24 @@ struct PIsExcludedByProjectMakefile
 
 #endif
 
+struct PIsExcludedByUser
+{
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
+    {
+        const CProjItem& project = item.second;
+        if (!GetApp().m_CustomConfiguration.DoesValueContain(
+            "__AllowedProjects",
+            CreateProjectName(CProjKey(project.m_ProjType, project.m_ID)))) {
+            PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
+                           "Excluded by user request");
+            return true;
+        }
+        return false;
+
+    }
+};
+
 struct PIsExcludedByRequires
 {
     typedef CProjectItemsTree::TProjects::value_type TValueType;
@@ -362,7 +380,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,12,0) );
+    SetVersion( CVersionInfo(2,0,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -373,6 +391,8 @@ CProjBulderApp::CProjBulderApp(void)
     m_IncompleteBuildTree = 0;
     m_ConfirmCfg = false;
     m_AllDllBuild = false;
+    m_InteractiveCfg = false;
+    m_Ide = 0;
     m_ExitCode = 0;
 }
 
@@ -463,6 +483,17 @@ void CProjBulderApp::Init(void)
     arg_desc->AddFlag      ("cfg", 
                             "Show GUI to confirm configuration parameters (MS Windows only).");
 #endif
+
+    arg_desc->AddFlag      ("i", 
+                            "Run interactively. Can only be used by PTB GUI shell!");
+
+    arg_desc->AddOptionalKey("args", "args_file",
+                             "Read arguments from a file",
+                             CArgDescriptions::eString);
+    arg_desc->SetDependency("args", CArgDescriptions::eExcludes, "root");
+    arg_desc->SetDependency("args", CArgDescriptions::eExcludes, "subtree");
+    arg_desc->SetDependency("args", CArgDescriptions::eExcludes, "solution");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -534,7 +565,12 @@ int CProjBulderApp::Run(void)
 
     // Get and check arguments
     ParseArguments();
-    if (m_ConfirmCfg && !ConfirmConfiguration())
+    if (m_InteractiveCfg && !Gui_ConfirmConfiguration())
+    {
+        LOG_POST(Info << "Cancelled by request.");
+        return 1;
+    }
+    else if (m_ConfirmCfg && !ConfirmConfiguration())
     {
         LOG_POST(Info << "Cancelled by request.");
         return 1;
@@ -553,6 +589,10 @@ int CProjBulderApp::Run(void)
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
+    if (m_ExitCode != 0) {
+        LOG_POST(Info << "Cancelled by request.");
+        return m_ExitCode;
+    }
     configure.CreateConfH(const_cast<CMsvcSite&>(GetSite()), 
                         GetRegSettings().m_ConfigInfo, 
                         m_IncDir);
@@ -1261,39 +1301,125 @@ void CProjBulderApp::Exit(void)
 
 void CProjBulderApp::ParseArguments(void)
 {
+    const CArgs& args = GetArgs();
+    string root;
+    bool extroot = false;
+    bool argfile = false;
+    string argsfile;
+
+    if ( args["args"] ) {
+        argsfile = args["args"].AsString();
+        if (CDirEntry(argsfile).Exists()) {
+            argfile = true;
+        } else {
+	        NCBI_THROW(CProjBulderAppException, eFileOpen, 
+                                    argsfile + " not found");
+        }
+    }
+
+    if (argfile) {
+        m_CustomConfiguration.LoadFrom(argsfile,&m_CustomConfiguration);
+
+        string v;
+        if (GetConfigPath().empty() && 
+            m_CustomConfiguration.GetPathValue("__arg_conffile", v)) {
+            LoadConfig(GetConfig(),&v);
+        }
+
+        m_CustomConfiguration.GetPathValue("__arg_root", root);
+        m_CustomConfiguration.GetPathValue("__arg_subtree", m_Subtree);
+        m_CustomConfiguration.GetPathValue("__arg_solution", m_Solution);
+        if (m_CustomConfiguration.GetValue("__arg_dll", v)) {
+            m_Dll = NStr::StringToBool(v);
+        }
+        if (m_CustomConfiguration.GetValue("__arg_nobuildptb", v)) {
+            m_BuildPtb = !NStr::StringToBool(v);
+        }
+
+        if (m_CustomConfiguration.GetValue("__arg_ext", v)) {
+            m_AddMissingLibs = NStr::StringToBool(v);
+        }
+        if (m_CustomConfiguration.GetValue("__arg_nws", v)) {
+            m_ScanWholeTree = !NStr::StringToBool(v);
+        }
+        extroot = m_CustomConfiguration.GetPathValue("__arg_extroot", m_BuildRoot);
+        m_CustomConfiguration.GetValue("__arg_projtag", m_ProjTags);
+
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+        if (m_CustomConfiguration.GetValue("__arg_ide", v)) {
+            m_Ide = NStr::StringToInt(v);
+        }
+        m_CustomConfiguration.GetValue("__arg_arch", m_Arch);
+#endif
+    } else {
+        root             = args["root"].AsString();
+        m_Subtree        = args["subtree"].AsString();
+        m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
+        m_Dll            =   (bool)args["dll"];
+        m_BuildPtb       = !((bool)args["nobuildptb"]);
+        m_AddMissingLibs =   (bool)args["ext"];
+        m_ScanWholeTree  = !((bool)args["nws"]);
+        extroot     = (bool)args["extroot"];
+        if (extroot) {
+            m_BuildRoot      = args["extroot"].AsString();
+        }
+        if ( const CArgValue& t = args["projtag"] ) {
+            m_ProjTags = t.AsString();
+        }
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+        const CArgValue& ide = args["ide"];
+        if ((bool)ide) {
+            m_Ide = ide.AsInteger();
+        }
+        const CArgValue& arch = args["arch"];
+        if ((bool)arch) {
+            m_Arch = arch.AsString();
+        }
+#endif
+    }
+
     CMsvc7RegSettings::IdentifyPlatform();
 
-    const CArgs& args = GetArgs();
+    string entry[] = {"","",""};
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        entry[0] = "ThirdPartyBasePath";
+        entry[1] = "ThirdParty_C_ncbi";
+    }
+    else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eXCode) {
+        entry[0] = "XCode_ThirdPartyBasePath";
+        entry[1] = "XCode_ThirdParty_C_ncbi";
+    }
+    if (argfile) {
+        // this replaces path separators in entry[j] with a native one
+        string v;
+        for (int j=0; !entry[j].empty(); ++j) {
+            if (m_CustomConfiguration.GetPathValue(entry[j], v)) {
+                m_CustomConfiguration.AddDefinition(entry[j], v);
+            }
+        }
+    }
 
-    m_Subtree = args["subtree"].AsString();
+    m_ConfirmCfg = false;
+#if defined(NCBI_COMPILER_MSVC)
+    m_ConfirmCfg =   (bool)args["cfg"];
+#endif
+    m_InteractiveCfg = (bool)args["i"];
 
-    string root = args["root"].AsString();
     m_Root = CDirEntry::IsAbsolutePath(root) ? 
         root : CDirEntry::ConcatPath( CDir::GetCwd(), root);
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
     m_Root = CDirEntry::NormalizePath(m_Root);
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
 
-    m_Dll     = (bool)args["dll"];
-    /// Root dir of building tree,
-    /// src child dir of Root,
-    /// Subtree to buil (default is m_RootSrc)
-    /// are provided by SProjectTreeInfo (see GetProjectTreeInfo(void) below)
-
     // Solution
-    m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
     PTB_INFO("Solution: " << m_Solution);
     m_StatusDir = 
         CDirEntry::NormalizePath( CDirEntry::ConcatPath( CDirEntry::ConcatPath( 
             CDirEntry(m_Solution).GetDir(),".."),"status"));
-    m_BuildPtb = !((bool)args["nobuildptb"]);
 //    m_BuildPtb = m_BuildPtb &&
 //        CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
 
-    m_AddMissingLibs =   (bool)args["ext"];
-    m_ScanWholeTree  = !((bool)args["nws"]);
-    if ( const CArgValue& t = args["extroot"] ) {
-        m_BuildRoot = t.AsString();
+    if ( extroot ) {
         if (CDirEntry(m_BuildRoot).Exists()) {
             string t, try_dir;
             string src = GetConfig().Get("ProjectTree", "src");
@@ -1308,22 +1434,46 @@ void CProjBulderApp::ParseArguments(void)
                     break;
                 }
             }
-
         }
-    }
-    if ( const CArgValue& t = args["projtag"] ) {
-        m_ProjTags = t.AsString();
     }
     if (m_ProjTags.empty()) {
         m_ProjTags = "*";
     }
-    
+
     string tmp(GetConfig().Get("ProjectTree", "CustomConfiguration"));
     if (!tmp.empty()) {
         m_CustomConfFile = CDirEntry::ConcatPath( CDirEntry(m_Solution).GetDir(), tmp);
     }
-    if (CFile(m_CustomConfFile).Exists()) {
-        m_CustomConfiguration.LoadFrom(m_CustomConfFile,&m_CustomConfiguration);
+    CDir sln_dir(CDirEntry(m_Solution).GetDir());
+    if ( !sln_dir.Exists() ) {
+        sln_dir.CreatePath();
+    }
+    if (!argfile) {
+        if (CFile(m_CustomConfFile).Exists()) {
+            m_CustomConfiguration.LoadFrom(m_CustomConfFile,&m_CustomConfiguration);
+        } else {
+            int j;
+            for (j=0; !entry[j].empty(); ++j) {
+                m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
+            }
+        }
+        m_CustomConfiguration.AddDefinition("__arg_conffile", GetConfigPath());
+        m_CustomConfiguration.AddDefinition("__arg_root", root);
+        m_CustomConfiguration.AddDefinition("__arg_subtree", m_Subtree);
+        m_CustomConfiguration.AddDefinition("__arg_solution", m_Solution);
+        m_CustomConfiguration.AddDefinition("__arg_dll", m_Dll ? "yes" : "no");
+        m_CustomConfiguration.AddDefinition("__arg_nobuildptb", m_BuildPtb ? "no" : "yes");
+        m_CustomConfiguration.AddDefinition("__arg_ext", m_AddMissingLibs ? "yes" : "no");
+        m_CustomConfiguration.AddDefinition("__arg_nws", m_ScanWholeTree ? "no" : "yes");
+        m_CustomConfiguration.AddDefinition("__arg_extroot", m_BuildRoot);
+        m_CustomConfiguration.AddDefinition("__arg_projtag", m_ProjTags);
+
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
+        m_CustomConfiguration.AddDefinition("__arg_ide", NStr::IntToString(m_Ide));
+        m_CustomConfiguration.AddDefinition("__arg_arch", m_Arch);
+#endif
+    }
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         string v;
         if (m_CustomConfiguration.GetValue("__TweakVTuneR", v)) {
             m_TweakVTuneR = NStr::StringToBool(v);
@@ -1331,22 +1481,7 @@ void CProjBulderApp::ParseArguments(void)
         if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
             m_TweakVTuneD = NStr::StringToBool(v);
         }
-    } else {
-        CDir sln_dir(CDirEntry(m_Solution).GetDir());
-        if ( !sln_dir.Exists() ) {
-            sln_dir.CreatePath();
-        }
-        int j;
-        string entry[] = {"ThirdPartyBasePath","ThirdParty_C_ncbi",""};
-        for (j=0; !entry[j].empty(); ++j) {
-            m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
-            m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
-        }
     }
-    m_ConfirmCfg = false;
-#if defined(NCBI_COMPILER_MSVC)
-    m_ConfirmCfg =   (bool)args["cfg"];
-#endif
 }
 
 void CProjBulderApp::VerifyArguments(void)
@@ -1791,6 +1926,11 @@ void CProjBulderApp::RegisterProjectWatcher(
         CDirEntry::CreateRelativePath(root, path));
     NStr::ReplaceInPlace( path, sep, "/");
     m_ProjWatchers.push_back( project + ", " + path + ", " + watcher );
+}
+
+void CProjBulderApp::ExcludeUnrequestedProjects(CProjectItemsTree& tree) const
+{
+    EraseIf(tree.m_Projects, PIsExcludedByUser());
 }
 
 CProjBulderApp& GetApp(void)

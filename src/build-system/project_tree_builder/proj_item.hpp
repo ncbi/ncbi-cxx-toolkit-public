@@ -172,6 +172,7 @@ public:
 
     list<string> m_Includes;
     list<string> m_Inlines;
+    list<string> m_ProjTags;
     
     mutable bool m_IsBundle;
     bool m_External;
