@@ -165,7 +165,8 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
             // And for OS-compatibility we can do nothing here,
             // except throwing an exception.
             NCBI_THROW(CInterProcessLockException, eMultipleLocks,
-                       "Attempt to lock already locked object in the same process");
+                       "Attempt to lock already locked object " \
+                       "in the same process");
         }
     }
 
@@ -204,8 +205,8 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
             // Timeout > 0
             unsigned long ms_gran;
             if ( granularity.IsInfinite()  ||
-                 granularity.IsDefault()    ||
-                 granularity <= CTimeout(0,0) ) 
+                 granularity.IsDefault()   ||
+                 granularity.IsZero() ) 
             {
                 ms_gran = min(ms/5, (unsigned long)500);
             } else {
@@ -238,7 +239,8 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
             if ( !ms ) {
                 close(fd);
                 NCBI_THROW(CInterProcessLockException, eLockTimeout,
-                           "The lock could not be acquired in the time allotted");
+                           "The lock could not be acquired in the time " \
+                           "allotted");
             }
         } // if (!ms)
     } // if (timeout.IsInfinite())
@@ -254,7 +256,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
 
 #elif defined(NCBI_OS_MSWIN)
 
-    HANDLE handle = ::CreateMutex(NULL, TRUE, m_SystemName.c_str());
+    HANDLE  handle  = ::CreateMutex(NULL, TRUE, m_SystemName.c_str());
     errno_t errcode = ::GetLastError();
     if (handle == kInvalidLockHandle) {
         switch(errcode) {
@@ -293,12 +295,14 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
                 case WAIT_TIMEOUT:
                     ::CloseHandle(handle);
                     NCBI_THROW(CInterProcessLockException, eLockTimeout,
-                               "The lock could not be acquired in the time allotted");
+                               "The lock could not be acquired in the time " \
+                               "allotted");
                     break;
                 case WAIT_ABANDONED:
-                    // The lock is in abandoned state... Other thread/process owning
-                    // it was terminated. We can reuse this mutex, but it is better
-                    // to wait until it will released by OS.
+                    // The lock is in abandoned state... Other thread/process
+                    // owning it was terminated. We can reuse this mutex, but 
+                    // it is better to wait until it will released by OS.
+                    /* FALLTHRU */
                 default:
                     ::CloseHandle(handle);
                     NCBI_THROW(CInterProcessLockException, eLockError,
@@ -322,7 +326,8 @@ void CInterProcessLock::Unlock()
     }
     CFastMutexGuard LOCK(s_ProcessLock);
 
-    // Check that lock with specified name not already locked in the current process.
+    // Check that lock with specified name not already locked
+    // in the current process.
     TLocks::iterator it = s_Locks->find(m_SystemName);
     _VERIFY(it != s_Locks->end());
 

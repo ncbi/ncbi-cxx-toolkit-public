@@ -206,7 +206,8 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
 
 #define CHECK_RANGE(value, what, min, max) \
     if ( value < min  ||  value > max ) {  \
-        NCBI_THROW(CTimeException, eArgument, "CTime: " what " value is out of range"); \
+        NCBI_THROW(CTimeException, eArgument, \
+                   "CTime: " what " value is out of range"); \
     }
 
 #define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_Int)
@@ -215,8 +216,8 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
 #define CHECK_RANGE_HOUR(value)  CHECK_RANGE(value, "hour", 0, 23)
 #define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "minute", 0, 59)
 #define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "second", 0, 61)
-#define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, kNanoSecondsPerSecond - 1)
-
+#define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, \
+                                             kNanoSecondsPerSecond - 1)
 
 
 //============================================================================
@@ -567,11 +568,13 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     while ( isspace((unsigned char)(*sss)) )
         sss++;
 
-    if (*fff != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
+    if (*fff != '\0'  &&  
+        !(format.GetFlags() & CTimeFormat::fMatch_ShortTime)) {
         NCBI_THROW(CTimeException, eFormat, 
                    "CTime: time string is too short for specified time format");
     }
-    if (*sss != '\0'  &&  !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
+    if (*sss != '\0'  &&  
+        !(format.GetFlags() & CTimeFormat::fMatch_ShortFormat)) {
         NCBI_THROW(CTimeException, eFormat,
                    "CTime: time string is too long for specified time format");
     }
@@ -1036,7 +1039,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-                  ERR_POST_X(5, "Format symbol 'z' is unsupported on this platform");
+                  ERR_POST_X(5, "Format symbol 'z' is unsupported " \
+                                "on this platform");
 #else
                   str += "GMT";
                   if (IsGmtTime()) {
@@ -1517,12 +1521,14 @@ CTime& CTime::Round(ERoundPrecision precision, EDaylight adl)
             m_Data.nanosec = 0;
             break;
         case eRound_Millisecond:
-            m_Data.nanosec = (Int4)(m_Data.nanosec + kNanoSecondsPerSecond/2000) 
-                             / 1000000 * 1000000;
+            m_Data.nanosec = 
+                (Int4)(m_Data.nanosec + kNanoSecondsPerSecond/2000) 
+                / 1000000 * 1000000;
             break;
         case eRound_Microsecond:
-            m_Data.nanosec = (Int4)(m_Data.nanosec + kNanoSecondsPerSecond/2000000) 
-                             / 1000 * 1000;
+            m_Data.nanosec = 
+                (Int4)(m_Data.nanosec + kNanoSecondsPerSecond/2000000)
+                / 1000 * 1000;
             break;
         default:
             NCBI_THROW(CTimeException, eArgument,
@@ -2272,13 +2278,16 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
     span[5] = SItem(diff.x_Second(), "second", "0 seconds");
     switch (precision) {
         case eSSP_Millisecond:
-            span[6] = SItem(nanoseconds / 1000000, "millisecond","0 milliseconds");
+            span[6] = SItem(nanoseconds / 1000000, 
+                            "millisecond", "0 milliseconds");
             break;
         case eSSP_Microsecond:
-            span[6] = SItem(nanoseconds / 1000, "microsecond", "0 microseconds");
+            span[6] = SItem(nanoseconds / 1000,
+                            "microsecond", "0 microseconds");
             break;
         case eSSP_Nanosecond:
-            span[6] = SItem(nanoseconds, "nanosecond", "0 nanoseconds");
+            span[6] = SItem(nanoseconds, 
+                            "nanosecond", "0 nanoseconds");
             break;
         default:
             ; // other not nanoseconds based precisions
@@ -2358,6 +2367,20 @@ const CTimeout& CTimeout::operator= (const CTimeout& t)
     m_Sec       = t.m_Sec;
     m_MicroSec  = t.m_MicroSec;
     return *this;
+}
+
+
+bool CTimeout::IsZero() const
+{
+    if ( !m_HaveValue ) {
+        if (m_Type == eDefault) {
+            NCBI_THROW(CTimeException, eInvalid, 
+                       "CTimeout: IsZero() cannot be used with " \
+                       "default timeout");
+        }
+        return false;
+    }
+    return !m_Sec  &&  !m_MicroSec;
 }
 
 

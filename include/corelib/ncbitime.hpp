@@ -57,7 +57,6 @@
 ///     less than January 1, 1900.
 
 #include <corelib/ncbistd.hpp>
-#include <connect/ncbi_types.h>  // STimeout
 
 
 BEGIN_NCBI_SCOPE
@@ -1483,6 +1482,7 @@ public:
     // Check on special timeout values.
     bool IsDefault()  const;
     bool IsInfinite() const;
+    bool IsZero()     const;
 
     //
     // Get timeout

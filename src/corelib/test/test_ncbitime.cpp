@@ -1363,11 +1363,13 @@ static void s_TestTimeout(void)
     double        ds;
     CTimeout      tmo_default;
     CTimeout      tmo_infinite(CTimeout::eInfinite);
+    CTimeout      tmo_zero(0,0);
 
     // Special values
     {{
         assert(tmo_default.IsDefault());
         assert(tmo_infinite.IsInfinite());
+        assert(tmo_zero.IsZero());
         try {
             ds = tmo_default.GetAsDouble();
             _TROUBLE;
@@ -1375,6 +1377,13 @@ static void s_TestTimeout(void)
         catch (CTimeException&) {}
         try {
             ds = tmo_infinite.GetAsDouble();
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+        assert(!tmo_infinite.IsZero());
+        try {
+            // Default value cannot be check on zero, unlike infinite timeout.
+            assert(tmo_default.IsZero());
             _TROUBLE;
         }
         catch (CTimeException&) {}
@@ -1467,6 +1476,7 @@ static void s_TestTimeout(void)
         assert(t2 >= t2);
 
         // Compare infinite timeout
+        assert(t1 >  tmo_zero);
         assert(t1 <  tmo_infinite);
         assert(t1 <= tmo_infinite);
         assert(!(t1 > tmo_infinite));
