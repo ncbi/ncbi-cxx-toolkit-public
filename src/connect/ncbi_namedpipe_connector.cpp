@@ -102,7 +102,8 @@ static EIO_Status s_VT_Open
         return eIO_Unknown;
     }
     // Open new connection
-    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout, xxx->pipebufsize);
+    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout,
+                                        xxx->pipebufsize);
     if (status == eIO_Success) {
         xxx->is_open = true;
     }
