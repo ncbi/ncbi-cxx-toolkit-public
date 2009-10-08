@@ -336,20 +336,6 @@ CNCBlobStorage::x_CheckPartsMinBlobId(void)
     }
 }
 
-inline void
-CNCBlobStorage::x_ReadLastBlobCoords(void)
-{
-    SNCDBPartInfo& last_info = m_DBParts.back();
-    m_LastBlob.part_id = last_info.part_id;
-    TMetaFileLock last_meta(this, last_info);
-    m_LastBlob.blob_id = last_meta->GetLastBlobId();
-    if (m_LastBlob.blob_id == 0) {
-        // min_blob_id is guaranteed to be correctly set because of
-        // x_CheckPartsMinBlobId()
-        m_LastBlob.blob_id = last_info.min_blob_id;
-    }
-}
-
 void
 CNCBlobStorage::x_MonitorPost(CTempString msg, bool do_trace /* = true */)
 {
@@ -552,6 +538,63 @@ CNCBlobStorage::x_SetNotCachedPartId(TNCDBPartId part_id)
     m_NotCachedPartId = part_id;
     if (part_id == -1)
         m_AllDBPartsCached = true;
+}
+
+inline void
+CNCBlobStorage::x_GC_RotateDBParts(void)
+{
+    SNCDBPartInfo& last_part = m_DBParts.back();
+    if (int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
+        return;
+
+    bool need_create_new = true;
+    try {
+        TMetaFileLock metafile(this, last_part);
+        need_create_new = metafile->HasAnyBlobs();
+    }
+    catch (exception& ex) {
+        CQuickStrStream msg;
+        msg << "BG: Error reading information from part " << last_part.part_id;
+        x_MonitorError(ex, msg);
+    }
+    if (need_create_new) {
+        try {
+            x_CreateNewDBPart();
+        }
+        catch (exception& ex) {
+            x_MonitorError(ex, "BG: Unable to rotate database");
+        }
+    }
+    else {
+        try {
+            m_IndexDB->UpdateDBPartCreated(&last_part);
+        }
+        catch (exception& ex) {
+            x_MonitorError(ex,
+                "BG: Index database does not update date created");
+        }
+    }
+}
+
+inline void
+CNCBlobStorage::x_ReadLastBlobCoords(void)
+{
+    SNCDBPartInfo& last_info = m_DBParts.back();
+    m_LastBlob.part_id = last_info.part_id;
+    TMetaFileLock last_meta(this, last_info);
+    m_LastBlob.blob_id = 0;
+    try {
+        m_LastBlob.blob_id = last_meta->GetLastBlobId();
+    }
+    catch (exception& ex) {
+        x_MonitorError(ex, "Error reading information from last part");
+        x_GC_RotateDBParts();
+    }
+    if (m_LastBlob.blob_id == 0) {
+        // min_blob_id is guaranteed to be correctly set because of
+        // x_CheckPartsMinBlobId()
+        m_LastBlob.blob_id = last_info.min_blob_id;
+    }
 }
 
 CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
@@ -1117,33 +1160,6 @@ CNCBlobStorage::x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
         x_GC_DeleteDBPart(part_it);
     }
     return can_shift;
-}
-
-inline void
-CNCBlobStorage::x_GC_RotateDBParts(void)
-{
-    SNCDBPartInfo& last_part = m_DBParts.back();
-    if (int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
-        return;
-
-    TMetaFileLock metafile(this, last_part);
-    if (metafile->HasAnyBlobs()) {
-        try {
-            x_CreateNewDBPart();
-        }
-        catch (exception& ex) {
-            x_MonitorError(ex, "BG: Unable to rotate database");
-        }
-    }
-    else {
-        try {
-            m_IndexDB->UpdateDBPartCreated(&last_part);
-        }
-        catch (exception& ex) {
-            x_MonitorError(ex,
-                           "BG: Index database does not update date created");
-        }
-    }
 }
 
 inline void
