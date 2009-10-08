@@ -541,7 +541,7 @@ CNCBlobStorage::x_SetNotCachedPartId(TNCDBPartId part_id)
 }
 
 inline void
-CNCBlobStorage::x_GC_RotateDBParts(void)
+CNCBlobStorage::x_RotateDBParts(void)
 {
     SNCDBPartInfo& last_part = m_DBParts.back();
     if (int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
@@ -588,7 +588,7 @@ CNCBlobStorage::x_ReadLastBlobCoords(void)
     }
     catch (exception& ex) {
         x_MonitorError(ex, "Error reading information from last part");
-        x_GC_RotateDBParts();
+        x_RotateDBParts();
     }
     if (m_LastBlob.blob_id == 0) {
         // min_blob_id is guaranteed to be correctly set because of
@@ -1226,7 +1226,7 @@ CNCBlobStorage::RunBackground(void)
                 m_LastDeadTime = next_dead;
             }
             x_CheckStopped();
-            x_GC_RotateDBParts();
+            x_RotateDBParts();
 
             x_MonitorPost("BG: GC cycle ended");
             m_StopTrigger.TryWait(m_GCRunDelay, 0);

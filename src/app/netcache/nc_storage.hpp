@@ -415,6 +415,12 @@ private:
     /// Do set of procedures creating and initializing new database part and
     /// switching storage to using new database part as current one.
     void x_CreateNewDBPart(void);
+    /// Do the database parts rotation. If last and current database part were
+    /// created too long ago (more than m_DBRotatePeriod) then new database
+    /// part is created and becomes current. But only if current part contains
+    /// any information (even about "non-exiting" blobs) otherwise its
+    /// creation time is just changing giving a second life to the part.
+    void x_RotateDBParts(void);
 
     /// Get id of the database part which is now in process of filling the
     /// cache. Cache is filled in the order of most recent part to most old
@@ -506,12 +512,6 @@ private:
     /// @sa m_LastDeadTime
     bool x_GC_CleanDBPart(TNCDBPartsList::iterator part_it,
                           int                      dead_before);
-    /// Do the database parts rotation. If last and current database part were
-    /// created too long ago (more than m_DBRotatePeriod) then new database
-    /// part is created and becomes current. But only if current part contains
-    /// any information (even about "non-exiting" blobs) otherwise its
-    /// creation time is just changing giving a second life to the part.
-    void x_GC_RotateDBParts(void);
     /// Collect statistics about number of parts, database files sizes etc.
     void x_GC_CollectPartsStatistics(void);
 
