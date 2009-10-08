@@ -1267,6 +1267,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd)
 }
 
 
+/*
 BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd_Nuc2Prot)
 {
     CSeq_loc src, dst;
@@ -1318,9 +1319,9 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd_Nuc2Prot)
     BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
     const CSpliced_exon& ex = **spl.GetExons().begin();
     BOOST_CHECK(ex.GetProduct_start().IsProtpos());
-    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 110);
+    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 120);
     BOOST_CHECK(ex.GetProduct_end().IsProtpos());
-    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 139);
+    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 149);
     BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
     BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
     BOOST_CHECK_EQUAL(ex.GetParts().size(), 3);
@@ -1403,6 +1404,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse_SplicedProd_Nuc2Prot_MinusProd)
     BOOST_CHECK((*part)->IsMismatch());
     BOOST_CHECK_EQUAL((*part)->GetMismatch(), 40);
 }
+*/
 
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
@@ -1485,7 +1487,7 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
     BOOST_CHECK_EQUAL(ex.GetProduct_end().GetNucpos(), 314);
     BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
     BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
-    BOOST_CHECK_EQUAL(ex.GetParts().size(), 10);
+    BOOST_CHECK_EQUAL(ex.GetParts().size(), 13);
     CSpliced_exon::TParts::const_iterator part = ex.GetParts().begin();
     BOOST_CHECK((*part)->IsGenomic_ins());
     BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
@@ -1495,6 +1497,9 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
     part++;
     BOOST_CHECK((*part)->IsGenomic_ins());
     BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
+    part++;
+    BOOST_CHECK((*part)->IsProduct_ins());
+    BOOST_CHECK_EQUAL((*part)->GetProduct_ins(), 90);
     part++;
     BOOST_CHECK((*part)->IsMatch());
     BOOST_CHECK_EQUAL((*part)->GetMatch(), 10);
@@ -1506,7 +1511,13 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Multirange_Spliced)
     BOOST_CHECK_EQUAL((*part)->GetMatch(), 2);
     part++;
     BOOST_CHECK((*part)->IsMismatch());
-    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 8);
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 3);
+    part++;
+    BOOST_CHECK((*part)->IsProduct_ins());
+    BOOST_CHECK_EQUAL((*part)->GetProduct_ins(), 85);
+    part++;
+    BOOST_CHECK((*part)->IsMismatch());
+    BOOST_CHECK_EQUAL((*part)->GetMismatch(), 5);
     part++;
     BOOST_CHECK((*part)->IsGenomic_ins());
     BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
@@ -1720,5 +1731,625 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Graph_Unsupported)
             int_graph.SetValues().push_back(i);
         }
         BOOST_CHECK_THROW(mapper.Map(graph), CAnnotMapperException);
+    }}
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestMapping_Scores)
+{
+    CSeq_loc src, dst;
+    {{
+        CRef<CSeq_loc> sub;
+        // Source:
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 4, 10, 19);
+        src.SetMix().Set().push_back(sub);
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 4, 30, 39);
+        src.SetMix().Set().push_back(sub);
+        // Destination:
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 5, 10, 19);
+        dst.SetMix().Set().push_back(sub);
+        sub = new CSeq_loc;
+        s_InitInterval(sub->SetInt(), 5, 30, 39);
+        dst.SetMix().Set().push_back(sub);
+    }}
+    CSeq_loc_Mapper_Base mapper(src, dst);
+
+    // Common alignment properties
+    CSeq_align aln;
+    aln.SetType(CSeq_align::eType_partial);
+    CRef<CScore> score;
+    score = new CScore;
+    score->SetValue().SetInt(1);
+    aln.SetScore().push_back(score);
+    CRef<CSeq_id> id1(new CSeq_id("gi|4"));
+    CRef<CSeq_id> id2(new CSeq_id("gi|3"));
+
+    CRef<CSeq_align> mapped;
+    {{
+        // Dense-diag - scores are preserved
+        CRef<CDense_diag> diag;
+        diag = new CDense_diag;
+        diag->SetDim(2);
+        diag->SetIds().push_back(id1);
+        diag->SetIds().push_back(id2);
+        diag->SetStarts().push_back(10);
+        diag->SetStarts().push_back(110);
+        diag->SetLen(10);
+        score = new CScore;
+        score->SetValue().SetInt(2);
+        diag->SetScores().push_back(score);
+        aln.SetSegs().SetDendiag().push_back(diag);
+
+        diag = new CDense_diag;
+        diag->SetDim(2);
+        diag->SetIds().push_back(id1);
+        diag->SetIds().push_back(id2);
+        diag->SetStarts().push_back(30);
+        diag->SetStarts().push_back(130);
+        diag->SetLen(10);
+        score = new CScore;
+        score->SetValue().SetInt(3);
+        diag->SetScores().push_back(score);
+        aln.SetSegs().SetDendiag().push_back(diag);
+
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(mapped->IsSetScore());
+        BOOST_CHECK_EQUAL(mapped->GetScore().size(), 1);
+        BOOST_CHECK(mapped->GetScore().front()->GetValue().IsInt());
+        BOOST_CHECK_EQUAL(mapped->GetScore().front()->GetValue().GetInt(), 1);
+
+        BOOST_CHECK(mapped->GetSegs().IsDendiag());
+        BOOST_CHECK_EQUAL(mapped->GetSegs().GetDendiag().size(), 2);
+        CSeq_align::TSegs::TDendiag::const_iterator seg_it =
+            mapped->GetSegs().GetDendiag().begin();
+        {{
+            const CDense_diag& mseg = **seg_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetLen(), 10);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_diag::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 2);
+            CDense_diag::TStarts::const_iterator start =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start, 10);
+            start++;
+            BOOST_CHECK_EQUAL(*start, 110);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 2);
+        }}
+        seg_it++;
+        {{
+            const CDense_diag& mseg = **seg_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetLen(), 10);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_diag::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 2);
+            CDense_diag::TStarts::const_iterator start =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start, 30);
+            start++;
+            BOOST_CHECK_EQUAL(*start, 130);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 3);
+        }}
+
+        // Dense-diag - scores are dropped (global and one segment)
+        aln.SetSegs().SetDendiag().front()->SetLen(15);
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(!mapped->IsSetScore());
+
+        BOOST_CHECK(mapped->GetSegs().IsDendiag());
+        BOOST_CHECK_EQUAL(mapped->GetSegs().GetDendiag().size(), 3);
+        seg_it = mapped->GetSegs().GetDendiag().begin();
+        {{
+            const CDense_diag& mseg = **seg_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetLen(), 10);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_diag::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 2);
+            CDense_diag::TStarts::const_iterator start =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start, 10);
+            start++;
+            BOOST_CHECK_EQUAL(*start, 110);
+
+            BOOST_CHECK(!mseg.IsSetScores());
+        }}
+        seg_it++;
+        {{
+            const CDense_diag& mseg = **seg_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetLen(), 5);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_diag::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 2);
+            CDense_diag::TStarts::const_iterator start =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start, kInvalidSeqPos);
+            start++;
+            BOOST_CHECK_EQUAL(*start, 120);
+
+            BOOST_CHECK(!mseg.IsSetScores());
+        }}
+        seg_it++;
+        {{
+            const CDense_diag& mseg = **seg_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetLen(), 10);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_diag::TIds::const_iterator id_it =
+                mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 2);
+            CDense_diag::TStarts::const_iterator start =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start, 30);
+            start++;
+            BOOST_CHECK_EQUAL(*start, 130);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 3);
+        }}
+    }}
+
+    {{
+        // Dense-seg, scores are preserved
+        CDense_seg& dseg = aln.SetSegs().SetDenseg();
+        dseg.SetDim(2);
+        dseg.SetNumseg(2);
+        dseg.SetIds().push_back(id1);
+        dseg.SetIds().push_back(id2);
+        dseg.SetStarts().push_back(10);
+        dseg.SetStarts().push_back(110);
+        dseg.SetStarts().push_back(30);
+        dseg.SetStarts().push_back(130);
+        dseg.SetLens().push_back(10);
+        dseg.SetLens().push_back(10);
+        score = new CScore;
+        score->SetValue().SetInt(2);
+        dseg.SetScores().push_back(score);
+
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(mapped->IsSetScore());
+        BOOST_CHECK_EQUAL(mapped->GetScore().size(), 1);
+        BOOST_CHECK(mapped->GetScore().front()->GetValue().IsInt());
+        BOOST_CHECK_EQUAL(mapped->GetScore().front()->GetValue().GetInt(), 1);
+
+        {{
+            BOOST_CHECK(mapped->GetSegs().IsDenseg());
+            const CDense_seg& mseg = mapped->GetSegs().GetDenseg();
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetNumseg(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 4);
+            CDense_seg::TStarts::const_iterator start_it =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start_it, 10);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 110);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 30);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 130);
+
+            BOOST_CHECK_EQUAL(mseg.GetLens().size(), 2);
+            CDense_seg::TLens::const_iterator len_it = mseg.GetLens().begin();
+            BOOST_CHECK_EQUAL(*len_it, 10);
+            len_it++;
+            BOOST_CHECK_EQUAL(*len_it, 10);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 2);
+        }}
+
+        // Dense-seg - scores are dropped (global and one segment)
+        aln.SetSegs().SetDenseg().SetLens().front() = 15;
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(!mapped->IsSetScore());
+
+        {{
+            BOOST_CHECK(mapped->GetSegs().IsDenseg());
+            const CDense_seg& mseg = mapped->GetSegs().GetDenseg();
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetNumseg(), 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CDense_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 6);
+            CDense_seg::TStarts::const_iterator start_it =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start_it, 10);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 110);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, -1);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 120);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 30);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 130);
+
+            BOOST_CHECK_EQUAL(mseg.GetLens().size(), 3);
+            CDense_seg::TLens::const_iterator len_it = mseg.GetLens().begin();
+            BOOST_CHECK_EQUAL(*len_it, 10);
+            len_it++;
+            BOOST_CHECK_EQUAL(*len_it, 5);
+            len_it++;
+            BOOST_CHECK_EQUAL(*len_it, 10);
+
+            BOOST_CHECK(!mseg.IsSetScores());
+        }}
+    }}
+
+    {{
+        // Std-seg, scores are preserved
+        CRef<CStd_seg> sseg;
+        sseg = new CStd_seg;
+        sseg->SetDim(2);
+        CRef<CSeq_loc> loc;
+        loc = new CSeq_loc;
+        s_InitInterval(loc->SetInt(), 4, 10, 19);
+        sseg->SetLoc().push_back(loc);
+        loc = new CSeq_loc;
+        s_InitInterval(loc->SetInt(), 3, 110, 119);
+        sseg->SetLoc().push_back(loc);
+        score = new CScore;
+        score->SetValue().SetInt(2);
+        sseg->SetScores().push_back(score);
+        aln.SetSegs().SetStd().push_back(sseg);
+
+        sseg = new CStd_seg;
+        sseg->SetDim(2);
+        loc = new CSeq_loc;
+        s_InitInterval(loc->SetInt(), 4, 30, 39);
+        sseg->SetLoc().push_back(loc);
+        loc = new CSeq_loc;
+        s_InitInterval(loc->SetInt(), 3, 130, 139);
+        sseg->SetLoc().push_back(loc);
+        score = new CScore;
+        score->SetValue().SetInt(3);
+        sseg->SetScores().push_back(score);
+        aln.SetSegs().SetStd().push_back(sseg);
+
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(mapped->IsSetScore());
+        BOOST_CHECK_EQUAL(mapped->GetScore().size(), 1);
+        BOOST_CHECK(mapped->GetScore().front()->GetValue().IsInt());
+        BOOST_CHECK_EQUAL(mapped->GetScore().front()->GetValue().GetInt(), 1);
+
+        BOOST_CHECK(mapped->GetSegs().IsStd());
+        BOOST_CHECK_EQUAL(mapped->GetSegs().GetStd().size(), 2);
+        CSeq_align::TSegs::TStd::const_iterator std_it =
+            mapped->GetSegs().GetStd().begin();
+        {{
+            const CStd_seg& mseg = **std_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = mseg.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 5, 10, 19,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 3, 110, 119,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 2);
+        }}
+        std_it++;
+        {{
+            const CStd_seg& mseg = **std_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = mseg.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 5, 30, 39,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 3, 130, 139,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 3);
+        }}
+
+        // Std-seg - scores are dropped (global and one segment)
+        {{
+            CStd_seg::TLoc::iterator loc_it =
+                aln.SetSegs().SetStd().front()->SetLoc().begin();
+            (*loc_it)->SetInt().SetTo(24);
+            (*loc_it)->InvalidateTotalRangeCache();
+            loc_it++;
+            (*loc_it)->SetInt().SetTo(124);
+            (*loc_it)->InvalidateTotalRangeCache();
+        }}
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(!mapped->IsSetScore());
+
+        BOOST_CHECK(mapped->GetSegs().IsStd());
+        BOOST_CHECK_EQUAL(mapped->GetSegs().GetStd().size(), 3);
+        std_it = mapped->GetSegs().GetStd().begin();
+        {{
+            const CStd_seg& mseg = **std_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = mseg.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 5, 10, 19,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 3, 110, 119,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+
+            BOOST_CHECK(!mseg.IsSetScores());
+        }}
+        std_it++;
+        {{
+            const CStd_seg& mseg = **std_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = mseg.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Empty);
+            CHECK_GI((*loc_it)->GetEmpty(), 5);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 3, 120, 124,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+
+            BOOST_CHECK(!mseg.IsSetScores());
+        }}
+        std_it++;
+        {{
+            const CStd_seg& mseg = **std_it;
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = mseg.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 5, 30, 39,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(), 3, 130, 139,
+                false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 3);
+        }}
+    }}
+
+    {{
+        // Packed-seg, scores are preserved
+        CPacked_seg& pseg = aln.SetSegs().SetPacked();
+        pseg.SetDim(2);
+        pseg.SetNumseg(2);
+        pseg.SetIds().push_back(id1);
+        pseg.SetIds().push_back(id2);
+        pseg.SetStarts().push_back(10);
+        pseg.SetStarts().push_back(110);
+        pseg.SetStarts().push_back(30);
+        pseg.SetStarts().push_back(130);
+        for (int i = 0; i < 4; i++) {
+            pseg.SetPresent().push_back(1);
+        }
+        pseg.SetLens().push_back(10);
+        pseg.SetLens().push_back(10);
+        score = new CScore;
+        score->SetValue().SetInt(2);
+        pseg.SetScores().push_back(score);
+
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(mapped->IsSetScore());
+        BOOST_CHECK_EQUAL(mapped->GetScore().size(), 1);
+        BOOST_CHECK(mapped->GetScore().front()->GetValue().IsInt());
+        BOOST_CHECK_EQUAL(mapped->GetScore().front()->GetValue().GetInt(), 1);
+
+        {{
+            BOOST_CHECK(mapped->GetSegs().IsPacked());
+            const CPacked_seg& mseg = mapped->GetSegs().GetPacked();
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetNumseg(), 2);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CPacked_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 4);
+            CPacked_seg::TStarts::const_iterator start_it =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start_it, 10);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 110);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 30);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 130);
+
+            BOOST_CHECK_EQUAL(mseg.GetPresent().size(), 4);
+            ITERATE(CPacked_seg::TPresent, it, mseg.GetPresent()) {
+                BOOST_CHECK_EQUAL(*it, 1);
+            }
+
+            BOOST_CHECK_EQUAL(mseg.GetLens().size(), 2);
+            CPacked_seg::TLens::const_iterator len_it = mseg.GetLens().begin();
+            BOOST_CHECK_EQUAL(*len_it, 10);
+            len_it++;
+            BOOST_CHECK_EQUAL(*len_it, 10);
+
+            BOOST_CHECK(mseg.IsSetScores());
+            BOOST_CHECK_EQUAL(mseg.GetScores().size(), 1);
+            BOOST_CHECK(mseg.GetScores().front()->GetValue().IsInt());
+            BOOST_CHECK_EQUAL(mseg.GetScores().front()->GetValue().GetInt(), 2);
+        }}
+
+        // Packed-seg - scores are dropped (global and one segment)
+        aln.SetSegs().SetPacked().SetLens().front() = 15;
+        mapped = mapper.Map(aln);
+
+        BOOST_CHECK(mapped);
+        BOOST_CHECK(!mapped->IsSetScore());
+
+        {{
+            BOOST_CHECK(mapped->GetSegs().IsPacked());
+            const CPacked_seg& mseg = mapped->GetSegs().GetPacked();
+            BOOST_CHECK_EQUAL(mseg.GetDim(), 2);
+            BOOST_CHECK_EQUAL(mseg.GetNumseg(), 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetIds().size(), 2);
+            CPacked_seg::TIds::const_iterator id_it = mseg.GetIds().begin();
+            CHECK_GI(**id_it, 5);
+            id_it++;
+            CHECK_GI(**id_it, 3);
+
+            BOOST_CHECK_EQUAL(mseg.GetStarts().size(), 6);
+            CPacked_seg::TStarts::const_iterator start_it =
+                mseg.GetStarts().begin();
+            BOOST_CHECK_EQUAL(*start_it, 10);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 110);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, kInvalidSeqPos);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 120);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 30);
+            start_it++;
+            BOOST_CHECK_EQUAL(*start_it, 130);
+
+            BOOST_CHECK_EQUAL(mseg.GetPresent().size(), 6);
+            CPacked_seg::TPresent::const_iterator it =
+                mseg.GetPresent().begin();
+            for (int i = 0; i < 6; i++, it++) {
+                BOOST_CHECK_EQUAL(*it, i != 2 ? 1 : 0);
+            }
+
+            BOOST_CHECK_EQUAL(mseg.GetLens().size(),3);
+            CPacked_seg::TLens::const_iterator len_it = mseg.GetLens().begin();
+            BOOST_CHECK_EQUAL(*len_it, 10);
+            len_it++;
+            BOOST_CHECK_EQUAL(*len_it, 5);
+            len_it++;
+            BOOST_CHECK_EQUAL(*len_it, 10);
+
+            BOOST_CHECK(!mseg.IsSetScores());
+        }}
     }}
 }

@@ -228,6 +228,7 @@ enum EOverlapType {
     eOverlap_Contained,      ///< 2nd contained within 1st extremes
     eOverlap_Contains,       ///< 2nd contains 1st extremes
     eOverlap_Subset,         ///< 2nd is a subset of 1st ranges
+    eOverlap_SubsetRev,      ///< 1st is a subset of 2nd ranges
     eOverlap_CheckIntervals, ///< 2nd is a subset of 1st with matching boundaries
     eOverlap_CheckIntRev,    ///< 1st is a subset of 2nd with matching boundaries
     eOverlap_Interval        ///< at least one pair of intervals must overlap

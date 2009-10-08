@@ -338,8 +338,11 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
 
 /// overlap_type defines how the location must be related to the feature.
-/// E.g. with eOverlap_Contains, the location will contain the feature,
-/// with eOverlap_Contained, it will be contained within the feature.
+/// For eOverlap_Subset, eOverlap_SubsetRev, eOverlap_CheckIntervals,
+/// eOverlap_CheckIntRev and eOverlap_Interval the relationship is
+/// reversed. E.g. with eOverlap_Contains, the location will contain
+/// the feature, but with eOverlap_Subset the feature will be defined
+/// on a subset of the location.
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,

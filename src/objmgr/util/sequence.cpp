@@ -680,6 +680,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
         annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
         break;
     case eOverlap_Subset:
+    case eOverlap_SubsetRev:
     case eOverlap_CheckIntervals:
     case eOverlap_Interval:
     case eOverlap_CheckIntRev:

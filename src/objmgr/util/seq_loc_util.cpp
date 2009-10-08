@@ -2168,6 +2168,7 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
             return diff;
         }
     case eOverlap_Subset:
+    case eOverlap_SubsetRev:
     case eOverlap_CheckIntervals:
     case eOverlap_CheckIntRev:
     case eOverlap_Interval:
@@ -2274,8 +2275,8 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                       TSeqPos circular_len,
                       CScope* scope)
 {
-    const CSeq_loc* ploc1 = type == eOverlap_CheckIntRev ? &loc2 : &loc1;
-    const CSeq_loc* ploc2 = type == eOverlap_CheckIntRev ? &loc1 : &loc2;
+    const CSeq_loc* ploc1 = &loc1;
+    const CSeq_loc* ploc2 = &loc2;
     typedef CRange<Int8> TRange8;
     CRange<TSeqPos> int_rg1, int_rg2;
     TRange8 rg1, rg2;
@@ -2317,6 +2318,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
     if ( !TestForStrands(strand1, strand2) ) {
         // Subset and CheckIntervals don't use total ranges
         if (type != eOverlap_Subset  &&
+            type != eOverlap_SubsetRev  &&
             type != eOverlap_CheckIntervals  &&
             type != eOverlap_CheckIntRev) {
             if ( strand1 == eNa_strand_other  ||
@@ -2448,6 +2450,9 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
             }
             return -1;
         }
+    case eOverlap_SubsetRev:
+        swap(ploc1, ploc2);
+        // Go on to the next case
     case eOverlap_Subset:
         {
             // loc1 should contain loc2
@@ -2457,8 +2462,10 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
             return Int8(GetLength(*ploc1, scope)) -
                 Int8(GetLength(*ploc2, scope));
         }
-    case eOverlap_CheckIntervals:
     case eOverlap_CheckIntRev:
+        swap(ploc1, ploc2);
+        // Go on to the next case
+    case eOverlap_CheckIntervals:
         {
             if ( !multi_seq  &&
                 (rg1.GetFrom() > rg2.GetTo()  || rg1.GetTo() < rg2.GetFrom()) ) {
