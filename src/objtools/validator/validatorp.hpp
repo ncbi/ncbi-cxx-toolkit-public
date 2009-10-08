@@ -45,6 +45,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
+#include <objects/valid/Comment_set.hpp>
 
 #include <objtools/validator/validator.hpp>
 
@@ -91,6 +92,7 @@ class CBioseq_Handle;
 class CSeq_feat_Handle;
 class CCountries;
 class CInferencePrefixList;
+class CComment_set;
 
 BEGIN_SCOPE(validator)
 
@@ -336,6 +338,8 @@ public:
 
     bool IsTransgenic(const CBioSource& bsrc);
 
+    CRef<CComment_set> GetStructuredCommentRules(void);
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidError_imp(const CValidError_imp&);
@@ -379,7 +383,9 @@ private:
     CConstRef<CSeq_entry>   m_TSE;
     CSeq_entry_Handle       m_TSEH;
 
+    // validation data read from external files
 	CCountryLatLonMap lat_lon_map;
+    CRef<CComment_set> m_StructuredCommentRules;
 
     // error repoitory
     CValidError*       m_ErrRepository;
@@ -752,6 +758,7 @@ public:
 private:
 
     void ValidateComment(const string& comment, const CSeqdesc& desc);
+    void ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc);
     void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
     void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
 

@@ -209,6 +209,8 @@ enum EErrType {
     eErr_SEQ_DESCR_BadKeyword,
     eErr_SEQ_DESCR_NoOrganismInTitle,
     eErr_SEQ_DESCR_MissingChromosome,
+    eErr_SEQ_DESCR_LatLonAdjacent,
+    eErr_SEQ_DESCR_BadStructuredCommentFormat,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,

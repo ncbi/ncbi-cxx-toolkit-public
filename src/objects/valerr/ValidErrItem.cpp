@@ -540,6 +540,12 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_MissingChromosome,
    TErrStrs( "MissingChromosome",
 "An NC or AC RefSeq record should have a chromosome annotated.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonAdjacent,
+   TErrStrs( "LatLonAdjacent",
+"The lat_lon coordinate may be in an adjacent country or in surrounding waters.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadStructuredCommentFormat,
+   TErrStrs( "BadStructuredCommentFormat",
+"Structured comment is missing required fields or field values do not conform to correct format.")),
 
 /* SEQ_GENERIC */
 

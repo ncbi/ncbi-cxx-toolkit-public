@@ -1906,6 +1906,39 @@ static bool s_SeqLocHasGI (const CSeq_loc& loc)
 }
 
 
+CRef<CComment_set> CValidError_imp::GetStructuredCommentRules(void)
+{
+    if (m_StructuredCommentRules) {
+        return m_StructuredCommentRules;
+    }
+	// note - may want to do this initialization later, when needed
+    string dir;
+    string fname;
+    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
+        dir = app->GetConfig().Get("NCBI", "Data");
+        if ( !dir.empty()  
+            && CFile(CDirEntry::MakePath(dir, "validrules.prt")).Exists()) {
+            dir = CDirEntry::AddTrailingPathSeparator(dir);
+            fname = dir + "validrules.prt";
+        } else {
+            dir.erase();
+        }
+    }
+    if (fname.empty()) {
+        ERR_POST_X(2, Info << "Unable to load structured comment rules.");
+    } else {
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Open(fname, eSerial_AsnText));
+        string header = in->ReadFileHeader();
+
+        m_StructuredCommentRules.Reset(new CComment_set());
+        in->Read(ObjectInfo(*m_StructuredCommentRules), CObjectIStream::eNoFileHeader);
+    }
+
+    return m_StructuredCommentRules;
+}
+
+
 void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
