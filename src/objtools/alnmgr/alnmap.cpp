@@ -158,7 +158,7 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     }
 
     // what's on the right?
-    if (r_seg < m_NumSegs - 1) {
+    if (r_seg <= m_NumSegs - 1) {
         flags |= fEndOnRight;
     }
     flags |= fNoSeqOnRight;
@@ -193,7 +193,7 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     }
 
     // what's on the left?
-    if (l_seg > 0) {
+    if (l_seg >= 0) {
         flags |= fEndOnLeft;
     }
     flags |= fNoSeqOnLeft;
@@ -226,17 +226,151 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
             }
         }
     }
-        
-    // add to cache
-    if ( !m_RawSegTypes ) {
-        // Using kZero for 0 works around a bug in Compaq's C++ compiler.
-        static const TSegTypeFlags kZero = 0;
-        m_RawSegTypes = new vector<TSegTypeFlags>
-            (m_NumRows * m_NumSegs, kZero);
-    }
-    (*m_RawSegTypes)[row + m_NumRows * seg] = flags | fTypeIsSet;
 
     return flags;
+}
+
+
+void
+CAlnMap::x_SetRawSegTypes(TNumrow row) const
+{
+    TRawSegTypes& types = x_GetRawSegTypes();
+
+    /// Check if already done (enough to check the first seg only)
+    if (types[row] & fTypeIsSet) {
+        return;
+    }
+
+    /// Strand
+    bool plus = IsPositiveStrand(row);
+
+    /// Variables
+    TNumseg seg;
+    int idx;
+    int l_idx = row;
+    int r_idx = (m_NumSegs - 1) * m_NumRows + row;
+    int anchor_idx = -1;
+
+    /// Determine types for the anchor first
+    bool anchored = IsSetAnchor();
+    if (anchored) {
+        if (row != m_Anchor) {
+            /// Prevent infinite loop
+            x_SetRawSegTypes(m_Anchor);
+        }
+        anchor_idx = m_Anchor;
+    }
+
+
+    /// Ends are trivial
+    types[l_idx] |= fEndOnLeft;
+    types[r_idx] |= fEndOnRight;
+
+
+    /// Left-to-right pass
+    int left_seq_pos = -1;
+    for (idx = l_idx, seg = 0;
+         idx <= r_idx;
+         idx += m_NumRows, anchor_idx += m_NumRows, ++seg) {
+
+        _ASSERT(idx == seg * m_NumRows + row);
+        _ASSERT(anchor_idx == seg * m_NumRows + m_Anchor);
+        _ASSERT(seg >= 0);
+        _ASSERT(seg < m_NumSegs);
+
+        TSegTypeFlags& flags = types[idx];
+
+        /// Sequence on left
+        if (left_seq_pos < 0) {
+            flags |= fNoSeqOnLeft;
+        }
+
+        /// Sequence or Gap?
+        TSignedSeqPos start = m_Starts[idx];
+        if (start >= 0) {
+
+            /// Sequence
+            flags |= fSeq;
+
+            /// Unaligned on left?
+            if (left_seq_pos > 0) {
+                if (plus ? 
+                    start > left_seq_pos :
+                    start + x_GetLen(row, seg) < (TSeqPos) left_seq_pos) {
+                    flags |= fUnalignedOnLeft;
+                }
+            }
+            left_seq_pos = plus ? start + x_GetLen(row, seg) : start;
+
+        } else {  /// Gap
+
+            if (anchored  &&  row == m_Anchor) {
+                flags |= fNotAlignedToSeqOnAnchor;
+            }
+
+        }
+    }
+
+
+    /// Right-to-left pass
+    int right_seq_pos = -1;
+    anchor_idx -= m_NumRows; // this relies on value from previous loop
+    _ASSERT(anchor_idx == (m_NumSegs - 1) * m_NumRows + m_Anchor);
+    for (idx = r_idx, seg = m_NumSegs - 1;
+         idx >= l_idx;
+         idx -= m_NumRows, anchor_idx -= m_NumRows, --seg) {
+
+        _ASSERT(idx == seg * m_NumRows + row);
+        _ASSERT(anchor_idx == seg * m_NumRows + m_Anchor);
+        _ASSERT(seg >= 0);
+        _ASSERT(seg < m_NumSegs);
+
+        TSegTypeFlags& flags = types[idx];
+
+        /// Sequence on right
+        if (right_seq_pos < 0) {
+            flags |= fNoSeqOnRight;
+        }
+
+
+        TSignedSeqPos start = m_Starts[idx];
+        if (start >= 0) {
+
+            /// Sequence
+            _ASSERT(flags | fSeq);
+
+            /// Unaligned on right?
+            if (right_seq_pos > 0) {
+                if (plus ? 
+                    start + x_GetLen(row, seg) < (TSeqPos) right_seq_pos :
+                    start > right_seq_pos) {
+                    flags |= fUnalignedOnRight;
+                }
+            }
+            right_seq_pos = plus ? start : start + x_GetLen(row, seg);
+        }
+
+
+         /// What's on the anchor?
+        if (anchored) {
+            if ( ! types[anchor_idx] & fSeq ) {
+                flags |= fNotAlignedToSeqOnAnchor;
+            }
+            if (types[anchor_idx] & fUnalignedOnRight) {
+                flags |= fUnalignedOnRightOnAnchor;
+            }
+            if (types[anchor_idx] & fUnalignedOnLeft) {
+                flags |= fUnalignedOnLeftOnAnchor;
+            }
+        }
+        
+
+        /// Regression test (against the original version)
+        _ASSERT(flags == x_SetRawSegType(row, seg));
+
+        /// Done with this segment
+        flags |= fTypeIsSet;
+    }
 }
 
 
@@ -878,26 +1012,26 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
     }
 
     // determine the participating segments range
-    TNumseg first_seg, last_seg, aln_seg;
+    TNumseg left_seg, right_seg, aln_seg;
 
     if (range.GetFrom() < 0) {
-        first_seg = 0;
+        left_seg = 0;
     } else {        
-        first_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetFrom()));
+        left_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetFrom()));
         if ( !(flags & fDoNotTruncateSegs) ) {
             vec->m_LeftDelta = range.GetFrom() - GetAlnStart(aln_seg);
         }
     }
     if ((TSeqPos)range.GetTo() > GetAlnStop(GetNumSegs()-1)) {
-        last_seg = m_NumSegs-1;
+        right_seg = m_NumSegs-1;
     } else {
-        last_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetTo()));
+        right_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetTo()));
         if ( !(flags & fDoNotTruncateSegs) ) {
             vec->m_RightDelta = GetAlnStop(aln_seg) - range.GetTo();
         }
     }
     
-    x_GetChunks(vec, row, first_seg, last_seg, flags);
+    x_GetChunks(vec, row, left_seg, right_seg, flags);
     return vec;
 }
 
@@ -915,32 +1049,32 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
     }
 
     // determine the participating segments range
-    TNumseg first_seg = 0, last_seg = m_NumSegs - 1;
+    TNumseg left_seg = 0, right_seg = m_NumSegs - 1;
 
     if (range.GetFrom() >= (TSignedSeqPos)GetSeqStart(row)) {
         if (IsPositiveStrand(row)) {
-            first_seg = GetRawSeg(row, range.GetFrom());
-            vec->m_LeftDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
+            left_seg = GetRawSeg(row, range.GetFrom());
+            vec->m_LeftDelta = range.GetFrom() - x_GetRawStart(row, left_seg);
         } else {
-            last_seg = GetRawSeg(row, range.GetFrom());
-            vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, last_seg);
+            right_seg = GetRawSeg(row, range.GetFrom());
+            vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, right_seg);
         }
     }
     if (range.GetTo() <= (TSignedSeqPos)GetSeqStop(row)) {
         if (IsPositiveStrand(row)) {
-            last_seg = GetRawSeg(row, range.GetTo());
+            right_seg = GetRawSeg(row, range.GetTo());
             if ( !(flags & fDoNotTruncateSegs) ) {
-                vec->m_RightDelta = x_GetRawStop(row, last_seg) - range.GetTo();
+                vec->m_RightDelta = x_GetRawStop(row, right_seg) - range.GetTo();
             }
         } else {
-            first_seg = GetRawSeg(row, range.GetTo());
+            left_seg = GetRawSeg(row, range.GetTo());
             if ( !(flags & fDoNotTruncateSegs) ) {
-                vec->m_LeftDelta = x_GetRawStop(row, last_seg) - range.GetTo();
+                vec->m_LeftDelta = x_GetRawStop(row, right_seg) - range.GetTo();
             }
         }
     }
 
-    x_GetChunks(vec, row, first_seg, last_seg, flags);
+    x_GetChunks(vec, row, left_seg, right_seg, flags);
     return vec;
 }
 
@@ -1011,20 +1145,24 @@ CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type,
 
 void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
                           TNumrow row,
-                          TNumseg first_seg, TNumseg last_seg,
+                          TNumseg left_seg, TNumseg right_seg,
                           TGetChunkFlags flags) const
 {
     TSegTypeFlags type, test_type;
 
-    // add the participating segments to the vector
-    for (TNumseg seg = first_seg;  seg <= last_seg;  seg++) {
-        type = x_GetRawSegType(row, seg);
+    _ASSERT(left_seg <= right_seg);
 
+    size_t hint_idx = m_NumRows * left_seg + row;
+
+    // add the participating segments to the vector
+    for (TNumseg seg = left_seg;  seg <= right_seg;  seg++, hint_idx += m_NumRows) {
+        type = x_GetRawSegType(row, seg, hint_idx);
+    
         // see if the segment needs to be skipped
         if (x_SkipType(type, flags)) {
-            if (seg == first_seg) {
+            if (seg == left_seg) {
                 vec->m_LeftDelta = 0;
-            } else if (seg == last_seg) {
+            } else if (seg == right_seg) {
                 vec->m_RightDelta = 0;
             }
             continue;
@@ -1034,11 +1172,14 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
 
         // find the stop seg
         TNumseg test_seg = seg;
-        while (test_seg < last_seg) {
+        int test_hint_idx = hint_idx;
+        while (test_seg < right_seg) {
             test_seg++;
-            test_type = x_GetRawSegType(row, test_seg);
+            test_hint_idx += m_NumRows;
+            test_type = x_GetRawSegType(row, test_seg, test_hint_idx);
             if (x_CompareAdjacentSegTypes(type, test_type, flags)) {
                 seg = test_seg;
+                hint_idx = test_hint_idx;
                 continue;
             }
 
@@ -1086,12 +1227,13 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         TSegTypeFlags type;
 
         // explore on the left
-        TNumseg l_seg = start_seg;
-        while (--l_seg >= 0) {
-            type = m_AlnMap.x_GetRawSegType(m_Row, l_seg);
+        for (TNumseg l_seg = start_seg - 1, idx = l_seg * m_AlnMap.m_NumRows + m_Row;
+             l_seg >= 0;
+             --l_seg, idx -= m_AlnMap.m_NumRows) {
+            
+            type = m_AlnMap.x_GetRawSegType(m_Row, l_seg, idx);
             if (type & fSeq  &&  l_from == -1) {
-                l_from = m_AlnMap.m_Starts[l_seg * m_AlnMap.m_NumRows
-                                         + m_Row];
+                l_from = m_AlnMap.m_Starts[idx];
                 l_to = l_from + m_AlnMap.x_GetLen(m_Row, l_seg) - 1;
                 if (aln_to != -1) {
                     break;
@@ -1108,12 +1250,13 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         }
 
         // explore on the right
-        TNumseg r_seg = stop_seg;
-        while (++r_seg < m_AlnMap.m_NumSegs) {
-            type = m_AlnMap.x_GetRawSegType(m_Row, r_seg);
+        for (TNumseg r_seg = stop_seg + 1, idx = r_seg * m_AlnMap.m_NumRows + m_Row;
+             r_seg < m_AlnMap.m_NumSegs;
+             ++r_seg, idx += m_AlnMap.m_NumRows) {
+
+            type = m_AlnMap.x_GetRawSegType(m_Row, r_seg, idx);
             if (type & fSeq  &&  r_from == -1) {
-                r_from = m_AlnMap.m_Starts[r_seg * m_AlnMap.m_NumRows
-                                         + m_Row];
+                r_from = m_AlnMap.m_Starts[idx];
                 r_to = r_from + m_AlnMap.x_GetLen(m_Row, r_seg) - 1;
                 if (aln_from != -1) {
                     break;
@@ -1150,11 +1293,17 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     }
 
     chunk->SetRange().Set(from, to);
-    chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, start_seg));
+
+    int idx = start_seg * m_AlnMap.m_NumRows + m_Row;
+    chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, start_seg, idx));
+    idx += m_AlnMap.m_NumRows;
 
     TSegTypeFlags type;
-    for (CAlnMap::TNumseg seg = start_seg + 1;  seg <= stop_seg;  seg++) {
-        type = m_AlnMap.x_GetRawSegType(m_Row, seg);
+    for (CAlnMap::TNumseg seg = start_seg + 1;
+         seg <= stop_seg;
+         ++seg, idx += m_AlnMap.m_NumRows) {
+
+        type = m_AlnMap.x_GetRawSegType(m_Row, seg, idx);
         if (type & fSeq) {
             // extend the range
             if (m_AlnMap.IsPositiveStrand(m_Row)) {

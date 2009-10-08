@@ -216,8 +216,8 @@ public:
 protected:
     void x_GetChunks              (CAlnChunkVec * vec,
                                    TNumrow row,
-                                   TNumseg first_seg,
-                                   TNumseg last_seg,
+                                   TNumseg left_seg,
+                                   TNumseg right_seg,
                                    TGetChunkFlags flags) const;
 
 public:
@@ -232,8 +232,11 @@ public:
     class NCBI_XALNMGR_EXPORT CAlnChunkVec : public CObject
     {
     public:
-        CAlnChunkVec(const CAlnMap& aln_map, TNumrow row)
-            : m_AlnMap(aln_map), m_Row(row) { }
+        CAlnChunkVec(const CAlnMap& aln_map, TNumrow row) :
+            m_AlnMap(aln_map), 
+            m_Row(row),
+            m_LeftDelta(0),
+            m_RightDelta(0) {}
 
         CConstRef<CAlnChunk> operator[] (TNumchunk i) const;
 
@@ -256,8 +259,8 @@ public:
         friend
         void               CAlnMap::x_GetChunks (CAlnChunkVec * vec,
                                                  TNumrow row,
-                                                 TNumseg first_seg,
-                                                 TNumseg last_seg,
+                                                 TNumseg left_seg,
+                                                 TNumseg right_seg,
                                                  TGetChunkFlags flags) const;
 #endif
 
@@ -321,17 +324,20 @@ protected:
     friend CConstRef<CAlnChunk> CAlnChunkVec::operator[](TNumchunk i) const;
 
     // internal functions for handling alignment segments
-    void              x_Init            (void);
-    void              x_CreateAlnStarts (void);
-    TSegTypeFlags     x_GetRawSegType   (TNumrow row, TNumseg seg) const;
-    TSegTypeFlags     x_SetRawSegType   (TNumrow row, TNumseg seg) const;
-    CNumSegWithOffset x_GetSegFromRawSeg(TNumseg seg)              const;
-    TNumseg           x_GetRawSegFromSeg(TNumseg seg)              const;
-    TSignedSeqPos     x_GetRawStart     (TNumrow row, TNumseg seg) const;
-    TSignedSeqPos     x_GetRawStop      (TNumrow row, TNumseg seg) const;
-    TSeqPos           x_GetLen          (TNumrow row, TNumseg seg) const;
-    const TNumseg&    x_GetSeqLeftSeg   (TNumrow row)              const;
-    const TNumseg&    x_GetSeqRightSeg  (TNumrow row)              const;
+    typedef vector<TSegTypeFlags> TRawSegTypes;
+    void              x_Init             (void);
+    void              x_CreateAlnStarts  (void);
+    TRawSegTypes&     x_GetRawSegTypes   ()                         const;
+    TSegTypeFlags     x_GetRawSegType    (TNumrow row, TNumseg seg, int hint_idx = -1) const;
+    TSegTypeFlags     x_SetRawSegType    (TNumrow row, TNumseg seg) const;
+    void              x_SetRawSegTypes   (TNumrow row)              const;
+    CNumSegWithOffset x_GetSegFromRawSeg (TNumseg seg)              const;
+    TNumseg           x_GetRawSegFromSeg (TNumseg seg)              const;
+    TSignedSeqPos     x_GetRawStart      (TNumrow row, TNumseg seg) const;
+    TSignedSeqPos     x_GetRawStop       (TNumrow row, TNumseg seg) const;
+    TSeqPos           x_GetLen           (TNumrow row, TNumseg seg) const;
+    const TNumseg&    x_GetSeqLeftSeg    (TNumrow row)              const;
+    const TNumseg&    x_GetSeqRightSeg   (TNumrow row)              const;
 
     TSignedSeqPos     x_FindClosestSeqPos(TNumrow row,
                                           TNumseg seg,
@@ -345,22 +351,22 @@ protected:
                                    TGetChunkFlags flags) const;
     // returns true if types are the same (as specified by flags)
 
-    CConstRef<CDense_seg>           m_DS;
-    TNumrow                         m_NumRows;
-    TNumseg                         m_NumSegs;
-    const CDense_seg::TIds&         m_Ids;
-    const CDense_seg::TStarts&      m_Starts;
-    const CDense_seg::TLens&        m_Lens;
-    const CDense_seg::TStrands&     m_Strands;
-    const CDense_seg::TScores&      m_Scores;
-    const CDense_seg::TWidths&      m_Widths;
-    TNumrow                         m_Anchor;
-    vector<TNumseg>                 m_AlnSegIdx;
-    mutable vector<TNumseg>         m_SeqLeftSegs;
-    mutable vector<TNumseg>         m_SeqRightSegs;
-    CDense_seg::TStarts             m_AlnStarts;
-    vector<CNumSegWithOffset>       m_NumSegWithOffsets;
-    mutable vector<TSegTypeFlags> * m_RawSegTypes;
+    CConstRef<CDense_seg>       m_DS;
+    TNumrow                     m_NumRows;
+    TNumseg                     m_NumSegs;
+    const CDense_seg::TIds&     m_Ids;
+    const CDense_seg::TStarts&  m_Starts;
+    const CDense_seg::TLens&    m_Lens;
+    const CDense_seg::TStrands& m_Strands;
+    const CDense_seg::TScores&  m_Scores;
+    const CDense_seg::TWidths&  m_Widths;
+    TNumrow                     m_Anchor;
+    vector<TNumseg>             m_AlnSegIdx;
+    mutable vector<TNumseg>     m_SeqLeftSegs;
+    mutable vector<TNumseg>     m_SeqRightSegs;
+    CDense_seg::TStarts         m_AlnStarts;
+    vector<CNumSegWithOffset>   m_NumSegWithOffsets;
+    mutable TRawSegTypes *      m_RawSegTypes;
 };
 
 
@@ -538,14 +544,25 @@ TSignedSeqPos CAlnMap::x_GetRawStart(TNumrow row, TNumseg seg) const
 inline
 int CAlnMap::GetWidth(TNumrow row) const
 {
-    return
-        (m_Widths.size() == (size_t) m_NumRows) ? m_Widths[row] : 1;
+    if ( !m_Widths.empty() ) {
+        _ASSERT(m_Widths.size() == (size_t) m_NumRows);
+        return m_Widths[row];
+    } else {
+        return 1;
+    }
 }
 
 inline
 TSeqPos CAlnMap::x_GetLen(TNumrow row, TNumseg seg) const
 {
-    return m_Lens[seg] * GetWidth(row);
+    /// Optimization for return m_Lens[seg] * GetWidth(row);
+    if (GetWidth(row) != 1) {
+        _ASSERT(GetWidth(row) == 3);
+        TSeqPos len = m_Lens[seg];
+        return len + len + len;
+    } else {
+        return m_Lens[seg];
+    }
 }
 
 inline
@@ -662,17 +679,29 @@ CAlnMap::TSignedRange CAlnMap::GetSeqAlnRange(TNumrow row) const
 }
 
 
+inline
+CAlnMap::TRawSegTypes& 
+CAlnMap::x_GetRawSegTypes() const {
+    if ( !m_RawSegTypes ) {
+        // Using kZero for 0 works around a bug in Compaq's C++ compiler.
+        static const TSegTypeFlags kZero = 0;
+        m_RawSegTypes = new vector<TSegTypeFlags>
+            (m_NumRows * m_NumSegs, kZero);
+    }
+    return *m_RawSegTypes;
+}
+
+
 inline 
 CAlnMap::TSegTypeFlags 
-CAlnMap::x_GetRawSegType(TNumrow row, TNumseg seg) const
+CAlnMap::x_GetRawSegType(TNumrow row, TNumseg seg, int hint_idx) const
 {
-    TSegTypeFlags type;
-    if (m_RawSegTypes &&
-        (type = (*m_RawSegTypes)[row + m_NumRows * seg]) & fTypeIsSet) {
-        return type & (~ fTypeIsSet);
-    } else {
-        return x_SetRawSegType(row, seg);
+    TRawSegTypes& types = x_GetRawSegTypes();
+    if ( !(types[row] & fTypeIsSet) ) {
+        x_SetRawSegTypes(row);
     }
+    _ASSERT(hint_idx < 0  ||  hint_idx == m_NumRows * seg + row);
+    return types[hint_idx >= 0 ? hint_idx : m_NumRows * seg + row] & (~ fTypeIsSet);
 }
 
 inline
