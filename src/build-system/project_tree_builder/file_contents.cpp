@@ -136,7 +136,7 @@ bool CSimpleMakeFileContents::HasDefinition( const string& key) const
 }
 
 bool CSimpleMakeFileContents::DoesValueContain(
-    const string& key, string& value, bool ifnokey /*=true*/) const
+    const string& key, const string& value, bool ifnokey /*=true*/) const
 {
     TContents::const_iterator k = m_Contents.find(key);
     if (k != m_Contents.end()) {

@@ -333,7 +333,7 @@ struct PIsExcludedByUser
         const CProjItem& project = item.second;
         if (!GetApp().m_CustomConfiguration.DoesValueContain(
             "__AllowedProjects",
-            CreateProjectName(CProjKey(project.m_ProjType, project.m_ID)))) {
+            CreateProjectName(CProjKey(project.m_ProjType, project.m_ID)), true)) {
             PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
                            "Excluded by user request");
             return true;

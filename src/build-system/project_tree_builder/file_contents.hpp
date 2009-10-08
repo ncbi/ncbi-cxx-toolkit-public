@@ -79,7 +79,7 @@ public:
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
     void AddDefinition( const string& key, const string& value);
     bool HasDefinition( const string& key) const;
-    bool DoesValueContain(const string& key, string& value, bool ifnokey=true) const;
+    bool DoesValueContain(const string& key, const string& value, bool ifnokey=true) const;
     bool GetPathValue(const string& key, string& value) const;
     bool GetValue(const string& key, string& value) const;
     
