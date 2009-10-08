@@ -364,6 +364,11 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                 ret = CSeq_id_Handle::GetGiHandle(gi);
             }
         }
+        else if ( (type & eGetId_TypeMask) == eGetId_Canonical  &&
+                  idh.IsGi()) {
+            /// short-cut: a gi is always the canonical form
+            return idh;
+        }
         else if ( (type & eGetId_TypeMask) == eGetId_ForceAcc ) {
             ret = scope.GetAccVer(idh);
         }
