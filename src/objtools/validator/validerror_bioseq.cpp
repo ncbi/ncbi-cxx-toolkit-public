@@ -643,23 +643,26 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     }
 
     try {
-        // Check that gene on non-segmented sequence does not have
-        // multiple intervals
-        ValidateMultiIntervalGene(seq);
+        // if there are no Seq-ids, the following tests can't be run
+        if (seq.IsSetId()) {
+            // Check that gene on non-segmented sequence does not have
+            // multiple intervals
+            ValidateMultiIntervalGene(seq);
 
-        ValidateSeqFeatContext(seq);
+            ValidateSeqFeatContext(seq);
 
-        // Check for duplicate features and overlapping peptide features.
-        ValidateDupOrOverlapFeats(seq);
+            // Check for duplicate features and overlapping peptide features.
+            ValidateDupOrOverlapFeats(seq);
 
-        // check for equivalent source features
-        x_ValidateSourceFeatures (bsh);
+            // check for equivalent source features
+            x_ValidateSourceFeatures (bsh);
 
-        // check for equivalen pub features
-        x_ValidatePubFeatures (bsh);
+            // check for equivalen pub features
+            x_ValidatePubFeatures (bsh);
 
-        // Check for colliding genes
-        ValidateCollidingGenes(seq);
+            // Check for colliding genes
+            ValidateCollidingGenes(seq);
+        }
 
         // Validate descriptors that affect this bioseq
         ValidateSeqDescContext(seq);
@@ -676,7 +679,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
 
     } catch ( const exception& e ) {
         PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-            string("Exeption while validating multi-interval genes. EXCEPTION: ") +
+            string("Exeption while validating BioseqContext. EXCEPTION: ") +
             e.what(), seq);
     }
 
@@ -878,59 +881,66 @@ static bool s_BiosrcFullLengthIsOk (const CBioSource& src)
 
 void CValidError_bioseq::x_ValidateSourceFeatures(const CBioseq_Handle& bsh)
 {
-    CFeat_CI feat (bsh, SAnnotSelector (CSeqFeatData::e_Biosrc));
-    if (feat) {
-        if (s_IsLocFullLength(feat->GetLocation(), bsh) 
-            && !s_BiosrcFullLengthIsOk(feat->GetData().GetBiosrc())) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
-                     "Source feature is full length, should be descriptor",
-                     feat->GetOriginalFeature());
-        }
-
-        CFeat_CI feat_prev = feat;
-        ++feat;
-        while (feat) {
-            if (s_IsLocFullLength(feat->GetLocation(), bsh)) {
+    try {
+        CFeat_CI feat (bsh, SAnnotSelector (CSeqFeatData::e_Biosrc));
+        if (feat) {
+            if (s_IsLocFullLength(feat->GetLocation(), bsh) 
+                && !s_BiosrcFullLengthIsOk(feat->GetData().GetBiosrc())) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
-                         "Multiple full-length source features, should only be one if descriptor is transgenic",
+                         "Source feature is full length, should be descriptor",
                          feat->GetOriginalFeature());
             }
 
-            // compare to see if feature sources are identical
-            bool are_identical = true;
-            if (feat_prev->IsSetComment() && feat->IsSetComment() 
-                && !NStr::EqualNocase (feat_prev->GetComment(), feat->GetComment())) {
-                are_identical = false;
-            } else {
-                const CBioSource& src_prev = feat_prev->GetData().GetBiosrc();
-                const CBioSource& src = feat->GetData().GetBiosrc();
-                if ((src.IsSetIs_focus() && !src_prev.IsSetIs_focus())
-                    || (!src.IsSetIs_focus() && src_prev.IsSetIs_focus())) {
-                    are_identical = false;
-                } else if ((src.IsSetSubtype() && !src_prev.IsSetSubtype())
-                           || (!src.IsSetSubtype() && src_prev.IsSetSubtype())
-                           || (src.IsSetSubtype() && src_prev.IsSetSubtype() 
-                               && !lists_match (src.GetSubtype().begin(), src.GetSubtype().end(),
-                                                src_prev.GetSubtype().begin(), src.GetSubtype().end(),
-                                                s_SubsourceEquivalent))) {
-                    are_identical = false;
-                } else if ((src.IsSetOrg() && !src_prev.IsSetOrg())
-                           || (!src.IsSetOrg() && src_prev.IsSetOrg())
-                           || (src.IsSetOrg() && src_prev.IsSetOrg()
-                               && !s_OrgrefEquivalent (src.GetOrg(), src_prev.GetOrg()))) {
-                    are_identical = false;
-                }                    
-            }
-            if (are_identical) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleEquivBioSources, 
-                         "Multiple equivalent source features should be combined into one multi-interval feature",
-                         feat->GetOriginalFeature());
-            }
-
-            ++feat_prev;
+            CFeat_CI feat_prev = feat;
             ++feat;
+            while (feat) {
+                if (s_IsLocFullLength(feat->GetLocation(), bsh)) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
+                             "Multiple full-length source features, should only be one if descriptor is transgenic",
+                             feat->GetOriginalFeature());
+                }
+
+                // compare to see if feature sources are identical
+                bool are_identical = true;
+                if (feat_prev->IsSetComment() && feat->IsSetComment() 
+                    && !NStr::EqualNocase (feat_prev->GetComment(), feat->GetComment())) {
+                    are_identical = false;
+                } else {
+                    const CBioSource& src_prev = feat_prev->GetData().GetBiosrc();
+                    const CBioSource& src = feat->GetData().GetBiosrc();
+                    if ((src.IsSetIs_focus() && !src_prev.IsSetIs_focus())
+                        || (!src.IsSetIs_focus() && src_prev.IsSetIs_focus())) {
+                        are_identical = false;
+                    } else if ((src.IsSetSubtype() && !src_prev.IsSetSubtype())
+                               || (!src.IsSetSubtype() && src_prev.IsSetSubtype())
+                               || (src.IsSetSubtype() && src_prev.IsSetSubtype() 
+                                   && !lists_match (src.GetSubtype().begin(), src.GetSubtype().end(),
+                                                    src_prev.GetSubtype().begin(), src.GetSubtype().end(),
+                                                    s_SubsourceEquivalent))) {
+                        are_identical = false;
+                    } else if ((src.IsSetOrg() && !src_prev.IsSetOrg())
+                               || (!src.IsSetOrg() && src_prev.IsSetOrg())
+                               || (src.IsSetOrg() && src_prev.IsSetOrg()
+                                   && !s_OrgrefEquivalent (src.GetOrg(), src_prev.GetOrg()))) {
+                        are_identical = false;
+                    }                    
+                }
+                if (are_identical) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleEquivBioSources, 
+                             "Multiple equivalent source features should be combined into one multi-interval feature",
+                             feat->GetOriginalFeature());
+                }
+
+                ++feat_prev;
+                ++feat;
+            }
         }
+    } catch ( const exception& e ) {
+        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+            string("Exeption while validating source features. EXCEPTION: ") +
+            e.what(), *(bsh.GetCompleteBioseq()));
     }
+
 }
 
 
@@ -956,48 +966,55 @@ static void s_MakePubLabelString (const CPubdesc& pd, string& label)
 
 void CValidError_bioseq::x_ValidatePubFeatures(const CBioseq_Handle& bsh)
 {
-    CFeat_CI feat (bsh, SAnnotSelector (CSeqFeatData::e_Pub));
-    if (feat) {
-        if (s_IsLocFullLength(feat->GetLocation(), bsh)) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
-                     "Publication feature is full length, should be descriptor",
-                     feat->GetOriginalFeature());
-        }
- 
-        CFeat_CI feat_prev = feat;
-        ++feat;
-        while (feat) {
+    try {
+        CFeat_CI feat (bsh, SAnnotSelector (CSeqFeatData::e_Pub));
+        if (feat) {
             if (s_IsLocFullLength(feat->GetLocation(), bsh)) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
                          "Publication feature is full length, should be descriptor",
                          feat->GetOriginalFeature());
             }
-            // compare to see if feature sources are identical
-            bool are_identical = true;
-            if (feat_prev->IsSetComment() && feat->IsSetComment() 
-                && !NStr::EqualNocase (feat_prev->GetComment(), feat->GetComment())) {
-                are_identical = false;
-            } else {
-                string label;
-                s_MakePubLabelString (feat->GetData().GetPub(), label);
-                string prev_label;
-                s_MakePubLabelString(feat_prev->GetData().GetPub(), prev_label);
-                if (!NStr::IsBlank (label) && !NStr::IsBlank(prev_label)
-                    && !NStr::EqualNocase (label, prev_label)) {
-                    are_identical = false;
-                }
-                // TODO: also check authors
-            }
-
-            if (are_identical) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleEquivPublications, 
-                         "Multiple equivalent publication features should be combined into one multi-interval feature",
-                         feat->GetOriginalFeature());
-            }
+     
+            CFeat_CI feat_prev = feat;
             ++feat;
-            ++feat_prev;
+            while (feat) {
+                if (s_IsLocFullLength(feat->GetLocation(), bsh)) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadFullLengthFeature,
+                             "Publication feature is full length, should be descriptor",
+                             feat->GetOriginalFeature());
+                }
+                // compare to see if feature sources are identical
+                bool are_identical = true;
+                if (feat_prev->IsSetComment() && feat->IsSetComment() 
+                    && !NStr::EqualNocase (feat_prev->GetComment(), feat->GetComment())) {
+                    are_identical = false;
+                } else {
+                    string label;
+                    s_MakePubLabelString (feat->GetData().GetPub(), label);
+                    string prev_label;
+                    s_MakePubLabelString(feat_prev->GetData().GetPub(), prev_label);
+                    if (!NStr::IsBlank (label) && !NStr::IsBlank(prev_label)
+                        && !NStr::EqualNocase (label, prev_label)) {
+                        are_identical = false;
+                    }
+                    // TODO: also check authors
+                }
+
+                if (are_identical) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleEquivPublications, 
+                             "Multiple equivalent publication features should be combined into one multi-interval feature",
+                             feat->GetOriginalFeature());
+                }
+                ++feat;
+                ++feat_prev;
+            }
         }
+    } catch ( const exception& e ) {
+        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+            string("Exeption while validating pub features. EXCEPTION: ") +
+            e.what(), *(bsh.GetCompleteBioseq()));
     }
+
 }
 
 
@@ -2905,6 +2922,9 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
 {
     try {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        if (!bsh) {
+            return;
+        }
         
         for ( CFeat_CI fi(bsh, CSeqFeatData::e_Gene); fi; ++fi ) {
             const CSeq_loc& loc = fi->GetOriginalFeature().GetLocation();
@@ -3684,7 +3704,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
         if (cds->IsSetExcept_text()
             && (NStr::FindNoCase (cds->GetExcept_text(), "ribosomal slippage") != string::npos
                 || NStr::FindNoCase (cds->GetExcept_text(), "trans-splicing") != string::npos)) {
-            overlap_type = eOverlap_Subset;
+            overlap_type = eOverlap_SubsetRev;
         }
 
         TFeatScores scores;
@@ -5517,28 +5537,34 @@ void CValidError_bioseq::x_CompareStrings
 
 void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
 {
-    TStrFeatMap label_map;
-    TStrFeatMap locus_tag_map;
+    try {
+        TStrFeatMap label_map;
+        TStrFeatMap locus_tag_map;
 
-    // Loop through genes and insert into multimap sorted by
-    // gene label / locus_tag -- case insensitive
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    for ( CFeat_CI fi(bsh, CSeqFeatData::e_Gene); fi; ++fi ) {
-        const CSeq_feat& feat = fi->GetOriginalFeature();
-        // record label
-        string label;
-        GetLabel(feat, &label, feature::eContent, m_Scope);
-        label_map.insert(TStrFeatMap::value_type(label, &feat));
-        // record locus_tag
-        const CGene_ref& gene = feat.GetData().GetGene();
-        if ( gene.CanGetLocus_tag()  &&  !gene.GetLocus_tag().empty() ) {
-            locus_tag_map.insert(TStrFeatMap::value_type(gene.GetLocus_tag(), &feat));
+        // Loop through genes and insert into multimap sorted by
+        // gene label / locus_tag -- case insensitive
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        for ( CFeat_CI fi(bsh, CSeqFeatData::e_Gene); fi; ++fi ) {
+            const CSeq_feat& feat = fi->GetOriginalFeature();
+            // record label
+            string label;
+            GetLabel(feat, &label, feature::eContent, m_Scope);
+            label_map.insert(TStrFeatMap::value_type(label, &feat));
+            // record locus_tag
+            const CGene_ref& gene = feat.GetData().GetGene();
+            if ( gene.CanGetLocus_tag()  &&  !gene.GetLocus_tag().empty() ) {
+                locus_tag_map.insert(TStrFeatMap::value_type(gene.GetLocus_tag(), &feat));
+            }
         }
+        x_CompareStrings(label_map, "names", eErr_SEQ_FEAT_CollidingGeneNames,
+            eDiag_Warning);
+        x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
+            eDiag_Error);
+    } catch ( const exception& e ) {
+        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+            string("Exeption while validating colliding genes. EXCEPTION: ") +
+            e.what(), seq);
     }
-    x_CompareStrings(label_map, "names", eErr_SEQ_FEAT_CollidingGeneNames,
-        eDiag_Warning);
-    x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
-        eDiag_Error);
 }
 
 

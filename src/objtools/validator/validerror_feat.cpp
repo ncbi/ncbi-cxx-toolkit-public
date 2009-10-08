@@ -4730,7 +4730,7 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             }
             if (partial5) {
                 EDiagSev sev = eDiag_Error;
-                if (s_CDS5primePartialTest) {
+                if (s_CDS5primePartialTest(feat, m_Scope)) {
                     sev = eDiag_Warning;
                 }
                 PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
@@ -4742,7 +4742,7 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             if ( partial5 && partial3 ) {
             } else if ( partial5 ) {
                 EDiagSev sev = eDiag_Error;
-                if (s_CDS5primePartialTest) {
+                if (s_CDS5primePartialTest(feat, m_Scope)) {
                     sev = eDiag_Warning;
                 }
                 PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
@@ -4823,13 +4823,16 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
     mrna = GetBestOverlappingFeat(
         loc,
         CSeqFeatData::eSubtype_mRNA,
-        eOverlap_Subset,
+        eOverlap_SubsetRev,
         *m_Scope);
 
     EDiagSev sev = eDiag_Error;
     if ( m_Imp.IsNC()  ||  m_Imp.IsNT()  ||  
          (feat.CanGetExcept()  &&  feat.GetExcept()) ) {
         sev = eDiag_Warning;
+    }
+    if (pseudo) {
+        sev = eDiag_Info;
     }
     if ( mrna ) {
         // ribosomal slippage exception suppresses CDSmRNArange warning
