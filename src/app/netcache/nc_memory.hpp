@@ -108,9 +108,9 @@ class CNCMMDBPage
 public:
     /// Get pointer to the object from pointer to page data
     static CNCMMDBPage* FromDataPtr(void* data);
-    /// Get page from LRU list with intention to delete it and use its memory
-    /// for some other purposes.
-    static CNCMMDBPage* PeekLRUForDelete(void);
+    /// Get page from LRU list with intention to destroy it and use its memory
+    /// for other database page.
+    static CNCMMDBPage* PeekLRUForDestroy(void);
 
     /// Special new and delete operators to obtain memory from centralized
     /// pool of memory chunks.
@@ -133,30 +133,30 @@ public:
     /// moment.
     bool IsInLRU(void);
     /// Put page to LRU list's tail i.e. it was just used and released.
-    /// Method should be called under relative cache's mutex.
+    /// Method should be called under corresponding cache's mutex.
     void AddToLRU(void);
     /// Remove page from LRU list i.e. it becomes locked and will not be
     /// reused by some other cache instance until it's returned to LRU list.
-    /// Method should be called under relative cache's mutex.
+    /// Method should be called under corresponding cache's mutex.
     void RemoveFromLRU(void);
     /// Request deletion of this page when it's removed from cache's
     /// hash-table.
     /// In most cases it will be just plain deleted except when it was peeked
     /// by another thread. In the latter case it will be deleted by that
     /// thread.
-    /// Method should be called under relative cache's mutex.
+    /// Method should be called under corresponding cache's mutex.
     ///
-    /// @sa PeekLRUForDelete
+    /// @sa PeekLRUForDestroy
     void RequestDelete(void);
-    /// Delete this page after peeking it by PeekLRUForDelete().
-    /// Page will be deleted only if it's in the LRU list, i.e. it's not used
-    /// by SQLite at the moment. Method returns TRUE if page was indeed
-    /// deleted, FALSE if it was discovered that page is used by SQLite and so
-    /// it was left untouched.
-    /// Method should be called under relative cache's mutex.
+    /// Destroy this page after peeking it by PeekLRUForDestroy().
+    /// Page will be destroyed only if it's in the LRU list, i.e. it's not
+    /// used by SQLite at the moment. Method returns TRUE if page was indeed
+    /// destroyed, FALSE if it was discovered that page is used by SQLite and
+    /// so it was left untouched.
+    /// Method should be called under corresponding cache's mutex.
     ///
-    /// @sa PeekLRUForDelete
-    bool DoPeekedDelete(void);
+    /// @sa PeekLRUForDestroy
+    bool DoPeekedDestruction(void);
 
 private:
     friend class CNCMMDBPagesHash;
@@ -166,7 +166,7 @@ private:
     CNCMMDBPage& operator= (const CNCMMDBPage&);
     void* operator new(size_t, void*);
 
-    /// Check if page is in LRU and wasn't peeked with PeekLRUForDelete().
+    /// Check if page is in LRU and wasn't peeked with PeekLRUForDestroy().
     /// If it was peeked IsInLRU() still returns TRUE but this method returns
     /// FALSE.
     /// Method should be called under sm_LRULock.
@@ -1160,11 +1160,11 @@ private:
 class CNCMMDBCache
 {
 public:
-    /// Free memory from one database page in any cache instance for use in
-    /// other memory allocations. Memory from the least recently used page is
-    /// freed here with regards to possible fact that this page can be re-used
-    /// in other thread.
-    static bool DeleteOnePage(void);
+    /// Destroy one database page in any cache instance for use in
+    /// another database page. Least recently used page is destroyed here
+    /// with regards to possible fact that this page can be re-used
+    /// in other thread while method is working.
+    static void* DestroyOnePage(void);
 
     /// The only allowed form of allocation and deallocation of memory for
     /// the cache.

@@ -1245,8 +1245,28 @@ CNCMMDBPage::RemoveFromLRU(void)
     m_StateFlags &= ~fInLRU;
 }
 
+inline
+CNCMMDBPage::CNCMMDBPage(void)
+    : m_Cache(NULL),
+      m_StateFlags(0),
+      m_PrevInLRU(NULL),
+      m_NextInLRU(NULL)
+{
+    // Required by SQLite if page is new for the cache instance
+    *reinterpret_cast<void**>(m_Data) = NULL;
+}
+
+inline
+CNCMMDBPage::~CNCMMDBPage(void)
+{
+    if (m_Cache) {
+        RemoveFromLRU();
+        m_Cache->DetachPage(this);
+    }
+}
+
 inline CNCMMDBPage*
-CNCMMDBPage::PeekLRUForDelete(void)
+CNCMMDBPage::PeekLRUForDestroy(void)
 {
     CFastMutexGuard guard(sm_LRULock);
 
@@ -1259,43 +1279,27 @@ CNCMMDBPage::PeekLRUForDelete(void)
 }
 
 inline bool
-CNCMMDBPage::DoPeekedDelete(void)
+CNCMMDBPage::DoPeekedDestruction(void)
 {
     _ASSERT((m_StateFlags & fPeeked) != 0);
 
-    bool do_delete;
+    bool do_destroy;
     {{
         CFastMutexGuard guard(sm_LRULock);
-        do_delete = IsInLRU();
-        _ASSERT(!do_delete  ||  !x_IsReallyInLRU());
+        do_destroy = IsInLRU();
+        _ASSERT(!do_destroy  ||  !x_IsReallyInLRU());
         m_StateFlags &= ~fPeeked;
     }}
-    if (do_delete) {
-        delete this;
+    if (do_destroy) {
+        this->~CNCMMDBPage();
     }
-    return do_delete;
+    return do_destroy;
 }
 
-inline
-CNCMMDBPage::CNCMMDBPage(void)
-    : m_Cache(NULL),
-      m_StateFlags(0),
-      m_PrevInLRU(NULL),
-      m_NextInLRU(NULL)
+inline void
+CNCMMDBPage::operator delete(void* mem_ptr)
 {
-    // Required by SQLite if page is new for the cache instance
-    *reinterpret_cast<void**>(m_Data) = NULL;
-
-    CNCMMCentral::DBPageCreated();
-}
-
-inline
-CNCMMDBPage::~CNCMMDBPage(void)
-{
-    if (m_Cache) {
-        RemoveFromLRU();
-        m_Cache->DetachPage(this);
-    }
+    CNCMMChunksPool::PutChunk(mem_ptr);
     CNCMMCentral::DBPageDeleted();
 }
 
@@ -1304,24 +1308,32 @@ CNCMMDBPage::operator new(size_t _DEBUG_ARG(size))
 {
     _ASSERT(size == kNCMMChunkSize);
 
+    void* page = NULL;
     ENCMMMode mode = CNCMMCentral::GetMemMode();
     switch (mode) {
     case eNCMemShrinking:
-        CNCMMDBCache::DeleteOnePage();
+        page = CNCMMDBCache::DestroyOnePage();
         // fall through
-    case eNCMemStable:
-        CNCMMDBCache::DeleteOnePage();
+    case eNCMemStable: {
+        void* second_page = CNCMMDBCache::DestroyOnePage();
+        if (second_page) {
+            if (page) {
+                operator delete(second_page);
+            }
+            else {
+                page = second_page;
+            }
+        }
         break;
+        }
     default:
         break;
     }
-    return CNCMMChunksPool::GetChunk();
-}
-
-inline void
-CNCMMDBPage::operator delete(void* mem_ptr)
-{
-    CNCMMChunksPool::PutChunk(mem_ptr);
+    if (!page) {
+        page = CNCMMChunksPool::GetChunk();
+        CNCMMCentral::DBPageCreated();
+    }
+    return page;
 }
 
 inline void
@@ -2829,25 +2841,27 @@ CNCMMDBCache::operator delete(void* ptr)
     ::operator delete(ptr);
 }
 
-bool
-CNCMMDBCache::DeleteOnePage(void)
+void*
+CNCMMDBCache::DestroyOnePage(void)
 {
+    CNCMMDBPage* page;
     for (;;) {
-        CNCMMDBPage* page = CNCMMDBPage::PeekLRUForDelete();
+        page = CNCMMDBPage::PeekLRUForDestroy();
         if (!page)
-            return false;
+            break;
         CNCMMDBCache* cache = page->GetCache();
         if (!cache) {
-            delete page;
-            return true;
+            page->~CNCMMDBPage();
+            break;
         }
         else {
             CFastMutexGuard guard(cache->m_ObjLock);
-            if (page->DoPeekedDelete())
-                return true;
+            if (page->DoPeekedDestruction())
+                break;
         }
         // Page should have been extracted from LRU by somebody.
     }
+    return page;
 }
 
 
