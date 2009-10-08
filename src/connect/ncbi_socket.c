@@ -2986,7 +2986,14 @@ static EIO_Status s_Connect(SOCK            sock,
                                      " Failed connect(%s)",
                                      s_ID(sock, _id),
                                      x_ConnPoint(sock, buf, sizeof(buf)/2)));
-                status = eIO_Unknown;
+                if (x_error == SOCK_ECONNREFUSED
+#ifdef NCBI_OS_UNIX
+                    ||  (sock->path[0]  &&  x_error == ENOENT)
+#endif /*NCBI_OS_UNIX*/
+                    ) {
+                    status = eIO_Closed;
+                } else
+                    status = eIO_Unknown;
             } else
                 status = eIO_Interrupt;
             s_Close(sock, -1/*abort*/);
