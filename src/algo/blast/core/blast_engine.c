@@ -267,27 +267,24 @@ s_AdjustSubjectChunks(Int4 total_subject_length,
         ending_idx = SSeqRangeArrayLessThanOrEqual(*seq_ranges_backup,
                                          *num_seq_ranges_backup, stop);
 
-		/* fix up SSeqRangeArrayLessThanOrEqual() output */
-		if (stop < (*seq_ranges_backup)[ending_idx].left) {
-			if (ending_idx) ending_idx--;
-			}
+        /* fix up SSeqRangeArrayLessThanOrEqual() output */
+        if (stop < (*seq_ranges_backup)[ending_idx].left) {
+            if (ending_idx) ending_idx--;
+        }
 
         subject->num_seq_ranges = ending_idx - starting_idx + 1;
 
-		ASSERT(starting_idx >= 0);
-		ASSERT(ending_idx >= 0);
-		ASSERT(starting_idx < *num_seq_ranges_backup);
-		ASSERT(ending_idx < *num_seq_ranges_backup);
+        ASSERT(starting_idx >= 0);
+        ASSERT(ending_idx >= 0);
+        ASSERT(starting_idx < *num_seq_ranges_backup);
+        ASSERT(ending_idx < *num_seq_ranges_backup);
 
-		/* sanity check cases where masks lie outside the subject chunk */
-		
-		/* if the subject starts after the last mask ends, there's nothing to mask. */
-		if (start > (*seq_ranges_backup)[ending_idx].right)
-			return;
-	
-		/* if the subject ends before the first mask begins, there's nothing to mask. */
-		if (stop < (*seq_ranges_backup)[starting_idx].left)
-			return;
+        /* sanity check cases where masks lie outside the subject chunk */
+        if (start > (*seq_ranges_backup)[ending_idx].right ||
+            stop < (*seq_ranges_backup)[starting_idx].left) {
+            subject->num_seq_ranges = 0;
+            return;
+        }
 		
         /* copy the relevant ranges ... */
         if (subject->num_seq_ranges > 0) {
