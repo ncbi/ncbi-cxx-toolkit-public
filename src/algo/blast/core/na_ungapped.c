@@ -385,8 +385,13 @@ s_TypeOfWord(BLAST_SequenceBlk * query,
 
     /* check query mask */
     context = BSearchContextInfo(q_end, query_info);
+    if (context > query_info->last_context) return 0;
     new_off = query_info->contexts[context].query_offset;
     q_range = new_off + query_info->contexts[context].query_length;
+
+    while (locations && locations->ssr->left < new_off) {
+        locations = locations->next;
+    }
 
     while (locations && locations->ssr->left < q_end) {
         new_off = locations->ssr->right + 1; /* right bound is inclusive*/
