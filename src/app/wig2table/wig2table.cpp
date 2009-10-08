@@ -389,7 +389,7 @@ int CWig2tableApplication::Run(void)
         if ( ss[0] == "track" ) {
         }
         else if ( ss[0] == "variableStep" ) {
-            size_t span = 0;
+            size_t span = 1;
             for ( size_t i = 1; i < ss.size(); ++i ) {
                 pair<string, string> p = get_param(ss[i]);
                 if ( p.first == "chrom" ) {
@@ -405,22 +405,18 @@ int CWig2tableApplication::Run(void)
             if ( m_ChromId.empty() ) {
                 ERR_POST(Fatal << "No chrom: " << line);
             }
-            if ( span == 0 ) {
-                ERR_POST(Fatal << "No span: " << line);
-            }
             SValueInfo value;
             value.m_Span = span;
             while ( fscanf(in, "%u %lf", &value.m_Pos, &value.m_Value) == 2 ) {
                 if ( !omit_zeros || value.m_Value != 0 ) {
                     m_Values.push_back(value);
                 }
-                m_Values.push_back(value);
             }
         }
         else if ( ss[0] == "fixedStep" ) {
             size_t start = 0;
             size_t step = 0;
-            size_t span = 0;
+            size_t span = 1;
             for ( size_t i = 1; i < ss.size(); ++i ) {
                 pair<string, string> p = get_param(ss[i]);
                 if ( p.first == "chrom" ) {
@@ -447,9 +443,6 @@ int CWig2tableApplication::Run(void)
             }
             if ( step == 0 ) {
                 ERR_POST(Fatal << "No step: " << line);
-            }
-            if ( span == 0 ) {
-                ERR_POST(Fatal << "No span: " << line);
             }
 
             SValueInfo value;
