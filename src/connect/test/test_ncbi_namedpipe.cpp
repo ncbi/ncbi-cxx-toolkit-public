@@ -57,6 +57,7 @@ const size_t kSubBlobSize = 10*1024;
 const size_t kBlobSize    = kNumSubBlobs * kSubBlobSize;
 
 
+
 ////////////////////////////////
 // Auxiliary functions
 //
@@ -117,14 +118,25 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
 class CTest : public CNcbiApplication
 {
 public:
+    CTest(void);
+
     virtual void Init(void);
     virtual int  Run(void);
-private:
+
+protected:
     void Client(int num);
     void Server(void);
-private:
-    string m_PipeName;
+
+    string   m_PipeName;
+    STimeout m_Timeout;
 };
+
+
+CTest::CTest(void)
+{
+    m_Timeout.sec  = 5;
+    m_Timeout.usec = 0;
+}
 
 
 void CTest::Init(void)
@@ -146,14 +158,20 @@ void CTest::Init(void)
                               "Test named pipe API");
 
     // Describe the expected command-line arguments
+    arg_desc->AddDefaultKey
+        ("suffix", "suffix",
+         "Unique string that will be added to the base pipe name",
+         CArgDescriptions::eString, "");
     arg_desc->AddPositional 
         ("mode", "Test mode",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("mode", &(*new CArgAllow_Strings, "client", "server"));
-    arg_desc->AddDefaultPositional
-        ("postfix", "Unique string that will be added to the base pipe name",
-         CArgDescriptions::eString, "");
+    arg_desc->AddOptionalPositional 
+        ("timeout", "Input/output timeout",
+         CArgDescriptions::eDouble);
+    arg_desc->SetConstraint
+        ("timeout", new CArgAllow_Doubles(0.0, 200.0));
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -165,18 +183,26 @@ int CTest::Run(void)
     CArgs args = GetArgs();
 
     m_PipeName = kPipeName;
-    if ( !args["postfix"].AsString().empty() ) {
-        m_PipeName += "_" + args["postfix"].AsString();
+    if ( !args["suffix"].AsString().empty() ) {
+        m_PipeName += "_" + args["suffix"].AsString();
     }
     ERR_POST(Info << "Using pipe name: " + m_PipeName);
 
+    if (args["timeout"].HasValue()) {
+        double tv = args["timeout"].AsDouble();
+        m_Timeout.sec  = (unsigned int)  tv;
+        m_Timeout.usec = (unsigned int)((tv - m_Timeout.sec) * 1000000);
+    }
     if (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
-        for (int i=1; i<=3; i++) {
+        for (int i = 1;  i <= 3;  i++) {
             Client(i);
         }
     }
     else if (args["mode"].AsString() == "server") {
+        if (!args["timeout"].HasValue()) {
+            m_Timeout.sec = 30;
+        }
         SetDiagPostPrefix("Server");
         Server();
     }
@@ -194,13 +220,12 @@ int CTest::Run(void)
 void CTest::Client(int num)
 {
     ERR_POST(Info << "Start client " + NStr::IntToString(num) + "...");
-    STimeout timeout = {2, 0};
 
     CNamedPipeClient pipe;
     assert(pipe.IsClientSide());
-    assert(pipe.SetTimeout(eIO_Open,  &timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Open,  &m_Timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
     assert(pipe.Open(m_PipeName,kDefaultTimeout,kSubBlobSize) == eIO_Success);
 
@@ -258,12 +283,11 @@ void CTest::Server(void)
     size_t   n_read    = 0;
     size_t   n_written = 0;
 
-    STimeout timeout   = {30, 0};
-    CNamedPipeServer pipe(m_PipeName, &timeout, kSubBlobSize + 512);
+    CNamedPipeServer pipe(m_PipeName, &m_Timeout, kSubBlobSize + 512);
 
     assert(pipe.IsServerSide());
-    assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
     for (;;) {
         ERR_POST(Info << "Listening pipe...");
