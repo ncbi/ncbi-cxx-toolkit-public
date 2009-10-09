@@ -8,6 +8,6 @@
 
 APP = wig2table
 SRC = wig2table
-LIB = $(SOBJMGR_LDEP)
+LIB = xobjreadex xobjutil $(OBJMGR_LIBS)
 
 REQUIRES = objects

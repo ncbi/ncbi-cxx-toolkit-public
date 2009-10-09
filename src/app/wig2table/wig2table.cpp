@@ -45,6 +45,8 @@
 #include <objects/seqtable/seqtable__.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objtools/readers/idmapper.hpp>
+
 #include <cmath>
 
 USING_SCOPE(ncbi);
@@ -72,6 +74,8 @@ class CWig2tableApplication : public CNcbiApplication
     };
     typedef vector<SValueInfo> TValues;
     TValues m_Values;
+
+    AutoPtr<IIdMapper> m_IdMapper;
 };
 
 
@@ -99,6 +103,18 @@ void CWig2tableApplication::Init(void)
                             CArgDescriptions::eString, "asn");
     arg_desc->SetConstraint
         ("outfmt", &(*new CArgAllow_Strings, "asn", "asnb", "xml"));
+
+    arg_desc->AddOptionalKey
+        ("mapfile",
+         "MapFile",
+         "IdMapper config filename",
+         CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey
+        ("genome", 
+         "Genome",
+         "UCSC build number",
+         CArgDescriptions::eString,
+         "");
 
     arg_desc->AddFlag("byte", "Convert data in byte range");
     arg_desc->AddFlag("omit_zeros", "Omit zero values");
@@ -156,6 +172,9 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
         table.SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
         col_id->SetDefault().SetId().Set(CSeq_id::e_Local, m_ChromId);
+        if ( m_IdMapper ) {
+            m_IdMapper->MapObject(col_id->SetDefault());
+        }
     }
     
     // position
@@ -370,6 +389,17 @@ int CWig2tableApplication::Run(void)
 {
     // Get arguments
     CArgs args = GetArgs();
+
+    if ( args["mapfile"] ) {
+        m_IdMapper.reset(new CIdMapperConfig(args["mapfile"].AsInputFile(),
+                                             args["genome"].AsString(),
+                                             false));
+    }
+    else if ( !args["genome"].AsString().empty() ) {
+        LOG_POST("Genome: "<<args["genome"].AsString());
+        m_IdMapper.reset(new CIdMapperBuiltin(args["genome"].AsString(),
+                                              false));
+    }
 
     auto_ptr<CObjectOStream> out
         (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
