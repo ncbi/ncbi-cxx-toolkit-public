@@ -58,9 +58,22 @@ class CWig2tableApplication : public CNcbiApplication
     virtual int  Run(void);
 
     CRef<CSeq_annot> MakeTableAnnot(void);
-    void DumpTableAnnot(CObjectOStream& out);
+    void DumpTableAnnot(void);
     void ResetData(void);
-    void SetChrom(const string& chrom, CObjectOStream& out);
+    void SetChrom(const string& chrom);
+
+    string GetLine(void);
+    pair<string, string> GetParam(const string& s) const;
+    double EstimateSize(size_t rows, bool fixed_span) const;
+
+    void ReadBrowser(void);
+    void ReadTrack(void);
+    void ReadFixedStep(void);
+    void ReadVariableStep(void);
+    void ReadBedLine(const char* chrom);
+
+    FILE* m_Input;
+    AutoPtr<CObjectOStream> m_Output;
 
     string m_ChromId;
     struct SValueInfo {
@@ -75,6 +88,9 @@ class CWig2tableApplication : public CNcbiApplication
     typedef vector<SValueInfo> TValues;
     TValues m_Values;
 
+    bool m_OmitZeros;
+    bool m_JoinSame;
+    bool m_AsByte;
     AutoPtr<IIdMapper> m_IdMapper;
 };
 
@@ -140,13 +156,13 @@ static ESerialDataFormat s_GetFormat(const string& name)
 }
 
 
-static double EstimateSize(size_t rows, bool fixed_span, bool as_byte)
+double CWig2tableApplication::EstimateSize(size_t rows, bool fixed_span) const
 {
     double ret = 0;
     ret += rows*4;
     if ( !fixed_span )
         ret += rows*4;
-    if ( as_byte )
+    if ( m_AsByte )
         ret += rows;
     else
         ret += 8*rows;
@@ -160,10 +176,6 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
     CSeq_table& table = annot->SetData().SetSeq_table();
 
     size_t size = m_Values.size();
-
-    CArgs args = GetArgs();
-    bool join_same = args["join_same"];
-    bool as_byte = args["byte"];
 
     table.SetFeat_type(0);
 
@@ -206,6 +218,7 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
                 max = v;
             }
         }
+        min = 0;
         if ( max > min ) {
             step = (max-min)/255;
         }
@@ -215,7 +228,7 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
         sort(m_Values.begin(), m_Values.end());
     }
 
-    if ( join_same && size ) {
+    if ( m_JoinSame && size ) {
         TValues nv;
         nv.reserve(size);
         nv.push_back(m_Values[0]);
@@ -229,8 +242,8 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
             }
         }
         if ( nv.size() != size ) {
-            double s = EstimateSize(size, fixed_span, as_byte);
-            double ns = EstimateSize(nv.size(), false, as_byte);
+            double s = EstimateSize(size, fixed_span);
+            double ns = EstimateSize(nv.size(), false);
             if ( ns < s*.75 ) {
                 m_Values.swap(nv);
                 size = m_Values.size();
@@ -257,7 +270,7 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
         }
     }
 
-    if ( as_byte ) { // values
+    if ( m_AsByte ) { // values
         CRef<CSeqTable_column> col_min(new CSeqTable_column);
         table.SetColumns().push_back(col_min);
         col_min->SetHeader().SetField_name("value_min");
@@ -319,11 +332,11 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
 }
 
 
-void CWig2tableApplication::DumpTableAnnot(CObjectOStream& out)
+void CWig2tableApplication::DumpTableAnnot(void)
 {
     LOG_POST("DumpTableAnnot: "<<m_ChromId<<" "<<m_Values.size());
     CRef<CSeq_annot> annot = MakeTableAnnot();
-    out << *annot;
+    *m_Output << *annot;
 }
 
 
@@ -334,12 +347,12 @@ void CWig2tableApplication::ResetData(void)
 }
 
 
-static string get_line(FILE* in)
+string CWig2tableApplication::GetLine()
 {
     string line;
     char buf[1024];
-    while ( !feof(in) ) {
-        fgets(buf, sizeof(buf), in);
+    while ( !feof(m_Input) ) {
+        fgets(buf, sizeof(buf), m_Input);
         size_t len = strlen(buf);
         if ( len && buf[len-1] == '\n' ) {
             --len;
@@ -356,7 +369,7 @@ static string get_line(FILE* in)
 }
 
 
-pair<string, string> get_param(const string& s)
+pair<string, string> CWig2tableApplication::GetParam(const string& s) const
 {
     pair<string, string> ret;
     size_t eq = s.find('=');
@@ -373,15 +386,126 @@ pair<string, string> get_param(const string& s)
 }
 
 
-void CWig2tableApplication::SetChrom(const string& chrom, CObjectOStream& out)
+void CWig2tableApplication::SetChrom(const string& chrom)
 {
     if ( chrom != m_ChromId ) {
         if ( !m_ChromId.empty() ) {
-            DumpTableAnnot(out);
+            DumpTableAnnot();
         }
         ResetData();
     }
     m_ChromId = chrom;
+}
+
+
+void CWig2tableApplication::ReadBrowser(void)
+{
+    GetLine();
+}
+
+
+void CWig2tableApplication::ReadTrack(void)
+{
+    GetLine();
+}
+
+
+void CWig2tableApplication::ReadFixedStep(void)
+{
+    vector<string> ss;
+    string line = GetLine();
+    NStr::Tokenize(line, " \t", ss);
+
+    size_t start = 0;
+    size_t step = 0;
+    size_t span = 1;
+    for ( size_t i = 1; i < ss.size(); ++i ) {
+        pair<string, string> p = GetParam(ss[i]);
+        if ( p.first == "chrom" ) {
+            SetChrom(p.second);
+        }
+        else if ( p.first == "start" ) {
+            start = NStr::StringToUInt(p.second);
+        }
+        else if ( p.first == "step" ) {
+            step = NStr::StringToUInt(p.second);
+        }
+        else if ( p.first == "span" ) {
+            span = NStr::StringToUInt(p.second);
+        }
+        else {
+            ERR_POST(Fatal << "Bad param name: " << line);
+        }
+    }
+    if ( m_ChromId.empty() ) {
+        ERR_POST(Fatal << "No chrom: " << line);
+    }
+    if ( start == 0 ) {
+        ERR_POST(Fatal << "No start: " << line);
+    }
+    if ( step == 0 ) {
+        ERR_POST(Fatal << "No step: " << line);
+    }
+
+    SValueInfo value;
+    value.m_Pos = start;
+    value.m_Span = span;
+    while ( fscanf(m_Input, "%lf", &value.m_Value) == 1 ) {
+        if ( !m_OmitZeros || value.m_Value != 0 ) {
+            m_Values.push_back(value);
+        }
+        value.m_Pos += step;
+    }
+}
+
+
+void CWig2tableApplication::ReadVariableStep(void)
+{
+    vector<string> ss;
+    string line = GetLine();
+    NStr::Tokenize(line, " \t", ss);
+
+    size_t span = 1;
+    for ( size_t i = 1; i < ss.size(); ++i ) {
+        pair<string, string> p = GetParam(ss[i]);
+        if ( p.first == "chrom" ) {
+            SetChrom(p.second);
+        }
+        else if ( p.first == "span" ) {
+            span = NStr::StringToUInt(p.second);
+        }
+        else {
+            ERR_POST(Fatal << "Bad param name: " << line);
+        }
+    }
+    if ( m_ChromId.empty() ) {
+        ERR_POST(Fatal << "No chrom: " << line);
+    }
+    SValueInfo value;
+    value.m_Span = span;
+    while ( fscanf(m_Input, "%u%lf", &value.m_Pos, &value.m_Value) == 2 ) {
+        if ( !m_OmitZeros || value.m_Value != 0 ) {
+            m_Values.push_back(value);
+        }
+    }
+}
+
+
+void CWig2tableApplication::ReadBedLine(const char* chrom)
+{
+    if ( m_ChromId != chrom ) {
+        SetChrom(chrom);
+    }
+    SValueInfo value;
+    if ( fscanf(m_Input, "%u%u%lf",
+                &value.m_Pos, &value.m_Span, &value.m_Value) != 3 ) {
+        ERR_POST(Fatal << "Failed to parse BED graph line");
+    }
+    value.m_Span -= value.m_Pos;
+    value.m_Pos += 1;
+    if ( !m_OmitZeros || value.m_Value != 0 ) {
+        m_Values.push_back(value);
+    }
 }
 
 
@@ -401,97 +525,49 @@ int CWig2tableApplication::Run(void)
                                               false));
     }
 
-    auto_ptr<CObjectOStream> out
+    m_OmitZeros = args["omit_zeros"];
+    m_JoinSame = args["join_same"];
+    m_AsByte = args["byte"];
+
+    // Read the entry
+    m_Input = fopen(args["in"].AsString().c_str(), "rt");
+    if ( !m_Input ) {
+        ERR_POST(Fatal << "Cannot open file: "<<args["in"].AsString());
+    }
+
+    m_Output.reset
         (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                               args["out"].AsOutputFile()));
 
-    bool omit_zeros = args["omit_zeros"];
-
-    // Read the entry
-    FILE* in = fopen(args["in"].AsString().c_str(), "rt");
-    while ( !feof(in) ) {
-        string line = get_line(in);
-        vector<string> ss;
-        NStr::Tokenize(line, " \t", ss);
-        if ( ss.empty() ) {
-            continue;
+    char buf[1024];
+    while ( !feof(m_Input) && fscanf(m_Input, "%1023s", buf) == 1 ) {
+        if ( strlen(buf) >= 1023 ) {
+            ERR_POST(Fatal << "Too long identifier: "<<buf);
         }
-        if ( ss[0] == "track" ) {
+        if ( buf[0] == '#' ) { // comment line
+            GetLine();
         }
-        else if ( ss[0] == "variableStep" ) {
-            size_t span = 1;
-            for ( size_t i = 1; i < ss.size(); ++i ) {
-                pair<string, string> p = get_param(ss[i]);
-                if ( p.first == "chrom" ) {
-                    SetChrom(p.second, *out);
-                }
-                else if ( p.first == "span" ) {
-                    span = NStr::StringToUInt(p.second);
-                }
-                else {
-                    ERR_POST(Fatal << "Bad param name: " << line);
-                }
-            }
-            if ( m_ChromId.empty() ) {
-                ERR_POST(Fatal << "No chrom: " << line);
-            }
-            SValueInfo value;
-            value.m_Span = span;
-            while ( fscanf(in, "%u %lf", &value.m_Pos, &value.m_Value) == 2 ) {
-                if ( !omit_zeros || value.m_Value != 0 ) {
-                    m_Values.push_back(value);
-                }
-            }
+        else if ( strcmp(buf, "browser") == 0 ) {
+            ReadBrowser();
         }
-        else if ( ss[0] == "fixedStep" ) {
-            size_t start = 0;
-            size_t step = 0;
-            size_t span = 1;
-            for ( size_t i = 1; i < ss.size(); ++i ) {
-                pair<string, string> p = get_param(ss[i]);
-                if ( p.first == "chrom" ) {
-                    SetChrom(p.second, *out);
-                }
-                else if ( p.first == "start" ) {
-                    start = NStr::StringToUInt(p.second);
-                }
-                else if ( p.first == "step" ) {
-                    step = NStr::StringToUInt(p.second);
-                }
-                else if ( p.first == "span" ) {
-                    span = NStr::StringToUInt(p.second);
-                }
-                else {
-                    ERR_POST(Fatal << "Bad param name: " << line);
-                }
-            }
-            if ( m_ChromId.empty() ) {
-                ERR_POST(Fatal << "No chrom: " << line);
-            }
-            if ( start == 0 ) {
-                ERR_POST(Fatal << "No start: " << line);
-            }
-            if ( step == 0 ) {
-                ERR_POST(Fatal << "No step: " << line);
-            }
-
-            SValueInfo value;
-            value.m_Pos = start;
-            value.m_Span = span;
-            while ( fscanf(in, "%lf", &value.m_Value) == 1 ) {
-                if ( !omit_zeros || value.m_Value != 0 ) {
-                    m_Values.push_back(value);
-                }
-                value.m_Pos += step;
-            }
+        else if ( strcmp(buf, "track") == 0 ) {
+            ReadTrack();
+        }
+        else if ( strcmp(buf, "fixedStep") == 0 ) {
+            ReadFixedStep();
+        }
+        else if ( strcmp(buf, "variableStep") == 0 ) {
+            ReadVariableStep();
         }
         else {
-            ERR_POST(Fatal << "Bad command: " << line);
+            ReadBedLine(buf);
         }
     }
-    fclose(in);
+    fclose(m_Input);
+    m_Input = 0;
 
-    SetChrom("", *out);
+    SetChrom(""); // flush current graph
+    m_Output.reset();
 
     // Exit successfully
     return 0;
