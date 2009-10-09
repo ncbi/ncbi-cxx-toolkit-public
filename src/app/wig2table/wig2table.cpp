@@ -226,7 +226,6 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
                 max = v;
             }
         }
-        min = 0;
         if ( max > min ) {
             step = (max-min)/255;
         }
