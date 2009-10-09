@@ -1825,7 +1825,8 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
     target_tree.GetExternalDepends(&external_depends);
 
     // We have to add more projects to the target tree
-    if ( !external_depends.empty()  &&  !filter->PassAll() ) {
+    if ( !external_depends.empty()  &&
+         !GetApp().IsScanningWholeTree() /*!filter->PassAll()*/ ) {
 
         list<CProjKey> depends_to_resolve = external_depends;
 
