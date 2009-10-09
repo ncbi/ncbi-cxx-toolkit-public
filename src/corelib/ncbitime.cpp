@@ -2450,6 +2450,9 @@ void CTimeout::Set(EType type)
         m_Type = type;
         m_HaveValue = false;
         break;
+    case eZero:
+        Set(0,0);
+        break;
     default:
         NCBI_THROW(CTimeException, eArgument, 
                    "CTimeout(type) can be used with eDefault " \
@@ -2528,6 +2531,27 @@ bool CTimeout::operator== (const CTimeout& t) const
 }
 
 
+bool CTimeout::operator< (const CTimeout& t) const
+{
+    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
+    switch (h) {
+        case 11:
+            if (m_Sec == t.m_Sec) {
+                return m_MicroSec < t.m_MicroSec;
+            }
+            return m_Sec < t.m_Sec;
+        case 12:
+            return true;  // value < infinite
+        case 21:
+        case 22:
+            return false;
+        default:
+            NCBI_THROW(CTimeException, eArgument, 
+                       "CTimeout: cannot compare with eDefault timeout");
+    }
+}
+
+
 bool CTimeout::operator> (const CTimeout& t) const
 {
     int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
@@ -2549,20 +2573,51 @@ bool CTimeout::operator> (const CTimeout& t) const
 }
 
 
-bool CTimeout::operator< (const CTimeout& t) const
+bool CTimeout::operator>= (const CTimeout& t) const
 {
     int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
     switch (h) {
         case 11:
             if (m_Sec == t.m_Sec) {
-                return m_MicroSec < t.m_MicroSec;
+                return m_MicroSec >= t.m_MicroSec;
             }
-            return m_Sec < t.m_Sec;
+            return m_Sec >= t.m_Sec;
         case 12:
-            return true;  // value < infinite
+            return false;     // value < infinity
         case 21:
         case 22:
-            return false;
+        case 23:
+            return true;      // infinity >= everything
+        case 31:
+            if ( t.IsZero() ) 
+                return true;  // default >= zero
+            // fall through
+        default:
+            NCBI_THROW(CTimeException, eArgument, 
+                       "CTimeout: cannot compare with eDefault timeout");
+    }
+}
+
+
+bool CTimeout::operator<= (const CTimeout& t) const
+{
+    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
+    switch (h) {
+        case 11:
+            if (m_Sec == t.m_Sec) {
+                return m_MicroSec <= t.m_MicroSec;
+            }
+            return m_Sec <= t.m_Sec;
+        case 21:
+            return false;    // infinity > value
+        case 12:
+        case 22:
+        case 32:
+            return true;     // everything <= infinity
+        case 13:
+            if ( IsZero() ) 
+                return true; // zero <= default
+            // fall through
         default:
             NCBI_THROW(CTimeException, eArgument, 
                        "CTimeout: cannot compare with eDefault timeout");

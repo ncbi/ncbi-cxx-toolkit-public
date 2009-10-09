@@ -1452,11 +1452,15 @@ public:
     /// Type of timeouts.
     enum EType {
         eDefault,   ///< Default timeout (depends from implementation).
-        eInfinite   ///< Infinite timeout.
+        eInfinite,  ///< Infinite timeout.
+        eZero       ///< Zero timeout, equal to CTimeout(0,0).
     };
 
+    /// Create default timeout.
+    CTimeout(void);
+
     /// Create timeout of specified type.
-    explicit CTimeout(EType type = eDefault);
+    CTimeout(EType type);
 
     /// Initialize timeout from CTimeSpan.
     ///
@@ -2348,6 +2352,9 @@ bool CTimeSpan::operator<= (const CTimeSpan& t) const
 //
 
 inline
+CTimeout::CTimeout(void) { Set(eDefault); }
+
+inline
 CTimeout::CTimeout(EType type) { Set(type); }
 
 inline
@@ -2384,18 +2391,6 @@ inline
 bool CTimeout::operator!= (const CTimeout& t) const
 {
     return !(*this == t);
-}
-
-inline
-bool CTimeout::operator>= (const CTimeout& t) const
-{
-    return !(*this < t);
-}
-
-inline
-bool CTimeout::operator<= (const CTimeout& t) const
-{
-    return !(*this > t);
 }
 
 

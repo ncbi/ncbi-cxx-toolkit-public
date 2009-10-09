@@ -1363,7 +1363,7 @@ static void s_TestTimeout(void)
     double        ds;
     CTimeout      tmo_default;
     CTimeout      tmo_infinite(CTimeout::eInfinite);
-    CTimeout      tmo_zero(0,0);
+    CTimeout      tmo_zero(CTimeout::eZero);
 
     // Special values
     {{
@@ -1483,9 +1483,14 @@ static void s_TestTimeout(void)
         assert(ti == tmo_infinite);
         assert(tmo_infinite == tmo_infinite);
 
-        // We cannot compare defasult timeout
+        // Default timeout is almost not comparable
         try {
             assert(t0 == tmo_default);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+        try {
+            (t1 < tmo_default);
             _TROUBLE;
         }
         catch (CTimeException&) {}
@@ -1509,6 +1514,32 @@ static void s_TestTimeout(void)
             _TROUBLE;
         }
         catch (CTimeException&) {}
+        try {
+            (tmo_default > tmo_zero);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+        try {
+            (tmo_default < tmo_infinite);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+        try {
+            (tmo_zero < tmo_default);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+        try {
+            (tmo_infinite > tmo_default);
+            _TROUBLE;
+        }
+        catch (CTimeException&) {}
+
+        // Only >= and <= can be applied in some cases
+        assert(tmo_infinite >= tmo_default);
+        assert(tmo_default  <= tmo_infinite);
+        assert(tmo_default  >= tmo_zero);
+        assert(tmo_zero     <= tmo_default);
     }}
 
     // Assignment
