@@ -62,6 +62,7 @@ class CWig2tableApplication : public CNcbiApplication
     void ResetData(void);
     void SetChrom(const string& chrom);
 
+    void SkipEOL(void);
     string GetLine(void);
     pair<string, string> GetParam(const string& s) const;
     double EstimateSize(size_t rows, bool fixed_span) const;
@@ -85,6 +86,13 @@ class CWig2tableApplication : public CNcbiApplication
             return m_Pos < v.m_Pos;
         }
     };
+
+    void AddValue(const SValueInfo& value) {
+        if ( !m_OmitZeros || value.m_Value != 0 ) {
+            m_Values.push_back(value);
+        }
+    }
+
     typedef vector<SValueInfo> TValues;
     TValues m_Values;
 
@@ -347,6 +355,17 @@ void CWig2tableApplication::ResetData(void)
 }
 
 
+inline void CWig2tableApplication::SkipEOL(void)
+{
+    int c;
+    while ( (c = fgetc(m_Input)) != EOF && c != '\n' ) {
+        if ( !isspace(c) ) {
+            ERR_POST(Fatal << "Extra text in line: "<<char(c));
+        }
+    }
+}
+
+
 string CWig2tableApplication::GetLine()
 {
     string line;
@@ -451,9 +470,8 @@ void CWig2tableApplication::ReadFixedStep(void)
     value.m_Pos = start;
     value.m_Span = span;
     while ( fscanf(m_Input, "%lf", &value.m_Value) == 1 ) {
-        if ( !m_OmitZeros || value.m_Value != 0 ) {
-            m_Values.push_back(value);
-        }
+        SkipEOL();
+        AddValue(value);
         value.m_Pos += step;
     }
 }
@@ -484,9 +502,8 @@ void CWig2tableApplication::ReadVariableStep(void)
     SValueInfo value;
     value.m_Span = span;
     while ( fscanf(m_Input, "%u%lf", &value.m_Pos, &value.m_Value) == 2 ) {
-        if ( !m_OmitZeros || value.m_Value != 0 ) {
-            m_Values.push_back(value);
-        }
+        SkipEOL();
+        AddValue(value);
     }
 }
 
@@ -501,11 +518,10 @@ void CWig2tableApplication::ReadBedLine(const char* chrom)
                 &value.m_Pos, &value.m_Span, &value.m_Value) != 3 ) {
         ERR_POST(Fatal << "Failed to parse BED graph line");
     }
+    SkipEOL();
     value.m_Span -= value.m_Pos;
     value.m_Pos += 1;
-    if ( !m_OmitZeros || value.m_Value != 0 ) {
-        m_Values.push_back(value);
-    }
+    AddValue(value);
 }
 
 
@@ -539,9 +555,11 @@ int CWig2tableApplication::Run(void)
         (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                               args["out"].AsOutputFile()));
 
-    char buf[1024];
-    while ( !feof(m_Input) && fscanf(m_Input, "%1023s", buf) == 1 ) {
-        if ( strlen(buf) >= 1023 ) {
+    const size_t BAD_ID_LEN = 1023;
+    const char* BAD_ID_FMT = "%1023s"; // same number as in BAD_ID_LEN
+    char buf[BAD_ID_LEN+1];
+    while ( !feof(m_Input) && fscanf(m_Input, BAD_ID_FMT, buf) == 1 ) {
+        if ( strlen(buf) >= BAD_ID_LEN ) {
             ERR_POST(Fatal << "Too long identifier: "<<buf);
         }
         if ( buf[0] == '#' ) { // comment line
