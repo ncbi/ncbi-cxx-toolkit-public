@@ -47,8 +47,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/readers/idmapper.hpp>
 
-#include <cmath>
-
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 
@@ -301,7 +299,7 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
                 if ( span_ptr ) {
                     span_ptr->push_back(it->m_Span);
                 }
-                int val = int(round((it->m_Value-min)*mul));
+                int val = int((it->m_Value-min)*mul+.5);
                 values->push_back(val);
             }
             col_val->SetData().SetBytes().push_back(values.release());
@@ -315,7 +313,7 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
                 if ( span_ptr ) {
                     span_ptr->push_back(it->m_Span);
                 }
-                int val = int(round((it->m_Value-min)*mul));
+                int val = int((it->m_Value-min)*mul+.5);
                 values.push_back(val);
             }
         }
