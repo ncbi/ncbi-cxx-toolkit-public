@@ -44,7 +44,7 @@
 
 #include <objects/seqtable/seqtable__.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 USING_SCOPE(ncbi);
@@ -185,14 +185,24 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
 
     table.SetFeat_type(0);
 
+    CRef<CSeq_id> chrom_id(new CSeq_id(CSeq_id::e_Local, m_ChromId));
+    if ( m_IdMapper ) {
+        m_IdMapper->MapObject(*chrom_id);
+    }
+
+    CRef<CSeq_loc> table_loc(new CSeq_loc);
+    { // Seq-table location
+        CRef<CSeqTable_column> col_id(new CSeqTable_column);
+        table.SetColumns().push_back(col_id);
+        col_id->SetHeader().SetField_name("Seq-table location");
+        col_id->SetDefault().SetLoc(*table_loc);
+    }
+
     { // Seq-id
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table.SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
-        col_id->SetDefault().SetId().Set(CSeq_id::e_Local, m_ChromId);
-        if ( m_IdMapper ) {
-            m_IdMapper->MapObject(col_id->SetDefault());
-        }
+        col_id->SetDefault().SetId(*chrom_id);
     }
     
     // position
@@ -231,6 +241,16 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
 
     if ( !sorted ) {
         sort(m_Values.begin(), m_Values.end());
+    }
+
+    if ( m_Values.empty() ) {
+        table_loc->SetEmpty(*chrom_id);
+    }
+    else {
+        CSeq_interval& interval = table_loc->SetInt();
+        interval.SetId(*chrom_id);
+        interval.SetFrom(m_Values.front().m_Pos);
+        interval.SetTo(m_Values.back().m_Pos + m_Values.back().m_Span - 1);
     }
 
     if ( m_JoinSame && size ) {
