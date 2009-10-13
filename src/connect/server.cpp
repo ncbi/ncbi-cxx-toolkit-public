@@ -43,11 +43,6 @@
 BEGIN_NCBI_SCOPE
 
 
-typedef IServer_ConnectionBase TConnBase;
-typedef CServer_Connection     TConnection;
-typedef CServer_Listener       TListener;
-
-
 /////////////////////////////////////////////////////////////////////////////
 // IServer_MessageHandler implementation
 void IServer_MessageHandler::OnRead(void)
@@ -136,19 +131,19 @@ public:
     CAcceptRequest(EServIO_Event event,
                    CServer_ConnectionPool& conn_pool,
                    const STimeout* timeout,
-                   TListener* listener,
+                   CServer_Listener* listener,
                    int request_id);
     virtual void Process(void);
     virtual void Cancel(void);
 private:
-    TConnection* m_Connection;
-    int          m_RequestId;
+    CServer_Connection* m_Connection;
+    int                 m_RequestId;
 } ;
 
 CAcceptRequest::CAcceptRequest(EServIO_Event event,
                                CServer_ConnectionPool& conn_pool,
                                const STimeout* timeout,
-                               TListener* listener,
+                               CServer_Listener* listener,
                                int request_id) :
         CServer_Request(event, conn_pool, timeout),
         m_Connection(NULL),
@@ -225,20 +220,20 @@ void CAcceptRequest::Cancel(void)
 class CServerConnectionRequest : public CServer_Request
 {
 public:
-    CServerConnectionRequest(EServIO_Event event,
-               CServer_ConnectionPool& conn_pool,
-               const STimeout* timeout,
-               TConnection* connection,
-               int request_id) :
-        CServer_Request(event, conn_pool, timeout),
+    CServerConnectionRequest(EServIO_Event           event,
+                             CServer_ConnectionPool& conn_pool,
+                             const STimeout*         timeout,
+                             CServer_Connection*     connection,
+                             int                     request_id)
+    : CServer_Request(event, conn_pool, timeout),
         m_Connection(connection),
         m_RequestId(request_id)
         { }
     virtual void Process(void);
     virtual void Cancel(void);
 private:
-    TConnection* m_Connection;
-    int          m_RequestId;
+    CServer_Connection* m_Connection;
+    int                 m_RequestId;
 } ;
 
 
@@ -273,9 +268,10 @@ void CServerConnectionRequest::Cancel(void)
 
 /////////////////////////////////////////////////////////////////////////////
 // CServer_Listener
-CStdRequest* TListener::CreateRequest(EServIO_Event event,
-                                      CServer_ConnectionPool& conn_pool,
-                                      const STimeout* timeout, int request_id)
+CStdRequest*
+CServer_Listener::CreateRequest(EServIO_Event event,
+                                CServer_ConnectionPool& conn_pool,
+                                const STimeout* timeout, int request_id)
 {
     return new CAcceptRequest(event, conn_pool, timeout, this, request_id);
 }
@@ -283,9 +279,11 @@ CStdRequest* TListener::CreateRequest(EServIO_Event event,
 
 /////////////////////////////////////////////////////////////////////////////
 // CServer_Connection
-CStdRequest* TConnection::CreateRequest(EServIO_Event event,
-                                        CServer_ConnectionPool& conn_pool,
-                                        const STimeout* timeout, int request_id)
+CStdRequest*
+CServer_Connection::CreateRequest(EServIO_Event           event,
+                                  CServer_ConnectionPool& conn_pool,
+                                  const STimeout*         timeout,
+                                  int                     request_id)
 {
     // Pull out socket from poll vector
     // See CServerConnectionRequest::Process and
@@ -296,18 +294,12 @@ CStdRequest* TConnection::CreateRequest(EServIO_Event event,
         event, conn_pool, timeout, this, request_id);
 }
 
-bool TConnection::IsOpen(void)
+bool CServer_Connection::IsOpen(void)
 {
-    // GetStatus should not be called with eIO_Open parameter because it
-    // checks only that we successfully opened socket and didn't close it.
-    // But eIO_Read and eIO_Write check that we can read and write into the
-    // socket which will not be true if socket e.g. closed by the peer.
-    m_Open = m_Open  &&  GetStatus(eIO_Read)  == eIO_Success
-                     &&  GetStatus(eIO_Write) == eIO_Success;
     return m_Open;
 }
 
-void TConnection::OnSocketEvent(EServIO_Event event)
+void CServer_Connection::OnSocketEvent(EServIO_Event event)
 {
     if (event == (EServIO_Event) -1) {
         m_Handler->OnTimer();
@@ -324,12 +316,6 @@ void TConnection::OnSocketEvent(EServIO_Event event)
             m_Handler->OnRead();
         if (eServIO_Write & event)
             m_Handler->OnWrite();
-        // We don't need here to check GetStatus(eIO_Open), it is in IsOpen
-        // method, but we need to check success of last read/write operations
-        // after them.
-        m_Open = m_Open
-                 &&  GetStatus(eIO_Read)  == eIO_Success
-                 &&  GetStatus(eIO_Write) == eIO_Success;
     }
 }
 
@@ -356,8 +342,8 @@ CServer::~CServer()
 void CServer::AddListener(IServer_ConnectionFactory* factory,
                           unsigned short port)
 {
-    m_ConnectionPool->Add(new TListener(factory, port),
-                    CServer_ConnectionPool::eListener);    
+    m_ConnectionPool->Add(new CServer_Listener(factory, port),
+                          CServer_ConnectionPool::eListener);
 }
 
 
@@ -476,7 +462,8 @@ void CServer::Run(void)
 //            _TRACE("Inserting selected requests");
             ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
                 if (!it->m_REvent) continue;
-                TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
+                IServer_ConnectionBase* conn_base =
+                    dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
                 _ASSERT(conn_base);
                 ++request_id;
                 CreateRequest(conn_base,

@@ -206,11 +206,9 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
     TData& data = const_cast<TData&>(m_Data);
     if (data.empty())
         return;
-    //int n_connections = 0;
     list<TConnBase*> to_delete;
     NON_CONST_ITERATE(TData, it, data) {
         SPerConnInfo& info = it->second;
-        //if (info.type != eListener) ++n_connections;
         if (info.type != eInactiveSocket  &&  info.type != eDeferredSocket
             &&  info.type != eClosedSocket)
         {
@@ -220,15 +218,18 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
         if (info.type == eClosedSocket) {
             to_delete.push_back(it->first);
         }
-        else if (!it->first->IsOpen() || info.expiration <= now) {
-            if (info.expiration <= now) {
-                _TRACE("Timeout on " << dynamic_cast<TConnBase *>(it->first));
-                it->first->OnTimeout();
-                conn->OnSocketEvent(eServIO_OurClose);
-            } else {
-                _TRACE("Closed " << dynamic_cast<TConnBase *>(it->first));
-                conn->OnSocketEvent(eServIO_ClientClose);
-            }
+        else if (!it->first->IsOpen()) {
+            // This connection was closed by the client earlier in CServer::Run
+            // after Poll returned eIO_Close which was converted into
+            // eServIO_ClientClose. Then during OnSocketEvent(eServIO_ClientClose)
+            // it was marked as closed.
+            // Here we just clean it up from the connection pool.
+            to_delete.push_back(it->first);
+        }
+        else if (info.expiration <= now) {
+            _TRACE("Timeout on " << dynamic_cast<TConnBase *>(it->first));
+            it->first->OnTimeout();
+            conn->OnSocketEvent(eServIO_OurClose);
             conn->Abort();
             to_delete.push_back(it->first);
         }
@@ -239,14 +240,10 @@ void CServer_ConnectionPool::Clean(vector<IServer_ConnectionBase*>& revived_conn
             revived_conns.push_back(it->first);
         }
     }
-    //int n_cleaned = 0;
     ITERATE(list<TConnBase*>, it, to_delete) {
         data.erase(*it);
         delete *it;
-        //++n_cleaned;
     }
-    // DEBUG if (n_cleaned)
-    //  printf("Cleaned %d connections out of %d\n", n_cleaned, n_connections);
 }
 
 
