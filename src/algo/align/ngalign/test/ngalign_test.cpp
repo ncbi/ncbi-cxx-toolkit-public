@@ -148,13 +148,18 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     CRef<CSeq_id> QueryId(new CSeq_id(QueryIdStr));
     CRef<CSeq_id> SubjectId(new CSeq_id(SubjectIdStr));
 
-    string BlastParams = TestCases->Get("consts", "blast");
-    string Filter0Str = TestCases->Get("consts", "filter0");
-    string Filter1Str = TestCases->Get("consts", "filter1");
-    string Filter2Str = TestCases->Get("consts", "filter2");
-    string Filter3Str = TestCases->Get("consts", "filter3");
+    int FilterCount = TestCases->GetInt("consts", "filter_count", 0);
+    list<string> Filters;
+    for(int Loop = 0; Loop < FilterCount; Loop++) {
+        string Curr = TestCases->Get("consts", "filter"+NStr::IntToString(Loop));
+        Filters.push_back(Curr);
+    }
     string NMerFile = TestCases->Get("consts", "nmer");
     string Operation = TestCases->Get(Case, "operation");
+    list<string> BlastParams;
+    BlastParams.push_back(TestCases->Get("consts", "blast"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
+ //   BlastParams.push_back(TestCases->Get("consts", "blast3"));
 
     if(Operation == "skip")
         return;
@@ -165,13 +170,19 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
             0, 1, 1, 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, "mean", 0, false, 0, false));
     }
 
-    CRef<CSeqIdListSet> Query(new CSeqIdListSet), Subject(new CSeqIdListSet);
-    CRef<CQueryFilter> QueryFilter0(new CQueryFilter(0, Filter0Str));
-    CRef<CQueryFilter> QueryFilter1(new CQueryFilter(1, Filter1Str));
-    CRef<CQueryFilter> QueryFilter2(new CQueryFilter(2, Filter2Str));
-    CRef<CQueryFilter> QueryFilter3(new CQueryFilter(3, Filter3Str));
-    CRef<CBlastAligner> BlastAligner(new CBlastAligner(BlastParams, 1));
+    CRef<CSeqIdListSet> Query(new CSeqIdListSet);
+    CRef<CSeqIdListSet> Subject(new CSeqIdListSet);
+    list<CRef<CQueryFilter> > QueryFilters;
+    int Rank = 0;
+    ITERATE(list<string>, StrIter, Filters) {
+        CRef<CQueryFilter> CurrFilter(new CQueryFilter(Rank, *StrIter));
+        Rank++;
+        QueryFilters.push_back(CurrFilter);
+    }
+    list<CRef<CBlastAligner> > BlastAligners;
+    BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
     CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 1));
+    CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
 
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
@@ -190,13 +201,17 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
     Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
 
-    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter0.GetPointer()));
-    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter1.GetPointer()));
-    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter2.GetPointer()));
-    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter3.GetPointer()));
+    NON_CONST_ITERATE(list<CRef<CQueryFilter> >, FilterIter, QueryFilters) {
+        Aligner.AddFilter(&**FilterIter);
+    }
 
-    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastAligner.GetPointer()));
-    Aligner.AddAligner(CRef<IAlignmentFactory>(InstancedAligner.GetPointer()));
+//    Aligner.AddAligner(CRef<IAlignmentFactory>(BlastListAligner.GetPointer()));
+    NON_CONST_ITERATE(list<CRef<CBlastAligner> >, BlastIter, BlastAligners) {
+        (*BlastIter)->SetSoftFiltering(30);
+        Aligner.AddAligner(&**BlastIter);
+    }
+    Aligner.AddAligner(InstancedAligner.GetPointer());
+    Aligner.AddAligner(MergeAligner.GetPointer());
 
     Aligner.AddScorer(CRef<IAlignmentScorer>(BlastScorer.GetPointer()));
     Aligner.AddScorer(CRef<IAlignmentScorer>(PctIdentScorer.GetPointer()));
@@ -251,7 +266,8 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     string Operation = TestCases->Get(Case, "operation");
     list<string> BlastParams;
     BlastParams.push_back(TestCases->Get("consts", "blast"));
- //   BlastParams.push_back(TestCases->Get("consts", "blast2"));
+    BlastParams.push_back(TestCases->Get("consts", "blast2"));
+ //   BlastParams.push_back(TestCases->Get("consts", "blast3"));
 
     if(Operation == "skip")
         return;
@@ -360,7 +376,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     list<string> BlastParams;
     BlastParams.push_back(TestCases->Get("consts", "blast"));
     BlastParams.push_back(TestCases->Get("consts", "blast2"));
-    BlastParams.push_back(TestCases->Get("consts", "blast3"));
+//    BlastParams.push_back(TestCases->Get("consts", "blast3"));
 
     if(Operation == "skip")
         return;
@@ -382,7 +398,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     }
     list<CRef<CBlastAligner> > BlastAligners;
     BlastAligners = CBlastAligner::CreateBlastAligners(BlastParams, 1);
-    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(300, 1));
+    CRef<CInstancedAligner> InstancedAligner(new CInstancedAligner(600, 1));
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
     CRef<CBlastScorer> BlastScorer(new CBlastScorer);
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
@@ -418,12 +434,6 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     Aligner.SetQuery(CRef<ISequenceSet>(Query.GetPointer()));
     Aligner.SetSubject(CRef<ISequenceSet>(Subject.GetPointer()));
 
-
-//    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter0.GetPointer()));
-//    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter1.GetPointer()));
-//    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter2.GetPointer()));
-//    Aligner.AddFilter(CRef<IAlignmentFilter>(QueryFilter3.GetPointer()));
-
     NON_CONST_ITERATE(list<CRef<CQueryFilter> >, FilterIter, QueryFilters) {
         Aligner.AddFilter(&**FilterIter);
     }
@@ -435,7 +445,7 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
             (*BlastIter)->SetSoftFiltering(30);
             First = false;
         } else {
-            (*BlastIter)->SetSoftFiltering(-1);
+            (*BlastIter)->SetSoftFiltering(CBlastDbSet::eNoSoftFiltering);
         }
         Aligner.AddAligner(&**BlastIter);
     }

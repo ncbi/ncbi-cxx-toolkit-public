@@ -78,6 +78,10 @@ class CBlastDbSet : public ISequenceSet
 public:
     CBlastDbSet(const string& BlastDb);
 
+    enum {
+        eNoSoftFiltering = -1
+    };
+
     void SetSoftFiltering(int Filter) { m_Filter = Filter; }
 
     CRef<blast::IQueryFactory> CreateQueryFactory(

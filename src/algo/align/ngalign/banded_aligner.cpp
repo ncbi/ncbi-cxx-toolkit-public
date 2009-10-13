@@ -356,7 +356,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
     CRef<CSeq_align_set> ResultSet(new CSeq_align_set);
 
     vector<CRef<CInstance> > Instances;
-//    x_GetCleanupInstances(QueryAligns, Scope, Instances);
+    x_GetCleanupInstances(QueryAligns, Scope, Instances);
     x_GetDistanceInstances(QueryAligns, Scope, Instances);
     if(Instances.empty()) {
         ERR_POST(Info << " No instances of " << QueryAligns.GetQueryId()->AsFastaString() << " found.");
@@ -376,7 +376,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
 
         const CInstance& Inst = **InstIter;
 
-        if( (Inst.Query.GetTo() - Inst.Query.GetFrom()) <= (LongestInstance*0.5)) {
+        if( (Inst.Query.GetTo() - Inst.Query.GetFrom()) <= (LongestInstance*0.005)) {
             continue;
         }
 
@@ -415,6 +415,8 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
         Result->SetType() = CSeq_align::eType_partial;
         ResultSet->Set().push_back(Result);
 
+        ERR_POST(Info << " Found alignment ");
+        cerr << MSerial_AsnText << *Result;
 /*
         // CContigAssembly::BestLocalSubAlignmentrescores, and finds better-scoring
         // sub-regions of the Denseg, and keeps only the subregion.
@@ -491,7 +493,8 @@ bool s_ProgressCallback(CNWAligner::SProgressInfo* ProgressInfo)
 
     if(TimeEstimated > CallbackData->TimeOutSeconds) {
         ERR_POST(Error << " Instanced Aligner expected to take " << TimeEstimated
-                       << " seconds. More than 5 minutes. Terminating Early.");
+                       << " seconds. More than " << (CallbackData->TimeOutSeconds/60.0)
+                       << " minutes. Terminating Early.");
         CallbackData->TimedOut = true;
         return true;
     }
@@ -615,170 +618,264 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
 }
 
 
-
-void CInstancedAligner::x_GetCleanupInstances(CQuerySet& QueryAligns, CScope& Scope,
-                                       vector<CRef<CInstance> >& Instances)
+CRef<objects::CSeq_align_set>
+CInstancedAligner::x_RunCleanup(const objects::CSeq_align_set& AlignSet,
+                                objects::CScope& Scope)
 {
     CAlignCleanup Cleaner(Scope);
     //Cleaner.FillUnaligned(true);
 
+    list<CConstRef<CSeq_align> > In;
+    ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet.Get()) {
+        CConstRef<CSeq_align> Align(*AlignIter);
+        In.push_back(Align);
+    }
+
+    CRef<CSeq_align_set> Out(new CSeq_align_set);
+
+    try {
+        Cleaner.Cleanup(In, Out->Set());
+    } catch(CException& e) {
+        ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
+        return CRef<CSeq_align_set>();
+    }
+
+    NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
+        CDense_seg& Denseg = (*AlignIter)->SetSegs().SetDenseg();
+
+        if(!Denseg.CanGetStrands() || Denseg.GetStrands().empty()) {
+            Denseg.SetStrands().resize(Denseg.GetDim()*Denseg.GetNumseg(), eNa_strand_plus);
+        }
+
+        if(Denseg.GetSeqStrand(1) != eNa_strand_plus) {
+            Denseg.Reverse();
+        }
+        //CRef<CDense_seg> Filled = Denseg.FillUnaligned();
+        //Denseg.Assign(*Filled);
+    }
+
+    return Out;
+}
+
+
+void CInstancedAligner::x_GetCleanupInstances(CQuerySet& QueryAligns, CScope& Scope,
+                                       vector<CRef<CInstance> >& Instances)
+{
     NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter,
                       QueryAligns.Get()) {
 
         CRef<CSeq_align_set> Set = SubjectIter->second;
-        list<CConstRef<CSeq_align> > In;
-        ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
-            CConstRef<CSeq_align> Align(*AlignIter);
-            In.push_back(Align);
-        }
+        CRef<CSeq_align_set> Out;
 
-        CRef<CSeq_align_set> Out(new CSeq_align_set);
-
-        try {
-            Cleaner.Cleanup(In, Out->Set());
-        } catch(CException& e) {
-            ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
-            break;
-        }
-
-        NON_CONST_ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
-            CDense_seg& Denseg = (*AlignIter)->SetSegs().SetDenseg();
-
-            if(!Denseg.CanGetStrands() || Denseg.GetStrands().empty()) {
-                Denseg.SetStrands().resize(Denseg.GetDim()*Denseg.GetNumseg(), eNa_strand_plus);
-            }
-
-            if(Denseg.GetSeqStrand(1) != eNa_strand_plus) {
-                Denseg.Reverse();
-            }
-            //CRef<CDense_seg> Filled = Denseg.FillUnaligned();
-            //Denseg.Assign(*Filled);
-        }
+        Out = x_RunCleanup(*Set, Scope);
 
         ITERATE(CSeq_align_set::Tdata, AlignIter, Out->Set()) {
-            CRef<CInstance> Inst(new CInstance);
-            Inst->Query.SetId().Assign((*AlignIter)->GetSeq_id(0));
-            Inst->Query.SetFrom((*AlignIter)->GetSeqStart(0));
-            Inst->Query.SetTo((*AlignIter)->GetSeqStop(0));
-            Inst->Query.SetStrand((*AlignIter)->GetSeqStrand(0));
-            Inst->Subject.SetId().Assign((*AlignIter)->GetSeq_id(1));
-            Inst->Subject.SetFrom((*AlignIter)->GetSeqStart(1));
-            Inst->Subject.SetTo((*AlignIter)->GetSeqStop(1));
-            Inst->Subject.SetStrand((*AlignIter)->GetSeqStrand(1));
+            CRef<CInstance> Inst(new CInstance(*AlignIter));
             Instances.push_back(Inst);
-            //Instances->Set().push_back(*AlignIter);
         }
     }
 
-    //return Instances;
 }
 
 
 
-CRef<CInstance> s_AlignToInstance(const CSeq_align& Align)
+CInstance::CInstance(CRef<CSeq_align> Align)
 {
-    CRef<CInstance> Inst(new CInstance);
+    Query.SetId().Assign(Align->GetSeq_id(0));
+    Subject.SetId().Assign(Align->GetSeq_id(1));
 
-    Inst->Query.SetId().Assign(Align.GetSeq_id(0));
-    Inst->Subject.SetId().Assign(Align.GetSeq_id(1));
+    Query.SetStrand() = Align->GetSeqStrand(0);
+    Subject.SetStrand() = Align->GetSeqStrand(1);
 
-    Inst->Query.SetStrand() = Align.GetSeqStrand(0);
-    Inst->Subject.SetStrand() = Align.GetSeqStrand(1);
+    Query.SetFrom() = Align->GetSeqStart(0);
+    Subject.SetFrom() = Align->GetSeqStart(1);
 
-    Inst->Query.SetFrom() = Align.GetSeqStart(0);
-    Inst->Subject.SetFrom() = Align.GetSeqStart(1);
+    Query.SetTo() = Align->GetSeqStop(0);
+    Subject.SetTo() = Align->GetSeqStop(1);
 
-    Inst->Query.SetTo() = Align.GetSeqStop(0);
-    Inst->Subject.SetTo() = Align.GetSeqStop(1);
-
-    return Inst;
+    Alignments.Set().push_back(Align);
 }
 
-CRef<CInstance> s_AlignSetToInstance(const CSeq_align_set& AlignSet)
+CInstance::CInstance(const CSeq_align_set& AlignSet)
 {
-    if(AlignSet.Get().empty())
-        return CRef<CInstance>();
+    Query.SetId().Assign(AlignSet.Get().front()->GetSeq_id(0));
+    Subject.SetId().Assign(AlignSet.Get().front()->GetSeq_id(1));
 
-    CRef<CInstance> Inst(new CInstance);
+    Query.SetStrand() = AlignSet.Get().front()->GetSeqStrand(0);
+    Subject.SetStrand() = AlignSet.Get().front()->GetSeqStrand(1);
 
-    Inst->Query.SetId().Assign(AlignSet.Get().front()->GetSeq_id(0));
-    Inst->Subject.SetId().Assign(AlignSet.Get().front()->GetSeq_id(1));
+    Query.SetFrom() = numeric_limits<TSeqPos>::max();
+    Subject.SetFrom() = numeric_limits<TSeqPos>::max();
 
-    Inst->Query.SetStrand() = AlignSet.Get().front()->GetSeqStrand(0);
-    Inst->Subject.SetStrand() = AlignSet.Get().front()->GetSeqStrand(1);
-
-    Inst->Query.SetFrom() = numeric_limits<TSeqPos>::max();
-    Inst->Subject.SetFrom() = numeric_limits<TSeqPos>::max();
-
-    Inst->Query.SetTo() = numeric_limits<TSeqPos>::min();
-    Inst->Subject.SetTo() = numeric_limits<TSeqPos>::min();
+    Query.SetTo() = numeric_limits<TSeqPos>::min();
+    Subject.SetTo() = numeric_limits<TSeqPos>::min();
 
     ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet.Get()) {
-        Inst->Query.SetFrom(min(Inst->Query.GetFrom(), (*AlignIter)->GetSeqStart(0)));
-        Inst->Subject.SetFrom(min(Inst->Subject.GetFrom(), (*AlignIter)->GetSeqStart(1)));
+        Query.SetFrom(min(Query.GetFrom(), (*AlignIter)->GetSeqStart(0)));
+        Subject.SetFrom(min(Subject.GetFrom(), (*AlignIter)->GetSeqStart(1)));
 
-        Inst->Query.SetTo(max(Inst->Query.GetTo(), (*AlignIter)->GetSeqStop(0)));
-        Inst->Subject.SetTo(max(Inst->Subject.GetTo(), (*AlignIter)->GetSeqStop(1)));
+        Query.SetTo(max(Query.GetTo(), (*AlignIter)->GetSeqStop(0)));
+        Subject.SetTo(max(Subject.GetTo(), (*AlignIter)->GetSeqStop(1)));
     }
-
-    return Inst;
 }
 
-bool s_CanMergeInstances(CScope& Scope, const CInstance& Inst, const CSeq_align& Align)
+
+bool CInstance::IsAlignmentContained(const CSeq_align& Align) const
 {
-    if(Inst.Subject.GetStrand() != Align.GetSeqStrand(1))
+    if(Query.GetStrand() != Align.GetSeqStrand(0) ||
+       Subject.GetStrand() != Align.GetSeqStrand(1))
         return false;
 
-    TSeqPos QueryLength = Scope.GetBioseqHandle(Inst.Query.GetId()).GetInst_Length();
-
-    TSeqPos SubjInstLength;
-
-    SubjInstLength = max(Inst.Subject.GetTo(), Align.GetSeqStop(1))
-                   - min(Inst.Subject.GetFrom(), Align.GetSeqStart(1))
-                   + 1;
-
-    if(SubjInstLength > (QueryLength*2) )
+    if( Align.GetSeqStart(0) >= Query.GetFrom() &&
+        Align.GetSeqStop(0)  <= Query.GetTo() &&
+        Align.GetSeqStart(1) >= Subject.GetFrom() &&
+        Align.GetSeqStop(1)  <= Subject.GetTo()) {
+        return true;
+    }
+    else {
         return false;
-
-    return true;
+    }
 }
 
-void s_MergeInstances(CInstance& Inst, const CSeq_align& Align)
-{
-    Inst.Query.SetFrom(min(Inst.Query.GetFrom(), Align.GetSeqStart(0)));
-    Inst.Subject.SetFrom(min(Inst.Subject.GetFrom(), Align.GetSeqStart(1)));
 
-    Inst.Query.SetTo(max(Inst.Query.GetTo(), Align.GetSeqStop(0)));
-    Inst.Subject.SetTo(max(Inst.Subject.GetTo(), Align.GetSeqStop(1)));
+int CInstance::GapDistance(const CSeq_align& Align) const
+{
+    int LongestGap = 0;
+    LongestGap = max((int)Align.GetSeqStart(0)-(int)Query.GetTo(), LongestGap);
+    LongestGap = max((int)Align.GetSeqStart(1)-(int)Subject.GetTo(), LongestGap);
+    LongestGap = max((int)Query.GetFrom()-(int)Align.GetSeqStop(0), LongestGap);
+    LongestGap = max((int)Subject.GetFrom()-(int)Align.GetSeqStop(1), LongestGap);
+   // cerr << "Longest Gap: " << LongestGap << endl;
+    return LongestGap;
+}
+
+
+void CInstance::MergeIn(const CRef<CSeq_align> Align)
+{
+    Query.SetFrom(min(Query.GetFrom(), Align->GetSeqStart(0)));
+    Subject.SetFrom(min(Subject.GetFrom(), Align->GetSeqStart(1)));
+
+    Query.SetTo(max(Query.GetTo(), Align->GetSeqStop(0)));
+    Subject.SetTo(max(Subject.GetTo(), Align->GetSeqStop(1)));
+
+    Alignments.Set().push_back(Align);
 }
 
 void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& Scope,
                                        vector<CRef<CInstance> >& Instances)
 {
+    typedef pair<CRef<CInstance>, CRef<CSeq_align_set> > TInstPair;
+
+    // Identify the best pct_coverage for every Subject Id.
+    // This will be used to filter out subjects with relatively low
+    // best pct_coverage, so that they can be skipped.
+    typedef map<string, double> TSubjectCoverage;
+    TSubjectCoverage BestCoverage;
+    double MaxCoverage = 0;
+    ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
+        CRef<CSeq_align_set> Set = SubjectIter->second;
+        string IdStr = Set->Get().front()->GetSeq_id(1).AsFastaString();
+        double SubjCoverage = 0;
+        ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
+            double PctCov;
+            (*AlignIter)->GetNamedScore("pct_coverage", PctCov);
+            SubjCoverage = max(SubjCoverage, PctCov);
+        }
+        BestCoverage[IdStr] = SubjCoverage;
+        MaxCoverage = max(SubjCoverage, MaxCoverage);
+    }
+
+    typedef vector<CRef<CInstance> > TInstVector;
     ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryAligns.Get()) {
 
-        vector<CRef<CInstance> > SubjInstances;
+        TInstVector SubjInstances;
 
         CRef<CSeq_align_set> Set = SubjectIter->second;
+        string SubjIdStr = Set->Get().front()->GetSeq_id(1).AsFastaString();
+        if(BestCoverage[SubjIdStr] < (MaxCoverage*0.10)) {
+            continue; // Skip any subject id that has less than 10% the best pct_coverage
+        }
+
+        // Group together alignments that are not contained within each other,
+        // but are within a 'small' gap distance of each other into initial
+        // instances
         ITERATE(CSeq_align_set::Tdata, AlignIter, Set->Get()) {
             bool Inserted = false;
-            NON_CONST_ITERATE(vector<CRef<CInstance> >, InstIter, SubjInstances) {
-                if(s_CanMergeInstances(Scope, **InstIter, **AlignIter)) {
-                    s_MergeInstances(**InstIter, **AlignIter);
+            bool Contained = false;
+            ITERATE(TInstVector, InstIter, SubjInstances) {
+                bool CurrContained = (*InstIter)->IsAlignmentContained(**AlignIter);
+                Contained |= CurrContained;
+            }
+            if(Contained)
+                continue;
+            NON_CONST_ITERATE(TInstVector, InstIter, SubjInstances) {
+                int GapDist = (*InstIter)->GapDistance(**AlignIter);
+                if(GapDist < 20000) {
+                    (*InstIter)->MergeIn(*AlignIter);
                     Inserted = true;
+                    break;
                 }
             }
             if(!Inserted) {
-                CRef<CInstance> Inst;
-                Inst = s_AlignToInstance(**AlignIter);
+                CRef<CInstance> Inst(new CInstance(*AlignIter));
                 SubjInstances.push_back(Inst);
             }
         }
 
-        copy(SubjInstances.begin(), SubjInstances.end(),
-            insert_iterator<vector<CRef<CInstance> > >(Instances, Instances.end()));
+        // For these initial instances, run CAlignCleanup on the instance
+        //  CSeq_align_sets. Then make instances from CAlignCleanup results.
+        TInstVector CleanedInstances;
+
+        ITERATE(TInstVector, InstIter, SubjInstances) {
+            // If the instance only has one alignment in it, skip it.
+            // we already have an identical BLAST result.
+            if((*InstIter)->Alignments.Get().size() <= 1)
+                continue;
+
+            CRef<CSeq_align_set> Cleaned;
+            Cleaned = x_RunCleanup((*InstIter)->Alignments, Scope);
+            if(!Cleaned.IsNull()) {
+                ITERATE(CSeq_align_set::Tdata, AlignIter, Cleaned->Get()) {
+                    // If any of these cleaned alignments are dupes of existing alignments,
+                    // skip them
+                    bool DupeFound = false;
+                    ITERATE(CSeq_align_set::Tdata, SourceIter, (*InstIter)->Alignments.Get()) {
+                        if( (*AlignIter)->GetSeqStart(0) == (*SourceIter)->GetSeqStart(0) &&
+                            (*AlignIter)->GetSeqStart(1) == (*SourceIter)->GetSeqStart(1) &&
+                            (*AlignIter)->GetSeqStop(0) == (*SourceIter)->GetSeqStop(0) &&
+                            (*AlignIter)->GetSeqStop(1) == (*SourceIter)->GetSeqStop(1)) {
+                            DupeFound = true;
+                            break;
+                        }
+                    }
+                    if(DupeFound)
+                        continue;
+
+                    // And if any of these cleaned alignments are contained in
+                    // established instances, throw them out too.
+                    bool Contained = false;
+                    ITERATE(TInstVector, CleanIter, CleanedInstances) {
+                        bool Curr = (*CleanIter)->IsAlignmentContained(**AlignIter);
+                        Contained |= Curr;
+                    }
+                    if(Contained)
+                        continue;
+
+                    // Any Cleaned Seq_align that got this far is a potential instance.
+                    CRef<CInstance> Inst(new CInstance(*AlignIter));
+                    CleanedInstances.push_back(Inst);
+                }
+            }
+        }
+
+        copy(CleanedInstances.begin(), CleanedInstances.end(),
+            insert_iterator<TInstVector>(Instances, Instances.end()));
     }
+
 }
+
+
+
 
 
 END_SCOPE(ncbi)
