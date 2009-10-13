@@ -166,6 +166,12 @@ void CAgpconvertApplication::Init(void)
     arg_desc->AddOptionalKey("sc", "source_comment",
                              "Source comment (for BioSource.subtype = other)",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ht", "haplotype",
+                             "Haplotype (for BioSource.subtype)",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("sex", "sex",
+                             "Sex/gender (for BioSource.subtype)",
+                             CArgDescriptions::eString);
 
 
     arg_desc->AddExtra
@@ -388,7 +394,8 @@ int CAgpconvertApplication::Run(void)
         ent_templ.SetSeq().SetDescr().Set().push_back(title_desc);
     }
     if (args["nt"] || args["on"] || args["sn"] || args["cm"]
-        || args["cn"] || args["cl"] || args["sc"]) {
+        || args["cn"] || args["cl"] || args["sc"] 
+        || args["ht"] || args["sex"]) {
         // consistency checks
         ITERATE (CSeq_descr::Tdata, desc,
                  ent_templ.GetSeq().GetDescr().Get()) {
@@ -399,7 +406,7 @@ int CAgpconvertApplication::Run(void)
         }
         if (args["chromosomes"]) {
             throw runtime_error("-chromosomes cannot be given with "
-                                "-nt, -on, -sn, -cm, -cn, -cl, or -sc");
+                                "-nt, -on, -sn, -cm, -cn, -cl, -sc, -ht or -sex");
         }
 
         // build a BioSource desc and add it to template
@@ -427,6 +434,18 @@ int CAgpconvertApplication::Run(void)
             sub_source = new CSubSource;
             sub_source->SetSubtype(CSubSource::eSubtype_other);
             sub_source->SetName(args["sc"].AsString());
+            source_desc->SetSource().SetSubtype().push_back(sub_source);
+        }
+        if (args["ht"]) {
+            sub_source = new CSubSource;
+            sub_source->SetSubtype(CSubSource::eSubtype_haplotype);
+            sub_source->SetName(args["ht"].AsString());
+            source_desc->SetSource().SetSubtype().push_back(sub_source);
+        }
+        if (args["sex"]) {
+            sub_source = new CSubSource;
+            sub_source->SetSubtype(CSubSource::eSubtype_sex);
+            sub_source->SetName(args["sex"].AsString());
             source_desc->SetSource().SetSubtype().push_back(sub_source);
         }
         if (args["sn"]) {
