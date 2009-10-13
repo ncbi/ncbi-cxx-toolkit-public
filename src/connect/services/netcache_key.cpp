@@ -42,13 +42,80 @@
 BEGIN_NCBI_SCOPE
 
 
-const string kNetCache_KeyPrefix = "NCID";
-CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
+static const char* kNetCache_KeyPrefix = "NCID";
+static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
 
+
+
+inline bool
+CNetCacheKey::x_ParseBlobKey(const string& key_str, CNetCacheKey* key_obj)
+{
+    // NCID_01_1_MYHOST_9000
+
+    const char* ch = key_str.c_str();
+
+    // prefix
+    const char* const prefix = ch;
+    while (*ch  &&  *ch != '_') {
+        ++ch;
+    }
+    if (*ch != '_'
+        ||  NStr::strncmp(prefix, kNetCache_KeyPrefix, ch - prefix) != 0)
+    {
+        return false;
+    }
+    ++ch;
+
+    // version
+    if (key_obj)
+        key_obj->m_Version = atoi(ch);
+    while (*ch  &&  isdigit(*ch)) {
+        ++ch;
+    }
+    if (*ch != '_') {
+        return false;
+    }
+    ++ch;
+
+    // id
+    if (key_obj)
+        key_obj->m_Id = atoi(ch);
+    while (*ch  &&  isdigit(*ch)) {
+        ++ch;
+    }
+    if (*ch != '_') {
+        return false;
+    }
+    ++ch;
+
+    // hostname
+    const char* const hostname = ch;
+    while (*ch  &&  *ch != '_') {
+        ++ch;
+    }
+    if (*ch != '_') {
+        return false;
+    }
+    if (key_obj)
+        key_obj->m_Host.assign(hostname, ch - hostname);
+    ++ch;
+
+    // port
+    if (key_obj)
+        key_obj->m_Port = atoi(ch);
+    while (*ch && isdigit(*ch)) {
+        ++ch;
+    }
+    if (*ch  &&  *ch != '_') {
+        return false;
+    }
+
+    return true;
+}
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
 {
-    if (!ParseBlobKey(key_str)) {
+    if (!x_ParseBlobKey(key_str, this)) {
         NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
 }
@@ -65,70 +132,6 @@ CNetCacheKey::operator string() const
     GenerateBlobKey(&key, m_Id, m_Host, m_Port);
     return key;
 }
-
-bool
-CNetCacheKey::ParseBlobKey(const string& key_str)
-{
-    // NCID_01_1_MYHOST_9000
-
-    const char* ch = key_str.c_str();
-    m_Host = kEmptyStr;
-
-    // prefix
-    string prefix;
-    for (;*ch && *ch != '_'; ++ch) {
-        prefix += *ch;
-    }
-    if (*ch != '_') {
-        return false;
-    }
-    ++ch;
-
-    if (prefix != kNetCache_KeyPrefix) {
-        return false;
-    }
-
-    // version
-    m_Version = atoi(ch);
-    while (*ch && isdigit(*ch)) {
-        ++ch;
-    }
-    if (*ch != '_') {
-        return false;
-    }
-    ++ch;
-
-    // id
-    m_Id = atoi(ch);
-    while (*ch && isdigit(*ch)) {
-        ++ch;
-    }
-    if (*ch != '_') {
-        return false;
-    }
-    ++ch;
-
-    // hostname
-    for (;*ch && *ch != '_'; ++ch) {
-        m_Host += *ch;
-    }
-    if (*ch != '_') {
-        return false;
-    }
-    ++ch;
-
-    // port
-    m_Port = atoi(ch);
-    while (*ch && isdigit(*ch)) {
-        ++ch;
-    }
-    if (*ch && *ch != '_') {
-        return false;
-    }
-
-    return true;
-}
-
 
 void
 CNetCacheKey::GenerateBlobKey(string*        key,
@@ -170,7 +173,6 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     *key += tmp;
 }
 
-
 unsigned int
 CNetCacheKey::GetBlobId(const string& key_str)
 {
@@ -181,10 +183,7 @@ CNetCacheKey::GetBlobId(const string& key_str)
 bool
 CNetCacheKey::IsValidKey(const string& key_str)
 {
-    CNetCacheKey key;
-    return key.ParseBlobKey(key_str);
+    return x_ParseBlobKey(key_str, NULL);
 }
-
-
 
 END_NCBI_SCOPE

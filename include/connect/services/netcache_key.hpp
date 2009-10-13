@@ -63,13 +63,9 @@ public:
                  unsigned int  _port,
                  unsigned int  ver = 1);
     /// Create the key out of string
-    /// @sa ParseBlobKey()
     explicit CNetCacheKey(const string& key_str);
 
     operator string() const;
-
-    /// Parse blob key string into a CNetCache_Key structure
-    bool ParseBlobKey(const string& key_str);
 
     /// Generate blob key string
     ///
@@ -97,6 +93,10 @@ public:
 
 private:
     CNetCacheKey(void);
+
+    /// Parse blob key string into a CNetCache_Key structure
+    static bool x_ParseBlobKey(const string& key_str, CNetCacheKey* key_obj);
+
 
     unsigned int m_Id;        ///< BLOB id
     string       m_Host;      ///< server name
