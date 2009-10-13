@@ -219,7 +219,9 @@ static const TRnaInfoPair kRnaInfoPairs[] = {
     RNA_INFO_PAIR(rRNA, rRNA, "rRNA", "rRNA"),
     RNA_INFO_PAIR(snRNA, snRNA, "snRNA", "snRNA"),
     RNA_INFO_PAIR(scRNA, scRNA, "scRNA", "scRNA"),
-    RNA_INFO_PAIR(snoRNA, snoRNA, "snoRNA", "snoRNA")
+    RNA_INFO_PAIR(snoRNA, snoRNA, "snoRNA", "snoRNA"),
+    RNA_INFO_PAIR(ncRNA, ncRNA, "ncRNA", "ncRNA"),
+    RNA_INFO_PAIR(tmRNA, tmRNA, "tmRNA", "tmRNA")
 };
 
 typedef CStaticArrayMap<CRNA_ref::EType,
@@ -261,8 +263,9 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
         }
     case e_Rna:
         {
+            CRNA_ref_Base::TType rna_type = GetRna().GetType();
             TRnaInfoMap::const_iterator it =
-                sc_RnaInfoPairs.find(GetRna().GetType());
+                sc_RnaInfoPairs.find(rna_type);
             if (it != sc_RnaInfoPairs.end()) {
                 m_FeatDataInfo = it->second;
             }
@@ -644,9 +647,11 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -656,6 +661,7 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -793,26 +799,48 @@ END_SUBTYPE
 
 START_SUBTYPE(ncRNA)
     ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(note);
     ADD_QUAL(ncRNA_class);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
+    ADD_QUAL(usedin);
 END_SUBTYPE
 
 START_SUBTYPE(tmRNA)
     ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
+    ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(tag_peptide);
+    ADD_QUAL(usedin);
 END_SUBTYPE
 
 START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
@@ -2226,6 +2254,7 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
     table[eSubtype_old_sequence].push_back(eQual_citation);
     table[eSubtype_operon].push_back(eQual_operon);
     table[eSubtype_source].push_back(eQual_organism);
+    table[eSubtype_ncRNA].push_back(eQual_ncRNA_class);
 
     // sort for binary_search
     NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
