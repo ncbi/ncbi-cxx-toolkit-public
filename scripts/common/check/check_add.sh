@@ -36,7 +36,7 @@ x_delim=" ____ "
 x_timeout_default=200
 
 # Convert source dir to relative path
-x_srcdir_rel=`echo "$x_srcdir" | sed -e 's%^.*/src/%%'`
+x_srcdir_rel=`echo "$x_srcdir" | perl -ne 's|^.*?/src/||; print'`
 
 # Check to necessity make test for this application
 if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
@@ -48,7 +48,7 @@ fi
 x_app=`grep '^ *APP[ =]' "$x_srcdir/Makefile.$x_test.app"`
 x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//'`
 
-x_tpath=`echo "$x_srcdir/$x_test" | sed 's%^.*/src/%%'`
+x_tpath=`echo "$x_srcdir/$x_test" | perl -ne 's|^.*?/src/||; print'`
 if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
    # Check ignore list
    x_use_ignore_list=`echo $x_use_ignore_list | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
