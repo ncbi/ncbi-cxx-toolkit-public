@@ -2114,102 +2114,103 @@ void CValidError_imp::ValidateSpecificHost
 		++feat_it;
 	}
 
+    if (org_rq_list.size() > 0) {
+	    CTaxon3 taxon3;
+	    taxon3.Init();
+	    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+	    if (reply) {
+		    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+		    vector< CRef<COrg_ref> >::iterator rq_it = org_rq_list.begin();
+		    // process descriptor responses
+		    desc_it = local_src_descs.begin();
+		    ctx_it = local_desc_ctxs.begin();
 
-	CTaxon3 taxon3;
-	taxon3.Init();
-	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
-	if (reply) {
-		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-		vector< CRef<COrg_ref> >::iterator rq_it = org_rq_list.begin();
-		// process descriptor responses
-		desc_it = local_src_descs.begin();
-		ctx_it = local_desc_ctxs.begin();
+		    while (reply_it != reply->GetReply().end()
+			       && rq_it != org_rq_list.end()
+			       && desc_it != local_src_descs.end()
+			       && ctx_it != local_desc_ctxs.end()) {
+    		    
+		        string host = (*rq_it)->GetTaxname();
+		        if ((*reply_it)->IsError()) {
+				    string err_str = "?";
+				    if ((*reply_it)->GetError().IsSetMessage()) {
+					    err_str = (*reply_it)->GetError().GetMessage();
+				    }
+				    if(NStr::Find(err_str, "ambiguous") != string::npos) {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+								    "Specific host value is ambiguous: " + host,
+								    **desc_it, *ctx_it);
+				    } else {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								    "Invalid value for specific host: " + host,
+								    **desc_it, *ctx_it);
+				    }
+			    } else if ((*reply_it)->IsData()) {
+				    if (s_HasMisSpellFlag((*reply_it)->GetData())) {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								    "Specific host value is misspelled: " + host,
+								    **desc_it, *ctx_it);
+				    } else if ((*reply_it)->GetData().IsSetOrg()) {
+                        string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
+					    if (!NStr::EqualCase(match, host)) {
+						    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+									    "Specific host value is incorrectly capitalized:  " + host,
+									    **desc_it, *ctx_it);
+					    }
+				    } else {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								    "Invalid value for specific host: " + host,
+								    **desc_it, *ctx_it);
+				    }
+			    }
+			    ++reply_it;
+			    ++rq_it;
+			    ++desc_it;
+			    ++ctx_it;
+		    }
 
-		while (reply_it != reply->GetReply().end()
-			   && rq_it != org_rq_list.end()
-			   && desc_it != local_src_descs.end()
-			   && ctx_it != local_desc_ctxs.end()) {
-		    
-		    string host = (*rq_it)->GetTaxname();
-		    if ((*reply_it)->IsError()) {
-				string err_str = "?";
-				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessage();
-				}
-				if(NStr::Find(err_str, "ambiguous") != string::npos) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-								"Specific host value is ambiguous: " + host,
-								**desc_it, *ctx_it);
-				} else {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								**desc_it, *ctx_it);
-				}
-			} else if ((*reply_it)->IsData()) {
-				if (s_HasMisSpellFlag((*reply_it)->GetData())) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Specific host value is misspelled: " + host,
-								**desc_it, *ctx_it);
-				} else if ((*reply_it)->GetData().IsSetOrg()) {
-                    string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
-					if (!NStr::EqualCase(match, host)) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-									"Specific host value is incorrectly capitalized:  " + host,
-									**desc_it, *ctx_it);
-					}
-				} else {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								**desc_it, *ctx_it);
-				}
-			}
-			++reply_it;
-			++rq_it;
-			++desc_it;
-			++ctx_it;
-		}
-
-		// TO DO - process feature responses
-        feat_it = local_src_feats.begin(); 
-		while (reply_it != reply->GetReply().end()
-			   && rq_it != org_rq_list.end()
-			   && feat_it != local_src_feats.end()) {
-		    string host = (*rq_it)->GetTaxname();
-		    if ((*reply_it)->IsError()) {
-				string err_str = "?";
-				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessage();
-				}
-				if(NStr::Find(err_str, "ambiguous") != string::npos) {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-								"Specific host value is ambiguous: " + host,
-								**feat_it);
-				} else {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								**feat_it);
-				}
-			} else if ((*reply_it)->IsData()) {
-				if (s_HasMisSpellFlag((*reply_it)->GetData())) {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Specific host value is misspelled: " + host,
-								**feat_it);
-				} else if ((*reply_it)->GetData().IsSetOrg()) {
-                    string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
-					if (!NStr::EqualCase(match, host)) {
-						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-									"Specific host value is incorrectly capitalized:  " + host,
-									**feat_it);
-					}
-				} else {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								**feat_it);
+		    // TO DO - process feature responses
+            feat_it = local_src_feats.begin(); 
+		    while (reply_it != reply->GetReply().end()
+			       && rq_it != org_rq_list.end()
+			       && feat_it != local_src_feats.end()) {
+		        string host = (*rq_it)->GetTaxname();
+		        if ((*reply_it)->IsError()) {
+				    string err_str = "?";
+				    if ((*reply_it)->GetError().IsSetMessage()) {
+					    err_str = (*reply_it)->GetError().GetMessage();
+				    }
+				    if(NStr::Find(err_str, "ambiguous") != string::npos) {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+								    "Specific host value is ambiguous: " + host,
+								    **feat_it);
+				    } else {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								    "Invalid value for specific host: " + host,
+								    **feat_it);
+				    }
+			    } else if ((*reply_it)->IsData()) {
+				    if (s_HasMisSpellFlag((*reply_it)->GetData())) {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								    "Specific host value is misspelled: " + host,
+								    **feat_it);
+				    } else if ((*reply_it)->GetData().IsSetOrg()) {
+                        string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
+					    if (!NStr::EqualCase(match, host)) {
+						    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+									    "Specific host value is incorrectly capitalized:  " + host,
+									    **feat_it);
+					    }
+				    } else {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+								    "Invalid value for specific host: " + host,
+								    **feat_it);
+                    }
                 }
+                ++reply_it;
+                ++rq_it;
+                ++feat_it;
             }
-            ++reply_it;
-            ++rq_it;
-            ++feat_it;
         }
     }
 }
@@ -2250,93 +2251,95 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 		++feat_it;
 	}
 
-	CTaxon3 taxon3;
-	taxon3.Init();
-	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
-	if (reply) {
-		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+    if (org_rq_list.size() > 0) {
+	    CTaxon3 taxon3;
+	    taxon3.Init();
+	    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+	    if (reply) {
+		    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
 
-		// process descriptor responses
-		desc_it = src_descs.begin();
-		ctx_it = desc_ctxs.begin();
+		    // process descriptor responses
+		    desc_it = src_descs.begin();
+		    ctx_it = desc_ctxs.begin();
 
-		while (reply_it != reply->GetReply().end()
-			   && desc_it != src_descs.end()
-			   && ctx_it != desc_ctxs.end()) {
-		    if ((*reply_it)->IsError()) {
-				string err_str = "?";
-				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessage();
-				}
-				PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup failed with message '" + err_str + "'",
-							**desc_it, *ctx_it);
-			} else if ((*reply_it)->IsData()) {
-				bool is_species_level = true;
-				bool force_consult = false;
-				bool has_nucleomorphs = false;
-				(*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-				if (!is_species_level) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup reports is_species_level FALSE",
-							**desc_it, *ctx_it);
-				}
-				if (force_consult) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup reports taxonomy consultation needed",
-							**desc_it, *ctx_it);
-				}
-                if ((*desc_it)->GetSource().IsSetGenome()
-					&& (*desc_it)->GetSource().GetGenome() == CBioSource::eGenome_nucleomorph
-					&& !has_nucleomorphs) {
-					PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup does not have expected nucleomorph flag",
-							**desc_it, *ctx_it);
-				}
-			}
-			++reply_it;
-			++desc_it;
-			++ctx_it;
-		}
-		// process feat responses
-        feat_it = src_feats.begin(); 
-		while (reply_it != reply->GetReply().end()
-			   && feat_it != src_feats.end()) {
-		    if ((*reply_it)->IsError()) {
-				string err_str = "?";
-				if ((*reply_it)->GetError().IsSetMessage()) {
-					err_str = (*reply_it)->GetError().GetMessage();
-				}
-				PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-						"Taxonomy lookup failed with message '" + err_str + "'",
-						**feat_it);
-			} else if ((*reply_it)->IsData()) {
-				bool is_species_level = true;
-				bool force_consult = false;
-				bool has_nucleomorphs = false;
-				(*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-				if (!is_species_level) {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup reports is_species_level FALSE",
-							**feat_it);
-				}
-				if (force_consult) {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup reports taxonomy consultation needed",
-							**feat_it);
-				}
-                if ((*feat_it)->GetData().GetBiosrc().IsSetGenome()
-					&& (*feat_it)->GetData().GetBiosrc().GetGenome() == CBioSource::eGenome_nucleomorph
-					&& !has_nucleomorphs) {
-					PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-							"Taxonomy lookup does not have expected nucleomorph flag",
-							**feat_it);
-				}
-			}
-			++reply_it;
-			++feat_it;
-		}            
-	}
+		    while (reply_it != reply->GetReply().end()
+			       && desc_it != src_descs.end()
+			       && ctx_it != desc_ctxs.end()) {
+		        if ((*reply_it)->IsError()) {
+				    string err_str = "?";
+				    if ((*reply_it)->GetError().IsSetMessage()) {
+					    err_str = (*reply_it)->GetError().GetMessage();
+				    }
+				    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup failed with message '" + err_str + "'",
+							    **desc_it, *ctx_it);
+			    } else if ((*reply_it)->IsData()) {
+				    bool is_species_level = true;
+				    bool force_consult = false;
+				    bool has_nucleomorphs = false;
+				    (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
+				    if (!is_species_level) {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup reports is_species_level FALSE",
+							    **desc_it, *ctx_it);
+				    }
+				    if (force_consult) {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup reports taxonomy consultation needed",
+							    **desc_it, *ctx_it);
+				    }
+                    if ((*desc_it)->GetSource().IsSetGenome()
+					    && (*desc_it)->GetSource().GetGenome() == CBioSource::eGenome_nucleomorph
+					    && !has_nucleomorphs) {
+					    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup does not have expected nucleomorph flag",
+							    **desc_it, *ctx_it);
+				    }
+			    }
+			    ++reply_it;
+			    ++desc_it;
+			    ++ctx_it;
+		    }
+		    // process feat responses
+            feat_it = src_feats.begin(); 
+		    while (reply_it != reply->GetReply().end()
+			       && feat_it != src_feats.end()) {
+		        if ((*reply_it)->IsError()) {
+				    string err_str = "?";
+				    if ((*reply_it)->GetError().IsSetMessage()) {
+					    err_str = (*reply_it)->GetError().GetMessage();
+				    }
+				    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+						    "Taxonomy lookup failed with message '" + err_str + "'",
+						    **feat_it);
+			    } else if ((*reply_it)->IsData()) {
+				    bool is_species_level = true;
+				    bool force_consult = false;
+				    bool has_nucleomorphs = false;
+				    (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
+				    if (!is_species_level) {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup reports is_species_level FALSE",
+							    **feat_it);
+				    }
+				    if (force_consult) {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup reports taxonomy consultation needed",
+							    **feat_it);
+				    }
+                    if ((*feat_it)->GetData().GetBiosrc().IsSetGenome()
+					    && (*feat_it)->GetData().GetBiosrc().GetGenome() == CBioSource::eGenome_nucleomorph
+					    && !has_nucleomorphs) {
+					    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+							    "Taxonomy lookup does not have expected nucleomorph flag",
+							    **feat_it);
+				    }
+			    }
+			    ++reply_it;
+			    ++feat_it;
+		    }            
+	    }
+    }
 
 	// Now look at specific-host values
     ValidateSpecificHost (src_descs, desc_ctxs, src_feats);
@@ -2727,8 +2730,8 @@ CCountryLatLonMap::CCountryLatLonMap (void)
 			vector<string> tokens;
 			NStr::Tokenize(line, "\t", tokens);
 			if (tokens.size() < 6 || (tokens.size() - 2) % 4 > 0) {
-				ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
-						   << "; disregarding");
+//				ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
+//						   << "; disregarding");
 			} else {
 				vector <CCountryBlock *> blocks_from_line;
 				bool line_ok = true;
@@ -2751,8 +2754,8 @@ CCountryLatLonMap::CCountryLatLonMap (void)
 						m_CountryBlockList.push_back(blocks_from_line[i]);
 					}
 				} else {
-					ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
-							   << "; disregarding");
+//					ERR_POST_X(1, Warning << "Malformed country_lat_lon.txt line " << line
+//							   << "; disregarding");
 					for (int i = 0; i < blocks_from_line.size(); i++) {
 						delete blocks_from_line[i];
 					}
@@ -9404,11 +9407,12 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
     int subtype = orgmod.GetSubtype();
 	string val = orgmod.GetSubname();
 
-    if (subtype == COrgMod::eSubtype_culture_collection
-		&& NStr::Find(val, ":") == string::npos) {
-		PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, 
-			       "Culture_collection should be structured, but is not",
-				   obj, ctx);
+    if (NStr::Find(val, ":") == string::npos) {
+      if (subtype == COrgMod::eSubtype_culture_collection) {
+		    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, 
+			           "Culture_collection should be structured, but is not",
+				       obj, ctx);
+      }
 		return;
 	}
 

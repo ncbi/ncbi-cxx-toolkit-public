@@ -1889,302 +1889,305 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
         }
     }
 
-    CSeq_data::E_Choice seqtyp = inst.IsSetSeq_data() ?
-        inst.GetSeq_data().Which() : CSeq_data::e_not_set;
-    switch (seqtyp) {
-    case CSeq_data::e_Iupacna:
-    case CSeq_data::e_Ncbi2na:
-    case CSeq_data::e_Ncbi4na:
-    case CSeq_data::e_Ncbi8na:
-    case CSeq_data::e_Ncbipna:
-        if (inst.IsAa()) {
-            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
-                     "Using a nucleic acid alphabet on a protein sequence",
-                     seq);
-            return;
-        }
-        break;
-    case CSeq_data::e_Iupacaa:
-    case CSeq_data::e_Ncbi8aa:
-    case CSeq_data::e_Ncbieaa:
-    case CSeq_data::e_Ncbipaa:
-    case CSeq_data::e_Ncbistdaa:
-        if (inst.IsNa()) {
-            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
-                     "Using a protein alphabet on a nucleic acid",
-                     seq);
-            return;
-        }
-        break;
-    default:
-        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
-                 "Sequence alphabet not set",
-                 seq);
-        return;
-    }
-
-    bool check_alphabet = false;
-    unsigned int factor = 1;
-    switch (seqtyp) {
-    case CSeq_data::e_Iupacaa:
-    case CSeq_data::e_Iupacna:
-    case CSeq_data::e_Ncbieaa:
-    case CSeq_data::e_Ncbistdaa:
-        check_alphabet = true;
-        break;
-    case CSeq_data::e_Ncbi8na:
-    case CSeq_data::e_Ncbi8aa:
-        break;
-    case CSeq_data::e_Ncbi4na:
-        factor = 2;
-        break;
-    case CSeq_data::e_Ncbi2na:
-        factor = 4;
-        break;
-    case CSeq_data::e_Ncbipna:
-        factor = 5;
-        break;
-    case CSeq_data::e_Ncbipaa:
-        factor = 21;
-        break;
-    default:
-        // Logically, should not occur
-        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
-                 "Sequence alphabet not set",
-                 seq);
-        return;
-    }
-    TSeqPos calc_len = inst.IsSetLength() ? inst.GetLength() : 0;
-    
-    if (calc_len % factor) {
-        calc_len += factor;
-    }
-    calc_len /= factor;
-
-    string s_len = NStr::UIntToString(inst.GetLength());
-
-    TSeqPos data_len = GetDataLen(inst);
-    string data_len_str = NStr::IntToString(data_len * factor);
-    if (calc_len > data_len) {
-        PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
-                 "Bioseq.seq_data too short [" + data_len_str +
-                 "] for given length [" + s_len + "]", seq);
-        return;
-    } else if (calc_len < data_len) {
-        PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
-                 "Bioseq.seq_data is larger [" + data_len_str +
-                 "] than given length [" + s_len + "]", seq);
-    }
-
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-    if (check_alphabet) {
-        unsigned int trailingX = 0;
-        size_t terminations = 0, dashes = 0;
-        bool gap_at_start = false, leading_x = false, found_lower = false;
-
-        CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        if (seqtyp == CSeq_data::e_Ncbieaa || seqtyp == CSeq_data::e_Ncbistdaa) {
-            sv.SetCoding (CSeq_data::e_Ncbieaa);
+    CSeq_data::E_Choice seqtyp = inst.IsSetSeq_data() ?
+        inst.GetSeq_data().Which() : CSeq_data::e_not_set;
+    if (seqtyp != CSeq_data::e_Gap) {
+        switch (seqtyp) {
+        case CSeq_data::e_Iupacna:
+        case CSeq_data::e_Ncbi2na:
+        case CSeq_data::e_Ncbi4na:
+        case CSeq_data::e_Ncbi8na:
+        case CSeq_data::e_Ncbipna:
+            if (inst.IsAa()) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
+                         "Using a nucleic acid alphabet on a protein sequence",
+                         seq);
+                return;
+            }
+            break;
+        case CSeq_data::e_Iupacaa:
+        case CSeq_data::e_Ncbi8aa:
+        case CSeq_data::e_Ncbieaa:
+        case CSeq_data::e_Ncbipaa:
+        case CSeq_data::e_Ncbistdaa:
+            if (inst.IsNa()) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
+                         "Using a protein alphabet on a nucleic acid",
+                         seq);
+                return;
+            }
+            break;
+        case CSeq_data::e_Gap:
+            break;
+        default:
+            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
+                     "Sequence alphabet not set",
+                     seq);
+            return;
         }
-        CSeqVector sv_res = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
 
-        size_t bad_cnt = 0;
-        TSeqPos pos = 1;
-        for ( CSeqVector_CI sv_iter(sv), sv_res_iter(sv_res); (sv_iter) && (sv_res_iter); ++sv_iter, ++sv_res_iter ) {
-            CSeqVector::TResidue res = *sv_iter;
-            CSeqVector::TResidue n_res = *sv_res_iter;
-            if ( !IsResidue(n_res) ) {
-                if (res == 'U' && bsh.IsSetInst_Mol() && bsh.GetInst_Mol() == CSeq_inst::eMol_rna) {
-                    // U is ok for RNA
-                } else {
-                    if ( ++bad_cnt > 10 ) {
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
-                            "More than 10 invalid residues. Checking stopped",
-                            seq);
-                        return;
+        bool check_alphabet = false;
+        unsigned int factor = 1;
+        switch (seqtyp) {
+        case CSeq_data::e_Iupacaa:
+        case CSeq_data::e_Iupacna:
+        case CSeq_data::e_Ncbieaa:
+        case CSeq_data::e_Ncbistdaa:
+            check_alphabet = true;
+            break;
+        case CSeq_data::e_Ncbi8na:
+        case CSeq_data::e_Ncbi8aa:
+            break;
+        case CSeq_data::e_Ncbi4na:
+            factor = 2;
+            break;
+        case CSeq_data::e_Ncbi2na:
+            factor = 4;
+            break;
+        case CSeq_data::e_Ncbipna:
+            factor = 5;
+            break;
+        case CSeq_data::e_Ncbipaa:
+            factor = 21;
+            break;
+        default:
+            // Logically, should not occur
+            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidAlphabet,
+                     "Sequence alphabet not set",
+                     seq);
+            return;
+        }
+        TSeqPos calc_len = inst.IsSetLength() ? inst.GetLength() : 0;
+        
+        if (calc_len % factor) {
+            calc_len += factor;
+        }
+        calc_len /= factor;
+
+        string s_len = NStr::UIntToString(inst.GetLength());
+
+        TSeqPos data_len = GetDataLen(inst);
+        string data_len_str = NStr::IntToString(data_len * factor);
+        if (calc_len > data_len) {
+            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
+                     "Bioseq.seq_data too short [" + data_len_str +
+                     "] for given length [" + s_len + "]", seq);
+            return;
+        } else if (calc_len < data_len) {
+            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
+                     "Bioseq.seq_data is larger [" + data_len_str +
+                     "] than given length [" + s_len + "]", seq);
+        }
+
+        if (check_alphabet) {
+            unsigned int trailingX = 0;
+            size_t terminations = 0, dashes = 0;
+            bool gap_at_start = false, leading_x = false, found_lower = false;
+
+            CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            if (seqtyp == CSeq_data::e_Ncbieaa || seqtyp == CSeq_data::e_Ncbistdaa) {
+                sv.SetCoding (CSeq_data::e_Ncbieaa);
+            }
+            CSeqVector sv_res = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
+
+            size_t bad_cnt = 0;
+            TSeqPos pos = 1;
+            for ( CSeqVector_CI sv_iter(sv), sv_res_iter(sv_res); (sv_iter) && (sv_res_iter); ++sv_iter, ++sv_res_iter ) {
+                CSeqVector::TResidue res = *sv_iter;
+                CSeqVector::TResidue n_res = *sv_res_iter;
+                if ( !IsResidue(n_res) ) {
+                    if (res == 'U' && bsh.IsSetInst_Mol() && bsh.GetInst_Mol() == CSeq_inst::eMol_rna) {
+                        // U is ok for RNA
                     } else {
-                        string msg = "Invalid";
-                        if (seq.IsNa() && strchr ("EFIJLPQZ", res) != NULL) {
-                            msg += " nucleotide";
+                        if ( ++bad_cnt > 10 ) {
+                            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
+                                "More than 10 invalid residues. Checking stopped",
+                                seq);
+                            return;
+                        } else {
+                            string msg = "Invalid";
+                            if (seq.IsNa() && strchr ("EFIJLPQZ", res) != NULL) {
+                                msg += " nucleotide";
+                            }
+                            msg += " residue '";
+                            msg += res;
+                            msg += "' at position [" + NStr::UIntToString(pos) + "]";
+
+                            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
+                                msg, seq);
                         }
-                        msg += " residue '";
-                        msg += res;
-                        msg += "' at position [" + NStr::UIntToString(pos) + "]";
-
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
-                            msg, seq);
                     }
-                }
-            } else if ( sv.IsInGap(pos - 1) || res == '-') {
-                dashes++;
-                if (pos == 1) {
-                    gap_at_start = true;
-                }
-            } else if ( res == '*') {
-                terminations++;
-                trailingX = 0;
-            } else if ( res == 'X' ) {
-                trailingX++;
-                if (pos == 1) {
-                    leading_x = true;
-                }
-            } else if (!isalpha (res)) {
-                string msg = "Invalid residue [";
-                msg += res;
-                msg += "] in position [" + NStr::UIntToString(pos) + "]";
-                PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
-                    msg, seq);
-            } else {
-                trailingX = 0;
-                if (islower (res)) {
-                    found_lower = true;
-                }
-            }
-            ++pos;
-        }
-
-        // only show leading or trailing X if product of NNN in nucleotide
-        if (seq.IsAa() && (leading_x || trailingX > 0)) {
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
-            const CSeq_feat* cds = GetCDSForProduct(bsh);
-            if (cds && cds->IsSetLocation()) {
-                size_t dna_len = GetLength (cds->GetLocation(), m_Scope);
-                if (dna_len > 5) {
-                    string cds_seq = GetSequenceStringFromLoc (cds->GetLocation(), *m_Scope);
-                    if (!NStr::StartsWith (cds_seq, "NNN")) {
-                        leading_x = false;
+                } else if ( sv.IsInGap(pos - 1) || res == '-') {
+                    dashes++;
+                    if (pos == 1) {
+                        gap_at_start = true;
                     }
-                    if (!NStr::EndsWith (cds_seq, "NNN")) {
-                        trailingX = 0;
+                } else if ( res == '*') {
+                    terminations++;
+                    trailingX = 0;
+                } else if ( res == 'X' ) {
+                    trailingX++;
+                    if (pos == 1) {
+                        leading_x = true;
                     }
-                }
-            }
-        }
-
-        if (leading_x) {
-            PostErr (eDiag_Warning, eErr_SEQ_INST_LeadingX, 
-                     "Sequence starts with leading X", seq);
-        }
-            
-        if ( trailingX > 0 && !SuppressTrailingXMsg(seq) ) {
-            // Suppress if cds ends in "*" or 3' partial
-            string msg = "Sequence ends in " +
-                NStr::IntToString(trailingX) + " trailing X";
-            if ( trailingX > 1 ) {
-                msg += "s";
-            }
-            PostErr(eDiag_Warning, eErr_SEQ_INST_TrailingX, msg, seq);
-        }
-
-        if (found_lower) {
-            PostErr (eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
-                     "Sequence contains lower-case characters", seq);
-        }
-
-        if (terminations > 0 || dashes > 0) {
-            // Post error indicating terminations found in protein sequence
-            // if possible, get gene and protein names
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
-            // First get gene label
-            string gene_label = "";
-            try {
-                const CSeq_feat* cds = GetCDSForProduct(bsh);
-                if (cds) {
-                    CConstRef<CSeq_feat> gene = GetOverlappingGene (cds->GetLocation(), *m_Scope);
-                    if (gene && gene->IsSetData() && gene->GetData().IsGene()) {
-                        gene->GetData().GetGene().GetLabel(&gene_label);
-                    }
-                }
-            } catch (...) {
-            }
-            // get protein label
-            string protein_label = "";
-            try {
-                CFeat_CI feat_ci (bsh, SAnnotSelector (CSeqFeatData::e_Prot));
-                if (feat_ci && feat_ci->GetData().IsProt() && feat_ci->GetData().GetProt().IsSetName()) {
-                    protein_label = feat_ci->GetData().GetProt().GetName().front();
-                }
-			} catch (CException ) {
-			} catch (std::exception ) {
-            }
-
-            string msg = "[" + NStr::IntToString(terminations) + "] termination symbols in protein sequence";
-
-            if (NStr::IsBlank(gene_label)) {
-                gene_label = "gene?";
-            }
-            if (NStr::IsBlank(protein_label)) {
-                protein_label = "prot?";
-            }
-            msg += " (" + gene_label + " - " + protein_label + ")";
-
-            if (dashes > 0) {
-                if (gap_at_start && dashes == 1) {
-                  PostErr (eDiag_Error, eErr_SEQ_INST_BadProteinStart, 
-                           "gap symbol at start of protein sequence (" + gene_label + " - " + protein_label + ")",
-                           seq);
-                } else if (gap_at_start) {
-                  PostErr (eDiag_Error, eErr_SEQ_INST_BadProteinStart, 
-                           "gap symbol at start of protein sequence (" + gene_label + " - " + protein_label + ")",
-                           seq);
-                  PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
-                           "[" + NStr::IntToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
-                           seq);
+                } else if (!isalpha (res)) {
+                    string msg = "Invalid residue [";
+                    msg += res;
+                    msg += "] in position [" + NStr::UIntToString(pos) + "]";
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
+                        msg, seq);
                 } else {
-                  PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
-                           "[" + NStr::IntToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
-                           seq);
+                    trailingX = 0;
+                    if (islower (res)) {
+                        found_lower = true;
+                    }
+                }
+                ++pos;
+            }
+
+            // only show leading or trailing X if product of NNN in nucleotide
+            if (seq.IsAa() && (leading_x || trailingX > 0)) {
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
+                const CSeq_feat* cds = GetCDSForProduct(bsh);
+                if (cds && cds->IsSetLocation()) {
+                    size_t dna_len = GetLength (cds->GetLocation(), m_Scope);
+                    if (dna_len > 5) {
+                        string cds_seq = GetSequenceStringFromLoc (cds->GetLocation(), *m_Scope);
+                        if (!NStr::StartsWith (cds_seq, "NNN")) {
+                            leading_x = false;
+                        }
+                        if (!NStr::EndsWith (cds_seq, "NNN")) {
+                            trailingX = 0;
+                        }
+                    }
                 }
             }
 
-            if (terminations > 0) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, seq);
+            if (leading_x) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_LeadingX, 
+                         "Sequence starts with leading X", seq);
+            }
+                
+            if ( trailingX > 0 && !SuppressTrailingXMsg(seq) ) {
+                // Suppress if cds ends in "*" or 3' partial
+                string msg = "Sequence ends in " +
+                    NStr::IntToString(trailingX) + " trailing X";
+                if ( trailingX > 1 ) {
+                    msg += "s";
+                }
+                PostErr(eDiag_Warning, eErr_SEQ_INST_TrailingX, msg, seq);
+            }
+
+            if (found_lower) {
+                PostErr (eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
+                         "Sequence contains lower-case characters", seq);
+            }
+
+            if (terminations > 0 || dashes > 0) {
+                // Post error indicating terminations found in protein sequence
+                // if possible, get gene and protein names
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
+                // First get gene label
+                string gene_label = "";
+                try {
+                    const CSeq_feat* cds = GetCDSForProduct(bsh);
+                    if (cds) {
+                        CConstRef<CSeq_feat> gene = GetOverlappingGene (cds->GetLocation(), *m_Scope);
+                        if (gene && gene->IsSetData() && gene->GetData().IsGene()) {
+                            gene->GetData().GetGene().GetLabel(&gene_label);
+                        }
+                    }
+                } catch (...) {
+                }
+                // get protein label
+                string protein_label = "";
+                try {
+                    CFeat_CI feat_ci (bsh, SAnnotSelector (CSeqFeatData::e_Prot));
+                    if (feat_ci && feat_ci->GetData().IsProt() && feat_ci->GetData().GetProt().IsSetName()) {
+                        protein_label = feat_ci->GetData().GetProt().GetName().front();
+                    }
+			    } catch (CException ) {
+			    } catch (std::exception ) {
+                }
+
+                string msg = "[" + NStr::IntToString(terminations) + "] termination symbols in protein sequence";
+
+                if (NStr::IsBlank(gene_label)) {
+                    gene_label = "gene?";
+                }
+                if (NStr::IsBlank(protein_label)) {
+                    protein_label = "prot?";
+                }
+                msg += " (" + gene_label + " - " + protein_label + ")";
+
+                if (dashes > 0) {
+                    if (gap_at_start && dashes == 1) {
+                      PostErr (eDiag_Error, eErr_SEQ_INST_BadProteinStart, 
+                               "gap symbol at start of protein sequence (" + gene_label + " - " + protein_label + ")",
+                               seq);
+                    } else if (gap_at_start) {
+                      PostErr (eDiag_Error, eErr_SEQ_INST_BadProteinStart, 
+                               "gap symbol at start of protein sequence (" + gene_label + " - " + protein_label + ")",
+                               seq);
+                      PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
+                               "[" + NStr::IntToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
+                               seq);
+                    } else {
+                      PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
+                               "[" + NStr::IntToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
+                               seq);
+                    }
+                }
+
+                if (terminations > 0) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, seq);
+                }
+            }
+        }
+
+        bool is_wgs = false;
+        CSeqdesc_CI mi_desc(bsh, CSeqdesc::e_Molinfo);
+        if (mi_desc && mi_desc->IsMolinfo() && mi_desc->GetMolinfo().IsSetTech()
+            && mi_desc->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
+            is_wgs = true;
+        }
+
+        if (seq.IsNa() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
+            // look for runs of Ns and gap characters
+            bool has_gap_char = false;
+            size_t run_len = 0;
+            TSeqPos start_pos = 0;
+            TSeqPos pos = 1;
+            CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            for ( CSeqVector_CI sv_iter(sv); (sv_iter); ++sv_iter, ++pos ) {
+                CSeqVector::TResidue res = *sv_iter;
+                if (res == 'N') {
+                    if (run_len == 0) {
+                        start_pos = pos;
+                    }
+                    run_len++;
+                } else {
+                    if (run_len > 0 && start_pos > 1
+                        && ((is_wgs && run_len >= 20) || run_len >= 100)) {
+                        PostErr (eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqRaw, 
+                                 "Run of " + NStr::IntToString (run_len) + " Ns in raw sequence starting at base "
+                                 + NStr::IntToString (start_pos),
+                                 seq);
+                    }
+                    run_len = 0;
+                    if (res == '-') {
+                        has_gap_char = true;
+                    }
+                }
+            }
+            if (has_gap_char) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_InternalGapsInSeqRaw, 
+                         "Raw nucleotide should not contain gap characters", seq);
             }
         }
     }
-
-    bool is_wgs = false;
-    CSeqdesc_CI mi_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
-    if (mi_desc && mi_desc->IsMolinfo() && mi_desc->GetMolinfo().IsSetTech()
-        && mi_desc->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
-        is_wgs = true;
-    }
-
-    if (seq.IsNa() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
-        // look for runs of Ns and gap characters
-        bool has_gap_char = false;
-        size_t run_len = 0;
-        TSeqPos start_pos = 0;
-        TSeqPos pos = 1;
-        CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        for ( CSeqVector_CI sv_iter(sv); (sv_iter); ++sv_iter, ++pos ) {
-            CSeqVector::TResidue res = *sv_iter;
-            if (res == 'N') {
-                if (run_len == 0) {
-                    start_pos = pos;
-                }
-                run_len++;
-            } else {
-                if (run_len > 0 && start_pos > 1
-                    && ((is_wgs && run_len >= 20) || run_len >= 100)) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqRaw, 
-                             "Run of " + NStr::IntToString (run_len) + " Ns in raw sequence starting at base "
-                             + NStr::IntToString (start_pos),
-                             seq);
-                }
-                run_len = 0;
-                if (res == '-') {
-                    has_gap_char = true;
-                }
-            }
-        }
-        if (has_gap_char) {
-            PostErr (eDiag_Warning, eErr_SEQ_INST_InternalGapsInSeqRaw, 
-                     "Raw nucleotide should not contain gap characters", seq);
-        }
-    }
-
 }
 
 
