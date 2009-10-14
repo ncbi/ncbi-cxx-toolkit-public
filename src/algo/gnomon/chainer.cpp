@@ -166,7 +166,7 @@ public:
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
 
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor);
-    void CollectEntrezmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
+    void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
 private:
     vector<CGeneModel*> m_members;
 
@@ -1242,19 +1242,19 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
     }
 }
 
-void CChain::CollectEntrezmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor)
+void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor)
 {
-    ClearEntrezmRNA();
-    ClearEntrezProt();
+    ClearTrustedmRNA();
+    ClearTrustedProt();
     if(Continuous() && ConfirmedStart() && ConfirmedStop()) {
         ITERATE(vector<CGeneModel*>, i, m_members) {
             if(Include(Limits(),(*i)->Limits())) {
                 CAlignModel* orig_align = orig_aligns[(*i)->ID()];
                 if(((*i)->Continuous() && (*i)->ConfirmedStart() && (*i)->ConfirmedStop()) || (orig_align->AlignLen() > minscor.m_minprotfrac*orig_align->TargetLen())) {
-                    if(!(*i)->EntrezmRNA().empty())
-                        InsertEntrezmRNA(*(*i)->EntrezmRNA().begin());
-                    else if(!(*i)->EntrezProt().empty())
-                        InsertEntrezProt(*(*i)->EntrezProt().begin());
+                    if(!(*i)->TrustedmRNA().empty())
+                        InsertTrustedmRNA(*(*i)->TrustedmRNA().begin());
+                    else if(!(*i)->TrustedProt().empty())
+                        InsertTrustedProt(*(*i)->TrustedProt().begin());
                 }
             }
         }
@@ -1991,7 +1991,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TAlignModelList& alignments, C
         CChain& chain(*it_chain);
 
         chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
-        chain.CollectEntrezmRNAsProts(orig_aligns, minscor);
+        chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
     }
 
 

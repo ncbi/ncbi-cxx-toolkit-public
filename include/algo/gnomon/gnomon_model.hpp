@@ -32,6 +32,7 @@
  *
  */
 
+#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include "set.hpp"
@@ -46,8 +47,10 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-    class CSeq_align;
+class CSeq_align;
+class CSeq_id;
 END_SCOPE(objects)
+USING_SCOPE(objects);
 BEGIN_SCOPE(gnomon)
 
 class CGnomonEngine;
@@ -455,13 +458,13 @@ public:
         return IdenticalAlign(a) && Type()==a.Type() && m_id==a.m_id && m_support==a.m_support;
     }
 
-    const CVectorSet<int>& EntrezmRNA() const { return m_entrez_mrna; }
-    void InsertEntrezmRNA(int g) { m_entrez_mrna.insert(g); };
-    void ClearEntrezmRNA() { m_entrez_mrna.clear(); };
+    const list< CRef<CSeq_id> >& TrustedmRNA() const { return m_trusted_mrna; }
+    void InsertTrustedmRNA(CRef<CSeq_id> g) { m_trusted_mrna.push_back(g); };
+    void ClearTrustedmRNA() { m_trusted_mrna.clear(); };
    
-    const CVectorSet<int>& EntrezProt() const { return m_entrez_prot; }
-    void InsertEntrezProt(int g) { m_entrez_prot.insert(g); };
-    void ClearEntrezProt() { m_entrez_prot.clear(); };
+    const list< CRef<CSeq_id> >& TrustedProt() const { return m_trusted_prot; }
+    void InsertTrustedProt(CRef<CSeq_id> g) { m_trusted_prot.push_back(g); };
+    void ClearTrustedProt() { m_trusted_prot.clear(); };
 
 #ifdef _DEBUG
     int oid;
@@ -487,21 +490,21 @@ private:
     CSupportInfoSet m_support;
     string m_protein_hit;
     string m_comment;
-    CVectorSet<int> m_entrez_prot;
-    CVectorSet<int> m_entrez_mrna;
+    list< CRef<CSeq_id> > m_trusted_prot;
+    list< CRef<CSeq_id> > m_trusted_mrna;
 };
 
 
 struct SSortModelsDescending {
     bool operator()(const CGeneModel& a, const CGeneModel& b)
     {
-        if(!a.EntrezmRNA().empty() && b.EntrezmRNA().empty())       // entrez gene is always better, mRNA is better than protein, both are better than one   
+        if(!a.TrustedmRNA().empty() && b.TrustedmRNA().empty())       // trusted gene is always better, mRNA is better than protein, both are better than one   
             return true;
-        else if(!b.EntrezmRNA().empty() && a.EntrezmRNA().empty()) 
+        else if(!b.TrustedmRNA().empty() && a.TrustedmRNA().empty()) 
             return false;
-        else if(!a.EntrezProt().empty() && b.EntrezProt().empty())    
+        else if(!a.TrustedProt().empty() && b.TrustedProt().empty())    
             return true;
-        else if(!b.EntrezProt().empty() && a.EntrezProt().empty()) 
+        else if(!b.TrustedProt().empty() && a.TrustedProt().empty()) 
             return false;
         else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is alway better
             return true;

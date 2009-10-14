@@ -1196,16 +1196,16 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     }
     attributes["support"].erase(0,1);
 
-    ITERATE(CVectorSet<int>, i, a.EntrezProt()) {
-        if(!attributes["EntrezProt"].empty())
-            attributes["EntrezProt"] += ",";
-        attributes["EntrezProt"] += NStr::IntToString(*i);      
+    ITERATE(list< CRef<CSeq_id> >, i, a.TrustedProt()) {
+        if(!attributes["TrustedProt"].empty())
+            attributes["TrustedProt"] += ",";
+        attributes["TrustedProt"] += CIdHandler::ToString(**i);      
     }
 
-    ITERATE(CVectorSet<int>, i, a.EntrezmRNA()) {
-        if(!attributes["EntrezmRNA"].empty())
-            attributes["EntrezmRNA"] += ",";
-        attributes["EntrezmRNA"] += NStr::IntToString(*i);      
+    ITERATE(list< CRef<CSeq_id> >, i, a.TrustedmRNA()) {
+        if(!attributes["TrustedmRNA"].empty())
+            attributes["TrustedmRNA"] += ",";
+        attributes["TrustedmRNA"] += CIdHandler::ToString(**i);      
     }
 
     if(a.TargetLen() > 0)
@@ -1300,16 +1300,16 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         a.AddSupport(CSupportInfo(id, core));
     }
     
-    vector<string> entrezmrna;
-    NStr::Tokenize(attributes["EntrezmRNA"], ",", entrezmrna);
-    ITERATE(vector<string>, s, entrezmrna) {
-        a.InsertEntrezmRNA(NStr::StringToInt(*s));
+    vector<string> trustedmrna;
+    NStr::Tokenize(attributes["TrustedmRNA"], ",", trustedmrna);
+    ITERATE(vector<string>, s, trustedmrna) {
+        a.InsertTrustedmRNA(CIdHandler::ToSeq_id(*s));
     }
 
-    vector<string> entrezprot;
-    NStr::Tokenize(attributes["EntrezProt"], ",", entrezprot);
-    ITERATE(vector<string>, s, entrezprot) {
-        a.InsertEntrezProt(NStr::StringToInt(*s));
+    vector<string> trustedprot;
+    NStr::Tokenize(attributes["TrustedProt"], ",", trustedprot);
+    ITERATE(vector<string>, s, trustedprot) {
+        a.InsertTrustedProt(CIdHandler::ToSeq_id(*s));
     }
     
     vector<string> flags;
