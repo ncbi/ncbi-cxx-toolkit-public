@@ -37,7 +37,8 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/blast/Blastdb2Entrez/dbASN/bdb2ez.asn \
   src/internal/gpipe/align_db/objects/alndb_query.asn \
   src/internal/gpipe/objects/*/*.asn \
-  src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn; do
+  src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn \
+  src/internal/gpipe/gpexec/queue/lib/gpxapi.asn; do
     if test -f "$spec"; then
         case $spec in
             */seq_annot_ref.asn ) continue ;; # sample data, not a spec
