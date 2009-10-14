@@ -10,3 +10,5 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = objects
 
 # CHECK_CMD = id2_fetch_simple -gi 3
+
+WATCHERS = grichenk

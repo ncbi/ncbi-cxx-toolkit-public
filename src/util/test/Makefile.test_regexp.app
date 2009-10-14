@@ -8,3 +8,5 @@ LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(PCRE_INCLUDE) $(ORIG_CPPFLAGS)
 
 CHECK_CMD = test_regexp Abc Ef Ghh Ooo Pppk /CHECK_NAME=test_regexp
+
+WATCHERS = ivanov

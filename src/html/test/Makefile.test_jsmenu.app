@@ -10,3 +10,5 @@ LIB = xhtml xncbi
 CHECK_CMD  = test_jsmenu html
 CHECK_CMD  = test_jsmenu template
 CHECK_COPY = template_jsmenu.html
+
+WATCHERS = ivanov

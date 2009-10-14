@@ -11,3 +11,5 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_edit_saver -gi 45678
 CHECK_CMD = test_edit_saver -gi 21225451 
+
+WATCHERS = vasilche

@@ -11,3 +11,5 @@ SRC = test_staticmap
 LIB = xncbi
 
 CHECK_CMD = test_staticmap
+
+WATCHERS = vasilche

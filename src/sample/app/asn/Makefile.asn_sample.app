@@ -26,3 +26,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir0)/sample/app/asn \
 
 CHECK_COPY = sample_asn.data
 CHECK_CMD  = asn_sample -input sample_asn.data -output sample_asn.xml /CHECK_NAME=asn_sample
+
+WATCHERS = gouriano

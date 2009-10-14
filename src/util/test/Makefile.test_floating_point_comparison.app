@@ -12,3 +12,5 @@ REQUIRES = Boost.Test.Included
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 CHECK_CMD =
+
+WATCHERS = satskyse

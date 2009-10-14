@@ -12,3 +12,5 @@ LIBS = $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = data
 CHECK_CMD = lds_unit_test
+
+WATCHERS = vasilche

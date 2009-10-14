@@ -12,3 +12,5 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = run_sybase_app.sh test_objmgr_loaders.sh test_objmgr_gbloader /CHECK_NAME=test_objmgr_gbloader
 CHECK_COPY = test_objmgr_loaders.sh
+
+WATCHERS = vasilche

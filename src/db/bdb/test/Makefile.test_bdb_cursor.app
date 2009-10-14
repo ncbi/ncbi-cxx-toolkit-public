@@ -22,3 +22,5 @@ CHECK_CMD =
 # remember to rename 'unit_test_sample.ini' to '<your_app_name>.ini'.
 #CHECK_COPY = unit_test_sample.ini
 ### END COPIED SETTINGS
+
+WATCHERS = joukovv

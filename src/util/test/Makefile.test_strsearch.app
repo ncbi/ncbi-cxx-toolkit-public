@@ -9,3 +9,5 @@ SRC = test_strsearch
 LIB = xutil xncbi
 
 CHECK_CMD = test_strsearch
+
+WATCHERS = ivanov

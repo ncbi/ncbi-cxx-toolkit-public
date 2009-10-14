@@ -8,3 +8,5 @@ SRC = cgidemo
 LIB = xcgi xutil xncbi
 
 CHECK_CMD =
+
+WATCHERS = grichenk

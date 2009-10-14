@@ -8,3 +8,5 @@ SRC = test_html
 LIB = xhtml xutil xncbi
 
 CHECK_CMD =
+
+WATCHERS = ivanov

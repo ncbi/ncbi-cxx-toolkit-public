@@ -7,3 +7,5 @@ LIB = xncbi xutil test_mt
 REQUIRES = MT
 
 CHECK_CMD = test_cache_mt
+
+WATCHERS = grichenk

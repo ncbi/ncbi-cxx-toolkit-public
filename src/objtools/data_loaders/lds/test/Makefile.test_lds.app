@@ -10,3 +10,5 @@ LIBS = $(BERKELEYDB_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = test.data
 CHECK_CMD  = test_lds
+
+WATCHERS = vasilche

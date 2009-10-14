@@ -25,3 +25,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  =
 CHECK_COPY = cgi_sample.html
+
+WATCHERS = vakatov

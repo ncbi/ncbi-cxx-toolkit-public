@@ -9,3 +9,5 @@ LIB = $(SEQ_LIBS) pub medline biblio general xser xutil test_boost xncbi
 CHECK_COPY = mapper_unit_test.ini
 
 CHECK_CMD =
+
+WATCHERS = grichenk

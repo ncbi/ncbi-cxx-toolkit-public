@@ -8,3 +8,5 @@ LIB = xutil xncbi test_mt
 REQUIRES = MT
 
 CHECK_CMD =
+
+WATCHERS = ivanovp

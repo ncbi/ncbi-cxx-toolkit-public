@@ -12,3 +12,5 @@ CHECK_CMD = test_compress_mt bz2
 CHECK_CMD = test_compress_mt lzo
 CHECK_TIMEOUT = 250
 
+
+WATCHERS = ivanov

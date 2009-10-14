@@ -12,3 +12,5 @@ LIBS = $(PCRE_LIBS)
 
 CHECK_CMD = test_pcre.sh
 CHECK_COPY = testdata test_pcre.sh
+
+WATCHERS = ivanov

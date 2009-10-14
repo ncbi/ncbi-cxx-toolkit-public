@@ -10,3 +10,5 @@ LIB = xutil xncbi
 
 # The test should not be run in a batch mode
 # CHECK_CMD = test_get_console_password
+
+WATCHERS = satskyse

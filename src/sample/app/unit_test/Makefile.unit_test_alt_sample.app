@@ -19,3 +19,5 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD = unit_test_alt_sample -disable_TestTimeout
 CHECK_COPY = unit_test_alt_sample.ini
 ### END COPIED SETTINGS
+
+WATCHERS = ivanovp

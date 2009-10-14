@@ -17,3 +17,5 @@ CHECK_CMD = test_objmgr_loaders_id1.sh test_objmgr_data_mt.sh /CHECK_NAME=test_o
 CHECK_CMD = test_objmgr_loaders_id2.sh test_objmgr_data_mt.sh /CHECK_NAME=test_objmgr_data_mt.sh+id2
 CHECK_CMD = test_objmgr_loaders_pubseqos.sh test_objmgr_data_mt.sh /CHECK_NAME=test_objmgr_data_mt.sh+pubseqos
 CHECK_TIMEOUT = 1800
+
+WATCHERS = vasilche

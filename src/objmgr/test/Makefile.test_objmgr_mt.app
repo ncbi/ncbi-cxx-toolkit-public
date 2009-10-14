@@ -14,3 +14,5 @@ LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_objmgr_mt
 CHECK_TIMEOUT = 600
+
+WATCHERS = vasilche

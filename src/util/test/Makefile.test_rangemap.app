@@ -11,3 +11,5 @@ SRC = test_rangemap
 LIB = xutil xncbi
 
 CHECK_CMD = test_rangemap
+
+WATCHERS = vasilche

@@ -10,3 +10,5 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 REQUIRES = objects
 
 CHECK_CMD = id1_fetch_simple -gi 3 /CHECK_NAME=id1_fetch_simple
+
+WATCHERS = grichenk

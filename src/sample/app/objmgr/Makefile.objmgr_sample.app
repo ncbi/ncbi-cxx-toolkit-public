@@ -21,3 +21,5 @@ CHECK_CMD = objmgr_sample -gi 178614
 CHECK_CMD = objmgr_sample -gi 18565551
 CHECK_CMD = objmgr_sample -gi 19550966
 CHECK_CMD = objmgr_sample -gi 455025
+
+WATCHERS = vasilche

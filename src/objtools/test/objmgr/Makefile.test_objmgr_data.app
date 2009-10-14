@@ -16,3 +16,5 @@ CHECK_CMD = test_objmgr_loaders_id1.sh test_objmgr_data.sh /CHECK_NAME=test_objm
 CHECK_CMD = test_objmgr_loaders_id2.sh test_objmgr_data.sh /CHECK_NAME=test_objmgr_data.sh+id2
 CHECK_CMD = test_objmgr_loaders_pubseqos.sh test_objmgr_data.sh /CHECK_NAME=test_objmgr_data.sh+pubseqos
 CHECK_CMD = test_objmgr_data -prefetch
+
+WATCHERS = vasilche

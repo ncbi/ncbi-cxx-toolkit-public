@@ -7,4 +7,5 @@ LIB = test_mt xncbi xutil
 
 CHECK_CMD =
 
-CHECK_AUTHORS = ivanovp
+
+WATCHERS = ivanovp

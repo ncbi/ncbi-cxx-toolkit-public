@@ -8,3 +8,5 @@ LIB = xutil xncbi
 REQUIRES = MT
 
 CHECK_CMD =
+
+WATCHERS = ucko
