@@ -1,0 +1,10 @@
+#
+#
+#
+
+# $Id$
+
+APP_PROJ = unit_test_validator
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
