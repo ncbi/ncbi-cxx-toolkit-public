@@ -79,12 +79,25 @@ public:
     //
 public:
     enum EWiggleFlags {
-        fDefaults = 0
+        fDefaults = 0,
+        fJoinSame = 1<<0,
+        fAsByte = 1<<1,
+        fAsGraph = 1<<2
     };
     typedef int TFlags;
 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
+        ILineReader&,
+        IErrorContainer* =0 );
+                
+    virtual CRef< CSeq_annot >
+    ReadSeqAnnotGraph(
+        ILineReader&,
+        IErrorContainer* =0 );
+                
+    virtual CRef< CSeq_annot >
+    ReadSeqAnnotTable(
         ILineReader&,
         IErrorContainer* =0 );
                 
@@ -144,6 +157,7 @@ protected:
 protected:
     unsigned int m_uCurrentRecordType;
     CWiggleSet* m_pSet;
+    TFlags m_Flags;
 };
 
 END_objects_SCOPE

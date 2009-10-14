@@ -100,8 +100,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 CWiggleReader::CWiggleReader(
-    int flags ) :
+    TFlags flags ) :
 //  ----------------------------------------------------------------------------
+    m_Flags( flags ),
     m_uCurrentRecordType( TYPE_NONE )
 {
     m_pSet = new CWiggleSet;
@@ -125,10 +126,25 @@ CWiggleReader::ReadObject(
         ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );
     return object; 
 }
-    
+
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CWiggleReader::ReadSeqAnnot(
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{
+    if (m_Flags & fAsGraph) {
+        return ReadSeqAnnotGraph( lr, pErrorContainer );
+    }
+    else {
+        return ReadSeqAnnotTable( lr, pErrorContainer );
+    } 
+}
+    
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CWiggleReader::ReadSeqAnnotGraph(
     ILineReader& lr,
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
@@ -158,6 +174,47 @@ CWiggleReader::ReadSeqAnnot(
     }
     try {
         m_pSet->MakeGraph( graphset );
+    }
+    catch( CObjReaderLineException& err ) {
+        ProcessError( err, pErrorContainer );
+    }
+    x_AddConversionInfo( annot, pErrorContainer );
+    return annot; 
+}
+    
+//  ----------------------------------------------------------------------------                
+CRef< CSeq_annot >
+CWiggleReader::ReadSeqAnnotTable(
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer ) 
+//  ----------------------------------------------------------------------------                
+{ 
+    m_uLineNumber = 0;
+    
+    CRef< CSeq_annot > annot( new CSeq_annot );
+    string pending;
+    vector<string> parts;
+    CWiggleRecord record;
+    
+    CSeq_table& table = annot->SetData().SetSeq_table();
+    while ( x_ReadLine( lr, pending ) ) {
+        try {
+            if ( x_ParseBrowserLine( pending, annot ) ) {
+                continue;
+            }
+            if ( x_ParseTrackData( pending, annot, record ) ) {
+                continue;
+            }
+            x_ParseGraphData( lr, pending, parts, record );
+            m_pSet->AddRecord( record );
+        }
+        catch( CObjReaderLineException& err ) {
+            ProcessError( err, pErrorContainer );
+        }
+    }
+    try {
+        m_pSet->MakeTable( table, 0!=(m_Flags & fJoinSame), 
+            0!=(m_Flags & fAsByte) );
     }
     catch( CObjReaderLineException& err ) {
         ProcessError( err, pErrorContainer );

@@ -44,6 +44,7 @@
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqtable/seqtable__.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
@@ -51,8 +52,11 @@
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
+#include <cmath>
 
 #include "wiggle_data.hpp"
+
+#define ROUND(x)    floor((x)+0.5)
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -439,6 +443,180 @@ void CWiggleSet::MakeGraph(
         it->second->MakeGraph( graphset );
     }       
 }
+
+//  ===========================================================================
+void CWiggleSet::MakeTable(
+    CSeq_table& table,
+    bool bJoinSame,
+    bool bAsByte )
+//  ===========================================================================
+{
+    for ( TrackIter it = m_Tracks.begin(); it != m_Tracks.end(); ++it ) {
+        it->second->MakeTable( table, bJoinSame, bAsByte );
+    }       
+}
+
+//  ===========================================================================
+void CWiggleTrack::MakeTable(
+    CSeq_table& table,
+    bool bJoinSame,
+    bool bAsByte )
+//  ===========================================================================
+{
+    size_t uSize( Count() );
+    
+    table.SetFeat_type(0);
+
+    { // Seq-id
+        CRef<CSeqTable_column> col_id(new CSeqTable_column);
+        table.SetColumns().push_back(col_id);
+        col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
+        col_id->SetDefault().SetId().Set(CSeq_id::e_Local, m_strChrom);
+    }
+    
+    // position
+    CRef<CSeqTable_column> col_pos(new CSeqTable_column);
+    table.SetColumns().push_back(col_pos);
+    col_pos->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_from);
+    CSeqTable_multi_data::TInt& pos = col_pos->SetData().SetInt();
+    
+    TSeqPos span = 1;
+    double min = 0, max = 0, step = 1;
+    bool fixed_span = true, sorted = true;
+    { // analyze
+        if ( uSize ) {
+            span = m_Data[0].SeqSpan();
+            min = max = m_Data[0].Value();
+        }
+        for ( size_t i = 1; i < uSize; ++i ) {
+            if ( m_Data[i].SeqSpan() != span ) {
+                fixed_span = false;
+            }
+            if ( m_Data[i].SeqStart() < m_Data[i-1].SeqStart() ) {
+                sorted = false;
+            }
+            double v = m_Data[i].Value();
+            if ( v < min ) {
+                min = v;
+            }
+            if ( v > max ) {
+                max = v;
+            }
+        }
+        if ( max > min ) {
+            step = (max-min)/255;
+        }
+    }
+
+    if ( !sorted ) {
+        sort(m_Data.begin(), m_Data.end());
+    }
+
+    if ( bJoinSame && uSize ) {
+        DataVector nv;
+        nv.reserve(uSize);
+        nv.push_back(m_Data[0]);
+        for ( size_t i = 1; i < uSize; ++i ) {
+            if ( m_Data[i].SeqStart() == nv.back().SeqStart()+nv.back().SeqSpan() &&
+                 m_Data[i].Value() == nv.back().Value() ) {
+                nv.back().m_uSeqSpan += m_Data[i].SeqSpan();
+            }
+            else {
+                nv.push_back(m_Data[i]);
+            }
+        }
+        if ( nv.size() != uSize ) {
+            double s = EstimateSize(uSize, fixed_span, bAsByte);
+            double ns = EstimateSize(nv.size(), false, bAsByte);
+            if ( ns < s*.75 ) {
+                m_Data.swap(nv);
+                uSize = m_Data.size();
+                LOG_POST("Joined size: "<<uSize);
+                fixed_span = false;
+            }
+        }
+    }
+    table.SetNum_rows(uSize);
+    pos.reserve(uSize);
+
+    CSeqTable_multi_data::TInt* span_ptr = 0;
+    { // span
+        CRef<CSeqTable_column> col_span(new CSeqTable_column);
+        table.SetColumns().push_back(col_span);
+        col_span->SetHeader().SetField_name("span");
+        if ( fixed_span ) {
+            col_span->SetDefault().SetInt(span);
+        }
+        else {
+            span_ptr = &col_span->SetData().SetInt();
+            span_ptr->reserve(uSize);
+        }
+    }
+
+    if ( bAsByte ) { // values
+
+        CRef<CSeqTable_column> col_min(new CSeqTable_column);
+        table.SetColumns().push_back(col_min);
+        col_min->SetHeader().SetField_name("value_min");
+        col_min->SetDefault().SetReal(min);
+
+        CRef<CSeqTable_column> col_step(new CSeqTable_column);
+        table.SetColumns().push_back(col_step);
+        col_step->SetHeader().SetField_name("value_step");
+        col_step->SetDefault().SetReal(step);
+
+        CRef<CSeqTable_column> col_val(new CSeqTable_column);
+        table.SetColumns().push_back(col_val);
+        col_val->SetHeader().SetField_name("values");
+        
+        double mul = 1/step;
+        AutoPtr< vector<char> > values(new vector<char>());
+        values->reserve(uSize);
+        ITERATE ( DataVector, it, m_Data ) {
+            pos.push_back(it->SeqStart());
+            if ( span_ptr ) {
+                span_ptr->push_back(it->SeqSpan());
+            }
+            int val = int(ROUND((it->Value()-min)*mul));
+            values->push_back(val);
+        }
+        col_val->SetData().SetBytes().push_back(values.release());
+    }
+    else {
+        CRef<CSeqTable_column> col_val(new CSeqTable_column);
+        table.SetColumns().push_back(col_val);
+        col_val->SetHeader().SetField_name("values");
+        CSeqTable_multi_data::TReal& values = col_val->SetData().SetReal();
+        values.reserve(uSize);
+        
+        ITERATE ( DataVector, it, m_Data ) {
+            pos.push_back(it->SeqStart());
+            if ( span_ptr ) {
+                span_ptr->push_back(it->SeqSpan());
+            }
+            values.push_back(it->Value());
+        }
+    }
+}
+
+//  ===========================================================================
+double CWiggleTrack::EstimateSize(
+    size_t rows, 
+    bool fixed_span,
+    bool bAsByte) const
+//  ===========================================================================
+{
+    double ret = 0;
+    ret += rows*4;
+    if ( !fixed_span )
+        ret += rows*4;
+    if ( bAsByte )
+        ret += rows;
+    else
+        ret += 8*rows;
+    return ret;
+}
+
 
 //  ===========================================================================
 void CWiggleTrack::MakeGraph(

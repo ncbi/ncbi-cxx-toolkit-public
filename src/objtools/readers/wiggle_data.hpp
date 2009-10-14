@@ -106,6 +106,11 @@ public:
     void MakeGraph(
         CSeq_annot::TData::TGraph& );
 
+    void MakeTable(
+        CSeq_table&,
+        bool,
+        bool );
+
     void Dump(
         CNcbiOstream& );
 
@@ -148,6 +153,11 @@ public:
     void MakeGraphs(
         CSeq_annot::TData::TGraph& );
         
+    void MakeTable(
+        CSeq_table&,
+        bool,
+        bool );
+
     const string& Chrom() const { return m_strChrom; };
     size_t Count() const { return m_Data.size(); };
     unsigned int SeqStart() const;
@@ -187,6 +197,9 @@ protected:
     bool m_bEvenlySpaced;
     //DataStore m_Entries;
     DataVector m_Data;
+    
+    double EstimateSize( size_t, bool, bool ) const;
+
 };
 
 //  ===========================================================================

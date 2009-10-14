@@ -54,6 +54,8 @@
 #include <objtools/readers/error_container.hpp>
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/multireader.hpp>
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/wiggle_reader.hpp> //  for flag definitions only
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -80,10 +82,17 @@ protected:
         
     void DumpErrors(
         CNcbiOstream& );
+    
+    void SetFormat(
+        const CArgs& );
         
+    void SetFlags(
+        const CArgs& );
+            
     CIdMapper* GetMapper();
     
-    CErrorContainerBase* GetErrorContainer();
+    void SetErrorContainer(
+        const CArgs& );
             
 private:
     virtual void Init(void);
@@ -224,6 +233,24 @@ void CMultiReaderApp::Init(void)
         &(*new CArgAllow_Strings, 
             "info", "warning", "error" ) );
 
+    //
+    //  wiggle reader specific arguments:
+    //
+    arg_desc->AddFlag(
+        "join-same",
+        "join abutting intervals",
+        true );
+        
+    arg_desc->AddFlag(
+        "as-byte",
+        "generate byte compressed data",
+        true );
+    
+    arg_desc->AddFlag(
+        "as-graph",
+        "generate graph object",
+        true );
+    
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -261,18 +288,26 @@ void CMultiReaderApp::Exit(void)
 void CMultiReaderApp::AppInitialize()
 //  ============================================================================
 {
-    const string& strProgramName = GetProgramDisplayName();
     const CArgs& args = GetArgs();
-    
-    m_uFormat = CFormatGuess::eUnknown;    
     m_pInput = &args["input"].AsInputFile();
     m_pOutput = &args["output"].AsOutputFile();
-    m_pErrors = 0;
+    
+    SetFormat( args );    
+    SetFlags( args );
     m_bCheckOnly = args["checkonly"];
-    m_iFlags = NStr::StringToInt( 
-        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
 
+    SetErrorContainer( args );
+}
+
+//  ============================================================================
+void CMultiReaderApp::SetFormat(
+    const CArgs& args )
+//  ============================================================================
+{
+    m_uFormat = CFormatGuess::eUnknown;    
     string format = args["format"].AsString();
+    const string& strProgramName = GetProgramDisplayName();
+    
     if ( NStr::StartsWith( strProgramName, "wig" ) || format == "wig" ||
         format == "wiggle" ) {
         m_uFormat = CFormatGuess::eWiggle;
@@ -290,8 +325,36 @@ void CMultiReaderApp::AppInitialize()
     if ( m_uFormat == CFormatGuess::eUnknown ) {
         m_uFormat = CFormatGuess::Format( *m_pInput );
     }
+}
+
+//  ============================================================================
+void CMultiReaderApp::SetFlags(
+    const CArgs& args )
+//  ============================================================================
+{
+    if (m_uFormat == CFormatGuess::eUnknown) {
+        SetFormat( args );
+    }
+    m_iFlags = NStr::StringToInt( 
+        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
+        
+    switch( m_uFormat ) {
     
-    m_pErrors = GetErrorContainer();
+    case CFormatGuess::eWiggle:
+        if ( args["join-same"] ) {
+            m_iFlags |= CWiggleReader::fJoinSame;
+        }
+        if ( args["as-byte"] ) {
+            m_iFlags |= CWiggleReader::fAsByte;
+        }
+        if ( args["as-graph"] ) {
+            m_iFlags |= CWiggleReader::fAsGraph;
+        }
+        break;
+        
+    default:
+        break;
+    }
 }
 
 //  ============================================================================
@@ -351,8 +414,9 @@ CMultiReaderApp::GetMapper()
 }        
 
 //  ============================================================================
-CErrorContainerBase*
-CMultiReaderApp::GetErrorContainer()
+void
+CMultiReaderApp::SetErrorContainer(
+    const CArgs& args )
 //  ============================================================================
 {
     //
@@ -361,16 +425,17 @@ CMultiReaderApp::GetErrorContainer()
     //  strongest. In the absence of -strict and -lenient, -max-error-count and
     //  -max-error-level become additive, i.e. both are enforced.
     //
-    const CArgs& args = GetArgs();
-    
     if ( args["noerrors"] ) {   // not using error policy at all
-        return 0;
+        m_pErrors = 0;
+        return;
     }
     if ( args["strict"] ) {
-        return new CErrorContainerStrict;
+        m_pErrors = new CErrorContainerStrict;
+        return;
     }
     if ( args["lenient"] ) {
-        return new CErrorContainerLenient;
+        m_pErrors = new CErrorContainerLenient;
+        return;
     }
     
     int iMaxErrorCount = args["max-error-count"].AsInteger();
@@ -384,9 +449,10 @@ CMultiReaderApp::GetErrorContainer()
     }
     
     if ( iMaxErrorCount == -1 ) {
-        return new CErrorContainerLevel( iMaxErrorLevel );
+        m_pErrors = new CErrorContainerLevel( iMaxErrorLevel );
+        return;
     }
-    return new CErrorContainerCustom( iMaxErrorCount, iMaxErrorLevel );
+    m_pErrors = new CErrorContainerCustom( iMaxErrorCount, iMaxErrorLevel );
 }
     
 //  ============================================================================
