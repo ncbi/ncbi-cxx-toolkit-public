@@ -84,20 +84,16 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
         DATABASE_DRIVER_ERROR( err_str, 200011 );
     }
 
-#ifndef MS_DBLIB_IN_USE
     DBSETLCHARSET(
             m_Login,
             const_cast<char*>(
                 GetCDriverContext().GetClientCharset().c_str()
                 )
             );
-#endif
     BCP_SETL(m_Login, TRUE);
 
-#ifndef MS_DBLIB_IN_USE
     if (params.GetParam("secure_login") == "true")
         DBSETLENCRYPT(m_Login, TRUE);
-#endif
 
     string server_name;
 
@@ -153,11 +149,6 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
         DATABASE_DRIVER_ERROR( err_str, 200011 );
     }
 
-
-#ifdef MS_DBLIB_IN_USE
-    GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTLIMIT, "0" )); // No limit
-    GetDBLibCtx().Check(dbsetopt(GetDBLibConnection(), DBTEXTSIZE , "2147483647" )); // 0x7FFFFFFF
-#endif
 
     // Set user-data. That will let us get server and user names in case of
     // any problem.
@@ -234,16 +225,10 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() !=
-#ifndef MS_DBLIB_IN_USE
-        CDBL_ITDESCRIPTOR_TYPE_MAGNUM
-#else
-        CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
-#endif
-        ) {
-    // this is not a native descriptor
-    p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-    if(p_desc == 0) return false;
+    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
+        // this is not a native descriptor
+        p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+        if(p_desc == 0) return false;
     }
 
 
@@ -346,13 +331,8 @@ bool CDBL_Connection::Close(void)
 
         MarkClosed();
 
-#ifdef MS_DBLIB_IN_USE
-                dbfreelogin(m_Login);
-                CheckFunctCall();
-#else
-                dbloginfree(m_Login);
-                CheckFunctCall();
-#endif
+        dbloginfree(m_Login);
+        CheckFunctCall();
 
         m_Link = NULL;
 
@@ -372,16 +352,10 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() !=
-#ifndef MS_DBLIB_IN_USE
-        CDBL_ITDESCRIPTOR_TYPE_MAGNUM
-#else
-        CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
-#endif
-        ){
-    // this is not a native descriptor
-    p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-    if(p_desc == 0) return false;
+    if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM){
+        // this is not a native descriptor
+        p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+        if(p_desc == 0) return false;
     }
 
 
@@ -548,15 +522,12 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
                     continue;
                 }
 
-// This optimization is currently unavailable for MS dblib...
-#ifndef MS_DBLIB_IN_USE /*Text,Image*/
                 if (Check(dbnumcols(pLink)) == 1) {
                     int ct = Check(dbcoltype(pLink, 1));
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
                         res = new CDBL_BlobResult(*this, pLink);
                     }
                 }
-#endif // MS_DBLIB_IN_USE
                 if (!res)
                     res = new CDBL_RowResult(*this, pLink, &x_Status);
                 dbres= Create_Result(*res);

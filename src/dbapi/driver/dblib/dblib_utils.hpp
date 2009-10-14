@@ -35,29 +35,10 @@
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include "../dbapi_driver_exception_storage.hpp"
 
-#ifdef MS_DBLIB_IN_USE
-#    define GetDBLExceptionStorage  GetMSDBLExceptionStorage
-#endif // MS_DBLIB_IN_USE
-
 BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-#if defined(MS_DBLIB_IN_USE)
-
-extern "C"
-{
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-NCBI_EntryPoint_xdbapi_msdblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method);
-
-} // extern C
-
-#else
-
 extern "C"
 {
 
@@ -68,8 +49,6 @@ NCBI_EntryPoint_xdbapi_dblib(
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 
 } // extern C
-
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

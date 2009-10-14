@@ -162,11 +162,7 @@ bool CommonInit(void)
 #ifdef HAVE_LIBSYBASE
     DBAPI_RegisterDriver_CTLIB();
 #endif
-/*
-#ifdef HAVE_LIBSQLITE3
-    DBAPI_RegisterDriver_SQLITE3();
-#endif
-*/
+
 #ifdef HAVE_ODBC
     DBAPI_RegisterDriver_ODBC();
 #endif
@@ -386,19 +382,12 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("HAVE_MYSQL", false);
 #endif
 
-#ifdef HAVE_LIBSQLITE3
-    parser->AddSymbol("HAVE_SQLITE3", true);
-#else
-    parser->AddSymbol("HAVE_SQLITE3", false);
-#endif
-
     parser->AddSymbol("DRIVER_AllowsMultipleContexts", GetArgs().DriverAllowsMultipleContexts());
 
     parser->AddSymbol("SERVER_MySQL", GetArgs().GetServerType() == CDBConnParams::eMySQL);
     parser->AddSymbol("SERVER_SybaseOS", GetArgs().GetServerType() == CDBConnParams::eSybaseOpenServer);
     parser->AddSymbol("SERVER_SybaseSQL", GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer);
     parser->AddSymbol("SERVER_MicrosoftSQL", GetArgs().GetServerType() == CDBConnParams::eMSSqlServer);
-    parser->AddSymbol("SERVER_SQLite", GetArgs().GetServerType() == CDBConnParams::eSqlite);
 
     parser->AddSymbol("DRIVER_ftds", GetArgs().GetDriverName() == ftds_driver);
     parser->AddSymbol("DRIVER_ftds64", GetArgs().GetDriverName() == ftds64_driver);

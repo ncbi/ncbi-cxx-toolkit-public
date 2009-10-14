@@ -163,7 +163,7 @@ CDbapiSampleApp::Init()
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", \
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", \
                       "gateway", "odbc"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "CLEMENTI"

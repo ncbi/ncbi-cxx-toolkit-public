@@ -170,15 +170,12 @@ CDB_Result* CDBL_LangCmd::Result()
             m_Status |= 0x60;
             if (DBCMDROW(GetCmd()) == SUCCEED) { // we could get rows in result
 
-// This optimization is currently unavailable for MS dblib...
-#ifndef MS_DBLIB_IN_USE /*Text,Image*/
                 if (Check(dbnumcols(GetCmd())) == 1) {
                     int ct = Check(dbcoltype(GetCmd(), 1));
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
                         SetResultSet( new CDBL_BlobResult(GetConnection(), GetCmd()) );
                     }
                 }
-#endif
                 if ( !GetResultSet() ) {
                     SetResultSet( new CDBL_RowResult(GetConnection(), GetCmd(), &m_Status) );
                 }

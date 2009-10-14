@@ -99,7 +99,7 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
-            if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            if test $driver = "odbc" -a  $server != $server_mssql ; then
                 continue
             fi
 
@@ -108,7 +108,7 @@ EOF
                 continue
             fi
 
-            if test $driver = "ftds63" -o $driver = "msdblib" -o $driver = "odbc" ; then
+            if test $driver = "odbc" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
                 continue
             fi

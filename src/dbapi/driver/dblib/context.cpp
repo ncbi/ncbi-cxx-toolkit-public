@@ -191,30 +191,6 @@ CDblibContextRegistry::StaticClearAll(void)
 
 extern "C" {
 
-#ifdef MS_DBLIB_IN_USE
-    static int s_DBLIB_err_callback
-    (DBPROCESS* dblink,   int   severity,
-     int        dberr,    int   oserr,
-     const char*  dberrstr, const char* oserrstr)
-    {
-        return CDBLibContext::DBLIB_dberr_handler
-            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "",
-             oserrstr? oserrstr : "");
-    }
-
-    static int s_DBLIB_msg_callback
-    (DBPROCESS* dblink,   DBINT msgno,
-     int        msgstate, int   severity,
-     const char*      msgtxt,   const char* srvname,
-     const char*      procname, unsigned short   line)
-    {
-        CDBLibContext::DBLIB_dbmsg_handler
-            (dblink, msgno,   msgstate, severity,
-             msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "",
-             line);
-        return 0;
-    }
-#else
     static int CS_PUBLIC s_DBLIB_err_callback
     (DBPROCESS* dblink,   int   severity,
      int        dberr,    int   oserr,
@@ -237,7 +213,6 @@ extern "C" {
              line);
         return 0;
     }
-#endif
 }
 
 
@@ -268,20 +243,14 @@ CDBLibContext::CDBLibContext(DBINT version)
         SetHostName( hostname );
     }
 
-#ifdef MS_DBLIB_IN_USE
-    if (Check(dbinit()) == NULL || version == 31415)
-#else
     if (Check(dbinit()) != SUCCEED)
-#endif
     {
         DATABASE_DRIVER_ERROR( "dbinit failed", 200001 );
     }
 
-#ifndef MS_DBLIB_IN_USE
     if (Check(dbsetversion(version)) != SUCCEED) {
         DATABASE_DRIVER_ERROR( "dbsetversion failed", 200001 );
     }
-#endif
 
     Check(dberrhandle(s_DBLIB_err_callback));
     Check(dbmsghandle(s_DBLIB_msg_callback));
@@ -349,11 +318,7 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
     sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
 
     CFastMutexGuard ctx_mg(s_CtxMutex);
-#ifdef MS_DBLIB_IN_USE
-    return Check(dbsetopt(0, DBTEXTLIMIT, s)) == SUCCEED;
-#else
     return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED;
-#endif
 }
 
 impl::CConnection*
@@ -410,10 +375,6 @@ CDBLibContext::x_Close(bool delete_conn)
                 }
                 NCBI_CATCH_ALL_X( 3, NCBI_CURRENT_FUNCTION )
 
-#ifdef MS_DBLIB_IN_USE
-                dbwinexit();
-                CheckFunctCall();
-#else
                 try {
                     // This function can fail if we try to connect to MS SQL server
                     // using Sybase client.
@@ -422,7 +383,6 @@ CDBLibContext::x_Close(bool delete_conn)
                 }
                 NCBI_CATCH_ALL_X( 4, "dbexit() call failed. This usually happens when "
                     "Sybase client has been used to connect to a MS SQL Server." )
-#endif
             }
         }
     } else {
@@ -682,77 +642,6 @@ void CDBLibContext::CheckFunctCall(void)
 //
 
 ///////////////////////////////////////////////////////////////////////////////
-#if defined(MS_DBLIB_IN_USE)
-
-class CDbapiMSDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
-{
-public:
-    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
-
-public:
-    CDbapiMSDblibCF2(void);
-    ~CDbapiMSDblibCF2(void);
-
-public:
-    virtual TInterface*
-    CreateInstance(
-        const string& driver  = kEmptyStr,
-        CVersionInfo version =
-        NCBI_INTERFACE_VERSION(I_DriverContext),
-        const TPluginManagerParamTree* params = 0) const;
-
-};
-
-CDbapiMSDblibCF2::CDbapiMSDblibCF2(void)
-    : TParent( "msdblib", 0 )
-{
-    return ;
-}
-
-CDbapiMSDblibCF2::~CDbapiMSDblibCF2(void)
-{
-    return ;
-}
-
-CDbapiMSDblibCF2::TInterface*
-CDbapiMSDblibCF2::CreateInstance(
-    const string& driver,
-    CVersionInfo version,
-    const TPluginManagerParamTree* params) const
-{
-    TImplementation* drv = NULL;
-
-    if ( !driver.empty()  &&  driver != m_DriverName ) {
-        return 0;
-    }
-    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
-                        != CVersionInfo::eNonCompatible) {
-        // Mandatory parameters ....
-        DBINT version = DBVERSION_46;
-
-        drv = new CDBLibContext(version);
-    }
-    return drv;
-}
-
-void
-NCBI_EntryPoint_xdbapi_msdblib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<CDbapiMSDblibCF2>::NCBI_EntryPointImpl( info_list, method );
-}
-
-NCBI_DBAPIDRIVER_DBLIB_EXPORT
-void
-DBAPI_RegisterDriver_MSDBLIB(void)
-{
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
-}
-
-#else
-
-///////////////////////////////////////////////////////////////////////////////
 class CDbapiDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
 {
 public:
@@ -871,8 +760,6 @@ DBAPI_RegisterDriver_DBLIB(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_dblib );
 }
-
-#endif
 
 END_NCBI_SCOPE
 

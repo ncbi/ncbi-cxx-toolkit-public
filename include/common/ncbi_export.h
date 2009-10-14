@@ -386,14 +386,6 @@
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT NCBI_DLL_IMPORT
 #endif
 
-/* Export specifier for library dbapi_driver_msdblib
- */
-#ifdef NCBI_DBAPIDRIVER_MSDBLIB_EXPORTS
-#  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT NCBI_DLL_IMPORT
-#endif
-
 /* Export specifier for library dbapi_driver_mysql
  */
 #ifdef NCBI_DBAPIDRIVER_MYSQL_EXPORTS
@@ -416,14 +408,6 @@
 #  define NCBI_DBAPIDRIVER_FTDS_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_DBAPIDRIVER_FTDS_EXPORT NCBI_DLL_IMPORT
-#endif
-
-/* Export specifier for library dbapi_driver_sqlite3
- */
-#ifdef NCBI_DBAPIDRIVER_SQLITE3_EXPORTS
-#  define NCBI_DBAPIDRIVER_SQLITE3_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_DBAPIDRIVER_SQLITE3_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library dbapi

@@ -35,49 +35,9 @@
 #define DBAPI_DRIVER_DBLIB___INTERFACES_P__HPP
 
 
-#ifdef MS_DBLIB_IN_USE
-
-#define SYBINT1 SQLINT1
-#define SYBINT2 SQLINT2
-#define SYBINT4 SQLINT4
-#define SYBIMAGE     SQLIMAGE
-#define SYBTEXT      SQLTEXT
-#define SYBBINARY    SQLBINARY
-#define SYBDATETIME  SQLDATETIME
-#define SYBDATETIME4 SQLDATETIM4
-#define SYBNUMERIC   SQLNUMERIC
-#define SYBCHAR      SQLCHAR
-#define SYBVARCHAR   SQLVARCHAR
-#define SYBBIT       SQLBIT
-#define SYBDECIMAL   SQLDECIMAL
-#define SYBREAL      SQLFLT4
-#define SYBFLT8      SQLFLT8
-
-#define SYBETIME     SQLETIME
-#define SYBEFCON     SQLECONNFB
-#define SYBECONN     SQLECONN
-
-// DBSETLENCRYPT
-#define DBDATETIME4  DBDATETIM4
-#define DBTYPEINFO   DBTYPEDEFS
-
-#define CS_SUCCEED 0
-#define INT_TIMEOUT 1
-#define CS_INT Int4
-
-#define DBDATETIME4_days(x) ((x)->numdays)
-#define DBDATETIME4_mins(x) ((x)->nummins)
-#define DBNUMERIC_val(x) ((x)->val)
-#define DBIORDESC(x) (-1)
-#define DBIOWDESC(x) (-1)
-
-#else
-
 #define DBDATETIME4_days(x) ((x)->days)
 #define DBDATETIME4_mins(x) ((x)->minutes)
 #define DBNUMERIC_val(x) ((x)->array)
-
-#endif // MS_DBLIB_IN_USE
 
 #endif  /* DBAPI_DRIVER_DBLIB___INTERFACES_P__HPP */
 

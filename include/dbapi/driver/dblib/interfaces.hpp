@@ -42,56 +42,13 @@
 
 #include <corelib/ncbi_safe_static.hpp>
 
-#ifdef MS_DBLIB_IN_USE
-#    define CDBLibContext           CMSDBLibContext
-#    define CDBL_Connection         CMSDBL_Connection
-#    define CDBL_Cmd                CMSDBL_Cmd
-#    define CDBL_LangCmd            CMSDBL_LangCmd
-#    define CDBL_RPCCmd             CMSDBL_RPCCmd
-#    define CDBL_CursorCmd          CMSDBL_CursorCmd
-#    define CDBL_BCPInCmd           CMSDBL_BCPInCmd
-#    define CDBL_SendDataCmd        CMSDBL_SendDataCmd
-#    define CDBL_Result             CMSDBL_Result
-#    define CDBL_ResultBase         CMSDBL_ResultBase
-#    define CDBL_RowResult          CMSDBL_RowResult
-#    define CDBL_ParamResult        CMSDBL_ParamResult
-#    define CDBL_ComputeResult      CMSDBL_ComputeResult
-#    define CDBL_StatusResult       CMSDBL_StatusResult
-#    define CDBL_CursorResult       CMSDBL_CursorResult
-#    define CDBL_BlobResult         CMSDBL_BlobResult
-#    define CDBL_ITDescriptor       CMSDBL_ITDescriptor
-#    define SDBL_ColDescr           CMSDBL_ColDescr
-#    define CDblibContextRegistry   CMSDBLContextRegistry
-#    define CDBLExceptions          CMSDBLExceptions
-#endif // MS_DBLIB_IN_USE
-
-#ifdef MS_DBLIB_IN_USE
-    #include <windows.h>
-
-    #define DBNTWIN32             /* must be defined before sqlfront.h */
-    #include <sqlfront.h>         /* must be after windows.h */
-
-    #if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
-        typedef const BYTE *LPCBYTE;  /* MSVC7 headers lucks typedef for LPCBYTE */
-    #endif
-
-    #include <sqldb.h>
-#else
-    #include <sybfront.h>
-    #include <sybdb.h>
-    #include <syberror.h>
-#endif // MS_DBLIB_IN_USE
+#include <sybfront.h>
+#include <sybdb.h>
+#include <syberror.h>
 
 
 BEGIN_NCBI_SCOPE
 
-
-#ifdef MS_DBLIB_IN_USE
-#   define DBVERSION_UNKNOWN DBUNKNOWN
-#   define DBVERSION_46 DBVER42
-#   define DBVERSION_100 DBVER60
-#   define DBCOLINFO    DBCOL
-#endif
 
 #define DEFAULT_TDS_VERSION DBVERSION_46
 
@@ -905,12 +862,7 @@ private:
 ///  CDBL_ITDescriptor::
 ///
 
-#if defined(MS_DBLIB_IN_USE)
-#    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd01
-#    define CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM CDBL_ITDESCRIPTOR_TYPE_MAGNUM
-#else
-#    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
-#endif
+#define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor :
     CDBL_Result,

@@ -173,8 +173,8 @@ bool
 CCachedResultSet::Next(void)
 {
     if (m_CurRowNum < m_RecordSet.size()) {
-		++m_CurRowNum;
-		return true;
+        ++m_CurRowNum;
+        return true;
     }
 
     return false;
@@ -187,9 +187,9 @@ CCachedResultSet::GetVariant(const CDBParamVariant& param)
         unsigned int col_num = param.GetPosition();
 
         if (col_num > 0 
-			&& col_num <= GetTotalColumns() 
-			&& m_CurRowNum <= m_RecordSet.size()
-			) {
+            && col_num <= GetTotalColumns() 
+            && m_CurRowNum <= m_RecordSet.size()
+            ) {
             return m_RecordSet[m_CurRowNum - 1][col_num - 1];
         }
     }
@@ -1072,8 +1072,6 @@ CConnection::CConnection(
             m_DefParams.SetServerType(CDBConnParams::eSybaseSQLServer);
         } else if ( db_type_uc == "MYSQL" ) {
             m_DefParams.SetServerType(CDBConnParams::eMySQL);
-        } else if ( db_type_uc == "SQLITE" ) {
-            m_DefParams.SetServerType(CDBConnParams::eSqlite);
         } else if ( db_type_uc == "MSSQL" ||
                 db_type_uc == "MS_SQL" ||
                 db_type_uc == "MS SQL") 
@@ -1112,15 +1110,15 @@ CConnection::CConnection(
         // Set up message handlers ...
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-		drv_context->PushCntxMsgHandler(
-				new CDB_UserHandler_Exception,
-				eTakeOwnership
-				);
+        drv_context->PushCntxMsgHandler(
+                new CDB_UserHandler_Exception,
+                eTakeOwnership
+                );
 
-		drv_context->PushDefConnMsgHandler(
-				new CDB_UserHandler_Exception,
-				eTakeOwnership
-				);
+        drv_context->PushDefConnMsgHandler(
+                new CDB_UserHandler_Exception,
+                eTakeOwnership
+                );
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
@@ -1429,15 +1427,15 @@ CTransaction::~CTransaction(void)
 pythonpp::CObject
 CTransaction::close(const pythonpp::CTuple& args)
 {
-	try {
-		CloseInternal();
-	}
+    try {
+        CloseInternal();
+    }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
     }
-	catch(const CException& e) {
-		throw CDatabaseError(e.what());
-	}
+    catch(const CException& e) {
+        throw CDatabaseError(e.what());
+    }
 
     // Unregister this transaction with the parent connection ...
     // I'm not absolutely shure about this ... 1/24/2005 5:31PM
@@ -1449,29 +1447,29 @@ CTransaction::close(const pythonpp::CTuple& args)
 pythonpp::CObject
 CTransaction::cursor(const pythonpp::CTuple& args)
 {
-	try {
-		return pythonpp::CObject(CreateCursor(), pythonpp::eTakeOwnership);
-	}
+    try {
+        return pythonpp::CObject(CreateCursor(), pythonpp::eTakeOwnership);
+    }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
     }
-	catch(const CException& e) {
-		throw CDatabaseError(e.what());
-	}
+    catch(const CException& e) {
+        throw CDatabaseError(e.what());
+    }
 }
 
 pythonpp::CObject
 CTransaction::commit(const pythonpp::CTuple& args)
 {
-	try {
-		CommitInternal();
-	}
+    try {
+        CommitInternal();
+    }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
     }
-	catch(const CException& e) {
-		throw CDatabaseError(e.what());
-	}
+    catch(const CException& e) {
+        throw CDatabaseError(e.what());
+    }
 
     return pythonpp::CNone();
 }
@@ -1479,15 +1477,15 @@ CTransaction::commit(const pythonpp::CTuple& args)
 pythonpp::CObject
 CTransaction::rollback(const pythonpp::CTuple& args)
 {
-	try {
-		RollbackInternal();
-	}
+    try {
+        RollbackInternal();
+    }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
     }
-	catch(const CException& e) {
-		throw CDatabaseError(e.what());
-	}
+    catch(const CException& e) {
+        throw CDatabaseError(e.what());
+    }
 
     return pythonpp::CNone();
 }
@@ -2202,70 +2200,70 @@ pythonpp::CObject
 ConvertCVariant2PCObject(const CVariant& value)
 {
     if ( value.IsNull() ) {
-	return pythonpp::CObject();
+    return pythonpp::CObject();
     }
 
     switch ( value.GetType() ) {
-	case eDB_Int :
-	    return pythonpp::CInt( value.GetInt4() );
-	case eDB_SmallInt :
-	    return pythonpp::CInt( value.GetInt2() );
-	case eDB_TinyInt :
-	    return pythonpp::CInt( value.GetByte() );
-	case eDB_BigInt :
-	    return pythonpp::CLong( value.GetInt8() );
-	case eDB_Float :
-	    return pythonpp::CFloat( value.GetFloat() );
-	case eDB_Double :
-	    return pythonpp::CFloat( value.GetDouble() );
-	case eDB_Bit :
-	    // BIT --> BOOL ...
-	    return pythonpp::CBool( value.GetBit() );
+    case eDB_Int :
+        return pythonpp::CInt( value.GetInt4() );
+    case eDB_SmallInt :
+        return pythonpp::CInt( value.GetInt2() );
+    case eDB_TinyInt :
+        return pythonpp::CInt( value.GetByte() );
+    case eDB_BigInt :
+        return pythonpp::CLong( value.GetInt8() );
+    case eDB_Float :
+        return pythonpp::CFloat( value.GetFloat() );
+    case eDB_Double :
+        return pythonpp::CFloat( value.GetDouble() );
+    case eDB_Bit :
+        // BIT --> BOOL ...
+        return pythonpp::CBool( value.GetBit() );
 #if PY_VERSION_HEX >= 0x02040000
-	case eDB_DateTime :
-	case eDB_SmallDateTime :
-	    {
-		const CTime& cur_time = value.GetCTime();
-		return pythonpp::CDateTime(
-			cur_time.Year(),
-			cur_time.Month(),
-			cur_time.Day(),
-			cur_time.Hour(),
-			cur_time.Minute(),
-			cur_time.Second(),
-			cur_time.NanoSecond() / 1000
-			);
-	    }
+    case eDB_DateTime :
+    case eDB_SmallDateTime :
+        {
+        const CTime& cur_time = value.GetCTime();
+        return pythonpp::CDateTime(
+            cur_time.Year(),
+            cur_time.Month(),
+            cur_time.Day(),
+            cur_time.Hour(),
+            cur_time.Minute(),
+            cur_time.Second(),
+            cur_time.NanoSecond() / 1000
+            );
+        }
 #endif
-	case eDB_VarChar :
-	case eDB_Char :
-	case eDB_LongChar :
-	    {
-		string str = value.GetString();
-		return pythonpp::CString( str );
-	    }
-	case eDB_LongBinary :
-	case eDB_VarBinary :
-	case eDB_Binary :
-	case eDB_Numeric :
-	    return pythonpp::CString( value.GetString() );
-	case eDB_Text :
-	case eDB_Image :
-	    {
-		size_t lob_size = value.GetBlobSize();
-		string tmp_str;
+    case eDB_VarChar :
+    case eDB_Char :
+    case eDB_LongChar :
+        {
+        string str = value.GetString();
+        return pythonpp::CString( str );
+        }
+    case eDB_LongBinary :
+    case eDB_VarBinary :
+    case eDB_Binary :
+    case eDB_Numeric :
+        return pythonpp::CString( value.GetString() );
+    case eDB_Text :
+    case eDB_Image :
+        {
+        size_t lob_size = value.GetBlobSize();
+        string tmp_str;
 
-		tmp_str.resize(lob_size);
-		value.Read( (void*)tmp_str.c_str(), lob_size );
-		return pythonpp::CString(tmp_str);
-	    }
-	case eDB_UnsupportedType :
-	    break;
-	default:
-	    // All cases are supposed to be handled.
-	    // In case of PY_VERSION_HEX < 0x02040000 eDB_DateTime and
-	    // eDB_SmallDateTime will be missed.
-	    break;
+        tmp_str.resize(lob_size);
+        value.Read( (void*)tmp_str.c_str(), lob_size );
+        return pythonpp::CString(tmp_str);
+        }
+    case eDB_UnsupportedType :
+        break;
+    default:
+        // All cases are supposed to be handled.
+        // In case of PY_VERSION_HEX < 0x02040000 eDB_DateTime and
+        // eDB_SmallDateTime will be missed.
+        break;
     }
 
     return pythonpp::CObject();
@@ -2383,7 +2381,7 @@ CCursor::AddInfoMessage(const string& message)
 pythonpp::CObject
 CCursor::callproc(const pythonpp::CTuple& args)
 {
-	try {
+    try {
         const size_t args_size = args.size();
 
         m_RowsNum = -1;                     // As required by the specification ...
@@ -2481,13 +2479,13 @@ CCursor::callproc(const pythonpp::CTuple& args)
 
             return output_args;
         }
-	}
+    }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e);
     }
-	catch(const CException& e) {
-		throw CDatabaseError(e.what());
-	}
+    catch(const CException& e) {
+        throw CDatabaseError(e.what());
+    }
 
     // Get RowResultSet ...
     if (m_CallableStmtHelper.MoveToNextRS()) {
@@ -2643,7 +2641,7 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
     } else if ( pythonpp::CString::HasSameType(obj) ) {
         const pythonpp::CString python_str(obj);
         const string std_str(python_str);
-		return CVariant( std_str );
+        return CVariant( std_str );
     } else if (obj == CBinary::GetType()) {
         const string value = static_cast<CBinary*>(obj.Get())->GetValue();
         return CVariant::VarBinary(value.c_str(), value.size());
@@ -2900,7 +2898,7 @@ pythonpp::CObject
 CCursor::nextset(const pythonpp::CTuple& args)
 {
     try {
-		if ( NextSetInternal() ) {
+        if ( NextSetInternal() ) {
             if (m_StmtStr.GetType() == estFunction) {
                 m_CallableStmtHelper.FillDescription(m_DescrList);
             }
@@ -2908,8 +2906,8 @@ CCursor::nextset(const pythonpp::CTuple& args)
                 m_StmtHelper.FillDescription(m_DescrList);
             }
             m_Description = m_DescrList;
-			return pythonpp::CBool(true);
-		}
+            return pythonpp::CBool(true);
+        }
         m_Description = pythonpp::CNone();
     }
     catch (const CDB_Exception& e) {

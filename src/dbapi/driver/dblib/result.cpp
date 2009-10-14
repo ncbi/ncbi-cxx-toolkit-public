@@ -1266,28 +1266,6 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(CDBL_Connection& conn,
                                      int col_num) :
 CDBL_Result(conn, dblink)
 {
-#if defined(MS_DBLIB_IN_USE)
-
-    DBCOL dbcol;
-
-    memset(&dbcol, 0, sizeof(DBCOL));
-    RETCODE res = Check(dbcolinfo(GetCmd(), CI_REGULAR, col_num, 0, &dbcol ));
-
-    CHECK_DRIVER_ERROR(
-        res == FAIL,
-        "Cannot get the DBCOLINFO*." + GetDbgInfo(),
-        280000 );
-
-    if ( dbcol.TableName && *dbcol.TableName ) {
-        m_ObjName += dbcol.TableName;
-        m_ObjName += ".";
-        m_ObjName += dbcol.ActualName;
-    } else {
-        m_ObjName.erase();
-    }
-
-#else
-
     // !!! This is a hack !!!
     // dbcolname returns char*
     DBCOLINFO* col_info = (DBCOLINFO*) Check(dbcolname(GetCmd(), col_num));
@@ -1300,8 +1278,6 @@ CDBL_Result(conn, dblink)
     if (!x_MakeObjName(col_info)) {
         m_ObjName.erase();
     }
-
-#endif
 
     DBBINARY* p = Check(dbtxptr(GetCmd(), col_num));
     if (p) {
@@ -1346,18 +1322,13 @@ CDBL_Result(conn, dblink)
 
 int CDBL_ITDescriptor::DescriptorType() const
 {
-#ifndef MS_DBLIB_IN_USE
     return CDBL_ITDESCRIPTOR_TYPE_MAGNUM;
-#else
-    return CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM;
-#endif
 }
 
 CDBL_ITDescriptor::~CDBL_ITDescriptor()
 {
 }
 
-#if !defined(MS_DBLIB_IN_USE)
 bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 {
     if (!col_info || !col_info->coltxobjname)
@@ -1373,7 +1344,6 @@ bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
     }
     return true;
 }
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1403,15 +1373,8 @@ EDB_Type CDBL_Result::GetDataType(int n)
     default:           return eDB_UnsupportedType;
     }
 
-#ifdef MS_DBLIB_IN_USE
-    DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
-    RETCODE res = Check(dbcolinfo(GetCmd(), CI_REGULAR, n, 0, &dbcol ));
-    return dbcol.Scale == 0 && dbcol.Precision < 20 ? eDB_BigInt : eDB_Numeric;
-#else
     DBTYPEINFO* t = Check(dbcoltypeinfo(GetCmd(), n));
     return t->scale == 0 && t->precision < 20 ? eDB_BigInt : eDB_Numeric;
-#endif
-
 }
 
 // Aux. for CDBL_RowResult::GetItem()

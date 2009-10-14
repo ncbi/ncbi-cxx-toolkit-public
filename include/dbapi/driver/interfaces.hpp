@@ -248,8 +248,7 @@ public:
         eMySQL,            //< MySQL server
         eSybaseOpenServer, //< Sybase Open server
         eSybaseSQLServer,  //< Sybase SQL server
-        eMSSqlServer,      //< Microsoft SQL server
-        eSqlite            //< SQLITE3 server
+        eMSSqlServer       //< Microsoft SQL server
     };
 
     virtual string GetDriverName(void) const = 0;
@@ -266,10 +265,10 @@ public:
     virtual Uint2  GetPort(void) const = 0;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
-	
-	/// Parameters, which are not listed above explicitly, should be retrieved via
-	/// SetParam() method.
-	virtual string GetParam(const string& key) const = 0;
+    
+    /// Parameters, which are not listed above explicitly, should be retrieved via
+    /// SetParam() method.
+    virtual string GetParam(const string& key) const = 0;
 
 protected:
     void SetChildObj(const CDBConnParams& child_obj) const
@@ -327,7 +326,7 @@ public:
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
 
-	virtual string GetParam(const string& key) const;
+    virtual string GetParam(const string& key) const;
 
 private:
     // Non-copyable.
@@ -579,7 +578,7 @@ public:
     virtual ~I_Result(void);
 
 public:
-	enum EGetItem {eAppendLOB, eAssignLOB};
+    enum EGetItem {eAppendLOB, eAssignLOB};
 
     /// @brief 
     ///   Get type of the result
@@ -659,15 +658,15 @@ public:
     ///   If "item_buf" is not NULL, then use "*item_buf" (its type should be
     ///   compatible with the type of retrieved item!) to retrieve the item to;
     ///   otherwise allocate new "CDB_Object".
-	///   In case of "CDB_Image" and "CDB_Text" data types value will be *appended*
-	///   to the "item_buf" by default (policy == eAppendLOB).
+    ///   In case of "CDB_Image" and "CDB_Text" data types value will be *appended*
+    ///   to the "item_buf" by default (policy == eAppendLOB).
     /// 
-	/// @param policy
-	///   Data retrieval policy. If policy == eAppendLOB and "item_buf" is an
-	///   object of CDB_Image or CDB_Text type, then data will be *appended* to
-	///   the end of previously assigned data. If policy == eAssignLOB and "item_buf" is an
-	///   object of CDB_Image or CDB_Text type, then new value will be *assigned*
-	///   to the "item_buf" object.
+    /// @param policy
+    ///   Data retrieval policy. If policy == eAppendLOB and "item_buf" is an
+    ///   object of CDB_Image or CDB_Text type, then data will be *appended* to
+    ///   the end of previously assigned data. If policy == eAssignLOB and "item_buf" is an
+    ///   object of CDB_Image or CDB_Text type, then new value will be *assigned*
+    ///   to the "item_buf" object.
     /// 
     /// @return 
     ///   a result item
