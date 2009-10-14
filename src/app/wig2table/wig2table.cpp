@@ -42,9 +42,14 @@
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqtable/seqtable__.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seqloc/seqloc__.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 USING_SCOPE(ncbi);
@@ -91,6 +96,16 @@ class CWig2tableApplication : public CNcbiApplication
         }
     }
 
+    string m_TrackName;
+    string m_TrackTypeValue;
+    enum ETrackType {
+        eTrackType_invalid,
+        eTrackType_wiggle_0,
+        eTrackType_bedGraph
+    };
+    ETrackType m_TrackType;
+    typedef map<string, string> TTrackParams;
+    TTrackParams m_TrackParams;
     typedef vector<SValueInfo> TValues;
     TValues m_Values;
 
@@ -179,6 +194,23 @@ double CWig2tableApplication::EstimateSize(size_t rows, bool fixed_span) const
 CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
+    if ( !m_TrackName.empty() ) {
+        CRef<CAnnotdesc> desc(new CAnnotdesc);
+        desc->SetName(m_TrackName);
+        annot->SetDesc().Set().push_back(desc);
+    }
+    if ( !m_TrackParams.empty() ) {
+        CRef<CAnnotdesc> desc(new CAnnotdesc);
+        annot->SetDesc().Set().push_back(desc);
+        CUser_object& user = desc->SetUser();
+        user.SetType().SetStr("Track Data");
+        ITERATE ( TTrackParams, it, m_TrackParams ) {
+            CRef<CUser_field> field(new CUser_field);
+            field->SetLabel().SetStr(it->first);
+            field->SetData().SetStr(it->second);
+            user.SetData().push_back(field);
+        }
+    }
     CSeq_table& table = annot->SetData().SetSeq_table();
 
     size_t size = m_Values.size();
@@ -375,7 +407,7 @@ void CWig2tableApplication::ResetData(void)
 inline void CWig2tableApplication::SkipEOL(void)
 {
     int c;
-    while ( (c = fgetc(m_Input)) != EOF && c != '\n' ) {
+    while ( (c = getc(m_Input)) != EOF && c != '\n' ) {
         if ( !isspace(c) ) {
             ERR_POST(Fatal << "Extra text in line: "<<char(c));
         }
@@ -442,12 +474,77 @@ void CWig2tableApplication::ReadBrowser(void)
 
 void CWig2tableApplication::ReadTrack(void)
 {
-    GetLine();
+    m_TrackName = "User Track";
+    m_TrackTypeValue.clear();
+    m_TrackType = eTrackType_invalid;
+    m_TrackParams.clear();
+    while ( !feof(m_Input) ) {
+        int c = getc(m_Input);
+        if ( c == EOF || c == '\n' ) {
+            break;
+        }
+        if ( isspace(c) ) {
+            continue;
+        }
+        string name;
+        while ( isalpha(c) ) {
+            name += c;
+            c = getc(m_Input);
+        }
+        if ( c != '=' ) {
+            ERR_POST(Fatal<<"Param value expected: "<<name);
+        }
+        string value;
+        c = getc(m_Input);
+        if ( c == '"' ) {
+            c = getc(m_Input);
+            while ( c != '"' ) {
+                if ( c == EOF || c == '\n' ) {
+                    ERR_POST(Fatal<<"Open quotes: " <<name<<'"'<<value);
+                }
+                value += c;
+                c = getc(m_Input);
+            }
+        }
+        else {
+            while ( !isspace(c) ) {
+                value += c;
+                c = getc(m_Input);
+            }
+        }
+        if ( name == "type" ) {
+            m_TrackTypeValue = value;
+            if ( value == "wiggle_0" ) {
+                m_TrackType = eTrackType_wiggle_0;
+            }
+            else if ( value == "bedGraph" ) {
+                m_TrackType = eTrackType_bedGraph;
+            }
+            else {
+                ERR_POST(Fatal<<"Invalid track type: "<<value);
+            }
+        }
+        else if ( name == "name" ) {
+            m_TrackName = value;
+        }
+        else {
+            m_TrackParams[name] = value;
+        }
+        if ( c == EOF || c == '\n' ) {
+            break;
+        }
+    }
+    if ( m_TrackType == eTrackType_invalid ) {
+        ERR_POST(Fatal<<"Unknown track type");
+    }
 }
 
 
 void CWig2tableApplication::ReadFixedStep(void)
 {
+    if ( m_TrackType != eTrackType_wiggle_0 ) {
+        ERR_POST(Fatal<<"Track type=wiggle_0 is required");
+    }
     vector<string> ss;
     string line = GetLine();
     NStr::Tokenize(line, " \t", ss);
@@ -496,6 +593,9 @@ void CWig2tableApplication::ReadFixedStep(void)
 
 void CWig2tableApplication::ReadVariableStep(void)
 {
+    if ( m_TrackType != eTrackType_wiggle_0 ) {
+        ERR_POST(Fatal<<"Track type=wiggle_0 is required");
+    }
     vector<string> ss;
     string line = GetLine();
     NStr::Tokenize(line, " \t", ss);
@@ -528,6 +628,9 @@ void CWig2tableApplication::ReadVariableStep(void)
 
 void CWig2tableApplication::ReadBedLine(const char* chrom)
 {
+    if ( m_TrackType != eTrackType_bedGraph ) {
+        ERR_POST(Fatal<<"Track type=bedGraph is required");
+    }
     if ( m_ChromId != chrom ) {
         SetChrom(chrom);
     }
