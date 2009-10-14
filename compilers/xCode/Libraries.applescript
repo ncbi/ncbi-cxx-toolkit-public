@@ -157,6 +157,7 @@ property taxon1 : {name:"taxon1", path:"objects:taxon1", inc:{"taxon1__.cpp", "t
 property taxon3 : {name:"taxon3", path:"objects:taxon3", inc:{"taxon3__.cpp", "taxon3___.cpp", "taxon3.cpp"}, asn1:true}
 property tinyseq : {name:"tinyseq", path:"objects:tinyseq", inc:{"tinyseq__.cpp", "tinyseq___.cpp"}, asn1:true}
 property valerr : {name:"valerr", path:"objects:valerr", inc:{"valerr__.cpp", "valerr___.cpp"}, asn1:true}
+property valid : {name:"valid", path:"objects:valid", inc:{"valid__.cpp", "valid___.cpp"}, asn1:true}
 
 (* ObjTools libs*)
 property xobjmgr : {name:"xobjmgr", path:"objmgr"}
@@ -292,7 +293,7 @@ property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacl
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, taxon3, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true, gui:false}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true, gui:false}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true, gui:false}
-property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true, gui:false}
+property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr, valid}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true, gui:false}
 property ncbi_lds : {name:"ncbi_lds", libs:{lds}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc db", req:true, gui:false}
 property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true, gui:false}
 property ncbi_xreader_id1 : {name:"ncbi_xreader_id1", libs:{xreader_id1}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_seqext ncbi_xreader", req:true, gui:false}
