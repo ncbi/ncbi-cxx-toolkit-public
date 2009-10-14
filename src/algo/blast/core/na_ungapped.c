@@ -402,8 +402,6 @@ s_TypeOfWord(BLAST_SequenceBlk * query,
 
     /* if we get here, q_end and s_end should be free from mask */
     if (locations) q_range = locations->ssr->left;
-    ASSERT(q_end >= new_off + lut_word_length); 
-    ASSERT(q_end <= q_range);
 
     ext_max = MIN(q_range - q_end, s_range - s_end);
     ext_to = MAX(new_off - *q_off, 0);
