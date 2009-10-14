@@ -20,14 +20,24 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/objtools/eutils/*/*.dtd src/gui/objects/*.asn \
   src/algo/gnomon/gnomon.asn src/algo/ms/formats/*/*.dtd \
   src/build-system/project_tree_builder/msvc71_project.dtd \
-  src/app/sample/asn/sample_asn.asn src/app/sample/soap/soap_dataobj.xsd \
-  src/internal/objects/*/*.asn src/internal/mapview/objects/*/*.asn \
-  src/internal/ncbi_ls/asn/*.asn \
+  src/sample/app/asn/sample_asn.asn src/sample/app/soap/soap_dataobj.xsd \
+  src/sample/lib/asn_lib/asn_sample_lib.asn \
+  src/sample/lib/dtd/dtd_sample_lib.dtd \
+  src/sample/lib/xsd/xsd_sample_lib.xsd \
+  src/internal/objects/*/*.asn src/internal/ncbi_ls/asn/login.asn \
+  src/internal/geo/objects/*/*.asn src/internal/asn_cache/lib/cache_blob.asn \
+  src/internal/idxext/snp/libs/eudocsum/eudocsum.xsd \
+  src/internal/mapview/objects/*/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
   src/internal/gbench/app/radar/*.asn \
   src/internal/blast/DistribDbSupport/*asn*/*.asn \
   src/internal/blast/SplitDB/asn/*.asn \
-  src/internal/blast/SplitDB/asn[24]*/*.asn; do
+  src/internal/blast/SplitDB/asn[24]*/*.asn \
+  src/internal/blast/SplitDB/BlastdbInfo/asn/BlastdbInfo.asn \
+  src/internal/blast/Blastdb2Entrez/dbASN/bdb2ez.asn \
+  src/internal/gpipe/align_db/objects/alndb_query.asn \
+  src/internal/gpipe/objects/*/*.asn \
+  src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn; do
     if test -f "$spec"; then
         case $spec in
             */seq_annot_ref.asn ) continue ;; # sample data, not a spec
@@ -70,6 +80,9 @@ if [ -f $splitdb_dir/Makefile.asntool ]; then
     fi
     if $force || [ ! -f ${splitdb_dir}dbld/objDbld.c ]; then
         (cd ${splitdb_dir}dbld && $make_asntool) || failed="$failed asndbld-C"
+    fi
+    if $force || [ ! -f src/internal/msgmail2/asn/objmmail.c ]; then
+        (cd src/internal/msgmail2/asn && $make_asntool) || failed="$failed objmmail"
     fi
 fi
 
