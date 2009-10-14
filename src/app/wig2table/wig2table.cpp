@@ -484,7 +484,7 @@ void CWig2tableApplication::ReadFixedStep(void)
     }
 
     SValueInfo value;
-    value.m_Pos = start;
+    value.m_Pos = start-1;
     value.m_Span = span;
     while ( fscanf(m_Input, "%lf", &value.m_Value) == 1 ) {
         SkipEOL();
@@ -520,6 +520,7 @@ void CWig2tableApplication::ReadVariableStep(void)
     value.m_Span = span;
     while ( fscanf(m_Input, "%u%lf", &value.m_Pos, &value.m_Value) == 2 ) {
         SkipEOL();
+        value.m_Pos -= 1;
         AddValue(value);
     }
 }
@@ -537,7 +538,6 @@ void CWig2tableApplication::ReadBedLine(const char* chrom)
     }
     SkipEOL();
     value.m_Span -= value.m_Pos;
-    value.m_Pos += 1;
     AddValue(value);
 }
 
