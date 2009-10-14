@@ -2297,12 +2297,44 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
 }
 
 
+CConstRef<CSeq_loc> CFastaOstream::x_MapMask(CSeq_loc_Mapper& mapper,
+                                             const CSeq_loc& mask,
+                                             const CSeq_id* base_seq_id,
+                                             CScope* scope)
+{
+    CConstRef<CSeq_loc> mapped_mask(&mask);
+
+    // Mapping down requires the higher-level ID as a reference, even
+    // when given a scope, and as such should precede mapping up to
+    // keep sequence::GetId from bombing out.
+    if ((m_Flags & fMapMasksDown) != 0  &&  scope) {
+        try {
+            CSeq_loc_Mapper mapper_down
+                (scope->GetBioseqHandle(sequence::GetId(*mapped_mask, scope)),
+                 CSeq_loc_Mapper::eSeqMap_Down);
+            mapped_mask = mapped_mask->Add(*mapper_down.Map(*mapped_mask),
+                                           CSeq_loc::fSortAndMerge_All, 0);
+        } catch (CObjmgrUtilException&) {
+        }
+    }
+    if ((m_Flags & fMapMasksUp) != 0  &&  scope  &&  base_seq_id) {
+        CSeq_loc_Mapper mapper_up(scope->GetBioseqHandle(*base_seq_id),
+                                  CSeq_loc_Mapper::eSeqMap_Up);
+        mapped_mask = mapped_mask->Add(*mapper_up.Map(*mapped_mask),
+                                       CSeq_loc::fSortAndMerge_All, 0);
+    }
+    mapped_mask = mapper.Map(*mapped_mask);
+    return mapped_mask;
+}
+
+
 void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
                                        const CSeq_id* base_seq_id,
                                        const CSeq_loc* location,
                                        CScope* scope)
 {
     CRef<CSeq_loc_Mapper> mapper;
+    CBioseq_Handle        bsh;
     masking_state[0] = 0;
 
     if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
@@ -2318,9 +2350,15 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
         mapper->SetMergeAll();
         mapper->TruncateNonmappingRanges();
 
-        const CSeq_loc& mask        = m_SoftMask ? *m_SoftMask : *m_HardMask;
-        int             type        = m_SoftMask ? eSoftMask : eHardMask;
-        CRef<CSeq_loc>  mapped_mask = mapper->Map(mask);
+        if (scope  &&  (m_Flags & (fMapMasksUp | fMapMasksDown))) {
+            bsh = scope->GetBioseqHandle(*base_seq_id);
+        }
+
+        const CSeq_loc&     mask      = m_SoftMask ? *m_SoftMask : *m_HardMask;
+        int                 type      = m_SoftMask ? eSoftMask : eHardMask;
+        CConstRef<CSeq_loc> mapped_mask = x_MapMask(*mapper, mask, base_seq_id,
+                                                    scope);
+
         for (CSeq_loc_CI it(*mapped_mask);  it;  ++it) {
             CSeq_loc_CI::TRange loc_range = it.GetRange();
             masking_state[loc_range.GetFrom()]   = type;
@@ -2329,7 +2367,8 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
     }
 
     if (m_SoftMask.NotEmpty()  &&  m_HardMask.NotEmpty()) {
-        CRef<CSeq_loc> mapped_mask = mapper->Map(*m_HardMask);
+        CConstRef<CSeq_loc> mapped_mask = x_MapMask(*mapper, *m_HardMask,
+                                                    base_seq_id, scope);
         for (CSeq_loc_CI it(*mapped_mask);  it;  ++it) {
             CSeq_loc_CI::TRange loc_range = it.GetRange();
             TSeqPos             from      = loc_range.GetFrom();

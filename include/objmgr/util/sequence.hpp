@@ -57,6 +57,7 @@ class CSeq_loc_mix;
 class CSeq_point;
 class CPacked_seqpnt;
 class CBioseq_Handle;
+class CSeq_loc_Mapper;
 class CSeqVector;
 class CCdregion;
 class CSeq_feat;
@@ -654,6 +655,8 @@ public:
         fSuppressRange   = 0x04, ///< never include location details in defline
         fReverseStrand   = 0x08, ///< flip the (implicit) location
         fKeepGTSigns     = 0x10, ///< don't convert '>' to '_' in title
+        fMapMasksUp      = 0x20, ///< honor masks specified at a lower level
+        fMapMasksDown    = 0x40, ///< honor masks specified at a higher level
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
@@ -717,11 +720,15 @@ private:
     void x_WriteSeqTitle(const CBioseq& bioseq,
                          CScope* scope);
 
+    CConstRef<CSeq_loc> x_MapMask(CSeq_loc_Mapper& mapper, const CSeq_loc& mask,
+                                  const CSeq_id* base_seq_id, CScope* scope);
+
     typedef map<TSeqPos, int> TMSMap;
     void x_GetMaskingStates(TMSMap& masking_states,
                             const CSeq_id* base_seq_id,
                             const CSeq_loc* location,
                             CScope* scope);
+
     void x_WriteSequence(const CSeqVector& vec,
                          const TMSMap& masking_state);
 };
