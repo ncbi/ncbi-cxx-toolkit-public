@@ -17,4 +17,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # CHECK_CMD = dbapi_sample.sh
 # CHECK_COPY = dbapi_sample.sh
 
-WATCHERS = ivanov
+WATCHERS = ivanovp
