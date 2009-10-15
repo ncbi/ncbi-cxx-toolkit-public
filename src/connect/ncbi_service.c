@@ -58,28 +58,38 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 
 static char* s_ServiceName(const char* service, size_t depth)
 {
-    char*  s;
     char   buf[128];
     char   srv[128];
     size_t len;
+    char*  s;
 
-    if (++depth > 8 || !service || !*service ||
+    if (depth > 7) {
+        CORE_LOGF_X(7, eLOG_Error,
+                    ("[%s]  Maximal service name recursion depth reached: %lu",
+                     service, (unsigned long) depth));
+        return 0/*failure*/;
+    }
+    if (!service  ||  !*service  ||
         (len = strlen(service)) + sizeof(CONN_SERVICE_NAME) >= sizeof(buf)) {
+        CORE_LOGF_X(8, eLOG_Error,
+                    ("[%s]  %s service name",
+                     !service ? "<NULL>" :  service,
+                     !service ?  "NULL"  : *service ? "Too long" : "Empty"));
         return 0/*failure*/;
     }
     s = (char*) memcpy(buf, service, len) + len;
     *s++ = '_';
     memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
-    /* Looking for "service_CONN_SERVICE_NAME" in environment */
+    /* Looking for "service_CONN_SERVICE_NAME" in the environment */
     if (!(s = getenv(strupr(buf)))  ||  !*s) {
         /* Looking for "CONN_SERVICE_NAME" in registry's section [service] */
         buf[len++] = '\0';
         CORE_REG_GET(buf, buf + len, srv, sizeof(srv), 0);
-        if (!*srv)
-            return strdup(service);
-    } else
-        strncpy0(srv, s, sizeof(srv) - 1);
-    return s_ServiceName(srv, depth);
+        s = srv;
+    }
+    if (!*s  ||  strcasecmp(s, service) == 0)
+        return strdup(service);
+    return s_ServiceName(s, ++depth);
 }
 
 
