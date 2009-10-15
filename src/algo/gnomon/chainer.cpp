@@ -839,28 +839,26 @@ void CChainMembers::FillGapsInAlignments(const CResidueVec& seq)
 {
     sort(begin(),end(),ScoreOrder());
 
-    for (unsigned i = 0; i < size(); ++i) {
-        SChainMember& mi = *(*this)[i];
-        CGeneModel& ai = *mi.m_align;
-        if ((ai.Type()&CGeneModel::eProt)==0 && ai.Continuous())
-            continue;
+    bool keep_doing = true;
+    while (keep_doing) {
+        keep_doing = false;
+        for (unsigned i = 0; i < size(); ++i) {
+            SChainMember& mi = *(*this)[i];
+            CGeneModel& ai = *mi.m_align;
+            if (ai.Continuous())
+                continue;
 
-        bool was_filled;
-        do {
-            was_filled = false;
             for (unsigned j = 0; j < size(); ++j) {
                 if (i == j) continue;
                 SChainMember& mj = *(*this)[j];
                 CGeneModel& aj = *mj.m_align;
                 
-                if (ai.isCompatible(aj) && CModelCompare::CodingCompatible(ai, aj, seq, false) && FillGaps(ai, aj)) {
-                    was_filled = true;
+                if (ai.isCompatible(aj) && CModelCompare::CodingCompatible(ai, aj, seq, false)) {
+                    keep_doing = FillGaps(ai, aj) || keep_doing;
                     _ASSERT( ai.isCompatible(aj) && CModelCompare::CodingCompatible(ai, aj, seq, false) );
-                    if(ai.Continuous())
-                        break;
                 }
             }
-        } while (was_filled && !ai.Continuous());
+        }
     }
 }
 
