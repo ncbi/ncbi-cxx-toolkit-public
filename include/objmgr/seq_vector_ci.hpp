@@ -36,6 +36,7 @@
 
 #include <objmgr/seq_map_ci.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <iterator>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,7 +59,10 @@ public:
     typedef TResidue            value_type;
     typedef TSeqPos             size_type;
     typedef TSignedSeqPos       difference_type;
-    
+    typedef std::random_access_iterator_tag iterator_category;
+    typedef const TResidue*     pointer;
+    typedef const TResidue&     reference;
+
     enum ECaseConversion {
         eCaseConversion_none,
         eCaseConversion_upper,
