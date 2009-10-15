@@ -440,13 +440,41 @@ CDiagCompileInfo::~CDiagCompileInfo(void)
 }
 
 
-void 
+// Skip matching l/r separators, return the last char before them
+// or null if the separators are unbalanced.
+const char* find_match(char        lsep,
+                       char        rsep,
+                       const char* start,
+                       const char* stop)
+{
+    if (*(stop - 1) != rsep) return stop;
+    int balance = 1;
+    const char* pos = stop - 2;
+    for (; pos > start; pos--) {
+        if (*pos == rsep) {
+            balance++;
+        }
+        else if (*pos == lsep) {
+            if (--balance == 0) break;
+        }
+    }
+    return (pos <= start) ? NULL : pos;
+}
+
+
+void
 CDiagCompileInfo::ParseCurrFunctName(void) const
 {
     if (m_CurrFunctName && *m_CurrFunctName) {
         // Parse curr_funct
 
-        const char* end_str = strchr(m_CurrFunctName, '(');
+        // Skip function arguments
+        const char* end_str = find_match('(', ')',
+            m_CurrFunctName, m_CurrFunctName + strlen(m_CurrFunctName));
+        if ( end_str ) {
+            // Skip template arguments
+            end_str = find_match('<', '>', m_CurrFunctName, end_str);
+        }
         if ( end_str ) {
             // Get a function/method name
             const char* start_str = NULL;
@@ -471,7 +499,7 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
 
            // Get a class name
            if (has_class) {
-               end_str = start_str - 2;
+               end_str = find_match('<', '>', m_CurrFunctName, start_str - 2);
                start_str = str_rev_str(m_CurrFunctName, end_str, " ");
                const char* cur_class_name =
                    (start_str == NULL ? m_CurrFunctName : start_str + 1);
