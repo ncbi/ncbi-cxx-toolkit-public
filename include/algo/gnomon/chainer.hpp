@@ -61,14 +61,14 @@ public:
     ~CChainer();
 
     void SetHMMParameters(CHMMParameters* params);
-    void CChainer::SetIntersectLimit(int value);
-    void CChainer::SetTrim(int trim);
-    void CChainer::SetMinPolyA(int minpolya);
-    void CChainer::SetAlignLimit(int alignlimit);
-    SMinScor& CChainer::SetMinScor();
-    void CChainer::SetMinInframeFrac(double mininframefrac);
-    map<string, pair<bool,bool> >& CChainer::SetProtComplet();
-    map<string,TSignedSeqRange>& CChainer::SetMrnaCDS();
+    void SetIntersectLimit(int value);
+    void SetTrim(int trim);
+    void SetMinPolyA(int minpolya);
+    void SetAlignLimit(int alignlimit);
+    SMinScor& SetMinScor();
+    void SetMinInframeFrac(double mininframefrac);
+    map<string, pair<bool,bool> >& SetProtComplet();
+    map<string,TSignedSeqRange>& SetMrnaCDS();
     CRef<objects::CScope>& SetScope();
     void SetGenomic(CSeq_id& seqid);
 
