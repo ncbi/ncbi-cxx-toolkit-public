@@ -35,8 +35,13 @@
 #include <algo/gnomon/gnomon_model.hpp>
 
 BEGIN_SCOPE(ncbi);
+
+class CArgDescriptions;
+class CArgs;
+
 BEGIN_SCOPE(gnomon);
 
+class CHMMParameters;
 
 struct SMinScor {
     double m_min;
@@ -55,12 +60,20 @@ public:
     CChainer();
     ~CChainer();
 
-    TGeneModelList MakeChains(TAlignModelList& alignments,
-                              CGnomonEngine& gnomon, const SMinScor& minscor,
-                              int intersect_limit, int trim, size_t alignlimit,
-                              const map<string,TSignedSeqRange>& mrnaCDS, 
-                              map<string, pair<bool,bool> >& prot_complet,
-                              double mininframefrac);
+    void SetHMMParameters(CHMMParameters* params);
+    void CChainer::SetIntersectLimit(int value);
+    void CChainer::SetTrim(int trim);
+    void CChainer::SetMinPolyA(int minpolya);
+    void CChainer::SetAlignLimit(int alignlimit);
+    SMinScor& CChainer::SetMinScor();
+    void CChainer::SetMinInframeFrac(double mininframefrac);
+    map<string, pair<bool,bool> >& CChainer::SetProtComplet();
+    map<string,TSignedSeqRange>& CChainer::SetMrnaCDS();
+    CRef<objects::CScope>& SetScope();
+    void SetGenomic(CSeq_id& seqid);
+
+    TGeneModelList MakeChains(TAlignModelList& alignments);
+
 private:
     // Prohibit copy constructor and assignment operator
     CChainer(const CChainer& value);
@@ -68,6 +81,13 @@ private:
 
     class CChainerImpl;
     auto_ptr<CChainerImpl> m_data;
+};
+
+
+class NCBI_XALGOGNOMON_EXPORT CChainerArgUtil {
+public:
+    static void SetupArgDescriptions(CArgDescriptions* arg_desc);
+    static void ArgsToChainer(CChainer* chainer, const CArgs& args);
 };
 
 END_SCOPE(gnomon)
