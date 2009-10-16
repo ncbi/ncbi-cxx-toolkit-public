@@ -51,9 +51,232 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objtools/readers/idmapper.hpp>
+#include <corelib/ncbifile.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
+
+class CWigBufferedLineReader
+{
+public:
+    /// read from the file, "-" (but not "./-") means standard input
+    CWigBufferedLineReader(const string& filename);
+    virtual ~CWigBufferedLineReader();
+    
+    bool                AtEOF(void) const;
+    CWigBufferedLineReader& operator++(void);
+    void                UngetLine(void);
+    CTempStringEx       operator*(void) const;
+    CT_POS_TYPE         GetPosition(void) const;
+    unsigned int        GetLineNumber(void) const;
+
+protected:
+
+    void x_LoadLong(void);
+    bool x_ReadBuffer(void);
+
+private:
+    AutoPtr<IReader> m_Reader;
+    bool          m_Eof;
+    bool          m_UngetLine;
+    size_t        m_BufferSize;
+    AutoArray<char> m_Buffer;
+    char*         m_Pos;
+    char*         m_End;
+    CTempStringEx m_Line;
+    string        m_String;
+    CT_POS_TYPE   m_InputPos;
+    unsigned int  m_LineNumber;
+};
+
+
+CWigBufferedLineReader::CWigBufferedLineReader(const string& filename)
+    : m_Reader(CFileReader::New(filename)),
+      m_Eof(false),
+      m_UngetLine(false),
+      m_BufferSize(32*1024),
+      m_Buffer(new char[m_BufferSize]),
+      m_Pos(m_Buffer.get()),
+      m_End(m_Pos),
+      m_InputPos(0),
+      m_LineNumber(0)
+{
+    x_ReadBuffer();
+}
+
+
+CWigBufferedLineReader::~CWigBufferedLineReader()
+{
+}
+
+
+bool CWigBufferedLineReader::AtEOF(void) const
+{
+    return m_Eof && !m_UngetLine;
+}
+
+
+void CWigBufferedLineReader::UngetLine(void)
+{
+    _ASSERT(!m_UngetLine);
+    _ASSERT(m_Line.begin());
+    --m_LineNumber;
+    m_UngetLine = true;
+}
+
+
+CWigBufferedLineReader& CWigBufferedLineReader::operator++(void)
+{
+    ++m_LineNumber;
+    if ( m_UngetLine ) {
+        _ASSERT(m_Line.begin());
+        m_UngetLine = false;
+        return *this;
+    }
+    // check if we are at the buffer end
+    char* start = m_Pos;
+    char* end = m_End;
+    for ( char* p = start; p < end; ++p ) {
+        if ( *p == '\n' ) {
+            *p = '\0';
+            m_Line.assign(start, p - start, CTempStringEx::eHasZeroAtEnd);
+            m_Pos = ++p;
+            if ( p == end ) {
+                m_String = m_Line;
+                m_Line = m_String;
+                x_ReadBuffer();
+            }
+            return *this;
+        }
+        else if ( *p == '\r' ) {
+            *p = '\0';
+            m_Line.assign(start, p - start, CTempStringEx::eHasZeroAtEnd);
+            if ( ++p == end ) {
+                m_String = m_Line;
+                m_Line = m_String;
+                if ( x_ReadBuffer() ) {
+                    p = m_Pos;
+                    if ( *p == '\n' ) {
+                        m_Pos = p+1;
+                    }
+                }
+                return *this;
+            }
+            if ( *p != '\n' ) {
+                return *this;
+            }
+            m_Pos = ++p;
+            if ( p == end ) {
+                m_String = m_Line;
+                m_Line = m_String;
+                x_ReadBuffer();
+            }
+            return *this;
+        }
+    }
+    x_LoadLong();
+    return *this;
+}
+
+
+void CWigBufferedLineReader::x_LoadLong(void)
+{
+    char* start = m_Pos;
+    char* end = m_End;
+    m_String.assign(start, end);
+    while ( x_ReadBuffer() ) {
+        start = m_Pos;
+        end = m_End;
+        for ( char* p = start; p < end; ++p ) {
+            char c = *p;
+            if ( c == '\r' || c == '\n' ) {
+                m_String.append(start, p - start);
+                m_Line = m_String;
+                if ( ++p == end ) {
+                    m_String = m_Line;
+                    m_Line = m_String;
+                    if ( x_ReadBuffer() ) {
+                        p = m_Pos;
+                        end = m_End;
+                        if ( p < end && c == '\r' && *p == '\n' ) {
+                            ++p;
+                            m_Pos = p;
+                        }
+                    }
+                }
+                else {
+                    if ( c == '\r' && *p == '\n' ) {
+                        if ( ++p == end ) {
+                            x_ReadBuffer();
+                            p = m_Pos;
+                        }
+                    }
+                    m_Pos = p;
+                }
+                return;
+            }
+        }
+        m_String.append(start, end - start);
+    }
+    m_Line = m_String;
+    return;
+}
+
+
+bool CWigBufferedLineReader::x_ReadBuffer()
+{
+    _ASSERT(m_Reader);
+
+    if ( m_Eof ) {
+        return false;
+    }
+
+    m_InputPos += CT_OFF_TYPE(m_End - m_Buffer.get());
+    m_Pos = m_End = m_Buffer.get();
+    for (bool flag = true; flag; ) {
+        size_t size;
+        ERW_Result result =
+            m_Reader->Read(m_Buffer.get(), m_BufferSize, &size);
+        switch (result) {
+        case eRW_NotImplemented:
+        case eRW_Error:
+            NCBI_THROW(CIOException, eRead, "Read error");
+            /*NOTREACHED*/
+            break;
+        case eRW_Timeout:
+            // keep spinning around
+            break;
+        case eRW_Eof:
+            m_Eof = true;
+            // fall through
+        case eRW_Success:
+            m_End = m_Pos + size;
+            return (result == eRW_Success  ||  size > 0);
+        default:
+            _ASSERT(0);
+        }
+    } // for
+    return false;
+}
+
+
+CTempStringEx CWigBufferedLineReader::operator*(void) const
+{
+    return m_Line;
+}
+
+
+CT_POS_TYPE CWigBufferedLineReader::GetPosition(void) const
+{
+    return m_InputPos + CT_OFF_TYPE(m_Pos - m_Buffer.get());
+}
+
+
+unsigned int CWigBufferedLineReader::GetLineNumber(void) const
+{
+    return m_LineNumber;
+}
+
 
 class CWig2tableApplication : public CNcbiApplication
 {
@@ -63,21 +286,42 @@ class CWig2tableApplication : public CNcbiApplication
     CRef<CSeq_annot> MakeTableAnnot(void);
     void DumpTableAnnot(void);
     void ResetData(void);
-    void SetChrom(const string& chrom);
+    void SetChrom(CTempString chrom);
 
-    void SkipEOL(void);
-    string GetLine(void);
-    pair<string, string> GetParam(const string& s) const;
     double EstimateSize(size_t rows, bool fixed_span) const;
 
     void ReadBrowser(void);
     void ReadTrack(void);
     void ReadFixedStep(void);
     void ReadVariableStep(void);
-    void ReadBedLine(const char* chrom);
+    void ReadBedLine(CTempString chrom);
 
-    FILE* m_Input;
+    AutoPtr<CWigBufferedLineReader> m_Input;
     AutoPtr<CObjectOStream> m_Output;
+
+    size_t m_LineNumber;
+    CTempStringEx m_FullLine;
+    CTempStringEx m_CurLine;
+    size_t m_LineBufferSize;
+    char* m_LineBufferPtr;
+    size_t m_LineBufferLen;
+    bool m_UngetLine;
+    AutoArray<char> m_LineBuffer;
+
+    bool x_GetLine(void);
+    void x_UngetLine(void);
+    bool x_SkipWS(void);
+    bool x_CommentLine(void) const;
+    CTempString x_GetWord(void);
+    CTempString x_GetParamName(void);
+    CTempString x_GetParamValue(void);
+    bool x_TryGetPos(TSeqPos& v);
+    bool x_TryGetDoubleSimple(double& v);
+    bool x_TryGetDouble(double& v);
+    void x_GetPos(TSeqPos& v);
+    void x_GetDouble(double& v);
+
+    void x_Error(const char* msg);
 
     string m_ChromId;
     struct SValueInfo {
@@ -404,71 +648,237 @@ void CWig2tableApplication::ResetData(void)
 }
 
 
-inline void CWig2tableApplication::SkipEOL(void)
+void CWig2tableApplication::x_Error(const char* msg)
 {
-    int c;
-    while ( (c = getc(m_Input)) != EOF && c != '\n' ) {
-        if ( !isspace(c) ) {
-            ERR_POST(Fatal << "Extra text in line: "<<char(c));
-        }
-    }
+    ERR_POST(Fatal<<GetArgs()["in"].AsString()<<":"<<m_LineNumber<<": "<<msg<<
+             ": \""<<m_CurLine<<"\"");
 }
 
 
-string CWig2tableApplication::GetLine()
+bool CWig2tableApplication::x_SkipWS(void)
 {
-    string line;
-    char buf[1024];
-    while ( !feof(m_Input) ) {
-        fgets(buf, sizeof(buf), m_Input);
-        size_t len = strlen(buf);
-        if ( len && buf[len-1] == '\n' ) {
-            --len;
-            if ( len && buf[len-1] == '\r' ) {
-                --len;
-            }
-            buf[len] = '\0';
-            line += buf;
+    const char* ptr = m_CurLine.data();
+    size_t skip = 0;
+    for ( size_t len = m_CurLine.size(); skip < len; ++skip ) {
+        char c = ptr[skip];
+        if ( c != ' ' && c != '\t' ) {
             break;
         }
-        line += buf;
     }
-    return line;
+    m_CurLine = m_CurLine.substr(skip);
+    return !m_CurLine.empty();
 }
 
 
-pair<string, string> CWig2tableApplication::GetParam(const string& s) const
+inline bool CWig2tableApplication::x_CommentLine(void) const
 {
-    pair<string, string> ret;
-    size_t eq = s.find('=');
-    if ( eq == NPOS ) {
-        ERR_POST(Fatal<<"Bad param: "<<s);
-    }
-    ret.first = s.substr(0, eq);
-    ret.second = s.substr(eq+1);
-    size_t s2 = ret.second.size();
-    if ( s2 >= 2 && ret.second[0] == '"' && ret.second[s2-1] == '"' ) {
-        ret.second = ret.second.substr(1, s2-2);
-    }
-    return ret;
+    char c = m_CurLine.data()[0];
+    return c == '#' || c == '\0';
 }
 
 
-void CWig2tableApplication::SetChrom(const string& chrom)
+CTempString CWig2tableApplication::x_GetWord(void)
+{
+    const char* ptr = m_CurLine.data();
+    size_t skip = 0;
+    for ( size_t len = m_CurLine.size(); skip < len; ++skip ) {
+        char c = ptr[skip];
+        if ( c == ' ' || c == '\t' ) {
+            break;
+        }
+    }
+    if ( skip == 0 ) {
+        x_Error("Identifier expected");
+    }
+    m_CurLine = m_CurLine.substr(skip);
+    return CTempString(ptr, skip);
+}
+
+
+CTempString CWig2tableApplication::x_GetParamName(void)
+{
+    const char* ptr = m_CurLine.data();
+    size_t skip = 0;
+    for ( size_t len = m_CurLine.size(); skip < len; ++skip ) {
+        char c = ptr[skip];
+        if ( c == '=' ) {
+            m_CurLine = m_CurLine.substr(skip+1);
+            return CTempString(ptr, skip);
+        }
+        if ( c == ' ' || c == '\t' ) {
+            break;
+        }
+    }
+    x_Error("'=' expected");
+    return CTempString();
+}
+
+
+CTempString CWig2tableApplication::x_GetParamValue(void)
+{
+    const char* ptr = m_CurLine.data();
+    size_t len = m_CurLine.size();
+    if ( len && *ptr == '"' ) {
+        size_t pos = 1;
+        for ( ; pos < len; ++pos ) {
+            char c = ptr[pos];
+            if ( c == '"' ) {
+                m_CurLine = m_CurLine.substr(pos+1);
+                return CTempString(ptr+1, pos-1);
+            }
+        }
+        x_Error("Open quotes");
+    }
+    return x_GetWord();
+}
+
+
+void CWig2tableApplication::x_GetPos(TSeqPos& v)
+{
+    TSeqPos ret = 0;
+    const char* ptr = m_CurLine.data();
+    for ( size_t skip = 0; ; ++skip ) {
+        char c = ptr[skip];
+        if ( c >= '0' && c <= '9' ) {
+            ret = ret*10 + (c-'0');
+        }
+        else if ( (c == ' ' || c == '\t' || c == '\0') && skip ) {
+            m_CurLine = m_CurLine.substr(skip);
+            v = ret;
+            return;
+        }
+        else {
+            x_Error("Integer value expected");
+        }
+    }
+}
+
+
+bool CWig2tableApplication::x_TryGetDoubleSimple(double& v)
+{
+    double ret = 0;
+    const char* ptr = m_CurLine.data();
+    size_t skip = 0;
+    bool negate = false, digits = false;
+    for ( ; ; ++skip ) {
+        char c = ptr[skip];
+        if ( !skip ) {
+            if ( c == '-' ) {
+                negate = true;
+                continue;
+            }
+            if ( c == '+' ) {
+                continue;
+            }
+        }
+        if ( c >= '0' && c <= '9' ) {
+            digits = true;
+            ret = ret*10 + (c-'0');
+        }
+        else if ( c == '.' ) {
+            ++skip;
+            break;
+        }
+        else if ( c == '\0' ) {
+            if ( !digits ) {
+                return false;
+            }
+            m_CurLine.clear();
+            v = ret;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    double digit_mul = 1;
+    for ( ; ; ++skip ) {
+        char c = ptr[skip];
+        if ( c >= '0' && c <= '9' ) {
+            digits = true;
+            digit_mul *= .1;
+            ret += (c-'0')*digit_mul;
+        }
+        else if ( (c == ' ' || c == '\t' || c == '\0') && digits ) {
+            m_CurLine.clear();
+            v = ret;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
+
+
+bool CWig2tableApplication::x_TryGetDouble(double& v)
+{
+    if ( x_TryGetDoubleSimple(v) ) {
+        return true;
+    }
+    const char* ptr = m_CurLine.data();
+    char* endptr = 0;
+    v = strtod(ptr, &endptr);
+    if ( endptr == ptr ) {
+        return false;
+    }
+    if ( *endptr ) {
+        x_Error("extra text in line");
+    }
+    m_CurLine.clear();
+    return true;
+}
+
+
+inline bool CWig2tableApplication::x_TryGetPos(TSeqPos& v)
+{
+    char c = m_CurLine[0];
+    if ( c < '0' || c > '9' ) {
+        return false;
+    }
+    x_GetPos(v);
+    return true;
+}
+
+
+inline void CWig2tableApplication::x_GetDouble(double& v)
+{
+    if ( !x_TryGetDouble(v) ) {
+        x_Error("Floating point value expected");
+    }
+}
+
+
+bool CWig2tableApplication::x_GetLine()
+{
+    if ( m_Input->AtEOF() ) {
+        return false;
+    }
+    m_FullLine = m_CurLine = *++*m_Input;
+    return true;
+}
+
+
+inline void CWig2tableApplication::x_UngetLine(void)
+{
+    m_Input->UngetLine();
+}
+
+
+void CWig2tableApplication::SetChrom(CTempString chrom)
 {
     if ( chrom != m_ChromId ) {
         if ( !m_ChromId.empty() ) {
             DumpTableAnnot();
         }
         ResetData();
+        m_ChromId = chrom;
     }
-    m_ChromId = chrom;
 }
 
 
 void CWig2tableApplication::ReadBrowser(void)
 {
-    GetLine();
 }
 
 
@@ -478,40 +888,9 @@ void CWig2tableApplication::ReadTrack(void)
     m_TrackTypeValue.clear();
     m_TrackType = eTrackType_invalid;
     m_TrackParams.clear();
-    while ( !feof(m_Input) ) {
-        int c = getc(m_Input);
-        if ( c == EOF || c == '\n' ) {
-            break;
-        }
-        if ( isspace(c) ) {
-            continue;
-        }
-        string name;
-        while ( isalpha(c) ) {
-            name += c;
-            c = getc(m_Input);
-        }
-        if ( c != '=' ) {
-            ERR_POST(Fatal<<"Param value expected: "<<name);
-        }
-        string value;
-        c = getc(m_Input);
-        if ( c == '"' ) {
-            c = getc(m_Input);
-            while ( c != '"' ) {
-                if ( c == EOF || c == '\n' ) {
-                    ERR_POST(Fatal<<"Open quotes: " <<name<<'"'<<value);
-                }
-                value += c;
-                c = getc(m_Input);
-            }
-        }
-        else {
-            while ( !isspace(c) ) {
-                value += c;
-                c = getc(m_Input);
-            }
-        }
+    while ( x_SkipWS() ) {
+        CTempString name = x_GetParamName();
+        CTempString value = x_GetParamValue();
         if ( name == "type" ) {
             m_TrackTypeValue = value;
             if ( value == "wiggle_0" ) {
@@ -521,7 +900,7 @@ void CWig2tableApplication::ReadTrack(void)
                 m_TrackType = eTrackType_bedGraph;
             }
             else {
-                ERR_POST(Fatal<<"Invalid track type: "<<value);
+                x_Error("Invalid track type");
             }
         }
         else if ( name == "name" ) {
@@ -530,61 +909,60 @@ void CWig2tableApplication::ReadTrack(void)
         else {
             m_TrackParams[name] = value;
         }
-        if ( c == EOF || c == '\n' ) {
-            break;
-        }
     }
     if ( m_TrackType == eTrackType_invalid ) {
-        ERR_POST(Fatal<<"Unknown track type");
+        x_Error("Unknown track type");
     }
 }
 
 
 void CWig2tableApplication::ReadFixedStep(void)
 {
-    if ( m_TrackType != eTrackType_wiggle_0 ) {
-        ERR_POST(Fatal<<"Track type=wiggle_0 is required");
+    if ( m_TrackType != eTrackType_wiggle_0 &&
+         m_TrackType != eTrackType_invalid ) {
+        x_Error("Track type=wiggle_0 is required");
     }
-    vector<string> ss;
-    string line = GetLine();
-    NStr::Tokenize(line, " \t", ss);
 
     size_t start = 0;
     size_t step = 0;
     size_t span = 1;
-    for ( size_t i = 1; i < ss.size(); ++i ) {
-        pair<string, string> p = GetParam(ss[i]);
-        if ( p.first == "chrom" ) {
-            SetChrom(p.second);
+    while ( x_SkipWS() ) {
+        CTempString name = x_GetParamName();
+        CTempString value = x_GetParamValue();
+        if ( name == "chrom" ) {
+            SetChrom(value);
         }
-        else if ( p.first == "start" ) {
-            start = NStr::StringToUInt(p.second);
+        else if ( name == "start" ) {
+            start = NStr::StringToUInt(value);
         }
-        else if ( p.first == "step" ) {
-            step = NStr::StringToUInt(p.second);
+        else if ( name == "step" ) {
+            step = NStr::StringToUInt(value);
         }
-        else if ( p.first == "span" ) {
-            span = NStr::StringToUInt(p.second);
+        else if ( name == "span" ) {
+            span = NStr::StringToUInt(value);
         }
         else {
-            ERR_POST(Fatal << "Bad param name: " << line);
+            x_Error("Bad param name");
         }
     }
     if ( m_ChromId.empty() ) {
-        ERR_POST(Fatal << "No chrom: " << line);
+        x_Error("No chrom");
     }
     if ( start == 0 ) {
-        ERR_POST(Fatal << "No start: " << line);
+        x_Error("No start");
     }
     if ( step == 0 ) {
-        ERR_POST(Fatal << "No step: " << line);
+        x_Error("No step");
     }
 
     SValueInfo value;
     value.m_Pos = start-1;
     value.m_Span = span;
-    while ( fscanf(m_Input, "%lf", &value.m_Value) == 1 ) {
-        SkipEOL();
+    while ( x_GetLine() ) {
+        if ( !x_TryGetDouble(value.m_Value) ) {
+            x_UngetLine();
+            break;
+        }
         AddValue(value);
         value.m_Pos += step;
     }
@@ -593,53 +971,57 @@ void CWig2tableApplication::ReadFixedStep(void)
 
 void CWig2tableApplication::ReadVariableStep(void)
 {
-    if ( m_TrackType != eTrackType_wiggle_0 ) {
-        ERR_POST(Fatal<<"Track type=wiggle_0 is required");
+    if ( m_TrackType != eTrackType_wiggle_0 &&
+         m_TrackType != eTrackType_invalid ) {
+        x_Error("Track type=wiggle_0 is required");
     }
-    vector<string> ss;
-    string line = GetLine();
-    NStr::Tokenize(line, " \t", ss);
 
     size_t span = 1;
-    for ( size_t i = 1; i < ss.size(); ++i ) {
-        pair<string, string> p = GetParam(ss[i]);
-        if ( p.first == "chrom" ) {
-            SetChrom(p.second);
+    while ( x_SkipWS() ) {
+        CTempString name = x_GetParamName();
+        CTempString value = x_GetParamValue();
+        if ( name == "chrom" ) {
+            SetChrom(value);
         }
-        else if ( p.first == "span" ) {
-            span = NStr::StringToUInt(p.second);
+        else if ( name == "span" ) {
+            span = NStr::StringToUInt(value);
         }
         else {
-            ERR_POST(Fatal << "Bad param name: " << line);
+            x_Error("Bad param name");
         }
     }
     if ( m_ChromId.empty() ) {
-        ERR_POST(Fatal << "No chrom: " << line);
+        x_Error("No chrom");
     }
     SValueInfo value;
     value.m_Span = span;
-    while ( fscanf(m_Input, "%u%lf", &value.m_Pos, &value.m_Value) == 2 ) {
-        SkipEOL();
+    while ( x_GetLine() ) {
+        if ( !x_TryGetPos(value.m_Pos) ) {
+            x_UngetLine();
+            break;
+        }
+        x_SkipWS();
+        x_GetDouble(value.m_Value);
         value.m_Pos -= 1;
         AddValue(value);
     }
 }
 
 
-void CWig2tableApplication::ReadBedLine(const char* chrom)
+void CWig2tableApplication::ReadBedLine(CTempString chrom)
 {
-    if ( m_TrackType != eTrackType_bedGraph ) {
-        ERR_POST(Fatal<<"Track type=bedGraph is required");
+    if ( m_TrackType != eTrackType_bedGraph &&
+         m_TrackType != eTrackType_invalid ) {
+        x_Error("Track type=bedGraph is required");
     }
-    if ( m_ChromId != chrom ) {
-        SetChrom(chrom);
-    }
+    SetChrom(chrom);
     SValueInfo value;
-    if ( fscanf(m_Input, "%u%u%lf",
-                &value.m_Pos, &value.m_Span, &value.m_Value) != 3 ) {
-        ERR_POST(Fatal << "Failed to parse BED graph line");
-    }
-    SkipEOL();
+    x_SkipWS();
+    x_GetPos(value.m_Pos);
+    x_SkipWS();
+    x_GetPos(value.m_Span);
+    x_SkipWS();
+    x_GetDouble(value.m_Value);
     value.m_Span -= value.m_Pos;
     AddValue(value);
 }
@@ -666,43 +1048,33 @@ int CWig2tableApplication::Run(void)
     m_AsByte = args["byte"];
 
     // Read the entry
-    m_Input = fopen(args["in"].AsString().c_str(), "rt");
-    if ( !m_Input ) {
-        ERR_POST(Fatal << "Cannot open file: "<<args["in"].AsString());
-    }
-
+    m_Input.reset(new CWigBufferedLineReader(args["in"].AsString()));
     m_Output.reset
         (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                               args["out"].AsOutputFile()));
 
-    const size_t BAD_ID_LEN = 1023;
-    const char* BAD_ID_FMT = "%1023s"; // same number as in BAD_ID_LEN
-    char buf[BAD_ID_LEN+1];
-    while ( !feof(m_Input) && fscanf(m_Input, BAD_ID_FMT, buf) == 1 ) {
-        if ( strlen(buf) >= BAD_ID_LEN ) {
-            ERR_POST(Fatal << "Too long identifier: "<<buf);
+    while ( x_GetLine() ) {
+        if ( x_CommentLine() ) {
+            continue;
         }
-        if ( buf[0] == '#' ) { // comment line
-            GetLine();
-        }
-        else if ( strcmp(buf, "browser") == 0 ) {
+        CTempString s = x_GetWord();
+        if ( s == "browser" ) {
             ReadBrowser();
         }
-        else if ( strcmp(buf, "track") == 0 ) {
+        else if ( s == "track" ) {
             ReadTrack();
         }
-        else if ( strcmp(buf, "fixedStep") == 0 ) {
+        else if ( s == "fixedStep" ) {
             ReadFixedStep();
         }
-        else if ( strcmp(buf, "variableStep") == 0 ) {
+        else if ( s == "variableStep" ) {
             ReadVariableStep();
         }
         else {
-            ReadBedLine(buf);
+            ReadBedLine(s);
         }
     }
-    fclose(m_Input);
-    m_Input = 0;
+    m_Input.reset();
 
     SetChrom(""); // flush current graph
     m_Output.reset();
