@@ -807,7 +807,10 @@ CNCFSOpenFile::ReadFirstPage(Int8 offset, int cnt, void* mem_ptr)
     _ASSERT(offset < kNCSQLitePageSize);
 
     if (offset < m_Size) {
-        int copy_cnt = min(cnt, int(m_Size - offset));
+        int copy_cnt = cnt;
+        Int8 left_cnt = m_Size - offset;
+        if (left_cnt < copy_cnt)
+            copy_cnt = int(left_cnt);
         memcpy(mem_ptr, &m_FirstPage[offset], copy_cnt);
         cnt -= copy_cnt;
         mem_ptr = static_cast<char*>(mem_ptr) + copy_cnt;
