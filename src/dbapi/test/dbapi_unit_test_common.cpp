@@ -440,7 +440,7 @@ CUnitTestParams::GetServerType(void) const
 
     if (driver_name == "dblib") {
         if (NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
-            || NStr::CompareNocase(server_name, 0, 8, "DBAPI_SYB_TEST") == 0
+            || NStr::CompareNocase(server_name, 0, 14, "DBAPI_SYB_TEST") == 0
             )
         {
             return eSybaseSQLServer;
