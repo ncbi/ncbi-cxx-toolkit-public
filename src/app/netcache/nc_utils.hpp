@@ -37,6 +37,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbithr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -141,6 +142,73 @@ private:
     /// Accumulator of the current output line
     CQuickStrStream       m_LineStream;
 };
+
+
+/// Thread running background task.
+/// All this thread does is calls given functor and then exits.
+///
+/// @param Functor
+///   Type of functor that will be executed in the thread. The only
+///   requirements for functor type are:
+///   - it should be copyable;
+///   - it should execute code when applied with function call parenthesis.
+template <class Functor>
+class CNCBGThread : public CThread
+{
+public:
+    /// Create new background thread executing given functor.
+    /// Thread is not started automatically - you have to call Run() for that.
+    CNCBGThread(const Functor& functor);
+    virtual ~CNCBGThread(void);
+
+protected:
+    virtual void* Main(void);
+
+private:
+    /// The functor to be executed in the thread
+    Functor m_Functor;
+};
+
+/// Special wrapper for object's method that can be used as functor, e.g. in
+/// CNCBGThread.
+///
+/// @param Executor
+///   Class containing method with no parameters and no return value which
+///   will be called in this wrapper.
+/// @sa CNCBGThread
+template <class Executor>
+class CNCMethodWrap
+{
+public:
+    typedef void (Executor::*TMethod)(void);
+
+    /// Create wrapper for given method of given executor object.
+    CNCMethodWrap(Executor* executor, TMethod method);
+    /// Functor's call redirection.
+    void operator() (void);
+
+private:
+    /// Executor object
+    Executor* m_Executor;
+    /// Method to run in the executor object
+    TMethod   m_Method;
+};
+
+/// Convenient function creating new background thread for given functor.
+/// Convenience is in automatic instantiation based on parameter value so that
+/// you don't need to state template parameter for CNCBGThread.
+template <class Functor>
+CNCBGThread<Functor>*
+NewBGThread(Functor functor);
+
+/// Convenient function creating new background thread for given executor
+/// object and given method in it.
+/// Convenience is in automatic instantiation based on parameter value so that
+/// you don't need to state template parameters for CNCBGThread and
+/// CNCMethodWrap.
+template <class Executor>
+CNCBGThread< CNCMethodWrap<Executor> >*
+NewBGThread(Executor* executor, void (Executor::*method) (void));
 
 
 /// Type to use for bit masks
@@ -586,6 +654,57 @@ CPrintTextProxy::operator<< (TEndlType)
 }
 
 
+template <class Functor>
+inline
+CNCBGThread<Functor>::CNCBGThread(const Functor& functor)
+    : m_Functor(functor)
+{}
+
+template <class Functor>
+inline
+CNCBGThread<Functor>::~CNCBGThread(void)
+{}
+
+template <class Functor>
+inline void*
+CNCBGThread<Functor>::Main(void)
+{
+    m_Functor();
+    return NULL;
+}
+
+
+template <class Executor>
+inline
+CNCMethodWrap<Executor>::CNCMethodWrap(Executor* executor, TMethod method)
+    : m_Executor(executor),
+      m_Method(method)
+{}
+
+template <class Executor>
+inline void
+CNCMethodWrap<Executor>::operator() (void)
+{
+    (m_Executor->*m_Method)();
+}
+
+
+template <class Functor>
+inline CNCBGThread<Functor>*
+NewBGThread(Functor functor)
+{
+    return new CNCBGThread<Functor>(functor);
+}
+
+template <class Executor>
+inline CNCBGThread< CNCMethodWrap<Executor> >*
+NewBGThread(Executor* executor, void (Executor::*method)(void))
+{
+    return new CNCBGThread< CNCMethodWrap<Executor> >
+                                  (CNCMethodWrap<Executor>(executor, method));
+}
+
+    
 template <int num_elems>
 inline
 CNCBitMaskBase<num_elems>::CNCBitMaskBase(void)

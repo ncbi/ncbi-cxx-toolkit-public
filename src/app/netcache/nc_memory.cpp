@@ -218,7 +218,9 @@ bool            CNCMMCentral::sm_Initialized = false;
 ENCMMMode       CNCMMCentral::sm_Mode        = eNCMemStable;
 size_t          CNCMMCentral::sm_MemLimit    = kNCMMDefMemoryLimit;
 CAtomicCounter  CNCMMCentral::sm_CntCanAlloc;
-CNCMMBGThread*  CNCMMCentral::sm_BGThread    = NULL;
+CThread*        CNCMMCentral::sm_BGThread    = NULL;
+CSemaphore      CNCMMCentral::sm_WaitForStop(0, 1);
+
 
 
 
@@ -800,7 +802,7 @@ CNCMMCentral::GetSlab(void* mem_ptr)
 inline ENCMMMode
 CNCMMCentral::GetMemMode(void)
 {
-    if (sm_Stats.GetSystemMem() < sm_MemLimit)
+    if (sm_Stats.GetSystemMem() < sm_MemLimit  &&  sm_Mode != eNCFinalized)
         return eNCMemGrowing;
     else
         return sm_Mode;
@@ -1195,12 +1197,8 @@ CNCMMDBPage::IsInLRU(void)
 }
 
 inline void
-CNCMMDBPage::AddToLRU(void)
+CNCMMDBPage::x_AddToLRUImpl(void)
 {
-    _ASSERT(!IsInLRU());
-
-    CFastMutexGuard guard(sm_LRULock);
-
     if ((m_StateFlags & fPeeked) == 0) {
         m_PrevInLRU = sm_LRUTail;
         if (sm_LRUTail) {
@@ -1211,6 +1209,17 @@ CNCMMDBPage::AddToLRU(void)
             sm_LRUHead = this;
         }
         sm_LRUTail = this;
+    }
+}
+
+inline void
+CNCMMDBPage::AddToLRU(void)
+{
+    _ASSERT(!IsInLRU());
+
+    CFastMutexGuard guard(sm_LRULock);
+    if (m_StateFlags < fCounterStep) {
+        x_AddToLRUImpl();
     }
     m_StateFlags |= fInLRU;
 }
@@ -1256,15 +1265,6 @@ CNCMMDBPage::CNCMMDBPage(void)
     *reinterpret_cast<void**>(m_Data) = NULL;
 }
 
-inline
-CNCMMDBPage::~CNCMMDBPage(void)
-{
-    if (m_Cache) {
-        RemoveFromLRU();
-        m_Cache->DetachPage(this);
-    }
-}
-
 inline CNCMMDBPage*
 CNCMMDBPage::PeekLRUForDestroy(void)
 {
@@ -1276,24 +1276,6 @@ CNCMMDBPage::PeekLRUForDestroy(void)
         page->x_RemoveFromLRUImpl();
     }
     return page;
-}
-
-inline bool
-CNCMMDBPage::DoPeekedDestruction(void)
-{
-    _ASSERT((m_StateFlags & fPeeked) != 0);
-
-    bool do_destroy;
-    {{
-        CFastMutexGuard guard(sm_LRULock);
-        do_destroy = IsInLRU();
-        _ASSERT(!do_destroy  ||  !x_IsReallyInLRU());
-        m_StateFlags &= ~fPeeked;
-    }}
-    if (do_destroy) {
-        this->~CNCMMDBPage();
-    }
-    return do_destroy;
 }
 
 inline void
@@ -1337,18 +1319,47 @@ CNCMMDBPage::operator new(size_t _DEBUG_ARG(size))
 }
 
 inline void
-CNCMMDBPage::RequestDelete(void)
+CNCMMDBPage::DeletedFromHash(void)
 {
-    RemoveFromLRU();
-    // Here m_StateFlags is checked outside sm_LRULock used to access it
-    // everywhere else because fPeeked cannot be set during execution of
-    // RemoveFromLRU() - it can be set before that or after that. If it was
-    // set before that then it will not be reset before next if because
-    // resetting is made under cache's mutex and this method works also under
-    // cache's mutex. If fPeeked wasn't set before RemoveFromLRU() then it
-    // will not be set after it because page should be in LRU list for the
-    // flag to be set. So this check is appropriate.
-    if ((m_StateFlags & fPeeked) == 0)
+    TStateFlags flags;
+    {{
+        CFastMutexGuard guard(sm_LRULock);
+
+        if (x_IsReallyInLRU())
+            x_RemoveFromLRUImpl();
+        m_Cache = NULL;
+        flags = m_StateFlags;
+    }}
+    if (flags < fCounterStep  &&  (flags & fPeeked) == 0)
+        delete this;
+}
+
+inline void
+CNCMMDBPage::Lock(void)
+{
+    CFastMutexGuard guard(sm_LRULock);
+    m_StateFlags += fCounterStep;
+    _ASSERT(!x_IsReallyInLRU());
+}
+
+inline void
+CNCMMDBPage::Unlock(void)
+{
+    bool need_delete = false;
+    {{
+        CFastMutexGuard guard(sm_LRULock);
+        _ASSERT(m_StateFlags >= fCounterStep);
+        m_StateFlags -= fCounterStep;
+        if (m_StateFlags < fCounterStep) {
+            if (IsInLRU()) {
+                x_AddToLRUImpl();
+            }
+            else if (m_Cache == NULL) {
+                need_delete = true;
+            }
+        }
+    }}
+    if (need_delete)
         delete this;
 }
 
@@ -1431,10 +1442,16 @@ CNCMMBlocksSet::GetEmptyGrade(void)
 inline void
 CNCMMBlocksSet::x_CalcEmptyGrade(void)
 {
-    m_EmptyGrade = s_GetGradeValue(CountFreeBlocks(),
-                                   kNCMMBlocksPerGrade[m_BlocksSize])
-                   + CNCMMCentral::GetSlab(this)->GetEmptyGrade()
-                                                        * kNCMMSetEmptyGrades;
+    unsigned int cnt_free  = CountFreeBlocks();
+    if (cnt_free == 0) {
+        m_EmptyGrade = 0;
+    }
+    else {
+        unsigned int per_grade  = kNCMMBlocksPerGrade[m_BlocksSize];
+        unsigned int slab_grade = CNCMMCentral::GetSlab(this)->GetEmptyGrade();
+        unsigned int slab_shift = slab_grade * kNCMMSetEmptyGrades;
+        m_EmptyGrade = s_GetGradeValue(cnt_free, per_grade) + slab_shift;
+    }
     _ASSERT(m_EmptyGrade < kNCMMTotalEmptyGrades);
 }
 
@@ -2317,8 +2334,8 @@ CNCMMSizePool::x_AllocateBlock(void)
             CNCMMStats::ReservedMemDeleted(kNCMMChunkSize);
         }
         else {
-            // Release mutex to allow deallocators to not wait for global
-            // allocation
+            // Release mutex to allow deallocators not to wait for global
+            // allocation.
             guard.Release();
             bl_set = new CNCMMBlocksSet(this, m_SizeIndex);
             guard.Guard(m_ObjLock);
@@ -2329,13 +2346,7 @@ CNCMMSizePool::x_AllocateBlock(void)
         bl_set = m_Sets[grade];
     }
     void* block = bl_set->GetBlock();
-    if (bl_set->CountFreeBlocks() == 0) {
-        x_RemoveSetFromList(bl_set, grade);
-        x_AddSetToList(bl_set, 0);
-    }
-    else {
-        x_CheckGradeChange(bl_set, grade);
-    }
+    x_CheckGradeChange(bl_set, grade);
     return block;
 }
 
@@ -2348,8 +2359,6 @@ CNCMMSizePool::x_DeallocateBlock(void* block, CNCMMBlocksSet* bl_set)
 
     CNCMMStats::MemBlockFreed(m_SizeIndex);
     int old_grade = bl_set->GetEmptyGrade();
-    if (bl_set->CountFreeBlocks() == 0)
-        old_grade = 0;
     bl_set->ReleaseBlock(block);
     if (bl_set->CountFreeBlocks() == kNCMMBlocksPerSet[m_SizeIndex]) {
         if (m_EmptySet) {
@@ -2388,21 +2397,6 @@ CNCMMSizePool::DeallocateBlock(void* mem_ptr, CNCMMBlocksSet* bl_set)
 {
     CFastReadGuard destr_guard(*sm_DestructLock);
     bl_set->GetPool()->x_DeallocateBlock(mem_ptr, bl_set);
-}
-
-
-inline
-CNCMMBGThread::CNCMMBGThread(void)
-    : m_WaitForStop(0, 1)
-{}
-
-CNCMMBGThread::~CNCMMBGThread(void)
-{}
-
-inline void
-CNCMMBGThread::Stop(void)
-{
-    m_WaitForStop.Post();
 }
 
 
@@ -2511,20 +2505,21 @@ CNCMMCentral::x_Initialize(void)
 inline void
 CNCMMCentral::RunLateInit(void)
 {
-    sm_BGThread = new CNCMMBGThread();
-    sm_BGThread->Run(CThread::fRunDetached);
+    sm_BGThread = NewBGThread(&CNCMMCentral::x_DoBackgroundWork);
+    sm_BGThread->Run();
 }
 
 inline void
 CNCMMCentral::PrepareToStop(void)
 {
     sm_Mode = eNCFinalized;
-    sm_BGThread->Stop();
+    sm_WaitForStop.Post();
+    sm_BGThread->Join();
     sm_BGThread = NULL;
 }
 
 inline void
-CNCMMCentral::DoBackgroundWork(void)
+CNCMMCentral::x_CalcMemoryMode(void)
 {
     size_t free_mem, db_cache_mem;
     CNCMMStats::GetUsageNumbers(&free_mem, &db_cache_mem);
@@ -2561,14 +2556,13 @@ CNCMMCentral::DoBackgroundWork(void)
 }
 
 
-void*
-CNCMMBGThread::Main(void)
+void
+CNCMMCentral::x_DoBackgroundWork(void)
 {
-    while (CNCMMCentral::GetMemMode() != eNCFinalized) {
-        CNCMMCentral::DoBackgroundWork();
-        m_WaitForStop.TryWait(kNCMMBGThreadWaitSecs);
+    while (GetMemMode() != eNCFinalized) {
+        x_CalcMemoryMode();
+        sm_WaitForStop.TryWait(kNCMMBGThreadWaitSecs);
     }
-    return NULL;
 }
 
 
@@ -2688,8 +2682,7 @@ CNCMMDBPagesHash::RemoveAllPages(unsigned int min_key)
             if (page->m_Key >= min_key) {
                 *page_ptr = page->m_NextInHash;
                 page->m_NextInHash = NULL;
-                page->SetCache(NULL);
-                page->RequestDelete();
+                page->DeletedFromHash();
                 ++cnt_removed;
             }
             else {
@@ -2737,19 +2730,19 @@ CNCMMDBCache::x_AttachPage(unsigned int key, CNCMMDBPage* page)
     m_MaxKey = max(m_MaxKey, key);
 }
 
-// Not inline because of use in CNCMMDBPage::~CNCMMDBPage().
-void
+inline void
 CNCMMDBCache::DetachPage(CNCMMDBPage* page)
 {
     _ASSERT(page->GetCache() == this);
 
-    page->SetCache(NULL);
     if (m_Pages.RemovePage(page)) {
         _ASSERT(m_CacheSize > 0);
         if (--m_CacheSize == 0) {
             m_MaxKey = 0;
         }
     }
+    // We shouldn't call page->SetCache(NULL) because it will cause race in
+    // CNCMMDBPage::Unlock().
 }
 
 inline void
@@ -2802,22 +2795,11 @@ CNCMMDBCache::UnpinPage(void* data, bool must_delete)
     if (must_delete) {
         CFastMutexGuard guard(m_ObjLock);
         DetachPage(page);
-        page->RequestDelete();
+        page->DeletedFromHash();
     }
     else if (m_Purgable) {
         page->AddToLRU();
     }
-}
-
-inline void
-CNCMMDBCache::ChangePageKey(void*        data,
-                            unsigned int new_key)
-{
-    CFastMutexGuard guard(m_ObjLock);
-
-    CNCMMDBPage* page = CNCMMDBPage::FromDataPtr(data);
-    DetachPage(page);
-    x_AttachPage(new_key, page);
 }
 
 inline
@@ -2841,24 +2823,46 @@ CNCMMDBCache::operator delete(void* ptr)
     ::operator delete(ptr);
 }
 
+// Special place for this method because it uses CNCMMDBCache::DetachPage().
+inline bool
+CNCMMDBPage::DoPeekedDestruction(void)
+{
+    _ASSERT((m_StateFlags & fPeeked) != 0);
+
+    bool do_destroy;
+    {{
+        CFastMutexGuard guard(sm_LRULock);
+        do_destroy = IsInLRU()  &&  m_StateFlags < fCounterStep;
+        _ASSERT(!do_destroy  ||  !x_IsReallyInLRU());
+        m_StateFlags &= ~fPeeked;
+    }}
+    if (do_destroy) {
+        // m_Cache is always changed to NULL under sm_LRULock along with
+        // do_destroy. So if do_destroy is true here then m_Cache cannot be
+        // changed already.
+        if (m_Cache) {
+            m_Cache->DetachPage(this);
+        }
+        this->~CNCMMDBPage();
+    }
+    return do_destroy;
+}
+
 void*
 CNCMMDBCache::DestroyOnePage(void)
 {
+    CFastMutexGuard guard(eEmptyGuard);
     CNCMMDBPage* page;
     for (;;) {
         page = CNCMMDBPage::PeekLRUForDestroy();
         if (!page)
             break;
         CNCMMDBCache* cache = page->GetCache();
-        if (!cache) {
-            page->~CNCMMDBPage();
+        if (cache)
+            guard.Guard(cache->m_ObjLock);
+        if (page->DoPeekedDestruction())
             break;
-        }
-        else {
-            CFastMutexGuard guard(cache->m_ObjLock);
-            if (page->DoPeekedDestruction())
-                break;
-        }
+        guard.Release();
         // Page should have been extracted from LRU by somebody.
     }
     return page;
@@ -2866,7 +2870,7 @@ CNCMMDBCache::DestroyOnePage(void)
 
 
 
-// Functions for exposing database cache to SQLite
+// Functions for exposing memory manager to SQLite
 
 /// Initialize database cache
 static int
@@ -2919,16 +2923,6 @@ s_SQLITE_PCache_UnpinPage(sqlite3_pcache* pcache, void* page, int discard)
     reinterpret_cast<CNCMMDBCache*>(pcache)->UnpinPage(page, discard != 0);
 }
 
-/// Change key of the page in cache
-static void
-s_SQLITE_PCache_RekeyPage(sqlite3_pcache* pcache,
-                          void*           page,
-                          unsigned int /* oldKey */,
-                          unsigned int    newKey)
-{
-    reinterpret_cast<CNCMMDBCache*>(pcache)->ChangePageKey(page, newKey);
-}
-
 /// Truncate cache, delete all pages with keys greater or equal to given limit
 static void
 s_SQLITE_PCache_Truncate(sqlite3_pcache* pcache, unsigned int iLimit)
@@ -2943,10 +2937,14 @@ s_SQLITE_PCache_Destroy(sqlite3_pcache* pcache)
     delete reinterpret_cast<CNCMMDBCache*>(pcache);
 }
 
-///
+/// Allocate memory for SQLite
 static void*
 s_SQLITE_Mem_Malloc(int size)
 {
+    // With specifics of SQLite usage in NetCache it's better to always
+    // allocate big block whenever SQLite asks for any block bigger than
+    // kNCMMSQLiteBigBlockMin, because this size is requested only for
+    // temporary storage of the blob data.
     if (size > kNCMMSQLiteBigBlockMin) {
         _ASSERT(size <= kNCMMSQLiteBigBlockReal);
         size = kNCMMSQLiteBigBlockReal;
@@ -2954,40 +2952,42 @@ s_SQLITE_Mem_Malloc(int size)
     return CNCMMCentral::AllocMemory(size);
 }
 
-///
+/// Free memory allocated for SQLite
 static void
 s_SQLITE_Mem_Free(void* ptr)
 {
     CNCMMCentral::DeallocMemory(ptr);
 }
 
-///
+/// Resize memory allocated for SQLite
 static void*
 s_SQLITE_Mem_Realloc(void* ptr, int new_size)
 {
     return CNCMMCentral::ReallocMemory(ptr, new_size);
 }
 
-///
+/// Get size of memory allocated for SQLite
 static int
 s_SQLITE_Mem_Size(void* ptr)
 {
     return CNCMMCentral::GetMemorySize(ptr);
 }
 
-///
+/// Get size of memory that will be allocated if given size is requested
 static int
 s_SQLITE_Mem_Roundup(int size)
 {
     return size;
 }
 
+/// Initialize memory managing module for SQLite
 static int
 s_SQLITE_Mem_Init(void*)
 {
     return SQLITE_OK;
 }
 
+/// Deinitialize memory managing module for SQLite
 static void
 s_SQLITE_Mem_Shutdown(void*)
 {}
@@ -3003,12 +3003,12 @@ static sqlite3_pcache_methods s_NCDBCacheMethods = {
     s_SQLITE_PCache_GetSize,    /* xPagecount */
     s_SQLITE_PCache_GetPage,    /* xFetch */
     s_SQLITE_PCache_UnpinPage,  /* xUnpin */
-    s_SQLITE_PCache_RekeyPage,  /* xRekey */
+    NULL,                       /* xRekey */
     s_SQLITE_PCache_Truncate,   /* xTruncate */
     s_SQLITE_PCache_Destroy     /* xDestroy */
 };
 
-///
+/// All methods of memory management exposed to SQLite
 static sqlite3_mem_methods s_NCMallocMethods = {
     s_SQLITE_Mem_Malloc,    /* xMalloc */
     s_SQLITE_Mem_Free,      /* xFree */
@@ -3019,6 +3019,7 @@ static sqlite3_mem_methods s_NCMallocMethods = {
     s_SQLITE_Mem_Shutdown,  /* xShutdown */
     NULL                    /* pAppData */
 };
+
 
 
 void
@@ -3048,6 +3049,24 @@ CNCMemManager::PrintStats(CPrintTextProxy& proxy)
     CNCMMStats stats_sum;
     CNCMMStats::CollectAllStats(&stats_sum);
     stats_sum.Print(proxy);
+}
+
+void
+CNCMemManager::LockDBPage(const void* data_ptr)
+{
+    void* ptr = const_cast<void*>(data_ptr);
+    CNCMMSlab* slab = CNCMMCentral::GetSlab(ptr);
+    CNCMMDBPage* page = reinterpret_cast<CNCMMDBPage*>(slab->GetBlocksSet(ptr));
+    page->Lock();
+}
+
+void
+CNCMemManager::UnlockDBPage(const void* data_ptr)
+{
+    void* ptr = const_cast<void*>(data_ptr);
+    CNCMMSlab* slab = CNCMMCentral::GetSlab(ptr);
+    CNCMMDBPage* page = reinterpret_cast<CNCMMDBPage*>(slab->GetBlocksSet(ptr));
+    page->Unlock();
 }
 
 END_NCBI_SCOPE

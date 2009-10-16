@@ -28,7 +28,7 @@
  * Authors:  Pavel Ivanov
  */
 
-#include <corelib/obj_pool.hpp>
+#include <corelib/ncbithr.hpp>
 #include <db/sqlite/sqlitewrapp.hpp>
 
 #include "nc_db_info.hpp"
@@ -36,6 +36,10 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+/// Size of database page used in NetCache
+static const int kNCSQLitePageSize = 32768;
 
 
 class CNCDBStat;
@@ -403,7 +407,8 @@ public:
 
 
 /// Factory class for creating connections to database files.
-/// Class can be used as factory in CObjPool and also as deleter in AutoPtr.
+/// Class creates one connection for each thread and deletes them all in
+/// destructor.
 ///
 /// @param TFile
 ///   Type of file connection to create by this factory.
@@ -414,12 +419,13 @@ class CNCDBFileObjFactory : public CNCTlsObject<CNCDBFileObjFactory<TFile>,
     typedef CNCTlsObject<CNCDBFileObjFactory<TFile>, TFile>  TBase;
 
 public:
-    /// Empty constructor for convenience - factory created in such way can
-    /// only delete objects and cannot create them.
-    CNCDBFileObjFactory(void);
-    /// Full-featured constructor - factory created in such way can both
-    /// create and delete objects. Both parameters are passed unchanged to
-    /// file connection constructor.
+    /// Both parameters of constructor are passed unchanged to file
+    /// connection constructor.
+    ///
+    /// @param file_name
+    ///   Name of database file all objects will connect to
+    /// @param stat
+    ///   Object collecting database statistics
     CNCDBFileObjFactory(const string& file_name, CNCDBStat* stat);
     /// Destructor cleans up all file objects that it created in all threads.
     ~CNCDBFileObjFactory(void);
@@ -430,20 +436,11 @@ public:
     /// Delete object.
     /// Part of the interface required by CNCTlsObject.
     static void DeleteTlsObject(void* obj_ptr);
-    /// Delete object.
-    /// Part of Deleter interface for AutoPtr.
-    /// For now it's simple delete but for consistency and possible future
-    /// changes it's extracted as though deletion happens in some other way.
-    void Delete(TFile* file);
-
-    /// Get one file object and forget about it - it will be destroyed by
-    /// caller.
-    TFile* ReleaseFile(void);
 
 private:
-    /// Name of the database file all objects will connect to
+    /// Name of database file all objects will connect to
     string       m_FileName;
-    /// Object for gathering database statistics
+    /// Object for collecting database statistics
     CNCDBStat*   m_Stat;
     /// Mutex for creation of new file objects (actually for work with
     /// m_AllFiles).
@@ -453,11 +450,8 @@ private:
 };
 
 /// Factories for database files with meta-information and with actual data
-typedef CNCDBFileObjFactory<CNCDBMetaFile>           TNCMetaFileFactory;
-typedef CNCDBFileObjFactory<CNCDBDataFile>           TNCDataFileFactory;
-/// Smart pointers to database file connections
-typedef AutoPtr<CNCDBMetaFile, TNCMetaFileFactory>   TNCMetaFilePtr;
-typedef AutoPtr<CNCDBDataFile, TNCDataFileFactory>   TNCDataFilePtr;
+typedef CNCDBFileObjFactory<CNCDBMetaFile>  TNCMetaFileFactory;
+typedef CNCDBFileObjFactory<CNCDBDataFile>  TNCDataFileFactory;
 
 
 /// Central pool of connections to database files belonging to one database
@@ -483,12 +477,6 @@ public:
     /// compile calls to such template method.
     void GetFile   (CNCDBMetaFile** file_ptr);
     void GetFile   (CNCDBDataFile** file_ptr);
-    /// Get meta file from pool and forget about it - it will be destroyed
-    /// by caller.
-    CNCDBMetaFile* ReleaseMetaFile(void);
-    /// Get data file from pool and forget about it - it will be destroyed
-    /// by caller.
-    CNCDBDataFile* ReleaseDataFile(void);
     /// Return file to the pool
     void ReturnFile(CNCDBMetaFile*  file);
     void ReturnFile(CNCDBDataFile*  file);
@@ -504,18 +492,257 @@ private:
 };
 
 
+class CNCFSOpenFile;
+struct SNCFSEvent;
+
+/// Class representing file system which NetCache works with.
+/// This class along with CNCFS* ones together make virtual file system
+/// exposed to SQLite. System implements somewhat dangerous mechanism of work:
+/// all actual writings on disk are made in background thread and data for
+/// writing is taken right from database cache memory which SQLite works with.
+/// This can cause some temporary inconsistencies in the database when SQLite
+/// makes several changes and several virtual writes of one page but because
+/// of background queue latency only all changes together will make it to the
+/// disk. And it can happen before some other changes which SQLite expects to
+/// be on disk earlier. These inconsistencies can cause database corruption in
+/// case of NetCache's or OS's crash. But they happen very-very rarely and
+/// cost of losing one database part because of that is not so high, though
+/// benefit in NetCache's performance from such work scheme is pretty big.
+class CNCFileSystem
+{
+public:
+    /// Initialize virtual file system
+    static void Initialize(void);
+    /// Finalize virtual file system.
+    /// Method will wait until all background writings to disk are finished.
+    static void Finalize(void);
+    /// Notify system that disk database was initialized and all SQLite's
+    /// hot-journals that could exist were read and rollbacked. So from this
+    /// point no new journals can appear (no other processes work with
+    /// database). And this fact allows to make additional optimizations.
+    static void SetDiskInitialized(void);
+    /// Check if disk database was initialized.
+    static bool IsDiskInitialized(void);
+    /// Open new database file.
+    /// Method is called automatically inside file system but can be called
+    /// outside to notify that database file requires synchronous I/O because
+    /// of extreme importance (as index file in NetCache's storage).
+    static CNCFSOpenFile* OpenNewDBFile(const string& file_name,
+                                        bool          force_sync_io = false);
+    /// Close database file.
+    /// File is closed in background so it's not allowed to do something with
+    /// the physical file right after call to this method.
+    /// Method is called automatically inside file system when last connection
+    /// to database file is closed.
+    static void CloseDBFile(CNCFSOpenFile* file);
+    /// Notify file system that given file should be deleted after last
+    /// connection to it is closed.
+    static void DeleteFileOnClose(const string& file_name);
+
+public:
+    // For use only internally in nc_db_files.cpp
+
+    /// Open real file for actual reading/writing using default SQLite's VFS.
+    static int OpenRealFile(sqlite3_file** file,
+                            const char*    name,
+                            int            flags,
+                            int*           out_flags);
+    /// Close real file opened with OpenRealFile() and assign pointer to NULL.
+    static int CloseRealFile(sqlite3_file*& file);
+    /// Find already opened file by its name.
+    static CNCFSOpenFile* FindOpenFile(const char* name);
+    /// Schedule writing data to the file for execution in background thread.
+    static void WriteToFile(CNCFSOpenFile* file,
+                            Int8           offset,
+                            const void*    data,
+                            int            cnt);
+
+private:
+    /// This is a utility class, so no instantiation is allowed.
+    CNCFileSystem(void);
+
+    /// Add new event to the event queue.
+    static void x_AddNewEvent(SNCFSEvent* event);
+    /// Remove open file from the list of all open files
+    static void x_RemoveFileFromList(CNCFSOpenFile* file);
+    /// Method executing all background work for the file system
+    static void x_DoBackgroundWork(void);
+    /// Execute writing event - perform real writing to the file.
+    static void x_DoWriteToFile(SNCFSEvent* event);
+    /// Execute closing event - close file, remove it from memory and delete
+    /// it on the disk if necessary.
+    static void x_DoCloseFile(SNCFSEvent* event);
+
+
+    /// Read/write lock to work with list of all open files
+    static CFastRWLock      sm_FilesListLock;
+    /// Head of the list of all open files
+    static CNCFSOpenFile*   sm_FilesListHead;
+    /// Mutex to work with write/close events queue
+    static CFastMutex       sm_EventsLock;
+    /// Head of write/close events queue
+    static SNCFSEvent*      sm_EventsHead;
+    /// Tail of write/close events queue
+    static SNCFSEvent*      sm_EventsTail;
+    /// Background thread executing all actual writings
+    static CRef<CThread>    sm_BGThread;
+    /// Flag showing that file system is finalized and background thread
+    /// should be stopped already.
+    static bool             sm_Stopped;
+    /// Flag showing that background thread is in process of executing some
+    /// write/close events. Value of FALSE in this flag means that background
+    /// thread is waiting for new events on sm_BGSleep.
+    static bool             sm_BGWorking;
+    /// Semaphore used in background thread for waiting of arival of new
+    /// events.
+    static CSemaphore       sm_BGSleep;
+    /// Flag showing that disk database was initialized
+    static bool             sm_DiskInitialized;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+// Classes only for internal use in nc_db_files.cpp
+//////////////////////////////////////////////////////////////////////////
+
+/// Class representing one open file in file system.
+class CNCFSOpenFile
+{
+public:
+    /// Open new file with given name and set flag of mandatory synchronous
+    /// I/O to given value.
+    CNCFSOpenFile(const string& file_name, bool force_sync_io);
+    ~CNCFSOpenFile(void);
+
+    /// Check if synchronous I/O is requested for the file.
+    bool IsForcedSync(void);
+    /// Get size of the file.
+    Int8 GetSize(void);
+
+    /// Read data from the very first page of the file.
+    int  ReadFirstPage (Int8 offset, int cnt, void* mem_ptr);
+    /// Write data to the very first page of the file.
+    /// Second parameter (data) is changed inside the method to point to the
+    /// persistent copy of the data inside this object.
+    void WriteFirstPage(Int8 offset, const void** data, int cnt);
+    /// Adjust remembered size of the file so that it's not less than given
+    /// value.
+    void AdjustSize(Int8 size);
+
+private:
+    friend class CNCFileSystem;
+
+    /// Prohibit copying of the object
+    CNCFSOpenFile(const CNCFSOpenFile&);
+    CNCFSOpenFile& operator= (const CNCFSOpenFile&);
+
+
+    /// Previous file in the list of all open files
+    CNCFSOpenFile*  m_PrevFile;
+    /// Next file in the list of all open files
+    CNCFSOpenFile*  m_NextFile;
+    /// Name of the file
+    string          m_Name;
+    /// Flag showing whether synchronous I/O is requested
+    bool            m_ForcedSync;
+    /// Real file in default SQLite's VFS used for writing
+    sqlite3_file*   m_RealFile;
+    /// Memory used to store very first page in the database - it's the only
+    /// page that is read and written very frequently, it's not stored in
+    /// database cache and thus can be read when some writes are pending.
+    char*           m_FirstPage;
+    /// Size of the file.
+    /// It could be not the same as size of file on disk but they will be
+    /// equal when all writing events in queue are executed.
+    Int8            m_Size;
+    /// Flag showing that file should be deleted from disk when it's closed.
+    bool            m_DeleteOnClose;
+};
+
+
+/// Information about one event in file system's queue for background
+/// execution.
+struct SNCFSEvent
+{
+    /// Type of event
+    enum EType {
+        eWrite,
+        eClose
+    };
+
+    /// Next event in the queue
+    SNCFSEvent*     next;
+    /// Type of this event
+    EType           type;
+    /// File which this event should be executed on
+    CNCFSOpenFile*  file;
+    /// Offset for writing
+    Int8            offset;
+    /// Data to be written
+    const void*     data;
+    /// Amount of data to be written
+    int             cnt;
+};
+
+
+/// Virtual file in the file system opened by SQLite.
+/// Class redirects all calls to a real file if it's for the file with
+/// synchronous I/O requested or for the journal. For other files it redirects
+/// all necessary calls to CNCFSOpenFile. Objects of this class are in
+/// one-to-one relation with CNCFSOpenFile objects. The difference is only in
+/// life time: for this class it's controlled by SQLite, for CNCFSOpenFile
+/// it's controlled by CNCFileSystem.
+class CNCFSVirtFile : public sqlite3_file
+{
+public:
+    /// Open new database file
+    int Open(const char* name, int flags, int* out_flags);
+    /// Close this file
+    int Close(void);
+    /// Read data from the file
+    int Read(Int8 offset, int cnt, void* mem_ptr);
+    /// Write data to the file
+    int Write(Int8 offset, const void* data, int cnt);
+    /// Get size of the file
+    Int8 GetSize(void);
+    /// Place a lock on the file.
+    /// Method is no-op for all files with asynchronous I/O because they're
+    /// opened by SQLite only once (because shared cache mode is on) and no
+    /// other process can use database.
+    int Lock(int lock_type);
+    /// Release lock on the file.
+    /// The same comment about no-op in the method as in Lock() is applicable.
+    int Unlock(int lock_type);
+    /// Check if somebody locked this file with RESERVED lock.
+    /// The same comment about no-op in the method as in Lock() is applicable.
+    bool IsReserved(void);
+
+private:
+    /// File used for writing operations
+    CNCFSOpenFile*  m_WriteFile;
+    /// Real file used only for reading operations
+    sqlite3_file*   m_ReadFile;
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////
+// Inline methods
+//////////////////////////////////////////////////////////////////////////
 
 inline
 CNCDBFile::CNCDBFile(CTempString     file_name,
                      TOperationFlags flags,
                      CNCDBStat*      stat)
+    // If fSyncOff in here was changed to something else then behavior
+    // in CNCFSVirtFile should have been changed appropriately.
     : CSQLITE_Connection(file_name,
                          flags | fExternalMT   | fSyncOff
                                | fTempToMemory | fWritesSync),
       m_Stat(stat)
 {
     _ASSERT(stat);
-    SetCacheSize(32768);
+    SetCacheSize(kNCSQLitePageSize);
 }
 
 inline
@@ -588,7 +815,7 @@ CNCDBIndexFile::DeleteAllDBParts(void)
 
 inline
 CNCDBMetaFile::CNCDBMetaFile(const string& file_name, CNCDBStat* stat)
-    : CNCDBFile(file_name, fJournalPersist | fVacuumManual, stat)
+    : CNCDBFile(file_name, fJournalOff | fVacuumManual, stat)
 {}
 
 inline void
@@ -709,7 +936,7 @@ CNCDBMetaFile::DeleteLastChunks(TNCBlobId  blob_id,
 
 inline
 CNCDBDataFile::CNCDBDataFile(const string& file_name, CNCDBStat* stat)
-    : CNCDBFile(file_name, fJournalPersist | fVacuumManual, stat)
+    : CNCDBFile(file_name, fJournalOff | fVacuumManual, stat)
 {}
 
 inline void
@@ -738,15 +965,6 @@ CNCDBDataFile::ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer)
 }
 
 
-
-template <class TFile>
-inline
-CNCDBFileObjFactory<TFile>::CNCDBFileObjFactory(void)
-    : m_Stat(NULL)
-{
-    // No base initialization because with this constructor we're created only
-    // for AutoPtr.
-}
 
 template <class TFile>
 inline
@@ -792,31 +1010,6 @@ CNCDBFileObjFactory<TFile>::DeleteTlsObject(void*)
     // Nothing to do now because it's static
 }
 
-template <class TFile>
-inline void
-CNCDBFileObjFactory<TFile>::Delete(TFile* file)
-{
-    delete file;
-}
-
-template <class TFile>
-inline TFile*
-CNCDBFileObjFactory<TFile>::ReleaseFile(void)
-{
-    TFile* file = NULL;
-    {{
-        CFastMutexGuard guard(m_CreateLock);
-        if (!m_AllFiles.empty()) {
-            file = m_AllFiles.front();
-            m_AllFiles.pop_front();
-        }
-    }}
-    if (!file)
-        file = new TFile(m_FileName, m_Stat);
-
-    return file;
-}
-
 
 
 inline
@@ -826,18 +1019,6 @@ CNCDBFilesPool::CNCDBFilesPool(const string& meta_name,
     : m_Metas(meta_name, stat),
       m_Datas(data_name, stat)
 {}
-
-inline CNCDBMetaFile*
-CNCDBFilesPool::ReleaseMetaFile(void)
-{
-    return m_Metas.ReleaseFile();
-}
-
-inline CNCDBDataFile*
-CNCDBFilesPool::ReleaseDataFile(void)
-{
-    return m_Datas.ReleaseFile();
-}
 
 inline void
 CNCDBFilesPool::GetFile(CNCDBMetaFile** file_ptr)
@@ -863,6 +1044,32 @@ CNCDBFilesPool::ReturnFile(CNCDBDataFile*)
 {
     // Nothing to be done for now until file objects are re-used for different
     // threads.
+}
+
+
+inline void
+CNCFileSystem::SetDiskInitialized(void)
+{
+    sm_DiskInitialized = true;
+}
+
+inline bool
+CNCFileSystem::IsDiskInitialized(void)
+{
+    return sm_DiskInitialized;
+}
+
+
+inline bool
+CNCFSOpenFile::IsForcedSync(void)
+{
+    return m_ForcedSync;
+}
+
+inline Int8
+CNCFSOpenFile::GetSize(void)
+{
+    return m_Size;
 }
 
 END_NCBI_SCOPE

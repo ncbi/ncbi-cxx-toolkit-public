@@ -345,6 +345,20 @@ CSQLITE_Global::SetCustomMallocFuncs(sqlite3_mem_methods* methods)
     }
 }
 
+sqlite3_vfs*
+CSQLITE_Global::GetDefaultVFS(void)
+{
+    return sqlite3_vfs_find(NULL);
+}
+
+void
+CSQLITE_Global::RegisterCustomVFS(sqlite3_vfs* vfs, bool set_default /*= true*/)
+{
+    if (sqlite3_vfs_register(vfs, set_default) != SQLITE_OK) {
+        ERR_POST_X(10, "Custom VFS is not registered because of an error");
+    }
+}
+
 
 
 CSQLITE_HandleFactory::CSQLITE_HandleFactory(CSQLITE_Connection* conn)

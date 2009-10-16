@@ -27,7 +27,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 
+#include "nc_memory.hpp"
 #include "nc_db_files.hpp"
 #include "nc_utils.hpp"
 #include "nc_db_stat.hpp"
@@ -66,6 +68,91 @@ static const char* kNCDBIndex_CreatedTimeCol  = "tm";
 static const char* kNCDBIndex_MinBlobIdCol    = "bid";
 
 
+CFastRWLock      CNCFileSystem::sm_FilesListLock;
+CNCFSOpenFile*   CNCFileSystem::sm_FilesListHead   = NULL;
+CFastMutex       CNCFileSystem::sm_EventsLock;
+SNCFSEvent*      CNCFileSystem::sm_EventsHead      = NULL;
+SNCFSEvent*      CNCFileSystem::sm_EventsTail      = NULL;
+CRef<CThread>    CNCFileSystem::sm_BGThread;
+bool             CNCFileSystem::sm_Stopped         = false;
+bool             CNCFileSystem::sm_BGWorking       = false;
+CSemaphore       CNCFileSystem::sm_BGSleep(0, 1000);
+bool             CNCFileSystem::sm_DiskInitialized = false;
+
+
+
+// Forward declarations
+static int s_SQLITE_FS_Fullname(sqlite3_vfs*, const char*, int, char*);
+static int s_SQLITE_FS_Access(sqlite3_vfs*, const char*, int, int*);
+static int s_SQLITE_FS_Open(sqlite3_vfs*, const char*, sqlite3_file*, int, int*);
+static int s_SQLITE_FS_Close(sqlite3_file*);
+static int s_SQLITE_FS_Read(sqlite3_file*, void*, int, sqlite3_int64);
+static int s_SQLITE_FS_Write(sqlite3_file*, const void*, int, sqlite3_int64);
+static int s_SQLITE_FS_Delete(sqlite3_vfs*, const char*, int);
+static int s_SQLITE_FS_Size(sqlite3_file*, sqlite3_int64*);
+static int s_SQLITE_FS_Lock(sqlite3_file*, int);
+static int s_SQLITE_FS_Unlock(sqlite3_file*, int);
+static int s_SQLITE_FS_IsReserved(sqlite3_file*, int*);
+static int s_SQLITE_FS_Random(sqlite3_vfs*, int, char*);
+static int s_SQLITE_FS_CurTime(sqlite3_vfs*, double*);
+static int s_SQLITE_FS_AboutDevice(sqlite3_file*);
+static int s_SQLITE_FS_Sync(sqlite3_file*, int);
+
+/// All methods of virtual file system exposed to SQLite
+static sqlite3_vfs s_NCVirtualFS = {
+    1,                      /* iVersion */
+    sizeof(CNCFSVirtFile),  /* szOsFile */
+    0,                      /* mxPathname */
+    NULL,                   /* pNext */
+    "NC_VirtualFS",         /* zName */
+    NULL,                   /* pAppData */
+    s_SQLITE_FS_Open,       /* xOpen */
+    s_SQLITE_FS_Delete,     /* xDelete */
+    s_SQLITE_FS_Access,     /* xAccess */
+    s_SQLITE_FS_Fullname,   /* xFullPathname */
+    NULL,                   /* xDlOpen */
+    NULL,                   /* xDlError */
+    NULL,                   /* xDlSym */
+    NULL,                   /* xDlClose */
+    s_SQLITE_FS_Random,     /* xRandomness */
+    NULL,                   /* xSleep */
+    s_SQLITE_FS_CurTime,    /* xCurrentTime */
+    NULL                    /* xGetLastError */
+};
+
+/// All methods of operations with file exposed to SQLite
+static sqlite3_io_methods s_NCVirtFileMethods = {
+    1,                       /* iVersion */
+    s_SQLITE_FS_Close,       /* xClose */
+    s_SQLITE_FS_Read,        /* xRead */
+    s_SQLITE_FS_Write,       /* xWrite */
+    NULL,                    /* xTruncate */
+    s_SQLITE_FS_Sync,        /* xSync */
+    s_SQLITE_FS_Size,        /* xFileSize */
+    s_SQLITE_FS_Lock,        /* xLock */
+    s_SQLITE_FS_Unlock,      /* xUnlock */
+    s_SQLITE_FS_IsReserved,  /* xCheckReservedLock */
+    NULL,                    /* xFileControl */
+    NULL,                    /* xSectorSize */
+    s_SQLITE_FS_AboutDevice  /* xDeviceCharacteristics */
+};
+
+/// Get pointer to default SQLite's VFS
+static inline sqlite3_vfs*
+s_GetRealVFS(void)
+{
+    return static_cast<sqlite3_vfs*>(s_NCVirtualFS.pAppData);
+}
+
+/// Set pointer to default SQLite's VFS
+static inline void
+s_SetRealVFS(sqlite3_vfs* vfs)
+{
+    s_NCVirtualFS.pAppData   = vfs;
+    s_NCVirtualFS.mxPathname = vfs->mxPathname;
+}
+
+
 
 void
 CNCDBFile::CreateIndexDatabase(void)
@@ -98,6 +185,10 @@ CNCDBFile::CreateMetaDatabase(void)
                << kNCBlobKeys_KeyCol     << " varchar not null,"
                << kNCBlobKeys_SubkeyCol  << " varchar not null,"
                << kNCBlobKeys_VersionCol << " int not null,"
+               // This index plays significant role at the start of NetCache.
+               // And although start time seems very small and rare and at all
+               // other times index only slows inserts it's still necessary
+               // because without it starting time becomes intolerably bad.
                << "unique(" << kNCBlobKeys_KeyCol    << ","
                             << kNCBlobKeys_SubkeyCol << ","
                             << kNCBlobKeys_VersionCol /* << ","
@@ -636,6 +727,531 @@ CNCDBFile::ReadChunkValue(TNCChunkId chunk_id, TNCBlobBuffer* buffer)
         return true;
     }
     return false;
+}
+
+
+inline int
+CNCFileSystem::OpenRealFile(sqlite3_file** file,
+                            const char*    name,
+                            int            flags,
+                            int*           out_flags)
+{
+    sqlite3_vfs* vfs = s_GetRealVFS();
+    *file = reinterpret_cast<sqlite3_file*>(new char[vfs->szOsFile]);
+    return vfs->xOpen(vfs, name, *file, flags, out_flags);
+}
+
+inline int
+CNCFileSystem::CloseRealFile(sqlite3_file*& file)
+{
+    int result = SQLITE_OK;
+    if (file) {
+        if (file->pMethods) {
+            result = file->pMethods->xClose(file);
+        }
+        delete[] file;
+        file = NULL;
+    }
+    return result;
+}
+
+
+inline
+CNCFSOpenFile::CNCFSOpenFile(const string& file_name, bool force_sync_io)
+    : m_Name(file_name),
+      m_ForcedSync(force_sync_io),
+      m_RealFile(NULL),
+      m_FirstPage(NULL),
+      m_DeleteOnClose(false)
+{
+    if (force_sync_io)
+        return;
+
+    const int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+                      | SQLITE_OPEN_MAIN_DB;
+    int out_flags   = 0;
+    int ret = CNCFileSystem::OpenRealFile(&m_RealFile, file_name.c_str(),
+                                          flags, &out_flags);
+    if (ret != SQLITE_OK)
+    {
+        NCBI_THROW(CSQLITE_Exception, eUnknown,
+                   "Error opening database file: " + NStr::IntToString(ret));
+    }
+    sqlite3_int64 size;
+    ret = m_RealFile->pMethods->xFileSize(m_RealFile, &size);
+    if (ret != SQLITE_OK) {
+        NCBI_THROW(CSQLITE_Exception, eUnknown,
+                   "Error reading database size: " + NStr::IntToString(ret));
+    }
+    m_Size = size;
+
+    m_FirstPage = new char[kNCSQLitePageSize];
+    ret = m_RealFile->pMethods->xRead(m_RealFile, m_FirstPage,
+                                      kNCSQLitePageSize, 0);
+    if (ret != SQLITE_OK  &&  ret != SQLITE_IOERR_SHORT_READ) {
+        NCBI_THROW(CSQLITE_Exception, eUnknown,
+                   "Error reading database: " + NStr::IntToString(ret));
+    }
+}
+
+inline
+CNCFSOpenFile::~CNCFSOpenFile(void)
+{
+    CNCFileSystem::CloseRealFile(m_RealFile);
+    delete[] m_FirstPage;
+}
+
+inline int
+CNCFSOpenFile::ReadFirstPage(Int8 offset, int cnt, void* mem_ptr)
+{
+    _ASSERT(offset < kNCSQLitePageSize);
+
+    if (offset < m_Size) {
+        int copy_cnt = min(cnt, int(m_Size - offset));
+        memcpy(mem_ptr, &m_FirstPage[offset], copy_cnt);
+        cnt -= copy_cnt;
+        mem_ptr = static_cast<char*>(mem_ptr) + copy_cnt;
+    }
+    if (cnt == 0) {
+        return SQLITE_OK;
+    }
+    else {
+        memset(mem_ptr, 0, cnt);
+        return SQLITE_IOERR_SHORT_READ;
+    }
+}
+
+inline void
+CNCFSOpenFile::WriteFirstPage(Int8 offset, const void** data, int cnt)
+{
+    _ASSERT(offset <= m_Size  &&  offset < kNCSQLitePageSize);
+
+    memcpy(&m_FirstPage[offset], *data, cnt);
+    *data = &m_FirstPage[offset];
+}
+
+inline void
+CNCFSOpenFile::AdjustSize(Int8 size)
+{
+    // This method is called under SQLite's locking, so there shouldn't be
+    // several parallel adjustments. So we don't need mutexes here.
+    m_Size = max(m_Size, size);
+}
+
+
+void
+CNCFileSystem::Initialize(void)
+{
+    s_SetRealVFS(CSQLITE_Global::GetDefaultVFS());
+    CSQLITE_Global::RegisterCustomVFS(&s_NCVirtualFS);
+
+    sm_BGThread = NewBGThread(&CNCFileSystem::x_DoBackgroundWork);
+    sm_BGThread->Run();
+}
+
+void
+CNCFileSystem::Finalize(void)
+{
+    sm_Stopped = true;
+    sm_BGSleep.Post();
+    sm_BGThread->Join();
+}
+
+CNCFSOpenFile*
+CNCFileSystem::OpenNewDBFile(const string& file_name,
+                             bool          force_sync_io /* = false */)
+{
+    CNCFSOpenFile* file = new CNCFSOpenFile(file_name, force_sync_io);
+
+    CFastWriteGuard guard(sm_FilesListLock);
+
+    file->m_PrevFile = NULL;
+    file->m_NextFile = sm_FilesListHead;
+    if (sm_FilesListHead)
+        sm_FilesListHead->m_PrevFile = file;
+    sm_FilesListHead = file;
+
+    return file;
+}
+
+inline CNCFSOpenFile*
+CNCFileSystem::FindOpenFile(const char* name)
+{
+    CFastReadGuard guard(sm_FilesListLock);
+
+    CNCFSOpenFile* file = sm_FilesListHead;
+    while (file  &&  file->m_Name != name) {
+        file = file->m_NextFile;
+    }
+    return file;
+}
+
+inline void
+CNCFileSystem::x_RemoveFileFromList(CNCFSOpenFile* file)
+{
+    CFastWriteGuard guard(sm_FilesListLock);
+    if (file->m_PrevFile) {
+        file->m_PrevFile->m_NextFile = file->m_NextFile;
+    }
+    else {
+        sm_FilesListHead = file->m_NextFile;
+    }
+    if (file->m_NextFile) {
+        file->m_NextFile->m_PrevFile = file->m_PrevFile;
+    }
+}
+
+inline void
+CNCFileSystem::x_AddNewEvent(SNCFSEvent* event)
+{
+    CFastMutexGuard guard(sm_EventsLock);
+    event->next = NULL;
+    if (sm_EventsTail) {
+        sm_EventsTail->next = event;
+    }
+    else {
+        _ASSERT(!sm_EventsHead);
+        sm_EventsHead = event;
+    }
+    sm_EventsTail = event;
+    if (!sm_BGWorking) {
+        sm_BGSleep.Post();
+    }
+}
+
+void
+CNCFileSystem::DeleteFileOnClose(const string& file_name)
+{
+    CNCFSOpenFile* file = FindOpenFile(file_name.c_str());
+    if (file) {
+        _ASSERT(!file->IsForcedSync());
+        file->m_DeleteOnClose = true;
+    }
+    else {
+        CFile(file_name).Remove();
+    }
+}
+
+inline void
+CNCFileSystem::CloseDBFile(CNCFSOpenFile* file)
+{
+    SNCFSEvent* event = new SNCFSEvent;
+    event->type = SNCFSEvent::eClose;
+    event->file = file;
+    x_AddNewEvent(event);
+}
+
+inline void
+CNCFileSystem::WriteToFile(CNCFSOpenFile* file,
+                           Int8           offset,
+                           const void*    data,
+                           int            cnt)
+{
+    _ASSERT(offset >= kNCSQLitePageSize  ||  offset + cnt <= kNCSQLitePageSize);
+
+    SNCFSEvent* event = new SNCFSEvent;
+    event->type    = SNCFSEvent::eWrite;
+    event->file    = file;
+    event->offset  = offset;
+    event->cnt     = cnt;
+    if (offset < kNCSQLitePageSize) {
+        file->WriteFirstPage(offset, &data, cnt);
+    }
+    else {
+        CNCMemManager::LockDBPage(data);
+    }
+    event->data = data;
+    x_AddNewEvent(event);
+    file->AdjustSize(offset + cnt);
+}
+
+inline void
+CNCFileSystem::x_DoWriteToFile(SNCFSEvent* event)
+{
+    CNCFSOpenFile* file = event->file;
+    file->m_RealFile->pMethods->xWrite(file->m_RealFile,
+                                       event->data, event->cnt, event->offset);
+    if (event->offset >= kNCSQLitePageSize) {
+        CNCMemManager::UnlockDBPage(event->data);
+    }
+}
+
+inline void
+CNCFileSystem::x_DoCloseFile(SNCFSEvent* event)
+{
+    CNCFSOpenFile* file = event->file;
+    string file_name = file->m_Name;
+    bool need_delete = file->m_DeleteOnClose;
+
+    x_RemoveFileFromList(file);
+    delete file;
+    if (need_delete) {
+        CFile(file_name).Remove();
+    }
+}
+
+void
+CNCFileSystem::x_DoBackgroundWork(void)
+{
+    while (!sm_Stopped) {
+        for (;;) {
+            SNCFSEvent* head;
+            {{
+                CFastMutexGuard guard(sm_EventsLock);
+                head = sm_EventsHead;
+                sm_EventsHead = sm_EventsTail = NULL;
+                if (head) {
+                    sm_BGWorking = true;
+                }
+                else {
+                    sm_BGWorking = false;
+                    break;
+                }
+            }}
+            while (head) {
+                switch (head->type) {
+                case SNCFSEvent::eWrite:
+                    x_DoWriteToFile(head);
+                    break;
+                case SNCFSEvent::eClose:
+                    x_DoCloseFile(head);
+                    break;
+                }
+                SNCFSEvent* prev = head;
+                head = head->next;
+                delete prev;
+            }
+        }
+        sm_BGSleep.Wait();
+    }
+}
+
+
+inline int
+CNCFSVirtFile::Open(const char* name, int flags, int* out_flags)
+{
+    pMethods       = &s_NCVirtFileMethods;
+    int read_flags = flags;
+    if ((flags & SQLITE_OPEN_MAIN_JOURNAL) == 0) {
+        m_WriteFile = CNCFileSystem::FindOpenFile(name);
+        if (!m_WriteFile) {
+            m_WriteFile = CNCFileSystem::OpenNewDBFile(name);
+        }
+        _ASSERT(m_WriteFile);
+        if (m_WriteFile->IsForcedSync()) {
+            m_WriteFile = NULL;
+        }
+        else {
+            read_flags &= ~SQLITE_OPEN_CREATE;
+        }
+    }
+    else {
+        m_WriteFile = NULL;
+    }
+    return CNCFileSystem::OpenRealFile(&m_ReadFile, name,
+                                       read_flags, out_flags);
+}
+
+inline int
+CNCFSVirtFile::Close(void)
+{
+    if (m_WriteFile) {
+        CNCFileSystem::CloseDBFile(m_WriteFile);
+        m_WriteFile = NULL;
+    }
+    return CNCFileSystem::CloseRealFile(m_ReadFile);
+}
+
+inline int
+CNCFSVirtFile::Read(Int8 offset, int cnt, void* mem_ptr)
+{
+    if (offset < kNCSQLitePageSize  &&  m_WriteFile) {
+        _ASSERT(offset + cnt <= kNCSQLitePageSize);
+        return m_WriteFile->ReadFirstPage(offset, cnt, mem_ptr);
+    }
+    return m_ReadFile->pMethods->xRead(m_ReadFile, mem_ptr, cnt, offset);
+}
+
+inline int
+CNCFSVirtFile::Write(Int8 offset, const void* data, int cnt)
+{
+    if (m_WriteFile) {
+        CNCFileSystem::WriteToFile(m_WriteFile, offset, data, cnt);
+        return SQLITE_OK;
+    }
+    return m_ReadFile->pMethods->xWrite(m_ReadFile, data, cnt, offset);
+}
+
+inline Int8
+CNCFSVirtFile::GetSize(void)
+{
+    if (m_WriteFile)
+        return m_WriteFile->GetSize();
+
+    sqlite3_int64 size;
+    m_ReadFile->pMethods->xFileSize(m_ReadFile, &size);
+    return size;
+}
+
+inline int
+CNCFSVirtFile::Lock(int lock_type)
+{
+    if (m_WriteFile) {
+        return SQLITE_OK;
+    }
+    return m_ReadFile->pMethods->xLock(m_ReadFile, lock_type);
+}
+
+inline int
+CNCFSVirtFile::Unlock(int lock_type)
+{
+    if (m_WriteFile) {
+        return SQLITE_OK;
+    }
+    return m_ReadFile->pMethods->xUnlock(m_ReadFile, lock_type);
+}
+
+inline bool
+CNCFSVirtFile::IsReserved(void)
+{
+    _ASSERT(!m_WriteFile);
+    int result;
+    m_ReadFile->pMethods->xCheckReservedLock(m_ReadFile, &result);
+    return result != 0;
+}
+
+
+/// Get fullname of some file
+static int
+s_SQLITE_FS_Fullname(sqlite3_vfs*, const char *name,
+                     int cnt_out, char *fullname)
+{
+    sqlite3_vfs* vfs = s_GetRealVFS();
+    return vfs->xFullPathname(vfs, name, cnt_out, fullname);
+}
+
+/// Check whether file exists on disk
+static int
+s_SQLITE_FS_Access(sqlite3_vfs*, const char *name, int flags, int *result)
+{
+    _ASSERT(flags == SQLITE_ACCESS_EXISTS);
+    if (CNCFileSystem::IsDiskInitialized()) {
+        *result = 0;
+        return SQLITE_OK;
+    }
+    else {
+        sqlite3_vfs* vfs = s_GetRealVFS();
+        return vfs->xAccess(vfs, name, flags, result);
+    }
+}
+
+/// Open file
+static int
+s_SQLITE_FS_Open(sqlite3_vfs*,
+                 const char*   name,
+                 sqlite3_file* file,
+                 int           flags,
+                 int*          out_flags)
+{
+    return static_cast<CNCFSVirtFile*>(file)->Open(name, flags, out_flags);
+}
+
+/// Close the file
+static int
+s_SQLITE_FS_Close(sqlite3_file* file)
+{
+    return static_cast<CNCFSVirtFile*>(file)->Close();
+}
+
+/// Read data from the file
+static int
+s_SQLITE_FS_Read(sqlite3_file* file,
+                 void*         mem_ptr,
+                 int           cnt,
+                 sqlite3_int64 offset)
+{
+    return static_cast<CNCFSVirtFile*>(file)->Read(offset, cnt, mem_ptr);
+}
+
+/// Write data to the file
+static int
+s_SQLITE_FS_Write(sqlite3_file* file,
+                  const void*   data,
+                  int           cnt,
+                  sqlite3_int64 offset)
+{
+    return static_cast<CNCFSVirtFile*>(file)->Write(offset, data, cnt);
+}
+
+/// Delete file (used only for journal)
+static int
+s_SQLITE_FS_Delete(sqlite3_vfs*, const char *name, int sync_dir)
+{
+    sqlite3_vfs* vfs = s_GetRealVFS();
+    return vfs->xDelete(vfs, name, sync_dir);
+}
+
+/// Read size of the file
+static int
+s_SQLITE_FS_Size(sqlite3_file* file, sqlite3_int64 *size)
+{
+    *size = static_cast<CNCFSVirtFile*>(file)->GetSize();
+    return SQLITE_OK;
+}
+
+/// Place a lock on the file
+static int
+s_SQLITE_FS_Lock(sqlite3_file* file, int lock_type)
+{
+    return static_cast<CNCFSVirtFile*>(file)->Lock(lock_type);
+}
+
+/// Release lock from the file
+static int
+s_SQLITE_FS_Unlock(sqlite3_file* file, int lock_type)
+{
+    return static_cast<CNCFSVirtFile*>(file)->Unlock(lock_type);
+}
+
+/// Check if file is locked with RESERVED lock
+static int
+s_SQLITE_FS_IsReserved(sqlite3_file* file, int* result)
+{
+    *result = static_cast<CNCFSVirtFile*>(file)->IsReserved();
+    return SQLITE_OK;
+}
+
+/// Generate random data
+static int
+s_SQLITE_FS_Random(sqlite3_vfs*, int bytes_cnt, char *out_str)
+{
+    sqlite3_vfs* vfs = s_GetRealVFS();
+    return vfs->xRandomness(vfs, bytes_cnt, out_str);
+}
+
+/// Get current OS time
+static int
+s_SQLITE_FS_CurTime(sqlite3_vfs*, double* time_ptr)
+{
+    sqlite3_vfs* vfs = s_GetRealVFS();
+    return vfs->xCurrentTime(vfs, time_ptr);
+}
+
+/// Get information about device which VFS works with
+static int
+s_SQLITE_FS_AboutDevice(sqlite3_file*)
+{
+    return SQLITE_IOCAP_ATOMIC32K | SQLITE_IOCAP_SAFE_APPEND
+                                  | SQLITE_IOCAP_SEQUENTIAL;
+}
+
+/// Synchronize the file with disk.
+/// Although NetCache uses synchronous = OFF for all its operations SQLite
+/// still needs this function for some reason.
+static int
+s_SQLITE_FS_Sync(sqlite3_file*, int)
+{
+    return SQLITE_OK;
 }
 
 END_NCBI_SCOPE

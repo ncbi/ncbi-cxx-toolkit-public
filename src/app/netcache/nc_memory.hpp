@@ -59,13 +59,23 @@ public:
     /// Print memory usage statistics
     static void PrintStats(CPrintTextProxy& proxy);
 
+    /// Lock page from database cache which given pointer falls into.
+    /// The database page will be locked from reusing in another cache until
+    /// UnlockDBPage() is called.
+    static void LockDBPage(const void* data_ptr);
+    /// Unlock page from database cache which given pointer falls into.
+    /// The database page should be unlocked as many times as many calls to
+    /// LockDBPage() was made. After last unlocking page will be allowed to be
+    /// reused for other cache.
+    static void UnlockDBPage(const void* data_ptr);
+
 private:
     CNCMemManager(void);
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-// Stuff for internal use only
+// Stuff only for internal use in nc_memory.cpp
 //////////////////////////////////////////////////////////////////////////
 
 class CNCMMFreeChunk;
@@ -118,8 +128,6 @@ public:
     void operator delete(void* mem_ptr);
 
     CNCMMDBPage(void);
-    /// Destructor should be called under relative cache's mutex.
-    ~CNCMMDBPage(void);
 
     /// Get pointer to page data
     void* GetData(void);
@@ -139,15 +147,17 @@ public:
     /// reused by some other cache instance until it's returned to LRU list.
     /// Method should be called under corresponding cache's mutex.
     void RemoveFromLRU(void);
-    /// Request deletion of this page when it's removed from cache's
-    /// hash-table.
-    /// In most cases it will be just plain deleted except when it was peeked
-    /// by another thread. In the latter case it will be deleted by that
-    /// thread.
+    /// Notify that page was removed from cache's hash-table and so can be
+    /// deleted at any time it is allowed to. It wouldn't be allowed to delete
+    /// page right away only in two cases: when page is locked from outside
+    /// and when page is already peeked for destruction in another thread.
+    /// In the latter case page will be destroyed and re-used in the thread
+    /// that picked it, in the former case page will be deleted when it is
+    /// unlocked.
     /// Method should be called under corresponding cache's mutex.
     ///
     /// @sa PeekLRUForDestroy
-    void RequestDelete(void);
+    void DeletedFromHash(void);
     /// Destroy this page after peeking it by PeekLRUForDestroy().
     /// Page will be destroyed only if it's in the LRU list, i.e. it's not
     /// used by SQLite at the moment. Method returns TRUE if page was indeed
@@ -157,6 +167,17 @@ public:
     ///
     /// @sa PeekLRUForDestroy
     bool DoPeekedDestruction(void);
+
+    /// Lock page and disallow its deletion or placement into LRU list where
+    /// it could be picked from and re-used in another cache.
+    /// Locking is done solely from CNCFileSystem to avoid reusing its memory
+    /// while data is not yet written to disk.
+    void Lock(void);
+    /// Unlock page and allow any reusing of its memory.
+    /// Unlocking should be done as many times as many calls to Lock() were
+    /// made. After last call to Unlock() page will be either placed to LRU
+    /// list or deleted if no cache owns it already.
+    void Unlock(void);
 
 private:
     friend class CNCMMDBPagesHash;
@@ -172,18 +193,24 @@ private:
     /// Method should be called under sm_LRULock.
     bool x_IsReallyInLRU(void);
     /// Implementation of removing page from LRU list when it's actually
-    /// there (x_IsReallyInLRU() returns TRUE).
+    /// there (should be called only when x_IsReallyInLRU() returns TRUE).
     /// Method should be called under sm_LRULock.
     void x_RemoveFromLRUImpl(void);
+    /// Implementation of adding page to LRU list.
+    /// Method should be called under sm_LRULock.
+    void x_AddToLRUImpl(void);
 
 
     /// Flags representing state of database page
     enum EStateFlags {
-        fInLRU  = 1,  ///< Page is in LRU list, i.e. it's not used now by
-                      ///< SQLite.
-        fPeeked = 2   ///< Page is extracted from LRU for destruction, i.e. if
-                      ///< page is not needed anymore then only thread that
-                      ///< extracted it can delete it.
+        fInLRU  = 1,      ///< Page is in LRU list, i.e. it's not used now by
+                          ///< SQLite.
+        fPeeked = 2,      ///< Page is extracted from LRU for destruction,
+                          ///< i.e. if page is not needed anymore then only
+                          ///< thread that extracted it can delete it.
+        fCounterStep = 4  ///< The incrementing/decrementing step in counting
+                          ///< number of locks made on the page. Value should
+                          ///< be greater than all other flags.
     };
     /// Bit mask of EStateFlags
     typedef int  TStateFlags;
@@ -1214,13 +1241,6 @@ public:
     ///   TRUE if page must not exist anymore, FALSE if page should be kept
     ///   until cache decides that it should be reused for other purposes.
     void UnpinPage(void* data, bool must_delete);
-    /// Change key of the page
-    ///
-    /// @param data
-    ///   Pointer to page data
-    /// @param new_key
-    ///   New key of the page
-    void ChangePageKey(void* data, unsigned int new_key);
     /// Delete from cache all pages with keys greater or equal to min_key
     void DeleteAllPages(unsigned int min_key);
 
@@ -1459,27 +1479,6 @@ private:
 };
 
 
-/// Background thread collecting average statistics of memory manager over
-/// time and making possible a good control over memory consumption without
-/// significant performance hit.
-class CNCMMBGThread : public CThread
-{
-public:
-    CNCMMBGThread(void);
-    /// Stop background thread - memory manager is finishing its work
-    void Stop(void);
-
-protected:
-    /// Part of CThread interface - implementation of thread working code.
-    virtual void* Main(void);
-
-private:
-    virtual ~CNCMMBGThread(void);
-
-    /// Semaphore allowing quick finalization of the thread.
-    CSemaphore m_WaitForStop;
-};
-
 /// Mode of operation of memory manager with regards to allocation of new
 /// memory chunks for database cache.
 enum ENCMMMode {
@@ -1542,13 +1541,14 @@ public:
 
     /// Get statistics collected for centrally managed operations.
     static CNCMMStats& GetStats(void);
-    /// TODO
+    /// Register allocation of memory for new database page.
+    /// Method calculates how many more pages can be allocated and adjusts
+    /// mode of operation accordingly.
     static void DBPageCreated(void);
-    /// TODO
+    /// Register deallocation of memory used by database page.
+    /// Method calculates how many more pages should be deallocated and
+    /// adjusts mode of operation accordingly.
     static void DBPageDeleted(void);
-    /// Implementation of the work that should be done in background.
-    /// Method will be called periodically from CNCMMBGThread::Main().
-    static void DoBackgroundWork(void);
 
 private:
     /// Class will never be instantiated.
@@ -1583,6 +1583,13 @@ private:
     static void* x_DoCallMmap(size_t size);
 #endif
 
+    /// Calculate mode of working with memory (sm_Mode).
+    /// Method is called periodically from x_DoBackGroundWork().
+    static void x_CalcMemoryMode(void);
+    /// Running method for the work that needs to be done in background.
+    static void x_DoBackgroundWork(void);
+
+
 
     /// Mutex controlling access to central operations
     DECLARE_CLASS_STATIC_FAST_MUTEX(sm_CentralLock);
@@ -1601,7 +1608,9 @@ private:
     /// current memory consumption numbers.
     static CAtomicCounter sm_CntCanAlloc;
     /// Background thread of memory manager.
-    static CNCMMBGThread* sm_BGThread;
+    static CThread*       sm_BGThread;
+    /// Semaphore allowing quick finalization of the background thread.
+    static CSemaphore     sm_WaitForStop;
 };
 
 END_NCBI_SCOPE

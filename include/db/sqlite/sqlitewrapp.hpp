@@ -75,6 +75,7 @@ public:
     /// Method can be called only before SQLite is initialized with
     /// Initialize() method.
     static void SetCustomMallocFuncs(sqlite3_mem_methods* methods);
+
     /// Initialization of SQLite and tuning some default parameters.
     /// For these SQLite wrappers to work properly this method should be
     /// called before any work with other classes.
@@ -83,10 +84,24 @@ public:
     /// application execution. After it has been called any further attempts
     /// to use wrapper classes will likely cause application crash.
     static void Finalize(void);
+
     /// Enable use of the same cache by different connections to the same
     /// database file. Setting can be changed at any time and will affect all
     /// connections opened after changing.
     static void EnableSharedCache(bool enable = true);
+    /// Get default virtual file system installed in SQLite.
+    /// Method can be called only after SQLite is initialized with
+    /// Initialize() method.
+    static sqlite3_vfs* GetDefaultVFS(void);
+    /// Register new virtual file system in SQLite.
+    /// If set_default is TRUE then all connections that will be opened after
+    /// call to this method will use this virtual file system. When
+    /// set_default is FALSE then connections will have to state explicitly
+    /// if they want to use this new vfs (although for now this functionality
+    /// is not yet implemented in CSQLITE_Connection).
+    /// Method can be called only after SQLite is initialized with
+    /// Initialize() method.
+    static void RegisterCustomVFS(sqlite3_vfs* vfs, bool set_default = true);
 
 #ifdef HAVE_SQLITE3ASYNC_H
     /// Setup the option for asynchronous file system to do the actual locking

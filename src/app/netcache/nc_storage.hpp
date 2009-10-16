@@ -276,10 +276,6 @@ public:
     /// Return blob lock holder to the pool
     void ReturnLockHolder(CNCBlobLockHolder* holder);
 
-    /// Implementation of background thread. Mainly garbage collector plus
-    /// caching of database data at the beginning of the storage work.
-    void RunBackground(void);
-
 private:
     CNCBlobStorage(const CNCBlobStorage&);
     CNCBlobStorage& operator= (const CNCBlobStorage&);
@@ -324,6 +320,9 @@ private:
     /// Check if storage have been already stopped. Throw special exception in
     /// this case.
     void x_CheckStopped(void);
+    /// Implementation of background thread. Mainly garbage collector plus
+    /// caching of database data at the beginning of the storage work.
+    void x_DoBackgroundWork(void);
 
     /// Read all storage parameters from registry
     void x_ReadStorageParams(const IRegistry& reg, CTempString section);

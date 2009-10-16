@@ -67,33 +67,6 @@ static const char* kNCStorage_GCSleepParam    = "purge_batch_sleep";
 
 
 
-typedef void (CNCBlobStorage::*TGCMethod)(void);
-
-/// Thread running background tasks for the storage
-class CNCStorage_BGThread : public CThread
-{
-public:
-    CNCStorage_BGThread(CNCBlobStorage* storage, TGCMethod method)
-        : m_Storage(storage), m_Method(method)
-    {}
-    virtual ~CNCStorage_BGThread(void)
-    {}
-
-protected:
-    virtual void* Main(void)
-    {
-        (m_Storage->*m_Method)();
-        return NULL;
-    }
-
-private:
-    /// Storage this thread is bound to
-    CNCBlobStorage* m_Storage;
-    /// Method to run in the storage
-    TGCMethod       m_Method;
-};
-
-
 /// Special exception to terminate background thread when storage is
 /// destroying. Class intentionally made without inheritance from CException
 /// or std::exception.
@@ -256,6 +229,7 @@ CNCBlobStorage::x_OpenIndexDB(EReinitMode* reinit_mode)
     for (;;) {
         string index_name = x_GetIndexFileName();
         try {
+            CNCFileSystem::OpenNewDBFile(index_name, true);
             m_IndexDB = new CNCDBIndexFile(index_name, GetStat());
             m_IndexDB->CreateDatabase();
             m_IndexDB->GetAllDBParts(&m_DBParts);
@@ -287,10 +261,8 @@ CNCBlobStorage::x_CheckDBInitialized(bool        guard_existed,
                           << " at " << m_Path);
 
             ITERATE(TNCDBPartsList, it, m_DBParts) {
-                CSQLITE_Connection meta_conn(it->meta_file);
-                meta_conn.DeleteDatabase();
-                CSQLITE_Connection data_conn(it->data_file);
-                data_conn.DeleteDatabase();
+                CNCFileSystem::DeleteFileOnClose(it->meta_file);
+                CNCFileSystem::DeleteFileOnClose(it->data_file);
             }
             m_DBParts.clear();
             m_IndexDB->DeleteAllDBParts();
@@ -642,8 +614,7 @@ CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
     }
     x_SetNotCachedPartId(m_LastBlob.blob_id == 0? -1: m_LastBlob.part_id);
 
-    m_BGThread.Reset(new CNCStorage_BGThread(this,
-                                             &CNCBlobStorage::RunBackground));
+    m_BGThread = NewBGThread(this, &CNCBlobStorage::x_DoBackgroundWork);
     m_BGThread->Run();
 
 }
@@ -654,6 +625,9 @@ CNCBlobStorage::~CNCBlobStorage(void)
     // To be on a safe side let's post 100
     m_StopTrigger.Post(100);
     m_BGThread->Join();
+
+    m_DBFiles.clear();
+    m_IndexDB.reset();
 
     x_FreeBlobIdLocks();
     if (!IsReadOnly()) {
@@ -1082,6 +1056,8 @@ inline void
 CNCBlobStorage::x_GC_DeleteDBPart(TNCDBPartsList::iterator part_it)
 {
     TNCDBPartId part_id = part_it->part_id;
+    string meta_name    = part_it->meta_file;
+    string data_name    = part_it->data_file;
     {{
         CFastWriteGuard guard(m_DBPartsLock);
         m_DBParts.erase(part_it);
@@ -1096,15 +1072,11 @@ CNCBlobStorage::x_GC_DeleteDBPart(TNCDBPartsList::iterator part_it)
     TFilesPoolPtr pool;
     x_GC_PrepFilesPoolToDelete(part_id, &pool);
     try {
-        // Save exactly one connection of each type to delete
-        // database files.
-        TNCMetaFilePtr metafile(pool->ReleaseMetaFile());
-        TNCDataFilePtr datafile(pool->ReleaseDataFile());
-        // All the rest should be gone before deleting.
+        // First schedule the deletion
+        CNCFileSystem::DeleteFileOnClose(meta_name);
+        CNCFileSystem::DeleteFileOnClose(data_name);
+        // Then close all connections.
         pool.reset();
-        // Now we can delete
-        metafile->DeleteDatabase();
-        datafile->DeleteDatabase();
     }
     catch (exception& ex) {
         // Something really bad happening
@@ -1185,7 +1157,7 @@ CNCBlobStorage::x_GC_CollectPartsStatistics(void)
 }
 
 void
-CNCBlobStorage::RunBackground(void)
+CNCBlobStorage::x_DoBackgroundWork(void)
 {
     // Make background postings to be all in the same request id
     CRef<CRequestContext> diag_context(new CRequestContext());

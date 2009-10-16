@@ -390,7 +390,9 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
 
     CSQLITE_Global::Initialize();
     CSQLITE_Global::EnableSharedCache();
+    CNCFileSystem ::Initialize();
     x_CreateStorages(reg, do_reinit);
+    CNCFileSystem::SetDiskInitialized();
 
     // Start session management
     bool session_mng = x_RegReadBool(reg, kNCReg_ManageSessions, false);
@@ -486,7 +488,9 @@ CNetCacheDApp::Run(void)
                            << server->GetSignalCode() << " signal.");
         }
     }}
+    CNCFileSystem ::Finalize();
     CSQLITE_Global::Finalize();
+    CNCMemManager ::FinalizeApp();
 
     return 0;
 }

@@ -51,7 +51,7 @@ NCBI_DEFINE_ERRCODE_X(Db_Bdb_File,       1006,  5 );
 NCBI_DEFINE_ERRCODE_X(Db_Bdb_Util,       1007,  2 );
 NCBI_DEFINE_ERRCODE_X(Db_Bdb_Volumes,    1008,  2 );
 NCBI_DEFINE_ERRCODE_X(Db_Bdb_BlobCache,  1009,  31);
-NCBI_DEFINE_ERRCODE_X(Db_Sqlite,         1010,  9 );
+NCBI_DEFINE_ERRCODE_X(Db_Sqlite,         1010,  10);
 
 
 END_NCBI_SCOPE
