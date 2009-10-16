@@ -631,72 +631,129 @@ bool CTempString::operator<(const CTempString& str) const
 class CTempStringEx : public CTempString
 {
 public:
+    enum EZeroAtEnd {
+        eNoZeroAtEnd,
+        eHasZeroAtEnd
+    };
     CTempStringEx(void)
-        : m_HasZeroAtEnd(false)
+        : m_ZeroAtEnd(eNoZeroAtEnd)
         {
         }
     CTempStringEx(const char* str)
         : CTempString(str),
-          m_HasZeroAtEnd(true)
+          m_ZeroAtEnd(eHasZeroAtEnd)
         {
         }
     CTempStringEx(const char* str, size_type len)
         : CTempString(str, len),
-          m_HasZeroAtEnd(false)
+          m_ZeroAtEnd(eNoZeroAtEnd)
+        {
+        }
+    CTempStringEx(const char* str, size_type len, EZeroAtEnd zero_at_end)
+        : CTempString(str, len),
+          m_ZeroAtEnd(zero_at_end)
         {
         }
     CTempStringEx(const string& str)
         : CTempString(str.c_str(), str.size()),
-          m_HasZeroAtEnd(true)
+          m_ZeroAtEnd(eHasZeroAtEnd)
         {
         }
     CTempStringEx(const string& str, size_type pos, size_type len)
         : CTempString(str, pos, len),
-          m_HasZeroAtEnd(false)
+          m_ZeroAtEnd(eNoZeroAtEnd)
         {
         }
     CTempStringEx(const CTempString& str)
         : CTempString(str),
-          m_HasZeroAtEnd(false)
+          m_ZeroAtEnd(eNoZeroAtEnd)
         {
         }
     CTempStringEx(const CTempString& str, size_type pos)
         : CTempString(str, pos),
-          m_HasZeroAtEnd(false)
+          m_ZeroAtEnd(eNoZeroAtEnd)
         {
         }
     CTempStringEx(const CTempString& str, size_type pos, size_type len)
         : CTempString(str, pos, len),
-          m_HasZeroAtEnd(false)
+          m_ZeroAtEnd(eNoZeroAtEnd)
         {
         }
 
     /// Assign new values to the content of the a string
-    CTempString& assign(const char* src_str, size_type len)
+    CTempStringEx& assign(const char* str, size_type len)
         {
-            m_HasZeroAtEnd = false;
-            return CTempString::assign(src_str, len);
+            m_ZeroAtEnd = eNoZeroAtEnd;
+            CTempString::assign(str, len);
+            return *this;
         }
-    CTempString& assign(const CTempString& src_str)
+    CTempStringEx& assign(const char* str, size_type len,
+                          EZeroAtEnd zero_at_end)
         {
-            m_HasZeroAtEnd = false;
-            return CTempString::assign(src_str);
+            m_ZeroAtEnd = zero_at_end;
+            CTempString::assign(str, len);
+            return *this;
         }
-    CTempString& assign(const CTempString& src_str,
+    CTempStringEx& assign(const CTempString& str)
+        {
+            m_ZeroAtEnd = eNoZeroAtEnd;
+            CTempString::assign(str);
+            return *this;
+        }
+    CTempStringEx& assign(const CTempStringEx& str)
+        {
+            return *this = str;
+        }
+    CTempStringEx& assign(const CTempString& str,
                         size_type          off, 
                         size_type          count)
         {
-            m_HasZeroAtEnd = false;
-            return CTempString::assign(src_str, off, count);
+            m_ZeroAtEnd = eNoZeroAtEnd;
+            CTempString::assign(str, off, count);
+            return *this;
+        }
+
+    /// Clear value to an empty string
+    void clear(void)
+        {
+            CTempString::clear();
+            m_ZeroAtEnd = eHasZeroAtEnd;
+        }
+
+    /// Obtain a substring from this string, beginning at a given offset
+    CTempStringEx substr(size_type pos) const
+        {
+            size_type max = size();
+            if ( pos > max ) {
+                pos = max;
+            }
+            size_type rem = max - pos;
+            return CTempStringEx(data()+pos, rem, m_ZeroAtEnd);
+        }
+    /// Obtain a substring from this string, beginning at a given offset
+    /// and extending a specified length
+    CTempStringEx substr(size_type pos, size_type len) const
+        {
+            size_type max = size();
+            if ( pos > max ) {
+                pos = max;
+            }
+            size_type rem = max - pos;
+            EZeroAtEnd zero_at_end = eNoZeroAtEnd;
+            if ( len >= rem ) {
+                len = rem;
+                zero_at_end = m_ZeroAtEnd;
+            }
+            return CTempStringEx(data()+pos, len, zero_at_end);
         }
 
     bool HasZeroAtEnd(void) const
         {
-            return m_HasZeroAtEnd;
+            return m_ZeroAtEnd != eNoZeroAtEnd;
         }
 
 private:
-    bool m_HasZeroAtEnd;
+    EZeroAtEnd m_ZeroAtEnd;
 };
 
 END_NCBI_SCOPE
