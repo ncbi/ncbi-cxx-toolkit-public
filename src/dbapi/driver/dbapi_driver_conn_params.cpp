@@ -722,6 +722,7 @@ CCPPToolkitConnParams::GetServerType(void) const
 
     // Artificial intelligence ...
     if (NStr::CompareNocase(server_name, 0, 3, "MS_") == 0
+        || NStr::CompareNocase(server_name, 0, 13, "DBAPI_MS_TEST") == 0
         || NStr::CompareNocase(server_name, 0, 5, "MSSQL") == 0
         || NStr::CompareNocase(server_name, 0, 5, "MSDEV") == 0
         || NStr::CompareNocase(server_name, 0, 7, "OAMSDEV") == 0
@@ -742,7 +743,7 @@ CCPPToolkitConnParams::GetServerType(void) const
         || NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
         || NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
-        || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
+        || NStr::CompareNocase(server_name, 0, 14, "DBAPI_SYB_TEST") == 0
         )
     {
         return eSybaseSQLServer;

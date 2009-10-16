@@ -417,13 +417,13 @@ string CUnitTestParams::GetServerName(void) const
 
     if (NStr::CompareNocase(server_name, "MsSql") == 0) {
 #ifdef HAVE_LIBCONNEXT
-        return "MS_TEST";
+        return "DBAPI_MS_TEST";
 #else
         return "MSDEV1";
 #endif
     } else if (NStr::CompareNocase(server_name, "Sybase") == 0) {
 #ifdef HAVE_LIBCONNEXT
-        return "SYB_TEST";
+        return "DBAPI_SYB_TEST";
 #else
         return "CLEMENTI";
 #endif
@@ -440,7 +440,7 @@ CUnitTestParams::GetServerType(void) const
 
     if (driver_name == "dblib") {
         if (NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
-            || NStr::CompareNocase(server_name, 0, 8, "SYB_TEST") == 0
+            || NStr::CompareNocase(server_name, 0, 8, "DBAPI_SYB_TEST") == 0
             )
         {
             return eSybaseSQLServer;

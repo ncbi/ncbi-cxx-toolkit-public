@@ -15,11 +15,11 @@ if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_mssql2005="MSDEV1"
 else
     # server_list="MS_DEV2"
-    server_list="MS_TEST SYB_TEST"
+    server_list="DBAPI_MS_TEST DBAPI_SYB_TEST"
     # server_mssql="MS_DEV2"
-    server_mssql="MS_TEST"
+    server_mssql="DBAPI_MS_TEST"
 
-    server_mssql2005="MS_TEST"
+    server_mssql2005="DBAPI_MS_TEST"
 fi
 
 if echo $FEATURES | grep "DLL" > /dev/null ; then

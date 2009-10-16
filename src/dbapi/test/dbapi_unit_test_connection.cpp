@@ -849,12 +849,12 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
 
         // CDB_ODBC_ConnParams ..
         {
-            CDB_ODBC_ConnParams params("Driver={SQLServer};Server=MS_TEST;Database=DBAPI_Sample;Uid=anyone;Pwd=allowed;");
+            CDB_ODBC_ConnParams params("Driver={SQLServer};Server=DBAPI_MS_TEST;Database=DBAPI_Sample;Uid=anyone;Pwd=allowed;");
 
             BOOST_CHECK_EQUAL(params.GetDriverName(), string("{SQLServer}"));
             BOOST_CHECK_EQUAL(params.GetUserName(), string("anyone"));
             BOOST_CHECK_EQUAL(params.GetPassword(), string("allowed"));
-            BOOST_CHECK_EQUAL(params.GetServerName(), string("MS_TEST"));
+            BOOST_CHECK_EQUAL(params.GetServerName(), string("DBAPI_MS_TEST"));
             BOOST_CHECK_EQUAL(params.GetPort(), 1433U);
             BOOST_CHECK_EQUAL(params.GetDatabaseName(), string("DBAPI_Sample"));
         }

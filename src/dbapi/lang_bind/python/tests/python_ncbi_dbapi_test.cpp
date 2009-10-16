@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(TestConnection)
             ExecuteStr( "tmp_connection3.close()\n" );
         }
     }
-    
+
     // Second test ...
     // Test extra-parameters with connection ...
     if (false) {
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
                    "    print cursor.fetchall() "
                 );
     }
-    
+
     if (false) {
         ExecuteStr("print cursor.callproc('DBAPI_Sample..SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
         ExecuteStr("cursor.fetchall()\n");
@@ -512,7 +512,7 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
                    "    print cursor.fetchall() "
                 );
     }
-    
+
     if (false) {
         ExecuteStr("print cursor.callproc('DBAPI_Sample.dbo.SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
         ExecuteStr("cursor.fetchall()\n");
@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
                    "    print cursor.fetchall() "
                 );
     }
-    
+
     if (false) {
         ExecuteStr("db_pipe = dbapi.connect('ftds', 'MSSQL','GPIPE_META', 'GPIPE_META', 'anyone', 'allowed') \n");
         ExecuteStr("cursor_pipe = db_pipe.cursor()\n");
@@ -531,7 +531,7 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
                    "    print cursor.fetchall() "
                 );
     }
-    
+
     {
         ExecuteStr("cursor_test = conn_simple.cursor()\n");
         ExecuteStr("cursor_test.fetchall()\n");
@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
                    "    print cursor_test.fetchall() "
                 );
     }
-    
+
     // CALL stored procedure ...
     ExecuteStr("print cursor.callproc('sp_databases')\n");
     BOOST_CHECK_THROW(
@@ -1180,8 +1180,8 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "CLEMENTI") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
-         || NStr::CompareNocase(GetServerName(), "SYB_TEST") == 0
-	 || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
+         || NStr::CompareNocase(GetServerName(), "DBAPI_SYB_TEST") == 0
+     || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
          ) {
         return eSybase;
     } else if ( NStr::StartsWith(GetServerName(), "MS_DEV")
@@ -1189,7 +1189,7 @@ CTestArguments::GetServerType(void) const
                 || NStr::StartsWith(GetServerName(), "MSDEV")
                 || NStr::StartsWith(GetServerName(), "OAMSDEV")
                 || NStr::StartsWith(GetServerName(), "QMSSQL")
-		|| NStr::CompareNocase(GetServerName(), "MS_TEST") == 0
+        || NStr::CompareNocase(GetServerName(), "DBAPI_MS_TEST") == 0
                 ) {
         return eMsSql;
     }
@@ -1200,15 +1200,15 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-	if (GetServerType() == eSybase) {
-		if ( GetDriverName() == "dblib") {
-				// Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-				// BcpIn to it using protocol version other than "100".
-				m_DatabaseParameters["version"] = "100";
-		} else if ( (GetDriverName() == "ftds")) {
-				m_DatabaseParameters["version"] = "42";
-		}
-	}
+    if (GetServerType() == eSybase) {
+        if ( GetDriverName() == "dblib") {
+                // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+                // BcpIn to it using protocol version other than "100".
+                m_DatabaseParameters["version"] = "100";
+        } else if ( (GetDriverName() == "ftds")) {
+                m_DatabaseParameters["version"] = "42";
+        }
+    }
 }
 
 string

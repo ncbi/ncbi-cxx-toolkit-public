@@ -133,14 +133,14 @@ CDbapiSampleApp::GetServerType(void) const
          || GetServerName() == "OBERON"
          || GetServerName() == "TAPER"
          || GetServerName() == "THALBERG"
-         || GetServerName() == "SYB_TEST"
+         || GetServerName() == "DBAPI_SYB_TEST"
          || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
          || NStr::StartsWith(GetServerName(), "BARTOK")
          ) {
         return eSybase;
     } else if (NStr::StartsWith(GetServerName(), "MS_DEV")
                || NStr::StartsWith(GetServerName(), "MSSQL")
-               || GetServerName() == "MS_TEST"
+               || GetServerName() == "DBAPI_MS_TEST"
                ) {
         return eMsSql;
     }
