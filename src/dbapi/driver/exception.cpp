@@ -500,7 +500,7 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
                        " SERVER: '" << ex->GetServerName() <<
                        "' USER: '" << ex->GetUserName() << "'" <<
                        (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                        ex->GetExtraMsg()) << "'"
+                        ex->GetExtraMsg() + "'")
                        );
         } else {
             ERR_POST_X(4, Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
@@ -508,7 +508,7 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
                        " SERVER: '" << ex->GetServerName() <<
                        "' USER: '" << ex->GetUserName() << "'" <<
                        (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                        ex->GetExtraMsg()) << "'"
+                        ex->GetExtraMsg() + "'")
                        );
         }
     }
@@ -603,7 +603,7 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
             " SERVER: '" + ex->GetServerName() +
             "' USER: '" + ex->GetUserName() + "'" +
             (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-             ex->GetExtraMsg()) + "'"
+             ex->GetExtraMsg() + "'")
             ;
 
         ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
