@@ -2024,6 +2024,10 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TAlignModelList& alignments)
 
 void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
+    arg_desc->AddKey("param", "param",
+                     "Organism specific parameters",
+                     CArgDescriptions::eInputFile);
+
     arg_desc->SetCurrentGroup("Alignment modification");
     arg_desc->AddDefaultKey("trim", "trim",
                             "If aligned sequence is partial and includes a small portion of an exon the alignment program "
