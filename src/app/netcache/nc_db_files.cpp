@@ -76,7 +76,7 @@ SNCFSEvent*      CNCFileSystem::sm_EventsTail      = NULL;
 CRef<CThread>    CNCFileSystem::sm_BGThread;
 bool             CNCFileSystem::sm_Stopped         = false;
 bool             CNCFileSystem::sm_BGWorking       = false;
-CSemaphore       CNCFileSystem::sm_BGSleep(0, 1000);
+CSemaphore       CNCFileSystem::sm_BGSleep(0, 1000000);
 bool             CNCFileSystem::sm_DiskInitialized = false;
 
 
@@ -856,7 +856,12 @@ void
 CNCFileSystem::Finalize(void)
 {
     sm_Stopped = true;
-    sm_BGSleep.Post();
+    try {
+        sm_BGSleep.Post();
+    }
+    catch (CException&) {
+        // Let's protect against accidental overflow of semaphore's counter.
+    }
     sm_BGThread->Join();
 }
 
@@ -918,7 +923,13 @@ CNCFileSystem::x_AddNewEvent(SNCFSEvent* event)
     }
     sm_EventsTail = event;
     if (!sm_BGWorking) {
-        sm_BGSleep.Post();
+        try {
+            sm_BGSleep.Post();
+        }
+        catch (CException&) {
+            // For some reason this can happen sometimes (attempt to exceed
+            // max_count) but we can safely ignore that.
+        }
     }
 }
 
@@ -932,6 +943,9 @@ CNCFileSystem::DeleteFileOnClose(const string& file_name)
     }
     else {
         CFile(file_name).Remove();
+        // For the case of transferring of database from the previous
+        // NetCache version.
+        CFile(file_name + "-journal").Remove();
     }
 }
 
@@ -990,6 +1004,9 @@ CNCFileSystem::x_DoCloseFile(SNCFSEvent* event)
     delete file;
     if (need_delete) {
         CFile(file_name).Remove();
+        // For the case of transferring of database from the previous
+        // NetCache version.
+        CFile(file_name + "-journal").Remove();
     }
 }
 

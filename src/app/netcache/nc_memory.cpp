@@ -1598,9 +1598,6 @@ CNCMMChainsPool_Getter::CreateTlsObject(void)
 
     CFastMutexGuard guard(sm_CreateLock);
 
-    if (sm_CntUsed == kNCMMMaxThreadsCnt) {
-    }
-
     CNCMMChainsPool* pool;
     if (sm_CntUsed == kNCMMMaxThreadsCnt) {
         pool = &sm_Pools[g_GetNCThreadIndex() % kNCMMMaxThreadsCnt];
@@ -2161,13 +2158,10 @@ CNCMMSizePool::x_RemoveSetFromList(CNCMMBlocksSet* bl_set,
                                    unsigned int    list_grade)
 {
     CNCMMBlocksSet*& list_head = m_Sets[list_grade];
-    if (!bl_set->m_PrevInPool  &&  list_head != bl_set)
-        return;
-
     if (bl_set->m_PrevInPool) {
         bl_set->m_PrevInPool->m_NextInPool = bl_set->m_NextInPool;
     }
-    else {
+    else if (list_head == bl_set) {
         list_head = bl_set->m_NextInPool;
         if (!list_head)
             m_ExistMask.InvertBits(list_grade, 1);
@@ -2833,7 +2827,6 @@ CNCMMDBPage::DoPeekedDestruction(void)
     {{
         CFastMutexGuard guard(sm_LRULock);
         do_destroy = IsInLRU()  &&  m_StateFlags < fCounterStep;
-        _ASSERT(!do_destroy  ||  !x_IsReallyInLRU());
         m_StateFlags &= ~fPeeked;
     }}
     if (do_destroy) {
