@@ -132,9 +132,19 @@ public:
 
     /// Constructor
     /// @param btc BioTreeContainer object
-    /// @param lblType ELabelType
+    /// @param lbl_type ELabelType
     ///
-    CGuideTree(CBioTreeContainer& btc,CGuideTreeCalc::ELabelType lblType = CGuideTreeCalc::eSeqId);
+    CGuideTree(CBioTreeContainer& btc, CGuideTreeCalc::ELabelType lbl_type
+               = CGuideTreeCalc::eSeqId);
+
+    /// Constructor with initialization of tree features
+    /// @param btc BioTreeContainer object [in]
+    /// @param lbl_type Type of lables for tree leaves [in]
+    /// @param mark_query_node Query node will be marked if true [in]
+    ///
+    CGuideTree(CBioTreeContainer& btc, const vector< CRef<CSeq_id> >& seqids,
+               CScope& scope, CGuideTreeCalc::ELabelType lbl_type
+               = CGuideTreeCalc::eSeqId, bool mark_query_node = true);
 
 
     /// Contructor

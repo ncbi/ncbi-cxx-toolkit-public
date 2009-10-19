@@ -89,12 +89,31 @@ CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc)
     copy(map.begin(), map.end(), m_BlastNameColorMap.begin());
 }
 
-CGuideTree::CGuideTree(CBioTreeContainer& btc,CGuideTreeCalc::ELabelType lblType)
+CGuideTree::CGuideTree(CBioTreeContainer& btc,
+		       CGuideTreeCalc::ELabelType lblType)
 {
     x_Init();
 
     CBioTreeDynamic dyntree;        
     x_InitTreeLabels(btc,lblType);     
+    BioTreeConvertContainer2Dynamic(dyntree, btc);
+    m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
+}
+
+
+CGuideTree::CGuideTree(CBioTreeContainer& btc,
+                       const vector< CRef<CSeq_id> >& seqids,
+                       CScope& scope,
+                       CGuideTreeCalc::ELabelType lbl_type,
+                       bool mark_query_node)
+{
+    x_Init();
+
+    CGuideTreeCalc::InitTreeFeatures(btc, seqids, scope, lbl_type,
+                                     mark_query_node, m_BlastNameColorMap,
+                                     m_QueryNodeId);
+
+    CBioTreeDynamic dyntree;        
     BioTreeConvertContainer2Dynamic(dyntree, btc);
     m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
 }

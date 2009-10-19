@@ -244,6 +244,28 @@ public:
                                CDistMethods::TMatrix& result,
                                EDistMethod method);
 
+
+    /// Create and initialize tree features. Initializes node labels,
+    /// descriptions, colors, etc.
+    /// @param btc Tree for which features are to be initialized [in|out]
+    /// @param seqids Sequence ids each corresponding to a tree leaf [in]
+    /// @param scope Scope [in]
+    /// @param label_type Type of labels to for tree leaves [in]
+    /// @param mark_query_node Is query node to be marked [in]
+    /// @param bcolormap Blast name to node color map [out]
+    /// @param query_node_id Id of query node (set only if mark_query_node
+    /// equal to true) [out]
+    ///
+    /// Tree leaves must have labels as numbers from zero to number of leaves
+    /// minus 1. This function does not initialize distance feature.
+    static void InitTreeFeatures(CBioTreeContainer& btc,
+                                 const vector< CRef<CSeq_id> >& seqids,
+                                 CScope& scope,
+                                 CGuideTreeCalc::ELabelType label_type,
+                                 bool mark_query_node,
+                                 TBlastNameColorMap& bcolormap,
+                                 int& query_node_id);
+
 protected:
 
     /// Initialize class attributes
@@ -263,12 +285,13 @@ protected:
     /// @param alnvec Alignment vector [in]
     void x_InitTreeFeatures(const CAlnVec& alnvec);
 
+
     /// Add feature descriptor to tree
     /// @param id Feature id [in]
     /// @param desc Feature description [in]
     /// @param btc Tree [in|out]
     static void x_AddFeatureDesc(int id, const string& desc,
-                                 CRef<CBioTreeContainer>& btc); 
+                                 CBioTreeContainer& btc); 
 
     /// Add feature to tree node
     /// @param id Feature id [in]

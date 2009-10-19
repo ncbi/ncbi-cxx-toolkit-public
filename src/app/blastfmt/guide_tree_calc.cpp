@@ -479,7 +479,7 @@ bool CGuideTreeCalc::x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet)
         x_InitAlignDS(mix.GetSeqAlign());        
     }
     else {        
-        bool success = false;
+        success = false;
         NCBI_THROW(CGuideTreeCalcException, eInvalidOptions,
                    "Empty seqalign provided");
     }
@@ -711,12 +711,25 @@ static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
     return id_string;
 }
 
-
-//Init lables for the tree nodes
 void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
 {
     _ASSERT(m_TreeContainer.NotEmpty());
+    _ASSERT(m_Scope.NotEmpty());
 
+    InitTreeFeatures(*m_TreeContainer, alnvec.GetDenseg().GetIds(),
+                     *m_Scope, m_LabelType, m_MarkQueryNode,
+                     m_BlastNameColorMap, m_QueryNodeId);
+}
+
+
+void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
+                                      const vector< CRef<CSeq_id> >& seqids,
+                                      CScope& scope,
+                                      CGuideTreeCalc::ELabelType label_type,
+                                      bool mark_query_node,
+                                      TBlastNameColorMap& bcolormap,
+                                      int& query_node_id)
+{
     CTaxon1 tax;
 
     bool success = tax.Init();
@@ -726,7 +739,7 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
     }
     
     // Come up with some labels for the terminal nodes
-    int num_rows = alnvec.GetNumRows();
+    int num_rows = (int)seqids.size();
     vector<string> labels(num_rows);
     vector<string> organisms(num_rows);
     vector<string> accession_nbrs(num_rows);    
@@ -736,7 +749,7 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
     vector<CBioseq_Handle> bio_seq_handles(num_rows);
 
     for (int i=0;i < num_rows;i++) {
-        bio_seq_handles[i] = alnvec.GetBioseqHandle(i);
+        bio_seq_handles[i] = scope.GetBioseqHandle(*seqids[i]);
 
         int tax_id = 0;
         try{
@@ -769,10 +782,10 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
         CConstRef<CSeq_id> accession = accession_handle.GetSeqId();
         (*accession).GetLabel(&accession_nbrs[i]);
 
-        tax_node_colors[i] = s_GetBlastNameColor(m_BlastNameColorMap,
+        tax_node_colors[i] = s_GetBlastNameColor(bcolormap,
                                                  blast_names[i]);
 
-        switch (m_LabelType) {
+        switch (label_type) {
         case eTaxName:
             labels[i] = organisms[i];
             break;
@@ -806,34 +819,26 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
     }
     
     // Add attributes to terminal nodes
-    x_AddFeatureDesc(eSeqIdId, CGuideTree::kSeqIDTag, m_TreeContainer);
-    x_AddFeatureDesc(eOrganismId, CGuideTree::kOrganismTag, m_TreeContainer);
-    x_AddFeatureDesc(eTitleId, CGuideTree::kSeqTitleTag, m_TreeContainer);
-    x_AddFeatureDesc(eAccessionNbrId, CGuideTree::kAccessionNbrTag,
-                     m_TreeContainer);
+    x_AddFeatureDesc(eSeqIdId, CGuideTree::kSeqIDTag, btc);
+    x_AddFeatureDesc(eOrganismId, CGuideTree::kOrganismTag, btc);
+    x_AddFeatureDesc(eTitleId, CGuideTree::kSeqTitleTag, btc);
+    x_AddFeatureDesc(eAccessionNbrId, CGuideTree::kAccessionNbrTag, btc);
 
-    x_AddFeatureDesc(eBlastNameId, CGuideTree::kBlastNameTag, m_TreeContainer);
-    x_AddFeatureDesc(eAlignIndexId, CGuideTree::kAlignIndexIdTag,
-                     m_TreeContainer);
+    x_AddFeatureDesc(eBlastNameId, CGuideTree::kBlastNameTag, btc);
+    x_AddFeatureDesc(eAlignIndexId, CGuideTree::kAlignIndexIdTag, btc);
 
-    x_AddFeatureDesc(eQueryNodeColorId, CGuideTree::kNodeColorTag,
-                     m_TreeContainer);
+    x_AddFeatureDesc(eQueryNodeColorId, CGuideTree::kNodeColorTag, btc);
 
-    x_AddFeatureDesc(eQueryLabelColorId, CGuideTree::kLabelColorTag,
-                     m_TreeContainer);
+    x_AddFeatureDesc(eQueryLabelColorId, CGuideTree::kLabelColorTag, btc);
 
-    x_AddFeatureDesc(eQueryLabelBgColorId, CGuideTree::kLabelBgColorTag,
-                     m_TreeContainer);
+    x_AddFeatureDesc(eQueryLabelBgColorId, CGuideTree::kLabelBgColorTag, btc);
 
-    x_AddFeatureDesc(eQueryLabelTagColorId, CGuideTree::kLabelTagColor,
-                     m_TreeContainer);
+    x_AddFeatureDesc(eQueryLabelTagColorId, CGuideTree::kLabelTagColor, btc);
 
-    x_AddFeatureDesc(s_kTreeSimplificationTagId, CGuideTree::kCollapseTag,
-                     m_TreeContainer);
+    x_AddFeatureDesc(s_kTreeSimplificationTagId, CGuideTree::kCollapseTag, btc);
 
     
-    NON_CONST_ITERATE (CNodeSet::Tdata, node,
-                       m_TreeContainer->SetNodes().Set()) {
+    NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
         if ((*node)->CanGetFeatures()) {
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
                                (*node)->SetFeatures().Set()) {
@@ -890,7 +895,7 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
                     x_AddFeature(eQueryNodeColorId,
                                  tax_node_colors[seq_number], node);                         
 
-                    if(seq_number == 0 && m_MarkQueryNode) { 
+                    if(seq_number == 0 && mark_query_node) { 
                         // color for query node
                         x_AddFeature(eQueryLabelBgColorId,
                                      s_kQueryNodeBgColor, node); 
@@ -901,7 +906,7 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
                         //Not sure if needed
                         //m_QueryAccessionNbr = accession_nbrs[seq_number];
 
-                        m_QueryNodeId = (*node).GetObject().GetId();
+                        query_node_id = (*node).GetObject().GetId();
                     }
                     
                     // done with this node
@@ -915,12 +920,12 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
 
 // Add feature descriptor in bio tree
 void CGuideTreeCalc::x_AddFeatureDesc(int id, const string& desc, 
-                                      CRef<CBioTreeContainer>& btc) 
+                                      CBioTreeContainer& btc) 
 {
     CRef<CFeatureDescr> feat_descr(new CFeatureDescr);
     feat_descr->SetId(id);
     feat_descr->SetName(desc);
-    btc->SetFdict().Set().push_back(feat_descr);
+    btc.SetFdict().Set().push_back(feat_descr);
 }   
 
 
