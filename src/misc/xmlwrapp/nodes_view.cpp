@@ -38,6 +38,9 @@
  */
 
 
+// Include this functionality only if it is explicitly requested
+#ifdef XMLWRAPP_USE_NODE_VIEW
+
 // xmlwrapp includes
 #include <misc/xmlwrapp/nodes_view.hpp>
 
@@ -135,3 +138,5 @@ nodes_view& nodes_view::operator=(const nodes_view& other)
 }
 
 } // namespace xml
+
+#endif // XMLWRAPP_USE_NODE_VIEW

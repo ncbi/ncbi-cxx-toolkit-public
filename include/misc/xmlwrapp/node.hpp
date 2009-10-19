@@ -64,10 +64,14 @@ namespace xml {
 // forward declarations
 class document;
 class attributes;
-class nodes_view;
-class const_nodes_view;
 class xpath_expression;
 class node_set;
+
+// Include this functionality only if it is explicitly requested
+#ifdef XMLWRAPP_USE_NODE_VIEW
+class nodes_view;
+class const_nodes_view;
+#endif // XMLWRAPP_USE_NODE_VIEW
 
 namespace impl {
 class node_iterator;
@@ -876,6 +880,8 @@ public:
     //####################################################################
     const_iterator find (const char *name, const const_iterator& start) const;
 
+    // Include this functionality only if it is explicitly requested
+    #ifdef XMLWRAPP_USE_NODE_VIEW
     /**
      * Returns view of child nodes of type type_element. If no such node
      * can be found, returns empty view.
@@ -961,6 +967,7 @@ public:
      * @since  0.6.0
     **/
     const_nodes_view elements(const char *name) const;
+    #endif // XMLWRAPP_USE_NODE_VIEW
 
     /**
      * Run the given XPath query.

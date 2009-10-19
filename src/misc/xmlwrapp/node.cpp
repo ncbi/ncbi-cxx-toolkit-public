@@ -211,6 +211,8 @@ namespace {
 	return 0;
     }
 
+    // Include this functionality only if it is explicitly requested
+    #ifdef XMLWRAPP_USE_NODE_VIEW
     class next_element_functor : public iter_advance_functor
     {
     public:
@@ -227,6 +229,7 @@ namespace {
     private:
         std::string name_;
     };
+    #endif // XMLWRAPP_USE_NODE_VIEW
 }
 //####################################################################
 xml::node::node (int) {
@@ -717,6 +720,8 @@ xml::node::const_iterator xml::node::find (const char *name, const const_iterato
     return end();
 }
 
+// Include this functionality only if it is explicitly requested
+#ifdef XMLWRAPP_USE_NODE_VIEW
 xml::nodes_view xml::node::elements()
 {
     return nodes_view
@@ -752,6 +757,7 @@ xml::const_nodes_view xml::node::elements(const char *name) const
                new next_named_element_functor(name)
            );
 }
+#endif // XMLWRAPP_USE_NODE_VIEW
 
 //####################################################################
 xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) {

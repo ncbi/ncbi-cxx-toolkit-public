@@ -45,6 +45,9 @@
 #ifndef _xmlwrapp_nodes_view_h_
 #define _xmlwrapp_nodes_view_h_
 
+// Have this functionality only if it is explicitly requested
+#ifdef XMLWRAPP_USE_NODE_VIEW
+
 // xmlwrapp includes
 #include <misc/xmlwrapp/xml_init.hpp>
 
@@ -287,5 +290,7 @@ private:
 };
 
 } // end xml namespace
+
+#endif // XMLWRAPP_USE_NODE_VIEW
 
 #endif // _xmlwrapp_nodes_view_h_

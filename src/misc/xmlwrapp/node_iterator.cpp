@@ -42,6 +42,7 @@
  * This file implements the xml::impl::node_iterator class for libxml2.
 **/
 
+
 // definition include
 #include "node_iterator.hpp"
 #include "pimpl_base.hpp"
@@ -186,6 +187,9 @@ void* xml::node::const_iterator::get_raw_node (void) const {
 }
 //####################################################################
 
+
+// Include this functionality only if it is explicitly requested
+#ifdef XMLWRAPP_USE_NODE_VIEW
 
 namespace xml
 {
@@ -339,3 +343,5 @@ void nodes_view::const_iterator::swap(nodes_view::const_iterator& other)
 }
 
 } // namespace xml
+
+#endif // XMLWRAPP_USE_NODE_VIEW
