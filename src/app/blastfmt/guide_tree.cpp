@@ -42,11 +42,20 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <serial/objostrasnb.hpp>
+#include <algo/phy_tree/bio_tree_conv.hpp>
+
+#include <connect/services/netcache_api.hpp>
+//This include is here - to fix compile error related to #include <serial/objostrasnb.hpp> - not sure why
+#include <objmgr/util/sequence.hpp>
 
 #include "guide_tree_calc.hpp"
 #include "guide_tree.hpp"
 
+
+
+
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 const string CGuideTree::kLabelTag = "label";
 const string CGuideTree::kSeqIDTag = "seq-id";
@@ -80,11 +89,12 @@ CGuideTree::CGuideTree(const CGuideTreeCalc& guide_tree_calc)
     copy(map.begin(), map.end(), m_BlastNameColorMap.begin());
 }
 
-CGuideTree::CGuideTree(const CBioTreeContainer& btc)
+CGuideTree::CGuideTree(CBioTreeContainer& btc,CGuideTreeCalc::ELabelType lblType)
 {
     x_Init();
 
-    CBioTreeDynamic dyntree;
+    CBioTreeDynamic dyntree;        
+    x_InitTreeLabels(btc,lblType);     
     BioTreeConvertContainer2Dynamic(dyntree, btc);
     m_DataSource.Reset(new CPhyloTreeDataSource(dyntree));
 }
@@ -115,6 +125,18 @@ bool CGuideTree::WriteImage(const string& filename)
     }
     return success;
 }
+
+string CGuideTree::WriteImageToNetcache(string netcacheServiceName,string netcacheClientName)
+{
+    string imageKey;
+    bool success = x_RenderImage();            
+    if(success) {
+        CNetCacheAPI nc_client(netcacheServiceName,netcacheClientName);
+        imageKey = nc_client.PutData(m_Context->GetBuffer().GetData(),  m_Width*m_Height*3);
+    }
+    return imageKey;
+}
+
 
 
 bool CGuideTree::WriteTree(CNcbiOstream& out)
@@ -148,6 +170,34 @@ bool CGuideTree::WriteTree(const string& filename)
 
     return true;
 }
+
+string CGuideTree::WriteTreeInNetcache(string netcacheServiceName,string netcacheClientName)
+{
+    CBioTreeDynamic dyntree;
+    CBioTreeContainer btc;
+
+    m_DataSource->Save(dyntree);
+    BioTreeConvert2Container(btc, dyntree);
+        
+    //Put contetnts of the tree in memory
+    CConn_MemoryStream iostr;
+    CObjectOStreamAsnBinary outBin(iostr);        
+    outBin << btc;
+    outBin.Flush();
+    
+    
+    CNetCacheAPI nc_client(netcacheServiceName,netcacheClientName);    
+    size_t data_length = iostr.tellp();
+    string data;                
+    data.resize(data_length);        
+    iostr.read(const_cast<char*>(data.data()), data_length);
+    string treeKey = nc_client.PutData(&data[0], data.size());
+    return treeKey;
+}    
+
+
+
+
 
 
 bool CGuideTree::PrintNewickTree(const string& filename)
@@ -286,7 +336,7 @@ void CGuideTree::SimplifyTree(ETreeSimplifyMode method, bool refresh)
     m_SimplifyMode = method;
 }
 
-void CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
+bool CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
 {
     //CPhyloTreeDataSource::GetNode(int) does not return NULL when node 
     // is not found!
@@ -335,6 +385,7 @@ void CGuideTree::ExpandCollapseSubtree(int node_id, bool refresh)
     }
 
     m_SimplifyMode = eNone;
+    return node->Expanded();
 }
 
 void CGuideTree::RerootTree(int new_root_id, bool refresh)
@@ -358,20 +409,24 @@ void CGuideTree::RerootTree(int new_root_id, bool refresh)
     }
 }
 
-void CGuideTree::ShowSubtree(int root_id, bool refresh)
+bool CGuideTree::ShowSubtree(int root_id, bool refresh)
 {
+    bool collapsed = false;
     CPhyloTreeNode* node = x_GetNode(root_id);
 
     // If a collapsed node is clicked, then it needs to be expanded
     // in order to show the subtree
     if (!node->Expanded()) {
+        collapsed = true;
         m_DataSource->ExpandCollapse(node, IPhyGraphicsNode::eShowChilds);
+        m_SimplifyMode = eNone;        
     }
     m_DataSource->SetSubtree(node);
 
     if (refresh) {
         Refresh();
     }
+    return collapsed;
 }
 
 
@@ -413,6 +468,8 @@ auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
     TBioTreeFeatureId fid_blast_name = x_GetFeatureId(kBlastNameTag);
     TBioTreeFeatureId fid_node_color = x_GetFeatureId(kNodeColorTag);
     TBioTreeFeatureId fid_seqid = x_GetFeatureId(kSeqIDTag);
+    TBioTreeFeatureId fid_accession = x_GetFeatureId(kAccessionNbrTag);
+    
 
     auto_ptr<STreeInfo> info(new STreeInfo);
     hash_set<string> found_blast_names;
@@ -422,6 +479,7 @@ auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
         string blast_name = x_GetNodeFeature(*it, fid_blast_name);
         string color = x_GetNodeFeature(*it, fid_node_color);
         string seqid = x_GetNodeFeature(*it, fid_seqid);
+        string accession = x_GetNodeFeature(*it, fid_accession);
         
 	// only one entry per blast name for color map
         if (found_blast_names.find(blast_name) == found_blast_names.end()) {
@@ -430,6 +488,7 @@ auto_ptr<CGuideTree::STreeInfo> CGuideTree::GetTreeInfo(int node_id)
         }
 
         info->seq_ids.push_back(seqid);
+        info->accessions.push_back(accession);
     }
 
     return info;
@@ -486,6 +545,34 @@ string CGuideTree::x_GetNodeFeature(const CPhyloTreeNode* node,
 }
 
 
+void CGuideTree::PreComuteImageDimensions()
+{
+    m_PhyloTreeScheme.Reset(new CPhyloTreeScheme());
+
+    m_PhyloTreeScheme->SetSize(CPhyloTreeScheme::eNodeSize) = m_NodeSize;
+    m_PhyloTreeScheme->SetSize(CPhyloTreeScheme::eLineWidth) = m_LineWidth;
+
+    GLdouble mleft = 10;
+    GLdouble mtop = 10;
+    GLdouble mright = 140;
+    GLdouble mbottom = 10;
+
+    //For now until done automatically  
+    if(m_RenderFormat == eRadial || m_RenderFormat == eForce) {
+        mleft = 200;
+    }
+    m_PhyloTreeScheme->SetMargins(mleft, mtop, mright, mbottom);
+
+    // Min dimensions check
+    // The minimum width and height which should be acceptable to output 
+    // image to display all data without information loss.
+    auto_ptr<IPhyloTreeRenderer> calcRender;       
+    //use recatngle for calulations of all min sizes
+    calcRender.reset(new CPhyloRectCladogram());      
+    m_MinDimRect = IPhyloTreeRenderer::GetMinDimensions(*m_DataSource,
+                                                        *calcRender,
+                                                        *m_PhyloTreeScheme);
+}
 
 void CGuideTree::x_CreateLayout(void)
 {
@@ -515,37 +602,13 @@ void CGuideTree::x_CreateLayout(void)
     // Creating layout
     m_Renderer->SetFont(new CGlBitmapFont(CGlBitmapFont::eHelvetica10));
     
-    CPhyloTreeScheme *phyloTreeScheme = new CPhyloTreeScheme();
-    phyloTreeScheme->SetSize(CPhyloTreeScheme::eNodeSize) = m_NodeSize;
-    phyloTreeScheme->SetSize(CPhyloTreeScheme::eLineWidth) = m_LineWidth;
-
-    GLdouble mleft = 10;
-    GLdouble mtop = 10;
-    GLdouble mright = 140;
-    GLdouble mbottom = 10;
-
-    //For now until done automatically  
-    if(m_RenderFormat == eRadial || m_RenderFormat == eForce) {
-        mleft = 200;
-    }
-    phyloTreeScheme->SetMargins(mleft, mtop, mright, mbottom);
-
-    // Min dimensions check
-    // The minimum width and height which should be acceptable to output 
-    // image to display all data without information loss.
-    auto_ptr<IPhyloTreeRenderer> calcRender;       
-    //use recatngle for calulations of all min sizes
-    calcRender.reset(new CPhyloRectCladogram());      
-    TVPRect dimRect = IPhyloTreeRenderer::GetMinDimensions(*m_DataSource,
-                                                           *calcRender,
-                                                           *phyloTreeScheme);
-
+    
     m_Renderer->SetModelDimensions(m_Width, m_Height);
 
     // Setting variable sized collapsed nodes
-    phyloTreeScheme->SetBoaNodes(true);
+    m_PhyloTreeScheme->SetBoaNodes(true);
 
-    m_Renderer->SetScheme(*phyloTreeScheme);    
+    m_Renderer->SetScheme(*m_PhyloTreeScheme);    
 
     m_Renderer->SetZoomablePrimitives(false);
 
@@ -677,3 +740,159 @@ void CGuideTree::x_PrintNewickTree(CNcbiOstream& ostr,
     else
         ostr << ';';
 }
+
+void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelType lblType) 
+{
+   
+    NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
+        if ((*node)->CanGetFeatures()) {
+            string  blastName = "";
+            //int id = (*node)->GetId();
+            CRef< CNodeFeature > label_feature_node;
+            CRef< CNodeFeature > selected_feature_node;
+            int featureSelectedID = CGuideTreeCalc::eLabelId;
+            if (lblType == CGuideTreeCalc::eSeqId || lblType == CGuideTreeCalc::eSeqIdAndBlastName) {
+//              featureSelectedID = s_kSeqIdId;
+                featureSelectedID = CGuideTreeCalc::eAccessionNbrId;                
+            }
+            else if (lblType == CGuideTreeCalc::eTaxName) {
+                featureSelectedID = CGuideTreeCalc::eOrganismId;
+            }                
+            else if (lblType == CGuideTreeCalc::eSeqTitle) {
+                featureSelectedID = CGuideTreeCalc::eTitleId;
+            }
+            else if (lblType == CGuideTreeCalc::eBlastName) {
+                featureSelectedID = CGuideTreeCalc::eBlastNameId;
+            }
+            
+            NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
+                               (*node)->SetFeatures().Set()) {
+
+                
+                //typedef list< CRef< CNodeFeature > > Tdata
+
+                if ((*node_feature)->GetFeatureid() == CGuideTreeCalc::eLabelId) { 
+                   label_feature_node = *node_feature;                                       
+                }
+                //If label typ = GI and blast name - get blast name here
+                if ((*node_feature)->GetFeatureid() == CGuideTreeCalc::eBlastNameId && 
+                                    lblType == CGuideTreeCalc::eSeqIdAndBlastName) { 
+                   blastName = (*node_feature)->GetValue();
+                }
+            
+                if ((*node_feature)->GetFeatureid() == featureSelectedID) {
+                    // a terminal node
+                    // figure out which sequence this corresponds to
+                    // from the numerical id we stuck in as a label
+                    selected_feature_node = *node_feature;                                        
+                }                
+            }
+            if(label_feature_node.NotEmpty() && selected_feature_node.NotEmpty())
+            {
+                string  label = selected_feature_node->GetValue();
+                if(lblType == CGuideTreeCalc::eSeqIdAndBlastName) {
+                    //concatinate with blastName
+                    label = label + "(" + blastName + ")";
+                }
+                //label_feature_node->SetValue(label);
+                label_feature_node->ResetValue();
+                label_feature_node->SetValue() = label;                
+            }
+        }
+    }            
+}
+
+
+
+int CGuideTree::GetRootNodeID()
+{
+    return(m_DataSource->GetTree()->GetValue().GetId());
+}
+
+
+//Sets data for display purposes marking the selected node on the tree
+void CGuideTree::SetSelection(int hit)
+{
+    if ((hit+1) >=0){
+		CPhyloTreeNode * node = m_DataSource->GetNode(hit);
+		if (node) {
+			m_DataSource->SetSelection(node, true, true, true);
+		}
+	}
+}
+
+string CGuideTree::GetMap(string jsClickNode,string jsClickLeaf,string jsMouseover,string jsMouseout,string jsClickQuery,bool showQuery)
+                                        
+{
+    CGuideTreeCGIMap map_visitor(m_Pane.get(),jsClickNode,jsClickLeaf,jsMouseover,jsMouseout,jsClickQuery,showQuery);    
+	map_visitor = TreeDepthFirstTraverse(*m_DataSource->GetTree(), map_visitor);
+	return map_visitor.GetMap();
+}
+
+
+void CGuideTreeCGIMap::x_FillNodeMapData(CPhyloTreeNode &  tree_node) 
+{	   
+	   int x  = m_Pane->ProjectX((*tree_node).XY().first);
+       int y  = m_Pane->GetViewport().Height() - m_Pane->ProjectY((*tree_node).XY().second);	   
+       int ps = 5;
+
+       
+       string strTooltip = (*tree_node).GetLabel().size()?(*tree_node).GetLabel():"No Label";
+	   
+
+       int nodeID = (*tree_node).GetId();
+       bool isQuery = false;
+       
+       //IsLeaf() instead of IsLeafEx() allows popup menu for collapsed nodes
+       if(tree_node.IsLeaf()) {
+            const CBioTreeFeatureList& featureList = (*tree_node).GetBioTreeFeatureList();
+       
+            if (m_ShowQuery && CPhyTreeNode::GetDictionary().HasFeature(CGuideTree::kAlignIndexIdTag)){ //"align-index"
+                int align_index = NStr::StringToInt(featureList.GetFeatureValue(
+                                    CPhyTreeNode::GetDictionary().GetId(CGuideTree::kAlignIndexIdTag)));
+                isQuery = align_index == 0; //s_kPhyloTreeQuerySeqIndex  
+            }       
+
+            if(isQuery) {
+                strTooltip += "(query)";
+            }
+            m_Map += "<area alt=\""+strTooltip+"\" title=\""+strTooltip+"\""; 
+
+            string accessionNbr;
+            if (CPhyTreeNode::GetDictionary().HasFeature(CGuideTree::kAccessionNbrTag)){ //accession-nbr
+                accessionNbr = featureList.GetFeatureValue(
+                                    CPhyTreeNode::GetDictionary().GetId(CGuideTree::kAccessionNbrTag));            
+            }
+            string arg = NStr::IntToString(nodeID);
+            if(!accessionNbr.empty()) {
+                arg += ",'" + accessionNbr + "'";
+            }            
+            if (isQuery && !m_JSClickQueryFunction.empty()) {
+                m_Map += " href=\"" + m_JSClickQueryFunction + arg+");\""; 
+            }
+            else if(!isQuery && !m_JSClickLeafFunction.empty()) {
+	            //m_Map += " href=\"" + string(JS_SELECT_NODE_FUNC) + NStr::IntToString(nodeID)+");\"";
+                m_Map += " href=\"" + m_JSClickLeafFunction + arg+");\"";                
+            }
+       }
+       else {           
+            m_Map += "<area";
+            if(!m_JSMouseoverFunction.empty())
+                //"javascript:setupPopupMenu(" 
+                m_Map += " onmouseover=\"" + m_JSMouseoverFunction + NStr::IntToString(nodeID)+ ");\"";
+                    
+            if(!m_JSMouseoutFunction.empty())
+                //"PopUpMenu2_Hide(0);"
+                m_Map += " onmouseout=\"" + m_JSMouseoutFunction + "\"";
+            if(!m_JSClickNodeFunction.empty()) 
+                //"//javascript:MouseHit(" //string(JS_SELECT_NODE_FUNC)
+                m_Map += " href=\"" + m_JSClickNodeFunction + NStr::IntToString(nodeID)+");\"";       
+       } 
+       m_Map += " coords=\"";
+       m_Map += NStr::IntToString(x-ps); m_Map+=",";
+       m_Map += NStr::IntToString(y-ps); m_Map+=",";
+       m_Map += NStr::IntToString(x+ps); m_Map+=",";
+       m_Map += NStr::IntToString(y+ps); 
+       m_Map+="\">";      
+}
+
