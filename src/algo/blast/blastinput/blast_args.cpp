@@ -1100,7 +1100,7 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Input query options");
     // query location
     arg_desc.AddOptionalKey(kArgQueryLocation, "range", 
-                            "Location on the query sequence "
+                            "Location on the query sequence in 1-based offsets "
                             "(Format: start-stop)",
                             CArgDescriptions::eString);
 
@@ -1252,9 +1252,9 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
         // subject location
         arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
-                                "Location on the subject sequence "
-                                "(Format: start-stop)",
-                                CArgDescriptions::eString);
+                        "Location on the subject sequence in 1-based offsets "
+                        "(Format: start-stop)",
+                        CArgDescriptions::eString);
         ITERATE(vector<string>, dbarg, database_args) {
             arg_desc.SetDependency(kArgSubjectLocation, 
                                    CArgDescriptions::eExcludes, 

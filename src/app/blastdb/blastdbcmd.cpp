@@ -399,7 +399,8 @@ void CBlastDBCmdApp::Init()
 
     arg_desc->SetCurrentGroup("Sequence retrieval configuration options");
     arg_desc->AddOptionalKey("range", "numbers",
-                         "Range of sequence to extract (Format: start-stop)",
+                         "Range of sequence to extract in 1-based offsets "
+                         "(Format: start-stop)",
                          CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("strand", "strand",

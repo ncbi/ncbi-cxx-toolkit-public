@@ -114,20 +114,37 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
 
 TSeqRange
 ParseSequenceRange(const string& range_str,
-                   const char* error_msg /* = NULL */)
+                   const char* error_prefix /* = NULL */)
 {
-    static const char* kDfltError = "Failed to parse sequence range";
+    static const char* kDfltErrorPrefix = "Failed to parse sequence range";
     static const string kDelimiters("-");
+    string error_msg(error_prefix ? error_prefix : kDfltErrorPrefix);
 
     vector<string> tokens;
     NStr::Tokenize(range_str, kDelimiters, tokens);
-    if (tokens.size() != 2) {
-        string msg(error_msg ? error_msg : kDfltError);
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    if (tokens.size() != 2 || tokens.front().empty() || tokens.back().empty()) {
+        error_msg += " (Format: start-stop)";
+        NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
     }
+    int from = NStr::StringToInt(tokens.front());
+    int to = NStr::StringToInt(tokens.back());
+    if (from <= 0 || to <= 0) {
+        error_msg += " (range elements cannot be less than or equal to 0)";
+        NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
+    }
+    if (from == to) {
+        error_msg += " (range cannot be empty)";
+        NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
+    }
+    if (from > to) {
+        error_msg += " (start cannot be larger than stop)";
+        NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
+    }
+    from--, to--;   // decrement to make range 0-based
+
     TSeqRange retval;
-    retval.SetFrom(NStr::StringToInt(tokens.front()));
-    retval.SetToOpen(NStr::StringToInt(tokens.back()));
+    retval.SetFrom(from);
+    retval.SetTo(to);
     return retval;
 }
 

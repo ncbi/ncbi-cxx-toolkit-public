@@ -2469,6 +2469,47 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
 
 }
 
+BOOST_AUTO_TEST_CASE(ParseSequenceRange_EmptyRange) {
+    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("4-4"),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(ParseSequenceRange_0BasedRange) {
+    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("0-4"),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(ParseSequenceRange_InvalidDelimiter) {
+    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("3,4"),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(ParseSequenceRange_IncompleteRange) {
+    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("3"),
+                        CBlastException);
+    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("3-"),
+                        CBlastException);
+    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("-3"),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(ParseSequenceRange_InvalidRange) {
+    TSeqRange r;
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("9-4"),
+                        CBlastException);
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("-4-2"),
+                        CBlastException);
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("-4-9"),
+                        CBlastException);
+}
+
+BOOST_AUTO_TEST_CASE(ParseSequenceRange_1BasedRange) {
+    TSeqRange r = ParseSequenceRange("1-10");
+    BOOST_REQUIRE_EQUAL(0U, r.GetFrom());
+    BOOST_REQUIRE_EQUAL(9U, r.GetTo());
+    BOOST_REQUIRE_EQUAL(10U, r.GetToOpen());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
