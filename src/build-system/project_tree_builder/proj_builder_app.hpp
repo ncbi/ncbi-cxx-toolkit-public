@@ -181,7 +181,7 @@ public:
     string GetDatatoolCommandLine (void) const;
 
     string GetProjectTreeRoot(void) const;
-    bool   IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
+    bool   IsAllowedProjectTag(const list<string>& tags,
                                string& unmet) const;
     void   LoadProjectTags(const string& filename);
     string ProcessLocationMacros(string data);
@@ -191,6 +191,7 @@ public:
     void RegisterGeneratedFile( const string& file);
     void RegisterProjectWatcher(
         const string& project, const string& dir,  const string& watcher);
+    void ExcludeProjectsByTag(CProjectItemsTree& tree) const;
     void ExcludeUnrequestedProjects(CProjectItemsTree& tree) const;
     
 private:

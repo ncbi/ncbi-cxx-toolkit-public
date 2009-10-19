@@ -1811,6 +1811,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
     BuildOneProjectTree(filter, root_src_path, &target_tree);
 
     if (!GetApp().IsScanningWholeTree()) {
+        GetApp().ExcludeProjectsByTag(target_tree);
         if ( GetApp().m_InteractiveCfg &&
             !GetApp().Gui_ConfirmProjects(target_tree))
         {
@@ -2138,13 +2139,8 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
 {
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty()  ) {
-        string unmet;
-        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
-	        makefiles->m_Lib[file_name] = fc;
-            PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
-	    } else {
-            PTB_WARNING(file_name, "ignored; unmet dependency: " << unmet);
-	    }
+        makefiles->m_Lib[file_name] = fc;
+        PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	} else {
         PTB_WARNING(file_name, "ignored; empty");
 	}
@@ -2158,12 +2154,7 @@ void CProjectTreeBuilder::ProcessMakeDllFile(const string& file_name,
 
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty()  ) {
-        string unmet;
-        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
-	        makefiles->m_Dll[file_name] = fc;
-	    } else {
-            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
-	    }
+        makefiles->m_Dll[file_name] = fc;
 	} else {
         LOG_POST(Info << s << "rejected (is empty)");
 	}
@@ -2176,13 +2167,8 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
 {
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty() ) {
-        string unmet;
-        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
-	        makefiles->m_App[file_name] = fc;
-            PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
-	    } else {
-            PTB_WARNING(file_name, "ignored; unmet dependency: " << unmet);
-	    }
+        makefiles->m_App[file_name] = fc;
+        PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	} else {
         PTB_WARNING(file_name, "ignored; empty");
 	}
@@ -2195,13 +2181,8 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
 {
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty() ) {
-        string unmet;
-        if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
-    	    makefiles->m_User[file_name] = fc;
-            PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
-	    } else {
-            PTB_WARNING(file_name, "ignored; unmet dependency: " << unmet);
-	    }
+	    makefiles->m_User[file_name] = fc;
+        PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	} else {
         PTB_WARNING(file_name, "ignored; empty");
 	}

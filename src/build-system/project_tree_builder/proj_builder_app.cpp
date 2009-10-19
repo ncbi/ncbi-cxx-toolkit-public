@@ -325,6 +325,22 @@ struct PIsExcludedByProjectMakefile
 
 #endif
 
+struct PIsExcludedByTag
+{
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
+    {
+        const CProjItem& project = item.second;
+        string unmet;
+        if ( !GetApp().IsAllowedProjectTag(project.m_ProjTags, unmet) ) {
+            PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
+                           "Excluded due to proj_tag: " << unmet);
+            return true;
+        }
+        return false;
+    }
+};
+
 struct PIsExcludedByUser
 {
     typedef CProjectItemsTree::TProjects::value_type TValueType;
@@ -1452,9 +1468,14 @@ void CProjBulderApp::ParseArguments(void)
         if (CFile(m_CustomConfFile).Exists()) {
             m_CustomConfiguration.LoadFrom(m_CustomConfFile,&m_CustomConfiguration);
         } else {
-            int j;
-            for (j=0; !entry[j].empty(); ++j) {
-                m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
+            if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+                for (int j=0; !entry[j].empty(); ++j) {
+                    m_CustomConfiguration.AddDefinition(entry[j], GetSite().GetConfigureEntry(entry[j]));
+                }
+            }
+            if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+                m_CustomConfiguration.AddDefinition("__TweakVTuneR", "no");
+                m_CustomConfiguration.AddDefinition("__TweakVTuneD", "no");
             }
         }
         m_CustomConfiguration.AddDefinition("__arg_conffile", GetConfigPath());
@@ -1493,8 +1514,8 @@ void CProjBulderApp::VerifyArguments(void)
     ITERATE(list<string>, n, values) {
         string value(*n);
         if (!value.empty()) {
-            if (value.find('!') != NPOS) {
-                value = NStr::Replace(value, "!", kEmptyStr);
+            if (NStr::StartsWith(value,"-")) {
+                value = value.substr(1);
                 if (!value.empty()) {
                     m_DisallowedTags.insert(value);
                 }
@@ -1812,46 +1833,38 @@ string CProjBulderApp::GetProjectTreeRoot(void) const
     return CDirEntry::AddTrailingPathSeparator(path);
 }
 
-bool CProjBulderApp::IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
-                                         string& unmet) const
+bool CProjBulderApp::IsAllowedProjectTag(
+    const list<string>& tags, string& unmet) const
 {
-    if (m_ScanningWholeTree) {
-        return true;
-    }
-    CSimpleMakeFileContents::TContents::const_iterator k;
-    k = mk.m_Contents.find("PROJ_TAG");
-    if (k == mk.m_Contents.end()) {
-        // makefile has no tag -- verify that *any tag* is allowed
+    if (tags.empty()) {
         return m_AllowedTags.find("*") != m_AllowedTags.end();
-    } else {
-        const list<string>& values = k->second;
-        list<string>::const_iterator i;
-        // verify that all project tags are registered
-        for (i = values.begin(); i != values.end(); ++i) {
-            if (m_ProjectTags.find(*i) == m_ProjectTags.end()) {
-                NCBI_THROW(CProjBulderAppException, eUnknownProjectTag, *i);
+    }
+    list<string>::const_iterator i;
+    // verify that all project tags are registered
+    for (i = tags.begin(); i != tags.end(); ++i) {
+        if (m_ProjectTags.find(*i) == m_ProjectTags.end()) {
+            NCBI_THROW(CProjBulderAppException, eUnknownProjectTag, *i);
+            return false;
+        }
+    }
+    // for each tag see if it is not prohibited explicitly
+    if (!m_DisallowedTags.empty()) {
+        for (i = tags.begin(); i != tags.end(); ++i) {
+            if (m_DisallowedTags.find(*i) != m_DisallowedTags.end()) {
+                unmet = *i;
                 return false;
             }
         }
-        // for each tag see if it is not prohibited explicitly
-        if (!m_DisallowedTags.empty()) {
-            for (i = values.begin(); i != values.end(); ++i) {
-                if (m_DisallowedTags.find(*i) != m_DisallowedTags.end()) {
-                    unmet = *i;
-                    return false;
-                }
-            }
-        }
-        if (m_AllowedTags.find("*") != m_AllowedTags.end()) {
+    }
+    if (m_AllowedTags.find("*") != m_AllowedTags.end()) {
+        return true;
+    }
+    for (i = tags.begin(); i != tags.end(); ++i) {
+        if (m_AllowedTags.find(*i) != m_AllowedTags.end()) {
             return true;
         }
-        for (i = values.begin(); i != values.end(); ++i) {
-            if (m_AllowedTags.find(*i) != m_AllowedTags.end()) {
-                return true;
-            }
-        }
     }
-    unmet = NStr::Join(k->second,",");
+    unmet = NStr::Join(tags,",");
     return false;
 }
 
@@ -1861,9 +1874,10 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
     if ( ifs.is_open() ) {
         string line;
         while ( NcbiGetlineEOL(ifs, line) ) {
-            NStr::TruncateSpacesInPlace(line);
-            if (!line.empty()) {
-                m_ProjectTags.insert(line);
+            list<string> values;
+            NStr::Split(line, LIST_SEPARATOR, values);
+            ITERATE(list<string>,v,values) {
+                m_ProjectTags.insert(*v);
             }
         }
     }
@@ -1926,6 +1940,11 @@ void CProjBulderApp::RegisterProjectWatcher(
         CDirEntry::CreateRelativePath(root, path));
     NStr::ReplaceInPlace( path, sep, "/");
     m_ProjWatchers.push_back( project + ", " + path + ", " + watcher );
+}
+
+void CProjBulderApp::ExcludeProjectsByTag(CProjectItemsTree& tree) const
+{
+    EraseIf(tree.m_Projects, PIsExcludedByTag());
 }
 
 void CProjBulderApp::ExcludeUnrequestedProjects(CProjectItemsTree& tree) const
