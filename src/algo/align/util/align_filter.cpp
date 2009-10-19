@@ -36,6 +36,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
@@ -247,6 +248,9 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name, const objects
     double score_value = numeric_limits<double>::quiet_NaN();
     if (NStr::EqualNocase(score_name, "align_length")) {
         score_value = align.GetSeqRange(0).GetLength();
+    } else if (NStr::EqualNocase(score_name, "product_length")) {
+        if (align.GetSegs().IsSpliced())
+            score_value = align.GetSegs().GetSpliced().GetProduct_length();
     } else if (align.IsSetScore()) {
         ITERATE (CSeq_align::TScore, iter, align.GetScore()) {
             const CScore& score = **iter;
