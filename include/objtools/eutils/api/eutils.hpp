@@ -191,7 +191,6 @@ private:
 
     mutable CRef<CEUtils_ConnContext> m_Context;
     auto_ptr<CConn_HttpStream>        m_Stream;
-    STimeout         m_Timeout;  // CConn_HttpStream compatible timeout
 
     string           m_ScriptName;
     string           m_QueryKey; // empty = use value from ConnContext

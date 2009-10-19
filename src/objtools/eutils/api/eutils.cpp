@@ -95,8 +95,9 @@ void CEUtils_Request::Connect(void)
 {
     string url = GetBaseURL() + GetScriptName();
     string body = GetQueryString();
-    const STimeout* tmo = 
-        CTimeoutToSTimeout(GetConnContext()->GetTimeout(), m_Timeout);
+    STimeout timeout_value;
+    const STimeout* timeout = 
+        CTimeoutToSTimeout(GetConnContext()->GetTimeout(), timeout_value);
 
     if ( m_Method == eHttp_Post ) {
         m_Stream.reset(new CConn_HttpStream(
@@ -104,14 +105,14 @@ void CEUtils_Request::Connect(void)
             NULL,
             "Content-type: application/x-www-form-urlencoded\n",
             fHCC_AutoReconnect,
-            tmo));
+            timeout));
         *m_Stream << body;
     }
     else {
         m_Stream.reset(new CConn_HttpStream(
             url + "?" + body,
             fHCC_AutoReconnect,
-            tmo));
+            timeout));
     }
 }
 

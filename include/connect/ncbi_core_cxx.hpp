@@ -102,12 +102,22 @@ protected:
 ///
 
 /// Convert CTimeout to STimeout.
+///
+/// @param cto
+///   Timeout value to convert.
+/// @param sto
+///   Variable used to store numeric timeout value.
+/// @return
+///   A special constants kDefaultTimeout or kInfiniteTimeout, 
+///   if timeout have default or infinite value accordingly.
+///   A pointer to "sto" object, if timeout have numeric value. 
+///   "sto" will be used to store numeric value.
+/// @sa CTimeout, STimeout
 const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto);
 
 /// Convert STimeout to CTimeout.
-CTimeout STimeoutToCTimeout(const STimeout& sto);
-
-/// Convert STimeout to CTimeout.
+///
+/// @sa CTimeout, STimeout
 CTimeout STimeoutToCTimeout(const STimeout* sto);
 
 
@@ -122,12 +132,6 @@ const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto)
         cto.Get(&sto.sec, &sto.usec);
         return &sto;
     }
-}
-
-inline 
-CTimeout STimeoutToCTimeout(const STimeout& sto)
-{
-    return CTimeout(sto.sec, sto.usec);
 }
 
 inline 
