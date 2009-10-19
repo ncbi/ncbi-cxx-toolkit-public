@@ -1488,6 +1488,9 @@ public:
     bool IsInfinite() const;
     bool IsZero()     const;
 
+    /// Check if timeout holds a numeric value.
+    bool HasValue() const;
+
     //
     // Get timeout
     //
@@ -1549,7 +1552,7 @@ public:
 
 private:
     EType         m_Type;       ///< Type of timeout.
-    bool          m_HaveValue;  ///< Timeout have numeric value.
+    bool          m_HasValue;   ///< Timeout holds numeric value.
     unsigned int  m_Sec;        ///< Seconds part of the timeout.
     unsigned int  m_MicroSec;   ///< Microseconds part of the timeout.
 };
@@ -1737,7 +1740,7 @@ public:
         eArgument,     ///< Bad function argument.
         eConvert,      ///< Error converting value from one format to another.
         eInvalid,      ///< Invalid time value.
-        eFormat,       ///< Incorrect format.
+        eFormat        ///< Incorrect format.
     };
 
     /// Translate from the error code value to its string representation.
@@ -2369,22 +2372,28 @@ CTimeout::CTimeout(double sec) { Set(sec); }
 inline
 CTimeout::CTimeout(const CTimeout& t)
 {
-    m_Type      = t.m_Type;
-    m_HaveValue = t.m_HaveValue;
-    m_Sec       = t.m_Sec;
-    m_MicroSec  = t.m_MicroSec;
+    m_Type     = t.m_Type;
+    m_HasValue = t.m_HasValue;
+    m_Sec      = t.m_Sec;
+    m_MicroSec = t.m_MicroSec;
 }
 
 inline
 bool CTimeout::IsDefault() const
 { 
-    return m_Type == eDefault  &&  !m_HaveValue;
+    return m_Type == eDefault  &&  !m_HasValue;
 }
 
 inline
 bool CTimeout::IsInfinite() const
 {
-    return m_Type == eInfinite  &&  !m_HaveValue;
+    return m_Type == eInfinite  &&  !m_HasValue;
+}
+
+inline
+bool CTimeout::HasValue() const
+{
+    return m_HasValue;
 }
 
 inline
