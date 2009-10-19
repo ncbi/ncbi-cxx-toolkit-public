@@ -41,6 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 #include <algo/phy_tree/bio_tree.hpp>
 
@@ -171,7 +172,7 @@ void CGuideTreeApplication::Init(void)
 //  Run test (printout arguments obtained from command-line)
 
 enum EInput {
-    eSeqAnnot, eSeqAlign, eTree
+    eSeqAlignSet, eSeqAlign, eTree
 };
 
 int CGuideTreeApplication::Run(void)
@@ -195,8 +196,8 @@ int CGuideTreeApplication::Run(void)
     }
 
     EInput input;
-    if (args["type"].AsString() == "seqannot") {
-        input = eSeqAnnot;
+    if (args["type"].AsString() == "seqAlignSet") {
+        input = eSeqAlignSet;
     } 
     else if (args["type"].AsString() == "seqalign") {
         input = eSeqAlign;
@@ -206,14 +207,14 @@ int CGuideTreeApplication::Run(void)
     }
 
     // If input is Seq-annot compute guide tree
-    if (input == eSeqAnnot || input == eSeqAlign) {
+    if (input == eSeqAlignSet || input == eSeqAlign) {
 
         CRef<CGuideTreeCalc> calc;
         
-        if (input == eSeqAnnot) {
-            CRef<CSeq_annot> seq_annot(new CSeq_annot());
-            args["i"].AsInputFile() >> MSerial_AsnText >> *seq_annot;
-            calc.Reset(new CGuideTreeCalc(seq_annot, scope, query_id));
+        if (input == eSeqAlignSet) {
+            CRef<CSeq_align_set> seq_align_set(new CSeq_align_set());
+            args["i"].AsInputFile() >> MSerial_AsnText >> *seq_align_set;
+            calc.Reset(new CGuideTreeCalc(seq_align_set, scope));
         }
         else {
             CSeq_align seq_align;
