@@ -44,6 +44,7 @@
 
 #include <gui/objutils/utils.hpp>
 
+
 #include <math.h>
 
 #include "guide_tree.hpp"
@@ -54,17 +55,18 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-static const int    s_kLabelId = 0;
-static const int    s_kSeqIdId = 2;
-static const int    s_kOrganismId = 3;
-static const int    s_kTitleId = 4;
-static const int    s_kAccessionNbr = 5;
-static const int    s_kBlastName = 6;
-static const int    s_kAlignIndexId = 7;
-static const int    s_kQueryNodeColorId = 8;
-static const int    s_kQueryLabelColorId = 9;
-static const int    s_kQueryLabelBgColorId = 10;
-static const int    s_kQueryLabelTagColorId = 11;
+
+//static const int    s_kLabelId = 0;
+//static const int    s_kSeqIdId = 2;
+//static const int    s_kOrganismId = 3;
+//static const int    s_kTitleId = 4;
+//static const int    s_kAccessionNbr = 5;
+//static const int    s_kBlastName = 6;
+//static const int    s_kAlignIndexId = 7;
+//static const int    s_kQueryNodeColorId = 8;
+//static const int    s_kQueryLabelColorId = 9;
+//static const int    s_kQueryLabelBgColorId = 10;
+//static const int    s_kQueryLabelTagColorId = 11;
 static const int    s_kTreeSimplificationTagId = 12;
 static const string s_kQueryNodeColor = "255 0 0";
 static const string s_kQueryLabelColor = "176 0 0";
@@ -73,15 +75,6 @@ static const string s_kQueryNodeBgColor = "255 255 0";
 static const string s_kUnknown = "unknown";
 static const string s_kSubtreeDisplayed = "0";
 
-
-CGuideTreeCalc::CGuideTreeCalc(CRef<CSeq_annot> annot,
-                               CRef<CScope> scope, const string& query_id)
-    : m_Scope(scope), 
-      m_QuerySeqId(query_id)
-{
-    x_Init();
-    x_InitAlignDS(*annot);
-}
 
 
 CGuideTreeCalc::CGuideTreeCalc(const CSeq_align& seq_aln,
@@ -94,6 +87,15 @@ CGuideTreeCalc::CGuideTreeCalc(const CSeq_align& seq_aln,
     x_InitAlignDS(seq_aln);
 }
 
+
+CGuideTreeCalc::CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet,
+                               CRef<CScope> scope)
+    : m_Scope(scope)      
+{
+    x_Init();
+    x_InitAlignDS(seqAlignSet);
+}
+
 const CBioTreeContainer& CGuideTreeCalc::GetSerialTree(void) const
 {
     if (m_TreeContainer.Empty()) {
@@ -102,7 +104,6 @@ const CBioTreeContainer& CGuideTreeCalc::GetSerialTree(void) const
     }
     return *m_TreeContainer;
 }
-
 
 auto_ptr<CBioTreeDynamic> CGuideTreeCalc::GetTree(void)
 {
@@ -126,17 +127,6 @@ CRef<CSeq_align> CGuideTreeCalc::GetSeqAlign(void) const
 
     return seqalign;
 }
-
-// Check if query in seq-align belongs to the query in m_QuerySeqID
-static bool s_SeqAlignQueryMatch(CRef<CSeq_align>& seq_align,
-                                 const string& query_seq_id)
-{
-    const CSeq_id& seq_id = seq_align->GetSeq_id(0);
-    string query_id;
-    seq_id.GetLabel(&query_id);
-    return (query_seq_id == query_id);
-}
-
 
 
 static const string& s_GetSequence(const CAlnVec& avec,
@@ -405,8 +395,7 @@ bool CGuideTreeCalc::CalcBioTree(void)
 
         if (!removed_inds.empty()) {
             alnvec = x_CreateValidAlign(removed_inds, used_inds);
-            x_TrimMatrix(pmat, used_inds);
-
+            x_TrimMatrix(pmat, used_inds);            
             m_Messages.push_back(NStr::IntToString(removed_inds.size())
                                  + " sequences were discarded due to"
                                  " divergence that exceeds maximum allowed.");
@@ -467,46 +456,36 @@ void CGuideTreeCalc::x_Init(void)
 }
 
 
-bool CGuideTreeCalc::x_InitAlignDS(const CSeq_annot& annot)
+
+bool CGuideTreeCalc::x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet)
 {
-    bool success = false;
+    bool success = true;
 
-    // Query from the first alignment is used as query for the tree,
-    // unless another id is selected
-    if (m_QuerySeqId.empty()) {        
-        const CSeq_id& seq_id 
-            = (*annot.GetData().GetAlign().begin())->GetSeq_id(0);
-
-        seq_id.GetLabel(&m_QuerySeqId);
+    if(seqAlignSet->Get().size() == 1) {   
+        x_InitAlignDS(**(seqAlignSet->Get().begin()));        
     }
+    else if(seqAlignSet->Get().size() > 1) {   
+        CAlnMix mix;
+        ITERATE (CSeq_annot::TData::TAlign, iter, seqAlignSet->Get()) {
 
-    CAlnMix mix;
-    ITERATE (CSeq_annot::TData::TAlign, iter, annot.GetData().GetAlign()) {
-
-        CRef<CSeq_align> seq_align = *iter;
-        
-        if (s_SeqAlignQueryMatch(seq_align, m_QuerySeqId)) {
-
-            success = true;
-            mix.Add(**iter);
+            CRef<CSeq_align> seq_align = *iter;            
+            mix.Add(**iter);        
         }
-    }
-
-    if (success) {
 
         CAlnMix::TMergeFlags merge_flags;
         merge_flags = CAlnMix::fGapJoin | CAlnMix::fTruncateOverlaps;
         mix.Merge(merge_flags);
 
-        x_InitAlignDS(mix.GetSeqAlign());
+        x_InitAlignDS(mix.GetSeqAlign());        
     }
-    else {
+    else {        
+        bool success = false;
         NCBI_THROW(CGuideTreeCalcException, eInvalidOptions,
-                   "Query sequence not found in Seq_annot");
+                   "Empty seqalign provided");
     }
-
     return success;
 }
+
 
 
 void CGuideTreeCalc::x_InitAlignDS(const CSeq_align& seq_aln)
@@ -713,7 +692,7 @@ static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
     if(get_gi_first) {        
         try {
             seq_id_handle = sequence::GetId(handle, sequence::eGetId_ForceGi);
-            get_best_id = false;
+            if(seq_id_handle.IsGi()) get_best_id = false;
         }
         catch(CException& e) {
             //x_TraceLog("sequence::GetId-ForceGi error"  + (string)e.what());
@@ -742,7 +721,8 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
 
     bool success = tax.Init();
     if (!success) {
-        m_Messages.push_back("Problem initializing taxonomy information.");
+        NCBI_THROW(CGuideTreeCalcException, eTaxonomyError,
+                   "Problem initializing taxonomy information.");        
     }
     
     // Come up with some labels for the terminal nodes
@@ -826,26 +806,26 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
     }
     
     // Add attributes to terminal nodes
-    x_AddFeatureDesc(s_kSeqIdId, CGuideTree::kSeqIDTag, m_TreeContainer);
-    x_AddFeatureDesc(s_kOrganismId, CGuideTree::kOrganismTag, m_TreeContainer);
-    x_AddFeatureDesc(s_kTitleId, CGuideTree::kSeqTitleTag, m_TreeContainer);
-    x_AddFeatureDesc(s_kAccessionNbr, CGuideTree::kAccessionNbrTag,
+    x_AddFeatureDesc(eSeqIdId, CGuideTree::kSeqIDTag, m_TreeContainer);
+    x_AddFeatureDesc(eOrganismId, CGuideTree::kOrganismTag, m_TreeContainer);
+    x_AddFeatureDesc(eTitleId, CGuideTree::kSeqTitleTag, m_TreeContainer);
+    x_AddFeatureDesc(eAccessionNbrId, CGuideTree::kAccessionNbrTag,
                      m_TreeContainer);
 
-    x_AddFeatureDesc(s_kBlastName, CGuideTree::kBlastNameTag, m_TreeContainer);
-    x_AddFeatureDesc(s_kAlignIndexId, CGuideTree::kAlignIndexIdTag,
+    x_AddFeatureDesc(eBlastNameId, CGuideTree::kBlastNameTag, m_TreeContainer);
+    x_AddFeatureDesc(eAlignIndexId, CGuideTree::kAlignIndexIdTag,
                      m_TreeContainer);
 
-    x_AddFeatureDesc(s_kQueryNodeColorId, CGuideTree::kNodeColorTag,
+    x_AddFeatureDesc(eQueryNodeColorId, CGuideTree::kNodeColorTag,
                      m_TreeContainer);
 
-    x_AddFeatureDesc(s_kQueryLabelColorId, CGuideTree::kLabelColorTag,
+    x_AddFeatureDesc(eQueryLabelColorId, CGuideTree::kLabelColorTag,
                      m_TreeContainer);
 
-    x_AddFeatureDesc(s_kQueryLabelBgColorId, CGuideTree::kLabelBgColorTag,
+    x_AddFeatureDesc(eQueryLabelBgColorId, CGuideTree::kLabelBgColorTag,
                      m_TreeContainer);
 
-    x_AddFeatureDesc(s_kQueryLabelTagColorId, CGuideTree::kLabelTagColor,
+    x_AddFeatureDesc(eQueryLabelTagColorId, CGuideTree::kLabelTagColor,
                      m_TreeContainer);
 
     x_AddFeatureDesc(s_kTreeSimplificationTagId, CGuideTree::kCollapseTag,
@@ -857,7 +837,7 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
         if ((*node)->CanGetFeatures()) {
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
                                (*node)->SetFeatures().Set()) {
-                if ((*node_feature)->GetFeatureid() == s_kLabelId) {
+                if ((*node_feature)->GetFeatureid() == eLabelId) {
                     // a terminal node
                     // figure out which sequence this corresponds to
                     // from the numerical id we stuck in as a label
@@ -881,41 +861,41 @@ void CGuideTreeCalc::x_InitTreeFeatures(const CAlnVec& alnvec)
                     string id_string 
                         = s_GetSeqIDString(bio_seq_handles[seq_number], true);
 
-                    x_AddFeature(s_kSeqIdId, id_string, node); 
+                    x_AddFeature(eSeqIdId, id_string, node); 
 
                     // add organism attribute if possible
                     if (!organisms[seq_number].empty()) {
-                        x_AddFeature(s_kOrganismId, organisms[seq_number], node);
+                        x_AddFeature(eOrganismId, organisms[seq_number], node);
                     }
 
                     // add seq-title attribute if possible
                     if (!titles[seq_number].empty()) {
-                        x_AddFeature(s_kTitleId, titles[seq_number], node); 
+                        x_AddFeature(eTitleId, titles[seq_number], node); 
                     }
                     // add blast-name attribute if possible
                     if (!accession_nbrs[seq_number].empty()) {
-                        x_AddFeature(s_kAccessionNbr, accession_nbrs[seq_number],
+                        x_AddFeature(eAccessionNbrId, accession_nbrs[seq_number],
                                      node);
                     }
 
                     // add blast-name attribute if possible
                     if (!blast_names[seq_number].empty()) {
-                        x_AddFeature(s_kBlastName, blast_names[seq_number],
+                        x_AddFeature(eBlastNameId, blast_names[seq_number],
                                      node);
                     }                   
 
-                    x_AddFeature(s_kAlignIndexId, NStr::IntToString(seq_number),
+                    x_AddFeature(eAlignIndexId, NStr::IntToString(seq_number),
                                  node); 
 
-                    x_AddFeature(s_kQueryNodeColorId,
+                    x_AddFeature(eQueryNodeColorId,
                                  tax_node_colors[seq_number], node);                         
 
                     if(seq_number == 0 && m_MarkQueryNode) { 
                         // color for query node
-                        x_AddFeature(s_kQueryLabelBgColorId,
+                        x_AddFeature(eQueryLabelBgColorId,
                                      s_kQueryNodeBgColor, node); 
 
-                        x_AddFeature(s_kQueryLabelTagColorId,
+                        x_AddFeature(eQueryLabelTagColorId,
                                      s_kQueryNodeColor, node); 
 
                         //Not sure if needed
