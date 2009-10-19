@@ -65,6 +65,7 @@ public:
     typedef struct STreeInfo {
         TBlastNameColorMap blastname_color_map;
         vector<string> seq_ids;
+        vector<string> accessions;        
     } STreeInfo;
 
     /// Tree rendering formats
@@ -131,8 +132,9 @@ public:
 
     /// Constructor
     /// @param btc BioTreeContainer object
+    /// @param lblType ELabelType
     ///
-    CGuideTree(const CBioTreeContainer& btc);
+    CGuideTree(CBioTreeContainer& btc,CGuideTreeCalc::ELabelType lblType = CGuideTreeCalc::eSeqId);
 
 
     /// Contructor
@@ -189,6 +191,12 @@ public:
     ///
     void SetImageFormat(CImageIO::EType format) {m_ImageFormat = format;}
 
+    /// Initialization related to the selected branch of the tree
+    ///
+    /// @param hit selected node id [in]
+    ///
+    void SetSelection(int hit);
+
     /// Set Blast Name to color map
     /// @return Reference to Blast Name to color map
     ///
@@ -222,12 +230,24 @@ public:
     ///
     ETreeSimplifyMode GetSimplifyMode(void) const {return m_SimplifyMode;}
 
+    ///Get the minimum image height which should be acceptable to output 
+    ///
+    /// @return min height
+    int GetMinHeight(void){ return m_MinDimRect.Height();}
+
     /// Get information about leaves (such as seqids, blast name to color map,
     /// usually used for auxilary information on the web) for selected subtree
     /// @param node_id Node id of subtree root [in]
     /// @return Tree information
     ///
     auto_ptr<STreeInfo> GetTreeInfo(int node_id);
+
+
+    /// Get tree root node id
+    ///
+    /// @return root node id
+    int GetRootNodeID();
+
 
 
     // --- Generating output ---
@@ -254,17 +274,33 @@ public:
     ///
     bool WriteImage(const string& filename = "");
 
+    /// Write image to netcache
+    /// @param netcacheServiceName Netcache Service Name [in]
+    /// @param netcacheClientName  Netcache Client Name  [in]
+    /// @return string netcache key
+    ///
+    string WriteImageToNetcache(string netcacheServiceName,string  netcacheClientName);
+
     /// Write tree structure to stream
     /// @param out Output stream [in|out]
     /// @return True on success, false on failure
     ///
     bool WriteTree(CNcbiOstream& out);
 
+
     /// Write tree structure to file
     /// @param filename Output file name [in]
     /// @return True on success, false on failure
     ///
     bool WriteTree(const string& filename = "");
+
+
+    /// Write tree to netcache
+    /// @param netcacheServiceName Netcache Service Name [in]
+    /// @param netcacheClientName  Netcache Client Name  [in]
+    /// @return string netcache key
+    ///
+    string WriteTreeInNetcache(string netcacheServiceName,string netcacheClientName);
 
     /// Write tree in Newick format to stream
     /// @param ostr Output stream [in|out]
@@ -328,7 +364,7 @@ public:
     /// manipulations are done. Refresh() method need to be called at the end
     /// in such case.
     ///
-    void ExpandCollapseSubtree(int node_id, bool refresh = true);
+    bool ExpandCollapseSubtree(int node_id, bool refresh = true);
 
 
     /// Reroot tree
@@ -351,14 +387,29 @@ public:
     /// manipulations are done. Refresh() method need to be called at the end
     /// in such case.
     ///
-    void ShowSubtree(int root_id, bool refresh);
+    bool ShowSubtree(int root_id, bool refresh);
 
 
     /// Recalculate dimensions of the tree for rendering.
     ///
     void Refresh(void);
 
-    
+    ///Get map corresponding to tree image
+    ///
+    ///@param  jsClickNode javascript function name for non-leaf node click
+    ///@param jsClickLeaf javascript function name for leaf node click
+    ///@param  jsMouseover javascript function name for node mouseover
+    ///@param  jsMouseout javascript function name for node mouseout
+    ///@param jsClickQuery javascript function name for query node click
+    ///@param showQuery if true higlight query node
+    ///@return string map
+    ///
+    string GetMap(string jsClickNode,string jsClickLeaf,string jsMouseover,string jsMouseout,string jsClickQuery = "",bool showQuery = true);
+
+    ///Calculates the minimum width and height which should be acceptable to output 
+    ///
+    void PreComuteImageDimensions(void);
+
 protected:    
     
     /// Forbiding copy constructor
@@ -429,6 +480,8 @@ protected:
     ///
     void x_CollapseSubtrees(CPhyloTreeNodeGroupper& groupper);
 
+
+    void x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelType lblType); 
 
 private:
     
@@ -629,8 +682,19 @@ protected:
     ///
     ETreeSimplifyMode m_SimplifyMode;
 
+
+    /// Min image dimensions
+    ///
+    TVPRect m_MinDimRect;    
+
+
     /// Blast Name to color map
     TBlastNameColorMap m_BlastNameColorMap;
+
+    ///Phylo Tree Scheme
+    ///
+    CRef <CPhyloTreeScheme> m_PhyloTreeScheme;
+
 };
 
 
@@ -648,6 +712,55 @@ public:
     };
 
     NCBI_EXCEPTION_DEFAULT(CGuideTreeException, CException);
+};
+
+
+
+///Class for creating image map
+///
+class CGuideTreeCGIMap
+{
+public:
+    
+    CGuideTreeCGIMap(CGlPane * x_pane, 
+                     string jsClickNode,
+                     string jsClickLeaf,                     
+                     string jsMouseover,
+                     string jsMouseout,
+                     string jsClickQuery,
+                     bool showQuery) : m_Pane(x_pane), m_Map(""){
+        m_JSClickNodeFunction = jsClickNode;
+        m_JSClickLeafFunction = jsClickLeaf;
+        m_JSMouseoverFunction = jsMouseover;
+        m_JSMouseoutFunction = jsMouseout;
+        m_JSClickQueryFunction = jsClickQuery;
+        m_ShowQuery = showQuery;
+    }
+     
+
+	const string & GetMap(void) { return m_Map;}
+
+    	
+    ETreeTraverseCode operator()(CPhyloTreeNode &  tree_node, int delta)
+    {
+            if (delta==1 || delta==0){
+				x_FillNodeMapData(tree_node);				
+            }                
+            return eTreeTraverse;
+    }
+	virtual ~CGuideTreeCGIMap(){}
+protected:
+	virtual void x_FillNodeMapData(CPhyloTreeNode &  tree_node);
+
+	CGlPane * m_Pane;
+    string  m_JSMouseoverFunction; //"javascript:setupPopupMenu(" 
+    string  m_JSMouseoutFunction; //"PopUpMenu2_Hide(0);"
+    string  m_JSClickNodeFunction;// - string(JS_SELECT_NODE_FUNC) - both
+    string  m_JSClickLeafFunction;// - string(JS_SELECT_NODE_FUNC) - blast ,"" - multi
+    string  m_JSClickQueryFunction;// - "" blast, "" multi
+    bool    m_ShowQuery;
+
+	string    m_Map;      
 };
 
 
