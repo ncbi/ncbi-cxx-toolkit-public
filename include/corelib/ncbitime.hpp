@@ -1487,9 +1487,8 @@ public:
     bool IsDefault()  const;
     bool IsInfinite() const;
     bool IsZero()     const;
-
     /// Check if timeout holds a numeric value.
-    bool HasValue() const;
+    bool IsFinite()   const;
 
     //
     // Get timeout
@@ -2391,7 +2390,7 @@ bool CTimeout::IsInfinite() const
 }
 
 inline
-bool CTimeout::HasValue() const
+bool CTimeout::IsFinite() const
 {
     return m_HasValue;
 }

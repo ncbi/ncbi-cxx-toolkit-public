@@ -2418,7 +2418,7 @@ const CTimeout& CTimeout::operator= (const CTimeout& t)
 
 bool CTimeout::IsZero() const
 {
-    if ( !HasValue() ) {
+    if ( !IsFinite() ) {
         if (m_Type == eDefault) {
             NCBI_THROW(CTimeException, eInvalid, 
                        "CTimeout::IsZero():  cannot be used for " \
@@ -2432,7 +2432,7 @@ bool CTimeout::IsZero() const
 
 unsigned long CTimeout::GetAsMilliSeconds(void) const
 { 
-    if ( !HasValue() ) {
+    if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "CTimeout::GetAsMilliSeconds(): cannot convert " \
                    "from special timeout value");
@@ -2450,7 +2450,7 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
 
 double CTimeout::GetAsDouble(void) const
 {
-    if ( !HasValue() ) {
+    if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "CTimeout::GetAsDouble(): cannot convert " \
                    "from special timeout value");
@@ -2461,7 +2461,7 @@ double CTimeout::GetAsDouble(void) const
 
 CTimeSpan CTimeout::GetAsTimeSpan(void) const
 {
-    if ( !HasValue() ) {
+    if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "CTimeout::GetAsTimeSpan(): cannot convert " \
                    "from special timeout value");
@@ -2480,7 +2480,7 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
 
 void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
 {
-    if ( !HasValue() ) {
+    if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "CTimeout::Get(): cannot convert from " \
                    "special timeout value");
