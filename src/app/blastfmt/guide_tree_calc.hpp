@@ -71,7 +71,8 @@ public:
     ///
     enum ETreeMethod {
         eNJ,      ///< Neighbor Joining
-        eFastME   ///< Fast Minumum Evolution
+        eFastME,  ///< Fast Minumum Evolution
+        eCobalt   ///< Cobalt tree
     };
 
 
@@ -81,6 +82,16 @@ public:
         eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName
     };
 
+
+
+    /// Feature IDs used in guide tree
+    ///
+    enum EFeatureID {
+        eLabelId,eDistId,eSeqIdId,eOrganismId,eTitleId,eAccessionNbrId,eBlastNameId,eAlignIndexId,eQueryNodeColorId,
+        eQueryLabelColorId,eQueryLabelBgColorId,eQueryLabelTagColorId,eTreeSimplificationTagId
+    };
+
+
     
     typedef pair<string, string> TBlastNameToColor;
     typedef vector<TBlastNameToColor> TBlastNameColorMap;
@@ -88,15 +99,7 @@ public:
 
 public:
 
-    //--- Constructors ---
-
-    /// Create CGuideTreeCalc from Seq-annot
-    /// @param annot Seq-annot [in]
-    /// @param scope Scope [in]
-    /// @param query_id Seqid of query sequence [in]
-    ///
-    CGuideTreeCalc(CRef<CSeq_annot> annot, CRef<CScope> scope,
-                   const string &query_id = "");
+    //--- Constructors ---    
 
     /// Create CGuideTreeCalc from Seq-align
     /// @param seq_aln Seq-align [in]
@@ -105,6 +108,13 @@ public:
     ///
     CGuideTreeCalc(const CSeq_align& seq_aln, CRef<CScope> scope,
                    const string& query_id = "");
+
+    /// Create CGuideTreeCalc from CSeq_align_set
+    /// @param annot CSeq_align_set [in]
+    /// @param scope Scope [in]    
+    ///
+    CGuideTreeCalc::CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet,
+                               CRef<CScope> scope);
 
     ~CGuideTreeCalc() {}
 
@@ -240,14 +250,14 @@ protected:
     void x_Init(void);
 
     /// Initialize alignment data source
-    /// @param annot Seq-annot [in]
-    /// @return True if success, false otherwise
-    bool x_InitAlignDS(const CSeq_annot& annot);
-
-    /// Initialize alignment data source
     /// @param seq_aln Seq-align [in]
     /// @return True if success, false otherwise
     void x_InitAlignDS(const CSeq_align& seq_aln);
+
+    /// Initialize alignment data source
+    /// @param seqAlignSet CSeq_align_set [in]
+    /// @return True if success, false otherwise
+    bool x_InitAlignDS(CRef<CSeq_align_set> &seqAlignSet);
 
     /// Initialize tree freatures
     /// @param alnvec Alignment vector [in]
@@ -315,8 +325,6 @@ protected:
     void x_ComputeTree(const CAlnVec& alnvec, const CDistMethods::TMatrix& dmat,
                        ETreeMethod method, bool correct = true);
 
-
-
 protected:
 
     /// Scope
@@ -356,7 +364,7 @@ protected:
     TBlastNameColorMap m_BlastNameColorMap;
 
     /// Error/warning messages
-    vector<string> m_Messages;
+    vector<string> m_Messages;    
 };
 
 
