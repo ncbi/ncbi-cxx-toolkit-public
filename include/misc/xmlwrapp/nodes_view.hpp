@@ -49,6 +49,7 @@
 #include <misc/xmlwrapp/xml_init.hpp>
 
 // standard includes
+#include <cstddef>
 #include <iterator>
 
 namespace xml
@@ -98,7 +99,7 @@ public:
     {
     public:
         typedef node value_type;
-        typedef int difference_type;
+        typedef std::ptrdiff_t difference_type;
         typedef value_type* pointer;
         typedef value_type& reference;
         typedef std::forward_iterator_tag iterator_category;
@@ -145,7 +146,7 @@ public:
     {
     public:
         typedef const node value_type;
-        typedef int difference_type;
+        typedef std::ptrdiff_t difference_type;
         typedef value_type* pointer;
         typedef value_type& reference;
         typedef std::forward_iterator_tag iterator_category;

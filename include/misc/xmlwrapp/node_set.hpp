@@ -40,6 +40,8 @@
 #include <misc/xmlwrapp/xpath_expression.hpp>
 #include <misc/xmlwrapp/node.hpp>
 
+// standard includes
+#include <cstddef>
 
 namespace xml {
 
@@ -107,7 +109,7 @@ public:
     {
     public:
         typedef node                        value_type;
-        typedef int                         difference_type;
+        typedef std::ptrdiff_t              difference_type;
         typedef value_type*                 pointer;
         typedef value_type&                 reference;
         typedef std::forward_iterator_tag   iterator_category;
@@ -227,7 +229,7 @@ public:
     {
     public:
         typedef const node                  value_type;
-        typedef int                         difference_type;
+        typedef std::ptrdiff_t              difference_type;
         typedef value_type*                 pointer;
         typedef value_type&                 reference;
         typedef std::forward_iterator_tag   iterator_category;

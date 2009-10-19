@@ -605,7 +605,7 @@ public:
     class iterator {
     public:
 	typedef node value_type;
-	typedef int difference_type;
+	typedef std::ptrdiff_t difference_type;
 	typedef value_type* pointer;
 	typedef value_type& reference;
 	typedef std::forward_iterator_tag iterator_category;
@@ -647,7 +647,7 @@ public:
     class const_iterator {
     public:
 	typedef const node value_type;
-	typedef int difference_type;
+	typedef std::ptrdiff_t difference_type;
 	typedef value_type* pointer;
 	typedef value_type& reference;
 	typedef std::forward_iterator_tag iterator_category;

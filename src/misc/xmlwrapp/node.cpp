@@ -659,7 +659,7 @@ xml::node::size_type xml::node::size (void) const {
         for (; first != last; ++first) { ++dist; }
         return dist;
     #else
-        return std::distance(begin(), end());
+        return static_cast<xml::node::size_type>(std::distance(begin(), end()));
     #endif
 }
 //####################################################################

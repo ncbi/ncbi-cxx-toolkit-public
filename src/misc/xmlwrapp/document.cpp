@@ -259,7 +259,8 @@ xml::document::size_type xml::document::size (void) const {
         for (; first != last; ++first) { ++dist; }
         return dist;
     #else
-        return std::distance(begin(), end());
+        return static_cast<xml::document::size_type>(std::distance(begin(),
+                                                                   end()));
     #endif
 }
 //####################################################################
