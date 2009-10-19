@@ -68,9 +68,9 @@ public:
     virtual ~CEUtils_ConnContext(void) {}
 
     /// Get timeout
-    const CConnTimeout& GetTimeout(void) const { return m_Timeout; }
+    const CTimeout& GetTimeout(void) const { return m_Timeout; }
     /// Set timeout
-    void SetTimeout(const CConnTimeout& tmo) { m_Timeout = tmo; }
+    void SetTimeout(const CTimeout& tmo) { m_Timeout = tmo; }
     /// Get WebEnv
     const string& GetWebEnv(void) const { return m_WebEnv; }
     /// Set WebEnv
@@ -91,11 +91,11 @@ public:
     void SetEmail(const string& email) { m_Email = email; }
 
 private:
-    CConnTimeout m_Timeout;
-    string       m_WebEnv;
-    string       m_QueryKey;
-    string       m_Tool;
-    string       m_Email;
+    CTimeout m_Timeout;
+    string   m_WebEnv;
+    string   m_QueryKey;
+    string   m_Tool;
+    string   m_Email;
 };
 
 
@@ -191,6 +191,7 @@ private:
 
     mutable CRef<CEUtils_ConnContext> m_Context;
     auto_ptr<CConn_HttpStream>        m_Stream;
+    STimeout         m_Timeout;  // CConn_HttpStream compatible timeout
 
     string           m_ScriptName;
     string           m_QueryKey; // empty = use value from ConnContext

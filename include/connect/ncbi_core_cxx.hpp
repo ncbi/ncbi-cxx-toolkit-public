@@ -38,6 +38,7 @@
 
 #include <connect/ncbi_core.h>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
 
 
 /** @addtogroup UtilityFunc
@@ -94,39 +95,50 @@ protected:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// C++ version of STimeout
+/// CTimeout/STimeout adapters
 ///
 
-class NCBI_XCONNECT_EXPORT CConnTimeout
+/// Convert CTimeout to STimeout.
+const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto);
+
+/// Convert STimeout to CTimeout.
+CTimeout STimeoutToCTimeout(const STimeout& sto);
+
+/// Convert STimeout to CTimeout.
+CTimeout STimeoutToCTimeout(const STimeout* sto);
+
+
+inline 
+const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto)
 {
-public:
-    /// Create default timeout
-    CConnTimeout(void) : m_Ptr(kDefaultTimeout) { }
-    /// Create timeout from STimeout*
-    CConnTimeout(const STimeout* tmo) { Set(tmo); }
-    /// Initialize timeout in seconds and microseconds
-    CConnTimeout(unsigned int sec, unsigned int usec) { Set(sec, usec); }
-    ~CConnTimeout() { }
+    if ( cto.IsDefault() )
+        return kDefaultTimeout;
+    else if ( cto.IsInfinite() )
+        return kInfiniteTimeout;
+    else {
+        cto.Get(&sto.sec, &sto.usec);
+        return &sto;
+    }
+}
 
-    /// Get STimeout*
-    const STimeout* Get(void) const { return m_Ptr; }
-    /// Convert to const STimeout*
-    operator const STimeout*(void) const { return Get(); }
+inline 
+CTimeout STimeoutToCTimeout(const STimeout& sto)
+{
+    return CTimeout(sto.sec, sto.usec);
+}
 
-    /// Set timeout
-    void Set(const STimeout* tmo);
-    /// Set timeout in seconds and microseconds
-    void Set(unsigned int sec, unsigned int usec);
-    /// Copy timeout from STimeout*
-    const CConnTimeout& operator=(const STimeout* tmo)
-    { Set(tmo); return *this; }
-
-private:
-    const STimeout* m_Ptr;
-    STimeout        m_Timeout;
-};
+inline 
+CTimeout STimeoutToCTimeout(const STimeout* sto)
+{
+    if ( sto == kDefaultTimeout )
+        return CTimeout(CTimeout::eDefault);
+    else if ( sto == kInfiniteTimeout )
+        return CTimeout(CTimeout::eInfinite);
+    return CTimeout(sto->sec, sto->usec);
+}
 
 
 END_NCBI_SCOPE
