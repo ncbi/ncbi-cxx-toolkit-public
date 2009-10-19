@@ -3425,6 +3425,118 @@ DO_UNIQUE (DBXREF_ON_PROTREF, Var, Func)
 #define UNIQUE_DBXREF_ON_PROT UNIQUE_DBXREF_ON_PROTREF
 
 
+///
+/// CRNA_gen macros
+
+/// QUAL_ON_RNAGEN macros
+
+#define QUAL_ON_RNAGEN_Type      CRNA_gen::TQuals::Tdata
+#define QUAL_ON_RNAGEN_Test(Var) (Var).IsSetQuals() && (Var).GetQuals().IsSet()
+#define QUAL_ON_RNAGEN_Get(Var)  (Var).GetQuals().Get()
+#define QUAL_ON_RNAGEN_Set(Var)  (Var).SetQuals().Set()
+
+/// RNAGEN_HAS_QUAL
+
+#define RNAGEN_HAS_QUAL(Var) \
+ITEM_HAS (QUAL_ON_RNAGEN, Var)
+
+/// FOR_EACH_QUAL_ON_RNAGEN
+/// EDIT_EACH_QUAL_ON_RNAGEN
+// CRNA_gen& as input, dereference with [const] CRNA_qual& qual = **itr;
+
+#define FOR_EACH_QUAL_ON_RNAGEN(Itr, Var) \
+FOR_EACH (QUAL_ON_RNAGEN, Itr, Var)
+
+#define EDIT_EACH_QUAL_ON_RNAGEN(Itr, Var) \
+EDIT_EACH (QUAL_ON_RNAGEN, Itr, Var)
+
+/// ADD_QUAL_TO_RNAGEN
+
+#define ADD_QUAL_TO_RNAGEN(Var, Ref) \
+ADD_ITEM (QUAL_ON_RNAGEN, Var, Ref)
+
+/// ERASE_QUAL_ON_RNAGEN
+
+#define ERASE_QUAL_ON_RNAGEN(Itr, Var) \
+LIST_ERASE_ITEM (QUAL_ON_RNAGEN, Itr, Var)
+
+/// QUAL_ON_RNAGEN_IS_SORTED
+
+#define QUAL_ON_RNAGEN_IS_SORTED(Var, Func) \
+IS_SORTED (QUAL_ON_RNAGEN, Var, Func)
+
+/// SORT_QUAL_ON_RNAGEN
+
+#define SORT_QUAL_ON_RNAGEN(Var, Func) \
+DO_LIST_SORT (QUAL_ON_RNAGEN, Var, Func)
+
+/// QUAL_ON_RNAGEN_IS_UNIQUE
+
+#define QUAL_ON_RNAGEN_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (QUAL_ON_RNAGEN, Var, Func)
+
+/// UNIQUE_QUAL_ON_RNAGEN
+
+#define UNIQUE_QUAL_ON_RNAGEN(Var, Func) \
+DO_UNIQUE (QUAL_ON_RNAGEN, Var, Func)
+
+
+///
+/// CRNA_qual_set macros
+
+/// QUAL_ON_RNAQSET macros
+
+#define QUAL_ON_RNAQSET_Type      CRNA_qual_set::Tdata
+#define QUAL_ON_RNAQSET_Test(Var) (Var).IsSet()
+#define QUAL_ON_RNAQSET_Get(Var)  (Var).Get()
+#define QUAL_ON_RNAQSET_Set(Var)  (Var).Set()
+
+/// RNAQSET_HAS_QUAL
+
+#define RNAQSET_HAS_QUAL(Var) \
+ITEM_HAS (QUAL_ON_RNAQSET, Var)
+
+/// FOR_EACH_QUAL_ON_RNAQSET
+/// EDIT_EACH_QUAL_ON_RNAQSET
+// CRNA_qual_set& as input, dereference with [const] CRNA_qual& qual = **itr;
+
+#define FOR_EACH_QUAL_ON_RNAQSET(Itr, Var) \
+FOR_EACH (QUAL_ON_RNAQSET, Itr, Var)
+
+#define EDIT_EACH_QUAL_ON_RNAQSET(Itr, Var) \
+EDIT_EACH (QUAL_ON_RNAQSET, Itr, Var)
+
+/// ADD_QUAL_TO_RNAQSET
+
+#define ADD_QUAL_TO_RNAQSET(Var, Ref) \
+ADD_ITEM (QUAL_ON_RNAQSET, Var, Ref)
+
+/// ERASE_QUAL_ON_RNAQSET
+
+#define ERASE_QUAL_ON_RNAQSET(Itr, Var) \
+LIST_ERASE_ITEM (QUAL_ON_RNAQSET, Itr, Var)
+
+/// QUAL_ON_RNAQSET_IS_SORTED
+
+#define QUAL_ON_RNAQSET_IS_SORTED(Var, Func) \
+IS_SORTED (QUAL_ON_RNAQSET, Var, Func)
+
+/// SORT_QUAL_ON_RNAQSET
+
+#define SORT_QUAL_ON_RNAQSET(Var, Func) \
+DO_LIST_SORT (QUAL_ON_RNAQSET, Var, Func)
+
+/// QUAL_ON_RNAQSET_IS_UNIQUE
+
+#define QUAL_ON_RNAQSET_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (QUAL_ON_RNAQSET, Var, Func)
+
+/// UNIQUE_QUAL_ON_RNAQSET
+
+#define UNIQUE_QUAL_ON_RNAQSET(Var, Func) \
+DO_UNIQUE (QUAL_ON_RNAQSET, Var, Func)
+
+
 
 ///
 /// @}
