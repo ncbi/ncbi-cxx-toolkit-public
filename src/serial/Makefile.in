@@ -5,6 +5,7 @@
 
 LIB_PROJ = serial cserial
 SUB_PROJ = datatool test soap
+PROJ_TAG = core
 
 REQUIRES = serial
 

@@ -4,6 +4,7 @@
 #################################
 
 APP_PROJ = test_html test_jsmenu
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

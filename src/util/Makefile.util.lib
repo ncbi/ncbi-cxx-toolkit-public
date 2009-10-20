@@ -9,5 +9,6 @@ SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
       thread_pool_ctrl scheduler distribution util_misc
 
 LIB = xutil
+PROJ_TAG = core
 
 LIBS = $(ORIG_LIBS)

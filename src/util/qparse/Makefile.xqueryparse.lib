@@ -1,4 +1,5 @@
 LIB = xqueryparse
+PROJ_TAG = core
 
 SRC = query_parse parser query_tree_print query_exec
 

@@ -5,6 +5,7 @@
 
 ASN_PROJ = we_cpp
 APP_PROJ = test_serial
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

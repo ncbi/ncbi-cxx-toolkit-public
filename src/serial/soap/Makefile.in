@@ -4,6 +4,7 @@
 
 LIB_PROJ = soap
 SUB_PROJ = 
+PROJ_TAG = -core
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
