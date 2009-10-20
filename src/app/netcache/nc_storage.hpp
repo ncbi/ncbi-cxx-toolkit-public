@@ -602,11 +602,11 @@ private:
     /// Pool of CNCBlob objects
     TNCBlobsPool             m_BlobsPool;
     /// Mutex to work with m_LastBlob
-    CFastMutex               m_LastBlobMutex;
+    CSpinLock                m_LastBlobLock;
     /// Coordinates of the latest blob created by the storage
     SNCBlobCoords            m_LastBlob;
     /// Mutex for locking/unlocking blob ids
-    CFastMutex               m_IdLockMutex;
+    CSpinLock                m_IdLockMutex;
     /// Map for CYieldingRWLock objects sorted to be searchable by blob id
     TId2LocksMap             m_IdLocks;
     /// CYieldingRWLock objects that are not used by anybody at the moment
@@ -699,11 +699,11 @@ CNCBlobStorage::ReturnBlob(CNCBlob* blob)
 inline void
 CNCBlobStorage::GetNextBlobCoords(SNCBlobCoords* coords)
 {
-    CFastMutexGuard guard(m_LastBlobMutex);
-
+    m_LastBlobLock.Lock();
     if (++m_LastBlob.blob_id <= 0)
         m_LastBlob.blob_id = 1;
     coords->AssignCoords(m_LastBlob);
+    m_LastBlobLock.Unlock();
 }
 
 inline bool

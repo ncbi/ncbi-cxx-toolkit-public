@@ -347,7 +347,7 @@ CNCBlobStorage::x_MonitorError(exception& ex, CTempString msg)
 TRWLockHolderRef
 CNCBlobStorage::LockBlobId(TNCBlobId blob_id, ENCBlobAccess access)
 {
-    CFastMutexGuard guard(m_IdLockMutex);
+    CSpinGuard guard(m_IdLockMutex);
     CYieldingRWLock* rw_lock = NULL;
 
     TId2LocksMap::iterator it = m_IdLocks.find(blob_id);
@@ -379,34 +379,32 @@ CNCBlobStorage::UnlockBlobId(TNCBlobId blob_id, TRWLockHolderRef& rw_holder)
 
     rw_holder->ReleaseLock();
     CYieldingRWLock* rw_lock = rw_holder->GetRWLock();
-    {{
-        CFastMutexGuard guard(m_IdLockMutex);
 
-        if (!rw_lock->IsLocked()) {
-            // By this check we avoid race when several threads are releasing
-            // lock simultaneously and both execute this code with unlocked
-            // rw_lock, but it should be added to m_FreeLocks only once. And
-            // there's even more tough scenario when 2 threads release lock,
-            // 1st removes it from map, but before 2nd comes here 3rd thread
-            // acquires lock on the same blob_id again thus adding to map
-            // another lock which could be accidentally deleted by 2nd thread.
-            // So here we must thoroughly check that we're deleting what we do
-            // really want to delete.
-            TId2LocksMap::iterator it = m_IdLocks.find(blob_id);
-            if (it != m_IdLocks.end()  &&  it->second == rw_lock) {
-                m_IdLocks.erase(it);
-                m_FreeLocks.push_back(rw_lock);
-            }
+    m_IdLockMutex.Lock();
+    if (!rw_lock->IsLocked()) {
+        // By this check we avoid race when several threads are releasing
+        // lock simultaneously and both execute this code with unlocked
+        // rw_lock, but it should be added to m_FreeLocks only once. And
+        // there's even more tough scenario when 2 threads release lock,
+        // 1st removes it from map, but before 2nd comes here 3rd thread
+        // acquires lock on the same blob_id again thus adding to map
+        // another lock which could be accidentally deleted by 2nd thread.
+        // So here we must thoroughly check that we're deleting what we do
+        // really want to delete.
+        TId2LocksMap::iterator it = m_IdLocks.find(blob_id);
+        if (it != m_IdLocks.end()  &&  it->second == rw_lock) {
+            m_IdLocks.erase(it);
+            m_FreeLocks.push_back(rw_lock);
         }
-    }}
+    }
+    m_IdLockMutex.Unlock();
+
     rw_holder.Reset();
 }
 
 inline void
 CNCBlobStorage::x_FreeBlobIdLocks(void)
 {
-    CFastMutexGuard guard(m_IdLockMutex);
-
     // This iteration is just to quickly find if something is wrong.
     // If everything is ok it should be no-op.
     ITERATE(TId2LocksMap, it, m_IdLocks) {
@@ -440,11 +438,12 @@ inline void
 CNCBlobStorage::x_SwitchCurrentDBPart(SNCDBPartInfo* part_info)
 {
     CFastWriteGuard guard(m_DBPartsLock);
-    {{
-        CFastMutexGuard id_guard(m_LastBlobMutex);
-        part_info->min_blob_id = ++m_LastBlob.blob_id;
-        m_LastBlob.part_id = part_info->part_id;
-    }}
+
+    m_LastBlobLock.Lock();
+    part_info->min_blob_id = ++m_LastBlob.blob_id;
+    m_LastBlob.part_id = part_info->part_id;
+    m_LastBlobLock.Unlock();
+
     m_DBParts.push_back(*part_info);
 }
 

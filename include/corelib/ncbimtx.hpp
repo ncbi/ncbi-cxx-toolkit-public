@@ -790,6 +790,54 @@ private:
 typedef CNoLock CNoMutex;
 
 
+class CSpinLock;
+typedef CGuard<CSpinLock>  CSpinGuard;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CSpinLock --
+///
+/// Simple lock with lock/unlock functions even faster than in CFastMutex.
+///
+/// This mutex can be used instead of CFastMutex when it's guaranteed that
+/// lock will be always held for a short period of time. CSpinLock doesn't do
+/// any system calls to wait for lock acquiring and relies on a fact that a
+/// couple of thread reschedulings will be enough for another thread to
+/// release the lock. As with CFastMutex no recursive locks are allowed.
+
+class CSpinLock
+{
+public:
+    CSpinLock(void);
+    ~CSpinLock(void);
+
+    /// Define Read Lock Guard.
+    typedef CSpinGuard TReadLockGuard;
+    /// Define Write Lock Guard.
+    typedef CSpinGuard TWriteLockGuard;
+
+    /// Lock the mutex
+    void Lock(void);
+    /// Attempt to lock the mutex and return TRUE if it succeeded or FALSE if
+    /// mutex is locked by other thread.
+    bool TryLock(void);
+    /// Unlock the mutex.
+    /// There's no check that mutex is unlocked by the same thread that
+    /// locked it.
+    void Unlock(void);
+
+private:
+    /// Prohibit copying of the object
+    CSpinLock(const CSpinLock&);
+    CSpinLock& operator= (const CSpinLock&);
+
+    /// Flag showing if mutex is locked (non-NULL value) or unlocked
+    /// (NULL value).
+    void* volatile m_Value;
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  RW-LOCK
@@ -1173,7 +1221,7 @@ private:
     /// Flag if lock was acquired
     bool                   m_LockAcquired;
     /// Mutex for operating listeners
-    CFastMutex             m_ObjMutex;
+    CSpinLock              m_ObjLock;
     /// List of holder listeners
     TListenersList         m_Listeners;
 };
@@ -1238,7 +1286,7 @@ private:
     /// Factory creating CRWLockHolder objects
     IRWLockHolder_Factory* m_Factory;
     /// Main locking mutex for object operations
-    CFastMutex             m_ObjMutex;
+    CSpinLock              m_ObjLock;
     /// Number of locks granted on this object by type
     int                    m_Locks[2];
     /// Queue for waiting lock requests

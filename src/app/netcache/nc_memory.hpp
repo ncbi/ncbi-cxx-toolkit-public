@@ -233,7 +233,7 @@ private:
     char          m_Data[kNCMMDBPageDataSize];
 
     /// Mutex for working with LRU list
-    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_LRULock);
+    static CSpinLock    sm_LRULock;
     /// Head of LRU list of database pages (i.e. the least recently used page
     /// and the first candidate for reuse).
     static CNCMMDBPage* sm_LRUHead;
@@ -377,7 +377,7 @@ private:
     void* operator new (size_t, void*);
 
     /// Global lock managing creation and deletion of pool instances
-    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_CreateLock);
+    static CSpinLock        sm_CreateLock;
     /// Array of all pool instances used in manager
     static CNCMMChunksPool  sm_Pools   [kNCMMMaxThreadsCnt];
     /// Array of pool instances that are to be yet used
@@ -449,7 +449,7 @@ private:
     void x_CleanPoolSpace(void);
 
     /// Mutex protecting object using
-    SNCFastMutex     m_ObjLock;
+    CSpinLock        m_ObjLock;
     /// Pointer to the next chunk that will be returned by x_GetChunk()
     CNCMMFreeChunk** m_GetPtr;
     /// Pointer to the place where next x_PutChunk() will put free chunk
@@ -501,15 +501,15 @@ protected:
     CNCMMSlabBase(void);
 
     /// Mutex to control access to the object
-    CFastMutex   m_ObjLock;
+    CSpinLock                        m_ObjLock;
     /// Bit mask showing which chunks in the slab are free
     /// (1 - free, 0 - occupied).
     CNCBitMask<kNCMMCntChunksInSlab> m_FreeMask;
     /// Emptiness grade of the slab: the more chunks is occupied the less this
     /// number with 0 meaning that all chunks are occupied.
-    unsigned int m_EmptyGrade;
+    unsigned int                     m_EmptyGrade;
     /// Number of free chunks inside the slab.
-    unsigned int m_CntFree;
+    unsigned int                     m_CntFree;
 };
 
 
@@ -775,7 +775,7 @@ private:
     void* operator new (size_t, void*);
 
     /// Global lock managing creation and deletion of pool instances
-    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_CreateLock);
+    static CSpinLock        sm_CreateLock;
     /// Array of all pool instances used in manager
     static CNCMMChainsPool  sm_Pools   [kNCMMMaxThreadsCnt];
     /// Array of pool instances that are to be yet used
@@ -836,7 +836,7 @@ private:
 
 
     /// Mutex protecting object using
-    SNCFastMutex    m_ObjLock;
+    CSpinLock       m_ObjLock;
     /// List of cached chains distributed by their size
     void*           m_FreeChains[kNCMMCntChunksInSlab + 1];
     /// Reference counter for this object
@@ -1000,15 +1000,15 @@ private:
 
 
     /// Mutex protecting access to the object
-    SNCFastMutex    m_ObjLock;
+    CSpinLock                            m_ObjLock;
     /// Bit mask containing information about chain sizes that exist in the
     /// storage. If bit with index n is set then chain with size n exists.
     CNCBitMask<kNCMMCntChunksInSlab + 1> m_ExistMask;
     /// Lists of chains grouped by size (number of chunks in them).
-    CNCMMFreeChunk* m_Chains[kNCMMCntChunksInSlab + 1];
+    CNCMMFreeChunk*                      m_Chains[kNCMMCntChunksInSlab + 1];
 
     /// Instances of storage for each value of slab's emptiness grade.
-    static CNCMMReserve sm_Instances[kNCMMSlabEmptyGrades];
+    static CNCMMReserve                  sm_Instances[kNCMMSlabEmptyGrades];
 };
 
 
@@ -1044,7 +1044,7 @@ private:
     void* operator new (size_t, void*);
 
     /// Global lock managing creation and deletion of pool instances
-    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_CreateLock);
+    static CSpinLock      sm_CreateLock;
     /// Array of pool instances that are used at the moment.
     /// Actually it's pointers to arrays of pools where array contains pool
     /// instances for each small size that memory manager allocates.
@@ -1102,6 +1102,13 @@ private:
     /// different from given old value. If grade is changed then move the set
     /// to appropriate place in m_Sets array.
     void x_CheckGradeChange(CNCMMBlocksSet* bl_set, unsigned int old_grade);
+    /// Get empty set from this pool (adjusting statistics accordingly) or by
+    /// doing global allocation.
+    CNCMMBlocksSet* x_GetEmptySet(void);
+    /// Add just emptied blocks set with given grade before last deallocation.
+    /// Set is remembered inside the pool (adjusting statistics accordingly)
+    /// or globally deallocated.
+    void x_NewEmptySet(CNCMMBlocksSet* bl_set, unsigned int grade);
     /// Add blocks set with given emptiness grade to this pool instance.
     /// Method is called only when one pool instance is destroyed and it needs
     /// to transfer all blocks set to some other pool.
@@ -1109,28 +1116,33 @@ private:
 
 
     /// Mutex protecting access to the object
-    SNCFastMutex    m_ObjLock;
+    CSpinLock                         m_ObjLock;
     /// Index of blocks size located in this pool (index is from
     /// kNCMMSmallSize)
-    unsigned int    m_SizeIndex;
+    unsigned int                      m_SizeIndex;
     /// Completely empty blocks set saved for speed optimization
-    CNCMMBlocksSet* m_EmptySet;
+    CNCMMBlocksSet*                   m_EmptySet;
     /// Blocks sets distributed by their total emptiness grades.
     /// Each element of the array is double-linked list of sets with the same
     /// emptiness grade.
-    CNCMMBlocksSet* m_Sets[kNCMMTotalEmptyGrades + 1];
+    CNCMMBlocksSet*                   m_Sets[kNCMMTotalEmptyGrades + 1];
     /// Mask for non-empty lists in m_Sets.
     /// If bit with some index in the mask is 1 then there are some blocks
     /// sets with emptiness grade equal to this index in m_Sets.
     CNCBitMask<kNCMMTotalEmptyGrades> m_ExistMask;
 
     /// Getter providing pools on thread-by-thread basis
-    static CNCMMSizePool_Getter sm_Getter;
+    static CNCMMSizePool_Getter       sm_Getter;
     /// Mutex providing exclusive execution of object destructor.
     /// Implement with fast read/write lock to allow methods to execute
     /// without blocking each other (read lock) but when destructor is
     /// executing (write lock) everything else will be blocked.
-    static CFastRWLock*         sm_DestructLock;
+    /// NB: Probably it's better to use some other class here which doesn't
+    /// contain any finalization code in the destructor because object can be
+    /// used after destructor too.
+    ///
+    /// @sa DeallocateBlock, ~CNCMMSizePool
+    static CFastRWLock*               sm_DestructLock;
 };
 
 
@@ -1359,12 +1371,12 @@ public:
     static void ReservedMemCreated(size_t mem_size);
     /// Register re-use of reserved memory or its return to central storage.
     static void ReservedMemDeleted(size_t mem_size);
-    /// Register refilling of CNCMMChunksPool with new chunks from central
-    /// reserve.
-    static void ChunksPoolRefilled(void);
-    /// Register releasing of chunks from CNCMMChunksPool to the central
-    /// reserve.
-    static void ChunksPoolCleaned(void);
+    /// Register refilling of CNCMMChunksPool with chunks_cnt new chunks from
+    /// central reserve.
+    static void ChunksPoolRefilled(unsigned int chunks_cnt);
+    /// Register releasing of chunks_cnt chunks from CNCMMChunksPool to the
+    /// central reserve.
+    static void ChunksPoolCleaned(unsigned int chunks_cnt);
     /// Register creation of new storage for page in database cache.
     static void DBPageCreated(void);
     /// Register deletion of storage for page in database cache.
@@ -1419,7 +1431,7 @@ private:
 
 
     /// Mutex controlling access to the object.
-    SNCFastMutex m_ObjLock;
+    CSpinLock    m_ObjLock;
     /// Amount of memory allocated from OS.
     size_t       m_SystemMem;
     /// Amount of free memory not used by anything.

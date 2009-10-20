@@ -101,14 +101,13 @@ public:
     TObjType* Get(void)
     {
         TObjType* obj = NULL;
-        {{
-            CFastMutexGuard guard(m_ObjLock);
 
-            if (!m_FreeObjects.empty()) {
-                obj = m_FreeObjects.back();
-                m_FreeObjects.pop_back();
-            }
-        }}
+        m_ObjLock.Lock();
+        if (!m_FreeObjects.empty()) {
+            obj = m_FreeObjects.back();
+            m_FreeObjects.pop_back();
+        }
+        m_ObjLock.Unlock();
 
         if (obj == NULL) {
             obj = m_Factory.CreateObject();
@@ -123,13 +122,12 @@ public:
     {
         _ASSERT(obj);
 
-        {{
-            CFastMutexGuard guard(m_ObjLock);
-            if (m_FreeObjects.size() < m_MaxStorage) {
-                m_FreeObjects.push_back(obj);
-                obj = NULL;
-            }
-        }}
+        m_ObjLock.Lock();
+        if (m_FreeObjects.size() < m_MaxStorage) {
+            m_FreeObjects.push_back(obj);
+            obj = NULL;
+        }
+        m_ObjLock.Unlock();
 
         if (obj != NULL) {
             m_Factory.DeleteObject(obj);
@@ -140,10 +138,10 @@ public:
     void Clear(void)
     {
         TObjectsList free_objects;
-        {{
-            CFastMutexGuard guard(m_ObjLock);
-            m_FreeObjects.swap(free_objects);
-        }}
+
+        m_ObjLock.Lock();
+        m_FreeObjects.swap(free_objects);
+        m_ObjLock.Unlock();
 
         ITERATE(typename TObjectsList, it, free_objects)
         {
@@ -162,8 +160,7 @@ public:
     /// 0 means unlimited storage.
     void SetMaxStorageSize(size_t max_storage_size)
     {
-        // In case if writing size_t is not atomic operation
-        CFastMutexGuard guard(m_ObjLock);
+        // Writing of size_t is always an atomic operation
         m_MaxStorage = max_storage_size;
     }
 
@@ -176,7 +173,7 @@ private:
     /// Object factory
     TObjFactory         m_Factory;
     /// Lock object to change the pool
-    CFastMutex          m_ObjLock;
+    CSpinLock           m_ObjLock;
     /// List of unused objects
     TObjectsList        m_FreeObjects;
 };

@@ -89,7 +89,7 @@ struct SNCDBStatData
 
 
     /// Main locking mutex for object
-    CFastMutex                        m_ObjLock;
+    CSpinLock                         m_ObjLock;
 
     /// Number of database parts
     CNCDBStatFigure<Uint8>            m_NumOfDBParts;
@@ -342,176 +342,195 @@ inline void
 CNCDBStat::AddNumberOfDBParts(size_t num_parts, Int8 ids_span)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     data->m_NumOfDBParts.AddValue(Uint8(num_parts));
     data->m_DBPartsIdsSpan.AddValue(ids_span);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddDBPartSizes(Int8 meta_size, Int8 data_size)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     data->m_MetaFileSize.AddValue(meta_size);
     data->m_DataFileSize.AddValue(data_size);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddTotalDBSize(Int8 meta_size, Int8 data_size)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     data->m_TotalMetaSize.AddValue(meta_size);
     data->m_TotalDataSize.AddValue(data_size);
     data->m_TotalDBSize.AddValue(meta_size + data_size);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddLockRequest(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_LockRequests;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddLockAcquired(double lock_waited_time)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_LocksAcquired;
     data->m_LocksWaitedTime += lock_waited_time;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddNotExistBlobLock(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_NotExistLocks;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddGCLockRequest(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_GCLockRequests;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddGCLockAcquired(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_GCLocksAcquired;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddTotalLockTime(double add_time)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     data->m_LocksTotalTime += add_time;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddBlobRead(size_t size)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_ReadBlobs;
     ++data->m_ReadBySize[x_GetSizeIndex(size)];
     data->m_MaxBlobSize = max(data->m_MaxBlobSize, size);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddChunkRead(size_t size, double add_time)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     data->m_ReadSize += size;
     data->m_ChunkReadTime.AddValue(add_time);
     data->m_ChunkRTimeBySize[x_GetSizeIndex(size)].AddValue(add_time);
     data->m_MaxChunkSize = max(data->m_MaxChunkSize, size);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddStoppedRead(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_ReadBlobs;
     ++data->m_StoppedReads;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddBlobWritten(size_t size)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_WrittenBlobs;
     ++data->m_WrittenBySize[x_GetSizeIndex(size)];
     data->m_MaxBlobSize = max(data->m_MaxBlobSize, size);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddChunkWritten(size_t size, double add_time)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     data->m_WrittenSize += size;
     data->m_ChunkWriteTime.AddValue(add_time);
     data->m_ChunkWTimeBySize[x_GetSizeIndex(size)].AddValue(add_time);
     data->m_MaxChunkSize = max(data->m_MaxChunkSize, size);
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddStoppedWrite(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_WrittenBlobs;
     ++data->m_StoppedWrites;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddBlobDelete(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_DeletedBlobs;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddBlobTruncate(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_TruncatedBlobs;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddCreateHitExisting(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_CreateExists;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddExistenceCheck(void)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     ++data->m_ExistChecks;
+    data->m_ObjLock.Unlock();
 }
 
 inline void
 CNCDBStat::AddTimeMetric(ETimeMetric metric, double add_time)
 {
     SNCDBStatData* data = GetObjPtr();
-    CFastMutexGuard guard(data->m_ObjLock);
+    data->m_ObjLock.Lock();
     switch (metric) {
     case eDbInfoRead:
         data->m_InfoReadTime.AddValue(add_time);
@@ -530,6 +549,7 @@ CNCDBStat::AddTimeMetric(ETimeMetric metric, double add_time)
     default:
         break;
     }
+    data->m_ObjLock.Unlock();
 }
 
 inline SNCDBStatData*

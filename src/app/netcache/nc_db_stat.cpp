@@ -83,7 +83,7 @@ SNCDBStatData::CalcTimePercent(const CNCDBStatFigure<double>& time_fig)
 inline void
 SNCDBStatData::CollectTo(SNCDBStatData* dest)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CSpinGuard guard(m_ObjLock);
 
     dest->m_NumOfDBParts    .AddValues(m_NumOfDBParts);
     dest->m_DBPartsIdsSpan  .AddValues(m_DBPartsIdsSpan);

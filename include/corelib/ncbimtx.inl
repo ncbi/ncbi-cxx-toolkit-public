@@ -282,6 +282,38 @@ bool CMutex::TryLock(void)
 
 
 inline
+CSpinLock::CSpinLock(void)
+    : m_Value(NULL)
+{}
+
+inline
+CSpinLock::~CSpinLock(void)
+{
+    _ASSERT(m_Value == NULL);
+}
+
+inline
+void CSpinLock::Lock(void)
+{
+    while (SwapPointers(&m_Value, (void*)1)) {
+        NCBI_SCHED_YIELD();
+    }
+}
+
+inline
+bool CSpinLock::TryLock(void)
+{
+    return SwapPointers(&m_Value, (void*)1) == NULL;
+}
+
+inline
+void CSpinLock::Unlock(void)
+{
+    _VERIFY(SwapPointers(&m_Value, NULL) != NULL);
+}
+
+
+inline
 CFastRWLock::CFastRWLock(void)
 {
     m_LockCount.Set(0);
@@ -380,9 +412,9 @@ void CRWLockHolder::AddListener(IRWLockHolder_Listener* listener)
 {
     _ASSERT(m_Lock);
 
-    CFastMutexGuard guard(m_ObjMutex);
-
+    m_ObjLock.Lock();
     m_Listeners.push_back(TRWLockHolder_ListenerWeakRef(listener));
+    m_ObjLock.Unlock();
 }
 
 inline
@@ -390,9 +422,9 @@ void CRWLockHolder::RemoveListener(IRWLockHolder_Listener* listener)
 {
     _ASSERT(m_Lock);
 
-    CFastMutexGuard guard(m_ObjMutex);
-
+    m_ObjLock.Lock();
     m_Listeners.remove(TRWLockHolder_ListenerWeakRef(listener));
+    m_ObjLock.Unlock();
 }
 
 
@@ -411,9 +443,10 @@ TRWLockHolderRef CYieldingRWLock::AcquireWriteLock(void)
 inline
 bool CYieldingRWLock::IsLocked(void)
 {
-    CFastMutexGuard guard(m_ObjMutex);
-
-    return m_Locks[eReadLock] + m_Locks[eWriteLock] != 0;
+    m_ObjLock.Lock();
+    bool locked = m_Locks[eReadLock] + m_Locks[eWriteLock] != 0;
+    m_ObjLock.Unlock();
+    return locked;
 }
 
 #endif

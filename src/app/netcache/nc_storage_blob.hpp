@@ -350,7 +350,7 @@ private:
     /// Remembered flag if blob exists in database
     bool                     m_BlobExists;
     /// Mutex used for critical operations during acquiring of the lock
-    mutable CFastMutex       m_LockAcqMutex;
+    mutable CSpinLock        m_LockAcqMutex;
 };
 
 /// Pool of CNCBlobLockHolder objects

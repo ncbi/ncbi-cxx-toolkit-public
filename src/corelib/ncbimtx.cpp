@@ -1288,13 +1288,7 @@ CFastRWLock::WriteLock(void)
     m_WriteLock.Lock();
     m_LockCount.Add(kWriteLockValue);
     while (m_LockCount.Get() != kWriteLockValue) {
-#if   defined(NCBI_POSIX_THREADS)
-        sched_yield();
-#elif defined(NCBI_WIN32_THREADS)
-        Sleep(0);
-#else
-        _ASSERT(0);
-#endif
+        NCBI_SCHED_YIELD();
     }
 }
 
@@ -1325,11 +1319,9 @@ CRWLockHolder::x_OnLockAcquired(void)
 {
     TListenersList listeners;
 
-    {{
-        CFastMutexGuard guard(m_ObjMutex);
-
-        listeners = m_Listeners;
-    }}
+    m_ObjLock.Lock();
+    listeners = m_Listeners;
+    m_ObjLock.Unlock();
 
     NON_CONST_ITERATE(TListenersList, it, listeners) {
         TRWLockHolder_ListenerRef lstn(it->Lock());
@@ -1344,11 +1336,9 @@ CRWLockHolder::x_OnLockReleased(void)
 {
     TListenersList listeners;
 
-    {{
-        CFastMutexGuard guard(m_ObjMutex);
-
-        listeners = m_Listeners;
-    }}
+    m_ObjLock.Lock();
+    listeners = m_Listeners;
+    m_ObjLock.Unlock();
 
     NON_CONST_ITERATE(TListenersList, it, listeners) {
         TRWLockHolder_ListenerRef lstn(it->Lock());
@@ -1432,7 +1422,7 @@ CYieldingRWLock::~CYieldingRWLock(void)
 # define RWLockFatal Critical
 #endif
 
-    CFastMutexGuard guard(m_ObjMutex);
+    CSpinGuard guard(m_ObjLock);
 
     if (m_Locks[eReadLock] + m_Locks[eWriteLock] != 0) {
         ERR_POST_X(1, RWLockFatal
@@ -1454,7 +1444,7 @@ CYieldingRWLock::AcquireLock(ERWLockType lock_type)
     TRWLockHolderRef holder(m_Factory->CreateHolder(this, lock_type));
 
     {{
-        CFastMutexGuard guard(m_ObjMutex);
+        CSpinGuard guard(m_ObjLock);
 
         if (m_Locks[other_type] != 0  ||  !m_LockWaits.empty()
             ||  lock_type == eWriteLock  &&  m_Locks[lock_type] != 0)
@@ -1474,11 +1464,15 @@ CYieldingRWLock::AcquireLock(ERWLockType lock_type)
 void
 CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
 {
+    // Extract one lock holder from next_holders to avoid unnecessary memory
+    // allocations in deque in case when we grant lock to only one next holder
+    // (the majority of cases).
+    TRWLockHolderRef first_next;
     THoldersList next_holders;
     bool save_acquired;
 
     {{
-        CFastMutexGuard guard(m_ObjMutex);
+        CSpinGuard guard(m_ObjLock);
 
         save_acquired = holder->m_LockAcquired;
         if (save_acquired) {
@@ -1488,8 +1482,13 @@ CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
             if (m_Locks[eReadLock] + m_Locks[eWriteLock] == 0
                 &&  !m_LockWaits.empty())
             {
-                ERWLockType next_type = m_LockWaits.front()->m_Type;
-                do {
+                first_next = m_LockWaits.front();
+                m_LockWaits.pop_front();
+                ERWLockType next_type = first_next->m_Type;
+                first_next->m_LockAcquired = true;
+                ++m_Locks[next_type];
+
+                while (next_type == eReadLock  &&  !m_LockWaits.empty()) {
                     TRWLockHolderRef next_hldr = m_LockWaits.front();
                     if (next_hldr->m_Type != next_type)
                         break;
@@ -1499,7 +1498,6 @@ CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
                     next_holders.push_back(next_hldr);
                     m_LockWaits.pop_front();
                 }
-                while (!m_LockWaits.empty()  &&  next_type == eReadLock);
             }
         }
         else {
@@ -1513,6 +1511,9 @@ CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
 
     if (save_acquired) {
         holder->x_OnLockReleased();
+    }
+    if (first_next.NotNull()) {
+        first_next->x_OnLockAcquired();
     }
     NON_CONST_ITERATE(THoldersList, it, next_holders) {
         (*it)->x_OnLockAcquired();

@@ -344,7 +344,7 @@ void
 CNCBlobLockHolder::OnLockAcquired(CRWLockHolder* holder)
 {
     {{
-        CFastMutexGuard guard(m_LockAcqMutex);
+        CSpinGuard guard(m_LockAcqMutex);
 
         if (m_RWHolder != holder  ||  !m_RWHolder->IsLockAcquired()
             ||  m_LockKnown)
@@ -389,7 +389,7 @@ CNCBlobLockHolder::x_LockAndValidate(const SNCBlobCoords& coords)
                                                      m_BlobAccess));
     bool lock_known;
     {{
-        CFastMutexGuard guard(m_LockAcqMutex);
+        CSpinGuard guard(m_LockAcqMutex);
 
         x_ReleaseLock();
         m_BlobInfo.AssignCoords(coords);
@@ -422,8 +422,7 @@ CNCBlobLockHolder::ReleaseLock(void)
         m_Storage->GetStat()->AddTotalLockTime(m_LockTimer.Elapsed());
     }
 
-    CFastMutexGuard guard(m_LockAcqMutex);
-
+    CSpinGuard guard(m_LockAcqMutex);
     x_ReleaseLock();
 }
 
@@ -432,7 +431,7 @@ CNCBlobLockHolder::GetBlob(void) const
 {
     _ASSERT(IsLockAcquired()  &&  IsBlobExists());
 
-    CFastMutexGuard guard(m_LockAcqMutex);
+    CSpinGuard guard(m_LockAcqMutex);
 
     if (!m_Blob) {
         x_EnsureBlobInfoRead();

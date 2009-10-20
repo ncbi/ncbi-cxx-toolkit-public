@@ -444,7 +444,7 @@ private:
     CNCDBStat*   m_Stat;
     /// Mutex for creation of new file objects (actually for work with
     /// m_AllFiles).
-    CFastMutex   m_CreateLock;
+    CSpinLock    m_CreateLock;
     /// List of all file objects created by this factory.
     list<TFile*> m_AllFiles;
 };
@@ -579,7 +579,7 @@ private:
     /// Head of the list of all open files
     static CNCFSOpenFile*   sm_FilesListHead;
     /// Mutex to work with write/close events queue
-    static CFastMutex       sm_EventsLock;
+    static CSpinLock        sm_EventsLock;
     /// Head of write/close events queue
     static SNCFSEvent*      sm_EventsHead;
     /// Tail of write/close events queue
@@ -997,8 +997,9 @@ CNCDBFileObjFactory<TFile>::CreateTlsObject(void)
     // changed too.
     TFile* file = new TFile(m_FileName, m_Stat);
 
-    CFastMutexGuard guard(m_CreateLock);
+    m_CreateLock.Lock();
     m_AllFiles.push_back(file);
+    m_CreateLock.Unlock();
 
     return file;
 }

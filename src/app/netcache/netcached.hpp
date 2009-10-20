@@ -122,7 +122,7 @@ private:
 
 
     /// Mutex for working with statistics
-    CFastMutex     m_ObjLock;
+    CSpinLock      m_ObjLock;
     /// Maximum time connection was opened
     double         m_MaxConnSpan;
     /// Number of connections closed
@@ -319,42 +319,47 @@ inline void
 CNCServerStat::AddClosedConnection(double conn_span)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
-    CFastMutexGuard guard(stat->m_ObjLock);
+    stat->m_ObjLock.Lock();
     ++stat->m_ClosedConns;
     stat->m_ConnsSpansSum += conn_span;
     stat->m_MaxConnSpan    = max(stat->m_MaxConnSpan, conn_span);
+    stat->m_ObjLock.Unlock();
 }
 
 inline void
 CNCServerStat::AddOpenedConnection(void)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
-    CFastMutexGuard guard(stat->m_ObjLock);
+    stat->m_ObjLock.Lock();
     ++stat->m_OpenedConns;
+    stat->m_ObjLock.Unlock();
 }
 
 inline void
 CNCServerStat::RemoveOpenedConnection(void)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
-    CFastMutexGuard guard(stat->m_ObjLock);
+    stat->m_ObjLock.Lock();
     --stat->m_OpenedConns;
+    stat->m_ObjLock.Unlock();
 }
 
 inline void
 CNCServerStat::AddOverflowConnection(void)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
-    CFastMutexGuard guard(stat->m_ObjLock);
+    stat->m_ObjLock.Lock();
     ++stat->m_OverflowConns;
+    stat->m_ObjLock.Unlock();
 }
 
 inline void
 CNCServerStat::AddTimedOutCommand(void)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
-    CFastMutexGuard guard(stat->m_ObjLock);
+    stat->m_ObjLock.Lock();
     ++stat->m_TimedOutCmds;
+    stat->m_ObjLock.Unlock();
 }
 
 

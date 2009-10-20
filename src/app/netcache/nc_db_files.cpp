@@ -70,7 +70,7 @@ static const char* kNCDBIndex_MinBlobIdCol    = "bid";
 
 CFastRWLock      CNCFileSystem::sm_FilesListLock;
 CNCFSOpenFile*   CNCFileSystem::sm_FilesListHead   = NULL;
-CFastMutex       CNCFileSystem::sm_EventsLock;
+CSpinLock        CNCFileSystem::sm_EventsLock;
 SNCFSEvent*      CNCFileSystem::sm_EventsHead      = NULL;
 SNCFSEvent*      CNCFileSystem::sm_EventsTail      = NULL;
 CRef<CThread>    CNCFileSystem::sm_BGThread;
@@ -912,7 +912,7 @@ CNCFileSystem::x_RemoveFileFromList(CNCFSOpenFile* file)
 inline void
 CNCFileSystem::x_AddNewEvent(SNCFSEvent* event)
 {
-    CFastMutexGuard guard(sm_EventsLock);
+    sm_EventsLock.Lock();
     event->next = NULL;
     if (sm_EventsTail) {
         sm_EventsTail->next = event;
@@ -931,6 +931,7 @@ CNCFileSystem::x_AddNewEvent(SNCFSEvent* event)
             // max_count) but we can safely ignore that.
         }
     }
+    sm_EventsLock.Unlock();
 }
 
 void
@@ -1015,19 +1016,14 @@ CNCFileSystem::x_DoBackgroundWork(void)
 {
     while (!sm_Stopped) {
         for (;;) {
-            SNCFSEvent* head;
-            {{
-                CFastMutexGuard guard(sm_EventsLock);
-                head = sm_EventsHead;
-                sm_EventsHead = sm_EventsTail = NULL;
-                if (head) {
-                    sm_BGWorking = true;
-                }
-                else {
-                    sm_BGWorking = false;
-                    break;
-                }
-            }}
+            sm_EventsLock.Lock();
+            SNCFSEvent* head = sm_EventsHead;
+            sm_EventsHead = sm_EventsTail = NULL;
+            sm_BGWorking = head != NULL;
+            sm_EventsLock.Unlock();
+
+            if (!head)
+                break;
             while (head) {
                 switch (head->type) {
                 case SNCFSEvent::eWrite:

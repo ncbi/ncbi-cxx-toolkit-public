@@ -122,8 +122,7 @@ CNCServerStat::AddFinishedCmd(const char*           cmd,
                               const vector<double>& state_spans)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
-    CFastMutexGuard guard(stat->m_ObjLock);
-
+    stat->m_ObjLock.Lock();
     ++stat->m_CntCmds;
     ++stat->m_CntCmdsByCmd[cmd];
     stat->m_CmdSpans           += cmd_span;
@@ -138,12 +137,13 @@ CNCServerStat::AddFinishedCmd(const char*           cmd,
     for (size_t i = 0; i < state_spans.size(); ++i) {
         stat->m_StatesSpansSums[i] += state_spans[i];
     }
+    stat->m_ObjLock.Unlock();
 }
 
 inline void
 CNCServerStat::x_CollectTo(CNCServerStat* other)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CSpinGuard guard(m_ObjLock);
 
     other->m_MaxConnSpan = max(other->m_MaxConnSpan, m_MaxConnSpan);
     other->m_ClosedConns += m_ClosedConns;
