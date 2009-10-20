@@ -651,7 +651,7 @@ MailToAuthors()
    echo "Send results of the test \$x_app to \$x_authors"
    echo '-----------------------'
         echo "To: \$x_authors"
-        echo "Subject: [C++ CHECK] \$x_app | \$signature"
+        echo "Subject: [WATCHERS] \$x_app | \$signature"
         echo
         echo \$x_cmd
         echo
@@ -660,7 +660,7 @@ MailToAuthors()
    COMMON_LimitTextFileSize \$x_logfile \$tmp \$mail_limit
    {
         echo "To: \$x_authors"
-        echo "Subject: [C++ CHECK] \$x_app | \$signature"
+        echo "Subject: [WATCHERS] \$x_app | \$signature"
         echo
         echo \$x_cmd
         echo
