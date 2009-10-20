@@ -84,7 +84,7 @@ public:
     unsigned int GetBlobId(const string& key_str);
 
     static
-    bool IsValidKey(const string& key_str);
+    bool IsValidKey(const char* key_str, size_t key_len);
 
     unsigned int  GetId     (void) const;
     const string& GetHost   (void) const;
@@ -95,7 +95,9 @@ private:
     CNetCacheKey(void);
 
     /// Parse blob key string into a CNetCache_Key structure
-    static bool x_ParseBlobKey(const string& key_str, CNetCacheKey* key_obj);
+    static bool x_ParseBlobKey(const char*    key_str,
+                               size_t         key_len,
+                               CNetCacheKey*  key_obj);
 
 
     unsigned int m_Id;        ///< BLOB id

@@ -146,7 +146,7 @@ CNetServProtoParserBase::x_GetToken(const char** str,
         {
             ttype = eNSTT_ICPrefix;
         }
-        else if (CNetCacheKey::IsValidKey(string(tok_start, *size))) {
+        else if (CNetCacheKey::IsValidKey(tok_start, *size)) {
             ttype = eNSTT_NCID;
         }
     }

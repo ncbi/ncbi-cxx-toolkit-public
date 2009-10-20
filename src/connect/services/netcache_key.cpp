@@ -48,18 +48,21 @@ static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
 
 
 inline bool
-CNetCacheKey::x_ParseBlobKey(const string& key_str, CNetCacheKey* key_obj)
+CNetCacheKey::x_ParseBlobKey(const char*    key_str,
+                             size_t         key_len,
+                             CNetCacheKey*  key_obj)
 {
     // NCID_01_1_MYHOST_9000
 
-    const char* ch = key_str.c_str();
+    const char* ch      = key_str;
+    const char* ch_end  = key_str + key_len;
 
     // prefix
     const char* const prefix = ch;
-    while (*ch  &&  *ch != '_') {
+    while (ch != ch_end  &&  *ch != '_') {
         ++ch;
     }
-    if (*ch != '_'
+    if (ch == ch_end  ||  *ch != '_'
         ||  NStr::strncmp(prefix, kNetCache_KeyPrefix, ch - prefix) != 0)
     {
         return false;
@@ -67,33 +70,35 @@ CNetCacheKey::x_ParseBlobKey(const string& key_str, CNetCacheKey* key_obj)
     ++ch;
 
     // version
-    if (key_obj)
-        key_obj->m_Version = atoi(ch);
-    while (*ch  &&  isdigit(*ch)) {
+    const char* const ver_str = ch;
+    while (ch != ch_end  &&  isdigit(*ch)) {
         ++ch;
     }
-    if (*ch != '_') {
+    if (ch == ch_end  ||  *ch != '_') {
         return false;
     }
+    if (key_obj)
+        key_obj->m_Version = atoi(ver_str);
     ++ch;
 
     // id
-    if (key_obj)
-        key_obj->m_Id = atoi(ch);
-    while (*ch  &&  isdigit(*ch)) {
+    const char* const id_str = ch;
+    while (ch != ch_end  &&  isdigit(*ch)) {
         ++ch;
     }
-    if (*ch != '_') {
+    if (ch == ch_end  ||  *ch != '_') {
         return false;
     }
+    if (key_obj)
+        key_obj->m_Id = atoi(id_str);
     ++ch;
 
     // hostname
     const char* const hostname = ch;
-    while (*ch  &&  *ch != '_') {
+    while (ch != ch_end  &&  *ch != '_') {
         ++ch;
     }
-    if (*ch != '_') {
+    if (ch == ch_end  ||  *ch != '_') {
         return false;
     }
     if (key_obj)
@@ -101,21 +106,22 @@ CNetCacheKey::x_ParseBlobKey(const string& key_str, CNetCacheKey* key_obj)
     ++ch;
 
     // port
-    if (key_obj)
-        key_obj->m_Port = atoi(ch);
-    while (*ch && isdigit(*ch)) {
+    const char* const port_str = ch;
+    while (ch != ch_end  &&  isdigit(*ch)) {
         ++ch;
     }
-    if (*ch  &&  *ch != '_') {
+    if (ch == ch_end  ||  *ch != '_') {
         return false;
     }
+    if (key_obj)
+        key_obj->m_Port = atoi(port_str);
 
     return true;
 }
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
 {
-    if (!x_ParseBlobKey(key_str, this)) {
+    if (!x_ParseBlobKey(key_str.c_str(), key_str.size(), this)) {
         NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
 }
@@ -181,9 +187,9 @@ CNetCacheKey::GetBlobId(const string& key_str)
 }
 
 bool
-CNetCacheKey::IsValidKey(const string& key_str)
+CNetCacheKey::IsValidKey(const char* key_str, size_t key_len)
 {
-    return x_ParseBlobKey(key_str, NULL);
+    return x_ParseBlobKey(key_str, key_len, NULL);
 }
 
 END_NCBI_SCOPE
