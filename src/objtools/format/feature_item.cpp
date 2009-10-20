@@ -2787,7 +2787,14 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(sec_str_type);
     DO_QUAL(heterogen);
 
-    // DO_QUAL(tag_peptide); // not until December 15, 2007
+    DO_QUAL(tag_peptide);
+
+    DO_QUAL(evidence);
+    DO_QUAL(experiment);
+    DO_QUAL(inference);
+    DO_QUAL(exception);
+    DO_QUAL(ribosomal_slippage);
+    DO_QUAL(trans_splicing);
 
     if ( !cfg.GoQualsToNote() ) {
         x_FormatQual(eFQ_go_component, "GO_component", qvec);
@@ -2802,37 +2809,39 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(number);
 
     DO_QUAL(pseudo);
-//    DO_QUAL(selenocysteine);
+    DO_QUAL(selenocysteine);
+    // DO_QUAL(pyrrolysine);
 
     DO_QUAL(codon_start);
 
     DO_QUAL(anticodon);
+    if ( ! cfg.CodonRecognizedToNote() ) {
+        DO_QUAL(trna_codons);
+    }
     DO_QUAL(bound_moiety);
     DO_QUAL(clone);
     DO_QUAL(compare);
-    DO_QUAL(cons_splice);
+    // DO_QUAL(cons_splice);
     DO_QUAL(direction);
     DO_QUAL(function);
-    DO_QUAL(evidence);
-    DO_QUAL(experiment);
-    DO_QUAL(inference);
-    DO_QUAL(exception);
     DO_QUAL(frequency);
     DO_QUAL(EC_number);
     x_FormatQual(eFQ_gene_map, "map", qvec);
+    // cyt_map
+    // gen_map
+    // rad_map
     DO_QUAL(estimated_length);
     DO_QUAL(allele);
     DO_QUAL(map);
     DO_QUAL(mod_base);
     DO_QUAL(PCR_conditions);
     DO_QUAL(phenotype);
-    DO_QUAL(ribosomal_slippage);
     DO_QUAL(rpt_family);
     DO_QUAL(rpt_type);
     DO_QUAL(rpt_unit);
     DO_QUAL(rpt_unit_range);
     DO_QUAL(rpt_unit_seq);
-    DO_QUAL(trans_splicing);
+    // DO_QUAL(satellite);
     DO_QUAL(mobile_element);
     DO_QUAL(usedin);
 
@@ -2844,16 +2853,15 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(transl_except);
     DO_QUAL(transl_table);
     DO_QUAL(codon);
-    if ( ! cfg.CodonRecognizedToNote() ) {
-        DO_QUAL(trna_codons);
-    }
     DO_QUAL(organism);
     DO_QUAL(label);
     x_FormatQual(eFQ_cds_product, "product", qvec);
+    // DO_QUAL(UniProtKB_evidence);
     DO_QUAL(protein_id);
     DO_QUAL(transcript_id);
     DO_QUAL(db_xref);
     x_FormatQual(eFQ_gene_xref, "db_xref", qvec);
+    // DO_QUAL(mol_wt);
     DO_QUAL(translation);
     DO_QUAL(transcription);
     DO_QUAL(peptide);
@@ -2929,10 +2937,12 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(prot_names);
     DO_NOTE(bond);
     DO_NOTE(site);
-    DO_NOTE(rrna_its);
+//    DO_NOTE(rrna_its);
     DO_NOTE(xtra_prod_quals);
+//     DO_NOTE(inference_bad);
     DO_NOTE(modelev);
-    DO_NOTE(tag_peptide); // through December 15, 2007
+//     DO_NOTE(cdd_definition);
+//    DO_NOTE(tag_peptide);
 #undef DO_NOTE
 
     string notestr;
