@@ -20,7 +20,12 @@ case "`uname -s`" in
    $pcre -q testdata/wintestinput3 > $out
    diff testdata/wintestoutput3 $out  ||  errcode=3
    ;;
- 
+
+  FreeBSD )
+   # Do not run test2 on FreeBSD. 
+   # Some parts of test 2 can exceed available memory in some configurations.
+   ;;
+
  * )
    echo --------------- Test 2 ----------------------
    $pcre -q testdata/testinput2 > $out
