@@ -197,6 +197,13 @@ private:
                 size_type pos);
     bool x_Equals(const_iterator it2, size_type len2) const;
     bool x_Less(const_iterator it2, size_type len2) const;
+
+    #if defined(NCBI_TEMPSTR_USE_A_COPY)
+    /// @attention This (making copy of the string) is turned off by default!
+    void x_MakeCopy(void);
+    /// @attention This (making copy of the string) is turned off by default!
+    void x_DestroyCopy(void);
+    #endif
 };
 
 
@@ -217,6 +224,19 @@ bool operator==(const string& str1, const CTempString& str2)
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+// This is NOT a default behavior.
+// The NCBI_TEMPSTR_USE_A_COPY define has been introduced specifically for
+// SWIG. Making copies in the CTempString allows using this class naturally in
+// the generated Python wrappers.
+#  define NCBI_TEMPSTR_MAKE_COPY()     x_MakeCopy()
+#  define NCBI_TEMPSTR_DESTROY_COPY()  x_DestroyCopy()
+#else
+#  define NCBI_TEMPSTR_MAKE_COPY()
+#  define NCBI_TEMPSTR_DESTROY_COPY()
+#endif
+
 
 inline
 CTempString::const_iterator CTempString::begin() const
@@ -309,6 +329,23 @@ void CTempString::x_Init(const char* str, size_type str_len,
 }
 
 
+#if defined(NCBI_TEMPSTR_USE_A_COPY)
+inline
+void CTempString::x_MakeCopy()
+{
+    char* copy = new char[m_Length];
+    memcpy(copy, m_String, m_Length);
+    m_String = copy;
+}
+
+inline
+void CTempString::x_DestroyCopy(void)
+{
+    delete [] m_String;
+}
+#endif
+
+
 inline
 CTempString::CTempString(void)
 {
@@ -325,6 +362,7 @@ CTempString::CTempString(const char* str)
     }
     m_String = str;
     m_Length = strlen(str);
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -342,6 +380,7 @@ inline
 CTempString::CTempString(const char* str, size_type len)
     : m_String(str), m_Length(len)
 {
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -349,6 +388,7 @@ inline
 CTempString::CTempString(const string& str)
     : m_String(str.data()), m_Length(str.size())
 {
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -356,6 +396,7 @@ inline
 CTempString::CTempString(const string& str, size_type pos, size_type len)
 {
     x_Init(str.data(), str.size(), pos, len);
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -363,6 +404,7 @@ inline
 CTempString::CTempString(const CTempString& str)
     : m_String(str.data()), m_Length(str.size())
 {
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -370,6 +412,7 @@ inline
 CTempString::CTempString(const CTempString& str, size_type pos)
 {
     x_Init(str.data(), str.size(), pos);
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -377,6 +420,7 @@ inline
 CTempString::CTempString(const CTempString& str, size_type pos, size_type len)
 {
     x_Init(str.data(), str.size(), pos, len);
+    NCBI_TEMPSTR_MAKE_COPY();
 }
 
 
@@ -496,8 +540,10 @@ CTempString::size_type CTempString::find(char match, size_type pos) const
 inline
 CTempString& CTempString::assign(const char* src, size_type len)
 {
+    NCBI_TEMPSTR_DESTROY_COPY();
     m_String = src;
     m_Length = len;
+    NCBI_TEMPSTR_MAKE_COPY();
     return *this;
 }
 
@@ -505,7 +551,10 @@ CTempString& CTempString::assign(const char* src, size_type len)
 inline
 CTempString& CTempString::assign(const CTempString& src_str)
 {
-    return *this = src_str;
+    NCBI_TEMPSTR_DESTROY_COPY();
+    *this = src_str;
+    NCBI_TEMPSTR_MAKE_COPY();
+    return *this;
 }
 
 
@@ -514,7 +563,9 @@ CTempString& CTempString::assign(const CTempString& src_str,
                                  size_type          off, 
                                  size_type          count)
 {
+    NCBI_TEMPSTR_DESTROY_COPY();
     x_Init(src_str.data(), src_str.size(), off, count);
+    NCBI_TEMPSTR_MAKE_COPY();
     return *this;
 }
 
