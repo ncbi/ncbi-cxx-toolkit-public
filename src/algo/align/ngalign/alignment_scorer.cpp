@@ -49,7 +49,16 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <objmgr/seq_vector.hpp>
+
+
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
@@ -151,8 +160,8 @@ void CCommonComponentScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& 
 
                 list<CRef<CSeq_id> > QueryIds, SubjectIds;
 
-                x_GetCompList(Curr->GetSeq_id(0), QueryIds, Scope);
-                x_GetCompList(Curr->GetSeq_id(1), SubjectIds, Scope);
+                x_GetCompList(Curr->GetSeq_id(0), Curr->GetSeqStart(0), Curr->GetSeqStop(0), QueryIds, Scope);
+                x_GetCompList(Curr->GetSeq_id(1), Curr->GetSeqStart(1), Curr->GetSeqStop(1), SubjectIds, Scope);
 
                 bool IsCommon = x_CompareCompLists(QueryIds, SubjectIds);
 
@@ -163,12 +172,87 @@ void CCommonComponentScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& 
 }
 
 
-void CCommonComponentScorer::x_GetCompList(const CSeq_id& Id,
-                                           list<CRef<CSeq_id> >& CompIds,
-                                           CScope& Scope)
+void CCommonComponentScorer::x_GetUserCompList(CBioseq_Handle Handle,
+                                                list<CRef<CSeq_id> >& CompIds)
 {
-    CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
+    if(!Handle.CanGetDescr())
+        return;
 
+/*
+user {
+      type
+        str "RefGeneTracking" ,
+      data {
+        {
+          label
+            str "Status" ,
+          data
+            str "Inferred" } ,
+        {
+          label
+            str "Assembly" ,
+          data
+            fields {
+              {
+                label
+                  id 0 ,
+                data
+                  fields {
+                    {
+                      label
+                        str "accession" ,
+                      data
+                        str "AC092447.5" } } } ,
+              {
+                label
+                  id 0 ,
+                data
+                  fields {
+                    {
+                      label
+                        str "accession" ,
+                      data
+                        str "AC092423.5" } } } } } } } ,
+*/
+
+    const CSeq_descr& Descr = Handle.GetDescr();
+    ITERATE(CSeq_descr::Tdata, DescIter, Descr.Get()) {
+        const CSeqdesc& Desc = **DescIter;
+        if(!Desc.IsUser())
+            continue;
+
+        const CUser_object& User = Desc.GetUser();
+        string TypeString;
+        if(User.CanGetType())
+            TypeString = User.GetType().GetStr();
+        if(TypeString == "RefGeneTracking" && User.HasField("Assembly")) {
+
+            const CUser_field& TopField = User.GetField("Assembly");
+            ITERATE(CUser_field::C_Data::TFields, FieldIter, TopField.GetData().GetFields()) {
+                const CUser_field& MiddleField = **FieldIter;
+                ITERATE(CUser_field::C_Data::TFields, FieldIter, MiddleField.GetData().GetFields()) {
+
+                    const CUser_field& LastField = **FieldIter;
+                    string Accession = LastField.GetData().GetStr();
+                    CRef<CSeq_id> Id(new CSeq_id(Accession));
+
+                    CSeq_id_Handle CanonicalId;
+                    CanonicalId = sequence::GetId(*Id, Handle.GetScope(),
+                                                sequence::eGetId_Canonical);
+                    Id->Assign(*CanonicalId.GetSeqId());
+                    CompIds.push_back(Id);
+                }
+            }
+        }
+    }
+
+}
+
+
+void CCommonComponentScorer::x_GetDeltaExtCompList(CBioseq_Handle Handle,
+                                           TSeqPos Start, TSeqPos Stop,
+                                           list<CRef<CSeq_id> >& CompIds)
+{
     if(!Handle.CanGetInst_Ext())
         return;
 
@@ -179,23 +263,109 @@ void CCommonComponentScorer::x_GetCompList(const CSeq_id& Id,
 
     const CDelta_ext& DeltaExt = Ext.GetDelta();
 
+    TSeqPos SegStart = 0;
     ITERATE(CDelta_ext::Tdata, SegIter, DeltaExt.Get()) {
         CRef<CDelta_seq> Seg(*SegIter);
 
-        if(!Seg->IsLoc())
+        if(Seg->IsLiteral()) {
+            SegStart += Seg->GetLiteral().GetLength();
             continue;
+        }
 
         const CSeq_loc& Loc = Seg->GetLoc();
 
-        if(!Loc.IsInt())
+        if(!Loc.IsInt()) {
+            // ??
             continue;
+        }
 
         const CSeq_interval& Int = Loc.GetInt();
 
-        CRef<CSeq_id> Id(new CSeq_id);
-        Id->Assign(Int.GetId());
-        CompIds.push_back(Id);
+        if(Start <= (SegStart+Int.GetLength()) && Stop >= SegStart) {
+            CSeq_id_Handle CanonicalId;
+            CanonicalId = sequence::GetId(Int.GetId(), Handle.GetScope(),
+                                        sequence::eGetId_Canonical);
+
+            CRef<CSeq_id> Id(new CSeq_id);
+            Id->Assign(*CanonicalId.GetSeqId());
+            CompIds.push_back(Id);
+        }
+
+        SegStart += Int.GetLength();
     }
+}
+
+
+void CCommonComponentScorer::x_GetSeqHistCompList(CBioseq_Handle Handle,
+                                           TSeqPos Start, TSeqPos Stop,
+                                           list<CRef<CSeq_id> >& CompIds)
+{
+    if(!Handle.CanGetInst_Hist())
+        return;
+
+    const CSeq_hist& Hist = Handle.GetInst_Hist();
+
+    if(!Hist.CanGetAssembly())
+        return;
+
+    const CSeq_hist::TAssembly& Assembly = Hist.GetAssembly();
+
+    CSeq_id_Handle HandleId = sequence::GetId(Handle.GetSeq_id_Handle(),
+                                Handle.GetScope(), sequence::eGetId_Canonical);
+
+    ITERATE(CSeq_hist::TAssembly, AlignIter, Assembly) {
+        const CSeq_align& Align = **AlignIter;
+
+        int ng_row        = 0;
+        int component_row = 1;
+
+        CSeq_id_Handle AlignIdHandle =
+            CSeq_id_Handle::GetHandle(Align.GetSeq_id(ng_row));
+        AlignIdHandle = sequence::GetId(AlignIdHandle, Handle.GetScope(),
+                                        sequence::eGetId_Canonical);
+        if (AlignIdHandle != HandleId) {
+            std::swap(ng_row, component_row);
+        }
+
+        list< CConstRef<CSeq_align> > SplitAligns;
+        if (Align.GetSegs().IsDisc()) {
+            SplitAligns.insert(SplitAligns.end(),
+                        Align.GetSegs().GetDisc().Get().begin(),
+                        Align.GetSegs().GetDisc().Get().end());
+        } else {
+            SplitAligns.push_back(CConstRef<CSeq_align>(&Align));
+        }
+
+        ITERATE(list<CConstRef<CSeq_align> >, SplitIter, SplitAligns) {
+            CSeq_id_Handle CompId =
+                CSeq_id_Handle::GetHandle
+                ((*SplitIter)->GetSeq_id(component_row));
+            CompId = sequence::GetId(CompId, Handle.GetScope(),
+                                   sequence::eGetId_Canonical);
+
+            if(Start <= (*SplitIter)->GetSeqStop(ng_row) &&
+               Stop >= (*SplitIter)->GetSeqStart(ng_row)) {
+                CRef<CSeq_id> Id(new CSeq_id);
+                Id->Assign(*CompId.GetSeqId());
+                CompIds.push_back(Id);
+            }
+        }
+    }
+}
+
+
+void CCommonComponentScorer::x_GetCompList(const CSeq_id& Id,
+                                           TSeqPos Start, TSeqPos Stop,
+                                           list<CRef<CSeq_id> >& CompIds,
+                                           CScope& Scope)
+{
+    CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
+
+    x_GetUserCompList(Handle, CompIds);
+    if(CompIds.empty())
+        x_GetDeltaExtCompList(Handle, Start, Stop, CompIds);
+    if(CompIds.empty())
+        x_GetSeqHistCompList(Handle, Start, Stop, CompIds);
 }
 
 

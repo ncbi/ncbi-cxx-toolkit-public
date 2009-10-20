@@ -102,7 +102,18 @@ public:
     void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
 
 private:
+
+    void x_GetUserCompList(CBioseq_Handle Handle,
+                       list<CRef<objects::CSeq_id> >& CompIds);
+    void x_GetDeltaExtCompList(CBioseq_Handle Handle,
+                       TSeqPos Start, TSeqPos Stop,
+                       list<CRef<objects::CSeq_id> >& CompIds);
+    void x_GetSeqHistCompList(CBioseq_Handle Handle,
+                       TSeqPos Start, TSeqPos Stop,
+                       list<CRef<objects::CSeq_id> >& CompIds);
+
     void x_GetCompList(const objects::CSeq_id& Id,
+                       TSeqPos Start, TSeqPos Stop,
                        list<CRef<objects::CSeq_id> >& CompIds,
                        objects::CScope& Scope);
 
