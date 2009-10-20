@@ -465,50 +465,58 @@ const char* find_match(char        lsep,
 void
 CDiagCompileInfo::ParseCurrFunctName(void) const
 {
-    if (m_CurrFunctName && *m_CurrFunctName) {
-        // Parse curr_funct
-
-        // Skip function arguments
-        const char* end_str = find_match('(', ')',
-            m_CurrFunctName, m_CurrFunctName + strlen(m_CurrFunctName));
-        if ( end_str ) {
-            // Skip template arguments
-            end_str = find_match('<', '>', m_CurrFunctName, end_str);
-        }
-        if ( end_str ) {
-            // Get a function/method name
-            const char* start_str = NULL;
-
-            // Get a finction start position.
-            const char* start_str_tmp =
-                str_rev_str(m_CurrFunctName, end_str, "::");
-            bool has_class = start_str_tmp != NULL;
-            if (start_str_tmp != NULL) {
-                start_str = start_str_tmp + 2;
-            } else {
-                start_str_tmp = str_rev_str(m_CurrFunctName, end_str, " ");
-                if (start_str_tmp != NULL) {
-                    start_str = start_str_tmp + 1;
-                } 
-            }
-
-            const char* cur_funct_name =
-                (start_str == NULL ? m_CurrFunctName : start_str);
-            size_t cur_funct_name_len = end_str - cur_funct_name;
-            m_FunctName = string(cur_funct_name, cur_funct_name_len);
-
-           // Get a class name
-           if (has_class) {
-               end_str = find_match('<', '>', m_CurrFunctName, start_str - 2);
-               start_str = str_rev_str(m_CurrFunctName, end_str, " ");
-               const char* cur_class_name =
-                   (start_str == NULL ? m_CurrFunctName : start_str + 1);
-               size_t cur_class_name_len = end_str - cur_class_name;
-               m_ClassName = string(cur_class_name, cur_class_name_len);
-           }
-        }
-    }
     m_Parsed = true;
+    if (!m_CurrFunctName  ||  !(*m_CurrFunctName)) {
+        return;
+    }
+    // Parse curr_funct
+
+    // Skip function arguments
+    size_t len = strlen(m_CurrFunctName);
+    const char* end_str = find_match('(', ')',
+                                     m_CurrFunctName,
+                                     m_CurrFunctName + len);
+    if (end_str == m_CurrFunctName + len) {
+        // Missing '('
+        return;
+    }
+    if ( end_str ) {
+        // Skip template arguments
+        end_str = find_match('<', '>', m_CurrFunctName, end_str);
+    }
+    if ( !end_str ) {
+        return;
+    }
+    // Get a function/method name
+    const char* start_str = NULL;
+
+    // Get a finction start position.
+    const char* start_str_tmp =
+        str_rev_str(m_CurrFunctName, end_str, "::");
+    bool has_class = start_str_tmp != NULL;
+    if (start_str_tmp != NULL) {
+        start_str = start_str_tmp + 2;
+    } else {
+        start_str_tmp = str_rev_str(m_CurrFunctName, end_str, " ");
+        if (start_str_tmp != NULL) {
+            start_str = start_str_tmp + 1;
+        } 
+    }
+
+    const char* cur_funct_name =
+        (start_str == NULL ? m_CurrFunctName : start_str);
+    size_t cur_funct_name_len = end_str - cur_funct_name;
+    m_FunctName = string(cur_funct_name, cur_funct_name_len);
+
+    // Get a class name
+    if (has_class) {
+        end_str = find_match('<', '>', m_CurrFunctName, start_str - 2);
+        start_str = str_rev_str(m_CurrFunctName, end_str, " ");
+        const char* cur_class_name =
+            (start_str == NULL ? m_CurrFunctName : start_str + 1);
+        size_t cur_class_name_len = end_str - cur_class_name;
+        m_ClassName = string(cur_class_name, cur_class_name_len);
+    }
 }
 
 
@@ -5592,11 +5600,6 @@ bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code,
         *description = entry;
     }
     return true;
-}
-
-const char* g_DiagUnknownFunction(void)
-{
-    return "UNK_FUNCTION";
 }
 
 

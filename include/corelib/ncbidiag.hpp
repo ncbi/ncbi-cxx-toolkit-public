@@ -110,8 +110,6 @@ private:
     char*          m_StrCurrFunctName;
 };
 
-NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
-
 /// Get current function name.
 /// Defined inside of either a method or a function body only.
 // Based on boost's BOOST_CURRENT_FUNCTION
@@ -134,10 +132,10 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 #  elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
 #    define NCBI_CURRENT_FUNCTION __func__
 #  else
-#    define NCBI_CURRENT_FUNCTION NCBI_NS_NCBI::g_DiagUnknownFunction()
+#    define NCBI_CURRENT_FUNCTION NULL
 #  endif
 #else
-#  define NCBI_CURRENT_FUNCTION NCBI_NS_NCBI::g_DiagUnknownFunction()
+#  define NCBI_CURRENT_FUNCTION NULL
 #endif
 
 
