@@ -496,10 +496,10 @@ void CProjBulderApp::Init(void)
     arg_desc->AddOptionalKey("arch", "platform",
                              "Target platform, for example: Win32, x64",
                              CArgDescriptions::eString);
-    arg_desc->AddFlag      ("cfg", 
-                            "Show GUI to confirm configuration parameters (MS Windows only).");
 #endif
 
+    arg_desc->AddFlag      ("cfg", 
+                            "Show GUI to confirm configuration parameters (MS Windows only).");
     arg_desc->AddFlag      ("i", 
                             "Run interactively. Can only be used by PTB GUI shell!");
 

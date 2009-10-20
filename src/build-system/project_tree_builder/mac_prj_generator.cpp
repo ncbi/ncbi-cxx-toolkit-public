@@ -289,13 +289,15 @@ void CMacProjectGenerator::Generate(const string& solution)
     all_dependencies->Set().sort(s_String_less);
 // aggregate targets
     InsertString( *targets,
+        AddConfigureTarget(solution_name,  *dict_objects, true));
+    InsertString( *targets,
+        AddConfigureTarget(solution_name,  *dict_objects, false));
+    InsertString( *targets,
         AddAggregateTarget("BUILD_LIBS", *dict_objects, lib_dependencies));
     InsertString( *targets,
         AddAggregateTarget("BUILD_APPS", *dict_objects, app_dependencies));
     InsertString( *targets,
         AddAggregateTarget("BUILD_ALL",  *dict_objects, all_dependencies));
-    InsertString( *targets,
-        AddConfigureTarget(solution_name,  *dict_objects));
 
 // root object
     AddString( dict_root, "rootObject",
@@ -1066,9 +1068,12 @@ string CMacProjectGenerator::AddAggregateTarget(
 }
 
 string CMacProjectGenerator::AddConfigureTarget(
-    const string& solution_name, CDict& dict_objects)
+    const string& solution_name, CDict& dict_objects, bool gui)
 {
     string target_name("CONFIGURE");
+    if (gui) {
+        target_name += "_DIALOG";
+    }
 #if USE_VERBOSE_NAMES
     string proj_target( target_name + "_target");
     string proj_script( target_name + "_script");
@@ -1092,6 +1097,9 @@ string CMacProjectGenerator::AddConfigureTarget(
             GetApp().GetProjectTreeInfo().m_Compilers,
             GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
     script += m_OutputDir + "UtilityProjects/configure_";
+    if (gui) {
+        script += "gui_";
+    }
     script += solution_name + ".sh";
     CRef<CDict> dict_script( AddDict( dict_objects, proj_script));
     AddArray(  *dict_script, "files");
