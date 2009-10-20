@@ -13,6 +13,7 @@ SRC     = grid_worker ns_client_factory  grid_worker_app \
           netservice_protocol_parser util
 
 LIB     = xconnserv
+PROJ_TAG = core
 LIBS    = $(NETWORK_LIBS)
 
 DLL_LIB = xthrserv xconnect xutil

@@ -11,5 +11,6 @@ SRC      = $(SRC_C)
 UNIX_SRC = $(LOCAL_LBSM)
 
 LIB      = connect
+PROJ_TAG = core
 
 LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
