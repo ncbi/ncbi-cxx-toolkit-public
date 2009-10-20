@@ -1,6 +1,7 @@
 # $Id$
 
 APP_PROJ = cgitest test_multipart_cgi cgi_io_test test_cgi_entry_reader
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
