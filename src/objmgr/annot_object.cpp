@@ -726,6 +726,9 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     if ( ex.IsSetGenomic_strand() ) {
                         loc.SetInt().SetStrand(ex.GetGenomic_strand());
                     }
+                    else if ( spliced.IsSetGenomic_strand() ) {
+                        loc.SetInt().SetStrand(spliced.GetGenomic_strand());
+                    }
                     hrmaps[0].AddLocation(loc);
                 }
                 const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
@@ -741,6 +744,9 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         : ex.GetProduct_end().GetProtpos().GetAmin());
                     if ( ex.IsSetProduct_strand() ) {
                         loc.SetInt().SetStrand(ex.GetProduct_strand());
+                    }
+                    else if ( spliced.IsSetProduct_strand() ) {
+                        loc.SetInt().SetStrand(spliced.GetProduct_strand());
                     }
                     hrmaps[1].AddLocation(loc);
                 }
