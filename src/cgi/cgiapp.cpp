@@ -576,8 +576,10 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
                 " " + cgi_e.GetStatusMessage();
         }
         else {
-            // Convert CgiRequestException to error 400
-            if ( dynamic_cast<CCgiRequestException*> (&e) ) {
+            // Convert CgiRequestException and CCgiArgsException
+            // to error 400
+            if (dynamic_cast<CCgiRequestException*> (&e)  ||
+                dynamic_cast<CCgiArgsException*> (&e)) {
                 SetHTTPStatus(400);
                 status_str = "400 Malformed HTTP Request";
             }
