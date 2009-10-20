@@ -157,16 +157,9 @@ string CGuideTree::WriteImageToNetcache(string netcacheServiceName,string netcac
 }
 
 
-
 bool CGuideTree::WriteTree(CNcbiOstream& out)
 {
-    CBioTreeDynamic dyntree;
-    CBioTreeContainer btc;
-
-    m_DataSource->Save(dyntree);
-    BioTreeConvert2Container(btc, dyntree);
-
-    out << MSerial_AsnText << btc;
+    out << MSerial_AsnText << *GetSerialTree();
 
     return true;
 }
@@ -826,6 +819,18 @@ void CGuideTree::x_InitTreeLabels(CBioTreeContainer &btc,CGuideTreeCalc::ELabelT
 int CGuideTree::GetRootNodeID()
 {
     return(m_DataSource->GetTree()->GetValue().GetId());
+}
+
+
+CRef<CBioTreeContainer> CGuideTree::GetSerialTree(void)
+{
+    CBioTreeDynamic dyntree;
+    CRef<CBioTreeContainer> btc(new CBioTreeContainer());
+
+    m_DataSource->Save(dyntree);
+    BioTreeConvert2Container(*btc, dyntree);
+
+    return btc;
 }
 
 

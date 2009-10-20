@@ -228,12 +228,12 @@ public:
     /// Get query node id
     /// @return Query node id
     ///
-    int GetQueryNodeId(void) {return m_QueryNodeId;}
+    int GetQueryNodeId(void) const {return m_QueryNodeId;}
 
     /// Get error message
     /// @return Error messsage
     ///
-    string GetErrorMessage(void) {return m_ErrorMessage;}
+    string GetErrorMessage(void) const {return m_ErrorMessage;}
 
     /// Get current tree simplification mode
     /// @return tree simplifcation mode
@@ -243,7 +243,7 @@ public:
     ///Get the minimum image height which should be acceptable to output 
     ///
     /// @return min height
-    int GetMinHeight(void){ return m_MinDimRect.Height();}
+    int GetMinHeight(void) const {return m_MinDimRect.Height();}
 
     /// Get information about leaves (such as seqids, blast name to color map,
     /// usually used for auxilary information on the web) for selected subtree
@@ -252,12 +252,15 @@ public:
     ///
     auto_ptr<STreeInfo> GetTreeInfo(int node_id);
 
-
     /// Get tree root node id
     ///
     /// @return root node id
-    int GetRootNodeID();
+    int GetRootNodeID(void);
 
+    /// Get serialized tree
+    /// @return Biotree container
+    ///
+    CRef<CBioTreeContainer> GetSerialTree(void);
 
 
     // --- Generating output ---
