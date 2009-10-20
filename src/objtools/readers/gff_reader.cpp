@@ -1147,7 +1147,7 @@ void CGFFReader::x_MergeAttributes(SRecord& dest, const SRecord& src)
         if (dait_tag == dait_end  ||  dait_tag->front() != tag) {
             dait_tag = dait;
         }
-        if (dait->front() == tag) {
+        if (dait != dait_end  &&  dait->front() == tag) {
             while (dait != dait_end  &&  *dait < *sait) {
                 ++dait;
             }
