@@ -47,6 +47,7 @@
 #include <objects/general/User_field.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqtable/seqtable__.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
@@ -283,9 +284,14 @@ class CWig2tableApplication : public CNcbiApplication
     virtual void Init(void);
     virtual int  Run(void);
 
+    CRef<CSeq_table> MakeTable(void);
+    CRef<CSeq_graph> MakeGraph(void);
+    CRef<CSeq_annot> MakeAnnot(void);
     CRef<CSeq_annot> MakeTableAnnot(void);
-    void DumpTableAnnot(void);
-    void ResetData(void);
+    CRef<CSeq_annot> MakeGraphAnnot(void);
+    void DumpAnnot(void);
+    void DumpChromValues(void);
+    void ResetChromValues(void);
     void SetChrom(CTempString chrom);
 
     double EstimateSize(size_t rows, bool fixed_span) const;
@@ -299,14 +305,7 @@ class CWig2tableApplication : public CNcbiApplication
     AutoPtr<CWigBufferedLineReader> m_Input;
     AutoPtr<CObjectOStream> m_Output;
 
-    size_t m_LineNumber;
-    CTempStringEx m_FullLine;
     CTempStringEx m_CurLine;
-    size_t m_LineBufferSize;
-    char* m_LineBufferPtr;
-    size_t m_LineBufferLen;
-    bool m_UngetLine;
-    AutoArray<char> m_LineBuffer;
 
     bool x_GetLine(void);
     void x_UngetLine(void);
@@ -334,6 +333,20 @@ class CWig2tableApplication : public CNcbiApplication
         }
     };
 
+    struct SStat {
+        bool m_FixedSpan;
+        TSeqPos m_Span;
+        double m_Min, m_Max, m_Step, m_StepMul;
+        int AsByte(double v) const
+            {
+                return int((v-m_Min)*m_StepMul+.5);
+            }
+    };
+    // sort values and return min and max values
+    SStat x_PreprocessValues(void);
+    CRef<CSeq_id> x_MakeChromId(void);
+    void x_SetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id);
+
     void AddValue(const SValueInfo& value) {
         if ( !m_OmitZeros || value.m_Value != 0 ) {
             m_Values.push_back(value);
@@ -341,6 +354,7 @@ class CWig2tableApplication : public CNcbiApplication
     }
 
     string m_TrackName;
+    string m_TrackDescription;
     string m_TrackTypeValue;
     enum ETrackType {
         eTrackType_invalid,
@@ -352,7 +366,9 @@ class CWig2tableApplication : public CNcbiApplication
     TTrackParams m_TrackParams;
     typedef vector<SValueInfo> TValues;
     TValues m_Values;
+    CRef<CSeq_annot> m_Annot;
 
+    bool m_AsGraph;
     bool m_OmitZeros;
     bool m_JoinSame;
     bool m_AsByte;
@@ -397,6 +413,7 @@ void CWig2tableApplication::Init(void)
          CArgDescriptions::eString,
          "");
 
+    arg_desc->AddFlag("graph", "Generate Seq-graph");
     arg_desc->AddFlag("byte", "Convert data in byte range");
     arg_desc->AddFlag("omit_zeros", "Omit zero values");
     arg_desc->AddFlag("join_same", "Join equal sequential values");
@@ -435,9 +452,273 @@ double CWig2tableApplication::EstimateSize(size_t rows, bool fixed_span) const
 }
 
 
-CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
+CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
+{
+    SStat stat;
+    stat.m_Span = 1;
+    stat.m_Min = stat.m_Max = 0;
+    stat.m_Step = stat.m_StepMul = 1;
+    stat.m_FixedSpan = true;
+    bool sorted = true;
+
+    size_t size = m_Values.size();
+    if ( size ) {
+        stat.m_Span = m_Values[0].m_Span;
+        stat.m_Min = stat.m_Max = m_Values[0].m_Value;
+        
+        for ( size_t i = 1; i < size; ++i ) {
+            if ( m_Values[i].m_Span != stat.m_Span ) {
+                stat.m_FixedSpan = false;
+            }
+            if ( m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
+                sorted = false;
+            }
+            double v = m_Values[i].m_Value;
+            if ( v < stat.m_Min ) {
+                stat.m_Min = v;
+            }
+            if ( v > stat.m_Max ) {
+                stat.m_Max = v;
+            }
+        }
+    }
+    if ( stat.m_Max > stat.m_Min ) {
+        stat.m_Step = (stat.m_Max-stat.m_Min)/(m_AsGraph? 254: 255);
+        stat.m_StepMul = 1/stat.m_Step;
+    }
+
+    if ( !sorted ) {
+        sort(m_Values.begin(), m_Values.end());
+    }
+
+    if ( !m_AsGraph && m_JoinSame && size ) {
+        TValues nv;
+        nv.reserve(size);
+        nv.push_back(m_Values[0]);
+        for ( size_t i = 1; i < size; ++i ) {
+            if ( m_Values[i].m_Pos == nv.back().m_Pos+nv.back().m_Span &&
+                 m_Values[i].m_Value == nv.back().m_Value ) {
+                nv.back().m_Span += m_Values[i].m_Span;
+            }
+            else {
+                nv.push_back(m_Values[i]);
+            }
+        }
+        if ( nv.size() != size ) {
+            double s = EstimateSize(size, stat.m_FixedSpan);
+            double ns = EstimateSize(nv.size(), false);
+            if ( ns < s*.75 ) {
+                m_Values.swap(nv);
+                size = m_Values.size();
+                LOG_POST("Joined size: "<<size);
+                stat.m_FixedSpan = false;
+            }
+        }
+    }
+
+    if ( m_AsGraph && !stat.m_FixedSpan ) {
+        stat.m_Span = 1;
+        stat.m_FixedSpan = true;
+    }
+
+    return stat;
+}
+
+
+CRef<CSeq_id> CWig2tableApplication::x_MakeChromId(void)
+{
+    CRef<CSeq_id> chrom_id(new CSeq_id(CSeq_id::e_Local, m_ChromId));
+    if ( m_IdMapper ) {
+        m_IdMapper->MapObject(*chrom_id);
+    }
+    return chrom_id;
+}
+
+
+void CWig2tableApplication::x_SetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id)
+{
+    if ( m_Values.empty() ) {
+        loc.SetEmpty(chrom_id);
+    }
+    else {
+        CSeq_interval& interval = loc.SetInt();
+        interval.SetId(chrom_id);
+        interval.SetFrom(m_Values.front().m_Pos+1);
+        interval.SetTo(m_Values.back().m_Pos + m_Values.back().m_Span);
+    }
+}
+
+
+CRef<CSeq_table> CWig2tableApplication::MakeTable(void)
+{
+    CRef<CSeq_table> table(new CSeq_table);
+
+    table->SetFeat_type(0);
+
+    CRef<CSeq_id> chrom_id = x_MakeChromId();
+
+    CRef<CSeq_loc> table_loc(new CSeq_loc);
+    { // Seq-table location
+        CRef<CSeqTable_column> col_id(new CSeqTable_column);
+        table->SetColumns().push_back(col_id);
+        col_id->SetHeader().SetField_name("Seq-table location");
+        col_id->SetDefault().SetLoc(*table_loc);
+    }
+
+    { // Seq-id
+        CRef<CSeqTable_column> col_id(new CSeqTable_column);
+        table->SetColumns().push_back(col_id);
+        col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
+        col_id->SetDefault().SetId(*chrom_id);
+    }
+    
+    // position
+    CRef<CSeqTable_column> col_pos(new CSeqTable_column);
+    table->SetColumns().push_back(col_pos);
+    col_pos->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_from);
+    CSeqTable_multi_data::TInt& pos = col_pos->SetData().SetInt();
+
+    SStat stat = x_PreprocessValues();
+    
+    x_SetTotalLoc(*table_loc, *chrom_id);
+
+    size_t size = m_Values.size();
+    table->SetNum_rows(size);
+    pos.reserve(size);
+
+    CSeqTable_multi_data::TInt* span_ptr = 0;
+    { // span
+        CRef<CSeqTable_column> col_span(new CSeqTable_column);
+        table->SetColumns().push_back(col_span);
+        col_span->SetHeader().SetField_name("span");
+        if ( stat.m_FixedSpan ) {
+            col_span->SetDefault().SetInt(stat.m_Span);
+        }
+        else {
+            span_ptr = &col_span->SetData().SetInt();
+            span_ptr->reserve(size);
+        }
+    }
+
+    if ( m_AsByte ) { // values
+        CRef<CSeqTable_column> col_min(new CSeqTable_column);
+        table->SetColumns().push_back(col_min);
+        col_min->SetHeader().SetField_name("value_min");
+        col_min->SetDefault().SetReal(stat.m_Min);
+
+        CRef<CSeqTable_column> col_step(new CSeqTable_column);
+        table->SetColumns().push_back(col_step);
+        col_step->SetHeader().SetField_name("value_step");
+        col_step->SetDefault().SetReal(stat.m_Step);
+
+        CRef<CSeqTable_column> col_val(new CSeqTable_column);
+        table->SetColumns().push_back(col_val);
+        col_val->SetHeader().SetField_name("values");
+        
+        if ( 1 ) {
+            AutoPtr< vector<char> > values(new vector<char>());
+            values->reserve(size);
+            ITERATE ( TValues, it, m_Values ) {
+                pos.push_back(it->m_Pos);
+                if ( span_ptr ) {
+                    span_ptr->push_back(it->m_Span);
+                }
+                values->push_back(stat.AsByte(it->m_Value));
+            }
+            col_val->SetData().SetBytes().push_back(values.release());
+        }
+        else {
+            CSeqTable_multi_data::TInt& values = col_val->SetData().SetInt();
+            values.reserve(size);
+            
+            ITERATE ( TValues, it, m_Values ) {
+                pos.push_back(it->m_Pos);
+                if ( span_ptr ) {
+                    span_ptr->push_back(it->m_Span);
+                }
+                values.push_back(stat.AsByte(it->m_Value));
+            }
+        }
+    }
+    else {
+        CRef<CSeqTable_column> col_val(new CSeqTable_column);
+        table->SetColumns().push_back(col_val);
+        col_val->SetHeader().SetField_name("values");
+        CSeqTable_multi_data::TReal& values = col_val->SetData().SetReal();
+        values.reserve(size);
+        
+        ITERATE ( TValues, it, m_Values ) {
+            pos.push_back(it->m_Pos);
+            if ( span_ptr ) {
+                span_ptr->push_back(it->m_Span);
+            }
+            values.push_back(it->m_Value);
+        }
+    }
+    return table;
+}
+
+
+CRef<CSeq_graph> CWig2tableApplication::MakeGraph(void)
+{
+    CRef<CSeq_graph> graph(new CSeq_graph);
+
+    CRef<CSeq_id> chrom_id = x_MakeChromId();
+
+    CRef<CSeq_loc> graph_loc(new CSeq_loc);
+    graph->SetLoc(*graph_loc);
+
+    SStat stat = x_PreprocessValues();
+    
+    x_SetTotalLoc(*graph_loc, *chrom_id);
+
+    if ( !m_TrackName.empty() ) {
+        graph->SetTitle(m_TrackName);
+    }
+    graph->SetComp(stat.m_Span);
+    graph->SetA(stat.m_Step);
+    graph->SetB(stat.m_Min);
+
+    CByte_graph& b_graph = graph->SetGraph().SetByte();
+    b_graph.SetMin(0);
+    b_graph.SetMax(255);
+    b_graph.SetAxis(0);
+    vector<char>& bytes = b_graph.SetValues();
+
+    if ( m_Values.empty() ) {
+        graph->SetNumval(0);
+    }
+    else {
+        _ASSERT(stat.m_FixedSpan);
+        TSeqPos start = m_Values[0].m_Pos;
+        TSeqPos end = m_Values.back().m_Pos + m_Values.back().m_Span;
+        size_t size = (end-start)/stat.m_Span;
+        graph->SetNumval(size);
+        bytes.resize(size);
+        ITERATE ( TValues, it, m_Values ) {
+            TSeqPos pos = it->m_Pos - start;
+            TSeqPos span = it->m_Span;
+            _ASSERT(pos % stat.m_Span == 0);
+            _ASSERT(span % stat.m_Span == 0);
+            size_t i = pos / stat.m_Span;
+            int v = stat.AsByte(it->m_Value)+1;
+            for ( ; span > 0; span -= stat.m_Span, ++i ) {
+                bytes[i] = v;
+            }
+        }
+    }
+    return graph;
+}
+
+
+CRef<CSeq_annot> CWig2tableApplication::MakeAnnot(void)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
+    if ( !m_TrackDescription.empty() ) {
+        CRef<CAnnotdesc> desc(new CAnnotdesc);
+        desc->SetTitle(m_TrackDescription);
+        annot->SetDesc().Set().push_back(desc);
+    }
     if ( !m_TrackName.empty() ) {
         CRef<CAnnotdesc> desc(new CAnnotdesc);
         desc->SetName(m_TrackName);
@@ -455,193 +736,27 @@ CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
             user.SetData().push_back(field);
         }
     }
-    CSeq_table& table = annot->SetData().SetSeq_table();
-
-    size_t size = m_Values.size();
-
-    table.SetFeat_type(0);
-
-    CRef<CSeq_id> chrom_id(new CSeq_id(CSeq_id::e_Local, m_ChromId));
-    if ( m_IdMapper ) {
-        m_IdMapper->MapObject(*chrom_id);
-    }
-
-    CRef<CSeq_loc> table_loc(new CSeq_loc);
-    { // Seq-table location
-        CRef<CSeqTable_column> col_id(new CSeqTable_column);
-        table.SetColumns().push_back(col_id);
-        col_id->SetHeader().SetField_name("Seq-table location");
-        col_id->SetDefault().SetLoc(*table_loc);
-    }
-
-    { // Seq-id
-        CRef<CSeqTable_column> col_id(new CSeqTable_column);
-        table.SetColumns().push_back(col_id);
-        col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
-        col_id->SetDefault().SetId(*chrom_id);
-    }
-    
-    // position
-    CRef<CSeqTable_column> col_pos(new CSeqTable_column);
-    table.SetColumns().push_back(col_pos);
-    col_pos->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_from);
-    CSeqTable_multi_data::TInt& pos = col_pos->SetData().SetInt();
-    
-    TSeqPos span = 1;
-    double min = 0, max = 0, step = 1;
-    bool fixed_span = true, sorted = true;
-    { // analyze
-        if ( size ) {
-            span = m_Values[0].m_Span;
-            min = max = m_Values[0].m_Value;
-        }
-        for ( size_t i = 1; i < size; ++i ) {
-            if ( m_Values[i].m_Span != span ) {
-                fixed_span = false;
-            }
-            if ( m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
-                sorted = false;
-            }
-            double v = m_Values[i].m_Value;
-            if ( v < min ) {
-                min = v;
-            }
-            if ( v > max ) {
-                max = v;
-            }
-        }
-        if ( max > min ) {
-            step = (max-min)/255;
-        }
-    }
-
-    if ( !sorted ) {
-        sort(m_Values.begin(), m_Values.end());
-    }
-
-    if ( m_Values.empty() ) {
-        table_loc->SetEmpty(*chrom_id);
-    }
-    else {
-        CSeq_interval& interval = table_loc->SetInt();
-        interval.SetId(*chrom_id);
-        interval.SetFrom(m_Values.front().m_Pos);
-        interval.SetTo(m_Values.back().m_Pos + m_Values.back().m_Span - 1);
-    }
-
-    if ( m_JoinSame && size ) {
-        TValues nv;
-        nv.reserve(size);
-        nv.push_back(m_Values[0]);
-        for ( size_t i = 1; i < size; ++i ) {
-            if ( m_Values[i].m_Pos == nv.back().m_Pos+nv.back().m_Span &&
-                 m_Values[i].m_Value == nv.back().m_Value ) {
-                nv.back().m_Span += m_Values[i].m_Span;
-            }
-            else {
-                nv.push_back(m_Values[i]);
-            }
-        }
-        if ( nv.size() != size ) {
-            double s = EstimateSize(size, fixed_span);
-            double ns = EstimateSize(nv.size(), false);
-            if ( ns < s*.75 ) {
-                m_Values.swap(nv);
-                size = m_Values.size();
-                LOG_POST("Joined size: "<<size);
-                fixed_span = false;
-            }
-        }
-    }
-
-    table.SetNum_rows(size);
-    pos.reserve(size);
-
-    CSeqTable_multi_data::TInt* span_ptr = 0;
-    { // span
-        CRef<CSeqTable_column> col_span(new CSeqTable_column);
-        table.SetColumns().push_back(col_span);
-        col_span->SetHeader().SetField_name("span");
-        if ( fixed_span ) {
-            col_span->SetDefault().SetInt(span);
-        }
-        else {
-            span_ptr = &col_span->SetData().SetInt();
-            span_ptr->reserve(size);
-        }
-    }
-
-    if ( m_AsByte ) { // values
-        CRef<CSeqTable_column> col_min(new CSeqTable_column);
-        table.SetColumns().push_back(col_min);
-        col_min->SetHeader().SetField_name("value_min");
-        col_min->SetDefault().SetReal(min);
-
-        CRef<CSeqTable_column> col_step(new CSeqTable_column);
-        table.SetColumns().push_back(col_step);
-        col_step->SetHeader().SetField_name("value_step");
-        col_step->SetDefault().SetReal(step);
-
-        CRef<CSeqTable_column> col_val(new CSeqTable_column);
-        table.SetColumns().push_back(col_val);
-        col_val->SetHeader().SetField_name("values");
-        
-        double mul = 1/step;
-        if ( 1 ) {
-            AutoPtr< vector<char> > values(new vector<char>());
-            values->reserve(size);
-            ITERATE ( TValues, it, m_Values ) {
-                pos.push_back(it->m_Pos);
-                if ( span_ptr ) {
-                    span_ptr->push_back(it->m_Span);
-                }
-                int val = int((it->m_Value-min)*mul+.5);
-                values->push_back(val);
-            }
-            col_val->SetData().SetBytes().push_back(values.release());
-        }
-        else {
-            CSeqTable_multi_data::TInt& values = col_val->SetData().SetInt();
-            values.reserve(size);
-            
-            ITERATE ( TValues, it, m_Values ) {
-                pos.push_back(it->m_Pos);
-                if ( span_ptr ) {
-                    span_ptr->push_back(it->m_Span);
-                }
-                int val = int((it->m_Value-min)*mul+.5);
-                values.push_back(val);
-            }
-        }
-    }
-    else {
-        CRef<CSeqTable_column> col_val(new CSeqTable_column);
-        table.SetColumns().push_back(col_val);
-        col_val->SetHeader().SetField_name("values");
-        CSeqTable_multi_data::TReal& values = col_val->SetData().SetReal();
-        values.reserve(size);
-        
-        ITERATE ( TValues, it, m_Values ) {
-            pos.push_back(it->m_Pos);
-            if ( span_ptr ) {
-                span_ptr->push_back(it->m_Span);
-            }
-            values.push_back(it->m_Value);
-        }
-    }
     return annot;
 }
 
 
-void CWig2tableApplication::DumpTableAnnot(void)
+CRef<CSeq_annot> CWig2tableApplication::MakeTableAnnot(void)
 {
-    LOG_POST("DumpTableAnnot: "<<m_ChromId<<" "<<m_Values.size());
-    CRef<CSeq_annot> annot = MakeTableAnnot();
-    *m_Output << *annot;
+    CRef<CSeq_annot> annot = MakeAnnot();
+    annot->SetData().SetSeq_table(*MakeTable());
+    return annot;
 }
 
 
-void CWig2tableApplication::ResetData(void)
+CRef<CSeq_annot> CWig2tableApplication::MakeGraphAnnot(void)
+{
+    CRef<CSeq_annot> annot = MakeAnnot();
+    annot->SetData().SetGraph().push_back(MakeGraph());
+    return annot;
+}
+
+
+void CWig2tableApplication::ResetChromValues(void)
 {
     m_ChromId.clear();
     m_Values.clear();
@@ -650,8 +765,9 @@ void CWig2tableApplication::ResetData(void)
 
 void CWig2tableApplication::x_Error(const char* msg)
 {
-    ERR_POST(Fatal<<GetArgs()["in"].AsString()<<":"<<m_LineNumber<<": "<<msg<<
-             ": \""<<m_CurLine<<"\"");
+    ERR_POST(Fatal<<
+             GetArgs()["in"].AsString()<<":"<<m_Input->GetLineNumber()<<": "<<
+             msg<<": \""<<m_CurLine<<"\"");
 }
 
 
@@ -666,6 +782,7 @@ bool CWig2tableApplication::x_SkipWS(void)
         }
     }
     m_CurLine = m_CurLine.substr(skip);
+    _ASSERT(m_CurLine.HasZeroAtEnd());
     return !m_CurLine.empty();
 }
 
@@ -673,7 +790,7 @@ bool CWig2tableApplication::x_SkipWS(void)
 inline bool CWig2tableApplication::x_CommentLine(void) const
 {
     char c = m_CurLine.data()[0];
-    return c == '#' || c == '\0';
+    return c == '#';// || c == '\0';
 }
 
 
@@ -691,6 +808,7 @@ CTempString CWig2tableApplication::x_GetWord(void)
         x_Error("Identifier expected");
     }
     m_CurLine = m_CurLine.substr(skip);
+    _ASSERT(m_CurLine.HasZeroAtEnd());
     return CTempString(ptr, skip);
 }
 
@@ -703,6 +821,7 @@ CTempString CWig2tableApplication::x_GetParamName(void)
         char c = ptr[skip];
         if ( c == '=' ) {
             m_CurLine = m_CurLine.substr(skip+1);
+            _ASSERT(m_CurLine.HasZeroAtEnd());
             return CTempString(ptr, skip);
         }
         if ( c == ' ' || c == '\t' ) {
@@ -724,6 +843,7 @@ CTempString CWig2tableApplication::x_GetParamValue(void)
             char c = ptr[pos];
             if ( c == '"' ) {
                 m_CurLine = m_CurLine.substr(pos+1);
+                _ASSERT(m_CurLine.HasZeroAtEnd());
                 return CTempString(ptr+1, pos-1);
             }
         }
@@ -744,6 +864,7 @@ void CWig2tableApplication::x_GetPos(TSeqPos& v)
         }
         else if ( (c == ' ' || c == '\t' || c == '\0') && skip ) {
             m_CurLine = m_CurLine.substr(skip);
+            _ASSERT(m_CurLine.HasZeroAtEnd());
             v = ret;
             return;
         }
@@ -784,6 +905,7 @@ bool CWig2tableApplication::x_TryGetDoubleSimple(double& v)
                 return false;
             }
             m_CurLine.clear();
+            _ASSERT(m_CurLine.HasZeroAtEnd());
             v = ret;
             return true;
         }
@@ -801,6 +923,7 @@ bool CWig2tableApplication::x_TryGetDoubleSimple(double& v)
         }
         else if ( (c == ' ' || c == '\t' || c == '\0') && digits ) {
             m_CurLine.clear();
+            _ASSERT(m_CurLine.HasZeroAtEnd());
             v = ret;
             return true;
         }
@@ -826,13 +949,14 @@ bool CWig2tableApplication::x_TryGetDouble(double& v)
         x_Error("extra text in line");
     }
     m_CurLine.clear();
+    _ASSERT(m_CurLine.HasZeroAtEnd());
     return true;
 }
 
 
 inline bool CWig2tableApplication::x_TryGetPos(TSeqPos& v)
 {
-    char c = m_CurLine[0];
+    char c = m_CurLine.data()[0];
     if ( c < '0' || c > '9' ) {
         return false;
     }
@@ -854,7 +978,8 @@ bool CWig2tableApplication::x_GetLine()
     if ( m_Input->AtEOF() ) {
         return false;
     }
-    m_FullLine = m_CurLine = *++*m_Input;
+    m_CurLine = *++*m_Input;
+    _ASSERT(m_CurLine.HasZeroAtEnd());
     return true;
 }
 
@@ -865,13 +990,43 @@ inline void CWig2tableApplication::x_UngetLine(void)
 }
 
 
+void CWig2tableApplication::DumpAnnot(void)
+{
+    if ( !m_Annot ) {
+        return;
+    }
+    if ( m_AsGraph ) {
+        LOG_POST("DumpAnnot");
+    }
+    *m_Output << *m_Annot;
+    m_Annot = null;
+}
+
+
+void CWig2tableApplication::DumpChromValues(void)
+{
+    if ( m_ChromId.empty() ) {
+        return;
+    }
+    LOG_POST("Chrom: "<<m_ChromId<<" "<<m_Values.size());
+    if ( !m_Annot ) {
+        m_Annot = MakeAnnot();
+    }
+    if ( m_AsGraph ) {
+        m_Annot->SetData().SetGraph().push_back(MakeGraph());
+    }
+    else {
+        m_Annot->SetData().SetSeq_table(*MakeTable());
+        DumpAnnot();
+    }
+    ResetChromValues();
+}
+
+
 void CWig2tableApplication::SetChrom(CTempString chrom)
 {
     if ( chrom != m_ChromId ) {
-        if ( !m_ChromId.empty() ) {
-            DumpTableAnnot();
-        }
-        ResetData();
+        DumpChromValues();
         m_ChromId = chrom;
     }
 }
@@ -884,7 +1039,10 @@ void CWig2tableApplication::ReadBrowser(void)
 
 void CWig2tableApplication::ReadTrack(void)
 {
+    DumpAnnot();
+
     m_TrackName = "User Track";
+    m_TrackDescription.clear();
     m_TrackTypeValue.clear();
     m_TrackType = eTrackType_invalid;
     m_TrackParams.clear();
@@ -905,6 +1063,9 @@ void CWig2tableApplication::ReadTrack(void)
         }
         else if ( name == "name" ) {
             m_TrackName = value;
+        }
+        else if ( name == "description" ) {
+            m_TrackDescription = value;
         }
         else {
             m_TrackParams[name] = value;
@@ -1029,6 +1190,7 @@ void CWig2tableApplication::ReadBedLine(CTempString chrom)
 
 int CWig2tableApplication::Run(void)
 {
+    SetDiagPostLevel(eDiag_Warning);
     // Get arguments
     CArgs args = GetArgs();
 
@@ -1043,9 +1205,22 @@ int CWig2tableApplication::Run(void)
                                               false));
     }
 
+    m_AsGraph = args["graph"];
     m_OmitZeros = args["omit_zeros"];
     m_JoinSame = args["join_same"];
-    m_AsByte = args["byte"];
+    m_AsByte = m_AsGraph || args["byte"];
+    if ( m_AsGraph ) {
+        if ( m_OmitZeros ) {
+            ERR_POST(Warning<<
+                     "The option -omit_zeros is ignored for Seq-graph");
+            m_OmitZeros = false;
+        }
+        if ( m_JoinSame ) {
+            ERR_POST(Warning<<
+                     "The option -join_same is ignored for Seq-graph");
+            m_JoinSame = false;
+        }
+    }
 
     // Read the entry
     m_Input.reset(new CWigBufferedLineReader(args["in"].AsString()));
@@ -1076,7 +1251,8 @@ int CWig2tableApplication::Run(void)
     }
     m_Input.reset();
 
-    SetChrom(""); // flush current graph
+    DumpChromValues();
+    DumpAnnot();
     m_Output.reset();
 
     // Exit successfully
