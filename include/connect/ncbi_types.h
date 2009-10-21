@@ -64,7 +64,7 @@ extern "C" {
 
 /** Timeout structure
  *
- * @sa CTimeout, CTimeoutToSTimeout, STimeoutToCTimeout
+ * @sa CTimeout, g_CTimeoutToSTimeout, g_STimeoutToCTimeout
  */
 typedef struct {
     unsigned int sec;  /**< seconds (truncated to the platf.-dep. max. limit)*/

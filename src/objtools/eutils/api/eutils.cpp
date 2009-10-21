@@ -97,7 +97,7 @@ void CEUtils_Request::Connect(void)
     string body = GetQueryString();
     STimeout timeout_value;
     const STimeout* timeout = 
-        CTimeoutToSTimeout(GetConnContext()->GetTimeout(), timeout_value);
+        g_CTimeoutToSTimeout(GetConnContext()->GetTimeout(), timeout_value);
 
     if ( m_Method == eHttp_Post ) {
         m_Stream.reset(new CConn_HttpStream(

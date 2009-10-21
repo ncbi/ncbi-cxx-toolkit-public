@@ -113,16 +113,16 @@ protected:
 ///   A pointer to "sto" object, if timeout have numeric value. 
 ///   "sto" will be used to store numeric value.
 /// @sa CTimeout, STimeout
-const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto);
+const STimeout* g_CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto);
 
 /// Convert STimeout to CTimeout.
 ///
 /// @sa CTimeout, STimeout
-CTimeout STimeoutToCTimeout(const STimeout* sto);
+CTimeout g_STimeoutToCTimeout(const STimeout* sto);
 
 
 inline 
-const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto)
+const STimeout* g_CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto)
 {
     if ( cto.IsDefault() )
         return kDefaultTimeout;
@@ -135,7 +135,7 @@ const STimeout* CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto)
 }
 
 inline 
-CTimeout STimeoutToCTimeout(const STimeout* sto)
+CTimeout g_STimeoutToCTimeout(const STimeout* sto)
 {
     if ( sto == kDefaultTimeout )
         return CTimeout(CTimeout::eDefault);
