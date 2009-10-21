@@ -74,6 +74,7 @@ private:
     bool HasShortIntron(const CGeneModel& algn);
     string FindMultiplyIncluded(CGeneModel& algn, TGeneModelList& clust, TOrigAligns& orig_aligns);
     void FilterOutPoorAlignments(TGeneModelList& clust, TOrigAligns& orig_aligns);
+    void FilterOutChimeras(TGeneModelList& clust, TOrigAligns& orig_aligns);
     bool AddIfCompatible(set<SFShiftsCluster>& fshift_clusters, const CGeneModel& algn);
     bool FsTouch(const TSignedSeqRange& lim, const CInDelInfo& fs);
     void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust, TOrigAligns& orig_aligns);
@@ -1311,6 +1312,70 @@ void CChainer::CChainerImpl::SkipReason(CGeneModel* orig_align, const string& co
     orig_align->AddComment(comment);
 }
 
+void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust, TOrigAligns& orig_aligns)
+{
+    typedef map<int,TGeneModelClusterSet> TClustersByStrand;
+    TClustersByStrand trusted_aligns;
+    ITERATE(TGeneModelList, it, clust) {
+        if(it->Continuous() && (!it->TrustedmRNA().empty() || !it->TrustedProt().empty())
+                            && it->AlignLen() > minscor.m_minprotfrac*orig_aligns[it->ID()]->TargetLen()) {
+            trusted_aligns[it->Strand()].Insert(*it); 
+        }           
+    }
+
+    if(trusted_aligns[ePlus].size() < 2 && trusted_aligns[eMinus].size() < 2)
+        return;
+
+    typedef set<int> TSplices;
+    typedef list<TSplices> TSplicesList;
+    typedef map<int,TSplicesList> TSplicesByStrand;
+    TSplicesByStrand trusted_splices;
+    
+    ITERATE(TClustersByStrand, it, trusted_aligns) {
+        int strand = it->first;
+        const TGeneModelClusterSet& clset = it->second;
+        ITERATE(TGeneModelClusterSet, jt, clset) {
+            const TGeneModelCluster& cls = *jt;
+            trusted_splices[strand].push_back(set<int>());
+            TSplices& splices = trusted_splices[strand].back();
+            ITERATE(TGeneModelCluster, lt, cls) {
+                const CGeneModel& align = *lt;
+                ITERATE(CGeneModel::TExons, e, align.Exons()) {
+                    if(e->m_fsplice)
+                        splices.insert(e->GetFrom());
+                    if(e->m_ssplice)
+                        splices.insert(e->GetTo());                       
+                }
+            }
+        }
+    }
+
+    for(TGeneModelList::iterator it_loop = clust.begin(); it_loop != clust.end(); ) {
+        TGeneModelList::iterator it = it_loop++;
+        
+        const CGeneModel& align = *it;
+        int strand = align.Strand();
+        const TSplicesList& spl = trusted_splices[strand];
+
+        int count = 0;
+        ITERATE(TSplicesList, jt, spl) {
+            const TSplices& splices = *jt;
+            for(unsigned int i = 0; i < align.Exons().size(); ++i) {
+                const CModelExon& e = align.Exons()[i];
+                if(splices.find(e.GetFrom()) != splices.end() || splices.find(e.GetTo()) != splices.end()) {
+                    ++count;
+                    break;
+                }
+            }        
+        }
+
+        if(count > 1) {
+            SkipReason(orig_aligns[align.ID()],"Chimera");
+            clust.erase(it);
+        }
+    }
+}
+
 void CChainer::CChainerImpl::FilterOverlappingSameAccessionAlignment(TGeneModelList& clust, TOrigAligns& orig_aligns)
 {
     //    clust.sort(s_ByAccVerLen);  this is moved up
@@ -1974,6 +2039,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TAlignModelList& alignments)
 
     if(models.empty()) return chains;
 
+    FilterOutChimeras(models, orig_aligns);
     FilterOverlappingSameAccessionAlignment(models, orig_aligns);
     FilterOutPoorAlignments(models, orig_aligns);
     FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(models, orig_aligns);
