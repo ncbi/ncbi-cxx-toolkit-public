@@ -40,6 +40,9 @@
 /* This header must go last */
 #include "test_assert.h"
 
+/* maximal UDP packet size as allowed by the standard */
+#define MAX_UDP_DGRAM_SIZE 65535
+
 #if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1) || defined(NCBI_OS_DARWIN)
    /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
    /* For OSF1 (and FreeBSD) see also: /usr/include/netinet/udp_var.h   */
@@ -51,8 +54,7 @@
    /* Larger sizes do not seem to work everywhere */
 #  define MAX_DGRAM_SIZE 59550
 #else
-   /* This is the maximal datagram size defined by the UDP standard */
-#  define MAX_DGRAM_SIZE 65535
+#  define MAX_DGRAM_SIZE MAX_UDP_DGRAM_SIZE
 #endif
 /* NOTE: x86_64 (AMD) kernel does not allow dgrams bigger than MTU minus
  * small overhead;  for these we use the script and pass the MTU via argv.
@@ -229,6 +231,8 @@ static int s_Client(int x_port, unsigned int max_try)
     msglen = (size_t)(((double)rand()/(double)RAND_MAX) * s_MTU);
     if (msglen < sizeof(time_t) + 10)
         msglen = sizeof(time_t) + 10;
+    if (msglen == MAX_UDP_DGRAM_SIZE)
+        msglen--;
 
     CORE_LOGF(eLOG_Note, ("[Client]  Generating a message %lu bytes long",
                           (unsigned long) msglen));
