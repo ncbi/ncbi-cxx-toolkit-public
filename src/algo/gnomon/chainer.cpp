@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <algo/gnomon/chainer.hpp>
+#include <algo/gnomon/id_handler.hpp>
 
 #include <util/sequtil/sequtil_manip.hpp>
 
@@ -2231,9 +2232,11 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
         CNcbiIstream& cdsfile = args["mrnaCDS"].AsInputFile();
         string accession, tmp;
         int a, b;
+        CIdHandler cidh(*chainer->SetScope());
         while(cdsfile >> accession >> a >> b) {
             _ASSERT(a > 0 && b > 0 && b > a);
             getline(cdsfile,tmp);
+            accession = CIdHandler::ToString(*cidh.ToCanonical(*CIdHandler::ToSeq_id(accession)));
             mrnaCDS[accession] = TSignedSeqRange(a-1,b-1);
         }
     }
