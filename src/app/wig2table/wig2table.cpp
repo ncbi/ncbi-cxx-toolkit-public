@@ -543,8 +543,8 @@ void CWig2tableApplication::x_SetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id)
     else {
         CSeq_interval& interval = loc.SetInt();
         interval.SetId(chrom_id);
-        interval.SetFrom(m_Values.front().m_Pos+1);
-        interval.SetTo(m_Values.back().m_Pos + m_Values.back().m_Span);
+        interval.SetFrom(m_Values.front().m_Pos);
+        interval.SetTo(m_Values.back().m_Pos + m_Values.back().m_Span-1);
     }
 }
 
