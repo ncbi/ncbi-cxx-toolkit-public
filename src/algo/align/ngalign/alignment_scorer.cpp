@@ -329,9 +329,10 @@ void CCommonComponentScorer::x_GetSeqHistCompList(CBioseq_Handle Handle,
 
         list< CConstRef<CSeq_align> > SplitAligns;
         if (Align.GetSegs().IsDisc()) {
-            SplitAligns.insert(SplitAligns.end(),
-                        Align.GetSegs().GetDisc().Get().begin(),
-                        Align.GetSegs().GetDisc().Get().end());
+            ITERATE (CSeq_align_set::Tdata, it,
+                     Align.GetSegs().GetDisc().Get()) {
+                SplitAligns.push_back(*it);
+            }
         } else {
             SplitAligns.push_back(CConstRef<CSeq_align>(&Align));
         }
