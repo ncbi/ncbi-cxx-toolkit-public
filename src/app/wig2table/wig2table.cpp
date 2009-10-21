@@ -372,6 +372,7 @@ class CWig2tableApplication : public CNcbiApplication
     bool m_OmitZeros;
     bool m_JoinSame;
     bool m_AsByte;
+    bool m_KeepInteger;
     AutoPtr<IIdMapper> m_IdMapper;
 };
 
@@ -388,12 +389,12 @@ void CWig2tableApplication::Init(void)
 
     // Describe the expected command-line arguments
     arg_desc->AddDefaultKey
-        ("in", "InputFile",
+        ("input", "InputFile",
          "name of file to read from (standard input by default)",
          CArgDescriptions::eInputFile, "-");
 
     arg_desc->AddDefaultKey
-        ("out", "OutputFile",
+        ("output", "OutputFile",
          "name of file to write to (standard output by default)",
          CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
     arg_desc->AddDefaultKey("outfmt", "OutputFormat", "format of output file",
@@ -413,10 +414,12 @@ void CWig2tableApplication::Init(void)
          CArgDescriptions::eString,
          "");
 
-    arg_desc->AddFlag("graph", "Generate Seq-graph");
-    arg_desc->AddFlag("byte", "Convert data in byte range");
-    arg_desc->AddFlag("omit_zeros", "Omit zero values");
-    arg_desc->AddFlag("join_same", "Join equal sequential values");
+    arg_desc->AddFlag("as-graph", "Generate Seq-graph");
+    arg_desc->AddFlag("as-byte", "Convert data in byte range");
+    arg_desc->AddFlag("omit-zeros", "Omit zero values");
+    arg_desc->AddFlag("join-same", "Join equal sequential values");
+    arg_desc->AddFlag("keep-integer",
+                      "Keep integer as is if they fit in an output range");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -459,7 +462,7 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
     stat.m_Min = stat.m_Max = 0;
     stat.m_Step = stat.m_StepMul = 1;
     stat.m_FixedSpan = true;
-    bool sorted = true;
+    bool sorted = true, integer = m_KeepInteger;
 
     size_t size = m_Values.size();
     if ( size ) {
@@ -470,7 +473,7 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
             if ( m_Values[i].m_Span != stat.m_Span ) {
                 stat.m_FixedSpan = false;
             }
-            if ( m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
+            if ( sorted && m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
                 sorted = false;
             }
             double v = m_Values[i].m_Value;
@@ -480,10 +483,15 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
             if ( v > stat.m_Max ) {
                 stat.m_Max = v;
             }
+            if ( integer && v != int(v) ) {
+                integer = false;
+            }
         }
     }
-    if ( stat.m_Max > stat.m_Min ) {
-        stat.m_Step = (stat.m_Max-stat.m_Min)/(m_AsGraph? 254: 255);
+    const int range = 255;
+    if ( stat.m_Max > stat.m_Min &&
+         (!integer || stat.m_Max-stat.m_Min > range) ) {
+        stat.m_Step = (stat.m_Max-stat.m_Min)/range;
         stat.m_StepMul = 1/stat.m_Step;
     }
 
@@ -680,8 +688,8 @@ CRef<CSeq_graph> CWig2tableApplication::MakeGraph(void)
     graph->SetB(stat.m_Min);
 
     CByte_graph& b_graph = graph->SetGraph().SetByte();
-    b_graph.SetMin(0);
-    b_graph.SetMax(255);
+    b_graph.SetMin(stat.AsByte(stat.m_Min));
+    b_graph.SetMax(stat.AsByte(stat.m_Max));
     b_graph.SetAxis(0);
     vector<char>& bytes = b_graph.SetValues();
 
@@ -701,7 +709,7 @@ CRef<CSeq_graph> CWig2tableApplication::MakeGraph(void)
             _ASSERT(pos % stat.m_Span == 0);
             _ASSERT(span % stat.m_Span == 0);
             size_t i = pos / stat.m_Span;
-            int v = stat.AsByte(it->m_Value)+1;
+            int v = stat.AsByte(it->m_Value);
             for ( ; span > 0; span -= stat.m_Span, ++i ) {
                 bytes[i] = v;
             }
@@ -766,8 +774,8 @@ void CWig2tableApplication::ResetChromValues(void)
 void CWig2tableApplication::x_Error(const char* msg)
 {
     ERR_POST(Fatal<<
-             GetArgs()["in"].AsString()<<":"<<m_Input->GetLineNumber()<<": "<<
-             msg<<": \""<<m_CurLine<<"\"");
+             GetArgs()["input"].AsString()<<":"<<m_Input->GetLineNumber()<<
+             ": "<<msg<<": \""<<m_CurLine<<"\"");
 }
 
 
@@ -1205,10 +1213,11 @@ int CWig2tableApplication::Run(void)
                                               false));
     }
 
-    m_AsGraph = args["graph"];
-    m_OmitZeros = args["omit_zeros"];
-    m_JoinSame = args["join_same"];
-    m_AsByte = m_AsGraph || args["byte"];
+    m_AsGraph = args["as-graph"];
+    m_OmitZeros = args["omit-zeros"];
+    m_JoinSame = args["join-same"];
+    m_AsByte = m_AsGraph || args["as-byte"];
+    m_KeepInteger = args["keep-integer"];
     if ( m_AsGraph ) {
         if ( m_OmitZeros ) {
             ERR_POST(Warning<<
@@ -1223,10 +1232,10 @@ int CWig2tableApplication::Run(void)
     }
 
     // Read the entry
-    m_Input.reset(new CWigBufferedLineReader(args["in"].AsString()));
+    m_Input.reset(new CWigBufferedLineReader(args["input"].AsString()));
     m_Output.reset
         (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
-                              args["out"].AsOutputFile()));
+                              args["output"].AsOutputFile()));
 
     while ( x_GetLine() ) {
         if ( x_CommentLine() ) {
