@@ -933,8 +933,8 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
         const char*  text;
         const size_t len;
     } kEndings[] = {
-        { ".ncbi.nlm.nih.gov", 17},
-        { ".ncbi.nih.gov",     13}
+        {".ncbi.nlm.nih.gov", 17},
+        {".ncbi.nih.gov",     13}
     };
     size_t len = hostname ? strlen(hostname) : 0;
 
