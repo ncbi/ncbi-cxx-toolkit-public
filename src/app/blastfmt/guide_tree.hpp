@@ -419,9 +419,10 @@ public:
     ///
     string GetMap(string jsClickNode,string jsClickLeaf,string jsMouseover,string jsMouseout,string jsClickQuery = "",bool showQuery = true);
 
-    ///Calculates the minimum width and height which should be acceptable to output 
+    ///Calculates the minimum width and height of tree image that ensures
+    ///that all nodes are visible
     ///
-    void PreComuteImageDimensions(void);
+    void PreComputeImageDimensions(void);
 
 protected:    
     

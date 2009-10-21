@@ -557,7 +557,7 @@ string CGuideTree::x_GetNodeFeature(const CPhyloTreeNode* node,
 }
 
 
-void CGuideTree::PreComuteImageDimensions()
+void CGuideTree::PreComputeImageDimensions()
 {
     m_PhyloTreeScheme.Reset(new CPhyloTreeScheme());
 
@@ -588,6 +588,10 @@ void CGuideTree::PreComuteImageDimensions()
 
 void CGuideTree::x_CreateLayout(void)
 {
+    if (m_PhyloTreeScheme.Empty()) {
+        PreComputeImageDimensions();
+    }
+
     // Creating pane
     m_Pane.reset(new CGlPane());
 

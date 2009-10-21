@@ -86,11 +86,11 @@ void CGuideTreeApplication::Init(void)
     arg_desc->AddKey("o", "filename", "File name",
                      CArgDescriptions::eOutputFile);
 
-    arg_desc->AddDefaultKey("type", "type", "Type of input data: seq-annot"
-                            " or tree", CArgDescriptions::eString, "seqannot");
+    arg_desc->AddDefaultKey("type", "type", "Type of input data",
+                            CArgDescriptions::eString, "seqalign");
 
-    arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "seqannot",
-                                      "seqalign", "tree"));
+    arg_desc->SetConstraint("type", &(*new CArgAllow_Strings, "seqalign",
+                                      "seqalignset", "tree"));
 
     arg_desc->AddOptionalKey("query", "id", "Query sequence id",
                              CArgDescriptions::eString);
@@ -161,6 +161,9 @@ void CGuideTreeApplication::Init(void)
     arg_desc->AddDefaultKey("height", "num", "Image height",
                             CArgDescriptions::eInteger, "600");
 
+    arg_desc->AddFlag("best_height", "Use minimal image height so that tree is"
+                      " visible");
+
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -196,7 +199,7 @@ int CGuideTreeApplication::Run(void)
     }
 
     EInput input;
-    if (args["type"].AsString() == "seqAlignSet") {
+    if (args["type"].AsString() == "seqalignset") {
         input = eSeqAlignSet;
     } 
     else if (args["type"].AsString() == "seqalign") {
@@ -360,8 +363,15 @@ int CGuideTreeApplication::Run(void)
     }
 
     if (tree_format == CGuideTree::eImage) {
+        gtree->PreComputeImageDimensions();
         gtree->SetImageWidth(args["width"].AsInteger());
-        gtree->SetImageHeight(args["height"].AsInteger());
+
+        if (args["best_height"]) {
+            gtree->SetImageHeight(gtree->GetMinHeight());
+        }
+        else {
+            gtree->SetImageHeight(args["height"].AsInteger());
+        }
     }
 
     // Write tree in selected format
