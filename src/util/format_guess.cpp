@@ -1037,6 +1037,9 @@ CFormatGuess::TestFormatWiggle(
             if ( NStr::Find( *it, "type=wiggle_0" ) != NPOS ) {
                 return true;
             }
+            if ( NStr::Find( *it, "type=bedGraph" ) != NPOS ) {
+                return true;
+            }
         }
     }
     return false;
