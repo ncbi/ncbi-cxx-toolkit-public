@@ -930,11 +930,11 @@ extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
 extern char* UTIL_NcbiLocalHostName(char* hostname)
 {
     static const struct {
-        const char* text;
-        size_t      len;
+        const char*  text;
+        const size_t len;
     } kEndings[] = {
         { ".ncbi.nlm.nih.gov", 17},
-        { ".ncbi.nih.gov", 13}
+        { ".ncbi.nih.gov",     13}
     };
     size_t len = hostname ? strlen(hostname) : 0;
 
