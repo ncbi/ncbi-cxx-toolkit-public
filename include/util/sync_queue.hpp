@@ -744,7 +744,7 @@ public:
 /// When access guardian is destroyed all iterator methods will throw
 /// CSyncQueueException.
 template <class Type, class Container, class TNativeIterator>
-class CSyncQueue_I : CSyncQueue_I_Base<Type, Container>
+class CSyncQueue_I : public CSyncQueue_I_Base<Type, Container>
 {
 public:
     /// Short name for this type
