@@ -198,6 +198,76 @@
         <key>productName</key>
         <string>CONFIGURE</string>
       </dict>
+      <key>CONFIGURE_DIALOG_Build_Configuration_DebugDLL</key>
+      <dict>
+        <key>buildSettings</key>
+        <dict>
+          <key>PRODUCT_NAME</key>
+          <string>CONFIGURE_DIALOG</string>
+        </dict>
+        <key>isa</key>
+        <string>XCBuildConfiguration</string>
+        <key>name</key>
+        <string>DebugDLL</string>
+      </dict>
+      <key>CONFIGURE_DIALOG_Build_Configuration_ReleaseDLL</key>
+      <dict>
+        <key>buildSettings</key>
+        <dict>
+          <key>PRODUCT_NAME</key>
+          <string>CONFIGURE_DIALOG</string>
+        </dict>
+        <key>isa</key>
+        <string>XCBuildConfiguration</string>
+        <key>name</key>
+        <string>ReleaseDLL</string>
+      </dict>
+      <key>CONFIGURE_DIALOG_Build_Configurations</key>
+      <dict>
+        <key>buildConfigurations</key>
+        <array>
+          <string>CONFIGURE_DIALOG_Build_Configuration_DebugDLL</string>
+          <string>CONFIGURE_DIALOG_Build_Configuration_ReleaseDLL</string>
+        </array>
+        <key>defaultConfigurationIsVisible</key>
+        <string>0</string>
+        <key>defaultConfigurationName</key>
+        <string>ReleaseDLL</string>
+        <key>isa</key>
+        <string>XCConfigurationList</string>
+      </dict>
+      <key>CONFIGURE_DIALOG_script</key>
+      <dict>
+        <key>files</key>
+        <array></array>
+        <key>inputPaths</key>
+        <array></array>
+        <key>outputPaths</key>
+        <array></array>
+        <key>isa</key>
+        <string>PBXShellScriptBuildPhase</string>
+        <key>shellPath</key>
+        <string>/bin/sh</string>
+        <key>shellScript</key>
+        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export PTB_PATH=../static/bin/ReleaseDLL&#xa;export SLN_PATH=ncbi_gui_dll&#xa;export TREE_ROOT=../../..&#xa;export BUILD_TREE_ROOT=..&#xa;UtilityProjects/configure_gui_ncbi_gui_dll.sh</string>
+      </dict>
+      <key>CONFIGURE_DIALOG_target</key>
+      <dict>
+        <key>buildConfigurationList</key>
+        <string>CONFIGURE_DIALOG_Build_Configurations</string>
+        <key>buildPhases</key>
+        <array>
+          <string>CONFIGURE_DIALOG_script</string>
+        </array>
+        <key>dependencies</key>
+        <array></array>
+        <key>isa</key>
+        <string>PBXAggregateTarget</string>
+        <key>name</key>
+        <string>CONFIGURE_DIALOG</string>
+        <key>productName</key>
+        <string>CONFIGURE_DIALOG</string>
+      </dict>
       <key>ROOT_OBJECT</key>
       <dict>
         <key>buildConfigurationList</key>
@@ -216,6 +286,7 @@
         <string></string>
         <key>targets</key>
         <array>
+          <string>CONFIGURE_DIALOG_target</string>
           <string>CONFIGURE_target</string>
         </array>
       </dict>
