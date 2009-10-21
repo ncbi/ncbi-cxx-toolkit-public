@@ -608,7 +608,6 @@ CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
     x_CheckDBInitialized(guard_existed, reinit_mode,
                          reg.GetBool(section, kNCStorage_DropDirtyParam,
                                      false, 0, IRegistry::eErrPost));
-    x_CheckPartsMinBlobId();
 
     m_LastDeadTime = int(time(NULL));
     if (m_DBParts.empty()) {
@@ -617,7 +616,10 @@ CNCBlobStorage::CNCBlobStorage(const IRegistry& reg,
     else {
         ITERATE(TNCDBPartsList, it, m_DBParts) {
             x_InitFilesPool(*it);
+            CNCFileSystem::SetFileInitialized(it->meta_file);
+            CNCFileSystem::SetFileInitialized(it->data_file);
         }
+        x_CheckPartsMinBlobId();
         x_ReadLastBlobCoords();
     }
     x_SetNotCachedPartId(m_LastBlob.blob_id == 0? -1: m_LastBlob.part_id);

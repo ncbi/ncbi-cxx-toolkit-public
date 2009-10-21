@@ -965,6 +965,9 @@ void
 CNCFileSystem::SetFileInitialized(const string& file_name)
 {
     CNCFSOpenFile* file = FindOpenFile(file_name.c_str());
+    if (!file) {
+        file = OpenNewDBFile(file_name);
+    }
     _ASSERT(file);
     file->m_Initialized = true;
 }
