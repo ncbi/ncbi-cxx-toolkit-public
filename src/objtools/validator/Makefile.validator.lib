@@ -8,4 +8,4 @@ SRC = validator validatorp valid_biosource valid_pub validerror_align validerror
       validerror_feat validerror_graph utilities
 LIB = xvalidate
 
-ASN_DEP = general biblio pub seq seqset submit taxon3 valerr
+ASN_DEP = general biblio pub seq seqset submit taxon3 valerr valid
