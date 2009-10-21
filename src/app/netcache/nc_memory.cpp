@@ -3156,10 +3156,40 @@ operator delete[] (void* ptr)
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
 
+#ifdef NCBI_COMPILER_GCC
+// glibc has special method of overriding C library allocation functions.
+
+#include <malloc.h>
+
+
+void* s_NCMallocHook(size_t size, const void* caller)
+{
+    return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
+}
+
+void* s_NCReallocHook(void* mem_ptr, size_t size, const void* caller)
+{
+    return NCBI_NS_NCBI::CNCMMCentral::ReallocMemory(mem_ptr, size);
+}
+
+void s_NCFreeHook(void* mem_ptr, const void* caller)
+{
+    NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(mem_ptr);
+}
+
+void s_NCInitMallocHook(void)
+{
+    __malloc_hook  = s_NCMallocHook;
+    __realloc_hook = s_NCReallocHook;
+    __free_hook    = s_NCFreeHook;
+}
+
+void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
+
+#elif !defined(NCBI_OS_MSWIN)
 // Changing of C library allocation functions on Windows is very tricky (if
 // possible at all) and NetCache will never run in production on Windows. So
 // let's just avoid not necessary headache.
-#ifndef NCBI_OS_MSWIN
 
 void*
 malloc(size_t size)
@@ -3174,9 +3204,9 @@ free(void* ptr)
 }
 
 void*
-realloc(void* ptr, size_t new_size)
+realloc(void* mem_ptr, size_t new_size)
 {
-    return NCBI_NS_NCBI::CNCMMCentral::ReallocMemory(ptr, new_size);
+    return NCBI_NS_NCBI::CNCMMCentral::ReallocMemory(mem_ptr, new_size);
 }
 
 void*

@@ -538,6 +538,10 @@ public:
     /// Notify file system that given file should be deleted after last
     /// connection to it is closed.
     static void DeleteFileOnClose(const string& file_name);
+    /// Notify file system that given file is initialized and no significant
+    /// changes will be made to the first page of the file in the future. This
+    /// allows to do some good optimizations in file system work.
+    static void SetFileInitialized(const string& file_name);
 
 public:
     // For use only internally in nc_db_files.cpp
@@ -657,6 +661,9 @@ private:
     Int8            m_Size;
     /// Flag showing that file should be deleted from disk when it's closed.
     bool            m_DeleteOnClose;
+    /// Flag showing if initialization of the file schema is done and no
+    /// significant changes to the first page will be made furthermore.
+    bool            m_Initialized;
 };
 
 

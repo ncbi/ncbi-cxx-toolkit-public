@@ -377,19 +377,26 @@ CSQLITE_HandleFactory::CreateObject(void)
         vfs = SQLITEASYNC_VFSNAME;
     }
 #endif
-    SQLITE_SAFE_CALL((sqlite3_open_v2(m_Conn->GetFileName().c_str(),
-                                      &result,
-                                      SQLITE_OPEN_READWRITE
-                                            | SQLITE_OPEN_CREATE
-                                            | SQLITE_OPEN_NOMUTEX,
-                                      vfs)),
-                     result, eDBOpen,
-                     "Error opening database '"
-                                      << m_Conn->GetFileName() << "'"
-                    );
-    _ASSERT(sql_ret == SQLITE_OK);
-    m_Conn->SetupNewConnection(result);
-    return result;
+    try {
+        SQLITE_SAFE_CALL((sqlite3_open_v2(m_Conn->GetFileName().c_str(),
+                                          &result,
+                                          SQLITE_OPEN_READWRITE
+                                                | SQLITE_OPEN_CREATE
+                                                | SQLITE_OPEN_NOMUTEX,
+                                          vfs)),
+                         result, eDBOpen,
+                         "Error opening database '"
+                                          << m_Conn->GetFileName() << "'"
+                        );
+        _ASSERT(sql_ret == SQLITE_OK);
+        m_Conn->SetupNewConnection(result);
+        return result;
+    }
+    catch (CException& ex) {
+        if (result)
+            sqlite3_close(result);
+        throw;
+    }
 }
 
 void

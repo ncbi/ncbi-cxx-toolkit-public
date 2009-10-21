@@ -347,12 +347,9 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
             m_Host = hostname;
         }
     } else {
-        unsigned int hostaddr = SOCK_HostToNetLong(SOCK_gethostbyname(0));
+        unsigned int host = SOCK_gethostbyname(0);
         char ipaddr[32];
-        sprintf(ipaddr, "%u.%u.%u.%u", (hostaddr >> 24) & 0xff,
-                                       (hostaddr >> 16) & 0xff,
-                                       (hostaddr >> 8)  & 0xff,
-                                        hostaddr        & 0xff);
+        SOCK_ntoa(host, ipaddr, sizeof(ipaddr)-1);
         m_Host = ipaddr;
     }
 

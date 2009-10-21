@@ -418,8 +418,10 @@ private:
     /// created too long ago (more than m_DBRotatePeriod) then new database
     /// part is created and becomes current. But only if current part contains
     /// any information (even about "non-exiting" blobs) otherwise its
-    /// creation time is just changing giving a second life to the part.
-    void x_RotateDBParts(void);
+    /// creation time is just changing giving a second life to the part. Also
+    /// rotation can be forced with parameter equal TRUE. In this case
+    /// conditions of containing data and too old creation are not checked.
+    void x_RotateDBParts(bool force_rotate = false);
 
     /// Get id of the database part which is now in process of filling the
     /// cache. Cache is filled in the order of most recent part to most old

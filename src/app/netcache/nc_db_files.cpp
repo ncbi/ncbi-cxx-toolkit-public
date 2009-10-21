@@ -762,7 +762,8 @@ CNCFSOpenFile::CNCFSOpenFile(const string& file_name, bool force_sync_io)
       m_ForcedSync(force_sync_io),
       m_RealFile(NULL),
       m_FirstPage(NULL),
-      m_DeleteOnClose(false)
+      m_DeleteOnClose(false),
+      m_Initialized(false)
 {
     if (force_sync_io)
         return;
@@ -772,16 +773,13 @@ CNCFSOpenFile::CNCFSOpenFile(const string& file_name, bool force_sync_io)
     int out_flags   = 0;
     int ret = CNCFileSystem::OpenRealFile(&m_RealFile, file_name.c_str(),
                                           flags, &out_flags);
-    if (ret != SQLITE_OK)
-    {
-        NCBI_THROW(CSQLITE_Exception, eUnknown,
-                   "Error opening database file: " + NStr::IntToString(ret));
+    if (ret != SQLITE_OK) {
+        ERR_POST(Fatal << "Error opening database file: " << ret);
     }
     sqlite3_int64 size;
     ret = m_RealFile->pMethods->xFileSize(m_RealFile, &size);
     if (ret != SQLITE_OK) {
-        NCBI_THROW(CSQLITE_Exception, eUnknown,
-                   "Error reading database size: " + NStr::IntToString(ret));
+        ERR_POST(Fatal << "Error reading database size: " << ret);
     }
     m_Size = size;
 
@@ -789,8 +787,7 @@ CNCFSOpenFile::CNCFSOpenFile(const string& file_name, bool force_sync_io)
     ret = m_RealFile->pMethods->xRead(m_RealFile, m_FirstPage,
                                       kNCSQLitePageSize, 0);
     if (ret != SQLITE_OK  &&  ret != SQLITE_IOERR_SHORT_READ) {
-        NCBI_THROW(CSQLITE_Exception, eUnknown,
-                   "Error reading database: " + NStr::IntToString(ret));
+        ERR_POST(Fatal << "Error reading database: " << ret);
     }
 }
 
@@ -811,6 +808,9 @@ CNCFSOpenFile::ReadFirstPage(Int8 offset, int cnt, void* mem_ptr)
         Int8 left_cnt = m_Size - offset;
         if (left_cnt < copy_cnt)
             copy_cnt = int(left_cnt);
+        /*if (offset != 24 || cnt != 16) {
+            LOG_POST("Reading first page " << cnt << " at " << offset);
+        }*/
         memcpy(mem_ptr, &m_FirstPage[offset], copy_cnt);
         cnt -= copy_cnt;
         mem_ptr = static_cast<char*>(mem_ptr) + copy_cnt;
@@ -828,8 +828,19 @@ inline void
 CNCFSOpenFile::WriteFirstPage(Int8 offset, const void** data, int cnt)
 {
     _ASSERT(offset <= m_Size  &&  offset < kNCSQLitePageSize);
+    _ASSERT(offset == 0  &&  cnt == kNCSQLitePageSize);
 
-    memcpy(&m_FirstPage[offset], *data, cnt);
+    if (m_Initialized) {
+        // Only 16 bytes at offset of 24 bytes in first page of the database
+        // are constantly re-read and re-written by SQLite. Everything else is
+        // initialized at the database creation, is not changed furthermore
+        // and during work is stored in database cache. So we save time spent
+        // in memcpy() and copy only these "magic" 16 bytes.
+        memcpy(&m_FirstPage[24], static_cast<const char*>(*data) + 24, 16);
+    }
+    else {
+        memcpy(&m_FirstPage[offset], *data, cnt);
+    }
     *data = &m_FirstPage[offset];
 }
 
@@ -948,6 +959,14 @@ CNCFileSystem::DeleteFileOnClose(const string& file_name)
         // NetCache version.
         CFile(file_name + "-journal").Remove();
     }
+}
+
+void
+CNCFileSystem::SetFileInitialized(const string& file_name)
+{
+    CNCFSOpenFile* file = FindOpenFile(file_name.c_str());
+    _ASSERT(file);
+    file->m_Initialized = true;
 }
 
 inline void
