@@ -3156,7 +3156,7 @@ operator delete[] (void* ptr)
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
 
-#ifdef NCBI_COMPILER_GCC
+#ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
 
 #include <malloc.h>
