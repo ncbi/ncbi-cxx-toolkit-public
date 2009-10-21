@@ -228,6 +228,14 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
 
     s_MakeBioseqs(seqlocs, scope, bioseqs);
     BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
+
+    // A gap in input sequence causes exception
+    ReadFastaQueries("data/queries_with_gaps.fa", *objmgr, seqlocs, scope);
+    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, scope),
+                      CMultiAlignerException);
+
+    s_MakeBioseqs(seqlocs, scope, bioseqs);
+    BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
 }
 
 

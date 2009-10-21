@@ -279,6 +279,12 @@ public:
 
 protected:
 
+    /// Validate query sequences. Check for gaps in sequences. Throws if
+    /// queries do not pass validation.
+    /// @return True if validation passed
+    ///
+    bool x_ValidateQueries(void) const;
+
     /// Validate user constraints with queries. Throws if constraints do not
     /// pass validation.
     /// @return True if validation passed

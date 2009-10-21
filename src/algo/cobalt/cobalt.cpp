@@ -113,6 +113,21 @@ void CMultiAligner::x_InitAligner(void)
 }
 
 
+bool CMultiAligner::x_ValidateQueries(void) const
+{
+    ITERATE (vector<CSequence>, it, m_QueryData) {
+        const unsigned char* sequence = it->GetSequence();
+        for (int i=0;i < it->GetLength();i++) {
+            if (sequence[i] == CSequence::kGapChar) {
+                NCBI_THROW(CMultiAlignerException, eInvalidInput, "Gaps in "
+                           "input sequences are not allowed");
+            }
+        }
+    }
+
+    return true;
+}
+
 bool CMultiAligner::x_ValidateUserHits(void)
 {
     for (int i = 0; i < m_UserHits.Size(); i++) {
@@ -166,6 +181,7 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CSeq_loc> >& queries,
         m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
 
+    x_ValidateQueries();
     x_ValidateUserHits();
     Reset();
 }
@@ -210,6 +226,7 @@ CMultiAligner::SetQueries(const vector< CRef<objects::CBioseq> >& queries)
         m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
 
+    x_ValidateQueries();
     x_ValidateUserHits();
     Reset();
 }
@@ -243,6 +260,7 @@ void CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
         m_QueryData.push_back(CSequence(**itr, *m_Scope));
     }
 
+    x_ValidateQueries();
     x_ValidateUserHits();
     Reset();
 }
