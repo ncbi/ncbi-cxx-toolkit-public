@@ -1138,7 +1138,7 @@ void
 CNCMMChunksPool::x_CleanPoolSpace(void)
 {
     const unsigned int half_size = kNCMMCntChunksInPool / 2;
-    if (m_PutPtr - m_Chunks >= half_size) {
+    if (static_cast<unsigned int>(m_PutPtr - m_Chunks) >= half_size) {
         m_PutPtr -= half_size;
         CNCMMReserve::DumpChunks(m_PutPtr, half_size);
     }
@@ -1154,7 +1154,7 @@ CNCMMChunksPool::x_CleanPoolSpace(void)
 void
 CNCMMChunksPool::x_ReleaseAllChunks(void)
 {
-    unsigned int cnt_chunks;
+    unsigned int cnt_chunks = 0;
     if (m_PutPtr > m_GetPtr) {
         cnt_chunks = static_cast<unsigned int>(m_PutPtr - m_GetPtr);
         CNCMMReserve::DumpChunks(m_GetPtr, cnt_chunks);
@@ -1172,7 +1172,8 @@ CNCMMChunksPool::x_ReleaseAllChunks(void)
     }
     m_GetPtr = m_PutPtr = &m_Chunks[0];
 
-    CNCMMStats::ChunksPoolCleaned(cnt_chunks);
+    if (cnt_chunks)
+        CNCMMStats::ChunksPoolCleaned(cnt_chunks);
 }
 
 inline void*

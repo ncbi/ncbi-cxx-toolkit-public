@@ -477,6 +477,9 @@ CNCBlobStorage::x_CreateNewDBPart(void)
     // deal and cleaning just harm code clearness.
     x_InitFilesPool(part_info);
     x_CreateNewDBStructure(part_id);
+    CNCFileSystem::SetFileInitialized(meta_name);
+    CNCFileSystem::SetFileInitialized(data_name);
+
     // No need of mutex on using index database because it is used only in one
     // background thread (after using in constructor).
     m_IndexDB->CreateDBPart(&part_info);
@@ -512,21 +515,27 @@ CNCBlobStorage::x_SetNotCachedPartId(TNCDBPartId part_id)
 }
 
 inline void
-CNCBlobStorage::x_RotateDBParts(void)
+CNCBlobStorage::x_RotateDBParts(bool force_rotate /* = false */)
 {
     SNCDBPartInfo& last_part = m_DBParts.back();
-    if (int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
+    if (!force_rotate
+        &&  int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
+    {
         return;
+    }
 
     bool need_create_new = true;
-    try {
-        TMetaFileLock metafile(this, last_part);
-        need_create_new = metafile->HasAnyBlobs();
-    }
-    catch (exception& ex) {
-        CQuickStrStream msg;
-        msg << "BG: Error reading information from part " << last_part.part_id;
-        x_MonitorError(ex, msg);
+    if (!force_rotate) {
+        try {
+            TMetaFileLock metafile(this, last_part);
+            need_create_new = metafile->HasAnyBlobs();
+        }
+        catch (exception& ex) {
+            CQuickStrStream msg;
+            msg << "BG: Error reading information from part "
+                << last_part.part_id;
+            x_MonitorError(ex, msg);
+        }
     }
     if (need_create_new) {
         try {
@@ -559,7 +568,7 @@ CNCBlobStorage::x_ReadLastBlobCoords(void)
     }
     catch (exception& ex) {
         x_MonitorError(ex, "Error reading information from last part");
-        x_RotateDBParts();
+        x_RotateDBParts(true);
     }
     if (m_LastBlob.blob_id == 0) {
         // min_blob_id is guaranteed to be correctly set because of

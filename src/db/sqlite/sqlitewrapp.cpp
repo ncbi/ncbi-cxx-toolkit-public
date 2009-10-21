@@ -392,7 +392,7 @@ CSQLITE_HandleFactory::CreateObject(void)
         m_Conn->SetupNewConnection(result);
         return result;
     }
-    catch (CException& ex) {
+    catch (CException&) {
         if (result)
             sqlite3_close(result);
         throw;
