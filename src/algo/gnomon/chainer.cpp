@@ -2148,7 +2148,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
     chainer->SetMinPolyA(args["minpolya"].AsInteger());
     chainer->SetAlignLimit(args["alignlimit"].AsInteger());
 
-    SMinScor minscor = chainer->SetMinScor();
+    SMinScor& minscor = chainer->SetMinScor();
     minscor.m_min = args["minscor"].AsDouble();
     minscor.m_i5p_penalty = args["i5p"].AsDouble();
     minscor.m_i3p_penalty = args["i3p"].AsDouble();
