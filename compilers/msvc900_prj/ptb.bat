@@ -46,19 +46,21 @@ for %%v in ("%PTB_PATH%" "%SLN_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PL
     exit /b 1
   )
 )
+set PTBGUI="%TREE_ROOT%\src\build-system\project_tree_builder_gui\bin\ptbgui.jar"
+set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
+set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
 set DEFPTB_VERSION=
-set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
 if exist "%DEFPTB_VERSION_FILE%" (
-  for /f %%a in ('type "%DEFPTB_VERSION_FILE%"') do (set DEFPTB_VERSION=%%a & goto donedf)
+  for /f %%a in ('type "%DEFPTB_VERSION_FILE%"') do (set DEFPTB_VERSION=%%a& goto donedf)
   :donedf
   set DEFPTB_VERSION=%DEFPTB_VERSION: =%
 )
 if exist "%PREBUILT_PTB_EXE%" (
   set ptbver=
-  for /f "tokens=2" %%a in ('"%PREBUILT_PTB_EXE%" -version') do (set ptbver=%%a & goto donepb)
+  for /f "tokens=2" %%a in ('"%PREBUILT_PTB_EXE%" -version') do (set ptbver=%%a& goto donepb)
   :donepb
   set ptbver=%ptbver: =%
   if not "%DEFPTB_VERSION%"=="%ptbver%" (
@@ -71,7 +73,32 @@ if "%DEFPTB_VERSION%"=="" (
   echo ERROR: DEFPTB_VERSION not specified
   exit /b 1
 )
-for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do set PTB_VER=%%a%%b%%c
+for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do (set PTB_VER=%%a%%b%%c& set PTB_VER_MAJOR=%%a)
+
+set REQ_GUI_CFG=NO
+set USE_GUI_CFG=NO
+for /f "tokens=*" %%i in ('echo %PTB_FLAGS%') do call :PARSE %%i
+goto :endparse
+:PARSE
+if "%1"=="" goto :eof
+if "%1"=="-cfg" (set REQ_GUI_CFG=YES& goto :eof)
+shift
+goto :PARSE
+:endparse
+if "%REQ_GUI_CFG%"=="YES" (
+  if %PTB_VER_MAJOR% GEQ 2 (
+    if exist "%PTBGUI%" (
+      java -version >NUL 2>&1
+      if errorlevel 1 (
+        echo WARNING: Java not found, cannot run configuration GUI
+      ) else (
+        set USE_GUI_CFG=YES
+      )
+    ) else (
+      echo WARNING: "%PTBGUI%" not found
+    )
+  )
+)
 if %PTB_VER% GEQ 180 (
   set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
 )
@@ -102,7 +129,6 @@ if exist "%DEF_PTB%" (
   set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
 )
 
-set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
 if not exist "%PTB_INI%" (
   echo ERROR: "%PTB_INI%" not found
   exit /b 1
@@ -117,7 +143,6 @@ if not exist "%PTB_EXE%" (
   rem --- msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
   @echo %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
   %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
-
 ) else (
   echo ******************************************************************************
   echo Using PREBUILT project tree builder at %PTB_EXE%
@@ -139,9 +164,13 @@ if errorlevel 1 exit /b 1
 echo ******************************************************************************
 echo Running -CONFIGURE- please wait
 echo ******************************************************************************
-@echo on
-"%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
-@echo off
+if "%USE_GUI_CFG%"=="YES" (
+  java -jar "%PTBGUI%" "%PTB_EXE%" -i %PTB_FLAGS% %PTB_EXTRA% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+) else (
+  @echo on
+  "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+  @echo off
+)
 if errorlevel 1 (set PTB_RESULT=1) else (set PTB_RESULT=0)
 
 call "%BUILD_TREE_ROOT%\lock_ptb_config.bat" OFF "%BUILD_TREE_ROOT%\"
