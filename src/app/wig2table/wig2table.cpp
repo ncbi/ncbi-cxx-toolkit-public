@@ -339,8 +339,49 @@ class CWig2tableApplication : public CNcbiApplication
     struct SStat {
         bool m_FixedSpan;
         bool m_HaveGaps;
+        bool m_IntValues;
         TSeqPos m_Span;
         double m_Min, m_Max, m_Step, m_StepMul;
+
+        SStat(void)
+            : m_FixedSpan(true),
+              m_HaveGaps(false),
+              m_IntValues(true),
+              m_Span(1),
+              m_Min(0),
+              m_Max(0),
+              m_Step(1),
+              m_StepMul(1)
+            {
+            }
+        void SetFirstSpan(TSeqPos span)
+            {
+                m_FixedSpan = true;
+                m_Span = span;
+            }
+        void AddSpan(TSeqPos span)
+            {
+                if ( span != m_Span ) {
+                    m_FixedSpan = false;
+                }
+            }
+        void SetFirstValue(double v)
+            {
+                m_Min = m_Max = v;
+                m_IntValues = v == int(v);
+            }
+        void AddValue(double v)
+            {
+                if ( v < m_Min ) {
+                    m_Min = v;
+                }
+                if ( v > m_Max ) {
+                    m_Max = v;
+                }
+                if ( m_IntValues && v != int(v) ) {
+                    m_IntValues = false;
+                }
+            }
         int AsByte(double v) const
             {
                 return int((v-m_Min)*m_StepMul+.5);
@@ -466,26 +507,15 @@ double CWig2tableApplication::EstimateSize(size_t rows, bool fixed_span) const
 CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
 {
     SStat stat;
-    stat.m_Span = 1;
-    stat.m_Min = stat.m_Max = 0;
-    stat.m_Step = stat.m_StepMul = 1;
-    stat.m_FixedSpan = true;
-    stat.m_HaveGaps = false;
-    bool sorted = true, int_values = m_KeepInteger;
-
+    bool sorted = true;
     size_t size = m_Values.size();
     if ( size ) {
-        TSeqPos span = m_Values[0].m_Span;
-        double v = m_Values[0].m_Value;
+        stat.SetFirstSpan(m_Values[0].m_Span);
+        stat.SetFirstValue(m_Values[0].m_Value);
 
-        stat.m_Span = span;
-        stat.m_Min = stat.m_Max = v;
-        
         for ( size_t i = 1; i < size; ++i ) {
-            span = m_Values[i].m_Span;
-            if ( span != stat.m_Span ) {
-                stat.m_FixedSpan = false;
-            }
+            stat.AddSpan(m_Values[i].m_Span);
+            stat.AddValue(m_Values[i].m_Value);
             if ( sorted ) {
                 if ( m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
                     sorted = false;
@@ -493,16 +523,6 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
                 if ( m_Values[i].m_Pos != m_Values[i-1].GetEnd() ) {
                     stat.m_HaveGaps = true;
                 }
-            }
-            v = m_Values[i].m_Value;
-            if ( v < stat.m_Min ) {
-                stat.m_Min = v;
-            }
-            if ( v > stat.m_Max ) {
-                stat.m_Max = v;
-            }
-            if ( int_values && v != int(v) ) {
-                int_values = false;
             }
         }
     }
@@ -516,21 +536,13 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
             }
         }
     }
-    if ( stat.m_HaveGaps ) {
-        if ( int_values && m_GapValue != int(m_GapValue) ) {
-            int_values = false;
-        }
-        if ( m_GapValue < stat.m_Min ) {
-            stat.m_Min = m_GapValue;
-        }
-        if ( m_GapValue > stat.m_Max ) {
-            stat.m_Max = m_GapValue;
-        }
+    if ( m_AsGraph && stat.m_HaveGaps ) {
+        stat.AddValue(m_GapValue);
     }
 
     const int range = 255;
     if ( stat.m_Max > stat.m_Min &&
-         (!int_values || stat.m_Max-stat.m_Min > range) ) {
+         (!stat.m_IntValues || stat.m_Max-stat.m_Min > range) ) {
         stat.m_Step = (stat.m_Max-stat.m_Min)/range;
         stat.m_StepMul = 1/stat.m_Step;
     }
@@ -647,7 +659,7 @@ CRef<CSeq_table> CWig2tableApplication::MakeTable(void)
     if ( stat.m_HaveGaps ) {
         CRef<CSeqTable_column> col_step(new CSeqTable_column);
         table->SetColumns().push_back(col_step);
-        col_step->SetHeader().SetField_name("gap_value");
+        col_step->SetHeader().SetField_name("value_gap");
         col_step->SetDefault().SetReal(m_GapValue);
     }
 
