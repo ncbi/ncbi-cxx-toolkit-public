@@ -1165,9 +1165,11 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         while (i >= 0 && right_end_order[i]->Exons().size() == 1 && pos < right_end_order[i]->Limits().GetTo())
             --i;    // only single-exon alignments extend complete alignments
         
-        if (right_end_order[i]->Limits().GetTo()-fuzz < pos &&
-            right_end_order[i]->Limits().GetTo() < Limits().GetTo()) {
-            clip_range.Set(pos+1, Limits().GetTo());
+        if (right_end_order[i]->Limits().GetTo()-fuzz < pos) {
+            Status() |= determinant;
+            if(right_end_order[i]->Limits().GetTo() < Limits().GetTo()) {
+                clip_range.Set(pos+1, Limits().GetTo());
+            }
         }
     } else
     if (Strand() != right_end_strand &&
@@ -1181,18 +1183,20 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         while (i < num && left_end_order[i]->Exons().size() == 1 && pos > left_end_order[i]->Limits().GetFrom())
             ++i ;    // only single-exon alignments extend complete alignments
         
-        if (pos < left_end_order[i]->Limits().GetFrom()+fuzz &&
-            left_end_order[i]->Limits().GetFrom() > Limits().GetFrom()) {
-            clip_range.Set(Limits().GetFrom(), pos-1);
+        if (pos < left_end_order[i]->Limits().GetFrom()+fuzz) {
+            Status() |= determinant;
+            if (left_end_order[i]->Limits().GetFrom() > Limits().GetFrom()) {
+                clip_range.Set(Limits().GetFrom(), pos-1);
+            }
         }
     }
 
     if (clip_range.NotEmpty()) {
-        Status() |= determinant;
         AddComment(name+"clip");
         CutExons(clip_range);
         RecalculateLimits();
-    } else {
+    } 
+    if((Status()&determinant) == 0) {
         AddComment("lost"+name);
     }
 }        
@@ -2031,6 +2035,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TAlignModelList& alignments)
             polyalen < minpolya) {
             i->Status() ^= CGeneModel::ePolyA;
         }
+
         CAlignModel aa = *i;
         ProjectCDS_ConvertToGeneModel(mrnaCDS, aa);
         models.push_back(aa);
