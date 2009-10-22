@@ -1326,27 +1326,40 @@ void SplitExon(CSpliced_seg::TExons& exons, TAliChunkIterator chunk_iter, bool g
 void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope, const string& matrix_name) {
     CProSplignText pro_text(scope, seq_align, matrix_name);
     const string& prot = pro_text.GetProtein();
+    const string& dna = pro_text.GetDNA();
     const string& match = pro_text.GetMatch();
-    int pos = 0, ident = 0, len = 0;
+    const string& trans = pro_text.GetTranslation();
+    int pos = 0, ident = 0, len = 0, neg = 0, pgap = 0, ngap = 0;
     for(string::size_type i=0;i<match.size(); ++i) {
-        if(prot[i] != '.') {
+        if( (prot[i] != '.') && (match[i] != 'X') ) {//skip introns and bad parts
             ++len;
-            bool triple = isupper(prot[i]);
-            switch(match[i]) {
-            case '|':
-                if(triple) ident +=3;
-                else ++ident;
-            case '+':
-                if(triple) pos +=3;
-                else ++pos;
-                break;
-            default:
-                break;
+            if(prot[i] == '-') {
+                ++pgap;
+            } else if(dna[i] == '-') {
+                ++ngap;
+            } else if(isalpha(prot[i])) {
+                bool triple = isupper(prot[i]);
+                switch(match[i]) {
+                case '|':
+                    if(triple) ident +=3;
+                    else ++ident;
+                case '+':
+                    if(triple) pos +=3;
+                    else ++pos;
+                    break;
+                default://mismatch
+                    if(triple) neg +=3;
+                    else ++neg;
+                    break;
+                }
             }
         }
     }
     seq_align.SetNamedScore("N of matches", ident);
     seq_align.SetNamedScore("N of positives", pos);
+    seq_align.SetNamedScore("N of negatives", neg);
+    seq_align.SetNamedScore("total gap length in protein", pgap);
+    seq_align.SetNamedScore("total gap length in DNA", ngap);
     seq_align.SetNamedScore("alignment length", len);
 }
 
