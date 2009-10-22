@@ -1515,7 +1515,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // number of threads
     arg_desc.SetCurrentGroup("Miscellaneous options");
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
-                           "Number of threads to use in the BLAST search",
+                           "Number of threads (CPUs) to use in the BLAST search",
                            CArgDescriptions::eInteger, 
                            NStr::IntToString(kMinValue));
     arg_desc.SetConstraint(kArgNumThreads, 
