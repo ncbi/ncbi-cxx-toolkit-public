@@ -1628,11 +1628,10 @@ static unsigned short x_GetLocalPort(TSOCK_Handle fd)
 #ifdef HAVE_SIN_LEN
     addr.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
-    if (getsockname(fd, (struct sockaddr*) &addr, &addrlen) == 0) {
-        assert(addr.sin_family == AF_INET);
-        return ntohs(addr.sin_port);
-    }
-    return 0;
+    if (getsockname(fd, (struct sockaddr*) &addr, &addrlen) < 0)
+        return 0;
+    assert(addr.sin_family == AF_INET);
+    return ntohs(addr.sin_port);
 }
 
 
@@ -5008,7 +5007,8 @@ extern unsigned short SOCK_GetLocalPort(SOCK          sock,
 
     if (!sock->myport)
         sock->myport = x_GetLocalPort(sock->sock);
-    return byte_order != eNH_HostByteOrder? htons(sock->myport) : sock->myport;
+    return
+        byte_order != eNH_HostByteOrder ? htons(sock->myport) : sock->myport;
 }
 
 
