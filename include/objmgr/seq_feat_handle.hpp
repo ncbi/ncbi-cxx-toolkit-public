@@ -358,7 +358,7 @@ const CFeat_id& CSeq_feat_Handle::GetId(void) const
 inline
 const CSeqFeatData& CSeq_feat_Handle::GetData(void) const
 {
-    return x_GetPlainSeq_feat().GetData();
+    return GetSeq_feat()->GetData();
 }
 
 
@@ -408,7 +408,7 @@ bool CSeq_feat_Handle::IsSetQual(void) const
 inline
 const CSeq_feat::TQual& CSeq_feat_Handle::GetQual(void) const
 {
-    return x_GetPlainSeq_feat().GetQual();
+    return GetSeq_feat()->GetQual();
 }
 
 
@@ -436,7 +436,7 @@ bool CSeq_feat_Handle::IsSetExt(void) const
 inline
 const CUser_object& CSeq_feat_Handle::GetExt(void) const
 {
-    return x_GetPlainSeq_feat().GetExt();
+    return GetSeq_feat()->GetExt();
 }
 
 
@@ -493,7 +493,7 @@ bool CSeq_feat_Handle::IsSetDbxref(void) const
 inline
 const CSeq_feat::TDbxref& CSeq_feat_Handle::GetDbxref(void) const
 {
-    return x_GetPlainSeq_feat().GetDbxref();
+    return GetSeq_feat()->GetDbxref();
 }
 
 
