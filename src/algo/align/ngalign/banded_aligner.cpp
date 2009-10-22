@@ -416,7 +416,7 @@ void CInstancedAligner::x_RunAligner(objects::CScope& Scope,
         ResultSet->Set().push_back(Result);
 
         ERR_POST(Info << " Found alignment ");
-        cerr << MSerial_AsnText << *Result;
+
 /*
         // CContigAssembly::BestLocalSubAlignmentrescores, and finds better-scoring
         // sub-regions of the Denseg, and keeps only the subregion.
@@ -862,8 +862,14 @@ void CInstancedAligner::x_GetDistanceInstances(CQuerySet& QueryAligns, CScope& S
                         continue;
 
                     // Any Cleaned Seq_align that got this far is a potential instance.
+                    bool Dupe = false;
                     CRef<CInstance> Inst(new CInstance(*AlignIter));
-                    CleanedInstances.push_back(Inst);
+                    ITERATE(vector<CRef<CInstance> >, OldInstIter, CleanedInstances) {
+                        Dupe |= ((*OldInstIter)->Query.Equals(Inst->Query)
+                              && (*OldInstIter)->Subject.Equals(Inst->Subject));
+                    }
+                    if(!Dupe)
+                        CleanedInstances.push_back(Inst);
                 }
             }
         }
