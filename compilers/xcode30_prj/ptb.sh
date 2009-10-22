@@ -47,9 +47,11 @@ for v in "$PTB_PATH" "$SLN_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
     exit 1
   fi
 done
+PTBGUI="${TREE_ROOT}/src/build-system/project_tree_builder_gui/bin/ptbgui.jar"
+DEFPTB_VERSION_FILE="${TREE_ROOT}/src/build-system/ptb_version.txt"
+PTB_INI="${TREE_ROOT}/src/build-system/${ptbname}.ini"
 
 DEFPTB_VERSION=""
-DEFPTB_VERSION_FILE="${TREE_ROOT}/src/build-system/ptb_version.txt"
 if test -r "$DEFPTB_VERSION_FILE"; then
   DEFPTB_VERSION=`cat "$DEFPTB_VERSION_FILE" | sed -e 's/ //g'`
 fi
@@ -62,6 +64,34 @@ if test -x "$PREBUILT_PTB_EXE"; then
 fi
 
 #PTB_VER=`echo $DEFPTB_VERSION | sed -e s/[.]//g`
+verno=`echo $DEFPTB_VERSION | sed -e 's/[.]/ /g'`
+for v in $verno; do
+  PTB_VER_MAJOR=$v
+  break;
+done
+REQ_GUI_CFG="no"
+USE_GUI_CFG="no"
+for v in $PTB_FLAGS; do
+  if test "$v" = "-cfg"; then
+    REQ_GUI_CFG="yes"
+    break;
+  fi
+done
+if test "$REQ_GUI_CFG" = "yes"; then
+  if test $PTB_VER_MAJOR -ge 2; then 
+    if test -e "$PTBGUI"; then 
+      java -version >/dev/null 2>&1
+      if test $? -ne 0; then
+        echo "WARNING: Java not found, cannot run configuration GUI"
+      else
+        USE_GUI_CFG="yes"
+      fi
+    else
+      echo WARNING: $PTBGUI not found
+    fi
+  fi
+fi
+
 test -z "$PTB_PLATFORM" && PTB_PLATFORM=`arch`
 PTB_EXTRA="$PTB_EXTRA -ide $IDE -arch \"$PTB_PLATFORM\""
 
@@ -87,7 +117,6 @@ else
   PTB_EXE="$PTB_PATH/$ptbname"
 fi
 
-PTB_INI="${TREE_ROOT}/src/build-system/${ptbname}.ini"
 if test ! -f "$PTB_INI"; then
   echo "ERROR: $PTB_INI not found"
   exit 1
@@ -120,7 +149,11 @@ echo "==========================================================================
 echo "Running CONFIGURE, please wait."
 echo "$PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH"
 echo "=============================================================================="
-eval $PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
+if test "$USE_GUI_CFG" = "yes"; then
+  eval java -jar $PTBGUI $PTB_EXE -i $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
+else
+  eval $PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
+fi
 if test "$?" -ne 0; then
   PTB_RESULT=1
 else
