@@ -188,10 +188,11 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
     //count 'pseudo' length	
     int len = CountQueryCoverage(hitrefs);
 
-    CCompartmentAccessor<THit> comps ( hitrefs.begin(), hitrefs.end(),
-                                       int(compart_options.m_CompartmentPenalty * len),
+    CCompartmentAccessor<THit> comps ( int(compart_options.m_CompartmentPenalty * len),
                                        int(compart_options.m_MinCompartmentIdty * len),
                                        int(compart_options.m_MinSingleCompartmentIdty * len));
+    comps.SetMaxIntron(compart_options.m_MaxIntron);
+    comps.Run(hitrefs.begin(), hitrefs.end());
 
     THitRefs comphits;
     if(comps.GetFirst(comphits)) {
@@ -286,6 +287,7 @@ TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartO
 const double CCompartOptions::default_CompartmentPenalty = 0.5;
 const double CCompartOptions::default_MinCompartmentIdty = 0.5;
 const double CCompartOptions::default_MinSingleCompartmentIdty = 0.25;
+const int CCompartOptions::default_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
 
 void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
 {
@@ -327,6 +329,13 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eBoolean,
          CCompartOptions::default_ByCoverage?"T":"F");
     
+    argdescr->AddDefaultKey
+        ("max_intron",
+         "integer",
+         "Maximal intron length",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CCompartOptions::default_MaxIntron));
+    
 }
 
 CCompartOptions::CCompartOptions(const CArgs& args) :
@@ -334,7 +343,8 @@ CCompartOptions::CCompartOptions(const CArgs& args) :
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
     m_MinSingleCompartmentIdty(args["min_singleton_idty"].AsDouble()),
     m_MaxExtent(args["max_extent"].AsInteger()),
-    m_ByCoverage(args["by_coverage"].AsBoolean())
+    m_ByCoverage(args["by_coverage"].AsBoolean()),
+    m_MaxIntron(args["max_intron"].AsInteger())
 {
 }
 

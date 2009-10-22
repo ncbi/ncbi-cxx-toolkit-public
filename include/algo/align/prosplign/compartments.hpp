@@ -52,12 +52,14 @@ public:
     double m_MinSingleCompartmentIdty;
     int    m_MaxExtent;
     bool   m_ByCoverage;
+    int    m_MaxIntron;
 
     static const double default_CompartmentPenalty;
     static const double default_MinCompartmentIdty;
     static const double default_MinSingleCompartmentIdty;
     static const int    default_MaxExtent = 500;
     static const bool   default_ByCoverage = true;
+    static const int    default_MaxIntron;
 };
 
 struct SCompartment {
