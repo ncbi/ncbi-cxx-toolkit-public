@@ -505,7 +505,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         http_status = -1;
     if (http_status < 200  ||  299 < http_status) {
         server_error = http_status;
-        if      (http_status == 301  ||  http_status == 302)
+        if (http_status == 301  ||  http_status == 302  ||  http_status == 307)
             retry->mode = eRetry_Redirect;
         else if (http_status == 401)
             retry->mode = eRetry_Authenticate;
@@ -525,7 +525,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             header_header = "HTTP header";
         else if (uuu->flags & fHCC_KeepHeader)
             header_header = "HTTP header (error)";
-        else if (uuu->code == 301  ||  uuu->code == 302)
+        else if (uuu->code == 301  ||  uuu->code == 302  ||  uuu->code == 307)
             header_header = "HTTP header (moved)";
         else if (!uuu->net_info->max_try)
             header_header = "HTTP header (unrecoverable error)";
