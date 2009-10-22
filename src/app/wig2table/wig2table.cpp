@@ -328,6 +328,9 @@ class CWig2tableApplication : public CNcbiApplication
         TSeqPos m_Span;
         double m_Value;
 
+        TSeqPos GetEnd(void) const {
+            return m_Pos + m_Span;
+        }
         bool operator<(const SValueInfo& v) const {
             return m_Pos < v.m_Pos;
         }
@@ -335,6 +338,7 @@ class CWig2tableApplication : public CNcbiApplication
 
     struct SStat {
         bool m_FixedSpan;
+        bool m_HaveGaps;
         TSeqPos m_Span;
         double m_Min, m_Max, m_Step, m_StepMul;
         int AsByte(double v) const
@@ -373,6 +377,7 @@ class CWig2tableApplication : public CNcbiApplication
     bool m_JoinSame;
     bool m_AsByte;
     bool m_KeepInteger;
+    double m_GapValue;
     AutoPtr<IIdMapper> m_IdMapper;
 };
 
@@ -420,6 +425,9 @@ void CWig2tableApplication::Init(void)
     arg_desc->AddFlag("join-same", "Join equal sequential values");
     arg_desc->AddFlag("keep-integer",
                       "Keep integer as is if they fit in an output range");
+    arg_desc->AddDefaultKey("gap-value", "GapValue",
+                            "Assumed value in gaps",
+                            CArgDescriptions::eDouble, "0");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -462,41 +470,69 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
     stat.m_Min = stat.m_Max = 0;
     stat.m_Step = stat.m_StepMul = 1;
     stat.m_FixedSpan = true;
-    bool sorted = true, integer = m_KeepInteger;
+    stat.m_HaveGaps = false;
+    bool sorted = true, int_values = m_KeepInteger;
 
     size_t size = m_Values.size();
     if ( size ) {
-        stat.m_Span = m_Values[0].m_Span;
-        stat.m_Min = stat.m_Max = m_Values[0].m_Value;
+        TSeqPos span = m_Values[0].m_Span;
+        double v = m_Values[0].m_Value;
+
+        stat.m_Span = span;
+        stat.m_Min = stat.m_Max = v;
         
         for ( size_t i = 1; i < size; ++i ) {
-            if ( m_Values[i].m_Span != stat.m_Span ) {
+            span = m_Values[i].m_Span;
+            if ( span != stat.m_Span ) {
                 stat.m_FixedSpan = false;
             }
-            if ( sorted && m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
-                sorted = false;
+            if ( sorted ) {
+                if ( m_Values[i].m_Pos < m_Values[i-1].m_Pos ) {
+                    sorted = false;
+                }
+                if ( m_Values[i].m_Pos != m_Values[i-1].GetEnd() ) {
+                    stat.m_HaveGaps = true;
+                }
             }
-            double v = m_Values[i].m_Value;
+            v = m_Values[i].m_Value;
             if ( v < stat.m_Min ) {
                 stat.m_Min = v;
             }
             if ( v > stat.m_Max ) {
                 stat.m_Max = v;
             }
-            if ( integer && v != int(v) ) {
-                integer = false;
+            if ( int_values && v != int(v) ) {
+                int_values = false;
             }
         }
     }
-    const int range = 255;
-    if ( stat.m_Max > stat.m_Min &&
-         (!integer || stat.m_Max-stat.m_Min > range) ) {
-        stat.m_Step = (stat.m_Max-stat.m_Min)/range;
-        stat.m_StepMul = 1/stat.m_Step;
-    }
-
     if ( !sorted ) {
         sort(m_Values.begin(), m_Values.end());
+        stat.m_HaveGaps = false;
+        for ( size_t i = 1; i < size; ++i ) {
+            if ( m_Values[i].m_Pos != m_Values[i-1].GetEnd() ) {
+                stat.m_HaveGaps = true;
+                break;
+            }
+        }
+    }
+    if ( stat.m_HaveGaps ) {
+        if ( int_values && m_GapValue != int(m_GapValue) ) {
+            int_values = false;
+        }
+        if ( m_GapValue < stat.m_Min ) {
+            stat.m_Min = m_GapValue;
+        }
+        if ( m_GapValue > stat.m_Max ) {
+            stat.m_Max = m_GapValue;
+        }
+    }
+
+    const int range = 255;
+    if ( stat.m_Max > stat.m_Min &&
+         (!int_values || stat.m_Max-stat.m_Min > range) ) {
+        stat.m_Step = (stat.m_Max-stat.m_Min)/range;
+        stat.m_StepMul = 1/stat.m_Step;
     }
 
     if ( !m_AsGraph && m_JoinSame && size ) {
@@ -504,7 +540,7 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
         nv.reserve(size);
         nv.push_back(m_Values[0]);
         for ( size_t i = 1; i < size; ++i ) {
-            if ( m_Values[i].m_Pos == nv.back().m_Pos+nv.back().m_Span &&
+            if ( m_Values[i].m_Pos == nv.back().GetEnd() &&
                  m_Values[i].m_Value == nv.back().m_Value ) {
                 nv.back().m_Span += m_Values[i].m_Span;
             }
@@ -552,7 +588,7 @@ void CWig2tableApplication::x_SetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id)
         CSeq_interval& interval = loc.SetInt();
         interval.SetId(chrom_id);
         interval.SetFrom(m_Values.front().m_Pos);
-        interval.SetTo(m_Values.back().m_Pos + m_Values.back().m_Span-1);
+        interval.SetTo(m_Values.back().GetEnd()-1);
     }
 }
 
@@ -606,6 +642,13 @@ CRef<CSeq_table> CWig2tableApplication::MakeTable(void)
             span_ptr = &col_span->SetData().SetInt();
             span_ptr->reserve(size);
         }
+    }
+
+    if ( stat.m_HaveGaps ) {
+        CRef<CSeqTable_column> col_step(new CSeqTable_column);
+        table->SetColumns().push_back(col_step);
+        col_step->SetHeader().SetField_name("gap_value");
+        col_step->SetDefault().SetReal(m_GapValue);
     }
 
     if ( m_AsByte ) { // values
@@ -699,10 +742,10 @@ CRef<CSeq_graph> CWig2tableApplication::MakeGraph(void)
     else {
         _ASSERT(stat.m_FixedSpan);
         TSeqPos start = m_Values[0].m_Pos;
-        TSeqPos end = m_Values.back().m_Pos + m_Values.back().m_Span;
+        TSeqPos end = m_Values.back().GetEnd();
         size_t size = (end-start)/stat.m_Span;
         graph->SetNumval(size);
-        bytes.resize(size);
+        bytes.resize(size, stat.AsByte(m_GapValue));
         ITERATE ( TValues, it, m_Values ) {
             TSeqPos pos = it->m_Pos - start;
             TSeqPos span = it->m_Span;
@@ -914,6 +957,9 @@ bool CWig2tableApplication::x_TryGetDoubleSimple(double& v)
             }
             m_CurLine.clear();
             _ASSERT(m_CurLine.HasZeroAtEnd());
+            if ( negate ) {
+                ret = -ret;
+            }
             v = ret;
             return true;
         }
@@ -933,6 +979,9 @@ bool CWig2tableApplication::x_TryGetDoubleSimple(double& v)
             m_CurLine.clear();
             _ASSERT(m_CurLine.HasZeroAtEnd());
             v = ret;
+            if ( negate ) {
+                ret = -ret;
+            }
             return true;
         }
         else {
@@ -1218,6 +1267,7 @@ int CWig2tableApplication::Run(void)
     m_JoinSame = args["join-same"];
     m_AsByte = m_AsGraph || args["as-byte"];
     m_KeepInteger = args["keep-integer"];
+    m_GapValue = args["gap-value"].AsDouble();
     if ( m_AsGraph ) {
         if ( m_OmitZeros ) {
             ERR_POST(Warning<<
