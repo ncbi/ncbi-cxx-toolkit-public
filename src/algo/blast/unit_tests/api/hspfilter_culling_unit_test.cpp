@@ -79,13 +79,14 @@ BOOST_AUTO_TEST_CASE(HSPCullingParams)
 
 BOOST_AUTO_TEST_CASE(HSPCullingWriter)
 {
+    BlastQueryInfo query_info;
     BlastHSPCullingParams* culling_params = s_GetCullingParams();
 
     BlastHSPWriterInfo* writer_info = BlastHSPCullingInfoNew(culling_params);
     BOOST_REQUIRE(writer_info);
     BOOST_REQUIRE(writer_info->NewFnPtr);
     BOOST_REQUIRE(writer_info->params);
-    BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, NULL);
+    BlastHSPWriter* writer = BlastHSPWriterNew(&writer_info, &query_info);
     BOOST_REQUIRE(writer_info == NULL);
     BOOST_REQUIRE(writer);
     // Following call also frees culling_params
@@ -95,13 +96,14 @@ BOOST_AUTO_TEST_CASE(HSPCullingWriter)
 
 BOOST_AUTO_TEST_CASE(HSPCullingPipe)
 {
+    BlastQueryInfo query_info;
     BlastHSPCullingParams* culling_params = s_GetCullingParams();
 
     BlastHSPPipeInfo* pipe_info = BlastHSPCullingPipeInfoNew(culling_params);
     BOOST_REQUIRE(pipe_info);
     BOOST_REQUIRE(pipe_info->NewFnPtr);
     BOOST_REQUIRE(pipe_info->params);
-    BlastHSPPipe* pipe = BlastHSPPipeNew(&pipe_info, NULL);
+    BlastHSPPipe* pipe = BlastHSPPipeNew(&pipe_info, &query_info);
     BOOST_REQUIRE(pipe_info == NULL);
     BOOST_REQUIRE(pipe);
     // Following call also frees culling_params
