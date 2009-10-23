@@ -827,13 +827,13 @@ void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eBlastNameId, CGuideTree::kBlastNameTag, btc);
     x_AddFeatureDesc(eAlignIndexId, CGuideTree::kAlignIndexIdTag, btc);
 
-    x_AddFeatureDesc(eQueryNodeColorId, CGuideTree::kNodeColorTag, btc);
+    x_AddFeatureDesc(eNodeColorId, CGuideTree::kNodeColorTag, btc);
 
-    x_AddFeatureDesc(eQueryLabelColorId, CGuideTree::kLabelColorTag, btc);
+    x_AddFeatureDesc(eLabelColorId, CGuideTree::kLabelColorTag, btc);
 
-    x_AddFeatureDesc(eQueryLabelBgColorId, CGuideTree::kLabelBgColorTag, btc);
+    x_AddFeatureDesc(eLabelBgColorId, CGuideTree::kLabelBgColorTag, btc);
 
-    x_AddFeatureDesc(eQueryLabelTagColorId, CGuideTree::kLabelTagColor, btc);
+    x_AddFeatureDesc(eLabelTagColorId, CGuideTree::kLabelTagColor, btc);
 
     x_AddFeatureDesc(s_kTreeSimplificationTagId, CGuideTree::kCollapseTag, btc);
 
@@ -892,15 +892,15 @@ void CGuideTreeCalc::InitTreeFeatures(CBioTreeContainer& btc,
                     x_AddFeature(eAlignIndexId, NStr::IntToString(seq_number),
                                  node); 
 
-                    x_AddFeature(eQueryNodeColorId,
+                    x_AddFeature(eNodeColorId,
                                  tax_node_colors[seq_number], node);                         
 
                     if(seq_number == 0 && mark_query_node) { 
                         // color for query node
-                        x_AddFeature(eQueryLabelBgColorId,
+                        x_AddFeature(eLabelBgColorId,
                                      s_kQueryNodeBgColor, node); 
 
-                        x_AddFeature(eQueryLabelTagColorId,
+                        x_AddFeature(eLabelTagColorId,
                                      s_kQueryNodeColor, node); 
 
                         //Not sure if needed

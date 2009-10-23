@@ -87,8 +87,20 @@ public:
     /// Feature IDs used in guide tree
     ///
     enum EFeatureID {
-        eLabelId,eDistId,eSeqIdId,eOrganismId,eTitleId,eAccessionNbrId,eBlastNameId,eAlignIndexId,eQueryNodeColorId,
-        eQueryLabelColorId,eQueryLabelBgColorId,eQueryLabelTagColorId,eTreeSimplificationTagId
+        eLabelId = 0,       ///< Node label
+        eDistId,            ///< Edge length from parent to this node
+        eSeqIdId,           ///< Sequence id
+        eOrganismId,        ///< Taxonomic organism id (for sequence)
+        eTitleId,           ///< Sequence title
+        eAccessionNbrId,    ///< Sequence accession
+        eBlastNameId,       ///< Sequence Blast Name
+        eAlignIndexId,      ///< Index of sequence in Seq_align
+        eNodeColorId,       ///< Node color
+        eLabelColorId,      ///< Node label color
+        eLabelBgColorId,    ///< Color for backgroud of node label
+        eLabelTagColorId,
+        eTreeSimplificationTagId, ///< Is subtree collapsed
+        eNumIds             ///< Number of known feature ids
     };
 
 
