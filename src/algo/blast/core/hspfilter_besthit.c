@@ -307,6 +307,9 @@ s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info)
    BlastHSPWriter * writer = NULL;
    BlastHSPBestHitData * data = NULL;
 
+   /* best hit algo needs query_info */
+   if (! query_info) return NULL;
+
    /* allocate space for writer */
    writer = malloc(sizeof(BlastHSPWriter));
 
@@ -376,6 +379,9 @@ s_BlastHSPBestHitPipeNew(void* params, BlastQueryInfo* query_info)
 {
    BlastHSPPipe * pipe = NULL;
    BlastHSPBestHitData * data = NULL;
+
+   /* best hit algo needs query_info */
+   if (! query_info) return NULL;
 
    /* allocate space for writer */
    pipe = malloc(sizeof(BlastHSPPipe));

@@ -662,6 +662,9 @@ s_BlastHSPCullingNew(void* params, BlastQueryInfo* query_info)
    BlastHSPWriter * writer = NULL;
    BlastHSPCullingData * data = NULL;
 
+   /* culling algo needs query_info */
+   if (! query_info) return NULL;
+
    /* allocate space for writer */
    writer = malloc(sizeof(BlastHSPWriter));
 
@@ -676,9 +679,7 @@ s_BlastHSPCullingNew(void* params, BlastQueryInfo* query_info)
    data = writer->data;
    data->params = params;
    data->query_info = query_info;
-   if (query_info) {
-      data->num_contexts = query_info->last_context + 1;
-   }
+   data->num_contexts = query_info->last_context + 1;
     
    return writer;
 }
@@ -735,6 +736,9 @@ s_BlastHSPCullingPipeNew(void* params, BlastQueryInfo* query_info)
 {
    BlastHSPPipe * pipe = NULL;
    BlastHSPCullingData * data = NULL;
+
+   /* culling algo needs query_info */
+   if (! query_info) return NULL;
 
    /* allocate space for writer */
    pipe = malloc(sizeof(BlastHSPPipe));
