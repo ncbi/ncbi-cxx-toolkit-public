@@ -53,6 +53,7 @@ private:
     bool start_element(const string &name, const attrs_type &attrs);
     bool end_element(const string &name);
     bool text(const string &data);
+    bool warning(const string &message);
 
     void convertPeaks(Uint4 peakCount, string &peaks, vector<float> &mz, vector<float> &it);    
     

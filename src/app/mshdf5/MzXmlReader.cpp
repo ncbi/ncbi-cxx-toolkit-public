@@ -55,6 +55,8 @@ MzXmlReader::~MzXmlReader()
 
 bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)
 {
+    if (!m_msHdf5) return true; // Just testing
+
     if (name == "msRun") {
         m_inMsRun = true;
     }
@@ -100,6 +102,8 @@ bool MzXmlReader::start_element(const string &name, const attrs_type &attrs)
 
 bool MzXmlReader::end_element(const string &name)
 {
+    if (!m_msHdf5) return true; // Just testing
+
     if (m_inMsRun) {
         if (name == "peaks") {
             m_peaksStack.push(m_elementText);
@@ -151,10 +155,18 @@ bool MzXmlReader::end_element(const string &name)
 
 bool MzXmlReader::text(const string &data)
 {
+    if (!m_msHdf5) return true; // Just testing
+
     if (m_inMsRun) {
         m_elementText += NStr::TruncateSpaces(data);
     }
     return true;
+}
+
+bool MzXmlReader::warning(const string &message)
+{
+    cerr << message << endl;
+    return false;
 }
 
 void MzXmlReader::convertPeaks(Uint4 peakCount, string &peaks, vector<float> &mz, vector<float> &it) 

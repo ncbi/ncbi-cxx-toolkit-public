@@ -73,6 +73,11 @@ void CMsHdf5::newSpectraSet(string name)
     m_curGroup = new Group(h5file->createGroup(m_curSetRoot));
     m_pathStack.clear();
     m_path = getCurrentPath();
+    m_specMap.clear();
+    for (Uint4 i=0; i<3; i++) {
+        m_msLevels[i].clear();
+        m_msLevelsInfo[i].clear();
+    }
 }
 
 void CMsHdf5::addSpectrum(Uint4 scan, Uint4 msLevel, Uint4 parentScan, vector<float> &mz, vector<float> &it, string &info) 
