@@ -450,6 +450,7 @@ RunTest() {
       echo "\$start_time" >> "\$x_test_rep"
       echo "\$result"     >> "\$x_test_rep"
       echo "\$exec_time"  >> "\$x_test_rep"
+      echo "\$x_authors"  >> "\$x_test_rep"
    fi
 }
 

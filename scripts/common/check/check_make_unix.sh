@@ -630,6 +630,10 @@ EOF_launch
                 fi
             fi
         fi
+
+        if \$no_report_err; then
+           test -n "\$NCBI_AUTOMATED_BUILD" && echo "\$x_authors" >> "\$x_test_rep"
+        fi
     fi
 }
 
