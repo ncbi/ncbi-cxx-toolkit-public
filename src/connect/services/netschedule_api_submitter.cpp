@@ -144,7 +144,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
 
     s_AppendClientIPAndSessionID(cmd);
 
-    job.job_id = m_API->m_Service.GetBestConnection().Exec(cmd);
+    job.job_id = m_API->m_Service.FindServerAndExec(cmd).response;
 
     if (job.job_id.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -164,14 +164,12 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         s_CheckInputSize(input, max_input_size);
     }
 
-    CNetServerConnection conn = m_Impl->m_API->m_Service.GetBestConnection();
-
     // Batch submit command.
     string cmd = "BSUB";
 
     s_AppendClientIPAndSessionID(cmd);
 
-    conn.Exec(cmd);
+    CNetServer::SExecResult exec_result(m_Impl->m_API->m_Service.FindServerAndExec(cmd));
 
     cmd.reserve(max_input_size * 6);
     string host;
@@ -190,8 +188,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
         cmd = "BTCH ";
         cmd.append(NStr::UIntToString(batch_size));
 
-        conn->WriteLine(cmd);
-
+        exec_result.conn->WriteLine(cmd);
 
         unsigned batch_start = i;
         string aff_prev;
@@ -199,10 +196,10 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
             cmd.erase();
             s_SerializeJob(cmd, jobs[i], 0, 0, aff_prev);
 
-            conn->WriteLine(cmd);
+            exec_result.conn->WriteLine(cmd);
         }
 
-        string resp = conn.Exec("ENDB");
+        string resp = exec_result.conn.Exec("ENDB");
 
         if (resp.empty()) {
             NCBI_THROW(CNetServiceException, eProtocolError,
@@ -264,7 +261,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 
     } // for
 
-    conn.Exec("ENDS");
+    exec_result.conn.Exec("ENDS");
 }
 
 class CReadCmdExecutor : public INetServerFinder
@@ -286,7 +283,7 @@ private:
 
 bool CReadCmdExecutor::Consider(CNetServer server)
 {
-    string response = server.Connect().Exec(m_Cmd);
+    string response = server.ExecWithRetry(m_Cmd).response;
 
     if (response.empty() || response == "0 " || response == "0")
         return false;
@@ -370,8 +367,7 @@ void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
         cmd += '"';
     }
 
-    m_API->m_Service->GetServer(first_key.host, first_key.port).
-        Connect().Exec(cmd);
+    m_API->m_Service->GetServer(first_key.host, first_key.port).ExecWithRetry(cmd);
 }
 
 void CNetScheduleSubmitter::ReadConfirm(const string& batch_id,

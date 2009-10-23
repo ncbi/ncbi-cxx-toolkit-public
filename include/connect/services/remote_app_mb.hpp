@@ -53,9 +53,7 @@ enum EStdOutErrStorageType {
 /// through NetSchedule infrastructure and should be used in conjunction with
 /// CGridJobSubmitter class
 ///
-class NCBI_XCONNECT_EXPORT CRemoteAppRequestMB :
-    public CObject,
-    public IRemoteAppRequest
+class NCBI_XCONNECT_EXPORT CRemoteAppRequestMB : public CObject
 {
 public:
     explicit CRemoteAppRequestMB(IBlobStorageFactory& factory);
@@ -73,10 +71,10 @@ public:
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
     /// the command line for the remote application. When the file is transfered
-    /// the the executer side it gets stored to a temprary directory and then its
-    /// original name in the command line will be replaced with the new temprary name.
+    /// the the executer side it gets stored to a temporary directory and then its
+    /// original name in the command line will be replaced with the new temporary name.
     void AddFileForTransfer(const string& fname,
-                            ETrasferType tt = eBlobStorage);
+        IRemoteAppRequest::ETrasferType tt = IRemoteAppRequest::eBlobStorage);
 
     void SetStdOutErrFileNames(const string& stdout_fname,
                                const string& stderr_fname,

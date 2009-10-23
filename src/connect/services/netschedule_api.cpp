@@ -116,6 +116,16 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }
 
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(
+        CConfig& config, const string& driver_name) :
+    m_Service(new SNetServiceImpl(config, driver_name))
+{
+    m_Queue = config.GetString(driver_name,
+        "queue_name", CConfig::eErr_Throw, "noname");
+
+    Init();
+}
+
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
 CNetScheduleAPI::CNetScheduleAPI(
@@ -371,13 +381,11 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
     for (CNetServerGroupIterator it =
             m_Service.DiscoverServers().Iterate(); it; ++it) {
-        CNetServerConnection conn = (*it).Connect();
-
         was_called = true;
 
         string resp;
         try {
-            resp = conn.Exec("GETP");
+            resp = (*it).ExecWithRetry("GETP").response;
         } catch (CNetScheduleException& ex) {
             if (ex.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
                 throw;
@@ -467,43 +475,13 @@ public:
                    CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
                    const TPluginManagerParamTree* params = 0) const
     {
-        auto_ptr<TDriver> drv;
-        if (params && (driver.empty() || driver == m_DriverName)) {
-            if (version.Match(NCBI_INTERFACE_VERSION(IFace))
-                                != CVersionInfo::eNonCompatible) {
-                CConfig conf(params);
-
-                string client_name = conf.GetString(m_DriverName,
-                    "client_name", CConfig::eErr_Throw, "noname");
-
-                string queue_name = conf.GetString(m_DriverName,
-                    "queue_name", CConfig::eErr_Throw, "noname");
-
-                string service = conf.GetString(m_DriverName,
-                    "service", CConfig::eErr_NoThrow, "");
-
-                NStr::TruncateSpacesInPlace(service);
-
-                if (!service.empty()) {
-                    unsigned int communication_timeout =
-                        conf.GetInt(m_DriverName, "communication_timeout",
-                            CConfig::eErr_NoThrow, 12);
-
-                    drv.reset(new SNetScheduleAPIImpl(service,
-                        client_name, queue_name,
-                            conf.GetString(m_DriverName, "use_lbsm_affinity",
-                                CConfig::eErr_NoThrow, kEmptyStr)));
-
-                    STimeout tm = {communication_timeout, 0};
-
-                    drv->m_Service.SetCommunicationTimeout(tm);
-
-                    drv->m_Service.SetRebalanceStrategy(
-                        CreateSimpleRebalanceStrategy(conf, m_DriverName));
-                }
-            }
+        if (params && (driver.empty() || driver == m_DriverName) &&
+                version.Match(NCBI_INTERFACE_VERSION(IFace)) !=
+                    CVersionInfo::eNonCompatible) {
+            CConfig config(params);
+            return new SNetScheduleAPIImpl(config, m_DriverName);
         }
-        return drv.release();
+        return NULL;
     }
 
     void GetDriverVersions(TDriverList& info_list) const

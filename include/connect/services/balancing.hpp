@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES___SRV_DISCOVERY__HPP
-#define CONNECT_SERVICES___SRV_DISCOVERY__HPP
+#ifndef CONNECT_SERVICES___BALANCING__HPP
+#define CONNECT_SERVICES___BALANCING__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -49,7 +49,7 @@ public:
 class CConfig;
 
 NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(CConfig& conf, const string& driver_name);
+    CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name);
 
 NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
     CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time);
@@ -59,4 +59,4 @@ NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
 
 END_NCBI_SCOPE
 
-#endif  /* CONNECT_SERVICES___SRV_DISCOVERY__HPP */
+#endif  /* CONNECT_SERVICES___BALANCING__HPP */

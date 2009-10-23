@@ -90,8 +90,6 @@ class NCBI_XCONNECT_EXPORT CNetService
     CNetServerGroup DiscoverServers(
         EDiscoveryMode discovery_mode = eSortByLoad);
 
-    CNetServerConnection GetBestConnection();
-
     bool IsLoadBalanced() const;
 
     void SetPermanentConnection(ESwitch type);
@@ -100,6 +98,8 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;
+
+    CNetServer::SExecResult FindServerAndExec(const string& cmd);
 
     enum ECmdOutputStyle {
         eSingleLineOutput,

@@ -384,7 +384,8 @@ CRemoteAppRequestMB::~CRemoteAppRequestMB()
 {
 }
 
-void CRemoteAppRequestMB::AddFileForTransfer(const string& fname, ETrasferType tt)
+void CRemoteAppRequestMB::AddFileForTransfer(const string& fname,
+    IRemoteAppRequest::ETrasferType tt)
 {
     m_Impl->AddFileForTransfer(fname, tt);
 }

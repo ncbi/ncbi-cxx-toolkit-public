@@ -39,56 +39,58 @@
 
 BEGIN_NCBI_SCOPE
 
+static string s_MkCmd(const char* cmd)
+{
+    string result(cmd);
+    SNetCacheAPIImpl::AppendClientIPSessionID(&result);
+    return result;
+}
+
 void CNetCacheAdmin::ShutdownServer()
 {
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
-        SNetCacheAPIImpl::AddClientIPSessionID("SHUTDOWN"));
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
+        ExecWithRetry(s_MkCmd("SHUTDOWN"));
 }
 
 void CNetCacheAdmin::Logging(bool on_off) const
 {
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
-        SNetCacheAPIImpl::AddClientIPSessionID(on_off ? "LOG ON" : "LOG OFF"));
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
+        ExecWithRetry(s_MkCmd(on_off ? "LOG ON" : "LOG OFF"));
 }
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(
-        SNetCacheAPIImpl::AddClientIPSessionID("GETCONF"),
+    m_Impl->m_API->m_Service.PrintCmdOutput(s_MkCmd("GETCONF"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(
-        SNetCacheAPIImpl::AddClientIPSessionID("GETSTAT"),
+    m_Impl->m_API->m_Service.PrintCmdOutput(s_MkCmd("GETSTAT"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintHealth(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(
-        SNetCacheAPIImpl::AddClientIPSessionID("HEALTH"),
+    m_Impl->m_API->m_Service.PrintCmdOutput(s_MkCmd("HEALTH"),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream) const
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(
-        SNetCacheAPIImpl::AddClientIPSessionID("VERSION"),
+    m_Impl->m_API->m_Service.PrintCmdOutput(s_MkCmd("VERSION"),
         output_stream, CNetService::eSingleLineOutput);
 }
 
 void CNetCacheAdmin::DropStat() const
 {
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().Exec(
-        SNetCacheAPIImpl::AddClientIPSessionID("DROPSTAT"));
+    m_Impl->m_API->m_Service->RequireStandAloneServerSpec().
+        ExecWithRetry(s_MkCmd("DROPSTAT"));
 }
 
 void CNetCacheAdmin::Monitor(CNcbiOstream& out) const
 {
-    m_Impl->m_API->m_Service->Monitor(out,
-        SNetCacheAPIImpl::AddClientIPSessionID("MONI"));
+    m_Impl->m_API->m_Service->Monitor(out, s_MkCmd("MONI"));
 }
 
 

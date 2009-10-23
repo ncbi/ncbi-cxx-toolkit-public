@@ -32,20 +32,29 @@
  *
  */
 
+#include "netservice_params.hpp"
+
 #include <connect/services/netservice_api.hpp>
 
 #include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
-struct SNetServerCmdOutputImpl : public CNetObject
+struct SNetServerMultilineCmdOutputImpl : public CNetObject
 {
-    SNetServerCmdOutputImpl(SNetServerConnectionImpl* connection_impl,
-        const string& first_output_line);
+    SNetServerMultilineCmdOutputImpl(
+        const CNetServer::SExecResult& exec_result) :
+            m_Connection(exec_result.conn),
+            m_FirstOutputLine(exec_result.response),
+            m_FirstLineConsumed(false),
+            m_NetCacheCompatMode(false),
+            m_ReadCompletely(false)
+    {
+    }
 
-    virtual ~SNetServerCmdOutputImpl();
+    virtual ~SNetServerMultilineCmdOutputImpl();
 
-    void SetNetCacheCompatMode() {m_NetCacheCompatMode = true;}
+    void SetNetCacheCompatMode() { m_NetCacheCompatMode = true; }
 
     CNetServerConnection m_Connection;
 
@@ -66,7 +75,6 @@ struct SNetServerConnectionImpl : public CNetObject
     virtual void Delete();
 
     void WriteLine(const string& line);
-    void WaitForServer();
     void ReadCmdOutputLine(string& result);
 
     void Close();
@@ -80,17 +88,6 @@ struct SNetServerConnectionImpl : public CNetObject
 
     CSocket m_Socket;
 };
-
-inline SNetServerCmdOutputImpl::SNetServerCmdOutputImpl(
-    SNetServerConnectionImpl* connection_impl,
-    const string& first_output_line) :
-        m_Connection(connection_impl),
-        m_FirstOutputLine(first_output_line),
-        m_FirstLineConsumed(false),
-        m_NetCacheCompatMode(false),
-        m_ReadCompletely(false)
-{
-}
 
 
 class INetServerConnectionListener : public CNetObject
@@ -117,6 +114,15 @@ struct SNetServerImpl : public CNetObject
     // objects that the parent service object may contain).
     virtual void Delete();
 
+    CNetServerConnection GetConnectionFromPool();
+    CNetServerConnection Connect();
+    void ConnectAndExec(const string& cmd,
+        CNetServer::SExecResult& exec_result);
+
+    void RegisterConnectionEvent(bool failure);
+    void CheckIfThrottled();
+    void ResetThrottlingParameters();
+
     // A smart pointer to the NetService object
     // that contains this NetServer.
     CNetService m_Service;
@@ -126,6 +132,15 @@ struct SNetServerImpl : public CNetObject
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;
+
+    int m_NumberOfSuccessiveFailures;
+    bool m_ConnectionFailureRegister[FAILURE_THRESHOLD_DENOMINATOR_MAX];
+    int m_ConnectionFailureRegisterIndex;
+    int m_ConnectionFailureCounter;
+    bool m_Throttled;
+    string m_ThrottleMessage;
+    CTime m_ThrottledUntil;
+    CFastMutex m_ThrottleLock;
 };
 
 struct SNetServerImplReal : public SNetServerImpl

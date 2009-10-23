@@ -245,9 +245,10 @@ void CRemoteAppRequestSB::SetAppRunTimeout(unsigned int sec)
     m_Impl->SetAppRunTimeout(sec);
 }
 
-void CRemoteAppRequestSB::AddFileForTransfer(const string& fname, ETrasferType )
+void CRemoteAppRequestSB::AddFileForTransfer(const string& fname,
+    IRemoteAppRequest::ETrasferType)
 {
-    m_Impl->AddFileForTransfer(fname, eBlobStorage);
+    m_Impl->AddFileForTransfer(fname, IRemoteAppRequest::eBlobStorage);
 }
 
 void CRemoteAppRequestSB::Send(CNcbiOstream& os)

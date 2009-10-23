@@ -40,12 +40,22 @@
 
 #include <connect/services/netschedule_key.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
-#include <connect/services/netschedule_api_const.hpp>
 #include <connect/services/netservice_api.hpp>
 
 #include <corelib/plugin_manager.hpp>
 
 BEGIN_NCBI_SCOPE
+
+
+/// @internal
+const unsigned int kNetScheduleMaxDataSize = 512;
+/// @internal
+const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
+
+/// @internal
+const unsigned int kNetScheduleMaxErrSize = 1024;
+/// @internal
+const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
 
 
 /** @addtogroup NetScheduleClient
@@ -438,9 +448,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @param job
     ///     NetSchedule job description structure
-    /// @param udp_port
-    ///     Used to instruct server that specified client does NOT
-    ///     listen to notifications (opposed to WaitJob)
     ///
     /// @return
     ///     TRUE if job has been returned from the queue and its input
@@ -477,16 +484,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///    Do not specify too long waiting time because it
     ///    increases chances of UDP notification loss
     ///    (60-320 seconds is a reasonable value).
-    /// @param udp_port
-    ///    UDP port to listen for queue notifications. Try to avoid many
-    ///    client programs (or threads) listening on the same port. Message
-    ///    is going to be delivered to just only one listener.
     ///
     /// @sa GetJob, WaitNotification
     ///
-    bool WaitJob(CNetScheduleJob& job,
-                 unsigned       wait_time,
-                 unsigned short udp_port = 0) const;
+    bool WaitJob(CNetScheduleJob& job, unsigned wait_time) const;
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())

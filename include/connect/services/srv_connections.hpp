@@ -71,17 +71,6 @@ struct SServerAddress {
 
 ///////////////////////////////////////////////////////////////////////////
 //
-struct SNetServerCmdOutputImpl;
-
-class NCBI_XCONNECT_EXPORT CNetServerCmdOutput
-{
-    NET_COMPONENT(NetServerCmdOutput);
-
-    bool ReadLine(string& output);
-};
-
-///////////////////////////////////////////////////////////////////////////
-//
 struct SNetServerConnectionImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerConnection
@@ -92,14 +81,6 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     // starts with 'OK:', and return the remaining
     // characters of the reply as a string.
     string Exec(const string& cmd);
-
-    // Execute remote command 'cmd' and return a smart
-    // pointer to a stream object for reading multiline
-    // output of the command.
-    CNetServerCmdOutput ExecMultiline(const string& cmd);
-
-    const string& GetHost() const;
-    unsigned int GetPort() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -113,7 +94,31 @@ class NCBI_XCONNECT_EXPORT CNetServer
     string GetHost() const;
     unsigned short GetPort() const;
 
-    CNetServerConnection Connect();
+    struct SExecResult {
+        string response;
+        CNetServerConnection conn;
+    };
+
+    // Execute remote command 'cmd', check if the reply
+    // starts with 'OK:', and return the remaining
+    // characters of the reply as a string. This method
+    // makes as many as TServConn_ConnMaxRetries attempts
+    // to connect to the server and execute the specified
+    // command.
+    SExecResult ExecWithRetry(const string& cmd);
+};
+
+///////////////////////////////////////////////////////////////////////////
+//
+struct SNetServerMultilineCmdOutputImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServerMultilineCmdOutput
+{
+    NET_COMPONENT(NetServerMultilineCmdOutput);
+
+    CNetServerMultilineCmdOutput(const CNetServer::SExecResult& exec_result);
+
+    bool ReadLine(string& output);
 };
 
 

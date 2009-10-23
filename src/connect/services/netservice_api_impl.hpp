@@ -87,10 +87,12 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 struct SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
-    SNetServiceImpl(
-        const string& service_name,
-        const string& client_name,
-        const string& lbsm_affinity_name);
+    SNetServiceImpl(CConfig& config, const string& driver_name);
+
+    SNetServiceImpl(const string& service_name,
+        const string& client_name, const string& lbsm_affinity_name);
+
+    void Init();
 
     // Set up connection event listening. In fact, this
     // listener implements the authentication part of both
@@ -102,12 +104,12 @@ struct SNetServiceImpl : public CNetObject
     CNetServer ReturnServer(SNetServerImpl* server_impl);
     CNetServer GetServer(const string& host, unsigned int port);
     CNetServer GetServer(const SServerAddress& server_address);
-    CNetServerConnection GetSingleServerConnection();
+    CNetServer GetSingleServer();
 
     // Utility method for commands that require single server (that is,
     // a host:port pair) to be specified (not a load-balanced service
     // name).
-    CNetServerConnection RequireStandAloneServerSpec();
+    CNetServer RequireStandAloneServerSpec();
 
     SNetServerGroupImpl* CreateServerGroup(
         CNetService::EDiscoveryMode discovery_mode);
@@ -147,6 +149,12 @@ struct SNetServiceImpl : public CNetObject
         eLoadBalanced,
         eSingleServer
     } m_ServiceType;
+
+    int m_MaxSubsequentConnectionFailures;
+    int m_ReconnectionFailureThresholdNumerator;
+    int m_ReconnectionFailureThresholdDenominator;
+    int m_ServerThrottlePeriod;
+    int m_MaxQueryTime;
 };
 
 inline SNetServerGroupImpl::SNetServerGroupImpl(unsigned discovery_iteration) :

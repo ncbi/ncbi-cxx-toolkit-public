@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include "netcache_api_impl.hpp"
-#include "netservice_params.hpp"
 
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/error_codes.hpp>
@@ -62,7 +61,7 @@ static SServerAddress* s_GetFallbackServer()
     try {
        string sport, host, hostport;
        hostport = TCGI_NetCacheFallbackServer::GetDefault();
-       if ( NStr::SplitInTwo(hostport, ":", host, sport) ) {
+       if (NStr::SplitInTwo(hostport, ":", host, sport)) {
           unsigned int port = NStr::StringToInt(sport);
           host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
           s_FallbackServer->reset(new SServerAddress(host, port));
@@ -71,6 +70,13 @@ static SServerAddress* s_GetFallbackServer()
     }
     s_FallbackServer_Initialized = true;
     return s_FallbackServer->get();
+}
+
+static string s_MkCmd(const char* cmd_base, const string& key)
+{
+    string result(cmd_base + key);
+    SNetCacheAPIImpl::AppendClientIPSessionID(&result);
+    return result;
 }
 
 void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
@@ -108,10 +114,10 @@ void CNetCacheServerListener::OnError(
 }
 
 
-CNetServerConnection SNetCacheAPIImpl::x_GetConnection(const string& bid)
+CNetServer SNetCacheAPIImpl::GetServer(const string& bid)
 {
     CNetCacheKey key(bid);
-    return m_Service->GetServer(key.GetHost(), key.GetPort()).Connect();
+    return m_Service->GetServer(key.GetHost(), key.GetPort());
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
@@ -122,13 +128,6 @@ void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
     cmd->append("\" \"");
     cmd->append(req.GetSessionID());
     cmd->append("\"");
-}
-
-string SNetCacheAPIImpl::AddClientIPSessionID(const string& cmd)
-{
-    string result(cmd);
-    AppendClientIPSessionID(&result);
-    return result;
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :
@@ -162,15 +161,19 @@ CNetServerConnection SNetCacheAPIImpl::InitiatePutCmd(
     request += NStr::IntToString(time_to_live);
     request += " ";
 
-    CNetServerConnection conn;
+    CNetServer::SExecResult exec_result;
 
     if (!key->empty()) {
-        conn = x_GetConnection(*key);
-
         request += *key;
+
+        AppendClientIPSessionID(&request);
+
+        exec_result = GetServer(*key).ExecWithRetry(request);
     } else {
+        AppendClientIPSessionID(&request);
+
         try {
-            conn = m_Service.GetBestConnection();
+            exec_result = m_Service.FindServerAndExec(request);
         } catch (CNetSrvConnException& e) {
             SServerAddress* backup = s_GetFallbackServer();
 
@@ -183,27 +186,26 @@ CNetServerConnection SNetCacheAPIImpl::InitiatePutCmd(
                 m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
-            conn = m_Service->GetServer(*backup).Connect();
+            exec_result = m_Service->GetServer(*backup).ExecWithRetry(request);
         }
     }
 
-    AppendClientIPSessionID(&request);
-
-    *key = conn.Exec(request);
-
-    if (NStr::FindCase(*key, "ID:") != 0) {
+    if (NStr::FindCase(exec_result.response, "ID:") != 0) {
         // Answer is not in "ID:....." format
         string msg = "Unexpected server response:";
-        msg += *key;
+        msg += exec_result.response;
         NCBI_THROW(CNetServiceException, eCommunicationError, msg);
     }
-    key->erase(0, 3);
+    exec_result.response.erase(0, 3);
 
-    if (key->empty()) {
+    if (exec_result.response.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
-    return conn;
+
+    *key = exec_result.response;
+
+    return exec_result.conn;
 }
 
 
@@ -251,9 +253,10 @@ IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live)
 
 bool CNetCacheAPI::HasBlob(const string& key)
 {
+    CNetServer srv = m_Impl->GetServer(key);
+
     try {
-        return m_Impl->x_GetConnection(key).Exec(
-            SNetCacheAPIImpl::AddClientIPSessionID("HASB " + key))[0] == '1';
+        return srv.ExecWithRetry(s_MkCmd("HASB ", key)).response[0] == '1';
     } catch (CNetServiceException& e) {
         if (!TCGI_NetCacheUseHasbFallback::GetDefault() ||
                 e.GetErrCode() != CNetServiceException::eCommunicationError ||
@@ -266,19 +269,16 @@ bool CNetCacheAPI::HasBlob(const string& key)
 
 size_t CNetCacheAPI::GetBlobSize(const string& key)
 {
-    return (size_t) NStr::StringToULong(m_Impl->x_GetConnection(key).
-        Exec(SNetCacheAPIImpl::AddClientIPSessionID("GSIZ " + key)));
+    return (size_t) NStr::StringToULong(
+        m_Impl->GetServer(key).ExecWithRetry(s_MkCmd("GSIZ ", key)).response);
 }
 
 
 void CNetCacheAPI::Remove(const string& key)
 {
-    string request = "RMV2 " + key;
-
-    CNetServerConnection conn = m_Impl->x_GetConnection(key);
+    CNetServer srv = m_Impl->GetServer(key);
     try {
-        SNetCacheAPIImpl::AppendClientIPSessionID(&request);
-        conn.Exec(request);
+        srv.ExecWithRetry(s_MkCmd("RMV2 ", key));
     } catch (std::exception& e) {
         ERR_POST("Could not remove blob \"" << key << "\": " << e.what());
     } catch (...) {
@@ -289,14 +289,10 @@ void CNetCacheAPI::Remove(const string& key)
 
 bool CNetCacheAPI::IsLocked(const string& key)
 {
-
-    string request = "ISLK " + key;
-
-    CNetServerConnection conn = m_Impl->x_GetConnection(key);
+    CNetServer srv = m_Impl->GetServer(key);
 
     try {
-        SNetCacheAPIImpl::AppendClientIPSessionID(&request);
-        return conn.Exec(request)[0] == '1';
+        return srv.ExecWithRetry(s_MkCmd("ISLK ", key)).response[0] == '1';
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return false;
@@ -307,12 +303,9 @@ bool CNetCacheAPI::IsLocked(const string& key)
 
 string CNetCacheAPI::GetOwner(const string& key)
 {
-    string request = "GBOW " + key;
-
-    CNetServerConnection conn = m_Impl->x_GetConnection(key);
+    CNetServer srv = m_Impl->GetServer(key);
     try {
-        SNetCacheAPIImpl::AppendClientIPSessionID(&request);
-        return conn.Exec(request);
+        return srv.ExecWithRetry(s_MkCmd("GBOW ", key)).response;
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return kEmptyStr;
@@ -331,35 +324,36 @@ IReader* CNetCacheAPI::GetData(const string& key,
 
     SNetCacheAPIImpl::AppendClientIPSessionID(&cmd);
 
-    return m_Impl->GetReadStream(m_Impl->x_GetConnection(key), cmd, blob_size);
-}
-
-IReader* SNetCacheAPIImpl::GetReadStream(
-    CNetServerConnection conn, const string& cmd, size_t* blob_size)
-{
-    string answer;
+    CNetServer::SExecResult exec_result;
 
     try {
-        answer = conn.Exec(cmd);
+        exec_result = m_Impl->GetServer(key).ExecWithRetry(cmd);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return NULL;
         throw;
     }
 
-    string::size_type pos = answer.find("SIZE=");
+    return m_Impl->GetReadStream(exec_result, blob_size);
+}
+
+IReader* SNetCacheAPIImpl::GetReadStream(
+    const CNetServer::SExecResult& exec_result, size_t* blob_size)
+{
+    string::size_type pos = exec_result.response.find("SIZE=");
 
     if (pos == string::npos) {
         NCBI_THROW(CNetCacheException, eInvalidServerResponse,
             "No SIZE field in reply to a blob reading command");
     }
 
-    size_t bsize = (size_t) atoi(answer.c_str() + pos + sizeof("SIZE=") - 1);
+    size_t bsize = (size_t) atoi(
+        exec_result.response.c_str() + pos + sizeof("SIZE=") - 1);
 
     if (blob_size)
         *blob_size = bsize;
 
-    return new CNetCacheReader(conn, bsize);
+    return new CNetCacheReader(exec_result.conn, bsize);
 }
 
 CNetCacheAPI::EReadResult
@@ -481,35 +475,13 @@ public:
                    CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
                    const TPluginManagerParamTree* params = 0) const
     {
-        TDriver* drv = 0;
-        if (params && (driver.empty() || driver == m_DriverName)) {
-            if (version.Match(NCBI_INTERFACE_VERSION(IFace))
-                                != CVersionInfo::eNonCompatible) {
-
-                CConfig conf(params);
-                string client_name =
-                    conf.GetString(m_DriverName,
-                                   "client_name", CConfig::eErr_Throw, "noname");
-                string service =
-                    conf.GetString(m_DriverName,
-                                   "service", CConfig::eErr_NoThrow, kEmptyStr);
-                NStr::TruncateSpacesInPlace(service);
-                unsigned int communication_timeout = conf.GetInt(m_DriverName,
-                                                              "communication_timeout",
-                                                              CConfig::eErr_NoThrow, 12);
-
-                drv = new SNetCacheAPIImpl(service, client_name,
-                    conf.GetString(m_DriverName, "use_lbsm_affinity",
-                        CConfig::eErr_NoThrow, kEmptyStr));
-
-                STimeout tm = { communication_timeout, 0 };
-                drv->m_Service.SetCommunicationTimeout(tm);
-
-                drv->m_Service.SetRebalanceStrategy(
-                    CreateSimpleRebalanceStrategy(conf, m_DriverName));
-            }
+        if (params && (driver.empty() || driver == m_DriverName) &&
+                version.Match(NCBI_INTERFACE_VERSION(IFace)) !=
+                    CVersionInfo::eNonCompatible) {
+            CConfig config(params);
+            return new SNetCacheAPIImpl(config, m_DriverName);
         }
-        return drv;
+        return NULL;
     }
 
     void GetDriverVersions(TDriverList& info_list) const

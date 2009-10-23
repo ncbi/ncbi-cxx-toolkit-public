@@ -43,16 +43,21 @@ BEGIN_NCBI_SCOPE
 class CSimpleRebalanceStrategy : public IRebalanceStrategy
 {
 public:
-    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
-        : m_RebalanceRequests(rebalance_requests), m_RebalanceTime(rebalance_time),
-          m_RequestCounter(0), m_LastRebalanceTime(0) {}
+    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time) :
+        m_RebalanceRequests(rebalance_requests),
+        m_RebalanceTime(rebalance_time),
+        m_RequestCounter(0),
+        m_LastRebalanceTime(0)
+    {
+    }
 
     virtual bool NeedRebalance() {
         CFastMutexGuard g(m_Mutex);
         time_t curr = time(0);
-        if ( !m_LastRebalanceTime ||
-             (m_RebalanceTime && int(curr - m_LastRebalanceTime) >= m_RebalanceTime) ||
-             (m_RebalanceRequests && (m_RequestCounter >= m_RebalanceRequests)) )  {
+        if ((m_RebalanceTime > 0 &&
+                curr >= m_LastRebalanceTime + m_RebalanceTime) ||
+            (m_RebalanceRequests > 0 &&
+                m_RequestCounter >= m_RebalanceRequests)) {
             m_RequestCounter = 0;
             m_LastRebalanceTime = curr;
             return true;
@@ -79,12 +84,12 @@ private:
 
 
 CNetObjectRef<IRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(CConfig& conf, const string& driver_name)
+    CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name)
 {
     return new CSimpleRebalanceStrategy(
-        conf.GetInt(driver_name, "rebalance_requests",
+        config.GetInt(driver_name, "rebalance_requests",
             CConfig::eErr_NoThrow, 100),
-        conf.GetInt(driver_name, "rebalance_time",
+        config.GetInt(driver_name, "rebalance_time",
             CConfig::eErr_NoThrow, 10));
 }
 

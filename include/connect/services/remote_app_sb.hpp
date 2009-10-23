@@ -46,9 +46,7 @@ class CRemoteAppRequestSB_Impl;
 /// through NetSchedule infrastructure and should be used in conjunction with
 /// CGridJobSubmitter class
 ///
-class NCBI_XCONNECT_EXPORT CRemoteAppRequestSB :
-    public CObject,
-    public IRemoteAppRequest
+class NCBI_XCONNECT_EXPORT CRemoteAppRequestSB : public CObject
 {
 public:
     const static int kSingleBlobMask = 0x4000;
@@ -68,9 +66,10 @@ public:
     /// Transfer a file to an application executer side.
     /// It only makes sense to transfer a file if its name also mentioned in
     /// the command line for the remote application. When the file is transfered
-    /// the the executer side it gets stored to a temprary directory and then its
-    /// original name in the command line will be replaced with the new temprary name.
-    void AddFileForTransfer(const string& fname, ETrasferType tt = eBlobStorage);
+    /// the the executer side it gets stored to a temporary directory and then its
+    /// original name in the command line will be replaced with the new temporary name.
+    void AddFileForTransfer(const string& fname,
+        IRemoteAppRequest::ETrasferType tt = IRemoteAppRequest::eBlobStorage);
 
     void Send(CNcbiOstream& os);
 

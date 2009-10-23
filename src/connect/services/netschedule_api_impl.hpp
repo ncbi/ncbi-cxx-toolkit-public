@@ -125,11 +125,6 @@ template<> struct ToStr<int> {
 
 struct SNetScheduleAPIImpl : public CNetObject
 {
-    SNetScheduleAPIImpl(const string& service_name,
-        const string& client_name,
-        const string& queue_name,
-        const string& lbsm_affinity_name);
-
     class CNetScheduleServerListener : public INetServerConnectionListener
     {
     public:
@@ -154,18 +149,40 @@ struct SNetScheduleAPIImpl : public CNetObject
         string m_WorkerNodeInitCmd;
     };
 
+    void Init()
+    {
+        m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
+
+        m_Listener = new CNetScheduleServerListener(
+            m_Service.GetClientName(), m_Queue);
+
+        m_Service->SetListener(m_Listener);
+    }
+
+    SNetScheduleAPIImpl(const string& service_name, const string& client_name,
+            const string& queue_name, const string& lbsm_affinity_name) :
+        m_Service(
+            new SNetServiceImpl(service_name, client_name, lbsm_affinity_name)),
+        m_Queue(queue_name)
+    {
+        Init();
+    }
+
+    SNetScheduleAPIImpl(CConfig& config, const string& driver_name);
+
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
     {
-        return x_GetConnection(job_key).Exec(cmd + ' ' + job_key);
+        return GetServer(job_key).ExecWithRetry(cmd + ' ' + job_key).response;
     }
     template<typename Arg1>
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key, Arg1 arg1)
+    string x_SendJobCmdWaitResponse(const string& cmd,
+        const string& job_key, Arg1 arg1)
     {
         string tmp = cmd;
         if (!job_key.empty())
             tmp += ' ' + job_key + ' ';
         tmp += ToStr<Arg1>::Convert(arg1);
-        return x_GetConnection(job_key).Exec(tmp);
+        return GetServer(job_key).ExecWithRetry(tmp).response;
     }
     template<typename Arg1, typename Arg2>
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
@@ -175,7 +192,7 @@ struct SNetScheduleAPIImpl : public CNetObject
         if (!job_key.empty())
             tmp += ' ' + job_key + ' ';
         tmp += ToStr<Arg1>::Convert(arg1) + ' ' + ToStr<Arg2>::Convert(arg2);
-        return x_GetConnection(job_key).Exec(tmp);
+        return GetServer(job_key).ExecWithRetry(tmp).response;
     }
     template<typename Arg1, typename Arg2, typename Arg3>
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
@@ -186,12 +203,16 @@ struct SNetScheduleAPIImpl : public CNetObject
             tmp += ' ' + job_key + ' ';
         tmp += ToStr<Arg1>::Convert(arg1) + ' '
             + ToStr<Arg2>::Convert(arg2) + ' ' + ToStr<Arg3>::Convert(arg3);
-        return x_GetConnection(job_key).Exec(tmp);
+        return GetServer(job_key).ExecWithRetry(tmp).response;
     }
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
 
-    CNetServerConnection x_GetConnection(const string& job_key);
+    CNetServer GetServer(const string& job_key)
+    {
+        CNetScheduleKey nskey(job_key);
+        return m_Service->GetServer(nskey.host, nskey.port);
+    }
 
     CNetScheduleAPI::EJobStatus x_GetJobStatus(
         const string& job_key,
@@ -210,29 +231,6 @@ struct SNetScheduleAPIImpl : public CNetObject
     CFastMutex m_FastMutex;
 };
 
-inline SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-    const string& service_name,
-    const string& client_name,
-    const string& queue_name,
-    const string& lbsm_affinity_name) :
-        m_Service(new SNetServiceImpl(service_name,
-            client_name,
-            lbsm_affinity_name)),
-        m_Queue(queue_name),
-        m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
-{
-    m_Listener = new CNetScheduleServerListener(
-        m_Service.GetClientName(), queue_name);
-
-    m_Service->SetListener(m_Listener);
-}
-
-inline CNetServerConnection
-    SNetScheduleAPIImpl::x_GetConnection(const string& job_key)
-{
-    CNetScheduleKey nskey(job_key);
-    return m_Service->GetServer(nskey.host, nskey.port).Connect();
-}
 
 struct SNetScheduleSubmitterImpl : public CNetObject
 {

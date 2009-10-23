@@ -34,7 +34,6 @@
 #include "../ncbi_servicep.h"
 
 #include "netservice_api_impl.hpp"
-#include "netservice_params.hpp"
 
 #include <connect/services/error_codes.hpp>
 #include <connect/services/srv_connections_expt.hpp>
@@ -43,6 +42,7 @@
 #include <connect/ncbi_conn_exception.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_config.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
@@ -82,24 +82,92 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
         new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
 }
 
-SNetServiceImpl::SNetServiceImpl(
-    const string& service_name,
-    const string& client_name,
-    const string& lbsm_affinity_name) :
-        m_ServiceName(service_name),
-        m_LBSMAffinityName(lbsm_affinity_name),
-        m_LatestDiscoveryIteration(0),
-        m_Timeout(s_GetDefaultCommTimeout()),
-        m_PermanentConnection(eOn)
+SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
 {
-    m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
+    m_ServiceName = config.GetString(driver_name,
+        "service", CConfig::eErr_NoThrow, kEmptyStr);
 
-    if (service_name.empty()) {
+    m_ClientName = config.GetString(driver_name,
+        "client_name", CConfig::eErr_Throw, "noname");
+
+    m_LBSMAffinityName = config.GetString(driver_name,
+        "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
+
+    int timeout_sec = config.GetInt(driver_name,
+        "communication_timeout", CConfig::eErr_NoThrow, -1);
+
+    if (timeout_sec < 0)
+        m_Timeout = s_GetDefaultCommTimeout();
+    else {
+        m_Timeout.sec = timeout_sec;
+        m_Timeout.usec = 0;
+    }
+
+    m_ServerThrottlePeriod = config.GetInt(driver_name,
+        "server_throttle_period", CConfig::eErr_NoThrow,
+        SERVER_THROTTLE_PERIOD_DEFAULT);
+
+    if (m_ServerThrottlePeriod > 0) {
+        int numerator = config.GetInt(driver_name,
+            "reconnection_failure_threshold_numerator", CConfig::eErr_NoThrow,
+                FAILURE_THRESHOLD_NUMERATOR_DEFAULT);
+
+        int denominator = config.GetInt(driver_name,
+            "reconnection_failure_threshold_denominator", CConfig::eErr_NoThrow,
+                FAILURE_THRESHOLD_DENOMINATOR_DEFAULT);
+
+        if (denominator < 1)
+            denominator = 1;
+        else if (denominator > FAILURE_THRESHOLD_DENOMINATOR_MAX) {
+            numerator = (numerator * FAILURE_THRESHOLD_DENOMINATOR_MAX) /
+                denominator;
+            denominator = FAILURE_THRESHOLD_DENOMINATOR_MAX;
+        }
+
+        if (numerator < 0)
+            numerator = 0;
+
+        m_ReconnectionFailureThresholdNumerator = numerator;
+        m_ReconnectionFailureThresholdDenominator = denominator;
+
+        m_MaxSubsequentConnectionFailures = config.GetInt(driver_name,
+            "max_subsequent_connection_failures", CConfig::eErr_NoThrow,
+            MAX_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
+
+        m_MaxQueryTime = config.GetInt(driver_name,
+            "max_query_time", CConfig::eErr_NoThrow,
+                MAX_QUERY_TIME_DEFAULT);
+    }
+
+    m_RebalanceStrategy = CreateSimpleRebalanceStrategy(config, driver_name);
+
+    Init();
+}
+
+SNetServiceImpl::SNetServiceImpl(const string& service_name,
+    const string& client_name, const string& lbsm_affinity_name) :
+        m_ServiceName(service_name),
+        m_ClientName(client_name),
+        m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
+        m_LBSMAffinityName(lbsm_affinity_name),
+        m_Timeout(s_GetDefaultCommTimeout())
+{
+    Init();
+}
+
+void SNetServiceImpl::Init()
+{
+    m_LatestDiscoveryIteration = 0;
+    m_PermanentConnection = eOn;
+
+    NStr::TruncateSpacesInPlace(m_ServiceName);
+
+    if (m_ServiceName.empty()) {
         m_ServiceType = eNotDefined;
     } else {
         string sport, host;
 
-        if (NStr::SplitInTwo(service_name, ":", host, sport)) {
+        if (NStr::SplitInTwo(m_ServiceName, ":", host, sport)) {
             m_ServiceType = eSingleServer;
             unsigned int port = NStr::StringToInt(sport);
             host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
@@ -115,13 +183,13 @@ SNetServiceImpl::SNetServiceImpl(
         }
     }
 
-    m_ClientName = !client_name.empty() &&
-        NStr::FindNoCase(client_name, "sample") == NPOS &&
-        NStr::FindNoCase(client_name, "unknown") == NPOS ?
-        client_name : CNcbiApplication::Instance()->GetProgramDisplayName();
+    if (m_ClientName.empty() || m_ClientName == "noname" ||
+        NStr::FindNoCase(m_ClientName, "sample") != NPOS ||
+        NStr::FindNoCase(m_ClientName, "unknown") != NPOS)
+        m_ClientName = CNcbiApplication::Instance()->GetProgramDisplayName();
 
     // Get affinity value from the local LBSM configuration file.
-    m_LBSMAffinityValue = lbsm_affinity_name.empty() ? NULL :
+    m_LBSMAffinityValue = m_LBSMAffinityName.empty() ? NULL :
         LBSMD_GetHostParameter(SERV_LOCALHOST, m_LBSMAffinityName.c_str());
 }
 
@@ -146,20 +214,19 @@ void CNetService::SetRebalanceStrategy(IRebalanceStrategy* strategy)
         CreateDefaultRebalanceStrategy().GetPtr();
 }
 
-
 void CNetService::PrintCmdOutput(const string& cmd,
     CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style)
 {
     for (CNetServerGroupIterator it = DiscoverServers().Iterate(); it; ++it) {
-        CNetServerConnection conn = (*it).Connect();
-
         if (output_style != eDumpNoHeaders)
             output_stream << (*it)->m_Address.AsString() << endl;
 
+        CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
+
         if (output_style == eSingleLineOutput)
-            output_stream << conn.Exec(cmd);
+            output_stream << exec_result.response;
         else {
-            CNetServerCmdOutput output = conn.ExecMultiline(cmd);
+            CNetServerMultilineCmdOutput output(exec_result);
 
             if (output_style == eMultilineOutput_NetCacheStyle)
                 output->SetNetCacheCompatMode();
@@ -213,7 +280,7 @@ CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
     return server;
 }
 
-CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
+CNetServer SNetServiceImpl::GetSingleServer()
 {
     _ASSERT(m_ServiceType != eLoadBalanced);
 
@@ -221,25 +288,24 @@ CNetServerConnection SNetServiceImpl::GetSingleServerConnection()
         NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
             "The service is not set.");
 
-    return ReturnServer(m_SignleServerGroup->m_Servers.front()).Connect();
+    return ReturnServer(m_SignleServerGroup->m_Servers.front());
 }
 
-CNetServerConnection CNetService::GetBestConnection()
+CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 {
     _ASSERT(m_Impl->m_ServiceType != SNetServiceImpl::eNotDefined);
 
     if (m_Impl->m_ServiceType != SNetServiceImpl::eLoadBalanced)
-        return m_Impl->GetSingleServerConnection();
+        return m_Impl->GetSingleServer().ExecWithRetry(cmd);
 
     for (CNetServerGroupIterator it = DiscoverServers().Iterate(); it; ++it) {
         try {
-            return (*it).Connect();
-        } catch (CNetSrvConnException& ex) {
-            if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure) {
-                ERR_POST_X(2, ex.what());
-            }
-            else
+            return (*it).ExecWithRetry(cmd);
+        }
+        catch (CNetSrvConnException& ex) {
+            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure)
                 throw;
+            ERR_POST_X(2, ex.what());
         }
     }
 
@@ -248,10 +314,10 @@ CNetServerConnection CNetService::GetBestConnection()
             GetServiceName() + " service.");
 }
 
-CNetServerConnection SNetServiceImpl::RequireStandAloneServerSpec()
+CNetServer SNetServiceImpl::RequireStandAloneServerSpec()
 {
     if (m_ServiceType != eLoadBalanced)
-        return GetSingleServerConnection();
+        return GetSingleServer();
 
     NCBI_THROW(CNetServiceException, eCommandIsNotAllowed,
         "This command requires explicit server address (host:port)");
@@ -396,13 +462,14 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
 
 void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
 {
-    CNetServerConnection conn = RequireStandAloneServerSpec();
+    CNetServer::SExecResult exec_result(
+        RequireStandAloneServerSpec().ExecWithRetry(cmd));
 
-    conn->WriteLine(cmd);
+    out << exec_result.response << "\n" << flush;
 
     STimeout rto = {1, 0};
 
-    CSocket* the_socket = &conn->m_Socket;
+    CSocket* the_socket = &exec_result.conn->m_Socket;
 
     the_socket->SetTimeout(eIO_Read, &rto);
 
@@ -415,7 +482,7 @@ void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
             if (the_socket->GetStatus(eIO_Open) != eIO_Success)
                 break;
 
-    conn->Close();
+    exec_result.conn->Close();
 }
 
 SNetServiceImpl::~SNetServiceImpl()

@@ -38,14 +38,15 @@
 
 BEGIN_NCBI_SCOPE
 
-static
-void s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
+static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 {
     // Server message format:
     //    JOB_KEY "input" ["affinity" ["client_ip session_id"]] [mask]
 
-    _ASSERT(!response.empty());
+    if (response.empty())
+        return false;
 
+    job.mask = CNetScheduleAPI::eEmptyMask;
     job.input.erase();
     job.job_id.erase();
     job.affinity.erase();
@@ -91,58 +92,59 @@ throw_err:
     while (*str && isspace((unsigned char) (*str)))
         ++str;
 
-    if (*str == 0)
-        return;
-
-    if (*str == '"') {
-        ++str;
-        for (; *str && *str; ++str) {
-            if (*str == '"' && str[-1] != '\\') {
-                ++str;
-                break;
+    if (*str != 0) {
+        if (*str == '"') {
+            ++str;
+            for (; *str && *str; ++str) {
+                if (*str == '"' && str[-1] != '\\') {
+                    ++str;
+                    break;
+                }
+                job.affinity += *str;
             }
-            job.affinity += *str;
+        } else {
+            goto throw_err;
         }
-    } else {
-        goto throw_err;
-    }
-    job.affinity = NStr::ParseEscapes(job.affinity);
+        job.affinity = NStr::ParseEscapes(job.affinity);
 
-    // parse "client_ip session_id"
-    while (*str && isspace((unsigned char) (*str)))
-        ++str;
+        // parse "client_ip session_id"
+        while (*str && isspace((unsigned char) (*str)))
+            ++str;
 
-    if (*str == 0)
-        return;
+        if (*str != 0) {
+            string client_ip_and_session_id;
 
-    string client_ip_and_session_id;
-
-    if (*str == '"') {
-        ++str;
-        for( ;*str && *str; ++str) {
-            if (*str == '"' && str[-1] != '\\') {
+            if (*str == '"') {
                 ++str;
-                break;
+                for( ;*str && *str; ++str) {
+                    if (*str == '"' && str[-1] != '\\') {
+                        ++str;
+                        break;
+                    }
+                    client_ip_and_session_id += *str;
+                }
+            } else {
+                goto throw_err;
             }
-            client_ip_and_session_id += *str;
+
+            NStr::SplitInTwo(NStr::ParseEscapes(client_ip_and_session_id),
+                " ", job.client_ip, job.session_id);
+
+            // parse mask
+            while (*str && isspace((unsigned char) (*str)))
+                ++str;
+
+            if (*str != 0)
+                job.mask = atoi(str);
         }
-    } else {
-        goto throw_err;
     }
 
-    NStr::SplitInTwo(NStr::ParseEscapes(client_ip_and_session_id),
-        " ", job.client_ip, job.session_id);
+    _ASSERT(!job.job_id.empty());
 
-    // parse mask
-    while (*str && isspace((unsigned char) (*str)))
-        ++str;
-    if (*str == 0)
-        return;
-
-    job.mask = atoi(str);
+    return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 void CNetScheduleExecuter::SetRunTimeout(const string& job_key,
                                          unsigned      time_to_run) const
 {
@@ -193,8 +195,7 @@ struct SWaitQueuePred {
 
 
 bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
-                                   unsigned   wait_time,
-                                   unsigned short /*udp_port*/) const
+                                   unsigned   wait_time) const
 {
     string cmd = "WGET ";
 
@@ -247,16 +248,9 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
     s_CheckOutputSize(done_job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
-    string resp = m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
-        done_job.job_id, done_job.ret_code, done_job.output);
-
-    if (!resp.empty()) {
-        new_job.mask = CNetScheduleAPI::eEmptyMask;
-        s_ParseGetJobResponse(new_job, resp);
-        _ASSERT(!new_job.job_id.empty());
-        return true;
-    }
-    return false;
+    return s_ParseGetJobResponse(new_job,
+        m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
+            done_job.job_id, done_job.ret_code, done_job.output));
 }
 
 
@@ -266,7 +260,8 @@ void CNetScheduleExecuter::PutProgressMsg(const CNetScheduleJob& job) const
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Progress message too long");
     }
-    m_Impl->m_API->x_SendJobCmdWaitResponse("MPUT" , job.job_id, job.progress_msg);
+    m_Impl->m_API->x_SendJobCmdWaitResponse("MPUT",
+        job.job_id, job.progress_msg);
 }
 
 void CNetScheduleExecuter::GetProgressMsg(CNetScheduleJob& job)
@@ -316,15 +311,7 @@ private:
 
 bool CGetJobCmdExecutor::Consider(CNetServer server)
 {
-    string resp = server.Connect().Exec(m_Cmd);
-
-    if (resp.empty())
-        return false;
-
-    m_Job.mask = CNetScheduleAPI::eEmptyMask;
-    s_ParseGetJobResponse(m_Job, resp);
-
-    return true;
+    return s_ParseGetJobResponse(m_Job, server.ExecWithRetry(m_Cmd).response);
 }
 
 bool SNetScheduleExecuterImpl::GetJobImpl(
@@ -344,7 +331,7 @@ void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd) const
         CNetServer server = *it;
 
         try {
-            server.Connect().Exec(cmd);
+            server.ExecWithRetry(cmd);
         } catch (CNetServiceException& ex) {
             ERR_POST_X(12, server->m_Address.AsString()
                 << " returned error: \"" << ex.what() << "\"");

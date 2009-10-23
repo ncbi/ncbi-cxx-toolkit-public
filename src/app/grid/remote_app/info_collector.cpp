@@ -166,10 +166,8 @@ void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
 {
     for (CNetServerGroupIterator it = x_GetAPI().GetService().DiscoverServers(
             CNetService::eIncludePenalized).Iterate(); it; ++it) {
-        CNetServerConnection conn = (*it).Connect();
-
-        CNetServerCmdOutput output = conn.ExecMultiline("QPRT " +
-                CNetScheduleAPI::StatusToString(status));
+        CNetServerMultilineCmdOutput output((*it).ExecWithRetry("QPRT " +
+                CNetScheduleAPI::StatusToString(status)));
 
         string response;
 

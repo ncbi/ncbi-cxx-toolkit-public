@@ -54,13 +54,28 @@ private:
 
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
 {
-    SNetCacheAPIImpl(const string& service,
-        const string& client_name,
-        const string& lbsm_affinity_name);
+    void Init()
+    {
+        m_Listener = new CNetCacheServerListener(m_Service.GetClientName());
+
+        m_Service->SetListener(m_Listener);
+    }
+
+    SNetCacheAPIImpl(const string& service, const string& client_name,
+            const string& lbsm_affinity_name) :
+        m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name))
+    {
+        Init();
+    }
+
+    SNetCacheAPIImpl(CConfig& config, const string& driver_name) :
+        m_Service(new SNetServiceImpl(config, driver_name))
+    {
+        Init();
+    }
 
     IReader* GetReadStream(
-        CNetServerConnection conn_impl,
-        const string& cmd,
+        const CNetServer::SExecResult& exec_result,
         size_t* blob_size);
 
     static CNetCacheAPI::EReadResult ReadBuffer(
@@ -70,7 +85,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         size_t* n_read,
         size_t blob_size);
 
-    CNetServerConnection x_GetConnection(const string& bid);
+    CNetServer GetServer(const string& bid);
     CNetServerConnection InitiatePutCmd(string* key, unsigned time_to_live);
 
     void WriteBuffer(
@@ -80,22 +95,11 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         size_t buf_size);
 
     static void AppendClientIPSessionID(string* cmd);
-    static string AddClientIPSessionID(const string& cmd);
 
     CNetService m_Service;
 
     CNetObjectRef<CNetCacheServerListener> m_Listener;
 };
-
-inline SNetCacheAPIImpl::SNetCacheAPIImpl(const string& service,
-    const string& client_name,
-    const string& lbsm_affinity_name) :
-    m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name))
-{
-    m_Listener = new CNetCacheServerListener(m_Service.GetClientName());
-
-    m_Service->SetListener(m_Listener);
-}
 
 struct SNetCacheAdminImpl : public CNetObject
 {

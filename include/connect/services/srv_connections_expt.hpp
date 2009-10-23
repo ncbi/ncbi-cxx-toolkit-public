@@ -46,11 +46,13 @@ class CNetSrvConnException : public CException
 public:
     enum EErrCode {
         eReadTimeout,
-        eResponseTimeout,
         eLBNameNotFound,
         eSrvListEmpty,
         eConnectionFailure,
-        eWriteFailure
+        eWriteFailure,
+        eConnClosedByServer,
+        eCommunicationError,
+        eServerThrottle,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -58,11 +60,13 @@ public:
         switch (GetErrCode())
         {
         case eReadTimeout:        return "eReadTimeout";
-        case eResponseTimeout:    return "eResponseTimeout";
         case eLBNameNotFound:     return "eLBNameNotFound";
         case eSrvListEmpty:       return "eSrvListEmpty";
         case eConnectionFailure:  return "eConnectionFailure";
         case eWriteFailure:       return "eWriteFailure";
+        case eConnClosedByServer: return "eConnClosedByServer";
+        case eCommunicationError: return "eCommunicationError";
+        case eServerThrottle:     return "eServerThrottle";
         default:                  return CException::GetErrCodeString();
         }
     }

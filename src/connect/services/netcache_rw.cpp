@@ -138,7 +138,6 @@ void CNetCacheWriter::Close()
     if (m_ResponseType == eNetCache_Wait) {
         try {
             m_Writer.reset();
-            m_Connection->WaitForServer();
             string dummy;
             m_Connection->ReadCmdOutputLine(dummy);
         } catch (...) {
