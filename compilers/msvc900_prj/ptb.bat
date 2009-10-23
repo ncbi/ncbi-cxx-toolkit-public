@@ -180,7 +180,9 @@ if "%PTB_RESULT%"=="1" (
   echo -CONFIGURE- has failed
   echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
   echo ******************************************************************************
-  if "%DIAG_SILENT_ABORT%"=="" start "" "%SLN_PATH%_configuration_log.txt"
+  if exist "%SLN_PATH%_configuration_log.txt" (
+    if "%DIAG_SILENT_ABORT%"=="" start "" "%SLN_PATH%_configuration_log.txt"
+  )
   exit /b 1
 ) else (
   echo ******************************************************************************

@@ -174,7 +174,9 @@ else
 fi
 
 if test "$TERM" = "dumb"; then
-  open ${SLN_PATH}_configuration_log.txt
+  if test -f "${SLN_PATH}_configuration_log.txt"; then
+    open ${SLN_PATH}_configuration_log.txt
+  fi
 fi
 
 exit 0
