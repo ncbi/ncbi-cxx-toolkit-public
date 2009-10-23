@@ -24,13 +24,13 @@ rm -f $server_log $client_log
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
-test_ncbi_namedpipe_connector server >$server_log 2>&1 &
+test_ncbi_namedpipe_connector -suffix $$ server >$server_log 2>&1 &
 
 spid=$!
 trap 'kill -9 $spid; rm -f ./.test_ncbi_namedpipe' 0 1 2 15
 
 sleep 2
-$CHECK_EXEC test_ncbi_namedpipe_connector client 1.23456 >$client_log 2>&1  ||  exit_code=1
+$CHECK_EXEC test_ncbi_namedpipe_connector -suffix $$ client 1.23456 >$client_log 2>&1  ||  exit_code=1
 
 kill $spid  ||  exit_code=2
 ( kill -9 $spid ) >/dev/null 2>&1
