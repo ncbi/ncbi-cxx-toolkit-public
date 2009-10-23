@@ -73,10 +73,13 @@ string CProjectsLstFileFilter::ConvertToMask(const string& name)
 
 void CProjectsLstFileFilter::InitFromString(const string& subtree)
 {
-    string sub = CDirEntry::AddTrailingPathSeparator(subtree);
+    string separator;
+    separator += CDirEntry::GetPathSeparator();
+    string nsubtree = NStr::Replace(subtree, "/",separator);
+    string sub = CDirEntry::AddTrailingPathSeparator(nsubtree);
     m_PassAll = NStr::CompareNocase(m_RootSrcDir, sub) == 0;
     if (!m_PassAll) {
-        string s = CDirEntry::CreateRelativePath(m_RootSrcDir,subtree);
+        string s = CDirEntry::CreateRelativePath(m_RootSrcDir,nsubtree);
         NStr::ReplaceInPlace(s,"\\","/");
         if (NStr::EndsWith(s,'/')) {
             s.erase(s.size()-1,1);

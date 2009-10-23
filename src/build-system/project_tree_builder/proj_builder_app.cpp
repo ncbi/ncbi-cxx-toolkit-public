@@ -1699,8 +1699,6 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 
     // Subtree to build - projects filter
     string subtree = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, m_Subtree);
-    string ext;
-    CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
     LOG_POST(Info << "Project list or subtree: " << subtree);
     m_ProjectTreeInfo->m_IProjectFilter.reset(
         new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src, subtree));
