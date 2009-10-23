@@ -414,6 +414,7 @@ class CWig2tableApplication : public CNcbiApplication
     CRef<CSeq_annot> m_Annot;
 
     bool m_AsGraph;
+    bool m_SingleAnnot;
     bool m_OmitZeros;
     bool m_JoinSame;
     bool m_AsByte;
@@ -437,33 +438,34 @@ void CWig2tableApplication::Init(void)
     arg_desc->AddDefaultKey
         ("input", "InputFile",
          "name of file to read from (standard input by default)",
-         CArgDescriptions::eInputFile, "-");
+         CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
         ("output", "OutputFile",
          "name of file to write to (standard output by default)",
-         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
+         CArgDescriptions::eOutputFile, "-");
     arg_desc->AddDefaultKey("outfmt", "OutputFormat", "format of output file",
                             CArgDescriptions::eString, "asn");
-    arg_desc->SetConstraint
-        ("outfmt", &(*new CArgAllow_Strings, "asn", "asnb", "xml"));
+    arg_desc->SetConstraint("outfmt",
+                            &(*new CArgAllow_Strings, "asn", "asnb", "xml"));
 
-    arg_desc->AddOptionalKey
-        ("mapfile",
-         "MapFile",
-         "IdMapper config filename",
-         CArgDescriptions::eInputFile);
-    arg_desc->AddDefaultKey
-        ("genome", 
-         "Genome",
-         "UCSC build number",
-         CArgDescriptions::eString,
-         "");
+    arg_desc->AddOptionalKey("mapfile", "MapFile",
+                             "IdMapper config filename",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey("genome", "Genome",
+                            "UCSC build number",
+                            CArgDescriptions::eString, "");
 
-    arg_desc->AddFlag("as-graph", "Generate Seq-graph");
-    arg_desc->AddFlag("as-byte", "Convert data in byte range");
-    arg_desc->AddFlag("omit-zeros", "Omit zero values");
-    arg_desc->AddFlag("join-same", "Join equal sequential values");
+    arg_desc->AddFlag("as-graph",
+                      "Generate Seq-graph");
+    arg_desc->AddFlag("single-annot",
+                      "Put all Seq-graphs in a single Seq-annot");
+    arg_desc->AddFlag("as-byte",
+                      "Convert data in byte range");
+    arg_desc->AddFlag("omit-zeros",
+                      "Omit zero values");
+    arg_desc->AddFlag("join-same",
+                      "Join equal sequential values");
     arg_desc->AddFlag("keep-integer",
                       "Keep integer as is if they fit in an output range");
     arg_desc->AddDefaultKey("gap-value", "GapValue",
@@ -542,7 +544,9 @@ CWig2tableApplication::SStat CWig2tableApplication::x_PreprocessValues(void)
 
     const int range = 255;
     if ( stat.m_Max > stat.m_Min &&
-         (!stat.m_IntValues || stat.m_Max-stat.m_Min > range) ) {
+         (!m_KeepInteger ||
+          !stat.m_IntValues ||
+          stat.m_Max-stat.m_Min > range) ) {
         stat.m_Step = (stat.m_Max-stat.m_Min)/range;
         stat.m_StepMul = 1/stat.m_Step;
     }
@@ -1086,6 +1090,8 @@ void CWig2tableApplication::DumpChromValues(void)
     }
     else {
         m_Annot->SetData().SetSeq_table(*MakeTable());
+    }
+    if ( !m_SingleAnnot ) {
         DumpAnnot();
     }
     ResetChromValues();
@@ -1275,6 +1281,7 @@ int CWig2tableApplication::Run(void)
     }
 
     m_AsGraph = args["as-graph"];
+    m_SingleAnnot = args["single-annot"];
     m_OmitZeros = args["omit-zeros"];
     m_JoinSame = args["join-same"];
     m_AsByte = m_AsGraph || args["as-byte"];
@@ -1290,6 +1297,13 @@ int CWig2tableApplication::Run(void)
             ERR_POST(Warning<<
                      "The option -join_same is ignored for Seq-graph");
             m_JoinSame = false;
+        }
+    }
+    else {
+        if ( m_SingleAnnot ) {
+            ERR_POST(Warning<<
+                     "The option -single-annot is ignored for Seq-table");
+            m_SingleAnnot = false;
         }
     }
 
