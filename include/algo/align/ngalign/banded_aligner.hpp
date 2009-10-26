@@ -150,7 +150,7 @@ private:
     int m_TimeOutSeconds;
     int m_Threshold;
 
-    int m_Match, int m_Mismatch, int m_GapOpen, int m_GapExtend;
+    int m_Match, m_Mismatch, m_GapOpen, m_GapExtend;
 
 
     void x_RunAligner(objects::CScope& Scope,
