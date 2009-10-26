@@ -128,30 +128,33 @@ int main(int argc, char* argv[])
     t = time(0);
     do {
         status = CONN_Wait(conn, eIO_Read, net_info->timeout);
-        if (status != eIO_Success) {
-            if (status != eIO_Timeout)
-                break;
-            if ((net_info->timeout  &&
-                 (net_info->timeout->sec | net_info->timeout->usec))
-                ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)
-                CORE_LOG(eLOG_Fatal, "Timed out");
+        if (status == eIO_Closed)
+            break;
+        if (status == eIO_Timeout
+            &&  ((net_info->timeout  &&
+                  (net_info->timeout->sec | net_info->timeout->usec))
+                 ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT)) {
+            CORE_LOG(eLOG_Fatal, "Timed out");
 #ifdef NCBI_OS_UNIX
             usleep(500);
 #endif /*NCBI_OS_UNIX*/
             continue;
         }
-
-        status = CONN_ReadLine(conn, blk, sizeof(blk), &n);
-        if (status == eIO_Timeout)
-            continue;
+        if (status == eIO_Success) {
+            status = CONN_ReadLine(conn, blk, sizeof(blk), &n);
+            if (status == eIO_Timeout) {
+                assert(!n);
+                continue;
+            }
+        }
         if (status != eIO_Success  &&  status != eIO_Closed)
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
-        if (n == sizeof(blk))
-            CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
         if (n) {
             fwrite(blk, 1, n, stdout);
             fputc('\n', stdout);
             fflush(stdout);
+            if (n == sizeof(blk)  &&  status != eIO_Closed)
+                CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
         }
     } while (status == eIO_Success  ||  status == eIO_Timeout);
 
