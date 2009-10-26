@@ -782,7 +782,8 @@ public:
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
                           bool remove_trailing_X = false,
-                          bool* alt_start = 0);
+                          bool* alt_start = 0,
+                          bool is_5prime_complete = true);
 
     /// translate a seq-vector using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
@@ -791,7 +792,8 @@ public:
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
                           bool remove_trailing_X = false,
-                          bool* alt_start = 0);
+                          bool* alt_start = 0,
+                          bool is_5prime_complete = true);
 
     /// utility function: translate a given location on a sequence
     NCBI_DEPRECATED

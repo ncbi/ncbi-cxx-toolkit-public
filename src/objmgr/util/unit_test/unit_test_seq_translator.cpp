@@ -800,17 +800,47 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     annot->SetData().SetFtable().push_back(feat);
     entry.SetSeq().SetAnnot().push_back(annot);
 
+    string tmp;
+    string complete_trans = "-MGMCFLRGWKGV";
+    string partial_trans = "KMGMCFLRGWKGV";
+
+    // translate with vector
+    tmp.clear();
+    CSeqVector vec(feat->GetLocation(), scope);
+    // default value for 5' complete is true
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, false, true);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+    // set 5' complete false
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, false, true, 0, false);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+
+    // translate with string
+    string seq_str;
+    vec.GetSeqData(0, entry.GetSeq().GetLength(), seq_str);
+    // default value for 5' complete is true
+    CSeqTranslator::Translate(seq_str, tmp,
+                              NULL, false, true);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+    // set 5' complete false
+    tmp.clear();
+    CSeqTranslator::Translate(seq_str, tmp,
+                              NULL, false, true, 0, false);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+
+
     ///
     /// translate the CDRegion directly
     ///
-    string tmp;
 
     /// use CSeqTranslator::Translate()
     tmp.clear();
     CSeqTranslator::Translate(*feat,
                               scope, tmp,
                               false, true);
-    BOOST_CHECK_EQUAL("-MGMCFLRGWKGV", tmp);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // if partial, should translate first codon
     feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
@@ -818,7 +848,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     CSeqTranslator::Translate(*feat,
                               scope, tmp,
                               false, true);
-    BOOST_CHECK_EQUAL("KMGMCFLRGWKGV", tmp);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 }
 

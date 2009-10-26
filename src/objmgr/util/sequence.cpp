@@ -2717,10 +2717,11 @@ void CSeqTranslator::Translate(const string& seq, string& prot,
                                const CGenetic_code* code,
                                bool include_stop,
                                bool remove_trailing_X,
-                               bool* alt_start)
+                               bool* alt_start,
+                               bool is_5prime_complete)
 {
     x_Translate(seq, prot, 0, code,
-                true, include_stop, remove_trailing_X, alt_start);
+                is_5prime_complete, include_stop, remove_trailing_X, alt_start);
 }
 
 
@@ -2728,10 +2729,11 @@ void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                const CGenetic_code* code,
                                bool include_stop,
                                bool remove_trailing_X,
-                               bool* alt_start)
+                               bool* alt_start,
+                               bool is_5prime_complete)
 {
     x_Translate(seq, prot, 0, code,
-                true, include_stop, remove_trailing_X, alt_start);
+                is_5prime_complete, include_stop, remove_trailing_X, alt_start);
 }
 
 
