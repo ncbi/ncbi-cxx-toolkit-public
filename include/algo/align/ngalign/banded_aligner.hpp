@@ -125,7 +125,17 @@ class CInstancedAligner : public IAlignmentFactory
 public:
 
     CInstancedAligner(int TimeOutSeconds, int Threshold)
-        : m_TimeOutSeconds(TimeOutSeconds), m_Threshold(Threshold) { ; }
+        : m_TimeOutSeconds(TimeOutSeconds), m_Threshold(Threshold),
+          m_Match(2), m_Mismatch(-3), m_GapOpen(-100), m_GapExtend(-1) { ; }
+
+    // Defaults to +2, -3, -100, -1
+    void SetPathValues(int Match, int Mismatch, int GapOpen, int GapExtend)
+    {
+        m_Match = Match;
+        m_Mismatch = Mismatch;
+        m_GapOpen = GapOpen;
+        m_GapExtend = GapExtend;
+    }
 
     TAlignResultsRef GenerateAlignments(objects::CScope& Scope,
                                         ISequenceSet* QuerySet,
@@ -139,6 +149,8 @@ private:
 
     int m_TimeOutSeconds;
     int m_Threshold;
+
+    int m_Match, int m_Mismatch, int m_GapOpen, int m_GapExtend;
 
 
     void x_RunAligner(objects::CScope& Scope,

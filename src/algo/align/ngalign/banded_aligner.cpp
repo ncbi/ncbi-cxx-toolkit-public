@@ -576,10 +576,10 @@ CRef<CDense_seg> CInstancedAligner::x_RunMMGlobal(const CSeq_id& QueryId,
     CRef<CDense_seg> ResultDenseg;
 
     CMMAligner Aligner(QuerySeq, SubjectSeq);
-    Aligner.SetWm(2);
-    Aligner.SetWms(-3);
-    Aligner.SetWg(-100);
-    Aligner.SetWs(-1);
+    Aligner.SetWm(m_Match);
+    Aligner.SetWms(m_Mismatch);
+    Aligner.SetWg(m_GapOpen);
+    Aligner.SetWs(m_GapExtend);
     Aligner.SetScoreMatrix(NULL);
     Aligner.SetProgressCallback(s_ProgressCallback, (void*)&CallbackData);
     try {

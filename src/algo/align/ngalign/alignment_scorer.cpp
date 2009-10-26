@@ -316,15 +316,17 @@ void CCommonComponentScorer::x_GetSeqHistCompList(CBioseq_Handle Handle,
     ITERATE(CSeq_hist::TAssembly, AlignIter, Assembly) {
         const CSeq_align& Align = **AlignIter;
 
-        int ng_row        = 0;
+        // the Seq-aligns are expected to be in this row order
+        // but just in case, there is a check and swap later if needed
+        int query_row     = 0;
         int component_row = 1;
 
         CSeq_id_Handle AlignIdHandle =
-            CSeq_id_Handle::GetHandle(Align.GetSeq_id(ng_row));
+            CSeq_id_Handle::GetHandle(Align.GetSeq_id(query_row));
         AlignIdHandle = sequence::GetId(AlignIdHandle, Handle.GetScope(),
                                         sequence::eGetId_Canonical);
         if (AlignIdHandle != HandleId) {
-            std::swap(ng_row, component_row);
+            std::swap(query_row, component_row);
         }
 
         list< CConstRef<CSeq_align> > SplitAligns;
@@ -344,8 +346,8 @@ void CCommonComponentScorer::x_GetSeqHistCompList(CBioseq_Handle Handle,
             CompId = sequence::GetId(CompId, Handle.GetScope(),
                                    sequence::eGetId_Canonical);
 
-            if(Start <= (*SplitIter)->GetSeqStop(ng_row) &&
-               Stop >= (*SplitIter)->GetSeqStart(ng_row)) {
+            if(Start <= (*SplitIter)->GetSeqStop(query_row) &&
+               Stop >= (*SplitIter)->GetSeqStart(query_row)) {
                 CRef<CSeq_id> Id(new CSeq_id);
                 Id->Assign(*CompId.GetSeqId());
                 CompIds.push_back(Id);
@@ -383,6 +385,9 @@ bool CCommonComponentScorer::x_CompareCompLists(list<CRef<CSeq_id> >& QueryIds,
 
     return false;
 }
+
+
+
 
 
 END_SCOPE(ncbi)
