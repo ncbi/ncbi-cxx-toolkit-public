@@ -62,6 +62,8 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -75,6 +77,7 @@ extern const char* sc_TestEntry_3prime_partial;
 extern const char* sc_TestEntry_5prime_partial_minus;
 extern const char* sc_TestEntry_TerminalTranslExcept;
 extern const char* sc_TestEntry_ShortCDS;
+extern const char* sc_TestEntry_FirstCodon;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 {
@@ -774,6 +777,49 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_ShortCDS)
             BOOST_CHECK_EQUAL("-", tmp);
         }
     }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_FirstCodon);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetCdregion();
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("FirstCodon");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(38);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    entry.SetSeq().SetAnnot().push_back(annot);
+
+    ///
+    /// translate the CDRegion directly
+    ///
+    string tmp;
+
+    /// use CSeqTranslator::Translate()
+    tmp.clear();
+    CSeqTranslator::Translate(*feat,
+                              scope, tmp,
+                              false, true);
+    BOOST_CHECK_EQUAL("-MGMCFLRGWKGV", tmp);
+
+    // if partial, should translate first codon
+    feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    tmp.clear();
+    CSeqTranslator::Translate(*feat,
+                              scope, tmp,
+                              false, true);
+    BOOST_CHECK_EQUAL("KMGMCFLRGWKGV", tmp);
+
 }
 
 
@@ -1749,4 +1795,20 @@ Seq-entry ::= seq {\
                         id\
                           local\
                             str \"ShortCDS\" } } } } } }\
+";
+
+const char *sc_TestEntry_FirstCodon = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"FirstCodon\" } ,\
+          descr {\
+            molinfo {\
+              biomol mRNA } } ,\
+          inst {\
+            repr raw ,\
+            mol rna ,\
+            length 39 ,\
+            seq-data\
+              iupacna \"AAAATGGGAATGTGCTTTTTGAGAGGATGGAAAGGTGTT\" } }\
 ";
