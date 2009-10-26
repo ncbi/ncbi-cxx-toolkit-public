@@ -1224,7 +1224,7 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
                 }
             }
         }
-        
+
         if(!ConfirmedStop() && HasStop() && prot_complet[orig_align->TargetAccession()].second && Include(Limits(),(*i)->Limits())) {  // protein has stop
             TSignedSeqPos not_aligned = orig_align->TargetLen()-orig_align->GetAlignMap().MapRangeOrigToEdited(orig_align->Limits(),false).GetTo();
             if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned
@@ -1245,11 +1245,11 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
 {
     ClearTrustedmRNA();
     ClearTrustedProt();
-    if(Continuous() && ConfirmedStart() && ConfirmedStop()) {
+    if(Continuous()) {
         ITERATE(vector<CGeneModel*>, i, m_members) {
-            if(Include(Limits(),(*i)->Limits())) {
+            if(IntersectingWith(**i)) {                  // just in case we clipped this alignment
                 CAlignModel* orig_align = orig_aligns[(*i)->ID()];
-                if(((*i)->Continuous() && (*i)->ConfirmedStart() && (*i)->ConfirmedStop()) || (orig_align->AlignLen() > minscor.m_minprotfrac*orig_align->TargetLen())) {
+                if((*i)->Continuous() && (((*i)->ConfirmedStart() && (*i)->ConfirmedStop()) || (orig_align->AlignLen() > minscor.m_minprotfrac*orig_align->TargetLen()))) {
                     if(!(*i)->TrustedmRNA().empty())
                         InsertTrustedmRNA(*(*i)->TrustedmRNA().begin());
                     else if(!(*i)->TrustedProt().empty())
@@ -1689,9 +1689,6 @@ void CChainer::CChainerImpl::AddFShiftsAndScoreCdnas(TGeneModelList& clust, cons
         gnomon->GetScore(algn);
         double ms = GoodCDNAScore(algn);
         RemovePoorCds(algn,ms);
-
-        if((algn.Status()&CGeneModel::ePolyA) != 0 && algn.ReadingFrame().NotEmpty() && !algn.HasStop())      // if there is no stop kill PolyA tail
-            algn.Status() ^= CGeneModel::ePolyA;           
 
         ++itcl;
     }
@@ -2231,13 +2228,14 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
     minscor.m_prot_cds_len = args["protcdslen"].AsInteger();
 
     chainer->SetMinInframeFrac(args["mininframefrac"].AsDouble());
+    
+    CIdHandler cidh(*chainer->SetScope());
 
     map<string,TSignedSeqRange>& mrnaCDS = chainer->SetMrnaCDS();
     if(args["mrnaCDS"]) {
         CNcbiIstream& cdsfile = args["mrnaCDS"].AsInputFile();
         string accession, tmp;
         int a, b;
-        CIdHandler cidh(*chainer->SetScope());
         while(cdsfile >> accession >> a >> b) {
             _ASSERT(a > 0 && b > 0 && b > a);
             getline(cdsfile,tmp);
@@ -2252,8 +2250,10 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
         string accession;
         bool fivep;
         bool threep; 
-        while(protfile >> accession >> fivep >> threep)
+        while(protfile >> accession >> fivep >> threep) {
+            accession = CIdHandler::ToString(*cidh.ToCanonical(*CIdHandler::ToSeq_id(accession)));
             prot_complet[accession] = make_pair(fivep, threep);
+        }
     }
 }
 
