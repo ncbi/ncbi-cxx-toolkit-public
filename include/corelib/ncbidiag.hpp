@@ -114,26 +114,16 @@ private:
 /// Defined inside of either a method or a function body only.
 // Based on boost's BOOST_CURRENT_FUNCTION
 
-#ifndef NDEBUG
-#  undef  NCBI_SHOW_FUNCTION_NAME
-#  define NCBI_SHOW_FUNCTION_NAME
-#endif
-
-
-#ifdef NCBI_SHOW_FUNCTION_NAME
-#  if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))
-#    define NCBI_CURRENT_FUNCTION __PRETTY_FUNCTION__
-#  elif defined(__FUNCSIG__)
-#    define NCBI_CURRENT_FUNCTION __FUNCSIG__
-#  elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
-#    define NCBI_CURRENT_FUNCTION __FUNCTION__
-#  elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
-#    define NCBI_CURRENT_FUNCTION __FUNC__
-#  elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
-#    define NCBI_CURRENT_FUNCTION __func__
-#  else
-#    define NCBI_CURRENT_FUNCTION NULL
-#  endif
+#if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))
+#  define NCBI_CURRENT_FUNCTION __PRETTY_FUNCTION__
+#elif defined(__FUNCSIG__)
+#  define NCBI_CURRENT_FUNCTION __FUNCSIG__
+#elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
+#  define NCBI_CURRENT_FUNCTION __FUNCTION__
+#elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
+#  define NCBI_CURRENT_FUNCTION __FUNC__
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
+#  define NCBI_CURRENT_FUNCTION __func__
 #else
 #  define NCBI_CURRENT_FUNCTION NULL
 #endif
