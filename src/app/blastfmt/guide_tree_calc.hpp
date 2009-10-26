@@ -125,8 +125,7 @@ public:
     /// @param annot CSeq_align_set [in]
     /// @param scope Scope [in]    
     ///
-    CGuideTreeCalc::CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet,
-                               CRef<CScope> scope);
+    CGuideTreeCalc(CRef<CSeq_align_set> &seqAlignSet, CRef<CScope> scope);
 
     ~CGuideTreeCalc() {}
 
