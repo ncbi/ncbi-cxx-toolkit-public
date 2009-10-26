@@ -40,7 +40,7 @@ const string kDfltArgTabularOutputFmt =
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 
-const size_t kNumTabularOutputFormatSpecifiers = 29;
+const size_t kNumTabularOutputFormatSpecifiers = 31;
 const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("qseqid",   
                 "Query Seq-id",
@@ -51,6 +51,9 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("qacc",
                 "Query accesion",
                 eQueryAccession),
+    SFormatSpec("qaccver",
+                "Query accesion.version",
+                eQueryAccessionVersion),
     SFormatSpec("sseqid",
                 "Subject Seq-id",
                 eSubjectSeqId),
@@ -66,6 +69,9 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("sacc",
                 "Subject accession", 
                 eSubjectAccession),
+    SFormatSpec("saccver",
+                "Subject accession.version", 
+                eSubjAccessionVersion),
     SFormatSpec("sallacc", 
                 "All subject accessions", 
                 eSubjectAllAccessions),

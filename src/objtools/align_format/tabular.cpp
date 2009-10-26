@@ -151,6 +151,12 @@ s_GetSeqIdListString(const list<CRef<CSeq_id> >& id,
         accid->GetLabel(&id_str, CSeq_id::eContent, 0);
         break;
     }
+    case CBlastTabularInfo::eAccVersion:
+    {
+        CConstRef<CSeq_id> accid = FindBestChoice(id, CSeq_id::Score);
+        accid->GetLabel(&id_str, CSeq_id::eContent, CSeq_id::fLabel_Version);
+        break;
+    }
     case CBlastTabularInfo::eGi:
         id_str = NStr::IntToString(FindGi(id));
         break;
@@ -176,6 +182,11 @@ void CBlastTabularInfo::x_PrintQueryGi()
 void CBlastTabularInfo::x_PrintQueryAccession()
 {
     m_Ostream << s_GetSeqIdListString(m_QueryId, eAccession);
+}
+
+void CBlastTabularInfo::x_PrintQueryAccessionVersion()
+{
+    m_Ostream << s_GetSeqIdListString(m_QueryId, eAccVersion);
 }
 
 void CBlastTabularInfo::x_PrintSubjectSeqId()
@@ -209,6 +220,11 @@ void CBlastTabularInfo::x_PrintSubjectAllGis(void)
 void CBlastTabularInfo::x_PrintSubjectAccession(void)
 {
     m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eAccession);
+}
+
+void CBlastTabularInfo::x_PrintSubjectAccessionVersion(void)
+{
+    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eAccVersion);
 }
 
 void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
@@ -470,6 +486,8 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "query gi"; break;
         case eQueryAccession:
             m_Ostream << "query acc."; break;
+        case eQueryAccessionVersion:
+            m_Ostream << "query acc.ver"; break;
         case eSubjectSeqId:
             m_Ostream << "subject id"; break;
         case eSubjectAllSeqIds:
@@ -480,6 +498,8 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "subject gis"; break;
         case eSubjectAccession:
             m_Ostream << "subject acc."; break;
+        case eSubjAccessionVersion:
+            m_Ostream << "subject acc.ver"; break;
         case eSubjectAllAccessions:
             m_Ostream << "subject accs."; break;
         case eQueryStart:
@@ -666,6 +686,8 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintQueryGi(); break;
     case eQueryAccession:
         x_PrintQueryAccession(); break;
+    case eQueryAccessionVersion:
+        x_PrintQueryAccessionVersion(); break;
     case eSubjectSeqId:
         x_PrintSubjectSeqId(); break;
     case eSubjectAllSeqIds:
@@ -676,6 +698,8 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintSubjectAllGis(); break;
     case eSubjectAccession:
         x_PrintSubjectAccession(); break;
+    case eSubjAccessionVersion:
+        x_PrintSubjectAccessionVersion(); break;
     case eSubjectAllAccessions:
         x_PrintSubjectAllAccessions(); break;
     case eQueryStart:
@@ -719,6 +743,7 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
     case eSubjFrame:
         x_PrintSubjectFrame(); break;        
     default:
+        _ASSERT(false);
         break;
     }
 }

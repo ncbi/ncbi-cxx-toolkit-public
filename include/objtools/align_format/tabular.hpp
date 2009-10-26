@@ -54,6 +54,7 @@ public:
     enum ESeqIdType {
         eFullId = 0, ///< Show full seq-id, with multiple ids concatenated.
         eAccession,  ///< Show only best accession
+        eAccVersion, ///< Show only best accession.version
         eGi          ///< Show only gi
     };
 
@@ -181,6 +182,8 @@ protected:
     void x_PrintQueryGi(void);
     /// Print query accession
     void x_PrintQueryAccession(void);
+    /// Print query accession.version
+    void x_PrintQueryAccessionVersion(void);
     /// Print subject Seq-id
     void x_PrintSubjectSeqId(void);
     /// Print all Seq-ids associated with this subject, separated by ';'
@@ -189,8 +192,10 @@ protected:
     void x_PrintSubjectGi(void);
     /// Print all gis associated with this subject, separated by ';'
     void x_PrintSubjectAllGis(void);
-    /// Print subject accessions
+    /// Print subject accession
     void x_PrintSubjectAccession(void);
+    /// Print subject accession.version
+    void x_PrintSubjectAccessionVersion(void);
     /// Print all accessions associated with this subject, separated by ';'
     void x_PrintSubjectAllAccessions(void);
     /// Print aligned part of query sequence

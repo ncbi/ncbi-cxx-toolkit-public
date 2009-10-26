@@ -80,12 +80,14 @@ enum ETabularField {
     eQuerySeqId = 0,       ///< Query Seq-id(s)
     eQueryGi,              ///< Query gi
     eQueryAccession,       ///< Query accession
+    eQueryAccessionVersion,///< Query accession.version
     eSubjectSeqId,         ///< Subject Seq-id(s)
     eSubjectAllSeqIds,     ///< If multiple redundant sequences, all sets
                            /// of subject Seq-ids, separated by ';'
     eSubjectGi,            ///< Subject gi
     eSubjectAllGis,        ///< All subject gis
     eSubjectAccession,     ///< Subject accession 
+    eSubjAccessionVersion, ///< Subject accession.version
     eSubjectAllAccessions, ///< All subject accessions, separated by ';'
     eQueryStart,           ///< Start of alignment in query
     eQueryEnd,             ///< End of alignment in query
