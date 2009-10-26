@@ -567,23 +567,31 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
     // Discriminate between different types of error
     string status_str = "500 Server Error";
+    string message = "";
     SetHTTPStatus(500);
-    if ( dynamic_cast<CCgiException*> (&e) ) {
-        CCgiException& cgi_e = dynamic_cast<CCgiException&>(e);
-        if ( cgi_e.GetStatusCode() != CCgiException::eStatusNotSet ) {
-            SetHTTPStatus(cgi_e.GetStatusCode());
-            status_str = NStr::IntToString(cgi_e.GetStatusCode()) +
-                " " + cgi_e.GetStatusMessage();
-        }
-        else {
-            // Convert CgiRequestException and CCgiArgsException
-            // to error 400
-            if (dynamic_cast<CCgiRequestException*> (&e)  ||
-                dynamic_cast<CCgiArgsException*> (&e)) {
-                SetHTTPStatus(400);
-                status_str = "400 Malformed HTTP Request";
+    CException* ce = dynamic_cast<CException*> (&e);
+    if ( ce ) {
+        message = ce->GetMsg();
+        CCgiException* cgi_e = dynamic_cast<CCgiException*>(&e);
+        if ( cgi_e ) {
+            if ( cgi_e->GetStatusCode() != CCgiException::eStatusNotSet ) {
+                SetHTTPStatus(cgi_e->GetStatusCode());
+                status_str = NStr::IntToString(cgi_e->GetStatusCode()) +
+                    " " + cgi_e->GetStatusMessage();
+            }
+            else {
+                // Convert CgiRequestException and CCgiArgsException
+                // to error 400
+                if (dynamic_cast<CCgiRequestException*> (&e)  ||
+                    dynamic_cast<CCgiArgsException*> (&e)) {
+                    SetHTTPStatus(400);
+                    status_str = "400 Malformed HTTP Request";
+                }
             }
         }
+    }
+    else {
+        message = e.what();
     }
 
     try {
@@ -593,7 +601,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 
         // Message
         os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
-        os << e.what();
+        os << message;
 
         if ( dynamic_cast<CArgException*> (&e) ) {
             string ustr;
