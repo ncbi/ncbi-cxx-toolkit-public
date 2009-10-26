@@ -1160,7 +1160,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         string type_temp = m_BlastType;
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
         if(type_temp == "mapview" || type_temp == "mapview_prev" || 
-           type_temp == "gsfasta"){
+           type_temp == "gsfasta" || type_temp == "gsfasta_prev"){
             taxid[row] = CAlignFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
                                                             m_Scope);
         } else {
@@ -1985,7 +1985,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
                         if((type_temp == "mapview" || 
                             type_temp == "mapview_prev" || 
-                            type_temp == "gsfasta") && 
+                            type_temp == "gsfasta" || type_temp == "gsfasta_prev") && 
                            (*iter)->IsSetTaxid() && 
                            (*iter)->CanGetTaxid()){
                             taxid = (*iter)->GetTaxid();
@@ -3039,7 +3039,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
            (type_temp.find("genome") != string::npos ||
             type_temp == "mapview" || 
             type_temp == "mapview_prev" || 
-            type_temp == "gsfasta")){
+            type_temp == "gsfasta" || type_temp == "gsfasta_prev")){
             string subj_id_str;
             char buffer[126];
             int master_start = m_AV->GetSeqStart(0) + 1;

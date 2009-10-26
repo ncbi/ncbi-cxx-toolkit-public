@@ -470,7 +470,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
         int taxid = 0;
         if (type_temp == "mapview" || type_temp == "mapview_prev" || 
-            type_temp == "gsfasta") {
+            type_temp == "gsfasta" || type_temp == "gsfasta_prev") {
             taxid = 
                 CAlignFormatUtil::GetTaxidForSeqid(aln_id, *m_ScopeRef);
         }
