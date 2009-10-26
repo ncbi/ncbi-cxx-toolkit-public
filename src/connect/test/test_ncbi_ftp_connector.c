@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    data_file = fopen("test_ncbi_ftp_connector.out", "wb");
+    data_file = fopen("test_ncbi_ftp_connector.dat", "wb");
     assert(data_file);
 
     assert((net_info = ConnNetInfo_Create(0)) != 0);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
     else if (net_info->debug_printout == eDebugPrintout_Data) {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
-        flag |= strcasecmp(val, "ALL") == 0 ? fFCDC_LogAll : fFCDC_LogData;
+        flag |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
 
     if (TEST_PORT) {
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
     /* Cleanup and exit */
     fclose(data_file);
     if (aborting) {
-        remove("test_ncbi_ftp_connector.out");
+        remove("test_ncbi_ftp_connector.dat");
     } else {
         CORE_LOGF(eLOG_Note, ("%lu bytes downloaded", (unsigned long) size));
     }
