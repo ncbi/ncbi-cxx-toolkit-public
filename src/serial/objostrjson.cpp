@@ -191,6 +191,7 @@ void CObjectOStreamJson::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamJson::WriteNullPointer(void)
 {
+    WriteKeywordValue("null");
 }
 
 void CObjectOStreamJson::WriteObjectReference(TObjectIndex /*index*/)
