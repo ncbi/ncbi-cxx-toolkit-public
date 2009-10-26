@@ -486,9 +486,13 @@ bool CTarEntryInfo::operator==(const CTarEntryInfo& info) const
 
 static string s_ModeAsString(TTarMode mode)
 {
-    string usr("---");
-    string grp("---");
-    string oth("---");
+    char  buf[9];
+    memset(buf, '-', sizeof(buf));
+
+    char* usr = buf;
+    char* grp = usr + 3;
+    char* oth = grp + 3;
+
     if (mode & fTarURead) {
         usr[0] = 'r';
     }
@@ -523,7 +527,7 @@ static string s_ModeAsString(TTarMode mode)
         oth[2] = 'T';
     }
 
-    return usr + grp + oth;
+    return string(buf, sizeof(buf));
 }
 
 
