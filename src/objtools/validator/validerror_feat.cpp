@@ -5006,7 +5006,6 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
     bool found = false;
 
     string str;
-    string::size_type   begin = 0, end, textlen = text.length();
 
     const string* except_begin = s_LegalExceptionStrings;
     const string* except_end = 
@@ -5015,12 +5014,22 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
     const string* refseq_end = 
         &(s_RefseqExceptionStrings[sizeof(s_RefseqExceptionStrings) / sizeof(string)]);
     
-    while ( begin < textlen ) {
+    bool reasons_in_cit = false;
+    bool annotated_by_transcript_or_proteomic = false;
+    bool redundant_with_comment = false;
+    bool refseq_except = false;
+    vector<string> exceptions;
+    NStr::Tokenize(text, ",", exceptions);
+    ITERATE(vector<string>, it, exceptions) {
         found = false;
-        end = min( text.find_first_of(',', begin), textlen );
-        str = NStr::TruncateSpaces( text.substr(begin, end) );
+        str = NStr::TruncateSpaces( *it );
         if ( find(except_begin, except_end, str) != except_end ) {
             found = true;
+            if (NStr::EqualNocase(str, "reasons given in citation")) {
+                reasons_in_cit = true;
+            } else if (NStr::EqualNocase(str, "annotated by transcript or proteomic data")) {
+                annotated_by_transcript_or_proteomic = true;
+            }
         }
         if ( !found) {
             if (m_Scope) {
@@ -5038,6 +5047,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
                 }
                 if (check_refseq && find(refseq_begin, refseq_end, str) != refseq_end ) {
                     found = true;
+                    refseq_except = true;
                 }
             }
         }
@@ -5048,7 +5058,41 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             PostErr(sev, eErr_SEQ_FEAT_ExceptionProblem,
                 str + " is not a legal exception explanation", feat);
         }
-        begin = end + 1;
+        if (feat.IsSetComment() && NStr::Find(feat.GetComment(), str) != string::npos) {
+            if (!NStr::EqualNocase(str, "ribosomal slippage") && !NStr::EqualNocase(str, "trans-splicing")) {
+                redundant_with_comment = true;
+            } else if (NStr::EqualNocase(feat.GetComment(), str)) {
+                redundant_with_comment = true;
+            }                
+        }
+    }
+    if (redundant_with_comment) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, 
+            "Exception explanation text is also found in feature comment", feat);
+    }
+    if (refseq_except) {
+        if (find(refseq_begin, refseq_end, str) == refseq_end ) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, 
+                     "Genome processing exception should not be combined with other explanations", feat);
+        }
+    }
+
+    if (reasons_in_cit && !feat.IsSetCit()) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem,
+            "Reasons given in citation exception does not have the required citation", feat);
+    }
+    if (annotated_by_transcript_or_proteomic) {
+        bool has_inference = false;
+        FOR_EACH_GBQUAL_ON_SEQFEAT (it, feat) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "inference")) {
+                has_inference = true;
+                break;
+            }
+        }
+        if (!has_inference) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem,
+                "Annotated by transcript or proteomic data exception does not have the required inference qualifier", feat);
+        }
     }
 }
 

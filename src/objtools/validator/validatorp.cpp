@@ -802,7 +802,7 @@ bool CValidError_imp::Validate
                 has_gi = true;
             }
         }
-        if (bi->IsNa()) {
+        if (bi->IsSetInst_Mol() && bi->IsNa()) {
             has_nucleotide_sequence = true;
         }
     }

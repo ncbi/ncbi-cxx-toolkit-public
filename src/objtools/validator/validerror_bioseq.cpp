@@ -207,17 +207,24 @@ void CValidError_bioseq::ValidateSeqIds
             }
         }
 
-        CConstRef<CBioseq> core = m_Scope->GetBioseqHandle(**i).GetBioseqCore();
-        if ( !core ) {
-            if ( !m_Imp.IsPatent() ) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(**i);
+        if (bsh) {
+            CConstRef<CBioseq> core = m_Scope->GetBioseqHandle(**i).GetBioseqCore();
+            if ( !core ) {
+                if ( !m_Imp.IsPatent() ) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
+                        "BioseqFind (" + (*i)->AsFastaString() + 
+                        ") unable to find itself - possible internal error", seq);
+                }
+            } else if ( core.GetPointer() != &seq ) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
-                    "BioseqFind (" + (*i)->AsFastaString() + 
-                    ") unable to find itself - possible internal error", seq);
+                    "SeqID " + (*i)->AsFastaString() + 
+                    " is present on multiple Bioseqs in record", seq);
             }
-        } else if ( core.GetPointer() != &seq ) {
+        } else {
             PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
-                "SeqID " + (*i)->AsFastaString() + 
-                " is present on multiple Bioseqs in record", seq);
+                "BioseqFind (" + (*i)->AsFastaString() + 
+                ") unable to find itself - possible internal error", seq);
         }
 
         if ( (*i)->IsGi() ) {
@@ -551,40 +558,46 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
     }
 
     // Check molecule, topology, and strand
-    const CSeq_inst::EMol& mol = inst.GetMol();
-    switch (mol) {
+    if (!inst.IsSetMol()) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_MolNotSet, "Bioseq.mol is 0",
+            seq);
+    } else {
+        const CSeq_inst::EMol& mol = inst.GetMol();
+        switch (mol) {
 
-        case CSeq_inst::eMol_na:
-            PostErr(eDiag_Error, eErr_SEQ_INST_MolNuclAcid,
-                     "Bioseq.mol is type na", seq);
-            break;
+            case CSeq_inst::eMol_na:
+                PostErr(eDiag_Error, eErr_SEQ_INST_MolNuclAcid,
+                         "Bioseq.mol is type na", seq);
+                break;
 
-        case CSeq_inst::eMol_aa:
-            if ( inst.IsSetTopology()  &&
-                 inst.GetTopology() != CSeq_inst::eTopology_not_set  &&
-                 inst.GetTopology() != CSeq_inst::eTopology_linear ) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_CircularProtein,
-                         "Non-linear topology set on protein", seq);
-            }
-            if ( inst.IsSetStrand()  &&
-                 inst.GetStrand() != CSeq_inst::eStrand_ss ) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_DSProtein,
-                         "Protein not single stranded", seq);
-            }
-            break;
+            case CSeq_inst::eMol_aa:
+                if ( inst.IsSetTopology()  &&
+                     inst.GetTopology() != CSeq_inst::eTopology_not_set  &&
+                     inst.GetTopology() != CSeq_inst::eTopology_linear ) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_CircularProtein,
+                             "Non-linear topology set on protein", seq);
+                }
+                if ( inst.IsSetStrand()  &&
+                     inst.GetStrand() != CSeq_inst::eStrand_ss &&
+                     inst.GetStrand() != CSeq_inst::eStrand_not_set) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_DSProtein,
+                             "Protein not single stranded", seq);
+                }
+                break;
 
-        case CSeq_inst::eMol_not_set:
-            PostErr(eDiag_Error, eErr_SEQ_INST_MolNotSet, "Bioseq.mol is 0",
-                seq);
-            break;
+            case CSeq_inst::eMol_not_set:
+                PostErr(eDiag_Error, eErr_SEQ_INST_MolNotSet, "Bioseq.mol is 0",
+                    seq);
+                break;
 
-        case CSeq_inst::eMol_other:
-            PostErr(eDiag_Error, eErr_SEQ_INST_MolOther,
-                     "Bioseq.mol is type other", seq);
-            break;
+            case CSeq_inst::eMol_other:
+                PostErr(eDiag_Error, eErr_SEQ_INST_MolOther,
+                         "Bioseq.mol is type other", seq);
+                break;
 
-        default:
-            break;
+            default:
+                break;
+        }
     }
 
     CSeq_inst::ERepr rp = seq.GetInst().GetRepr();
@@ -1861,7 +1874,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
     const CEnumeratedTypeValues* tv = CSeq_inst::GetTypeInfo_enum_ERepr();
     const string& rpr = tv->FindName(inst.GetRepr(), true);
 
-    if (inst.IsSetFuzz()) {
+    if (inst.IsSetFuzz() && (!inst.IsSetSeq_data() || !inst.GetSeq_data().IsGap())) {
         PostErr(eDiag_Error, eErr_SEQ_INST_FuzzyLen,
             "Fuzzy length on " + rpr + " Bioseq", seq);
     }

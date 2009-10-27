@@ -69,8 +69,11 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -176,10 +179,40 @@ static CRef<CSeq_entry> BuildGoodSeq(void)
     taxon_id->SetDb("taxon");
     taxon_id->SetTag().SetId(592768);
     odesc->SetSource().SetOrg().SetDb().push_back(taxon_id);
+    CRef<CSubSource> subsrc(new CSubSource());
+    subsrc->SetSubtype(CSubSource::eSubtype_chromosome);
+    subsrc->SetName("1");
+    odesc->SetSource().SetSubtype().push_back(subsrc);
     seq->SetDescr().Set().push_back(odesc);
 
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSeq(*seq);
+
+    return entry;
+}
+
+
+static CRef<CSeq_entry> BuildGoodProtSeq(void)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("PROTEIN");
+    entry->SetSeq().SetInst().SetLength(7);
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            (*it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+        }
+    }
+
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetProt().SetName().push_back("fake protein name");
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(6);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    entry->SetSeq().SetAnnot().push_back(annot);
 
     return entry;
 }
@@ -449,3 +482,278 @@ const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
                   id\
                     local str \"LocusCollidesWithLocusTag\" } } } } } }\
 ";
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_CircularProtein)
+{
+    CRef<CSeq_entry> entry = BuildGoodProtSeq();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CValidator validator(*objmgr);
+
+    // Set validator options
+    unsigned int options = CValidator::eVal_need_isojta
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez;
+
+    // list of expected errors
+    vector< CExpectedError *> expected_errors;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "CircularProtein", "Non-linear topology set on protein"));
+
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            (*it)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_complete);
+        }
+    }
+
+
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_tandem);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // should be no error for not set or linear
+    delete expected_errors[0];
+    expected_errors.clear();
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_not_set);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_linear);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_DSProtein)
+{
+    CRef<CSeq_entry> entry = BuildGoodProtSeq();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CValidator validator(*objmgr);
+
+    // Set validator options
+    unsigned int options = CValidator::eVal_need_isojta
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez;
+
+    // list of expected errors
+    vector< CExpectedError *> expected_errors;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "DSProtein", "Protein not single stranded"));
+
+    entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ds);
+    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_mixed);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // no errors expected for not set or single strand
+    delete expected_errors[0];
+    expected_errors.clear();
+
+    entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_not_set);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetStrand(CSeq_inst::eStrand_ss);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNotSet)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CValidator validator(*objmgr);
+
+    // Set validator options
+    unsigned int options = CValidator::eVal_need_isojta
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez;
+
+    // list of expected errors
+    vector< CExpectedError *> expected_errors;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MolNotSet", "Bioseq.mol is 0"));
+
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_not_set);
+    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrCode("MolOther");
+    expected_errors[0]->SetErrMsg("Bioseq.mol is type other");
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_other);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrCode("MolNuclAcid");
+    expected_errors[0]->SetErrMsg("Bioseq.mol is type na");
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    delete expected_errors[0];
+    expected_errors.clear();
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_FuzzyLen)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CValidator validator(*objmgr);
+
+    // Set validator options
+    unsigned int options = CValidator::eVal_need_isojta
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez;
+
+    // list of expected errors
+    vector< CExpectedError *> expected_errors;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "FuzzyLen", "Fuzzy length on raw Bioseq"));
+
+    entry->SetSeq().SetInst().SetFuzz();
+    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    expected_errors[0]->SetErrMsg("Fuzzy length on const Bioseq");
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_const);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    delete expected_errors[0];
+    expected_errors.clear();
+
+    // shouldn't get fuzzy length if gap
+    entry->SetSeq().SetInst().SetSeq_data().SetGap();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CValidator validator(*objmgr);
+
+    // Set validator options
+    unsigned int options = CValidator::eVal_need_isojta
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez;
+
+    // list of expected errors
+    vector< CExpectedError *> expected_errors;
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ExceptionProblem", "Exception explanation text is also found in feature comment"));
+
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetImp().SetKey("misc_feature");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(10);
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetExcept();
+    CRef<CSeq_annot> annot (new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    entry->SetSeq().SetAnnot().push_back(annot);
+
+    // look for exception in comment
+    feat->SetExcept_text("RNA editing");
+    feat->SetComment("RNA editing");
+    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // look for one exception in comment
+    feat->SetExcept_text("RNA editing, rearrangement required for product");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // no citation
+    feat->SetExcept_text("reasons given in citation");
+    expected_errors[0]->SetErrMsg("Reasons given in citation exception does not have the required citation");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // no inference
+    feat->SetExcept_text("annotated by transcript or proteomic data");
+    expected_errors[0]->SetErrMsg("Annotated by transcript or proteomic data exception does not have the required inference qualifier");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // not legal
+    feat->SetExcept_text("not a legal exception");
+    expected_errors[0]->SetErrMsg("not a legal exception is not a legal exception explanation");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // change to ref-seq
+    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
+    scope.RemoveTopLevelSeqEntry(seh);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    feat->SetLocation().SetInt().SetId().SetOther().SetAccession("NC_123456");
+
+
+    // multiple ref-seq exceptions
+    feat->SetExcept_text("unclassified transcription discrepancy, RNA editing");
+    feat->ResetComment();
+    expected_errors[0]->SetErrMsg("Genome processing exception should not be combined with other explanations");
+    expected_errors[0]->SetAccession("NC_123456");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // not legal (is warning for NC or NT)
+    feat->SetExcept_text("not a legal exception");
+    expected_errors[0]->SetErrMsg("not a legal exception is not a legal exception explanation");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    delete expected_errors[0];
+    expected_errors.clear();
+
+
+}
