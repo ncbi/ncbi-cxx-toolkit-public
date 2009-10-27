@@ -35,8 +35,7 @@ PLATF_DIR_NAMES=(    "Linux64"
                      "FreeBSD32"
                      "IntelMAC"
                      "SunOSx86"
-                     "SunOSSparc"
-                     "Irix")
+                     "SunOSSparc")
 declare -a PLATF_SERVERS
 PLATF_SERVERS=(      "coremake2"
                      "coremake2"
@@ -46,7 +45,7 @@ PLATF_SERVERS=(      "coremake2"
                      "coremake2"
                      "coremake2")
 declare -a PLATF_NCBI_BIN_DIRS
-PLATF_NCBI_BIN_DIRS=("/net/coleman/vol/export3/lnx64_netopt/ncbi_tools/bin/_production/CPPCORE"
+PLATF_NCBI_BIN_DIRS=("/net/napme02/vol/ncbi_tools/lnx64_netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/net/snowman/vol/export2/win-coremake/Builds/bin"
                      "/net/snowman/vol/export2/lnx_netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/netopt/ncbi_tools/bin/_production/CPPCORE"
