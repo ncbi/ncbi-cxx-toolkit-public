@@ -550,6 +550,16 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
     if (align.GetSegs().IsSpliced()  &&
         align.GetSegs().GetSpliced().IsSetPoly_a()) {
         seq_len = align.GetSegs().GetSpliced().GetPoly_a();
+
+        if (align.GetSegs().GetSpliced().IsSetProduct_strand()  &&
+            align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus) {
+            if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
+                seq_len = align.GetSegs().GetSpliced().GetProduct_length() - seq_len;
+            } else {
+                CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+                seq_len = bsh.GetBioseqLength() - seq_len;
+            }
+        }
     } else {
         CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
         seq_len = bsh.GetBioseqLength();
