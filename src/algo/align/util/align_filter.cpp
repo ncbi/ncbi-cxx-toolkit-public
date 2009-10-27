@@ -89,23 +89,34 @@ private:
     CChecksum m_Checksum;
 };
 
-static
-char *functions[] = { "MUL", NULL };
-
 /////////////////////////////////////////////////////////////////////////////
+
+CAlignFilter::CAlignFilter()
+    : m_RemoveDuplicates(false)
+{
+}
+
 
 CAlignFilter::CAlignFilter(const string& query)
     : m_RemoveDuplicates(false)
-    , m_Query(query)
 {
+    SetFilter(query);
+}
+
+
+void CAlignFilter::SetFilter(const string& filter)
+{
+    static const char *sc_Functions[] = { "MUL", NULL };
+
+    m_Query = filter;
     m_ParseTree.reset(new CQueryParseTree);
 
     vector<string> func_vec;
-    for (char** func = functions; *func; ++func) {
+    for (const char** func = sc_Functions;  func  &&  *func;  ++func) {
         func_vec.push_back(*func);
     }
 
-    m_ParseTree->Parse(query.c_str(),
+    m_ParseTree->Parse(m_Query.c_str(),
                        CQueryParseTree::eCaseInsensitive,
                        CQueryParseTree::eSyntaxCheck, false,
                        func_vec);
@@ -222,8 +233,12 @@ bool CAlignFilter::Match(const CSeq_align& align)
     }
 
     /// check to see if scores match
-    return x_Match(*m_ParseTree->GetQueryTree(), align) &&
-            ( !m_RemoveDuplicates  ||  x_IsUnique(align) );
+    bool match = true;
+    if (m_ParseTree.get()) {
+        match = x_Match(*m_ParseTree->GetQueryTree(), align);
+    }
+
+    return (match  &&  ( !m_RemoveDuplicates  ||  x_IsUnique(align) ) );
 }
 
 

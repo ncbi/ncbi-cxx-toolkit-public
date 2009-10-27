@@ -51,7 +51,11 @@ END_SCOPE(objects)
 class CAlignFilter : public CObject
 {
 public:
-    CAlignFilter(const string& query);
+    CAlignFilter();
+    CAlignFilter(const string& filter_string);
+
+    /// Set the query to be used
+    void SetFilter(const string& filter_string);
 
     /// CAlignFilter uses a scope internally.  You can set a scope yourself;
     /// alternatively, the scope used internally will be a default scope
