@@ -147,7 +147,7 @@ static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
     return *val  &&  (strcmp    (val, "1")    == 0  ||
                       strcasecmp(val, "on")   == 0  ||
                       strcasecmp(val, "yes")  == 0  ||
-                      strcasecmp(val, "true") == 0));
+                      strcasecmp(val, "true") == 0);
 }
 
 

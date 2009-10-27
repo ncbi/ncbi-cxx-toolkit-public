@@ -1264,7 +1264,7 @@ static CONNECTOR s_CreateConnector
     if (*value  &&  (strcmp    (value, "1")    == 0  ||
                      strcasecmp(value, "on")   == 0  ||
                      strcasecmp(value, "yes")  == 0  ||
-                     strcasecmp(value, "true") == 0));
+                     strcasecmp(value, "true") == 0)) {
         flags |= fHCC_InsecureRedirect;
     }
 
