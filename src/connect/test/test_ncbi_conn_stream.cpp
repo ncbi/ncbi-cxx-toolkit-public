@@ -223,7 +223,7 @@ int main(int argc, const char* argv[])
     else {
         char val[32];
         ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val), "");
-        flag |= strcasecmp(val, "ALL") == 0 ? fFCDC_LogAll : fFCDC_LogData;
+        flag |= strcasecmp(val, "all") == 0 ? fFCDC_LogAll : fFCDC_LogData;
     }
     CConn_FTPDownloadStream ftp("ftp.ncbi.nlm.nih.gov",
                                 "Misc/test_ncbi_conn_stream.FTP.data",

@@ -91,12 +91,13 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     if ((p = getenv("CONN_DEBUG_PRINTOUT")) != 0) {
-        if (strcasecmp(p, "1")    == 0  ||
-            strcasecmp(p, "ON")   == 0  ||
-            strcasecmp(p, "YES")  == 0  ||
-            strcasecmp(p, "TRUE") == 0  ||
-            strcasecmp(p, "SOME") == 0  ||
-            strcasecmp(p, "DATA") == 0) {
+        if (strcmp    (p, "1")    == 0  ||
+            strcasecmp(p, "on")   == 0  ||
+            strcasecmp(p, "yes")  == 0  ||
+            strcasecmp(p, "all")  == 0  ||
+            strcasecmp(p, "true") == 0  ||
+            strcasecmp(p, "some") == 0  ||
+            strcasecmp(p, "data") == 0) {
             SOCK_SetDataLoggingAPI(eOn);
         }
     }
