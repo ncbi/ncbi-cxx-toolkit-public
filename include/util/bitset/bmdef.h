@@ -6,6 +6,8 @@
 // Set all required preprocessor defines
 
 
+#ifndef BMDEF__H__INCLUDED__
+#define BMDEF__H__INCLUDED__
 
 #ifndef BM_ASSERT
 
@@ -94,4 +96,6 @@
 # endif
 
 #endif
+
+#endif  // BMDEF__H__INCLUDED__
 

@@ -50,3 +50,6 @@
 #undef VECT_COPY_BLOCK
 #undef VECT_SET_BLOCK
 
+// Undef the bmdef.h sentinel
+#undef BMDEF__H__INCLUDED__
+

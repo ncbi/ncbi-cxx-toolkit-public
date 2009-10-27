@@ -33,6 +33,7 @@ For more information please visit:  http://bmagic.sourceforge.net
 //    instruction set
 #include<emmintrin.h>
 
+#include "bmdef.h"
 
 
 namespace bm
