@@ -798,8 +798,8 @@ public:
     // new implementation, with flags
     static void Translate(const string& seq,
                           string& prot,
-                          const CGenetic_code* code = NULL,
-                          TTranslationFlags flags = fTranslationFlag_IncludeStop | fTranslationFlag_Is5PrimeComplete,
+                          const CGenetic_code* code,
+                          TTranslationFlags flags,
                           bool* alt_start = NULL);
 
     /// translate a seq-vector using a specified genetic code
@@ -815,8 +815,8 @@ public:
     // new implementation, with flags
     static void Translate(const CSeqVector& seq,
                           string& prot,
-                          const CGenetic_code* code = NULL,
-                          TTranslationFlags flags = fTranslationFlag_IncludeStop | fTranslationFlag_Is5PrimeComplete,
+                          const CGenetic_code* code,
+                          TTranslationFlags flags,
                           bool* alt_start = NULL);
 
     /// utility function: translate a given location on a sequence
