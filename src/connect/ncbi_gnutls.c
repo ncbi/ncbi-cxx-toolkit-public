@@ -75,6 +75,7 @@ static ssize_t     x_GnuTlsPush  (gnutls_transport_ptr_t, const void*, size_t);
 #  endif /*__cplusplus*/
 
 
+#  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
 static const int kGnuTlsChiperPrio[] = {
     GNUTLS_CIPHER_3DES_CBC,
     GNUTLS_CIPHER_ARCFOUR_128,
@@ -84,9 +85,9 @@ static const int kGnuTlsChiperPrio[] = {
 static const int kGnuTlsProtoPrio[] = {
   /* These are enum values rather than macros, so direct
      conditionalization isn't possible. */
-#  ifdef LIBGNUTLS_VERSION_NUMBER
+#    ifdef LIBGNUTLS_VERSION_NUMBER
     GNUTLS_TLS1_1,
-#  endif
+#    endif /*LIBGNUTLS_VERSION_NUMBER*/
     GNUTLS_TLS1,
     GNUTLS_SSL3,
     0
@@ -115,6 +116,7 @@ static const int kGnuTlsKxPrio[] = {
     GNUTLS_KX_RSA_EXPORT,
     0
 };
+#endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
 
 
 static gnutls_anon_client_credentials_t s_GnuTlsCredAnon;
@@ -212,6 +214,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
         return 0;
 
     if ((err = gnutls_set_default_priority(session))                     !=0 ||
+#  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
         (err = gnutls_cipher_set_priority(session, kGnuTlsChiperPrio))   !=0 ||
         (err = gnutls_compression_set_priority(session, kGnuTlsCompPrio))!=0 ||
         (err = gnutls_certificate_type_set_priority(session,
@@ -219,6 +222,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
         (err = gnutls_protocol_set_priority(session, kGnuTlsProtoPrio))  !=0 ||
         (err = gnutls_mac_set_priority(session, kGnuTlsMacPrio))         !=0 ||
         (err = gnutls_kx_set_priority(session, kGnuTlsKxPrio))           !=0 ||
+#  endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
                                       s_GnuTlsCredCert))                 !=0 ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON,
