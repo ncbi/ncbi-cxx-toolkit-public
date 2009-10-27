@@ -752,6 +752,13 @@ public:
     }
      
 
+    ///Creates concatinated html <area...> string for tree image
+    ///
+    ///Gets coordinates of the tree nodes from m_DataSource and creats html <area...>
+    ///for each  node with javascript for actions on click and mouseover
+    ///
+    ///@return 
+    /// A string concatinating all "areas" corresponding to the image    
 	const string & GetMap(void) { return m_Map;}
 
     	
