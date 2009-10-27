@@ -79,7 +79,7 @@ int CRegexApplication::Run(void)
 {
     // Simple way to use regular expressions
     CRegexp pattern("D\\w*g");
-    LOG_POST(pattern.GetMatch("The Dodgers play baseball."));
+    assert(pattern.GetMatch("The Dodgers play baseball.") == "Dodg");
     
     // Perl compatible regular expression pattern to match
     string pat("(q.*k).*f?x");
@@ -94,10 +94,14 @@ int CRegexApplication::Run(void)
         "even a mouse.\n");
 
     // Display pattern and sub pattern matches
-    LOG_POST(pattern.GetMatch(text));
-    for (int k = 1;  k < pattern.NumFound();  k++) {
-        LOG_POST(pattern.GetSub(text, 1));
+    assert(pattern.GetMatch(text) == "quick brown fox");
+    assert(pattern.NumFound() == 2);
+    for (int i = 0;  i < pattern.NumFound();  i++) {
+        LOG_POST(pattern.GetSub(text, i));
     }
+    assert(pattern.GetSub(text,0) == "quick brown fox");
+    assert(pattern.GetSub(text,1) == "quick");
+    assert(pattern.GetSub(text,2) == "");
 
     LOG_POST(string(33, '-'));
 
@@ -116,6 +120,7 @@ int CRegexApplication::Run(void)
         }
     }
     LOG_POST(string(33, '-'));
+
     // Note: This loop works only with this regular expression
     // and test string. The text.find() can give incorrect results for
     // other input data and regular expression. Usually, it is better
