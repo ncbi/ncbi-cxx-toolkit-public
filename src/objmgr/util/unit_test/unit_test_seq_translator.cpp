@@ -811,10 +811,21 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     CSeqTranslator::Translate(vec, tmp,
                               NULL, false, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, CSeqTranslator::fTranslationFlag_IncludeStop | CSeqTranslator::fTranslationFlag_Is5PrimeComplete, NULL);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+
     // set 5' complete false
     tmp.clear();
     CSeqTranslator::Translate(vec, tmp,
                               NULL, false, true, 0, false);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, CSeqTranslator::fTranslationFlag_IncludeStop, NULL);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
     // translate with string
@@ -824,10 +835,21 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     CSeqTranslator::Translate(seq_str, tmp,
                               NULL, false, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(seq_str, tmp,
+                              NULL, CSeqTranslator::fTranslationFlag_IncludeStop | CSeqTranslator::fTranslationFlag_Is5PrimeComplete, NULL);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+
     // set 5' complete false
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp,
                               NULL, false, true, 0, false);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(seq_str, tmp,
+                              NULL, CSeqTranslator::fTranslationFlag_IncludeStop, NULL);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 
@@ -849,6 +871,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
                               scope, tmp,
                               false, true);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+
+
 
 }
 

@@ -2725,6 +2725,20 @@ void CSeqTranslator::Translate(const string& seq, string& prot,
 }
 
 
+void CSeqTranslator::Translate(const string& seq,
+                               string& prot,
+                               const CGenetic_code* code,
+                               TTranslationFlags flags,
+                               bool* alt_start)
+{
+    x_Translate(seq, prot, 0, code,
+                flags & fTranslationFlag_Is5PrimeComplete, 
+                flags & fTranslationFlag_IncludeStop, 
+                flags & fTranslationFlag_RemoveTrailingX,
+                alt_start);
+}
+
+
 void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                const CGenetic_code* code,
                                bool include_stop,
@@ -2734,6 +2748,19 @@ void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
 {
     x_Translate(seq, prot, 0, code,
                 is_5prime_complete, include_stop, remove_trailing_X, alt_start);
+}
+
+
+void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
+                               const CGenetic_code* code,
+                               TTranslationFlags flags,
+                               bool* alt_start)
+{
+    x_Translate(seq, prot, 0, code,
+                flags & fTranslationFlag_Is5PrimeComplete, 
+                flags & fTranslationFlag_IncludeStop, 
+                flags & fTranslationFlag_RemoveTrailingX,
+                alt_start);
 }
 
 

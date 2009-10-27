@@ -774,6 +774,16 @@ public:
 class NCBI_XOBJUTIL_EXPORT CSeqTranslator
 {
 public:
+    enum ETranslationFlags {
+        fTranslationFlag_None = 0,
+        fTranslationFlag_IncludeStop = (1<<0), ///< = 0x1
+        fTranslationFlag_RemoveTrailingX = (1<<1), ///< = 0x2
+        fTranslationFlag_Is5PrimeComplete = (1<<2) ///< = 0x4
+    };
+
+    typedef int TTranslationFlags;
+
+
 
     /// translate a string using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
@@ -782,8 +792,15 @@ public:
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
                           bool remove_trailing_X = false,
-                          bool* alt_start = 0,
+                          bool* alt_start = NULL,
                           bool is_5prime_complete = true);
+
+    // new implementation, with flags
+    static void Translate(const string& seq,
+                          string& prot,
+                          const CGenetic_code* code = NULL,
+                          TTranslationFlags flags = fTranslationFlag_IncludeStop | fTranslationFlag_Is5PrimeComplete,
+                          bool* alt_start = NULL);
 
     /// translate a seq-vector using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
@@ -792,8 +809,15 @@ public:
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
                           bool remove_trailing_X = false,
-                          bool* alt_start = 0,
+                          bool* alt_start = NULL,
                           bool is_5prime_complete = true);
+
+    // new implementation, with flags
+    static void Translate(const CSeqVector& seq,
+                          string& prot,
+                          const CGenetic_code* code = NULL,
+                          TTranslationFlags flags = fTranslationFlag_IncludeStop | fTranslationFlag_Is5PrimeComplete,
+                          bool* alt_start = NULL);
 
     /// utility function: translate a given location on a sequence
     NCBI_DEPRECATED
