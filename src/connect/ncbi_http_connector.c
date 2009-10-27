@@ -1231,6 +1231,7 @@ static CONNECTOR s_CreateConnector
     CONNECTOR       ccc;
     SHttpConnector* uuu;
     SConnNetInfo*   xxx;
+    char*           fff;
 
     xxx = net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     if (!xxx)
@@ -1238,6 +1239,8 @@ static CONNECTOR s_CreateConnector
     if ((flags & fHCC_NoAutoRetry)  ||  !xxx->max_try)
         xxx->max_try = 1;
 
+    if ((fff = strchr(xxx->args, '#')) != 0)
+        *fff = '\0';
     if ((xxx->scheme != eURL_Unspec  && 
          xxx->scheme != eURL_Https   &&
          xxx->scheme != eURL_Http)   ||
@@ -1259,9 +1262,9 @@ static CONNECTOR s_CreateConnector
 
     ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", value, sizeof(value),"");
     if (*value  &&  (strcmp    (value, "1")    == 0  ||
-                     strcasecmp(value, "true") == 0  ||
+                     strcasecmp(value, "on")   == 0  ||
                      strcasecmp(value, "yes")  == 0  ||
-                     strcasecmp(value, "on")   == 0)) {
+                     strcasecmp(value, "true") == 0));
         flags |= fHCC_InsecureRedirect;
     }
 
@@ -1279,9 +1282,9 @@ static CONNECTOR s_CreateConnector
 
     ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", value, sizeof(value),"");
     uuu->error_header = (*value  &&  (strcmp    (value, "1")    == 0  ||
-                                      strcasecmp(value, "true") == 0  ||
+                                      strcasecmp(value, "on")   == 0  ||
                                       strcasecmp(value, "yes")  == 0  ||
-                                      strcasecmp(value, "on")   == 0));
+                                      strcasecmp(value, "true") == 0));
 
     uuu->sock             = 0;
     uuu->o_timeout        = kDefaultTimeout;  /* deliberately bad values --  */
