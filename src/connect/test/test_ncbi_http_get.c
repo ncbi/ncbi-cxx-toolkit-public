@@ -76,9 +76,9 @@ int main(int argc, char* argv[])
 
     ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, "");
     if (*blk  &&  (strcmp    (blk, "1")    == 0  ||
-                   strcasecmp(blk, "ON")   == 0  ||
-                   strcasecmp(blk, "YES")  == 0  ||
-                   strcasecmp(blk, "TRUE") == 0)) {
+                   strcasecmp(blk, "on")   == 0  ||
+                   strcasecmp(blk, "yes")  == 0  ||
+                   strcasecmp(blk, "true") == 0)) {
         CORE_LOG(eLOG_Note, "Reconnect mode acknowledged");
         flags = fHCC_AutoReconnect;
     } else
@@ -86,9 +86,9 @@ int main(int argc, char* argv[])
 
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
     if (*blk  &&  (strcmp    (blk, "1")    == 0  ||
-                   strcasecmp(blk, "ON")   == 0  ||
-                   strcasecmp(blk, "YES")  == 0  ||
-                   strcasecmp(blk, "TRUE") == 0)) {
+                   strcasecmp(blk, "on")   == 0  ||
+                   strcasecmp(blk, "yes")  == 0  ||
+                   strcasecmp(blk, "true") == 0)) {
 #ifdef HAVE_LIBGNUTLS
         CORE_LOG(eLOG_Note,    "SSL request acknowledged");
         SOCK_SetupSSL(NcbiSetupGnuTls);
@@ -128,8 +128,6 @@ int main(int argc, char* argv[])
     t = time(0);
     do {
         status = CONN_Wait(conn, eIO_Read, net_info->timeout);
-        if (status == eIO_Closed)
-            break;
         if (status == eIO_Timeout
             &&  ((net_info->timeout  &&
                   (net_info->timeout->sec | net_info->timeout->usec))
@@ -147,9 +145,10 @@ int main(int argc, char* argv[])
                 continue;
             }
         }
-        if (status != eIO_Success  &&  status != eIO_Closed)
+        if (status != eIO_Success  &&  (status != eIO_Closed  ||  connector))
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
         if (n) {
+            connector = 0/*as bool, visited*/;
             fwrite(blk, 1, n, stdout);
             fputc('\n', stdout);
             fflush(stdout);
