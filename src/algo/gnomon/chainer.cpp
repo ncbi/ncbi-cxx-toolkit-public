@@ -59,6 +59,11 @@ struct SFShiftsCluster;
 class CChainer::CChainerImpl {
 public:
     CChainerImpl();
+    void TrimAlignments(TAlignModelList& alignments);
+    void DoNotBelieveShortPolyATails(TAlignModelList& alignments);
+
+    void FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments);
+
     TGeneModelList MakeChains(TAlignModelList& alignments);
 private:
     void FindNextSingleExon(vector<SChainMember*>::iterator& iter, const vector<SChainMember*>::iterator& end);
@@ -71,7 +76,6 @@ private:
     double GoodCDNAScore(const CGeneModel& algn);
     void RemovePoorCds(CGeneModel& algn, double minscor);
     void SkipReason(CGeneModel* orig_align, const string& comment);
-    void FilterOverlappingSameAccessionAlignment(TGeneModelList& clust, TOrigAligns& orig_aligns);
     bool HasShortIntron(const CGeneModel& algn);
     string FindMultiplyIncluded(CGeneModel& algn, TGeneModelList& clust, TOrigAligns& orig_aligns);
     void FilterOutPoorAlignments(TGeneModelList& clust, TOrigAligns& orig_aligns);
@@ -92,7 +96,6 @@ private:
     SMinScor minscor;
     int intersect_limit;
     int trim;
-    size_t alignlimit;
     map<string,TSignedSeqRange> mrnaCDS;
     map<string, pair<bool,bool> > prot_complet;
     double mininframefrac;
@@ -993,7 +996,7 @@ CChain::CChain(const set<SChainMember*>& chain_alignments)
 
     vector<CSupportInfo> support;
     support.reserve(m_members.size());
-    int last_important_support;
+    int last_important_support = -1;
     const CGeneModel* last_important_align = 0;
     
     ITERATE (vector<CGeneModel*>, it, m_members) {
@@ -1054,7 +1057,7 @@ void CChain::RestoreTrimmedEnds(int trim)
 void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon)
 {
     TSignedSeqRange conf_start;
-    TSignedSeqPos rf, fivep; 
+    TSignedSeqPos rf=0, fivep=0; 
     
     ITERATE (vector<CGeneModel*>, it, m_members) {
         const CGeneModel& align = **it;
@@ -1116,8 +1119,8 @@ void CChain::RemoveFshiftsFromUTRs()
 void CChain::ClipToCompleteAlignment(EStatus determinant)
 {
     string  name;
-    EStrand right_end_strand;
-    bool complete;
+    EStrand right_end_strand = ePlus;
+    bool complete = false;
 
     if (determinant == CGeneModel::ePolyA) {
         name  = "polya";
@@ -1381,19 +1384,24 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust, TOrigAlign
     }
 }
 
-void CChainer::CChainerImpl::FilterOverlappingSameAccessionAlignment(TGeneModelList& clust, TOrigAligns& orig_aligns)
+void CChainer::FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments)
 {
-    //    clust.sort(s_ByAccVerLen);  this is moved up
+    m_data->FilterOverlappingSameAccessionAlignment(alignments);
+}
 
-    TGeneModelList::iterator first = clust.begin();
-    TGeneModelList::iterator current = first; ++current;
-    pair<string,int> first_accver = GetAccVer(orig_aligns[first->ID()]->TargetAccession());
-    while (current != clust.end()) {
-        pair<string,int> current_accver = GetAccVer(orig_aligns[current->ID()]->TargetAccession());
+void CChainer::CChainerImpl::FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments)
+{
+    alignments.sort(s_ByAccVerLen);
+
+    TAlignModelList::iterator first = alignments.begin();
+    TAlignModelList::iterator current = first; ++current;
+    pair<string,int> first_accver = GetAccVer(first->TargetAccession());
+    while (current != alignments.end()) {
+        pair<string,int> current_accver = GetAccVer(current->TargetAccession());
         if (first_accver.first == current_accver.first) {
             if (current->Limits().IntersectingWith(first->Limits())) {
-                SkipReason(orig_aligns[current->ID()],"Overlaps the same alignment");
-                current = clust.erase(current);
+                SkipReason(&*current,"Overlaps the same alignment");
+                current = alignments.erase(current);
             } else {
                 ++current;
             }
@@ -1402,7 +1410,7 @@ void CChainer::CChainerImpl::FilterOverlappingSameAccessionAlignment(TGeneModelL
             if (first==current) {
                 first_accver = current_accver;
             } else {
-                first_accver = GetAccVer(orig_aligns[first->ID()]->TargetAccession()); 
+                first_accver = GetAccVer(first->TargetAccession()); 
                 current = first;
             }
             current = first; ++current;
@@ -2000,6 +2008,34 @@ public:
     }
 };
 
+void CChainer::TrimAlignments(TAlignModelList& alignments)
+{
+    m_data->TrimAlignments(alignments);
+}
+
+void CChainer::CChainerImpl::TrimAlignments(TAlignModelList& alignments)
+{
+    transform(alignments.begin(), alignments.end(), alignments.begin(),
+              TrimAlignment(trim, gnomon->GetSeq(), mrnaCDS));
+}
+
+void CChainer::DoNotBelieveShortPolyATails(TAlignModelList& alignments)
+{
+    m_data->DoNotBelieveShortPolyATails(alignments);
+}
+
+void CChainer::CChainerImpl::DoNotBelieveShortPolyATails(TAlignModelList& alignments)
+{
+    NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
+        
+        int polyalen = i->PolyALen();
+        if ((i->Status() & CGeneModel::ePolyA) != 0  &&
+            polyalen < minpolya) {
+            i->Status() ^= CGeneModel::ePolyA;
+        }
+    }
+}
+
 TGeneModelList CChainer::CChainerImpl::MakeChains(TAlignModelList& alignments)
 {
     TGeneModelList chains;
@@ -2014,40 +2050,19 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TAlignModelList& alignments)
         gnomon->ResetRange(range);
     }
 
-    transform(alignments.begin(), alignments.end(), alignments.begin(),
-              TrimAlignment(trim, gnomon->GetSeq(), mrnaCDS));
-
     TGeneModelList models;
     TOrigAligns orig_aligns;
-    bool skipest = (alignments.size() > alignlimit);
-    
-    alignments.sort(s_ByAccVerLen);    // used in FilterOverlappingSameAccessionAlignment
     
     NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
-        if(skipest && (i->Type() & CGeneModel::eEST)!=0)
-            continue;
-        
-        int polyalen = i->PolyALen();
-        if ((i->Status() & CGeneModel::ePolyA) != 0  &&
-            polyalen < minpolya) {
-            i->Status() ^= CGeneModel::ePolyA;
-        }
-
         CAlignModel aa = *i;
         ProjectCDS_ConvertToGeneModel(mrnaCDS, aa);
         models.push_back(aa);
-        //        models.back().SetID(++align_counter);
         orig_aligns[models.back().ID()]=&(*i);
     }
 
-    if(models.empty()) return chains;
-
     FilterOutChimeras(models, orig_aligns);
-    FilterOverlappingSameAccessionAlignment(models, orig_aligns);
     FilterOutPoorAlignments(models, orig_aligns);
     FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(models, orig_aligns);
-
-    if(models.empty()) return chains;
 
     TInDels fshifts;
     CollectFShifts(models, fshifts);
@@ -2108,10 +2123,6 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey("minpolya", "minpolya",
                             "Minimal accepted polyA tale. The default (large) value forces chainer to ignore PolyA",
                             CArgDescriptions::eInteger, "10000");
-    arg_desc->AddDefaultKey("alignlimit", "alignlimit",
-                            "Maximal number of alignments in cluster before "
-                            "skipping all EST",
-                            CArgDescriptions::eInteger, "25000");
 
     arg_desc->SetCurrentGroup("Additional information about sequences");
     arg_desc->AddOptionalKey("mrnaCDS", "mrnaCDS",
@@ -2187,10 +2198,6 @@ void CChainer::SetMinPolyA(int minpolya)
 {
     m_data->minpolya = minpolya;
 }
-void CChainer::SetAlignLimit(int alignlimit)
-{
-    m_data->alignlimit = alignlimit;
-}
 SMinScor& CChainer::SetMinScor()
 {
     return m_data->minscor;
@@ -2215,7 +2222,6 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
     chainer->SetIntersectLimit(args["oep"].AsInteger());
     chainer->SetTrim(args["trim"].AsInteger());
     chainer->SetMinPolyA(args["minpolya"].AsInteger());
-    chainer->SetAlignLimit(args["alignlimit"].AsInteger());
 
     SMinScor& minscor = chainer->SetMinScor();
     minscor.m_min = args["minscor"].AsDouble();
@@ -2257,7 +2263,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
     }
 }
 
-void CChainer::SetGenomic(CSeq_id& contig)
+void CChainer::SetGenomic(const CSeq_id& contig)
 {
     CBioseq_Handle bh(SetScope()->GetBioseqHandle(contig));
     CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));

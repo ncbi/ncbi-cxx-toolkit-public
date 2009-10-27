@@ -64,13 +64,18 @@ public:
     void SetIntersectLimit(int value);
     void SetTrim(int trim);
     void SetMinPolyA(int minpolya);
-    void SetAlignLimit(int alignlimit);
     SMinScor& SetMinScor();
     void SetMinInframeFrac(double mininframefrac);
     map<string, pair<bool,bool> >& SetProtComplet();
     map<string,TSignedSeqRange>& SetMrnaCDS();
     CRef<objects::CScope>& SetScope();
-    void SetGenomic(CSeq_id& seqid);
+    void SetGenomic(const CSeq_id& seqid);
+
+
+    void TrimAlignments(TAlignModelList& alignments);
+    void DoNotBelieveShortPolyATails(TAlignModelList& alignments);
+
+    void FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments);
 
     TGeneModelList MakeChains(TAlignModelList& alignments);
 
