@@ -774,19 +774,33 @@ public:
 class NCBI_XOBJUTIL_EXPORT CSeqTranslator
 {
 public:
+    /// @sa TTranslationFlags
     enum ETranslationFlags {
-        fTranslationFlag_None = 0,
-        fTranslationFlag_IncludeStop = (1<<0), ///< = 0x1
-        fTranslationFlag_RemoveTrailingX = (1<<1), ///< = 0x2
-        fTranslationFlag_Is5PrimeComplete = (1<<2) ///< = 0x4
+        f_None = 0,
+        f_NoStop = (1<<0), ///< = 0x1 Do not include stop in translation
+        f_RemoveTrailingX = (1<<1), ///< = 0x2 Remove trailing Xs from protein
+        f_Is5PrimePartial = (1<<2) ///< = 0x4 Translate first codon even if not start codon (because sequence is 5' partial)
     };
 
     typedef int TTranslationFlags;
 
 
 
-    /// translate a string using a specified genetic code
-    /// if the code is NULL, then the default genetic code is used
+    /// Translate a string using a specified genetic code
+    /// @param seq
+    ///   String containing IUPAC representation of sequence to be translated
+    /// @param code
+    ///   Genetic code to use for translation (NULL to use default)
+    /// @param include_stop
+    ///   If true, include stop at end of protein translation (true by default)
+    /// @param remove_trailing_X
+    ///   If true, remove trailing Xs from protein translation (false by default)
+    /// @param alt_start
+    ///   Pointer to bool to indicate whether an alternative start codon was used
+    /// @param is_5prime_complete
+    ///   If true, only translate first codon if start codon, otherwise translate
+    ///   as dash (-) to indicate problem with sequence
+
     static void Translate(const string& seq,
                           string& prot,
                           const CGenetic_code* code = NULL,
@@ -795,15 +809,36 @@ public:
                           bool* alt_start = NULL,
                           bool is_5prime_complete = true);
 
-    // new implementation, with flags
+    /// Translate a string using a specified genetic code
+    /// @param seq
+    ///   String containing IUPAC representation of sequence to be translated
+    /// @param code
+    ///   Genetic code to use for translation (NULL to use default)
+    /// @param flags
+    ///   Binary OR of "ETranslationFlags"
+    /// @param alt_start
+    ///   Pointer to bool to indicate whether an alternative start codon was used
     static void Translate(const string& seq,
                           string& prot,
                           const CGenetic_code* code,
                           TTranslationFlags flags,
                           bool* alt_start = NULL);
 
-    /// translate a seq-vector using a specified genetic code
+    /// Translate a seq-vector using a specified genetic code
     /// if the code is NULL, then the default genetic code is used
+    /// @param seq
+    ///   CSeqVector of sequence to be translated
+    /// @param code
+    ///   Genetic code to use for translation (NULL to use default)
+    /// @param include_stop
+    ///   If true, include stop at end of protein translation (true by default)
+    /// @param remove_trailing_X
+    ///   If true, remove trailing Xs from protein translation (false by default)
+    /// @param alt_start
+    ///   Pointer to bool to indicate whether an alternative start codon was used
+    /// @param is_5prime_complete
+    ///   If true, only translate first codon if start codon, otherwise translate
+    ///   as dash (-) to indicate problem with sequence
     static void Translate(const CSeqVector& seq,
                           string& prot,
                           const CGenetic_code* code = NULL,
@@ -812,7 +847,16 @@ public:
                           bool* alt_start = NULL,
                           bool is_5prime_complete = true);
 
-    // new implementation, with flags
+    /// Translate a seq-vector using a specified genetic code
+    /// if the code is NULL, then the default genetic code is used
+    /// @param seq
+    ///   CSeqVector of sequence to be translated
+    /// @param code
+    ///   Genetic code to use for translation (NULL to use default)
+    /// @param flags
+    ///   Binary OR of "ETranslationFlags"
+    /// @param alt_start
+    ///   Pointer to bool to indicate whether an alternative start codon was used
     static void Translate(const CSeqVector& seq,
                           string& prot,
                           const CGenetic_code* code,
