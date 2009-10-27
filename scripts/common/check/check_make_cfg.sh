@@ -319,8 +319,8 @@ RunTest() {
    fi
 
    # Generate name of the output file
-   x_test_out="\$x_work_dir/\$x_app.out\$x_ext"
-   x_test_rep="\$x_work_dir/\$x_app.rep\$x_ext"
+   x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
+   x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
    x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
 
    if \$is_db_load; then
