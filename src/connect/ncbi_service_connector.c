@@ -582,6 +582,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         /* HTTP connector is auxiliary only */
         EIO_Status status = eIO_Success;
         CONNECTOR conn;
+        char val[40];
         CONN c;
 
         /* Clear connection info */
@@ -621,7 +622,15 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
         if (net_info->firewall  &&  *net_info->proxy_host)
             strcpy(net_info->host, net_info->proxy_host);
-        else
+        else if (ConnNetInfo_GetValue(net_info->service,
+                                      "FWDAEMON_COMPATIBILITY",
+                                      val, sizeof(val), "")
+                 &&  *val  &&  (strcmp    (val, "1")    == 0  ||
+                                strcasecmp(val, "on")   == 0  ||
+                                strcasecmp(val, "yes")  == 0  ||
+                                strcasecmp(val, "true") == 0)) {
+            strcpy(uuu->host, "fwdaemon.ncbi.nlm.nih.gov");
+        } else
             SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         net_info->port = uuu->port;
         /* Build and return target SOCKET connector */
