@@ -49,6 +49,41 @@ BEGIN_NCBI_SCOPE
 /// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
+/// CSeqDBGiIndex
+/// 
+/// This class maintains the OID->GI translation 
+class CSeqDBGiIndex : public CObject {
+public:
+    typedef CSeqDBAtlas::TIndx   TIndx;
+    typedef int TOid;
+    typedef int TGi;
+
+    CSeqDBGiIndex(CSeqDBAtlas  & atlas,
+                  const string & dbname,
+                  char           prot_nucl)
+        : m_Atlas    (atlas),
+          m_Lease    (atlas),
+          m_Fname    (dbname + '.' + prot_nucl + "xg"),
+          m_NumOIDs  (0) { }
+
+    static bool IndexExists(const string & name,
+                            const char     prot_nucl)
+    {
+        string fn(name + '.' + prot_nucl + "xg");
+        return CFile(fn).Exists();
+    }
+ 
+    TGi GetSeqGI(TOid oid, CSeqDBLockHold & locked);
+
+private:
+    CSeqDBAtlas &  m_Atlas;
+    CSeqDBMemLease m_Lease;
+    string         m_Fname;
+    Int4           m_Size;
+    Int4           m_NumOIDs;
+};
+    
+
 /// CSeqDBRangeList
 ///
 /// This class maintains a list of ranges of sequence offsets that are
@@ -231,7 +266,7 @@ public:
               CSeqDBNegativeList * neg_list,
               int                  vol_start,
               CSeqDBLockHold     & locked);
-    
+
     /// Sequence length for protein databases.
     /// 
     /// This method returns the length of the sequence in bases, and
@@ -433,6 +468,15 @@ public:
                                     const CSeqDBFiltInfo * filt_info,
                                     CSeqDBLockHold       & locked) const;
     
+    /// Get the GI of a sequence
+    /// This method returns the gi of the sequence
+    ///
+    /// @param oid
+    ///   The OID of the sequence. [in]
+    /// @return
+    ///   The oid of the sequence
+    int GetSeqGI(int oid, CSeqDBLockHold & locked) const;
+
     /// Get the volume title.
     /// @return The volume's title.
     string GetTitle() const;
@@ -1368,6 +1412,9 @@ private:
     /// Handles translation of sequence hash value to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamHash;
     
+    /// The GI index file (for fast oid->gi conversion)
+    mutable CRef<CSeqDBGiIndex> m_GiIndex;
+
     /// This cache allows CBioseqs to share taxonomic objects.
     mutable CSeqDBIntCache< CRef<CSeqdesc> > m_TaxCache;
     

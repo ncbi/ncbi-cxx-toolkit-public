@@ -416,6 +416,17 @@ public:
     /// @return
     ///   A list of Seq-id objects for this sequence.
     list< CRef<CSeq_id> > GetSeqIDs(int oid);
+
+    /// Look up for the GI of a sequence
+    /// 
+    /// This returns the first GI (if any) that identifies the sequence
+    /// specified by the given OID, or -1 if no GI is found.
+    ///
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @return
+    ///   GI or -1.
+    int GetSeqGI(int oid);
     
     /// Returns the database title.
     ///
@@ -1326,7 +1337,7 @@ private:
 
     /// Return sequence to buffer
     void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
-    
+
 };
 
 END_NCBI_SCOPE

@@ -699,6 +699,34 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
+int CSeqDBImpl::GetSeqGI(int oid)
+{
+    CHECK_MARKER();
+    int vol_oid = 0;
+
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        // Try lookup *.nxg first
+        int gi = vol->GetSeqGI(vol_oid, locked);
+        if (gi>=0) return gi;
+        // Fall back to parsing deflines
+        list< CRef<CSeq_id> > ids = 
+            vol->GetSeqIDs(vol_oid, & x_GetFiltInfo(locked), locked);
+        ITERATE(list< CRef<CSeq_id> >, id, ids) {
+            if ((**id).IsGi()) {
+                return (**id).GetGi();
+            }
+        }
+        // No GI found 
+        return -1;
+    }
+    
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
+}
+
 int CSeqDBImpl::GetNumSeqs() const
 {
     CHECK_MARKER();

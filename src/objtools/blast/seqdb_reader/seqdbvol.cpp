@@ -53,6 +53,28 @@ static char const rcsid[] = "$Id$";
 
 BEGIN_NCBI_SCOPE
 
+int CSeqDBGiIndex::GetSeqGI(TOid             oid,
+                            CSeqDBLockHold & locked) 
+{
+    const char* data(0);
+
+    if (m_NumOIDs == 0) {
+        TIndx length;
+        m_Atlas.Lock(locked);
+        m_Atlas.GetFile(m_Lease, m_Fname, length, locked);
+        data = m_Lease.GetPtr(0);
+        // TODO we may want to check the version number and file type
+        m_Size = (Int4) SeqDB_GetStdOrd((Int4 *) (data+8));
+        m_NumOIDs = (Int4) SeqDB_GetStdOrd((Int4 *) (data+12));
+    }
+
+    if (oid >= m_NumOIDs || oid < 0) return -1;
+    
+    TIndx offset = oid * m_Size;
+    data = m_Lease.GetPtr(offset);
+    return (TGi) SeqDB_GetStdOrd((TGi *) data);
+}
+
 CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                      const string       & name,
                      char                 prot_nucl,
@@ -135,6 +157,11 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            prot_nucl,
                            'h',
                            CSeqDBIsam::eHashId);
+    }
+
+    if (CSeqDBGiIndex::IndexExists(name, prot_nucl)) {
+        m_GiIndex = 
+            new CSeqDBGiIndex(m_Atlas, name, prot_nucl);
     }
 }
 
@@ -1962,6 +1989,15 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                    oid,
     }
     
     return seqids;
+}
+
+int CSeqDBVol::GetSeqGI(int              oid, 
+                        CSeqDBLockHold & locked) const 
+{
+    if (!m_GiIndex.Empty()) {
+         return m_GiIndex->GetSeqGI(oid, locked);
+    }
+    return -1;
 }
 
 Uint8 CSeqDBVol::GetVolumeLength() const
