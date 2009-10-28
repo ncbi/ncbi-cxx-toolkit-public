@@ -49,7 +49,7 @@ class CRemoteAppRequestSB_Impl;
 class NCBI_XCONNECT_EXPORT CRemoteAppRequestSB : public CObject
 {
 public:
-    const static int kSingleBlobMask = 0x4000;
+    static const int kSingleBlobMask = 0x4000;
 
     explicit CRemoteAppRequestSB(IBlobStorageFactory& factory);
     ~CRemoteAppRequestSB();
