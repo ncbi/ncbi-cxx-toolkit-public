@@ -38,10 +38,12 @@ public class ArgsParser {
     final private String m_Undef;
     private int m_nCmd;
     private String m_Ptb, m_Root, m_Subtree;
-    private String m_SolutionPath, m_SolutionFile;
+    private String m_BuildRoot, m_BuildRootToSolution;
+    private String m_SolutionPath, m_SolutionFile, m_SolutionFileExt;
     private String m_extroot, m_projtag, m_ide, m_arch, m_logfile, m_conffile;
     private String m_Unknown;
-    public boolean m_dll, m_nobuildptb, m_ext, m_nws, m_i;
+    private boolean m_dll;
+    public boolean m_nobuildptb, m_ext, m_nws, m_i;
     private String m_ArgsFile;
 
     public ArgsParser() {
@@ -63,13 +65,13 @@ public class ArgsParser {
             if (args[i].charAt(0) == '-') {
                 dest = toEnum(args[i]);
                 switch (dest) {
-                    case dll:        m_dll = true; break;
+                    case dll:        m_dll        = true; break;
                     case nobuildptb: m_nobuildptb = true; break;
-                    case ext:        m_ext = true;        break;
-                    case nws:        m_nws = true;        break;
-                    case undefined: m_Unknown.concat(args[i]); break;
-                    case cfg:        --m_nCmd; break;
-                    case i:          m_i = true; break;
+                    case ext:        m_ext        = true; break;
+                    case nws:        m_nws        = true; break;
+                    case undefined:  m_Unknown.concat(args[i]); break;
+                    case cfg:        --m_nCmd;            break;
+                    case i:          m_i          = true; break;
                 }
             } else {
                 if (dest != eArg.undefined) {
@@ -97,14 +99,41 @@ public class ArgsParser {
                         m_Subtree = args[i];
                         break;
                     case 3:
-                        File f = new File(toCanonicalPath(args[i]));
-                        m_SolutionPath = f.getParent();
-                        m_SolutionFile = f.getName();
+                        parseSolutionPath(toCanonicalPath(args[i]));
                         break;
                     }
                     ++iPositional;
                 }
             }
+        }
+    }
+    private void parseSolutionPath(String solution) {
+        File f = new File(solution);
+        m_SolutionPath = f.getParent();
+        m_SolutionFile = f.getName();
+        m_SolutionFileExt = "";
+        if (m_SolutionFile.endsWith(".sln")) {
+            m_SolutionFileExt = ".sln";
+            m_SolutionFile = m_SolutionFile.replaceFirst("[.]sln$","");
+        }
+        if (f.getParentFile().getName().equals("build")) {
+            String t = f.getParentFile().getParentFile().getName();
+            if (t.equals("static") || t.equals("dll") || t.equals("user")) {
+                m_BuildRoot = f.getParentFile().getParentFile().getParent();
+                m_BuildRootToSolution = t + File.separator + "build";
+            }
+        }
+        else if (f.getParentFile().getName().equals("static")) {
+            m_BuildRoot = f.getParentFile().getParent();
+            m_BuildRootToSolution = "static";
+        }
+        else if (f.getParentFile().getName().equals("dll")) {
+            m_BuildRoot = f.getParentFile().getParent();
+            m_BuildRootToSolution = "dll";
+        }
+        if (m_BuildRoot == null) {
+            m_BuildRoot = m_SolutionPath;
+            m_BuildRootToSolution = ".";
         }
     }
     public String[] createCommandline() {
@@ -172,7 +201,7 @@ public class ArgsParser {
             }
             vcmd.add(m_Root);
             vcmd.add(m_Subtree);
-            vcmd.add(m_SolutionPath + File.separator + m_SolutionFile);
+            vcmd.add(getSolution());
         }
         String[] cmd = new String[vcmd.size()];
         for (int i = 0; i < vcmd.size(); ++i) {
@@ -219,10 +248,43 @@ public class ArgsParser {
     public void setSubtree(String subtree) {
         m_Subtree = subtree;
     }
+    public String getBuildRoot() {
+        return (m_BuildRoot != null) ? m_BuildRoot : m_Undef;
+    }
+    public boolean getDll() {
+        return m_dll;
+    }
+    public void setDll(boolean dll, boolean adjustpath) {
+        if (m_dll != dll) {
+            if (adjustpath) {
+            if (m_dll) {
+                if (!m_BuildRoot.equals(m_SolutionPath)) {
+                    m_BuildRootToSolution =
+                        m_BuildRootToSolution.replaceFirst("^dll", "static");
+                }
+                m_SolutionFile = m_SolutionFile.replaceFirst("_dll$","");
+            } else {
+                if (!m_BuildRoot.equals(m_SolutionPath)) {
+                    m_BuildRootToSolution =
+                        m_BuildRootToSolution.replaceFirst("^static", "dll");
+                }
+                m_SolutionFile = m_SolutionFile + "_dll";
+            }
+            }
+            m_dll = dll;
+        }
+    }
     public String getSolution() {
-        if (m_SolutionPath != null && m_SolutionPath.length() > 0 &&
-            m_SolutionFile != null && m_SolutionFile.length() > 0) {
-            return m_SolutionPath + File.separator + m_SolutionFile;
+        try {
+            if (!m_BuildRoot.equals(m_SolutionPath)) {
+                return m_BuildRoot           + File.separator +
+                       m_BuildRootToSolution + File.separator +
+                       m_SolutionFile + m_SolutionFileExt;
+            } else {
+                return m_SolutionPath + File.separator +
+                       m_SolutionFile + m_SolutionFileExt;
+            }
+        } catch (Exception e) {
         }
         return m_Undef;
     }

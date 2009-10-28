@@ -32,25 +32,48 @@
 package ptbgui;
 
 import java.awt.*;
+import java.util.*;
 import javax.swing.*;
 
 public class CheckListRenderer extends JCheckBox implements ListCellRenderer {
     private static final long serialVersionUID = 1L;
+    private SortedSet<String> m_undefSel;
+    public void setUndefinedSelection(SortedSet<String> undefSel) {
+        if (m_undefSel == null) {
+            m_undefSel = new TreeSet<String>();
+        } else {
+            m_undefSel.clear();
+        }
+        m_undefSel.addAll(undefSel);
+    }
     public Component getListCellRendererComponent(
            JList list, Object value, int index,
            boolean isSelected, boolean hasFocus)
 {
     setEnabled(list.isEnabled());
     setFont(list.getFont());
-    setText(((JCheckBox)value).getText());
-    boolean selected = ((JCheckBox)value).isSelected();
+    JCheckBox b= (JCheckBox)value;
+    String s = b.getText();
+    setText(s);
+    boolean selected = b.isSelected();
     setSelected(selected);
     if (selected) {
         setBackground(SystemColor.textHighlight);
         setForeground(SystemColor.textHighlightText);
     } else {
-        setBackground(list.getBackground());
-        setForeground(list.getForeground());
+        if (m_undefSel != null && m_undefSel.contains(s)) {
+            Color n = list.getBackground();
+            Color h = SystemColor.textHighlight;
+            Color u = new Color(
+                    (n.getRed() + h.getRed())/2,
+                    (n.getGreen() + h.getGreen())/2,
+                    (n.getBlue() + h.getBlue())/2);
+            setBackground(u);
+            setForeground(list.getForeground());
+        } else {
+            setBackground(list.getBackground());
+            setForeground(list.getForeground());
+        }
     }
     return this;
 }

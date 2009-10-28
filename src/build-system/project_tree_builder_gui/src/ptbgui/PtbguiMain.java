@@ -50,6 +50,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     private String m_Params, m_TmpParams;
     private String m_Key3root, m_KeyCpath;
     private Map<String, String[]> m_ProjectTags;
+    private SortedSet<String> m_UndefSelTags;
     enum eState {
         beforePtb,
         got3rdparty,
@@ -67,6 +68,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     private void initObjects() {
         m_ArgsParser = new ArgsParser();
         m_ProjectTags = new HashMap<String, String[]>();
+        m_UndefSelTags = new TreeSet<String>();
         ButtonGroup group = new ButtonGroup();
         group.add(jRadioButtonStatic);
         group.add(jRadioButtonDLL);
@@ -131,8 +133,8 @@ public class PtbguiMain extends javax.swing.JFrame {
             jTextFieldArch.setToolTipText("Win32 or x64");
         }
 
-        jRadioButtonDLL.setSelected(m_ArgsParser.m_dll);
-        jRadioButtonStatic.setSelected(!m_ArgsParser.m_dll);
+        jRadioButtonDLL.setSelected(m_ArgsParser.getDll());
+        jRadioButtonStatic.setSelected(!m_ArgsParser.getDll());
         jCheckBoxNoPtb.setSelected(m_ArgsParser.m_nobuildptb);
         jCheckBoxNws.setSelected(m_ArgsParser.m_nws);
         jCheckBoxExt.setSelected(m_ArgsParser.m_ext);
@@ -144,10 +146,25 @@ public class PtbguiMain extends javax.swing.JFrame {
             m_ArgsProp.clear();
         }
 
-        jRadioButtonDLL.setEnabled(false);
-        jRadioButtonStatic.setEnabled(false);
-        jTextFieldArch.setEnabled(false);
+//        jRadioButtonDLL.setEnabled(false);
+//        jRadioButtonStatic.setEnabled(false);
+        adjustArch();
         initKnownTags();
+    }
+    private void adjustArch() {
+        File build_root = new File(m_ArgsParser.getBuildRoot());
+        File[] arrFile = build_root.listFiles( new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return (name.toLowerCase().matches("__configured_platform.*"));
+            }
+        });
+        jTextFieldArch.setEditable(arrFile.length==0);
+    }
+    void adjustBuildType() {
+        m_ArgsParser.setDll( jRadioButtonDLL.isSelected(),true);
+        setPathText(jTextFieldSolution, m_ArgsParser.getSolutionFile(), false);
     }
     private void initData(Properties prop) {
         String v;
@@ -165,6 +182,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         jCheckBoxNws.setSelected(getProp(prop,"__arg_nws").equals("yes"));
         jCheckBoxExt.setSelected(getProp(prop,"__arg_ext").equals("yes"));
         jTextFieldExt.setText(getProp(prop,"__arg_extroot"));
+        adjustArch();
         initKnownTags();
     }
     private void initKnownTags() {
@@ -224,7 +242,6 @@ public class PtbguiMain extends javax.swing.JFrame {
                 }
                 fout.flush();
                 fout.close();
-//                m_ArgsProp.store( new FileOutputStream(f), "ptbconf001");
                 m_TmpParams = f.getPath();
             } catch (Exception e) {
                 System.err.println(e.toString());
@@ -240,7 +257,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
 
             m_ArgsParser.setArch(jTextFieldArch.getText());
-            m_ArgsParser.m_dll = jRadioButtonDLL.isSelected();
+            m_ArgsParser.setDll(jRadioButtonDLL.isSelected(), false);
             m_ArgsParser.m_nobuildptb = jCheckBoxNoPtb.isSelected();
             m_ArgsParser.m_nws = jCheckBoxNws.isSelected();
             m_ArgsParser.m_ext = jCheckBoxExt.isSelected();
@@ -504,6 +521,35 @@ public class PtbguiMain extends javax.swing.JFrame {
         }
         list.repaint();
     }
+    private void checkProjectSelection(JList list,
+        Vector<String> selected, Vector<String> unselected) {
+        DefaultListModel model = (DefaultListModel)list.getModel();
+        for (int i =0; i< model.getSize(); ++i) {
+            JCheckBox b = (JCheckBox)model.getElementAt(i);
+            String prj = b.getText();
+            if (m_ProjectTags.containsKey(prj)) {
+                String[] tags = m_ProjectTags.get(prj);
+                boolean hasProhibited = false;
+                for (int t=0; t<tags.length; ++t) {
+                    if (unselected.contains(tags[t])) {
+                        if (b.isSelected()) {
+                            m_UndefSelTags.add(tags[t]);
+                        }
+                        hasProhibited = true;
+                    }
+                }
+                if (!hasProhibited) {
+                    for (int t=0; t<tags.length; ++t) {
+                        if (selected.contains(tags[t])) {
+                            if (!b.isSelected()) {
+                                m_UndefSelTags.add(tags[t]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     private int getSelectedCount(JList list) {
         int count = 0;
         DefaultListModel model = (DefaultListModel)list.getModel();
@@ -528,13 +574,42 @@ public class PtbguiMain extends javax.swing.JFrame {
             getSelectedCount(jListOther) + "/" +
             jListOther.getModel().getSize()+ ")";
         jLabelOther.setText(t);
+        verifyTagSelection();
+    }
+    private void verifyTagSelection() {
+        Vector<String> selected = new Vector<String>();
+        Vector<String> unselected = new Vector<String>();
+        DefaultListModel model = (DefaultListModel)jListTags.getModel();
+        for (int i =0; i< model.getSize(); ++i) {
+            JCheckBox b = (JCheckBox)model.getElementAt(i);
+            if (b.isSelected()) {
+                selected.add(b.getText());
+            } else {
+                unselected.add(b.getText());
+            }
+        }
+        m_UndefSelTags.clear();
+        checkProjectSelection(jListApps, selected, unselected);
+        checkProjectSelection(jListLibs, selected, unselected);
+        checkProjectSelection(jListOther, selected, unselected);
+        for (int i =0; i< model.getSize(); ++i) {
+            JCheckBox b = (JCheckBox)model.getElementAt(i);
+            if (m_UndefSelTags.contains(b.getText())) {
+                if (b.isSelected()) {
+                    b.setSelected(false);
+                }
+            }
+        }
+        CheckListRenderer r = (CheckListRenderer)(jListTags.getCellRenderer());
+        r.setUndefinedSelection(m_UndefSelTags);
+        jListTags.repaint();
     }
     private void jListSelectionChanged(java.awt.event.MouseEvent evt) {
         JList list = (JList) evt.getSource();
         if (list == jListTags) {
             Vector<String> selected = new Vector<String>();
             Vector<String> unselected = new Vector<String>();
-            DefaultListModel model = (DefaultListModel)list.getModel();
+            DefaultListModel model = (DefaultListModel)jListTags.getModel();
             for (int i =0; i< model.getSize(); ++i) {
                 JCheckBox b = (JCheckBox)model.getElementAt(i);
                 if (b.isSelected()) {
@@ -833,8 +908,18 @@ public class PtbguiMain extends javax.swing.JFrame {
         });
 
         jRadioButtonStatic.setText("Static");
+        jRadioButtonStatic.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonStaticActionPerformed(evt);
+            }
+        });
 
         jRadioButtonDLL.setText("Dynamic");
+        jRadioButtonDLL.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonDLLActionPerformed(evt);
+            }
+        });
 
         jLabel14.setText("Build libraries as");
 
@@ -950,11 +1035,6 @@ public class PtbguiMain extends javax.swing.JFrame {
         jLabel5.setText("Solution to generate");
 
         jTextFieldSolution.setText("jTextFieldSolution");
-        jTextFieldSolution.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextFieldSolutionActionPerformed(evt);
-            }
-        });
 
         jCheckBoxNoPtb.setText("Exclude 'Build PTB' step from CONFIGURE project");
 
@@ -968,8 +1048,8 @@ public class PtbguiMain extends javax.swing.JFrame {
 
         jLabel6.setText("Target IDE");
 
+        jTextFieldIde.setEditable(false);
         jTextFieldIde.setText("jTextFieldIde");
-        jTextFieldIde.setEnabled(false);
 
         jLabel7.setText("Target architecture");
 
@@ -1403,7 +1483,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 0.5");
+        jLabel13.setText("  version 0.7");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
@@ -1437,10 +1517,6 @@ public class PtbguiMain extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void jTextFieldSolutionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextFieldSolutionActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextFieldSolutionActionPerformed
 
     private void jButtonPtbActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonPtbActionPerformed
         JFileChooser fd = new JFileChooser();
@@ -1554,48 +1630,45 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_jButtonSaveActionPerformed
-
     private void jButtonArgsResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonArgsResetActionPerformed
         initData();
     }//GEN-LAST:event_jButtonArgsResetActionPerformed
-
     private void jButtonAppsPlusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAppsPlusActionPerformed
         selectProjects(jListApps, true);
     }//GEN-LAST:event_jButtonAppsPlusActionPerformed
-
     private void jButtonAppsMinusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAppsMinusActionPerformed
         selectProjects(jListApps, false);
     }//GEN-LAST:event_jButtonAppsMinusActionPerformed
-
     private void jButtonLibsPlusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonLibsPlusActionPerformed
         selectProjects(jListLibs, true);
     }//GEN-LAST:event_jButtonLibsPlusActionPerformed
-
     private void jButtonLibsMinusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonLibsMinusActionPerformed
         selectProjects(jListLibs, false);
     }//GEN-LAST:event_jButtonLibsMinusActionPerformed
-
     private void jButtonOtherPlusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOtherPlusActionPerformed
         selectProjects(jListOther, true);
     }//GEN-LAST:event_jButtonOtherPlusActionPerformed
-
     private void jButtonOtherMinusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOtherMinusActionPerformed
         selectProjects(jListOther, false);
     }//GEN-LAST:event_jButtonOtherMinusActionPerformed
-
     private void jButtonStartOverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonStartOverActionPerformed
         resetState();
         initData();
     }//GEN-LAST:event_jButtonStartOverActionPerformed
-
     private void jButtonMoreActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMoreActionPerformed
         showMoreAdvanced(!jCheckBoxNoPtb.isVisible());
     }//GEN-LAST:event_jButtonMoreActionPerformed
-
     private void jCheckBoxVTuneActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxVTuneActionPerformed
         jCheckBoxVTuneD.setVisible(jCheckBoxVTune.isSelected());
         jCheckBoxVTuneR.setVisible(jCheckBoxVTune.isSelected());
     }//GEN-LAST:event_jCheckBoxVTuneActionPerformed
+    private void jRadioButtonStaticActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonStaticActionPerformed
+        adjustBuildType();
+    }//GEN-LAST:event_jRadioButtonStaticActionPerformed
+
+    private void jRadioButtonDLLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonDLLActionPerformed
+        adjustBuildType();
+    }//GEN-LAST:event_jRadioButtonDLLActionPerformed
 
     /**
     * @param args the command line arguments
