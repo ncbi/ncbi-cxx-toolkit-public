@@ -20,7 +20,7 @@ REQUIRES = Boost.Test.Included
 # Uncomment if you do not want it to run automatically as part of
 # "make check".
 CHECK_CMD = unit_test_idmapper
-CHECK_AUTHORS = dicuccio@ncbi.nlm.nih.gov ludwigf@ncbi.nlm.nih.gov
+CHECK_AUTHORS = dicuccio ludwigf
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
 # PRE_LIBS = $(NCBI_C_LIBPATH) .....

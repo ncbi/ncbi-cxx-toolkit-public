@@ -15,5 +15,4 @@ REQUIRES = Boost.Test.Included
 # "make check".
 CHECK_CMD = unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn
 CHECK_COPY = alignments.asn annotations.asn
-CHECK_AUTHORS = dicuccio@ncbi.nlm.nih.gov
-
+CHECK_AUTHORS = dicuccio
