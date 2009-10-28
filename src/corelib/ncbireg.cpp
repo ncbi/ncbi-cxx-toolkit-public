@@ -1428,7 +1428,8 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     // Normally, all settings should go to the main portion.  However,
     // loading an initial configuration file should instead go to the
     // file portion so that environment settings can take priority.
-    if (FindByName(sm_MainRegName)->Empty()  &&  m_FileRegistry->Empty()) {
+    CConstRef<IRegistry> main_reg(FindByName(sm_MainRegName));
+    if (main_reg->Empty()  &&  m_FileRegistry->Empty()) {
         m_FileRegistry->Read(is, flags);
         LoadBaseRegistries(flags);
         IncludeNcbircIfAllowed(flags);
@@ -1437,6 +1438,29 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
         CRef<CCompoundRWRegistry> crwreg
             (new CCompoundRWRegistry(m_Flags & fCaseFlags));
         crwreg->Read(is, flags);
+        // Allow contents to override anything previously Set() directly.
+        IRWRegistry& nc_main_reg
+            = dynamic_cast<IRWRegistry&>(const_cast<IRegistry&>(*main_reg));
+        if ((flags & fTransient) == 0) {
+            flags |= fPersistent;
+        }
+        list<string> sections;
+        crwreg->EnumerateSections(&sections, flags | fCountCleared);
+        ITERATE (list<string>, sit, sections) {
+            list<string> entries;
+            crwreg->EnumerateEntries(*sit, &entries, flags | fCountCleared);
+            ITERATE (list<string>, eit, entries) {
+                // In principle, it should be possible to clear the setting
+                // in nc_main_reg rather than duplicating it; however,
+                // letting the entry in crwreg be visible would require
+                // having CCompoundRegistry::FindByContents no longer force
+                // fCountCleared, which breaks other corner cases (as shown
+                // by test_sub_reg). :-/
+                if (nc_main_reg.HasEntry(*sit, *eit, flags | fCountCleared)) {
+                    nc_main_reg.Set(*sit, *eit, crwreg->Get(*sit, *eit), flags);
+                }
+            }
+        }
         ++m_RuntimeOverrideCount;
         x_Add(*crwreg, ePriority_RuntimeOverrides + m_RuntimeOverrideCount,
               sm_OverrideRegName + NStr::IntToString(m_RuntimeOverrideCount));
