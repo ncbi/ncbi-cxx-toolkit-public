@@ -35,7 +35,8 @@ setlocal
 set sln_name=ncbi_cpp
 set use_projectlst=scripts/projects/ncbi_cpp.lst
 
-set use_gui=yes
+set use_gui=no
+set maybe_gui=yes
 set use_dll=no
 set use_64=no
 set use_ide=800
@@ -66,9 +67,13 @@ if "%1"=="--without-dll"   (set use_dll=no&   goto :CONTINUEPARSEARGS)
 if "%1"=="--with-64"       (set use_64=yes&   goto :CONTINUEPARSEARGS)
 if "%1"=="--with-projects" (set dest=lst&     goto :CONTINUEPARSEARGS)
 :CONTINUEPARSEARGS
+set maybe_gui=no
 shift
 goto :PARSEARGS
 :ENDPARSEARGS
+if "%maybe_gui%"=="yes" (
+  set use_gui=yes
+)
 
 REM --------------------------------------------------------------------------------
 REM print usage
