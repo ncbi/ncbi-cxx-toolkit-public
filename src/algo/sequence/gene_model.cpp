@@ -434,73 +434,75 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
                     cds_loc->SetPacked_int().Set().push_back(ival);
                 }
             }
-            cds_loc->SetId(*loc->GetId());
-            cds_feat->SetLocation(*cds_loc);
+            if (cds_loc->Which() != CSeq_loc::e_not_set) {
+                cds_loc->SetId(*loc->GetId());
+                cds_feat->SetLocation(*cds_loc);
 
-            if (is_partial_5prime  ||  is_partial_3prime) {
-                cds_feat->SetPartial(true);
-                if (is_partial_5prime) {
-                    cds_loc->SetPartialStart(true, eExtreme_Positional);
+                if (is_partial_5prime  ||  is_partial_3prime) {
+                    cds_feat->SetPartial(true);
+                    if (is_partial_5prime) {
+                        cds_loc->SetPartialStart(true, eExtreme_Positional);
+                    }
+                    if (is_partial_3prime) {
+                        cds_loc->SetPartialStop(true, eExtreme_Positional);
+                    }
                 }
-                if (is_partial_3prime) {
-                    cds_loc->SetPartialStop(true, eExtreme_Positional);
+
+
+                /// copy any existing dbxrefs
+                if (cds_feat  &&  gene_feat  &&
+                    !cds_feat->IsSetDbxref()  &&  gene_feat->IsSetDbxref()) {
+                    ITERATE (CSeq_feat::TDbxref, xref_it,
+                             gene_feat->GetDbxref()) {
+                        CRef<CDbtag> tag(new CDbtag);
+                        tag->Assign(**xref_it);
+                        cds_feat->SetDbxref().push_back(tag);
+                    }
                 }
-            }
 
-
-            /// copy any existing dbxrefs
-            if (cds_feat  &&  gene_feat  &&
-                !cds_feat->IsSetDbxref()  &&  gene_feat->IsSetDbxref()) {
-                ITERATE (CSeq_feat::TDbxref, xref_it,
-                         gene_feat->GetDbxref()) {
-                    CRef<CDbtag> tag(new CDbtag);
-                    tag->Assign(**xref_it);
-                    cds_feat->SetDbxref().push_back(tag);
+                /// also copy the code break if it exists
+                if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
+                    CSeqFeatData::TCdregion& cds =
+                        cds_feat->SetData().SetCdregion();
+                    NON_CONST_ITERATE(CCdregion::TCode_break, it,
+                                      cds.SetCode_break()) {
+                        CRef<CSeq_loc> new_cb_loc = mapper.Map((*it)->GetLoc());
+                        (*it)->SetLoc(*new_cb_loc);
+                    }
                 }
-            }
 
-            /// also copy the code break if it exists
-            if (cds_feat->GetData().GetCdregion().IsSetCode_break()) {
-                CSeqFeatData::TCdregion& cds =
-                    cds_feat->SetData().SetCdregion();
-                NON_CONST_ITERATE(CCdregion::TCode_break, it,
-                                  cds.SetCode_break()) {
-                    CRef<CSeq_loc> new_cb_loc = mapper.Map((*it)->GetLoc());
-                    (*it)->SetLoc(*new_cb_loc);
+                annot.SetData().SetFtable().push_back(cds_feat);
+
+                if (flags & fForceTranslateCds) {
+                    /// create a new bioseq for the CDS
+                    CRef<CSeq_entry> entry(new CSeq_entry);
+                    CBioseq& bioseq = entry->SetSeq();
+
+                    /// create a new seq-id for this
+                    string str("lcl|PROT_");
+                    str += time.AsString("YMD");
+                    str += "_";
+                    str += NStr::IntToString(model_num);
+                    CRef<CSeq_id> id(new CSeq_id(str));
+                    bioseq.SetId().push_back(id);
+                    cds_feat->SetProduct().SetWhole().Assign(*id);
+
+                    /// set up the inst
+                    CSeq_inst& inst = bioseq.SetInst();
+                    inst.SetRepr(CSeq_inst::eRepr_raw);
+                    inst.SetMol(CSeq_inst::eMol_aa);
+
+                    /// this is created as a translation of the genomic
+                    /// location
+                    CSeqTranslator::Translate
+                        (*cds_loc, handle.GetScope(),
+                         inst.SetSeq_data().SetIupacaa().Set(),
+                         NULL /* default genetic code */,
+                         false /* trim at first stop codon */);
+                    inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
+
+                    seqs.SetSeq_set().push_back(entry);
                 }
-            }
-
-            annot.SetData().SetFtable().push_back(cds_feat);
-
-            if (flags & fForceTranslateCds) {
-                /// create a new bioseq for the CDS
-                CRef<CSeq_entry> entry(new CSeq_entry);
-                CBioseq& bioseq = entry->SetSeq();
-
-                /// create a new seq-id for this
-                string str("lcl|PROT_");
-                str += time.AsString("YMD");
-                str += "_";
-                str += NStr::IntToString(model_num);
-                CRef<CSeq_id> id(new CSeq_id(str));
-                bioseq.SetId().push_back(id);
-                cds_feat->SetProduct().SetWhole().Assign(*id);
-
-                /// set up the inst
-                CSeq_inst& inst = bioseq.SetInst();
-                inst.SetRepr(CSeq_inst::eRepr_raw);
-                inst.SetMol(CSeq_inst::eMol_aa);
-
-                /// this is created as a translation of the genomic
-                /// location
-                CSeqTranslator::Translate
-                    (*cds_loc, handle.GetScope(),
-                     inst.SetSeq_data().SetIupacaa().Set(),
-                     NULL /* default genetic code */,
-                     false /* trim at first stop codon */);
-                inst.SetLength(inst.GetSeq_data().GetIupacaa().Get().size());
-
-                seqs.SetSeq_set().push_back(entry);
             }
         }
     }
