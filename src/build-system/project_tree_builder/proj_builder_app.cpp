@@ -990,22 +990,25 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             }
 
             string error;
-	    ITERATE(set<CProjKey>, u, p->second.m_UnconditionalDepends) {
-                CProjKey proj_key = *u;
-                if (projects_tree.m_Projects.find(proj_key) ==
-                    projects_tree.m_Projects.end()) {
-                    bool depfound = false;
-		    string dll(GetDllHost(projects_tree, proj_key.Id()));
-                    if (!dll.empty()) {
-                        CProjKey id_alt(CProjKey::eDll,dll);
-                        depfound = (projects_tree.m_Projects.find(id_alt) !=
-                            projects_tree.m_Projects.end());
-		    }
-                    if (!depfound && !SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
-                        error = "@echo ERROR: this project depends on missing " + CreateProjectName(proj_key);
+            if (p->second.m_MakeType != eMakeType_Expendable) {
+	            ITERATE(set<CProjKey>, u, p->second.m_UnconditionalDepends) {
+                    CProjKey proj_key = *u;
+                    if (projects_tree.m_Projects.find(proj_key) ==
+                        projects_tree.m_Projects.end()) {
+                        bool depfound = false;
+		                string dll(GetDllHost(projects_tree, proj_key.Id()));
+                        if (!dll.empty()) {
+                            CProjKey id_alt(CProjKey::eDll,dll);
+                            depfound = (projects_tree.m_Projects.find(id_alt) !=
+                                projects_tree.m_Projects.end());
+		                }
+                        if (!depfound && !SMakeProjectT::IsConfigurableDefine(proj_key.Id())) {
+                            error = "@echo ERROR: this project depends on missing " +
+                                CreateProjectName(proj_key);
+                        }
                     }
-                }
-	    }
+	            }
+	        }
             set<string> lib_guid, visited;
             ITERATE(list<CProjKey>, i, p->second.m_Depends) {
 
