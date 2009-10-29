@@ -126,6 +126,12 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                                max_file_size,
                                                false));
         }
+
+        m_GiIndex.Reset(new CWriteDB_GiIndex(dbname,
+                                             protein,
+                                             index,
+                                             max_file_size));
+                          
     }
 }
 
@@ -224,6 +230,16 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     if (m_Indices != CWriteDB::eNoIndex) {
         m_AccIsam->AddIds(m_OID, idlist);
         m_GiIsam->AddIds(m_OID, idlist);
+
+        Int4 gi = -1;
+        ITERATE(TIdList, iter, idlist) {
+            const CSeq_id & seqid = **iter;
+            if (seqid.IsGi()) {
+                gi = seqid.GetGi();
+                break;
+            }
+        }
+        m_GiIndex->AddGi(gi);
         
         if (m_Protein && pig) {
             m_PigIsam->AddPig(m_OID, pig);
@@ -279,6 +295,7 @@ void CWriteDB_Volume::Close()
             }
             m_GiIsam->Close();
             m_AccIsam->Close();
+            m_GiIndex->Close();
             
             if (m_TraceIsam.NotEmpty()) {
                 m_TraceIsam->Close();
@@ -314,6 +331,7 @@ void CWriteDB_Volume::RenameSingle()
         }
         m_GiIsam->RenameSingle();
         m_AccIsam->RenameSingle();
+        m_GiIndex->RenameSingle();
         
         if (m_TraceIsam.NotEmpty()) {
             m_TraceIsam->RenameSingle();
@@ -358,6 +376,9 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
         m_HashIsam->ListFiles(files);
     }
     
+    if (m_GiIndex.NotEmpty()) {
+        files.push_back(m_GiIndex->GetFilename());
+    }
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {

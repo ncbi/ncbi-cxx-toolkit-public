@@ -1275,7 +1275,7 @@ BOOST_AUTO_TEST_CASE(MultiVolume)
     BOOST_REQUIRE_EQUAL(v[1], string("multivol.01"));
     BOOST_REQUIRE_EQUAL(v[2], string("multivol.02"));
     
-    BOOST_REQUIRE_EQUAL(22, (int) f.size());
+    BOOST_REQUIRE_EQUAL(25, (int) f.size());
     
     // Check resulting db.
     

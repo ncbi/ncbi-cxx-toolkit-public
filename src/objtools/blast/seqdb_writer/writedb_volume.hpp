@@ -49,6 +49,52 @@ BEGIN_NCBI_SCOPE
 /// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
+/// CWriteDB_GiIndex class
+///
+/// This class creates OID->GI lookup file
+class CWriteDB_GiIndex : public CWriteDB_File {
+public:
+    CWriteDB_GiIndex(const string & dbname,
+                     bool           protein,
+                     int            index,
+                     Uint8          max_fsize)
+    : CWriteDB_File  (dbname, (protein ? "pxg" : "nxg"), index, max_fsize, false){ }
+
+    ~CWriteDB_GiIndex() { };
+    
+    void AddGi(Int4 gi) {
+        m_Gi.push_back(gi);
+    }
+
+private:
+    void x_Flush() {
+
+        Int4 nGi = m_Gi.size();
+
+        if (! nGi) return;
+
+        Create();    
+        WriteInt4(kVersion);
+        WriteInt4(kFileType);
+        WriteInt4(kGiSize);
+        WriteInt4(nGi);
+
+        for (Int4 i=0; i<4; i++) {
+            WriteInt4(0);
+        }
+
+        for (Int4 i=0; i<nGi; i++) {
+            WriteInt4(m_Gi[i]);
+        }
+    }
+
+    static const int kVersion = 1;
+    static const int kFileType = 0;
+    static const int kGiSize = 4;
+    vector<Int4> m_Gi;
+};
+                     
+ 
 /// CWriteDB_Volume class
 /// 
 /// This manufactures a blast database volume from sequences.
@@ -214,6 +260,7 @@ private:
     CRef<CWriteDB_Isam> m_PigIsam;   ///< PIG index (ppi+ppd, protein only).
     CRef<CWriteDB_Isam> m_TraceIsam; ///< Trace ID index (pti+ptd or nti+ntd).
     CRef<CWriteDB_Isam> m_HashIsam;  ///< Hash index (phi+phd or nhi+nhd).
+    CRef<CWriteDB_GiIndex> m_GiIndex;///< OID->GI lookup (pgx or ngx).
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
