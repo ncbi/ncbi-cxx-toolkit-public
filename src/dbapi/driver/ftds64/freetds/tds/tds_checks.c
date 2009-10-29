@@ -176,7 +176,7 @@ tds_check_column_extra(const TDSCOLUMN * column)
 
 	assert(column);
 
-	assert(column->column_varint_size <= 5 && column->column_varint_size != 3);
+	assert(column->column_varint_size < 5 && column->column_varint_size != 3);
 
 	assert(column->column_scale <= column->column_prec);
 	assert(column->column_prec <= 77);
@@ -198,11 +198,6 @@ tds_check_column_extra(const TDSCOLUMN * column)
     varint_ok = tds_get_varint_size(&tds, column->on_server.column_type) == column->column_varint_size;
     tds.major_version = 7;
     varint_ok = varint_ok || tds_get_varint_size(&tds, column->on_server.column_type) == column->column_varint_size;
-    if (!varint_ok) {
-        tds.product_name = "OpenServer";
-        tds.major_version = 5;
-        varint_ok = tds_get_varint_size(&tds, column->on_server.column_type) == column->column_varint_size;
-    }
     assert(varint_ok);
 
 	/* check current size <= size */

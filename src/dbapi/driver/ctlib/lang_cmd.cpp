@@ -301,11 +301,16 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
     case eDB_LongBinary: {
         CDB_LongBinary& par = dynamic_cast<CDB_LongBinary&> (param);
-        param_fmt.datatype = CS_LONGBINARY_TYPE;
+#ifdef FTDS_IN_USE
+        if (GetConnection().GetServerType() == CDBConnParams::eMSSqlServer)
+            param_fmt.datatype = CS_BINARY_TYPE;
+        else
+#endif
+            param_fmt.datatype = CS_LONGBINARY_TYPE;
+
         if ( declare_only ) {
             break;
         }
-
         ret_code = Check(ct_param(x_GetSybaseCmd(),
                                   &param_fmt,
                                   (CS_VOID*) par.Value(),

@@ -184,6 +184,7 @@ int
 tds_get_varint_size(TDSSOCKET * tds, int datatype)
 {
 	switch (datatype) {
+    case SYBLONGBINARY:
 	case SYBTEXT:
 	case SYBNTEXT:
 	case SYBIMAGE:
@@ -207,8 +208,6 @@ tds_get_varint_size(TDSSOCKET * tds, int datatype)
 	case SYBUINT4:
 	case SYBUINT8:
 		return 0;
-    case SYBLONGBINARY:
-        return IS_TDS_OS(tds)? 4: 5;
     }
 
     if (IS_TDS7_PLUS(tds)) {

@@ -1127,8 +1127,7 @@ _bcp_read_hostfile(DBPROCESS * dbproc, FILE * hostfile, int *row_error)
 
 		/* detect prefix len */
 		if (bcpcol && hostcol->prefix_len == -1) {
-			int plen = bcpcol->column_varint_size;
-			hostcol->prefix_len = plen == 5 ? 4 : plen;
+			hostcol->prefix_len = bcpcol->column_varint_size;
 		}
 
 		/* a prefix length, if extant, specifies how many bytes to read */

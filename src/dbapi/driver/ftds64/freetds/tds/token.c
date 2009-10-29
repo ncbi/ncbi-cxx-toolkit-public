@@ -1916,9 +1916,6 @@ tds5_process_result(TDSSOCKET * tds)
                 curcol->column_size = tds_get_int(tds);
             }
             break;
-        case 5:
-            curcol->column_size = tds_get_int(tds);
-            break;
         case 2:
             curcol->column_size = tds_get_smallint(tds);
             break;
@@ -2079,15 +2076,6 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
             return TDS_SUCCEED;
         }
 
-        /*
-         * LONGBINARY
-         * This type just stores a 4-byte length
-         */
-        if (curcol->column_type == SYBLONGBINARY) {
-            colsize = tds_get_int(tds);
-            break;
-        }
-
         /* It's a BLOB... */
         if (is_blob_type(curcol->column_type)) {
             len = tds_get_byte(tds);
@@ -2106,9 +2094,6 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
         colsize = tds_get_int(tds);
         if (colsize == 0)
             colsize = -1;
-        break;
-    case 5:
-        colsize = tds_get_int(tds);
         break;
     case 2:
         colsize = tds_get_smallint(tds);
@@ -2963,9 +2948,6 @@ tds5_process_dyn_result2(TDSSOCKET * tds)
         curcol->column_varint_size = tds5_get_varint_size(curcol->column_type);
         /* column size */
         switch (curcol->column_varint_size) {
-        case 5:
-            curcol->column_size = tds_get_int(tds);
-            break;
         case 4:
             if (curcol->column_type == SYBTEXT || curcol->column_type == SYBIMAGE) {
                 curcol->column_size = tds_get_int(tds);
@@ -2973,8 +2955,10 @@ tds5_process_dyn_result2(TDSSOCKET * tds)
                 curcol->table_namelen =
                     tds_get_string(tds, tds_get_smallint(tds), curcol->table_name,
                                sizeof(curcol->table_name) - 1);
-            } else
-                tdsdump_log(TDS_DBG_INFO1, "UNHANDLED TYPE %x\n", curcol->column_type);
+            } else {
+                curcol->column_size = tds_get_int(tds);
+                /*tdsdump_log(TDS_DBG_INFO1, "UNHANDLED TYPE %x\n", curcol->column_type);*/
+            }
             break;
         case 2:
             curcol->column_size = tds_get_smallint(tds);
@@ -3091,15 +3075,13 @@ static int
 tds5_get_varint_size(int datatype)
 {
     switch (datatype) {
+    case SYBLONGBINARY:
+    case XSYBCHAR:
     case SYBTEXT:
     case SYBNTEXT:
     case SYBIMAGE:
     case SYBVARIANT:
         return 4;
-
-    case SYBLONGBINARY:
-    case XSYBCHAR:
-        return 5;   /* Special case */
 
     case SYBVOID:
     case SYBINT1:
