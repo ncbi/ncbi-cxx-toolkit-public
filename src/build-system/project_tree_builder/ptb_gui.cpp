@@ -200,6 +200,16 @@ bool  CProjBulderApp::Gui_ConfirmConfiguration(void)
         }
     }
 //    m_CustomConfiguration.Save(m_CustomConfFile);
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        string v;
+        if (m_CustomConfiguration.GetValue("__TweakVTuneR", v)) {
+            m_TweakVTuneR = NStr::StringToBool(v);
+        }
+        if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
+            m_TweakVTuneD = NStr::StringToBool(v);
+        }
+        GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
+    }
     return true;
 }
 
