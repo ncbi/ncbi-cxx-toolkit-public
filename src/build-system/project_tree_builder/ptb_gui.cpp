@@ -208,7 +208,9 @@ bool  CProjBulderApp::Gui_ConfirmConfiguration(void)
         if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
             m_TweakVTuneD = NStr::StringToBool(v);
         }
-        GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
+        if ( m_MsvcRegSettings.get() ) {
+            GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
+        }
     }
     return true;
 }
