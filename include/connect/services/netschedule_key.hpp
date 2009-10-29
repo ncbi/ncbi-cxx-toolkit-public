@@ -95,21 +95,21 @@ public:
     class const_iterator
     {
     public:
-        typedef CNetScheduleKeys::TKeysMap TKeysMap;
-        typedef TBVector::enumerator TBVEnumerator;
-
-        const_iterator(const TKeysMap& keys, bool end) : m_Keys(&keys)
+        const_iterator() : m_Keys(NULL) {}
+        const_iterator(const CNetScheduleKeys::TKeysMap& keys, bool end) :
+            m_Keys(&keys)
         {
             if (end)
                 m_SrvIter = m_Keys->end();
             else {
-                for (m_SrvIter = m_Keys->begin(); m_SrvIter != m_Keys->end(); ++m_SrvIter) {
+                for (m_SrvIter = m_Keys->begin();
+                        m_SrvIter != m_Keys->end(); ++m_SrvIter) {
                     m_BVEnum = m_SrvIter->second.first();
                     if (m_BVEnum != m_SrvIter->second.end())
                         break;
                 }
                 if (m_SrvIter == m_Keys->end())
-                    m_BVEnum = TBVEnumerator();
+                    m_BVEnum = TBVector::enumerator();
             }
         }
         bool operator == (const const_iterator& other) const
@@ -124,6 +124,7 @@ public:
 
         CNetScheduleKey operator*() const
         {
+            _ASSERT(m_Keys != NULL);
             return CNetScheduleKey((unsigned)*m_BVEnum, m_SrvIter->first.first,
                                    m_SrvIter->first.second);
         }
@@ -133,7 +134,7 @@ public:
             if (m_SrvIter != m_Keys->end()) {
                 if(++m_BVEnum == m_SrvIter->second.end()) {
                     if (++m_SrvIter == m_Keys->end())
-                        m_BVEnum = TBVEnumerator();
+                        m_BVEnum = TBVector::enumerator();
                     else
                         m_BVEnum = m_SrvIter->second.first();
                 }
@@ -147,9 +148,9 @@ public:
             return tmp;
         }
     private:
-        const TKeysMap* m_Keys;
-        TKeysMap::const_iterator m_SrvIter;
-        TBVEnumerator m_BVEnum;
+        const CNetScheduleKeys::TKeysMap* m_Keys;
+        CNetScheduleKeys::TKeysMap::const_iterator m_SrvIter;
+        TBVector::enumerator m_BVEnum;
     };
 
     const_iterator begin() const { return const_iterator(m_Keys, false); }
