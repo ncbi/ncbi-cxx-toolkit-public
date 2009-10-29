@@ -37,6 +37,7 @@
 
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 
