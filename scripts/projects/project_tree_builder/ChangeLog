@@ -67,5 +67,10 @@ August 07, 2009
 version 1.11.0
 Made it possible to modify parts of NCBI_SIGNATURE from project_tree_builder.ini
 
-
+October 29, 2009
+version 2.0.0
+Enforce existence of projects listed in ASN_DEP and USR_DEP
+(fail when such project cannot be found).
+Added communication mechanism for PTBGUI and reading command line arguments from a file.
+Allow hierarchical project tag definition.
 
