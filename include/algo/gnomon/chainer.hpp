@@ -70,14 +70,24 @@ public:
     map<string,TSignedSeqRange>& SetMrnaCDS();
     CRef<objects::CScope>& SetScope();
     void SetGenomic(const CSeq_id& seqid);
+    void SetGenomicRange(const TAlignModelList& alignments);
 
 
     void TrimAlignments(TAlignModelList& alignments);
     void DoNotBelieveShortPolyATails(TAlignModelList& alignments);
-
     void FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments);
+    void ProjectCDSes(TAlignModelList& alignments);
+    void DoNotBelieveFrameShiftsWithoutCdsEvidence(TAlignModelList& alignments);
+    void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
+    void FilterOutChimeras(TGeneModelList& clust);
+    void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);
+    void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust);
+    void ReplicateFrameShifts(TGeneModelList& models);
+    void ScoreCdnas(TGeneModelList& clust);
 
-    TGeneModelList MakeChains(TAlignModelList& alignments);
+    TGeneModelList MakeChains(TGeneModelList& models);
+
+    void FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains);
 
 private:
     // Prohibit copy constructor and assignment operator
