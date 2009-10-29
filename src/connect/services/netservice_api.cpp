@@ -93,35 +93,42 @@ SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
     m_LBSMAffinityName = config.GetString(driver_name,
         "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
 
-    int timeout_sec = config.GetInt(driver_name,
-        "communication_timeout", CConfig::eErr_NoThrow, -1);
+    unsigned long timeout_ms =
+        s_SecondsToMilliseconds(config.GetString(driver_name,
+            "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
 
-    if (timeout_sec < 0)
+    if (timeout_ms > 0)
+        NcbiMsToTimeout(&m_Timeout, timeout_ms);
+    else
         m_Timeout = s_GetDefaultCommTimeout();
-    else {
-        m_Timeout.sec = timeout_sec;
-        m_Timeout.usec = 0;
-    }
 
-    m_ServerThrottlePeriod = config.GetInt(driver_name,
-        "server_throttle_period", CConfig::eErr_NoThrow,
-        SERVER_THROTTLE_PERIOD_DEFAULT);
+    m_ServerThrottlePeriod =
+        s_SecondsToMilliseconds(config.GetString(driver_name,
+            "throttle_relaxation_period", CConfig::eErr_NoThrow,
+                NCBI_AS_STRING(THROTTLE_RELAXATION_PERIOD_DEFAULT)),
+                SECONDS_DOUBLE_TO_MS_UL(THROTTLE_RELAXATION_PERIOD_DEFAULT));
 
     if (m_ServerThrottlePeriod > 0) {
-        int numerator = config.GetInt(driver_name,
-            "reconnection_failure_threshold_numerator", CConfig::eErr_NoThrow,
-                FAILURE_THRESHOLD_NUMERATOR_DEFAULT);
+        string numerator_str, denominator_str;
 
-        int denominator = config.GetInt(driver_name,
-            "reconnection_failure_threshold_denominator", CConfig::eErr_NoThrow,
-                FAILURE_THRESHOLD_DENOMINATOR_DEFAULT);
+        NStr::SplitInTwo(config.GetString(driver_name,
+            "throttle_by_connection_error_rate", CConfig::eErr_NoThrow,
+                THROTTLE_BY_CONNECTION_ERROR_RATE_DEFAULT), "/",
+                    numerator_str, denominator_str);
+
+        int numerator = NStr::StringToInt(numerator_str,
+            NStr::fConvErr_NoThrow |
+                NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+        int denominator = NStr::StringToInt(denominator_str,
+            NStr::fConvErr_NoThrow |
+                NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
 
         if (denominator < 1)
             denominator = 1;
-        else if (denominator > FAILURE_THRESHOLD_DENOMINATOR_MAX) {
-            numerator = (numerator * FAILURE_THRESHOLD_DENOMINATOR_MAX) /
+        else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
+            numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) /
                 denominator;
-            denominator = FAILURE_THRESHOLD_DENOMINATOR_MAX;
+            denominator = CONNECTION_ERROR_HISTORY_MAX;
         }
 
         if (numerator < 0)
@@ -131,12 +138,23 @@ SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
         m_ReconnectionFailureThresholdDenominator = denominator;
 
         m_MaxSubsequentConnectionFailures = config.GetInt(driver_name,
-            "max_subsequent_connection_failures", CConfig::eErr_NoThrow,
-            MAX_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
+            "throttle_by_subsequent_connection_failures", CConfig::eErr_NoThrow,
+                THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
 
-        m_MaxQueryTime = config.GetInt(driver_name,
-            "max_query_time", CConfig::eErr_NoThrow,
-                MAX_QUERY_TIME_DEFAULT);
+        m_MaxQueryTime = s_SecondsToMilliseconds(config.GetString(driver_name,
+            "max_connection_time", CConfig::eErr_NoThrow,
+                NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
+                SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
+
+        m_ThrottleUntilDiscoverable = config.GetBool(driver_name,
+            "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
+                THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
+
+        m_ForceRebalanceAfterThrottleWithin =
+            s_SecondsToMilliseconds(config.GetString(driver_name,
+                "throttle_forced_rebalance", CConfig::eErr_NoThrow,
+                    NCBI_AS_STRING(THROTTLE_FORCED_REBALANCE_DEFAULT)),
+                    SECONDS_DOUBLE_TO_MS_UL(THROTTLE_FORCED_REBALANCE_DEFAULT));
     }
 
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(config, driver_name);
@@ -303,7 +321,8 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
             return (*it).ExecWithRetry(cmd);
         }
         catch (CNetSrvConnException& ex) {
-            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure)
+            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
+                ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
                 throw;
             ERR_POST_X(2, ex.what());
         }
@@ -405,7 +424,7 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
             }
             ERR_POST_X(4, "Could not find LB service name '" <<
                 m_ServiceName << "', will retry after delay");
-            SleepMilliSec(TServConn_RetryDelay::GetDefault());
+            SleepMilliSec(s_GetRetryDelay());
         }
 
         base_group = CreateServerGroup(
@@ -422,8 +441,10 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
                     (discovery_mode == CNetService::eIncludePenalized &&
                         LBSMD_IS_PENALIZED_RATE(sinfo->rate)))) {
 
-                base_group->m_Servers.push_back(FindOrCreateServerImpl(
-                    CSocketAPI::ntoa(sinfo->host), sinfo->port));
+                SNetServerImpl* server = FindOrCreateServerImpl(
+                    CSocketAPI::ntoa(sinfo->host), sinfo->port);
+                server->m_DiscoveryIteration = m_LatestDiscoveryIteration;
+                base_group->m_Servers.push_back(server);
             }
         }
 

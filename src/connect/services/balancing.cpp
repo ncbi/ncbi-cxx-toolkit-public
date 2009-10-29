@@ -47,19 +47,21 @@ public:
         m_RebalanceRequests(rebalance_requests),
         m_RebalanceTime(rebalance_time),
         m_RequestCounter(0),
-        m_LastRebalanceTime(0)
+        m_LastRebalanceTime(CTime::eEmpty),
+        m_NextRebalanceTime(CTime::eEmpty)
     {
     }
 
     virtual bool NeedRebalance() {
         CFastMutexGuard g(m_Mutex);
-        time_t curr = time(0);
-        if ((m_RebalanceTime > 0 &&
-                curr >= m_LastRebalanceTime + m_RebalanceTime) ||
+        CTime current_time(CTime::eCurrent);
+        if ((m_RebalanceTime > 0 && current_time >= m_NextRebalanceTime) ||
             (m_RebalanceRequests > 0 &&
                 m_RequestCounter >= m_RebalanceRequests)) {
             m_RequestCounter = 0;
-            m_LastRebalanceTime = curr;
+            m_LastRebalanceTime = current_time;
+            m_NextRebalanceTime = current_time;
+            m_NextRebalanceTime.AddNanoSecond(m_RebalanceTime * 1000000);
             return true;
         }
         return false;
@@ -71,14 +73,20 @@ public:
     virtual void Reset() {
         CFastMutexGuard g(m_Mutex);
         m_RequestCounter = 0;
-        m_LastRebalanceTime = 0;
+        m_LastRebalanceTime.Clear();
+        m_NextRebalanceTime.Clear();
+    }
+    virtual const CTime& GetLastRebalanceTime()
+    {
+        return m_LastRebalanceTime;
     }
 
 private:
     int     m_RebalanceRequests;
     int     m_RebalanceTime;
     int     m_RequestCounter;
-    time_t  m_LastRebalanceTime;
+    CTime   m_LastRebalanceTime;
+    CTime   m_NextRebalanceTime;
     CFastMutex m_Mutex;
 };
 

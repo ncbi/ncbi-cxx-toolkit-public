@@ -219,6 +219,7 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 SNetServerImplReal::SNetServerImplReal(const string& host,
     unsigned short port) : SNetServerImpl(host, port)
 {
+    m_DiscoveryIteration = 0;
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 
@@ -383,9 +384,31 @@ void SNetServerImpl::CheckIfThrottled()
         CFastMutexGuard guard(m_ThrottleLock);
 
         if (m_Throttled) {
-            if (CTime(CTime::eCurrent) >= m_ThrottledUntil) {
-                ResetThrottlingParameters();
-                return;
+            CTime current_time(CTime::eCurrent);
+            if (current_time >= m_ThrottledUntil) {
+                if (!m_Service->m_ThrottleUntilDiscoverable) {
+                    ResetThrottlingParameters();
+                    return;
+                } else {
+                    if (m_Service->m_ForceRebalanceAfterThrottleWithin > 0) {
+                        CTime discovery_validity_time(m_Service->
+                            m_RebalanceStrategy->GetLastRebalanceTime());
+
+                        discovery_validity_time.AddNanoSecond(m_Service->
+                            m_ForceRebalanceAfterThrottleWithin * 1000000);
+
+                        if (discovery_validity_time < current_time) {
+                            ++m_Service->m_LatestDiscoveryIteration;
+                            m_Service.DiscoverServers(
+                                CNetService::eIncludePenalized);
+                        }
+                    }
+                    if (m_DiscoveryIteration ==
+                            m_Service->m_LatestDiscoveryIteration) {
+                        ResetThrottlingParameters();
+                        return;
+                    }
+                }
             }
             NCBI_THROW(CNetSrvConnException, eServerThrottle,
                 m_ThrottleMessage);
@@ -455,7 +478,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
             LOG_POST(Warning << e.what() << ", reconnecting: attempt " <<
                 attempt << " of " << TServConn_ConnMaxRetries::GetDefault());
 
-            SleepMilliSec(TServConn_RetryDelay::GetDefault());
+            SleepMilliSec(s_GetRetryDelay());
         }
     }
 }

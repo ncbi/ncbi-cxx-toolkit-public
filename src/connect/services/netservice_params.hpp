@@ -38,17 +38,19 @@
 
 #include <corelib/ncbi_param.hpp>
 
-// Server throttling parameter defaults
-#define SERVER_THROTTLE_PERIOD_DEFAULT 0
-#define MAX_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT 0
-#define FAILURE_THRESHOLD_NUMERATOR_DEFAULT 0
-#define FAILURE_THRESHOLD_DENOMINATOR_DEFAULT 0
-#define FAILURE_THRESHOLD_DENOMINATOR_MAX 128
-#define MAX_QUERY_TIME_DEFAULT 0
+#define RETRY_DELAY_DEFAULT 1.0
+#define COMMUNICATION_TIMEOUT_DEFAULT 12.0
+#define THROTTLE_RELAXATION_PERIOD_DEFAULT 0.0
+#define THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT 0
+#define THROTTLE_BY_CONNECTION_ERROR_RATE_DEFAULT "0/0"
+#define THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT false
+#define THROTTLE_FORCED_REBALANCE_DEFAULT 3.0
+#define CONNECTION_ERROR_HISTORY_MAX 128
+#define MAX_CONNECTION_TIME_DEFAULT 0.0
 
 BEGIN_NCBI_SCOPE
 
-NCBI_PARAM_DECL(double, netservice_api, communication_timeout);
+NCBI_PARAM_DECL(string, netservice_api, communication_timeout);
 typedef NCBI_PARAM_TYPE(netservice_api, communication_timeout)
     TServConn_CommTimeout;
 
@@ -56,7 +58,7 @@ NCBI_PARAM_DECL(unsigned int, netservice_api, connection_max_retries);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_max_retries)
     TServConn_ConnMaxRetries;
 
-NCBI_PARAM_DECL(unsigned int, netservice_api, retry_delay);
+NCBI_PARAM_DECL(string, netservice_api, retry_delay);
 typedef NCBI_PARAM_TYPE(netservice_api, retry_delay)
     TServConn_RetryDelay;
 
@@ -97,9 +99,13 @@ NCBI_PARAM_DECL(bool, server, do_not_rebalance);
 typedef NCBI_PARAM_TYPE(server, do_not_rebalance)
     TWorkerNode_DoNotRebalance;
 
+#define SECONDS_DOUBLE_TO_MS_UL(seconds) ((unsigned long) (seconds * 1000.0))
 
+NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(
+    const string& seconds, unsigned long default_value);
 NCBI_XCONNECT_EXPORT STimeout s_GetDefaultCommTimeout();
 NCBI_XCONNECT_EXPORT void s_SetDefaultCommTimeout(const STimeout& tm);
+NCBI_XCONNECT_EXPORT unsigned long s_GetRetryDelay();
 
 
 END_NCBI_SCOPE

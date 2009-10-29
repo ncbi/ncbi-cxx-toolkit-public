@@ -44,6 +44,7 @@ public:
     virtual bool NeedRebalance() = 0;
     virtual void OnResourceRequested() = 0;
     virtual void Reset() = 0;
+    virtual const CTime& GetLastRebalanceTime() = 0;
 };
 
 class CConfig;

@@ -227,7 +227,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     /// Set connection mode
     /// @sa GetConnMode
-    void SetConnMode(EConnectionMode conn_mode)
+    NCBI_DEPRECATED void SetConnMode(EConnectionMode conn_mode)
     {
         GetService().SetPermanentConnection(
             conn_mode == eCloseConnection ? eOff : eOn);

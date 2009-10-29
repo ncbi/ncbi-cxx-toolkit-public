@@ -129,12 +129,14 @@ struct SNetServerImpl : public CNetObject
 
     SServerAddress m_Address;
 
+    unsigned m_DiscoveryIteration;
+
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;
 
     int m_NumberOfSuccessiveFailures;
-    bool m_ConnectionFailureRegister[FAILURE_THRESHOLD_DENOMINATOR_MAX];
+    bool m_ConnectionFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
     int m_ConnectionFailureRegisterIndex;
     int m_ConnectionFailureCounter;
     bool m_Throttled;

@@ -468,7 +468,7 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
                     if (++try_count >= TServConn_ConnMaxRetries::GetDefault())
                         throw;
                     ERR_POST_X(22, "Communication Error : " << ex.what());
-                    SleepMilliSec(TServConn_RetryDelay::GetDefault());
+                    SleepMilliSec(s_GetRetryDelay());
                 }
             }
 
@@ -1150,7 +1150,7 @@ int CGridWorkerNode::Run()
                 CGridGlobals::GetInstance().RequestShutdown(
                     CNetScheduleAdmin::eShutdownImmediate);
             } else {
-                SleepMilliSec(TServConn_RetryDelay::GetDefault());
+                SleepMilliSec(s_GetRetryDelay());
                 continue;
             }
         } catch (exception& ex) {
@@ -1338,7 +1338,7 @@ bool CGridWorkerNode::x_CreateNSReadClient()
                     CNetScheduleAdmin::eShutdownImmediate);
                 return false;
             }
-            SleepMilliSec(TServConn_RetryDelay::GetDefault());
+            SleepMilliSec(s_GetRetryDelay());
             continue;
 
         } catch (exception& ex) {
