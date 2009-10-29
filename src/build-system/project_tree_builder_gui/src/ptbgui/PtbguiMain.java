@@ -51,6 +51,8 @@ public class PtbguiMain extends javax.swing.JFrame {
     private String m_Key3root, m_KeyCpath;
     private Map<String, String[]> m_ProjectTags;
     private SortedSet<String> m_UndefSelTags;
+    private Vector<String> m_KnownTags;
+    private KTagsDialog m_KtagsDlg;
     enum eState {
         beforePtb,
         got3rdparty,
@@ -69,6 +71,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         m_ArgsParser = new ArgsParser();
         m_ProjectTags = new HashMap<String, String[]>();
         m_UndefSelTags = new TreeSet<String>();
+        m_KnownTags = new Vector<String>();
         ButtonGroup group = new ButtonGroup();
         group.add(jRadioButtonStatic);
         group.add(jRadioButtonDLL);
@@ -186,11 +189,10 @@ public class PtbguiMain extends javax.swing.JFrame {
         initKnownTags();
     }
     private void initKnownTags() {
-        String tags = " ";
-        jTextFieldKTags.setText(tags);
         String from = jTextFieldRoot.getText()+
             "/src/build-system/project_tags.txt";
         int n = 0;
+        m_KnownTags.clear();
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(
                 new FileInputStream(new File(nativeFileSeparator(from)))));
@@ -200,10 +202,7 @@ public class PtbguiMain extends javax.swing.JFrame {
                 for (int i=0; i<t.length; ++i) {
                     if (t[i].trim().length() != 0) {
                         ++n;
-                        if (n>1) {
-                            tags += ", ";
-                        }
-                        tags += t[i].trim();
+                        m_KnownTags.add(t[i].trim());
                     }
                 }
             }
@@ -211,7 +210,13 @@ public class PtbguiMain extends javax.swing.JFrame {
             System.err.println(e.toString());
             e.printStackTrace();
         }
-        jTextFieldKTags.setText(tags);
+        String tags = new String();
+        for (int i=0; i<m_KnownTags.size(); ++i) {
+            if (i != 0) {
+                tags += ", ";
+            }
+            tags += m_KnownTags.get(i);
+        }
     }
     private void updateData() {
         m_ArgsParser.setPtb(jTextFieldPtb.getText());
@@ -610,6 +615,19 @@ public class PtbguiMain extends javax.swing.JFrame {
             Vector<String> selected = new Vector<String>();
             Vector<String> unselected = new Vector<String>();
             DefaultListModel model = (DefaultListModel)jListTags.getModel();
+
+            int index = jListTags.locationToIndex(evt.getPoint());
+            JCheckBox item = (JCheckBox)model.getElementAt(index);
+            if (m_UndefSelTags.contains(item.getText()) && !item.isSelected()) {
+                item.setSelected(true);
+                jListTags.repaint();
+            }
+            if (item.isSelected()) {
+                selected.add(item.getText());
+            } else {
+                unselected.add(item.getText());
+            }
+/*
             for (int i =0; i< model.getSize(); ++i) {
                 JCheckBox b = (JCheckBox)model.getElementAt(i);
                 if (b.isSelected()) {
@@ -618,6 +636,7 @@ public class PtbguiMain extends javax.swing.JFrame {
                     unselected.add(b.getText());
                 }
             }
+ */
             selectProjects(jListApps, selected, unselected);
             selectProjects(jListLibs, selected, unselected);
             selectProjects(jListOther, selected, unselected);
@@ -641,7 +660,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     }
     private void processProjects() {
         m_State = eState.gotProjects;
-        jButtonGOK.setText("Continue");
+        jButtonGOK.setText("Generate project");
         jButtonGCancel.setEnabled(true);
         int i = jTabbedPane.indexOfComponent(jPanelPrj);
         jTabbedPane.setEnabledAt(i,true);
@@ -707,7 +726,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         m_State = eState.donePtb;
         jButtonGOK.setVisible(false);
         jButtonGCancel.setEnabled(true);
-        jButtonGCancel.setText("Close");
+        jButtonGCancel.setText("Finish");
         int i = jTabbedPane.indexOfComponent(jPanelDone);
         jTabbedPane.setEnabledAt(i,true);
         jTabbedPane.setSelectedIndex(i);
@@ -812,8 +831,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         jLabel14 = new javax.swing.JLabel();
         jLabelArgs = new javax.swing.JLabel();
         jButtonArgsReset = new javax.swing.JButton();
-        jLabel10 = new javax.swing.JLabel();
-        jTextFieldKTags = new javax.swing.JTextField();
+        jButtonKTags = new javax.swing.JButton();
         jPanelAdvanced = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jTextFieldPtb = new javax.swing.JTextField();
@@ -933,10 +951,12 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel10.setText("Known project tags");
-
-        jTextFieldKTags.setEditable(false);
-        jTextFieldKTags.setText("jTextFieldKTags");
+        jButtonKTags.setText("...");
+        jButtonKTags.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonKTagsActionPerformed(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout jPanelCmndLayout = new org.jdesktop.layout.GroupLayout(jPanelCmnd);
         jPanelCmnd.setLayout(jPanelCmndLayout);
@@ -945,41 +965,36 @@ public class PtbguiMain extends javax.swing.JFrame {
             .add(jPanelCmndLayout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanelCmndLayout.createSequentialGroup()
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanelCmndLayout.createSequentialGroup()
+                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, jPanelCmndLayout.createSequentialGroup()
+                                .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE))
+                            .add(jPanelCmndLayout.createSequentialGroup()
+                                .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 148, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jTextFieldLst, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 399, Short.MAX_VALUE)))
+                        .add(18, 18, 18)
                         .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanelCmndLayout.createSequentialGroup()
-                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanelCmndLayout.createSequentialGroup()
-                                        .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                        .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE))
-                                    .add(jPanelCmndLayout.createSequentialGroup()
-                                        .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 148, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                        .add(jTextFieldLst, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 399, Short.MAX_VALUE)))
-                                .add(18, 18, 18)
-                                .add(jButtonLst, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                            .add(jPanelCmndLayout.createSequentialGroup()
-                                .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonDLL, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonStatic, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE)))
-                            .add(jSeparator2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 624, Short.MAX_VALUE)
-                            .add(jPanelCmndLayout.createSequentialGroup()
-                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                                    .add(jLabel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .add(jButtonArgs, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 167, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(jLabelArgs, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 451, Short.MAX_VALUE)
-                                    .add(jButtonArgsReset, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 87, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
-                        .addContainerGap())
+                            .add(jButtonKTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jButtonLst, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                     .add(jPanelCmndLayout.createSequentialGroup()
-                        .add(jLabel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jTextFieldKTags, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE)
-                        .add(83, 83, 83))))
+                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonDLL, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonStatic, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE)))
+                    .add(jSeparator2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 624, Short.MAX_VALUE)
+                    .add(jPanelCmndLayout.createSequentialGroup()
+                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                            .add(jLabel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(jButtonArgs, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 167, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jLabelArgs, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 451, Short.MAX_VALUE)
+                            .add(jButtonArgsReset, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 87, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap())
         );
         jPanelCmndLayout.setVerticalGroup(
             jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -1001,12 +1016,9 @@ public class PtbguiMain extends javax.swing.JFrame {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel4)
-                    .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel10)
-                    .add(jTextFieldKTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 30, Short.MAX_VALUE)
+                    .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jButtonKTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 58, Short.MAX_VALUE)
                 .add(jSeparator2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
@@ -1432,7 +1444,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         });
 
         jLabelGen.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabelGen.setText("generated:");
+        jLabelGen.setText("Generated project file:");
 
         jLabelSln.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabelSln.setText("jLabelSln");
@@ -1602,9 +1614,11 @@ public class PtbguiMain extends javax.swing.JFrame {
             doneProjects();
         }
         if (isPtbRunning()) {
-            jButtonGOK.setText("Please wait");
+            jButtonGOK.setText("Please wait...");
+            jButtonGOK.setForeground(Color.red);
             jButtonGOK.paintImmediately(0,0,
                 jButtonGOK.getWidth(), jButtonGOK.getHeight());
+            jButtonGOK.setForeground(SystemColor.controlText);
             jButtonGCancel.setText("Stop");
         }
         processPtbOutput();
@@ -1670,6 +1684,17 @@ public class PtbguiMain extends javax.swing.JFrame {
         adjustBuildType();
     }//GEN-LAST:event_jRadioButtonDLLActionPerformed
 
+    private void jButtonKTagsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonKTagsActionPerformed
+        if (m_KtagsDlg == null) {
+            m_KtagsDlg = new KTagsDialog(this,false);
+            m_KtagsDlg.setLocationRelativeTo(this);
+        }
+        if (!m_KtagsDlg.isVisible()) {
+            m_KtagsDlg.setTextData(m_KnownTags);
+            m_KtagsDlg.setVisible(true);
+        }
+    }//GEN-LAST:event_jButtonKTagsActionPerformed
+
     /**
     * @param args the command line arguments
     */
@@ -1687,6 +1712,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JButton jButtonArgsReset;
     private javax.swing.JButton jButtonGCancel;
     private javax.swing.JButton jButtonGOK;
+    private javax.swing.JButton jButtonKTags;
     private javax.swing.JButton jButtonLibsMinus;
     private javax.swing.JButton jButtonLibsPlus;
     private javax.swing.JButton jButtonLst;
@@ -1703,7 +1729,6 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBoxVTuneD;
     private javax.swing.JCheckBox jCheckBoxVTuneR;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
@@ -1751,7 +1776,6 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldCpath;
     private javax.swing.JTextField jTextFieldExt;
     private javax.swing.JTextField jTextFieldIde;
-    private javax.swing.JTextField jTextFieldKTags;
     private javax.swing.JTextField jTextFieldLst;
     private javax.swing.JTextField jTextFieldPtb;
     private javax.swing.JTextField jTextFieldRoot;
