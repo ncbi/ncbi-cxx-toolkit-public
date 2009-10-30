@@ -55,10 +55,10 @@ typedef enum {
     fFtpFeature_MDTM = 1,
     fFtpFeature_SIZE = 2
 } EFTP_Feature;
-typedef unsigned int TFTP_Features; /* bitwise OR of individual EFtpFeature's */
+typedef unsigned int TFTP_Features; /* bitwise OR of EFtpFeature's */
 
 
-/* All internal data necessary to perform the (re)connect and i/o
+/* All internal data necessary to perform I/O
  */
 typedef struct {
     const char*    host;
