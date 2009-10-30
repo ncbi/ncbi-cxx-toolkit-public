@@ -91,11 +91,11 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 			break;
 		}
 	}
-    else if (!IS_TDS_OS(tds)) {
+    else {
 		switch (type) {
 		case SYBVARCHAR:
 		case SYBCHAR:
-            if (!curcol->column_output)
+            if (!curcol->column_output  &&  (tds->capabilities[5] & 0x10))
 			    type = XSYBCHAR;
 			break;
 		default:

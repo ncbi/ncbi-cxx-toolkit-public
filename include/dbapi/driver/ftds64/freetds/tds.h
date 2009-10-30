@@ -1464,8 +1464,6 @@ void tds_answer_challenge(TDSSOCKET * tds, TDSCONNECTION *connection, const unsi
 
 #define IS_TDS7_PLUS(x) ( IS_TDS70(x) || IS_TDS80(x) )
 
-#define IS_TDS_OS(x) (x->product_name && strcmp(x->product_name, "OpenServer") == 0)
-
 #define IS_TDSDEAD(x) (((x) == NULL) || TDS_IS_SOCKET_INVALID((x)->s))
 
 /** Check if product is Sybase (such as Adaptive Server Enterrprice). x should be a TDS_SOCKET*. */
