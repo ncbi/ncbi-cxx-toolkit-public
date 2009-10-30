@@ -421,6 +421,16 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Log
  );
 
 
+/* Reconstruct text URL out of SConnNetInfo components
+ * (username:password excluded for security reasons).
+ * Returned string must be free()'d when no longer necessary.
+ * Return NULL on error.
+ */
+extern NCBI_XCONNECT_EXPORT char* ConnNetInfo_URL
+(const SConnNetInfo* info
+ );
+
+
 /* Destroy and deallocate "info" (if not NULL).
  */
 extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
