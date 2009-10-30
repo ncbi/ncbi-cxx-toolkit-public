@@ -1135,80 +1135,6 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
     const CDoubleStrandSeq& ds = m_data->m_ds;
     TDVec splicescr(mrna.size(),0);
 
-    /*
-    if(strand == ePlus) {
-        int shift = -1;
-        for(int i = 1; i < num_exons; ++i) {
-            shift += mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
-            
-            if(exons[i-1].m_ssplice) {
-                int l = exons[i-1].GetTo();
-                double scr = donor.Score(ds[ePlus],l);
-                if(scr == BadScore()) {
-                    scr = 0;
-                } else {
-                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
-                        double s = ncdr.Score(ds[ePlus],k);
-                        if(s == BadScore()) s = 0;
-                        scr -= s;
-                    }
-                }
-                splicescr[shift] = scr;
-            }
-
-            if(exons[i].m_fsplice) {
-                int l = exons[i].GetFrom()-1;
-                double scr = acceptor.Score(ds[ePlus],l);
-                if(scr == BadScore()) {
-                    scr = 0;
-                } else {
-                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
-                        double s = ncdr.Score(ds[ePlus],k);
-                        if(s == BadScore()) s = 0;
-                        scr -= s;
-                    }
-                }
-                splicescr[shift] += scr;
-            }
-        }
-    } else {
-        int shift = mrna.size()-1;
-        for(int i = 1; i < num_exons; ++i) {
-            shift -= mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
-            
-            if(exons[i-1].m_ssplice) {
-                int l = contig_len-2-exons[i-1].GetTo();
-                double scr = acceptor.Score(ds[eMinus],l);
-                if(scr == BadScore()) {
-                    scr = 0;
-                } else {
-                    for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
-                        double s = ncdr.Score(ds[eMinus],k);
-                        if(s == BadScore()) s = 0;
-                        scr -= s;
-                    }
-                }
-                splicescr[shift] = scr;
-            }
-
-            if(exons[i].m_fsplice) {
-                int l = contig_len-1-exons[i].GetFrom();
-                double scr = donor.Score(ds[eMinus],l);
-                if(scr == BadScore()) {
-                    scr = 0;
-                } else {
-                    for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
-                        double s = ncdr.Score(ds[eMinus],k);
-                        if(s == BadScore()) s = 0;
-                        scr -= s;
-                    }
-                }
-                splicescr[shift] += scr;
-            }
-        }
-    }
-    */
-
     TDVec cdrscr[3];
     for(int frame = 0; frame < 3; ++frame) {
         if (frame==best_frame || best_frame==-1) {
@@ -1240,69 +1166,74 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
     CCDSInfo cds_info = model.GetCdsInfo();
 
     for(int frame = 0; frame < 3; ++frame) {
-        for(int i = (int)starts[frame].size()-1; i >= 0; --i) {
-            int start = starts[frame][i];
-
-            TIVec::iterator it_stop = lower_bound(stops[frame].begin(),stops[frame].end(),start);
-            int stop = *it_stop;
-
-            if (stop-start-(start>=0?0:3) < 75)
+        for(int i = 0; i < (int)stops[frame].size(); i++) {
+            int stop = stops[frame][i];
+            if(stop < 0)        // bogus stop
                 continue;
+
+            int prev_stop = -6;
+            if(i > 0)
+                prev_stop = stops[frame][i-1];
+            TIVec::iterator it_a = lower_bound(starts[frame].begin(),starts[frame].end(),prev_stop+3);
+            if(it_a == starts[frame].end() || *it_a >= stop)    // no start
+                continue;
+            TIVec::iterator it_b = it_a+1;
+            if(*it_a < 0 && it_b != starts[frame].end() && *it_b < stop)   // open rf and there is apropriate start at right
+                ++it_b;
+            for(TIVec::iterator it = it_a; it != it_b; it++) {             // this loop includes only open rf (if exists) and one real start
+                int start = *it;
+
+                if (stop-start-(start>=0?0:3) < 75)
+                    continue;
             
-            double s = cdrscr[frame][stop-1]-cdrscr[frame][start+2+(start>=0?0:3)];
+                double s = cdrscr[frame][stop-1]-cdrscr[frame][start+2+(start>=0?0:3)];
             
-            double stt_score = BadScore();
-            if(start >= stt.Left()+2) {    // 5 extra bases for ncdr
-                int pnt = start+2;
-                stt_score = stt.Score(mrna,pnt);
-                if(stt_score != BadScore()) {
-                    for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
+                double stt_score = BadScore();
+                if(start >= stt.Left()+2) {    // 5 extra bases for ncdr
+                    int pnt = start+2;
+                    stt_score = stt.Score(mrna,pnt);
+                    if(stt_score != BadScore()) {
+                        for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
+                            double sn = ncdr.Score(mrna,k);
+                            if(sn != BadScore())
+                                stt_score -= sn;
+                        }
+                    }
+                } else {
+                    int pnt = mrnamap.MapEditedToOrig(start+(start>=0?0:3));
+                    if(strand == eMinus) pnt = contig_len-1-pnt;
+                    pnt += 2;
+                    stt_score = stt.Score(ds[strand],pnt);
+                    if(stt_score != BadScore()) {
+                        for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
+                            double sn = ncdr.Score(ds[strand],k);
+                            if(sn != BadScore())
+                                stt_score -= sn;
+                        }
+                    }
+                }
+                if(stt_score != BadScore())
+                    s += stt_score;
+            
+                double stp_score = stp.Score(mrna,stop-1);
+                if(stp_score != BadScore()) {
+                    for(int k = stop-stp.Left(); k < stop+stp.Right(); ++k) {
                         double sn = ncdr.Score(mrna,k);
                         if(sn != BadScore())
-                            stt_score -= sn;
+                            stp_score -= sn;
                     }
+                    s += stp_score;
                 }
-            } else {
-                int pnt = mrnamap.MapEditedToOrig(start+(start>=0?0:3));
-                if(strand == eMinus) pnt = contig_len-1-pnt;
-                pnt += 2;
-                stt_score = stt.Score(ds[strand],pnt);
-                if(stt_score != BadScore()) {
-                    for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
-                        double sn = ncdr.Score(ds[strand],k);
-                        if(sn != BadScore())
-                            stt_score -= sn;
-                    }
+            
+                if(s >= best_score) {
+                    best_frame = frame;
+                    best_score = s;
+                    best_start = start;
+                    best_stop = stop;
                 }
-            }
-            if(stt_score != BadScore())
-                s += stt_score;
-            
-            double stp_score = stp.Score(mrna,stop-1);
-            if(stp_score != BadScore()) {
-                for(int k = stop-stp.Left(); k < stop+stp.Right(); ++k) {
-                    double sn = ncdr.Score(mrna,k);
-                    if(sn != BadScore())
-                        stp_score -= sn;
-                }
-                s += stp_score;
-            }
-            
-            
-            //            if(cds_info.ConfirmedStart() && i == int(starts[frame].size())-1) {
-            //                s += max(1.,0.1*s);        // in case s negative
-            //            }
-            if(s > best_score) {
-                best_frame = frame;
-                best_score = s;
-                best_start = start;
-                best_stop = stop;
             }
         }
     }
-
-//    if (cds_info.ConfirmedStart() && best_start == starts[best_frame].back())
-//        best_score /= 1.1;
 
     if(cds_info.ConfirmedStart() && cds_info.ConfirmedStop() && model.Continuous()) {  // looks like a complete model, will get a permanent boost in score which will improve chanses for the first placement over notcomplete models
         best_score += max(1.,0.3*best_score);        // in case s negative
@@ -1376,19 +1307,13 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
     if(has_start) {
         int upstream_stop = -3;
         bool found_upstream_stop = FindUpstreamStop(stops[frame],best_start,upstream_stop);
-        int first_start = *lower_bound(starts[frame].begin(),starts[frame].end(),upstream_stop+3);
-        _ASSERT( first_start >= 0 );
         
-        cds_info.SetStart(mrnamap.MapRangeEditedToOrig(TSignedSeqRange(first_start,first_start+2), false), confirmed_start);
-        if(first_start != best_start) {    // ensure the longest 5'
-            best_reading_frame = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(first_start+3,best_stop-1), true);
-            cds_info.SetReadingFrame(best_reading_frame);
-        }
+        cds_info.SetStart(mrnamap.MapRangeEditedToOrig(TSignedSeqRange(best_start,best_start+2), false), confirmed_start);
 
         if(found_upstream_stop) {
-            first_start = mrnamap.MapEditedToOrig(first_start);
-            _ASSERT( first_start >= 0 );
-            cds_info.Set5PrimeCdsLimit(first_start);
+            int bs  = mrnamap.MapEditedToOrig(best_start);
+            _ASSERT( bs >= 0 );
+            cds_info.Set5PrimeCdsLimit(bs);
         } else {
 #ifdef _DEBUG
             for(int i = best_start; i >=0; i -= 3) {
