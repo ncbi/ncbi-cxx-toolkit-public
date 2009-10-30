@@ -2667,6 +2667,25 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
     BOOST_REQUIRE_EQUAL(k, ids->GetNumSeqIds());
 }
 
+BOOST_AUTO_TEST_CASE(OidToGiLookup)
+{
+    CSeqDB dbp("data/ranges/twenty", CSeqDB::eProtein);
+    for(int oid = 0; dbp.CheckOrFindOID(oid); oid++) {
+        int gi = dbp.GetSeqGI(oid);
+        int the_oid;
+        BOOST_REQUIRE( dbp.GiToOid(gi, the_oid));
+        BOOST_REQUIRE_EQUAL(oid, the_oid);
+    }
+
+    CSeqDB dbn("data/seqn", CSeqDB::eNucleotide);
+    for(int oid = 0; dbp.CheckOrFindOID(oid); oid++) {
+        int gi = dbp.GetSeqGI(oid);
+        int the_oid;
+        BOOST_REQUIRE( dbp.GiToOid(gi, the_oid));
+        BOOST_REQUIRE_EQUAL(oid, the_oid);
+    }
+}
+    
 
 BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
 {

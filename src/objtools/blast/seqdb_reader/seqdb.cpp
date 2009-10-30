@@ -595,6 +595,11 @@ list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(int oid) const
     return rv;
 }
 
+int CSeqDB::GetSeqGI(int oid) const
+{
+    return m_Impl->GetSeqGI(oid);
+}
+
 bool CSeqDB::PigToOid(int pig, int & oid) const
 {
     m_Impl->Verify();

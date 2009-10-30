@@ -70,7 +70,7 @@ int CSeqDBGiIndex::GetSeqGI(TOid             oid,
 
     if (oid >= m_NumOIDs || oid < 0) return -1;
     
-    TIndx offset = oid * m_Size;
+    TIndx offset = oid * m_Size + 32;
     data = m_Lease.GetPtr(offset);
     return (TGi) SeqDB_GetStdOrd((TGi *) data);
 }
