@@ -947,26 +947,7 @@ static const char* s_VT_GetType
 static char* s_VT_Descr
 (CONNECTOR connector)
 {
-    SHttpConnector* uuu = (SHttpConnector*) connector->handle;
-    size_t len = 8/*"http[s]://"*/ + strlen(uuu->net_info->host) +
-        (uuu->net_info->port ? 6/*:port*/ : 0) +
-        (uuu->net_info->http_proxy_adjusted ? 2 : 0) +
-        strlen(uuu->net_info->path) + 1 +
-        (*uuu->net_info->args ? 2 + strlen(uuu->net_info->args) : 1);
-    char* buf = (char*) malloc(len);
-    if (buf) {
-        len = sprintf(buf, "http%s://%s",
-                      &"s"[uuu->net_info->scheme != eURL_Https],
-                      uuu->net_info->host);
-        if (uuu->net_info->port)
-            len += sprintf(&buf[len], ":%hu", uuu->net_info->port);
-        sprintf(&buf[len], "%s%s%s%s%s", uuu->net_info->http_proxy_adjusted
-                ? "<" : *uuu->net_info->path != '/'
-                ? "/" : "", uuu->net_info->path,
-                &"?"[!*uuu->net_info->args], uuu->net_info->args,
-                ">" + !uuu->net_info->http_proxy_adjusted);
-    }
-    return buf;
+    return ConnNetInfo_URL(((SHttpConnector*) connector->handle)->net_info);
 }
 
 
@@ -1248,6 +1229,8 @@ static CONNECTOR s_CreateConnector
         ConnNetInfo_Destroy(xxx);
         return 0;
     }
+    if (xxx->scheme == eURL_Unspec)
+        xxx->scheme = eURL_Http;
 
     if (!(ccc = (SConnector    *) malloc(sizeof(SConnector    )))  ||
         !(uuu = (SHttpConnector*) malloc(sizeof(SHttpConnector)))) {

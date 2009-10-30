@@ -588,35 +588,16 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
 {
     char* str, *referer = 0;
 
-    if (strcasecmp(iter->op->name, "DISPD") == 0) {
-        const char* host = net_info->host;
-        const char* path = net_info->path;
-        const char* args = net_info->args;
-        char        port[8];
-
-        if (net_info->port)
-            sprintf(port, ":%hu", net_info->port);
-        else
-            *port = '\0';
-        if (!(referer = (char*) malloc(8 + 1 + 1 + strlen(host) + strlen(port)
-                                       + strlen(path) + strlen(args)))) {
-            return;
-        }
-        if (net_info->scheme == eURL_Https)
-            strcpy(referer, "https://"/*8*/);
-        else
-            strcpy(referer, "http://"/*7*/);
-        strcat(strcat(strcat(referer, host), port), path);
-        if (*args)
-            strcat(strcat(referer, "?"), args);
-    } else if ((str = strdup(iter->op->name)) != 0) {
+    if (strcasecmp(iter->op->name, "DISPD") == 0)
+        referer = ConnNetInfo_URL(net_info);
+    else if ((str = strdup(iter->op->name)) != 0) {
         const char* host = net_info->client_host;
         const char* args = net_info->args;
         const char* name = iter->name;
 
-        if (!*net_info->client_host  &&
-            !SOCK_gethostbyaddr(0, net_info->client_host,
-                                sizeof(net_info->client_host))) {
+        if (!*net_info->client_host
+            &&  !SOCK_gethostbyaddr(0, net_info->client_host,
+                                    sizeof(net_info->client_host))) {
             SOCK_gethostname(net_info->client_host,
                              sizeof(net_info->client_host));
         }
