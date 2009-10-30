@@ -657,8 +657,7 @@ class CAlignModel : public CGeneModel {
 public:
     CAlignModel() {}
     CAlignModel(const objects::CSeq_align& seq_align);
-    //    CAlignModel(const CGeneModel& g) : CGeneModel(g), m_alignmap(g.GetAlignMap()) {}
-    CAlignModel(const CGeneModel& g, const CAlignMap& a) : CGeneModel(g), m_alignmap(a) {FrameShifts() = m_alignmap.GetInDels(true);}
+    CAlignModel(const CGeneModel& g, const CAlignMap& a);
     TSignedSeqRange TranscriptExon(int i) const;
     virtual CAlignMap GetAlignMap() const { return m_alignmap; }
 
