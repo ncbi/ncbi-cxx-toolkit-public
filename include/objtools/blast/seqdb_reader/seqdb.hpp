@@ -343,6 +343,9 @@ public:
     
     /// Returns the sequence length in base pairs or residues.
     int GetSeqLength(int oid) const;
+
+    /// Returns the first Gi (if any) of the sequence
+    int GetSeqGI(int oid) const;
     
     /// Returns an unbiased, approximate sequence length.
     ///
