@@ -229,7 +229,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
  */
 NCBI_C_DEFINE_ERRCODE_X(Connect_Connection, 301,  32);
 NCBI_C_DEFINE_ERRCODE_X(Connect_MetaConn,   302,   2);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,  12);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Util,       303,  14);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,      304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,        305,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,    306,  33);
