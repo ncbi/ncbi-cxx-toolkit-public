@@ -49,6 +49,13 @@ USING_SCOPE(objects);
 
 CAlignMap CGeneModel::GetAlignMap() const { return CAlignMap(Exons(), FrameShifts(), Strand()); }
 
+CAlignModel::CAlignModel(const CGeneModel& g, const CAlignMap& a)
+    : CGeneModel(g), m_alignmap(a)
+{
+    FrameShifts() = m_alignmap.GetInDels(true);
+    SetTargetId(*CIdHandler::GnomonMRNA(ID()));
+}
+
 string CAlignModel::TargetAccession() const {
     _ASSERT( !GetTargetId().Empty() );
     if (GetTargetId().Empty())
@@ -1447,12 +1454,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
         exon.start = e->GetFrom();
         exon.end = e->GetTo();
 
-        string target;
-        if((a.Type() & CGeneModel::eGnomon)!=0 || (a.Type() & CGeneModel::eChain)!=0) {
-            target = CIdHandler::ToString(*CIdHandler::GnomonMRNA(a.ID()));
-        } else {
-            target = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
-        }
+        string target = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
         
         TSignedSeqRange transcript_exon = a.TranscriptExon(i);
         target += " "+NStr::IntToString(transcript_exon.GetFrom()+1)+" "+NStr::IntToString(transcript_exon.GetTo()+1);
