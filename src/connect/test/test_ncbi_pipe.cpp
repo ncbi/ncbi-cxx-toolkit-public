@@ -172,8 +172,8 @@ static void s_WriteLine(FILE* fs, const string& str)
     if (written == size) {
         static const char eol[] = { '\n' };
         fwrite(eol, 1, 1, fs);
-        fflush(fs);
     }
+    fflush(fs);
 }
 
 
@@ -369,8 +369,8 @@ int CTest::Run(void)
         ps << i << endl;
         ps.flush();
         ps >> value;
-        cout << value << endl;
         assert(ps.good());
+        cout << value << endl;
         assert(value == i*i);
     }
     ps >> str;
