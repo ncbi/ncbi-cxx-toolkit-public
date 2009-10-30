@@ -1786,7 +1786,11 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
             CPDB_seq_id& pdb = SetPdb();
             pdb.SetMol().Set(acc);
 
-            if (name.empty()) {
+            // Consult name_in in addition to name as whitespace
+            // stripping can lose relevant information here.
+            if (name_in.empty()) {
+                pdb.ResetChain();
+            } else if (name.empty()) {
                 pdb.SetChain(' ');
             } else if (name.size() == 1) { // force upper case?
                 pdb.SetChain(static_cast<unsigned char>(name[0]));
