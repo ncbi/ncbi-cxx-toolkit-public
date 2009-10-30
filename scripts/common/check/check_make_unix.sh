@@ -390,6 +390,10 @@ RunTest()
     x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
 
     if \$is_db_load; then
+        dbg_watches=\`sed -n -e '9 p' "\$x_test_rep" | egrep 'real.*user.*sys'\`
+        if test -n "\$dbg_watches"; then
+            cp "\$x_test_rep" /net/gizmo3/export/home/ivanovp/tmp/
+        fi
         case \`uname -s\` in
 
           CYGWIN* )
