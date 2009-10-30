@@ -426,11 +426,11 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1, const SSERV_Info *i2)
 static char* s_Ncbid_Write(size_t reserve, const USERV_Info* u)
 {
     const SSERV_NcbidInfo* info = &u->ncbid;
-    char* str = (char*) malloc(reserve + strlen(SERV_NCBID_ARGS(info))+3);
+    const char* args = SERV_NCBID_ARGS(info);
+    char* str = (char*) malloc(reserve + strlen(args) + 3);
 
     if (str) {
-        sprintf(str + reserve, "%s",
-                *SERV_NCBID_ARGS(info) ? SERV_NCBID_ARGS(info) : "''");
+        sprintf(str + reserve, "%s", *args ? args : "''");
     }
     return str;
 }
@@ -443,10 +443,10 @@ static SSERV_Info* s_Ncbid_Read(const char** str, size_t add)
 
     if (!(args = strdup(*str)))
         return 0;
-    for (c = args; *c; c++) {
+    for (c = args;  *c;  c++) {
         if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
-            while (*c && isspace((unsigned char)(*c)))
+            while (*c  &&  isspace((unsigned char)(*c)))
                 c++;
             break;
         }
@@ -582,13 +582,13 @@ SSERV_Info* SERV_CreateStandaloneInfo(unsigned int host, unsigned short port)
 static char* s_Http_Write(size_t reserve, const USERV_Info* u)
 {
     const SSERV_HttpInfo* info = &u->http;
-    char* str = (char*) malloc(reserve + strlen(SERV_HTTP_PATH(info))+1 +
-                               strlen(SERV_HTTP_ARGS(info))+1);
+    const char* path = SERV_HTTP_PATH(info);
+    const char* args = SERV_HTTP_ARGS(info);
+    char* str = (char*) malloc(reserve + strlen(path) + strlen(args) + 2);
     if (str) {
-        int n = sprintf(str + reserve, "%s", SERV_HTTP_PATH(info));
-        
-        if (*SERV_HTTP_ARGS(info))
-            sprintf(str + reserve + n, "?%s", SERV_HTTP_ARGS(info));
+        int n = sprintf(str + reserve, "%s", path);
+        if (*args)
+            sprintf(str + reserve + n, "%s%s", &"?"[*args == '#'], args);
     }
     return str;
 }
@@ -601,23 +601,20 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type   type,
     SSERV_Info* info;
     char       *path, *args, *c;
 
-    if (!**str || !(path = strdup(*str)))
+    if (!**str  ||  !(path = strdup(*str)))
         return 0;
-    for (c = path; *c; c++)
+    for (c = path;  *c;  c++) {
         if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
-            while (*c && isspace((unsigned char)(*c)))
+            while (*c  &&  isspace((unsigned char)(*c)))
                 c++;
             break;
         }
+    }
     if ((args = strchr(path, '?')) != 0)
         *args++ = '\0';
-    /* Sanity check: no parameter delimiter allowed within path */
-    if (!strchr(path, '&') &&
-        (info = SERV_CreateHttpInfoEx(type, 0, 80, path, args, add)) != 0)
+    if ((info = SERV_CreateHttpInfoEx(type, 0, 80, path, args, add)) != 0)
         *str += c - path;
-    else
-        info = 0;
     free(path);
     return info;
 }
@@ -651,7 +648,7 @@ static size_t s_Http_SizeOf(const USERV_Info* u)
 static int/*bool*/ s_Http_Equal(const USERV_Info* u1, const USERV_Info* u2)
 {
     return
-        strcmp(SERV_HTTP_PATH(&u1->http), SERV_HTTP_PATH(&u2->http)) == 0 &&
+        strcmp(SERV_HTTP_PATH(&u1->http), SERV_HTTP_PATH(&u2->http)) == 0  &&
         strcmp(SERV_HTTP_ARGS(&u1->http), SERV_HTTP_ARGS(&u2->http)) == 0;
 }
 
