@@ -42,6 +42,9 @@
 #define NCBI_USE_ERRCODE_X   Connect_Service
 
 
+static const char kFWDaemon[] = "fwdaemon.ncbi.nlm.nih.gov";
+
+
 typedef struct SServiceConnectorTag {
     const char*     name;               /* Verbal connector type             */
     TSERV_Type      types;              /* Server types, record keeping only */
@@ -629,7 +632,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                 strcasecmp(val, "on")   == 0  ||
                                 strcasecmp(val, "yes")  == 0  ||
                                 strcasecmp(val, "true") == 0)) {
-            strcpy(uuu->host, "fwdaemon.ncbi.nlm.nih.gov");
+            assert(sizeof(kFWDaemon) <= sizeof(net_info->host));
+            memcpy(net_info->host, kFWDaemon, sizeof(kFWDaemon));
         } else
             SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         net_info->port = uuu->port;
