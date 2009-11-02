@@ -1,5 +1,7 @@
 Nov 02, 2009
 * Internal bug fix release for 2.2.22
+* Fix issue dealing with opening BLAST databases which contain references to a
+  BLAST database specified with a relative path.
 
 Sep 27, 2009
 * 2.2.22 release
