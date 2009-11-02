@@ -354,6 +354,7 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
                      EGetIdType type)
 {
     CSeq_id_Handle ret;
+    if (!idh) return ret;
     try {
         if ( (type & eGetId_TypeMask) == eGetId_ForceGi ) {
             if ( idh.IsGi()  &&  (type & eGetId_VerifyId) == 0 ) {

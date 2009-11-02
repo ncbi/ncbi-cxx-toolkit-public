@@ -2155,6 +2155,7 @@ void CScope_Impl::x_PopulateBioseq_HandleSet(const CSeq_entry_Handle& seh,
 CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
 {
     TIds ret;
+    if (!idh) return ret;
     TConfReadLockGuard rguard(m_ConfLock);
     SSeqMatch_Scope match;
     CRef<CBioseq_ScopeInfo> info =
