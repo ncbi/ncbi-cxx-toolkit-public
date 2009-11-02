@@ -60,8 +60,8 @@ set dest=
 if "%1"=="" goto :ENDPARSEARGS
 if "%dest%"=="lst"         (set use_projectlst=%1& set dest=& goto :CONTINUEPARSEARGS)
 if "%1"=="--help"          (set help_req=yes& goto :CONTINUEPARSEARGS)
-if "%1"=="--with-gui"      (set use_gui=yes&  goto :CONTINUEPARSEARGS)
-if "%1"=="--without-gui"   (set use_gui=no&   goto :CONTINUEPARSEARGS)
+if "%1"=="--with-cfg"      (set use_gui=yes&  goto :CONTINUEPARSEARGS)
+if "%1"=="--without-cfg"   (set use_gui=no&   goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"      (set use_dll=yes&  goto :CONTINUEPARSEARGS)
 if "%1"=="--without-dll"   (set use_dll=no&   goto :CONTINUEPARSEARGS)
 if "%1"=="--with-64"       (set use_64=yes&   goto :CONTINUEPARSEARGS)
@@ -80,13 +80,14 @@ REM print usage
 
 :PRINTUSAGE
 if "%help_req%"=="yes" (
-  echo  USAGE: $script_name [OPTION]...
+  echo  USAGE:
+  echo    %script_name% [OPTION]...
   echo  SYNOPSIS:
   echo    configure NCBI C++ toolkit for MSVC build system.
   echo  OPTIONS:
   echo    --help                  -- print Usage
-  echo    --with-gui              -- show Configuration GUI application
-  echo    --without-gui           -- do not use Configuration GUI application
+  echo    --with-cfg              -- use Configuration GUI application
+  echo    --without-cfg           -- do not use Configuration GUI application
   echo    --with-dll              -- assemble toolkit libraries into DLLs where requested
   echo    --without-dll           -- build all toolkit libraries as static ones
   echo    --with-64               -- compile to 64-bit code
