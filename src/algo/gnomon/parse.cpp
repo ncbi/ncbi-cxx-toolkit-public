@@ -622,7 +622,7 @@ TGeneModelList CParse::GetGenes() const
         CAlignMap gene_map = gene.GetAlignMap();
         if (g_it->back()->isGeneLeftEnd()) {
             int utr_len = gene_map.FShiftedLen(TSignedSeqRange(gene.Limits().GetFrom(),reading_frame.GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) - 1; 
-            if(utr_len > 0 || m_seqscr.isReadingFrameLeftEnd(local_reading_frame.GetFrom(),strand)) {                                       // extend gene only if start/stop is conventional
+            if(utr_len >= 3 || m_seqscr.isReadingFrameLeftEnd(local_reading_frame.GetFrom(),strand)) {                                       // extend gene only if start/stop is conventional
                 if (utr_len < 3 ) {
                     gene.ExtendLeft(3-utr_len);
                     gene_map = gene.GetAlignMap();
@@ -639,7 +639,7 @@ TGeneModelList CParse::GetGenes() const
 
         if (g_it->front()->isGeneRightEnd()) {
             int utr_len = gene_map.FShiftedLen(TSignedSeqRange(reading_frame.GetTo(),gene.Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) - 1; 
-            if(utr_len > 0 || m_seqscr.isReadingFrameRightEnd(local_reading_frame.GetTo(),strand)) {                                        // extend gene only if start/stop is conventional
+            if(utr_len >= 3 || m_seqscr.isReadingFrameRightEnd(local_reading_frame.GetTo(),strand)) {                                        // extend gene only if start/stop is conventional
                 if (utr_len < 3 ) {
                     gene.ExtendRight(3-utr_len);
                     gene_map = gene.GetAlignMap();
