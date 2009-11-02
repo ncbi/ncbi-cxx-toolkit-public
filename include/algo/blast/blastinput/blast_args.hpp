@@ -243,9 +243,9 @@ public:
      * Currently only supported for blastn [in]
      */
     CGenericSearchArgs(bool query_is_protein = true, bool is_rpsblast = false,
-                       bool show_perc_identity = false)
+                       bool show_perc_identity = false, bool is_tblastx = false)
         : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast),
-          m_ShowPercentIdentity(show_perc_identity) {}
+          m_ShowPercentIdentity(show_perc_identity), m_IsTblastx(is_tblastx) {}
          
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -256,7 +256,8 @@ private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
     bool m_IsRpsBlast;      /**< true if the search is RPS-BLAST */
     bool m_ShowPercentIdentity; /**< true if the percent identity option should
-                                  be shown */
+                                 be shown */
+    bool m_IsTblastx; /**< true if the search is tblastx */
 };
 
 /** Argument class for collecting filtering options */
