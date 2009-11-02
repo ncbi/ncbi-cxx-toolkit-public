@@ -457,7 +457,7 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
             precise_cds_clip_limits += e->Limits() & cds_clip_limits;
         cds_clip_limits = precise_cds_clip_limits;
 
-        CAlignMap mrnamap(Exons(),FrameShifts(),Strand(),ReadingFrame());
+        CAlignMap mrnamap(Exons(),FrameShifts(),Strand(),GetCdsInfo().Cds());
 
         if (RealCdsLimits().GetFrom() < cds_clip_limits.GetFrom() && cds_clip_limits.GetFrom() < ReadingFrame().GetFrom())
             cds_clip_limits.SetFrom(ReadingFrame().GetFrom());
