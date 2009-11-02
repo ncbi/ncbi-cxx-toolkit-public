@@ -69,7 +69,7 @@ CTblastxAppArgs::CTblastxAppArgs()
 
     // N.B.: query is not protein because the options are applied on the 
     // translated query
-    arg.Reset(new CGenericSearchArgs( !kQueryIsProtein ));
+    arg.Reset(new CGenericSearchArgs( !kQueryIsProtein, false, false, true));
     m_Args.push_back(arg);
 
     /*arg.Reset(new CFrameShiftArgs);
