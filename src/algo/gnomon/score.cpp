@@ -900,7 +900,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
     }
     
-    const int NonConsensusMargin = 1500;
+    const int NonConsensusMargin = 50;
     if (consensuspenalty != BadScore())
     ITERATE(TAlignSet, it, allaligns) {
         const CGeneModel& algn(*it);
