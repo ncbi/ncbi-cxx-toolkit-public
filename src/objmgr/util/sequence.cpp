@@ -2732,9 +2732,9 @@ void CSeqTranslator::Translate(const string& seq,
                                bool* alt_start)
 {
     x_Translate(seq, prot, 0, code,
-                !(flags & f_Is5PrimePartial), 
-                !(flags & f_NoStop), 
-                flags & f_RemoveTrailingX,
+                !(flags & fIs5PrimePartial), 
+                !(flags & fNoStop), 
+                flags & fRemoveTrailingX,
                 alt_start);
 }
 
@@ -2757,9 +2757,9 @@ void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                bool* alt_start)
 {
     x_Translate(seq, prot, 0, code,
-                !(flags & f_Is5PrimePartial), 
-                !(flags & f_NoStop), 
-                flags & f_RemoveTrailingX,
+                !(flags & fIs5PrimePartial), 
+                !(flags & fNoStop), 
+                flags & fRemoveTrailingX,
                 alt_start);
 }
 

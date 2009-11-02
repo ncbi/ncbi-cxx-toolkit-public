@@ -814,7 +814,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(vec, tmp,
-                              NULL, CSeqTranslator::f_None, NULL);
+                              NULL, CSeqTranslator::fDefault, NULL);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
@@ -825,7 +825,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(vec, tmp,
-                              NULL, CSeqTranslator::f_Is5PrimePartial, NULL);
+                              NULL, CSeqTranslator::fIs5PrimePartial, NULL);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
     // translate with string
@@ -838,7 +838,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp,
-                              NULL, CSeqTranslator::f_None, NULL);
+                              NULL, CSeqTranslator::fDefault, NULL);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
@@ -849,7 +849,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp,
-                              NULL, CSeqTranslator::f_Is5PrimePartial, NULL);
+                              NULL, CSeqTranslator::fIs5PrimePartial, NULL);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 

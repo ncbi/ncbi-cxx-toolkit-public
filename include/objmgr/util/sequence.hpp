@@ -776,10 +776,10 @@ class NCBI_XOBJUTIL_EXPORT CSeqTranslator
 public:
     /// @sa TTranslationFlags
     enum ETranslationFlags {
-        f_None = 0,
-        f_NoStop = (1<<0), ///< = 0x1 Do not include stop in translation
-        f_RemoveTrailingX = (1<<1), ///< = 0x2 Remove trailing Xs from protein
-        f_Is5PrimePartial = (1<<2) ///< = 0x4 Translate first codon even if not start codon (because sequence is 5' partial)
+        fDefault = 0,
+        fNoStop = (1<<0), ///< = 0x1 Do not include stop in translation
+        fRemoveTrailingX = (1<<1), ///< = 0x2 Remove trailing Xs from protein
+        fIs5PrimePartial = (1<<2) ///< = 0x4 Translate first codon even if not start codon (because sequence is 5' partial)
     };
 
     typedef int TTranslationFlags;
