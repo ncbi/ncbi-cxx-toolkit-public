@@ -120,10 +120,12 @@ CBlastpAppArgs::CBlastpAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, 
-                                      const CArgs& /*args*/)
+                                      const CArgs& args)
 {
-    CRef<CBlastOptionsHandle> retval
-        (new CBlastAdvancedProteinOptionsHandle(locality));
+   CRef<CBlastOptionsHandle> retval;
+    SetTask(args[kTask].AsString());
+    retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
+    _ASSERT(retval.NotEmpty());
     return retval;
 }
 

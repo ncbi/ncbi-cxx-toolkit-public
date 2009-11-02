@@ -136,7 +136,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            ? new CArgAllowValuesGreaterThanOrEqual(2)
                            : new CArgAllowValuesGreaterThanOrEqual(4));
 
-    if ( !m_IsRpsBlast ) {
+    if ( !m_IsRpsBlast && !m_IsTblastx) {
         // gap open penalty
         arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty", 
                                 "Cost to open a gap", 
@@ -165,17 +165,20 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "X-dropoff value (in bits) for ungapped extensions",
                             CArgDescriptions::eDouble);
 
-    // initial gapped X-drop
-    // Default values: blastn=30, megablast=20, tblastx=0, others=15
-    arg_desc.AddOptionalKey(kArgGappedXDropoff, "float_value", 
+    // Tblastx is ungapped only.
+    if (!m_IsTblastx) {
+         // initial gapped X-drop
+         // Default values: blastn=30, megablast=20, tblastx=0, others=15
+         arg_desc.AddOptionalKey(kArgGappedXDropoff, "float_value", 
                  "X-dropoff value (in bits) for preliminary gapped extensions",
                  CArgDescriptions::eDouble);
 
-    // final gapped X-drop
-    // Default values: blastn/megablast=50, tblastx=0, others=25
-    arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value", 
+         // final gapped X-drop
+         // Default values: blastn/megablast=50, tblastx=0, others=25
+         arg_desc.AddOptionalKey(kArgFinalGappedXDropoff, "float_value", 
                          "X-dropoff value (in bits) for final gapped alignment",
                          CArgDescriptions::eDouble);
+    }
 
     arg_desc.SetCurrentGroup("Statistical options");
     // effective search space
@@ -231,11 +234,11 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetXDropoff(args[kArgUngappedXDropoff].AsDouble());
     }
 
-    if (args[kArgGappedXDropoff]) {
+    if (args.Exist(kArgGappedXDropoff) && args[kArgGappedXDropoff]) {
         opt.SetGapXDropoff(args[kArgGappedXDropoff].AsDouble());
     }
 
-    if (args[kArgFinalGappedXDropoff]) {
+    if (args.Exist(kArgFinalGappedXDropoff) && args[kArgFinalGappedXDropoff]) {
         opt.SetGapXDropoffFinal(args[kArgFinalGappedXDropoff].AsDouble());
     }
 
@@ -487,10 +490,9 @@ void
 CMatrixNameArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
-    arg_desc.AddDefaultKey(kArgMatrixName, "matrix_name", 
-                           "Scoring matrix name",
-                           CArgDescriptions::eString, 
-                           string(BLAST_DEFAULT_MATRIX));
+    arg_desc.AddOptionalKey(kArgMatrixName, "matrix_name",
+                           "Scoring matrix name (normally BLOSUM62)",
+                           CArgDescriptions::eString); 
     arg_desc.SetCurrentGroup("");
 }
 
