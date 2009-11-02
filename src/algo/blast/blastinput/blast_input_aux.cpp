@@ -231,7 +231,7 @@ HasRawSequenceData(const objects::CBioseq& bioseq)
          return false;
      // CFastaReader returns empty Bioseqs with the following traits, assume it
      // has sequence data so it can be processed by the BLAST engine.
-     else if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_virtual &&
+     else if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_virtual && bioseq.GetInst().CanGetLength() &&
               bioseq.GetLength() == 0)
          return true;
      else if (bioseq.GetInst().CanGetSeq_data() == true)
