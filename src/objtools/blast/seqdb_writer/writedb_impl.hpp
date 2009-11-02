@@ -212,9 +212,10 @@ public:
     /// the Seq-ids.
     ///
     /// @param bs Bioseq from which to construct the defline set.
+    /// @param parse_ids If we should parse seq_ids.
     /// @return The blast defline set.
     static CRef<CBlast_def_line_set>
-    ExtractBioseqDeflines(const CBioseq & bs);
+    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids);
     
     /// Set bases that should not be used in sequences.
     /// 

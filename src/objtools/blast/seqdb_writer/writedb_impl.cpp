@@ -1129,7 +1129,7 @@ void CWriteDB_Impl::SetMaxVolumeLetters(Uint8 sz)
 }
 
 CRef<CBlast_def_line_set>
-CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs)
+CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids)
 {
     // Get information
     
@@ -1138,7 +1138,7 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs)
     vector< vector<int> > v1, v2;
     
     CConstRef<CBioseq> bsref(& bs);
-    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0);
+    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, -1, !parse_ids);
     
     // Convert to return type
     
@@ -1321,21 +1321,23 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
     CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
     CRef<CBlast_def_line> defline;
 
-    if (bioseq.CanGetId() && bioseq.GetId().front()->IsLocal()) {
+    if (no_parse_id) {
 
-        CRef<CSeq_id> gnl_id (bioseq.GetId().front());
-
-        if (no_parse_id) {
-            // Generate an BL_ORD_ID in case no parse is needed
-            gnl_id = new CSeq_id();
-            gnl_id->SetGeneral().SetDb("BL_ORD_ID");
-            gnl_id->SetGeneral().SetTag().SetId(0);  // will be filled later
-        }
+        // Generate an BL_ORD_ID in case no parse is needed
+        CRef<CSeq_id> gnl_id(new CSeq_id());
+        gnl_id->SetGeneral().SetDb("BL_ORD_ID");
+        gnl_id->SetGeneral().SetTag().SetId(0);  // will be filled later
      
         // Build the local defline.
         defline.Reset(new CBlast_def_line);
         defline->SetSeqid().push_back(gnl_id);
-        defline->SetTitle(string(fasta, 1, fasta.size()));
+
+        string title(fasta, 1, fasta.size());
+        // Replace ^A with space
+        for(size_t pos=0; pos < title.size(); ++pos) {
+            if (title[pos] == '\001') title[pos] = ' ';
+        }
+        defline->SetTitle(title);
 
         if (mship_i < membits.size()) {
             const vector<int> & V = membits[mship_i++];
@@ -1377,8 +1379,14 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                 pos_next = fasta.size();
                 skip = 0;
             }
+
+            if (pos_title == fasta.npos || pos_title >= pos_next) {
+                // title field is missing
+                pos_title = pos_next;
+            }
         
             string ids(fasta, id_start, pos_title - id_start);
+            if (pos_title == pos_next) pos_title--;
             string title(fasta, pos_title + 1, pos_next-pos_title - 1);
             string remaining(fasta, pos_next, fasta.size() - pos_next);
             fasta.swap(remaining);

@@ -431,7 +431,7 @@ void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                                         objects::CSeqVector         * sv)
 {
     CRef<CBlast_def_line_set> headers =
-        CWriteDB::ExtractBioseqDeflines(*bs);
+        CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs);
     
     m_DeflineCount += headers->Get().size();
     m_OIDCount ++;

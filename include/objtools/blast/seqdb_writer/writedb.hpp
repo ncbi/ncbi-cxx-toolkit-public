@@ -330,9 +330,10 @@ public:
     /// apply them to a sequence with SetDeflines().
     /// 
     /// @param bs The bioseq from which to extract a defline set. [in]
+    /// @param parse_ids If seqid should be parsed [in]
     /// @return A set of deflines for this CBioseq.
     static CRef<CBlast_def_line_set>
-    ExtractBioseqDeflines(const CBioseq & bs);
+    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids=true);
     
     /// Set letters that should not be used in sequences.
     /// 

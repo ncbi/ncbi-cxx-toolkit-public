@@ -121,9 +121,9 @@ void CWriteDB::SetMaxVolumeLetters(Uint8 sz)
 }
 
 CRef<CBlast_def_line_set>
-CWriteDB::ExtractBioseqDeflines(const CBioseq & bs)
+CWriteDB::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids)
 {
-    return CWriteDB_Impl::ExtractBioseqDeflines(bs);
+    return CWriteDB_Impl::ExtractBioseqDeflines(bs, parse_ids);
 }
 
 void CWriteDB::SetMaskedLetters(const string & masked)
