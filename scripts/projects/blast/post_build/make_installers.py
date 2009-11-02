@@ -35,9 +35,9 @@ def main(): #IGNORE:R0911
         return launch_win_installer_build(installdir, blast_version)                
     if platform == "Win64":
         return launch_win_installer_build(installdir, blast_version)
-    if platform == "Linux32":
+    if platform == "Linux32-Suse":
         return launch_rpm_build(installdir, blast_version)
-    if platform == "Linux64":
+    if platform == "Linux64-Suse":
         return launch_rpm_build(installdir, blast_version)
     if platform == "FreeBSD32":
         return do_nothing(platform)
