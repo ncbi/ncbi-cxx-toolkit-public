@@ -144,6 +144,45 @@ private:
 };
 
 
+/// Class representing one statistical value.
+/// Object collects set of values and can return number of values in set,
+/// sum of all values, maximum value and average of all values.
+template <class T>
+class CNCStatFigure
+{
+public:
+    /// Empty constructor, all initialization should be made in Initialize()
+    /// because in memory manager static objects are used before constructors
+    /// are called.
+    CNCStatFigure   (void);
+    /// Initialize all data members
+    void Initialize (void);
+
+    /// Add next value into the set.
+    void  AddValue  (T value);
+
+    /// Get number of values in the set.
+    Uint8 GetCount  (void) const;
+    /// Get sum of all values in the set.
+    T     GetSum    (void) const;
+    /// Get maximum value in the set.
+    T     GetMaximum(void) const;
+    /// Get average of all values in the set.
+    T     GetAverage(void) const;
+
+    /// Add all values from another set.
+    void  AddValues (const CNCStatFigure<T>& other);
+
+private:
+    /// Sum of all values collected.
+    T      m_ValuesSum;
+    /// Number of all values collected.
+    Uint8  m_ValuesCount;
+    /// Maximum value among collected.
+    T      m_ValuesMax;
+};
+
+
 /// Thread running background task.
 /// All this thread does is calls given functor and then exits.
 ///
@@ -651,6 +690,67 @@ CPrintTextProxy::operator<< (TEndlType)
     m_LineStream.Clear();
 
     return *this;
+}
+
+
+template <class T>
+inline
+CNCStatFigure<T>::CNCStatFigure(void)
+{}
+
+template <class T>
+inline void
+CNCStatFigure<T>::Initialize(void)
+{
+    m_ValuesSum   = 0;
+    m_ValuesCount = 0;
+    m_ValuesMax   = 0;
+}
+
+template <class T>
+inline void
+CNCStatFigure<T>::AddValue(T value)
+{
+    m_ValuesSum += value;
+    ++m_ValuesCount;
+    m_ValuesMax = max(m_ValuesMax, value);
+}
+
+template <class T>
+inline void
+CNCStatFigure<T>::AddValues(const CNCStatFigure<T>& other)
+{
+    m_ValuesSum   += other.m_ValuesSum;
+    m_ValuesCount += other.m_ValuesCount;
+    m_ValuesMax    = max(other.m_ValuesMax, m_ValuesMax);
+}
+
+template <class T>
+inline Uint8
+CNCStatFigure<T>::GetCount(void) const
+{
+    return m_ValuesCount;
+}
+
+template <class T>
+inline T
+CNCStatFigure<T>::GetSum(void) const
+{
+    return m_ValuesSum;
+}
+
+template <class T>
+inline T
+CNCStatFigure<T>::GetMaximum(void) const
+{
+    return m_ValuesMax;
+}
+
+template <class T>
+inline T
+CNCStatFigure<T>::GetAverage(void) const
+{
+    return m_ValuesCount == 0? 0: T(m_ValuesSum / m_ValuesCount);
 }
 
 

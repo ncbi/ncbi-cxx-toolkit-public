@@ -622,6 +622,10 @@ public:
     bool IsForcedSync(void);
     /// Get size of the file.
     Int8 GetSize(void);
+    /// Check if file was really opened by SQLite (TRUE) or internally (FALSE)
+    bool IsFileOpen(void);
+    /// Set flag showing if file was really opened by SQLite
+    void SetFileOpen(bool value = true);
 
     /// Read data from the very first page of the file.
     int  ReadFirstPage (Int8 offset, int cnt, void* mem_ptr);
@@ -647,8 +651,6 @@ private:
     CNCFSOpenFile*  m_NextFile;
     /// Name of the file
     string          m_Name;
-    /// Flag showing whether synchronous I/O is requested
-    bool            m_ForcedSync;
     /// Real file in default SQLite's VFS used for writing
     sqlite3_file*   m_RealFile;
     /// Memory used to store very first page in the database - it's the only
@@ -659,11 +661,23 @@ private:
     /// It could be not the same as size of file on disk but they will be
     /// equal when all writing events in queue are executed.
     Int8            m_Size;
-    /// Flag showing that file should be deleted from disk when it's closed.
-    bool            m_DeleteOnClose;
-    /// Flag showing if initialization of the file schema is done and no
-    /// significant changes to the first page will be made furthermore.
-    bool            m_Initialized;
+
+    /// Flags of file operation
+    enum EFlags {
+        fForcedSync    = 1, ///< Synchronous I/O is requested
+        fDeleteOnClose = 2, ///< File should be deleted from disk when it's
+                            ///< closed
+        fInitialized   = 4, ///< Initialization of the file schema is done and
+                            ///< no significant changes to the first page will
+                            ///< be made furthermore
+        fOpened        = 8  ///< File was really opened by SQLite, not just
+                            ///< internally to set some flags
+    };
+    /// Bit mask from EFlags
+    typedef int  TFlags;
+
+    /// Flags for the file
+    TFlags          m_Flags;
 };
 
 
@@ -1071,13 +1085,28 @@ CNCFileSystem::IsDiskInitialized(void)
 inline bool
 CNCFSOpenFile::IsForcedSync(void)
 {
-    return m_ForcedSync;
+    return (m_Flags & fForcedSync) != 0;
 }
 
 inline Int8
 CNCFSOpenFile::GetSize(void)
 {
     return m_Size;
+}
+
+inline bool
+CNCFSOpenFile::IsFileOpen(void)
+{
+    return (m_Flags & fOpened) != 0;
+}
+
+inline void
+CNCFSOpenFile::SetFileOpen(bool value /* = true */)
+{
+    if (value)
+        m_Flags |= fOpened;
+    else
+        m_Flags &= ~fOpened;
 }
 
 END_NCBI_SCOPE

@@ -86,11 +86,11 @@ public:
     ///   application is running.
     /// @param cmd_span
     ///   Time command was executed
-    /// @param state_spans
-    ///   Array of times spent in each handler state during command execution
-    static void AddFinishedCmd(const char*           cmd,
-                               double                cmd_span,
-                               const vector<double>& state_spans);
+    /// @param cmd_status
+    ///   Resultant status code of the command
+    static void AddFinishedCmd(const char* cmd,
+                               double      cmd_span,
+                               int         cmd_status);
     /// Add closed connection
     ///
     /// @param conn_span
@@ -112,44 +112,36 @@ public:
 private:
     friend class CNCServerStat_Getter;
 
-    typedef map<const char*, Uint8,  SConstCharCompare>  TCmdsCountsMap;
-    typedef map<const char*, double, SConstCharCompare>  TCmdsSpansMap;
+
+    typedef CNCStatFigure<double>                           TSpanValue;
+    typedef map<const char*, TSpanValue, SConstCharCompare> TCmdsSpansMap;
+    typedef map<int, TCmdsSpansMap>                         TStatCmdsSpansMap;
 
 
     CNCServerStat(void);
+    /// Get pointer to element in given span map related to given command name.
+    /// If there's no such element then it's created and initialized.
+    static TCmdsSpansMap::iterator x_GetSpanFigure(TCmdsSpansMap&  cmd_span_map,
+                                                   const char*     cmd);
     /// Collect all statistics from this instance to another
     void x_CollectTo(CNCServerStat* other);
 
 
     /// Mutex for working with statistics
-    CSpinLock      m_ObjLock;
-    /// Maximum time connection was opened
-    double         m_MaxConnSpan;
-    /// Number of connections closed
-    Uint8          m_ClosedConns;
+    CSpinLock             m_ObjLock;
     /// Number of connections opened
-    Uint8          m_OpenedConns;
+    Uint8                 m_OpenedConns;
     /// Number of connections closed because of maximum number of opened
     /// connections limit.
-    Uint8          m_OverflowConns;
+    Uint8                 m_OverflowConns;
     /// Sum of times all connections stayed opened
-    double         m_ConnsSpansSum;
+    CNCStatFigure<double> m_ConnSpan;
     /// Maximum time one command was executed
-    double         m_MaxCmdSpan;
+    CNCStatFigure<double> m_CmdSpan;
     /// Maximum time of each command type executed
-    TCmdsSpansMap  m_MaxCmdSpanByCmd;
-    /// Total number of executed commands
-    Uint8          m_CntCmds;
-    /// Number of each command type executed
-    TCmdsCountsMap m_CntCmdsByCmd;
-    /// Sum of times all commands were executed
-    double         m_CmdSpans;
-    /// Sum of times each type of command was executed
-    TCmdsSpansMap  m_CmdSpansByCmd;
-    /// Sums of times handlers spent in every state
-    vector<double> m_StatesSpansSums;
+    TStatCmdsSpansMap     m_CmdSpanByCmd;
     /// Number of commands terminated because of command timeout
-    Uint8          m_TimedOutCmds;
+    Uint8                 m_TimedOutCmds;
 
     /// Object differentiating statistics instances over threads
     static CNCServerStat_Getter sm_Getter;
@@ -320,9 +312,7 @@ CNCServerStat::AddClosedConnection(double conn_span)
 {
     CNCServerStat* stat = sm_Getter.GetObjPtr();
     stat->m_ObjLock.Lock();
-    ++stat->m_ClosedConns;
-    stat->m_ConnsSpansSum += conn_span;
-    stat->m_MaxConnSpan    = max(stat->m_MaxConnSpan, conn_span);
+    stat->m_ConnSpan.AddValue(conn_span);
     stat->m_ObjLock.Unlock();
 }
 

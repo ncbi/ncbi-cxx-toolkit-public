@@ -1332,14 +1332,17 @@ public:
     static void Initialize(void);
     /// Take all statistics from all threads collected at this moment and
     /// put it inside one statistics object for printing it.
-    static void CollectAllStats(CNCMMStats* dest_stats);
-    /// Same as CollectAllStats() but summarize only 2 numbers from
-    /// statistics - amount of free unused memory and amount of memory used by
-    /// database cache.
-    static void GetUsageNumbers(size_t* free_mem, size_t* db_cache_mem);
+    static void CollectAllStats(CNCMMStats* stats);
+    /// Same as CollectAllStats() but summarize only memory usage numbers from
+    /// statistics.
+    static void AggregateUsage(CNCMMStats* stats);
 
     /// Get amount of memory allocated from OS.
-    size_t GetSystemMem(void);
+    size_t GetSystemMem(void) const;
+    /// Get amount of free memory not used by anything
+    size_t GetFreeMem(void) const;
+    /// Get amount of memory used by database cache
+    size_t GetDBCacheMem(void) const;
     /// Print all memory statistics.
     void Print(CPrintTextProxy& proxy);
 
@@ -1399,6 +1402,12 @@ public:
     /// Register deallocation of chain with given number of chunks for the
     /// memory block with given size.
     static void ChunksChainFreed  (size_t block_size, unsigned int chain_size);
+    /// Register allocation of chain from central reserve (as opposed to
+    /// allocation from chains pool).
+    static void ChainCentrallyAlloced(void);
+    /// Register deallocation of chain from central reserve (as opposed to
+    /// deallocation to chains pool).
+    static void ChainCentrallyFreed  (void);
     /// Register allocation of big block - block that doesn't fit into
     /// one memory slab.
     static void BigBlockAlloced(size_t block_size);
@@ -1409,6 +1418,10 @@ public:
     static void DBPageHitInCache(void);
     /// Register request of database page that doesn't exist in cache.
     static void DBPageNotInCache(void);
+
+    /// Register measurement of memory usage summary for the purpose of
+    /// calculating average usage values.
+    void AddAggregateMeasures(const CNCMMStats& stats);
 
 public:
     /// Empty constructor to avoid any problems in some compilers.
@@ -1427,26 +1440,42 @@ private:
     void* operator new(size_t, void*);
 
     /// Sum up statistics contained in this object into another object.
-    void x_CollectAllTo(CNCMMStats* other);
+    void x_CollectAllTo(CNCMMStats* stats);
 
 
     /// Mutex controlling access to the object.
     CSpinLock    m_ObjLock;
+
     /// Amount of memory allocated from OS.
-    size_t       m_SystemMem;
+    size_t                m_SystemMem;
     /// Amount of free memory not used by anything.
-    size_t       m_FreeMem;
+    size_t                m_FreeMem;
     /// Amount of memory not used by anything but reserved in internal
     /// structures for future uses.
-    size_t       m_ReservedMem;
+    size_t                m_ReservedMem;
     /// Amount of memory used by memory manager itself.
-    size_t       m_OverheadMem;
+    size_t                m_OverheadMem;
     /// Amount of lost memory that won't be used by anything ever.
-    size_t       m_LostMem;
+    size_t                m_LostMem;
     /// Amount of memory used by database cache.
-    size_t       m_DBCacheMem;
+    size_t                m_DBCacheMem;
     /// Amount of memory used by data blocks requested by user.
-    size_t       m_DataMem;
+    size_t                m_DataMem;
+    /// Aggregate values of memory allocated from OS over time.
+    CNCStatFigure<size_t> m_SysMemAggr;
+    /// Aggregate values of free memory over time.
+    CNCStatFigure<size_t> m_FreeMemAggr;
+    /// Aggregate values of memory reserved in internal structures over time.
+    CNCStatFigure<size_t> m_RsrvMemAggr;
+    /// Aggregate values of memory used by memory manager over time.
+    CNCStatFigure<size_t> m_OvrhdMemAggr;
+    /// Aggregate values of lost memory over time.
+    CNCStatFigure<size_t> m_LostMemAggr;
+    /// Aggregate values of memory used by database cache over time.
+    CNCStatFigure<size_t> m_DBCacheMemAggr;
+    /// Aggregate values of memory used by data allocated by program over time.
+    CNCStatFigure<size_t> m_DataMemAggr;
+
     /// Number of memory allocations from OS.
     Uint8        m_SysAllocs;
     /// Number of releases of memory to OS.
@@ -1457,6 +1486,12 @@ private:
     Uint8        m_ChunksPoolRefills;
     /// Number of releases chunks from pool to central reserve.
     Uint8        m_ChunksPoolCleans;
+    /// Number of chunk chains allocated from central reserve (as opposed to
+    /// allocation from chains pool).
+    Uint8        m_ChainsCentrallyAlloced;
+    /// Number of chunk chains deallocated to central reserve (as opposed to
+    /// storage in chains pool).
+    Uint8        m_ChainsCentrallyFreed;
     /// Number of memory slabs allocated.
     Uint8        m_SlabsAlloced;
     /// Number of memory slabs deallocated.
@@ -1595,9 +1630,10 @@ private:
     static void* x_DoCallMmap(size_t size);
 #endif
 
-    /// Calculate mode of working with memory (sm_Mode).
+    /// Calculate mode of working with memory (sm_Mode) based on memory usage
+    /// statistics given in statistics object.
     /// Method is called periodically from x_DoBackGroundWork().
-    static void x_CalcMemoryMode(void);
+    static void x_CalcMemoryMode(const CNCMMStats& stats);
     /// Running method for the work that needs to be done in background.
     static void x_DoBackgroundWork(void);
 

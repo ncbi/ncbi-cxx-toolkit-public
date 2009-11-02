@@ -55,18 +55,30 @@ SNCDBStatData::SNCDBStatData(void)
       m_ReadSize(0),
       m_StoppedReads(0),
       m_ReadBySize(40, 0),
-      m_ChunkRTimeBySize(40),
       m_WrittenBlobs(0),
       m_WrittenSize(0),
       m_StoppedWrites(0),
       m_WrittenBySize(40, 0),
-      m_ChunkWTimeBySize(40),
       m_DeletedBlobs(0),
       m_TotalDbTime(0),
       m_TruncatedBlobs(0),
       m_CreateExists(0),
       m_ExistChecks(0)
-{}
+{
+    m_NumOfDBParts    .Initialize();
+    m_DBPartsIdsSpan  .Initialize();
+    m_MetaFileSize    .Initialize();
+    m_DataFileSize    .Initialize();
+    m_TotalMetaSize   .Initialize();
+    m_TotalDataSize   .Initialize();
+    m_TotalDBSize     .Initialize();
+    m_InfoReadTime    .Initialize();
+    m_ChunkReadTime   .Initialize();
+    m_ChunkRTimeBySize.resize(40, m_ChunkReadTime);
+    m_InfoWriteTime   .Initialize();
+    m_ChunkWriteTime  .Initialize();
+    m_ChunkWTimeBySize.resize(40, m_ChunkWriteTime);
+}
 
 inline int
 SNCDBStatData::CalcTimePercent(double time)
@@ -75,7 +87,7 @@ SNCDBStatData::CalcTimePercent(double time)
 }
 
 inline int
-SNCDBStatData::CalcTimePercent(const CNCDBStatFigure<double>& time_fig)
+SNCDBStatData::CalcTimePercent(const CNCStatFigure<double>& time_fig)
 {
     return CalcTimePercent(time_fig.GetSum());
 }
@@ -167,97 +179,109 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
         m_Data[i].CollectTo(&data);
     }
 
-    proxy << "Database size        - "
-                        << data.m_TotalDBSize.GetAverage() << " avg ("
+    proxy << "DB size  - "
+                        << data.m_TotalDBSize.GetAverage()   << " avg ("
                         << data.m_TotalDataSize.GetAverage() << " data, "
                         << data.m_TotalMetaSize.GetAverage() << " meta), "
-                        << data.m_TotalDBSize.GetMaximum() << " max ("
+                        << data.m_TotalDBSize.GetMaximum()   << " max ("
                         << data.m_TotalDataSize.GetMaximum() << " data, "
                         << data.m_TotalMetaSize.GetMaximum() << " meta)" << endl
-          << "DB files size        - "
+          << "DB files - "
                         << data.m_DataFileSize.GetAverage() << " avg data, "
                         << data.m_MetaFileSize.GetAverage() << " avg meta, "
                         << data.m_DataFileSize.GetMaximum() << " max data, "
                         << data.m_MetaFileSize.GetMaximum() << " max meta" << endl
-          << "Number of db parts   - "
-                        << data.m_NumOfDBParts.GetAverage() << " avg, "
-                        << data.m_NumOfDBParts.GetMaximum() << " max" << endl
-          << "Parts ids difference - "
-                        << data.m_DBPartsIdsSpan.GetAverage() << " avg, "
-                        << data.m_DBPartsIdsSpan.GetMaximum() << " max" << endl
-          << endl;
-    proxy << "Locks                  - "
+          << "DB parts - "
+                        << data.m_NumOfDBParts.GetAverage()   << " avg, "
+                        << data.m_NumOfDBParts.GetMaximum()   << " max, "
+                        << data.m_DBPartsIdsSpan.GetAverage() << " avg diff, "
+                        << data.m_DBPartsIdsSpan.GetMaximum() << " max diff" << endl;
+    proxy << "Locks    - "
                                << data.m_LockRequests << " requested ("
                                << data.m_GCLockRequests << " GC), "
                                << data.m_LocksAcquired << " acquired ("
                                << data.m_GCLocksAcquired << " GC)" << endl
-          << "Locks on non-existing  - " << data.m_NotExistLocks << endl
-          << "Time waiting for locks - "
-                << data.CalcTimePercent(data.m_LocksWaitedTime) << "%" << endl
-          << "Time of database I/O   - "
-                << data.CalcTimePercent(data.m_TotalDbTime) << "%" << endl
-          << endl
-          << "Blobs deleted by user - " << data.m_DeletedBlobs << endl
-          << "Blobs truncated       - " << data.m_TruncatedBlobs << endl
-          << "Creates over existing - " << data.m_CreateExists << endl
-          << "Checks for existence  - " << data.m_ExistChecks << endl
+          << "I/O      - "
+                        << data.CalcTimePercent(data.m_TotalDbTime) << "% (db), "
+                        << data.CalcTimePercent(data.m_LocksWaitedTime) << "% (locks), "
+                        << data.m_NotExistLocks << " (non-exist), "
+                        << data.m_DeletedBlobs << " (del), "
+                        << data.m_TruncatedBlobs << " (trunc), "
+                        << data.m_CreateExists << " (re-wr), "
+                        << data.m_ExistChecks << " (check)" << endl
           << endl;
-    proxy << "Read data    - " << data.m_ReadBlobs << " blobs ("
-                            << data.m_StoppedReads << " unfinished) of "
-                            << data.m_ChunkReadTime.GetCount() << " chunks of "
-                            << data.m_ReadSize << " bytes" << endl
-          << "Time reading - "
-                << data.CalcTimePercent(data.m_InfoReadTime) << "% for meta ("
-                << data.m_InfoReadTime.GetAverage() << " avg, "
-                << data.m_InfoReadTime.GetMaximum() << " max), "
-                << data.CalcTimePercent(data.m_ChunkReadTime) << "% for data ("
-                << data.m_ChunkReadTime.GetAverage() << " avg, "
-                << data.m_ChunkReadTime.GetMaximum() << " max)" << endl
-          << "Blobs read by size:" << endl;
-    size_t sz = kMinSizeInChart;
-    for (size_t i = 0; i < data.m_ReadBySize.size(); ++i, sz <<= 1) {
-        proxy << sz << " - " << data.m_ReadBySize[i] << endl;
-        if (sz >= data.m_MaxBlobSize)
-            break;
+    if (data.m_ReadBlobs == 0) {
+        proxy << "Read    - " << data.m_ReadBlobs << " blobs" << endl;
     }
-    proxy << "Chunks read by size:" << endl;
-    sz = kMinSizeInChart;
-    for (size_t i = 0; i < data.m_ChunkRTimeBySize.size(); ++i, sz <<= 1) {
-        proxy << sz << " - " << data.m_ChunkRTimeBySize[i].GetCount() << " cnt, "
-              << data.CalcTimePercent(data.m_ChunkRTimeBySize[i]) << "% total time, "
-              << data.m_ChunkRTimeBySize[i].GetAverage() << " avg time, "
-              << data.m_ChunkRTimeBySize[i].GetMaximum() << " max time" << endl;
-        if (sz >= data.m_MaxChunkSize)
-            break;
+    else {
+        proxy << "Read - " << data.m_ReadBlobs << " blobs ("
+                           << data.m_StoppedReads << " unfinished) of "
+                           << data.m_ChunkReadTime.GetCount() << " chunks of "
+                           << data.m_ReadSize << " bytes" << endl
+              << "Time - "
+                    << data.CalcTimePercent(data.m_InfoReadTime) << "% for meta ("
+                    << data.m_InfoReadTime.GetAverage() << " avg, "
+                    << data.m_InfoReadTime.GetMaximum() << " max), "
+                    << data.CalcTimePercent(data.m_ChunkReadTime) << "% for data ("
+                    << data.m_ChunkReadTime.GetAverage() << " avg, "
+                    << data.m_ChunkReadTime.GetMaximum() << " max)" << endl
+              << "By size:" << endl;
+        size_t sz = kMinSizeInChart;
+        for (size_t i = 0; i < data.m_ReadBySize.size(); ++i, sz <<= 1) {
+            if (data.m_ReadBySize[i] != 0)
+                proxy << sz << " - " << data.m_ReadBySize[i] << endl;
+            if (sz >= data.m_MaxBlobSize)
+                break;
+        }
+        proxy << "Chunks by size:" << endl;
+        sz = kMinSizeInChart;
+        for (size_t i = 0; i < data.m_ChunkRTimeBySize.size(); ++i, sz <<= 1) {
+            if (data.m_ChunkRTimeBySize[i].GetCount() != 0) {
+                proxy << sz << " - " << data.m_ChunkRTimeBySize[i].GetCount() << " cnt, "
+                      << data.CalcTimePercent(data.m_ChunkRTimeBySize[i]) << "% total time, "
+                      << data.m_ChunkRTimeBySize[i].GetAverage() << " avg time, "
+                      << data.m_ChunkRTimeBySize[i].GetMaximum() << " max time" << endl;
+            }
+            if (sz >= data.m_MaxChunkSize)
+                break;
+        }
+        proxy << endl;
     }
-    proxy << endl
-          << "Written data - " << data.m_WrittenBlobs << " blobs ("
-                            << data.m_StoppedWrites << " unfinished) of "
-                            << data.m_ChunkWriteTime.GetCount() << " chunks of "
-                            << data.m_WrittenSize << " bytes" << endl
-          << "Time writing - "
-                << data.CalcTimePercent(data.m_InfoWriteTime) << "% for meta ("
-                << data.m_InfoWriteTime.GetAverage() << " avg, "
-                << data.m_InfoWriteTime.GetMaximum() << " max), "
-                << data.CalcTimePercent(data.m_ChunkWriteTime) << "% for data ("
-                << data.m_ChunkWriteTime.GetAverage() << " avg, "
-                << data.m_ChunkWriteTime.GetMaximum() << " max)" << endl
-          << "Blobs written by size:" << endl;
-    sz = kMinSizeInChart;
-    for (size_t i = 0; i < data.m_WrittenBySize.size(); ++i, sz <<= 1) {
-        proxy << sz << " - " << data.m_WrittenBySize[i] << endl;
-        if (sz >= data.m_MaxBlobSize)
-            break;
+    if (data.m_WrittenBlobs == 0) {
+        proxy << "Written - " << data.m_WrittenBlobs << " blobs" << endl;
     }
-    proxy << "Chunks written by size:" << endl;
-    sz = kMinSizeInChart;
-    for (size_t i = 0; i < data.m_ChunkWTimeBySize.size(); ++i, sz <<= 1) {
-        proxy << sz << " - " << data.m_ChunkWTimeBySize[i].GetCount() << " cnt, "
-              << data.CalcTimePercent(data.m_ChunkWTimeBySize[i]) << "% total time, "
-              << data.m_ChunkWTimeBySize[i].GetAverage() << " avg time, "
-              << data.m_ChunkWTimeBySize[i].GetMaximum() << " max time" << endl;
-        if (sz >= data.m_MaxChunkSize)
-            break;
+    else {
+        proxy << "Written - " << data.m_WrittenBlobs << " blobs ("
+                                   << data.m_StoppedWrites << " unfinished) of "
+                                   << data.m_ChunkWriteTime.GetCount() << " chunks of "
+                                   << data.m_WrittenSize << " bytes" << endl
+              << "Time    - "
+                    << data.CalcTimePercent(data.m_InfoWriteTime) << "% for meta ("
+                    << data.m_InfoWriteTime.GetAverage() << " avg, "
+                    << data.m_InfoWriteTime.GetMaximum() << " max), "
+                    << data.CalcTimePercent(data.m_ChunkWriteTime) << "% for data ("
+                    << data.m_ChunkWriteTime.GetAverage() << " avg, "
+                    << data.m_ChunkWriteTime.GetMaximum() << " max)" << endl
+              << "By size:" << endl;
+        size_t sz = kMinSizeInChart;
+        for (size_t i = 0; i < data.m_WrittenBySize.size(); ++i, sz <<= 1) {
+            if (data.m_WrittenBySize[i] != 0)
+                proxy << sz << " - " << data.m_WrittenBySize[i] << endl;
+            if (sz >= data.m_MaxBlobSize)
+                break;
+        }
+        proxy << "Chunks by size:" << endl;
+        sz = kMinSizeInChart;
+        for (size_t i = 0; i < data.m_ChunkWTimeBySize.size(); ++i, sz <<= 1) {
+            if (data.m_ChunkWTimeBySize[i].GetCount()) {
+                proxy << sz << " - " << data.m_ChunkWTimeBySize[i].GetCount() << " cnt, "
+                      << data.CalcTimePercent(data.m_ChunkWTimeBySize[i]) << "% total time, "
+                      << data.m_ChunkWTimeBySize[i].GetAverage() << " avg time, "
+                      << data.m_ChunkWTimeBySize[i].GetMaximum() << " max time" << endl;
+            }
+            if (sz >= data.m_MaxChunkSize)
+                break;
+        }
     }
 }
 

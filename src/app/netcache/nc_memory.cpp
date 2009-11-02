@@ -153,7 +153,7 @@ static const int    kNCMMDBHashSizeFactor     = 8;
 static const int    kNCMMBGThreadWaitSecs     = 5;
 /// Number of chunks that manager allows to be used on top of global limit for
 /// memory consumption.
-static const size_t kNCMMLimitToleranceChunks = 10;
+static const size_t kNCMMLimitToleranceChunks = 25;
 
 
 /// Size of memory page that is a granularity of all allocations from OS.
@@ -266,40 +266,75 @@ CNCMMStats::InitInstance(void)
     memset(this, 0, sizeof(*this));
     // Hack to initialize spin lock.
     new (&m_ObjLock) CSpinLock();
+    m_SysMemAggr    .Initialize();
+    m_FreeMemAggr   .Initialize();
+    m_RsrvMemAggr   .Initialize();
+    m_OvrhdMemAggr  .Initialize();
+    m_LostMemAggr   .Initialize();
+    m_DBCacheMemAggr.Initialize();
+    m_DataMemAggr   .Initialize();
 }
 
 void
-CNCMMStats::x_CollectAllTo(CNCMMStats* other)
+CNCMMStats::x_CollectAllTo(CNCMMStats* stats)
 {
     CSpinGuard guard(m_ObjLock);
 
-    other->m_SystemMem         += m_SystemMem;
-    other->m_FreeMem           += m_FreeMem;
-    other->m_ReservedMem       += m_ReservedMem;
-    other->m_OverheadMem       += m_OverheadMem;
-    other->m_LostMem           += m_LostMem;
-    other->m_DBCacheMem        += m_DBCacheMem;
-    other->m_DataMem           += m_DataMem;
-    other->m_SysAllocs         += m_SysAllocs;
-    other->m_SysFrees          += m_SysFrees;
-    other->m_SysReallocs       += m_SysReallocs;
-    other->m_ChunksPoolRefills += m_ChunksPoolRefills;
-    other->m_ChunksPoolCleans  += m_ChunksPoolCleans;
-    other->m_SlabsAlloced      += m_SlabsAlloced;
-    other->m_SlabsFreed        += m_SlabsFreed;
-    other->m_BigAlloced        += m_BigAlloced;
-    other->m_BigFreed          += m_BigFreed;
-    other->m_DBPagesRequested  += m_DBPagesRequested;
-    other->m_DBPagesHit        += m_DBPagesHit;
+    stats->m_SystemMem              += m_SystemMem;
+    stats->m_FreeMem                += m_FreeMem;
+    stats->m_ReservedMem            += m_ReservedMem;
+    stats->m_OverheadMem            += m_OverheadMem;
+    stats->m_LostMem                += m_LostMem;
+    stats->m_DBCacheMem             += m_DBCacheMem;
+    stats->m_DataMem                += m_DataMem;
+    stats->m_SysMemAggr    .AddValues(m_SysMemAggr);
+    stats->m_FreeMemAggr   .AddValues(m_FreeMemAggr);
+    stats->m_RsrvMemAggr   .AddValues(m_RsrvMemAggr);
+    stats->m_OvrhdMemAggr  .AddValues(m_OvrhdMemAggr);
+    stats->m_LostMemAggr   .AddValues(m_LostMemAggr);
+    stats->m_DBCacheMemAggr.AddValues(m_DBCacheMemAggr);
+    stats->m_DataMemAggr   .AddValues(m_DataMemAggr);
+
+    stats->m_SysAllocs              += m_SysAllocs;
+    stats->m_SysFrees               += m_SysFrees;
+    stats->m_SysReallocs            += m_SysReallocs;
+    stats->m_ChunksPoolRefills      += m_ChunksPoolRefills;
+    stats->m_ChunksPoolCleans       += m_ChunksPoolCleans;
+    stats->m_ChainsCentrallyAlloced += m_ChainsCentrallyAlloced;
+    stats->m_ChainsCentrallyFreed   += m_ChainsCentrallyFreed;
+    stats->m_SlabsAlloced           += m_SlabsAlloced;
+    stats->m_SlabsFreed             += m_SlabsFreed;
+    stats->m_BigAlloced             += m_BigAlloced;
+    stats->m_BigFreed               += m_BigFreed;
+    stats->m_DBPagesRequested       += m_DBPagesRequested;
+    stats->m_DBPagesHit             += m_DBPagesHit;
     for (unsigned int i = 0; i < kNCMMCntSmallSizes; ++i) {
-        other->m_BlocksAlloced[i] += m_BlocksAlloced[i];
-        other->m_BlocksFreed[i]   += m_BlocksFreed[i];
-        other->m_SetsCreated[i]   += m_SetsCreated[i];
-        other->m_SetsDeleted[i]   += m_SetsDeleted[i];
+        stats->m_BlocksAlloced[i]   += m_BlocksAlloced[i];
+        stats->m_BlocksFreed[i]     += m_BlocksFreed[i];
+        stats->m_SetsCreated[i]     += m_SetsCreated[i];
+        stats->m_SetsDeleted[i]     += m_SetsDeleted[i];
     }
     for (unsigned int i = 0; i < kNCMMCntChunksInSlab - 1; ++i) {
-        other->m_ChainsAlloced[i] += m_ChainsAlloced[i];
-        other->m_ChainsFreed[i]   += m_ChainsFreed[i];
+        stats->m_ChainsAlloced[i]   += m_ChainsAlloced[i];
+        stats->m_ChainsFreed[i]     += m_ChainsFreed[i];
+    }
+}
+
+inline void
+CNCMMStats::AggregateUsage(CNCMMStats* stats)
+{
+    stats->m_SystemMem = CNCMMCentral::GetStats().m_SystemMem;
+    stats->m_FreeMem = stats->m_ReservedMem = stats->m_OverheadMem = 0;
+    stats->m_LostMem = stats->m_DBCacheMem = stats->m_DataMem = 0;
+    for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
+        CSpinGuard guard(sm_Stats[i].m_ObjLock);
+
+        stats->m_FreeMem     += sm_Stats[i].m_FreeMem;
+        stats->m_ReservedMem += sm_Stats[i].m_ReservedMem;
+        stats->m_OverheadMem += sm_Stats[i].m_OverheadMem;
+        stats->m_LostMem     += sm_Stats[i].m_LostMem;
+        stats->m_DBCacheMem  += sm_Stats[i].m_DBCacheMem;
+        stats->m_DataMem     += sm_Stats[i].m_DataMem;
     }
 }
 
@@ -516,6 +551,24 @@ CNCMMStats::ChunksChainFreed(size_t       block_size,
 }
 
 inline void
+CNCMMStats::ChainCentrallyAlloced(void)
+{
+    CNCMMStats* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_ChainsCentrallyAlloced;
+    stat->m_ObjLock.Unlock();
+}
+
+inline void
+CNCMMStats::ChainCentrallyFreed(void)
+{
+    CNCMMStats* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_ChainsCentrallyFreed;
+    stat->m_ObjLock.Unlock();
+}
+
+inline void
 CNCMMStats::BigBlockAlloced(size_t block_size)
 {
     CNCMMStats* stat = sm_Getter.GetObjPtr();
@@ -556,63 +609,95 @@ CNCMMStats::DBPageNotInCache(void)
     stat->m_ObjLock.Unlock();
 }
 
+inline void
+CNCMMStats::AddAggregateMeasures(const CNCMMStats& stats)
+{
+    CSpinGuard guard(m_ObjLock);
+
+    m_SysMemAggr    .AddValue(stats.m_SystemMem  );
+    m_FreeMemAggr   .AddValue(stats.m_FreeMem    );
+    m_RsrvMemAggr   .AddValue(stats.m_ReservedMem);
+    m_OvrhdMemAggr  .AddValue(stats.m_OverheadMem);
+    m_LostMemAggr   .AddValue(stats.m_LostMem    );
+    m_DBCacheMemAggr.AddValue(stats.m_DBCacheMem );
+    m_DataMemAggr   .AddValue(stats.m_DataMem    );
+}
+
 inline size_t
-CNCMMStats::GetSystemMem(void)
+CNCMMStats::GetSystemMem(void) const
 {
     return m_SystemMem;
 }
 
-inline void
-CNCMMStats::CollectAllStats(CNCMMStats* dest_stats)
+inline size_t
+CNCMMStats::GetFreeMem(void) const
 {
-    dest_stats->InitInstance();
-    CNCMMCentral::GetStats().x_CollectAllTo(dest_stats);
-    for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
-        sm_Stats[i].x_CollectAllTo(dest_stats);
-    }
+    return m_FreeMem;
+}
+
+inline size_t
+CNCMMStats::GetDBCacheMem(void) const
+{
+    return m_DBCacheMem;
 }
 
 inline void
-CNCMMStats::GetUsageNumbers(size_t* free_mem, size_t* db_cache_mem)
- {
-    *free_mem = *db_cache_mem = 0;
+CNCMMStats::CollectAllStats(CNCMMStats* stats)
+{
+    stats->InitInstance();
+    CNCMMCentral::GetStats().x_CollectAllTo(stats);
     for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
-        *free_mem     += sm_Stats[i].m_FreeMem;
-        *db_cache_mem += sm_Stats[i].m_DBCacheMem;
+        sm_Stats[i].x_CollectAllTo(stats);
     }
 }
 
 inline void
 CNCMMStats::Print(CPrintTextProxy& proxy)
 {
-    proxy << "Memory limit - " << CNCMMCentral::GetMemLimit()
-                               << " (real used - "
-                               << m_SystemMem - m_FreeMem << ")" << endl;
-    proxy << "Memory used - " << m_SystemMem   << " (sys), "
-                              << m_DataMem     << " (data), "
-                              << m_DBCacheMem  << " (db cache), "
-                              << m_FreeMem     << " (free), "
-                              << m_ReservedMem << " (reserved), "
-                              << m_OverheadMem << " (overhead), "
-                              << m_LostMem     << " (lost)" << endl
-          << "Sys calls   - " << m_SysAllocs        << " (allocs), "
-                              << m_SysFrees         << " (frees), "
-                              << m_SysReallocs      << " (reallocs), "
-                              << m_ChunksPoolRefills << " (pool refills), "
-                              << m_ChunksPoolCleans << " (pool releases)" << endl
-          << "Cache hit   - " << int(double(m_DBPagesHit)
-                                     / m_DBPagesRequested * 100) << "%" << endl
-          << "Allocations - " << m_SlabsAlloced << " (+slabs), "
-                              << m_SlabsFreed   << " (-slabs), "
-                              << m_BigAlloced   << " (+big), "
-                              << m_BigFreed     << " (-big)" << endl
+    proxy << "Memory  - " << m_SystemMem                   << " (sys), "
+                          << m_DataMem                     << " (data), "
+                          << m_DBCacheMem                  << " (db), "
+                          << m_FreeMem                     << " (free), "
+                          << m_ReservedMem                 << " (rsrv), "
+                          << m_OverheadMem                 << " (ovrhd), "
+                          << m_LostMem                     << " (lost)" << endl
+          << "Mem avg - " << m_SysMemAggr.GetAverage()     << " (sys), "
+                          << m_DataMemAggr.GetAverage()    << " (data), "
+                          << m_DBCacheMemAggr.GetAverage() << " (db), "
+                          << m_FreeMemAggr.GetAverage()    << " (free), "
+                          << m_RsrvMemAggr.GetAverage()    << " (rsrv), "
+                          << m_OvrhdMemAggr.GetAverage()   << " (ovrhd), "
+                          << m_LostMemAggr.GetAverage()    << " (lost)" << endl
+          << "Mem max - " << m_SysMemAggr.GetMaximum()     << " (sys), "
+                          << m_DataMemAggr.GetMaximum()    << " (data), "
+                          << m_DBCacheMemAggr.GetMaximum() << " (db), "
+                          << m_FreeMemAggr.GetMaximum()    << " (free), "
+                          << m_RsrvMemAggr.GetMaximum()    << " (rsrv), "
+                          << m_OvrhdMemAggr.GetMaximum()   << " (ovrhd), "
+                          << m_LostMemAggr.GetMaximum()    << " (lost)" << endl;
+    proxy << "System  - " << CNCMMCentral::GetMemLimit()   << " mem lim, "
+                          << int(double(m_DBPagesHit)
+                                 / m_DBPagesRequested * 100) << "% cache hit, "
+                          << m_SysAllocs                   << " (allocs), "
+                          << m_SysFrees                    << " (frees), "
+                          << m_SysReallocs                 << " (reallocs), " << endl
+          << "Allocs  - " << m_SlabsAlloced                << " (+slabs), "
+                          << m_SlabsFreed                  << " (-slabs), "
+                          << m_BigAlloced                  << " (+big), "
+                          << m_BigFreed                    << " (-big), "
+                          << m_ChainsCentrallyAlloced      << " (+chains), "
+                          << m_ChainsCentrallyFreed        << " (-chains), "
+                          << m_ChunksPoolRefills           << " (+pool), "
+                          << m_ChunksPoolCleans            << " (-pool), " << endl
           << "By size:" << endl;
     for (unsigned int i = 0; i < kNCMMCntSmallSizes; ++i) {
-        proxy << kNCMMSmallSize[i]  << " - "
-              << m_BlocksAlloced[i] << " (+blocks), "
-              << m_BlocksFreed[i]   << " (-blocks), "
-              << m_SetsCreated[i]   << " (+sets), "
-              << m_SetsDeleted[i]   << " (-sets)" << endl;
+        if (m_BlocksAlloced[i] != 0) {
+            proxy << kNCMMSmallSize[i]  << " - "
+                  << m_BlocksAlloced[i] << " (+blocks), "
+                  << m_BlocksFreed[i]   << " (-blocks), "
+                  << m_SetsCreated[i]   << " (+sets), "
+                  << m_SetsDeleted[i]   << " (-sets)" << endl;
+        }
     }
     Uint8 other_alloced = 0, other_freed = 0;
     for (unsigned int i = 1; i <= kNCMMCntChunksInSlab; ++i) {
@@ -628,8 +713,10 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
             other_freed   += m_ChainsFreed  [i];
         }
     }
-    proxy << "other - " << other_alloced << " (+blocks), "
-                        << other_freed   << " (-blocks)" << endl;
+    if (other_alloced != 0) {
+        proxy << "other - " << other_alloced << " (+blocks), "
+                            << other_freed   << " (-blocks)" << endl;
+    }
 }
 
 
@@ -849,7 +936,7 @@ inline void
 CNCMMCentral::DBPageDeleted(void)
 {
     CNCMMStats::DBPageDeleted();
-    if (sm_Mode == eNCMemShrinking  &&  sm_CntCanAlloc.Add(1) == 0) {
+    if (sm_Mode == eNCMemShrinking  &&  sm_CntCanAlloc.Add(-1) == 0) {
         sm_Mode = eNCMemStable;
     }
 }
@@ -1926,6 +2013,7 @@ CNCMMReserve::FillChunksFromChains(CNCMMFreeChunk** chunk_ptrs,
 void*
 CNCMMReserve::GetChain(unsigned int chain_size)
 {
+    CNCMMStats::ChainCentrallyAlloced();
     for (;;) {
         for (unsigned int i = 1; i < kNCMMSlabEmptyGrades; ++i) {
             SNCMMChainInfo chain;
@@ -1964,6 +2052,7 @@ void
 CNCMMReserve::DumpChain(void* chain_ptr, unsigned int chain_size)
 {
     _ASSERT(chain_size <= kNCMMCntChunksInSlab);
+    CNCMMStats::ChainCentrallyFreed();
 
     SNCMMChainInfo chain, chain_left, chain_right;
     chain_left .Initialize();
@@ -2582,11 +2671,10 @@ CNCMMCentral::PrepareToStop(void)
 }
 
 inline void
-CNCMMCentral::x_CalcMemoryMode(void)
+CNCMMCentral::x_CalcMemoryMode(const CNCMMStats& stats)
 {
-    size_t free_mem, db_cache_mem;
-    CNCMMStats::GetUsageNumbers(&free_mem, &db_cache_mem);
-
+    size_t free_mem     = stats.GetFreeMem();
+    size_t db_cache_mem = stats.GetDBCacheMem();
     size_t sys_mem      = sm_Stats.GetSystemMem();
     size_t used_mem     = sys_mem - free_mem;
     size_t db_mem_limit = sm_MemLimit / 2;
@@ -2594,9 +2682,15 @@ CNCMMCentral::x_CalcMemoryMode(void)
         sm_Mode = eNCMemStable;
     }
     else if (used_mem < sm_MemLimit) {
-        size_t alloc_cnt = (sm_MemLimit - used_mem) / kNCMMChunkSize + 1;
-        sm_CntCanAlloc.Set(CAtomicCounter::TValue(alloc_cnt));
-        sm_Mode = eNCMemGrowing;
+        size_t alloc_cnt = (sm_MemLimit - used_mem) / kNCMMChunkSize;
+        if (alloc_cnt <= kNCMMLimitToleranceChunks) {
+            sm_Mode = eNCMemStable;
+        }
+        else {
+            sm_CntCanAlloc.Set(CAtomicCounter::TValue(
+                                      alloc_cnt - kNCMMLimitToleranceChunks));
+            sm_Mode = eNCMemGrowing;
+        }
     }
     else if (db_cache_mem < db_mem_limit) {
         size_t alloc_cnt = (db_mem_limit - db_cache_mem) / kNCMMChunkSize + 1;
@@ -2604,18 +2698,19 @@ CNCMMCentral::x_CalcMemoryMode(void)
         sm_Mode = eNCMemGrowing;
     }
     else {
-        size_t cnt_for_db = (db_cache_mem - db_mem_limit) / kNCMMChunkSize - 1;
-        size_t cnt_total  = (used_mem - sm_MemLimit) / kNCMMChunkSize - 1;
+        size_t cnt_for_db = (db_cache_mem - db_mem_limit) / kNCMMChunkSize;
+        size_t cnt_total  = (used_mem - sm_MemLimit) / kNCMMChunkSize;
         cnt_total = min(cnt_total, cnt_for_db);
         if (cnt_total <= kNCMMLimitToleranceChunks) {
             sm_Mode = eNCMemStable;
         }
         else {
-            sm_CntCanAlloc.Set(CAtomicCounter::TValue(-int(cnt_total)));
+            sm_CntCanAlloc.Set(CAtomicCounter::TValue(
+                                      cnt_total - kNCMMLimitToleranceChunks));
             sm_Mode = eNCMemShrinking;
         }
     }
-    //printf("limit=%llu, used=%llu, free=%llu\n", sm_MemLimit, used_mem, free_mem);
+    //printf("sys=%llu, free=%llu, used=%llu, cache=%llu, mode=%d\n", sys_mem, free_mem, used_mem, db_cache_mem, sm_Mode);
 }
 
 
@@ -2623,7 +2718,10 @@ void
 CNCMMCentral::x_DoBackgroundWork(void)
 {
     while (GetMemMode() != eNCFinalized) {
-        x_CalcMemoryMode();
+        CNCMMStats stats;
+        CNCMMStats::AggregateUsage(&stats);
+        x_CalcMemoryMode(stats);
+        sm_Stats.AddAggregateMeasures(stats);
         sm_WaitForStop.TryWait(kNCMMBGThreadWaitSecs);
     }
 }

@@ -116,11 +116,12 @@ struct SNCBlobInfo : public SNCBlobIdentity
 /// Information about database part in NetCache storage
 struct SNCDBPartInfo
 {
-    TNCDBPartId part_id;      ///< Id of database part
-    string      meta_file;    ///< Name of meta file for the part
-    string      data_file;    ///< Name of file with blob data for the part
-    int         create_time;  ///< Time when the part was created
-    TNCBlobId   min_blob_id;  ///< Minimum value of blob id inside the part
+    TNCDBPartId part_id;       ///< Id of database part
+    string      meta_file;     ///< Name of meta file for the part
+    string      data_file;     ///< Name of file with blob data for the part
+    int         create_time;   ///< Time when the part was created
+    int         last_rot_time; ///< Time when the part was last "rotated"
+    TNCBlobId   min_blob_id;   ///< Minimum value of blob id inside the part
 };
 /// Information about all database parts in NetCache storage
 typedef list<SNCDBPartInfo>  TNCDBPartsList;

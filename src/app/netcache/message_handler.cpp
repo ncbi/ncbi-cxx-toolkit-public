@@ -694,8 +694,12 @@ CNCMessageHandler::x_DoCommand(void)
 void
 CNCMessageHandler::x_FinishCommand(void)
 {
-    // Context is reseted early but it is still in diagnostics
-    m_DiagContext.Reset();
+    int cmd_status = 0;
+    if (m_DiagContext.NotNull()) {
+        cmd_status = m_DiagContext->GetRequestStatus();
+        // Context is reseted early but it is still in diagnostics
+        m_DiagContext.Reset();
+    }
 
     if (!x_IsFlagSet(fCommandStarted)) {
         return;
@@ -732,7 +736,8 @@ CNCMessageHandler::x_FinishCommand(void)
     x_UnsetFlag(fReadExactBlobSize);
 
     double cmd_span = (m_Server->GetFastTime() - m_CmdStartTime).GetAsDouble();
-    CNCServerStat::AddFinishedCmd(m_CurCmd, cmd_span, m_StateSpanStats);
+    //CNCServerStat::AddFinishedCmd(m_CurCmd, cmd_span, m_StateSpanStats);
+    CNCServerStat::AddFinishedCmd(m_CurCmd, cmd_span, cmd_status);
 
     ResetDiagnostics();
 }

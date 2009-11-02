@@ -179,6 +179,9 @@ CNCDBFile::CreateMetaDatabase(void)
     CSQLITE_Statement stmt(this);
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
+    stmt.SetSql("BEGIN");
+    stmt.Execute();
+
     sql.Clear();
     sql << "create table " << kNCBlobKeys_Table
         << "(" << kNCBlobKeys_BlobIdCol  << " integer primary key,"
@@ -224,6 +227,9 @@ CNCDBFile::CreateMetaDatabase(void)
                <<       ")"
         << ")";
     stmt.SetSql(sql);
+    stmt.Execute();
+
+    stmt.SetSql("COMMIT");
     stmt.Execute();
 }
 
@@ -408,7 +414,7 @@ CNCDBFile::CreateDBPart(SNCDBPartInfo* part_info)
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_CreateDBPart));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
 
-    part_info->create_time = int(time(NULL));
+    part_info->last_rot_time = part_info->create_time = int(time(NULL));
     stmt->Bind(1, part_info->part_id);
     stmt->Bind(2, part_info->meta_file.data(), part_info->meta_file.size());
     stmt->Bind(3, part_info->data_file.data(), part_info->data_file.size());
@@ -466,11 +472,12 @@ CNCDBFile::GetAllDBParts(TNCDBPartsList* parts_list)
     CSQLITE_Statement stmt(this, sql);
     while (stmt.Step()) {
         SNCDBPartInfo info;
-        info.part_id     = stmt.GetInt8  (0);
-        info.meta_file   = stmt.GetString(1);
-        info.data_file   = stmt.GetString(2);
-        info.create_time = stmt.GetInt   (3);
-        info.min_blob_id = stmt.GetInt8  (4);
+        info.part_id       = stmt.GetInt8  (0);
+        info.meta_file     = stmt.GetString(1);
+        info.data_file     = stmt.GetString(2);
+        info.create_time   = stmt.GetInt   (3);
+        info.last_rot_time = info.create_time;
+        info.min_blob_id   = stmt.GetInt8  (4);
 
         parts_list->push_back(info);
     }
@@ -759,11 +766,9 @@ CNCFileSystem::CloseRealFile(sqlite3_file*& file)
 inline
 CNCFSOpenFile::CNCFSOpenFile(const string& file_name, bool force_sync_io)
     : m_Name(file_name),
-      m_ForcedSync(force_sync_io),
       m_RealFile(NULL),
       m_FirstPage(NULL),
-      m_DeleteOnClose(false),
-      m_Initialized(false)
+      m_Flags(fOpened | (force_sync_io? fForcedSync: 0))
 {
     if (force_sync_io)
         return;
@@ -830,7 +835,7 @@ CNCFSOpenFile::WriteFirstPage(Int8 offset, const void** data, int cnt)
     _ASSERT(offset <= m_Size  &&  offset < kNCSQLitePageSize);
     _ASSERT(offset == 0  &&  cnt == kNCSQLitePageSize);
 
-    if (m_Initialized) {
+    if (m_Flags & fInitialized) {
         // Only 16 bytes at offset of 24 bytes in first page of the database
         // are constantly re-read and re-written by SQLite. Everything else is
         // initialized at the database creation, is not changed furthermore
@@ -949,11 +954,19 @@ void
 CNCFileSystem::DeleteFileOnClose(const string& file_name)
 {
     CNCFSOpenFile* file = FindOpenFile(file_name.c_str());
+    bool need_delete = true;
     if (file) {
         _ASSERT(!file->IsForcedSync());
-        file->m_DeleteOnClose = true;
+        if (file->IsFileOpen()) {
+            file->m_Flags |= CNCFSOpenFile::fDeleteOnClose;
+            need_delete = false;
+        }
+        else {
+            x_RemoveFileFromList(file);
+            delete file;
+        }
     }
-    else {
+    if (need_delete) {
         CFile(file_name).Remove();
         // For the case of transferring of database from the previous
         // NetCache version.
@@ -967,9 +980,10 @@ CNCFileSystem::SetFileInitialized(const string& file_name)
     CNCFSOpenFile* file = FindOpenFile(file_name.c_str());
     if (!file) {
         file = OpenNewDBFile(file_name);
+        file->SetFileOpen(false);
     }
     _ASSERT(file);
-    file->m_Initialized = true;
+    file->m_Flags |= CNCFSOpenFile::fInitialized;
 }
 
 inline void
@@ -1021,7 +1035,7 @@ CNCFileSystem::x_DoCloseFile(SNCFSEvent* event)
 {
     CNCFSOpenFile* file = event->file;
     string file_name = file->m_Name;
-    bool need_delete = file->m_DeleteOnClose;
+    bool need_delete = (file->m_Flags & CNCFSOpenFile::fDeleteOnClose) != 0;
 
     x_RemoveFileFromList(file);
     delete file;
@@ -1072,7 +1086,10 @@ CNCFSVirtFile::Open(const char* name, int flags, int* out_flags)
     int read_flags = flags;
     if ((flags & SQLITE_OPEN_MAIN_JOURNAL) == 0) {
         m_WriteFile = CNCFileSystem::FindOpenFile(name);
-        if (!m_WriteFile) {
+        if (m_WriteFile) {
+            m_WriteFile->SetFileOpen();
+        }
+        else {
             m_WriteFile = CNCFileSystem::OpenNewDBFile(name);
         }
         _ASSERT(m_WriteFile);

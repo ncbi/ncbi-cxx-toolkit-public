@@ -453,10 +453,12 @@ private:
     /// Maximum time when command should finish execution or it will be
     /// timed out
     CTime                     m_MaxCmdTime;
+    /*
     /// Array of times spent in each handler state
     vector<double>            m_StateSpanStats;
     /// Timer to measure time spent in current state
     CStopWatch                m_StateSpanTimer;
+    */
 
     /// Storage to execute current command on
     CNCBlobStorage*           m_Storage;
@@ -690,6 +692,7 @@ CNCMessageHandler::x_GetState(void) const
 inline void
 CNCMessageHandler::x_SetState(EStates new_state)
 {
+    /*
     int old_state = x_GetState();
     if (m_StateSpanStats.size() <= size_t(old_state)) {
         m_StateSpanStats.resize(size_t(old_state + 1), 0);
@@ -698,15 +701,19 @@ CNCMessageHandler::x_SetState(EStates new_state)
 
     m_State = m_State - old_state + new_state;
     m_StateSpanTimer.Start();
+    */
+    m_State = (m_State & eAllFlagsMask) + new_state;
 }
 
 inline void
 CNCMessageHandler::x_CleanStateSpans(void)
 {
+    /*
     for (size_t i = 0; i < m_StateSpanStats.size(); ++i) {
         m_StateSpanStats[i] = 0;
     }
     m_StateSpanTimer.Start();
+    */
 }
 
 inline void

@@ -39,40 +39,6 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Class representing one statistical value.
-/// Object collects set of values and can return number of values in set,
-/// sum of all values, maximum value and average of all values.
-template <class T>
-class CNCDBStatFigure
-{
-public:
-    CNCDBStatFigure (void);
-
-    /// Add next value into the set.
-    void  AddValue  (T value);
-
-    /// Get number of values in the set.
-    Uint8 GetCount  (void) const;
-    /// Get sum of all values in the set.
-    T     GetSum    (void) const;
-    /// Get maximum value in the set.
-    T     GetMaximum(void) const;
-    /// Get average of all values in the set.
-    T     GetAverage(void) const;
-
-    /// Add all values from another set.
-    void  AddValues (const CNCDBStatFigure<T>& other);
-
-private:
-    /// Sum of all values collected.
-    T      m_ValuesSum;
-    /// Number of all values collected.
-    Uint8  m_ValuesCount;
-    /// Maximum value among collected.
-    T      m_ValuesMax;
-};
-
-
 /// Structure containing all statistics data collected by CNCDBStat.
 /// This data will be different for each thread (up to kNCMaxThreadsCnt
 /// instances).
@@ -83,84 +49,84 @@ struct SNCDBStatData
     /// Calculate percentage for given time out of total time spent in locks
     int CalcTimePercent(double time);
     /// Calculate percentage for total time inside given fgure
-    int CalcTimePercent(const CNCDBStatFigure<double>& time_fig);
+    int CalcTimePercent(const CNCStatFigure<double>& time_fig);
     /// Collect all data from here to another statistics object.
     void CollectTo(SNCDBStatData* dest);
 
 
     /// Main locking mutex for object
-    CSpinLock                         m_ObjLock;
+    CSpinLock                       m_ObjLock;
 
     /// Number of database parts
-    CNCDBStatFigure<Uint8>            m_NumOfDBParts;
+    CNCStatFigure<Uint8>            m_NumOfDBParts;
     /// Difference between the highest and lowest database part ids
-    CNCDBStatFigure<Int8>             m_DBPartsIdsSpan;
+    CNCStatFigure<Int8>             m_DBPartsIdsSpan;
     /// Size of individual meta file in database part
-    CNCDBStatFigure<Int8>             m_MetaFileSize;
+    CNCStatFigure<Int8>             m_MetaFileSize;
     /// Size of individual data file in database part
-    CNCDBStatFigure<Int8>             m_DataFileSize;
+    CNCStatFigure<Int8>             m_DataFileSize;
     /// Total size of all meta files in database
-    CNCDBStatFigure<Int8>             m_TotalMetaSize;
+    CNCStatFigure<Int8>             m_TotalMetaSize;
     /// Total size of all data files in database
-    CNCDBStatFigure<Int8>             m_TotalDataSize;
+    CNCStatFigure<Int8>             m_TotalDataSize;
     /// Total size of database
-    CNCDBStatFigure<Int8>             m_TotalDBSize;
+    CNCStatFigure<Int8>             m_TotalDBSize;
     /// Number of requests to lock blob
-    Uint8                             m_LockRequests;
+    Uint8                           m_LockRequests;
     /// Number of blob locks acquired
-    Uint8                             m_LocksAcquired;
+    Uint8                           m_LocksAcquired;
     /// Number of locks acquired for not existing blob
-    Uint8                             m_NotExistLocks;
+    Uint8                           m_NotExistLocks;
     /// Number of requests to lock blob made by GC
-    Uint8                             m_GCLockRequests;
+    Uint8                           m_GCLockRequests;
     /// Number of blob locks acquired by GC
-    Uint8                             m_GCLocksAcquired;
+    Uint8                           m_GCLocksAcquired;
     /// Total time between blob lock request and release
-    double                            m_LocksTotalTime;
+    double                          m_LocksTotalTime;
     /// Time while blob lock was waited to acquire
-    double                            m_LocksWaitedTime;
+    double                          m_LocksWaitedTime;
     /// Maximum size of blob operated at any moment by storage
-    size_t                            m_MaxBlobSize;
+    size_t                          m_MaxBlobSize;
     /// Maximum size of blob chunk operated at any moment by storage
-    size_t                            m_MaxChunkSize;
+    size_t                          m_MaxChunkSize;
     /// Number of blobs read from database
-    Uint8                             m_ReadBlobs;
+    Uint8                           m_ReadBlobs;
     /// Total size of data read from database (sum of sizes of all chunks)
-    Uint8                             m_ReadSize;
+    Uint8                           m_ReadSize;
     /// Number of blobs with reading aborted before blob is finished
-    Uint8                             m_StoppedReads;
+    Uint8                           m_StoppedReads;
     /// Distribution of number of blobs read by their size interval
-    vector<Uint8>                     m_ReadBySize;
+    vector<Uint8>                   m_ReadBySize;
     /// Time spent reading one piece of meta-information about blob
-    CNCDBStatFigure<double>           m_InfoReadTime;
+    CNCStatFigure<double>           m_InfoReadTime;
     /// Time spent reading one blob chunk
-    CNCDBStatFigure<double>           m_ChunkReadTime;
+    CNCStatFigure<double>           m_ChunkReadTime;
     /// Distribution of time spent reading chunks by their size interval
-    vector< CNCDBStatFigure<double> > m_ChunkRTimeBySize;
+    vector< CNCStatFigure<double> > m_ChunkRTimeBySize;
     /// Number of blobs written to database
-    Uint8                             m_WrittenBlobs;
+    Uint8                           m_WrittenBlobs;
     /// Total size of data written to database (sum of sizes of all chunks)
-    Uint8                             m_WrittenSize;
+    Uint8                           m_WrittenSize;
     /// Number of blobs with writing aborted before blob is finalized
-    Uint8                             m_StoppedWrites;
+    Uint8                           m_StoppedWrites;
     /// Distribution of number of blobs written by there size interval
-    vector<Uint8>                     m_WrittenBySize;
+    vector<Uint8>                   m_WrittenBySize;
     /// Time spent writing one piece of meta-information about blob
-    CNCDBStatFigure<double>           m_InfoWriteTime;
+    CNCStatFigure<double>           m_InfoWriteTime;
     /// Time spent writing one blob chunk
-    CNCDBStatFigure<double>           m_ChunkWriteTime;
+    CNCStatFigure<double>           m_ChunkWriteTime;
     /// Distribution of time spent writing chunks by their size interval
-    vector< CNCDBStatFigure<double> > m_ChunkWTimeBySize;
+    vector< CNCStatFigure<double> > m_ChunkWTimeBySize;
     /// Number of blobs deleted from database
-    Uint8                             m_DeletedBlobs;
+    Uint8                           m_DeletedBlobs;
     /// Total time spent on all database operations
-    double                            m_TotalDbTime;
+    double                          m_TotalDbTime;
     /// Number of blobs truncated down to lower size
-    Uint8                             m_TruncatedBlobs;
+    Uint8                           m_TruncatedBlobs;
     /// Number of create requests that have met already existing blob
-    Uint8                             m_CreateExists;
+    Uint8                           m_CreateExists;
     /// Number of checks for blob existence
-    Uint8                             m_ExistChecks;
+    Uint8                           m_ExistChecks;
 };
 
 
@@ -280,61 +246,6 @@ private:
     CStopWatch             m_Timer;
 };
 
-
-
-template <class T>
-inline
-CNCDBStatFigure<T>::CNCDBStatFigure(void)
-    : m_ValuesSum(0),
-      m_ValuesCount(0),
-      m_ValuesMax(0)
-{}
-
-template <class T>
-inline void
-CNCDBStatFigure<T>::AddValue(T value)
-{
-    m_ValuesSum += value;
-    ++m_ValuesCount;
-    m_ValuesMax = max(m_ValuesMax, value);
-}
-
-template <class T>
-inline void
-CNCDBStatFigure<T>::AddValues(const CNCDBStatFigure<T>& other)
-{
-    m_ValuesSum   += other.m_ValuesSum;
-    m_ValuesCount += other.m_ValuesCount;
-    m_ValuesMax    = max(other.m_ValuesMax, m_ValuesMax);
-}
-
-template <class T>
-inline Uint8
-CNCDBStatFigure<T>::GetCount(void) const
-{
-    return m_ValuesCount;
-}
-
-template <class T>
-inline T
-CNCDBStatFigure<T>::GetSum(void) const
-{
-    return m_ValuesSum;
-}
-
-template <class T>
-inline T
-CNCDBStatFigure<T>::GetMaximum(void) const
-{
-    return m_ValuesMax;
-}
-
-template <class T>
-inline T
-CNCDBStatFigure<T>::GetAverage(void) const
-{
-    return m_ValuesCount == 0? 0: T(m_ValuesSum / m_ValuesCount);
-}
 
 
 

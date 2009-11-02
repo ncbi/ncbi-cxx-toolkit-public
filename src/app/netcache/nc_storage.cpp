@@ -519,7 +519,7 @@ CNCBlobStorage::x_RotateDBParts(bool force_rotate /* = false */)
 {
     SNCDBPartInfo& last_part = m_DBParts.back();
     if (!force_rotate
-        &&  int(time(NULL)) - last_part.create_time < m_DBRotatePeriod)
+        &&  int(time(NULL)) - last_part.last_rot_time < m_DBRotatePeriod)
     {
         return;
     }
@@ -546,6 +546,8 @@ CNCBlobStorage::x_RotateDBParts(bool force_rotate /* = false */)
         }
     }
     else {
+        last_part.last_rot_time = int(time(NULL));
+        /*
         try {
             m_IndexDB->UpdateDBPartCreated(&last_part);
         }
@@ -553,6 +555,7 @@ CNCBlobStorage::x_RotateDBParts(bool force_rotate /* = false */)
             x_MonitorError(ex,
                 "BG: Index database does not update date created");
         }
+        */
     }
 }
 
