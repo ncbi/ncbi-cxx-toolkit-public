@@ -55,6 +55,35 @@ struct SMinScor {
 };
 
 
+// redefine STL algorithms to take Function Object pointer to allow for inheritance
+
+template <class Container, class Predicate>
+void remove_if(Container& c, Predicate* __pred)
+{
+    typedef typename Container::iterator Iterator;
+    Iterator __first = c.begin();
+    Iterator __last = c.end();
+    while (__first != __last) {
+        if ((*__pred)(*__first))
+            __first = c.erase(__first);
+        else
+            ++__first;
+    }
+    delete __pred;
+}
+
+template <class Container, class UnaryFunction>
+void transform(Container& c,  UnaryFunction* op)
+{
+    typedef typename Container::iterator Iterator;
+    Iterator __first = c.begin();
+    Iterator __last = c.end();
+    for (;__first != __last;++__first)
+	(*op)(*__first);
+    delete op;
+}
+
+////////////////////////////////////////////////////////////////////////
 class NCBI_XALGOGNOMON_EXPORT CChainer {
 public:
     CChainer();
@@ -72,12 +101,20 @@ public:
     void SetGenomic(const CSeq_id& seqid);
     void SetGenomicRange(const TAlignModelList& alignments);
 
+    struct TransformFunction : public unary_function<CAlignModel&, CAlignModel&> {
+        virtual ~TransformFunction() {}
+        virtual CAlignModel& operator()(CAlignModel& a) { return a; }
+    };
+    struct Predicate : public unary_function<CAlignModel&, bool> {
+        virtual ~Predicate() {}
+        virtual bool operator()(CAlignModel& a) { return false; }
+    };
 
-    void TrimAlignments(TAlignModelList& alignments);
-    void DoNotBelieveShortPolyATails(TAlignModelList& alignments);
-    void FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments);
-    void ProjectCDSes(TAlignModelList& alignments);
-    void DoNotBelieveFrameShiftsWithoutCdsEvidence(TAlignModelList& alignments);
+    TransformFunction* TrimAlignment();
+    TransformFunction* DoNotBelieveShortPolyATail();
+    Predicate* OverlapsSameAccessionAlignment(TAlignModelList& alignments);
+    TransformFunction* ProjectCDS();
+    TransformFunction* DoNotBelieveFrameShiftsWithoutCdsEvidence();
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
     void FilterOutChimeras(TGeneModelList& clust);
     void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);

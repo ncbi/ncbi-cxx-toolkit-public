@@ -61,12 +61,6 @@ public:
     CChainerImpl();
     void SetGenomicRange(const TAlignModelList& alignments);
 
-    void TrimAlignments(TAlignModelList& alignments);
-    void DoNotBelieveShortPolyATails(TAlignModelList& alignments);
-
-    void FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments);
-    void ProjectCDSes(TAlignModelList& alignments);
-    void DoNotBelieveFrameShiftsWithoutCdsEvidence(TAlignModelList& alignments);
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
 
     void FilterOutChimeras(TGeneModelList& clust);
@@ -96,8 +90,6 @@ private:
     void AddFShifts(TGeneModelList& clust, const TInDels& fshifts);
     void CollectFShifts(const TGeneModelList& clust, TInDels& fshifts);
     void SplitAlignmentsByStrand(const TGeneModelList& clust, TGeneModelList& clust_plus, TGeneModelList& clust_minus);
-    double InframeFraction(const CGeneModel& a, TSignedSeqPos left, TSignedSeqPos right);
-    void ProjectCDS(const map<string,TSignedSeqRange>& mrnaCDS, CAlignModel& align);
 
     CRef<CHMMParameters> hmm_params;
     CRef<CScope> m_scope;
@@ -1380,38 +1372,40 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
     }
 }
 
-void CChainer::FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments)
-{
-    m_data->FilterOverlappingSameAccessionAlignment(alignments);
-}
+struct OverlapsSameAccessionAlignment : public CChainer::Predicate {
+    OverlapsSameAccessionAlignment(TAlignModelList& alignments);
+    virtual bool operator()(CAlignModel& align);
+};
 
-void CChainer::CChainerImpl::FilterOverlappingSameAccessionAlignment(TAlignModelList& alignments)
+OverlapsSameAccessionAlignment::OverlapsSameAccessionAlignment(TAlignModelList& alignments)
 {
     alignments.sort(s_ByAccVerLen);
 
     TAlignModelList::iterator first = alignments.begin();
-    TAlignModelList::iterator current = first; ++current;
     pair<string,int> first_accver = GetAccVer(first->TargetAccession());
-    while (current != alignments.end()) {
+    TAlignModelList::iterator current = first; ++current;
+    for (; current != alignments.end(); ++current) {
         pair<string,int> current_accver = GetAccVer(current->TargetAccession());
         if (first_accver.first == current_accver.first) {
             if (current->Limits().IntersectingWith(first->Limits())) {
-                SkipReason(&*current,"Overlaps the same alignment");
-                current = alignments.erase(current);
-            } else {
-                ++current;
+                current->Status() |= CGeneModel::eSkipped;
+                current->AddComment("Overlaps the same alignment");
             }
         } else {
-            ++first;
-            if (first==current) {
-                first_accver = current_accver;
-            } else {
-                first_accver = GetAccVer(first->TargetAccession()); 
-                current = first;
-            }
-            current = first; ++current;
+            first=current;
+            first_accver = current_accver;
         }
     }
+}
+
+bool OverlapsSameAccessionAlignment::operator()(CAlignModel& align)
+{
+    return align.Status() & CGeneModel::eSkipped;
+}
+
+CChainer::Predicate* CChainer::OverlapsSameAccessionAlignment(TAlignModelList& alignments)
+{
+    return new gnomon::OverlapsSameAccessionAlignment(alignments);
 }
 
 bool CChainer::CChainerImpl::HasShortIntron(const CGeneModel& algn)
@@ -1773,7 +1767,7 @@ void CChainer::CChainerImpl::SplitAlignmentsByStrand(const TGeneModelList& clust
 //     }
 // } 
 
-double CChainer::CChainerImpl::InframeFraction(const CGeneModel& a, TSignedSeqPos left, TSignedSeqPos right)
+double InframeFraction(const CGeneModel& a, TSignedSeqPos left, TSignedSeqPos right)
 {
     if(a.FrameShifts().empty())
         return 1.0;
@@ -1807,11 +1801,21 @@ double CChainer::CChainerImpl::InframeFraction(const CGeneModel& a, TSignedSeqPo
     return double(inframelength)/(inframelength + outframelength);
 }
 
-void CChainer::CChainerImpl::ProjectCDS(const map<string, TSignedSeqRange>& mrnaCDS, CAlignModel& align)
+struct ProjectCDS : public CChainer::TransformFunction {
+    ProjectCDS(double _mininframefrac, const CResidueVec& _seq, const map<string, TSignedSeqRange>& _mrnaCDS)
+        : mininframefrac(_mininframefrac), seq(_seq), mrnaCDS(_mrnaCDS) {}
+
+    double mininframefrac;
+    const CResidueVec& seq;
+    const map<string, TSignedSeqRange>& mrnaCDS;
+    virtual CAlignModel& operator()(CAlignModel& align);
+};
+
+CAlignModel& ProjectCDS::operator()(CAlignModel& align)
 {
     if ((align.Type()&CAlignModel::eProt)!=0)
-        return;
-        
+        return align;
+    
     if ((align.Type()&CAlignModel::emRNA)!=0 && (align.Status()&CAlignModel::eReversed)==0) {
         string accession = align.TargetAccession();
         map<string,TSignedSeqRange>::const_iterator pos = mrnaCDS.find(accession);
@@ -1828,9 +1832,9 @@ void CChainer::CChainerImpl::ProjectCDS(const map<string, TSignedSeqRange>& mrna
             align.FrameShifts().clear();
             
             if(left < 0 || right < 0)     // start or stop cannot be projected  
-                return;
+                return align;
             if(left < align.Limits().GetFrom() || right >  align.Limits().GetTo())    // cds is clipped
-                return;
+                return align;
             
             a.Clip(TSignedSeqRange(left,right),CGeneModel::eRemoveExons);
 
@@ -1839,22 +1843,22 @@ void CChainer::CChainerImpl::ProjectCDS(const map<string, TSignedSeqRange>& mrna
             //            }
 
             if (InframeFraction(a, left, right) < mininframefrac)
-                return;
+                return align;
             
             a.FrameShifts().clear();                       // clear notshifted indels   
             CAlignMap cdsmap(a.GetAlignMap());
             CResidueVec cds;
-            cdsmap.EditedSequence(gnomon->GetSeq(),cds);
+            cdsmap.EditedSequence(seq, cds);
             unsigned int length = cds.size();
             
             if(length%3 != 0)
-                return;
+                return align;
             
             if(!IsStartCodon(&cds[0]) || !IsStopCodon(&cds[length-3]) )   // start or stop on genome is not right
-                return;
+                return align;
 
             for(unsigned int i = 0; i < length-3; i += 3) {
-                if(IsStopCodon(&cds[i])) return;                // premature stop on genome
+                if(IsStopCodon(&cds[i])) return align;                // premature stop on genome
             }
             
             TSignedSeqRange reading_frame = cdsmap.MapRangeEditedToOrig(TSignedSeqRange(3,length-4));
@@ -1867,9 +1871,10 @@ void CChainer::CChainerImpl::ProjectCDS(const map<string, TSignedSeqRange>& mrna
             cdsinfo.SetStop(stop,true);
             align.SetCdsInfo(cdsinfo);
             
-            return;
+            return align;
         }
     }
+    return align;
 }
 
 void CChainer::FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains)
@@ -1906,7 +1911,7 @@ void CChainer::CChainerImpl::FilterOutBadScoreChainsHavingBetterCompatibles(TGen
 }
           
 
-struct TrimAlignment : public unary_function<CAlignModel&, CAlignModel&> {
+struct TrimAlignment : public CChainer::TransformFunction {
 public:
     TrimAlignment(int a_trim, const CResidueVec& a_seq, const map<string,TSignedSeqRange>& a_mrnaCDS) : trim(a_trim), seq(a_seq), mrnaCDS(a_mrnaCDS)  {}
     int trim;
@@ -1931,7 +1936,7 @@ public:
         return new_to;
     }
 
-    CAlignModel& operator() (CAlignModel& align)
+    virtual CAlignModel& operator() (CAlignModel& align)
     {
         TSignedSeqRange limits = align.Limits();
         CAlignMap alignmap(align.GetAlignMap());
@@ -2025,32 +2030,29 @@ public:
     }
 };
 
-void CChainer::TrimAlignments(TAlignModelList& alignments)
+CChainer::TransformFunction* CChainer::TrimAlignment()
 {
-    m_data->TrimAlignments(alignments);
+    return new gnomon::TrimAlignment(m_data->trim, m_data->gnomon->GetSeq(), m_data->mrnaCDS);
 }
 
-void CChainer::CChainerImpl::TrimAlignments(TAlignModelList& alignments)
-{
-    transform(alignments.begin(), alignments.end(), alignments.begin(),
-              TrimAlignment(trim, gnomon->GetSeq(), mrnaCDS));
-}
+struct DoNotBelieveShortPolyATail : public CChainer::TransformFunction {
+    DoNotBelieveShortPolyATail(int _minpolya) : minpolya(_minpolya) {}
 
-void CChainer::DoNotBelieveShortPolyATails(TAlignModelList& alignments)
-{
-    m_data->DoNotBelieveShortPolyATails(alignments);
-}
-
-void CChainer::CChainerImpl::DoNotBelieveShortPolyATails(TAlignModelList& alignments)
-{
-    NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
-        
-        int polyalen = i->PolyALen();
-        if ((i->Status() & CGeneModel::ePolyA) != 0  &&
+    int minpolya;
+    virtual CAlignModel& operator()(CAlignModel& align)
+    {
+        int polyalen = align.PolyALen();
+        if ((align.Status() & CGeneModel::ePolyA) != 0  &&
             polyalen < minpolya) {
-            i->Status() ^= CGeneModel::ePolyA;
+            align.Status() ^= CGeneModel::ePolyA;
         }
+        return align;
     }
+};
+
+CChainer::TransformFunction* CChainer::DoNotBelieveShortPolyATail()
+{
+    return new gnomon::DoNotBelieveShortPolyATail(m_data->minpolya);
 }
 
 void CChainer::SetGenomicRange(const TAlignModelList& alignments)
@@ -2070,32 +2072,23 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
     orig_aligns.clear();
 }
 
-void CChainer::ProjectCDSes(TAlignModelList& alignments)
+CChainer::TransformFunction* CChainer::ProjectCDS()
 {
-    m_data->ProjectCDSes(alignments);
+    return new gnomon::ProjectCDS(m_data->mininframefrac, m_data->gnomon->GetSeq(), m_data->mrnaCDS);
 }
 
-void CChainer::CChainerImpl::ProjectCDSes(TAlignModelList& alignments)
-{
-    NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
-        CAlignModel& aa = *i;
-
-        ProjectCDS(mrnaCDS, aa);
+struct DoNotBelieveFrameShiftsWithoutCdsEvidence : public CChainer::TransformFunction {
+    virtual CAlignModel& operator()(CAlignModel& align)
+    {
+        if (align.ReadingFrame().Empty())
+            align.FrameShifts().clear();
+        return align;
     }
-}
+};
 
-void CChainer::DoNotBelieveFrameShiftsWithoutCdsEvidence(TAlignModelList& alignments)
+CChainer::TransformFunction* CChainer::DoNotBelieveFrameShiftsWithoutCdsEvidence()
 {
-    m_data->DoNotBelieveFrameShiftsWithoutCdsEvidence(alignments);
-}
-
-void CChainer::CChainerImpl::DoNotBelieveFrameShiftsWithoutCdsEvidence(TAlignModelList& alignments)
-{
-    NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
-        CAlignModel& aa = *i;
-        if (aa.ReadingFrame().Empty())
-            aa.FrameShifts().clear();
-    }
+    return new gnomon::DoNotBelieveFrameShiftsWithoutCdsEvidence();
 }
 
 void CChainer::DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models)
