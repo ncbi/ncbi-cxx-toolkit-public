@@ -15,7 +15,7 @@ APP: test_xslt tree_parsing xml_generation xslt_transformation
 
 LIB: libxmlwrapp.a
 
-DEFAULT_CONFIGURATIONS: Linux32:plain-ICC  Linux64:plain-ICC  SunOSx86:plain-WS64 SunOSSparc:plain-WS64
+DEFAULT_CONFIGURATIONS: Linux32-Suse:plain-ICC  Linux64-Suse:plain-ICC  SunOSx86:plain-WS64 SunOSSparc:plain-WS64
 
 # Each line describes a single configuration
 # The format is as follows:
