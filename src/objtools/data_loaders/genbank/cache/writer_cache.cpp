@@ -138,8 +138,14 @@ namespace {
     class CStoreBuffer {
     public:
         CStoreBuffer(void)
-            : m_Ptr(m_Buffer)
+            : m_Buffer(m_Buffer0),
+              m_End(m_Buffer0+sizeof(m_Buffer0)),
+              m_Ptr(m_Buffer)
             {
+            }
+        ~CStoreBuffer(void)
+            {
+                x_FreeBuffer();
             }
         
         const char* data(void) const
@@ -150,7 +156,7 @@ namespace {
             {
                 return m_Ptr - m_Buffer;
             }
-        void CheckStore(size_t size) const;
+        void CheckStore(size_t size);
         void StoreUint4(Uint4 v)
             {
                 CheckStore(4);
@@ -170,6 +176,7 @@ namespace {
             }
 
     protected:
+        void x_FreeBuffer(void);
         void x_StoreUint4(Uint4 v)
             {
                 m_Ptr[0] = v>>24;
@@ -183,16 +190,34 @@ namespace {
         CStoreBuffer(const CStoreBuffer&);
         void operator=(const CStoreBuffer&);
 
-        char m_Buffer[4096];
+        char m_Buffer0[256];
+        char* m_Buffer;
+        char* m_End;
         char* m_Ptr;
     };
 
     
-    void CStoreBuffer::CheckStore(size_t size) const
+    void CStoreBuffer::CheckStore(size_t add)
     {
-        if ( m_Ptr + size > m_Buffer + sizeof(m_Buffer) ) {
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "store buffer overflow");
+        if ( m_Ptr + add > m_End ) {
+            size_t old_size = size();
+            size_t new_size = (old_size+add)*2;
+            char* new_buf = new char[new_size];
+            memcpy(new_buf, data(), old_size);
+            x_FreeBuffer();
+            m_Buffer = new_buf;
+            m_Ptr = new_buf + old_size;
+            m_End = new_buf + new_size;
+        }
+        _ASSERT(m_Ptr + add <= m_End);
+    }
+
+
+    void CStoreBuffer::x_FreeBuffer(void)
+    {
+        if ( m_Buffer != m_Buffer0 ) {
+            delete[] m_Buffer;
+            m_Buffer = m_End = m_Ptr = 0;
         }
     }
 }
