@@ -168,16 +168,14 @@ BOOST_AUTO_TEST_CASE(Test_Translator_Raw)
 
             /// use CSeqTranslator::Translate()
             tmp.clear();
-            CSeqTranslator::Translate(nucleotide_sequence, tmp,
-                                      NULL, false, true);
+            CSeqTranslator::Translate(nucleotide_sequence, tmp, CSeqTranslator::fNoStop | CSeqTranslator::fRemoveTrailingX);
 
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
 
             /// use CSeqTranslator::Translate(), include the stop codon
             real_prot_seq += '*';
             tmp.clear();
-            CSeqTranslator::Translate(nucleotide_sequence, tmp,
-                                      NULL, true, true);
+            CSeqTranslator::Translate(nucleotide_sequence, tmp, CSeqTranslator::fRemoveTrailingX);
 
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
         }
@@ -220,15 +218,13 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeqVector)
 
             /// use CSeqTranslator::Translate()
             tmp.clear();
-            CSeqTranslator::Translate(vec, tmp,
-                                      NULL, false, true);
+            CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fNoStop | CSeqTranslator::fRemoveTrailingX);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
 
             /// use CSeqTranslator::Translate()
             real_prot_seq += '*';
             tmp.clear();
-            CSeqTranslator::Translate(vec, tmp,
-                                      NULL, true, true);
+            CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fRemoveTrailingX);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
         }
     }

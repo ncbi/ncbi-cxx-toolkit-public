@@ -2728,8 +2728,8 @@ void CSeqTranslator::Translate(const string& seq, string& prot,
 
 void CSeqTranslator::Translate(const string& seq,
                                string& prot,
-                               const CGenetic_code* code,
                                TTranslationFlags flags,
+                               const CGenetic_code* code,
                                bool* alt_start)
 {
     x_Translate(seq, prot, 0, code,
@@ -2753,8 +2753,8 @@ void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
 
 
 void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
-                               const CGenetic_code* code,
                                TTranslationFlags flags,
+                               const CGenetic_code* code,
                                bool* alt_start)
 {
     x_Translate(seq, prot, 0, code,

@@ -801,10 +801,10 @@ public:
     ///   If true, only translate first codon if start codon, otherwise translate
     ///   as dash (-) to indicate problem with sequence
 
-    static void Translate(const string& seq,
+    NCBI_DEPRECATED static void Translate(const string& seq,
                           string& prot,
-                          const CGenetic_code* code = NULL,
-                          bool include_stop = true,
+                          const CGenetic_code* code,
+                          bool include_stop,
                           bool remove_trailing_X = false,
                           bool* alt_start = NULL,
                           bool is_5prime_complete = true);
@@ -820,8 +820,8 @@ public:
     ///   Pointer to bool to indicate whether an alternative start codon was used
     static void Translate(const string& seq,
                           string& prot,
-                          const CGenetic_code* code,
-                          TTranslationFlags flags,
+                          TTranslationFlags flags = fDefault,
+                          const CGenetic_code* code = NULL,
                           bool* alt_start = NULL);
 
     /// Translate a seq-vector using a specified genetic code
@@ -839,10 +839,10 @@ public:
     /// @param is_5prime_complete
     ///   If true, only translate first codon if start codon, otherwise translate
     ///   as dash (-) to indicate problem with sequence
-    static void Translate(const CSeqVector& seq,
+    NCBI_DEPRECATED static void Translate(const CSeqVector& seq,
                           string& prot,
-                          const CGenetic_code* code = NULL,
-                          bool include_stop = true,
+                          const CGenetic_code* code,
+                          bool include_stop,
                           bool remove_trailing_X = false,
                           bool* alt_start = NULL,
                           bool is_5prime_complete = true);
@@ -859,8 +859,8 @@ public:
     ///   Pointer to bool to indicate whether an alternative start codon was used
     static void Translate(const CSeqVector& seq,
                           string& prot,
-                          const CGenetic_code* code,
-                          TTranslationFlags flags,
+                          TTranslationFlags flags = fDefault,
+                          const CGenetic_code* code = NULL,
                           bool* alt_start = NULL);
 
     /// utility function: translate a given location on a sequence
