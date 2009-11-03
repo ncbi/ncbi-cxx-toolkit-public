@@ -1,27 +1,48 @@
-#ifndef OLIGOFAR_IALIGNER__HPP
-#define OLIGOFAR_IALIGNER__HPP
+#ifndef OLIGOFAR__IALIGNER__HPP
+#define OLIGOFAR__IALIGNER__HPP
 
-#include "talignerbase.hpp"
+#include "cseqcoding.hpp"
+#include "ctranscript.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
-class IAligner 
+class CScoringFactory;
+class IAligner
 {
 public:
-	IAligner() : m_bestQueryScore(0) {}
-	virtual ~IAligner() {}
-	// qlen, slen should be negative for reverse strand
-	virtual void Align( CSeqCoding::ECoding qenc, const char * qseq, int qlen, 
-						CSeqCoding::ECoding send, const char * sseq, int slen, int flags ) = 0; 
-	const CAlignerBase& GetAlignerBase() const { return m_alignerBase; }
-	void SetScoreTbl( CScoreTbl& scoreTbl ) { m_alignerBase.SetScoreTbl( scoreTbl ); }
-    void SelectBasicScoreTables( int tbl ) { m_alignerBase.SelectBasicScoreTables( tbl ); }
-	void SetBestPossibleQueryScore( double s ) { m_bestQueryScore = s; }
-	double GetBestPossibleQueryScore() const { return m_bestQueryScore; }
-    int GetBasicScoreTables() const { return m_alignerBase.GetBasicScoreTables(); }
-protected:
-	CAlignerBase m_alignerBase;
-	double m_bestQueryScore;
+    typedef TTrSequence TTranscript;
+    virtual ~IAligner() {}
+
+
+    // this should be used for following purposes:
+    // * retrieve scoring parameters 
+    // * retrieve scoring function according to:
+    //   - query strand
+    //   - bisulfite treatment mode according to hash word type (AG|TC)
+    //   - all this for the given coding
+    virtual CScoringFactory * GetScoringFactory() const = 0;
+    
+    virtual void SetWordDistance( int k ) = 0;
+
+    virtual void SetQueryCoding( CSeqCoding::ECoding ) = 0;
+    virtual void SetSubjectCoding( CSeqCoding::ECoding ) = 0;
+    virtual void SetQueryStrand( CSeqCoding::EStrand ) = 0;
+    virtual void SetSubjectStrand( CSeqCoding::EStrand ) = 0;
+    virtual void SetQuery( const char * begin, int len ) = 0;
+    virtual void SetSubject( const char * begin, int len ) = 0;
+    virtual void SetPenaltyLimit( double limit ) = 0;
+    virtual void SetSubjectAnchor( int first, int last ) = 0; // last is included, should clear guide transcript 
+    virtual void SetQueryAnchor( int first, int last ) = 0; // last is included, should clear guide transcript
+    virtual void SetSubjectGuideTranscript( const TTranscript& tr ) = 0;
+
+    virtual bool Align() = 0;
+    
+    virtual double GetPenalty() const = 0;
+    virtual int GetSubjectFrom() const = 0;
+    virtual int GetSubjectTo() const = 0;
+    virtual int GetQueryFrom() const = 0;
+    virtual int GetQueryTo() const = 0;
+    virtual const TTranscript& GetSubjectTranscript() const = 0;
 };
 
 END_OLIGOFAR_SCOPES

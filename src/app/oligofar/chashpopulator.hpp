@@ -1,6 +1,7 @@
 #ifndef OLIGOFAR_CHASHPOPULATOR__HPP
 #define OLIGOFAR_CHASHPOPULATOR__HPP
 
+#include "cbitmaskaccess.hpp"
 #include "cpermutator8b.hpp"
 #include "chashatom.hpp"
 
@@ -26,7 +27,8 @@ public:
                     int strands,
                     int offset,
                     int component,
-                    CHashAtom::EConv conv ) :
+                    CHashAtom::EConv conv,
+                    CBitmaskAccess * bmAccess ) :
         m_query( query ),
         m_windowSize( windowSize ),
         m_wordSize( wordSize ),
@@ -36,11 +38,13 @@ public:
         m_windowMask( CBitHacks::WordFootprint<UintH>( 4 * windowSize ) ),
         m_wordMask( CBitHacks::WordFootprint<Uint8>( 2 * wordSize ) ),
         m_permutator( 0 ),
-        m_indel( CHashAtom::eNoIndel ),
-        m_flags( conv | ( component ? CHashAtom::fFlag_pairMate1 : CHashAtom::fFlag_pairMate0 ) )
+        m_gaps( 0 ),
+        m_gapType( CHashAtom::eNone ),
+        m_flags( conv | ( component ? CHashAtom::fFlag_pairMate1 : CHashAtom::fFlag_pairMate0 ) ),
+        m_wbmAccess( bmAccess )
         {}
     CHashPopulator& SetPermutator( const CPermutator8b * p ) { m_permutator = p; return *this; }
-    CHashPopulator& SetIndel( CHashAtom::EIndel i ) { m_indel = i; return *this; }
+    CHashPopulator& SetIndels( int gaps, CHashAtom::EGapType t ) { m_gaps = gaps; m_gapType = t; return *this; }
     CHashPopulator& Reserve( size_t count ) { m_data.reserve( count ); return *this; }
     
     THashList& SetData() { return m_data; }
@@ -55,6 +59,9 @@ public:
     void PopulateHash( const UintH& window );
 
     void operator() ( Uint8 hash, int mism, int amb );
+    void SetConv( CHashAtom::EConv conv ) {
+        m_flags = ( m_flags & ~CHashAtom::fMask_convert ) | conv;
+    }
 
     void Print( ostream& o ) const;
     static void Print( ostream& o, const value_type& );
@@ -72,8 +79,10 @@ protected:
     UintH m_windowMask; // 4bpp
     Uint8 m_wordMask;   // 2bpp
     const CPermutator8b * m_permutator;
-    CHashAtom::EIndel m_indel;
+    Uint1 m_gaps;
+    CHashAtom::EGapType m_gapType;
     Uint1 m_flags;
+    CBitmaskAccess * m_wbmAccess;
     THashList m_data;
 };
 
@@ -102,6 +111,7 @@ inline bool CHashPopulator::Less( const value_type& a, const value_type& b )
     
     if( a.first < b.first ) return true;
     if( a.first > b.first ) return false;
+
     if( a.second.GetOffset() < b.second.GetOffset() ) return true;
     if( a.second.GetOffset() > b.second.GetOffset() ) return false;
     if( a.second.GetStrandId() < b.second.GetStrandId() ) return true;
@@ -110,13 +120,8 @@ inline bool CHashPopulator::Less( const value_type& a, const value_type& b )
     if( a.second.GetWordId() > b.second.GetWordId() ) return false;
     if( a.second.GetConv() < b.second.GetConv() ) return true;
     if( a.second.GetConv() > b.second.GetConv() ) return false;
-    /*
-    if( a.second.GetIndel() < b.second.GetIndel() ) return true;
-    if( a.second.GetIndel() > b.second.GetIndel() ) return false;
-    if( a.second.GetMismatches() < b.second.GetMismatches() ) return true;
-    if( a.second.GetMismatches() > b.second.GetMismatches() ) return false;
-    */
-    return false;
+    // NB: we should distinguish different word qualities to help find better first
+    return CHashAtom::LessDiffs( a.second, b.second );
 }
 
 inline bool CHashPopulator::Same( const value_type& a, const value_type& b ) 
@@ -127,8 +132,8 @@ inline bool CHashPopulator::Same( const value_type& a, const value_type& b )
         a.second.GetWordId() == b.second.GetWordId() && 
         a.second.GetConv() == b.second.GetConv() && 
         a.second.GetStrandId() == b.second.GetStrandId() &&
-     //   a.second.GetIndel() == b.second.GetIndel()
-        true ;
+        // following line SHOULD be present since it affects alignment code
+        CHashAtom::EqualDiffs( a.second, b.second );
 }
 
 inline void CHashPopulator::PopulateHash( const UintH& window )
@@ -156,14 +161,16 @@ inline void CHashPopulator::PopulateHash( const UintH& window )
 
 inline void CHashPopulator::operator () ( Uint8 hash, int mism, int amb )
 {
+    if( m_wbmAccess != 0 && ! m_wbmAccess->HasWord( hash ) ) return;
+
     if( m_wordSize == m_windowSize ) {
-        CHashAtom a(m_query, m_flags, m_stride + m_offset, mism, m_indel );
+        CHashAtom a(m_query, m_flags, m_stride + m_offset, mism, m_gaps, m_gapType );
         m_data.push_back( make_pair( hash, a  ) );
     } else {
         int o = m_windowSize - m_wordSize;
         int o0 = o, o1 = 0;
-        CHashAtom a0( m_query, m_flags | CHashAtom::fFlag_wordId0, m_stride + m_offset, mism, m_indel );
-        CHashAtom a1( m_query, m_flags | CHashAtom::fFlag_wordId1, m_stride + m_offset, mism, m_indel );
+        CHashAtom a0( m_query, m_flags | CHashAtom::fFlag_wordId0, m_stride + m_offset, mism, m_gaps, m_gapType );
+        CHashAtom a1( m_query, m_flags | CHashAtom::fFlag_wordId1, m_stride + m_offset, mism, m_gaps, m_gapType );
         m_data.push_back( make_pair( (hash >> unsigned(o0*2)) & m_wordMask, a0 ) );
         m_data.push_back( make_pair( (hash >> unsigned(o1*2)) & m_wordMask, a1 ) );
     }

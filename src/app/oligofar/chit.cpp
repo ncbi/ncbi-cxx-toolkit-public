@@ -21,7 +21,8 @@ CHit::~CHit() {
     delete m_next; 
     delete m_target[0];
     delete m_target[1];
-    if( !IsNull() ) --s_count; 
+//    if( !IsNull() ) 
+        --s_count; 
 }
 
 CHit::CHit( CQuery* q ) : 
@@ -30,10 +31,10 @@ CHit::CHit( CQuery* q ) :
     m_score[0] = m_score[1] = 0;
     m_length[0] = m_length[1] = 0;
     m_target[0] = m_target[1] = 0;
-//        ++s_count;
+    ++s_count;
 }
 
-CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to, int convTbl ) : 
+CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to, int convTbl, const TTranscript& trans ) : 
     m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), 
     m_fullFrom( from ), m_fullTo( to ),
     m_flags( ( fComponent_1 << pairmate ) | ( (3&convTbl) << kAlign_convTbl1_bit ) )
@@ -51,16 +52,19 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int t
     m_score[pairmate] = float( score );
     m_score[!pairmate] = 0;
     m_target[0] = m_target[1] = 0;
+    m_transcript[pairmate].Assign( trans );
     ++s_count;
 }
 
-CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int convTbl1, double score2, int from2, int to2, int convTbl2 ) : 
+CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int convTbl1, double score2, int from2, int to2, int convTbl2, const TTranscript& tr1, const TTranscript& tr2 ) : 
     m_query( q ), m_next( 0 ), m_seqOrd( seqOrd ), m_flags( fPairedHit | ((3&convTbl1) << kAlign_convTbl1_bit) | ((3&convTbl2) << kAlign_convTbl2_bit))
 {
     ASSERT( m_seqOrd != ~0U );
     m_score[0] = float( score1 );
     m_score[1] = float( score2 );
     m_target[0] = m_target[1] = 0;
+    m_transcript[0].Assign( tr1 );
+    m_transcript[1].Assign( tr2 );
     if( from1 > to1 ) {
         m_flags |= fRead1_reverse;
         m_length[0] = from1 - to1 + 1;
@@ -81,11 +85,11 @@ CHit::CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int conv
     case fRead1_reverse|fRead2_reverse: x_SetValues( to1, from1, to2, from2 ); break;
     default: THROW( logic_error, "Oops here!" );
     }
-    //ASSERT( (m_flags&fReads_overlap) == 0 );
+    ASSERT( (m_flags&fReads_overlap) == 0 );
     ++s_count;
 }
 
-void CHit::SetPairmate( int pairmate, double score, int from, int to, int convTbl )
+void CHit::SetPairmate( int pairmate, double score, int from, int to, int convTbl, const TTranscript& tr )
 {
     ASSERT( m_score[pairmate] <= score );
     ASSERT( (pairmate&~1) == 0 );
@@ -140,6 +144,7 @@ void CHit::SetPairmate( int pairmate, double score, int from, int to, int convTb
         }
     }
     m_score[pairmate] = float( score );
+    m_transcript[pairmate] = tr;
     ASSERT( (m_flags&fReads_overlap) == 0 );
 }
 
@@ -158,16 +163,14 @@ void CHit::x_SetValues( int min1, int max1, int min2, int max2 )
         m_fullFrom = min( min1, min2 );
         m_fullTo = max( max1, max2 );
         m_flags |= fReads_overlap;
-        cerr << "\n\x1b[31mA reads-to overlap!\x1b[0m\n";
+        cerr << "\n\x1b[31mReads overlap: one is subsequence of the other: [" << min1 << ".." << max1 << "] & [" << min2 << ".." << max2 << "]\x1b[0m\n";
     }
 }
 
 void CHit::SetTarget( int pairmate, const char * begin, const char * end ) 
 { 
-    if( begin == 0 || !HasComponent( pairmate ) ) {
-        m_target[pairmate] = 0;
-        return;
-    }
+    if( m_target[pairmate] ) { delete m_target[pairmate]; m_target[pairmate] = 0; }
+    if( begin == 0 || !HasComponent( pairmate ) ) { return; }
     int b = min( GetFrom( pairmate ), GetTo( pairmate ) );
     int l = abs( GetFrom( pairmate ) - GetTo( pairmate ) ) + 1;
     int p = 0, s = 0;

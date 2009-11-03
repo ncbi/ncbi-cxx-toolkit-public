@@ -20,12 +20,12 @@ public:
     CSnpDbBase( ESeqIdType type = eSeqId_integer, const string& idprefix = "gi|", const string& idsuffix = "|" );
 
     string GetSeqId() const;
-
+    
     int    GetPos() const { return m_pos; }
     float  GetProb( int i ) const { return m_prob[i]; }
 
-    unsigned GetBase( double cutoff = 0.1 ) const {
-        return
+    unsigned GetBase( double cutoff = 0.1 ) const { 
+        return 
             (m_prob[0] > cutoff ? 0x01 : 0) |
             (m_prob[1] > cutoff ? 0x02 : 0) |
             (m_prob[2] > cutoff ? 0x04 : 0) |
@@ -43,7 +43,7 @@ public:
 	}
 protected:
     void ParseSeqId( const string& seqId );
-
+    
 protected:
     ESeqIdType m_seqIdType;
     string m_prefix;
@@ -62,7 +62,7 @@ public:
         eStrand_forward,
         eStrand_reverse
     };
-
+    
     CSnpDbCreator( ESeqIdType type = eSeqId_integer, const string& idprefix = "gi|", const string& idsuffix = "|" )
         : CSnpDbBase( type, idprefix, idsuffix ) {}
 
@@ -75,7 +75,7 @@ class CSnpDb : public CSnpDbBase
 public:
     CSnpDb( ESeqIdType type = eSeqId_integer, const string& idprefix = "gi|", const string& idsuffix = "|" )
         : CSnpDbBase( type, idprefix, idsuffix ) {}
-
+    
     ~CSnpDb() { Close(); }
 
     void Close() { m_cursor.reset(0); CSnpDbBase::Close(); }
@@ -83,7 +83,7 @@ public:
     int  First( int seqId );
     int  First( const string& seqId );
     int  Next();
-
+    
     bool Ok() const { return m_cursor.get() != 0; }
 
 protected:
@@ -93,5 +93,5 @@ protected:
 END_OLIGOFAR_SCOPES
 
 #endif
-
+    
 

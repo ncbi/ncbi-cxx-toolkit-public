@@ -1,26 +1,46 @@
-oligoFAR 3.32                     15-NOV-2008                                1-NCBI
+oligoFAR 3.101                     03-NOV-2009                                1-NCBI
 
 NAME 
-    oligoFAR version 3.32 - global alignment of single or paired short reads
+    oligoFAR version 3.101 - global alignment of single or paired short reads
 
 SYNOPSIS
-        usage: [-hV] [--help[=full|brief|extended]] [-U version]
-          [-i inputfile] [-d genomedb] [-b snpdb] [-g guidefile] [-l gilist]
-          [-1 solexa1] [-2 solexa2] [-q 0|1] [-0 qbase] [-c +|-] [-o output]
-          [-O -eumxtadh] [-B batchsz] [-x 0|1|2] [-s 1|2|3] [-k skipPos]
-          [--pass0] [-w win[/word]] [-N wcnt] [-n mism] [-e gaps] [-S stride] [-H bits]
-          [--pass1  [-w win[/word]] [-N wcnt] [-n mism] [-e gaps] [-S stride] [-H bits] ]
-          [-r f|s] [-a maxamb] [-A maxamb] [-y seqid [-y ...]] [-P phrap] [-F dust]
-          [-p cutoff] [-u topcnt] [-t toppct] [-X xdropoff] [-I idscore]
-          [-M mismscore] [-G gapcore] [-Q gapextscore] [-D minPair[-maxPair]]
-          [-m margin] [-R geometry] [-L memlimit] [-T +|-]
-
+    usage: [-hV] [--help[=full|brief|extended]] [-U version]
+      [short-read-options] [-0 qbase] [-d genomedb] [-b snpdb] [-g guidefile]
+      [-v featfile] [-l gilist|-y seqID] [--hash-bitmap-file=file]
+      [-o output] [-O -eumxtdhz] [-B batchsz] [-s 1|2|3] [-k skipPos]
+      [--pass0 hash-options] [--pass1 hash-options]
+      [-a maxamb] [-A maxamb] [-P phrap] [-F dust] [-X xdropoff] [-Y bandhw]
+      [-I idscore] [-M mismscore] [-G gapcore] [-Q gapextscore]
+      [-D minPair[-maxPair]] [-m margin] [-R geometry]
+      [-p cutoff] [-x dropoff] [-u topcnt] [-t toppct] [-L memlimit] [-T +|-]
+      [--NaHSO3=yes|no]
+    where hash-options are:
+      [-w win[/word]] [-N wcnt] [-f wstep] [-r wstart] [-S stride] [-H bits]
+      [-n mism] [-e gaps] [-j ins] [-J del] [-E dist]
+      [--add-splice=pos([min:]max)] [--longest-del=val] [--longest-ins=val]
+      [--max-inserted=val] [--max-deleted=val]
+    and short-read-options are:
+      [-i reads.col] [-1 reads1] [-2 reads2] [-q 0|1|4] [-c yes|no]
+ 
 EXAMPLES
-    oligofar -U 3.32 -C human-data.ini -C deep-search.ini -i my.reads -h
-
     oligofar -i pairs.tbl -d contigs.fa -b snpdb.bdb -l gilist -g pairs.guide \
-             -w 20/12 -B 250000 -H32 -n2 -rf -p90 -D100-500 -m50 -Rp \
+             -w 20/12 -B 250000 -H32 -n2 -p90 -D100-500 -m50 -Rp \
              -L16G -o output -Omx
+
+INPUT FORMAT OPTIONS
+    following combinations of input format and data flags are allowed:
+
+    1. with column file:
+       -q0 -i input.col -c no 
+       -q1 -i input.col -c no 
+       -q0 -i input.col -c yes
+    2. with fasta or fastq files:
+       -q0 -1 reads1.fa  [-2 reads2.fa]  -c yes|no
+       -q1 -1 reads1.faq [-2 reads2.faq] -c no
+    3. with Solexa 4-channel data
+       -q4 -i input.id -1 reads1.prb [-2 reads2.prb] -c no
+
+    See options and file formats for more info.
 
 CHANGES
     Following parameters are new, have changed or have disappeared 
@@ -29,6 +49,10 @@ CHANGES
     in version 3.27: -n, -w, -e, -H, -S, -a, -A, --pass0, --pass1
     in version 3.28: -y, -R, -N
     in version 3.29: --NaHSO3 (Development)
+    in version 3.91: -X -Y -r -O --NaHSO3 
+    in version 3.98: -x -g -O -B
+    in version 3.100: -v 
+    in verison 3.101: -i -1 -2 -q -O
 
 DESCRIPTION
     Performs global alignments of multiple single or paired short reads 
@@ -47,13 +71,13 @@ DESCRIPTION
     oligoFAR matches way.
 
     Input is processed by batches of size controlled by option -B. 
-    Reads to match are hashed (one window per read, preferrably at the 5' end)
-    with a window size controlled by option -w. Option -n controls how many 
-    mismatches are allowed within hashed values.  Option -a controls how many 
-    ambiguous bases withing a window of a read may be hashed independently 
-    to mismatches allowed. Low quality 3' ends of the reads may be clipped. 
-    Low complexity (controlled by -F argument) and low quality reads may be 
-    ignored.
+    Reads to match are hashed (one window (unless option -N is used) per read, 
+    preferrably at the 5' end) with a window size controlled by option -w. 
+    Option -n controls how many mismatches are allowed within hashed values.  
+    Option -a controls how many ambiguous bases withing a window of a read 
+    may be hashed independently to mismatches allowed. Low quality 3' ends 
+    of the reads may be clipped.  Low complexity (controlled by -F argument) 
+    and low quality reads may be ignored.
 
     OligoFAR may use different implementations of the hash table (see -H):
     vector (uses a lot of memory, but is faster for big batches) and
@@ -66,13 +90,8 @@ DESCRIPTION
     as regular IUPACna ambiguities of the sequences in database. Option -A
     controls maximum number of ambiguities in the same window.
 
-    Alignments are seeded by hash and may be extended from 5' to 3' end by 
-    one of the three algorithms:
-        - simple score computation, no indels allowed (use -X0 for it);
-        - Smith-Watermann banded alignment (use -Xn -rs for it, n > 0);
-        - fast linear-time alignment (use -Xn -rf for it, n > 0), is almost as
-          fast as no-indel algorithm, and times faster then the Smith-Watermann, 
-          allows indels, but sometimes may produce suboptimal results.
+    Alignments are seeded by hash and may be extended by Smith-Watermann
+    algorithm (unless -X0 or -Y0 is used).
 
     Alignments are filtered (see -p option). For paired reads geometrical
     constraints are applied (reads of the same pair should be mutually 
@@ -105,18 +124,19 @@ PAIRED READS
     Pairs are looked-up constrained by following requirements: 
      - relative orientation (geometry) which may be set by --geometry or -R 
        (see section OPTIONS subsection ``Filtering and ranking options'')
-     - distance between lowest position of plus-stranded read and highest
-       position on minus-stranded one should be in range [ $a - $m ; $b + $m ] 
+     - distance between lowest position of the two reads and highest
+       position of the two reads one should be in range [ $a - $m ; $b + $m ] 
        where $a, $b and $m are arguments of parameters -D $a-$b -m $m.
 
     If pair has no hits which comply constraints mentioned above, individual 
-    hits for the pair components still will be reported.
+    hits for the pair components still will be reported. Also for each
+    component unpaired hits better then the best paired hit will be reported.
 
     Paired reads have one ID per pair. Individual reads in this case do not
     have individual ID, although report provides info which component(s) of 
     the pair produce the hit.
 
-SODIUM BISULFITE TREATMENT (Development)
+SODIUM BISULFITE TREATMENT
     To discover methylation state of DNA sodium bisulfite curation may be
     used before producing reads.  In order to simulate this procedure
     oligoFAR has special mode, which may be turned on by:
@@ -128,12 +148,10 @@ SODIUM BISULFITE TREATMENT (Development)
     
     This mode is not compatible with colorspace computations.
 
-    This code is under development. 
-
 MULTIPASS MODE
     By default oligoFAR aligns all reads just once, but if option --pass1 is 
-    used, oligoFAR switches to the two-pass mode. Parameters -w, -n, -e, -H 
-    and -S preceeding --pass1 or following --pass0 affect first run, same 
+    used, oligoFAR switches to the two-pass mode. Parameters -w, -n, -e, -H, 
+    and some other, preceeding --pass1 or following --pass0 affect first run, same 
     parameters when follow --pass1 are for the second run.  For the second run 
     only reads (or pairs) having more mismatches or indels then allowed in 
     parameters for the first pass will be hashed and aligned. So using something 
@@ -227,8 +245,9 @@ Service options
 
 File options
     --input-file=filename
-    -i filename  Read short reads from this file. See format description in
-                section FILE FORMATS.
+    -i filename For -q0 and -q1 read file with 2,3, or 5 space-separated 
+                columns (see FILE FORMATS); for -q4 read only first column 
+                with read IDs.
 
     --fasta-file=filename
     -d filename Sets database file name. If there exists file with given name
@@ -245,6 +264,11 @@ File options
     -b filename Sets SNP database filename. Snpdb is a file prepared by an
                 oligofar.snpdb program.
 
+    --feat-file=filename
+    -v filename Sets filename for feature file which is three column file
+                containing subject sequence id, begin and end positions for
+                regions within which scanning should be performed
+                
     --output-file=filename
     -o filename Sets output filename.
 
@@ -258,19 +282,24 @@ File options
                 Comparison is pretty strict, so lcl| or .2 are required in
                 'lcl|chr12' and 'NM_012345.2'. 
 
-    --qual-1-file=filename
-    -1 filename Sets file with 4-channel scores for the first component of
-                paired reads or for single reads. Should contain data in
-                exactly same order as the input file.
+    --read-1-file=filename
+    -1 filename For -q0 read this file as fasta file of the reads sequences;
+                for -q1 read this file as fastq file of the reads sequences and
+                quality; for -q4 read file with 4-channel (Solexa) quality scores, 
+                then this requires also -i for read IDs (which should go in
+                the same order). All 1 sequence per read - for paired reads,
+                pair mates will be in the file specified by option -2.
 
-    --qual-2-file=filename
-    -2 filename Sets file with 4-channel scores for the second component of
-                paired reads. Should contain data in exactly same order an the
-                input file.
+    --read-2-file=filename
+    -2 filename In case of paired reads contains pair mate data in the same
+                order and the same format as in file specified by option -1.
 
     --quality-channels=cnt
-    -q 0|1      Affects expected input file format - indicates does it have
-                1-channel scores for reads in additional (4th and 5th ) columns.
+    -q 0|1|4    What data are expected on input: with -q0 it should be either 
+                2 or 3 column file in -i or fasta file(s) in -1, -2; with -q1 
+                it should be either 5-column file in -i or fastq file(s) in
+                -1, -2; with -q4 read IDs are read from -i and Solexa
+                4-channel scores from -1 and -2.
 
     --quality-base=value
     --quality-base=+char
@@ -279,20 +308,17 @@ File options
                 i.e. integer ASCII value or `+' followed by character which 
                 corresponds to the phrap score of 0.
 
-    --guide-max-mism=count
-    -x count    Maximal number of mismatches for hits in guidefile to be used.
-
     --colorspace=+|-
     -c +|-      Input is in di-base colorspace encoding. Hashing and alignment 
-                will be performed in the colorspace encoding. 
-                Not compatible with -q, -1, -2 parameters.
+                will be performed in the colorspace encoding.  Requires -q0.
 
     --NaHSO3=+|- (Development)
                 Turns sodium bisulfite treatment simulation mode on or off.
                 Make sure to use reasonable value for -A.
 
-    --output-flags=-eumxtadh
-    -O-eumxtadh Controls what types of records should be produced on output.
+    --output-flags=-eumxtadrh
+    -O-eumxtadrh 
+                Controls what types of records should be produced on output.
                 See OUTPUT FORMAT section below. Flags stand for:
                 e - empty line
                 u - unmapped reads
@@ -301,6 +327,7 @@ File options
                 t - terminator (there were no more hits except reported)
                 a - alignment - output alignment details in comments 
                 d - differences - output positions of misalignments
+                r - print raw scores, rather then relative to the best
                 h - print all hits above threshold before ranking
                 Use '-' flag to reset flags to none. So, -Oeumx -Ot-a is
                 equivalent to -O-a.
@@ -310,12 +337,18 @@ File options
                 takes too much memory and may lead to excessive paging, too
                 small makes scan inefficient. 
 
-Hashing and scanning options
-    --pass0     Following -w, -n, -e, -S and -H options will apply to first
-                pass.
+    --batch-range=min[-max]
+                Process only batches in given ordinal range. First batch is 0,
+                therefore if one uses -B100000 --batch-range=2-4 reads from 
+                200000 to 499999 will be processed in three batches 100000 in
+                each. Convenient for parallel processing.
 
-    --pass1     Turns on two-pass mode; following -w, -n, -e, -S and -H 
-                options will apply to the second pass.
+Hashing and scanning options
+    --pass0     Hashing and pairing (-D, -m) options which follow this flag will 
+                be applied to the first pass.
+
+    --pass1     Turns on two-pass mode; hashing and pairing (-D, -m) options  
+                that follow this flag will be applied to the second pass.
 
     --window-size=window[/word]
     -w window[/word]
@@ -327,13 +360,25 @@ Hashing and scanning options
                 will be multiplied by stride size. Also alternatives, indels 
                 and mismatches will extend this number independently.
 
+    --window-start=position
+    -r position Start first hashed window at this position (default is 1)
+
+    --window-step=dist
+    -f dist     Set step between hashed windows (default is window size plus 
+                number of indels allowed in hash)
+
     --input-mism=mism
     -n mism     Sets maximal allowed number of mismatches within hashed word.
                 Reasonable values are 0 and 1, sometimes 2.
 
-    --input-gaps=[0,]0|1
+    --input-gaps=[0,]0|1|2
     -e [0,]0|1  Sets maximal number of indels per window. Allowed values are 
-                0 and 1.
+                0, 1, and 2.  Value of 2 allows only single indel of length 
+                up to 2 bases.
+
+    --max-hash-dist=value
+    -E value    Hash only at most with this amount of errors within window 
+                (default is max( -n, -e, -E ))
 
     --index-bits=bits
     -H bits     Set number of bits in hash value to be used as an direct index.
@@ -352,6 +397,9 @@ Hashing and scanning options
                 If used with --ambiguify-positions=true (extended option, may
                 be changed in next release), just replaces appropriate bases
                 with `N's, then this option affects scoring as well.
+
+    --indel-pos=pos
+    -K pos      Allow indels only at this position of read when hashing
 
     --input-max-amb=count
     -a count    Maximal number of ambiguous bases in a window allowed for read 
@@ -381,15 +429,17 @@ Hashing and scanning options
                 only, 3 - both.
 
 Alignment options
-    --algorithm=f|s
-    -r f|s      Alignment algorithm to use if indels are allowed:
-                s - Smith-Watermann (banded)
-                f - Fast linear time
+    --indel-dropoff=value
+    -X value    Longest indel reliably detectable. 0 forbids indels, otherwise 
+                for banded Smith-Watermann it controls band width
 
-    --x-dropoff=value
-    -X value    X-dropoff. 0 forbids indels, otherwise for banded Smith-Watermann 
-                it controls band width. Does not affect fast algorithm if
-                above 0.
+    --extention-dropoff=value
+    -x value    maximal score penalty which may be accumulated when extending
+                seeded alignment
+
+    --band-half-width=value
+    -Y value    Band half width for matrix to compute; it makes no sense for X
+                to exceed Y. 0 forbids indels.
 
     --identity-score=score
     -I score    Set identity score
@@ -476,7 +526,7 @@ Extended options
 
 FILE FORMATS
 
-Input file
+Column-based input file
     Input file is two to five column whitespace-separated text file. Empty
     lines and lines starting with `#' are ignored (note: they are ignored as
     if not present, so if you use # to comment out a read but provide solexa
@@ -530,50 +580,16 @@ Input file with di-base colorspace reads (SOLiD technology)
     The read above represents sequence CCTTATTTAAGACATGTTTAAATTCAC.
 
 Guide file
-    Guide file is an output of srsearch program or similar tool which finds 
-    exact or almost exact matches for reads and read pairs.
-
-    It should be tab-separated file having records with 7 or 11 columns (11 for
-    paired hits or paired reads) with columns:
-
-    1. type of result:
-       for non-paired search - always 0;
-       for paired search: 
-        0 - paired match; 
-        1 - non-paired match for the first member of the pair; 
-        2 - non-paired match for the second member of the pair;
-    2. query ordinal number (0-based) or query id;
-    3. subject ordinal number (OID) or subject id;
-    4. subject offset 1-based (for the first member of the pair if paired match);
-    5. '0' or '-' - reverse strand; '1' or '+' - forward strand (for the first 
-       member of the pair if paired match);
-    6. comma-separated list of 1-based mismatch positions for the first
-       member of the pair if paired match; 0 values are ignored (so single 0 
-       is an empty list); dash (-) is considered for empty list as well; 
-    7. subject base at mismatch position ('-' for exact match) (for the
-       first member of the pair if paired match);
-    8. if paired match - subject offset of the second member of the pair;
-    9. if paired match - strand of the second member of the pair;
-    10. if paired match - mismatch position(s) of the second member of the
-        pair, like col 6;
-    11. if paired match - subject base at mismatch position for the second
-        member of the pair.
+    Starting from version 3.99, guide file should be in SAM 1.2 format. 
+    
+    Also this file should either have OligoFAR version of CIGAR alignments
+    (with R for replace, C for changed base, B for overlap), or have field MD:
+    set for all reads, because otherwise there is no way to compute compatible 
+    alignment score and estimate should the guide alignment be taken or the
+    query should be realigned.
 
     It is essential that order of hits in guide is the same as order of reads in
     input file.
-
-    When parsing input, oligoFAR reads guide file and ignores records which do not
-    satisfy following constraints:
-
-    1. Column 1 should be 0, as well as columns 6 and 10 (if exists)
-    2. If record has 11 columns, column 5 should differ from column 9
-    3. If column 5 = '+' or '1', then column 8 should be > then column 4,
-       otherwise column 4 should be > then column 8
-    4. Distance between values in columns 4 and 8 plus length of read should
-       fit within allowed distance (between min - margin and max + margin)
-
-    If read is not ignored, it is added to output list, and read or read pair will
-    bypass alignment procedure.
 
 Gi list file
     is just list of integers, one number per line.
@@ -585,7 +601,46 @@ Solexa-style score file
     IDs. If solexa-style file is set, IUPACna and quality scores from input
     file are ignored.
 
+FASTA reads file 
+    should be an argument of -1 and -2 when -q0 is used. No spaces are allowed
+    after '>' sign. As an extension, colorspace sequence data may be used
+    instead of IUPAC.  See note below regarding read identifiers.
+
+FASTQ reads file
+    should be an argument of -1 and -2 when -q1 is used.  No spaces are
+    allowed after '@' or '+' signs specifying ID lines.  Since now (as of
+    version 3.101) oligofar does not support colorspace with quality scores,
+    only IUPAC seequence format may be used. See note below regarding read
+    identifiers.
+
+Read identifiers
+    It is essential that each of the files given by options -i, -1, -2, -g
+    contains read information in the same order, exactly one record per read
+    (except -g which may have multiple or no records).  Paired reads should
+    have the same ID and be in different files (for -1, -2) or columns 
+    (for -i); exception is Illumina-style naming: if the reads in -1 have ID
+    ending by "/1" AND ids in -2 are ending by "/2", these last slash and 
+    digit are being ignored. 
+    
+    NB: it is expected that both output and guide SAM do not have "/1"
+        and "/2" components in readID.
+
+Feature file
+    Is a three-column whitespace-separated file containing 1-based closed
+    regions on the reference gequences to scan. 
+    Columns are: sequence-id, from, and to.
+
 OUTPUT FORMAT
+    There are two formats avaialble for output: SAM 1.2 and oligoFAR
+    proprietary. Default is SAM, although for some purposes proprietary 
+    may be more convenient.
+
+    SAM format does not output quality information, sequence data may differ
+    from input if quality scoreas are used. Tags AS, XN and XR are generated,
+    where XR is rank (see explanation in proprietary output section) and XN is
+    number of sequences in output for this rank.
+
+Proprietary output format
     Output file is a 15-column tab-separated file representing different types
     of records (see -O options) in uniform way. 
 
@@ -622,6 +677,8 @@ OUTPUT FORMAT
         sequence at positions where the first read maps, or '-'.
     15. Instantiated as IUPACna image of positive strand of the subject 
         sequence at positions where the second read maps, or '-'.
+    16. CIGAR alignment of the first read in subject strand, or '-'. 
+    17. CIGAR alignment of the second read in subject strand, or '-'.
 
     "Ideal" mapping (having single best) should consider using filter on first 
     column = 0, second column = 1
@@ -631,6 +688,24 @@ OUTPUT FORMAT
     Since filtering by -p is performed before combining individual hits to
     paires, value for -p should not ever exceed 100. 
 
+    CIGAR here uses following letters:
+        M - match (*)
+        R - replacement (**)
+        I - insertion
+        D - deletion
+        S - soft masking (dovetail)
+        C - changed (scored as match although is not the same) (**)
+        N - splice (not penalized deletion) 
+        B - overlap (subject basea match twice) (**)
+    Here (*) means that code is changed compared to the extended CIGAR
+    (as described in SAM 1.2 standard), and (**) is addition to the CIGAR.
+
+    Following extended CIGAR codes are not produced by oligoFAR:
+        H - hard masking
+        P - padding
+
+Following output flag (a) is currently ignored, 
+but description is preserved for future
     If the flag a for -O is set, for every individual read of hit which score 
     is below 100 three additional lines will be printed. These lines start
     with `#' and contain graphical representation of the alignment (in subject
@@ -726,19 +801,7 @@ Output record types
     them.
 
 BUGS, UNTESTED AND DEVELOPMENT CODE, SPECIAL CASES
-    - Mutual orientation restriction code is not tested on guide files yet
-
-    - Fast alignment code produces suboptimal alignments by design. Some patterns
-      may be improved in time, but to gain speed it gives up pricision. One of 
-      the typical cases when it currently makes mistakes is pattern 'flip+indel' 
-      like:
-            TTA-CC      TT-ACC
-            ||  ||      || |||
-            TTCACC      TTCACC
-      which produces mismatch + indel instead of indel + match
-
-    - Di-nucleotide colorspace is at development stage - scoring is very
-      trivial and suites for mapping, not for SNP detection.
+    There should be some ;-)
 
 EXIT VALUES
     0 for success, non-zero for failure.

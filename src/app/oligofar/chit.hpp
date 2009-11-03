@@ -2,6 +2,8 @@
 #define OLIGOFAR_CHIT__HPP
 
 #include "defs.hpp"
+#include "cseqcoding.hpp"
+#include "ctranscript.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
@@ -9,14 +11,20 @@ class CQuery;
 class CHit
 {
 public:
+    typedef TTrSequence TTranscript;
+
     ~CHit();
 
     CHit( CQuery* q );
-    CHit( CQuery* q, Uint4 seqOrd, int pairmate, double score, int from, int to, int convtbl );
-    CHit( CQuery* q, Uint4 seqOrd, double score1, int from1, int to1, int convTbl1, double score2, int from2, int to2, int convTbl2 );
+    CHit( CQuery* q, Uint4 seqOrd, int pairmate, 
+            double score, int from, int to, int convtbl, 
+            const TTranscript& transcript );
+    CHit( CQuery* q, Uint4 seqOrd, 
+            double score1, int from1, int to1, int convTbl1, 
+            double score2, int from2, int to2, int convTbl2, 
+            const TTranscript& tr1, const TTranscript& tr2 );
 
-    void SetPairmate( int pairmate, double score, int from, int to, int convTbl );
-    bool IsNull() const { return m_length[0] == 0 && m_length[1] == 0; }
+    void SetPairmate( int pairmate, double score, int from, int to, int convTbl, const TTranscript& tr );
 
     Uint4 GetSeqOrd() const { return m_seqOrd; }
 
@@ -30,6 +38,7 @@ public:
     void SetTarget( int pairmate, const char * from, const char * to );
 
     const char * GetTarget( int pairmate ) const { if( char * x = m_target[pairmate] ) return x; else return ""; }
+    const TTranscript& GetTranscript( int pairmate ) const { return m_transcript[pairmate]; }
 
     /* 
        Note: from and to for alignments do not affect algorithms, and are used only for output formatting,
@@ -76,6 +85,9 @@ public:
         fGeometry_NOT_SET = 0
     };
     
+    bool IsNull() const { return GetComponentFlags() == 0; } //return m_length[0] == 0 && m_length[1] == 0; }
+    bool IsPairedHit() const { return (m_flags & fPairedHit) == fPairedHit; }
+
     static int ComputeRangeLength( int , int, int, int );
     static int GetOtherComponent( int pairmate ) { return !pairmate; }
     static Uint8 GetCount() { return s_count; }
@@ -86,6 +98,8 @@ public:
     int  GetTo( int pairmate ) const;
     int  GetLength( int pairmate ) const { return m_length[pairmate]; }
     int  GetConvTbl( int pairmate ) const { return 3 & (m_flags >> ( pairmate ? kAlign_convTbl2_bit : kAlign_convTbl1_bit )); } 
+
+    CSeqCoding::EStrand GetStrand( int pairmate ) const;
     
     bool Equals( const CHit * other ) const;
     bool EqualsSameQ( const CHit * other ) const;
@@ -99,8 +113,11 @@ public:
     bool HasComponent( int pairmate ) const { return m_length[pairmate] != 0 ; }
     bool HasPairTo( int pairmate ) const { return HasComponent( GetOtherComponent( pairmate ) ); }
 
+    int  GetComponentMask() const { return GetComponentFlags() >> CHit::kComponents_bit; }
     int  GetComponentFlags() const { return m_flags&fPairedHit; }
     char GetStrand() const { return IsReverseStrand( HasComponent(0) ? 0 : 1 ) ? '-' : '+'; }
+    double GetComponentScores( int cflags ) const { 
+        cflags <<= kComponents_bit; return (cflags & fComponent_1 ? GetScore(0) : 0) + (cflags & fComponent_2 ? GetScore(1) : 0 ); }
 
     int GetFrom() const { return m_fullFrom; }
     int GetTo() const { return m_fullTo; }
@@ -148,13 +165,22 @@ private:
     Uint1 m_length[2]; // for components 1 and 2, 0 for no alignment
     Uint2 m_flags;
 
+    // TODO: optimize memory usage and fragmentation at some point
     char * m_target[2]; // length should be... length[i] ;-)
+    TTranscript m_transcript[2];
+
     static Uint8 s_count;
-    // all together 12 bytes per hit are saved...
 };
 
 ////////////////////////////////////////////////////////////////////////
 // implementation
+
+inline CSeqCoding::EStrand CHit::GetStrand( int pairmate ) const 
+{
+    return pairmate ?
+        m_flags & fRead2_reverse ? CSeqCoding::eStrand_neg : CSeqCoding::eStrand_pos :
+        m_flags & fRead1_reverse ? CSeqCoding::eStrand_neg : CSeqCoding::eStrand_pos ;
+}
 
 inline int CHit::GetFrom( int pairmate ) const
 {
@@ -173,7 +199,8 @@ inline int CHit::GetFrom( int pairmate ) const
 
 inline int CHit::GetTo( int pairmate ) const
 {
-    // here logically we invert fRead?_reverse flags, i.e. it should return same values as m_flags ^= (fRead1_reverse|fRead2_reverse); GetFrom( pairmate ); 
+    // here logically we invert fRead?_reverse flags, i.e. it should return same values 
+    // as m_flags ^= (fRead1_reverse|fRead2_reverse); GetFrom( pairmate ); 
     switch( m_flags & fMaskGeometry ) {
     case fRead1_reverse|fRead2_reverse|fOrder_forward: return pairmate ? m_fullTo - m_length[1] + 1 : m_fullFrom;
     case fRead1_reverse|fRead2_reverse|fOrder_reverse: return pairmate ? m_fullFrom : m_fullTo - m_length[1] + 1;

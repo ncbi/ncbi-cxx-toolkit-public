@@ -1,17 +1,23 @@
 #ifndef OLIGOFAR_DEBUG__HPP
 #define OLIGOFAR_DEBUG__HPP
 
+#include <string>
 #include <sstream>
+#include <iostream>
 #include <stdexcept>
 
 #define DISPLAY(a) "\t"#a" = [" << a << "]"
 
+#ifndef NOASSERT
 #define ASSERT(a)                                                       \
     do {                                                                \
         if( !(a) ) {                                                    \
             THROW( std::logic_error, "Assertion failed: "#a" in file "__FILE__" line " << __LINE__ ); \
         }                                                               \
     } while(0)
+#else
+#define ASSERT(a)
+#endif
 
 #ifdef _WIN32
 #define TTYATTR(a) ""
@@ -45,5 +51,16 @@
         }                                                               \
     }                                                                   \
     while(0)
+
+class __Enter__ 
+{ 
+public: 
+    __Enter__( const std::string& fun ) : m_fun( fun ) { std::cerr << "\x1b[31mSTART\t\x1b[33m" << m_fun << "\x1b[0m\n"; } 
+    ~__Enter__() { std::cerr << "\x1b[32mDONE\t\x1b[33m" << m_fun << "\x1b[0m\n"; } 
+protected: 
+    std::string m_fun; 
+}; 
+
+#define ENTER  __Enter__ __enter__( __PRETTY_FUNCTION__ )
 
 #endif

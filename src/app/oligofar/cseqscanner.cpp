@@ -3,6 +3,7 @@
 #include "cscancallback.hpp"
 #include "cprogressindicator.hpp"
 #include "cqueryhash.hpp"
+#include "cfeatmap.hpp"
 #include "cfilter.hpp"
 #include "cseqids.hpp"
 #include "csnpdb.hpp"
@@ -29,8 +30,7 @@ void CSeqScanner::SequenceBegin( const TSeqIds& seqIds, int oid )
 
 void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer ) 
 {
-    char * a = const_cast<char*>( buffer->GetBeginPtr() ); 
-// TODO: hack! still need tochange it
+    char * a = const_cast<char*>( buffer->GetBeginPtr() ); // TODO: hack! still need to change it
     const char * A = buffer->GetEndPtr();
     unsigned off = buffer->GetBeginPos();
     unsigned end = buffer->GetEndPos();
@@ -49,17 +49,19 @@ void CSeqScanner::SequenceBuffer( CSeqBuffer* buffer )
     if( m_inputChunk ) {
         // set target for all reads 
         ITERATE( TInputChunk, q, (*m_inputChunk) ) {
-            for( CHit * h = (*q)->GetTopHit(); h; h = h->GetNextHit() ) {
-                if( (int)h->GetSeqOrd() == m_ord && h->TargetNotSet() ) {
-                    h->SetTarget( 0, a, A );
-                    h->SetTarget( 1, a, A );
+            for( int mask = 1; mask <= 3; ++mask ) {
+                for( CHit * h = (*q)->GetTopHit( mask ); h; h = h->GetNextHit() ) {
+                    if( (int)h->GetSeqOrd() == m_ord && h->TargetNotSet() ) {
+                        h->SetTarget( 0, a, A );
+                        h->SetTarget( 1, a, A );
+                    }
                 }
             }
         }
     }
 }
 
-void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A )
+void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
     
@@ -68,7 +70,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
     
     const char * y = a;
 
-    int winLen = m_queryHash->GetWindowSize();
+    int winLen = m_queryHash->GetScannerWindowLength(); 
 
     for( const char * Y = a + winLen; y < Y; ++y ) {
         CNcbi8naBase b( *y & 0x0f );
@@ -84,10 +86,10 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
                 if( lastType != eType_skip && rangeMap.size() && rangeMap.back().second != eType_skip && 
                     rangeMap.back().first.second - rangeMap.back().first.first + z - a - lastPos < m_minBlockLength ) {
                     // merge too short blocks
-                    rangeMap.back().first.second = z - a;
+                    rangeMap.back().first.second = z - a + off;
                     rangeMap.back().second = eType_iterate; // whatever it is - we drive it to larger of the two
                 } else {
-                    rangeMap.push_back( make_pair( TRange( lastPos, z - a ), lastType ) );
+                    rangeMap.push_back( make_pair( TRange( lastPos + off, z - a + off ), lastType ) );
                 }
             }
             lastPos = z - a;
@@ -102,7 +104,7 @@ void CSeqScanner::CreateRangeMap( TRangeMap& rangeMap, const char * a, const cha
         lastPos = 0;
         lastType = ambCount > m_maxAmbiguities ? eType_skip : ambCount <= allowedMismatches ? eType_direct : eType_iterate;
     }
-    rangeMap.push_back( make_pair( TRange( lastPos, A - a ), lastType ) );
+    rangeMap.push_back( make_pair( TRange( lastPos + off, A - a + off ), lastType ) );
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -124,24 +126,24 @@ inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::RunCallback( Callback& c
 inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::Prepare( char x )
 {
     m_hashCode.AddBaseCode( CNcbi8naBase( x ).GetSmallestNcbi2na() );
-    m_complexityMeasure.Add( m_hashCode.GetNewestTriplet() );
+//    m_complexityMeasure.Add( m_hashCode.GetNewestTriplet() );
 }
 
 inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::Prepare( char x )
 {
     m_hashGenerator.AddBaseMask( x );
-    m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
+//    m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
 }
 
 inline void CSeqScanner::C_LoopImpl_Ncbi8naNoAmbiguities::Update( char x )
 {
-    m_complexityMeasure.Del( m_hashCode.GetOldestTriplet() );
+//    m_complexityMeasure.Del( m_hashCode.GetOldestTriplet() );
     Prepare( x );
 }
 
 inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::Update( char x )
 {
-    m_complexityMeasure.Del( m_hashGenerator.GetOldestTriplet() );
+//    m_complexityMeasure.Del( m_hashGenerator.GetOldestTriplet() );
     Prepare( x );
 }
 
@@ -150,7 +152,7 @@ inline void CSeqScanner::C_LoopImpl_Ncbi8naAmbiguities::Update( char x )
 inline void CSeqScanner::C_LoopImpl_ColorspNoAmbiguities::Prepare( char x )
 {
     m_hashCode.AddBaseCode( CColorTwoBase( CNcbi8naBase( m_lastBase ), CNcbi8naBase( x ) ).GetColorOrd() );
-    m_complexityMeasure.Add( m_hashCode.GetNewestTriplet() );
+//    m_complexityMeasure.Add( m_hashCode.GetNewestTriplet() );
     m_lastBase = x;
 }
 
@@ -159,21 +161,21 @@ inline void CSeqScanner::C_LoopImpl_ColorspAmbiguities::Prepare( char x )
     // todo: logic should be modified here to take care of previous bases
     CNcbi8naBase z = CNcbi8naBase( x & 0xf ).IsAmbiguous() ? '\xf' : ( 1 << CColorTwoBase( x ).GetColorOrd() );
     m_hashGenerator.AddBaseMask( CColorTwoBase( CNcbi8naBase( m_lastBase ), z ).GetColorOrd() );
-    m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
+//    m_complexityMeasure.Add( m_hashGenerator.GetNewestTriplet() );
     m_lastBase = x;
 }
 
 inline void CSeqScanner::C_LoopImpl_ColorspNoAmbiguities::Update( char x )
 {
     // should be reimplemented since functions are not virtual
-    m_complexityMeasure.Del( m_hashCode.GetOldestTriplet() );
+//    m_complexityMeasure.Del( m_hashCode.GetOldestTriplet() );
     Prepare( x );
 }
 
 inline void CSeqScanner::C_LoopImpl_ColorspAmbiguities::Update( char x )
 {
     // should be reimplemented since functions are not virtual
-    m_complexityMeasure.Del( m_hashGenerator.GetOldestTriplet() );
+//    m_complexityMeasure.Del( m_hashGenerator.GetOldestTriplet() );
     Prepare( x );
 }
 
@@ -184,7 +186,7 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
                             int from, int toOpen, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetWindowSize();
+    int winLen = m_queryHash->GetScannerWindowLength(); //m_queryHash->GetWindowSize();
 
     if( from < 0 ) from = 0;
     if( toOpen > A - a ) toOpen = A - a;
@@ -193,20 +195,16 @@ void CSeqScanner::x_MainLoop( LoopImpl& loop, TMatches& matches, Callback& callb
     const char * x = a + from;
     for( const char * w = x + winLen; x < w ; ) loop.Prepare( *x++ );
 
+    ASSERT( off == 0 ); // Bug: below off should be handled if not zero, but it is not
     if( p ) p->SetCurrentValue( off + from );
-    off -= winLen;
-    int pos = x - a + off, strideSize = m_queryHash->GetStrideSize();
-    for( const char * w = a + toOpen ; x < w ; ++pos ) {
+    int pos = x - a + off - winLen;
+    int strideSize = m_queryHash->GetStrideSize();
+    for( const char * w = a + toOpen ; x <= w ; ++pos ) {
         if( (pos % strideSize == 0 ) && loop.IsOk() ) {
             matches.clear();
             loop.RunCallback( callback );
-//            int pos = x - a + off;
             ITERATE( TMatches, m, matches ) {
-                switch( m->GetStrand() ) {
-                case '+': m_filter->Match( *m, a, A, pos - m->GetOffset() ); break;
-                case '-': m_filter->Match( *m, a, A, pos + m->GetOffset() + winLen - 1 ); break;
-                default: THROW( logic_error, "Invalid strand " << m->GetStrand() );
-                }
+                m_filter->Match( *m, a, A, pos, pos + winLen - 1 ); 
             }
         }
         loop.Update( *x++ );
@@ -219,7 +217,8 @@ template<class NoAmbiq, class Ambiq, class Callback>
 void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callback& cbk, CProgressIndicator*p, const char * a, const char * A, int off )
 {
     if( m_queryHash == 0 ) return;
-    int winLen = m_queryHash->GetWindowSize();
+    int winLen = m_queryHash->GetScannerWindowLength(); //m_queryHash->GetWindowSize();
+//    double maxSimplicity = m_queryHash->GetMaxSimplicity();
 
     Uint8 mask8 = CBitHacks::WordFootprint<Uint8>( 2 * winLen );
     UintH maskH = CBitHacks::WordFootprint<UintH>( 4 * winLen );
@@ -228,11 +227,11 @@ void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callb
             if( p ) p->SetCurrentValue( i->first.second );
         } else if( i->second == eType_direct ) {
 
-            NoAmbiq impl( m_queryHash->GetWindowSize(), m_queryHash->GetStrideSize(), m_maxSimplicity );
+            NoAmbiq impl( winLen, m_queryHash->GetStrideSize() ); //, maxSimplicity );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
         } else { // eType_iterate
 
-            Ambiq impl( m_queryHash->GetWindowSize(), m_queryHash->GetStrideSize(), m_maxSimplicity, m_maxAmbiguities, mask8, maskH );
+            Ambiq impl( winLen, m_queryHash->GetStrideSize(),/* maxSimplicity,*/ m_maxAmbiguities, mask8, maskH );
             x_MainLoop( impl, matches, cbk, p, i->first.first, i->first.second, a, A, off );
         }
     }
@@ -241,7 +240,15 @@ void CSeqScanner::x_RangemapLoop( const TRangeMap& rm, TMatches& matches,  Callb
 void CSeqScanner::ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end, CSeqCoding::ECoding coding )
 {
     TRangeMap rangeMap;
-    CreateRangeMap( rangeMap, a, A );
+    if( m_featMap ) {
+        if( CSpacialRanges * r = m_featMap->GetRanges( m_ord ) ) {
+            for( CSpacialRanges * x = r->GetLeftmost(); x; x = x->Right() ) {
+                if( x->GetCount() == 0 ) continue;
+                if( x->GetFrom() >= (A - a) ) break;
+                CreateRangeMap( rangeMap, a + max( x->GetFrom(), 0 ), a + min( x->GetTo() + 1L, A - a ), max( 0, x->GetFrom() ) );
+            }
+        } else return;
+    } else CreateRangeMap( rangeMap, a, A, 0 );
 
     TMatches matches;
     CScanCallback callback( matches, *m_queryHash );

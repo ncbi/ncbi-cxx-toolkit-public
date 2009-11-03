@@ -2,51 +2,66 @@
 #define OLIGOFAR_CBATCH__HPP
 
 #include "cfilter.hpp"
-#include "cscoretbl.hpp"
 #include "cqueryhash.hpp"
-#include "chashparam.hpp"
+#include "cpassparam.hpp"
+#include "cscoringfactory.hpp"
 #include "cseqvecprocessor.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
+class IAligner;
 class IOutputFormatter;
 class CProgressIndicator;
+class CSeqScanner;
+
 class CBatch
 {
 public:
     typedef vector<CQuery*> TInputChunk;
-    typedef vector<CHashParam> THashParamSet;
+    typedef vector<CPassParam> TPassParamSet;
 
-    // scoring is used to estimate number of mismathes for more iterative hashing
-    CBatch( int readCount, const string& fastaFile, 
-            CQueryHash& queryHash, CSeqVecProcessor& seqVecProcessor, 
-            CFilter& filter, IOutputFormatter* formatter,
-            const CScoreTbl& scoring ) ;
-    ~CBatch();
-
+    void SetReadCount( int rc ) { m_readsPerRun = rc; if( m_queryHash ) m_queryHash->SetExpectedReadCount( rc ); m_inputChunk.reserve( rc ); }
+    void SetFastaFile( const string& fname ) { m_fastaFile = fname; }
+    void SetFilter( CFilter * f ) { m_filter = f; }
+    void SetQueryHash( CQueryHash * qh ) { m_queryHash = qh; if( qh ) qh->SetExpectedReadCount( m_readsPerRun ); }
+    void SetSeqScanner( CSeqScanner * ss ) { m_seqScanner = ss; }
+    void SetSeqVecProcessor( CSeqVecProcessor * sp ) { m_seqVecProcessor = sp; }
+    void SetScoringFactory( CScoringFactory * sf ) { m_scoringFactory = sf; }
+    void SetOutputFormatter( IOutputFormatter * sf ) { m_formatter = sf; }
     void SetReadProgressIndicator( CProgressIndicator * p ) { m_readProgressIndicator = p; }
+    void SetRange( int minBatch, int maxBatch ) { m_minBatch = minBatch; m_maxBatch = maxBatch; }
+    
+    ~CBatch();
+    CBatch() : 
+        m_passParam( 0 ), 
+        m_readsPerRun( 0 ), 
+        m_minBatch( 0 ),
+        m_maxBatch( numeric_limits<int>::max() ),
+        m_batchOrdinal( 0 ),
+        m_hashedReads( 0 ), 
+        m_guidedReads( 0 ), 
+        m_ignoredReads( 0 ),
+        m_hashEntries( 0 ), 
+        m_filter( 0 ), 
+        m_queryHash( 0 ), 
+        m_seqVecProcessor( 0 ), 
+        m_seqScanner( 0 ),
+        m_scoringFactory( 0 ),
+        m_formatter( 0 ),
+        m_readProgressIndicator( 0 ), 
+        m_pass( -1 ) {}
 
     void Start();
     int  AddQuery( CQuery * query );
     void Purge();
+    bool Done() const { return m_batchOrdinal > m_maxBatch; }
     
+    bool SinglePass() const { return m_passParam && m_passParam->size() < 2; }
+
     const TInputChunk& GetInputChunk() const { return m_inputChunk; }
 
-    template<class iterator>
-    void SetHashParam( iterator a, iterator b ) { m_hashParam.clear(); copy( a, b, back_inserter( m_hashParam ) ); }
-    template<class container>
-    void SetHashParam( const container& c ) { SetHashParam( c.begin(), c.end() ); }
-
-    enum EAlignerType {
-        eAligner_noIndel = 0,
-        eAligner_regular = 1
-    };
-
-    void SetAligner( EAlignerType atype, IAligner * aligner, bool own ) { m_aligner[atype] = aligner; m_ownAligner[atype] = own; ASSERT( m_aligner[atype] ); }
-    IAligner * GetAligner( EAlignerType t ) const { return m_aligner[t]; }
-    IAligner * GetAligner() const;
-
-    bool SinglePass() const { return m_hashParam.size() < 2; }
+    void SetPassParam( const TPassParamSet* pps ) { m_passParam = pps; }
+    const CPassParam& GetPassParam( int pass ) const { return (*m_passParam)[pass]; }
 
 protected:
     int x_EstimateMismatchCount( const CQuery*, bool matepair ) const;
@@ -54,45 +69,26 @@ protected:
     void x_Rehash( unsigned pass );
     void SetPass( unsigned );
 protected:
-    THashParamSet m_hashParam;
+    const TPassParamSet * m_passParam;
     int m_readsPerRun;
+    int m_minBatch;
+    int m_maxBatch;
+    int m_batchOrdinal;
     int m_hashedReads;
     int m_guidedReads;
     int m_ignoredReads;
     Uint8 m_hashEntries;
-    const CScoreTbl& m_scoreTbl;
-    double m_mismatchPenalty;
     string m_fastaFile;
     TInputChunk m_inputChunk;
-    CFilter          & m_filter;
-    CQueryHash       & m_queryHash;
-    CSeqVecProcessor & m_seqVecProcessor;
-    IOutputFormatter * m_formatter;
+    CFilter            * m_filter;
+    CQueryHash         * m_queryHash;
+    CSeqVecProcessor   * m_seqVecProcessor;
+    CSeqScanner        * m_seqScanner;
+    CScoringFactory    * m_scoringFactory;
+    IOutputFormatter   * m_formatter;
     CProgressIndicator * m_readProgressIndicator;
-    IAligner * m_aligner[2];
-    bool m_ownAligner[2];
-    unsigned m_pass;
+    int m_pass;
 };
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-// implementation
-
-inline CBatch::CBatch( int readCount, const string& fastaFile, 
-        CQueryHash& queryHash, CSeqVecProcessor& seqVecProcessor, CFilter& filter, 
-        IOutputFormatter* formatter, const CScoreTbl& scoreTbl ) :
-    m_readsPerRun( readCount ), m_hashedReads( 0 ), m_guidedReads( 0 ), m_ignoredReads( 0 ), m_hashEntries( 0 ),
-    m_scoreTbl( scoreTbl ),
-    m_mismatchPenalty( scoreTbl.GetIdentityScore() - max( scoreTbl.GetMismatchScore(), scoreTbl.GetGapOpeningScore() ) ),
-    m_fastaFile( fastaFile ), m_filter( filter ), m_queryHash( queryHash ), 
-    m_seqVecProcessor( seqVecProcessor ), m_formatter( formatter ), 
-    m_readProgressIndicator( 0 )
-{
-    ASSERT( m_mismatchPenalty > 0 );
-    m_inputChunk.reserve( readCount );
-    m_queryHash.SetExpectedReadCount( readCount );
-    m_aligner[0] = m_aligner[1] = 0;
-    m_ownAligner[0] = m_ownAligner[1] = 0;
-}
 
 END_OLIGOFAR_SCOPES
 

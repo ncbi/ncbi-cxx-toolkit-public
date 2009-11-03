@@ -4,7 +4,9 @@
 #include "capp.hpp"
 #include "util.hpp"
 #include "array_set.hpp"
-#include "chashparam.hpp"
+#include "cpassparam.hpp"
+#include "cshortreader.hpp"
+#include "cintron.hpp"
 #include <corelib/ncbireg.hpp>
 #include <string>
 #include <set>
@@ -13,6 +15,7 @@ BEGIN_OLIGOFAR_SCOPES
 
 class IAligner;
 class CScoreTbl;
+class CQueryHash;
 class COligoFarApp : public CApp
 {
 public:
@@ -23,19 +26,27 @@ public:
         kMegaByte = 1024*kKiloByte,
         kGigaByte = 1024*kMegaByte
     };
-    enum EAlignmentAlgo {
-        eAlignment_HSP   = 'h',
-        eAlignment_SW    = 's',
-        eAlignment_fast  = 'f',
-    };
     enum ELongOpt { 
         kLongOptBase = 0x100,
         kLongOpt_pass0 = kLongOptBase + 0x00,
         kLongOpt_pass1 = kLongOptBase + 0x01,
         kLongOpt_min_block_length = kLongOptBase + 0x02,
-        kLongOpt_NaHSO3 = kLongOptBase + 0x03
+        kLongOpt_NaHSO3 = kLongOptBase + 0x03,
+        kLongOpt_maxInsertions = kLongOptBase + 0x04,
+        kLongOpt_maxDeletions = kLongOptBase + 0x05,
+        kLongOpt_maxInsertion = kLongOptBase + 0x07,
+        kLongOpt_maxDeletion = kLongOptBase + 0x08,
+        kLongOpt_addSplice = kLongOptBase + 0x09,
+        kLongOpt_hashBitMask = kLongOptBase + 0x10,
+        kLongOpt_batchRange = kLongOptBase + 0x11,
+        kLongOptEnd
     };
     typedef CHashParam::TSkipPositions TSkipPositions;
+
+    string ReportSplices( int pass ) const;
+    void AddSplice( const char * arg );
+
+    bool ValidateSplices( CQueryHash& );
 
 protected:
     virtual void Help( const char * );
@@ -50,8 +61,6 @@ protected:
     void ParseConfig( IRegistry * );
 
     int GetOutputFlags();
-
-    IAligner * CreateAligner( EAlignmentAlgo, CScoreTbl * tbl ) const;
 
     virtual const option * GetLongOptions() const;
     virtual const char * GetOptString() const;
@@ -74,25 +83,20 @@ protected:
     }
 
 protected:
-    vector<CHashParam> m_hashParam;
+    vector<CPassParam> m_passParam;
     unsigned m_hashPass;
-    unsigned m_maxHashAmb;
-    unsigned m_maxFastaAmb;
     unsigned m_strands;
     unsigned m_readsPerRun;
-    unsigned m_phrapSensitivity;
-    unsigned m_xdropoff;
+    unsigned m_minRun;
+    unsigned m_maxRun;
     unsigned m_topCnt;
     double   m_topPct;
     double   m_minPctid;
-    double   m_maxSimplicity;
     double   m_identityScore;
     double   m_mismatchScore;
     double   m_gapOpeningScore;
     double   m_gapExtentionScore;
-    int      m_minPair;
-    int      m_maxPair;
-    int      m_pairMargin;
+    double   m_extentionPenaltyDropoff;
     int      m_qualityChannels;
     int      m_qualityBase;
     int      m_minBlockLength;
@@ -102,19 +106,18 @@ protected:
     bool     m_colorSpace;
     bool     m_sodiumBisulfiteCuration;
     bool     m_outputSam;
-    EAlignmentAlgo m_alignmentAlgo;
-    TSkipPositions m_skipPositions;
     string m_readFile;
     string m_gilistFile;
     string m_fastaFile;
     string m_snpdbFile;
-    string m_vardbFile;
     string m_guideFile;
+    string m_featFile;
     string m_outputFile;
     string m_outputFlags;
     string m_read1qualityFile;
     string m_read2qualityFile;
     string m_geometry;
+    string m_hashBitMask;
     list<string> m_seqIds;
 };
 

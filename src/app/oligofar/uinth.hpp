@@ -45,8 +45,8 @@ public:
     const Uint8& GetHi() const { return m_hi; }
     const Uint8& GetLo() const { return m_lo; }
 
-    friend UintH operator << ( UintH a, int b ) { return a <<= b; }
-    friend UintH operator >> ( UintH a, int b ) { return a >>= b; }
+    friend UintH operator << ( UintH a, int b ) { a <<= b; return a; }
+    friend UintH operator >> ( UintH a, int b ) { a >>= b; return a; }
     friend UintH operator |  ( UintH a, const UintH& b ) { return a |= b; }
     friend UintH operator &  ( UintH a, const UintH& b ) { return a &= b; }
     friend UintH operator ^  ( UintH a, const UintH& b ) { return a ^= b; }
@@ -58,7 +58,7 @@ public:
     friend ostream& operator << ( ostream& out, const UintH& h );
 
     bool operator == ( const UintH& other ) const { return m_lo == other.m_lo && m_hi == other.m_hi; return *this; }
-    bool operator != ( const UintH& other ) const { return m_lo != other.m_lo && m_hi != other.m_hi; return *this; }
+    bool operator != ( const UintH& other ) const { return m_lo != other.m_lo || m_hi != other.m_hi; return *this; }
 
     bool operator <  ( const UintH& other ) const { return m_hi < other.m_hi || m_hi == other.m_hi && m_lo <  other.m_lo; }
     bool operator >  ( const UintH& other ) const { return m_hi > other.m_hi || m_hi == other.m_hi && m_lo >  other.m_lo; }

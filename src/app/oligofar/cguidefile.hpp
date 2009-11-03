@@ -3,6 +3,7 @@
 
 #include "defs.hpp"
 #include "cfilter.hpp"
+#include "iguidefile.hpp"
 
 BEGIN_OLIGOFAR_SCOPES
 
@@ -37,8 +38,8 @@ BEGIN_OLIGOFAR_SCOPES
    less then column 8, alse column 4 should be greater then column 8 */
 
 class CSeqIds;
-class CScoring;
-class CGuideFile 
+class CScoreParam;
+class CGuideFile : public IGuideFile
 {
 public:
     typedef map<string,int> TId2Ord;
@@ -48,7 +49,7 @@ public:
     
     bool NextHit( Uint8 ordinal, CQuery * query );
     void SetMaxMismatch( int mm ) { m_maxMismatch = mm; }
-    void SetMismatchPenalty( const CScoring& sc );
+    void SetMismatchPenalty( const CScoreParam& sc );
     
 protected:
     typedef pair<int,int> TRange;

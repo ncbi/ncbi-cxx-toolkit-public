@@ -4,11 +4,12 @@
 #include "cseqcoding.hpp"
 #include "debug.hpp"
 #include "chit.hpp"
+#include <iterator>
 
 BEGIN_OLIGOFAR_SCOPES
 
 class CHit;
-class CScoreTbl;
+class CScoreParam;
 class CQuery
 {
 public:
@@ -39,7 +40,7 @@ public:
     static Uint4 GetCount() { return s_count; }
 
     CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2 = "", int base = kDefaultQualityBase );
-    ~CQuery() { delete m_topHit; delete [] m_data; --s_count; }
+    ~CQuery() { for( int i = 0; i < 3; ++i ) delete m_topHit[i]; delete [] m_data; --s_count; }
 
     void SetRejectAsShort( int i, bool on = true ) { if( on ) m_flags |= (fReject_short0 << i ); else m_flags &= ~(fReject_short0 << i); }
     void SetRejectAsLoQual( int i, bool on = true ) { if( on ) m_flags |= (fReject_loQual0 << i ); else m_flags &= ~(fReject_loQual0 << i); }
@@ -61,20 +62,26 @@ public:
     unsigned GetBytesPerBase() const { return GetCoding() == CSeqCoding::eCoding_ncbipna ? 5 : 1; }
 
     CSeqCoding::ECoding GetCoding() const;
-    CHit * GetTopHit() const { return m_topHit; }
-    void ClearHits() { delete m_topHit; m_topHit = 0; }
+    CHit * GetTopHit() const { return GetTopHit( IsPairedRead() ? 3 : 1 ); }
+    CHit * GetTopHit( int components ) const { CheckMask( components ); return m_topHit[components-1]; }
+    void ClearHits() { for( int i = 0; i < 3; ++i ) { delete m_topHit[i]; m_topHit[i] = 0; } }
+    bool HasHits() const { return m_topHit[0] || m_topHit[1] || m_topHit[2]; }
 
-    double ComputeBestScore( const CScoreTbl& scoring, int component );
+    double ComputeBestScore( const CScoreParam * , int component );
     double GetBestScore(int i) const { return m_bestScore[i]; }
+    double GetBestScore() const { return GetBestScore(0) + GetBestScore(1); }
 
     void MarkPositionAmbiguous( int component, int pos );
+
+    ostream& PrintIupac( ostream& dest, int component, CSeqCoding::EStrand = CSeqCoding::eStrand_pos ) const;
+    template<typename Base>
+    ostream& PrintSeq( ostream& out, int component, CSeqCoding::EStrand = CSeqCoding::eStrand_pos ) const;
+    template<typename Base, typename Iter>
+    Iter Export( Iter dest, int component, CSeqCoding::EStrand = CSeqCoding::eStrand_pos ) const;
 
 private:
     explicit CQuery( const CQuery& q );
 
-    template<class CBase, int incr, CSeqCoding::ECoding coding>
-    double x_ComputeBestScore( const CScoreTbl& scoring, int component );
-    
 protected:
     void x_InitNcbi8na( const string& id, const string& data1, const string& data2, int base );
     void x_InitNcbiqna( const string& id, const string& data1, const string& data2, int base );
@@ -85,21 +92,26 @@ protected:
     template<class iterator>
     inline iterator Solexa2Ncbipna( iterator dest, const string& line, int );
 
+    static void CheckMask( int mask ) { ASSERT( mask ); ASSERT( (mask & ~3) == 0 ); }
+    void SetTopHit( CHit * hit ) { if( hit ) { CheckMask( hit->GetComponentMask() ); m_topHit[hit->GetComponentMask() - 1] = hit; } }
+    void ResetTopHit( int cmask ) { CheckMask( cmask ); m_topHit[cmask - 1] = 0; }
+
 protected:
     unsigned char * m_data; // contains id\0 data1 data2
     unsigned short  m_offset[2]; // m_offset[1] should always point to next byte after first seq data
     unsigned char   m_length[2];
     unsigned short  m_flags;
-    float m_bestScore[2];
-    CHit * m_topHit;
+    float m_bestScore[2]; // according to new scoring approach, we may not need this
+    CHit * m_topHit[3];
     static Uint4 s_count;
 };
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation
 
-inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2, int base ) : m_data(0), m_flags(0), m_topHit(0)
+inline CQuery::CQuery( CSeqCoding::ECoding coding, const string& id, const string& data1, const string& data2, int base ) : m_data(0), m_flags(0)
 {
+    m_topHit[0] = m_topHit[1] = m_topHit[2] = 0;
     switch( coding ) {
     case CSeqCoding::eCoding_ncbi8na: x_InitNcbi8na( id, data1, data2, base ); break;
     case CSeqCoding::eCoding_ncbiqna: x_InitNcbiqna( id, data1, data2, base ); break;
@@ -124,7 +136,7 @@ inline CSeqCoding::ECoding CQuery::GetCoding() const
 inline unsigned CQuery::x_ComputeInformativeLength( const string& seq ) const
 {
     unsigned l = seq.length();
-    while( l && strchr("N. \t",seq[l - 1]) ) --l;
+    while( l && strchr(" \t\r\n\v\f",seq[l - 1]) ) --l; // removed clipping of trailing Ns and .s to keep coordinates correct
     return l;
 }
 
@@ -240,6 +252,35 @@ inline void CQuery::x_InitColorspace( const string& id, const string& data1, con
         m_data[j++] = CColorTwoBase( CColorTwoBase::eFromASCII, data1[i++] );
     for( unsigned i = 0, j = m_offset[1]; i < m_length[1]; )
         m_data[j++] = CColorTwoBase( CColorTwoBase::eFromASCII, data2[i++] );
+}
+
+inline ostream& CQuery::PrintIupac( ostream& dest, int component, CSeqCoding::EStrand strand ) const 
+{
+    switch( GetCoding() ) {
+        case CSeqCoding::eCoding_ncbi8na: return PrintSeq<CNcbi8naBase>( dest, component, strand );
+        case CSeqCoding::eCoding_ncbiqna: return PrintSeq<CNcbiqnaBase>( dest, component, strand );
+        case CSeqCoding::eCoding_ncbipna: return PrintSeq<CNcbipnaBase>( dest, component, strand );
+        case CSeqCoding::eCoding_colorsp: return PrintSeq<CColorTwoBase>( dest, component, strand );
+        default: THROW( logic_error, "Unexpected encoding of sequence: " << GetCoding() );
+    }
+}
+
+template<typename Base>
+inline ostream& CQuery::PrintSeq( ostream& out, int component, CSeqCoding::EStrand strand ) const 
+{
+    Export<Base>( ostream_iterator<CIupacnaBase>( out ), component, strand );
+    return out;
+}
+
+template<typename Base, typename Iter>
+inline Iter CQuery::Export( Iter dest, int component, CSeqCoding::EStrand strand ) const 
+{
+    int incr = GetBytesPerBase();
+    const char * x = GetData( component );
+    const char * X = x + GetLength( component ) * incr;
+    if( strand ==  CSeqCoding::eStrand_neg ) { incr = - incr; swap( x, X ); x += incr; X += incr; }
+    for(; x != X; x += incr ) { *dest++ = CIupacnaBase( Base( x, strand ) ); }
+    return dest;
 }
 
 END_OLIGOFAR_SCOPES

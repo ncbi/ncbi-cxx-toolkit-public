@@ -1,4 +1,5 @@
-APP_PROJ = oligofar fadice
+APP_PROJ = oligofar fadice wbmask 
+#mktest
 
 REQUIRES = objects bdb -Cygwin
 

@@ -1,6 +1,6 @@
 #include <ncbi_pch.hpp>
 #include "cguidefile.hpp"
-#include "cscoring.hpp"
+#include "cscoreparam.hpp"
 #include "cseqids.hpp"
 #include "cquery.hpp"
 #include "chit.hpp"
@@ -36,9 +36,9 @@ int CGuideFile::x_CountMismatches( const string& smposx ) const
     return mcnt;
 }
     
-void CGuideFile::SetMismatchPenalty( const CScoring& sc ) 
+void CGuideFile::SetMismatchPenalty( const CScoreParam& sc ) 
 { 
-    m_mismatchPenalty = sc.GetMismatchScore()/sc.GetIdentityScore() - 1;
+    m_mismatchPenalty = (-sc.GetMismatchPenalty())/sc.GetIdentityScore() - 1;
 }
 
 bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
@@ -126,29 +126,29 @@ bool CGuideFile::NextHit( Uint8 ordinal, CQuery * query )
                 if( sfwd2 ) {
                     hit = new CHit( query, sord, 
                                     score1, spos1, spos1 + query->GetLength(0) - 1, 0,
-                                    score2, spos2, spos2 + query->GetLength(1) - 1, 0 );
+                                    score2, spos2, spos2 + query->GetLength(1) - 1, 0, "", "" );
                 } else {
                     hit = new CHit( query, sord, 
                                     score1, spos1, spos1 + query->GetLength(0) - 1, 0,
-                                    score2, spos2 + query->GetLength(1) - 1, spos2, 0 );
+                                    score2, spos2 + query->GetLength(1) - 1, spos2, 0, "", "" );
                 }
             } else {
                 if( sfwd2 ) {
                     hit = new CHit( query, sord, 
                                     score1, spos1 + query->GetLength(0) - 1, spos1, 0,
-                                    score2, spos2, spos2 + query->GetLength(1) - 1, 0 );
+                                    score2, spos2, spos2 + query->GetLength(1) - 1, 0, "", "" );
                 } else {
                     hit = new CHit( query, sord, 
                                     score1, spos1 + query->GetLength(0) - 1, spos1, 0,
-                                    score2, spos2 + query->GetLength(1) - 1, spos2, 0 );
+                                    score2, spos2 + query->GetLength(1) - 1, spos2, 0, "", "" );
                 }
             }
         } else {
             // Note: for paired reads we have only paired hits
             if( sfwd1 ) {
-                hit = new CHit( query, sord, 0, score1, spos1, spos1 + query->GetLength(0) - 1, 0 );
+                hit = new CHit( query, sord, 0, score1, spos1, spos1 + query->GetLength(0) - 1, 0, "" );
             } else {
-                hit = new CHit( query, sord, 0, score1, spos1 + query->GetLength(0) - 1, spos1, 0 );
+                hit = new CHit( query, sord, 0, score1, spos1 + query->GetLength(0) - 1, spos1, 0, "" );
             }
         }
         m_filter->PurgeHit( hit );

@@ -19,7 +19,7 @@ public:
     int GetEndPos() const { return m_bufferOffset + GetLength(); }
 
     CSeqBuffer( const objects::CSeqVector& vect, CSeqCoding::ECoding );
-    ~CSeqBuffer() { if( m_bufferAllocated ) delete m_begin; }
+    ~CSeqBuffer() { if( m_bufferAllocated ) delete [] m_begin; }
 
     CSeqCoding::ECoding GetCoding() const { return m_coding; }
 
@@ -30,8 +30,9 @@ protected:
     bool m_bufferAllocated;
     CSeqCoding::ECoding m_coding;
 
-protected:
+private:
     explicit CSeqBuffer( const CSeqBuffer& ) { THROW( logic_error, "CSeqBuffer copy constructor is prohibited!" ); } 
+    CSeqBuffer& operator = ( const CSeqBuffer& );
 };
 
 ////////////////////////////////////////////////////////////////////////

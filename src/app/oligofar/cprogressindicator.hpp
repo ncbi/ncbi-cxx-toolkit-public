@@ -25,6 +25,7 @@ public:
     void ResetTimer() { m_t0 = m_t1 = time(0); }
     void SetMessage( const string& message ) { m_message = message; Indicate(); }
     void SetUnits( const string& units ) { m_units = units; Indicate(); }
+    void AddCurrentValue( double value ) { m_currentValue += value; Indicate(); }
     void SetCurrentValue( double value ) { m_currentValue = value; Indicate(); }
     void SetInitialValue( double value ) { m_initialValue = value; }
     void SetFinalValue( double value ) { m_finalValue = value; }

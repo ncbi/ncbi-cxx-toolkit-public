@@ -1,99 +1,128 @@
 #include <ncbi_pch.hpp>
 #include "cfilter.hpp"
 #include "ialigner.hpp"
+#include "caligner.hpp"
 #include "cquery.hpp"
 #include "ioutputformatter.hpp"
+#include "cscoringfactory.hpp"
+#include "ialigner.hpp"
+#include <sstream>
 
 USING_OLIGOFAR_SCOPES;
 
 static const bool gsx_allowReverseAlignment = true;
 
-void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
+Uint8 CFilter::s_longestQueue = 0;
+
+void CFilter::SetAligner( IAligner * a ) 
+{
+    m_aligner = a;
+    m_scoringFactory = a ? a->GetScoringFactory() : 0;
+}
+
+void CFilter::Match( const CHashAtom& m, const char * a, const char * A, int pos1, int pos2 ) // always start at pos
 {
     ASSERT( m_aligner );
+    ASSERT( m_scoringFactory );
     if( int conv = m.GetConv() ) {
         if( conv & CHashAtom::fFlags_convTC ) {
-            int tbl = m.IsForwardStrand() ? CScoreTbl::eSel_ConvTC : CScoreTbl::eSel_ConvTC ;
-            m_aligner->SelectBasicScoreTables( tbl );
-            MatchConv( m, a, A, pos );
+            CScoringFactory::EConvertionTable tbl = m.IsForwardStrand() ? CScoringFactory::eConvTC : CScoringFactory::eConvTC ;
+            m_scoringFactory->SetConvertionTable( tbl );
+            MatchConv( m, a, A, pos1, pos2 );
         }
         if( conv & CHashAtom::fFlags_convAG ) {
-            int tbl = m.IsForwardStrand() ? CScoreTbl::eSel_ConvAG : CScoreTbl::eSel_ConvAG ;
-            m_aligner->SelectBasicScoreTables( tbl );
-            MatchConv( m, a, A, pos );
+            CScoringFactory::EConvertionTable tbl = m.IsReverseStrand() ? CScoringFactory::eConvAG : CScoringFactory::eConvAG ;
+            m_scoringFactory->SetConvertionTable( tbl );
+            MatchConv( m, a, A, pos1, pos2 );
         }
     } else {
-        m_aligner->SelectBasicScoreTables( CScoreTbl::eSel_NoConv );
-        MatchConv( m, a, A, pos );
+        m_scoringFactory->SetConvertionTable( CScoringFactory::eNoConv );
+        MatchConv( m, a, A, pos1, pos2 );
     }
 }
 
-void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int pos ) // always start at pos
+double CFilter::ComputePenaltyLimit( const CHashAtom& m, double bestScore ) const
 {
-    double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
-    m_aligner->SetBestPossibleQueryScore( bestScore );
+    // SCORE -- REWRITE
+    double worstScore = bestScore * m_scoreCutoff / 100;
+    if( m_topPct > m_scoreCutoff ) {
+        // int p = m.GetQuery()->IsPairedRead() ? 1 : 0;
+        double p = m.GetQuery()->GetBestScore( ! m.GetPairmate() );
+        if( CHit * hp = m.GetQuery()->GetTopHit( 3 ) ) 
+            worstScore = max( worstScore, (hp->GetTotalScore() * m_topPct/100/*00*/ - p) /* * bestScore */ );
+        if( CHit * hs = m.GetQuery()->GetTopHit( m.GetPairmask() ) ) 
+            worstScore = max( worstScore, (hs->GetTotalScore() * m_topPct/100/*00*/ - p) /* * bestScore */ );
+    }
+    double penaltyLimit = worstScore - bestScore; 
+    if( penaltyLimit > 0 ) {
+        THROW( runtime_error, "Bad penalty limit" << DISPLAY( penaltyLimit ) << DISPLAY( bestScore ) << DISPLAY( worstScore ) << DISPLAY( m_scoreCutoff ) << DISPLAY( m_topPct ) );
+    }
+    return penaltyLimit;
+}
+
+void CFilter::MatchConv( const CHashAtom& m, const char * a, const char * A, int pos1, int pos2 ) // always start at pos
+{
     bool reverseStrand = m.IsReverseStrand();
-    if( reverseStrand && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) --pos;
-    const CAlignerBase& abase = m_aligner->GetAlignerBase();
-    if( gsx_allowReverseAlignment && m.GetOffset() >= 3 ) {
-        int one = reverseStrand ? -1 : 1;
-        int off = m.GetOffset() * one;
-        const CAlignerBase& abase = m_aligner->GetAlignerBase();
-        /*
-        int qf1 = m.GetOffset(), ql1 = - m.GetOffset() - 1;
-        int sf1 = pos + off, sl1 = reverseStrand ? A - a - pos : -pos;
-        */
-        m_aligner->Align( m.GetQuery()->GetCoding(),
-                          m.GetQuery()->GetData( m.GetPairmate() ) + m.GetOffset(),
-                          - m.GetOffset() - 1,
-                          CSeqCoding::eCoding_ncbi8na,
-                          a + pos + off,
-                          reverseStrand ? A - a - pos : -pos,
-                          CAlignerBase::fComputeScore );
-        
-        double score1 = abase.GetRawScore();
-        int from = pos + off - one * (abase.GetSubjectAlignedLength() - 1);
+    if( reverseStrand && m.GetQuery()->GetCoding() == CSeqCoding::eCoding_colorsp ) { --pos1; --pos2; }
 
-        /*
-        int qf2 = m.GetOffset() + 1, ql2 = m.GetQuery()->GetLength( m.GetPairmate() ) - m.GetOffset() - 1;
-        int sf2 = pos + off + one, sl2 = reverseStrand ? -pos : A - a - pos;
-        */
-        m_aligner->Align( m.GetQuery()->GetCoding(),
-                          m.GetQuery()->GetData( m.GetPairmate() ) + m.GetOffset() + 1,
-                          m.GetQuery()->GetLength( m.GetPairmate() ) - m.GetOffset() - 1,
-                          CSeqCoding::eCoding_ncbi8na,
-                          a + pos + off + one,
-                          reverseStrand ? -pos : A - a - pos,
-                          CAlignerBase::fComputeScore );
+    /*========================================================================*
+     * Determine which parts of the read should align where 
+     *========================================================================*/
 
-        double score2 = abase.GetRawScore();
-        int to = pos + off + one * (abase.GetSubjectAlignedLength());
-        //int ql =  m.GetQuery()->GetLength( m.GetPairmate() );
+    int offset = m.GetOffset(); // offset
+    int length = m.GetQuery()->GetLength( m.GetPairmate() );
+    int width = pos2 - pos1 + 1; // window width
+    if( offset + length < width ) return; // does not fit
 
-        double score = (score1 + score2);
-        /*
-        cerr << m.GetQuery()->GetId() << DISPLAY( ql ) << DISPLAY( from ) << DISPLAY( to ) << DISPLAY( score ) << DISPLAY( bestScore ) << "\n";
-        cerr << DISPLAY( qf1 ) << DISPLAY( ql1 ) << DISPLAY( sf1 ) << DISPLAY( sl1 ) << DISPLAY( score1 ) << endl;
-        cerr << DISPLAY( qf2 ) << DISPLAY( ql2 ) << DISPLAY( sf2 ) << DISPLAY( sl2 ) << DISPLAY( score2 ) << endl;
-        */
-        score *= 100.0/bestScore;
-        if( score >= m_scoreCutoff ) { ProcessMatch( score, from, to, reverseStrand,  m.GetQuery(), m.GetPairmate() ); }
-    } else {
-        m_aligner->Align( m.GetQuery()->GetCoding(),
-                          m.GetQuery()->GetData( m.GetPairmate() ),
-                          m.GetQuery()->GetLength( m.GetPairmate() ),
-                          CSeqCoding::eCoding_ncbi8na,
-                          a + pos,
-                          reverseStrand ? -pos : A - a - pos,
-                          CAlignerBase::fComputeScore );
-        double score = abase.GetScore();
-        if( score >= m_scoreCutoff ) {
-            if( reverseStrand ) {
-                ProcessMatch( score, pos, pos - abase.GetSubjectAlignedLength() + 1, true,  m.GetQuery(), m.GetPairmate() );
-            } else {
-                ProcessMatch( score, pos, pos + abase.GetSubjectAlignedLength() - 1, false, m.GetQuery(), m.GetPairmate() );
-            }
-        }
+    /*========================================================================*
+     * Determine worst score allowed and penalty limit
+     *========================================================================*/
+
+    // this is the value below which there is no reason to continue alignment
+    double bestScore = m.GetQuery()->GetBestScore( m.GetPairmate() );
+    double penaltyLimit = ComputePenaltyLimit( m, bestScore );
+
+    /*========================================================================*
+     * Filter out too bad windows 
+     * (TODO: this may be too restrictive if we use quality scores)
+     *========================================================================*/
+
+    if( m_prefilter && m.HasDiffs() ) {
+        const CScoreParam * sp = m_scoringFactory->GetScoreParam();
+        double wordPenalty = 
+            - ( m.GetMismatches() * ( sp->GetMismatchPenalty() + sp->GetIdentityScore() ) )
+            - ( m.GetInsertions() ? ( sp->GetGapBasePenalty() + m.GetInsertions() * ( sp->GetGapExtentionPenalty() ) ) : 0 )
+            - ( m.GetDeletions()  ? ( sp->GetGapBasePenalty() + m.GetDeletions()  * ( sp->GetGapExtentionPenalty() + sp->GetIdentityScore() ) ) : 0 )
+            ;
+        if( wordPenalty < penaltyLimit ) return;
+    }
+
+    /*========================================================================*
+     * Here aligning code should start
+     *========================================================================*/
+
+    m_aligner->SetQuery( m.GetQuery()->GetData( m.GetPairmate() ), length );
+    m_aligner->SetQueryCoding( m.GetQuery()->GetCoding() );
+
+    // NB: m.Insertions mean insertion on subject side, while output insertion means that query has extra base,
+    // therefore here (in this function) we have opposite meanings of insertions and deletions to compute 
+    // positions and penalties
+
+    int qpos2 = offset + width - 1 - m.GetInsertions() + m.GetDeletions();
+
+    m_aligner->SetQueryAnchor( offset, qpos2 );
+    m_aligner->SetSubjectAnchor( pos1, pos2 );
+    m_aligner->SetSubjectStrand( m.IsReverseStrand() ? CSeqCoding::eStrand_neg : CSeqCoding::eStrand_pos );
+    m_aligner->SetPenaltyLimit( penaltyLimit );
+    m_aligner->SetWordDistance( m.GetMismatches() + m.GetInsertions() + m.GetDeletions() );
+
+    if( m_aligner->Align() ) {
+        double score = bestScore + m_aligner->GetPenalty();
+
+        // SCORE -- OK
+        ProcessMatch( score, // / bestScore * 100, 
+            m_aligner->GetSubjectFrom(), m_aligner->GetSubjectTo(), 
+            reverseStrand,  m.GetQuery(), m.GetPairmate() ); 
     }
 }
 
@@ -101,8 +130,11 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
 {
     ASSERT( query );
     ASSERT( m_ord >= 0 );
+    if( reverse ) swap( seqFrom, seqTo );
+    const TTranscript& transcript = m_aligner->GetSubjectTranscript();
+
     if( query->IsPairedRead() == false ) {
-        PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) );
+        PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_scoringFactory->GetConvertionTable(), transcript ) );
     } else { 
         Uint4 componentGeometry = Uint4( reverse ) | ( pairmate << 1 );
         ASSERT( (m_geometry & ~3) == 0 );
@@ -112,13 +144,14 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
         switch( "ALALLALALLAAAALL"[ (componentGeometry << 2) | m_geometry ] ) {
         default: THROW( logic_error, "Invalid action here!" );
         case eAction_Append:
-            m_pendingHits.insert( make_pair( reverse ? seqTo : seqFrom, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) ) );
+            m_pendingHits.insert( make_pair( reverse ? seqTo : seqFrom, new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_scoringFactory->GetConvertionTable(), transcript ) ) );
             break;
         case eAction_Lookup:
             do {
                 TPendingHits toAdd;
-                if( ! LookupInQueue( score, seqFrom, seqTo, reverse, query, pairmate, toAdd, true ) )
-                    PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) );
+                if( ! LookupInQueue( score, seqFrom, seqTo, reverse, query, pairmate, toAdd, true, transcript ) ) {
+                    PurgeHit( new CHit( query, m_ord, pairmate, score, seqFrom, seqTo, m_scoringFactory->GetConvertionTable(), transcript ) );
+                }
                 copy( toAdd.begin(), toAdd.end(), inserter( m_pendingHits, m_pendingHits.end() ) );
             } while(0);
             break;
@@ -126,7 +159,7 @@ void CFilter::ProcessMatch( double score, int seqFrom, int seqTo, bool reverse, 
     }
 }
 
-bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse, CQuery * query, int pairmate, TPendingHits& toAdd, bool canPurgeQueue )
+bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse, CQuery * query, int pairmate, TPendingHits& toAdd, bool canPurgeQueue, const TTranscript& transcript )
 {
     int seqMin = reverse ? seqTo : seqFrom;
     int seqMax = reverse ? seqFrom : seqTo;
@@ -154,7 +187,12 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
         if( hit->GetQuery() != query ) continue;
         if( !hit->HasComponent( !pairmate ) ) continue;
         if( !hit->HasComponent( pairmate ) ) {
-            hit->SetPairmate( pairmate, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() );
+            if( pairmate ) {
+                if( ! CheckGeometry( hit->GetFrom(0), hit->GetTo(0), seqFrom, seqTo ) ) continue;
+            } else {
+                if( ! CheckGeometry( seqFrom, seqTo, hit->GetFrom(1), hit->GetTo(1) ) ) continue;
+            }
+            hit->SetPairmate( pairmate, score, seqFrom, seqTo, m_scoringFactory->GetConvertionTable(), transcript );
             if( hit->IsOverlap() || hit->GetFilterGeometry() != m_geometry ) {
                 cerr << "\n\033[32mUpdated hit: " << ( hit->IsOverlap() ? "reads overlap" : "wrong geometry" ) << " {\x1b[032m";
                 hit->PrintDebug( cerr );
@@ -166,9 +204,14 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
             found = true;
         } else if( hit->IsReverseStrand( pairmate ) == reverse ) { // the strict criterion on mutual orientation suggests this
             int pos = phit->first;
+            if( pairmate ) {
+                if( ! CheckGeometry( hit->GetFrom(0), hit->GetTo(0), seqFrom, seqTo ) ) continue;
+            } else {
+                if( ! CheckGeometry( seqFrom, seqTo, hit->GetFrom(1), hit->GetTo(1) ) ) continue;
+            }
             CHit * nhit = pairmate ? 
-                new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), hit->GetConvTbl(0), score, seqFrom, seqTo, m_aligner->GetBasicScoreTables() ) :
-                new CHit( query, m_ord, score, seqFrom, seqTo, m_aligner->GetBasicScoreTables(), hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1), hit->GetConvTbl(1) );
+                new CHit( query, m_ord, hit->GetScore(0), hit->GetFrom(0), hit->GetTo(0), hit->GetConvTbl(0), score, seqFrom, seqTo, m_scoringFactory->GetConvertionTable(), hit->GetTranscript(0), transcript ) :
+                new CHit( query, m_ord, score, seqFrom, seqTo, m_scoringFactory->GetConvertionTable(), hit->GetScore(1), hit->GetFrom(1), hit->GetTo(1), hit->GetConvTbl(1), transcript, hit->GetTranscript(1) );
             if( nhit->IsOverlap() || nhit->GetFilterGeometry() != m_geometry ) {
                 cerr << "\n\033[35mDEBUG: Ignoring " << ( hit->IsOverlap() ? "reads overlap" : "wrong geometry" ) << " {\x1b[36m";
                 nhit->PrintDebug( cerr );
@@ -188,8 +231,10 @@ bool CFilter::LookupInQueue( double score, int seqFrom, int seqTo, bool reverse,
             } else {
                 toAdd.insert( make_pair( pos, nhit ) );
                 found = true;
-                while( phit != m_pendingHits.end() && phit->first == pos ) ++phit; // to prevent multiplication of existing hits
-                if( phit == m_pendingHits.end() ) break;
+                for( TPendingHits::iterator nhit = phit; ++nhit != m_pendingHits.end() ; )
+                    if( phit->first == nhit->first ) phit = nhit;
+                // while( phit != m_pendingHits.end() && phit->first == pos ) ++phit; // to prevent multiplication of existing hits
+                // if( phit == m_pendingHits.end() ) break;
             }
         } // else it is ignored
     }
@@ -241,6 +286,8 @@ void CFilter::SequenceBuffer( CSeqBuffer* buffer )
 {
     m_begin = buffer->GetBeginPtr();
     m_end = buffer->GetEndPtr();
+    ASSERT( m_aligner );
+    m_aligner->SetSubject( m_begin, m_end - m_begin );
 }
 
 void CFilter::SequenceEnd()
@@ -257,6 +304,7 @@ inline ostream& operator << ( ostream& o, CHit * h )
     return o;
 }
 
+// TODO: clip by score unpaired reads if we have added the paired one on top (?)
 void CFilter::PurgeHit( CHit * hit, bool setTarget )
 {
     if( hit == 0 ) return;
@@ -266,71 +314,80 @@ void CFilter::PurgeHit( CHit * hit, bool setTarget )
     ASSERT( hit->GetNextHit() == 0 );
     ASSERT( hit->GetComponentFlags() );
     CHit::C_NextCtl( hit ).SetPurged();
-    if( CHit * tih = q->GetTopHit() ) {
-        double hscore = hit->GetTotalScore();
-        double tscore = tih->GetTotalScore();
-        double cscore = tscore * m_topPct/100;
-        if( cscore > hscore ) { delete hit; return; }
+    if( CHit * top = q->GetTopHit( hit->GetComponentMask() ) ) {
+        double hitscore = hit->GetTotalScore();
+        double topscore = top->GetTotalScore();
+        double cutscore = topscore * m_topPct/100;
+        if( cutscore > hitscore ) { delete hit; return; } // chain was not changed - leave
         int topcnt = m_topCnt - 1;
 
-        if( tih->ClustersWithSameQ( hit ) ) {
-            if( tscore <= hscore ) {
-                q->m_topHit = hit;
-                CHit::C_NextCtl( hit ).SetNext( tih->GetNextHit() );
-                CHit::C_NextCtl( tih ).SetNext( 0 );
-                delete tih;
-                tih = 0;
+        if( top->ClustersWithSameQ( hit ) ) {
+            if( topscore <= hitscore ) {
+                q->SetTopHit( hit );
+                CHit::C_NextCtl( hit ).SetNext( top->GetNextHit() );
+                CHit::C_NextCtl( top ).SetNext( 0 );
+                delete top;
+                top = 0;
             } else {
-                delete hit; return; 
+                delete hit; return; // chain was not changed - leave
             }
-        } else if( tscore < hscore ) {
-            CHit::C_NextCtl( hit ).SetNext( tih );
-            q->m_topHit = hit;
-            cscore = ( tscore = hscore ) * m_topPct/100;
-        } else {
+        } else if( topscore < hitscore ) {
+            CHit::C_NextCtl( hit ).SetNext( top );
+            q->SetTopHit( hit );
+            cutscore = ( topscore = hitscore ) * m_topPct/100;
+        } else { // top >= hitscore
             // trying to insert hit somewhere in the list
             bool weak = true;
-            for( ; weak && tih->GetNextHit() && topcnt > 0; (tih = tih->GetNextHit()), --topcnt ) {
-                CHit * nih = tih->GetNextHit();
-                if( nih->ClustersWithSameQ( hit ) ) {
-                    if( nih->GetTotalScore() >= hit->GetTotalScore() ) {
+            for( ; weak && top->GetNextHit() && topcnt > 0; (top = top->GetNextHit()), --topcnt ) {
+                CHit * nxt = top->GetNextHit();
+                if( (!nxt->IsNull()) && nxt->ClustersWithSameQ( hit ) ) { // it does check components
+                    if( nxt->GetTotalScore() >= hitscore ) {
                         delete hit;
                     } else {
-                        CHit::C_NextCtl( tih ).SetNext( hit );
-                        CHit::C_NextCtl( hit ).SetNext( nih->GetNextHit() );
-                        CHit::C_NextCtl( nih ).SetNext( 0 );
-                        delete nih;
+                        CHit::C_NextCtl( top ).SetNext( hit );
+                        CHit::C_NextCtl( hit ).SetNext( nxt->GetNextHit() );
+                        CHit::C_NextCtl( nxt ).SetNext( 0 );
+                        delete nxt;
                     }
-                    return;
-                } else if( nih->IsNull() || nih->GetTotalScore() < hscore ) {
+                    return; // we either did not change chain, or have changed middle of the chain - no farther changes needed
+                } else if( nxt->IsNull() || nxt->GetTotalScore() < hitscore ) {
                     // keep chain linked
-                    CHit::C_NextCtl( hit ).SetNext( nih );
-                    CHit::C_NextCtl( tih ).SetNext( hit );
+                    CHit::C_NextCtl( hit ).SetNext( nxt );
+                    CHit::C_NextCtl( top ).SetNext( hit );
                     weak = false;
                 }
             }
-            // oops - the hit is too weak, ignore it 
+            // oops - the hit is too weak, we did nto find a place to insert it - so ignore it,
+            // and since chain have not changed - exit
             if( weak ) {
                 delete hit;
                 return;
             }
         }
-        for( tih = hit; topcnt > 0 && tih->GetNextHit() && tih->GetNextHit()->GetTotalScore() >= cscore; tih = tih->GetNextHit(), --topcnt ) { 
-            CHit * nih = tih->GetNextHit();
-            if( nih->ClustersWithSameQ( hit ) ) {
-                CHit::C_NextCtl( tih ).SetNext( nih->GetNextHit() );
-                CHit::C_NextCtl( nih ).SetNext( 0 );
-                delete nih;
+        // here we have updated chain, and accordingly we have updated topcnt and cutscore
+        CHit * cur = hit;
+        for( ; topcnt > 0 ; cur = cur->GetNextHit() ) { 
+            CHit * nxt = cur->GetNextHit();
+            if( nxt == 0 ) break;
+            if( nxt->IsNull() ) { ASSERT( nxt->GetNextHit() == 0 ); break; }
+            --topcnt;
+            if( nxt->GetTotalScore() < cutscore ) break;
+            if( nxt->ClustersWithSameQ( hit ) ) {
+                CHit::C_NextCtl( cur ).SetNext( nxt->GetNextHit() );
+                CHit::C_NextCtl( nxt ).SetNext( 0 );
+                delete nxt;
+                nxt = cur->GetNextHit();
                 ++topcnt;
+                if( nxt == 0 ) break;
             }
         }
-        if( tih->GetNextHit() && !tih->GetNextHit()->IsNull() ) {
-            delete tih->GetNextHit();
-            CHit::C_NextCtl( tih ).SetNext( topcnt > 0 ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
+        // we have reached the end of chain as it should be clipped
+        if( cur->GetNextHit() && !cur->GetNextHit()->IsNull() ) {
+            delete cur->GetNextHit();
+            CHit::C_NextCtl( cur ).SetNext( topcnt > 0 ? new CHit( q ) : 0 ); // if we clipped by score, we need to restore terminator
         }
     } else {
-        q->m_topHit = hit;
-        ASSERT( hit->GetNextHit() == 0 );
+        q->SetTopHit( hit );
         CHit::C_NextCtl( hit ).SetNext( new CHit( q ) );
     }
     bool fmt = m_outputFormatter && m_outputFormatter->ShouldFormatAllHits();

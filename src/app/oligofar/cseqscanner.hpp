@@ -12,8 +12,9 @@ BEGIN_OLIGOFAR_SCOPES
 class CSnpDb;
 class CSeqIds;
 class CFilter;
+class CFeatMap;
 class CProgressIndicator;
-class CComplexityMeasure;
+//class CComplexityMeasure;
 class CSeqScanner : public CSeqVecProcessor::ICallback
 {
 public:
@@ -21,19 +22,20 @@ public:
     typedef array_set <CHashAtom> TMatches;
 
     CSeqScanner() : 
-        m_maxAmbiguities( 4 ), m_maxSimplicity( 2.0 ), 
-        m_seqIds(0), m_snpDb(0), m_filter(0), m_queryHash(0), m_inputChunk(0), m_minBlockLength(1000),
+        m_maxAmbiguities( 4 ), 
+        m_seqIds(0), m_snpDb(0), m_filter(0), m_queryHash(0), m_featMap(0), 
+        m_inputChunk(0), m_minBlockLength(1000),
         m_ord(-1)/*, m_bisulfiteCuration(false)*/ {}
     
     virtual void SequenceBegin( const TSeqIds& seqIds, int oid );
     virtual void SequenceBuffer( CSeqBuffer* iupacna );
     virtual void SequenceEnd() {}
 
-    void SetMaxSimplicity( double s ) { m_maxSimplicity = s; }
     void SetMaxAmbiguities( int a ) { m_maxAmbiguities = a; }
 
 //    void SetSodiumBisulfateCuration( bool on ) { m_bisulfiteCuration = on; }
 
+    void SetFeatMap( CFeatMap * fmap ) { m_featMap = fmap; }
     void SetSnpDb( CSnpDb* snpdb ) { m_snpDb = snpdb; }
     void SetFilter( CFilter * filter ) { m_filter = filter; }
     void SetQueryHash( CQueryHash* queryhash ) { m_queryHash = queryhash; }
@@ -48,7 +50,7 @@ public:
 protected:
     void ScanSequenceBuffer( const char * a, const char * A, unsigned off, unsigned end, CSeqCoding::ECoding );
     void AssignTargetSequences( );
-	void CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A );
+	void CreateRangeMap( TRangeMap& rangeMap, const char * a, const char * A, int off );
 	bool IsThisSequence( int oid ) const;
 
     template<class Details, class Callback>
@@ -62,10 +64,10 @@ protected:
     class C_ScanImpl_Base 
     {
     public:
-        C_ScanImpl_Base( int winSize, int stride, double maxSimpl ) : 
-            m_windowSize( winSize ), m_strideSize( stride ), m_maxSimplicity( maxSimpl ) {}
-        double GetComplexity() const { return m_complexityMeasure; }
-        bool IsOk() const { return m_complexityMeasure <= m_maxSimplicity; }
+        C_ScanImpl_Base( int winSize, int stride ) : //, double maxSimpl ) : 
+            m_windowSize( winSize ), m_strideSize( stride ) {} //, m_maxSimplicity( maxSimpl ) {}
+//        double GetComplexity() const { return m_complexityMeasure; }
+        bool IsOk() const { return true; } //return m_complexityMeasure <= m_maxSimplicity; }
         // CHashParam  API
         int GetWindowSize() const { return m_windowSize; }
         int GetStrideSize() const { return m_strideSize; }
@@ -73,15 +75,15 @@ protected:
     protected:
         int m_windowSize;
         int m_strideSize;
-        double m_maxSimplicity;
-        CComplexityMeasure m_complexityMeasure;
+//        double m_maxSimplicity;
+//        CComplexityMeasure m_complexityMeasure;
     };
 
     class C_LoopImpl_Ncbi8naNoAmbiguities : public C_ScanImpl_Base
     {
     public:
-        C_LoopImpl_Ncbi8naNoAmbiguities( int ws, int ss, double maxSimpl ) : 
-            C_ScanImpl_Base( ws, ss, maxSimpl ), m_hashCode( GetWindowSize() ) {}
+        C_LoopImpl_Ncbi8naNoAmbiguities( int ws, int ss ) : //, double maxSimpl ) : 
+            C_ScanImpl_Base( ws, ss /*, maxSimpl*/ ), m_hashCode( GetWindowSize() ) {}
         template<class Callback>
         void RunCallback( Callback& );
         void Prepare( char a );
@@ -95,8 +97,9 @@ protected:
     {
     public:
         C_LoopImpl_Ncbi8naAmbiguities( int ws, int ss,
-                                       double maxSimpl, int maxAmb, Uint8 mask8, const UintH& maskH ) : 
-            C_ScanImpl_Base( ws, ss, maxSimpl ), 
+                                       /*double maxSimpl,*/
+                                       int maxAmb, Uint8 mask8, const UintH& maskH ) : 
+            C_ScanImpl_Base( ws, ss /*, maxSimpl*/ ), 
             m_hashGenerator( GetWindowSize() ), 
             m_maxAmbiguities( maxAmb ), m_mask8( mask8 ), m_maskH( maskH ) {}
         template<class Callback>
@@ -115,8 +118,8 @@ protected:
     class C_LoopImpl_ColorspNoAmbiguities : public C_LoopImpl_Ncbi8naNoAmbiguities
     {
     public:
-        C_LoopImpl_ColorspNoAmbiguities( int ws, int ss, double maxSimpl ) : 
-            C_LoopImpl_Ncbi8naNoAmbiguities( ws, ss, maxSimpl ), m_lastBase(1) {}
+        C_LoopImpl_ColorspNoAmbiguities( int ws, int ss /*, double maxSimpl */) : 
+            C_LoopImpl_Ncbi8naNoAmbiguities( ws, ss /*, maxSimpl*/ ), m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspNoAmbiguities"; }
@@ -128,8 +131,9 @@ protected:
     {
     public:
         C_LoopImpl_ColorspAmbiguities( int ws, int ss,
-                                       double maxSimpl, int maxAmb, Uint8 mask8, const UintH& maskH ) : 
-            C_LoopImpl_Ncbi8naAmbiguities( ws, ss, maxSimpl, maxAmb, mask8, maskH ),m_lastBase(1) {}
+                                       /*double maxSimpl, */
+                                       int maxAmb, Uint8 mask8, const UintH& maskH ) : 
+            C_LoopImpl_Ncbi8naAmbiguities( ws, ss/*, maxSimpl*/, maxAmb, mask8, maskH ),m_lastBase(1) {}
         void Prepare( char a );
         void Update( char a );
         const char * GetName() const { return "C_LoopImpl_ColorspAmbiguities"; }
@@ -143,11 +147,11 @@ protected:
 protected:
 //    unsigned m_windowLength;
     int m_maxAmbiguities;
-    double m_maxSimplicity;
     CSeqIds * m_seqIds;
     CSnpDb * m_snpDb;
     CFilter * m_filter;
     CQueryHash * m_queryHash;
+    CFeatMap * m_featMap;
     const TInputChunk * m_inputChunk;
     int  m_minBlockLength;
 	int  m_ord;

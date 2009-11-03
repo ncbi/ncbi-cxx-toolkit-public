@@ -66,10 +66,10 @@ public:
         flags &= mask;
         const TArray& a = m_table[ Uint4(key & m_indexMask) ];
         Uint2 subkey = Uint2( key >> m_indexBits );
+        if( a.size() == 0 ) return;
         TArray::const_iterator x = lower_bound( a.begin(), a.end(), value_type( subkey ), value_type::LessSubkey ); 
         for( ; x != a.end() && ! value_type::LessSubkey( subkey, x->GetSubkey() ) ; ++x ) {
-            if( x->GetFlags( mask ) == flags ) 
-                callback( *x );
+            if( x->GetFlags( mask ) == flags ) callback( *x );
         }
     }
 

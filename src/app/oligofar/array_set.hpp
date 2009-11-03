@@ -19,10 +19,12 @@ public:
     typedef       T& reference;
     typedef const T& const_reference;
 
+    ~array_set() { delete[] m_data; }
     array_set(): m_data(0), m_size(0), m_capacity(0) {}
     array_set(const array_set& a): m_data(0), m_size(0), m_capacity(0)
-    { *this = a; }
-    array_set& operator = (const array_set& a) {
+    { assign( a ); }
+    array_set& operator = (const array_set& a) { return assign( a ); }
+    array_set& assign( const array_set& a ) {
         if(&a == this) return *this;
         delete [] m_data;
         m_capacity = a.m_capacity;
@@ -36,6 +38,7 @@ public:
         return *this;
     }
 
+    bool empty() const { return m_size == 0; }
     size_type size() const { return m_size; }
     size_type capacity() const { return m_capacity; }
     void set_capacity(unsigned c) {
@@ -45,17 +48,18 @@ public:
         delete[] m_data;
         m_data = x;
     }
+    void reserve( size_t capacity ) { set_capacity( capacity ); }
 
     typedef T * iterator;
     typedef const T * const_iterator;
 
     iterator find(T a) {
         size_t pos = find_pos(a);
-        return m_data[pos] == a ? m_data+pos : end() ;
+        return (pos < m_size && m_data[pos] == a) ? m_data+pos : end() ;
     }
     const_iterator find(T a) const {
         size_t pos = find_pos(a);
-        return m_data[pos] == a ? m_data+pos : end() ;
+        return (pos < m_size && m_data[pos] == a) ? m_data+pos : end() ;
     }
 
     bool has(T a) const { return m_data[find_pos(a)] == a; }
@@ -74,7 +78,7 @@ public:
     array_set<T,Cmp>& operator -= (const array_set<T,Cmp>& a)
     { erase(a); return *this; }
 
-    void clear() { m_size = m_capacity = 0; delete m_data; m_data = 0; }
+    void clear() { m_size = m_capacity = 0; delete[] m_data; m_data = 0; }
     void purge() { m_size = 0; }
 
     iterator insert(iterator i, T t) { return insert(t); }
@@ -151,12 +155,13 @@ protected:
         if( pos > m_size ) pos = m_size;
         if( pos < m_size && m_data[pos] == val ) return end();
         if( m_size >= m_capacity ) {
-            T* x = new T[m_capacity+4];
+            if( m_capacity ) m_capacity <<= 1; else m_capacity = 1;
+            T* x = new T[m_capacity];
             std::copy(m_data, m_data+pos, x);
             if( m_size > pos ) std::copy(m_data+pos, m_data+m_size, x+pos+1);
             delete [] m_data;
             m_data = x;
-            m_capacity += 4;
+            //m_capacity += 4;
         } else {
             if( pos<m_size ) {
                 for(T* p=m_data+m_size, *q=p-1, *P=m_data+pos; p>P; )

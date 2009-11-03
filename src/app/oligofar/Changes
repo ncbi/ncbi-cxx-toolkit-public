@@ -40,3 +40,17 @@
 	* Added --NaHSO3=+|- to process sodium bisulfite treated data
 	* Fixed some errors
 
+3.91	2009/02/20
+	* New way to align using adopted Smith-Waterman, and a lot of changes connected to it.
+	* No colorspace, bisulfite curation of quality scores are allowed yet
+	* Going towards 4.0
+
+3.99    2009/06/15
+    * SAM 1.2 hsould be used as guide file format
+
+3.101	2009/11/03
+	* SAM 1.2 is default format for output. 
+	* FASTA and FASTAq are supported as input
+	* Feature files (limit search to the given loci) are added
+	* Colorspace and bisulfite curation are back
+	* A number of small improvements, optimizations and bugfixes
