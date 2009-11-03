@@ -17,17 +17,17 @@ Win32      : MSVC8 : msvc800_prj  static  32  ReleaseDLL
 Win64      : MSVC9-32 : msvc900_prj  dll     32  DebugDLL
 Win64      : MSVC9-64 : msvc900_prj  static  64  ReleaseDLL
 
-Linux32 : GCC304  : GCC.sh 3.0.4 --with-dll --with-mt --with-distcc
-Linux32 : GCC342  : GCC.sh 3.4.2 --without-flat-makefile --with-distcc
-Linux32 : GCC412  : GCC.sh 4.1.2 --without-debug --with-mt  <ENV>NCBI=</ENV>
-Linux32 : GCC423  : GCC.sh 4.2.3 --without-debug --with-distcc
-Linux32 : ICC     : ICC.sh       --without-debug --with-dll --with-mt
+Linux32-Suse : GCC304  : GCC.sh 3.0.4 --with-dll --with-mt --with-distcc
+Linux32-Suse : GCC342  : GCC.sh 3.4.2 --without-flat-makefile --with-distcc
+Linux32-Suse : GCC412  : GCC.sh 4.1.2 --without-debug --with-mt  <ENV>NCBI=</ENV>
+Linux32-Suse : GCC423  : GCC.sh 4.2.3 --without-debug --with-distcc
+Linux32-Suse : ICC     : ICC.sh       --without-debug --with-dll --with-mt
 
-Linux64 : GCC401  : GCC.sh 4.0.1 --without-debug --without-flat-makefile
-Linux64 : GCC401d : GCC.sh 4.0.1 --with-mt --with-distcc  <ENV>NCBI=</ENV> 
-Linux64 : GCC412  : GCC.sh 4.1.2 --with-distcc
-Linux64 : GCC423  : GCC.sh 4.2.3 --without-debug --with-mt --with-distcc
-Linux64 : ICC     : ICC.sh       --with-mt  <ENV>NCBI=</ENV>
+Linux64-Suse : GCC401  : GCC.sh 4.0.1 --without-debug --without-flat-makefile
+Linux64-Suse : GCC401d : GCC.sh 4.0.1 --with-mt --with-distcc  <ENV>NCBI=</ENV> 
+Linux64-Suse : GCC412  : GCC.sh 4.1.2 --with-distcc
+Linux64-Suse : GCC423  : GCC.sh 4.2.3 --without-debug --with-mt --with-distcc
+Linux64-Suse : ICC     : ICC.sh       --with-mt  <ENV>NCBI=</ENV>
 
 FreeBSD32 : GCC : GCC.sh --without-debug
 

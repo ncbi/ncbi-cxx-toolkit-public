@@ -13,7 +13,7 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
-DEFAULT_CONFIGURATIONS:  Linux32:ICC  Linux64:ICC  FreeBSD32:GCC  SunOSx86:GCC  SunOSSparc:WS64  IntelMAC:GCC
+DEFAULT_CONFIGURATIONS:  Linux32-Suse:ICC  Linux64-Suse:ICC  FreeBSD32:GCC  SunOSx86:GCC  SunOSSparc:WS64  IntelMAC:GCC
 
 COPY: $srcdir/src/connect/daemons/mod/*mod*  $installdir/src/
 COPY: $srcdir/include/connect/*.h            $installdir/include/connect/
@@ -28,10 +28,10 @@ COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux32    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux32-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux32-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux64-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux64-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 FreeBSD32  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSx86   : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSx86   : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
