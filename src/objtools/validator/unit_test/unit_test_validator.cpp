@@ -57,13 +57,18 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Ref_ext.hpp>
 #include <objects/seq/Map_ext.hpp>
+#include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_gap.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Pubdesc.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -82,6 +87,8 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/validator/validator.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -102,6 +109,8 @@ public:
     void SetSeverity (EDiagSev severity) { m_Severity = severity; }
     void SetErrCode (string err_code) { m_ErrCode = err_code; }
     void SetErrMsg (string err_msg) { m_ErrMsg = err_msg; }
+
+    const string& GetErrMsg(void) { return m_ErrMsg; }
 
 private:
     string m_Accession;
@@ -135,12 +144,13 @@ static void CheckErrors (const CValidError& eval, vector< CExpectedError* >& exp
 {
     size_t err_pos = 0;
 
-    for ( CValidError_CI vit(eval); vit; ++vit, ++err_pos ) {
+    for ( CValidError_CI vit(eval); vit; ++vit) {
         while (err_pos < expected_errors.size() && !expected_errors[err_pos]) {
             ++err_pos;
         }
         if (err_pos < expected_errors.size()) {
             expected_errors[err_pos]->Test(*vit);
+            ++err_pos;
         } else {
             string description =  vit->GetAccession() + ":"
                 + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
@@ -148,6 +158,12 @@ static void CheckErrors (const CValidError& eval, vector< CExpectedError* >& exp
                 + vit->GetMsg();
             BOOST_CHECK_EQUAL(description, "Unexpected error");
         }
+    }
+    while (err_pos < expected_errors.size()) {
+        if (expected_errors[err_pos]) {
+            BOOST_CHECK_EQUAL(expected_errors[err_pos]->GetErrMsg(), "Expected error not found");
+        }
+        ++err_pos;
     }
 }
 
@@ -657,14 +673,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_FuzzyLen)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    delete expected_errors[0];
-    expected_errors.clear();
-
     // shouldn't get fuzzy length if gap
+    expected_errors[0]->SetErrCode("SeqDataNotFound");
+    expected_errors[0]->SetErrMsg("Missing Seq-data on constructed Bioseq");
+    expected_errors[0]->SetSeverity(eDiag_Critical);
     entry->SetSeq().SetInst().SetSeq_data().SetGap();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    delete expected_errors[0];
+    expected_errors.clear();
 }
 
 
@@ -757,3 +775,151 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqDataLenWrong)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    // need to call this statement before calling AddDefaults 
+    // to make sure that we can fetch the sequence referenced by the
+    // delta sequence so that we can detect that the loc in the
+    // delta sequence is longer than the referenced sequence
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CValidator validator(*objmgr);
+
+    // Set validator options
+    unsigned int options = CValidator::eVal_need_isojta
+                          | CValidator::eVal_far_fetch_mrna_products
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version
+	                      | CValidator::eVal_use_entrez;
+
+    // list of expected errors
+    vector< CExpectedError *> expected_errors;
+
+    // validate - should be fine
+    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // longer and shorter for iupacna
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [65]"));
+    entry->SetSeq().SetInst().SetLength(65);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetLength(55);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [60] than given length [55]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // try other divisors
+    entry->SetSeq().SetInst().SetLength(60);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('A');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('T');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('G');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('C');
+    CRef<CSeq_data> packed_data(new CSeq_data);
+    // convert seq data to another format
+    // (NCBI2na = 2 bit nucleic acid code)
+    CSeqportUtil::Convert(entry->SetSeq().SetInst().GetSeq_data(),
+                          packed_data,
+                          CSeq_data::e_Ncbi2na);
+    entry->SetSeq().SetInst().SetSeq_data(*packed_data);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetSeq_data().SetNcbi2na().Set().pop_back();
+    entry->SetSeq().SetInst().SetSeq_data().SetNcbi2na().Set().pop_back();
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CSeqportUtil::Convert(entry->SetSeq().SetInst().GetSeq_data(),
+                          packed_data,
+                          CSeq_data::e_Ncbi4na);
+    entry->SetSeq().SetInst().SetSeq_data(*packed_data);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetSeq_data().SetNcbi4na().Set().push_back('1');
+    entry->SetSeq().SetInst().SetSeq_data().SetNcbi4na().Set().push_back('8');
+    entry->SetSeq().SetInst().SetSeq_data().SetNcbi4na().Set().push_back('1');
+    entry->SetSeq().SetInst().SetSeq_data().SetNcbi4na().Set().push_back('8');
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
+    // now try seg and ref
+    entry->SetSeq().SetInst().ResetSeq_data();
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_seg);
+    CRef<CSeq_id> id(new CSeq_id("gb|AY123456"));
+    CRef<CSeq_loc> loc(new CSeq_loc(*id, 0, 55));
+    entry->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+  
+    loc->SetInt().SetTo(63);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_ref);
+    entry->SetSeq().SetInst().SetExt().SetRef().SetInt().SetId(*id);
+    entry->SetSeq().SetInst().SetExt().SetRef().SetInt().SetFrom(0);
+    entry->SetSeq().SetInst().SetExt().SetRef().SetInt().SetTo(55);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetExt().SetRef().SetInt().SetTo(63);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // delta sequence
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 55);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data too short [56] for given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    entry->SetSeq().SetInst().SetExt().Reset();
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 30);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 40, 72);
+    expected_errors[0]->SetErrMsg("Bioseq.seq_data is larger [64] than given length [60]");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetExt().Reset();
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddSeqRange(*id, 0, 59);
+    CRef<CDelta_seq> delta_seq;
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
+    expected_errors[0]->SetErrMsg("NULL pointer in delta seq_ext valnode (segment 2)");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    entry->SetSeq().SetInst().SetExt().Reset();
+    CRef<CDelta_seq> delta_seq2(new CDelta_seq());
+    delta_seq2->SetLoc().SetInt().SetId(*id);
+    delta_seq2->SetLoc().SetInt().SetFrom(0);
+    delta_seq2->SetLoc().SetInt().SetTo(485);
+    entry->SetSeq().SetInst().SetLength(486);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(delta_seq2);
+    expected_errors[0]->SetErrMsg("Seq-loc extent (486) greater than length of gb|AY123456 (485)");
+    expected_errors[0]->SetSeverity(eDiag_Critical);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    delete expected_errors[0];
+    expected_errors.clear();
+}
+

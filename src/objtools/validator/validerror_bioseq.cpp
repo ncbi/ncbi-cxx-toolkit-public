@@ -1341,18 +1341,27 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
 }
 
 
-bool CValidError_bioseq::GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc)
+CRef<CSeq_loc> CValidError_bioseq::GetLocFromSeq(const CBioseq& seq)
 {
-    if (!seq.GetInst().IsSetExt()  ||  !seq.GetInst().GetExt().IsSeg()) {
-        return false;
+    CRef<CSeq_loc> loc;
+    if (!seq.GetInst().IsSetExt()) {
+        return loc;
     }
 
-    CSeq_loc_mix& mix = loc->SetMix();
-    ITERATE (list< CRef<CSeq_loc> >, it,
-        seq.GetInst().GetExt().GetSeg().Get()) {
-        mix.Set().push_back(*it);
+    if (seq.GetInst().GetExt().IsSeg()) {
+        CRef<CSeq_loc> nloc(new CSeq_loc());
+        loc = nloc;
+        CSeq_loc_mix& mix = loc->SetMix();
+        ITERATE (list< CRef<CSeq_loc> >, it,
+            seq.GetInst().GetExt().GetSeg().Get()) {
+            mix.Set().push_back(*it);
+        }
+    } else if (seq.GetInst().GetExt().IsRef()) {
+        CRef<CSeq_loc> nloc(new CSeq_loc());
+        loc = nloc;
+        loc->Add(seq.GetInst().GetExt().GetRef());
     }
-    return true;
+    return loc;
 }
 
 
@@ -2214,28 +2223,30 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     const CSeq_inst& inst = seq.GetInst();
 
     // Validate extension data -- wrap in CSeq_loc_mix for convenience
-    CSeq_loc loc;
-    if ( GetLocFromSeq(seq, &loc) ) {
-        m_Imp.ValidateSeqLoc(loc, bsh, "Segmented Bioseq", seq);
-    }
-
-    // Validate Length
-    try {
-        TSeqPos loclen = GetLength(loc, m_Scope);
-        TSeqPos seqlen = inst.IsSetLength() ? inst.GetLength() : 0;
-        if (seqlen > loclen) {
-            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
-                "Bioseq.seq_data too short [" + NStr::IntToString(loclen) +
-                "] for given length [" + NStr::IntToString(seqlen) + "]",
-                seq);
-        } else if (seqlen < loclen) {
-            PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
-                "Bioseq.seq_data is larger [" + NStr::IntToString(loclen) +
-                "] than given length [" + NStr::IntToString(seqlen) + "]",
-                seq);
+    CRef<CSeq_loc> loc = GetLocFromSeq(seq);
+    if (loc) {
+        if (inst.IsSetRepr() && inst.GetRepr() == CSeq_inst::eRepr_seg) {
+            m_Imp.ValidateSeqLoc(*loc, bsh, "Segmented Bioseq", seq);
         }
-    } catch (const CObjmgrUtilException&) {
-        ERR_POST_X(6, Critical << "Unable to calculate length: ");
+
+        // Validate Length
+        try {
+            TSeqPos loclen = GetLength(*loc, m_Scope);
+            TSeqPos seqlen = inst.IsSetLength() ? inst.GetLength() : 0;
+            if (seqlen > loclen) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
+                    "Bioseq.seq_data too short [" + NStr::IntToString(loclen) +
+                    "] for given length [" + NStr::IntToString(seqlen) + "]",
+                    seq);
+            } else if (seqlen < loclen) {
+                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
+                    "Bioseq.seq_data is larger [" + NStr::IntToString(loclen) +
+                    "] than given length [" + NStr::IntToString(seqlen) + "]",
+                    seq);
+            }
+        } catch (const CObjmgrUtilException&) {
+            ERR_POST_X(6, Critical << "Unable to calculate length: ");
+        }
     }
 
     // Check for multiple references to the same Bioseq
@@ -2273,7 +2284,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
 
     // Check that partial sequence info on sequence segments is consistent with
     // partial sequence info on sequence -- aa  sequences only
-    int partial = SeqLocPartialCheck(loc, m_Scope);
+    int partial = SeqLocPartialCheck(*loc, m_Scope);
     if (partial  &&  seq.IsAa()) {
         bool got_partial = false;
         FOR_EACH_DESCRIPTOR_ON_BIOSEQ (sd, seq) {
@@ -2414,7 +2425,7 @@ void CValidError_bioseq::ValidateDeltaLoc
                     if (seq_len <= stop) {
                         string id_label;
                         id->GetLabel(&id_label);
-                        PostErr (eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
+                        PostErr (eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
                                  "Seq-loc extent (" + NStr::IntToString (stop + 1) 
                                  + ") greater than length of " + id_label
                                  + " (" + NStr::IntToString(seq_len) + ")",
@@ -2807,7 +2818,8 @@ bool CValidError_bioseq::ValidateRepr
             rtn = false;
         }
         if (!inst.IsSetSeq_data() ||
-          inst.GetSeq_data().Which() == CSeq_data::e_not_set)
+          inst.GetSeq_data().Which() == CSeq_data::e_not_set
+          || inst.GetSeq_data().Which() == CSeq_data::e_Gap)
         {
             PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataNotFound, err2, seq);
             rtn = false;

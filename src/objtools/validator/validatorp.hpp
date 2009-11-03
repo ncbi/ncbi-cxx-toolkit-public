@@ -882,7 +882,7 @@ private:
     bool x_IsSameSeqAnnotDesc(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2);
     bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
     bool SuppressTrailingXMsg(const CBioseq& seq);
-    bool GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc);
+    CRef<CSeq_loc> GetLocFromSeq(const CBioseq& seq);
     bool IsDifferentDbxrefs(const TDbtags& dbxref1,
                             const TDbtags& dbxref2);
     bool IsHistAssemblyMissing(const CBioseq& seq);
