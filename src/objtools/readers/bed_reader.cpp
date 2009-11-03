@@ -215,6 +215,11 @@ void CBedReader::x_SetFeatureDisplayData(
     if ( m_columncount >= 4 ) {
         display_data->AddField( "name", fields[3] );
     }
+    else {
+        display_data->AddField( "name", string("") );
+        feature->SetData().SetUser( *display_data );
+        return;
+    }
     if ( m_columncount >= 5 ) {
         if ( !m_usescore ) {
             display_data->AddField( 
