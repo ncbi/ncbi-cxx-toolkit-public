@@ -804,7 +804,7 @@ public:
     NCBI_DEPRECATED static void Translate(const string& seq,
                           string& prot,
                           const CGenetic_code* code,
-                          bool include_stop,
+                          bool include_stop = true,
                           bool remove_trailing_X = false,
                           bool* alt_start = NULL,
                           bool is_5prime_complete = true);
@@ -842,7 +842,7 @@ public:
     NCBI_DEPRECATED static void Translate(const CSeqVector& seq,
                           string& prot,
                           const CGenetic_code* code,
-                          bool include_stop,
+                          bool include_stop = true,
                           bool remove_trailing_X = false,
                           bool* alt_start = NULL,
                           bool is_5prime_complete = true);
