@@ -1095,10 +1095,20 @@ bool CObjectIStreamXml::ReadCDSection(string& str)
 }
 
 void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
+/*
+    White Space Handling:
+    http://www.w3.org/TR/2000/REC-xml-20001006#sec-white-space
+
+    End-of-Line Handling
+    http://www.w3.org/TR/2000/REC-xml-20001006#sec-line-ends
+    
+    Attribute-Value Normalization
+    http://www.w3.org/TR/2000/REC-xml-20001006#AVNormalize
+*/
 {
     BeginData();
-    bool skip_spaces = false;
     bool encoded = false;
+    bool CR = false;
     try {
         for ( ;; ) {
             int c = ReadEncodedChar(m_Attlist ? '\"' : '<', type, &encoded);
@@ -1106,27 +1116,21 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
                 if (m_Attlist || !ReadCDSection(str)) {
                     break;
                 }
+                CR = false;
                 continue;
             }
-            if (!encoded) {
-                if (c == '\n' || c == '\r') {
-                    skip_spaces = true;
-                    if (c == '\n') {
-                        str += ' ';
-                    }
-                    continue;
+            if (CR) {
+                if (c == '\n') {
+                    CR = false;
+                } else if (c == '\r') {
+                    c = '\n';
                 }
-                if (skip_spaces) {
-                    if (IsWhiteSpace(c)) {
-                        continue;
-                    } else {
-                        skip_spaces = false;
-                    }
-                }
-            } else {
-                if (!IsWhiteSpace(c)) {
-                    skip_spaces = false;
-                }
+            } else if (c == '\r') {
+                CR = true;
+                continue;
+            }
+            if (m_Attlist && !encoded && IsWhiteSpace(c)) {
+                c = ' ';
             }
             str += char(c);
             // pre-allocate memory for long strings
