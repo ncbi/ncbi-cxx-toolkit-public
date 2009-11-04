@@ -107,7 +107,7 @@ public:
     //  interface:
     //
 public:
-    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults);
+    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults, size_t = 5 );
 
     //
     //  internal helpers:
@@ -169,10 +169,8 @@ CRmOutReader::~CRmOutReader()
 }
 
 
-void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
+void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags, size_t uMaxErrorCount )
 {
-    const size_t MAX_ERROR_COUNT = 5;
-    
     string line;
     CSeq_annot::C_Data::TFtable& ftable = entry->SetData().SetFtable();
     CRef<CSeq_feat> feat;
@@ -197,7 +195,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
             LOG_POST_X( 1, Error << "Rmo Reader: Parse error in record " 
                 << record_counter << " (line " << line_counter 
                 << "). Record skipped" );
-            if ( error_counter < MAX_ERROR_COUNT ) {
+            if ( error_counter < uMaxErrorCount ) {
                 continue;
             }
             else {
@@ -210,7 +208,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
             LOG_POST_X( 2, Error << "Rmo Reader: Verification error in record " 
                 << record_counter << " (line " << line_counter 
                 << "). Record skipped." );
-            if ( error_counter < MAX_ERROR_COUNT ) {
+            if ( error_counter < uMaxErrorCount ) {
                 continue;
             }
             else {
@@ -220,7 +218,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
         
         if ( ! MakeFeature( mask_data, feat, flags ) ) {
             // we don't tolerate even a few errors here!
-            error_counter = MAX_ERROR_COUNT;
+            error_counter = uMaxErrorCount;
             LOG_POST_X( 3, Error << "Rmo Reader: Unable to create feature table for record " 
                 << record_counter << " (line " << line_counter 
                 << "). Aborting file import." );
@@ -230,7 +228,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
         ftable.push_back( feat );
     }
     
-    if ( error_counter == MAX_ERROR_COUNT ) {
+    if ( error_counter == uMaxErrorCount ) {
         LOG_POST_X( 4, Error << "Rmo Reader: File import aborted due to error count or severity." );
         throw 0; // upper layer catches everything in sight and reports error to file_loader.
     }
