@@ -11,7 +11,7 @@ while :; do
         *     ) break ;;
     esac
 done
-: ${command=`basename "$1"`}
+: ${command:=`basename "$1"`}
 
 clean_up () {
     rm -rf "$command.lock"
