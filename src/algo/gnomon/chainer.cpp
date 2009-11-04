@@ -2325,6 +2325,187 @@ void CChainer::SetGenomic(const CSeq_id& contig)
     m_data->gnomon.reset(new CGnomonEngine(m_data->hmm_params, seq, TSignedSeqRange::GetWhole()));
 }
 
+CGnomonEngine& CChainer::GetGnomon()
+{
+    return *m_data->gnomon;
+}
+
+MarkupCappedEst::MarkupCappedEst(const set<string>& _caps, int _capgap)
+    : caps(_caps)
+    , capgap(_capgap)
+{}
+
+CAlignModel& MarkupCappedEst::operator()(CAlignModel& align)
+{
+    string acc = CIdHandler::ToString(*align.GetTargetId());
+    int fivep = align.TranscriptExon(0).GetFrom();
+    if(align.Strand() == eMinus)
+        fivep = align.TranscriptExon(align.Exons().size()-1).GetFrom();
+    if((align.Status()&CGeneModel::eReversed) == 0 && caps.find(acc) != caps.end() && fivep < capgap)
+        align.Status() |= CGeneModel::eCap;
+    return align;
+}
+
+MarkupTrustedGenes::MarkupTrustedGenes(set<string> _trusted_genes) : trusted_genes(_trusted_genes) {}
+
+CAlignModel& MarkupTrustedGenes::operator()(CAlignModel& align)
+{
+    string acc = CIdHandler::ToString(*align.GetTargetId());
+    if(trusted_genes.find(acc) != trusted_genes.end()) {
+        CRef<CSeq_id> target_id(new CSeq_id);
+        target_id->Assign(*align.GetTargetId());
+        if(align.Type() == CGeneModel::eProt)
+            align.InsertTrustedProt(target_id);
+        else
+            align.InsertTrustedmRNA(target_id);
+    }
+    return align;
+}
+
+ProteinWithBigHole::ProteinWithBigHole(double _hthresh, double _hmaxlen, CGnomonEngine& _gnomon)
+    : hthresh(_hthresh), hmaxlen(_hmaxlen), gnomon(_gnomon) {}
+bool ProteinWithBigHole::operator()(CAlignModel& m)
+{
+    if ((m.Type() & CAlignModel::eProt)!=0)
+        return false;
+    int total_hole_len = 0;
+    for(unsigned int i = 1; i < m.Exons().size(); ++i) {
+        if(!m.Exons()[i-1].m_ssplice || !m.Exons()[i].m_fsplice)
+            total_hole_len += m.Exons()[i].GetFrom()-m.Exons()[i-1].GetTo()-1;
+    }
+    if(total_hole_len < hmaxlen*m.Limits().GetLength())
+        return false;
+
+    for(unsigned int i = 1; i < m.Exons().size(); ++i) {
+        bool hole = !m.Exons()[i-1].m_ssplice || !m.Exons()[i].m_fsplice;
+        int intron = m.Exons()[i].GetFrom()-m.Exons()[i-1].GetTo()-1;
+        if (hole && gnomon.GetChanceOfIntronLongerThan(intron) < hthresh) {
+            return true;
+        } 
+    }
+    return false;
+}
+
+bool CdnaWithHole::operator()(CAlignModel& m)
+{
+    if ((m.Type() & CAlignModel::eProt)!=0)
+        return false;
+    return !m.Continuous();
+}
+
+HasShortIntron::HasShortIntron(CGnomonEngine& _gnomon)
+    :gnomon(_gnomon) {}
+
+bool HasShortIntron::operator()(CAlignModel& m)
+{
+    for(unsigned int i = 1; i < m.Exons().size(); ++i) {
+        bool hole = !m.Exons()[i-1].m_ssplice || !m.Exons()[i].m_fsplice;
+        int intron = m.Exons()[i].GetFrom()-m.Exons()[i-1].GetTo()-1;
+        if (!hole && intron < gnomon.GetMinIntronLen()) {
+            return true;
+        } 
+    }
+    return false;
+}
+
+CutShortPartialExons::CutShortPartialExons(int _minex)
+    : minex(_minex) {}
+
+int EffectiveExonLength(const CModelExon& e, const CAlignMap& alignmap, bool snap_to_codons) {
+    TSignedSeqRange shrinkedexon = alignmap.ShrinkToRealPoints(e,snap_to_codons);
+    int exonlen = alignmap.FShiftedLen(shrinkedexon,false);  // length of the projection on transcript
+    return min(exonlen,shrinkedexon.GetLength());
+}
+
+CAlignModel& CutShortPartialExons::operator()(CAlignModel& a)
+{
+    if (a.Exons().empty())
+        return a;
+
+    CAlignMap alignmap(a.GetAlignMap());
+    if(a.Exons().size() == 1 && min(a.Limits().GetLength(),alignmap.FShiftedLen(alignmap.ShrinkToRealPoints(a.Limits()),false)) < minex) {
+        // one exon and it is short
+        a.CutExons(a.Limits());
+        return a;
+    }
+
+    bool snap_to_codons = ((a.Type() & CAlignModel::eProt)!=0);      
+    TSignedSeqPos left  = a.Limits().GetFrom();
+    if ((a.Type() & CAlignModel::eProt)==0 || !a.LeftComplete()) {
+        for(unsigned int i = 0; i < a.Exons().size()-1; ++i) {
+            if(EffectiveExonLength(a.Exons()[i], alignmap, snap_to_codons) >= minex) {
+                break;
+            } else {
+                left = a.Exons()[i+1].GetFrom();
+                if(a.Strand() == ePlus && (a.Status()&CGeneModel::eCap) != 0)
+                    a.Status() ^= CGeneModel::eCap;
+                if(a.Strand() == eMinus && (a.Status()&CGeneModel::ePolyA) != 0)
+                    a.Status() ^= CGeneModel::ePolyA;
+            }
+        }
+    }
+
+    TSignedSeqPos right = a.Limits().GetTo();
+    if ((a.Type() & CAlignModel::eProt)==0 || !a.RightComplete()) {
+        for(unsigned int i = a.Exons().size()-1; i > 0; --i) {
+            if(EffectiveExonLength(a.Exons()[i], alignmap, snap_to_codons) >= minex) {
+                break;
+            } else {
+                right = a.Exons()[i-1].GetTo();
+                if(a.Strand() == eMinus && (a.Status()&CGeneModel::eCap) != 0)
+                    a.Status() ^= CGeneModel::eCap;
+                if(a.Strand() == ePlus && (a.Status()&CGeneModel::ePolyA) != 0)
+                    a.Status() ^= CGeneModel::ePolyA;
+            }
+        }
+    }
+
+    TSignedSeqRange newlimits(left,right);
+    newlimits = alignmap.ShrinkToRealPoints(newlimits,snap_to_codons);
+    if(newlimits != a.Limits()) {
+        if(newlimits.Empty() || newlimits.GetLength() < minex || alignmap.FShiftedLen(newlimits,false) < minex) {
+            a.CutExons(a.Limits());
+            return a;
+        }
+        a.Clip(newlimits,CAlignModel::eRemoveExons);
+    }
+    
+
+    for (size_t i = 1; i < a.Exons().size()-1; ++i) {
+        const CModelExon* e = &a.Exons()[i];
+        
+        while (i > 0 && !e->m_ssplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) {  //i==0 exon is long enough
+            
+            //this point is not an indel and is a codon boundary for proteins
+            TSignedSeqPos remainingpoint = alignmap.ShrinkToRealPoints(TSignedSeqRange(a.Exons().front().GetFrom(),a.Exons()[i-1].GetTo()),snap_to_codons).GetTo();
+            TSignedSeqPos left = e->GetFrom();
+            if(remainingpoint < a.Exons()[i-1].GetTo())
+                left = remainingpoint+1;
+            a.CutExons(TSignedSeqRange(left,e->GetTo()));
+            --i;
+            e = &a.Exons()[i];
+        }
+        
+        while (!e->m_fsplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) { // i always < size()-1
+            
+            //this point is not an indel and is a codon boundary for proteins
+            TSignedSeqPos remainingpoint = alignmap.ShrinkToRealPoints(TSignedSeqRange(a.Exons()[i+1].GetFrom(),a.Exons().back().GetTo()),snap_to_codons).GetFrom();
+            TSignedSeqPos right = e->GetTo();
+            if(remainingpoint > a.Exons()[i+1].GetFrom())
+                right = remainingpoint-1;
+            
+            a.CutExons(TSignedSeqRange(e->GetFrom(),right));
+            e = &a.Exons()[i];
+        }
+    }
+    return a;
+}
+
+bool HasNoExons::operator()(CAlignModel& m)
+{
+    return m.Exons().empty();
+}
+
 END_SCOPE(gnomon)
 END_SCOPE(ncbi)
 

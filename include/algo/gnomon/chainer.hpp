@@ -100,6 +100,7 @@ public:
     CRef<objects::CScope>& SetScope();
     void SetGenomic(const CSeq_id& seqid);
     void SetGenomicRange(const TAlignModelList& alignments);
+    CGnomonEngine& GetGnomon();
 
     struct TransformFunction : public unary_function<CAlignModel&, CAlignModel&> {
         virtual ~TransformFunction() {}
@@ -135,6 +136,49 @@ private:
     auto_ptr<CChainerImpl> m_data;
 };
 
+struct MarkupCappedEst : public CChainer::TransformFunction {
+    MarkupCappedEst(const set<string>& _caps, int _capgap);
+
+    const set<string>& caps;
+    int capgap;
+
+    virtual CAlignModel& operator()(CAlignModel& align);
+};
+
+struct MarkupTrustedGenes : public  CChainer::TransformFunction {
+    MarkupTrustedGenes(set<string> _trusted_genes);
+    const set<string>& trusted_genes;
+
+    virtual CAlignModel& operator()(CAlignModel& align);
+};
+
+struct ProteinWithBigHole : public  CChainer::Predicate {
+    ProteinWithBigHole(double hthresh, double hmaxlen, CGnomonEngine& gnomon);
+    double hthresh, hmaxlen;
+    CGnomonEngine& gnomon;
+    virtual bool operator()(CAlignModel& align);
+};
+
+struct CdnaWithHole : public  CChainer::Predicate {
+    virtual bool operator()(CAlignModel& align);
+};
+
+struct HasShortIntron : public  CChainer::Predicate {
+    HasShortIntron(CGnomonEngine& gnomon);
+    CGnomonEngine& gnomon;
+    virtual bool operator()(CAlignModel& align);
+};
+
+struct CutShortPartialExons : public  CChainer::TransformFunction {
+    CutShortPartialExons(int minex);
+    int minex;
+
+    virtual CAlignModel& operator()(CAlignModel& align);
+};
+
+struct HasNoExons : public  CChainer::Predicate {
+    virtual bool operator()(CAlignModel& align);
+};
 
 class NCBI_XALGOGNOMON_EXPORT CChainerArgUtil {
 public:
