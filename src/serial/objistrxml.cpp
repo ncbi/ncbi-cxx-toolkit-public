@@ -207,10 +207,11 @@ char CObjectIStreamXml::SkipWSAndComments(void)
             m_Input.SkipEndOfLine(c);
             continue;
         case '<':
+// http://www.w3.org/TR/REC-xml/#dt-comment
             if ( m_Input.PeekChar(1) == '!' &&
                  m_Input.PeekChar(2) == '-' &&
-                 m_Input.PeekChar(3) == '-' &&
-                 m_Input.PeekChar(4) != '-' ) {
+                 m_Input.PeekChar(3) == '-' /*&&
+                 m_Input.PeekChar(4) != '-'*/ ) {
                 // start of comment
                 m_Input.SkipChars(4);
                 for ( ;; ) {
