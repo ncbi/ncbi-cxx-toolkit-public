@@ -1184,7 +1184,9 @@ CDataType* DTDParser::TypesBlock(
             member->SetNotag();
         }
         if (!refNode.GetDefault().empty()) {
-            member->SetDefault(Value(refNode));
+            if (occ != DTDElement::eOneOrMore && occ != DTDElement::eZeroOrMore) {
+                member->SetDefault(Value(refNode));
+            }
         }
         member->SetNoPrefix();
         if (m_SrcType == eDTD || refNode.IsEmbedded()) {
