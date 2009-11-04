@@ -1,0 +1,3 @@
+[AddToProject]
+HeadersInInclude = test_mt.hpp
+HeadersInSrc = !
