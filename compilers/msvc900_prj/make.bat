@@ -101,8 +101,8 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO ABORT
 :CONTCFG
 TIME /T
-ECHO INFO: Configure "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "-CONFIGURE-"
+ECHO INFO: Configure "%LIBDLL%\%SOLUTION% [ReleaseDLL|%ARCH%]"
+%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "ReleaseDLL|%ARCHW%" /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
 IF NOT _%CMD% == _make GOTO COMPLETE
 
