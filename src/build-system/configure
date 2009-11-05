@@ -31738,7 +31738,6 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
-
 #############################################################################
 ### Create output files and do some post-configuration
 
