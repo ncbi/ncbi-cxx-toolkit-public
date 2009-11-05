@@ -101,6 +101,7 @@ CBedReader::CBedReader(
 //  ----------------------------------------------------------------------------
     : m_columncount( 0 )
     , m_usescore( false )
+    , m_iFlags( flags )
 {
 }
 
@@ -269,7 +270,7 @@ void CBedReader::x_SetFeatureLocation(
 {
     feature->ResetLocation();
     
-    CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, fields[0] ) );
+    CRef<CSeq_id> id = x_ResolvedId( fields[0] );
 
     CRef<CSeq_loc> location( new CSeq_loc );
     CSeq_interval& interval = location->SetInt();
@@ -307,6 +308,32 @@ void CBedReader::x_SetFeatureLocation(
     feature->SetLocation( *location );
 }
 
+//  ----------------------------------------------------------------------------
+CRef<CSeq_id> CBedReader::x_ResolvedId(
+    const string& strRawId )
+//  ----------------------------------------------------------------------------
+{
+    if (m_iFlags & fAllIdsAsLocal) {
+        if (NStr::StartsWith(strRawId, "lcl|")) {
+            return CRef<CSeq_id>(new CSeq_id( strRawId ) );
+        } else {
+            return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, strRawId ));
+        }
+    }
+
+    if (m_iFlags & fNumericIdsAsLocal) {
+        if ( strRawId.find_first_not_of("0123456789") == string::npos ) {
+            return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, strRawId));
+        }
+    }
+    try {
+        return CRef<CSeq_id>( new CSeq_id( strRawId ) );
+    }
+    catch (CSeqIdException&) {
+        return CRef<CSeq_id>( new CSeq_id( CSeq_id::e_Local, strRawId ) );
+    }
+}    
+            
 //  ----------------------------------------------------------------------------
 void CBedReader::x_SetTrackData(
     CRef<CSeq_annot>& annot,

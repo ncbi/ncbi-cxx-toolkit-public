@@ -61,7 +61,9 @@ public:
     //
 public:
     enum EBedFlags {
-        fDefaults = 0
+        fDefaults = 0,
+        fAllIdsAsLocal = 1<<0,
+        fNumericIdsAsLocal = 1<<1,
     };
     typedef int TFlags;
 
@@ -97,13 +99,17 @@ protected:
         CRef<CUser_object>&,
         const string&,
         const string& );
-    
+
+    CRef<CSeq_id> x_ResolvedId(
+        const string& );
+            
     //
     //  data:
     //
 protected:
     vector<string>::size_type m_columncount;
     bool m_usescore;
+    int m_iFlags;
 };
 
 END_SCOPE(objects)
