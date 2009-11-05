@@ -119,16 +119,22 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
     unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
         // ignore ampersand and "&amp;"
-        if ( (query[beg] == '&') ) {
+        if (query[beg] == '&') {
             ++beg;
             if (beg < len && !NStr::CompareNocase(query, beg, 4, "amp;")) {
                 beg += 4;
             }
             continue;
         }
+        // Alternative separator - ';'
+        else if (query[beg] == ';')
+        {
+            ++beg;
+            continue;
+        }
 
         // parse and URL-decode name
-        SIZE_TYPE mid = query.find_first_of("=&", beg);
+        SIZE_TYPE mid = query.find_first_of("=&;", beg);
         if (mid == beg) {
             NCBI_THROW2(CCgiArgsParserException, eFormat,
                         "Invalid delimiter: \"" + query + "\"", mid+1);
@@ -143,8 +149,8 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
         string value;
         if (query[mid] == '=') { // has a value
             mid++;
-            SIZE_TYPE end = query.find_first_of(" &", mid);
-            if (end != NPOS  &&  query[end] != '&') {
+            SIZE_TYPE end = query.find_first_of(" &;", mid);
+            if (end != NPOS  &&  query[end] != '&'  &&  query[end] != ';') {
                 NCBI_THROW2(CCgiArgsParserException, eFormat,
                             "Invalid delimiter: \"" + query + "\"", end+1);
             }
