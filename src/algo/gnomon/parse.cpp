@@ -645,7 +645,6 @@ TGeneModelList CParse::GetGenes() const
                     gene_map = gene.GetAlignMap();
                 }
                 
-                CAlignMap gene_map = gene.GetAlignMap();
                 TSignedSeqRange rf = gene_map.MapRangeOrigToEdited(reading_frame, true);
                 TSignedSeqRange stt(rf.GetFrom()-3,rf.GetFrom()-1);
                 TSignedSeqRange stp(rf.GetTo()+1,rf.GetTo()+3);
