@@ -371,61 +371,40 @@ void CSeq_loc_Mapper::CollectSynonyms(const CSeq_id_Handle& id,
 }
 
 
-int CSeq_loc_Mapper::CheckSeqWidth(const CSeq_id& id,
-                                   int            width,
-                                   TSeqPos*       length)
+CSeq_loc_Mapper::ESeqType
+CSeq_loc_Mapper::GetSeqType(const CSeq_id_Handle& idh) const
 {
     if ( m_Scope.IsNull() ) {
-        return width;
+        return eSeq_unknown;
     }
+    ESeqType seqtype = eSeq_unknown;
     CBioseq_Handle handle;
     try {
-        handle = m_Scope.GetScope().GetBioseqHandle(id);
+        handle = m_Scope.GetScope().GetBioseqHandle(idh);
+        if ( handle ) {
+            switch ( handle.GetBioseqMolType() ) {
+            case CSeq_inst::eMol_dna:
+            case CSeq_inst::eMol_rna:
+            case CSeq_inst::eMol_na:
+                seqtype = eSeq_nuc;
+                break;
+            case CSeq_inst::eMol_aa:
+                seqtype = eSeq_prot;
+                break;
+            default:
+                break;
+            }
+        }
     } catch (...) {
-        return width;
     }
-    if ( !handle ) {
-        return width;
-    }
-    if ( length ) {
-        *length = handle.GetBioseqLength();
-    }
-    switch ( handle.GetBioseqMolType() ) {
-    case CSeq_inst::eMol_dna:
-    case CSeq_inst::eMol_rna:
-    case CSeq_inst::eMol_na:
-        {
-            if ( width  &&  width != 3 ) {
-                // width already set to a different value
-                NCBI_THROW(CAnnotMapperException, eBadLocation,
-                            "Location contains different sequence types");
-            }
-            width = 3;
-            break;
+    if (seqtype != eSeq_unknown) {
+        // Cache sequence type for all synonyms
+        CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(idh);
+        ITERATE(CSynonymsSet, syn_it, *syns) {
+            SetSeqTypeById(syns->GetSeq_id_Handle(syn_it), seqtype);
         }
-    case CSeq_inst::eMol_aa:
-        {
-            if ( width  &&  width != 1 ) {
-                // width already set to a different value
-                NCBI_THROW(CAnnotMapperException, eBadLocation,
-                            "Location contains different sequence types");
-            }
-            width = 1;
-            break;
-        }
-    default:
-        return width;
     }
-    // Destination width should always be checked first
-    if ( !m_Dst_width ) {
-        m_Dst_width = width;
-    }
-    TWidthFlags wid_cvt = GetWidthFlags(width);
-    CConstRef<CSynonymsSet> syns = m_Scope.GetScope().GetSynonyms(id);
-    ITERATE(CSynonymsSet, syn_it, *syns) {
-        m_Widths[syns->GetSeq_id_Handle(syn_it)] = wid_cvt;
-    }
-    return width;
+    return seqtype;
 }
 
 
@@ -447,8 +426,7 @@ TSeqPos CSeq_loc_Mapper::GetSequenceLength(const CSeq_id& id)
 CSeq_align_Mapper_Base*
 CSeq_loc_Mapper::InitAlignMapper(const CSeq_align& src_align)
 {
-    return new CSeq_align_Mapper(src_align, m_UseWidth,
-        m_Scope.GetScopeOrNull());
+    return new CSeq_align_Mapper(src_align, *this);
 }
 
 

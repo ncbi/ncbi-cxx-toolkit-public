@@ -41,18 +41,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align,
-                                     bool map_widths,
-                                     CScope* scope)
-    : m_Scope(scope)
+CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align&     align,
+                                     CSeq_loc_Mapper_Base& loc_mapper)
+    : CSeq_align_Mapper_Base(loc_mapper)
 {
-    m_MapWidths = map_widths  &&  scope;
     x_Init(align);
 }
 
 
-CSeq_align_Mapper::CSeq_align_Mapper(CScope* scope)
-    : m_Scope(scope)
+CSeq_align_Mapper::CSeq_align_Mapper(CSeq_loc_Mapper_Base& loc_mapper)
+    : CSeq_align_Mapper_Base(loc_mapper)
 {
 }
 
@@ -430,30 +428,10 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
 }
 
 
-int CSeq_align_Mapper::GetSeqWidth(const CSeq_id& id) const
-{
-    if ( !m_Scope ) {
-        return 0;
-    }
-    CBioseq_Handle bh = m_Scope->GetBioseqHandle(id);
-    switch ( bh.GetBioseqMolType() ) {
-    case CSeq_inst::eMol_aa:
-        return 3;
-    case CSeq_inst::eMol_na:
-    case CSeq_inst::eMol_dna:
-    case CSeq_inst::eMol_rna:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
-
 CSeq_align_Mapper_Base*
-CSeq_align_Mapper::CreateSubAlign(const CSeq_align& align,
-                                  EWidthFlag map_widths)
+CSeq_align_Mapper::CreateSubAlign(const CSeq_align& align)
 {
-    return new CSeq_align_Mapper(align, map_widths == eWidth_Map, m_Scope);
+    return new CSeq_align_Mapper(align, GetLocMapper());
 }
 
 
@@ -461,8 +439,7 @@ CSeq_align_Mapper_Base*
 CSeq_align_Mapper::CreateSubAlign(const CSpliced_seg& spliced,
                                   const CSpliced_exon& exon)
 {
-    auto_ptr<CSeq_align_Mapper> sub(
-        new CSeq_align_Mapper(m_Scope.GetPointerOrNull()));
+    auto_ptr<CSeq_align_Mapper> sub(new CSeq_align_Mapper(GetLocMapper()));
     sub->InitExon(spliced, exon);
     return sub.release();
 }

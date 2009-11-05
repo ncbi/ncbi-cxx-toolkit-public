@@ -1904,9 +1904,10 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
 void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
                                       CRef<CSeq_align>* dst)
 {
-    CRef<CSeq_align_Mapper> mapper(new CSeq_align_Mapper(src, false));
-    mapper->Convert(*this);
-    *dst = mapper->GetDstAlign();
+    CSeq_loc_Mapper_Base loc_mapper;
+    CSeq_align_Mapper mapper(src, loc_mapper);
+    mapper.Convert(*this);
+    *dst = mapper.GetDstAlign();
 }
 
 

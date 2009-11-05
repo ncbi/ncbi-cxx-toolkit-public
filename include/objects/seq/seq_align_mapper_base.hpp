@@ -66,9 +66,7 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
         TSeqPos        m_Start; ///< kInvalidSeqPos means skipped segment
         bool           m_IsSetStrand;
         ENa_strand     m_Strand;
-        int            m_Width; ///< not stored in ASN.1, width of a character
         bool           m_Mapped;
-        int            m_Frame;
     };
     typedef vector<SAlignment_Row> TRows;
 
@@ -80,16 +78,12 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
                            const CSeq_id& id,
                            int            start,
                            bool           is_set_strand,
-                           ENa_strand     strand,
-                           int            width,
-                           int            frame);
+                           ENa_strand     strand);
     SAlignment_Row& AddRow(size_t                idx,
                            const CSeq_id_Handle& id,
                            int                   start,
                            bool                  is_set_strand,
-                           ENa_strand            strand,
-                           int                   width,
-                           int                   frame);
+                           ENa_strand            strand);
 
     typedef vector< CRef<CScore> > TScores;
     typedef CSpliced_exon_chunk::E_Choice TPartType;
@@ -112,20 +106,14 @@ public:
     typedef CSeq_align::C_Segs::TDendiag TDendiag;
     typedef CSeq_align::C_Segs::TStd TStd;
 
-    enum EWidthFlag {
-        eWidth_NoMap,  // map sequences' widths
-        eWidth_Map     // do not map sequences' widths
-    };
-
-    CSeq_align_Mapper_Base(const CSeq_align& align,
-                           EWidthFlag        map_widths);
+    CSeq_align_Mapper_Base(const CSeq_align&     align,
+                           CSeq_loc_Mapper_Base& loc_mapper);
     ~CSeq_align_Mapper_Base(void);
 
     /// Map the whole alignment
-    void Convert(CSeq_loc_Mapper_Base& mapper);
+    void Convert(void);
     /// Map a single row of the alignment
-    void Convert(CSeq_loc_Mapper_Base& mapper,
-                 size_t                row);
+    void Convert(size_t row);
 
     CRef<CSeq_align> GetDstAlign(void) const;
 
@@ -136,14 +124,16 @@ public:
     const TSegments& GetSegments() const;
 
 protected:
-    CSeq_align_Mapper_Base(void);
+    CSeq_align_Mapper_Base(CSeq_loc_Mapper_Base& loc_mapper);
 
-    virtual int GetSeqWidth(const CSeq_id& id) const;
-    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align,
-                                                   EWidthFlag map_widths);
-    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSpliced_seg& spliced,
-                                                   const CSpliced_exon& exon);
-    void InitExon(const CSpliced_seg& spliced,
+    CSeq_loc_Mapper_Base& GetLocMapper(void) const { return m_LocMapper; }
+
+    virtual CSeq_align_Mapper_Base*
+        CreateSubAlign(const CSeq_align& align);
+    virtual CSeq_align_Mapper_Base*
+        CreateSubAlign(const CSpliced_seg&  spliced,
+                       const CSpliced_exon& exon);
+    void InitExon(const CSpliced_seg&  spliced,
                   const CSpliced_exon& exon);
 
     void x_Init(const CSeq_align& align);
@@ -167,12 +157,10 @@ private:
     void x_Init(const CSparse_seg& sparse);
 
     // Mapping through CSeq_loc_Mapper
-    void x_ConvertAlign(CSeq_loc_Mapper_Base& mapper, size_t* row);
-    void x_ConvertRow(CSeq_loc_Mapper_Base& mapper,
-                      size_t                row);
-    CSeq_id_Handle x_ConvertSegment(TSegments::iterator&  seg_it,
-                                    CSeq_loc_Mapper_Base& mapper,
-                                    size_t                row);
+    void x_ConvertAlign(size_t* row);
+    void x_ConvertRow(size_t row);
+    CSeq_id_Handle x_ConvertSegment(TSegments::iterator& seg_it,
+                                    size_t               row);
 
     typedef vector<ENa_strand> TStrands;
     void x_FillKnownStrands(TStrands& strands) const;
@@ -184,29 +172,34 @@ private:
     void x_GetDstDisc(CRef<CSeq_align>& dst) const;
     void x_GetDstSpliced(CRef<CSeq_align>& dst) const;
     void x_GetDstSparse(CRef<CSeq_align>& dst) const;
-    void x_GetDstExon(CSpliced_seg& spliced,
+    void x_GetDstExon(CSpliced_seg&              spliced,
                       TSegments::const_iterator& seg,
-                      CSeq_id_Handle& gen_id,
-                      CSeq_id_Handle& prod_id,
-                      ENa_strand& gen_strand,
-                      ENa_strand& prod_strand,
-                      bool& partial) const;
-    void x_PushExonPart(CRef<CSpliced_exon_chunk>& last_part,
+                      CSeq_id_Handle&            gen_id,
+                      CSeq_id_Handle&            prod_id,
+                      ENa_strand&                gen_strand,
+                      ENa_strand&                prod_strand,
+                      bool&                      partial) const;
+    void x_PushExonPart(CRef<CSpliced_exon_chunk>&    last_part,
                         CSpliced_exon_chunk::E_Choice part_type,
-                        int part_len,
-                        bool reverse,
-                        CSpliced_exon& exon) const;
+                        int                           part_len,
+                        bool                          reverse,
+                        CSpliced_exon&                exon) const;
+    // Sort segments by the first row start (to order exon parts
+    // by genetic start).
+    void x_SortSegs(void) const;
 
     // Special case: have to convert multi-id alignments to disc.
     void x_ConvToDstDisc(CRef<CSeq_align>& dst) const;
     int x_GetPartialDenseg(CRef<CSeq_align>& dst,
-                           int start_seg) const;
+                           int               start_seg) const;
 
+    // Check if both nucs and prots are present in the segments.
+    bool x_HaveMixedSeqTypes(void) const;
+
+    CSeq_loc_Mapper_Base&        m_LocMapper;
     CConstRef<CSeq_align>        m_OrigAlign;
     CConstRef<CSpliced_exon>     m_OrigExon;
     bool                         m_HaveStrands;
-    bool                         m_HaveWidths;
-    bool                         m_OnlyNucs;
     size_t                       m_Dim;
 
     // Alignment scores
@@ -239,8 +232,7 @@ protected:
 
     mutable CRef<CSeq_align>     m_DstAlign;
     TSubAligns                   m_SubAligns;
-    TSegments                    m_Segs;
-    bool                         m_MapWidths;
+    mutable TSegments            m_Segs;
     EAlignFlags                  m_AlignFlags;
 };
 
@@ -250,7 +242,6 @@ SAlignment_Segment::SAlignment_Row::SAlignment_Row(void)
     : m_Start(kInvalidSeqPos),
       m_IsSetStrand(false),
       m_Strand(eNa_strand_unknown),
-      m_Width(0),
       m_Mapped(false)
 {
     return;

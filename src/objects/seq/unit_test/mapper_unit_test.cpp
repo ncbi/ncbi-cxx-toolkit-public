@@ -91,7 +91,6 @@ USING_SCOPE(objects);
 #   define kInvalidSeqPos  -1
 #endif
 
-
 NCBITEST_AUTO_INIT()
 {
 }
@@ -1034,7 +1033,8 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse_Dendiag)
 
 BOOST_AUTO_TEST_CASE(s_TestMapping_Nuc2Prot_Denseg)
 {
-    // Dense-seg mapping, nuc to prot
+    // Dense-seg mapping, nuc to prot,
+    // mapped alignment is std-seg
     CSeq_loc src, dst;
     s_InitInterval(src.SetInt(), 4, 30, 89);
     s_InitInterval(dst.SetInt(), 6, 110, 129);
@@ -1061,39 +1061,74 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Nuc2Prot_Denseg)
         CRef<CSeq_align> mapped = mapper.Map(aln);
 
         BOOST_CHECK(mapped);
-        BOOST_CHECK(mapped->GetSegs().IsDenseg());
-        const CDense_seg& md = mapped->GetSegs().GetDenseg();
-        BOOST_CHECK_EQUAL(md.GetDim(), 2);
-        BOOST_CHECK(!md.IsSetStrands());
-        BOOST_CHECK_EQUAL(md.GetNumseg(), 3);
+        BOOST_CHECK(mapped->GetSegs().IsStd());
+        const CSeq_align::C_Segs::TStd& msegs = mapped->GetSegs().GetStd();
+        BOOST_CHECK_EQUAL(msegs.size(), 3);
+        CSeq_align::C_Segs::TStd::const_iterator msit = msegs.begin();
+        {{
+            const CStd_seg& ms = **msit;
+            BOOST_CHECK_EQUAL(ms.GetDim(), 2);
 
-        BOOST_CHECK_EQUAL(md.GetIds().size(), 2);
-        CDense_seg::TIds::const_iterator id_it = md.GetIds().begin();
-        CHECK_GI(**id_it, 3);
-        id_it++;
-        CHECK_GI(**id_it, 6);
+            BOOST_CHECK_EQUAL(ms.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = ms.GetIds().begin();
+            CHECK_GI(**id_it, 3);
+            id_it++;
+            CHECK_GI(**id_it, 6);
 
-        BOOST_CHECK_EQUAL(md.GetStarts().size(), 6);
-        CDense_seg::TStarts::const_iterator start = md.GetStarts().begin();
-        BOOST_CHECK_EQUAL(*start, 915);
-        start++;
-        BOOST_CHECK_EQUAL(*start, -1);
-        start++;
-        BOOST_CHECK_EQUAL(*start, 930);
-        start++;
-        BOOST_CHECK_EQUAL(*start, 110);
-        start++;
-        BOOST_CHECK_EQUAL(*start, 990);
-        start++;
-        BOOST_CHECK_EQUAL(*start, -1);
+            BOOST_CHECK_EQUAL(ms.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = ms.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(),
+                3, 915, 929, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Empty);
+            CHECK_GI((*loc_it)->GetEmpty(), 6);
+        }}
+        msit++;
+        {{
+            const CStd_seg& ms = **msit;
+            BOOST_CHECK_EQUAL(ms.GetDim(), 2);
 
-        BOOST_CHECK_EQUAL(md.GetLens().size(), 3);
-        CDense_seg::TLens::const_iterator len = md.GetLens().begin();
-        BOOST_CHECK_EQUAL(*len, 15);
-        len++;
-        BOOST_CHECK_EQUAL(*len, 60);
-        len++;
-        BOOST_CHECK_EQUAL(*len, 15);
+            BOOST_CHECK_EQUAL(ms.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = ms.GetIds().begin();
+            CHECK_GI(**id_it, 3);
+            id_it++;
+            CHECK_GI(**id_it, 6);
+
+            BOOST_CHECK_EQUAL(ms.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = ms.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(),
+                3, 930, 989, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(),
+                6, 110, 129, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+        }}
+        msit++;
+        {{
+            const CStd_seg& ms = **msit;
+            BOOST_CHECK_EQUAL(ms.GetDim(), 2);
+
+            BOOST_CHECK_EQUAL(ms.GetIds().size(), 2);
+            CStd_seg::TIds::const_iterator id_it = ms.GetIds().begin();
+            CHECK_GI(**id_it, 3);
+            id_it++;
+            CHECK_GI(**id_it, 6);
+
+            BOOST_CHECK_EQUAL(ms.GetLoc().size(), 2);
+            CStd_seg::TLoc::const_iterator loc_it = ms.GetLoc().begin();
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Int);
+            CHECK_SEQ_INT((*loc_it)->GetInt(),
+                3, 990, 1004, false, eNa_strand_unknown,
+                CInt_fuzz::eLim_unk, CInt_fuzz::eLim_unk);
+            loc_it++;
+            BOOST_CHECK_EQUAL((*loc_it)->Which(), CSeq_loc::e_Empty);
+            CHECK_GI((*loc_it)->GetEmpty(), 6);
+        }}
     }}
 }
 
@@ -1106,73 +1141,24 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Prot2Nuc_Denseg)
     s_InitInterval(dst.SetInt(), 4, 110, 169);
     CSeq_loc_Mapper_Base mapper(src, dst);
 
-    {{
-        CSeq_align aln;
-        aln.SetDim(2);
-        aln.SetType(CSeq_align::eType_diags);
-        CDense_seg& dseg = aln.SetSegs().SetDenseg();
-        dseg.SetDim(2);
-        dseg.SetNumseg(1);
+    CSeq_align aln;
+    aln.SetDim(2);
+    aln.SetType(CSeq_align::eType_diags);
+    CDense_seg& dseg = aln.SetSegs().SetDenseg();
+    dseg.SetDim(2);
+    dseg.SetNumseg(1);
 
-        CRef<CSeq_id> id(new CSeq_id);
-        id->SetGi(3); // not to be mapped
-        dseg.SetIds().push_back(id);
-        id.Reset(new CSeq_id);
-        id->SetGi(6); // will be mapped to gi 4
-        dseg.SetIds().push_back(id);
-        dseg.SetStarts().push_back(915);
-        dseg.SetStarts().push_back(15);
-        dseg.SetLens().push_back(50); // Extra bases on left and right
-        // Mapper treats all coordinates as nucleotide by default.
-        // Need to specify widths to force protein coordinates in the
-        // alignment row 2.
-        dseg.SetWidths().push_back(1);
-        dseg.SetWidths().push_back(3);
+    CRef<CSeq_id> id(new CSeq_id);
+    id->SetGi(3); // not to be mapped
+    dseg.SetIds().push_back(id);
+    id.Reset(new CSeq_id);
+    id->SetGi(6); // will be mapped to gi 4
+    dseg.SetIds().push_back(id);
+    dseg.SetStarts().push_back(915);
+    dseg.SetStarts().push_back(15);
+    dseg.SetLens().push_back(50); // Extra bases on left and right
 
-        CRef<CSeq_align> mapped = mapper.Map(aln);
-
-        BOOST_CHECK(mapped);
-        BOOST_CHECK(mapped->GetSegs().IsDenseg());
-        const CDense_seg& md = mapped->GetSegs().GetDenseg();
-        BOOST_CHECK_EQUAL(md.GetDim(), 2);
-        BOOST_CHECK(!md.IsSetStrands());
-        BOOST_CHECK_EQUAL(md.GetNumseg(), 3);
-
-        BOOST_CHECK_EQUAL(md.GetIds().size(), 2);
-        CDense_seg::TIds::const_iterator id_it = md.GetIds().begin();
-        CHECK_GI(**id_it, 3);
-        id_it++;
-        CHECK_GI(**id_it, 4);
-
-        BOOST_CHECK_EQUAL(md.GetStarts().size(), 6);
-        CDense_seg::TStarts::const_iterator start = md.GetStarts().begin();
-        BOOST_CHECK_EQUAL(*start, 915);
-        start++;
-        BOOST_CHECK_EQUAL(*start, -1);
-        start++;
-        BOOST_CHECK_EQUAL(*start, 960);
-        start++;
-        BOOST_CHECK_EQUAL(*start, 110);
-        start++;
-        BOOST_CHECK_EQUAL(*start, 1020);
-        start++;
-        BOOST_CHECK_EQUAL(*start, -1);
-
-        BOOST_CHECK_EQUAL(md.GetLens().size(), 3);
-        CDense_seg::TLens::const_iterator len = md.GetLens().begin();
-        BOOST_CHECK_EQUAL(*len, 45);
-        len++;
-        BOOST_CHECK_EQUAL(*len, 60);
-        len++;
-        BOOST_CHECK_EQUAL(*len, 45);
-
-        // Now both rows should be on nucs
-        BOOST_CHECK_EQUAL(md.GetWidths().size(), 2);
-        CDense_seg::TWidths::const_iterator wid = md.GetWidths().begin();
-        BOOST_CHECK_EQUAL(*wid, 1);
-        wid++;
-        BOOST_CHECK_EQUAL(*wid, 1);
-    }}
+    BOOST_CHECK_THROW(mapper.Map(aln), CAnnotMapperException);
 }
 
 
@@ -1318,9 +1304,9 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_SplicedProd_Nuc2Prot)
     BOOST_CHECK_EQUAL(spl.GetExons().size(), 1);
     const CSpliced_exon& ex = **spl.GetExons().begin();
     BOOST_CHECK(ex.GetProduct_start().IsProtpos());
-    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 120);
+    BOOST_CHECK_EQUAL(ex.GetProduct_start().GetProtpos().GetAmin(), 110);
     BOOST_CHECK(ex.GetProduct_end().IsProtpos());
-    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 149);
+    BOOST_CHECK_EQUAL(ex.GetProduct_end().GetProtpos().GetAmin(), 139);
     BOOST_CHECK_EQUAL(ex.GetGenomic_start(), 0);
     BOOST_CHECK_EQUAL(ex.GetGenomic_end(), 99);
     BOOST_CHECK_EQUAL(ex.GetParts().size(), 3);
@@ -1397,11 +1383,11 @@ BOOST_AUTO_TEST_CASE(s_TestMapping_Reverse_SplicedProd_Nuc2Prot_MinusProd)
     BOOST_CHECK((*part)->IsMatch());
     BOOST_CHECK_EQUAL((*part)->GetMatch(), 50);
     part++;
-    BOOST_CHECK((*part)->IsGenomic_ins());
-    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
-    part++;
     BOOST_CHECK((*part)->IsMismatch());
     BOOST_CHECK_EQUAL((*part)->GetMismatch(), 40);
+    part++;
+    BOOST_CHECK((*part)->IsGenomic_ins());
+    BOOST_CHECK_EQUAL((*part)->GetGenomic_ins(), 10);
 }
 
 

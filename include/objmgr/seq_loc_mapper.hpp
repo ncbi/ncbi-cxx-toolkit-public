@@ -198,10 +198,8 @@ public:
                                  TSynonyms&            synonyms) const;
 
 protected:
-    // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
-    virtual int CheckSeqWidth(const CSeq_id& id,
-                              int            width,
-                              TSeqPos*       length = 0);
+    // Check molecule type
+    virtual ESeqType GetSeqType(const CSeq_id_Handle& idh) const;
 
     // Get sequence length for the given seq-id
     virtual TSeqPos GetSequenceLength(const CSeq_id& id);

@@ -37,6 +37,7 @@
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <algorithm>
@@ -138,7 +139,9 @@ struct SSeq_align_Info
         {
             SMatch match;
             match.align.Reset(&align);
-            CSeq_align_Mapper mapper(align, false, &m_Master.GetScope());
+            CSeq_loc_Mapper loc_mapper(new CMappingRanges,
+                &m_Master.GetScope());
+            CSeq_align_Mapper mapper(align, loc_mapper);
             ITERATE ( CSeq_align_Mapper::TSegments, s, mapper.GetSegments() ) {
                 TSeqPos len = s->m_Len;
                 ITERATE ( SAlignment_Segment::TRows, r1, s->m_Rows ) {

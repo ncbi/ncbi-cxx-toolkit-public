@@ -240,8 +240,7 @@ public:
     };
     typedef int TMapOptions;
 
-    /// Mapping through a pre-filled CMappipngRanges. Source(s) and
-    /// destination(s) are considered as having the same width.
+    /// Mapping through a pre-filled CMappipngRanges.
     /// @param mapping_ranges
     ///  CMappingRanges filled with the desired source and destination
     ///  ranges. Must be a heap object (will be stored in a CRef<>).
@@ -330,21 +329,15 @@ public:
                                  TSynonyms&            synonyms) const;
 
 protected:
-    // Initialize the mapper with default values
-    CSeq_loc_Mapper_Base(void);
-
-    // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
-    virtual int CheckSeqWidth(const CSeq_id& id,
-                              int            width,
-                              TSeqPos*       length = 0);
-
-    enum EWidthFlags {
-        fWidthProtToNuc = 1,
-        fWidthNucToProt = 2
+    // Sequence type - to recalculate coordinates.
+    enum ESeqType {
+        eSeq_unknown = 0,
+        eSeq_nuc = 1,
+        eSeq_prot = 3
     };
-    typedef int TWidthFlags; // binary OR of "EWidthFlags"
-    // Get width flags from the width value.
-    TWidthFlags GetWidthFlags(int width) const;
+
+    // Get molecule type.
+    virtual ESeqType GetSeqType(const CSeq_id_Handle& idh) const;
 
     // Get sequence length for the given seq-id
     virtual TSeqPos GetSequenceLength(const CSeq_id& id);
@@ -380,8 +373,7 @@ protected:
                             TSeqPos&         dst_len,
                             ENa_strand       dst_strand,
                             const CInt_fuzz* fuzz_from = 0,
-                            const CInt_fuzz* fuzz_to = 0,
-                            int              src_width = 1);
+                            const CInt_fuzz* fuzz_to = 0);
 
     void x_MapSeq_loc(const CSeq_loc& src_loc);
 
@@ -399,8 +391,8 @@ protected:
     typedef vector<TDstIdMap>               TDstStrandMap;
 
     // Destination locations arranged by ID/range
-    typedef CRef<CInt_fuzz>                      TFuzz;
-    typedef pair<TFuzz, TFuzz>                   TRangeFuzz;
+    typedef CRef<CInt_fuzz>                 TFuzz;
+    typedef pair<TFuzz, TFuzz>              TRangeFuzz;
 
     struct SMappedRange {
         SMappedRange(void) : group(0) {}
@@ -423,17 +415,16 @@ protected:
     // 0 = not set, any other index = na_strand + 1
     typedef vector<TMappedRanges>                TRangesByStrand;
     typedef map<CSeq_id_Handle, TRangesByStrand> TRangesById;
-    typedef map<CSeq_id_Handle, TWidthFlags>     TWidthById;
+    typedef map<CSeq_id_Handle, ESeqType>        TSeqTypeById;
 
-    typedef CSeq_align::C_Segs::TDendiag TDendiag;
-    typedef CSeq_align::C_Segs::TStd     TStd;
+    typedef CSeq_align::C_Segs::TDendiag         TDendiag;
+    typedef CSeq_align::C_Segs::TStd             TStd;
 
 private:
     CSeq_loc_Mapper_Base(const CSeq_loc_Mapper_Base&);
     CSeq_loc_Mapper_Base& operator=(const CSeq_loc_Mapper_Base&);
 
     friend class CSeq_align_Mapper_Base;
-    // friend class CSeq_align_Mapper;
 
     enum EMergeFlags {
         eMergeNone,      // no merging
@@ -447,8 +438,20 @@ private:
         eGapRemove       // Remove gaps (NULLs)
     };
 
-    int x_CheckSeqWidth(const CSeq_loc& loc,
-                        TSeqPos* total_length);
+    // Check types of all sequences referenced by the location,
+    // calculate the total length of the location, return true
+    // if types are known for all sequences.
+    // Set seqtype to the detected sequence type or to unknown
+    // if the type can not be detected or there are multiple types.
+    bool x_CheckSeqTypes(const CSeq_loc& loc,
+                         ESeqType&       seqtype,
+                         TSeqPos&        len) const;
+    // Try to find at least one known sequence type in the location
+    // and force it for all other sequences if any.
+    ESeqType x_ForceSeqTypes(const CSeq_loc& loc) const;
+
+    void x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh);
+
     // Get sequence length, try to get the real length for
     // reverse strand, do not use "whole".
     TSeqPos x_GetRangeLength(const CSeq_loc_CI& it);
@@ -482,8 +485,7 @@ private:
                             const CSeq_id&             prod_id,
                             TSeqPos&                   prod_start,
                             TSeqPos&                   prod_len,
-                            ENa_strand                 prod_strand,
-                            int                        src_width);
+                            ENa_strand                 prod_strand);
     static TSeqPos sx_GetExonPartLength(const CSpliced_exon_chunk& part);
 
     bool x_MapNextRange(const TRange&     src_rg,
@@ -546,10 +548,8 @@ private:
     CRef<CGraphRanges>   m_GraphRanges;
 
 protected:
-    // Sources may have different widths, e.g. in an alignment
-    TWidthById           m_Widths;
-    bool                 m_UseWidth;
-    int                  m_Dst_width;
+    // Sources may have different types, e.g. in an alignment
+    mutable TSeqTypeById m_SeqTypes;
     bool                 m_Partial;
     bool                 m_LastTruncated;
     CRef<CMappingRanges> m_Mappings;
@@ -558,9 +558,24 @@ protected:
     int                  m_CurrentGroup;
 
 public:
-    // Methods for getting widths and mappings
+    // Initialize the mapper with default values
+    CSeq_loc_Mapper_Base(void);
+
+    // Methods for getting sequence types, use cached types (m_SeqTypes)
+    // if possible.
+    ESeqType GetSeqTypeById(const CSeq_id_Handle& idh) const;
+    ESeqType GetSeqTypeById(const CSeq_id& id) const;
+    // Methods for setting sequence types. May be used to populate the
+    // cache before mapping huge alignments if the types are already
+    // known.
+    void SetSeqTypeById(const CSeq_id_Handle& idh, ESeqType seqtype) const;
+    void SetSeqTypeById(const CSeq_id& id, ESeqType seqtype) const;
+
+    // Get sequence width.
     int GetWidthById(const CSeq_id_Handle& idh) const;
     int GetWidthById(const CSeq_id& id) const;
+
+    // Get mapping ranges.
     const CMappingRanges& GetMappingRanges(void) const { return *m_Mappings; }
 };
 
@@ -750,17 +765,44 @@ CRef<CSeq_align> CSeq_loc_Mapper_Base::Map(const CSeq_align& src_align,
 
 
 inline
+CSeq_loc_Mapper_Base::ESeqType
+CSeq_loc_Mapper_Base::GetSeqTypeById(const CSeq_id_Handle& idh) const
+{
+    TSeqTypeById::const_iterator it = m_SeqTypes.find(idh);
+    if (it != m_SeqTypes.end()) {
+        return it->second;
+    }
+    return GetSeqType(idh);
+}
+
+
+inline
+CSeq_loc_Mapper_Base::ESeqType
+CSeq_loc_Mapper_Base::GetSeqTypeById(const CSeq_id& id) const
+{
+    return GetSeqTypeById(CSeq_id_Handle::GetHandle(id));
+}
+
+
+inline
+void CSeq_loc_Mapper_Base::SetSeqTypeById(const CSeq_id& id,
+                                          ESeqType       seqtype) const
+{
+    SetSeqTypeById(CSeq_id_Handle::GetHandle(id), seqtype);
+}
+
+
+inline
 int CSeq_loc_Mapper_Base::GetWidthById(const CSeq_id_Handle& idh) const
 {
-    TWidthById::const_iterator it = m_Widths.find(idh);
-    return (it->second & fWidthProtToNuc) ? 3 : 1;
+    return (GetSeqTypeById(idh) == eSeq_prot) ? 3 : 1;
 }
 
 
 inline
 int CSeq_loc_Mapper_Base::GetWidthById(const CSeq_id& id) const
 {
-    return CSeq_id_Handle::GetHandle(id);
+    return GetWidthById(CSeq_id_Handle::GetHandle(id));
 }
 
 

@@ -48,16 +48,13 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CSeq_align_Mapper : public CSeq_align_Mapper_Base
 {
 public:
-    CSeq_align_Mapper(const CSeq_align& align,
-                      bool map_widths,
-                      CScope* scope = 0);
+    CSeq_align_Mapper(const CSeq_align&     align,
+                      CSeq_loc_Mapper_Base& loc_mapper);
 
     ~CSeq_align_Mapper(void);
 
 protected:
-    virtual int GetSeqWidth(const CSeq_id& id) const;
-    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align,
-                                                   EWidthFlag map_widths);
+    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align);
     virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSpliced_seg& spliced,
                                                    const CSpliced_exon& exon);
 
@@ -70,7 +67,7 @@ private:
     friend class CSeq_loc_Conversion_Set;
 
     // Used only to create sub-aligns
-    CSeq_align_Mapper(CScope* scope);
+    CSeq_align_Mapper(CSeq_loc_Mapper_Base& loc_mapper);
 
     void Convert(CSeq_loc_Conversion_Set& cvts);
 
@@ -86,8 +83,6 @@ private:
     CSeq_id_Handle x_ConvertSegmentCvt(TSegments::iterator& seg_it,
                                        TIdMap& id_map,
                                        size_t row);
-
-    mutable CRef<CScope> m_Scope;
 };
 
 
