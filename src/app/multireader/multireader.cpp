@@ -55,6 +55,7 @@
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/multireader.hpp>
 #include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/bed_reader.hpp> //  for flag definitions only
 #include <objtools/readers/wiggle_reader.hpp> //  for flag definitions only
 
 USING_NCBI_SCOPE;
@@ -234,6 +235,19 @@ void CMultiReaderApp::Init(void)
             "info", "warning", "error" ) );
 
     //
+    //  bed reader specific arguments:
+    //
+    arg_desc->AddFlag(
+        "all-ids-as-local",
+        "turn all ids into local ids",
+        true );
+        
+    arg_desc->AddFlag(
+        "numeric-ids-as-local",
+        "turn integer ids into local ids",
+        true );
+        
+    //
     //  wiggle reader specific arguments:
     //
     arg_desc->AddFlag(
@@ -351,7 +365,16 @@ void CMultiReaderApp::SetFlags(
             m_iFlags |= CWiggleReader::fAsGraph;
         }
         break;
-        
+    
+    case CFormatGuess::eBed:
+        if ( args["all-ids-as-local"] ) {
+            m_iFlags |= CBedReader::fAllIdsAsLocal;
+        }
+        if ( args["numeric-ids-as-local"] ) {
+            m_iFlags |= CBedReader::fNumericIdsAsLocal;
+        }
+        break;
+                   
     default:
         break;
     }
