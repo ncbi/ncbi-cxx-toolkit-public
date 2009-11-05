@@ -1001,10 +1001,8 @@ case "$host_os:$compiler" in
    CONF_dll_ext=".dylib"
    CONF_loadable_ext=".so"
    if $CXX -v 2>&1 | grep -q Apple; then
-      # Suppress warnings about potential changes in the size of long double;
-      # our ABI isn't too stable yet anyway.
-      CFLAGS="-Wno-long-double -fpascal-strings $CFLAGS"
-      CXXFLAGS="-Wno-long-double -fno-permissive -fpascal-strings $CXXFLAGS"
+      CFLAGS="-fpascal-strings $CFLAGS"
+      CXXFLAGS="-fno-permissive -fpascal-strings $CXXFLAGS"
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
       LDFLAGS="-flat_namespace $LD_FLAGS"
