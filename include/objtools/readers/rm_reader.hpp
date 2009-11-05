@@ -68,7 +68,8 @@ public:
         fDefaults = fIncludeRepeatName
     };
     typedef int TFlags;
-    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults, size_t = 5 ) =0;
+    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults, 
+        size_t = kMax_UInt ) =0;
 
     //
     //  data:

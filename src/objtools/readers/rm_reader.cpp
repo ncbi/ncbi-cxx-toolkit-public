@@ -107,7 +107,8 @@ public:
     //  interface:
     //
 public:
-    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults, size_t = 5 );
+    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults, 
+        size_t = kMax_UInt );
 
     //
     //  internal helpers:
