@@ -238,7 +238,7 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
     if (left_cds_limit<0) {
         int model_start = mrnamap.MapEditedToOrig(0);
 
-        if(Include(model.GetCdsInfo().ProtReadingFrame(),model_start)) {
+        if(Include(model.GetCdsInfo().ProtReadingFrame(),model_start) && reading_frame_start < 3) {
             starts[0].push_back(-3);            // proteins are scored no matter what
         } else {
             if(strand == eMinus)
