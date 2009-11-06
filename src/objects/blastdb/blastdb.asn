@@ -53,7 +53,8 @@ Blast-filter-program ::= INTEGER {
 }
 
 Blast-mask-list ::= SEQUENCE {
-    masks SEQUENCE OF Seq-loc,
+    -- masks for a single sequence should be grouped in a Packed-seqint
+    masks SEQUENCE OF Seq-loc,  
     more BOOLEAN
 }
 
