@@ -225,8 +225,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
         eKeepConnection
     };
 
-    /// Set connection mode
-    /// @sa GetConnMode
+    /// Please do not use this method. The eKeepConnection
+    /// connection mode is the default now.
     NCBI_DEPRECATED void SetConnMode(EConnectionMode conn_mode)
     {
         GetService().SetPermanentConnection(
