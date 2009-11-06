@@ -539,7 +539,6 @@ public :
 			size_t Puzator = 10000;
 			// size_t Puzator = 100;
                         CNetCacheAPI cln(mService,"Ooch!");
-                        cln.SetConnMode(CNetCacheAPI::eKeepConnection);
 
 			for( ; ; ) {
 				vector < StressoPotam * >::iterator PB =
