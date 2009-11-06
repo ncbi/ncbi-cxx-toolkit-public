@@ -7,7 +7,8 @@ HOSTED_LIBS = mapdata mapview mapviewcli mv_admin mv_admincli mv_align \
               mvobjutil
 
 
-DEPENDENCIES = ncbi_core ncbi_seq ncbi_seqext ncbi_misc ncbi_image ncbi_general
+DEPENDENCIES = gui_utils ncbi_algo ncbi_seqext ncbi_seq ncbi_misc ncbi_general \
+               ncbi_image ncbi_core
 
 CPPFLAGS = -DNCBI_MAPVIEWASN_EXPORTS
 
