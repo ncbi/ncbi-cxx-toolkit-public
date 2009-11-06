@@ -40,7 +40,13 @@ BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////
 //
-#define NET_COMPONENT_ALLOW_DEFAULT_CONSTRUCTOR(component_name) \
+
+/// To create a void (uninitialized) component instance
+enum EVoid {
+    eVoid   ///< To create a void (uninitialized) instance of a component
+};
+
+#define NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component_name) \
     protected: \
     CNetObjectRef<S##component_name##Impl> m_Impl; \
     public: \
@@ -49,10 +55,11 @@ BEGIN_NCBI_SCOPE
     C##component_name& operator =(TInstance impl) \
         {m_Impl = impl; return *this;} \
     operator TInstance() const {return m_Impl.GetPtr();} \
-    TInstance operator ->() const {return m_Impl.GetPtr();}
+    TInstance operator ->() const {return m_Impl.GetPtr();} \
+    C##component_name(EVoid /* create_void */) {}
 
-#define NET_COMPONENT(component_name) \
-    NET_COMPONENT_ALLOW_DEFAULT_CONSTRUCTOR(component_name) \
+#define NCBI_NET_COMPONENT(component_name) \
+    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component_name) \
     C##component_name() {}
 
 class NCBI_XCONNECT_EXPORT CNetObject

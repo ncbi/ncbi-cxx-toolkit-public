@@ -43,7 +43,7 @@ struct SCmdLineArgListImpl;
 
 class NCBI_XCONNECT_EXPORT CCmdLineArgList
 {
-    NET_COMPONENT(CmdLineArgList);
+    NCBI_NET_COMPONENT(CmdLineArgList);
 
     static CCmdLineArgList OpenForOutput(const string& file_or_stdout);
 

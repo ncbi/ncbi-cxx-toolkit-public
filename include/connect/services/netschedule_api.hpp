@@ -85,7 +85,7 @@ struct SNetScheduleAPIImpl;
 
 class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 {
-    NET_COMPONENT(NetScheduleAPI);
+    NCBI_NET_COMPONENT(NetScheduleAPI);
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
@@ -294,7 +294,7 @@ struct SNetScheduleSubmitterImpl;
 /// @sa CNetScheduleAPI, CNetScheduleExecuter
 class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 {
-    NET_COMPONENT(NetScheduleSubmitter);
+    NCBI_NET_COMPONENT(NetScheduleSubmitter);
 
     /// Submit job.
     /// @note on success job.job_id will be set.
@@ -437,7 +437,7 @@ struct SNetScheduleExecuterImpl;
 /// @sa CNetScheduleAPI, CNetScheduleSubmitter
 class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 {
-    NET_COMPONENT(NetScheduleExecuter);
+    NCBI_NET_COMPONENT(NetScheduleExecuter);
 
     /// Get a pending job.
     /// When function returns TRUE and job_key job receives running status,
@@ -604,7 +604,7 @@ struct SNetScheduleAdminImpl;
 
 class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 {
-    NET_COMPONENT(NetScheduleAdmin);
+    NCBI_NET_COMPONENT(NetScheduleAdmin);
 
     /// Status map, shows number of jobs in each status
     typedef map<CNetScheduleAPI::EJobStatus, unsigned> TStatusMap;

@@ -82,19 +82,21 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
         new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
 }
 
-SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
+SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section)
 {
-    m_ServiceName = config.GetString(driver_name,
+    _ASSERT(config != NULL);
+
+    m_ServiceName = config->GetString(section,
         "service", CConfig::eErr_NoThrow, kEmptyStr);
 
-    m_ClientName = config.GetString(driver_name,
+    m_ClientName = config->GetString(section,
         "client_name", CConfig::eErr_Throw, "noname");
 
-    m_LBSMAffinityName = config.GetString(driver_name,
+    m_LBSMAffinityName = config->GetString(section,
         "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
 
     unsigned long timeout_ms =
-        s_SecondsToMilliseconds(config.GetString(driver_name,
+        s_SecondsToMilliseconds(config->GetString(section,
             "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
 
     if (timeout_ms > 0)
@@ -103,7 +105,7 @@ SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
         m_Timeout = s_GetDefaultCommTimeout();
 
     m_ServerThrottlePeriod =
-        s_SecondsToMilliseconds(config.GetString(driver_name,
+        s_SecondsToMilliseconds(config->GetString(section,
             "throttle_relaxation_period", CConfig::eErr_NoThrow,
                 NCBI_AS_STRING(THROTTLE_RELAXATION_PERIOD_DEFAULT)),
                 SECONDS_DOUBLE_TO_MS_UL(THROTTLE_RELAXATION_PERIOD_DEFAULT));
@@ -111,7 +113,7 @@ SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
     if (m_ServerThrottlePeriod > 0) {
         string numerator_str, denominator_str;
 
-        NStr::SplitInTwo(config.GetString(driver_name,
+        NStr::SplitInTwo(config->GetString(section,
             "throttle_by_connection_error_rate", CConfig::eErr_NoThrow,
                 THROTTLE_BY_CONNECTION_ERROR_RATE_DEFAULT), "/",
                     numerator_str, denominator_str);
@@ -137,28 +139,38 @@ SNetServiceImpl::SNetServiceImpl(CConfig& config, const string& driver_name)
         m_ReconnectionFailureThresholdNumerator = numerator;
         m_ReconnectionFailureThresholdDenominator = denominator;
 
-        m_MaxSubsequentConnectionFailures = config.GetInt(driver_name,
+        m_MaxSubsequentConnectionFailures = config->GetInt(section,
             "throttle_by_subsequent_connection_failures", CConfig::eErr_NoThrow,
                 THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
 
-        m_MaxQueryTime = s_SecondsToMilliseconds(config.GetString(driver_name,
+        m_MaxQueryTime = s_SecondsToMilliseconds(config->GetString(section,
             "max_connection_time", CConfig::eErr_NoThrow,
                 NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
                 SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
 
-        m_ThrottleUntilDiscoverable = config.GetBool(driver_name,
+        m_ThrottleUntilDiscoverable = config->GetBool(section,
             "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
                 THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
 
         m_ForceRebalanceAfterThrottleWithin =
-            s_SecondsToMilliseconds(config.GetString(driver_name,
+            s_SecondsToMilliseconds(config->GetString(section,
                 "throttle_forced_rebalance", CConfig::eErr_NoThrow,
                     NCBI_AS_STRING(THROTTLE_FORCED_REBALANCE_DEFAULT)),
                     SECONDS_DOUBLE_TO_MS_UL(THROTTLE_FORCED_REBALANCE_DEFAULT));
     }
 
-    m_RebalanceStrategy = CreateSimpleRebalanceStrategy(config, driver_name);
+    m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
 
+    Init();
+}
+
+SNetServiceImpl::SNetServiceImpl(const string& service_name,
+        const string& client_name) :
+    m_ServiceName(service_name),
+    m_ClientName(client_name),
+    m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
+    m_Timeout(s_GetDefaultCommTimeout())
+{
     Init();
 }
 
@@ -419,8 +431,8 @@ SNetServerGroupImpl* SNetServiceImpl::DiscoverServers(
 
             if (--try_count < 0) {
                 NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-                    "Load balancer cannot find service name " +
-                        m_ServiceName + ".");
+                    "Load balancer cannot find service name '" +
+                        m_ServiceName + "'");
             }
             ERR_POST_X(4, "Could not find LB service name '" <<
                 m_ServiceName << "', will retry after delay");

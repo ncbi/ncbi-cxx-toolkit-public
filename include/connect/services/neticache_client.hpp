@@ -66,7 +66,7 @@ struct SNetICacheClientImpl;
 ///
 class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 {
-    NET_COMPONENT_ALLOW_DEFAULT_CONSTRUCTOR(NetICacheClient);
+    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(NetICacheClient);
 
     // Construct an instance with default connection parameters.
     CNetICacheClient();

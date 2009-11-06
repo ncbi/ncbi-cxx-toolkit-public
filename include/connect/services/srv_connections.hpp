@@ -75,7 +75,7 @@ struct SNetServerConnectionImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerConnection
 {
-    NET_COMPONENT(NetServerConnection);
+    NCBI_NET_COMPONENT(NetServerConnection);
 
     // Execute remote command 'cmd', check if the reply
     // starts with 'OK:', and return the remaining
@@ -89,7 +89,7 @@ struct SNetServerImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServer
 {
-    NET_COMPONENT(NetServer);
+    NCBI_NET_COMPONENT(NetServer);
 
     string GetHost() const;
     unsigned short GetPort() const;
@@ -114,7 +114,7 @@ struct SNetServerMultilineCmdOutputImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerMultilineCmdOutput
 {
-    NET_COMPONENT(NetServerMultilineCmdOutput);
+    NCBI_NET_COMPONENT(NetServerMultilineCmdOutput);
 
     CNetServerMultilineCmdOutput(const CNetServer::SExecResult& exec_result);
 

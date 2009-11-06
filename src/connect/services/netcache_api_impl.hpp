@@ -61,6 +61,12 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         m_Service->SetListener(m_Listener);
     }
 
+    SNetCacheAPIImpl(const string& service, const string& client_name) :
+        m_Service(new SNetServiceImpl(service, client_name))
+    {
+        Init();
+    }
+
     SNetCacheAPIImpl(const string& service, const string& client_name,
             const string& lbsm_affinity_name) :
         m_Service(new SNetServiceImpl(service, client_name, lbsm_affinity_name))
@@ -68,11 +74,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CNetObject
         Init();
     }
 
-    SNetCacheAPIImpl(CConfig& config, const string& driver_name) :
-        m_Service(new SNetServiceImpl(config, driver_name))
-    {
-        Init();
-    }
+    SNetCacheAPIImpl(CConfig* config, const string& section);
 
     IReader* GetReadStream(
         const CNetServer::SExecResult& exec_result,

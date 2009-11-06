@@ -116,11 +116,14 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }
 
+const char* kNetScheduleAPIDriverName = "netschedule_api";
+
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-        CConfig& config, const string& driver_name) :
-    m_Service(new SNetServiceImpl(config, driver_name))
+        CConfig* config, const string& section) :
+    m_Service(new SNetServiceImpl(config,
+        !section.empty() ? section : kNetScheduleAPIDriverName))
 {
-    m_Queue = config.GetString(driver_name,
+    m_Queue = config->GetString(section,
         "queue_name", CConfig::eErr_Throw, "noname");
 
     Init();
@@ -436,8 +439,6 @@ void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const char* kNetScheduleAPIDriverName = "netschedule_api";
-
 /// @internal
 class CNetScheduleAPICF : public IClassFactory<SNetScheduleAPIImpl>
 {
@@ -479,7 +480,7 @@ public:
                 version.Match(NCBI_INTERFACE_VERSION(IFace)) !=
                     CVersionInfo::eNonCompatible) {
             CConfig config(params);
-            return new SNetScheduleAPIImpl(config, m_DriverName);
+            return new SNetScheduleAPIImpl(&config, m_DriverName);
         }
         return NULL;
     }

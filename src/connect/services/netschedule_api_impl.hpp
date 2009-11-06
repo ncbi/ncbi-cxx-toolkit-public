@@ -168,7 +168,7 @@ struct SNetScheduleAPIImpl : public CNetObject
         Init();
     }
 
-    SNetScheduleAPIImpl(CConfig& config, const string& driver_name);
+    SNetScheduleAPIImpl(CConfig* config, const string& section);
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
     {

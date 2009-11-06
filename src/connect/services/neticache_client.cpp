@@ -367,8 +367,7 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "HASB");
     m_Impl->AddKVS(&cmd, key, 0, subkey);
-    return NStr::StringToUInt(
-        m_Impl->m_Service.FindServerAndExec(cmd).response) != 0;
+    return m_Impl->m_Service.FindServerAndExec(cmd).response == "1";
 }
 
 

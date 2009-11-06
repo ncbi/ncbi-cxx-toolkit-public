@@ -87,7 +87,9 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 struct SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
-    SNetServiceImpl(CConfig& config, const string& driver_name);
+    SNetServiceImpl(CConfig* config, const string& section);
+
+    SNetServiceImpl(const string& service_name, const string& client_name);
 
     SNetServiceImpl(const string& service_name,
         const string& client_name, const string& lbsm_affinity_name);

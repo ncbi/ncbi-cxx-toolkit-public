@@ -57,7 +57,6 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-
 struct SNetCacheAPIImpl;
 
 /// Client API for NetCache server.
@@ -74,14 +73,48 @@ struct SNetCacheAPIImpl;
 ///
 class NCBI_XCONNECT_EXPORT CNetCacheAPI
 {
-    NET_COMPONENT(NetCacheAPI);
+    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(NetCacheAPI);
+
+    /// Defines how this object must be initialized.
+    enum EAppRegistry {
+        eAppRegistry
+    };
+
+    /// Creates an instance of CNetCacheAPI and initializes
+    /// it with parameters read from the application registry.
+    /// @param use_app_reg
+    ///   Selects this constructor.
+    ///   The parameter is not used otherwise.
+    /// @param conf_section
+    ///   Name of the registry section to look for the configuration
+    ///   parameters in.  If empty string is passed, then section
+    ///   "netcache_api" will be used.
+    explicit CNetCacheAPI(EAppRegistry use_app_reg,
+        const string& conf_section = kEmptyStr);
+
+    /// Constructs a CNetCacheAPI object and initializes it with
+    /// parameters read from the specified configuration object.
+    /// @param conf
+    ///   Registry to get the configuration parameters from.
+    /// @param conf_section
+    ///   Name of the registry section to look for the configuration
+    ///   parameters in.  If empty string is passed, then section
+    ///   "netcache_api" will be used.
+    explicit CNetCacheAPI(CConfig* conf,
+        const string& conf_section = kEmptyStr);
 
     explicit CNetCacheAPI(const string& client_name);
 
     /// Construct client, working with the specified service
     CNetCacheAPI(const string& service_name,
+        const string& client_name);
+
+    /// This constructor will be retired in favor of the
+    /// constructors with the app registry/CConfig parameters.
+    NCBI_DEPRECATED
+    CNetCacheAPI(const string& service_name,
         const string& client_name,
-        const string& lbsm_affinity_name = kEmptyStr);
+        const string& lbsm_affinity_name);
 
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is

@@ -42,7 +42,7 @@ struct SNetServerGroupIteratorImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerGroupIterator
 {
-    NET_COMPONENT(NetServerGroupIterator);
+    NCBI_NET_COMPONENT(NetServerGroupIterator);
 
     CNetServer GetServer();
     CNetServer operator *() {return GetServer();}
@@ -63,7 +63,7 @@ struct SNetServerGroupImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServerGroup
 {
-    NET_COMPONENT(NetServerGroup);
+    NCBI_NET_COMPONENT(NetServerGroup);
 
     CNetServerGroupIterator Iterate();
 
@@ -74,7 +74,7 @@ struct SNetServiceImpl;
 
 class NCBI_XCONNECT_EXPORT CNetService
 {
-    NET_COMPONENT(NetService);
+    NCBI_NET_COMPONENT(NetService);
 
     const string& GetClientName() const;
     const string& GetServiceName() const;

@@ -53,7 +53,7 @@ struct SNetCacheAdminImpl;
 
 class NCBI_XCONNECT_EXPORT CNetCacheAdmin
 {
-    NET_COMPONENT(NetCacheAdmin);
+    NCBI_NET_COMPONENT(NetCacheAdmin);
 
     /// Shutdown the server daemon.
     ///

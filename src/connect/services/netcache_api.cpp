@@ -113,6 +113,14 @@ void CNetCacheServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, message);
 }
 
+const char* kNetCacheAPIDriverName = "netcache_api";
+
+SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section) :
+    m_Service(new SNetServiceImpl(config,
+        !section.empty() ? section : kNetCacheAPIDriverName))
+{
+    Init();
+}
 
 CNetServer SNetCacheAPIImpl::GetServer(const string& bid)
 {
@@ -130,11 +138,34 @@ void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
     cmd->append("\"");
 }
 
+CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
+    const string& conf_section /* = kEmptyStr */)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    CNcbiRegistry* reg;
+    if (app == NULL || (reg = &app->GetConfig()) == NULL) {
+        NCBI_THROW(CConfigException, eParameterMissing,
+            "Could not get default configuration parameters");
+    }
+    CConfig conf(*reg);
+    m_Impl = new SNetCacheAPIImpl(&conf, conf_section);
+}
+
+CNetCacheAPI::CNetCacheAPI(CConfig* conf, const string& conf_section) :
+    m_Impl(new SNetCacheAPIImpl(conf, conf_section))
+{
+}
+
 CNetCacheAPI::CNetCacheAPI(const string& client_name) :
     m_Impl(new SNetCacheAPIImpl(kEmptyStr, client_name, kEmptyStr))
 {
 }
 
+CNetCacheAPI::CNetCacheAPI(const string& service_name,
+        const string& client_name) :
+    m_Impl(new SNetCacheAPIImpl(service_name, client_name))
+{
+}
 
 CNetCacheAPI::CNetCacheAPI(const string& service_name,
     const string& client_name,
@@ -142,7 +173,6 @@ CNetCacheAPI::CNetCacheAPI(const string& service_name,
     m_Impl(new SNetCacheAPIImpl(service_name, client_name, lbsm_affinity_name))
 {
 }
-
 
 string CNetCacheAPI::PutData(const void*  buf,
                                 size_t       size,
@@ -436,7 +466,6 @@ CNetCacheAPI::EReadResult SNetCacheAPIImpl::ReadBuffer(
 
 
 ///////////////////////////////////////////////////////////////////////////////
-const char* kNetCacheAPIDriverName = "netcache_api";
 
 /// @internal
 class CNetCacheAPICF : public IClassFactory<SNetCacheAPIImpl>
@@ -479,7 +508,7 @@ public:
                 version.Match(NCBI_INTERFACE_VERSION(IFace)) !=
                     CVersionInfo::eNonCompatible) {
             CConfig config(params);
-            return new SNetCacheAPIImpl(config, m_DriverName);
+            return new SNetCacheAPIImpl(&config, m_DriverName);
         }
         return NULL;
     }
