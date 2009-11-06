@@ -210,10 +210,14 @@ char CObjectIStreamXml::SkipWSAndComments(void)
 // http://www.w3.org/TR/REC-xml/#dt-comment
             if ( m_Input.PeekChar(1) == '!' &&
                  m_Input.PeekChar(2) == '-' &&
-                 m_Input.PeekChar(3) == '-' /*&&
-                 m_Input.PeekChar(4) != '-'*/ ) {
+                 m_Input.PeekChar(3) == '-' ) {
                 // start of comment
                 m_Input.SkipChars(4);
+                if (m_Input.PeekChar(0) == '-' &&
+                    m_Input.PeekChar(1) == '-') {
+                        ThrowError(fFormatError,
+                                   "double-hyphen '--' is not allowed in XML comments");
+                }
                 for ( ;; ) {
                     m_Input.FindChar('-');
                     if ( m_Input.PeekChar(1) == '-' ) {
@@ -226,7 +230,7 @@ char CObjectIStreamXml::SkipWSAndComments(void)
                         else {
                             // --[^>]
                             ThrowError(fFormatError,
-                                       "double dash '--' is not allowed in XML comments");
+                                       "double-hyphen '--' is not allowed in XML comments");
                         }
                     }
                     else {
