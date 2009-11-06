@@ -73,7 +73,7 @@ struct SNetCacheAPIImpl;
 ///
 class NCBI_XCONNECT_EXPORT CNetCacheAPI
 {
-    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(NetCacheAPI);
+    NCBI_NET_COMPONENT(NetCacheAPI);
 
     /// Defines how this object must be initialized.
     enum EAppRegistry {
