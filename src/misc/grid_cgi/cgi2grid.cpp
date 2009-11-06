@@ -65,10 +65,7 @@ string s_GetCgiTunnel2GridUrl(const CCgiRequest& cgi_request)
 
 static inline string s_GetElapsedTime()
 {
-    CTime time(CTime::eCurrent);
-    time_t tt = time.GetTimeT();
-    string st = NStr::IntToString(tt);
-    return st;
+    return NStr::IntToString((long) CTime(CTime::eCurrent).GetTimeT());
 }
 
 
