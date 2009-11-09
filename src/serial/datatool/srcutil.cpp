@@ -49,8 +49,11 @@ string Identifier(const string& typeName, bool capitalize)
             if ( c == ':' ) {
                 continue;
             }
-            if ( c == '-' || c == '.' )
+            if ( c == '-' || c == '.' ) {
                 c = '_';
+            } else if (!isalnum((unsigned char)c)) {
+                c = '_';
+            }
             s += c;
         }
     }

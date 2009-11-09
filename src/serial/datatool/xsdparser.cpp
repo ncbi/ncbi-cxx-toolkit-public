@@ -1088,6 +1088,10 @@ void XSDParser::ParseRestriction(DTDAttribute& att)
 }
 
 void XSDParser::ParseEnumeration(DTDAttribute& att)
+// enumeration
+// http://www.w3.org/TR/2004/REC-xmlschema-2-20041028/datatypes.html#rf-enumeration
+// actual value
+// http://www.w3.org/TR/2004/REC-xmlschema-1-20041028/structures.html#key-vv
 {
     TToken tok = GetRawAttributeSet();
     att.SetType(DTDAttribute::eEnum);
@@ -1097,7 +1101,13 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
         att.SetType(DTDAttribute::eIntEnum);
     }
     if (GetAttribute("value")) {
-        att.AddEnumValue(m_Value, Lexer().CurrentLine(), id);
+        string v(m_ValuePrefix);
+        if (!v.empty()) {
+            v += ':';
+        }
+        v += m_Value;
+        NStr::TruncateSpacesInPlace(v);
+        att.AddEnumValue(v, Lexer().CurrentLine(), id);
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
