@@ -5292,12 +5292,17 @@ bool CValidError_feat::ValidateCdRegionTranslation
         other_than_mismatch = true;
         if (got_dash) {
             if (report_errors  ||  unclassified_except) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                EDiagSev sev = eDiag_Error;
+                if (unclassified_except) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_StartCodon,
                     "Illegal start codon (and " + 
                     NStr::IntToString(internal_stop_count) +
                     " internal stops). Probably wrong genetic code [" +
                     gccode + "]", feat);
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
+                reported_bad_start_codon = true;
+                PostErr(sev, eErr_SEQ_FEAT_InternalStop, 
                     NStr::IntToString(internal_stop_count) + 
                     " internal stops (and illegal start codon). Genetic code [" + gccode + "]", feat);
             }
@@ -5313,7 +5318,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
     } else if (got_dash) {
         has_errors = true;
         other_than_mismatch = true;
-        if (report_errors) {
+        if (report_errors && !reported_bad_start_codon) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, 
                 "Illegal start codon used. Wrong genetic code [" +
                 gccode + "] or protein should be partial", feat);

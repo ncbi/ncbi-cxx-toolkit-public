@@ -190,7 +190,14 @@ void CValidError_bioseq::ValidateSeqIds
     // gi, NT, or NC. Check that the same CSeq_id not included more
     // than once.
     bool has_gi = false;
+    bool is_lrg = false;
+    bool has_ng = false;
     FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
+        if ((*i)->IsGeneral() && (*i)->GetGeneral().IsSetDb() && NStr::EqualNocase((*i)->GetGeneral().GetDb(), "LRG")) {
+            is_lrg = true;
+        } else if ((*i)->IsOther() && (*i)->GetOther().IsSetAccession() && NStr::StartsWith((*i)->GetOther().GetAccession(), "NG_")) {
+            has_ng = true;
+        }
 
         // Check that no two CSeq_ids for same CBioseq are same type
         CBioseq::TId::const_iterator j;
@@ -231,6 +238,11 @@ void CValidError_bioseq::ValidateSeqIds
             has_gi = true;
         }
     }
+    if (is_lrg && !has_ng) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_ConflictingIdsOnBioseq,
+            "LRG sequence needs NG_ accession", seq);
+    }
+
 
     // Loop thru CSeq_ids to check formatting
     bool is_wgs = false;
@@ -1305,18 +1317,9 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
         const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(seq);
         if ( sfp ) {
         
-            // Get CCdregion 
-            CTypeConstIterator<CCdregion> cdr(ConstBegin(*sfp));
-            
-            // Get location on source sequence
-            const CSeq_loc& loc = sfp->GetLocation();
-
-            // Get CBioseq_Handle for source sequence
-            CBioseq_Handle hnd = m_Scope->GetBioseqHandle(loc);
-
             // Translate na CSeq_data
-            string prot;        
-            CCdregion_translate::TranslateCdregion(prot, hnd, loc, *cdr);
+            string prot;   
+            CSeqTranslator::Translate(*sfp, *m_Scope, prot); 
             
             if ( prot[prot.size() - 1] == '*' ) {
                 return true;
@@ -1510,9 +1513,35 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
 
     TSeqPos len = inst.IsSetLength() ? inst.GetLength() : 0;
     if ( seq.IsAa() ) {
-        if ( len <= 3  &&  !m_Imp.IsPDB() ) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_ShortSeq, "Sequence only " +
-                NStr::IntToString(len) + " residues", seq);
+        if (len <= 3) {
+            bool short_ok = false;
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);        
+            if ( bsh ) {
+                CSeqdesc_CI desc( bsh, CSeqdesc::e_Molinfo );
+                if (desc && desc->GetMolinfo().IsSetCompleteness()) {
+                    CMolInfo::TCompleteness completeness = desc->GetMolinfo().GetCompleteness();
+                    if (completeness == CMolInfo::eCompleteness_partial
+                        || completeness == CMolInfo::eCompleteness_no_left
+                        || completeness == CMolInfo::eCompleteness_no_right
+                        || completeness == CMolInfo::eCompleteness_no_ends) {
+                        short_ok = true;
+                    }
+                }
+            }
+
+            if (!short_ok) {
+                FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
+                    if ((*id)->IsPdb()) {
+                        short_ok = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!short_ok) {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_ShortSeq, "Sequence only " +
+                    NStr::IntToString(len) + " residues", seq);
+            }
         }
     } else {
         if ( len <= 10  &&  !m_Imp.IsPDB()) {
@@ -2022,15 +2051,29 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                 if ( !IsResidue(n_res) ) {
                     if (res == 'U' && bsh.IsSetInst_Mol() && bsh.GetInst_Mol() == CSeq_inst::eMol_rna) {
                         // U is ok for RNA
+                    } else if (res == '*' && bsh.IsAa()) {
+                        terminations++;
+                        trailingX = 0;
                     } else {
-                        if ( ++bad_cnt > 10 ) {
-                            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
-                                "More than 10 invalid residues. Checking stopped",
-                                seq);
-                            return;
+                        if (res > 250) {                            
+                            if ( ++bad_cnt > 10 ) {
+                                PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
+                                    "More than 10 invalid residues. Checking stopped",
+                                    seq);
+                                return;
+                            } else {
+                                PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
+                                        "Invalid residue [" + NStr::UIntToString(res) 
+                                        + "] at position [" + NStr::UIntToString(pos) + "]",
+                                        seq);
+                            }
+                        } else if (islower (res)) {
+                            found_lower = true;
                         } else {
                             string msg = "Invalid";
-                            if (seq.IsNa() && strchr ("EFIJLPQZ", res) != NULL) {
+                            if (seq.IsNa() && strchr ("EFIJLOPQXZ", res) != NULL) {
+                                msg += " nucleotide";
+                            } else if (seq.IsNa() && res == 'U') {
                                 msg += " nucleotide";
                             }
                             msg += " residue '";
@@ -2062,9 +2105,6 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                         msg, seq);
                 } else {
                     trailingX = 0;
-                    if (islower (res)) {
-                        found_lower = true;
-                    }
                 }
                 ++pos;
             }
@@ -2285,7 +2325,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     // Check that partial sequence info on sequence segments is consistent with
     // partial sequence info on sequence -- aa  sequences only
     int partial = SeqLocPartialCheck(*loc, m_Scope);
-    if (partial  &&  seq.IsAa()) {
+    if (seq.IsAa()) {
         bool got_partial = false;
         FOR_EACH_DESCRIPTOR_ON_BIOSEQ (sd, seq) {
             if (!(*sd)->IsMolinfo() || !(*sd)->GetMolinfo().IsSetCompleteness()) {
@@ -2295,6 +2335,10 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
             switch ((*sd)->GetMolinfo().GetCompleteness()) {
                 case CMolInfo::eCompleteness_partial:
                     got_partial = true;
+                    if (!partial) {
+                        PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
+                                 "Complete segmented sequence with MolInfo partial", seq);
+                    }
                     break;
                 case CMolInfo::eCompleteness_no_left:
                     if (!(partial & eSeqlocPartial_Start)) {
@@ -2506,9 +2550,24 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         sev = eDiag_Warning;
     }
 
+    bool any_tech_ok = false;
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+        if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
+            const string& accession = (*id_it)->GetOther().GetAccession();
+            if (NStr::StartsWith(accession, "NT_")
+                || NStr::StartsWith(accession, "NC_")) {
+                any_tech_ok = true;
+                break;
+            }
+        }
+    }
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-
-    if ((m_Imp.IsNT() || m_Imp.IsNC()) &&  !GetGenProdSetParent (bsh) 
+    if (!any_tech_ok) {
+        if (GetGenProdSetParent (bsh)) {
+            any_tech_ok = true;
+        }
+    }
+    if (!any_tech_ok 
         && tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1 
         && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3 
         && tech != CMolInfo::eTech_wgs && tech != CMolInfo::eTech_composite_wgs_htgs 
@@ -2547,7 +2606,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             
             ValidateDeltaLoc (loc, seq, len);
 
-            if ( !last_is_gap ) {
+            if ( !last_is_gap && !first) {
                 non_interspersed_gaps = true;
             }
             last_is_gap = false;
@@ -2569,8 +2628,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             }
 
             // Check for invalid residues
-            if ( lit.CanGetSeq_data() ) {
-                if ( !last_is_gap ) {
+            if ( lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap() ) {
+                if ( !last_is_gap && !first) {
                     non_interspersed_gaps = true;
                 }
                 last_is_gap = false;
@@ -2592,10 +2651,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     {
                         const vector<char>& c = data.GetNcbistdaa().Get();
                         ITERATE (vector<TSeqPos>, ci, badIdx) {
-                            PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
+                            PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
                                 "Invalid residue [" +
-                                NStr::IntToString((int)c[*ci]) + "] in position " +
-                                NStr::IntToString(*ci), seq);
+                                NStr::IntToString((int)c[*ci]) + "] at position [" +
+                                NStr::IntToString((*ci) + 1) + "]", seq);
                         }
                         break;
                     }
@@ -2605,10 +2664,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 
                 if ( ss ) {
                     ITERATE (vector<TSeqPos>, it, badIdx) {
-                        PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
                             "Invalid residue [" +
-                            ss->substr(*it, 1) + "] in position " +
-                            NStr::IntToString(*it), seq);
+                            ss->substr(*it, 1) + "] at position [" +
+                            NStr::IntToString((*it) + 1) + "]", seq);
                     }
                 }
                             
@@ -6278,19 +6337,37 @@ size_t CValidError_bioseq::x_CountAdjacentNs(const CSeq_literal& lit)
 
     const CSeq_data& lit_data = lit.GetSeq_data();
     CSeq_data data;
-    CSeqportUtil::Convert(lit_data, &data, CSeq_data::e_Iupacna);
-
     size_t count = 0;
     size_t max = 0;
-    ITERATE(string, res, data.GetIupacna().Get() ) {
-        if ( *res == 'N' ) {
-            ++count;
-            if ( count > max ) {
-                max = count;
+
+    if (lit_data.IsIupacna()
+        || lit_data.IsNcbi2na()
+        || lit_data.IsNcbi4na()
+        || lit_data.IsNcbi8na()) {
+        CSeqportUtil::Convert(lit_data, &data, CSeq_data::e_Iupacna);
+        ITERATE(string, res, data.GetIupacna().Get() ) {
+            if ( *res == 'N' ) {
+                ++count;
+                if ( count > max ) {
+                    max = count;
+                }
+            }
+            else {
+                count = 0;
             }
         }
-        else {
-            count = 0;
+    } else {
+        CSeqportUtil::Convert(lit_data, &data, CSeq_data::e_Iupacaa);
+        ITERATE(string, res, data.GetIupacaa().Get() ) {
+            if ( *res == 'N' ) {
+                ++count;
+                if ( count > max ) {
+                    max = count;
+                }
+            }
+            else {
+                count = 0;
+            }
         }
     }
 
