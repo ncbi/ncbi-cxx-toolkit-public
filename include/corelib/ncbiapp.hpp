@@ -276,6 +276,8 @@ public:
         const;
 
     /// Get the program version information.
+    ///
+    /// @sa SetVersion, SetFullVersion
     CVersionInfo GetVersion(void) const;
 
     /// Get the program version information.
@@ -365,9 +367,20 @@ protected:
     /// Set the version number for the program.
     ///
     /// If not set, a default of 0.0.0 (unknown) is used.
+    /// @note
+    ///   This function should be used from constructor of CNcbiApplication
+    ///   derived class, otherwise command-like arguments "-version" and 
+    ///   "-version-full" will not work as expected.
+    /// @sa GetVersion
     void SetVersion(const CVersionInfo& version);
 
     /// Set version data for the program.
+    ///
+    /// @note
+    ///   This function should be used from constructor of CNcbiApplication
+    ///   derived class, otherwise command-like arguments "-version" and 
+    ///   "-version-full" will not work as expected.
+    /// @sa GetVersion
     void SetFullVersion( CRef<CVersion> version);
 
     /// Setup the command line argument descriptions.

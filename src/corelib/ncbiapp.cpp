@@ -62,11 +62,18 @@ BEGIN_NCBI_SCOPE
 //  Constants
 //
 
-static const char* s_ArgLogFile = "-logfile";
-static const char* s_ArgCfgFile = "-conffile";
-static const char* s_ArgVersion = "-version";
+static const char* s_ArgLogFile     = "-logfile";
+static const char* s_ArgCfgFile     = "-conffile";
+static const char* s_ArgVersion     = "-version";
 static const char* s_ArgFullVersion = "-version-full";
-static const char* s_ArgDryRun  = "-dryrun";
+static const char* s_ArgDryRun      = "-dryrun";
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  Global variables
+//
+
+static bool s_IsApplicationStarted = false;
 
 
 ///////////////////////////////////////////////////////
@@ -567,6 +574,7 @@ int CNcbiApplication::AppMain
     // Call:  Init() + Run() + Exit()
     int exit_code = 1;
     bool got_exception = false;
+    s_IsApplicationStarted = true;
 
     if ( s_HandleExceptions() ) {
         try {
@@ -623,11 +631,19 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 
 void CNcbiApplication::SetVersion(const CVersionInfo& version)
 {
+    if ( s_IsApplicationStarted ) {
+        ERR_POST_X(19, "SetVersion() should be used from constructor of " \
+                       "CNcbiApplication derived class, see description");
+    }
     m_Version->SetVersionInfo( new CVersionInfo(version) );
 }
 
 void CNcbiApplication::SetFullVersion( CRef<CVersion> version)
 {
+    if ( s_IsApplicationStarted ) {
+        ERR_POST_X(19, "SetFullVersion() should be used from constructor of "\
+                       "CNcbiApplication derived class, see description");
+    }
     m_Version.Reset( version );
 }
 
