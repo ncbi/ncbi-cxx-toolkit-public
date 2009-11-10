@@ -76,11 +76,28 @@ public:
     ReadSeqAnnot(
         ILineReader&,
         IErrorContainer* =0 );
-                
+
+    virtual void
+    ReadSeqAnnots(
+        vector< CRef<CSeq_annot> >&,
+        CNcbiIstream&,
+        IErrorContainer* =0 );
+                        
+    virtual void
+    ReadSeqAnnots(
+        vector< CRef<CSeq_annot> >&,
+        ILineReader&,
+        IErrorContainer* =0 );
+                        
     //
     //  helpers:
     //
 protected:
+    virtual bool x_ParseTrackLine(
+        const string&,
+        vector< CRef< CSeq_annot > >&,
+        CRef< CSeq_annot >& );
+        
     bool x_ParseFeature(
         const string&,
         CRef<CSeq_annot>& );
@@ -102,11 +119,21 @@ protected:
 
     CRef<CSeq_id> x_ResolvedId(
         const string& );
-            
+
+    CRef< CSeq_annot > x_AppendAnnot(
+        vector< CRef< CSeq_annot > >& );
+                    
+    void
+    x_ProcessError(
+        CObjReaderLineException&,
+        IErrorContainer* );
+        
     //
     //  data:
     //
 protected:
+    CErrorContainerLenient m_ErrorsPrivate;
+    
     vector<string>::size_type m_columncount;
     bool m_usescore;
     int m_iFlags;

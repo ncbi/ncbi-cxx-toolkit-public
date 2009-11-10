@@ -136,21 +136,75 @@ CBedReader::ReadSeqAnnot(
             if ( x_ParseBrowserLine( line, annot ) ) {
                 continue;
             }
-            if ( x_ParseTrackLine( line, annot ) ) {
+            if ( CReaderBase::x_ParseTrackLine( line, annot ) ) {
                 continue;
             }
             x_ParseFeature( line, annot );
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( linecount );
-            ProcessError( err, pErrorContainer );
+            x_ProcessError( err, pErrorContainer );
         }
         continue;
     }
     x_AddConversionInfo( annot, pErrorContainer );
     return annot;
 }
+
+//  --------------------------------------------------------------------------- 
+void
+CBedReader::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    CNcbiIstream& istr,
+    IErrorContainer* pErrorContainer )
+//  ---------------------------------------------------------------------------
+{
+    CStreamLineReader lr( istr );
+    ReadSeqAnnots( annots, lr, pErrorContainer );
+}
  
+//  ---------------------------------------------------------------------------                       
+void
+CBedReader::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_annot > annot( new CSeq_annot );
+//    CRef< CAnnot_descr > desc( new CAnnot_descr );
+//    annot->SetDesc( *desc );
+//    annots.push_back( annot );
+//    CRef< CSeq_annot > annot = x_AppendAnnot( annots );
+
+    string line;
+    int linecount = 0;
+
+    while ( ! lr.AtEOF() ) {
+        ++linecount;
+        line = *++lr;
+        if ( NStr::TruncateSpaces( line ).empty() ) {
+            continue;
+        }
+        try {
+            if ( x_ParseBrowserLine( line, annot ) ) {
+                continue;
+            }
+            if ( x_ParseTrackLine( line, annots, annot ) ) {
+                continue;
+            }
+            x_ParseFeature( line, annot );
+        }
+        catch( CObjReaderLineException& err ) {
+            err.SetLineNumber( linecount );
+            x_ProcessError( err, pErrorContainer );
+        }
+        continue;
+    }
+    x_AddConversionInfo( annot, &m_ErrorsPrivate );
+//    return annot;
+}
+                        
 //  ----------------------------------------------------------------------------                
 CRef< CSerialObject >
 CBedReader::ReadObject(
@@ -163,6 +217,38 @@ CBedReader::ReadObject(
     return object;
 }
 
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::x_ParseTrackLine(
+    const string& strLine,
+    vector< CRef< CSeq_annot > >& annots,
+    CRef< CSeq_annot >& current )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+        return false;
+    }
+    x_AddConversionInfo( current, &m_ErrorsPrivate );
+    
+    m_columncount = 0;
+    m_ErrorsPrivate.ClearAll();
+    current = x_AppendAnnot( annots );
+    return CReaderBase::x_ParseTrackLine( strLine, current );
+}
+
+//  ----------------------------------------------------------------------------
+CRef< CSeq_annot >
+CBedReader::x_AppendAnnot(
+    vector< CRef< CSeq_annot > >& annots )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_annot > annot( new CSeq_annot );
+    CRef< CAnnot_descr > desc( new CAnnot_descr );
+    annot->SetDesc( *desc );
+    annots.push_back( annot );
+    return annot;
+}    
+    
 //  ----------------------------------------------------------------------------
 bool CBedReader::x_ParseFeature(
     const string& record,
@@ -366,6 +452,25 @@ void CBedReader::x_SetTrackData(
         return;
     }
     CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
+}
+
+//  ----------------------------------------------------------------------------
+void
+CBedReader::x_ProcessError(
+    CObjReaderLineException& err,
+    IErrorContainer* pContainer )
+//  ----------------------------------------------------------------------------
+{
+    err.SetLineNumber( m_uLineNumber );
+    m_ErrorsPrivate.PutError( err );
+    
+    if ( 0 == pContainer ) {
+        throw( err );
+    }
+    if ( ! pContainer->PutError( err ) )
+    {
+        throw( err );
+    }
 }
 
 END_objects_SCOPE

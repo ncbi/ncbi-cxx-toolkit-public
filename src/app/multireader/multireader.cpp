@@ -75,11 +75,20 @@ protected:
     void ReadObject(
         CRef<CSerialObject>& );
         
+    void ReadAnnots(
+        vector< CRef<CSeq_annot> >& );
+        
     void MapObject(
         CSerialObject& );
         
+    void MapAnnots(
+        vector< CRef<CSeq_annot> >& );
+        
     void DumpObject(
         CSerialObject& );
+        
+    void DumpAnnots(
+        vector< CRef<CSeq_annot> >& );
         
     void DumpErrors(
         CNcbiOstream& );
@@ -276,13 +285,28 @@ CMultiReaderApp::Run(void)
     AppInitialize();
     
     CRef< CSerialObject> object;
-    
-    try {
-        ReadObject( object );
-        MapObject( *object );
-        DumpObject( *object );       
-    }
-    catch ( CObjReaderLineException& /*err*/ ) {
+    vector< CRef< CSeq_annot > > annots;
+    switch( m_uFormat ) {
+
+    default:    
+        try {
+            ReadObject( object );
+            MapObject( *object );
+            DumpObject( *object );       
+        }
+        catch ( CObjReaderLineException& /*err*/ ) {
+        }
+        break;
+
+    case CFormatGuess::eBed:
+        try {
+            ReadAnnots( annots );
+            MapAnnots( annots );
+            DumpAnnots( annots );       
+        }
+        catch ( CObjReaderLineException& /*err*/ ) {
+        }
+        break;
     }
     DumpErrors( cerr );
     
@@ -387,6 +411,44 @@ void CMultiReaderApp::ReadObject(
 {
     CMultiReader reader( m_uFormat, m_iFlags );
     object = reader.ReadObject( *m_pInput, m_pErrors );
+}
+
+//  ============================================================================
+void CMultiReaderApp::ReadAnnots(
+    vector< CRef<CSeq_annot> >& annots )
+//  ============================================================================
+{
+    CBedReader reader( m_iFlags );
+    reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+}
+
+//  ============================================================================
+void CMultiReaderApp::MapAnnots(
+    vector< CRef<CSeq_annot> >& annots )
+//  ============================================================================
+{
+    auto_ptr< CIdMapper > pMapper( GetMapper() );
+    if ( ! pMapper.get() ) {
+        return;
+    }
+    for ( size_t u=0; u < annots.size(); ++u ) {
+        CRef< CSeq_annot > pAnnot = annots[u];
+        pMapper->MapObject( *pAnnot );
+    }
+}
+
+//  ============================================================================
+void CMultiReaderApp::DumpAnnots(
+    vector< CRef<CSeq_annot> >& annots )
+//  ============================================================================
+{
+//    *m_pOutput << "Here we go:" << endl;
+    if ( m_bCheckOnly ) {
+        return;
+    }
+    for ( size_t u=0; u < annots.size(); ++u ) {
+        *m_pOutput << MSerial_AsnText << *(annots[u]);
+    }
 }
 
 //  ============================================================================
