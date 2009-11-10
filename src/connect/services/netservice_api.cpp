@@ -82,33 +82,84 @@ CNetServerGroupIterator CNetServerGroup::Iterate()
         new SNetServerGroupIteratorImpl(m_Impl, it) : NULL;
 }
 
-SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section)
+SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
+    const string& service_name, const string& client_name,
+    const string& lbsm_affinity_name)
 {
-    _ASSERT(config != NULL);
+    _ASSERT(!section.empty());
 
-    m_ServiceName = config->GetString(section,
-        "service", CConfig::eErr_NoThrow, kEmptyStr);
+    auto_ptr<CConfig> app_reg_config;
 
-    m_ClientName = config->GetString(section,
-        "client_name", CConfig::eErr_Throw, "noname");
+    if (config == NULL) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        CNcbiRegistry* reg;
+        if (app == NULL || (reg = &app->GetConfig()) == NULL) {
+            NCBI_THROW(CConfigException, eParameterMissing,
+                "Could not get default configuration parameters");
+        }
+        app_reg_config.reset(new CConfig(*reg));
+        config = app_reg_config.get();
+    }
 
-    m_LBSMAffinityName = config->GetString(section,
-        "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
+    if (!service_name.empty())
+        m_ServiceName = service_name;
+    else {
+        try {
+            m_ServiceName = config->GetString(section,
+                "service", CConfig::eErr_Throw, kEmptyStr);
+        }
+        catch (exception&) {
+            m_ServiceName = config->GetString(section,
+                "service_name", CConfig::eErr_NoThrow, kEmptyStr);
+        }
+        if (m_ServiceName.empty()) {
+            string host;
+            try {
+                host = config->GetString(section,
+                    "server", CConfig::eErr_Throw, kEmptyStr);
+            }
+            catch (exception&) {
+                m_ServiceName = config->GetString(section,
+                    "host", CConfig::eErr_NoThrow, kEmptyStr);
+            }
+            string port = config->GetString(section,
+                "port", CConfig::eErr_NoThrow, kEmptyStr);
+            if (!host.empty() && !port.empty()) {
+                m_ServiceName = host + ":";
+                m_ServiceName += port;
+            }
+        }
+    }
 
-    unsigned long timeout_ms =
-        s_SecondsToMilliseconds(config->GetString(section,
-            "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
+    if (!client_name.empty())
+        m_ClientName = client_name;
+    else {
+        try {
+            m_ClientName = config->GetString(section,
+                "client_name", CConfig::eErr_Throw, kEmptyStr);
+        }
+        catch (exception&) {
+            m_ClientName = config->GetString(section,
+                "client", CConfig::eErr_NoThrow, kEmptyStr);
+        }
+    }
 
-    if (timeout_ms > 0)
-        NcbiMsToTimeout(&m_Timeout, timeout_ms);
+    m_LBSMAffinityName = lbsm_affinity_name.empty() ? config->GetString(section,
+        "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr) :
+            lbsm_affinity_name;
+
+    unsigned long timeout = s_SecondsToMilliseconds(config->GetString(section,
+        "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
+
+    if (timeout > 0)
+        NcbiMsToTimeout(&m_Timeout, timeout);
     else
         m_Timeout = s_GetDefaultCommTimeout();
 
-    m_ServerThrottlePeriod =
-        s_SecondsToMilliseconds(config->GetString(section,
-            "throttle_relaxation_period", CConfig::eErr_NoThrow,
-                NCBI_AS_STRING(THROTTLE_RELAXATION_PERIOD_DEFAULT)),
-                SECONDS_DOUBLE_TO_MS_UL(THROTTLE_RELAXATION_PERIOD_DEFAULT));
+    m_ServerThrottlePeriod = s_SecondsToMilliseconds(config->GetString(section,
+        "throttle_relaxation_period", CConfig::eErr_NoThrow,
+            NCBI_AS_STRING(THROTTLE_RELAXATION_PERIOD_DEFAULT)),
+            SECONDS_DOUBLE_TO_MS_UL(THROTTLE_RELAXATION_PERIOD_DEFAULT));
 
     if (m_ServerThrottlePeriod > 0) {
         string numerator_str, denominator_str;
@@ -161,32 +212,6 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section)
 
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
 
-    Init();
-}
-
-SNetServiceImpl::SNetServiceImpl(const string& service_name,
-        const string& client_name) :
-    m_ServiceName(service_name),
-    m_ClientName(client_name),
-    m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
-    m_Timeout(s_GetDefaultCommTimeout())
-{
-    Init();
-}
-
-SNetServiceImpl::SNetServiceImpl(const string& service_name,
-    const string& client_name, const string& lbsm_affinity_name) :
-        m_ServiceName(service_name),
-        m_ClientName(client_name),
-        m_RebalanceStrategy(CreateDefaultRebalanceStrategy()),
-        m_LBSMAffinityName(lbsm_affinity_name),
-        m_Timeout(s_GetDefaultCommTimeout())
-{
-    Init();
-}
-
-void SNetServiceImpl::Init()
-{
     m_LatestDiscoveryIteration = 0;
     m_PermanentConnection = eOn;
 

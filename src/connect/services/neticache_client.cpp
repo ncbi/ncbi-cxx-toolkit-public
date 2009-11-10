@@ -58,23 +58,41 @@
 
 BEGIN_NCBI_SCOPE
 
+static const char* kNetICacheDriverName = "netcache";
+
 struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 {
-    SNetICacheClientImpl(const string& service_name,
+    SNetICacheClientImpl(CConfig* config,
+            const string& section,
+            const string& service_name,
             const string& client_name,
             const string& lbsm_affinity_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(service_name, client_name, lbsm_affinity_name),
-        m_CacheName(cache_name)
+        SNetCacheAPIImpl(config,
+            section.empty() ? kNetICacheDriverName : section,
+            service_name, client_name, lbsm_affinity_name)
     {
-        if (client_name.length() < 3) {
+        if (m_Service->m_ClientName.length() < 3) {
             NCBI_THROW(CNetCacheException,
                 eAuthenticationError, "Client name is too short or empty");
         }
 
-        if (cache_name.empty()) {
-            NCBI_THROW(CNetCacheException,
-                eAuthenticationError, "Cache name is not defined");
+        if (!cache_name.empty())
+            m_CacheName = cache_name;
+        else {
+            if (config == NULL) {
+                NCBI_THROW(CNetCacheException,
+                    eAuthenticationError, "Cache name is not defined");
+            } else {
+                try {
+                    m_CacheName = config->GetString(section,
+                        "name", CConfig::eErr_Throw, kEmptyStr);
+                }
+                catch (exception&) {
+                    m_CacheName = config->GetString(section,
+                        "cache_name", CConfig::eErr_Throw, "default_cache");
+                }
+            }
         }
 
         m_ICacheCmdPrefix = "IC(";
@@ -107,28 +125,39 @@ CNetServerConnection SNetICacheClientImpl::InitiateStoreCmd(
     return m_Service.FindServerAndExec(cmd).conn;
 }
 
-CNetICacheClient::CNetICacheClient() :
-    m_Impl(new SNetICacheClientImpl(
-        "localhost:9000", "neticache_client", kEmptyStr, "default_cache"))
-{
-}
-
-CNetICacheClient::CNetICacheClient(const string&  host,
-                                   unsigned short port,
-                                   const string&  cache_name,
-                                   const string&  client_name) :
-    m_Impl(new SNetICacheClientImpl(host + ':' + NStr::UIntToString(port),
+CNetICacheClient::CNetICacheClient(
+        const string& host,
+        unsigned short port,
+        const string& cache_name,
+        const string& client_name) :
+    m_Impl(new SNetICacheClientImpl(NULL, kEmptyStr,
+        host + ':' + NStr::UIntToString(port),
         client_name, kEmptyStr, cache_name))
 {
 }
 
 CNetICacheClient::CNetICacheClient(
-    const string& lb_service_name,
-    const string& cache_name,
-    const string& client_name,
-    const string& lbsm_affinity_name) :
-        m_Impl(new SNetICacheClientImpl(
-            lb_service_name, client_name, lbsm_affinity_name, cache_name))
+        const string& service_name,
+        const string& cache_name,
+        const string& client_name) :
+    m_Impl(new SNetICacheClientImpl(NULL, kEmptyStr,
+        service_name, client_name, kEmptyStr, cache_name))
+{
+}
+
+CNetICacheClient::CNetICacheClient(
+        const string& service_name,
+        const string& cache_name,
+        const string& client_name,
+        const string& lbsm_affinity_name) :
+    m_Impl(new SNetICacheClientImpl(NULL, kEmptyStr,
+        service_name, client_name, lbsm_affinity_name, cache_name))
+{
+}
+
+CNetICacheClient::CNetICacheClient(CConfig* config, const string& driver_name) :
+    m_Impl(new SNetICacheClientImpl(config, driver_name,
+        kEmptyStr, kEmptyStr, kEmptyStr, kEmptyStr))
 {
 }
 
@@ -425,8 +454,6 @@ bool CNetICacheClient::SameCacheParams(const TCacheParams* params) const
 }
 
 
-const char* kNetICacheDriverName = "netcache";
-
 /// Class factory for NetCache implementation of ICache
 ///
 /// @internal
@@ -448,15 +475,6 @@ public:
 };
 
 
-static const char* kCFParam_service         = "service_name";
-static const char* kCFParam_server          = "server";
-static const char* kCFParam_host            = "host";
-static const char* kCFParam_port            = "port";
-static const char* kCFParam_cache_name2     = "cache_name";
-static const char* kCFParam_cache_name      = "name";
-static const char* kCFParam_client          = "client";
-
-
 ICache* CNetICacheCF::CreateInstance(
            const string&                  driver,
            CVersionInfo                   version,
@@ -470,48 +488,9 @@ ICache* CNetICacheCF::CreateInstance(
     if (!params)
         return new CNetICacheClient;
 
-    // cache client configuration
-    string cache_name;
-    try {
-        cache_name =
-            GetParam(params, kCFParam_cache_name, true);
-    }
-    catch (exception&)
-    {
-        cache_name =
-            GetParam(params, kCFParam_cache_name2, true);
-    }
+    CConfig conf(params);
 
-    const string& client_name =
-        GetParam(params, kCFParam_client, true);
-
-    string service_name = GetParam(params, kCFParam_service, false);
-
-    if (!service_name.empty()) {
-        CConfig conf(params);
-
-        CNetICacheClient* client = new CNetICacheClient(service_name,
-            cache_name, client_name, conf.GetString(driver,
-                "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr));
-
-        (*client)->m_Service->m_RebalanceStrategy =
-            CreateSimpleRebalanceStrategy(conf, driver);
-
-        return client;
-    } else {
-        string host;
-        try {
-            host = GetParam(params, kCFParam_server, true);
-        }
-        catch (exception&)
-        {
-            host = GetParam(params, kCFParam_host, true);
-        }
-
-        return new CNetICacheClient(host,
-            GetParamInt(params, kCFParam_port, true, 9000),
-            cache_name, client_name);
-    }
+    return new CNetICacheClient(&conf, driver);
 }
 
 

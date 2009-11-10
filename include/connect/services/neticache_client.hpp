@@ -68,18 +68,27 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 {
     NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(NetICacheClient);
 
-    // Construct an instance with default connection parameters.
-    CNetICacheClient();
+    // Construct an instance using connection parameters
+    // specified in the configuration file.
+    CNetICacheClient(CConfig* config = NULL,
+                     const string& driver_name = kEmptyStr);
 
-    CNetICacheClient(const string&  host,
+    CNetICacheClient(const string& host,
                      unsigned short port,
-                     const string&  cache_name,
-                     const string&  client_name);
+                     const string& cache_name,
+                     const string& client_name);
 
-    CNetICacheClient(const string& lb_service_name,
+    CNetICacheClient(const string& service_name,
+                     const string& cache_name,
+                     const string& client_name);
+
+    /// This constructor will be retired in favor of the
+    /// constructor that accepts the CConfig parameter.
+    NCBI_DEPRECATED
+    CNetICacheClient(const string& service_name,
                      const string& cache_name,
                      const string& client_name,
-                     const string& lbsm_affinity_name = kEmptyStr);
+                     const string& lbsm_affinity_name);
 
     /// Send session registration command
     void RegisterSession(unsigned pid);

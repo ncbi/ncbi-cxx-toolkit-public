@@ -33,6 +33,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "netservice_params.hpp"
+
 #include <connect/services/balancing.hpp>
 
 #include <corelib/ncbi_config.hpp>
@@ -97,9 +99,11 @@ CNetObjectRef<IRebalanceStrategy>
 {
     return new CSimpleRebalanceStrategy(
         config.GetInt(driver_name, "rebalance_requests",
-            CConfig::eErr_NoThrow, 100),
-        config.GetInt(driver_name, "rebalance_time",
-            CConfig::eErr_NoThrow, 10));
+            CConfig::eErr_NoThrow, REBALANCE_REQUESTS_DEFAULT),
+        s_SecondsToMilliseconds(config.GetString(driver_name,
+            "rebalance_time", CConfig::eErr_NoThrow,
+                NCBI_AS_STRING(REBALANCE_TIME_DEFAULT)),
+            SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT)));
 }
 
 CNetObjectRef<IRebalanceStrategy>
@@ -110,7 +114,8 @@ CNetObjectRef<IRebalanceStrategy>
 
 CNetObjectRef<IRebalanceStrategy> CreateDefaultRebalanceStrategy()
 {
-    return new CSimpleRebalanceStrategy(5000, 5);
+    return new CSimpleRebalanceStrategy(REBALANCE_REQUESTS_DEFAULT,
+        SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT));
 }
 
 

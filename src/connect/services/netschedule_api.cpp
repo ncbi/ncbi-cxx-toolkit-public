@@ -119,27 +119,40 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
 const char* kNetScheduleAPIDriverName = "netschedule_api";
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-        CConfig* config, const string& section) :
-    m_Service(new SNetServiceImpl(config,
-        !section.empty() ? section : kNetScheduleAPIDriverName))
+    CConfig* config, const string& section,
+    const string& service_name, const string& client_name,
+    const string& queue_name)
 {
-    m_Queue = config->GetString(section,
-        "queue_name", CConfig::eErr_Throw, "noname");
+    string driver_name = section.empty() ? kNetScheduleAPIDriverName : section;
 
-    Init();
+    m_Service = new SNetServiceImpl(config, driver_name,
+        service_name, client_name, kEmptyStr);
+
+    if (!queue_name.empty())
+        m_Queue = queue_name;
+    else {
+        if (config == NULL) {
+            NCBI_THROW(CConfigException, eParameterMissing,
+                "Could not get queue name");
+        }
+        m_Queue = config->GetString(driver_name,
+            "queue_name", CConfig::eErr_Throw, "noname");
+    }
+
+    m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
+
+    m_Listener = new CNetScheduleServerListener(
+        m_Service.GetClientName(), m_Queue);
+
+    m_Service->SetListener(m_Listener);
 }
 
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
-CNetScheduleAPI::CNetScheduleAPI(
-    const string& service_name,
-    const string& client_name,
-    const string& queue_name,
-    const string& lbsm_affinity_name) :
-    m_Impl(new SNetScheduleAPIImpl(service_name,
-        client_name,
-        queue_name,
-        lbsm_affinity_name))
+CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
+        const string& client_name, const string& queue_name) :
+    m_Impl(new SNetScheduleAPIImpl(NULL, kEmptyStr,
+        service_name, client_name, queue_name))
 {
 }
 
@@ -480,7 +493,8 @@ public:
                 version.Match(NCBI_INTERFACE_VERSION(IFace)) !=
                     CVersionInfo::eNonCompatible) {
             CConfig config(params);
-            return new SNetScheduleAPIImpl(&config, m_DriverName);
+            return new SNetScheduleAPIImpl(&config, m_DriverName,
+                kEmptyStr, kEmptyStr, kEmptyStr);
         }
         return NULL;
     }
@@ -489,10 +503,10 @@ public:
     {
         info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
     }
+
 protected:
     CVersionInfo  m_DriverVersionInfo;
     string        m_DriverName;
-
 };
 
 

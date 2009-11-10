@@ -101,8 +101,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     ///
     CNetScheduleAPI(const string& service_name,
                     const string& client_name,
-                    const string& queue_name,
-                    const string& lbsm_affinity_name = kEmptyStr);
+                    const string& queue_name);
 
     /// Set program version (like: MyProgram v. 1.2.3)
     ///
@@ -202,9 +201,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     const SServerParams& GetServerParams();
 
-    /// Get job's details
-    /// @param job
-    ///
+    /// Get job details
     EJobStatus GetJobDetails(CNetScheduleJob& job);
 
     void GetProgressMsg(CNetScheduleJob& job);

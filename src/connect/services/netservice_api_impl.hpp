@@ -87,14 +87,9 @@ inline SNetServerGroupIteratorImpl::SNetServerGroupIteratorImpl(
 struct SNetServiceImpl : public CNetObject
 {
     // Construct a new object.
-    SNetServiceImpl(CConfig* config, const string& section);
-
-    SNetServiceImpl(const string& service_name, const string& client_name);
-
-    SNetServiceImpl(const string& service_name,
-        const string& client_name, const string& lbsm_affinity_name);
-
-    void Init();
+    SNetServiceImpl(CConfig* config, const string& section,
+        const string& service_name, const string& client_name,
+        const string& lbsm_affinity_name);
 
     // Set up connection event listening. In fact, this
     // listener implements the authentication part of both

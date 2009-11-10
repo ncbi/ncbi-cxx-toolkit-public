@@ -149,26 +149,9 @@ struct SNetScheduleAPIImpl : public CNetObject
         string m_WorkerNodeInitCmd;
     };
 
-    void Init()
-    {
-        m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
-
-        m_Listener = new CNetScheduleServerListener(
-            m_Service.GetClientName(), m_Queue);
-
-        m_Service->SetListener(m_Listener);
-    }
-
-    SNetScheduleAPIImpl(const string& service_name, const string& client_name,
-            const string& queue_name, const string& lbsm_affinity_name) :
-        m_Service(
-            new SNetServiceImpl(service_name, client_name, lbsm_affinity_name)),
-        m_Queue(queue_name)
-    {
-        Init();
-    }
-
-    SNetScheduleAPIImpl(CConfig* config, const string& section);
+    SNetScheduleAPIImpl(CConfig* config, const string& section,
+        const string& service_name, const string& client_name,
+        const string& queue_name);
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
     {
