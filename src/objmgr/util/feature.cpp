@@ -826,6 +826,671 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 }
 
 
+static bool s_IsBadLocation(const CSeq_loc& loc)
+{
+    return false;
+}
+
+
+CSeqFeatData::ESubtype sx_GetParentType(const CMappedFeat& feat)
+{
+    switch ( feat.GetFeatSubtype() ) {
+    case CSeqFeatData::eSubtype_operon:
+    case CSeqFeatData::eSubtype_gap:
+        // operon and gap features do not inherit anything
+        return CSeqFeatData::eSubtype_bad;
+    case CSeqFeatData::eSubtype_gene:
+        // Gene features can inherit operon by overlap (CONTAINED_WITHIN)
+        return CSeqFeatData::eSubtype_operon;
+    case CSeqFeatData::eSubtype_mat_peptide:
+    case CSeqFeatData::eSubtype_sig_peptide:
+        return CSeqFeatData::eSubtype_prot;
+    case CSeqFeatData::eSubtype_prot:
+        return CSeqFeatData::eSubtype_cdregion;
+    default:
+        return CSeqFeatData::eSubtype_gene;
+    }
+}
+
+
+NCBI_XOBJUTIL_EXPORT
+CMappedFeat GetParentFeature(const CMappedFeat& feat)
+{
+    // Most features parent type is gene
+    CSeqFeatData::ESubtype parent_type = CSeqFeatData::eSubtype_gene;
+    bool by_product = false;
+
+    switch ( feat.GetFeatSubtype() ) {
+    case CSeqFeatData::eSubtype_operon:
+    case CSeqFeatData::eSubtype_gap:
+        // operon and gap features do not inherit anything
+        return CMappedFeat();
+    case CSeqFeatData::eSubtype_gene:
+        // Gene features can inherit operon by overlap (CONTAINED_WITHIN)
+        parent_type = CSeqFeatData::eSubtype_operon;
+        break;
+    case CSeqFeatData::eSubtype_mat_peptide:
+    case CSeqFeatData::eSubtype_sig_peptide:
+        parent_type = CSeqFeatData::eSubtype_prot;
+        break;
+    case CSeqFeatData::eSubtype_prot:
+        parent_type = CSeqFeatData::eSubtype_cdregion;
+        by_product = true;
+        break;
+    default:
+        break;
+    }
+
+    if ( feat.IsSetXref() ) {
+        CTSE_Handle tse = feat.GetAnnot().GetTSE_Handle();
+        const CSeq_feat::TXref& xrefs = feat.GetXref();
+        ITERATE ( CSeq_feat::TXref, it, xrefs ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                const CFeat_id& id = xref.GetId();
+                if ( id.IsLocal() ) {
+                    const CObject_id& obj_id = id.GetLocal();
+                    if ( obj_id.IsId() ) {
+                        CSeq_feat_Handle feat1 =
+                            tse.GetFeatureWithId(parent_type, obj_id.GetId());
+                        if ( feat1 ) {
+                            return feat1;
+                        }
+                    }
+                }
+            }
+            if ( parent_type == CSeqFeatData::eSubtype_gene && xref.IsSetData() ) {
+                const CSeqFeatData& data = xref.GetData();
+                if ( data.IsGene() ) {
+                    CSeq_feat_Handle feat1 = tse.GetGeneByRef(data.GetGene());
+                    if ( feat1 ) {
+                        return feat1;
+                    }
+                }
+            }
+        }
+    }
+
+    EOverlapType overlap_type = eOverlap_Contained;
+    if ( feat.GetFeatSubtype() != CSeqFeatData::eSubtype_gene ) {
+        // Other features can inherit gene by using an xref to a gene
+        if ( s_IsBadLocation(feat.GetLocation()) ) {
+            // LOCATION_SUBSET if bad order or mixed strand
+            // otherwise CONTAINED_WITHIN
+            overlap_type = eOverlap_Subset;
+        }
+    }
+    
+    CMappedFeat best_parent;
+    Int8 best_overlap = kMax_I8;
+    SAnnotSelector sel(parent_type);
+    sel.SetByProduct(by_product);
+    for ( CFeat_CI it(feat.GetScope(), feat.GetLocation(), sel); it; ++it ) {
+        Int8 overlap = TestForOverlap(it->GetLocation(),
+                                      feat.GetLocation(),
+                                      overlap_type,
+                                      kInvalidSeqPos,
+                                      &feat.GetScope());
+        if ( overlap >= 0 && overlap < best_overlap ) {
+            best_parent = *it;
+            best_overlap = overlap;
+        }
+    }
+    return best_parent;
+}
+
+
+CFeatTree::CFeatTree(void)
+    : m_AssignedParents(0)
+{
+}
+
+
+CFeatTree::CFeatTree(CFeat_CI it)
+{
+    AddFeatures(it);
+}
+
+
+void CFeatTree::AddFeatures(CFeat_CI it)
+{
+    for ( ; it; ++it ) {
+        AddFeature(*it);
+    }
+}
+
+
+void CFeatTree::AddFeature(const CMappedFeat& feat)
+{
+    CRef<CFeatInfo> info(new CFeatInfo(feat));
+    m_InfoMap[feat.GetSeq_feat_Handle()] = info;
+    if ( feat.IsSetId() ) {
+        x_AddFeatId(feat.GetId(), *info);
+    }
+    if ( feat.IsSetIds() ) {
+        ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
+            x_AddFeatId(**it, *info);
+        }
+    }
+    if ( feat.GetFeatType() == CSeqFeatData::e_Gene ) {
+        x_AddGene(feat.GetData().GetGene(), *info);
+    }
+}
+
+
+void CFeatTree::x_AddFeatId(const CFeat_id& id, CFeatInfo& info)
+{
+#ifdef NCBI_FEAT_TREE_TSE_INFO
+    if ( id.IsLocal() ) {
+        const CObject_id& obj_id = id.GetLocal();
+        if ( obj_id.IsId() ) {
+            CTSEFeatInfo::TInfoByIdKey key(info.m_Feat.GetFeatSubtype(),
+                                           obj_id.GetId());
+            x_GetTSEInfo(info).m_InfoByIdMap[key] = &info;
+        }
+    }
+#endif
+}
+
+
+void CFeatTree::x_AddGene(const CGene_ref& ref, CFeatInfo& info)
+{
+#ifdef NCBI_FEAT_TREE_TSE_INFO
+    if ( ref.IsSetLocus() ) {
+        CTSEFeatInfo::TInfoByGeneKey key(ref.GetLocus(), false);
+        x_GetTSEInfo(info).m_InfoByGeneMap[key] = &info;
+    }
+    if ( ref.IsSetLocus_tag() ) {
+        CTSEFeatInfo::TInfoByGeneKey key(ref.GetLocus_tag(), true);
+        x_GetTSEInfo(info).m_InfoByGeneMap[key] = &info;
+    }
+#endif
+}
+
+
+CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CMappedFeat& feat)
+{
+    return x_GetInfo(feat.GetSeq_feat_Handle());
+}
+
+
+CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CSeq_feat_Handle& feat)
+{
+    TInfoMap::iterator it = m_InfoMap.find(feat);
+    if ( it == m_InfoMap.end() ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CFeatTree: feature not found");
+    }
+    return *it->second;
+}
+
+
+CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
+{
+    TInfoMap::iterator it = m_InfoMap.find(feat);
+    if ( it == m_InfoMap.end() ) {
+        return 0;
+    }
+    return it->second;
+}
+
+#ifdef NCBI_FEAT_TREE_TSE_INFO
+CFeatTree::CTSEFeatInfo& CFeatTree::x_GetTSEInfo(const CFeatInfo& info)
+{
+    return x_GetTSEInfo(info.GetTSE());
+}
+
+
+CFeatTree::CTSEFeatInfo& CFeatTree::x_GetTSEInfo(const CTSE_Handle& tse)
+{
+    CRef<CTSEFeatInfo>& info = m_TSEInfoMap[tse];
+    if ( !info ) {
+        info = new CTSEFeatInfo(tse);
+    }
+    return *info;
+}
+#endif
+
+void CFeatTree::x_AssignParentsByRef(void)
+{
+    ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second.GetNCObject();
+        if ( info.IsSetParent() ) {
+            continue;
+        }
+        if ( !info.m_Feat.IsSetXref() ) {
+            continue;
+        }
+        CSeqFeatData::ESubtype p_type = sx_GetParentType(info.m_Feat);
+        if ( p_type == CSeqFeatData::eSubtype_bad ) {
+            continue;
+        }
+        CTSE_Handle tse = info.GetTSE();
+        const CSeq_feat::TXref& xrefs = info.m_Feat.GetXref();
+        CRef<CFeatInfo> gene_parent;
+        ITERATE ( CSeq_feat::TXref, it, xrefs ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                const CFeat_id& id = xref.GetId();
+                if ( !id.IsLocal() ) {
+                    continue;
+                }
+                const CObject_id& obj_id = id.GetLocal();
+                if ( obj_id.IsId() ) {
+                    vector<CSeq_feat_Handle> ff =
+                        tse.GetFeaturesWithId(p_type, obj_id.GetId());
+                    ITERATE ( vector<CSeq_feat_Handle>, fit, ff ) {
+                        CFeatInfo* p_info = x_FindInfo(*fit);
+                        if ( p_info ) {
+                            x_SetParent(info, *p_info);
+                            break;
+                        }
+                        else {
+                            x_SetNoParent(info);
+                            break;
+                        }
+                    }
+                    if ( info.IsSetParent() ) {
+                        break;
+                    }
+                }
+            }
+            if ( p_type == CSeqFeatData::eSubtype_gene && !gene_parent && 
+                 xref.IsSetData() ) {
+                const CSeqFeatData& data = xref.GetData();
+                if ( data.IsGene() ) {
+                    vector<CSeq_feat_Handle> ff =
+                        tse.GetGenesByRef(data.GetGene());
+                    ITERATE ( vector<CSeq_feat_Handle>, fit, ff ) {
+                        CFeatInfo* p_info = x_FindInfo(*fit);
+                        if ( p_info ) {
+                            gene_parent = p_info;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if ( !info.IsSetParent() && gene_parent ) {
+            x_SetParent(info, *gene_parent);
+        }
+    }
+}
+
+
+namespace {
+    struct SParentInfo {
+        CSeq_id_Handle m_Id;
+        CRange<TSeqPos> m_Range;
+        CFeatTree::CFeatInfo* m_Info;
+        
+        // min start coordinate for all entries after this
+        mutable TSeqPos m_MinFrom;
+
+        SParentInfo(CFeatTree::CFeatInfo& info, bool by_product)
+            : m_Info(&info)
+            {
+                const CSeq_loc& loc =
+                    by_product?
+                    info.m_Feat.GetProduct():
+                    info.m_Feat.GetLocation();
+                const CSeq_id* id = loc.GetId();
+                if ( id ) {
+                    m_Id = CSeq_id_Handle::GetHandle(*id);
+                    m_Range = loc.GetTotalRange();
+                }
+            }
+
+        // sort first by end coordinate, then by start coordinate
+        bool operator<(const SParentInfo& b) const
+            {
+                return m_Id < b.m_Id || m_Id == b.m_Id &&
+                    (m_Range.GetToOpen() < b.m_Range.GetToOpen() ||
+                     m_Range.GetToOpen() == b.m_Range.GetToOpen() &&
+                     m_Range.GetFrom() < b.m_Range.GetFrom());
+            }
+    };
+    struct SChildInfo {
+        CSeq_id_Handle m_Id;
+        CRange<TSeqPos> m_Range;
+        CFeatTree::CFeatInfo* m_Info;
+
+        SChildInfo(CFeatTree::CFeatInfo& info)
+            : m_Info(&info)
+            {
+                const CSeq_loc& loc = info.m_Feat.GetLocation();
+                const CSeq_id* id = loc.GetId();
+                if ( id ) {
+                    m_Id = CSeq_id_Handle::GetHandle(*id);
+                    m_Range = loc.GetTotalRange();
+                }
+            }
+
+        // sort first by start coordinate, then by end coordinate
+        bool operator<(const SChildInfo& b) const
+            {
+                return m_Id < b.m_Id || m_Id == b.m_Id && m_Range < b.m_Range;
+            }
+    };
+}
+
+
+void CFeatTree::x_AssignParentsByOverlap(void)
+{
+    typedef vector<CFeatInfo*> TFeatArray;
+    typedef pair<TFeatArray, TFeatArray> TFeatArrayPair;
+    typedef map<CSeqFeatData::ESubtype, TFeatArrayPair> TParentInfoMap;
+
+    // collect all features without assigned parent
+    TParentInfoMap pinfo_map;
+    ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second.GetNCObject();
+        if ( info.IsSetParent() ) {
+            continue;
+        }
+        pinfo_map[sx_GetParentType(info.m_Feat)].second.push_back(&info);
+    }
+    if ( pinfo_map.empty() ) { // no work to do
+        return;
+    }
+    // collect all necessary parent candidates
+    ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second.GetNCObject();
+        TParentInfoMap::iterator iter =
+            pinfo_map.find(info.m_Feat.GetFeatSubtype());
+        if ( iter != pinfo_map.end() ) {
+            iter->second.first.push_back(&info);
+        }
+    }
+    // assign parents for each parent type
+    NON_CONST_ITERATE ( TParentInfoMap, it1, pinfo_map ) {
+        TFeatArrayPair& pinfo = it1->second;
+        if ( pinfo.first.empty() ) {
+            // no parent candidates of this type
+            ITERATE ( TFeatArray, it, pinfo.second ) {
+                x_SetNoParent(**it);
+            }
+            continue;
+        }
+
+        // collect parents parameters
+        typedef vector<SParentInfo> TParentArray;
+        TParentArray pp;
+        bool by_product = it1->first == CSeqFeatData::eSubtype_cdregion;
+        ITERATE ( TFeatArray, it, pinfo.first ) {
+            pp.push_back(SParentInfo(**it, by_product));
+        }
+        sort(pp.begin(), pp.end());
+
+        // collect children parameters
+        typedef vector<SChildInfo> TChildArray;
+        TChildArray cc;
+        ITERATE ( TFeatArray, it, pinfo.second ) {
+            cc.push_back(SChildInfo(**it));
+        }
+        sort(cc.begin(), cc.end());
+
+        // assign parents in single scan over both lists
+        TParentArray::const_iterator pi = pp.begin();
+        TChildArray::const_iterator ci = cc.begin();
+        for ( ; ci != cc.end(); ) {
+            // skip all parents with Seq-ids smaller than first child
+            while ( pi != pp.end() && pi->m_Id < ci->m_Id ) {
+                ++pi;
+            }
+            if ( pi == pp.end() ) { // none parents remaining
+                break;
+            }
+            CFeatInfo& info = *ci->m_Info;
+            if ( ci->m_Id < pi->m_Id || !ci->m_Id ) {
+                // skip all children with Seq-ids smaller than first parent
+                do {
+                    x_SetNoParent(info);
+                    ++ci;
+                } while (ci != cc.end() && (ci->m_Id < pi->m_Id || !ci->m_Id));
+                continue;
+            }
+            
+            // find end of Seq-id parents
+            TParentArray::const_iterator pe = pi;
+            while ( pe != pp.end() && pe->m_Id == pi->m_Id ) {
+                ++pe;
+            }
+
+            {{
+                // update parents' m_MinFrom on the Seq-id
+                TParentArray::const_iterator i = pe;
+                TSeqPos min_from = (--i)->m_Range.GetFrom();
+                i->m_MinFrom = min_from;
+                while ( i != pi ) {
+                    min_from = min(min_from, (--i)->m_Range.GetFrom());
+                    i->m_MinFrom = min_from;
+                }
+            }}
+
+            // scan all Seq-id children
+            for ( ; ci != cc.end() &&
+                      pi != pe && ci->m_Id == pe[-1].m_Id; ++ci ) {
+                // child parameters
+                CFeatInfo& info = *ci->m_Info;
+                const CSeq_loc& c_loc = info.m_Feat.GetLocation();
+                EOverlapType overlap_type = eOverlap_Contained;
+                if ( it1->first == CSeqFeatData::eSubtype_gene &&
+                     s_IsBadLocation(c_loc) ) {
+                    // LOCATION_SUBSET if bad order or mixed strand
+                    // otherwise CONTAINED_WITHIN
+                    overlap_type = eOverlap_Subset;
+                }
+
+                // skip non-overlapping parents
+                while ( pi != pe &&
+                        pi->m_Range.GetToOpen() < ci->m_Range.GetFrom() ) {
+                    ++pi;
+                }
+                
+                // scan parent candidates
+                CFeatInfo* best_parent = 0;
+                Int8 best_overlap = kMax_I8;
+                for ( TParentArray::const_iterator pc = pi;
+                      pc != pe && pc->m_MinFrom < ci->m_Range.GetToOpen();
+                      ++pc ) {
+                    if ( !pc->m_Range.IntersectingWith(ci->m_Range) ) {
+                        continue;
+                    }
+                    const CMappedFeat& p_feat = pc->m_Info->m_Feat;
+                    const CSeq_loc& p_loc =
+                        by_product?
+                        p_feat.GetProduct():
+                        p_feat.GetLocation();
+                    Int8 overlap = TestForOverlap(p_loc,
+                                                  c_loc,
+                                                  overlap_type,
+                                                  kInvalidSeqPos,
+                                                  &p_feat.GetScope());
+                    if ( overlap >= 0 && overlap < best_overlap ) {
+                        best_parent = pc->m_Info;
+                        best_overlap = overlap;
+                    }
+                }
+
+                // assign best parent
+                if ( best_parent ) {
+                    x_SetParent(info, *best_parent);
+                }
+                else {
+                    x_SetNoParent(info);
+                }
+            }
+            // scan remaining Seq-id children
+            for ( ; ci != cc.end() && ci->m_Id == pe[-1].m_Id; ++ci ){
+                CFeatInfo& info = *ci->m_Info;
+                x_SetNoParent(info);
+            }
+        }
+        for ( ; ci != cc.end(); ++ci ) {
+            CFeatInfo& info = *ci->m_Info;
+            x_SetNoParent(info);
+        }
+    }
+}
+
+
+void CFeatTree::x_AssignParents(void)
+{
+    if ( m_AssignedParents >= m_InfoMap.size() ) {
+        return;
+    }
+    
+    x_AssignParentsByRef();
+    x_AssignParentsByOverlap();
+    
+    m_AssignedParents = m_InfoMap.size();
+}
+
+
+void CFeatTree::x_SetParent(CFeatInfo& info, CFeatInfo& parent)
+{
+    _ASSERT(!info.IsSetParent());
+    _ASSERT(!info.m_Parent);
+    _ASSERT(!parent.m_IsSetChildren);
+    parent.m_Children.push_back(Ref(&info));
+    info.m_Parent = &parent;
+    info.m_IsSetParent = true;
+}
+
+
+void CFeatTree::x_SetNoParent(CFeatInfo& info)
+{
+    _ASSERT(!info.IsSetParent());
+    _ASSERT(!info.m_Parent);
+    info.m_IsSetParent = true;
+}
+
+
+const CFeatTree::TInfoRef& CFeatTree::x_GetParent(CFeatInfo& info)
+{
+    if ( !info.IsSetParent() ) {
+        x_AssignParents();
+    }
+    /*
+        CMappedFeat parent = GetParentFeature(info.m_Feat);
+        if ( parent ) {
+            try {
+                x_SetParent(info, x_GetInfo(parent));
+            }
+            catch ( CObjMgrException& ) {
+                x_SetNoParent(info);
+            }
+        }
+        else {
+            x_SetNoParent(info);
+        }
+    */
+    return info.m_Parent;
+}
+
+
+const CFeatTree::TChildren& CFeatTree::x_GetChildren(CFeatInfo& info)
+{
+    x_AssignParents();
+    return info.m_Children;
+}
+
+
+CMappedFeat CFeatTree::GetParent(const CMappedFeat& feat)
+{
+    CMappedFeat ret;
+    TInfoRef info = x_GetParent(x_GetInfo(feat));
+    if ( info ) {
+        ret = info->m_Feat;
+    }
+    return ret;
+}
+
+
+CMappedFeat CFeatTree::GetParent(const CMappedFeat& feat,
+                                 CSeqFeatData::E_Choice type)
+{
+    CMappedFeat parent = GetParent(feat);
+    while ( parent && parent.GetFeatType() != type ) {
+        parent = GetParent(parent);
+    }
+    return parent;
+}
+
+
+CMappedFeat CFeatTree::GetParent(const CMappedFeat& feat,
+                                 CSeqFeatData::ESubtype subtype)
+{
+    CMappedFeat parent = GetParent(feat);
+    while ( parent && parent.GetFeatSubtype() != subtype ) {
+        parent = GetParent(parent);
+    }
+    return parent;
+}
+
+
+vector<CMappedFeat> CFeatTree::GetChildren(const CMappedFeat& feat)
+{
+    vector<CMappedFeat> children;
+    GetChildrenTo(feat, children);
+    return children;
+}
+
+
+void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
+                              vector<CMappedFeat>& children)
+{
+    children.clear();
+    if ( feat ) {
+        const TChildren& infos = x_GetChildren(x_GetInfo(feat));
+        children.reserve(infos.size());
+        ITERATE ( TChildren, it, infos ) {
+            children.push_back((*it)->m_Feat);
+        }
+    }
+    else {
+        x_AssignParents();
+        ITERATE ( TInfoMap, it, m_InfoMap ) {
+            const CFeatInfo& info = *it->second;
+            if ( !info.m_Parent ) {
+                children.push_back(info.m_Feat);
+            }
+        }
+    }
+}
+
+
+CFeatTree::CFeatInfo::CFeatInfo(const CMappedFeat& feat)
+    : m_Feat(feat),
+      m_IsSetParent(false),
+      m_IsSetChildren(false)
+{
+}
+
+
+CFeatTree::CFeatInfo::~CFeatInfo(void)
+{
+}
+
+
+const CTSE_Handle& CFeatTree::CFeatInfo::GetTSE(void) const
+{
+    return m_Feat.GetAnnot().GetTSE_Handle();
+}
+
+#ifdef NCBI_FEAT_TREE_TSE_INFO
+CFeatTree::CTSEFeatInfo::CTSEFeatInfo(const CTSE_Handle& tse)
+    : m_TSE(tse)
+{
+}
+
+
+CFeatTree::CTSEFeatInfo::~CTSEFeatInfo(void)
+{
+}
+#endif
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

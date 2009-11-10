@@ -46,6 +46,7 @@ class CScope;
 class CFeat_CI;
 class CTSE_Handle;
 class CFeat_id;
+class CGene_ref;
 
 BEGIN_SCOPE(feature)
 
@@ -99,6 +100,7 @@ private:
 class NCBI_XOBJUTIL_EXPORT CFeatComparatorByLabel : public CObject,
                                                     public IFeatComparator
 {
+public:
     virtual bool Less(const CSeq_feat& f1,
                       const CSeq_feat& f2,
                       CScope* scope);
@@ -119,6 +121,105 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
 NCBI_XOBJUTIL_EXPORT
 CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
                         const CSeq_id_Handle& master_id);
+
+
+class NCBI_XOBJUTIL_EXPORT CFeatTree : public CObject
+{
+public:
+    CFeatTree(void);
+    CFeatTree(CFeat_CI it);
+    
+    void AddFeatures(CFeat_CI it);
+    void AddFeature(const CMappedFeat& feat);
+
+    const CMappedFeat& GetMappedFeat(const CSeq_feat_Handle& feat) const;
+    CMappedFeat GetParent(const CMappedFeat& feat);
+    CMappedFeat GetParent(const CMappedFeat& feat,
+                          CSeqFeatData::E_Choice type);
+    CMappedFeat GetParent(const CMappedFeat& feat,
+                          CSeqFeatData::ESubtype subtype);
+    vector<CMappedFeat> GetChildren(const CMappedFeat& feat);
+    void GetChildrenTo(const CMappedFeat& feat, vector<CMappedFeat>& children);
+
+public:
+    class CFeatInfo : public CObject {
+    public:
+        CFeatInfo(const CMappedFeat& feat);
+        ~CFeatInfo(void);
+
+        const CTSE_Handle& GetTSE(void) const;
+        bool IsSetParent(void) const {
+            return m_IsSetParent;
+        }
+
+        typedef CRef<CFeatInfo> TInfoRef;
+        typedef vector<TInfoRef> TChildren;
+        
+        CMappedFeat m_Feat;
+        CRange<TSeqPos> m_MasterRange;
+        bool m_IsSetParent, m_IsSetChildren;
+        TInfoRef m_Parent;
+        TChildren m_Children;
+    };
+
+protected:
+    typedef CRef<CFeatInfo> TInfoRef;
+    typedef vector<TInfoRef> TChildren;
+
+    CFeatInfo& x_GetInfo(const CSeq_feat_Handle& feat);
+    CFeatInfo& x_GetInfo(const CMappedFeat& feat);
+    CFeatInfo* x_FindInfo(const CSeq_feat_Handle& feat);
+
+    void x_AddFeatId(const CFeat_id& id, CFeatInfo& info);
+    void x_AddGene(const CGene_ref& ref, CFeatInfo& info);
+
+    void x_AssignParents(void);
+    void x_AssignParentsByRef(void);
+    void x_AssignParentsByOverlap(void);
+
+    void x_SetParent(CFeatInfo& info, CFeatInfo& parent);
+    void x_SetNoParent(CFeatInfo& info);
+    const TInfoRef& x_GetParent(CFeatInfo& info);
+    const TChildren& x_GetChildren(CFeatInfo& info);
+
+    typedef map<CSeq_feat_Handle, TInfoRef> TInfoMap;
+    typedef CRangeMultimap<TSeqPos> TRangeMap;
+
+    size_t m_AssignedParents;
+    TInfoMap m_InfoMap;
+    TRangeMap m_RangeMap;
+
+//#define NCBI_FEAT_TREE_TSE_INFO
+#ifdef NCBI_FEAT_TREE_TSE_INFO
+    class CTSEFeatInfo : public CObject {
+    public:
+        CTSEFeatInfo(const CTSE_Handle& tse);
+        ~CTSEFeatInfo(void);
+        
+        const CTSE_Handle& GetTSE(void) const {
+            return m_TSE;
+        }
+        
+    private:
+        friend class CFeatTree;
+
+        typedef CRef<CFeatInfo> TInfoRef;
+        typedef pair<CSeqFeatData::ESubtype, int> TInfoByIdKey;
+        typedef map<TInfoByIdKey, TInfoRef> TInfoByIdMap;
+        typedef pair<string, bool> TInfoByGeneKey;
+        typedef map<TInfoByGeneKey, TInfoRef> TInfoByGeneMap;
+        
+        CTSE_Handle m_TSE;
+        TInfoByIdMap m_InfoByIdMap;
+        TInfoByGeneMap m_InfoByGeneMap;
+    };
+    typedef map<CTSE_Handle, CRef<CTSEFeatInfo> > TTSEInfoMap;
+    TTSEInfoMap m_TSEInfoMap;
+
+    CTSEFeatInfo& x_GetTSEInfo(const CFeatInfo& info);
+    CTSEFeatInfo& x_GetTSEInfo(const CTSE_Handle& tse);
+#endif
+};
 
 
 /* @} */
