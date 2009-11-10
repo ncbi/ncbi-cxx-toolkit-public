@@ -182,10 +182,11 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
     BOOST_REQUIRE_CLOSE(bits, 503.263, 0.0001);
     BOOST_REQUIRE(num_ident == 331);
 
-    string evalue_str, bit_score_str, total_bit_score_str;
-    CBlastFormatUtil::GetScoreString(evalue, bits, 0,
+    string evalue_str, bit_score_str, raw_score_str, total_bit_score_str;
+    CBlastFormatUtil::GetScoreString(evalue, bits, 0, 0,
                                      evalue_str, bit_score_str, 
-                                     total_bit_score_str);
+                                     total_bit_score_str,
+                                     raw_score_str);
     BOOST_REQUIRE(evalue_str == string("2e-141"));
     BOOST_REQUIRE(bit_score_str == string(" 503"));
 }
