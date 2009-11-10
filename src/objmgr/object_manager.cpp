@@ -51,6 +51,9 @@
 #define NCBI_USE_ERRCODE_X   ObjMgr_Main
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(7);
+
 BEGIN_SCOPE(objects)
 
 CRef<CObjectManager> CObjectManager::sx_Create(void)

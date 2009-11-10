@@ -56,6 +56,9 @@
 #define NCBI_USE_ERRCODE_X   ObjMgr_TSEinfo
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(3);
+
 BEGIN_SCOPE(objects)
 
 
@@ -1334,6 +1337,30 @@ void CTSE_Info::x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref)
 }
 
 
+void CTSE_Info::x_MapFeatByLocus(const string& locus, bool tag,
+                                 CAnnotObject_Info& info)
+{
+    m_LocusIndex.insert(TLocusIndex::value_type(TLocusKey(locus, tag), &info));
+}
+
+
+void CTSE_Info::x_UnmapFeatByLocus(const string& locus, bool tag,
+                                   CAnnotObject_Info& info)
+{
+    for ( TLocusIndex::iterator it =
+              m_LocusIndex.lower_bound(TLocusKey(locus, tag));
+          it != m_LocusIndex.end() &&
+              it->first.first == locus &&
+              it->first.second == tag;
+          ++it ) {
+        if ( it->second == &info ) {
+            m_LocusIndex.erase(it);
+            return;
+        }
+    }
+}
+
+
 void CTSE_Info::x_MapChunkByFeatId(TFeatId id,
                                    CSeqFeatData::ESubtype subtype,
                                    TChunkId chunk_id,
@@ -1441,6 +1468,23 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
                 CAnnotType_Index::GetSubtypeForIndex(index);
             x_AddFeaturesById(objects, subtype, id, xref);
         }
+    }
+    return objects;
+}
+
+
+CTSE_Info::TAnnotObjects CTSE_Info::x_GetFeaturesByLocus(const string& locus,
+                                                         bool tag) const
+{
+    UpdateAnnotIndex();
+    TAnnotObjects objects;
+    for ( TLocusIndex::const_iterator it =
+              m_LocusIndex.lower_bound(TLocusKey(locus, tag));
+          it != m_LocusIndex.end() &&
+              it->first.first == locus &&
+              it->first.second == tag;
+          ++it ) {
+        objects.push_back(it->second);
     }
     return objects;
 }

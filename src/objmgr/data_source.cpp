@@ -76,6 +76,9 @@
 #define NCBI_USE_ERRCODE_X   ObjMgr_DataSource
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(3);
+
 BEGIN_SCOPE(objects)
 
 CDataSource::CDataSource(void)

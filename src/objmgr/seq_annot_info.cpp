@@ -61,6 +61,9 @@
 #define NCBI_USE_ERRCODE_X   ObjMgr_SeqAnnot
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(7);
+
 BEGIN_SCOPE(objects)
 
 
@@ -1070,6 +1073,30 @@ void CSeq_annot_Info::x_UnmapFeatById(const CFeat_id& id,
 }
 
 
+void CSeq_annot_Info::x_MapFeatByGene(const CGene_ref& gene,
+                                      CAnnotObject_Info& info)
+{
+    if ( gene.IsSetLocus() ) {
+        GetTSE_Info().x_MapFeatByLocus(gene.GetLocus(), false, info);
+    }
+    if ( gene.IsSetLocus_tag() ) {
+        GetTSE_Info().x_MapFeatByLocus(gene.GetLocus_tag(), true, info);
+    }
+}
+
+
+void CSeq_annot_Info::x_UnmapFeatByGene(const CGene_ref& gene,
+                                        CAnnotObject_Info& info)
+{
+    if ( gene.IsSetLocus() ) {
+        GetTSE_Info().x_UnmapFeatByLocus(gene.GetLocus(), false, info);
+    }
+    if ( gene.IsSetLocus_tag() ) {
+        GetTSE_Info().x_UnmapFeatByLocus(gene.GetLocus_tag(), true, info);
+    }
+}
+
+
 void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
 {
     const CSeq_feat& feat = *info.GetFeatFast();
@@ -1080,6 +1107,9 @@ void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
         ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
             x_MapFeatById(**it, info, true);
         }
+    }
+    if ( info.GetFeatType() == CSeqFeatData::e_Gene ) {
+        x_MapFeatByGene(feat.GetData().GetGene(), info);
     }
     if ( feat.IsSetXref() ) {
         ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
@@ -1102,6 +1132,9 @@ void CSeq_annot_Info::x_UnmapFeatIds(CAnnotObject_Info& info)
         ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
             x_UnmapFeatById(**it, info, true);
         }
+    }
+    if ( info.GetFeatType() == CSeqFeatData::e_Gene ) {
+        x_UnmapFeatByGene(feat.GetData().GetGene(), info);
     }
     if ( feat.IsSetXref() ) {
         ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {

@@ -149,6 +149,11 @@ public:
     CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
                                       TFeatureId id) const;
 
+    CSeq_feat_Handle GetGeneWithLocus(const string& locus, bool tag) const;
+    TSeq_feat_Handles GetGenesWithLocus(const string& locus, bool tag) const;
+    CSeq_feat_Handle GetGeneByRef(const CGene_ref& ref) const;
+    TSeq_feat_Handles GetGenesByRef(const CGene_ref& ref) const;
+
 
 protected:
     friend class CScope_Impl;

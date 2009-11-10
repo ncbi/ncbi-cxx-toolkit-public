@@ -571,5 +571,48 @@ CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
 }
 
 
+CSeq_feat_Handle CTSE_Handle::GetGeneWithLocus(const string& locus,
+                                               bool tag) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesByLocus(locus, tag));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetGenesWithLocus(const string& locus,
+                               bool tag) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesByLocus(locus, tag));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetGeneByRef(const CGene_ref& ref) const
+{
+    CSeq_feat_Handle feat;
+    if ( ref.IsSetLocus_tag() ) {
+        feat = GetGeneWithLocus(ref.GetLocus_tag(), true);
+    }
+    if ( !feat && ref.IsSetLocus() ) {
+        feat = GetGeneWithLocus(ref.GetLocus(), false);
+    }
+    return feat;
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetGenesByRef(const CGene_ref& ref) const
+{
+    TSeq_feat_Handles ret;
+    if ( ref.IsSetLocus_tag() ) {
+        GetGenesWithLocus(ref.GetLocus_tag(), true).swap(ret);
+    }
+    if ( ref.IsSetLocus() ) {
+        TSeq_feat_Handles hh = GetGenesWithLocus(ref.GetLocus(), false);
+        ret.insert(ret.end(), hh.begin(), hh.end());
+    }
+    return ret;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

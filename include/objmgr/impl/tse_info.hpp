@@ -302,6 +302,8 @@ public:
         TIndex    m_Index;
     };
     typedef map<CSeqFeatData::ESubtype, SFeatIdIndex>        TFeatIdIndex;
+    typedef pair<string, bool> TLocusKey;
+    typedef multimap<TLocusKey, CAnnotObject_Info*> TLocusIndex;
 
     typedef vector<CSeq_id_Handle> TSeqIds;
     typedef TSeqIds TBioseqsIds;
@@ -375,6 +377,7 @@ public:
     TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                                     TFeatId id,
                                     bool xref) const;
+    TAnnotObjects x_GetFeaturesByLocus(const string& locus, bool tag) const;
 
     typedef pair<CConstRef<CSeq_annot_Info>, CTSE_Lock> TSeq_annot_Lock;
     typedef pair<TSeq_annot_Lock, int> TSeq_feat_Lock;
@@ -474,6 +477,10 @@ private:
 
     void x_MapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref);
     void x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref);
+    void x_MapFeatByLocus(const string& locus, bool tag,
+                          CAnnotObject_Info& info);
+    void x_UnmapFeatByLocus(const string& locus, bool tag,
+                            CAnnotObject_Info& info);
 
     void x_MapChunkByFeatType(CSeqFeatData::ESubtype subtype,
                               TChunkId chunk_id);
@@ -577,6 +584,7 @@ private:
     TNamedAnnotObjs        m_NamedAnnotObjs;
     TIdAnnotInfoMap        m_IdAnnotInfoMap;
     TFeatIdIndex           m_FeatIdIndex;
+    TLocusIndex            m_LocusIndex;
 
     mutable TAnnotLock     m_AnnotLock;
     mutable CSeq_id_Handle m_RequestedId;

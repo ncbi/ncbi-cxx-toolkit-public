@@ -59,6 +59,7 @@ class CTSEAnnotObjectMapper;
 class CSeq_annot_SNP_Info;
 class CSeqTableInfo;
 class CFeat_id;
+class CGene_ref;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 {
@@ -195,6 +196,8 @@ protected:
     void x_UnmapFeatIds(CAnnotObject_Info& info);
     void x_MapFeatById(const CFeat_id& id, CAnnotObject_Info& info, bool xref);
     void x_UnmapFeatById(const CFeat_id& id, CAnnotObject_Info& info, bool xref);
+    void x_MapFeatByGene(const CGene_ref& gene, CAnnotObject_Info& info);
+    void x_UnmapFeatByGene(const CGene_ref& gene, CAnnotObject_Info& info);
 
     void x_Map(const CTSEAnnotObjectMapper& mapper,
                const SAnnotObject_Key& key,
