@@ -121,7 +121,7 @@ CSeq_interval::CSeq_interval(TId& id, TFrom from, TTo to, TStrand strand)
 inline
 TSeqPos CSeq_interval::GetLength(void) const
 {
-    return ((GetTo() - GetFrom()) + 1);
+    return GetTo() >= GetFrom() ? ((GetTo() - GetFrom()) + 1) : 0;
 }
 
 /////////////////// end of CSeq_interval inline methods
