@@ -66,7 +66,7 @@ extern "C" {
  *
  * @sa CTimeout, g_CTimeoutToSTimeout, g_STimeoutToCTimeout
  */
-typedef struct {
+typedef struct STimeoutTag {
     unsigned int sec;  /**< seconds (truncated to the platf.-dep. max. limit)*/
     unsigned int usec; /**< microseconds (always truncated by mod. 1,000,000)*/
 } STimeout;
