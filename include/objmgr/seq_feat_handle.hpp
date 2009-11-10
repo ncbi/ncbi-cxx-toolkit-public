@@ -143,6 +143,10 @@ public:
     bool GetPseudo(void) const;
     bool IsSetExcept_text(void) const;
     const string& GetExcept_text(void) const;
+    bool IsSetIds(void) const;
+    const CSeq_feat::TIds& GetIds(void) const;
+    bool IsSetExts(void) const;
+    const CSeq_feat::TExts& GetExts(void) const;
 
     // Access to some methods of CSeq_feat members
     CSeqFeatData::E_Choice GetFeatType(void) const;
@@ -522,6 +526,34 @@ inline
 const string& CSeq_feat_Handle::GetExcept_text(void) const
 {
     return x_GetPlainSeq_feat().GetExcept_text();
+}
+
+
+inline
+bool CSeq_feat_Handle::IsSetIds(void) const
+{
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetIds();
+}
+
+
+inline
+const CSeq_feat::TIds& CSeq_feat_Handle::GetIds(void) const
+{
+    return x_GetPlainSeq_feat().GetIds();
+}
+
+
+inline
+bool CSeq_feat_Handle::IsSetExts(void) const
+{
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExts();
+}
+
+
+inline
+const CSeq_feat::TExts& CSeq_feat_Handle::GetExts(void) const
+{
+    return x_GetPlainSeq_feat().GetExts();
 }
 
 
