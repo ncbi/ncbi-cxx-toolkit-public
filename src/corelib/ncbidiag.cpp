@@ -5603,4 +5603,10 @@ bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code,
 }
 
 
+const char* g_DiagUnknownFunction(void)
+{
+    return kEmptyCStr;
+}
+
+
 END_NCBI_SCOPE
