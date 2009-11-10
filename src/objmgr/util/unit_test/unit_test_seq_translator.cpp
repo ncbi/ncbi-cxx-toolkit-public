@@ -78,6 +78,7 @@ extern const char* sc_TestEntry_5prime_partial_minus;
 extern const char* sc_TestEntry_TerminalTranslExcept;
 extern const char* sc_TestEntry_ShortCDS;
 extern const char* sc_TestEntry_FirstCodon;
+extern const char* sc_TestEntry_FirstCodon2;
 
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 {
@@ -799,6 +800,100 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     string tmp;
     string complete_trans = "-MGMCFLRGWKGV";
     string partial_trans = "KMGMCFLRGWKGV";
+
+    // translate with vector
+    tmp.clear();
+    CSeqVector vec(feat->GetLocation(), scope);
+    // default value for 5' complete is true
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, false, true);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, CSeqTranslator::fDefault, NULL);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+
+    // set 5' complete false
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp,
+                              NULL, false, true, 0, false);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+
+    // translate with string
+    string seq_str;
+    vec.GetSeqData(0, entry.GetSeq().GetLength(), seq_str);
+    // default value for 5' complete is true
+    CSeqTranslator::Translate(seq_str, tmp,
+                              NULL, false, true);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fDefault);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+
+    // set 5' complete false
+    tmp.clear();
+    CSeqTranslator::Translate(seq_str, tmp,
+                              NULL, false, true, 0, false);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+    // try it with flag version
+    tmp.clear();
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+
+
+    ///
+    /// translate the CDRegion directly
+    ///
+
+    /// use CSeqTranslator::Translate()
+    tmp.clear();
+    CSeqTranslator::Translate(*feat,
+                              scope, tmp,
+                              false, true);
+    BOOST_CHECK_EQUAL(complete_trans, tmp);
+
+    // if partial, should translate first codon
+    feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    tmp.clear();
+    CSeqTranslator::Translate(*feat,
+                              scope, tmp,
+                              false, true);
+    BOOST_CHECK_EQUAL(partial_trans, tmp);
+
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry_FirstCodon2);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetCdregion();
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("FirstCodon2");
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(26);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(feat);
+    entry.SetSeq().SetAnnot().push_back(annot);
+
+    string tmp;
+    string complete_trans = "-P*K*E*N";
+    string partial_trans = "MP*K*E*N";
 
     // translate with vector
     tmp.clear();
@@ -1858,4 +1953,20 @@ Seq-entry ::= seq {\
             length 39 ,\
             seq-data\
               iupacna \"AAAATGGGAATGTGCTTTTTGAGAGGATGGAAAGGTGTT\" } }\
+";
+
+const char *sc_TestEntry_FirstCodon2 = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"FirstCodon2\" } ,\
+          descr {\
+            molinfo {\
+              biomol genomic } } ,\
+          inst {\
+            repr raw ,\
+            mol dna ,\
+            length 27 ,\
+            seq-data\
+              iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } }\
 ";

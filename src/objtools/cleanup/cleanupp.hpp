@@ -414,6 +414,7 @@ private:
     void x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh);
     void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss, bool merge);
     void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh, bool merge);
+    bool x_ExtendedCleanupBioSource(CBioSource& bs);
 
     // MolInfo Cleanup Functions
     void x_FuseMolInfos (CBioseq::TDescr& desc_set, CSeq_descr::Tdata& desc_list);

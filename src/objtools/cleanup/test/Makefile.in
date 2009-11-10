@@ -3,7 +3,7 @@
 # Meta-makefile("CACHE" project)
 #################################
 
-APP_PROJ = test_basic_cleanup
+APP_PROJ = test_basic_cleanup unit_test_extended_cleanup
 SUB_PROJ = 
 
 srcdir = @srcdir@

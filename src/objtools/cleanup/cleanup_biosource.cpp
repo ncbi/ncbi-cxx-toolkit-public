@@ -2248,7 +2248,18 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
 )
 
 {
-    // First, convert Org-ref descriptors to BioSource descriptors
+    // first, do extended cleanup on individual sources on this set
+    if (bh.IsSetDescr()) {
+        CBioseq_EditHandle edith = bh.GetEditHandle ();
+
+        EDIT_EACH_DESCRIPTOR_ON_SEQSET (ds, edith) {
+            if ((*ds)->IsSource()) {
+                x_ExtendedCleanupBioSource((*ds)->SetSource());
+            }
+        }
+    }
+
+    // Convert Org-ref descriptors to BioSource descriptors
     x_ConvertOrgDescToSourceDescriptor (bh);
     // Convert Org-ref features to BioSource features
     x_ConvertOrgFeatToSource (bh);
@@ -2280,7 +2291,18 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
 )
 
 {
-    // First, clean the members of this set
+    // first, do extended cleanup on individual sources on this set
+    if (bss.IsSetDescr()) {
+        CBioseq_set_EditHandle edith = bss.GetEditHandle ();
+
+        EDIT_EACH_DESCRIPTOR_ON_SEQSET (ds, edith) {
+            if ((*ds)->IsSource()) {
+                x_ExtendedCleanupBioSource((*ds)->SetSource());
+            }
+        }
+    }
+
+    // then clean the members of this set
     if (merge 
         && bss.GetCompleteBioseq_set()->IsSetSeq_set()
         && bss.CanGetClass() 
@@ -2316,7 +2338,8 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
     if (bss.IsSetDescr()) {
         // merge descriptors
         CSeq_descr::Tdata remove_list;    
-        CBioseq_set_EditHandle edith = bss.GetEditHandle ();     
+        CBioseq_set_EditHandle edith = bss.GetEditHandle ();
+
         x_RecurseDescriptorsForMerge(edith.SetDescr(),
                                      &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource,
                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources,
@@ -2349,6 +2372,31 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures (
                 break;
         }
     }
+}
+
+
+bool CCleanup_imp::x_ExtendedCleanupBioSource(CBioSource& bs)
+{
+    bool change_made = false;
+
+    if (!bs.IsSetOrg() || !bs.IsSetOrgname() || !bs.IsSetTaxname()) {
+        return false;
+    }
+    COrgName& orgname = bs.SetOrg().SetOrgname();
+        
+    EDIT_EACH_ORGMOD_ON_ORGNAME (it, orgname) {
+        if (!(*it)->IsSetSubtype() || !(*it)->IsSetSubname()) {
+            continue;
+        }
+        if ((*it)->GetSubtype() == COrgMod::eSubtype_old_name
+            && NStr::EqualCase ((*it)->GetSubname(), bs.GetTaxname()) 
+            && (!(*it)->IsSetAttrib() || NStr::IsBlank((*it)->GetAttrib()))) {
+            ERASE_ORGMOD_ON_ORGNAME (it, orgname);
+            ChangeMade (CCleanupChange::eChangeOrgmod);
+            change_made = true;
+        }
+    }
+    return change_made;
 }
 
 
