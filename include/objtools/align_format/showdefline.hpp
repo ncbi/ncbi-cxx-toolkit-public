@@ -272,6 +272,7 @@ protected:
     struct SScoreInfo {
         list<int> use_this_gi;         // Limit formatting by these GI's.
         string bit_string;             //bit score
+        string raw_score_string;       //raw score
         string evalue_string;          //e value
         int sum_n;                     //sum_n in score block
         string total_bit_string;       //total bit score for this hit

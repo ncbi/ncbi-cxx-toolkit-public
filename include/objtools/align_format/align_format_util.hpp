@@ -485,15 +485,20 @@ public:
     ///format evalue and bit_score 
     ///@param evalue: e value
     ///@param bit_score: bit score
+    ///@param total_bit_score: total bit score(??)
+    ///@param raw_score: raw score (e.g., BLOSUM score)
     ///@param evalue_str: variable to store the formatted evalue
     ///@param bit_score_str: variable to store the formatted bit score
+    ///@param raw_score_str: variable to store the formatted raw score
     ///
     static void GetScoreString(double evalue, 
                                double bit_score, 
                                double total_bit_score, 
+                               int raw_score,
                                string& evalue_str, 
                                string& bit_score_str,
-                               string& total_bit_score_str);
+                               string& total_bit_score_str,
+                               string& raw_score_str);
     
     ///Fill new alignset containing the specified number of alignments with
     ///unique slave seqids.  Note no new seqaligns were created. It just 
