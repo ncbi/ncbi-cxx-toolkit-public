@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/reader_base.hpp>
-
+#include <objtools/readers/error_container.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 
