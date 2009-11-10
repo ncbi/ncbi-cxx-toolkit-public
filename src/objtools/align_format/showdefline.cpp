@@ -693,6 +693,14 @@ void CShowBlastDefline::x_InitDefline(void)
 
 void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 {
+    // We cannot get on ungapped results, should check why?
+    bool kIsGlobal = (m_AlnSetRef->IsSet() && m_AlnSetRef->CanGet() && 
+          m_AlnSetRef->Get().front()->CanGetType() &&
+          m_AlnSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global);
+
+    if (kIsGlobal)
+      return;
+
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
@@ -711,7 +719,8 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
             CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             CAlignFormatUtil::AddSpace(out, 2); //E align to l of value
-            out << kE;
+            if (!kIsGlobal)
+                out << kE;
             out << "\n";
             out << kHeader;
             if(m_Option & eHtml){
@@ -826,12 +835,16 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << sdl->score_url;
         }
-        out << (*iter)->bit_string;
+        if (kIsGlobal)
+            out << (*iter)->raw_score_string;
+        else
+            out << (*iter)->bit_string;
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
         CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
-        out << kTwoSpaceMargin << (*iter)->evalue_string;
+        if (!kIsGlobal)
+            out << kTwoSpaceMargin << (*iter)->evalue_string;
         CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
         if(m_Option & eShowSumN){ 
             out << kTwoSpaceMargin << (*iter)->sum_n;   
@@ -1378,7 +1391,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 CShowBlastDefline::SScoreInfo* 
 CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
 {
-    string evalue_buf, bit_score_buf, total_bit_score_buf;
+    string evalue_buf, bit_score_buf, total_bit_score_buf, raw_score_buf;
     int score = 0;
     double bits = 0;
     double evalue = 0;
@@ -1391,8 +1404,9 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     CAlignFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
                                        num_ident, use_this_gi);
 
-    CAlignFormatUtil::GetScoreString(evalue, bits, 0, 
-                              evalue_buf, bit_score_buf, total_bit_score_buf);
+    CAlignFormatUtil::GetScoreString(evalue, bits, 0, score,
+                              evalue_buf, bit_score_buf, total_bit_score_buf,
+                              raw_score_buf);
 
     auto_ptr<SScoreInfo> score_info(new SScoreInfo);
     score_info->sum_n = sum_n == -1 ? 1:sum_n ;
@@ -1401,6 +1415,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     score_info->use_this_gi = use_this_gi;
 
     score_info->bit_string = bit_score_buf;
+    score_info->raw_score_string = raw_score_buf;
     score_info->evalue_string = evalue_buf;
     score_info->id = &(aln.GetSeq_id(1));
     score_info->blast_rank = blast_rank+1;
@@ -1411,7 +1426,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
 CShowBlastDefline::SScoreInfo* 
 CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_rank)
 {
-    string evalue_buf, bit_score_buf, total_bit_score_buf;
+    string evalue_buf, bit_score_buf, total_bit_score_buf, raw_score_buf;
     int score = 0;
     double bits = 0;
     double evalue = 0;
@@ -1456,8 +1471,8 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     score_info->align_length = highest_length;
 
     // Really need to call this twice??
-    CAlignFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, 
-                                     evalue_buf, bit_score_buf, total_bit_score_buf);
+    CAlignFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, score,
+                                     evalue_buf, bit_score_buf, total_bit_score_buf, raw_score_buf);
 
     score_info->total_bit_string = total_bit_score_buf; 
     score_info->bit_string = bit_score_buf;

@@ -606,10 +606,10 @@ void CBlastTabularInfo::PrintNumProcessed(int num_queries)
 void 
 CBlastTabularInfo::SetScores(int score, double bit_score, double evalue)
 {
-    string total_bit_string;
+    string total_bit_string, raw_score_string;
     m_Score = score;
-    CAlignFormatUtil::GetScoreString(evalue, bit_score, 0, m_Evalue, 
-                                     m_BitScore, total_bit_string);
+    CAlignFormatUtil::GetScoreString(evalue, bit_score, 0, score, m_Evalue, 
+                                     m_BitScore, total_bit_string, raw_score_string);
 }
 
 void 

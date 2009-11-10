@@ -744,9 +744,11 @@ void CAlignFormatUtil::AddSpace(CNcbiOstream& out, int number)
 void CAlignFormatUtil::GetScoreString(double evalue, 
                                       double bit_score, 
                                       double total_bit_score, 
+                                      int raw_score,
                                       string& evalue_str, 
                                       string& bit_score_str,
-                                      string& total_bit_score_str)
+                                      string& total_bit_score_str,
+                                      string& raw_score_str)
 {
     char evalue_buf[100], bit_score_buf[100], total_bit_score_buf[100];
 
@@ -807,6 +809,9 @@ void CAlignFormatUtil::GetScoreString(double evalue,
     evalue_str = evalue_buf;
     bit_score_str = bit_score_buf;
     total_bit_score_str = total_bit_score_buf;
+    if (raw_score <= 0)
+      raw_score = -1;
+    NStr::IntToString(raw_score_str, raw_score);
 }
 
 

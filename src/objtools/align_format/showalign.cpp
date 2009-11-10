@@ -3028,10 +3028,10 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
         } 
     }
     if (m_AlignOption&eShowBlastInfo) {
-        string evalue_buf, bit_score_buf, total_bit_buf;
+        string evalue_buf, bit_score_buf, total_bit_buf, raw_score_buf;
         CAlignFormatUtil::GetScoreString(aln_vec_info->evalue, 
-                                         aln_vec_info->bits, 0, evalue_buf, 
-                                         bit_score_buf, total_bit_buf);
+                                         aln_vec_info->bits, 0, 0, evalue_buf, 
+                                         bit_score_buf, total_bit_buf, raw_score_buf);
         //add id anchor for mapviewer link
         string type_temp = m_BlastType;
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
@@ -3058,18 +3058,26 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
             
             out << buffer << "\n"; 
         }
-        out<<" Score = "<<bit_score_buf<<" ";
-        out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
-        out<<"Expect";
-        if (aln_vec_info->sum_n > 0) {
-            out << "(" << aln_vec_info->sum_n << ")";
+    CRef<CSeq_align> first_aln = m_SeqalignSetRef->Get().front();
+        if (m_SeqalignSetRef->Get().front()->CanGetType() && 
+           m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
+        {
+            out<<" NW Score = "<< aln_vec_info->score;
         }
-        
-        out << " = " << evalue_buf;
-        if (aln_vec_info->comp_adj_method == 1)
-            out << ", Method: Composition-based stats.";
-        else if (aln_vec_info->comp_adj_method == 2)
-            out << ", Method: Compositional matrix adjust.";
+        else
+        {
+            out<<" Score = "<<bit_score_buf<<" ";
+            out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
+            out<<"Expect";
+            if (aln_vec_info->sum_n > 0) {
+                out << "(" << aln_vec_info->sum_n << ")";
+            }
+            out << " = " << evalue_buf;
+            if (aln_vec_info->comp_adj_method == 1)
+                out << ", Method: Composition-based stats.";
+            else if (aln_vec_info->comp_adj_method == 2)
+                out << ", Method: Compositional matrix adjust.";
+        }
         out << "\n";
     }
         
