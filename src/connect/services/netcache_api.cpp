@@ -113,7 +113,7 @@ void CNetCacheServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, message);
 }
 
-static const char* kNetCacheAPIDriverName = "netcache_api";
+const char* kNetCacheAPIDriverName = "netcache_api";
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name,

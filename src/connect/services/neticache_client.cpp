@@ -58,7 +58,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char* kNetICacheDriverName = "netcache";
+const char* kNetICacheDriverName = "netcache";
 
 struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 {
