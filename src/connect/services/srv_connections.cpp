@@ -394,8 +394,8 @@ void SNetServerImpl::CheckIfThrottled()
                         CTime discovery_validity_time(m_Service->
                             m_RebalanceStrategy->GetLastRebalanceTime());
 
-                        discovery_validity_time.AddNanoSecond(m_Service->
-                            m_ForceRebalanceAfterThrottleWithin * 1000000);
+                        discovery_validity_time.AddSecond(m_Service->
+                            m_ForceRebalanceAfterThrottleWithin);
 
                         if (discovery_validity_time < current_time) {
                             ++m_Service->m_LatestDiscoveryIteration;
@@ -433,8 +433,7 @@ void SNetServerImpl::CheckIfThrottled()
 
         if (m_Throttled) {
             m_ThrottledUntil.SetCurrent();
-            m_ThrottledUntil.AddNanoSecond(
-                m_Service->m_ServerThrottlePeriod * 1000000);
+            m_ThrottledUntil.AddSecond(m_Service->m_ServerThrottlePeriod);
             NCBI_THROW(CNetSrvConnException, eServerThrottle,
                 m_ThrottleMessage);
         }

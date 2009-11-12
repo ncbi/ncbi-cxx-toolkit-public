@@ -165,10 +165,9 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
     else
         m_Timeout = s_GetDefaultCommTimeout();
 
-    m_ServerThrottlePeriod = s_SecondsToMilliseconds(config->GetString(section,
+    m_ServerThrottlePeriod = config->GetInt(section,
         "throttle_relaxation_period", CConfig::eErr_NoThrow,
-            NCBI_AS_STRING(THROTTLE_RELAXATION_PERIOD_DEFAULT)),
-            SECONDS_DOUBLE_TO_MS_UL(THROTTLE_RELAXATION_PERIOD_DEFAULT));
+            THROTTLE_RELAXATION_PERIOD_DEFAULT);
 
     if (m_ServerThrottlePeriod > 0) {
         string numerator_str, denominator_str;
@@ -212,11 +211,9 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
             "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
                 THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
 
-        m_ForceRebalanceAfterThrottleWithin =
-            s_SecondsToMilliseconds(config->GetString(section,
-                "throttle_forced_rebalance", CConfig::eErr_NoThrow,
-                    NCBI_AS_STRING(THROTTLE_FORCED_REBALANCE_DEFAULT)),
-                    SECONDS_DOUBLE_TO_MS_UL(THROTTLE_FORCED_REBALANCE_DEFAULT));
+        m_ForceRebalanceAfterThrottleWithin = config->GetInt(section,
+            "throttle_forced_rebalance", CConfig::eErr_NoThrow,
+                THROTTLE_FORCED_REBALANCE_DEFAULT);
     }
 
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);

@@ -153,7 +153,7 @@ struct SNetServiceImpl : public CNetObject
     int m_ServerThrottlePeriod;
     int m_MaxQueryTime;
     bool m_ThrottleUntilDiscoverable;
-    unsigned long m_ForceRebalanceAfterThrottleWithin;
+    int m_ForceRebalanceAfterThrottleWithin;
 };
 
 inline SNetServerGroupImpl::SNetServerGroupImpl(unsigned discovery_iteration) :
