@@ -103,6 +103,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
     : m_Atlas    (atlas),
       m_DBPath   ("."),
       m_ThisName ("-"),
+      m_HasGiMask(true),
       m_AliasSets(alias_sets)
 {
     CSeqDBLockHold locked(atlas);
@@ -111,6 +112,12 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
     m_Values["DBLIST"] = dbname_list;
     
     x_Tokenize(dbname_list);
+
+    // Skip gi mask if more than one DBs are specified.
+    if (m_DBList.size() != 1) {
+        m_HasGiMask = false;
+    }
+
     x_ResolveNames(prot_nucl, locked);
     
     CSeqDBAliasStack recurse;
@@ -120,6 +127,15 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
     m_Atlas.Unlock(locked);
     
     _ASSERT(recurse.Size() == 0);
+   
+    // When we get here, the subnodes tree has been built
+    if (m_HasGiMask) {
+        if (m_SubNodes.size() != 1 ||
+            m_SubNodes[0]->m_Values.find("MASKLIST") 
+            == m_SubNodes[0]->m_Values.end()) {
+            m_HasGiMask = false;
+        }
+    }
 }
 
 
@@ -1542,6 +1558,22 @@ GetAliasFileValues(TAliasFileValues & afv) const
     }
 }
 
+void CSeqDBAliasNode::
+GetMaskList(vector <string> & mask_list)
+{
+    if (!m_HasGiMask) {
+        return;
+    }
+
+    mask_list.clear();
+
+    // parse the white spaces...
+    vector <CTempString> masks;
+    SeqDB_SplitQuoted(m_SubNodes[0]->m_Values["MASKLIST"], masks);
+    ITERATE(vector <CTempString>, mask, masks) {
+        mask_list.push_back(string(*mask));
+    }
+}
 
 void CSeqDBAliasFile::GetAliasFileValues(TAliasFileValues   & afv,
                                          const CSeqDBVolSet & volset)

@@ -76,10 +76,18 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_NegativeList    (neg_list),
       m_IdSet           (idset),
       m_NeedTotalsScan  (false),
+      m_UseGiMask       (m_Aliases.HasGiMask()),
       m_MaskDataColumn  (kUnknownTitle),
       m_NumThreads      (0)
 {
     INIT_CLASS_MARK();
+    
+    if (m_UseGiMask) {
+        vector <string> mask_list;
+        m_Aliases.GetMaskList(mask_list);
+cout << mask_list.size() << endl;
+        m_GiMask.Reset(new CSeqDBGiMask(m_Atlas, mask_list));
+    }
     
     _ASSERT((! gi_list) || (! neg_list));
     
@@ -162,6 +170,7 @@ CSeqDBImpl::CSeqDBImpl()
       m_SeqType         ('-'),
       m_OidListSetup    (true),
       m_NeedTotalsScan  (false),
+      m_UseGiMask       (false),
       m_MaskDataColumn  (kUnknownTitle),
       m_NumThreads      (0)
 {
@@ -702,29 +711,8 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
 int CSeqDBImpl::GetSeqGI(int oid)
 {
     CHECK_MARKER();
-    int vol_oid = 0;
-
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
-    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
-    
-    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        // Try lookup *.nxg first
-        int gi = vol->GetSeqGI(vol_oid, locked);
-        if (gi>=0) return gi;
-        // Fall back to parsing deflines
-        list< CRef<CSeq_id> > ids = 
-            vol->GetSeqIDs(vol_oid, & x_GetFiltInfo(locked), locked);
-        ITERATE(list< CRef<CSeq_id> >, id, ids) {
-            if ((**id).IsGi()) {
-                return (**id).GetGi();
-            }
-        }
-        // No GI found 
-        return -1;
-    }
-    
-    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
+    return x_GetSeqGI(oid, locked);
 }
 
 int CSeqDBImpl::GetNumSeqs() const
@@ -773,6 +761,32 @@ int CSeqDBImpl::x_GetNumSeqs() const
     _ASSERT((rv & 0x7FFFFFFF) == rv);
     
     return (int) rv;
+}
+
+int CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
+{
+    CHECK_MARKER();
+
+    m_Atlas.Lock(locked);
+
+    int vol_oid = 0;
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        // Try lookup *.nxg first
+        int gi = vol->GetSeqGI(vol_oid, locked);
+        if (gi>=0) return gi;
+        // Fall back to parsing deflines
+        list< CRef<CSeq_id> > ids = 
+            vol->GetSeqIDs(vol_oid, & x_GetFiltInfo(locked), locked);
+        ITERATE(list< CRef<CSeq_id> >, id, ids) {
+            if ((**id).IsGi()) {
+                return (**id).GetGi();
+            }
+        }
+        // No GI found 
+        return -1;
+    }
+    
+    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
 int CSeqDBImpl::x_GetNumSeqsStats() const
@@ -1939,6 +1953,11 @@ int CSeqDB_IdRemapper::RealToVol(int vol_idx, int algo_id)
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
 {
+    if (m_UseGiMask) {
+        m_GiMask->GetAvailableMaskAlgorithms(algorithms);
+        return;
+    }
+
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
@@ -2012,13 +2031,20 @@ void CSeqDBImpl::GetMaskAlgorithmDetails(int                 algorithm_id,
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
-    
-    if (m_AlgorithmIds.Empty()) {
-        x_BuildMaskAlgorithmList(locked);
-    }
 
     string s;
-    bool found = m_AlgorithmIds.GetDesc(algorithm_id, s);
+    bool found;
+
+    if (m_UseGiMask) {
+       // TODO:  to get description s
+       s = m_GiMask->GetDesc(algorithm_id, locked);
+       found = true;
+    } else {
+       if (m_AlgorithmIds.Empty()) {
+           x_BuildMaskAlgorithmList(locked);
+       }
+       found = m_AlgorithmIds.GetDesc(algorithm_id, s);
+    }
 
     if (found == false) {
         CNcbiOstrstream oss;
@@ -2038,7 +2064,7 @@ void CSeqDBImpl::x_BuildMaskAlgorithmList(CSeqDBLockHold & locked)
     if (! m_AlgorithmIds.Empty()) {
         return;
     }
-    
+
     int col_id = x_GetMaskDataColumn(locked);
     
     if (col_id < 0) {
@@ -2144,9 +2170,9 @@ void s_ReadRanges(const vector<int>           & vol_algos,
     }
 }
 
-void CSeqDBImpl::GetMaskData(int                 oid,
-                             const vector<int> & algo_ids,
-                             CSeqDB::TSequenceRanges   & ranges)
+void CSeqDBImpl::GetMaskData(int                       oid,
+                             const vector<int>       & algo_ids,
+                             CSeqDB::TSequenceRanges & ranges)
 {
     CHECK_MARKER();
     
@@ -2157,6 +2183,11 @@ void CSeqDBImpl::GetMaskData(int                 oid,
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
+    if (m_UseGiMask) {
+        m_GiMask->GetMaskData(algo_ids[0], x_GetSeqGI(oid, locked), ranges, locked);
+        return;
+    }
+
     if (m_AlgorithmIds.Empty()) {
         x_BuildMaskAlgorithmList(locked);
     }

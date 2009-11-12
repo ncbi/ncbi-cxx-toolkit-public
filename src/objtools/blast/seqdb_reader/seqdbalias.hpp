@@ -705,7 +705,26 @@ public:
     ///
     /// @param has_filters Will be set true if any filtering is done.
     void ComputeMasks(bool & has_filters);
+
+    /// Get Gi-based Mask Names From Alias Files
+    ///
+    /// This will return the MASKLIST field of the alias node.
+    ///
+    /// @param mask_list
+    ///   The mask names will be returned here.
+    void GetMaskList(vector <string> & mask_list);
     
+    /// Is the top node alias file associated with Gi based masks?
+    ///
+    /// This will return true if the MASKLIST field of the top alias
+    /// node is set.
+    ///
+    /// @return TRUE if MASKLIST field is present
+    bool HasGiMask() const
+    {
+        return m_HasGiMask;
+    };
+
 private:
     /// Private Constructor
     ///
@@ -902,6 +921,10 @@ private:
     
     /// Tokenized version of DBLIST
     vector<CSeqDB_BasePath> m_DBList;
+
+    /// Do we have Gi masks for the top node?
+    /// (only applicable to the top node)
+    bool m_HasGiMask;
 
     /// Should we skip local DB search for this DBLIST?
     vector<bool> m_SkipLocal;
@@ -1140,6 +1163,28 @@ public:
     ///   The set of database volumes
     void GetAliasFileValues(TAliasFileValues   & afv,
                             const CSeqDBVolSet & volset);
+
+    /// Is the top node alias file associated with Gi based masks?
+    ///
+    /// This will return true if the MASKLIST field of the top alias
+    /// node is set.
+    ///
+    /// @return TRUE if MASKLIST field is present
+    bool HasGiMask() const
+    {
+        return (m_Node->HasGiMask());
+    }
+
+    /// Get Gi-based Mask Names From Alias Files
+    ///
+    /// This will return the MASKLIST field of the top alias node.
+    ///
+    /// @param mask_list
+    ///   The mask names will be returned here.
+    void GetMaskList(vector <string> &mask_list)
+    {
+        m_Node->GetMaskList(mask_list);
+    }
     
 private:
     /// Compute filtering options for all volumes.

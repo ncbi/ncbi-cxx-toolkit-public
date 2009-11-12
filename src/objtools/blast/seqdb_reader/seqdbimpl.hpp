@@ -44,6 +44,7 @@
 #include "seqdbalias.hpp"
 #include "seqdboidlist.hpp"
 #include "seqdbcol.hpp"
+#include "seqdbgimask.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -131,7 +132,7 @@ public:
     {
         m_Empty = false;
     }
-    
+
     /// Build a list of volume algorithm IDs.
     ///
     /// This method takes a list of algorithm IDs and translates them
@@ -1006,11 +1007,11 @@ public:
     /// actually the list of non-maksed (rather than masked) ranges.
     ///
     /// @param oid The ordinal ID of the sequence. [in]
-    /// @param algo_ids The algorithm IDs to get data for. [in]
+    /// @param algo_id The algorithm IDs to get data for. [in]
     /// @param inverted If true, return a list of included ranges. [in]
     /// @param ranges The list of sequence offset ranges. [out]
-    void GetMaskData(int                 oid,
-                     const vector<int> & algo_ids,
+    void GetMaskData(int                         oid,
+                     const vector<int>         & algo_id,
                      CSeqDB::TSequenceRanges   & ranges);
 #endif
 
@@ -1113,6 +1114,19 @@ private:
     /// @return
     ///   The length of the sequence in bases.
     CRef<CBlast_def_line_set> x_GetHdr(int oid, CSeqDBLockHold & locked);
+    
+    /// Look up for the GI of a sequence
+    /// 
+    /// This returns the first GI (if any) that identifies the sequence
+    /// specified by the given OID, or -1 if no GI is found.
+    ///
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    /// @return
+    ///   GI or -1.
+    int x_GetSeqGI(int oid, CSeqDBLockHold & locked);
     
     /// Compute totals via iteration
     ///
@@ -1294,6 +1308,12 @@ private:
         kColumnNotFound = -2
     };
     
+    /// Which type of masks are we using?
+    bool m_UseGiMask;
+   
+    /// Gi-based mask.
+    CRef<CSeqDBGiMask> m_GiMask;
+
     /// Column ID for mask data column.
     int m_MaskDataColumn;
     

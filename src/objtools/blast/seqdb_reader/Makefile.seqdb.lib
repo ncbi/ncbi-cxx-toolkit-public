@@ -19,6 +19,7 @@ seqdbgilistset \
 seqdbexpert \
 seqdbblob \
 seqdbcol \
+seqdbgimask \
 seqdbobj
 
 LIB = seqdb
