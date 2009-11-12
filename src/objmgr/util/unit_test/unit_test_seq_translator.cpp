@@ -810,8 +810,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     BOOST_CHECK_EQUAL(complete_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(vec, tmp,
-                              NULL, CSeqTranslator::fDefault, NULL);
+    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
@@ -821,7 +820,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     BOOST_CHECK_EQUAL(partial_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial);
+    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
     // translate with string
@@ -833,7 +832,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     BOOST_CHECK_EQUAL(complete_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fDefault);
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
@@ -843,7 +842,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     BOOST_CHECK_EQUAL(partial_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial);
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 
@@ -873,6 +872,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
 
 BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
 {
+    // here, the first codon translates to M if complete, because it's an alternate start,
+    // but L if partial
     CSeq_entry entry;
     {{
          CNcbiIstrstream istr(sc_TestEntry_FirstCodon2);
@@ -892,8 +893,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     entry.SetSeq().SetAnnot().push_back(annot);
 
     string tmp;
-    string complete_trans = "-P*K*E*N";
-    string partial_trans = "MP*K*E*N";
+    string complete_trans = "MP*K*E*N";
+    string partial_trans = "LP*K*E*N";
 
     // translate with vector
     tmp.clear();
@@ -904,8 +905,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     BOOST_CHECK_EQUAL(complete_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(vec, tmp,
-                              NULL, CSeqTranslator::fDefault, NULL);
+    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
@@ -915,7 +915,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     BOOST_CHECK_EQUAL(partial_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial);
+    CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
     // translate with string
@@ -927,7 +927,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     BOOST_CHECK_EQUAL(complete_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fDefault);
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
 
     // set 5' complete false
@@ -937,7 +937,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     BOOST_CHECK_EQUAL(partial_trans, tmp);
     // try it with flag version
     tmp.clear();
-    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial);
+    CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
 
 
