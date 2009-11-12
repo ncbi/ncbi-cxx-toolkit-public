@@ -763,6 +763,10 @@ unsigned short SERV_ServerPort(const char*  name,
     SSERV_Info*    info;
     unsigned short port;
 
+    /* FIXME:  SERV_LOCALHOST may not need to be resolved here,
+     *         but taken from LBSMD table (or resolved later in DISPD/LOCAL
+     *         if needed).
+     */
     if (!host  ||  host == SERV_LOCALHOST)
         host = SOCK_GetLocalHostAddress(eDefault);
     if (!(info = s_GetInfo(name, fSERV_Standalone | fSERV_Promiscuous,
