@@ -89,6 +89,7 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
     _ASSERT(!section.empty());
 
     auto_ptr<CConfig> app_reg_config;
+    auto_ptr<CConfig::TParamTree> param_tree;
 
     if (config == NULL) {
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -97,7 +98,15 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
             NCBI_THROW(CConfigException, eParameterMissing,
                 "Could not get default configuration parameters");
         }
-        app_reg_config.reset(new CConfig(*reg));
+
+        param_tree.reset(CConfig::ConvertRegToTree(*reg));
+
+        const CConfig::TParamTree* section_param_tree =
+            param_tree->FindSubNode(section);
+
+        app_reg_config.reset(section_param_tree != NULL ?
+            new CConfig(section_param_tree) : new CConfig(*reg));
+
         config = app_reg_config.get();
     }
 
