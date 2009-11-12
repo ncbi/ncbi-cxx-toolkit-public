@@ -1628,7 +1628,7 @@ unsigned short SOCK_htons(unsigned short);
  *  @li <b>NOTE:</b> "0.0.0.0" and "255.255.255.255" are considered invalid.
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
-(const char* hostname \
+(const char* hostname
  );
 
 
