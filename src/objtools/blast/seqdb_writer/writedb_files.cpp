@@ -120,7 +120,7 @@ CWriteDB_File::CWriteDB_File(const string & basename,
     m_Nul.resize(1);
     m_Nul[0] = (char) 0;
     
-    m_UseIndex = true;
+    m_UseIndex = (index >= 0);
     x_MakeFileName();
     
     if (always_create) {
