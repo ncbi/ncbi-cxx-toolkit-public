@@ -220,6 +220,7 @@ EAnnotPriority GetSeqdescPriority(const CSeqdesc& desc)
     case CSeqdesc::e_Source:
     case CSeqdesc::e_Molinfo:
     case CSeqdesc::e_Title:
+    case CSeqdesc::e_User: // for the feature fetch policy
         return eAnnotPriority_skeleton;
     case CSeqdesc::e_Pub:
     case CSeqdesc::e_Comment:
