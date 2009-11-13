@@ -37,6 +37,7 @@
 .inline NCBICORE_asm_xchg, 8
 	movl   (%esp), %eax
 	movl  4(%esp), %edx
+	lock
 	xchg     %eax, (%edx)
 .end
 
@@ -53,5 +54,6 @@
 ! out: old value (%rax)
 .inline NCBICORE_asm_xchgq, 16
 	movq   %rdi, %rax
+	lock
 	xchgq  %rax, (%rsi)
 .end

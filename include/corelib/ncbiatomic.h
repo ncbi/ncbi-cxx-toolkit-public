@@ -93,7 +93,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
     /* inline assembly */
 #    if defined(__i386)  ||  defined(__x86_64) /* same (overloaded) opcode... */
     void* old_value;
-    asm volatile("xchg %0, %1" : "=m" (*nv_loc), "=r" (old_value)
+    asm volatile("lock; xchg %0, %1" : "=m" (*nv_loc), "=r" (old_value)
                  : "1" (new_value), "m" (*nv_loc));
     return old_value;
 #    elif defined(__sparcv9)
@@ -133,7 +133,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
 #else
                      "lwarx %1,0,%4\n\tstwcx. %3,0,%4"
 #endif
-                     "\n\tbne 0f\n\tli %2,1\n\t0:"
+                     "\n\tbne 0f\n\tli %2,1\n\t0:\n\tisync"
                      : "=m" (*nv_loc), "=&r" (old_value), "=r" (swapped)
                      : "r" (new_value), "r" (nv_loc), "m" (*nv_loc)
                      : "cc");
