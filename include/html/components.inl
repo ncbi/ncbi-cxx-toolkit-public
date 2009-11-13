@@ -31,6 +31,11 @@
  */
 
 
+inline COptionDescription::COptionDescription(void)
+{
+    return;
+}
+
 inline COptionDescription::COptionDescription(const string& value)
     : m_Value(value)
 {
