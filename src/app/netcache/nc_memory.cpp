@@ -2468,18 +2468,18 @@ CNCMMSizePool::x_GetEmptySet(void)
 inline void
 CNCMMSizePool::x_NewEmptySet(CNCMMBlocksSet* bl_set, unsigned int grade)
 {
-    if (m_EmptySet) {
+    x_RemoveSetFromList(bl_set, grade);
+    swap(m_EmptySet, bl_set);
+    if (bl_set) {
         // Release mutex to allow all others not to wait for probably global
         // deallocation.
         m_ObjLock.Unlock();
-        delete m_EmptySet;
+        delete bl_set;
         m_ObjLock.Lock();
     }
     else {
         CNCMMStats::ReservedMemCreated(kNCMMChunkSize);
     }
-    x_RemoveSetFromList(bl_set, grade);
-    m_EmptySet = bl_set;
 }
 
 inline void*
