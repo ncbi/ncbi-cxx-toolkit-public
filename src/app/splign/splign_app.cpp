@@ -79,6 +79,16 @@ namespace {
 
 BEGIN_NCBI_SCOPE
 
+CSplignApp::CSplignApp(void):
+    m_AppName("Splign v.1.39")
+{
+    SetVersion(CVersionInfo(1, 39, 0, "Splign"));
+#ifdef GENOME_PIPELINE
+    m_AppName += 'p';
+#endif
+}
+
+
 void CSplignApp::Init()
 {
 #ifndef GENOME_PIPELINE
@@ -87,14 +97,9 @@ void CSplignApp::Init()
                 fHideXmlHelp | fHideFullHelp);
 #endif
 
-    SetVersion(CVersionInfo(1, 38, 0, "Splign"));
-    string program_name ("Splign v.1.38");
-#ifdef GENOME_PIPELINE
-    program_name += 'p';
-#endif
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
-    argdescr->SetUsageContext(GetArguments().GetProgramName(), program_name);
+    argdescr->SetUsageContext(GetArguments().GetProgramName(), m_AppName);
     
     argdescr->AddOptionalKey
         ("hits", "hits",
@@ -337,162 +342,87 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 }
 
 
-bool CSplignApp::x_GetNextComp(istream& ifs, THitRefs* hitrefs,
-                               THit::TCoord* psubj_min, THit::TCoord* psubj_max)
+void ReadCompartment(istream& istr, CSplign::THitRefs* phitrefs)
 {
-    hitrefs->resize(0);
+    phitrefs->clear();
+    while(istr) {
+        string line;
+        getline(istr, line);
+        if(line.empty()) {
+            if(phitrefs->empty()) continue; else break;
+        }
+        CSplign::THitRef h (new CSplign::THit(line.c_str()));
+        phitrefs->push_back(h);
+    }
+}
 
-    if(!ifs) {
-        return false;
+
+bool CSplignApp::x_GetNextComp(istream& ifs,
+                               THitRefs* phitrefs,
+                               THit::TCoord* psubj_min,
+                               THit::TCoord* psubj_max)
+{
+    static THitRefs hitrefs_next;
+    THitRefs & hitrefs (*phitrefs);
+
+    const THit::TCoord kUndef (numeric_limits<THit::TCoord>::max());
+    const THit::TCoord kMax (numeric_limits<THit::TCoord>::max() - 1);
+    static THit::TCoord smin (kUndef), smax (kUndef);
+
+    if(!hitrefs_next.empty()) {
+        hitrefs.resize(hitrefs_next.size());
+        copy(hitrefs_next.begin(), hitrefs_next.end(), hitrefs.begin());
+        hitrefs_next.clear();
+    }
+    else {
+        // read the first compartment
+        ReadCompartment(ifs, phitrefs);
     }
 
-    THit::TCoord & smin = *psubj_min;
-    THit::TCoord & smax = *psubj_max;
+    // read the next compartment
+    ReadCompartment(ifs, &hitrefs_next);
 
-    smin = 0;
-    smax = numeric_limits<THit::TCoord>::max();
-
-    static THit::TId query, subj;
-    static bool strand (true);
-
-    static THit::TCoord last_coord (0);
-
-    if(m_firstline.size()) {
-
-        THitRef hit (s_ReadBlastHit(m_firstline));
-
-        if(last_coord) {
-
-            // no change in query, subj and strand
-            if(strand) {
-                smin = last_coord;
-                smax = hit->GetSubjStop();
-            }
-            else {
-                smax = last_coord;
-                smin = hit->GetSubjStop();
-            }
-            last_coord = 0;
-        }
-        else {
-            
-            // at least one <q,s,s> component has changed
-            query  = hit->GetQueryId();
-            subj   = hit->GetSubjId();
-            strand = hit->GetSubjStrand();
-
-            if(strand) {
-                smin = 0;
-                smax = hit->GetSubjStop();
-            }
-            else {
-                smin = hit->GetSubjStop();
-                smax = numeric_limits<THit::TCoord>::max();
-            }
-        }
-
-        hitrefs->push_back(hit);
-
-        m_firstline.resize(0);
+    // init coord range - may clarify further
+    if(smin != kUndef) {
+        *psubj_min = smin;
+        *psubj_max = kMax;
+    }
+    else if(smax != kUndef) {
+        *psubj_min = 0;
+        *psubj_max = smax;
+    }
+    else {
+        *psubj_min = 0;
+        *psubj_max = kMax;
     }
     
-    char buf [1024];
-    bool first_line_only (false);
-    while(ifs) {
-
-        buf[0] = 0;
-        CT_POS_TYPE pos0 = ifs.tellg();
-        ifs.getline(buf, sizeof buf, '\n');
-        CT_POS_TYPE pos1 = ifs.tellg();
-        if(pos1 == pos0) break; // GCC hack
-        if(buf[0] == '#') continue; // skip comments
-        const char* p = buf; // skip leading spaces
-        while(*p == ' ' || *p == '\t') ++p;
-        if(*p == 0) {
-            first_line_only = true;
-            continue;
-        }
-
-        THitRef hit (s_ReadBlastHit(p));
-
-        const THit::TId curr_query (hit->GetQueryId());
-        const THit::TId curr_subj (hit->GetSubjId());
-        if(query.IsNull()) {
-            query = curr_query;
-            subj  = curr_subj;
-            strand = hit->GetSubjStrand();
-        }
-        
-        const bool new_triple (hit->GetSubjStrand() != strand ||
-                               curr_query->Match(*query) == false ||
-                               curr_subj->Match(*subj) == false);
-
-        if(first_line_only) {
-            
-            if(new_triple) {
-                if(strand) {
-                    smax = numeric_limits<THit::TCoord>::max();
-                }
-                else {
-                    smin = 0;
-                }
-                last_coord = 0;
-            }
-            else {
-                if(strand) {
-                    last_coord = smax;
-                    smax = hit->GetSubjStart();
-                }
-                else {
-                    last_coord = smin;
-                    smin = hit->GetSubjStart();
-                }
-            }
-
-            m_firstline = p;
-            break;
-        }
-
-        if(new_triple) {
-
-            // reset smin, smax
-            query  = hit->GetQueryId();
-            subj   = hit->GetSubjId();
-            strand = hit->GetSubjStrand();
-
-            if(strand) {
-                smin = 0;
-                smax = hit->GetSubjStop();
-            }
-            else {
-                smin = hit->GetSubjStop();
-                smax = numeric_limits<THit::TCoord>::max();
-            }
+    if(!hitrefs_next.empty()
+       && hitrefs.front()->GetSubjStrand() == hitrefs_next.front()->GetSubjStrand()
+       && hitrefs.front()->GetQueryId()->Match(*(hitrefs_next.front()->GetQueryId()))
+       && hitrefs.front()->GetSubjId()->Match(*(hitrefs_next.front()->GetSubjId())))
+    {
+        if(hitrefs.front()->GetSubjStart() < hitrefs_next.front()->GetSubjStart()) {
+            *psubj_min = smin != kUndef? smin: 0;
+            *psubj_max = min(hitrefs_next.front()->GetSubjMin(),
+                             hitrefs_next.back()->GetSubjMin());
+            smin = max(hitrefs.front()->GetSubjMax(),
+                       hitrefs.back()->GetSubjMax());
+            smax = kUndef;
         }
         else {
-
-            if(strand) {
-                smax = hit->GetSubjStop();
-            }
-            else {
-                smin = hit->GetSubjStop();
-            }
-        }
-
-        hitrefs->push_back(hit);
-
-    } // while(ifs)
-
-    if(!ifs && last_coord == 0) {
-        if(strand) {
-            smax = numeric_limits<THit::TCoord>::max();
-        }
-        else {
-            smin = 0;
+            *psubj_min = max(hitrefs_next.front()->GetSubjMax(),
+                             hitrefs_next.back()->GetSubjMax());
+            *psubj_max = smax != kUndef? smax: kMax;
+            smin = kUndef;
+            smax = min(hitrefs.front()->GetSubjMin(),
+                       hitrefs.back()->GetSubjMin());
         }
     }
-
-    return hitrefs->size() > 0;
+    else {
+        smin = smax = kUndef;
+    }
+    
+    return !hitrefs.empty();
 }
 
 
@@ -770,7 +700,10 @@ int CSplignApp::Run()
         THit::TCoord subj_min, subj_max;
 
         while(x_GetNextComp(hit_stream, &hitrefs, &subj_min, &subj_max) ) {
-            x_ProcessPair(hitrefs, args, subj_min, subj_max);
+
+            if(hitrefs.front()->GetScore() > 0) {
+                x_ProcessPair(hitrefs, args, subj_min, subj_max);
+            }
         }
     }
     else {

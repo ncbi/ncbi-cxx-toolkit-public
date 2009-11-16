@@ -60,6 +60,8 @@ class CSplignApp: public CNcbiApplication
 {
 public:
 
+    CSplignApp(void);
+
     virtual void Init();
     virtual int  Run();
 
@@ -113,6 +115,8 @@ protected:
 
     typedef map<int, CRef<CSeq_id> > TOidToSeqId;
     TOidToSeqId                         m_Oid2SeqId;
+
+    string                              m_AppName;
 
     string                              m_firstline;
     THitRefs                            m_PendingHits;
