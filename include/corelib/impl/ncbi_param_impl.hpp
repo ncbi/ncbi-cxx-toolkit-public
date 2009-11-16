@@ -50,8 +50,8 @@ struct SParamDescription
     const char*           section;
     const char*           name;
     const char*           env_var_name;
-    const TValue          default_value;
-    const TNcbiParamFlags flags;
+    TValue                default_value;
+    TNcbiParamFlags       flags;
 };
 
 
