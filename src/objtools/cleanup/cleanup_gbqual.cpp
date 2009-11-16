@@ -1066,6 +1066,22 @@ void CCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
 }
 
 
+bool s_HasUpper (string val)
+{
+    bool rval = false;
+
+    string::iterator it = val.begin();
+    while (it != val.end()) {
+        if (isupper(*it)) {
+            rval = true;
+            break;
+        }
+        ++it;
+    }
+    return rval;
+}
+
+
 // return true if the val indicates this a range qualifier "[0-9]+..[0-9]+"
 
 bool CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
@@ -1076,9 +1092,11 @@ bool CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
         return false;
     }
     if( string::npos != val.find_first_not_of( "ACGTUNacgtun0123456789()" ) ) {
-        // Has characters in it that are inappropriate for range or nucleotides.
-        // We don't understand it and we certainly won't mess with it...
-        return false;
+        if (s_HasUpper(val)) {
+            val = NStr::ToLower(val);
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+            return false;
+        }
     } 
     bool    digits1, sep, digits2;
     digits1 = sep = digits2 = false;
@@ -1117,7 +1135,10 @@ bool CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
             char c = *it;
             if (c != '('  &&  c != ')'  &&  c != ','  &&  c != '.'  &&
                 !isspace((unsigned char) c)  &&  !isdigit((unsigned char) c)) {
-                NStr::ToLower(val);
+                if (s_HasUpper(val)) {
+                    val = NStr::ToLower(val);
+                    ChangeMade(CCleanupChange::eChangeQualifiers);
+                }
                 return false;
             }
         }
