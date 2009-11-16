@@ -900,6 +900,12 @@ void CSplign::Run(THitRefs* phitrefs)
      
             try {
 
+                if(smax < box[3]) {
+                    // alert if not ordered by lower subject coordinate
+                    NCBI_THROW(CAlgoAlignException, eInternal, 
+                               "Unexpected order of compartments");                    
+                }
+
                 if(comps.GetStatus(i)) {
                     THitRefs comp_hits;
                     comps.Get(i, comp_hits);
