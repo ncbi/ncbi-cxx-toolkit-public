@@ -74,3 +74,6 @@ Enforce existence of projects listed in ASN_DEP and USR_DEP
 Added communication mechanism for PTBGUI and reading command line arguments from a file.
 Allow hierarchical project tag definition.
 
+November 16, 2009
+version 2.1.0
+Corrected DLL dependencies analysis
