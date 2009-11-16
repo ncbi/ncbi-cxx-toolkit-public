@@ -187,38 +187,6 @@ protected:
 
     size_t m_AssignedParents;
     TInfoMap m_InfoMap;
-    TRangeMap m_RangeMap;
-
-//#define NCBI_FEAT_TREE_TSE_INFO
-#ifdef NCBI_FEAT_TREE_TSE_INFO
-    class CTSEFeatInfo : public CObject {
-    public:
-        CTSEFeatInfo(const CTSE_Handle& tse);
-        ~CTSEFeatInfo(void);
-        
-        const CTSE_Handle& GetTSE(void) const {
-            return m_TSE;
-        }
-        
-    private:
-        friend class CFeatTree;
-
-        typedef CRef<CFeatInfo> TInfoRef;
-        typedef pair<CSeqFeatData::ESubtype, int> TInfoByIdKey;
-        typedef map<TInfoByIdKey, TInfoRef> TInfoByIdMap;
-        typedef pair<string, bool> TInfoByGeneKey;
-        typedef map<TInfoByGeneKey, TInfoRef> TInfoByGeneMap;
-        
-        CTSE_Handle m_TSE;
-        TInfoByIdMap m_InfoByIdMap;
-        TInfoByGeneMap m_InfoByGeneMap;
-    };
-    typedef map<CTSE_Handle, CRef<CTSEFeatInfo> > TTSEInfoMap;
-    TTSEInfoMap m_TSEInfoMap;
-
-    CTSEFeatInfo& x_GetTSEInfo(const CFeatInfo& info);
-    CTSEFeatInfo& x_GetTSEInfo(const CTSE_Handle& tse);
-#endif
 };
 
 

@@ -1479,17 +1479,6 @@ const CTSE_Handle& CFeatTree::CFeatInfo::GetTSE(void) const
     return m_Feat.GetAnnot().GetTSE_Handle();
 }
 
-#ifdef NCBI_FEAT_TREE_TSE_INFO
-CFeatTree::CTSEFeatInfo::CTSEFeatInfo(const CTSE_Handle& tse)
-    : m_TSE(tse)
-{
-}
-
-
-CFeatTree::CTSEFeatInfo::~CTSEFeatInfo(void)
-{
-}
-#endif
 
 END_SCOPE(feature)
 END_SCOPE(objects)
