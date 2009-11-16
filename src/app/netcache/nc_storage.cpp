@@ -471,6 +471,7 @@ CNCBlobStorage::x_CreateNewDBPart(void)
     part_info.part_id = part_id;
     part_info.meta_file = meta_name;
     part_info.data_file = data_name;
+    part_info.meta_size = part_info.data_size = 0;
 
     // After x_InitFilesPool() in case of exception pool will be left alive,
     // but we intentionally will not clean it because it's not a big
@@ -977,8 +978,10 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
     NON_CONST_ITERATE(TNCDBPartsList, it, parts) {
         CTime create_time(time_t(it->create_time));
         create_time.ToLocalTime();
-        proxy << it->part_id << " - " << create_time << " created, "
-                                      << it->min_blob_id << " blob id" << endl;
+        proxy << it->part_id << " - " << it->meta_size   << " (meta), "
+                                      << it->data_size   << " (data), "
+                                      << create_time     << " (created), "
+                                      << it->min_blob_id << " (blob id)" << endl;
     }
     proxy << endl;
     m_Stat.Print(proxy);
@@ -1159,11 +1162,11 @@ CNCBlobStorage::x_GC_CollectPartsStatistics(void)
     // With ITERATE code should look more ugly to be
     // compilable in WorkShop.
     NON_CONST_ITERATE(TNCDBPartsList, it, m_DBParts) {
-        Int8 meta_size = CFile(it->meta_file).GetLength();
-        Int8 data_size = CFile(it->data_file).GetLength();
-        total_meta += meta_size;
-        total_data += data_size;
-        GetStat()->AddDBPartSizes(meta_size, data_size);
+        it->meta_size = CFile(it->meta_file).GetLength();
+        it->data_size = CFile(it->data_file).GetLength();
+        total_meta += it->meta_size;
+        total_data += it->data_size;
+        GetStat()->AddDBPartSizes(it->meta_size, it->data_size);
     }
     GetStat()->AddTotalDBSize(total_meta, total_data);
     m_CurDBSize = total_meta + total_data;
