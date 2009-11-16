@@ -2237,6 +2237,14 @@ if test ! -f ${real_srcdir}/src/app/Makefile.in ; then
 fi
 
 dnl NCBI_CHECK_SUBTREE(bdb) # deferred until end, as --with-bdb does double duty
+dnl NCBI_CHECK_SUBTREE(cgi) # --without-cgi deliberately unavailable for now
+if test -f ${real_srcdir}/src/cgi/Makefile.in  -a \
+        -d ${real_srcdir}/include/cgi; then
+   NCBI_PROJECT(cgi)
+else
+   AC_MSG_WARN([CGI tree missing; some projects may fail to build.])
+fi
+
 NCBI_CHECK_SUBTREE(ctools)
 NCBI_CHECK_SUBTREE(dbapi)
 NCBI_CHECK_SUBTREE(gui)

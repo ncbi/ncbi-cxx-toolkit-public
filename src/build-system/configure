@@ -7985,6 +7985,14 @@ echo "$as_me: error: --with-app:  APP sources are missing" >&2;}
    with_app="no"
 fi
 
+if test -f ${real_srcdir}/src/cgi/Makefile.in  -a \
+        -d ${real_srcdir}/include/cgi; then
+             WithProjects="$WithProjects${WithProjectsSep}cgi"; WithProjectsSep=" "
+else
+   { echo "$as_me:$LINENO: WARNING: CGI tree missing; some projects may fail to build." >&5
+echo "$as_me: WARNING: CGI tree missing; some projects may fail to build." >&2;}
+fi
+
 if test "$with_ctools" = "no" ; then
    NoConfProjects="$NoConfProjects ctools"
 fi
@@ -31399,7 +31407,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_B
           ;;
       esac
    done
-  for x in local_lbsm connext ncbi_crypt serial objects bdb dbapi app ctools gui algo gbench; do
+  for x in cgi local_lbsm connext ncbi_crypt serial objects bdb dbapi app ctools gui algo gbench; do
       case " $WithProjects " in
          *" $x "*) ;;
          *) WithoutProjects="$WithoutProjects$WithoutProjectsSep$x"
