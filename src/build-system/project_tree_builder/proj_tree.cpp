@@ -269,6 +269,18 @@ void CProjectItemsTree::GetInternalDepends(list<CProjKey>* depends) const
             ITERATE(list<CProjKey>, n, proj_item.m_Depends) {
                 depends_set.insert(*n);
             }
+            if (proj_item.m_ProjType == CProjKey::eLib &&
+                GetApp().GetBuildType().GetType() == CBuildType::eDll &&
+                !proj_item.m_DllHost.empty()) {
+                    depends_set.insert(CProjKey(
+                        CProjKey::eDll, proj_item.m_DllHost));
+            }
+        } else {
+            if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+                ITERATE(list<string>, n, proj_item.m_HostedLibs) {
+                    depends_set.insert(CProjKey(CProjKey::eLib, *n));
+                }
+            }
         }
     }
 
@@ -299,6 +311,9 @@ void CProjectItemsTree::VerifyExternalDepends(void)
             continue;
         }
         ITERATE(list<CProjKey>, n, proj_item.m_Depends) {
+            if (*n == p->first) {
+                continue;
+            }
             depends_set.insert(*n);
         }
     }

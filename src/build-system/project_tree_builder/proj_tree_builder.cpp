@@ -1810,27 +1810,30 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
     CProjectItemsTree target_tree;
     BuildOneProjectTree(filter, root_src_path, &target_tree);
 
-    if (!GetApp().IsScanningWholeTree()) {
-        GetApp().ExcludeProjectsByTag(target_tree);
-        if ( GetApp().m_InteractiveCfg &&
-            !GetApp().Gui_ConfirmProjects(target_tree))
-        {
-            GetApp().SetFail();
-            return;
+    if (GetApp().IsScanningWholeTree()) {
+        *tree = target_tree;
+        NON_CONST_ITERATE( CProjectItemsTree::TProjects, t, tree->m_Projects) {
+            t->second.m_External = true;
         }
-        GetApp().ExcludeUnrequestedProjects(target_tree);
+        return;
     }
+
+    GetApp().ExcludeProjectsByTag(target_tree);
+    if ( GetApp().m_InteractiveCfg &&
+        !GetApp().Gui_ConfirmProjects(target_tree))
+    {
+        GetApp().SetFail();
+        return;
+    }
+    GetApp().ExcludeUnrequestedProjects(target_tree);
 
     // Analyze subtree dependencies
     list<CProjKey> external_depends;
     target_tree.GetExternalDepends(&external_depends);
 
     // We have to add more projects to the target tree
-    if ( !external_depends.empty()  &&
-         !GetApp().IsScanningWholeTree() /*!filter->PassAll()*/ ) {
-
+    if ( !external_depends.empty()) {
         list<CProjKey> depends_to_resolve = external_depends;
-
         while ( !depends_to_resolve.empty() ) {
             bool modified = false;
             ITERATE(list<CProjKey>, p, depends_to_resolve) {
@@ -1842,7 +1845,6 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                 if (n != GetApp().GetWholeTree().m_Projects.end()) {
                     //insert this project into the target_tree
                     target_tree.m_Projects[prj_id] = n->second;
-                    target_tree.m_Projects[prj_id].m_External = true;
                     modified = true;
                 } else {
                     /// FIXME: is this needed?

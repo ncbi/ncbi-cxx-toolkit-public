@@ -347,7 +347,8 @@ struct PIsExcludedByUser
     bool operator() (const TValueType& item) const
     {
         const CProjItem& project = item.second;
-        if (!GetApp().m_CustomConfiguration.DoesValueContain(
+        if (project.m_ProjType != CProjKey::eDll &&
+            !GetApp().m_CustomConfiguration.DoesValueContain(
             "__AllowedProjects",
             CreateProjectName(CProjKey(project.m_ProjType, project.m_ID)), true)) {
             PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
@@ -396,7 +397,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,0,0) );
+    SetVersion( CVersionInfo(2,1,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -640,11 +641,6 @@ int CProjBulderApp::Run(void)
         // Project requires are not provided
         EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
     }}
-    projects_tree.VerifyExternalDepends();
-    {{
-        // Erase obsolete external projects
-        EraseIf(projects_tree.m_Projects, PIsExcludedByDisuse());
-    }}
 
     CProjectItemsTree dll_projects_tree;
     bool dll = (GetBuildType().GetType() == CBuildType::eDll);
@@ -654,6 +650,11 @@ int CProjBulderApp::Run(void)
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
     }
     CProjectItemsTree& prj_tree = dll ? dll_projects_tree : projects_tree;
+    prj_tree.VerifyExternalDepends();
+    {{
+        // Erase obsolete external projects
+        EraseIf(prj_tree.m_Projects, PIsExcludedByDisuse());
+    }}
 
     PTB_INFO("Checking project inter-dependencies...");
     CCyclicDepends::TDependsCycles cycles;

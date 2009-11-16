@@ -220,10 +220,12 @@ bool CProjBulderApp::Gui_ConfirmProjects(CProjectItemsTree& projects_tree)
     string prjid;
     cout << "*PTBGUI{* projects" << endl;
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+/*
         if (p->second.m_MakeType == eMakeType_Excluded ||
             p->second.m_MakeType == eMakeType_ExcludedByReq) {
             continue;
         }
+*/
         if (p->first.Type() == CProjKey::eDll) {
             continue;
         }
