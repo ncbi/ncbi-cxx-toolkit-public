@@ -1181,6 +1181,11 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         bool depth_is_set = depth >= 0 && depth < kMax_Int;
         bool exact_depth = selector.GetExactDepth() && depth_is_set;
         int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
+        bool ignore_policy =
+            (adaptive_flags & SAnnotSelector::fAdaptive_IgnorePolicy) != 0;
+        adaptive_flags &=
+            SAnnotSelector::fAdaptive_ByTriggers |
+            SAnnotSelector::fAdaptive_BySubtypes;
 
         // main sequence
         bool deeper = true;
@@ -1191,6 +1196,10 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         if ( deeper ) {
             deeper = depth > 0 &&
                 selector.GetResolveMethod() != selector.eResolve_None;
+        }
+        if ( deeper && !ignore_policy ) {
+            deeper =
+                bh.GetFeatureFetchPolicy() != bh.eFeatureFetchPolicy_only_near;
         }
         if ( deeper && adaptive_flags ) {
             m_CollectAnnotTypes &= m_UnseenAnnotTypes;
@@ -1245,6 +1254,11 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         bool depth_is_set = depth >= 0 && depth < kMax_Int;
         bool exact_depth = selector.GetExactDepth() && depth_is_set;
         int adaptive_flags = exact_depth? 0: selector.GetAdaptiveDepthFlags();
+        bool ignore_policy =
+            (adaptive_flags & SAnnotSelector::fAdaptive_IgnorePolicy) != 0;
+        adaptive_flags &=
+            SAnnotSelector::fAdaptive_ByTriggers |
+            SAnnotSelector::fAdaptive_BySubtypes;
 
         // main sequence
         bool deeper = true;
@@ -1406,6 +1420,10 @@ bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
     if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
         sel.SetLimitTSE(bh.GetTSE_Handle());
     }
+    if ( !(m_Selector->GetAdaptiveDepthFlags() &
+           SAnnotSelector::fAdaptive_IgnorePolicy) ) {
+        sel.SetByFeaturePolicy();
+    }
 
     bool has_more = false;
     const CRange<TSeqPos>& range = master_range.begin()->first;
@@ -1480,6 +1498,10 @@ bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
         SSeqMapSelector sel(flags, level-1);
         if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
             sel.SetLimitTSE(bh.GetTSE_Handle());
+        }
+        if ( !(m_Selector->GetAdaptiveDepthFlags() &
+               SAnnotSelector::fAdaptive_IgnorePolicy) ) {
+            sel.SetByFeaturePolicy();
         }
 
         CHandleRange::TRange range = idit->second.GetOverlappingRange();

@@ -178,6 +178,12 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
+    SSeqMapSelector& SetByFeaturePolicy(void)
+        {
+            m_Flags |= CSeqMap::fByFeaturePolicy;
+            return *this;
+        }
+
     size_t GetResolveCount(void) const
         {
             return m_MaxResolveCount;

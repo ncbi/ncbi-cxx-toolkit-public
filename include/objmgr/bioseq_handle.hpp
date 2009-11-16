@@ -440,6 +440,14 @@ public:
     ///   Circular reference in 'used' tree.
     bool AddUsedBioseq(const CBioseq_Handle& bh) const;
 
+    /// Feature fetch policy describes when to look for features on sequence
+    /// segments.
+    enum EFeatureFetchPolicy {
+        eFeatureFetchPolicy_default = 0,
+        eFeatureFetchPolicy_only_near = 1
+    };
+    EFeatureFetchPolicy GetFeatureFetchPolicy(void) const;
+
 protected:
     friend class CScope_Impl;
     friend class CSynonymsSet;

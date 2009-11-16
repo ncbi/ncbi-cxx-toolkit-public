@@ -62,6 +62,9 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <algorithm>
 
 
@@ -79,14 +82,17 @@ BEGIN_SCOPE(objects)
 
 
 CBioseq_Info::CBioseq_Info(CBioseq& seq)
-    : m_AssemblyChunk(-1)
+    : m_AssemblyChunk(-1),
+      m_FeatureFetchPolicy(-1)
 {
     x_SetObject(seq);
 }
 
 
 CBioseq_Info::CBioseq_Info(const CBioseq_Info& info, TObjectCopyMap* copy_map)
-    : TParent(info, copy_map), m_AssemblyChunk(-1)
+    : TParent(info, copy_map),
+      m_AssemblyChunk(-1),
+      m_FeatureFetchPolicy(-1)
 {
     x_SetObject(info, copy_map);
 }
@@ -221,6 +227,52 @@ void CBioseq_Info::x_ParentDetach(CSeq_entry_Info& parent)
 }
 
 
+int CBioseq_Info::GetFeatureFetchPolicy(void) const
+{
+    if ( m_FeatureFetchPolicy == -1 ) {
+        int policy = -1;
+        if ( IsSetDescr() ) {
+            for ( TDesc_CI it = x_GetFirstDesc(1<<CSeqdesc::e_User);
+                  policy == -1 && !x_IsEndDesc(it);
+                  it = x_GetNextDesc(it, 1<<CSeqdesc::e_User) ) {
+                const CSeqdesc& desc = **it;
+                if ( !desc.IsUser() ) {
+                    continue;
+                }
+                const CUser_object& user = desc.GetUser();
+                const CObject_id& id = user.GetType();
+                if ( !id.IsStr() || id.GetStr() != "FeatureFetchPolicy" ) {
+                    continue;
+                }
+                ITERATE ( CUser_object::TData, fit, user.GetData() ) {
+                    const CUser_field& field = **fit;
+                    const CObject_id& fid = field.GetLabel();
+                    if ( !fid.IsStr() || fid.GetStr() != "Policy" ) {
+                        continue;
+                    }
+                    if ( !field.GetData().IsStr() ) {
+                        continue;
+                    }
+                    const string& str = field.GetData().GetStr();
+                    if ( str == "OnlyNearFeatures" ) {
+                        policy = CBioseq_Handle::eFeatureFetchPolicy_only_near;
+                    }
+                    else {
+                        policy = CBioseq_Handle::eFeatureFetchPolicy_default;
+                    }
+                    break;
+                }
+            }
+        }
+        if ( policy == -1 ) {
+            policy = CBioseq_Handle::eFeatureFetchPolicy_default;
+        }
+        m_FeatureFetchPolicy = policy;
+    }
+    return m_FeatureFetchPolicy;
+}
+
+
 void CBioseq_Info::x_SetObject(TObject& obj)
 {
     _ASSERT(!m_Object);
@@ -237,6 +289,7 @@ void CBioseq_Info::x_SetObject(TObject& obj)
     if ( obj.IsSetAnnot() ) {
         x_SetAnnot();
     }
+    m_FeatureFetchPolicy = -1;
 }
 
 
@@ -257,6 +310,7 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
     if ( info.IsSetAnnot() ) {
         x_SetAnnot(info, copy_map);
     }
+    m_FeatureFetchPolicy = info.m_FeatureFetchPolicy;
 }
 
 

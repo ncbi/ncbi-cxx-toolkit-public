@@ -399,6 +399,10 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
                            seq_id.AsFastaString()+": unknown");
             }
         }
+        if ( (GetFlags() & CSeqMap::fByFeaturePolicy) &&
+            bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_only_near ) {
+            return false;
+        }
         if ( info.m_TSE ) {
             if ( !info.m_TSE.AddUsedTSE(bh.GetTSE_Handle()) ) {
                 m_Selector.AddUsedTSE(bh.GetTSE_Handle());

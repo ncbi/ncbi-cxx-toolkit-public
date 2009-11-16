@@ -336,6 +336,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         kAdaptive_Default    = fAdaptive_Default,
         fAdaptive_ByTriggers = 1<<1,
         fAdaptive_BySubtypes = 1<<2,
+        fAdaptive_IgnorePolicy = 1<<3,
         kAdaptive_All        = fAdaptive_ByTriggers | fAdaptive_BySubtypes,
         kAdaptive_DefaultBits= fAdaptive_ByTriggers
     };

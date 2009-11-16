@@ -217,6 +217,8 @@ public:
     bool IsNa(void) const;
     bool IsAa(void) const;
 
+    int GetFeatureFetchPolicy(void) const;
+
     // Get some values from core:
     const CSeqMap& GetSeqMap(void) const;
 
@@ -288,6 +290,7 @@ private:
 
     TChunkIds               m_Seq_dataChunks;
     TChunkId                m_AssemblyChunk;
+    mutable int             m_FeatureFetchPolicy;
 };
 
 

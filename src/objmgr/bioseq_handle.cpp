@@ -1159,6 +1159,13 @@ CSeqMap& CBioseq_EditHandle::SetSeqMap(void) const
 }
 
 
+CBioseq_Handle::EFeatureFetchPolicy
+CBioseq_Handle::GetFeatureFetchPolicy(void) const
+{
+    return EFeatureFetchPolicy(x_GetInfo().GetFeatureFetchPolicy());
+}
+
+
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
 

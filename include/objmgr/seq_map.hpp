@@ -131,6 +131,7 @@ public:
         fFindInnerRef   = (1<<3),
         fFindExactLevel = (1<<4),
         fIgnoreUnresolved = (1<<5),
+        fByFeaturePolicy= (1<<6),
         fFindRef        = (fFindLeafRef | fFindInnerRef),
         fFindAny        = fFindData | fFindGap | fFindRef,
         fFindAnyLeaf    = fFindData | fFindGap | fFindLeafRef,
