@@ -691,7 +691,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
         }
         else {  // cDNA mode
 
-            if(bases >= m_MinQueryLength) {
+            if(bases >= m_MinQueryLength && bases <= m_MaxQueryLength) {
             
                 // head
                 Uint8 fivebytes (0);
@@ -1740,6 +1740,7 @@ void CElementaryMatching::x_InitBasic(void)
     m_MaxVolSize = 512 * 1024 * 1024;
 
     m_MinQueryLength = 50;
+    m_MaxQueryLength = 100000;
     m_MinHitLength = 1;
 }
 

@@ -269,6 +269,7 @@ private:
 
     size_t                    m_MaxVolSize;
     size_t                    m_MinQueryLength;
+    size_t                    m_MaxQueryLength;
     size_t                    m_MinHitLength;
 
     string                    m_qdb, m_sdb;
