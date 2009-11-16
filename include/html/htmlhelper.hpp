@@ -110,30 +110,6 @@ public:
     /// Strip all named and numeric character entities from a string.
     static string StripSpecialChars(const string& str);
 
-    typedef set<int> TIDList;
-    typedef multimap<string, string> TCgiEntries;
-
-    // Load ID list from CGI request.
-    // Args:
-    //   ids            - resulting ID list
-    //   values         - CGI values
-    //   hiddenPrefix   - prefix for hidden values names
-    //   checkboxPrefix - prefix for checkboxes names
-    static void LoadIDList(TIDList& ids,
-                           const TCgiEntries& values,
-                           const string& hiddenPrefix,
-                           const string& checkboxPrefix);
-    // Store ID list to HTML form.
-    // Args:
-    //   form           - HTML form to fill
-    //   ids            - ID list
-    //   hiddenPrefix   - prefix for hidden values names
-    //   checkboxPrefix - prefix for checkboxes names
-    static void StoreIDList(CHTML_form* form,
-                            const TIDList& ids,
-                            const string& hiddenPrefix,
-                            const string& checkboxPrefix);
-
     // Platform-dependent newline symbol.
     // Default value is "\n" as in UNIX.
     // Application program is to set it as correct.
