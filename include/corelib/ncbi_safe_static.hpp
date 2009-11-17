@@ -432,7 +432,8 @@ void CSafeStaticPtr<T>::Init(FUserCreate user_create)
     if ( Init_Lock(&mutex_locked) ) {
         // Create the object and register for cleanup
         try {
-            m_Ptr = user_create();
+            T* ptr = user_create();
+            m_Ptr = ptr;
             if ( m_Ptr ) {
                 CSafeStaticGuard::Register(this);
             }
