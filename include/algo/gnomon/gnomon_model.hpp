@@ -521,7 +521,7 @@ struct SSortModelsDescending {
             if(a.isNMD())
                 as -= ds;
             
-            double bs = a.Score();
+            double bs = b.Score();
             if((b.Status()&&CGeneModel::ePolyA) != 0)
                 bs += ds; 
             if((b.Status()&&CGeneModel::eCap) != 0)
