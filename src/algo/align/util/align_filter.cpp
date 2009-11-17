@@ -198,8 +198,14 @@ bool CAlignFilter::Match(const CSeq_align& align)
         if (m_QueryBlacklist.size()  ||  m_QueryWhitelist.size()) {
             CSeq_id_Handle query =
                 CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
-            query = sequence::GetId(query, *m_Scope,
+            if (m_Scope) {
+                CSeq_id_Handle idh =
+                    sequence::GetId(query, *m_Scope,
                                     sequence::eGetId_Canonical);
+                if (idh) {
+                    query = idh;
+                }
+            }
             if (m_QueryBlacklist.size()  &&
                 m_QueryBlacklist.find(query) != m_QueryBlacklist.end()) {
                 /// reject: query sequence found in black list
@@ -216,8 +222,14 @@ bool CAlignFilter::Match(const CSeq_align& align)
         if (m_SubjectBlacklist.size()  ||  m_SubjectWhitelist.size()) {
             CSeq_id_Handle subject =
                 CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
-            subject = sequence::GetId(subject, *m_Scope,
-                                      sequence::eGetId_Canonical);
+            if (m_Scope) {
+                CSeq_id_Handle idh =
+                    sequence::GetId(subject, *m_Scope,
+                                    sequence::eGetId_Canonical);
+                if (idh) {
+                    subject = idh;
+                }
+            }
             if (m_SubjectBlacklist.size()  &&
                 m_SubjectBlacklist.find(subject) != m_SubjectBlacklist.end()) {
                 /// reject: subject sequence found in black list
