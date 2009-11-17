@@ -9,7 +9,7 @@
 
 TAB="	"
 # defaults
-use_debug="no"
+use_debug="yes"
 use_dll="no"
 use_64="no"
 use_universal="no"
@@ -23,6 +23,151 @@ sln_name="configured"
 generated="_generated_files.txt"
 tmpfile="tmptmp.tmp"
 buildres="build_results.txt"
+#-----------------------------------------------------------------------------
+# silently ignored  options
+noops="\
+ --without-optimization \
+ --with-profiling \
+ --with-tcheck \
+ --with-static \
+ --with-plugin-auto-load \
+ --with-bin-release \
+ --with-mt \
+ --without-exe \
+ --with-runpath \
+ --with-lfs \
+ --with-autodep \
+ --with-build-root \
+ --with-fake-root \
+ --without-suffix \
+ --with-hostspec \
+ --without-version \
+ --with-build-root-sfx \
+ --without-execopy \
+ --with-bincopy \
+ --with-lib-rebuilds \
+ --with-lib-rebuilds \
+ --without-deactivation \
+ --without-makefile-auto-update \
+ --without-flat-makefile \
+ --with-check \
+ --with-check-tools \
+ --with-ncbi-public \
+ --with-strip \
+ --with-pch \
+ --with-caution \
+ --without-caution \
+ --without-ccache \
+ --with-distcc \
+ --without-ncbi-c \
+ --without-sss \
+ --without-utils \
+ --without-sssdb \
+ --with-included-sss \
+ --with-z \
+ --without-z \
+ --with-bz2 \
+ --without-bz2 \
+ --with-lzo \
+ --without-lzo \
+ --with-pcre \
+ --without-pcre \
+ --with-gnutls \
+ --without-gnutls \
+ --with-openssl \
+ --without-openssl \
+ --without-sybase \
+ --with-sybase-local \
+ --with-sybase-new \
+ --without-ftds \
+ --with-ftds \
+ --without-ftds-renamed \
+ --without-mysql \
+ --with-mysql \
+ --without-fltk \
+ --with-fltk \
+ --without-opengl \
+ --with-opengl \
+ --without-mesa \
+ --with-mesa \
+ --without-glut \
+ --with-glut \
+ --without-wxwin \
+ --with-wxwin \
+ --without-wxwidgets \
+ --with-wxwidgets \
+ --with-wxwidgets-ucs \
+ --without-wxwidgets-ucs \
+ --without-freetype \
+ --with-freetype \
+ --without-fastcgi \
+ --with-fastcgi \
+ --with-fastcgi \
+ --without-bdb \
+ --with-bdb \
+ --without-sp \
+ --without-orbacus \
+ --with-orbacus \
+ --with-odbc \
+ --with-python \
+ --without-python \
+ --with-cppunit \
+ --without-cppunit \
+ --with-boost \
+ --without-boost \
+ --with-boost-tag \
+ --without-boost-tag \
+ --with-sqlite \
+ --without-sqlite \
+ --with-sqlite3 \
+ --without-sqlite3 \
+ --with-icu \
+ --without-icu \
+ --with-expat \
+ --without-expat \
+ --with-sablot \
+ --without-sablot \
+ --with-libxml \
+ --without-libxml \
+ --with-libxslt \
+ --without-libxslt \
+ --with-xerces \
+ --without-xerces \
+ --with-xalan \
+ --without-xalan \
+ --with-oechem \
+ --without-oechem \
+ --with-sge \
+ --without-sge \
+ --with-muparser \
+ --without-muparser \
+ --with-hdf5 \
+ --without-hdf5 \
+ --with-gif \
+ --without-gif \
+ --with-jpeg \
+ --without-jpeg \
+ --with-png \
+ --without-png \
+ --with-tiff \
+ --without-tiff \
+ --with-xpm \
+ --without-xpm \
+ --without-local-lbsm \
+ --without-ncbi-crypt \
+ --without-connext \
+ --without-serial \
+ --without-objects \
+ --without-dbapi \
+ --without-app \
+ --without-ctools \
+ --without-gui \
+ --without-algo \
+ --without-internal \
+ --with-gbench \
+ --without-gbench \
+ --with-x \
+"
 #-----------------------------------------------------------------------------
 
 initial_dir=`pwd`
@@ -48,6 +193,7 @@ OPTIONS:
   --with-static-exe         -- use static C++ standard libraries
   --with-projects=FILE      -- build projects listed in FILE
   --with-extra-action=SCR   -- script to call after the configuration is complete
+  --ignore-unsupported-options   --ignore unsupported options
 EOF
 }
 
@@ -63,6 +209,8 @@ Error()
 #--------------------------------------------------------------------------------
 
 cd "$script_dir"
+unknown=""
+ignore_unknown="no"
 for cmd_arg in "$@"; do
   case "$cmd_arg" in
     --help                )  Usage; exit 0 ;;
@@ -76,9 +224,32 @@ for cmd_arg in "$@"; do
     --with-universal=*    )  use_arch="$cmd_arg" ;;
     --with-projects=*     )  use_projectlst="$cmd_arg" ;;
     --with-extra-action=* )  use_action="$cmd_arg" ;;
-    *  )  Error "Invalid option:  $cmd_arg"
+    --ignore-unsupported-options ) ignore_unknown="yes" ;;
+    *  ) unknown="$unknown $cmd_arg" ;;
   esac
 done
+
+# check and report unknown options
+for u in $unknown; do
+  found="no"
+  for n in $noops; do
+    echo $u | grep --regexp="^$n" >/dev/null 2>/dev/null
+    if test $? -eq 0; then
+      found="yes"
+      break
+    fi
+  done
+  if test $found = "yes"; then
+    echo "Ignored:  $u"
+  else
+    if test $ignore_unknown = "no"; then
+      Error  "Invalid option:  $u"
+    else
+      echo "Ignored unsupported:  $u"
+    fi
+  fi
+done
+
 use_arch=`echo $use_arch | sed -e s/--with-universal=//`
 use_projectlst=`echo $use_projectlst | sed -e s/--with-projects=//`
 use_action=`echo $use_action | sed -e s/--with-extra-action=//`
@@ -178,7 +349,7 @@ cfgs="$build_results,$sln_name,$CONFIGURATION"
   echo "${TAB}xcodebuild -project ${sln_name}.xcodeproj -target \${TARGET} -configuration \${CONFIGURATION} clean"
   echo
   echo "check :"
-  echo "${TAB}cd ..; ./check.sh run"
+  echo "${TAB}cd ..; ./check.sh run; ./check.sh concat_err; ./check.sh load_to_db"
   echo
   echo "all_r : all"
   echo "all_p : all"
