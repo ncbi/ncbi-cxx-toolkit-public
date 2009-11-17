@@ -51,12 +51,13 @@ USING_SCOPE(std);
 CWriteDB_GiMask::CWriteDB_GiMask(const string      & maskname,
                                  const string      & desc,
                                  Uint8               max_file_size):
-       m_DFile       (new CWriteDB_GiMaskData(maskname, ".gmd", max_file_size)),
-       m_DFile_LE    (new CWriteDB_GiMaskData(maskname, ".gnd", max_file_size, true)),
-       m_OFile       (new CWriteDB_GiMaskOffset(maskname, ".gmo", max_file_size)),
-       m_OFile_LE    (new CWriteDB_GiMaskOffset(maskname, ".gno", max_file_size, true)),
-       m_IFile       (new CWriteDB_GiMaskIndex(maskname, ".gmi", desc, max_file_size)),
-       m_IFile_LE    (new CWriteDB_GiMaskIndex(maskname, ".gni", desc, max_file_size, true))
+       m_MaskName    (maskname),
+       m_DFile       (new CWriteDB_GiMaskData(maskname, "gmd", max_file_size)),
+       m_DFile_LE    (new CWriteDB_GiMaskData(maskname, "gnd", max_file_size, true)),
+       m_OFile       (new CWriteDB_GiMaskOffset(maskname, "gmo", max_file_size)),
+       m_OFile_LE    (new CWriteDB_GiMaskOffset(maskname, "gno", max_file_size, true)),
+       m_IFile       (new CWriteDB_GiMaskIndex(maskname, "gmi", desc, max_file_size)),
+       m_IFile_LE    (new CWriteDB_GiMaskIndex(maskname, "gni", desc, max_file_size, true))
 { }
 
 void CWriteDB_GiMask::ListFiles(vector<string> & files) const
@@ -85,13 +86,16 @@ void CWriteDB_GiMask::AddGiMask(const vector<int> & GIs,
 
 void CWriteDB_GiMask::Close()
 {
-    if (!m_GiOffset.size()) return;
+    if (!m_GiOffset.size()) {
+        // un_used mask file
+        m_MaskName = "";
+        return;
+    }
 
     m_DFile->Close();
     m_DFile_LE->Close();
 
-    // TODO sort the gi offset array first
-
+    sort(m_GiOffset.begin(), m_GiOffset.end());
 
     m_IFile->AddGIs(m_GiOffset);
     m_IFile->Close();
@@ -268,6 +272,7 @@ void CWriteDB_GiMaskData::WriteMask(const TPairVector & mask)
     }
 
     Write(data.Str()); 
+    m_DataLength += (1+2*mask.size()) * 4;
 }
 
 #endif

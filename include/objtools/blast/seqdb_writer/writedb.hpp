@@ -142,10 +142,16 @@ public:
     ///   The database title. [in]
     /// @param itype
     ///   Indicates the type of indices to build if specified. [in]
+    /// @param parse_ids
+    ///   If true, generate ISAM files [in]
+    /// @param use_gi_mask
+    ///   If true, generate GI-based mask files [in]
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
-             int            itype = eDefault);
+             int            itype = eDefault,
+             bool           parse_ids = true,
+             bool           use_gi_mask = false);
     
     /// Destructor.
     ///
@@ -223,12 +229,6 @@ public:
     /// @param pig PIG identifier as an integer. [in]
     void SetPig(int pig);
 
-    /// Do not parse seqid from FASTA file deflines
-    /// 
-    /// This method will cause BL_ORD_ID type of ID generated based
-    /// on volume OIDs
-    void SetNoParseID();
-    
     /// Set the deflines to be used for the sequence.
     /// 
     /// This method sets all the deflines at once as a complete set,
@@ -244,8 +244,10 @@ public:
     /// @return algorithm ID for the filtering data.
     /// @param program Program used to produce this masking data. [in]
     /// @param options Algorithm options provided to the program. [in]
+    /// @param name Name of the GI-based mask. [in]
     int RegisterMaskAlgorithm(EBlast_filter_program program, 
-                              const string & options = string());
+                              const string & options = string(),
+                              const string & name = string());
     
     /// Set filtering data for a sequence.
     /// 
@@ -257,7 +259,9 @@ public:
     /// uses the algorithm id for a non-empty offset range list.
     /// 
     /// @param ranges Filtered ranges for this sequence and algorithm.
-    void SetMaskData(const CMaskedRangesVector & ranges);
+    /// @param gis GIs associated with this sequence.
+    void SetMaskData(const CMaskedRangesVector & ranges,
+                     const vector<int>         & gis);
     
     //
     // Output
@@ -580,13 +584,15 @@ private:
  * @param seq_type type of sequences stored in the database [in]
  * @param gi_file_name name of the file containing gis [in]
  * @param title title to use in this alias file [in]
+ * @param gi_mask list of gi-based mask files in this alias file [in]
  */
 NCBI_XOBJWRITE_EXPORT 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& db_name,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title = string());
+                              const string& title = string(),
+                              const string& gi_mask = string());
 
 /** 
  * @brief Writes an alias file that aggregates multiple existing BLAST
@@ -597,12 +603,14 @@ void CWriteDB_CreateAliasFile(const string& file_name,
  * @param db_names database names to aggregate [in]
  * @param seq_type type of sequences stored in the database [in]
  * @param title title to use in this alias file [in]
+ * @param gi_mask list of gi-based mask files in this alias file [in]
  */
 NCBI_XOBJWRITE_EXPORT 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector <string> & db_names,
                               CWriteDB::ESeqType seq_type,
-                              const string& title = string());
+                              const string& title = string(),
+                              const string& gi_mask = string());
 
 /** 
  * @brief Writes an alias file that aggregates multiple existing BLAST
@@ -616,12 +624,14 @@ void CWriteDB_CreateAliasFile(const string& file_name,
  * file [in]
  * @param seq_type type of sequences stored in the database [in]
  * @param title title to use in this alias file [in]
+ * @param gi_mask list of gi-based mask files in this alias file [in]
  */
 NCBI_XOBJWRITE_EXPORT 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
-                              const string& title = string());
+                              const string& title = string(),
+                              const string& gi_mask = string());
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_WRITER___WRITEDB__HPP

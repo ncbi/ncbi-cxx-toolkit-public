@@ -422,7 +422,14 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
     if (rng.empty()) {
         return;
     }
-    m_OutputDb->SetMaskData(rng);
+
+    vector <int> gis;
+    ITERATE(list< CRef<CSeq_id> >, id, ids) {
+        if ((*id)->IsGi()) {
+            gis.push_back((*id)->GetGi());
+        }
+    }
+    m_OutputDb->SetMaskData(rng, gis);
     m_FoundMatchingMasks = true;
 }
 #endif
@@ -878,18 +885,26 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
                 blob_out.WriteRaw(& blob_in.data()[0], blob_in.size());
             }
             // Don't forget about the IMaskDataSource!
-            if (!m_MaskData.Empty()) {
+            vector <int> gis;  // GIs associated with this sequence
+            if (!mask_data.empty() || !m_MaskData.Empty()) {
                 ITERATE(CBlast_def_line_set::Tdata, defline, deflines->Get()) {
-                    const CMaskedRangesVector rng = 
-                        m_MaskData->GetRanges((*defline)->GetSeqid());
-                    if (!rng.empty()) {
-                        mask_data.insert(mask_data.end(), rng.begin(), rng.end());  //TODO merge?
-                        m_FoundMatchingMasks = true;
+                    const list< CRef<CSeq_id> > & ids = (*defline)->GetSeqid();
+                    ITERATE(list< CRef<CSeq_id> >, id, ids) {
+                        if ((*id)->IsGi()) {
+                            gis.push_back((*id)->GetGi());
+                        }
+                    }
+                    if (!m_MaskData.Empty()) {
+                        const CMaskedRangesVector rng = m_MaskData->GetRanges(ids);
+                        if (!rng.empty()) {
+                            mask_data.insert(mask_data.end(), rng.begin(), rng.end());  
+                            m_FoundMatchingMasks = true;
+                        }
                     }
                 }
             }
             if (!mask_data.empty()) {
-                m_OutputDb->SetMaskData(mask_data);
+                m_OutputDb->SetMaskData(mask_data, gis);
             }
 #endif
             
@@ -914,6 +929,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                const string         & title,
                                bool                   is_protein,
                                CWriteDB::TIndexType   indexing,
+                               bool                   use_gi_mask,
                                ostream              * logfile)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
@@ -940,13 +956,13 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     m_OutputDb.Reset(new CWriteDB(dbname,
                                   seqtype,
                                   title,
-                                  indexing));
+                                  indexing,
+                                  m_ParseIDs,
+                                  use_gi_mask));
     
     // Standard 1 GB limit
     
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
-
-    if (!m_ParseIDs) m_OutputDb->SetNoParseID();
 }
 
 CBuildDatabase::CBuildDatabase(const string & dbname,
@@ -954,6 +970,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                bool           is_protein,
                                bool           sparse,
                                bool           parse_seqids,
+                               bool           use_gi_mask,
                                ostream      * logfile)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
@@ -984,13 +1001,13 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     m_OutputDb.Reset(new CWriteDB(dbname,
                                   seqtype,
                                   title,
-                                  ix));
+                                  ix,
+                                  m_ParseIDs,
+                                  use_gi_mask));
 
     // Standard 1 GB limit
     
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
-
-    if (!m_ParseIDs) m_OutputDb->SetNoParseID();
 }
 
 CBuildDatabase::~CBuildDatabase()
@@ -1312,11 +1329,12 @@ void CBuildDatabase::SetMaxFileSize(Uint8 max_file_size)
 
 int
 CBuildDatabase::RegisterMaskingAlgorithm(EBlast_filter_program program, 
-                                         const string & options)
+                                         const string        & options,
+                                         const string        & name)
 {
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    return m_OutputDb->RegisterMaskAlgorithm(program, options);
+    return m_OutputDb->RegisterMaskAlgorithm(program, options, name);
 #else
     return 0;
 #endif

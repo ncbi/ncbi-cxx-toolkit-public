@@ -44,6 +44,7 @@
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include "writedb_volume.hpp"
+#include "writedb_gimask.hpp"
 #include "mask_info_registry.hpp"
 
 #include <objmgr/bioseq_handle.hpp>
@@ -70,10 +71,14 @@ public:
     /// @param protein True for protein, false for nucleotide.
     /// @param title Title string for volumes and alias file.
     /// @param indices Type of indexing to do for string IDs.
+    /// @param parse_ids If true generate ISAM files
+    /// @param use_gi_mask If true generate GI-based mask files.
     CWriteDB_Impl(const string     & dbname,
                   bool               protein,
                   const string     & title,
-                  EIndexType         indices);
+                  EIndexType         indices,
+                  bool               parse_ids,
+                  bool               use_gi_mask);
     
     /// Destructor.
     ~CWriteDB_Impl();
@@ -149,11 +154,6 @@ public:
     /// @param sv CSeqVector for sequence data.
     void AddSequence(const CBioseq & bs, CSeqVector & sv);
     
-    /// Do not parse ID, use BL_ORD_ID instead
-    /// 
-    /// This method will cause BL_ORD_ID generated
-    void SetNoParseID();
-
     /// This method replaces any stored header data for the current
     /// sequence with the provided CBlast_def_line_set.  Header data
     /// can be constructed directly by the caller, or extracted from
@@ -264,8 +264,10 @@ public:
     /// @return algorithm ID for the filtering data.
     /// @param program Program used to produce this masking data. [in]
     /// @param options Algorithm options provided to the program. [in]
+    /// @param name Name of a GI-based mask [in]
     int RegisterMaskAlgorithm(EBlast_filter_program   program,
-                             const string      & options);
+                             const string           & options,
+                             const string           & name = "");
     
     /// Set filtering data for a sequence.
     /// 
@@ -273,7 +275,9 @@ public:
     /// sequence can have filtering data from various algorithms.
     /// 
     /// @param ranges Filtered ranges for this sequence and algorithm.
-    void SetMaskData(const CMaskedRangesVector & ranges);
+    /// @param gis The GIs associated with this sequence
+    void SetMaskData(const CMaskedRangesVector & ranges,
+                     const vector <int>        & gis);
     
     /// Set up a generic CWriteDB metadata column.
     ///
@@ -345,7 +349,9 @@ private:
     string        m_MaskByte;         ///< Byte that replaced masked letters.
     vector<char>  m_MaskLookup;       ///< Is (blast-aa) byte masked?
     int           m_MaskDataColumn;   ///< Column ID for masking data column.
-    bool          m_NoParseID;        ///< Do not parse seqids in FASTA
+    map<int, int> m_MaskAlgoMap;      ///< Mapping from algo_id to gi-mask id
+    bool          m_ParseIDs;         ///< Generate ISAM files
+    bool          m_UseGiMask;        ///< Generate GI-based mask files
     
     /// Column titles.
     vector<string> m_ColumnTitles;
@@ -357,6 +363,9 @@ private:
     
     /// Meta data for all columns.
     vector< TColumnMeta > m_ColumnMetas;
+
+    /// Gi-based masks
+    vector< CRef<CWriteDB_GiMask> > m_GiMasks;
 #endif
     
     // Functions
@@ -447,7 +456,7 @@ private:
     /// @param linkout Linkout bits for each defline. [in]
     /// @param pig PIG to attach to a protein sequence. [in]
     /// @param accept_gt Whether greater-than is a delimiter. [in]
-    /// @param no_parse_id Whether seq_id should not be parsed. [in]
+    /// @param parse_ids Whether seq_id should not be parsed. [in]
     static void
     x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                              CConstRef<CBlast_def_line_set> & deflines,
@@ -455,7 +464,7 @@ private:
                              const vector< vector<int> >    & linkout,
                              int                              pig,
                              bool                             accept_gt,
-                             bool                             no_parse_id);
+                             bool                             parse_ids);
     
     /// Returns true if we have unwritten sequence data.
     bool x_HaveSequence() const;
@@ -482,7 +491,7 @@ private:
     /// @param linkouts Linkout bits for each defline. [in]
     /// @param pig PIG to attach to a protein sequence. [in]
     /// @param OID the current OID for local id. [in]
-    /// @param no_parse_id whether we should not parse id. [in]
+    /// @param parse_ids whether we should not parse id. [in]
     static void x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                   CConstRef<CBlast_def_line_set> & deflines,
                                   string                         & bin_hdr,
@@ -490,7 +499,7 @@ private:
                                   const vector< vector<int> >    & linkouts,
                                   int                              pig,
                                   int                              OID=-1,
-                                  bool                             no_parse_id=false);
+                                  bool                             parse_ids=true);
     
     /// Compute the hash of a (raw) sequence.
     ///

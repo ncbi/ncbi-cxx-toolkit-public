@@ -85,7 +85,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
     if (m_UseGiMask) {
         vector <string> mask_list;
         m_Aliases.GetMaskList(mask_list);
-cout << mask_list.size() << endl;
         m_GiMask.Reset(new CSeqDBGiMask(m_Atlas, mask_list));
     }
     

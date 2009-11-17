@@ -224,6 +224,17 @@ void CMakeBlastDBApp::Init()
                              "applications (e.g. dustmasker, segmasker, "
                              "windowmasker)",
                              CArgDescriptions::eString);
+
+    arg_desc->AddFlag("gi_mask",
+                      "Create GI indexed masking data.", true);
+    arg_desc->SetDependency("gi_mask", CArgDescriptions::eRequires, "parse_seqids");
+
+    arg_desc->AddOptionalKey("gi_mask_name", "gi_based_mask_names",
+                             "Comma-separated list of masking data output files.",
+                             CArgDescriptions::eString);
+    arg_desc->SetDependency("gi_mask_name", CArgDescriptions::eRequires, "mask_data");
+    arg_desc->SetDependency("gi_mask_name", CArgDescriptions::eRequires, "gi_mask");
+
 #endif
     
     arg_desc->SetCurrentGroup("Output options");
@@ -422,7 +433,8 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
         objects::EBlast_filter_program algo;
         string algo_opts, algo_name;
         m_Source->GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
-        m_MaskIdMap[*algo_id] = outdb->RegisterMaskingAlgorithm(algo, algo_opts); 
+        algo_name += NStr::IntToString(*algo_id);
+        m_MaskIdMap[*algo_id] = outdb->RegisterMaskingAlgorithm(algo, algo_opts, algo_name); 
     }              
     // Process columns
     m_Source->ListColumns(m_ColumnNames);
@@ -535,32 +547,47 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
     
     vector<string> mask_list;
+
     NStr::Tokenize(NStr::TruncateSpaces(files.AsString()), ",", mask_list,
                    NStr::eNoMergeDelims);
-    
+
     if (! mask_list.size()) {
         NCBI_THROW(CInvalidDataException, eInvalidInput, 
                 "mask_data option found, but no files were specified.");
     }
     
-    ITERATE(vector<string>, iter, mask_list) {
-        if ( !CFile(*iter).Exists() ) {
-            ERR_POST(Error << "Ignoring mask file '" << *iter 
+    vector<string> gi_mask_names;
+    const CArgValue & gi_names = args["gi_mask_name"];
+    if (gi_names.HasValue()) {
+        NStr::Tokenize(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names,
+                   NStr::eNoMergeDelims);
+        if (mask_list.size() != gi_mask_names.size()) {
+            NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                "gi_mask list does not correspond to mask_data list.");
+        }
+        // TODO optionally we need check to make sure the names are unique...
+    } 
+    
+    for (unsigned int i = 0; i < mask_list.size(); ++i) {
+        if ( !CFile(mask_list[i]).Exists() ) {
+            ERR_POST(Error << "Ignoring mask file '" << mask_list[i] 
                            << "' as it does not exist.");
             continue;
         }
 
-        CNcbiIfstream mask_file(iter->c_str(), ios::binary);
+        CNcbiIfstream mask_file(mask_list[i].c_str(), ios::binary);
         
         CRef<CBlast_db_mask_info> first_obj;
         
-        s_ReadObject(mask_file, first_obj, "mask data in '" + *iter + "'");
-        *m_LogFile << "Mask file: " << *iter << endl;
+        s_ReadObject(mask_file, first_obj, "mask data in '" + mask_list[i] + "'");
+        *m_LogFile << "Mask file: " << mask_list[i] << endl;
         
         EBlast_filter_program prog_id = 
             static_cast<EBlast_filter_program>(first_obj->GetAlgo_program());
         string opts = first_obj->GetAlgo_options();
-        int algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts);
+        string name = gi_mask_names.size() ? gi_mask_names[i] : mask_list[i];
+
+        int algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts, name);
         
         CRef<CBlast_mask_list> masks(& first_obj->SetMasks());
         first_obj.Reset();
@@ -722,6 +749,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
     
     bool parse_seqids = args["parse_seqids"];
     bool hash_index = args["hash_index"];
+    bool use_gi_mask = args["gi_mask"];
     
     CWriteDB::TIndexType indexing = CWriteDB::eNoIndex;
     indexing |= (hash_index ? CWriteDB::eAddHash : 0);
@@ -731,6 +759,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
                                   title,
                                   is_protein,
                                   indexing,
+                                  use_gi_mask,
                                   m_LogFile));
 
 #if _DEBUG

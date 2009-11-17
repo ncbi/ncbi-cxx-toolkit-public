@@ -52,13 +52,17 @@ using namespace std;
 CWriteDB::CWriteDB(const string       & dbname,
                    CWriteDB::ESeqType   seqtype,
                    const string       & title,
-                   int                 indices)
+                   int                  indices,
+                   bool                 parse_ids,
+                   bool                 use_gi_mask)
     : m_Impl(0)
 {
     m_Impl = new CWriteDB_Impl(dbname,
                                seqtype == eProtein,
                                title,
-                               (EIndexType)indices);
+                               (EIndexType)indices,
+                               parse_ids,
+                               use_gi_mask);
 }
 
 CWriteDB::~CWriteDB()
@@ -79,11 +83,6 @@ void CWriteDB::AddSequence(const CBioseq_Handle & bsh)
 void CWriteDB::AddSequence(const CBioseq & bs, CSeqVector & sv)
 {
     m_Impl->AddSequence(bs, sv);
-}
-
-void CWriteDB::SetNoParseID()
-{
-    m_Impl->SetNoParseID();
 }
 
 void CWriteDB::SetDeflines(const CBlast_def_line_set & deflines)
@@ -145,14 +144,16 @@ void CWriteDB::ListFiles(vector<string> & files)
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB::
 RegisterMaskAlgorithm(EBlast_filter_program   program, 
-                      const string                & options)
+                      const string          & options,
+                      const string          & name)
 {
-    return m_Impl->RegisterMaskAlgorithm(program, options);
+    return m_Impl->RegisterMaskAlgorithm(program, options, name);
 }
 
-void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges)
+void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges,
+                           const vector<int>         & gis)
 {
-    m_Impl->SetMaskData(ranges);
+    m_Impl->SetMaskData(ranges, gis);
 }
 
 int CWriteDB::FindColumn(const string & title) const
@@ -241,7 +242,8 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& db_name,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title /* = string() */)
+                              const string& title,
+                              const string& gi_mask)
 {
     CNcbiOstrstream fname;
     fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
@@ -255,13 +257,17 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     }
     out << "DBLIST " << db_name << "\n";
     out << "GILIST " << gi_file_name << "\n";
+    if ( !gi_mask.empty()) {
+        out << "MASKLIST " << gi_mask << "\n";
+    }
     out.close();
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector<string>& databases,
                               CWriteDB::ESeqType seq_type,
-                              const string& title /* = string() */)
+                              const string& title,
+                              const string& gi_mask)
 {
     CNcbiOstrstream fname;
     fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
@@ -279,13 +285,17 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << "\"" << *iter << "\" ";
     }
     out << "\n";
+    if ( !gi_mask.empty()) {
+        out << "MASKLIST " << gi_mask << "\n";
+    }
     out.close();
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
-                              const string& title /* = string() */)
+                              const string& title,
+                              const string& gi_mask)
 {
     if (num_volumes >= 101) {
         NCBI_THROW(CWriteDBException,
@@ -310,6 +320,9 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << (string)CNcbiOstrstreamToString(oss);
     }
     out << "\n";
+    if ( !gi_mask.empty()) {
+        out << "MASKLIST " << gi_mask << "\n";
+    }
     out.close();
 }
 END_NCBI_SCOPE

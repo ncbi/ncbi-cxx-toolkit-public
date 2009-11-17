@@ -1857,8 +1857,9 @@ BOOST_AUTO_TEST_CASE(MaskDataColumn)
         // empty array should be the same as not calling it at all;
         // this code tests that equivalence.)
         
+        vector <int> gis;
         if (i & 7) {
-            W.SetMaskData(ranges);
+            W.SetMaskData(ranges, gis);
         }
     }
     
@@ -1954,7 +1955,8 @@ BOOST_AUTO_TEST_CASE(UndefinedAlgoID)
     
     ranges.back().offsets.push_back(rng);
     
-    BOOST_REQUIRE_THROW(W.SetMaskData(ranges), CWriteDBException);
+    vector <int> gis;
+    BOOST_REQUIRE_THROW(W.SetMaskData(ranges, gis), CWriteDBException);
     
     W.Close();
     s_WrapUpDb(W);
@@ -1990,7 +1992,8 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
     rng.second = L+1;
     
     ranges.back().offsets.push_back(rng);
-    BOOST_REQUIRE_THROW(W.SetMaskData(ranges), CWriteDBException);
+    vector <int> gis;
+    BOOST_REQUIRE_THROW(W.SetMaskData(ranges,gis), CWriteDBException);
     
     W.Close();
     s_WrapUpDb(W);

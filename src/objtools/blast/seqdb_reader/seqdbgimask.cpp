@@ -100,12 +100,12 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
     // Retrieving the mask data
     const Int4 * datap = (const Int4 *)
               m_DataFile.GetRegion(m_DataLease, retv, retv+4, locked);
-    Int4 num_ranges = *datap;
-    ranges.resize(num_ranges);
+    ranges._size = *datap;
+    ranges.resize(ranges._size);
     // Remapping the mask data
     datap = (const Int4 *)
-            m_DataFile.GetRegion(m_DataLease, retv+4, retv + 8*num_ranges + 4, locked);
-    memcpy(ranges._data, datap, num_ranges * 8);
+            m_DataFile.GetRegion(m_DataLease, retv+4, retv + 8*ranges._size + 4, locked);
+    memcpy(ranges._data, datap, ranges._size * 8);
     return;
 }
 
@@ -220,15 +220,10 @@ void CSeqDBGiMask::x_ReadFields(CSeqDBLockHold & locked)
     
     m_Desc  = header.ReadString (kStringFmt);
     m_Date  = header.ReadString (kStringFmt);
-    
+
     SEQDB_FILE_ASSERT(m_Desc.size());
     SEQDB_FILE_ASSERT(m_Date.size());
     
-    if (header.GetReadOffset() != m_IndexStart) {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "CSeqDBGiMask: File format error.");
-    }
     // Map the index file
     TIndx begin = m_IndexStart;
     TIndx end = begin + m_NumIndex * (m_GiSize + m_OffsetSize);

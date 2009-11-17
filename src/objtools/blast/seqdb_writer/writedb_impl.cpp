@@ -59,7 +59,9 @@ USING_SCOPE(std);
 CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              bool           protein,
                              const string & title,
-                             EIndexType     indices)
+                             EIndexType     indices,
+                             bool           parse_ids,
+                             bool           use_gi_mask)
     : m_Dbname           (dbname),
       m_Protein          (protein),
       m_Title            (title),
@@ -68,7 +70,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_Indices          (indices),
       m_Closed           (false),
       m_MaskDataColumn   (-1),
-      m_NoParseID        (false),
+      m_ParseIDs         (parse_ids),
+      m_UseGiMask        (use_gi_mask),
       m_Pig              (0),
       m_Hash             (0),
       m_SeqLength        (0),
@@ -180,9 +183,17 @@ void CWriteDB_Impl::Close()
     if (! m_Volume.Empty()) {
         m_Volume->Close();
         
+        if (m_UseGiMask) {
+            for (unsigned int i=0; i<m_GiMasks.size(); ++i) {
+                m_GiMasks[i]->Close();
+            }
+        }
+
         if (m_VolumeList.size() == 1) {
             m_Volume->RenameSingle();
-        } else {
+        } 
+
+        if (m_VolumeList.size() > 1 || m_UseGiMask) {
             x_MakeAlias();
         }
         
@@ -198,20 +209,38 @@ string CWriteDB_Impl::x_MakeAliasName()
 void CWriteDB_Impl::x_MakeAlias()
 {
     string dblist;
-    for(unsigned i = 0; i < m_VolumeList.size(); i++) {
-        if (dblist.size())
-            dblist += " ";
+    if (m_VolumeList.size() > 1) {
+        for(unsigned i = 0; i < m_VolumeList.size(); i++) {
+            if (dblist.size())
+                dblist += " ";
         
-        dblist += CWriteDB_File::MakeShortName(m_Dbname, i);
+            dblist += CWriteDB_File::MakeShortName(m_Dbname, i);
+        }
+    } else {
+        dblist = m_Dbname;
     }
     
+    string masklist("");
+    if (m_UseGiMask) {
+        for (unsigned i = 0; i < m_GiMasks.size(); i++) {
+            const string & x = m_GiMasks[i]->GetName();
+            if (x != "") {
+                masklist += x + " ";
+            }
+        }
+    }
+
     string nm = x_MakeAliasName();
     
     ofstream alias(nm.c_str());
     
     alias << "#\n# Alias file created: " << m_Date  << "\n#\n"
           << "TITLE "        << m_Title << "\n"
-          << "DBLIST "       << dblist  << "\n\n";
+          << "DBLIST "       << dblist  << "\n";
+
+    if (masklist != "") {
+        alias << "MASKLIST " << masklist << "\n";
+    }
 }
 
 void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
@@ -443,7 +472,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  const vector< vector<int> >    & linkouts,
                                  int                              pig,
                                  int                              OID,
-                                 bool                             no_parse_id)
+                                 bool                             parse_ids)
 {
     bool use_bin = (deflines.Empty() && pig == 0);
     
@@ -476,7 +505,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                      linkouts,
                                      pig,
                                      false,
-                                     no_parse_id);
+                                     parse_ids);
         }
         
         if (bin_hdr.empty() && deflines.Empty()) {
@@ -552,7 +581,7 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
 void CWriteDB_Impl::x_CookHeader()
 {
     int OID = -1;
-    if (m_NoParseID) {
+    if (! m_ParseIDs) {
         OID = (m_Volume ) ? m_Volume->GetOID() : 0;
     }
     x_ExtractDeflines(m_Bioseq,
@@ -562,7 +591,7 @@ void CWriteDB_Impl::x_CookHeader()
                       m_Linkouts,
                       m_Pig,
                       OID,
-                      m_NoParseID);
+                      m_ParseIDs);
 }
 
 void CWriteDB_Impl::x_CookIds()
@@ -838,11 +867,6 @@ void CWriteDB_Impl::x_Publish()
     }
 }
 
-void CWriteDB_Impl::SetNoParseID()
-{
-    m_NoParseID = true;
-}
-
 void CWriteDB_Impl::SetDeflines(const CBlast_def_line_set & deflines)
 {
     CRef<CBlast_def_line_set>
@@ -939,8 +963,15 @@ void s_WriteRanges(CBlastDbBlob  & blob,
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
+void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges,
+                                const vector <int>        & gis)
 {
+    // No GI is found for the sequence 
+    // TODO should we generate a warning?
+    if (m_UseGiMask && !gis.size()) {
+        return;
+    }
+
     TSeqPos seq_length = x_ComputeSeqLength();
     
     // Check validity of data and determine maximum integer value
@@ -992,7 +1023,18 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
         return;
     }
     
-    // Write the actual data.
+    // Gi-based masks
+    if (m_UseGiMask) {
+        ITERATE(CMaskedRangesVector, r1, ranges) {
+            if (r1->offsets.size()) {
+                m_GiMasks[m_MaskAlgoMap[r1->algorithm_id]]
+                    ->AddGiMask(gis, r1->offsets);
+            }
+        }
+        return;
+    }  
+
+    // OID-based masks
     const int col_id = x_GetMaskDataColumnId();
     CBlastDbBlob & blob = SetBlobData(col_id);
     blob.Clear();
@@ -1019,19 +1061,27 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges)
     }
     
     blob.WritePadBytes(4, CBlastDbBlob::eSimple);
-    blob2.WritePadBytes(4, CBlastDbBlob::eSimple);
+    blob2.WritePadBytes(4, CBlastDbBlob::eSimple); 
 }
 
 int CWriteDB_Impl::
 RegisterMaskAlgorithm(EBlast_filter_program   program, 
-                      const string      & options)
+                      const string          & options,
+                      const string          & name)
 {
     int algorithm_id = m_MaskAlgoRegistry.Add(program, options);
     
     string key = NStr::IntToString(algorithm_id);
     string value = NStr::IntToString((int)program) + ":" + options;
-    
-    m_ColumnMetas[x_GetMaskDataColumnId()][key] = value;
+
+    if (m_UseGiMask) {
+        m_MaskAlgoMap[algorithm_id] = m_GiMasks.size();
+        m_GiMasks.push_back(CRef<CWriteDB_GiMask> 
+            (new CWriteDB_GiMask(name, value, 0)));
+    } else {
+        m_ColumnMetas[x_GetMaskDataColumnId()][key] = value;
+    }
+
     return algorithm_id;
 }
 
@@ -1138,7 +1188,7 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids)
     vector< vector<int> > v1, v2;
     
     CConstRef<CBioseq> bsref(& bs);
-    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, -1, !parse_ids);
+    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, -1, parse_ids);
     
     // Convert to return type
     
@@ -1268,7 +1318,7 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                          const vector< vector<int> >    & linkout,
                          int                              pig,
                          bool                             accept_gt,
-                         bool                             no_parse_id)
+                         bool                             parse_ids)
 {
     if (! bioseq.CanGetDescr()) {
         return;
@@ -1321,7 +1371,7 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
     CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
     CRef<CBlast_def_line> defline;
 
-    if (no_parse_id) {
+    if (!parse_ids) {
 
         // Generate an BL_ORD_ID in case no parse is needed
         CRef<CSeq_id> gnl_id(new CSeq_id());

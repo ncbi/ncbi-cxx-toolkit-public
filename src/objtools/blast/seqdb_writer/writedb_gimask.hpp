@@ -222,6 +222,13 @@ public:
     /// @param files
     ///   The set of resolved database path names.
     void ListFiles(vector<string> & files) const;
+
+    /// Get Mask Name
+    /// 
+    /// Returns the name of the mask
+    const string & GetName() const {
+        return m_MaskName;
+    }
     
     /// Add a mask data for a sequence represented by a set of GIs.
     ///
@@ -231,6 +238,8 @@ public:
                    const TPairVector & masks);
 
 private:
+    string m_MaskName;    // the name of the mask data
+
     /// Data file
     CRef<CWriteDB_GiMaskData> m_DFile;
     CRef<CWriteDB_GiMaskData> m_DFile_LE; // little endian

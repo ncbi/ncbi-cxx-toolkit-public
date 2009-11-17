@@ -148,11 +148,13 @@ public:
     /// @param is_protein Use true for protein, false for nucleotide. [in]
     /// @param sparse Specify true to use sparse Seq-id indexing. [in]
     /// @param Logging will be done to this stream. [in]
+    /// @param use_gi_mask if true will generate GI-based mask files [in]
     /// @param logfile file to write the log to [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
                    CWriteDB::TIndexType   indexing,
+                   bool                   use_gi_mask,
                    ostream              * logfile);
     
     // Note -- should deprecate (or just remove) the following one:
@@ -172,12 +174,14 @@ public:
     /// @param is_protein Use true for protein, false for nucleotide. [in]
     /// @param sparse Specify true to use sparse Seq-id indexing. [in]
     /// @param parse_seqids specify true to parse the sequence IDs [in]
+    /// @param use_gi_mask if true will generate GI-based mask files [in]
     /// @param indexing index fields to add to database. [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
                    bool                   sparse,
                    bool                   parse_seqids,
+                   bool                   use_gi_mask,
                    ostream              * logfile);
 
     ~CBuildDatabase();
@@ -381,9 +385,11 @@ public:
     /// @param program One of the predefined masking types (dust etc). [in]
     /// @param options A free-form string describing this type of data.
     /// The empty string should be used to indicate default parameters. [in]
+    /// @param name Name of the GI-base mask file [in]
     int
     RegisterMaskingAlgorithm(EBlast_filter_program program, 
-                             const string        & options);
+                             const string        & options,
+                             const string        & name = "");
     
     /// Specify an object mapping Seq-id to subject masking data.
     ///
