@@ -1866,10 +1866,6 @@ void ProjectCDS::operator()(CAlignModel& align)
     }
 }
 
-void CChainer::FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains)
-{
-    m_data->FilterOutBadScoreChainsHavingBetterCompatibles(chains);
-}
 void CChainer::CChainerImpl::FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains)
 {
             for(TGeneModelList::iterator it = chains.begin(); it != chains.end();) {
@@ -2137,6 +2133,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
     ITERATE(list<CChain>, it, tmp_chains) {
         chains.push_back(*it);
     }
+
+    FilterOutBadScoreChainsHavingBetterCompatibles(chains);
+
     return chains;
 }
 

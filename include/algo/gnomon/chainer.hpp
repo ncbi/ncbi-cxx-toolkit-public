@@ -131,8 +131,6 @@ public:
 
     TGeneModelList MakeChains(TGeneModelList& models);
 
-    void FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains);
-
 private:
     // Prohibit copy constructor and assignment operator
     CChainer(const CChainer& value);
