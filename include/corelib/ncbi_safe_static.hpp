@@ -189,7 +189,6 @@ class CSafeStaticPtr : public CSafeStaticPtr_Base
 {
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
-    typedef T* (*FUserCreate)(void);
 
     // Set the cleanup function to be called on variable destruction,
     // default life span is normal.
@@ -206,6 +205,7 @@ public:
         }
         return *static_cast<T*> (m_Ptr);
     }
+    template <class FUserCreate>
     T& Get(FUserCreate user_create)
     {
         if ( !m_Ptr ) {
@@ -226,6 +226,8 @@ public:
 private:
     // Initialize the object
     void Init(void);
+
+    template <class FUserCreate>
     void Init(FUserCreate user_create);
 
     // "virtual" cleanup function
@@ -254,7 +256,6 @@ class CSafeStaticRef : public CSafeStaticPtr_Base
 {
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
-    typedef CRef<T> (*FUserCreate)(void);
 
     // Set the cleanup function to be called on variable destruction,
     // default life span is normal.
@@ -271,6 +272,7 @@ public:
         }
         return *static_cast<T*>(m_Ptr);
     }
+    template <class FUserCreate>
     T& Get(FUserCreate user_create)
     {
         if ( !m_Ptr ) {
@@ -290,6 +292,8 @@ public:
 private:
     // Initialize the object and the reference
     void Init(void);
+
+    template <class FUserCreate>
     void Init(FUserCreate user_create);
 
     // "virtual" cleanup function
@@ -420,6 +424,7 @@ void CSafeStaticPtr<T>::Init(void)
 
 
 template <class T>
+template <class FUserCreate>
 inline
 void CSafeStaticPtr<T>::Init(FUserCreate user_create)
 {
@@ -502,6 +507,7 @@ void CSafeStaticRef<T>::Init(void)
 
 
 template <class T>
+template <class FUserCreate>
 inline
 void CSafeStaticRef<T>::Init(FUserCreate user_create)
 {
