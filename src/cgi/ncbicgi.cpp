@@ -1266,9 +1266,10 @@ size_t CCgiRequest::GetContentLength(void) const
 
 void CCgiRequest::SetInputStream(CNcbiIstream* is, bool own, int fd)
 {
-    if (is != m_Input) {
+    if (is != m_Input  ||  is == NULL) {
         if (m_EntryReaderContext) {
             delete m_EntryReaderContext;
+            m_EntryReaderContext = NULL;
         }
         if (m_Input  &&  m_OwnInput) {
             delete m_Input;
