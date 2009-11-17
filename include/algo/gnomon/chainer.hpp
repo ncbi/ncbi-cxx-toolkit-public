@@ -64,9 +64,11 @@ void remove_if(Container& c, Predicate* __pred)
     Iterator __first = c.begin();
     Iterator __last = c.end();
     while (__first != __last) {
-        if ((*__pred)(*__first))
+        if ((*__pred)(*__first)) {
+            (__first)->Status() |= CGeneModel::eSkipped;
+            (__first)->AddComment(__pred->GetComment());
             __first = c.erase(__first);
-        else
+        } else
             ++__first;
     }
     delete __pred;
@@ -82,6 +84,18 @@ void transform(Container& c,  UnaryFunction* op)
 	(*op)(*__first);
     delete op;
 }
+
+struct TransformFunction {
+    virtual ~TransformFunction() {}
+    virtual void operator()(CGeneModel& a) {}
+    virtual void operator()(CAlignModel& a) {}
+};
+struct Predicate {
+    virtual ~Predicate() {}
+    virtual string GetComment() { return "reason not given"; }
+    virtual bool operator()(CGeneModel& a) { return false; }
+    virtual bool operator()(CAlignModel& a) { return false; }
+};
 
 ////////////////////////////////////////////////////////////////////////
 class NCBI_XALGOGNOMON_EXPORT CChainer {
@@ -102,18 +116,10 @@ public:
     void SetGenomicRange(const TAlignModelList& alignments);
     CGnomonEngine& GetGnomon();
 
-    struct TransformFunction : public unary_function<CAlignModel&, CAlignModel&> {
-        virtual ~TransformFunction() {}
-        virtual CAlignModel& operator()(CAlignModel& a) { return a; }
-    };
-    struct Predicate : public unary_function<CAlignModel&, bool> {
-        virtual ~Predicate() {}
-        virtual bool operator()(CAlignModel& a) { return false; }
-    };
-
     TransformFunction* TrimAlignment();
     TransformFunction* DoNotBelieveShortPolyATail();
     Predicate* OverlapsSameAccessionAlignment(TAlignModelList& alignments);
+    Predicate* ConnectsParalogs(TAlignModelList& alignments);
     TransformFunction* ProjectCDS();
     TransformFunction* DoNotBelieveFrameShiftsWithoutCdsEvidence();
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
@@ -136,48 +142,62 @@ private:
     auto_ptr<CChainerImpl> m_data;
 };
 
-struct MarkupCappedEst : public CChainer::TransformFunction {
+struct MarkupCappedEst : public TransformFunction {
     MarkupCappedEst(const set<string>& _caps, int _capgap);
 
     const set<string>& caps;
     int capgap;
 
-    virtual CAlignModel& operator()(CAlignModel& align);
+    virtual void operator()(CAlignModel& align);
 };
 
-struct MarkupTrustedGenes : public  CChainer::TransformFunction {
+struct MarkupTrustedGenes : public TransformFunction {
     MarkupTrustedGenes(set<string> _trusted_genes);
     const set<string>& trusted_genes;
 
-    virtual CAlignModel& operator()(CAlignModel& align);
+    virtual void operator()(CAlignModel& align);
 };
 
-struct ProteinWithBigHole : public  CChainer::Predicate {
+struct ProteinWithBigHole : public Predicate {
     ProteinWithBigHole(double hthresh, double hmaxlen, CGnomonEngine& gnomon);
     double hthresh, hmaxlen;
     CGnomonEngine& gnomon;
     virtual bool operator()(CAlignModel& align);
 };
 
-struct CdnaWithHole : public  CChainer::Predicate {
+struct CdnaWithHole : public Predicate {
     virtual bool operator()(CAlignModel& align);
 };
 
-struct HasShortIntron : public  CChainer::Predicate {
+struct HasShortIntron : public Predicate {
     HasShortIntron(CGnomonEngine& gnomon);
     CGnomonEngine& gnomon;
     virtual bool operator()(CAlignModel& align);
 };
 
-struct CutShortPartialExons : public  CChainer::TransformFunction {
+struct CutShortPartialExons : public TransformFunction {
     CutShortPartialExons(int minex);
     int minex;
 
-    virtual CAlignModel& operator()(CAlignModel& align);
+    virtual void operator()(CAlignModel& align);
 };
 
-struct HasNoExons : public  CChainer::Predicate {
+struct HasNoExons : public Predicate {
     virtual bool operator()(CAlignModel& align);
+};
+
+struct SingleExon_AllEst : public Predicate {
+    virtual bool operator()(CGeneModel& align);
+};
+
+struct SingleExon_Noncoding : public Predicate {
+    virtual bool operator()(CGeneModel& align);
+};
+
+struct LowSupport_Noncoding : public Predicate {
+    LowSupport_Noncoding(int _minsupport);
+    int minsupport;
+    virtual bool operator()(CGeneModel& align);
 };
 
 class NCBI_XALGOGNOMON_EXPORT CChainerArgUtil {
