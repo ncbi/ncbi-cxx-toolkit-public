@@ -30,6 +30,8 @@
 *
 */
 
+#include <corelib/ncbistl.hpp>
+
 #include <stddef.h>
 
 
