@@ -661,9 +661,9 @@ inline bool
 CNCBlobStorage::x_ReadBlobCoordsFromCache(SNCBlobIdentity* identity)
 {
     CFastReadGuard guard(m_KeysCacheLock);
-    TKeyIdMap::const_iterator it = m_KeysCache.find(*identity);
+    TKeyIdMap::const_iterator it = m_KeysCache.find(identity);
     if (it != m_KeysCache.end()) {
-        identity->AssignCoords(*it);
+        identity->AssignCoords(**it);
         return true;
     }
     return false;
@@ -673,19 +673,21 @@ inline bool
 CNCBlobStorage::x_CreateBlobInCache(const SNCBlobIdentity& identity,
                                     SNCBlobCoords*         new_coords)
 {
+    SNCBlobIdentity* cache_ident = new SNCBlobIdentity(identity);
     {{
         CFastWriteGuard guard(m_KeysCacheLock);
         pair<TKeyIdMap::iterator, bool> ins_pair
-                                              = m_KeysCache.insert(identity);
+                                            = m_KeysCache.insert(cache_ident);
         if (!ins_pair.second) {
-            new_coords->AssignCoords(*ins_pair.first);
+            delete cache_ident;
+            new_coords->AssignCoords(**ins_pair.first);
             GetStat()->AddCreateHitExisting();
             return false;
         }
     }}
     {{
         CFastWriteGuard guard(m_IdsCacheLock);
-        m_IdsCache.insert(identity);
+        _VERIFY(m_IdsCache.insert(cache_ident).second);
     }}
     return true;
 }
@@ -694,9 +696,9 @@ inline bool
 CNCBlobStorage::x_ReadBlobKeyFromCache(SNCBlobIdentity* identity)
 {
     CFastReadGuard guard(m_IdsCacheLock);
-    TIdKeyMap::const_iterator it = m_IdsCache.find(*identity);
+    TIdKeyMap::const_iterator it = m_IdsCache.find(identity);
     if (it != m_IdsCache.end()) {
-        *identity = *it;
+        *identity = **it;
         return true;
     }
     return false;
@@ -706,20 +708,23 @@ inline void
 CNCBlobStorage::x_DeleteBlobFromCache(const SNCBlobCoords& coords)
 {
     SNCBlobIdentity identity(coords);
+    SNCBlobIdentity* cache_ident;
     {{
         CFastWriteGuard guard(m_IdsCacheLock);
-        TIdKeyMap::iterator it = m_IdsCache.find(identity);
+        TIdKeyMap::iterator it = m_IdsCache.find(&identity);
         // Blob will not be found if somebody else has already deleted it.
         // But it should not ever occur because deleting is mutually
         // exclusive by blob locking.
         _ASSERT(it != m_IdsCache.end());
-        identity = *it;
+        cache_ident = *it;
+        identity = *cache_ident;
         m_IdsCache.erase(it);
     }}
     {{
         CFastWriteGuard guard(m_KeysCacheLock);
-        m_KeysCache.erase(identity);
+        m_KeysCache.erase(cache_ident);
     }}
+    delete cache_ident;
 }
 
 inline void
@@ -728,9 +733,9 @@ CNCBlobStorage::x_FillBlobIdsFromCache(const string& key, TNCIdsList* id_list)
     CFastReadGuard guard(m_KeysCacheLock);
 
     SNCBlobIdentity identity(key);
-    TKeyIdMap::const_iterator it = m_KeysCache.lower_bound(identity);
-    while (it != m_KeysCache.end()  &&  it->key == key) {
-        id_list->push_back(it->blob_id);
+    TKeyIdMap::const_iterator it = m_KeysCache.lower_bound(&identity);
+    while (it != m_KeysCache.end()  &&  (*it)->key == key) {
+        id_list->push_back((*it)->blob_id);
         ++it;
     }
 }
@@ -740,9 +745,9 @@ CNCBlobStorage::x_IsBlobExistsInCache(CTempString key, CTempString subkey)
 {
     SNCBlobIdentity identity(key, subkey, 0);
     CFastReadGuard guard(m_KeysCacheLock);
-    TKeyIdMap::const_iterator it = m_KeysCache.lower_bound(identity);
+    TKeyIdMap::const_iterator it = m_KeysCache.lower_bound(&identity);
     return it != m_KeysCache.end()
-           &&  it->key == key  &&  it->subkey == subkey;
+           &&  (*it)->key == key  &&  (*it)->subkey == subkey;
 }
 
 inline void

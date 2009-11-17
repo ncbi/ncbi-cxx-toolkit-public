@@ -84,15 +84,15 @@ struct SNCBlobIdentity : public SNCBlobCoords
 /// Comparator for sorting blob identities by key information
 struct SNCBlobCompareKeys
 {
-    bool operator() (const SNCBlobIdentity& left,
-                     const SNCBlobIdentity& right) const;
+    bool operator() (const SNCBlobIdentity* left,
+                     const SNCBlobIdentity* right) const;
 };
 
 /// Comparator for sorting blob identities by blob ids
 struct SNCBlobCompareIds
 {
-    bool operator() (const SNCBlobIdentity& left,
-                     const SNCBlobIdentity& right) const;
+    bool operator() (const SNCBlobIdentity* left,
+                     const SNCBlobIdentity* right) const;
 };
 
 /// Full information about NetCache blob
@@ -194,28 +194,28 @@ SNCBlobIdentity::SNCBlobIdentity(const string& _key,
 
 
 inline bool
-SNCBlobCompareKeys::operator() (const SNCBlobIdentity& left,
-                                const SNCBlobIdentity& right) const
+SNCBlobCompareKeys::operator() (const SNCBlobIdentity* left,
+                                const SNCBlobIdentity* right) const
 {
-    if (left.key.size() != right.key.size())
-        return left.key.size() < right.key.size();
-    int ret = left.key.compare(right.key);
+    if (left->key.size() != right->key.size())
+        return left->key.size() < right->key.size();
+    int ret = left->key.compare(right->key);
     if (ret != 0)
         return ret < 0;
-    if (left.subkey.size() != right.subkey.size())
-        return left.subkey.size() < right.subkey.size();
-    ret = left.subkey.compare(right.subkey);
+    if (left->subkey.size() != right->subkey.size())
+        return left->subkey.size() < right->subkey.size();
+    ret = left->subkey.compare(right->subkey);
     if (ret != 0)
         return ret < 0;
-    return left.version < right.version;
+    return left->version < right->version;
 }
 
 
 inline bool
-SNCBlobCompareIds::operator() (const SNCBlobIdentity& left,
-                               const SNCBlobIdentity& right) const
+SNCBlobCompareIds::operator() (const SNCBlobIdentity* left,
+                               const SNCBlobIdentity* right) const
 {
-    return left.blob_id < right.blob_id;
+    return left->blob_id < right->blob_id;
 }
 
 

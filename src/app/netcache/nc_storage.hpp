@@ -290,8 +290,8 @@ private:
     /// Bit mask of EOperationFlags
     typedef int  TOperationFlags;
 
-    typedef set<SNCBlobIdentity, SNCBlobCompareKeys>  TKeyIdMap;
-    typedef set<SNCBlobIdentity, SNCBlobCompareIds>   TIdKeyMap;
+    typedef set<SNCBlobIdentity*, SNCBlobCompareKeys> TKeyIdMap;
+    typedef set<SNCBlobIdentity*, SNCBlobCompareIds>  TIdKeyMap;
 
     typedef map<TNCBlobId, CYieldingRWLock*>          TId2LocksMap;
     typedef deque<CYieldingRWLock*>                   TLocksList;
