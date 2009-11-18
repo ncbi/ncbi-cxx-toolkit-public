@@ -142,6 +142,8 @@ AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
 AC_ARG_WITH(flat-makefile,
    [ --without-flat-makefile do not generate an all-encompassing flat makefile])
+AC_ARG_WITH(configure-dialog,
+   [ --with-configure-dialog allow interactive flat makefile project selection])
 AC_ARG_WITH(check,
    [ --with-check            run test suite after the build])
 AC_ARG_WITH(check-tools,
@@ -393,8 +395,8 @@ x_with_list="\
 debug optimization profiling tcheck dll static static-exe plugin-auto-load \
 bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
-deactivation makefile-auto-update projects flat-makefile check ncbi-public \
-strip pch caution ccache distcc \
+deactivation makefile-auto-update projects flat-makefile configure-dialog \
+check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
@@ -6453,6 +6455,12 @@ else
 fi
 
 dnl Create Makefile.flat if requested
+if test "$with_configure_dialog" = yes; then
+   if test "$with_flat_makefile" = no; then
+      AC_MSG_ERROR([incompatible options: --without-flat-makefile but --with-configure-dialog.])
+   fi
+   with_flat_makefile=yes
+fi
 if test "$with_flat_makefile" != "no"; then
    if test "$with_flat_makefile" = yes; then
       cfm_flags=''
@@ -6464,6 +6472,9 @@ if test "$with_flat_makefile" != "no"; then
       no | '' ) ;;
       *       ) cfm_flags="$cfm_flags -p $with_projects" ;;
    esac
+   if test "$with_configure_dialog" = yes; then
+      cfm_flags="$cfm_flags -cfg"
+   fi
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
@@ -6552,6 +6563,7 @@ WithoutProjects='$WithoutProjects'
 with_extra_action='$with_extra_action'
 with_projects='$with_projects'
 with_flat_makefile='$with_flat_makefile'
+with_configure_dialog='$with_configure_dialog'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 ])

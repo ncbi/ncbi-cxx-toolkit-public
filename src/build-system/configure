@@ -898,6 +898,7 @@ Optional Packages:
  --without-makefile-auto-update  do not auto-update generated makefiles
  --with-projects=FILE    build projects listed in FILE by default
  --without-flat-makefile do not generate an all-encompassing flat makefile
+ --with-configure-dialog allow interactive flat makefile project selection
  --with-check            run test suite after the build
  --with-check-tools=...  use the specified tools for testing
  --with-ncbi-public      ensure compatibility for all in-house platforms
@@ -1711,6 +1712,12 @@ if test "${with_flat_makefile+set}" = set; then
 
 fi;
 
+# Check whether --with-configure-dialog or --without-configure-dialog was given.
+if test "${with_configure_dialog+set}" = set; then
+  withval="$with_configure_dialog"
+
+fi;
+
 # Check whether --with-check or --without-check was given.
 if test "${with_check+set}" = set; then
   withval="$with_check"
@@ -2433,8 +2440,8 @@ x_with_list="\
 debug optimization profiling tcheck dll static static-exe plugin-auto-load \
 bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
-deactivation makefile-auto-update projects flat-makefile check ncbi-public \
-strip pch caution ccache distcc \
+deactivation makefile-auto-update projects flat-makefile configure-dialog \
+check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwin wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
@@ -32321,6 +32328,7 @@ WithoutProjects='$WithoutProjects'
 with_extra_action='$with_extra_action'
 with_projects='$with_projects'
 with_flat_makefile='$with_flat_makefile'
+with_configure_dialog='$with_configure_dialog'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 
@@ -33434,6 +33442,14 @@ else
    echo "$ncbicfg" is not present
 fi
 
+if test "$with_configure_dialog" = yes; then
+   if test "$with_flat_makefile" = no; then
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-flat-makefile but --with-configure-dialog." >&5
+echo "$as_me: error: incompatible options: --without-flat-makefile but --with-configure-dialog." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   with_flat_makefile=yes
+fi
 if test "$with_flat_makefile" != "no"; then
    if test "$with_flat_makefile" = yes; then
       cfm_flags=''
@@ -33445,6 +33461,9 @@ if test "$with_flat_makefile" != "no"; then
       no | '' ) ;;
       *       ) cfm_flags="$cfm_flags -p $with_projects" ;;
    esac
+   if test "$with_configure_dialog" = yes; then
+      cfm_flags="$cfm_flags -cfg"
+   fi
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
       build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
