@@ -16,6 +16,8 @@ ptbname="project_tree_builder"
 defptbpath="$NCBI/c++.metastable/Release/bin/"
 # release path to project_tree_builder
 relptbpath="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb/"
+# Configuration GUI
+ptbgui="src/build-system/project_tree_builder_gui/bin/ptbgui.jar"
 
 # dependencies
 ptbdep="corelib util util/regexp util/xregexp build-system/project_tree_builder"
@@ -33,7 +35,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 Usage()
 {
     cat <<EOF 1>&2
-USAGE: $script_name BuildDir [-s SrcDir] [-p ProjectList] [-b] 
+USAGE: $script_name BuildDir [-s SrcDir] [-p ProjectList] [-b] [-remoteptb] [-cfg]
 SYNOPSIS:
  Create flat makefile for a given build tree.
 ARGUMENTS:
@@ -42,6 +44,7 @@ ARGUMENTS:
   -p         -- optional.  List of projects: subtree of the source tree, or LST file
   -b         -- optional.  Build project_tree_builder locally
   -remoteptb -- optional.  Use prebuilt project_tree_builder only; do not attempt to build it locally
+  -cfg       -- optional.  Use Configuration GUI application.
 EOF
     test -z "$1"  ||  echo ERROR: $1 1>&2
     exit 1
@@ -116,6 +119,7 @@ srcdir="$a1/.."
 projectlist="src"
 buildptb="no"
 remoteptbonly="no"
+req_gui_cfg="no"
 shift
 
 dest=""
@@ -130,6 +134,7 @@ for cmd_arg in "$@"; do
     -p )  dest="prj" ;;
     -b )  dest="";    buildptb="yes" ;;
     -remoteptb )  dest="";    remoteptbonly="yes" ;;
+    -cfg       )  dest="";    req_gui_cfg="yes" ;;
     *  )  Usage "Invalid command line argument:  $cmd_arg"
   esac
 done
@@ -219,6 +224,33 @@ fi
 test -x "$ptb" || Usage "$ptbname not found at $ptb"
 
 #-----------------------------------------------------------------------------
+# get version of project_tree_builder
+
+ptbver=`$ptb -version | grep ^$ptbname | sed -e s/$ptbname:// | sed -e 's/ //g'`
+verno=`echo $ptbver | sed -e 's/[.]/ /g'`
+for v in $verno; do
+  ptb_ver_major=$v
+  break
+done
+
+# see if we can use GUI
+use_gui_cfg="no"
+if test "$req_gui_cfg" = "yes"; then
+  if test $ptb_ver_major -ge 2; then
+    if test -e "$srcdir/$ptbgui"; then 
+      java -version >/dev/null 2>&1
+      if test $? -ne 0; then
+        echo "WARNING: Java not found, cannot run configuration GUI"
+      else
+        use_gui_cfg="yes"
+      fi
+    else
+      echo WARNING: $srcdir/$ptbgui not found
+    fi
+  fi
+fi
+
+#-----------------------------------------------------------------------------
 # run project_tree_builder
 
 COMMON_Exec cd $builddir
@@ -226,5 +258,9 @@ echo "**********************************************************************"
 echo "Running $ptbname. Please wait."
 echo "**********************************************************************"
 echo $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
-COMMON_Exec $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+if test "$use_gui_cfg" = "yes"; then
+  COMMON_Exec java -jar $srcdir/$ptbgui $ptb -i $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+else
+  COMMON_Exec $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+fi
 echo "Done"
