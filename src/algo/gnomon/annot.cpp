@@ -54,13 +54,10 @@ CGnomonAnnotator::CGnomonAnnotator()
 {
 }
 
-struct AlignScoreOrder
+bool s_AlignScoreOrder(const CGeneModel& ap, const CGeneModel& bp)
 {
-    bool operator()(const CGeneModel& ap, const CGeneModel& bp)
-    {
-        return (ap.Score() < bp.Score());
-    }
-};
+    return (ap.Score() < bp.Score());
+}
 
 void CGnomonAnnotator::RemoveShortHolesAndRescore(TGeneModelList chains, const CGnomonEngine& gnomon)
 {
@@ -258,7 +255,7 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
                 continue;
             }
         } else {
-            suspect_aligns.sort(AlignScoreOrder());
+            suspect_aligns.sort(s_AlignScoreOrder);
 
             score = TryToEliminateOneAlignment(suspect_aligns, bad_aligns,
                                                gnomon, leftwall, rightwall, leftanchor, rightanchor,
@@ -320,22 +317,19 @@ TSignedSeqRange WalledCdsLimits(const CGeneModel& a)
     return ((a.Type() & CGeneModel::eWall)!=0) ? a.Limits() : a.MaxCdsLimits();
 }
 
-struct AlignSeqOrder
+bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
 {
-    bool operator()(const CGeneModel& ap, const CGeneModel& bp)
-    {
-        return (ap.MaxCdsLimits().GetFrom() != bp.MaxCdsLimits().GetFrom() ? 
-                ap.MaxCdsLimits().GetFrom() < bp.MaxCdsLimits().GetFrom() :
-                ap.MaxCdsLimits().GetTo() > bp.MaxCdsLimits().GetTo()
-                );
-    }
-};
+    return (ap.MaxCdsLimits().GetFrom() != bp.MaxCdsLimits().GetFrom() ? 
+            ap.MaxCdsLimits().GetFrom() < bp.MaxCdsLimits().GetFrom() :
+            ap.MaxCdsLimits().GetTo() > bp.MaxCdsLimits().GetTo()
+            );
+}
 
 void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResidueVec& seq, TGeneModelList& models,
              int window, int margin, bool wall, double mpp, double nonconsensp, TGeneModelList& bad_aligns)
 {
 
-    models.sort(AlignSeqOrder());
+    models.sort(s_AlignSeqOrder);
 
     TGeneModelList aligns;
     TSignedSeqPos right = -1;
