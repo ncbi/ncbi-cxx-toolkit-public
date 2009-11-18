@@ -105,7 +105,6 @@ CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
     
     m_TSE.Reset(new CSeq_entry);
     m_TSE->SetSeq(*bioseq);
-    cerr << MSerial_AsnText << *bioseq << endl;
 }
 
 static CBioseq::TId s_ExtractSeqIds(const CBioseq& bioseq)
