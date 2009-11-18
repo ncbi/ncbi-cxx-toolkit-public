@@ -30,7 +30,7 @@
  *
  */
 
-/// @file remote_services.hpp
+/// @file blast_services.hpp
 /// Declares the CBlastServices class.
 
 #include <corelib/ncbistd.hpp>
