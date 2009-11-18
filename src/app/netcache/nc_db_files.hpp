@@ -579,29 +579,34 @@ private:
 
 
     /// Read/write lock to work with list of all open files
-    static CFastRWLock      sm_FilesListLock;
+    static CFastRWLock          sm_FilesListLock;
     /// Head of the list of all open files
-    static CNCFSOpenFile*   sm_FilesListHead;
+    static CNCFSOpenFile*       sm_FilesListHead;
     /// Mutex to work with write/close events queue
-    static CSpinLock        sm_EventsLock;
+    static CSpinLock            sm_EventsLock;
     /// Head of write/close events queue
-    static SNCFSEvent*      sm_EventsHead;
+    static SNCFSEvent* volatile sm_EventsHead;
     /// Tail of write/close events queue
-    static SNCFSEvent*      sm_EventsTail;
+    static SNCFSEvent*          sm_EventsTail;
     /// Background thread executing all actual writings
-    static CRef<CThread>    sm_BGThread;
+    static CRef<CThread>        sm_BGThread;
     /// Flag showing that file system is finalized and background thread
     /// should be stopped already.
-    static bool             sm_Stopped;
+    static bool                 sm_Stopped;
     /// Flag showing that background thread is in process of executing some
     /// write/close events. Value of FALSE in this flag means that background
     /// thread is waiting for new events on sm_BGSleep.
-    static bool             sm_BGWorking;
-    /// Semaphore used in background thread for waiting of arival of new
-    /// events.
-    static CSemaphore       sm_BGSleep;
+    static bool volatile        sm_BGWorking;
+    /// Semaphore used in background thread for waiting for new events to
+    /// arrive.
+    static CSemaphore           sm_BGSleep;
     /// Flag showing that disk database was initialized
-    static bool             sm_DiskInitialized;
+    static bool                 sm_DiskInitialized;
+    /// Number of threads frozen and waiting while any disk write will happen
+    /// and some memory will be freed.
+    static CAtomicCounter       sm_WaitingOnAlert;
+    /// Semaphore for freezing threads waiting for disk writes.
+    static CSemaphore           sm_OnAlertWaiter;
 };
 
 

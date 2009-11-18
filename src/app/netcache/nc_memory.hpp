@@ -49,12 +49,16 @@ public:
     /// This must be called to stop background thread started in
     /// InitializeApp().
     static void FinalizeApp(void);
-    /// Set maximum memory amount that process can use.
-    /// Limit is not hard, i.e. if NetCache will not be able to work inside
-    /// this limit then additional memory will be automatically allocated.
-    /// Also manager ensures that at least half of this limit is used by
-    /// database cache.
-    static void SetLimit(size_t limit);
+    /// Set maximum memory amount that process can use and amount of memory
+    /// that should be considered dangerous and should put the whole
+    /// application on alert.
+    /// Limit (including alert_level) is not hard, i.e. if NetCache will not
+    /// be able to work inside this limit then additional memory will be
+    /// automatically allocated. Also manager ensures that at least half of
+    /// this limit is used by database cache.
+    static void SetLimits(size_t limit, size_t alert_level);
+    /// Check if memory consumption is above alert level.
+    static bool IsOnAlert(void);
 
     /// Print memory usage statistics
     static void PrintStats(CPrintTextProxy& proxy);
@@ -1557,12 +1561,16 @@ public:
     static size_t GetMemorySize(void* mem_ptr);
 
     /// Get mode of memory manager operation
-    static ENCMMMode GetMemMode  (void);
+    static ENCMMMode GetMemMode      (void);
+    /// Check if memory consumption is over alert limit
+    static bool      IsOnAlert       (void);
     /// Get global limit for memory consumption.
-    static size_t    GetMemLimit (void);
-    /// Set global limit for memory consumption.
-    /// At least half of this memory will be spent on database cache.
-    static void      SetMemLimit (size_t mem_size);
+    static size_t    GetMemLimit     (void);
+    /// Get alert level of memory consumption.
+    static size_t    GetMemAlertLevel(void);
+    /// Set global limit and alert level for memory consumption.
+    /// At least half of the limit will be spent on database cache.
+    static void      SetMemLimits    (size_t limit, size_t alert_level);
 
     /// Get memory slab containing given memory block
     static CNCMMSlab* GetSlab(void* mem_ptr);
@@ -1650,8 +1658,14 @@ private:
     static bool           sm_Initialized;
     /// Mode of memory manager operation.
     static ENCMMMode      sm_Mode;
+    /// Flag showing that memory consumption has grown above alert level and
+    /// should be lowered by all means available including those outside
+    /// memory manager itself.
+    static bool           sm_OnAlert;
     /// Global limit of memory consumption.
     static size_t         sm_MemLimit;
+    /// Amount of memory consumption that should be considered dangerous.
+    static size_t         sm_MemAlertLevel;
     /// Number of memory chunks that can be allocated for database pages with
     /// current memory consumption numbers.
     static CAtomicCounter sm_CntCanAlloc;

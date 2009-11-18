@@ -85,6 +85,7 @@ static const char* kNCReg_DropBadDB          = "drop_db";
 static const char* kNCReg_ManageSessions     = "session_mng";
 static const char* kNCReg_SessMngTimeout     = "session_shutdown_timeout";
 static const char* kNCReg_MemLimit           = "memory_limit";
+static const char* kNCReg_MemAlert           = "memory_alert";
 
 
 CNCServerStat_Getter  CNCServerStat::sm_Getter;
@@ -334,13 +335,13 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     20);
     // A bit of hard coding but it's really not necessary to create more than
     // 25 threads in server's thread pool.
-    if (params.max_threads >= 25) {
+    if (params.max_threads >= 20) {
         ERR_POST(Warning << "NetCache configuration is not optimal. "
-                            "Maximum optimal number of threads is 25, "
+                            "Maximum optimal number of threads is 20, "
                             "maximum number given - " << params.max_threads
                          << ".");
     }
-    params.init_threads    = x_RegReadInt(reg, kNCReg_InitThreads,    10);
+    params.init_threads = x_RegReadInt(reg, kNCReg_InitThreads, 1);
     if (params.init_threads > params.max_threads) {
         params.init_threads = params.max_threads;
     }
@@ -354,11 +355,15 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
 
     CNCMemManager::InitializeApp();
     try {
-        CNCMemManager::SetLimit(size_t(NStr::StringToUInt8_DataSize(
-                              x_RegReadString(reg, kNCReg_MemLimit, "1Gb"))));
+        size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(
+                                  x_RegReadString(reg, kNCReg_MemLimit, "1Gb")));
+        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(
+                                  x_RegReadString(reg, kNCReg_MemAlert, "4Gb")));
+        CNCMemManager::SetLimits(mem_limit, mem_alert);
     }
     catch (CStringException& ex) {
-        ERR_POST_X(14, "Error in " << kNCReg_MemLimit << " parameter: " << ex);
+        ERR_POST_X(14, "Error in " << kNCReg_MemLimit
+                         << " or " << kNCReg_MemAlert << " parameter: " << ex);
     }
 
     CSQLITE_Global::Initialize();

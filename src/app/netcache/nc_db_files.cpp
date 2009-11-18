@@ -68,16 +68,18 @@ static const char* kNCDBIndex_CreatedTimeCol  = "tm";
 static const char* kNCDBIndex_MinBlobIdCol    = "bid";
 
 
-CFastRWLock      CNCFileSystem::sm_FilesListLock;
-CNCFSOpenFile*   CNCFileSystem::sm_FilesListHead   = NULL;
-CSpinLock        CNCFileSystem::sm_EventsLock;
-SNCFSEvent*      CNCFileSystem::sm_EventsHead      = NULL;
-SNCFSEvent*      CNCFileSystem::sm_EventsTail      = NULL;
-CRef<CThread>    CNCFileSystem::sm_BGThread;
-bool             CNCFileSystem::sm_Stopped         = false;
-bool             CNCFileSystem::sm_BGWorking       = false;
-CSemaphore       CNCFileSystem::sm_BGSleep(0, 1000000);
-bool             CNCFileSystem::sm_DiskInitialized = false;
+CFastRWLock          CNCFileSystem::sm_FilesListLock;
+CNCFSOpenFile*       CNCFileSystem::sm_FilesListHead   = NULL;
+CSpinLock            CNCFileSystem::sm_EventsLock;
+SNCFSEvent* volatile CNCFileSystem::sm_EventsHead      = NULL;
+SNCFSEvent*          CNCFileSystem::sm_EventsTail      = NULL;
+CRef<CThread>        CNCFileSystem::sm_BGThread;
+bool                 CNCFileSystem::sm_Stopped         = false;
+bool volatile        CNCFileSystem::sm_BGWorking       = false;
+CSemaphore           CNCFileSystem::sm_BGSleep        (0, 1000000);
+bool                 CNCFileSystem::sm_DiskInitialized = false;
+CAtomicCounter       CNCFileSystem::sm_WaitingOnAlert;
+CSemaphore           CNCFileSystem::sm_OnAlertWaiter  (0, 1000000);
 
 
 
@@ -864,6 +866,8 @@ CNCFileSystem::Initialize(void)
     s_SetRealVFS(CSQLITE_Global::GetDefaultVFS());
     CSQLITE_Global::RegisterCustomVFS(&s_NCVirtualFS);
 
+    sm_WaitingOnAlert.Set(0);
+
     sm_BGThread = NewBGThread(&CNCFileSystem::x_DoBackgroundWork);
     sm_BGThread->Run();
 }
@@ -1003,6 +1007,22 @@ CNCFileSystem::WriteToFile(CNCFSOpenFile* file,
 {
     _ASSERT(offset >= kNCSQLitePageSize  ||  offset + cnt <= kNCSQLitePageSize);
 
+    if (CNCMemManager::IsOnAlert()
+        // Two conditions below will ensure that background writer is working
+        // and will be able to wake us up.
+        &&  sm_BGWorking  &&  sm_EventsHead != NULL)
+    {
+        sm_EventsLock.Lock();
+        if (sm_BGWorking  &&  sm_EventsHead != NULL) {
+            sm_WaitingOnAlert.Add(1);
+            sm_EventsLock.Unlock();
+            sm_OnAlertWaiter.Wait();
+        }
+        else {
+            sm_EventsLock.Unlock();
+        }
+    }
+
     SNCFSEvent* event = new SNCFSEvent;
     event->type    = SNCFSEvent::eWrite;
     event->file    = file;
@@ -1072,6 +1092,11 @@ CNCFileSystem::x_DoBackgroundWork(void)
                 SNCFSEvent* prev = head;
                 head = head->next;
                 delete prev;
+
+                if (sm_WaitingOnAlert.Get() != 0) {
+                    sm_WaitingOnAlert.Add(-1);
+                    sm_OnAlertWaiter.Post();
+                }
             }
         }
         sm_BGSleep.Wait();

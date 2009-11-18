@@ -214,11 +214,13 @@ CNCMMStats_Getter        CNCMMStats::sm_Getter;
 
 DEFINE_CLASS_STATIC_FAST_MUTEX(CNCMMCentral::sm_CentralLock);
 CNCMMStats      CNCMMCentral::sm_Stats;
-bool            CNCMMCentral::sm_Initialized = false;
-ENCMMMode       CNCMMCentral::sm_Mode        = eNCMemStable;
-size_t          CNCMMCentral::sm_MemLimit    = kNCMMDefMemoryLimit;
+bool            CNCMMCentral::sm_Initialized   = false;
+ENCMMMode       CNCMMCentral::sm_Mode          = eNCMemStable;
+bool            CNCMMCentral::sm_OnAlert       = false;
+size_t          CNCMMCentral::sm_MemLimit      = kNCMMDefMemoryLimit;
+size_t          CNCMMCentral::sm_MemAlertLevel = 2 * kNCMMDefMemoryLimit;
 CAtomicCounter  CNCMMCentral::sm_CntCanAlloc;
-CThread*        CNCMMCentral::sm_BGThread    = NULL;
+CThread*        CNCMMCentral::sm_BGThread      = NULL;
 CSemaphore      CNCMMCentral::sm_WaitForStop(0, 1);
 
 
@@ -242,15 +244,30 @@ s_GetGradeValue(unsigned int cur_cnt, unsigned int cnt_per_grade)
 
 
 inline void
-CNCMMCentral::SetMemLimit(size_t mem_size)
+CNCMMCentral::SetMemLimits(size_t limit, size_t alert_level)
 {
-    sm_MemLimit = mem_size;
+    if (limit == 0)
+        limit = kNCMMDefMemoryLimit;
+    if (alert_level / 2 < limit) {
+        if (numeric_limits<size_t>::max() / 2 < limit)
+            alert_level = numeric_limits<size_t>::max();
+        else
+            alert_level = 2 * limit;
+    }
+    sm_MemLimit      = limit;
+    sm_MemAlertLevel = alert_level;
 }
 
 inline size_t
 CNCMMCentral::GetMemLimit(void)
 {
     return sm_MemLimit;
+}
+
+inline size_t
+CNCMMCentral::GetMemAlertLevel(void)
+{
+    return sm_MemAlertLevel;
 }
 
 inline CNCMMStats&
@@ -675,12 +692,13 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
                           << m_RsrvMemAggr.GetMaximum()    << " (rsrv), "
                           << m_OvrhdMemAggr.GetMaximum()   << " (ovrhd), "
                           << m_LostMemAggr.GetMaximum()    << " (lost)" << endl;
-    proxy << "System  - " << CNCMMCentral::GetMemLimit()   << " mem lim, "
-                          << int(double(m_DBPagesHit)
-                                 / m_DBPagesRequested * 100) << "% cache hit, "
-                          << m_SysAllocs                   << " (allocs), "
-                          << m_SysFrees                    << " (frees), "
-                          << m_SysReallocs                 << " (reallocs), " << endl
+    proxy << "System  - " << int(double(m_DBPagesHit)
+                                 / m_DBPagesRequested * 100)  << "% cache hit, "
+                          << m_SysAllocs                      << " (allocs), "
+                          << m_SysFrees                       << " (frees), "
+                          << m_SysReallocs                    << " (reallocs), "
+                          << CNCMMCentral::GetMemLimit()      << " (mem lim), "
+                          << CNCMMCentral::GetMemAlertLevel() << " (alert)" << endl
           << "Allocs  - " << m_SlabsAlloced                << " (+slabs), "
                           << m_SlabsFreed                  << " (-slabs), "
                           << m_BigAlloced                  << " (+big), "
@@ -688,7 +706,7 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
                           << m_ChainsCentrallyAlloced      << " (+chains), "
                           << m_ChainsCentrallyFreed        << " (-chains), "
                           << m_ChunksPoolRefills           << " (+pool), "
-                          << m_ChunksPoolCleans            << " (-pool), " << endl
+                          << m_ChunksPoolCleans            << " (-pool)" << endl
           << "By size:" << endl;
     for (unsigned int i = 0; i < kNCMMCntSmallSizes; ++i) {
         if (m_BlocksAlloced[i] != 0) {
@@ -921,6 +939,12 @@ CNCMMCentral::GetMemMode(void)
         return eNCMemGrowing;
     else
         return sm_Mode;
+}
+
+inline bool
+CNCMMCentral::IsOnAlert(void)
+{
+    return sm_OnAlert;
 }
 
 inline void
@@ -2678,6 +2702,9 @@ CNCMMCentral::x_CalcMemoryMode(const CNCMMStats& stats)
     size_t sys_mem      = sm_Stats.GetSystemMem();
     size_t used_mem     = sys_mem - free_mem;
     size_t db_mem_limit = sm_MemLimit / 2;
+
+    sm_OnAlert = sys_mem >= sm_MemAlertLevel;
+
     if (sys_mem < sm_MemLimit) {
         sm_Mode = eNCMemStable;
     }
@@ -3197,9 +3224,15 @@ CNCMemManager::FinalizeApp(void)
 }
 
 void
-CNCMemManager::SetLimit(size_t mem_size)
+CNCMemManager::SetLimits(size_t limit, size_t alert_level)
 {
-    CNCMMCentral::SetMemLimit(mem_size);
+    CNCMMCentral::SetMemLimits(limit, alert_level);
+}
+
+bool
+CNCMemManager::IsOnAlert(void)
+{
+    return CNCMMCentral::IsOnAlert();
 }
 
 void
