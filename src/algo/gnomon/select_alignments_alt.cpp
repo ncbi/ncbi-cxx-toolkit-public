@@ -273,9 +273,80 @@ bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tol
     return true;
 }
 
+bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
+{
+    if(!a.TrustedmRNA().empty() && b.TrustedmRNA().empty())       // trusted gene is always better, mRNA is better than protein, both are better than one   
+        return true;
+    else if(!b.TrustedmRNA().empty() && a.TrustedmRNA().empty()) 
+        return false;
+    else if(!a.TrustedProt().empty() && b.TrustedProt().empty())    
+        return true;
+    else if(!b.TrustedProt().empty() && a.TrustedProt().empty()) 
+        return false;
+    else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is alway better
+        return true;
+    } else if(b.ReadingFrame().NotEmpty() && a.ReadingFrame().Empty()) {
+        return false;
+    } else if(a.ReadingFrame().NotEmpty()) {     // both coding
+        double ds = 0.025*(fabs(b.Score())+fabs(a.Score()));
+        
+        double as = a.Score();
+        if((a.Status()&&CGeneModel::ePolyA) != 0)
+            as += ds; 
+        if((a.Status()&&CGeneModel::eCap) != 0)
+            as += ds; 
+        if(a.isNMD())
+            as -= ds;
+        
+        double bs = b.Score();
+        if((b.Status()&&CGeneModel::ePolyA) != 0)
+            bs += ds; 
+        if((b.Status()&&CGeneModel::eCap) != 0)
+            bs += ds; 
+        if(b.isNMD())
+            bs -= ds;
+        
+        if(as > bs)
+            return true;
+        else if(bs > as)
+            return false;
+        else if(a.Support().size() > b.Support().size())       // more alignments is better
+            return true;
+        else if(a.Support().size() < b.Support().size()) 
+            return false;
+        else 
+            return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
+    } else {                       // both noncoding
+        double asize = a.Support().size();
+        double bsize = b.Support().size();
+        double ds = 0.025*(asize+bsize);
+        
+        if((a.Status()&&CGeneModel::ePolyA) != 0)
+            asize += ds; 
+        if((a.Status()&&CGeneModel::eCap) != 0)
+            asize += ds; 
+        if(a.isNMD())
+            asize -= ds;
+        
+        if((b.Status()&&CGeneModel::ePolyA) != 0)
+            bsize += ds; 
+        if((b.Status()&&CGeneModel::eCap) != 0)
+            bsize += ds; 
+        if(b.isNMD())
+            bsize -= ds;
+        
+        if(asize > bsize)     
+            return true;
+        else if(bsize > asize)
+            return false;
+        else 
+            return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
+    }
+}
+
 void CGnomonAnnotator::FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns)
 {
-    cls.sort(SSortModelsDescending());
+    cls.sort(DescendingModelOrder);
     for(TGeneModelList::iterator it = cls.begin(); it != cls.end(); ++it) {
         const CGeneModel& ai(*it);
         TGeneModelList::iterator jt_loop = it;
@@ -547,7 +618,7 @@ void CGnomonAnnotator::FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSpli
     list<const CGeneModel*> possibly_alternative;
     TGeneModelList rejected;
 
-    cls.sort(SSortModelsDescending());
+    cls.sort(DescendingModelOrder);
     FindGenesPass1(cls, alts,
                    minIntergenic, altfrac, composite, allow_opposite_strand, allow_partialalts,
                    possibly_alternative, rejected);
@@ -585,7 +656,7 @@ bool CModelCompare::HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel
 
 void CGnomonAnnotator::FilterOutTandemOverlap(TGeneModelList&cls, double fraction, TGeneModelList& bad_aligns)
 {
-    cls.sort(SSortModelsDescending());
+    cls.sort(DescendingModelOrder);
     for(TGeneModelList::iterator it_loop = cls.begin(); it_loop != cls.end();) {
         TGeneModelList::iterator it = it_loop++;
         const CGeneModel& ai(*it);
