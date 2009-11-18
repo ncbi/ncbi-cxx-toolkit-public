@@ -184,6 +184,7 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
         NCBI_THROW(CSeqDBException, eArgErr, "Empty BLAST database handle");
     }
     _ASSERT(m_BlastDb.NotEmpty());
+    _TRACE("Using " << GetLoaderNameFromArgs(param) << " data loader");
 }
 
 CBlastDbDataLoader::~CBlastDbDataLoader(void)
@@ -311,8 +312,10 @@ int CBlastDbDataLoader::x_GetOid(const CSeq_id_Handle& idh)
     int oid = -1;
     
     if (! m_BlastDb->SeqidToOid(*seqid, oid)) {
+        _TRACE("FAILED to find '" << seqid->AsFastaString() << "'");
         return -1;
     }
+    _TRACE("Found '" << seqid->AsFastaString() << "' at OID " << oid);
     
     // Test for deflines.  If the filtering eliminates the Seq-id we
     // are interested in, we just pretend we don't know anything about

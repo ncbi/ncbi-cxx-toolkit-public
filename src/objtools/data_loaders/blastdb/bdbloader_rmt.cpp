@@ -117,6 +117,7 @@ CRemoteBlastDbDataLoader::CRemoteBlastDbDataLoader(const string& loader_name,
     m_BlastDb.Reset(new CRemoteBlastDbAdapter(m_DBName, dbtype,
                                               m_UseFixedSizeSlices));
     _ASSERT(m_BlastDb.NotEmpty());
+    _TRACE("Using " << GetLoaderNameFromArgs(param) << " data loader");
 }
 
 /// A BLAST DB (blob) ID

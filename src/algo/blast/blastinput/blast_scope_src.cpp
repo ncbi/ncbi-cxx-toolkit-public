@@ -94,6 +94,8 @@ SDataLoaderConfig::x_LoadDataLoadersConfig(const CMetaRegistry::SEntry& sentry)
             m_UseGenbank = false;
         }
     }
+    _TRACE("Using data loaders: blastdb " << boolalpha << m_UseBlastDbs
+           << "; genbank " << boolalpha << m_UseGenbank);
 }
 
 void

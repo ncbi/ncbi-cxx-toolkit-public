@@ -2315,6 +2315,83 @@ BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
     arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
 }
 
+BOOST_AUTO_TEST_CASE(wb325_1)
+{
+    //string input("gb|ABZI01000088\ngb|ABZN01000067");
+    //string input("217999527\n218001205");
+    string input("gb|M18059.1\ngb|M94317.1");
+    istringstream instream(input);
+    
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+    
+    BOOST_REQUIRE(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    BOOST_REQUIRE(source->End() == true);
+    BOOST_REQUIRE_EQUAL(2u, seqs.size());
+    //blast::SSeqLoc ssl = seqs.front();
+}
+
+BOOST_AUTO_TEST_CASE(wb325_2)
+{
+    //string input("gb|ABZN01000067\ngb|ABZI01000088");
+    string input("218001205\n217999527");
+    istringstream instream(input);
+    
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+    
+    BOOST_REQUIRE(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    BOOST_REQUIRE(source->End() == true);
+    BOOST_REQUIRE_EQUAL(2u, seqs.size());
+    //blast::SSeqLoc ssl = seqs.front();
+}
+
+BOOST_AUTO_TEST_CASE(wb325_single1)
+{
+    string input("gb|ABZN01000067");
+    //string input("218001205");
+    istringstream instream(input);
+    
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+    
+    BOOST_REQUIRE(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    BOOST_REQUIRE(source->End() == true);
+    BOOST_REQUIRE_EQUAL(1u, seqs.size());
+    //blast::SSeqLoc ssl = seqs.front();
+}
+
+BOOST_AUTO_TEST_CASE(wb325_single2)
+{
+    string input("gb|ABZI01000088");
+    //string input("217999527");
+    istringstream instream(input);
+    
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+    
+    BOOST_REQUIRE(source->End() == false);
+    blast::TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    BOOST_REQUIRE(source->End() == true);
+    BOOST_REQUIRE_EQUAL(1u, seqs.size());
+    //blast::SSeqLoc ssl = seqs.front();
+}
+
 BOOST_AUTO_TEST_CASE(ReadSinglePdb)
 {
     string pdb_mol("1QCF");
