@@ -9,12 +9,13 @@
 
 TAB="	"
 # defaults
+use_gui="no"
 use_debug="yes"
 use_dll="no"
 use_64="no"
 use_universal="no"
 use_staticstd="no"
-use_projectlst="src/"
+use_projectlst="scripts/projects/ncbi_cpp.lst"
 use_action=""
 use_arch=""
 
@@ -182,17 +183,19 @@ USAGE: $script_name [OPTION]...
 SYNOPSIS:
  configure NCBI C++ toolkit for Xcode build system.
 OPTIONS:
-  --help                    -- print Usage
-  --without-debug           -- build non-debug versions of libs and apps
-  --with-debug              -- build debug versions of libs and apps
-  --without-dll             -- build all toolkit libraries as static ones
-  --with-dll                -- assemble toolkit libraries into DLLs where requested
-  --with-64                 -- compile to 64-bit code
-  --with-universal          -- build universal binaries
-  --with-universal=CPU      -- build universal binaries targeting the given CPU
-  --with-static-exe         -- use static C++ standard libraries
-  --with-projects=FILE      -- build projects listed in FILE
-  --with-extra-action=SCR   -- script to call after the configuration is complete
+  --help                     -- print Usage
+  --with-configure-dialog    -- use Configuration GUI application
+  --without-configure-dialog -- do not use Configuration GUI application
+  --without-debug            -- build non-debug versions of libs and apps
+  --with-debug               -- build debug versions of libs and apps
+  --without-dll              -- build all toolkit libraries as static ones
+  --with-dll                 -- assemble toolkit libraries into DLLs where requested
+  --with-64                  -- compile to 64-bit code
+  --with-universal           -- build universal binaries
+  --with-universal=CPU       -- build universal binaries targeting the given CPU
+  --with-static-exe          -- use static C++ standard libraries
+  --with-projects=FILE       -- build projects listed in FILE
+  --with-extra-action=SCR    -- script to call after the configuration is complete
   --ignore-unsupported-options   --ignore unsupported options
 EOF
 }
@@ -214,6 +217,8 @@ ignore_unknown="no"
 for cmd_arg in "$@"; do
   case "$cmd_arg" in
     --help                )  Usage; exit 0 ;;
+    --with-configure-dialog    ) use_gui="yes" ;;
+    --without-configure-dialog ) use_gui="no" ;;
     --without-debug       )  use_debug="no" ;;
     --with-debug          )  use_debug="yes" ;;
     --without-dll         )  use_dll="no" ;;
@@ -305,6 +310,9 @@ else
       conf="Release"
     fi
   fi
+fi
+if test "$use_gui" = "yes"; then
+  PTB_FLAGS="$PTB_FLAGS -cfg"
 fi
 sln_path="${platform}-${conf}-${use_arch}"
 sln_path=`echo $sln_path | sed -e 's/ /_/g'`
