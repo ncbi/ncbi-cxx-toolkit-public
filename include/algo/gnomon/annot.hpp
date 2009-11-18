@@ -103,7 +103,7 @@ private:
                                       CGnomonEngine& gnomon,
                                       bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
                                       double mpp, double nonconsensp);
-    double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
+    double TryToEliminateAlignmentsFromTail(TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
                                                               CGnomonEngine& gnomon,
                                                               bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
                                                               double mpp, double nonconsensp);
