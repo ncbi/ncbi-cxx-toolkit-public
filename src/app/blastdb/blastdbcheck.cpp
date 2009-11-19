@@ -765,6 +765,26 @@ private:
     string m_DbType;
     int    m_Threads;
     bool   m_Recurse;
+
+    void x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &list) const;
+};
+
+void CDirTest::x_GetVolumeList(CSeqDB::ESeqType stype, set <string> &list) const {
+
+    ITERATE(vector<SSeqDBInitInfo>, iter, m_DBs) {
+        if (iter->m_MoleculeType != stype) continue;
+        vector <string> paths;
+        try {
+            CSeqDB::FindVolumePaths(iter->m_BlastDbName, iter->m_MoleculeType, paths);
+        } catch (...) {
+            m_Out.Log(e_Summary) 
+                 << endl << "BLAST AliasDB error: Could not find all volume or alias "
+                 << "files referenced in " << iter->m_BlastDbName << ", [skipped]" << endl;
+            continue;
+        }
+        list.insert(paths.begin(), paths.end());
+    }
+   
 };
 
 bool CDirTest::Test(CTestAction & action)
@@ -774,20 +794,25 @@ bool CDirTest::Test(CTestAction & action)
     m_Out.Log(e_Summary)
         << "Finding database volumes..." << flush;
     
-    // N.B.: this app was not designed to work with alias files, in particular,
-    // the ends test needs to be fixed.
-    m_DBs = FindBlastDBs(m_Dir, m_DbType, m_Recurse);
+    m_DBs = FindBlastDBs(m_Dir, m_DbType, m_Recurse, true);
+
+    set <string> prot_list;
+    set <string> nucl_list;
+    
+    x_GetVolumeList(CSeqDB::eProtein, prot_list);
+    x_GetVolumeList(CSeqDB::eNucleotide, nucl_list);
     
     m_Out.Log(e_Summary) << "(done)" << endl;
     
+    int total = prot_list.size() + nucl_list.size(), passed = 0;
+
     m_Out.Log(e_Summary)
-        << "Testing " << m_DBs.size() << " volume(s)." << endl;
+        << "Testing " << total << " volumne(s)." << endl;
     
-    int total = m_DBs.size(), passed = 0;
     
-    ITERATE(vector<SSeqDBInitInfo>, iter, m_DBs) {
-        
-        CRef<CSeqDB> db = iter->InitSeqDb();
+    ITERATE(set<string>, iter, prot_list) {
+
+        CRef<CSeqDB> db (new CSeqDB(*iter, CSeqDB::eProtein));
         TSeen seen;
         
         bool okay = action.DoTest(*db, seen);
@@ -799,6 +824,20 @@ bool CDirTest::Test(CTestAction & action)
         }
     }
     
+    ITERATE(set<string>, iter, nucl_list) {
+
+        CRef<CSeqDB> db (new CSeqDB(*iter, CSeqDB::eNucleotide));
+        TSeen seen;
+        
+        bool okay = action.DoTest(*db, seen);
+        
+        if (okay) {
+            passed ++;
+        } else {
+            success = false;
+        }
+    }
+
     if (total == passed) {
         m_Out.Log(e_Brief)
             << " Result=SUCCESS. No errors reported for "
