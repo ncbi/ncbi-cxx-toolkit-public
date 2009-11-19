@@ -59,7 +59,8 @@ public:
 
     enum ETextFlags {
         eTF_None = 0,
-        eTF_NoExonScores = 1
+        eTF_NoExonScores = 0x0001,
+        eTF_UseFastaStyleIds = 0x0002
     };
 
     enum EAsnFlags {

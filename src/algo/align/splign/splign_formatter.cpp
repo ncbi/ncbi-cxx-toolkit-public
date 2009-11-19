@@ -99,14 +99,20 @@ string CSplignFormatter::AsExonTable(
         results = &m_splign_results;
     }
 
-    const string querystr (m_QueryId->GetSeqIdString(true));
-    const string subjstr (m_SubjId->GetSeqIdString(true));
-
     CNcbiOstrstream oss;
     oss.precision(3);
 
     const bool print_exon_scores ((flags & eTF_NoExonScores)? false: true);
+    const bool use_fasta_style_ids (flags & eTF_UseFastaStyleIds);
     
+
+    const string querystr (use_fasta_style_ids?
+                           m_QueryId->AsFastaString():
+                           m_QueryId->GetSeqIdString(true));
+    const string subjstr (use_fasta_style_ids?
+                          m_SubjId->AsFastaString():
+                          m_SubjId->GetSeqIdString(true));
+
     ITERATE(CSplign::TResults, ii, *results) {
 
         for(size_t i (0), seg_dim (ii->m_Segments.size()); i < seg_dim; ++i) {

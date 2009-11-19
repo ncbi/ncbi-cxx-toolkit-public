@@ -868,7 +868,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
 {
 
 #ifdef GENOME_PIPELINE
-    const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_None);
+    const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_UseFastaStyleIds);
 #else
     const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_NoExonScores);
 #endif
