@@ -2059,7 +2059,7 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
     ITERATE(TAlignModelList, i, alignments) {
         range += i->Limits();
     }
-    _ASSERT(gnomon.get() != NULL);
+    _ASSERT(m_gnomon.get() != NULL);
     m_gnomon->ResetRange(range);
 
     orig_aligns.clear();

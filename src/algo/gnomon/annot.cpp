@@ -401,7 +401,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
     NON_CONST_ITERATE(TGeneModelList, it, models) {
 #ifdef _DEBUG
         {
-            string protein = it->GetProtein(seq);
+            string protein = it->GetProtein(m_gnomon->GetSeq());
             int nstar = 0;
             ITERATE(string, is, protein) {
                 if(*is == '*')
