@@ -58,7 +58,7 @@ struct SFShiftsCluster;
 
 class CChainer::CChainerImpl {
 public:
-    CChainerImpl();
+    CChainerImpl(CRef<CHMMParameters>& hmm_params, CRef<CScope>& scope, auto_ptr<CGnomonEngine>& gnomon);
     void SetGenomicRange(const TAlignModelList& alignments);
 
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
@@ -89,9 +89,11 @@ private:
     void CollectFShifts(const TGeneModelList& clust, TInDels& fshifts);
     void SplitAlignmentsByStrand(const TGeneModelList& clust, TGeneModelList& clust_plus, TGeneModelList& clust_minus);
 
-    CRef<CHMMParameters> hmm_params;
-    CRef<CScope> m_scope;
-    auto_ptr<CGnomonEngine> gnomon;
+    CRef<CHMMParameters>& m_hmm_params;
+    CRef<CScope>& m_scope;
+    auto_ptr<CGnomonEngine>& m_gnomon;
+
+
     SMinScor minscor;
     int intersect_limit;
     int trim;
@@ -105,16 +107,25 @@ private:
     friend class CChainer;
 };
 
+CGnomonAnnotator_Base::CGnomonAnnotator_Base()
+{
+}
+
+CGnomonAnnotator_Base::~CGnomonAnnotator_Base()
+{
+}
+
 CChainer::CChainer()
 {
-    m_data.reset( new CChainerImpl() );
+    m_data.reset( new CChainerImpl(m_hmm_params, m_scope, m_gnomon) );
 }
 
 CChainer::~CChainer()
 {
 }
 
-CChainer::CChainerImpl::CChainerImpl()
+CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, CRef<CScope>& scope, auto_ptr<CGnomonEngine>& gnomon)
+    :m_hmm_params(hmm_params), m_scope(scope), m_gnomon(gnomon)
 {
 }
 
@@ -563,7 +574,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 //  finding contained subalignments (alignment is contained in itself)
 
     sort(pointers.begin(),pointers.end(),LeftOrder());
-    const CResidueVec& seq = gnomon->GetSeq();
+    const CResidueVec& seq = m_gnomon->GetSeq();
     NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
@@ -596,7 +607,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
 {
     sort(pointers.begin(),pointers.end(),LeftOrder());
-    const CResidueVec& seq = gnomon->GetSeq();
+    const CResidueVec& seq = m_gnomon->GetSeq();
     NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
@@ -666,7 +677,7 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
 void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
 {
     sort(pointers.begin(),pointers.end(),RightOrder());
-    const CResidueVec& seq = gnomon->GetSeq();
+    const CResidueVec& seq = m_gnomon->GetSeq();
     NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
     
         SChainMember& mi = **i;
@@ -872,8 +883,8 @@ void CChainer::CChainerImpl::MakeOneStrandChains(TGeneModelList& clust, list<CCh
     if(clust.empty()) return;
 
     CChainMembers pointers(clust);
-    pointers.FillGapsInAlignments(gnomon->GetSeq());
-    pointers.DuplicateUnrestricted5Prime(clust, gnomon->GetSeq());
+    pointers.FillGapsInAlignments(m_gnomon->GetSeq());
+    pointers.DuplicateUnrestricted5Prime(clust, m_gnomon->GetSeq());
     MergeIdenticalSingleExon(pointers);
     FindContainedAlignments(pointers);
     LeftRight(pointers);
@@ -1492,7 +1503,7 @@ void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& 
                     CCDSInfo cdsinfo = prev_align->GetCdsInfo();
                     algn.SetCdsInfo(cdsinfo);
                 } else {
-                    gnomon->GetScore(algn);
+                    m_gnomon->GetScore(algn);
                 }
             }
            
@@ -1696,7 +1707,7 @@ void CChainer::CChainerImpl::ScoreCdnas(TGeneModelList& clust)
         if((algn.Type() & CGeneModel::eProt)!=0 || algn.ConfirmedStart()) {
             continue;
         }
-        gnomon->GetScore(algn);
+        m_gnomon->GetScore(algn);
         double ms = GoodCDNAScore(algn);
         RemovePoorCds(algn,ms);
     }
@@ -2015,7 +2026,7 @@ public:
 
 TransformFunction* CChainer::TrimAlignment()
 {
-    return new gnomon::TrimAlignment(m_data->trim, m_data->gnomon->GetSeq(), m_data->mrnaCDS);
+    return new gnomon::TrimAlignment(m_data->trim, m_gnomon->GetSeq(), m_data->mrnaCDS);
 }
 
 struct DoNotBelieveShortPolyATail : public TransformFunction {
@@ -2049,14 +2060,14 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
         range += i->Limits();
     }
     _ASSERT(gnomon.get() != NULL);
-    gnomon->ResetRange(range);
+    m_gnomon->ResetRange(range);
 
     orig_aligns.clear();
 }
 
 TransformFunction* CChainer::ProjectCDS()
 {
-    return new gnomon::ProjectCDS(m_data->mininframefrac, m_data->gnomon->GetSeq(), m_data->mrnaCDS);
+    return new gnomon::ProjectCDS(m_data->mininframefrac, m_gnomon->GetSeq(), m_data->mrnaCDS);
 }
 
 struct DoNotBelieveFrameShiftsWithoutCdsEvidence : public TransformFunction {
@@ -2110,9 +2121,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
 
         chain.RestoreTrimmedEnds(trim);
 
-        gnomon->GetScore(chain);
+        m_gnomon->GetScore(chain);
 
-        chain.RestoreReasonableConfirmedStart(*gnomon);
+        chain.RestoreReasonableConfirmedStart(*m_gnomon);
         
         double ms = GoodCDNAScore(chain);
         if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
@@ -2208,14 +2219,14 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
                             CArgDescriptions::eDouble, "0.005");
 }
 
-void CChainer::SetHMMParameters(CHMMParameters* params)
+void CGnomonAnnotator_Base::SetHMMParameters(CHMMParameters* params)
 {
-    m_data->hmm_params = params;
+    m_hmm_params = params;
 }
 
-CRef<CScope>& CChainer::SetScope()
+CRef<CScope>& CGnomonAnnotator_Base::SetScope()
 {
-    return m_data->m_scope;
+    return m_scope;
 }
 
 void CChainer::SetIntersectLimit(int value)
@@ -2296,7 +2307,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args)
     }
 }
 
-void CChainer::SetGenomic(const CSeq_id& contig)
+void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig)
 {
     CBioseq_Handle bh(SetScope()->GetBioseqHandle(contig));
     CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
@@ -2306,12 +2317,12 @@ void CChainer::SetGenomic(const CSeq_id& contig)
 
     CResidueVec seq(seq_txt.size());
     copy(seq_txt.begin(), seq_txt.end(), seq.begin());
-    m_data->gnomon.reset(new CGnomonEngine(m_data->hmm_params, seq, TSignedSeqRange::GetWhole()));
+    m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));
 }
 
-CGnomonEngine& CChainer::GetGnomon()
+CGnomonEngine& CGnomonAnnotator_Base::GetGnomon()
 {
-    return *m_data->gnomon;
+    return *m_gnomon;
 }
 
 MarkupCappedEst::MarkupCappedEst(const set<string>& _caps, int _capgap)

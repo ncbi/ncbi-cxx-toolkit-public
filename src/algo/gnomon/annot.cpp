@@ -50,7 +50,15 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(gnomon)
 
+CGeneSelector::CGeneSelector()
+{
+}
+
 CGnomonAnnotator::CGnomonAnnotator()
+{
+}
+
+CGnomonAnnotator::~CGnomonAnnotator()
 {
 }
 
@@ -59,16 +67,15 @@ bool s_AlignScoreOrder(const CGeneModel& ap, const CGeneModel& bp)
     return (ap.Score() < bp.Score());
 }
 
-void CGnomonAnnotator::RemoveShortHolesAndRescore(TGeneModelList chains, const CGnomonEngine& gnomon)
+void CGnomonAnnotator::RemoveShortHolesAndRescore(TGeneModelList chains)
 {
     NON_CONST_ITERATE(TGeneModelList, it, chains) {
-        it->RemoveShortHolesAndRescore(gnomon);
+        it->RemoveShortHolesAndRescore(*m_gnomon);
     }
 }
 
 double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
-                                             CGnomonEngine& gnomon, TSignedSeqPos left, TSignedSeqPos right,
-                                             double mpp, double nonconsensp)
+                                             TSignedSeqPos left, TSignedSeqPos right)
 {
     TGeneModelList test_align;
     test_align.push_back(chain);
@@ -76,15 +83,14 @@ double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
     int r = min(right,chain.Limits().GetTo()+10000);
     cout << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
                     
-    gnomon.ResetRange(l,r);
-    return gnomon.Run(test_align, true, false, false, false, false, mpp, nonconsensp);
+    m_gnomon->ResetRange(l,r);
+    return m_gnomon->Run(test_align, true, false, false, false, false, mpp, nonconsensp);
 }
 
 double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns, TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
-                                                          CGnomonEngine& gnomon,
                                                           bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
                                                           TSignedSeqPos left, TSignedSeqPos right,
-                                                          double mpp, double nonconsensp, TSignedSeqRange& tested_range)
+                                                          TSignedSeqRange& tested_range)
 {
     bool already_tested = Include(tested_range, TSignedSeqRange(left,right));
 
@@ -104,7 +110,7 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
             }
             
             if ((it->Type() & (CGeneModel::eWall | CGeneModel::eNested))==0 &&
-                ExtendJustThisChain(*it, gnomon, left, right, mpp, nonconsensp) == BadScore()) {
+                ExtendJustThisChain(*it, left, right) == BadScore()) {
                 found_bad_cluster = true;
                 cout << "Deleting alignment " << it->ID() << endl;
                 it->Status() |= CGeneModel::eSkipped;
@@ -117,19 +123,17 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
             suspect_aligns.push_back(*it++);
         }
         
-        gnomon.ResetRange(left, right);
+        m_gnomon->ResetRange(left, right);
         if(found_bad_cluster) {
             cout << "Testing w/o bad alignments in fragment " << left << ' ' << right << endl;
-            return gnomon.Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+            return m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
         }
     }
     return BadScore();
 }
 
 double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
-                                      CGnomonEngine& gnomon,
-                                      bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
-                                      double mpp, double nonconsensp)
+                                      bool leftwall, bool rightwall, bool leftanchor, bool rightanchor)
 {
     double score = BadScore();
     for(TGeneModelList::iterator it = suspect_aligns.begin(); it != suspect_aligns.end();) {
@@ -141,7 +145,7 @@ double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_alig
         it = suspect_aligns.erase(it);
         
         cout << "Testing w/o " << algn.ID();
-        score = gnomon.Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
         if (score != BadScore()) {
             cout << "- Good. Deleting alignment " << algn.ID() << endl;
             algn.Status() |= CGeneModel::eSkipped;
@@ -157,9 +161,7 @@ double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_alig
 }
 
 double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
-                                      CGnomonEngine& gnomon,
-                                      bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
-                                      double mpp, double nonconsensp)
+                                      bool leftwall, bool rightwall, bool leftanchor, bool rightanchor)
 {
     double score = BadScore();
     for (TGeneModelList::iterator it = suspect_aligns.begin(); score == BadScore() && it != suspect_aligns.end(); ) {
@@ -174,13 +176,13 @@ double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspec
         it = suspect_aligns.erase(it);
         
         cout << "Testing fragment " << left << ' ' << right << endl;
-        score = gnomon.Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
     }
     return score;
 }
 
-void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResidueVec& seq, TSignedSeqPos llimit, TSignedSeqPos rlimit, TGeneModelList::const_iterator il, TGeneModelList::const_iterator ir, TGeneModelList& models,
-             int window, int margin, bool leftmostwall, bool rightmostwall, bool leftmostanchor, bool rightmostanchor, double mpp, double nonconsensp, TGeneModelList& bad_aligns)
+void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGeneModelList::const_iterator il, TGeneModelList::const_iterator ir, TGeneModelList& models,
+             bool leftmostwall, bool rightmostwall, bool leftmostanchor, bool rightmostanchor, TGeneModelList& bad_aligns)
 {
     TGeneModelList aligns(il, ir);
 
@@ -195,9 +197,9 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
     TSignedSeqPos prev_bad_right = rlimit+1;
     bool do_it_again = false;
         
-    CGnomonEngine gnomon(hmm_params, seq, TSignedSeqRange(left, right));
+    m_gnomon->ResetRange(left, right);
 
-    RemoveShortHolesAndRescore(aligns, gnomon);
+    RemoveShortHolesAndRescore(aligns);
 
     TGeneModelList suspect_aligns;
     TSignedSeqRange tested_range;
@@ -233,18 +235,18 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
         if (right < prev_bad_right) {
             suspect_aligns.clear();
 
-            gnomon.ResetRange(left,right);
+            m_gnomon->ResetRange(left,right);
 
-            cout << left << ' ' << right << ' ' << gnomon.GetGCcontent() << endl;
+            cout << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
         
-            score = gnomon.Run(aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+            score = m_gnomon->Run(aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
         
             if(score == BadScore()) {
                 cout << "Inconsistent alignments in fragment " << left << ' ' << right << '\n';
 
                 score = TryWithoutObviouslyBadAlignments(aligns, suspect_aligns, bad_aligns,
-                                                         gnomon, leftwall, rightwall, leftanchor, rightanchor,
-                                                         left, right, mpp, nonconsensp, tested_range);
+                                                         leftwall, rightwall, leftanchor, rightanchor,
+                                                         left, right, tested_range);
             }
 
             if(score == BadScore()) {
@@ -258,12 +260,10 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
             suspect_aligns.sort(s_AlignScoreOrder);
 
             score = TryToEliminateOneAlignment(suspect_aligns, bad_aligns,
-                                               gnomon, leftwall, rightwall, leftanchor, rightanchor,
-                                               mpp, nonconsensp);
+                                               leftwall, rightwall, leftanchor, rightanchor);
             if (score == BadScore())
                 score = TryToEliminateAlignmentsFromTail(suspect_aligns, bad_aligns,
-                                                         gnomon, leftwall, rightwall, leftanchor, rightanchor,
-                                                         mpp, nonconsensp);
+                                                         leftwall, rightwall, leftanchor, rightanchor);
             if(score == BadScore()) {
                 cout << "!!! BAD SCORE EVEN WITH FINISHED ALIGNMENTS !!! " << endl;
                 ITERATE(TGeneModelList, it, suspect_aligns) {
@@ -274,7 +274,7 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
         }
         prev_bad_right = rlimit+1;
         
-        list<CGeneModel> genes = gnomon.GetGenes();
+        list<CGeneModel> genes = m_gnomon->GetGenes();
         
         TSignedSeqPos partial_start = right;
  
@@ -325,8 +325,7 @@ bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
             );
 }
 
-void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResidueVec& seq, TGeneModelList& models,
-             int window, int margin, bool wall, double mpp, double nonconsensp, TGeneModelList& bad_aligns)
+void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
 {
 
     models.sort(s_AlignSeqOrder);
@@ -396,8 +395,8 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
     }
     */
 
-    Predict(hmm_params, seq, left, TSignedSeqPos(seq.size()-1), il, aligns.end(), models, window, margin,
-            (left!=0 || wall), wall, left!=0, false, mpp, nonconsensp, bad_aligns);
+    Predict(left, TSignedSeqPos(m_gnomon->GetSeq().size())-1, il, aligns.end(), models,
+            (left!=0 || wall), wall, left!=0, false, bad_aligns);
 
     NON_CONST_ITERATE(TGeneModelList, it, models) {
 #ifdef _DEBUG
@@ -423,7 +422,32 @@ void CGnomonAnnotator::Predict(CConstRef<CHMMParameters> hmm_params, const CResi
         }
     }
 }
-    
+
+
+void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    arg_desc->AddKey("param", "param",
+                     "Organism specific parameters",
+                     CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey("window","window","Prediction window",CArgDescriptions::eInteger,"200000");
+    arg_desc->AddDefaultKey("margin","margin","The minimal distance between chains to place the end of prediction window",CArgDescriptions::eInteger,"1000");
+    arg_desc->AddFlag("open","Allow partial predictions at the ends of contigs. Used for poorly assembled genomes with lots of unfinished contigs.");
+    arg_desc->AddDefaultKey("mpp","mpp","Penalty for connection two protein containing chains into one model.",CArgDescriptions::eDouble,"10.0");
+    arg_desc->AddFlag("nonconsens","Allows to accept nonconsensus splices starts/stops to complete partial alignmet. If not allowed some partial alignments "
+                      "may be rejected if there is no way to complete them.");
+    arg_desc->AddDefaultKey("ncsp","ncsp","Nonconsensus penalty",CArgDescriptions::eDouble,"25");
+}
+
+void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& args)
+{
+    annot->SetHMMParameters(new CHMMParameters(args["param"].AsInputFile()));
+    annot->window = args["window"].AsInteger();
+    annot->margin = args["margin"].AsInteger();
+    annot->wall = !args["open"];
+    annot->mpp = args["mpp"].AsDouble();
+    bool nonconsens = args["nonconsens"];
+    annot->nonconsensp = (nonconsens ? -args["ncsp"].AsDouble() : BadScore());
+}
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 

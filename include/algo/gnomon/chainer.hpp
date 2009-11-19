@@ -97,13 +97,28 @@ struct Predicate {
     virtual bool operator()(CAlignModel& a) { return false; }
 };
 
+class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator_Base {
+public:
+    CGnomonAnnotator_Base();
+    virtual ~CGnomonAnnotator_Base();
+
+    void SetHMMParameters(CHMMParameters* params);
+    CRef<objects::CScope>& SetScope();
+    void SetGenomic(const CSeq_id& seqid);
+    CGnomonEngine& GetGnomon();
+
+protected:
+    CRef<CHMMParameters> m_hmm_params;
+    CRef<CScope> m_scope;
+    auto_ptr<CGnomonEngine> m_gnomon;
+};
+
 ////////////////////////////////////////////////////////////////////////
-class NCBI_XALGOGNOMON_EXPORT CChainer {
+class NCBI_XALGOGNOMON_EXPORT CChainer : public CGnomonAnnotator_Base {
 public:
     CChainer();
     ~CChainer();
 
-    void SetHMMParameters(CHMMParameters* params);
     void SetIntersectLimit(int value);
     void SetTrim(int trim);
     void SetMinPolyA(int minpolya);
@@ -111,10 +126,7 @@ public:
     void SetMinInframeFrac(double mininframefrac);
     map<string, pair<bool,bool> >& SetProtComplet();
     map<string,TSignedSeqRange>& SetMrnaCDS();
-    CRef<objects::CScope>& SetScope();
-    void SetGenomic(const CSeq_id& seqid);
     void SetGenomicRange(const TAlignModelList& alignments);
-    CGnomonEngine& GetGnomon();
 
     TransformFunction* TrimAlignment();
     TransformFunction* DoNotBelieveShortPolyATail();

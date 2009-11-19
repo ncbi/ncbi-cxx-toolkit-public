@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 
-void CGnomonAnnotator::FilterOutSingleExonEST(TGeneModelList& chains)
+void CGeneSelector::FilterOutSingleExonEST(TGeneModelList& chains)
 {
       for (TGeneModelList::iterator it = chains.begin(); it != chains.end();) {
         const CGeneModel& chain(*it++);
@@ -344,7 +344,7 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
     }
 }
 
-void CGnomonAnnotator::FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns)
+void CGeneSelector::FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns)
 {
     cls.sort(DescendingModelOrder);
     for(TGeneModelList::iterator it = cls.begin(); it != cls.end(); ++it) {
@@ -365,7 +365,7 @@ void CGnomonAnnotator::FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int 
     }
 }
 
-void  CGnomonAnnotator::FilterOutLowSupportModels(TGeneModelList& cls, int minsupport, int minCDS, bool allow_partialgenes, TGeneModelList& bad_aligns)
+void  CGeneSelector::FilterOutLowSupportModels(TGeneModelList& cls, int minsupport, int minCDS, bool allow_partialgenes, TGeneModelList& bad_aligns)
 {
     for(TGeneModelList::iterator jt_loop = cls.begin(); jt_loop != cls.end();) {
         TGeneModelList::iterator jt = jt_loop++;
@@ -406,7 +406,7 @@ bool CModelCompare::RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& alg
     return false;
 }
 
-CGnomonAnnotator::ECompat CGnomonAnnotator::CheckCompatibility(const CAltSplice& gene, const CGeneModel& algn, int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts)
+CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene, const CGeneModel& algn, int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts)
 {
     TSignedSeqRange gene_lim_with_margins( gene.Limits().GetFrom() - minIntergenic, gene.Limits().GetTo() + minIntergenic );
     TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front().CompleteCds()) ? gene.RealCdsLimits() : gene.front().MaxCdsLimits();
@@ -471,7 +471,7 @@ CGnomonAnnotator::ECompat CGnomonAnnotator::CheckCompatibility(const CAltSplice&
     return eNotCompatible;
 }
 
-void CGnomonAnnotator::FindGenesPass1(const TGeneModelList& cls, list<CAltSplice>& alts,
+void CGeneSelector::FindGenesPass1(const TGeneModelList& cls, list<CAltSplice>& alts,
                                       int minIntergenic, double altfrac, int composite,
                                       bool allow_opposite_strand, bool allow_partialalts,
                                       list<const CGeneModel*>& possibly_alternative, TGeneModelList& rejected)
@@ -523,7 +523,7 @@ void CGnomonAnnotator::FindGenesPass1(const TGeneModelList& cls, list<CAltSplice
     }
 }
 
-void CGnomonAnnotator::FindGenesPass2(const list<const CGeneModel*>& possibly_alternative, list<CAltSplice>& alts,
+void CGeneSelector::FindGenesPass2(const list<const CGeneModel*>& possibly_alternative, list<CAltSplice>& alts,
                                       int minIntergenic, double altfrac, int composite,
                                       bool allow_opposite_strand, bool allow_partialalts,
                                       TGeneModelList& bad_aligns)
@@ -581,7 +581,7 @@ void CGnomonAnnotator::FindGenesPass2(const list<const CGeneModel*>& possibly_al
     }
 }
 
-void CGnomonAnnotator::FindGenesPass3(const TGeneModelList& rejected, list<CAltSplice>& alts,
+void CGeneSelector::FindGenesPass3(const TGeneModelList& rejected, list<CAltSplice>& alts,
                                       int minIntergenic, double altfrac, int composite,
                                       bool allow_opposite_strand, bool allow_partialalts,
                                       TGeneModelList& bad_aligns)
@@ -613,7 +613,7 @@ void CGnomonAnnotator::FindGenesPass3(const TGeneModelList& rejected, list<CAltS
     }
 }
 
-void CGnomonAnnotator::FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSplice>& alts, int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts, TGeneModelList& bad_aligns)
+void CGeneSelector::FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSplice>& alts, int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts, TGeneModelList& bad_aligns)
 {
     list<const CGeneModel*> possibly_alternative;
     TGeneModelList rejected;
@@ -654,7 +654,7 @@ bool CModelCompare::HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel
 
 
 
-void CGnomonAnnotator::FilterOutTandemOverlap(TGeneModelList&cls, double fraction, TGeneModelList& bad_aligns)
+void CGeneSelector::FilterOutTandemOverlap(TGeneModelList&cls, double fraction, TGeneModelList& bad_aligns)
 {
     cls.sort(DescendingModelOrder);
     for(TGeneModelList::iterator it_loop = cls.begin(); it_loop != cls.end();) {
@@ -687,7 +687,7 @@ void CGnomonAnnotator::FilterOutTandemOverlap(TGeneModelList&cls, double fractio
 }
 
 
-TGeneModelList CGnomonAnnotator::SelectCompleteModels(TGeneModelList& chains,
+TGeneModelList CGeneSelector::SelectCompleteModels(TGeneModelList& chains,
                           int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts, bool allow_partialgenes, TGeneModelList& bad_aligns)
 {        
     TGeneModelList models;

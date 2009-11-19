@@ -40,17 +40,22 @@
 
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/gnomon.hpp>
+#include <algo/gnomon/chainer.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CArgDescriptions;
+class CArgs;
+
 BEGIN_SCOPE(gnomon)
 
 class CAltSplice;
 
-class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator {
+class NCBI_XALGOGNOMON_EXPORT CGeneSelector {
 public:
-    CGnomonAnnotator();
+    CGeneSelector();
     void FilterOutSingleExonEST(TGeneModelList& chains);
     void FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns);
     void FilterOutLowSupportModels(TGeneModelList& cls, int minsupport, int minCDS, bool allow_partialgenes, TGeneModelList& bad_aligns);
@@ -61,14 +66,8 @@ public:
                               int composite, bool opposite,
                               bool allow_partialalts, bool allow_partialgenes, TGeneModelList& bad_aligns);
 
-    void Predict(CConstRef<CHMMParameters> hmm_params, const CResidueVec& seq,
-                 TGeneModelList& models,
-                 int window, int margin, bool wall, double mpp, double nonconsensp,
-                 TGeneModelList& bad_aligns);
-
 private:
 
-    void RemoveShortHolesAndRescore(TGeneModelList chains, const CGnomonEngine& gnomon);
     void FindGenesPass1(const TGeneModelList& cls, list<CAltSplice>& alts,
                         int minIntergenic, double altfrac, int composite,
                         bool allow_opposite_strand, bool allow_partialalts,
@@ -87,29 +86,41 @@ private:
     void FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSplice>& alts,
                                 int minIntergenic, double altfrac, int composite, bool allow_opposite_strand, bool allow_partialalts,
                                 TGeneModelList& bad_aligns);
+};
 
-    void Predict(CConstRef<CHMMParameters> hmm_params, const CResidueVec& seq,
-                 TSignedSeqPos llimit, TSignedSeqPos rlimit, TGeneModelList::const_iterator il, TGeneModelList::const_iterator ir,
+class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator : public CGnomonAnnotator_Base {
+public:
+    CGnomonAnnotator();
+    ~CGnomonAnnotator();
+
+    void Predict(TGeneModelList& models,
+                 TGeneModelList& bad_aligns);
+
+
+private:
+    void RemoveShortHolesAndRescore(TGeneModelList chains);
+    void Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGeneModelList::const_iterator il, TGeneModelList::const_iterator ir,
                  TGeneModelList& models,
-                 int window, int margin, bool leftmostwall, bool rightmostwall, bool leftmostanchor, bool rightmostanchor,
-                 double mpp, double nonconsensp, TGeneModelList& bad_aligns);
+                 bool leftmostwall, bool rightmostwall, bool leftmostanchor, bool rightmostanchor,
+                 TGeneModelList& bad_aligns);
 
     double TryWithoutObviouslyBadAlignments(TGeneModelList& aligns, TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
-                                            CGnomonEngine& gnomon,
                                             bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
                                             TSignedSeqPos left, TSignedSeqPos right,
-                                            double mpp, double nonconsensp, TSignedSeqRange& tested_range);
+                                            TSignedSeqRange& tested_range);
     double TryToEliminateOneAlignment(TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
-                                      CGnomonEngine& gnomon,
-                                      bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
-                                      double mpp, double nonconsensp);
+                                      bool leftwall, bool rightwall, bool leftanchor, bool rightanchor);
     double TryToEliminateAlignmentsFromTail(TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
-                                                              CGnomonEngine& gnomon,
-                                                              bool leftwall, bool rightwall, bool leftanchor, bool rightanchor,
-                                                              double mpp, double nonconsensp);
-    double ExtendJustThisChain(CGeneModel& chain, CGnomonEngine& gnomon, TSignedSeqPos left, TSignedSeqPos right,
-                               double mpp, double nonconsensp);
+                                            bool leftwall, bool rightwall, bool leftanchor, bool rightanchor);
+    double ExtendJustThisChain(CGeneModel& chain, TSignedSeqPos left, TSignedSeqPos right);
     
+    int window;
+    int margin;
+    bool wall;
+    double mpp;
+    double nonconsensp;
+
+    friend class CGnomonAnnotatorArgUtil;
 };
 
 class CModelCompare {
@@ -120,6 +131,18 @@ public:
     static bool BadOverlapTest(const CGeneModel& a, const CGeneModel& b);
     static bool RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn);
     static bool HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel& b);
+};
+
+class NCBI_XALGOGNOMON_EXPORT CGeneSelectorArgUtil {
+public:
+    static void SetupArgDescriptions(CArgDescriptions* arg_desc);
+    static void ReadArgs(CGeneSelector* annot, const CArgs& args);
+};
+
+class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotatorArgUtil {
+public:
+    static void SetupArgDescriptions(CArgDescriptions* arg_desc);
+    static void ReadArgs(CGnomonAnnotator* annot, const CArgs& args);
 };
 
 END_SCOPE(gnomon)
