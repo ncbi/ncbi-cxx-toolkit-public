@@ -28,7 +28,7 @@
 * ===========================================================================
 */
 
-/// @file remote_services.cpp
+/// @file blast_services.cpp
 /// Implementation of CBlastServices class
 
 #include <ncbi_pch.hpp>
