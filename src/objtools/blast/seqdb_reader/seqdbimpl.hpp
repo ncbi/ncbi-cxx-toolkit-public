@@ -1205,13 +1205,15 @@ private:
     /// @return
     ///   The mapped local cache ID
     int x_GetCacheID(CSeqDBLockHold &locked) const {
-        int threadID = CThread::GetSelf();
-        if (m_CacheID.find(threadID) != m_CacheID.end()) {
-            return m_CacheID[threadID];
+        if (m_NextCacheID < m_NumThreads) {
+            m_Atlas.Lock(locked);
         }
-        m_Atlas.Lock(locked);
-        m_CacheID[threadID] = m_NextCacheID;
-        return m_NextCacheID++;
+        int threadID = CThread::GetSelf();
+        if (m_CacheID.find(threadID) == m_CacheID.end()) {
+            m_CacheID[threadID] = m_NextCacheID++;
+        }
+        m_Atlas.Unlock(locked);
+        return m_CacheID[threadID];
     }
 
     /// This callback functor allows the atlas code flush any cached

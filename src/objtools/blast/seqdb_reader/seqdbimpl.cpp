@@ -297,6 +297,9 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
+
+    int cacheID = (m_NumThreads) ? x_GetCacheID(locked) : 0;
+
     m_Atlas.Lock(locked);
 
     if (! state_obj) {
@@ -322,7 +325,6 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
 
     // fill the cache for all sequence in mmaped slice
     if (m_NumThreads) {
-        int cacheID = x_GetCacheID(locked);
         SSeqResBuffer * buffer = m_CachedSeqs[cacheID];
         x_FillSeqBuffer(buffer, begin_chunk, locked);
         end_chunk = begin_chunk + buffer->results.size();
