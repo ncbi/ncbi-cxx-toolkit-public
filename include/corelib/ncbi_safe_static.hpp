@@ -111,8 +111,7 @@ public:
     CSafeStaticPtr_Base(FSelfCleanup self_cleanup,
                         FUserCleanup user_cleanup = 0,
                         TLifeSpan life_span = TLifeSpan::GetDefault())
-        : m_Ptr(NULL),
-          m_SelfCleanup(self_cleanup),
+        : m_SelfCleanup(self_cleanup),
           m_UserCleanup(user_cleanup),
           m_LifeSpan(life_span.GetLifeSpan()),
           m_CreationOrder(x_GetCreationOrder())
