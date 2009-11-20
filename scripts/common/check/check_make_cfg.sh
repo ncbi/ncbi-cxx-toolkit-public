@@ -291,6 +291,7 @@ if ! \$is_db_load; then
     rm -f "\$res_log"
 fi
 
+
 ##  Run one test
 
 RunTest() {
@@ -299,10 +300,11 @@ RunTest() {
    x_test="\$2"
    x_app="\$3"
    x_run="\${4:-\$x_app}"
-   x_name="\${5:-\$x_run}"  
    x_real_name="\$5"
+   x_name="\${5:-\$x_run}"  
    x_ext="\$6"
    x_timeout="\$7"
+   x_authors="\$8"
  
    x_work_dir="\$check_dir/\$x_wdir"
    mkdir -p "\$x_work_dir" > /dev/null 2>&1 
@@ -351,7 +353,6 @@ RunTest() {
    fi
 
    x_cmd="[\$build_tree/\$build_cfg/\$x_wdir]"
-##   x_cmd="[\$x_wdir]"
 
    if test \$result -eq 0; then
       echo "ABS --  \$x_cmd - \$x_test"
@@ -535,13 +536,14 @@ for x_row in $x_tests; do
    # Write current test commands into a script file
    cat >> $x_out <<EOF
 ######################################################################
-RunTest "$x_rel_dir" \\
-        "$x_test" \\
-        "$x_app" \\
-        "$x_cmd" \\
-        "$x_name" \\
+RunTest "$x_rel_dir"  \\
+        "$x_test"     \\
+        "$x_app"      \\
+        "$x_cmd"      \\
+        "$x_name"     \\
         "$x_test_ext" \\
-        "$x_timeout"
+        "$x_timeout"  \\
+        "$x_authors"
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
