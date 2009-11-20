@@ -697,7 +697,29 @@ private:
     
     string m_Db;
     string m_DbType;
+
+    void x_GetVolumeList(const vector <string> &dbs, 
+                                CSeqDB::ESeqType stype, 
+                                set <string> &list) const;
 };
+
+void CDbTest::x_GetVolumeList(const vector <string>  &dbs, 
+                              CSeqDB::ESeqType       stype, 
+                              set <string>          &list) const {
+
+    ITERATE(vector<string>, iter, dbs) {
+        vector <string> paths;
+        try {
+            CSeqDB::FindVolumePaths(*iter, stype, paths);
+        } catch (...) {
+            m_Out.Log(e_Summary) 
+                 << endl << "BLAST AliasDB error: Could not find all volume or alias "
+                 << "files referenced in " << *iter << ", [skipped]" << endl;
+            continue;
+        }
+        list.insert(paths.begin(), paths.end());
+    }
+}
 
 bool CDbTest::Test(CTestAction & action)
 {
@@ -708,13 +730,17 @@ bool CDbTest::Test(CTestAction & action)
     NStr::Tokenize(m_Db, " ", dbs, NStr::eMergeDelims);
     
     CSeqDB::ESeqType seqtype = ParseTypeString(m_DbType);
+
+    set <string> vol_list;
+    
+    x_GetVolumeList(dbs, seqtype, vol_list);
     
     m_Out.Log(e_Summary)
-        << "Testing " << dbs.size() << " database(s)." << endl;
+        << "Testing " << vol_list.size() << " volume(s)." << endl;
     
-    int total = dbs.size(), passed = 0;
+    int total = vol_list.size(), passed = 0;
     
-    ITERATE(vector<string>, iter, dbs) {
+    ITERATE(set<string>, iter, vol_list) {
         CRef<CSeqDB> db(new CSeqDB(*iter, seqtype));
         bool okay = action.DoTest(*db, seen);
         
@@ -728,12 +754,12 @@ bool CDbTest::Test(CTestAction & action)
     if (total == passed) {
         m_Out.Log(e_Brief)
             << " Result=SUCCESS. No errors reported for "
-            << total << " databases." << endl;
+            << total << " volume(s)." << endl;
     } else {
         m_Out.Log(e_Brief)
             << " Result=FAILURE. "
             << (total-passed) << " errors reported for "
-            << total << " databases." << endl;
+            << total << " volume(s)." << endl;
     }
     
     return success;
@@ -807,7 +833,7 @@ bool CDirTest::Test(CTestAction & action)
     int total = prot_list.size() + nucl_list.size(), passed = 0;
 
     m_Out.Log(e_Summary)
-        << "Testing " << total << " volumne(s)." << endl;
+        << "Testing " << total << " volume(s)." << endl;
     
     
     ITERATE(set<string>, iter, prot_list) {
