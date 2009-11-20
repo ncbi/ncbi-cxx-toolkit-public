@@ -877,10 +877,10 @@ CSeqDB::FindVolumePaths(const string   & dbname,
 }
 
 void
-CSeqDB::FindVolumePaths(vector<string> & paths) const
+CSeqDB::FindVolumePaths(vector<string> & paths, bool recursive) const
 {
     m_Impl->Verify();
-    m_Impl->FindVolumePaths(paths);
+    m_Impl->FindVolumePaths(paths, recursive);
     m_Impl->Verify();
 }
 

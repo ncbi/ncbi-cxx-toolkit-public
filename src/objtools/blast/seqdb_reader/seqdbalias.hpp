@@ -465,7 +465,9 @@ public:
     ///
     /// @param vols
     ///   The returned set of volume names
-    void GetVolumeNames(vector<string> & vols) const;
+    /// @param recursive
+    ///   If true will descend the alias tree to the volume nodes
+    void GetVolumeNames(vector<string> & vols, bool recursive=true) const;
     
     /// Get the title
     ///
@@ -988,6 +990,11 @@ public:
         return m_VolumeNames;
     }
     
+    void GetVolumeNames(vector<string> & vols) const
+    {
+        m_Node->GetVolumeNames(vols, false);
+    };
+
     /// Get the title
     ///
     /// This iterates the alias node tree to build and return a title

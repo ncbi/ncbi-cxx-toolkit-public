@@ -1234,10 +1234,14 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
 }
 
 void
-CSeqDBImpl::FindVolumePaths(vector<string> & paths) const
+CSeqDBImpl::FindVolumePaths(vector<string> & paths, bool recursive) const
 {
     CHECK_MARKER();
-    paths = m_Aliases.GetVolumeNames();
+    if (recursive) {
+        paths = m_Aliases.GetVolumeNames();
+    } else {
+        m_Aliases.GetVolumeNames(paths);
+    }
 }
 
 void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)

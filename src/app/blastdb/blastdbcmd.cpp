@@ -251,7 +251,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
 
     // Print volume names
     vector<string> volumes;
-    m_BlastDb->FindVolumePaths(volumes);
+    m_BlastDb->FindVolumePaths(volumes,false);
     out << endl << "Volumes:" << endl;
     ITERATE(vector<string>, file_name, volumes) {
         out << "\t" << *file_name << endl;

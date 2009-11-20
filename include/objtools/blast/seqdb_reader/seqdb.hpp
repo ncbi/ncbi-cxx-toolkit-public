@@ -903,7 +903,9 @@ public:
     ///
     /// @param paths
     ///   The returned set of resolved database path names
-    void FindVolumePaths(vector<string> & paths) const;
+    /// @param recursive
+    ///   If true, the search will continue till volume file is found
+    void FindVolumePaths(vector<string> & paths, bool recursive=true) const;
     
     /// Set Iteration Range
     ///

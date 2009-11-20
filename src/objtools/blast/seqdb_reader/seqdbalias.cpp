@@ -917,10 +917,26 @@ Int4 x_CompareVolume(const string & s1, const string & s2)
 } 
 
 
-void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols) const
+void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols, bool recursive) const
 {
+
     set<string> volset;
-    x_GetVolumeNames(volset);
+
+    if (recursive) {
+        x_GetVolumeNames(volset);
+    } else {
+        ITERATE(vector<CSeqDB_BasePath>, path, m_VolNames) {
+            volset.insert(path->GetBasePathS());
+        }
+        ITERATE(TSubNodeList, iter, m_SubNodes) {
+            ITERATE(vector<CSeqDB_BasePath>, path, (*iter)->m_VolNames) {
+                volset.insert(path->GetBasePathS());
+            }
+            ITERATE(TSubNodeList, sub, (*iter)->m_SubNodes) {
+                volset.insert(((*sub)->m_ThisName).GetPathS());
+            }
+        }
+    }
     
     vols.clear();
     ITERATE(set<string>, iter, volset) {
