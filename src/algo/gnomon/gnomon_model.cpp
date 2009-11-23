@@ -331,18 +331,6 @@ void CGeneModel::RemoveShortHolesAndRescore(const CGnomonEngine& gnomon) {
     }
 }
 
-bool CGeneModel::GoodEnoughToBeAlternative(int maxcomposite) const
-{
-    int composite = 0;
-    ITERATE(CSupportInfoSet, s, Support()) {
-        if(s->IsCore() && ++composite > maxcomposite) return false;
-    }
-    
-    return GoodEnoughToBeAnnotation();
-
-    //        && !PStop() && FrameShifts().empty() &&
-    //        !isNMD();
-}
 bool CGeneModel::CdsInvariant(bool check_start_stop) const
 {
     _ASSERT( !(ConfirmedStart() && OpenCds()) );
@@ -1193,6 +1181,8 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     attributes["ID"] = NStr::IntToString(a.ID());
     if (a.GeneID()!=0)
         attributes["Parent"] = "gene"+NStr::IntToString(a.GeneID());
+    if (a.RankInGene()!=0)
+        attributes["rankInGene"] = NStr::IntToString(a.RankInGene());
 
     ITERATE(CSupportInfoSet, i, a.Support()) {
         attributes["support"] += ",";
@@ -1292,6 +1282,9 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
 
     if (NStr::StartsWith(attributes["Parent"],"gene"))
         a.SetGeneID(NStr::StringToInt(attributes["Parent"],NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols));
+    if (!attributes["rankInGene"].empty()) {
+        a.SetRankInGene(NStr::StringToInt(attributes["rankInGene"]));
+    }
 
     if (!attributes["Target"].empty()) {
         string target = NStr::Replace(attributes["Target"], "%20", " ");

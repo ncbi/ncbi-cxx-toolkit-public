@@ -303,7 +303,7 @@ public:
     };
 
     CGeneModel(EStrand s = ePlus, int id = 0, int type = 0) :
-        m_type(type), m_id(id), m_status(0), m_expecting_hole(false), m_strand(s), m_geneid(0) {}
+        m_type(type), m_id(id), m_status(0), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
     virtual ~CGeneModel() {}
 
     void AddExon(TSignedSeqRange exon);
@@ -358,6 +358,8 @@ public:
     int Type() const { return m_type; }
     int GeneID() const { return m_geneid; }
     void SetGeneID(int id) { m_geneid = id; }
+    int RankInGene() const { return m_rank_in_gene; }
+    void SetRankInGene(int rank) { m_rank_in_gene = rank; }
     int ID() const { return m_id; }
     void SetID(int id) { m_id = id; }
     const CSupportInfoSet& Support() const { return m_support; }
@@ -397,7 +399,6 @@ public:
         _ASSERT( !(OpenCds()&&ConfirmedStart()) );
         return (ReadingFrame().Empty() || (!OpenCds() && FullCds()));
     }
-    bool GoodEnoughToBeAlternative(int maxcomposite) const;
 
     bool Open5primeEnd() const
     {
@@ -487,6 +488,7 @@ private:
     bool CdsInvariant(bool check_start_stop = true) const;
 
     int m_geneid;
+    int m_rank_in_gene;
     CSupportInfoSet m_support;
     string m_protein_hit;
     string m_comment;
