@@ -1818,7 +1818,7 @@ bool CTime::operator< (const CTime& t) const
 bool CTime::IsLeap(void) const
 {
     int year = Year();
-    return year % 4 == 0  &&  year % 100 != 0  ||  year % 400 == 0;
+    return (year % 4 == 0  &&  year % 100 != 0)  ||  year % 400 == 0;
 }
 
 
@@ -2437,6 +2437,7 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
                    "CTimeout::GetAsMilliSeconds(): cannot convert " \
                    "from special timeout value");
     }
+#if (SIZEOF_INT == SIZEOF_LONG)
     // Roughly calculate maximum number of seconds that can be safely converted
     // to milliseconds without overflow.
     if (m_Sec > (kMax_ULong/1000 - 1)) {
@@ -2444,6 +2445,7 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
                    "CTimeout::GetAsMilliSeconds(): timeout value " \
                    "is too big to convert to 'unsigned long'");
     }
+#endif
     return m_Sec * kMilliSecondsPerSecond + m_MicroSec / 1000;
 }
 
@@ -2466,6 +2468,7 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
                    "CTimeout::GetAsTimeSpan(): cannot convert " \
                    "from special timeout value");
     }
+#if (SIZEOF_INT == SIZEOF_LONG)
     if ( m_Sec > (long)kMax_Long ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "CTimeout::GetAsTimeSpan(): timeout value " \
@@ -2473,6 +2476,7 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
         // We don't need to check microseconds here, because it always have
         // normalized value and can be safely converted to nanoseconds.
     }
+#endif
     CTimeSpan ts(m_Sec, long(m_MicroSec)*1000);
     return ts;
 }
