@@ -978,10 +978,10 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
             else {
                 // all versions
                 int packed = 0;
-                for ( int ver = 0; ver < 2; ++ver, key.SetVersion(kMin_Int) ) {
-                    for ( TPackedMap_CI it = m_PackedMap.lower_bound(key);
-                          it != m_PackedMap.end() && it->first.EqualAcc(key);
-                          ++it ) {
+                for ( TPackedMap_CI it = m_PackedMap.lower_bound(key);
+                      it != m_PackedMap.end() && it->first.SameHashNoVer(key);
+                      ++it ) {
+                    if ( it->first.EqualAcc(key) ) {
                         const CSeq_id_Textseq_Info* info = it->second;
                         if ( packed == 0 ) {
                             packed = info->ParseAccNumber(str);
@@ -989,7 +989,6 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                         _ASSERT(packed == info->ParseAccNumber(str));
                         id_list.insert(CSeq_id_Handle(info, packed));
                     }
-                    
                 }
             }
         }
@@ -1024,13 +1023,14 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
             static_cast<const CSeq_id_Textseq_Info*>(GetInfo(id));
         if ( !info->IsSetVersion() ) {
             // add all known versions
-            TPackedKey key = info->GetKey();
-            key.SetVersion(kMin_Int);
+            const TPackedKey& key = info->GetKey();
             for ( TPackedMap_CI it = m_PackedMap.lower_bound(key);
-                  it != m_PackedMap.end() && it->first.EqualAcc(key);
+                  it != m_PackedMap.end() && it->first.SameHashNoVer(key);
                   ++it ) {
-                const CSeq_id_Textseq_Info* info = it->second;
-                id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
+                if ( it->first.EqualAcc(key) ) {
+                    const CSeq_id_Textseq_Info* info = it->second;
+                    id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
+                }
             }
         }
         if ( !m_ByAcc.empty() ) {

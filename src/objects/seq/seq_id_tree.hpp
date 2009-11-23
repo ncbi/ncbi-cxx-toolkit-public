@@ -309,8 +309,14 @@ public:
                  NStr::CompareNocase(m_Prefix, b.m_Prefix) < 0);
         }
 
+        bool SameHash(const TKey& b) const {
+            return m_Hash == b.m_Hash;
+        }
+        bool SameHashNoVer(const TKey& b) const {
+            return ((m_Hash ^ b.m_Hash) & ~1) == 0;
+        }
         bool EqualAcc(const TKey& b) const {
-            return ((m_Hash ^ b.m_Hash) & ~1) == 0 &&
+            return SameHashNoVer(b) &&
                 NStr::EqualNocase(m_Prefix, b.m_Prefix);
         }
 
