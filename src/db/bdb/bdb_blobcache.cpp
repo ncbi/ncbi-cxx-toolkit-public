@@ -2380,7 +2380,7 @@ bool CBDB_Cache::Read(const string& key,
     int tz_delta = m_LocalTimer.GetLocalTimezone();
 
     int overflow = 0;
-    unsigned volume_id, split_id;
+    unsigned volume_id = 0, split_id = 0;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
     if (!blob_id) return false;
@@ -2620,7 +2620,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     time_t curr = time(0);
     int tz_delta = m_LocalTimer.GetLocalTimezone();
     int overflow = 0;
-    unsigned volume_id, split_id;
+    unsigned volume_id = 0, split_id = 0;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
     if (!blob_id) return 0;
@@ -2826,7 +2826,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     time_t curr = time(0);
     int tz_delta = m_LocalTimer.GetLocalTimezone();
     int overflow = 0;
-    unsigned volume_id, split_id;
+    unsigned volume_id = 0, split_id = 0;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
     if (!blob_id) {

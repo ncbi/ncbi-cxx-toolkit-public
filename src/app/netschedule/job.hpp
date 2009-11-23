@@ -153,7 +153,7 @@ public:
     unsigned       GetAffinityId() const
     { return m_AffinityId; }
     bool           HasAffinityToken() const
-    { return m_AffinityToken.size(); }
+    { return m_AffinityToken.size() != 0; }
     const string&  GetAffinityToken() const
     { return m_AffinityToken; }
 

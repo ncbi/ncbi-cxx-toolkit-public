@@ -2006,6 +2006,7 @@ CNCMMReserve::FillChunksFromChains(CNCMMFreeChunk** chunk_ptrs,
     CSpinGuard guard(m_ObjLock);
 
     SNCMMChainInfo cur_chain;
+    cur_chain.Initialize();
     if (!x_FindFreeChain(1, &cur_chain))
         return 0;
     unsigned int cnt_chains = 0, cnt_chunks = 0;
@@ -3266,24 +3267,34 @@ END_NCBI_SCOPE
 
 void*
 operator new (size_t size)
+#if defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_GCC)
+throw (std::bad_alloc)
+#else
+throw ()
+#endif
 {
     return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
 }
 
 void
-operator delete (void* ptr)
+operator delete (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
 
 void*
 operator new[] (size_t size)
+#if defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_GCC)
+throw (std::bad_alloc)
+#else
+throw ()
+#endif
 {
     return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
 }
 
 void
-operator delete[] (void* ptr)
+operator delete[] (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }

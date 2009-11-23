@@ -203,7 +203,7 @@ int CQueueDbBlockArray::Allocate()
 
 bool CQueueDbBlockArray::Allocate(int pos)
 {
-    if (pos < 0  || pos >= m_Count) return false;
+    if (pos < 0  || pos >= int(m_Count)) return false;
     if (m_Array[pos].allocated) return false;
     m_Array[pos].allocated = true;
     return true;

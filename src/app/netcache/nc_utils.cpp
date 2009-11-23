@@ -54,7 +54,7 @@ g_GetNCThreadIndex(void)
                       reinterpret_cast<size_t>(NCTlsGet(s_NCThreadIndexKey)));
     if (!index) {
         index = static_cast<TNCThreadIndex>(s_NextThreadIndex.Add(1));
-        NCTlsSet(s_NCThreadIndexKey, reinterpret_cast<void*>(index));
+        NCTlsSet(s_NCThreadIndexKey, (void*)index);
     }
     return index;
 }
