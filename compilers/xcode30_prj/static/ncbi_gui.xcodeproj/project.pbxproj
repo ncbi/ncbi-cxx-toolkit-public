@@ -41,7 +41,7 @@
           <key>GCC_DEBUGGING_SYMBOLS</key>
           <string>default</string>
           <key>SDKROOT</key>
-          <string>$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk</string>
+          <string></string>
           <key>FRAMEWORK_SEARCH_PATHS</key>
           <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
           <key>DEAD_CODE_STRIPPING</key>
@@ -91,7 +91,7 @@
           <key>GCC_DEBUGGING_SYMBOLS</key>
           <string>default</string>
           <key>SDKROOT</key>
-          <string>$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk</string>
+          <string></string>
           <key>FRAMEWORK_SEARCH_PATHS</key>
           <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
           <key>DEAD_CODE_STRIPPING</key>
@@ -135,7 +135,7 @@
           <key>GCC_GENERATE_DEBUGGING_SYMBOLS</key>
           <string>NO</string>
           <key>SDKROOT</key>
-          <string>$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk</string>
+          <string></string>
           <key>FRAMEWORK_SEARCH_PATHS</key>
           <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
           <key>DEAD_CODE_STRIPPING</key>
@@ -179,7 +179,7 @@
           <key>GCC_GENERATE_DEBUGGING_SYMBOLS</key>
           <string>NO</string>
           <key>SDKROOT</key>
-          <string>$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk</string>
+          <string></string>
           <key>FRAMEWORK_SEARCH_PATHS</key>
           <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
           <key>DEAD_CODE_STRIPPING</key>
