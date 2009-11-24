@@ -650,6 +650,9 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
                     continue;
                 case 1:              // no introns in intersection
                 {
+                    if(mi.m_type == eCDS && mj.m_type == eCDS && ai.MaxCdsLimits().IntersectingWith(aj.MaxCdsLimits()))  // no intersecting limit for coding
+                        break;
+
                     int intersection_len = (ai_limits & aj.Limits()).GetLength(); 
                     if (intersection_len < intersect_limit) continue;
                     break;
@@ -721,6 +724,9 @@ void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
                     continue;
                 case 1:              // no introns in intersection
                 {
+                    if(mi.m_type == eCDS && mj.m_type == eCDS && ai.MaxCdsLimits().IntersectingWith(aj.MaxCdsLimits()))  // no intersecting limit for coding
+                        break;
+
                     int intersect = (ai_limits & aj.Limits()).GetLength(); 
                     if(intersect < intersect_limit) continue;
                     break;
