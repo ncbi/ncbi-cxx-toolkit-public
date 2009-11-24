@@ -124,7 +124,7 @@ CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
 {
     bool mutex_locked = false;
     if ( x_IsStdStatic()  &&  !Init_Lock(&mutex_locked) ) {
-        Cleanup();
+        x_Cleanup();
     }
     Init_Unlock(mutex_locked);
 }
@@ -175,7 +175,7 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
 
     // Call Cleanup() for all variables registered
     NON_CONST_ITERATE(TStack, it, *sm_Stack) {
-        (*it)->Cleanup();
+        (*it)->x_Cleanup();
     }
 
     delete sm_Stack;
@@ -189,7 +189,7 @@ static CSafeStaticGuard sg_CleanupGuard;
 
 
 // Initialization of the guard
-CSafeStaticGuard* CSafeStaticGuard::Get(void)
+CSafeStaticGuard* CSafeStaticGuard::x_Get(void)
 {
     // Local static variable - to initialize the guard
     // as soon as the function is called (global static

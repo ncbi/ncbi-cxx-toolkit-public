@@ -148,10 +148,12 @@ private:
 
     // To be called by CSafeStaticGuard on the program termination
     friend class CSafeStaticGuard;
-    void Cleanup(void)
+    void x_Cleanup(void)
     {
-        if ( m_UserCleanup )  m_UserCleanup(m_Ptr);
-        if ( m_SelfCleanup )  m_SelfCleanup(&m_Ptr);
+        if ( m_UserCleanup )
+            m_UserCleanup(m_Ptr);
+        if ( m_SelfCleanup )
+            m_SelfCleanup(&m_Ptr);
     }
 
 };
@@ -196,14 +198,14 @@ public:
     // default life span is normal.
     CSafeStaticPtr(FUserCleanup user_cleanup = 0,
                    TLifeSpan life_span = TLifeSpan::GetDefault())
-        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup, life_span)
+        : CSafeStaticPtr_Base(x_SelfCleanup, user_cleanup, life_span)
     {}
 
     // Create the variable if not created yet, return the reference
     T& Get(void)
     {
         if ( !m_Ptr ) {
-            Init();
+            x_Init();
         }
         return *static_cast<T*> (m_Ptr);
     }
@@ -211,7 +213,7 @@ public:
     T& Get(FUserCreate user_create)
     {
         if ( !m_Ptr ) {
-            Init(user_create);
+            x_Init(user_create);
         }
         return *static_cast<T*> (m_Ptr);
     }
@@ -227,13 +229,13 @@ public:
 
 private:
     // Initialize the object
-    void Init(void);
+    void x_Init(void);
 
     template <class FUserCreate>
-    void Init(FUserCreate user_create);
+    void x_Init(FUserCreate user_create);
 
     // "virtual" cleanup function
-    static void SelfCleanup(void** ptr)
+    static void x_SelfCleanup(void** ptr)
     {
         T* tmp = static_cast<T*> (*ptr);
         *ptr = 0;
@@ -265,14 +267,14 @@ public:
     // default life span is normal.
     CSafeStaticRef(FUserCleanup user_cleanup = 0,
                    TLifeSpan life_span = TLifeSpan::GetDefault())
-        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup, life_span)
+        : CSafeStaticPtr_Base(x_SelfCleanup, user_cleanup, life_span)
     {}
 
     // Create the variable if not created yet, return the reference
     T& Get(void)
     {
         if ( !m_Ptr ) {
-            Init();
+            x_Init();
         }
         return *static_cast<T*>(m_Ptr);
     }
@@ -280,7 +282,7 @@ public:
     T& Get(FUserCreate user_create)
     {
         if ( !m_Ptr ) {
-            Init(user_create);
+            x_Init(user_create);
         }
         return *static_cast<T*>(m_Ptr);
     }
@@ -295,13 +297,13 @@ public:
 
 private:
     // Initialize the object and the reference
-    void Init(void);
+    void x_Init(void);
 
     template <class FUserCreate>
-    void Init(FUserCreate user_create);
+    void x_Init(FUserCreate user_create);
 
     // "virtual" cleanup function
-    static void SelfCleanup(void** ptr)
+    static void x_SelfCleanup(void** ptr)
     {
         T* tmp = static_cast<T*>(*ptr);
         if ( tmp ) {
@@ -339,14 +341,14 @@ public:
             return;
         }
         if ( !sm_Stack ) {
-            Get();
+            x_Get();
         }
         sm_Stack->insert(ptr);
     }
 
 private:
     // Initialize the guard, return pointer to it.
-    static CSafeStaticGuard* Get(void);
+    static CSafeStaticGuard* x_Get(void);
 
     // Stack to keep registered variables.
     typedef multiset<CSafeStaticPtr_Base*, CSafeStatic_Less> TStack;
@@ -400,7 +402,7 @@ void CSafeStaticPtr<T>::Set(T* object)
 
 template <class T>
 inline
-void CSafeStaticPtr<T>::Init(void)
+void CSafeStaticPtr<T>::x_Init(void)
 {
     bool mutex_locked = false;
     if ( Init_Lock(&mutex_locked) ) {
@@ -430,7 +432,7 @@ void CSafeStaticPtr<T>::Init(void)
 template <class T>
 template <class FUserCreate>
 inline
-void CSafeStaticPtr<T>::Init(FUserCreate user_create)
+void CSafeStaticPtr<T>::x_Init(FUserCreate user_create)
 {
     bool mutex_locked = false;
     if ( Init_Lock(&mutex_locked) ) {
@@ -486,7 +488,7 @@ void CSafeStaticRef<T>::Set(T* object)
 
 template <class T>
 inline
-void CSafeStaticRef<T>::Init(void)
+void CSafeStaticRef<T>::x_Init(void)
 {
     bool mutex_locked = false;
     if ( Init_Lock(&mutex_locked) ) {
@@ -514,7 +516,7 @@ void CSafeStaticRef<T>::Init(void)
 template <class T>
 template <class FUserCreate>
 inline
-void CSafeStaticRef<T>::Init(FUserCreate user_create)
+void CSafeStaticRef<T>::x_Init(FUserCreate user_create)
 {
     bool mutex_locked = false;
     if ( Init_Lock(&mutex_locked) ) {
