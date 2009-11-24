@@ -1868,8 +1868,9 @@ CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
     TSeconds sec = DiffSecond(t);
     if (sec < kMin_Long  || sec > kMax_Long) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTime::DiffTimeSpan(): difference in time is " \
-                   "too big to convert to CTimeSpan");
+                   "CTime::DiffTimeSpan(): difference in time " +
+                   NStr::Int8ToString(sec) + 
+                   " is too big to convert to CTimeSpan");
     }
     return CTimeSpan((long)sec , NanoSecond() - t.NanoSecond());
 }
@@ -2403,6 +2404,21 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 //=============================================================================
 
 
+string s_SpecialValueName(CTimeout::EType type)
+{ 
+    switch(type) {
+    case CTimeout::eDefault:
+        return "eDefault";
+    case CTimeout::eInfinite:
+        return "eInfinity";
+        break;
+    case CTimeout::eZero:
+        ; // kEmptySr;
+    }
+    return kEmptyStr;
+}
+
+
 const CTimeout& CTimeout::operator= (const CTimeout& t)
 {
     if ( &t == this ) {
@@ -2434,16 +2450,17 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
 { 
     if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::GetAsMilliSeconds(): cannot convert " \
-                   "from special timeout value");
+                   "CTimeout::GetAsMilliSeconds(): cannot convert from " +
+                   s_SpecialValueName(m_Type) + " timeout value");
     }
 #if (SIZEOF_INT == SIZEOF_LONG)
     // Roughly calculate maximum number of seconds that can be safely converted
     // to milliseconds without overflow.
     if (m_Sec > (kMax_ULong/1000 - 1)) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::GetAsMilliSeconds(): timeout value " \
-                   "is too big to convert to 'unsigned long'");
+                   "CTimeout::GetAsMilliSeconds(): timeout value " +
+                   NStr::UIntToString(m_Sec) + 
+                   " sec is too big to convert to 'unsigned long'");
     }
 #endif
     return m_Sec * kMilliSecondsPerSecond + m_MicroSec / 1000;
@@ -2454,8 +2471,8 @@ double CTimeout::GetAsDouble(void) const
 {
     if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::GetAsDouble(): cannot convert " \
-                   "from special timeout value");
+                   "CTimeout::GetAsDouble(): cannot convert from " +
+                   s_SpecialValueName(m_Type) + " timeout value");
     }
     return m_Sec + double(m_MicroSec) / kMicroSecondsPerSecond;
 }
@@ -2465,13 +2482,14 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
 {
     if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::GetAsTimeSpan(): cannot convert " \
-                   "from special timeout value");
+                   "CTimeout::GetAsTimeSpan(): cannot convert from " +
+                   s_SpecialValueName(m_Type) + " timeout value");
     }
 #if (SIZEOF_INT == SIZEOF_LONG)
     if ( m_Sec > (long)kMax_Long ) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::GetAsTimeSpan(): timeout value " \
+                   "CTimeout::GetAsTimeSpan(): timeout value " +
+                   NStr::UIntToString(m_Sec) + 
                    "is too big to convert to CTimeSpan");
         // We don't need to check microseconds here, because it always have
         // normalized value and can be safely converted to nanoseconds.
@@ -2486,8 +2504,8 @@ void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
 {
     if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::Get(): cannot convert from " \
-                   "special timeout value");
+                   "CTimeout::Get(): cannot convert from " +
+                   s_SpecialValueName(m_Type) + " timeout value");
     }
     if ( sec )
         *sec  = m_Sec;
