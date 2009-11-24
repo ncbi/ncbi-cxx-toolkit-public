@@ -181,6 +181,8 @@ public:
 //    For simple on-demand variables.
 //    Create the variable of type "T" on demand,
 //    destroy it on the program termination.
+//    Should be used only as static object. Otherwise
+//    the correct initialization is not guaranteed.
 //
 
 
@@ -248,6 +250,8 @@ private:
 //    For on-demand CObject-derived object.
 //    Create the variable of type "T" using CRef<>
 //    (to avoid premature destruction).
+//    Should be used only as static object. Otherwise
+//    the correct initialization is not guaranteed.
 //
 
 
