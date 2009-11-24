@@ -49,9 +49,9 @@ PLATF_NCBI_BIN_DIRS=("/net/napme02/vol/ncbi_tools/lnx64_netopt/ncbi_tools/bin/_p
                      "/net/snowman/vol/export2/win-coremake/Builds/bin"
                      "/net/snowman/vol/export2/lnx_netopt/ncbi_tools/bin/_production/CPPCORE"
                      "/netopt/ncbi_tools/bin/_production/CPPCORE"
-                     "/net/coleman/vol/export3/darwin/ncbi_tools/bin/_production/CPPCORE"
-                     "/net/coleman/vol/export3/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE"
-                     "/net/coleman/vol/export3/ncbi_tools.solaris/sparc-5.10/bin/_production/CPPCORE")
+                     "/net/snowman/vol/osx/ncbi_tools/bin/_production/CPPCORE"
+                     "/net/snowman/vol/projects/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE"
+                     "/net/snowman/vol/projects/ncbi_tools.solaris/sparc-5.10/bin/_production/CPPCORE")
 
 CGI_BIN_DIR="/net/snowman/vol/export2/iweb/ieb/ToolBox/STAT/test_stat"
 
