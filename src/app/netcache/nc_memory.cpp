@@ -3267,7 +3267,7 @@ END_NCBI_SCOPE
 
 void*
 operator new (size_t size)
-#if defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_GCC)
+#ifndef NCBI_COMPILER_MSVC
 throw (std::bad_alloc)
 #else
 throw ()
@@ -3284,7 +3284,7 @@ operator delete (void* ptr) throw ()
 
 void*
 operator new[] (size_t size)
-#if defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_GCC)
+#ifndef NCBI_COMPILER_MSVC
 throw (std::bad_alloc)
 #else
 throw ()
