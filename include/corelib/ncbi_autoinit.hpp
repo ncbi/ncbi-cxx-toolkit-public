@@ -29,7 +29,10 @@
  * Author:   Aleksey Grichenko
  *
  * File Description:
- *   Auto-init variables - create on demand, destroy on termination
+ *   Auto-init variables - create on demand, destroy on termination. This
+ *                         classes should not be used for static variables.
+ *                         If you need a static auto-init variable, use
+ *                         CSafeStaticPtr/Ref instead.
  *
  *   CAutoInitPtr_Base::   -- base class for CAutoInitPtr<> and CAutoInitRef<>
  *   CAutoInitPtr<>::      -- create variable on demand, destroy on CAutoInitPtr
@@ -103,6 +106,8 @@ private:
 //    For simple on-demand variables.
 //    Create the variable of type "T" on demand,
 //    destroy it on the CAutoInitPtr termination.
+//    The class should not be used for static variables,
+//    use CSafeStaticPtr class instead.
 //
 
 
@@ -166,6 +171,8 @@ private:
 //    For on-demand CObject-derived object.
 //    Create the variable of type "T" using CRef<>
 //    (to avoid premature destruction).
+//    The class should not be used for static variables,
+//    use CSafeStaticRef class instead.
 //
 
 
