@@ -2317,9 +2317,7 @@ BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
 
 BOOST_AUTO_TEST_CASE(wb325_1)
 {
-    //string input("gb|ABZI01000088\ngb|ABZN01000067");
-    //string input("217999527\n218001205");
-    string input("gb|M18059.1\ngb|M94317.1");
+    string input("gb|ABZI01000088\ngb|ABZN01000067");
     istringstream instream(input);
     
     const bool is_protein(false);
@@ -2337,8 +2335,7 @@ BOOST_AUTO_TEST_CASE(wb325_1)
 
 BOOST_AUTO_TEST_CASE(wb325_2)
 {
-    //string input("gb|ABZN01000067\ngb|ABZI01000088");
-    string input("218001205\n217999527");
+    string input("gb|ABZN01000067\ngb|ABZI01000088");
     istringstream instream(input);
     
     const bool is_protein(false);
