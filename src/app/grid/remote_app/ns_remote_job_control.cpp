@@ -355,15 +355,11 @@ int CNSRemoveJobControlApp::Run(void)
     } else if (args["cmd"]) {
         string cmd = args["cmd"].AsString();
         if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {
-            CNetScheduleAdmin::EShutdownLevel level =
-                CNetScheduleAdmin::eShutdownImmediate;
-            CWNodeShutdownAction action(level);
+            CWNodeShutdownAction action(CNetScheduleAdmin::eShutdownImmediate);
             info_collector->TraverseNodes(action);
         }
         if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
-            CNetScheduleAdmin::EShutdownLevel level =
-                level = CNetScheduleAdmin::eDie;
-            CWNodeShutdownAction action(level);
+            CWNodeShutdownAction action(CNetScheduleAdmin::eDie);
             info_collector->TraverseNodes(action);
         }
         if (NStr::CompareNocase(cmd, "drop_jobs") == 0) {
