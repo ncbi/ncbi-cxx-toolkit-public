@@ -45,19 +45,19 @@ static char const rcsid[] =
 /** linked list of HSPs
  *  used to keep best hits for each query.
  */
-typedef struct LinkedHSP {
+typedef struct LinkedHSP_BH {
    BlastHSP * hsp;
    Int4 sid;   /* OID for hsp*/
    Int4 begin; /* query offset in plus strand - overhang */
    Int4 end;   /* query end in plus strand + overhang */
    Int4 len;   /* actual length */
-   struct LinkedHSP *next;
-} LinkedHSP;
+   struct LinkedHSP_BH *next;
+} LinkedHSP_BH;
 
 typedef struct BlastHSPBestHitData {
    BlastHSPBestHitParams* params;       /**< parameters to control overhang */
    BlastQueryInfo* query_info;          /**< query info */
-   LinkedHSP** best_list;               /**< buffer to store best hits */
+   LinkedHSP_BH** best_list;               /**< buffer to store best hits */
 } BlastHSPBestHitData;
 
 /*************************************************************/
@@ -71,7 +71,7 @@ static int
 s_BlastHSPBestHitInit(void* data, BlastHSPResults* results)
 {
    BlastHSPBestHitData * bh_data = data;
-   bh_data->best_list = calloc(results->num_queries, sizeof(LinkedHSP *));
+   bh_data->best_list = calloc(results->num_queries, sizeof(LinkedHSP_BH *));
    return 0;
 }
 
@@ -85,7 +85,7 @@ s_BlastHSPBestHitFinal(void* data, BlastHSPResults* results)
    int qid, sid, id, new_allocated;
    BlastHSPBestHitData *bh_data = data;
    BlastHSPBestHitParams* params = bh_data->params;
-   LinkedHSP **best_list = bh_data->best_list, *p;
+   LinkedHSP_BH **best_list = bh_data->best_list, *p;
    BlastHitList* hitlist;
    BlastHSPList* list;
    Boolean allocated;
@@ -178,13 +178,13 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
    Int4 allowed_begin, allowed_end;
    double denA, evalueA, evalueB, param_overhang, param_s;
    BlastHSP *hsp;
-   LinkedHSP *p, *q, *r;
+   LinkedHSP_BH *p, *q, *r;
    Boolean bad;
 
    BlastHSPBestHitData* bh_data = data;
    BlastHSPBestHitParams* params = bh_data->params;
    EBlastProgramType program = params->program;
-   LinkedHSP **best_list = bh_data->best_list;
+   LinkedHSP_BH **best_list = bh_data->best_list;
 
    if (!hsp_list) return 0;
    param_overhang = params->overhang;
@@ -259,7 +259,7 @@ s_BlastHSPBestHitRun(void* data, BlastHSPList* hsp_list)
 
       /* Insert hit A into the best_list and hit_list */
       for (q=NULL, p=best_list[qid]; p && p->begin < begin; q=p, p=p->next);
-      r = malloc(sizeof(LinkedHSP));
+      r = malloc(sizeof(LinkedHSP_BH));
       r->hsp   = hsp;
       r->sid   = hsp_list->oid; 
       r->begin = begin;
