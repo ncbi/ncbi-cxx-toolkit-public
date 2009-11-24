@@ -43,7 +43,9 @@
 #define BMRESTRICT NCBI_RESTRICT
 #endif
 
-#ifdef NCBI_FORCEINLINE
+#if defined(NCBI_FORCEINLINE)  &&  \
+    ( !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 400  || \
+      defined(__OPTIMIZE__))
 #define BM_HASFORCEINLINE
 #define BMFORCEINLINE NCBI_FORCEINLINE
 #endif
