@@ -872,15 +872,36 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         SIZE_TYPE non_dig_pos = acc.find_first_not_of(kDigits, digit_pos);
         const unsigned char* ucdata = (const unsigned char*)acc.data();
         if (non_dig_pos < main_size  &&  non_dig_pos != NPOS) {
-            if (digit_pos == 0  &&  main_size >= 4  &&  main_size == acc.size()
-                &&  (main_size <= 5  ||  ispunct(ucdata[4]))) {
-                return eAcc_pdb; // must be unversioned
-            } else if (digit_pos == 1  &&  main_size == 6
-                       &&  (main_acc[0] == 'O'  ||  main_acc[0] == 'P'
-                            ||  main_acc[0] == 'Q' ||  isalpha(ucdata[2]))
-                       &&  isdigit(ucdata[1]) &&  isalnum(ucdata[2])
-                       &&  isalnum(ucdata[3]) &&  isalnum(ucdata[4])
-                       &&  isdigit(ucdata[5])) {
+            if (digit_pos == 0  &&  main_size >= 4  &&  main_size <= 7
+                &&  main_size == acc.size()) {
+                // Possible PDB (always unversioned); examine further
+                // to avoid false positives.
+                switch (main_size) {
+                case 7:
+                    if ((main_acc[5] != main_acc[6]
+                         &&  (main_acc[5] != 'V' || main_acc[6] != 'B'))
+                        ||  !isascii(ucdata[5])) {
+                        break;
+                    } // else fall through
+                case 6:
+                    // Be extra strict when the potential molecule ID
+                    // could simply be a year.  (NB: *insisting* on a
+                    // non-digit would rule out 1914|A, gi 157829621.)
+                    if ((non_dig_pos < 4  &&  ispunct(ucdata[4]))
+                        ||  strchr("|-_", main_acc[4])) {
+                        return eAcc_pdb;
+                    }
+                    break;
+                case 5: case 4:
+                    return eAcc_pdb;
+                }
+            }
+            if (digit_pos == 1  &&  main_size == 6
+                &&  (main_acc[0] == 'O'  ||  main_acc[0] == 'P'
+                     ||  main_acc[0] == 'Q' ||  isalpha(ucdata[2]))
+                &&  isdigit(ucdata[1])  &&  isalnum(ucdata[2])
+                &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
+                &&  isdigit(ucdata[5])) {
                 return eAcc_swissprot;
             } else if (digit_pos == 0  &&  main_size == 8
                        &&  main_size == acc.size()  &&  non_dig_pos >= 6

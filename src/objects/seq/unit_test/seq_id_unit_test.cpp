@@ -198,6 +198,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|VB")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|AAA")));
+
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("2004[dp]"),
+                      CSeq_id::eAcc_unknown);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("2008;358:2545"),
+                      CSeq_id::eAcc_unknown);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("2000:2010"),
+                      CSeq_id::eAcc_unknown);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
