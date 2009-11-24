@@ -54,9 +54,7 @@ BEGIN_NCBI_SCOPE
 
 // Protective mutex and the owner thread ID to avoid
 // multiple initializations and deadlocks
-DEFINE_STATIC_MUTEX(s_AutoInitPtrMutex);
-
-CMutex CAutoInitPtr_Base::sm_Mutex;
+DEFINE_CLASS_STATIC_MUTEX(CAutoInitPtr_Base::sm_Mutex);
 
 
 CAutoInitPtr_Base::~CAutoInitPtr_Base(void)

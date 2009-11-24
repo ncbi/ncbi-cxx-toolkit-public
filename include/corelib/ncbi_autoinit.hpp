@@ -80,7 +80,7 @@ public:
 protected:
     void* m_Ptr;          // Pointer to the data
 
-    static CMutex sm_Mutex;
+    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 
 private:
     FSelfCleanup m_SelfCleanup;   // Derived class' cleanup function
