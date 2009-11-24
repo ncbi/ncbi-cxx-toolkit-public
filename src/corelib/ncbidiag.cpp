@@ -2254,12 +2254,17 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         }
     }
 
+    // Allow to modify severity level
+    DisableDiagPostLevelChange(false);
     if ( to_applog ) {
         ctx.SetOldPostFormat(false);
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
         TLogSizeLimitParam::SetDefault(0); // No log size limit
+        SetDiagPostLevel(eDiag_Warning);
+        // Lock severity level
+        DisableDiagPostLevelChange(true);
     }
     else {
         if ( s_MergeLinesSetBySetupDiag ) {
