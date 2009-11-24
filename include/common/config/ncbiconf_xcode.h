@@ -426,6 +426,14 @@
 /* Define to 1 if you have the `readpassphrase' function. */
 #define HAVE_READPASSPHRASE 1
 
+/* Define to 1 if your C compiler supports some variant of the C99 `restrict'
+   keyword. */
+#define HAVE_RESTRICT_C 1
+
+/* Define to 1 if your C++ compiler supports some variant of the C99
+   `restrict' keyword. */
+#define HAVE_RESTRICT_CXX 1
+
 /* Define to 1 if you have the `sched_yield' function. */
 #define HAVE_SCHED_YIELD 1
 

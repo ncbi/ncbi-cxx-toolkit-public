@@ -3110,6 +3110,11 @@ test "$restrict" = "no"  &&  restrict=""
 AC_DEFINE_UNQUOTED(NCBI_RESTRICT_C, $restrict,
    [Define to whatever syntax, if any, your C compiler supports for marking
     pointers as restricted in the C99 sense.])
+if test -n "$restrict"; then
+   AC_DEFINE(HAVE_RESTRICT_C, 1,
+      [Define to 1 if your C compiler supports some variant of the C99
+       `restrict' keyword.])
+fi
 AC_LANG_POP(C)
 
 AC_CACHE_CHECK([whether the C++ compiler supports C99 restrict],
@@ -3125,6 +3130,11 @@ test "$restrict" = "no"  &&  restrict=""
 AC_DEFINE_UNQUOTED(NCBI_RESTRICT_CXX, $restrict,
    [Define to whatever syntax, if any, your C++ compiler supports for marking
     pointers as restricted in the C99 sense.])
+if test -n "$restrict"; then
+   AC_DEFINE(HAVE_RESTRICT_CXX, 1,
+      [Define to 1 if your C++ compiler supports some variant of the C99
+       `restrict' keyword.])
+fi
 
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],

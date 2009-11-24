@@ -414,6 +414,14 @@
 /* Define to 1 if you have the `readv' function. */
 #undef HAVE_READV
 
+/* Define to 1 if your C compiler supports some variant of the C99 `restrict'
+   keyword. */
+#undef HAVE_RESTRICT_C
+
+/* Define to 1 if your C++ compiler supports some variant of the C99
+   `restrict' keyword. */
+#undef HAVE_RESTRICT_CXX
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 

@@ -17694,6 +17694,13 @@ cat >>confdefs.h <<_ACEOF
 #define NCBI_RESTRICT_C $restrict
 _ACEOF
 
+if test -n "$restrict"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RESTRICT_C 1
+_ACEOF
+
+fi
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -17757,6 +17764,13 @@ cat >>confdefs.h <<_ACEOF
 #define NCBI_RESTRICT_CXX $restrict
 _ACEOF
 
+if test -n "$restrict"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RESTRICT_CXX 1
+_ACEOF
+
+fi
 
 # for FreeTDS
 echo "$as_me:$LINENO: checking whether FIONBIO requires BSD_COMP to be defined" >&5
