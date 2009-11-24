@@ -634,30 +634,32 @@ public:
     typedef int TFlags;
     enum Flags {
         /// do not handle indexes as regular FORM entries with empty value
-        fIndexesNotEntries   = (1 << 0),
+        fIndexesNotEntries          = (1 << 0),
         /// do not parse $QUERY_STRING (or cmd.line if $REQUEST_METHOD not def)
-        fIgnoreQueryString   = (1 << 1),
+        fIgnoreQueryString          = (1 << 1),
         /// own the passed "env" (and destroy it in the destructor)
-        fOwnEnvironment      = (1 << 2),
+        fOwnEnvironment             = (1 << 2),
         /// do not automatically parse the request's content body (from "istr")
-        fDoNotParseContent   = (1 << 3),
+        fDoNotParseContent          = (1 << 3),
         /// use case insensitive CGI arguments
-        fCaseInsensitiveArgs = (1 << 4),
+        fCaseInsensitiveArgs        = (1 << 4),
         /// Do not use URL-encoding/decoding for cookies
-        fCookies_Unencoded   = (1 << 5),
+        fCookies_Unencoded          = (1 << 5),
         /// Use hex code for encoding spaces rather than '+'
-        fCookies_SpaceAsHex  = (1 << 6),
+        fCookies_SpaceAsHex         = (1 << 6),
         /// Save request content (available through GetContent())
-        fSaveRequestContent  = (1 << 7),
+        fSaveRequestContent         = (1 << 7),
         /// Do not check if page hit id is present, do not generate one
         /// if it's missing.
-        fIgnorePageHitId     = (1 << 8),
+        fIgnorePageHitId            = (1 << 8),
         /// Set client-ip and session-id properties for logging.
-        fSkipDiagProperties  = (1 << 9),
+        fSkipDiagProperties         = (1 << 9),
         /// Old (deprecated) flag controlling diag properties.
-        fSetDiagProperties   = 0,
+        fSetDiagProperties          = 0,
         /// Enable on-demand parsing via GetNextEntry()
-        fParseInputOnDemand  = (1 << 10)
+        fParseInputOnDemand         = (1 << 10),
+        /// Do not treat semicolon as query string argument separator
+        fSemicolonIsNotArgDelimiter = (1 << 11)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,

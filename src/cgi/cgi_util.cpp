@@ -127,14 +127,22 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
             continue;
         }
         // Alternative separator - ';'
-        else if (query[beg] == ';')
+        else if (!m_SemicolonIsNotArgDelimiter  &&  query[beg] == ';')
         {
             ++beg;
             continue;
         }
 
         // parse and URL-decode name
-        SIZE_TYPE mid = query.find_first_of("=&;", beg);
+        string mid_seps = "=&";
+        string end_seps = " &";
+        if (!m_SemicolonIsNotArgDelimiter)
+        {
+            mid_seps += ';';
+            end_seps += ';';
+        }
+
+        SIZE_TYPE mid = query.find_first_of(mid_seps, beg);
         if (mid == beg) {
             NCBI_THROW2(CCgiArgsParserException, eFormat,
                         "Invalid delimiter: \"" + query + "\"", mid+1);
@@ -149,8 +157,9 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
         string value;
         if (query[mid] == '=') { // has a value
             mid++;
-            SIZE_TYPE end = query.find_first_of(" &;", mid);
-            if (end != NPOS  &&  query[end] != '&'  &&  query[end] != ';') {
+            SIZE_TYPE end = query.find_first_of(end_seps, mid);
+            if (end != NPOS  &&  query[end] != '&'  &&
+                (m_SemicolonIsNotArgDelimiter  ||  query[end] != ';')) {
                 NCBI_THROW2(CCgiArgsParserException, eFormat,
                             "Invalid delimiter: \"" + query + "\"", end+1);
             }

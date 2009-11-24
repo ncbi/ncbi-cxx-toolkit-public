@@ -207,6 +207,7 @@ private:
 class NCBI_XCGI_EXPORT CCgiArgs_Parser
 {
 public:
+    CCgiArgs_Parser(void) : m_SemicolonIsNotArgDelimiter(false) {}
     virtual ~CCgiArgs_Parser(void) {}
 
     /// Parse query string, call AddArgument() to store each value.
@@ -214,6 +215,12 @@ public:
     /// Parse query string, call AddArgument() to store each value.
     void SetQueryString(const string& query,
                         const IUrlEncoder* encoder = 0);
+
+    /// Treat semicolon as query string argument separator
+    void SetSemicolonIsNotArgDelimiter(bool enable = true)
+    {
+        m_SemicolonIsNotArgDelimiter = enable;
+    }
 
 protected:
     /// Query type flag
@@ -240,6 +247,8 @@ protected:
 private:
     void x_SetIndexString(const string& query,
                           const IUrlEncoder& encoder);
+
+    bool m_SemicolonIsNotArgDelimiter;
 };
 
 

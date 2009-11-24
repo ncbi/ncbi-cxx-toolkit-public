@@ -1083,6 +1083,9 @@ void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
         if ( query_string ) {
             CCgiEntries_Parser parser(&m_Entries, &m_Indexes,
                 (flags & fIndexesNotEntries) == 0);
+            if (flags & fSemicolonIsNotArgDelimiter) {
+                parser.SetSemicolonIsNotArgDelimiter(true);
+            }
             parser.SetQueryString(*query_string);
         }
     }
