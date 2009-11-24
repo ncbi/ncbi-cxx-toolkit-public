@@ -1018,7 +1018,7 @@ CNHM<CRO>	s	Croatian Natural History Museum, Botany Department
 CNHM<USA-OH>	s	Cincinnati Museum of Natural History
 CNHP	s	Beijing Natural History Museum
 CNHS	s	Croydon Natural History and Scientific Society
-CNIN	s	Colecci'on Nacional de Insectos, Universidad Nacional Aut'onoma de M'exico
+CNIN	s	Coleccion Nacional de Insectos, Universidad Nacional Autonoma de Mexico
 CNM	s	Cheltenham Naturalists' Association
 CNM-CM	c	Filamentous fungus collection of the Spanish National Center for Microbiology
 CNMC	s	Colorado National Monument
@@ -1036,7 +1036,7 @@ COCA	s	Comision Tecnico Consultiva de Coeficientes de Agostadero (COTECOCA)
 COCH	s	Universidad Mayor de San Simon, Departamento de Botanica
 COCO	s	Colorado College, Biology Department
 CODAGEM	s	Universidad Autonoma del Estado de Mexico
-CODIMAR	c	Centro de Investigaciones Biol'ogicas del Noroeste
+CODIMAR	c	Centro de Investigaciones Biologicas del Noroeste
 COFC	s	Universidad de Cordoba, Departamento de Biologia Vegetal
 COI	s	University of Coimbra
 COL	s	Universidad Nacional de Colombia
@@ -1061,7 +1061,7 @@ CP	s	Royal Veterinary and Agricultural University, Plant Biology Department
 CPAC	c	Centro de Pesquisas Agropecuarias do Cerrado
 CPAP<BRA-Belem>	s	Centro de Pesquisas Agropecuarias do Tropico Umido
 CPAP<BRA-Corumba>	s	EMBRAPA
-CPATU	s	Centro de Pesquisa Agroflorestal da Amaz^onia Oriental-Embrapa
+CPATU	s	Centro de Pesquisa Agroflorestal da Amazonia Oriental-Embrapa
 CPB	s	National Institute for the Control of Pharmaceutical and Biological Products
 CPC	c	Culture collection of Pedro Crous
 CPCC	c	Canadian Phycological Culture Centre
@@ -1730,7 +1730,7 @@ FSIU	s	Laboratory of Fisheries, Department of Oceanography
 FSL	s	Collections de la Faculte des Sciences de Lyon
 FSLF	s	Rocky Mountain Forest and Range Experiment Station
 FSMC	s	Florida State Museum
-FSP-USP	s	Faculdade de Saude Publica, Universidade de S~ao Paulo
+FSP-USP	s	Faculdade de Saude Publica, Universidade de Sao Paulo
 FSSR	s	Forest Service, USDA, Biological and Physical Resources Unit
 FSU	s	Florida State University, Department of Biological Science
 FSU<DEU>	c	Institut fuer Mikrobiologie FSU Jena
@@ -2202,7 +2202,7 @@ HUKUK	c	Culture Collection of Animal Cells
 HUL	s	Fine Arts Museum
 HULE	s	Universidad Nacional Autonoma de Nicaragua, Departamento de Biologia
 HUM	s	Humbolt University Zoologischen Museum
-HUMO	s	Universidad Aut'onoma del Estado de Morelos, Centro de Educaci'on Ambiental e Investigaci'on Sierra de Huautla
+HUMO	s	Universidad Autonoma del Estado de Morelos, Centro de Educacion Ambiental e Investigacion Sierra de Huautla
 HUMP	s	Muzeum v Humpolci
 HUMZ	s	Hokkaido University, Laboratory of Marine Zoology
 HUPG	s	State University of Ponta Grossa, Departamento de Biologia
@@ -5234,7 +5234,7 @@ STIU	s	University of Stirling, Biological Sciences Department
 STK	s	Stoke-on-Trent Athenaeum
 STL	s	Instituto Nacional de Limnologia, Departamento Macrofitas
 STM<DEU>	s	Stettinger Museum
-STM<FRA>	c	Laboratoire des Symbioses Tropicales et M'editerran'eennes
+STM<FRA>	c	Laboratoire des Symbioses Tropicales et Mediterraneennes
 STM<GBR>	s	Streatham Antiquarian and Natural History Society
 STMC	s	School of Tropical Medicine
 STO	s	The Potteries Museum & Art Gallery
