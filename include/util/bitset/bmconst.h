@@ -1,5 +1,7 @@
+#ifndef BMCONST__H__INCLUDED__
+#define BMCONST__H__INCLUDED__
 /*
-Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -23,9 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information please visit:  http://bmagic.sourceforge.net
 
 */
-
-#ifndef BMCONST__H__INCLUDED__
-#define BMCONST__H__INCLUDED__
 
 namespace bm
 {
@@ -54,6 +53,9 @@ const unsigned set_block_size  = 2048u;
 const unsigned set_block_shift = 16u;
 const unsigned set_block_mask  = 0xFFFFu;
 const unsigned set_blkblk_mask = 0xFFFFFFu;
+
+const unsigned set_block_plain_size = set_block_size / 32u;
+const unsigned set_block_plain_cnt = sizeof(bm::word_t) * 8u;
 
 // Word parameters
 
@@ -113,6 +115,70 @@ enum strategy
 {
     BM_BIT = 0, //!< No GAP compression strategy. All new blocks are bit blocks.
     BM_GAP = 1  //!< GAP compression is ON.
+};
+
+
+template<bool T> struct DeBruijn_bit_position
+{
+    static const unsigned _multiply[32];
+};
+
+template<bool T>
+const unsigned DeBruijn_bit_position<T>::_multiply[32] = { 
+  0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
+  31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+};
+
+/** Structure keeps index of first right 1 bit for every byte.  
+    @ingroup bitfunc 
+*/
+template<bool T> struct first_bit_table
+{
+    static const char _idx[256];
+};
+
+template<bool T>
+const char first_bit_table<T>::_idx[256] = {
+  -1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+};
+
+//---------------------------------------------------------------------
+
+/** Structure to aid in counting bits
+    table contains count of bits in 0-255 diapason of numbers
+
+   @ingroup bitfunc
+*/
+template<bool T> struct bit_count_table 
+{
+  static const unsigned char _count[256];
+};
+
+template<bool T>
+const unsigned char bit_count_table<T>::_count[256] = {
+    0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
+    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8
 };
 
 

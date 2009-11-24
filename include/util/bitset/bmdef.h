@@ -1,27 +1,60 @@
-// Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
-
-
+// Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+//
 // BM library internal header
 //
 // Set all required preprocessor defines
 
 
-#ifndef BMDEF__H__INCLUDED__
-#define BMDEF__H__INCLUDED__
+
+// macro to define/undefine unaligned memory access (x86, PowerPC)
+//
+#if defined(__i386) || defined(__x86_64) || defined(__ppc__) || \
+	defined(__ppc64__) || defined(_M_IX86) || defined(_M_AMD64) || \
+    (defined(_M_MPPC) && !defined(BM_FORBID_UNALIGNED_ACCESS))
+#define BM_UNALIGNED_ACCESS_OK 1
+#endif
+
+#if defined(__i386) || defined(__x86_64) || defined(_M_AMD64) || defined(BMSSE2OPT) || defined(BMSSE42OPT)
+#define BM_x86
+#endif
+
+
+// Enable MSVC 8.0 (2005) specific optimization options
+//
+#if(_MSC_VER >= 1400)
+
+#  define BM_HASFORCEINLINE
+#  ifndef BMRESTRICT
+#    define BMRESTRICT __restrict
+#  endif
+#endif 
+
+#ifdef __GNUG__
+
+#  ifndef BMRESTRICT
+#    define BMRESTRICT __restrict__
+#  endif
+
+#  ifdef __OPTIMIZE__
+#    define BM_NOASSERT
+#  endif
+#endif
 
 #ifndef BM_ASSERT
 
 # ifndef BM_NOASSERT
-#  include <assert.h>
+#  include <cassert>
 #  define BM_ASSERT assert
 # else
-#  define BM_ASSERT(x)
+#  ifndef BM_ASSERT
+#    define BM_ASSERT(x)
+#  endif
 # endif
 
 #endif
 
 
-#define FULL_BLOCK_ADDR all_set<true>::_block._p
+#define FULL_BLOCK_ADDR bm::all_set<true>::_block._p
 #define IS_VALID_ADDR(addr) (addr && (addr != FULL_BLOCK_ADDR))
 #define IS_FULL_BLOCK(addr) (addr == FULL_BLOCK_ADDR)
 #define IS_EMPTY_BLOCK(addr) (addr == 0)
@@ -38,7 +71,7 @@
 
 # define BMGAP_PTR(ptr)    ((bm::gap_word_t*)ptr)
 # define BMSET_PTRGAP(ptr) (void(0))
-# define BM_IS_GAP(obj, ptr, idx) ( obj.is_block_gap(idx) ) 
+# define BM_IS_GAP(obj, ptr, idx) ( (obj).is_block_gap(idx) ) 
 
 #else
 
@@ -69,7 +102,9 @@
 #  define BMRESTRICT restrict
 # endif
 #else
-# define BMRESTRICT 
+# ifndef BMRESTRICT
+#   define BMRESTRICT
+# endif
 #endif
 
 
@@ -82,20 +117,63 @@
 #endif
 
 
+// --------------------------------
+// SSE optmization
+//
 
-#ifndef BMSSE2OPT
+#if !(defined(BMSSE2OPT) || defined(BMSSE42OPT)) 
 
 # ifndef BM_SET_MMX_GUARD
 #  define BM_SET_MMX_GUARD
 # endif
 
-#else
+#define BM_ALIGN16 
+#define BM_ALIGN16ATTR
+
+#else  
 
 # ifndef BM_SET_MMX_GUARD
-#  define BM_SET_MMX_GUARD  sse2_empty_guard  bm_mmx_guard_;
+#  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
 # endif
+
+#ifdef _MSC_VER
+
+#ifndef BM_ALIGN16
+#  define BM_ALIGN16 __declspec(align(16))
+#  define BM_ALIGN16ATTR
+#endif
+
+# else // GCC
+
+#ifndef BM_ALIGN16
+#  define BM_ALIGN16
+#  define BM_ALIGN16ATTR __attribute__((aligned(16)))
+#endif
 
 #endif
 
-#endif  // BMDEF__H__INCLUDED__
+#endif
+
+/*! 
+	Define calculates number of 1 bits in 32-bit word.
+    @ingroup bitfunc 
+*/
+#ifndef BM_INCWORD_BITCOUNT
+
+#ifdef BMSSE42OPT
+
+# define BM_INCWORD_BITCOUNT(cnt, w) cnt += _mm_popcnt_u32(w);
+
+#else
+
+# define BM_INCWORD_BITCOUNT(cnt, w) cnt += \
+     bm::bit_count_table<true>::_count[(unsigned char)(w)] + \
+     bm::bit_count_table<true>::_count[(unsigned char)((w) >> 8)] + \
+     bm::bit_count_table<true>::_count[(unsigned char)((w) >> 16)] + \
+     bm::bit_count_table<true>::_count[(unsigned char)((w) >> 24)];
+
+#endif
+
+#endif
+
 

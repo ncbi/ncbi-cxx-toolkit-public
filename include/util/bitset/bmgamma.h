@@ -1,7 +1,5 @@
-#ifndef BMFWD__H__INCLUDED__
-#define BMFWD__H__INCLUDED__
 /*
-Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -26,27 +24,64 @@ For more information please visit:  http://bmagic.sourceforge.net
 
 */
 
-#include "bmconst.h"
+#ifndef BMGAMMAENC__H__INCLUDED__
+#define BMGAMMAENC__H__INCLUDED__
+
 
 namespace bm
 {
 
-class block_allocator;
-class ptr_allocator;
 
-template<class BA = block_allocator, class PA = ptr_allocator> class mem_alloc;
+/**
+    Elias Gamma decoder
+*/
+template<typename T, typename TBitIO>
+class gamma_decoder
+{
+public:
+    gamma_decoder(TBitIO& bin) : bin_(bin) 
+    {}
+    
+    /**
+        Start encoding sequence
+    */
+    void start()
+    {}
+    
+    /**
+        Stop decoding sequence
+    */
+    void stop()
+    {}
+    
+    /**
+        Decode word
+    */
+    T operator()(void)
+    {
+        unsigned l = bin_.eat_zero_bits();
+        bin_.get_bit(); // get border bit
+        T current = 0;
+        for (unsigned i = 0; i < l; ++i)
+        {
+            if (bin_.get_bit())
+            {
+                current += 1 << i;
+            }
+        }
+        current |= (1 << l);
+        return current;
+    }
+private:
+    gamma_decoder(const gamma_decoder&);
+    gamma_decoder& operator=(const gamma_decoder&);
+private:
+    TBitIO&  bin_;
+};
 
-template <class A, size_t N> class miniset;
-template<size_t N> class bvmini;
-
-typedef bm::bvmini<bm::set_total_blocks> standard_miniset;
-typedef mem_alloc<block_allocator, ptr_allocator> standard_allocator;
-
-template<class A = bm::standard_allocator,  
-         class MS = bm::standard_miniset> 
-class bvector;
 
 
-} // namespace
+} // bm
 
 #endif
+

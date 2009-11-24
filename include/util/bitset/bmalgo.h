@@ -1,3 +1,5 @@
+#ifndef BMALGO__H__INCLUDED__
+#define BMALGO__H__INCLUDED__
 /*
 Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
@@ -23,9 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information please visit:  http://bmagic.sourceforge.net
 
 */
-
-#ifndef BMALGO__H__INCLUDED__
-#define BMALGO__H__INCLUDED__
 
 #include "bm.h"
 #include "bmfunc.h"

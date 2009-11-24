@@ -1,5 +1,7 @@
+#ifndef BMALLOC__H__INCLUDED__
+#define BMALLOC__H__INCLUDED__
 /*
-Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
+Copyright(c) 2002-2009 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
 Permission is hereby granted, free of charge, to any person 
 obtaining a copy of this software and associated documentation 
@@ -24,10 +26,8 @@ For more information please visit:  http://bmagic.sourceforge.net
 
 */
 
-#ifndef BMALLOC__H__INCLUDED__
-#define BMALLOC__H__INCLUDED__
-
 #include <stdlib.h>
+#include <new>
 
 namespace bm
 {
@@ -56,16 +56,22 @@ public:
     */
     static bm::word_t* allocate(size_t n, const void *)
     {
-#ifdef BMSSE2OPT
+        bm::word_t* ptr;
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
 # ifdef _MSC_VER
-        return (bm::word_t*) ::_aligned_malloc(n * sizeof(bm::word_t), 16);
+        ptr = (bm::word_t*) ::_aligned_malloc(n * sizeof(bm::word_t), 16);
 #else
-        return (bm::word_t*) ::_mm_malloc(n * sizeof(bm::word_t), 16);
+        ptr = (bm::word_t*) ::_mm_malloc(n * sizeof(bm::word_t), 16);
 # endif
 
 #else  
-        return (bm::word_t*) ::malloc(n * sizeof(bm::word_t));
+        ptr = (bm::word_t*) ::malloc(n * sizeof(bm::word_t));
 #endif
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
+        return ptr;
     }
 
     /**
@@ -74,7 +80,7 @@ public:
     */
     static void deallocate(bm::word_t* p, size_t)
     {
-#ifdef BMSSE2OPT
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
 # ifdef _MSC_VER
         ::_aligned_free(p);
 #else
@@ -105,7 +111,12 @@ public:
     */
     static void* allocate(size_t n, const void *)
     {
-        return ::malloc(n * sizeof(void*));
+        void* ptr = ::malloc(n * sizeof(void*));
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
+        return ptr;
     }
 
     /**
@@ -154,18 +165,22 @@ public:
 
 
     /*! @brief Allocates and returns bit block.
+        @param alloc_factor 
+            indicated how many blocks we want to allocate in chunk
+            total allocation is going to be bm::set_block_size * alloc_factor
+            Default allocation factor is 1
     */
-    bm::word_t* alloc_bit_block()
+    bm::word_t* alloc_bit_block(unsigned alloc_factor = 1)
     {
-        return block_alloc_.allocate(bm::set_block_size, 0);
+        return block_alloc_.allocate(bm::set_block_size * alloc_factor, 0);
     }
 
     /*! @brief Frees bit block allocated by alloc_bit_block.
     */
-    void free_bit_block(bm::word_t* block)
+    void free_bit_block(bm::word_t* block, unsigned alloc_factor = 1)
     {
         if (IS_VALID_ADDR(block)) 
-            block_alloc_.deallocate(block, bm::set_block_size);
+            block_alloc_.deallocate(block, bm::set_block_size * alloc_factor);
     }
 
     /*! @brief Allocates GAP block using bit block allocator (BA).
@@ -208,7 +223,8 @@ public:
     */
     void free_ptr(void* p, unsigned size = bm::set_array_size)
     {
-        ptr_alloc_.deallocate(p, size);
+        if (p)
+            ptr_alloc_.deallocate(p, size);
     }
 private:
     BA            block_alloc_;

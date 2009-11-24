@@ -50,6 +50,9 @@
 #undef VECT_COPY_BLOCK
 #undef VECT_SET_BLOCK
 
-// Undef the bmdef.h sentinel
-#undef BMDEF__H__INCLUDED__
+#undef BM_UNALIGNED_ACCESS_OK
+#undef BM_ALIGN16
+#undef BM_ALIGN16ATTR
+#undef BM_x86
+
 

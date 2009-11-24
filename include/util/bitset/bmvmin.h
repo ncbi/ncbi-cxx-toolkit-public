@@ -1,3 +1,5 @@
+#ifndef BMVMIN__H__INCLUDED__
+#define BMVMIN__H__INCLUDED__
 /*
 Copyright(c) 2002-2005 Anatoliy Kuznetsov(anatoliy_kuznetsov at yahoo.com)
 
@@ -23,9 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information please visit:  http://bmagic.sourceforge.net
 
 */
-
-#ifndef BMVMIN__H__INCLUDED__
-#define BMVMIN__H__INCLUDED__
 
 namespace bm
 {
