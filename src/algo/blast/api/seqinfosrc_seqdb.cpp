@@ -124,8 +124,7 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     CSeqDB::TSequenceRanges ranges;
-    vector<int> filt_algo_ids(1, m_FilteringAlgoId);
-    m_iSeqDb->GetMaskData(index, filt_algo_ids, ranges);
+    m_iSeqDb->GetMaskData(index, m_FilteringAlgoId, ranges);
     ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
         for (int it=0; it<target.size(); it++) {
             if (target[it] != TSeqRange::GetEmpty() &&

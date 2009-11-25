@@ -376,17 +376,26 @@ CMaskingDataExtractor::GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
     return CConstRef<CSeq_loc>(retval.GetPointer());
 }
 
+static int lessthan(const void *x1, const void *x2) {
+    const int &r1 = *(int *)x1;
+    const int &r2 = *(int *)x2;
+    return (r2 < r1);
+}
+
 void 
 CMaskingDataExtractor::GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
-                                        CSeqDB::TSequenceRanges& masked_ranges)
+                                        CSeqDB::TSequenceRanges& ranges)
 {
-    masked_ranges.clear();
+    ranges.clear();
     if (m_AlgoIds.empty()) {
         return;
     }
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
-    blastdb.GetMaskData(kOid, m_AlgoIds, masked_ranges);
+
+    // Only support the 1st algo for now.
+    blastdb.GetMaskData(kOid, m_AlgoIds[0], ranges);
 }
+
 
 string
 CMaskingDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)

@@ -299,10 +299,9 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     if ( datap->algorithm_id != -1 ) {
-        vector<int> filtering_algorithms(1, datap->algorithm_id);
         static const Boolean kCopySequenceRanges = false;
         CSeqDB::TSequenceRanges & ranges = datap->seq_ranges;
-        seqdb.GetMaskData(oid, filtering_algorithms, ranges);
+        seqdb.GetMaskData(oid, datap->algorithm_id, ranges);
         if ( !ranges.empty() ) {
             if (BlastSeqBlkSetSeqRanges(args->seq, 
                                     (SSeqRange*)& ranges[0],

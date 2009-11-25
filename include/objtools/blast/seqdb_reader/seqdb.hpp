@@ -1226,15 +1226,33 @@ public:
     /// Get masked ranges of a sequence.
     ///
     /// For the provided OID and list of algorithm IDs, this method
+    /// gets a list of masked areas of those sequences for the first
+    /// algorithm ID.  The list of masked areas is returned via the 
+    /// ranges parameter.
+    ///
+    /// @param oid The ordinal ID of the sequence. [in]
+    /// @param algo_id The algorithm ID to get data for. [in]
+    /// @param ranges The list of sequence offset ranges. [out]
+    NCBI_DEPRECATED 
+    void GetMaskData(int                 oid,
+                     const vector<int> & algo_ids,
+                     TSequenceRanges   & ranges) 
+    {
+        GetMaskData(oid, algo_ids[0], ranges);
+    }         
+
+    /// Get masked ranges of a sequence.
+    ///
+    /// For the provided OID and algorithm ID, this method
     /// gets a list of masked areas of those sequences.  The list of
     /// masked areas is returned via the ranges parameter.
     ///
     /// @param oid The ordinal ID of the sequence. [in]
-    /// @param algo_ids The algorithm IDs to get data for. [in]
+    /// @param algo_id The algorithm ID to get data for. [in]
     /// @param ranges The list of sequence offset ranges. [out]
-    void GetMaskData(int                 oid,
-                     const vector<int> & algo_ids,
-                     TSequenceRanges   & ranges);
+    void GetMaskData(int              oid,
+                     int              algo_id,
+                     TSequenceRanges &ranges);
 #endif
 
     /// Invoke the garbage collector to free up memory

@@ -1090,10 +1090,10 @@ void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,
 }
 
 void CSeqDB::GetMaskData(int                 oid,
-                         const vector<int> & algo_ids,
+                         int                 algo_id,
                          TSequenceRanges   & ranges)
 {
-    m_Impl->GetMaskData(oid, algo_ids, ranges);
+    m_Impl->GetMaskData(oid, algo_id, ranges);
 }
 
 #endif

@@ -141,10 +141,9 @@ public:
     /// the returned data is no longer needed.
     ///
     /// @param vol_idx The index of the database volume.
-    /// @param algo_ids A list of (global) algorithms IDs.
-    /// @return The volume specific algorithm IDs.
-    const vector<int> &
-    GetVolAlgos(int vol_idx, const vector<int> & algo_ids);
+    /// @param algo_id A list of (global) algorithms ID.
+    /// @return The volume specific algorithm ID.
+    int GetVolAlgo(int vol_idx, int algo_id);
     
     /// Translate a real algorithm ID to a volume algorithm ID.
     int RealToVol(int vol_idx, int algo_id);
@@ -166,13 +165,13 @@ private:
     bool m_Empty;
     
     /// Cached list of real algorithms for BuildVolAlgos.
-    vector<int> m_CacheRealAlgos;
+    int m_CacheRealAlgo;
     
     /// Cached volume index for BuildVolAlgos.
     int m_CacheVolIndex;
     
     /// Cached list of volume algorithms for BuildVolAlgos.
-    vector<int> m_CacheVolAlgos;
+    int m_CacheVolAlgo;
 };
 
 
@@ -1009,11 +1008,11 @@ public:
     /// actually the list of non-maksed (rather than masked) ranges.
     ///
     /// @param oid The ordinal ID of the sequence. [in]
-    /// @param algo_id The algorithm IDs to get data for. [in]
+    /// @param algo_id The algorithm ID to get data for. [in]
     /// @param inverted If true, return a list of included ranges. [in]
     /// @param ranges The list of sequence offset ranges. [out]
     void GetMaskData(int                         oid,
-                     const vector<int>         & algo_id,
+                     int                         algo_id,
                      CSeqDB::TSequenceRanges   & ranges);
 #endif
 

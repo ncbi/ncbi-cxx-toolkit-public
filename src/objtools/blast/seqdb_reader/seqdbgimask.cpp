@@ -100,12 +100,16 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
     // Retrieving the mask data
     const Int4 * datap = (const Int4 *)
               m_DataFile.GetRegion(m_DataLease, retv, retv+4, locked);
-    ranges._size = *datap;
-    ranges.resize(ranges._size);
+    Int4 n = *datap;
+
+    if (ranges._capacity < (ranges._size + n)) {
+        ranges._data = (CSeqDB::TOffsetPair *) realloc(ranges._data, (ranges._size + n)*8);
+    }
     // Remapping the mask data
     datap = (const Int4 *)
-            m_DataFile.GetRegion(m_DataLease, retv+4, retv + 8*ranges._size + 4, locked);
-    memcpy(ranges._data, datap, ranges._size * 8);
+            m_DataFile.GetRegion(m_DataLease, retv+4, retv + 8*n + 4, locked);
+    memcpy(ranges._data + ranges._size, datap,  n*8);
+    ranges._size +=n;
     return;
 }
 

@@ -474,10 +474,8 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     // process masks
     ITERATE(vector<int>, algo_id, m_MaskIds) { 
 
-        vector<int> algo_ids;
         CSeqDB::TSequenceRanges ranges;
-        algo_ids.push_back(*algo_id);
-        m_Source->GetMaskData(m_Oid, algo_ids, ranges);
+        m_Source->GetMaskData(m_Oid, *algo_id, ranges);
 
         SBlastDbMaskData mask_data;
         mask_data.algorithm_id = m_MaskIdMap[*algo_id];

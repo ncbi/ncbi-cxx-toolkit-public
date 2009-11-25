@@ -1859,7 +1859,7 @@ static const string* s_CheckUniqueValues(const map<string, string> & m)
 }
 
 CSeqDB_IdRemapper::CSeqDB_IdRemapper()
-    : m_NextId(100), m_Empty(true)
+    : m_NextId(100), m_Empty(true), m_CacheRealAlgo(-1)
 {
 }
 
@@ -1920,21 +1920,14 @@ bool CSeqDB_IdRemapper::GetDesc(int algorithm_id, string & desc)
     return true;
 }
 
-const vector<int> &
-CSeqDB_IdRemapper::GetVolAlgos(int vol_idx, const vector<int> & algo_ids)
+int CSeqDB_IdRemapper::GetVolAlgo(int vol_idx, int algo_id)
 {
-    if (algo_ids != m_CacheRealAlgos || vol_idx != m_CacheVolIndex) {
-        m_CacheVolAlgos.resize(0);
-        
-        ITERATE(vector<int>, iter, algo_ids) {
-            int volid = RealToVol(vol_idx, *iter);
-            m_CacheVolAlgos.push_back(volid);
-        }
-        
+    if (algo_id != m_CacheRealAlgo || vol_idx != m_CacheVolIndex) {
         m_CacheVolIndex = vol_idx;
-        m_CacheRealAlgos = algo_ids;
+        m_CacheRealAlgo = algo_id;
+        m_CacheVolAlgo = RealToVol(vol_idx, algo_id);
     }
-    return m_CacheVolAlgos;
+    return m_CacheVolAlgo;
 }
 
 int CSeqDB_IdRemapper::RealToVol(int vol_idx, int algo_id)
@@ -2132,64 +2125,51 @@ struct SReadInt4 {
     static void Read(CBlastDbBlob & blob, int n, 
                      CSeqDB::TSequenceRanges & ranges)
     {
-    const void * src = (const void *) blob.ReadRaw(n*8);
+        const void * src = (const void *) blob.ReadRaw(n*8);
 
-    // reallocate if necessary
-    if (ranges._capacity < (ranges._size + n) ) {
-	    ranges._data = (CSeqDB::TOffsetPair *) realloc(ranges._data, (ranges._size+n)*8 );
-    }
-	
-    memcpy(ranges._data + ranges._size*8,src,n*8);
-	ranges._size += n;
+        // reallocate if necessary
+        if (ranges._capacity < (ranges._size + n) ) {
+            ranges._data = (CSeqDB::TOffsetPair *) realloc(ranges._data, (ranges._size+n)*8 );
+        }
+
+        memcpy(ranges._data + ranges._size, src, n*8);
+        ranges._size += n;
     }
 };
 
 template<class TRead>
-void s_ReadRanges(const vector<int>           & vol_algos,
+void s_ReadRanges(int                       vol_algo,
                   CSeqDB::TSequenceRanges & ranges,
-                  CBlastDbBlob                & blob)
+                  CBlastDbBlob            & blob)
 {
     int num_ranges = TRead::Read(blob);
     
     for(int rng = 0; rng < num_ranges; rng++) {
-        int vol_algo = TRead::Read(blob);
+        int algo = TRead::Read(blob);
         int num_pairs = TRead::Read(blob);
-        bool need = false;
-        
-        ITERATE(vector<int>, iter, vol_algos) {
-            if (*iter == vol_algo) {
-                need = true;
-                break;
-            }
-        }
-        
-        _ASSERT(vol_algo >= 0);
-        //_ASSERT(num_pairs > 0);
-        
-        if (need) {
+        if (algo == vol_algo) {
             TRead::Read(blob, num_pairs, ranges);        
-        } else {
-            int skip_amt = num_pairs * 2 * TRead::numeric_size;
-            blob.SeekRead(blob.GetReadOffset() + skip_amt);
-        }
+            break;
+        } 
+        int skip_amt = num_pairs * 2 * TRead::numeric_size;
+        blob.SeekRead(blob.GetReadOffset() + skip_amt);
     }
 }
 
 void CSeqDBImpl::GetMaskData(int                       oid,
-                             const vector<int>       & algo_ids,
+                             int                       algo_id,
                              CSeqDB::TSequenceRanges & ranges)
 {
     CHECK_MARKER();
     
     // This reads the data written by CWriteDB_Impl::SetMaskData
-    
     ranges._size=0;
     
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
     
     if (m_UseGiMask) {
-        m_GiMask->GetMaskData(algo_ids[0], x_GetSeqGI(oid, locked), ranges, locked);
+        m_GiMask->GetMaskData(algo_id, x_GetSeqGI(oid, locked), ranges, locked);
         return;
     }
 
@@ -2215,15 +2195,12 @@ void CSeqDBImpl::GetMaskData(int                       oid,
         // If there actually is mask data, then we need to do the
         // algorithm translation.
         
-        const vector<int> & vol_algos =
-            m_AlgorithmIds.GetVolAlgos(vol_idx, algo_ids);
+        int vol_algo_id = m_AlgorithmIds.GetVolAlgo(vol_idx, algo_id);
         
-        s_ReadRanges<SReadInt4>(vol_algos, ranges, blob);
+        s_ReadRanges<SReadInt4>(vol_algo_id, ranges, blob);
     }
     
     //int seq_length = 0;
-    
-    m_Atlas.Unlock(locked);
 }
 #endif
 
