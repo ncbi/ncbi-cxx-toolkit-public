@@ -106,7 +106,7 @@ void CRC32_init(void) {
             CRCTable[i] = crc;
         else
         {
-            assert( CRCTable[i] == crc );
+            _ASSERT( CRCTable[i] == crc );
         }
     } 
     initialized = 1;
