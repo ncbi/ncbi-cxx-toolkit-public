@@ -49,10 +49,6 @@ class CNCDBStat;
 enum ENCStmtType
 {
     eStmt_CreateDBPart,      ///< Create new database part
-    eStmt_SetDBPartBlobId,   ///< Update value of minimum blob id in database
-                             ///< part
-    eStmt_SetDBPartCreated,  ///< Set time when database part was created to
-                             ///< the current time
     eStmt_DeleteDBPart,      ///< Delete info about old database part
     eStmt_GetBlobId,         ///< Get id of blob by key, subkey, version
     eStmt_GetKeyIds,         ///< Get ids of blobs with given key
@@ -113,11 +109,6 @@ protected:
     /// Create new database part and save information about it.
     /// Creation time in given info structure is set to current time.
     void CreateDBPart(SNCDBPartInfo* part_info);
-    /// Set minimum blob id in database part
-    void SetDBPartMinBlobId(TNCDBPartId part_id, TNCBlobId blob_id);
-    /// Set time when database part was created equal to current time.
-    /// Information in given structure is updated as well.
-    void UpdateDBPartCreated(SNCDBPartInfo* part_info);
     /// Delete database part
     void DeleteDBPart(TNCDBPartId part_id);
     /// Read information about all database parts in order of their creation
@@ -266,11 +257,6 @@ public:
     /// Create new database part and save information about it.
     /// Creation time in given info structure is set to current time.
     void CreateDBPart(SNCDBPartInfo* part_info);
-    /// Set minimum blob id in database part
-    void SetDBPartMinBlobId(TNCDBPartId part_id, TNCBlobId blob_id);
-    /// Set time when database part was created equal to current time.
-    /// Information in given structure is updated as well.
-    void UpdateDBPartCreated(SNCDBPartInfo* part_info);
     /// Delete database part
     void DeleteDBPart(TNCDBPartId part_id);
     /// Read information about all database parts in order of their creation
@@ -437,6 +423,9 @@ public:
     /// Part of the interface required by CNCTlsObject.
     static void DeleteTlsObject(void* obj_ptr);
 
+    /// Get name of the file all connections will be created to.
+    const string& GetFileName(void) const;
+
 private:
     /// Name of database file all objects will connect to
     string       m_FileName;
@@ -480,6 +469,10 @@ public:
     /// Return file to the pool
     void ReturnFile(CNCDBMetaFile*  file);
     void ReturnFile(CNCDBDataFile*  file);
+
+    /// Get name of files this pool is for
+    const string& GetMetaFileName(void) const;
+    const string& GetDataFileName(void) const;
 
 private:
     CNCDBFilesPool(const CNCDBFilesPool&);
@@ -554,7 +547,7 @@ public:
     /// Close real file opened with OpenRealFile() and assign pointer to NULL.
     static int CloseRealFile(sqlite3_file*& file);
     /// Find already opened file by its name.
-    static CNCFSOpenFile* FindOpenFile(const char* name);
+    static CNCFSOpenFile* FindOpenFile(const string& name);
     /// Schedule writing data to the file for execution in background thread.
     static void WriteToFile(CNCFSOpenFile* file,
                             Int8           offset,
@@ -578,10 +571,13 @@ private:
     static void x_DoCloseFile(SNCFSEvent* event);
 
 
+    typedef map<string, CNCFSOpenFile*>  TFilesList;
+
+
     /// Read/write lock to work with list of all open files
     static CFastRWLock          sm_FilesListLock;
     /// Head of the list of all open files
-    static CNCFSOpenFile*       sm_FilesListHead;
+    static TFilesList           sm_FilesList;
     /// Mutex to work with write/close events queue
     static CSpinLock            sm_EventsLock;
     /// Head of write/close events queue
@@ -650,10 +646,6 @@ private:
     CNCFSOpenFile& operator= (const CNCFSOpenFile&);
 
 
-    /// Previous file in the list of all open files
-    CNCFSOpenFile*  m_PrevFile;
-    /// Next file in the list of all open files
-    CNCFSOpenFile*  m_NextFile;
     /// Name of the file
     string          m_Name;
     /// Real file in default SQLite's VFS used for writing
@@ -806,18 +798,6 @@ inline void
 CNCDBIndexFile::CreateDBPart(SNCDBPartInfo* part_info)
 {
     CNCDBFile::CreateDBPart(part_info);
-}
-
-inline void
-CNCDBIndexFile::SetDBPartMinBlobId(TNCDBPartId part_id, TNCBlobId blob_id)
-{
-    CNCDBFile::SetDBPartMinBlobId(part_id, blob_id);
-}
-
-inline void
-CNCDBIndexFile::UpdateDBPartCreated(SNCDBPartInfo* part_info)
-{
-    CNCDBFile::UpdateDBPartCreated(part_info);
 }
 
 inline void
@@ -1037,6 +1017,13 @@ CNCDBFileObjFactory<TFile>::DeleteTlsObject(void*)
     // Nothing to do now because it's static
 }
 
+template <class TFile>
+inline const string&
+CNCDBFileObjFactory<TFile>::GetFileName(void) const
+{
+    return m_FileName;
+}
+
 
 
 inline
@@ -1071,6 +1058,18 @@ CNCDBFilesPool::ReturnFile(CNCDBDataFile*)
 {
     // Nothing to be done for now until file objects are re-used for different
     // threads.
+}
+
+inline const string&
+CNCDBFilesPool::GetMetaFileName(void) const
+{
+    return m_Metas.GetFileName();
+}
+
+inline const string&
+CNCDBFilesPool::GetDataFileName(void) const
+{
+    return m_Datas.GetFileName();
 }
 
 

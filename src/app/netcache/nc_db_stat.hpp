@@ -61,6 +61,10 @@ struct SNCDBStatData
     CNCStatFigure<Uint8>            m_NumOfDBParts;
     /// Difference between the highest and lowest database part ids
     CNCStatFigure<Int8>             m_DBPartsIdsSpan;
+    /// Size of all meta files in database part
+    CNCStatFigure<Int8>             m_MetaPartSize;
+    /// Size of all data files in database part
+    CNCStatFigure<Int8>             m_DataPartSize;
     /// Size of individual meta file in database part
     CNCStatFigure<Int8>             m_MetaFileSize;
     /// Size of individual data file in database part
@@ -144,8 +148,10 @@ public:
     /// Add measurement for number of database parts and difference between
     /// highest and lowest ids of database parts.
     void AddNumberOfDBParts  (size_t num_parts, Int8 ids_span);
-    /// Add measurement for the single database part files sizes.
+    /// Add measurement for the database part files sizes.
     void AddDBPartSizes      (Int8 meta_size, Int8 data_size);
+    /// Add measurement for the single database volume files sizes.
+    void AddDBFilesSizes     (Int8 meta_size, Int8 data_size);
     /// Add measurement for the total database size (separately for meta files
     /// part and for data files part).
     void AddTotalDBSize      (Int8 meta_size, Int8 data_size);
@@ -261,6 +267,16 @@ CNCDBStat::AddNumberOfDBParts(size_t num_parts, Int8 ids_span)
 
 inline void
 CNCDBStat::AddDBPartSizes(Int8 meta_size, Int8 data_size)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    data->m_MetaPartSize.AddValue(meta_size);
+    data->m_DataPartSize.AddValue(data_size);
+    data->m_ObjLock.Unlock();
+}
+
+inline void
+CNCDBStat::AddDBFilesSizes(Int8 meta_size, Int8 data_size)
 {
     SNCDBStatData* data = GetObjPtr();
     data->m_ObjLock.Lock();

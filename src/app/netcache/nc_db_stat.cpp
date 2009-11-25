@@ -67,6 +67,8 @@ SNCDBStatData::SNCDBStatData(void)
 {
     m_NumOfDBParts    .Initialize();
     m_DBPartsIdsSpan  .Initialize();
+    m_MetaPartSize    .Initialize();
+    m_DataPartSize    .Initialize();
     m_MetaFileSize    .Initialize();
     m_DataFileSize    .Initialize();
     m_TotalMetaSize   .Initialize();
@@ -99,6 +101,8 @@ SNCDBStatData::CollectTo(SNCDBStatData* dest)
 
     dest->m_NumOfDBParts    .AddValues(m_NumOfDBParts);
     dest->m_DBPartsIdsSpan  .AddValues(m_DBPartsIdsSpan);
+    dest->m_MetaPartSize    .AddValues(m_MetaPartSize);
+    dest->m_DataPartSize    .AddValues(m_DataPartSize);
     dest->m_MetaFileSize    .AddValues(m_MetaFileSize);
     dest->m_DataFileSize    .AddValues(m_DataFileSize);
     dest->m_TotalMetaSize   .AddValues(m_TotalMetaSize);
@@ -186,6 +190,11 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                         << data.m_TotalDBSize.GetMaximum()   << " max ("
                         << data.m_TotalDataSize.GetMaximum() << " data, "
                         << data.m_TotalMetaSize.GetMaximum() << " meta)" << endl
+          << "   Parts - "
+                        << data.m_DataPartSize.GetAverage() << " avg data, "
+                        << data.m_MetaPartSize.GetAverage() << " avg meta, "
+                        << data.m_DataPartSize.GetMaximum() << " max data, "
+                        << data.m_MetaPartSize.GetMaximum() << " max meta" << endl
           << "DB files - "
                         << data.m_DataFileSize.GetAverage() << " avg data, "
                         << data.m_MetaFileSize.GetAverage() << " avg meta, "

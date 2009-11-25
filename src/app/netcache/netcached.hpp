@@ -40,7 +40,6 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_config.hpp>
 
-#include "smng_thread.hpp"
 #include "nc_storage.hpp"
 #include "nc_utils.hpp"
 
@@ -168,17 +167,6 @@ public:
     /// Ask server to stop after receiving given signal
     void RequestShutdown(int signal = 0);
     
-    // Check if session management turned on
-    bool IsManagingSessions(void) const;
-    /// Register new session
-    ///
-    /// @return
-    ///   TRUE if session has been registered,
-    ///   FALSE if session management cannot do it (shutdown)
-    bool RegisterSession  (const string& host, unsigned int pid);
-    /// Unregister session
-    void UnregisterSession(const string& host, unsigned int pid);
-
     /// Get monitor for the server
     CServer_Monitor* GetServerMonitor(void);
     /// Get storage for the given cache name.
@@ -225,11 +213,6 @@ private:
     ///   Flag if all storages should be forced to reinitialize
     void x_CreateStorages(const IRegistry& reg, bool do_reinit);
 
-    /// Start session management thread
-    void x_StartSessionManagement(unsigned int shutdown_timeout);
-    /// Stop session management thread
-    void x_StopSessionManagement (void);
-
     /// Print full server statistics into stream or diagnostics
     void x_PrintServerStats(CPrintTextProxy& proxy);
 
@@ -259,8 +242,6 @@ private:
     TStorageMap                    m_StorageMap;
     /// Counter for blob id
     CAtomicCounter                 m_BlobIdCounter;
-    /// Session management thread
-    CRef<CSessionManagementThread> m_SessionMngThread;
     /// Server monitor
     CServer_Monitor                m_Monitor;
 };
@@ -385,30 +366,6 @@ CNetCacheServer::RequestShutdown(int sig)
         m_Shutdown = true;
         m_Signal = sig;
     }
-}
-
-inline bool
-CNetCacheServer::IsManagingSessions(void) const
-{
-    return !m_SessionMngThread.Empty();
-}
-
-inline bool
-CNetCacheServer::RegisterSession(const string& host, unsigned int pid)
-{
-    if (m_SessionMngThread.Empty())
-        return false;
-
-    return m_SessionMngThread->RegisterSession(host, pid);
-}
-
-inline void
-CNetCacheServer::UnregisterSession(const string& host, unsigned int pid)
-{
-    if (m_SessionMngThread.Empty())
-        return;
-
-    m_SessionMngThread->UnregisterSession(host, pid);
 }
 
 inline CServer_Monitor*

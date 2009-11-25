@@ -226,26 +226,6 @@ CNCBlobLockHolder::x_OnLockValidated(void)
     m_Storage->GetStat()->AddLockAcquired(m_LockTimer.Elapsed());
 }
 
-inline bool
-CNCBlobLockHolder::x_ValidateLock(void)
-{
-    m_BlobExists = m_Storage->ReadBlobKey(&m_BlobInfo);
-    // If there's no need to create then we're valid anyway
-    if (m_BlobExists  ||  m_BlobAccess != eCreate) {
-        if (m_BlobAccess == eCreate  &&  m_BlobExists
-            &&  m_BlobInfo.part_id != m_CreateCoords.part_id)
-        {
-            m_Storage->DeleteBlob(m_BlobInfo);
-            m_BlobInfo.AssignCoords(m_CreateCoords);
-            m_RWHolder = m_CreateHolder;
-            m_CreateHolder.Reset();
-            _VERIFY(m_Storage->CreateBlob(m_BlobInfo, NULL));
-        }
-        x_OnLockValidated();
-    }
-    return m_LockValid;
-}
-
 inline void
 CNCBlobLockHolder::x_ReleaseLock(void)
 {
@@ -258,11 +238,36 @@ CNCBlobLockHolder::x_ReleaseLock(void)
     m_LockValid = false;
 }
 
+inline bool
+CNCBlobLockHolder::x_ValidateLock(SNCBlobCoords* new_coords)
+{
+    m_BlobExists = m_Storage->ReadBlobKey(&m_BlobInfo);
+    if (!m_BlobExists  &&  !m_BlobInfo.key.empty()) {
+        SNCBlobIdentity new_ident(m_BlobInfo);
+        if (m_Storage->ReadBlobCoords(&new_ident)) {
+            new_coords->AssignCoords(new_ident);
+            return false;
+        }
+    }
+    // If there's no need to create then we're valid anyway
+    if (m_BlobExists  ||  m_BlobAccess != eCreate) {
+        if (m_BlobAccess == eCreate  &&  m_BlobExists
+            &&  m_Storage->MoveBlobIfNeeded(m_BlobInfo, m_CreateCoords))
+        {
+            x_ReleaseLock();
+            m_BlobInfo.AssignCoords(m_CreateCoords);
+            m_RWHolder.Swap(m_CreateHolder);
+        }
+        x_OnLockValidated();
+    }
+    return m_LockValid;
+}
+
 void
 CNCBlobLockHolder::AcquireLock(TNCDBPartId   part_id,
+                               TNCDBVolumeId volume_id,
                                TNCBlobId     blob_id,
-                               ENCBlobAccess access,
-                               bool          change_access_time)
+                               ENCBlobAccess access)
 {
     _ASSERT(blob_id > 0);
     _ASSERT(part_id >= 0);
@@ -270,9 +275,10 @@ CNCBlobLockHolder::AcquireLock(TNCDBPartId   part_id,
 
     m_BlobInfo.Clear();
     m_BlobInfo.part_id   = part_id;
+    m_BlobInfo.volume_id = volume_id;
     m_BlobInfo.blob_id   = blob_id;
     m_BlobAccess         = access;
-    m_SaveInfoOnRelease  = change_access_time;
+    m_SaveInfoOnRelease  = false;
     m_DeleteNotFinalized = false;
 
     x_InitLock();
@@ -355,10 +361,12 @@ CNCBlobLockHolder::OnLockAcquired(CRWLockHolder* holder)
         m_LockKnown = true;
     }}
 
-    if (!x_ValidateLock()) {
-        // Lock can be invalid here only in one case - blob should be created
-        // and yet doesn't exist in database.
-        x_RetakeCreateLock();
+    SNCBlobCoords new_coords;
+    if (!x_ValidateLock(&new_coords)) {
+        if (m_BlobAccess == eCreate)
+            x_RetakeCreateLock();
+        else
+            x_LockAndValidate(new_coords);
     }
 }
 
@@ -383,25 +391,32 @@ CNCBlobLockHolder::x_RetakeCreateLock(void)
 }
 
 bool
-CNCBlobLockHolder::x_LockAndValidate(const SNCBlobCoords& coords)
+CNCBlobLockHolder::x_LockAndValidate(SNCBlobCoords coords)
 {
-    TRWLockHolderRef rw_holder(m_Storage->LockBlobId(coords.blob_id,
-                                                     m_BlobAccess));
-    bool lock_known;
-    {{
-        CSpinGuard guard(m_LockAcqMutex);
+    for (;;) {
+        TRWLockHolderRef rw_holder(m_Storage->LockBlobId(coords.blob_id,
+                                                         m_BlobAccess));
+        bool lock_known;
+        {{
+            CSpinGuard guard(m_LockAcqMutex);
 
-        x_ReleaseLock();
-        m_BlobInfo.AssignCoords(coords);
-        rw_holder->AddListener(this);
-        m_RWHolder = rw_holder;
-        lock_known = m_LockKnown = rw_holder->IsLockAcquired();
-    }}
-    if (lock_known) {
-        return x_ValidateLock();
-    }
-    else {
-        return true;
+            x_ReleaseLock();
+            m_BlobInfo.AssignCoords(coords);
+            rw_holder->AddListener(this);
+            m_RWHolder = rw_holder;
+            lock_known = m_LockKnown = rw_holder->IsLockAcquired();
+        }}
+        if (lock_known) {
+            SNCBlobCoords new_coords;
+            bool validated = x_ValidateLock(&new_coords);
+            if (validated  ||  coords == new_coords)
+                return validated;
+            coords.AssignCoords(new_coords);
+            continue;
+        }
+        else {
+            return true;
+        }
     }
 }
 

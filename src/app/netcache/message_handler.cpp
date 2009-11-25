@@ -148,11 +148,6 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "REMK",     {&CNCMessageHandler::x_DoCmd_IC_PrepareRemoveKey, "IC_REMKey"},
-        { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
-          { "key",     eNSPT_Str,  eNSPA_Required },
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "SHUTDOWN", {&CNCMessageHandler::x_DoCmd_Shutdown, "SHUTDOWN"},
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
@@ -181,35 +176,28 @@ CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "OK",       {&CNCMessageHandler::x_DoCmd_OK, "OK"} },
-    { "SMR",      {&CNCMessageHandler::x_DoCmd_SessionReg, "SessManReg"},
-        { { "host",    eNSPT_Id,   eNSPA_Required },
-          { "port",    eNSPT_Int,  eNSPA_Required },
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "SMU",      {&CNCMessageHandler::x_DoCmd_SessionUnreg, "SessManUnreg"},
-        { { "host",    eNSPT_Id,   eNSPA_Required },
-          { "port",    eNSPT_Int,  eNSPA_Required },
-          { "ip",      eNSPT_Str,  eNSPA_Optchain },
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "ISOP",     {&CNCMessageHandler::x_DoCmd_IC_IsOpen, "ISOpen"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "LOG",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
-    { "STAT",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
-    { "DROPSTAT", {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
-    { "PUT",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "not_impl"} },
-    { "STSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
+    { "LOG",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "LOG"} },
+    { "STAT",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "STAT"} },
+    { "DROPSTAT", {&CNCMessageHandler::x_DoCmd_NotImplemented, "DROPSTAT"} },
+    { "PUT",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "PUT"} },
+    { "SMR",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "SMR"} },
+    { "SMU",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "SMU"} },
+    { "STSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_STSP"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "GTSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
+    { "GTSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_GTSP"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "SVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
+    { "SVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_SVRP"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "GVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
+    { "GVRP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_GVRP"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "PRG1",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_not_impl"},
+    { "PRG1",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_PRG1"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "EXIT",     {&CNCMessageHandler::x_DoCmd_Exit} },
+    { "REMK",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_REMK"},
+        { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
     { NULL }
 };
 
@@ -1045,65 +1033,12 @@ CNCMessageHandler::x_DoCmd_Health(void)
 }
 
 bool
-CNCMessageHandler::x_DoCmd_Exit(void)
-{
-    _exit(0);
-    return true;
-}
-
-bool
 CNCMessageHandler::x_DoCmd_Monitor(void)
 {
     m_Socket->DisableOSSendDelay(false);
     m_SockBuffer.WriteMessage("OK:", "Monitor for " NETCACHED_VERSION "\n");
     m_Monitor->SetSocket(*m_Socket);
     x_CloseConnection();
-    return true;
-}
-
-void
-CNCMessageHandler::x_DoSessionManagement(bool reg)
-{
-    if (!m_Server->IsManagingSessions()) {
-        m_DiagContext->SetRequestStatus(eStatus_NotAllowed);
-        m_SockBuffer.WriteMessage("ERR:",
-                                  "Server does not support sessions ");
-    }
-    else {
-        if (!m_SessionPort  ||  m_SessionHost.empty()) {
-            m_DiagContext->SetRequestStatus(eStatus_BadCmd);
-            NCBI_THROW(CNSProtoParserException, eWrongParams,
-                       "Invalid request for session management");
-        }
-
-        if (reg) {
-            m_Server->RegisterSession(m_SessionHost, m_SessionPort);
-        } else {
-            m_Server->UnregisterSession(m_SessionHost, m_SessionPort);
-        }
-        m_SockBuffer.WriteMessage("OK:", "");
-    };
-
-    if (m_SockBuffer.IsWriteDataPending()) {
-        ERR_POST_X(1, Critical
-                      << "Cannot send response to session management request "
-                         "and close connection at the same time. "
-                         "Closing connection without sending.");
-    }
-    x_CloseConnection();
-}
-
-bool
-CNCMessageHandler::x_DoCmd_SessionReg(void)
-{
-    x_DoSessionManagement(true);
-    return true;
-}
-
-bool
-CNCMessageHandler::x_DoCmd_SessionUnreg(void)
-{
-    x_DoSessionManagement(false);
     return true;
 }
 
@@ -1288,42 +1223,6 @@ CNCMessageHandler::x_DoCmd_IC_GetAccessTime(void)
 {
     int t = m_BlobLock->GetBlobAccessTime();
     m_SockBuffer.WriteMessage("OK:", NStr::IntToString(t));
-    return true;
-}
-
-inline bool
-CNCMessageHandler::x_LockNextIdToRemove(void)
-{
-    if (m_NextIdToRemove == m_BlobIdsList.end())
-        return false;
-
-    m_BlobLock = m_Storage->GetBlobAccess(eWrite, *m_NextIdToRemove);
-    ++m_NextIdToRemove;
-    x_SetState(eWaitForBlobLock);
-    return true;
-}
-
-bool
-CNCMessageHandler::x_DoCmd_IC_PrepareRemoveKey(void)
-{
-    m_Storage->FillBlobIds(m_BlobKey, &m_BlobIdsList);
-    m_NextIdToRemove = m_BlobIdsList.begin();
-    m_CmdProcessor = &CNCMessageHandler::x_DoCmd_IC_RemoveKey;
-
-    x_LockNextIdToRemove();
-    return true;
-}
-
-bool
-CNCMessageHandler::x_DoCmd_IC_RemoveKey(void)
-{
-    m_BlobLock->DeleteBlob();
-    m_BlobLock->ReleaseLock();
-    m_BlobLock.Reset();
-
-    if (!x_LockNextIdToRemove()) {
-        m_SockBuffer.WriteMessage("OK:", "");
-    }
     return true;
 }
 

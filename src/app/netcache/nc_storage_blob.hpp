@@ -242,18 +242,17 @@ public:
     /// when lock is released if blob wasn't properly finalized.
     ///
     /// @param part_id
-    ///   Database part id. If 0 then part id will be determined by blob id.
+    ///   Database part id.
+    /// @param volume_id
+    ///   Id of volume in the database part.
     /// @param blob_id
     ///   Id of the blob
     /// @param access
     ///   Required access to the blob
-    /// @param change_access_time
-    ///   Flag if holder should change blob access time when lock will be
-    ///   released.
-    void AcquireLock(TNCDBPartId     part_id,
-                     TNCBlobId       blob_id,
-                     ENCBlobAccess   access,
-                     bool            change_access_time);
+    void AcquireLock(TNCDBPartId   part_id,
+                     TNCDBVolumeId volume_id,
+                     TNCBlobId     blob_id,
+                     ENCBlobAccess access);
 
 private:
     CNCBlobLockHolder(const CNCBlobLockHolder&);
@@ -281,10 +280,10 @@ private:
     /// @return
     ///   TRUE if lock is valid, i.e. if access mode is eCreate then blob
     ///   record exists in database (created if needed), for modes eRead and
-    ///   eWrite no validation is necessary - just check and remember if blob
-    ///   exists. FALSE if lock is invalid, i.e. mentioned above requirement
-    ///   is not met
-    bool x_ValidateLock(void);
+    ///   eWrite then blob exists and didn't change its coordinates. FALSE if
+    ///   lock is invalid, i.e. mentioned above requirements are not met.
+    ///   new_coords will contain new coordinates if blob was moved.
+    bool x_ValidateLock(SNCBlobCoords* new_coords);
     /// Lock blob with given coordinates and validate acquired lock. If
     /// another lock was already acquired at the moment then it's
     /// automatically released.
@@ -298,7 +297,7 @@ private:
     ///   OnLockAcquired().
     ///
     /// @sa x_ValidateLock, OnLockAcquired
-    bool x_LockAndValidate(const SNCBlobCoords& coords);
+    bool x_LockAndValidate(SNCBlobCoords coords);
     /// Internal releasing of the lock
     /// Only pure releasing without obtaining mutex and statistics
     /// registration, thus it should execute from constructor or under

@@ -33,9 +33,12 @@
 #include "nc_db_files.hpp"
 #include "nc_utils.hpp"
 #include "nc_db_stat.hpp"
+#include "error_codes.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+#define NCBI_USE_ERRCODE_X   NetCache_Storage
 
 
 static const char* kNCBlobKeys_Table          = "NCB";
@@ -65,21 +68,21 @@ static const char* kNCDBIndex_DBIdCol         = "id";
 static const char* kNCDBIndex_MetaNameCol     = "met";
 static const char* kNCDBIndex_DataNameCol     = "dat";
 static const char* kNCDBIndex_CreatedTimeCol  = "tm";
-static const char* kNCDBIndex_MinBlobIdCol    = "bid";
+static const char* kNCDBIndex_VolumesCol      = "vlm";
 
 
-CFastRWLock          CNCFileSystem::sm_FilesListLock;
-CNCFSOpenFile*       CNCFileSystem::sm_FilesListHead   = NULL;
-CSpinLock            CNCFileSystem::sm_EventsLock;
-SNCFSEvent* volatile CNCFileSystem::sm_EventsHead      = NULL;
-SNCFSEvent*          CNCFileSystem::sm_EventsTail      = NULL;
-CRef<CThread>        CNCFileSystem::sm_BGThread;
-bool                 CNCFileSystem::sm_Stopped         = false;
-bool volatile        CNCFileSystem::sm_BGWorking       = false;
-CSemaphore           CNCFileSystem::sm_BGSleep        (0, 1000000);
-bool                 CNCFileSystem::sm_DiskInitialized = false;
-CAtomicCounter       CNCFileSystem::sm_WaitingOnAlert;
-CSemaphore           CNCFileSystem::sm_OnAlertWaiter  (0, 1000000);
+CFastRWLock               CNCFileSystem::sm_FilesListLock;
+CNCFileSystem::TFilesList CNCFileSystem::sm_FilesList;
+CSpinLock                 CNCFileSystem::sm_EventsLock;
+SNCFSEvent* volatile      CNCFileSystem::sm_EventsHead      = NULL;
+SNCFSEvent*               CNCFileSystem::sm_EventsTail      = NULL;
+CRef<CThread>             CNCFileSystem::sm_BGThread;
+bool                      CNCFileSystem::sm_Stopped         = false;
+bool volatile             CNCFileSystem::sm_BGWorking       = false;
+CSemaphore                CNCFileSystem::sm_BGSleep        (0, 1000000);
+bool                      CNCFileSystem::sm_DiskInitialized = false;
+CAtomicCounter            CNCFileSystem::sm_WaitingOnAlert;
+CSemaphore                CNCFileSystem::sm_OnAlertWaiter  (0, 1000000);
 
 
 
@@ -168,10 +171,23 @@ CNCDBFile::CreateIndexDatabase(void)
                << kNCDBIndex_MetaNameCol    << " varchar not null,"
                << kNCDBIndex_DataNameCol    << " varchar not null,"
                << kNCDBIndex_CreatedTimeCol << " int not null,"
-               << kNCDBIndex_MinBlobIdCol   << " int64 not null default 0"
+               << kNCDBIndex_VolumesCol     << " int not null"
         << ")";
     stmt.SetSql(sql);
     stmt.Execute();
+
+    try {
+        // Try to upgrade from previous version of index database
+        sql.Clear();
+        sql << "alter table " << kNCDBIndex_Table
+            << " add column " << kNCDBIndex_VolumesCol
+                                            << " int not null default 0";
+        stmt.SetSql(sql);
+        stmt.Execute();
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST_X(15, Info << ex);
+    }
 }
 
 void
@@ -264,18 +280,9 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                 << "(" << kNCDBIndex_DBIdCol        << ","
                        << kNCDBIndex_MetaNameCol    << ","
                        << kNCDBIndex_DataNameCol    << ","
-                       << kNCDBIndex_CreatedTimeCol
-                << ")values(?1,?2,?3,?4)";
-            break;
-        case eStmt_SetDBPartBlobId:
-            sql << "update " << kNCDBIndex_Table
-                <<   " set " << kNCDBIndex_MinBlobIdCol << "=?2"
-                << " where " << kNCDBIndex_DBIdCol << "=?1";
-            break;
-        case eStmt_SetDBPartCreated:
-            sql << "update " << kNCDBIndex_Table
-                <<   " set " << kNCDBIndex_CreatedTimeCol << "=?2"
-                << " where " << kNCDBIndex_DBIdCol << "=?1";
+                       << kNCDBIndex_CreatedTimeCol << ","
+                       << kNCDBIndex_VolumesCol
+                << ")values(?1,?2,?3,?4,?5)";
             break;
         case eStmt_DeleteDBPart:
             sql << "delete from " << kNCDBIndex_Table
@@ -421,29 +428,7 @@ CNCDBFile::CreateDBPart(SNCDBPartInfo* part_info)
     stmt->Bind(2, part_info->meta_file.data(), part_info->meta_file.size());
     stmt->Bind(3, part_info->data_file.data(), part_info->data_file.size());
     stmt->Bind(4, part_info->create_time);
-    stmt->Execute();
-}
-
-void
-CNCDBFile::SetDBPartMinBlobId(TNCDBPartId part_id, TNCBlobId blob_id)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_SetDBPartBlobId));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
-
-    stmt->Bind(1, part_id);
-    stmt->Bind(2, blob_id);
-    stmt->Execute();
-}
-
-void
-CNCDBFile::UpdateDBPartCreated(SNCDBPartInfo* part_info)
-{
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_SetDBPartCreated));
-    CNCStatTimer timer(GetStat(), CNCDBStat::eDbOther);
-
-    part_info->create_time = int(time(NULL));
-    stmt->Bind(1, part_info->part_id);
-    stmt->Bind(2, part_info->create_time);
+    stmt->Bind(5, part_info->cnt_volumes);
     stmt->Execute();
 }
 
@@ -467,19 +452,19 @@ CNCDBFile::GetAllDBParts(TNCDBPartsList* parts_list)
                      << kNCDBIndex_MetaNameCol    << ","
                      << kNCDBIndex_DataNameCol    << ","
                      << kNCDBIndex_CreatedTimeCol << ","
-                     << kNCDBIndex_MinBlobIdCol
+                     << kNCDBIndex_VolumesCol
         <<  " from " << kNCDBIndex_Table
         << " order by " << kNCDBIndex_CreatedTimeCol;
 
     CSQLITE_Statement stmt(this, sql);
     while (stmt.Step()) {
-        SNCDBPartInfo info;
-        info.part_id       = stmt.GetInt8  (0);
-        info.meta_file     = stmt.GetString(1);
-        info.data_file     = stmt.GetString(2);
-        info.create_time   = stmt.GetInt   (3);
-        info.last_rot_time = info.create_time;
-        info.min_blob_id   = stmt.GetInt8  (4);
+        SNCDBPartInfo* info = new SNCDBPartInfo;
+        info->part_id       = stmt.GetInt8  (0);
+        info->meta_file     = stmt.GetString(1);
+        info->data_file     = stmt.GetString(2);
+        info->create_time   = stmt.GetInt   (3);
+        info->last_rot_time = info->create_time;
+        info->cnt_volumes   = stmt.GetInt   (4);
 
         parts_list->push_back(info);
     }
@@ -885,31 +870,25 @@ CNCFileSystem::Finalize(void)
     sm_BGThread->Join();
 }
 
+inline CNCFSOpenFile*
+CNCFileSystem::FindOpenFile(const string& name)
+{
+    CFastReadGuard guard(sm_FilesListLock);
+
+    TFilesList::const_iterator it = sm_FilesList.find(name);
+    return it == sm_FilesList.end()? NULL: it->second;
+}
+
 CNCFSOpenFile*
 CNCFileSystem::OpenNewDBFile(const string& file_name,
                              bool          force_sync_io /* = false */)
 {
-    CNCFSOpenFile* file = new CNCFSOpenFile(file_name, force_sync_io);
+    CNCFSOpenFile* file = FindOpenFile(file_name);
+    if (!file) {
+        file = new CNCFSOpenFile(file_name, force_sync_io);
 
-    CFastWriteGuard guard(sm_FilesListLock);
-
-    file->m_PrevFile = NULL;
-    file->m_NextFile = sm_FilesListHead;
-    if (sm_FilesListHead)
-        sm_FilesListHead->m_PrevFile = file;
-    sm_FilesListHead = file;
-
-    return file;
-}
-
-inline CNCFSOpenFile*
-CNCFileSystem::FindOpenFile(const char* name)
-{
-    CFastReadGuard guard(sm_FilesListLock);
-
-    CNCFSOpenFile* file = sm_FilesListHead;
-    while (file  &&  file->m_Name != name) {
-        file = file->m_NextFile;
+        CFastWriteGuard guard(sm_FilesListLock);
+        sm_FilesList[file_name] = file;
     }
     return file;
 }
@@ -918,15 +897,7 @@ inline void
 CNCFileSystem::x_RemoveFileFromList(CNCFSOpenFile* file)
 {
     CFastWriteGuard guard(sm_FilesListLock);
-    if (file->m_PrevFile) {
-        file->m_PrevFile->m_NextFile = file->m_NextFile;
-    }
-    else {
-        sm_FilesListHead = file->m_NextFile;
-    }
-    if (file->m_NextFile) {
-        file->m_NextFile->m_PrevFile = file->m_PrevFile;
-    }
+    sm_FilesList.erase(file->m_Name);
 }
 
 inline void

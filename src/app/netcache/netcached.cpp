@@ -82,8 +82,6 @@ static const char* kNCReg_MaxConnections     = "max_connections";
 static const char* kNCReg_MaxThreads         = "max_threads";
 static const char* kNCReg_InitThreads        = "init_threads";
 static const char* kNCReg_DropBadDB          = "drop_db";
-static const char* kNCReg_ManageSessions     = "session_mng";
-static const char* kNCReg_SessMngTimeout     = "session_shutdown_timeout";
 static const char* kNCReg_MemLimit           = "memory_limit";
 static const char* kNCReg_MemAlert           = "memory_alert";
 
@@ -257,27 +255,6 @@ CNetCacheServer::x_CreateStorages(const IRegistry& reg, bool do_reinit)
     }
 }
 
-inline void
-CNetCacheServer::x_StartSessionManagement(unsigned int shutdown_timeout)
-{
-    LOG_POST_X(5, Info << "Starting session management thread. timeout="
-                       << shutdown_timeout);
-    m_SessionMngThread.Reset(
-                new CSessionManagementThread(*this, shutdown_timeout, 10, 2));
-    m_SessionMngThread->Run();
-}
-
-inline void
-CNetCacheServer::x_StopSessionManagement(void)
-{
-    if (!m_SessionMngThread.Empty()) {
-        LOG_POST_X(6, Info << "Stopping session management thread...");
-        m_SessionMngThread->RequestStop();
-        m_SessionMngThread->Join();
-        LOG_POST_X(7, Info << "Stopped.");
-    }
-}
-
 CNetCacheServer::CNetCacheServer(bool do_reinit)
     : m_Shutdown(false),
       m_Signal(0)
@@ -335,7 +312,7 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     params.max_threads     = x_RegReadInt(reg, kNCReg_MaxThreads,     20);
     // A bit of hard coding but it's really not necessary to create more than
     // 25 threads in server's thread pool.
-    if (params.max_threads >= 20) {
+    if (params.max_threads > 20) {
         ERR_POST(Warning << "NetCache configuration is not optimal. "
                             "Maximum optimal number of threads is 20, "
                             "maximum number given - " << params.max_threads
@@ -372,12 +349,6 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     x_CreateStorages(reg, do_reinit);
     CNCFileSystem::SetDiskInitialized();
 
-    // Start session management
-    bool session_mng = x_RegReadBool(reg, kNCReg_ManageSessions, false);
-    if (session_mng) {
-        x_StartSessionManagement(x_RegReadInt(reg, kNCReg_SessMngTimeout, 60));
-    }
-
     m_BlobIdCounter.Set(0);
     m_StartTime = GetFastTime();
 
@@ -387,12 +358,9 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
 
 CNetCacheServer::~CNetCacheServer()
 {
-    {{
-        CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
-        LOG_POST_X(13, "NetCache server is stopping. Usage statistics:");
-        x_PrintServerStats(proxy);
-    }}
-    x_StopSessionManagement();
+    CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
+    LOG_POST_X(13, "NetCache server is stopping. Usage statistics:");
+    x_PrintServerStats(proxy);
 }
 
 void

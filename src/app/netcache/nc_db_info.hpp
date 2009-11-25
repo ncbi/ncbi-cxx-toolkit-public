@@ -42,6 +42,8 @@ typedef Int8                             TNCBlobId;
 typedef Int8                             TNCChunkId;
 /// Type of database part id
 typedef Int8                             TNCDBPartId;
+/// Type of volume id inside a database part
+typedef unsigned int                     TNCDBVolumeId;
 /// Universal type of list of ids
 typedef list<Int8>                       TNCIdsList;
 /// Type of buffer used for reading/writing blobs
@@ -51,15 +53,20 @@ typedef CSimpleBufferT<char>             TNCBlobBuffer;
 /// Coordinates of blob inside NetCache database
 struct SNCBlobCoords
 {
-    TNCDBPartId part_id;  ///< Id of database part which blob is written to
-    TNCBlobId   blob_id;  ///< Id of the blob itself
+    TNCDBPartId   part_id;   ///< Id of database part which blob is written to
+    TNCDBVolumeId volume_id; ///< Id of volume inside the part
+    TNCBlobId     blob_id;   ///< Id of the blob itself
 
     SNCBlobCoords(void);
-    SNCBlobCoords(TNCDBPartId _part_id, TNCBlobId _blob_id);
+    SNCBlobCoords(TNCDBPartId   _part_id,
+                  TNCDBVolumeId _volume_id,
+                  TNCBlobId     _blob_id);
     /// Clear the coordinates (set both ids to 0)
     void Clear(void);
     /// Copy coordinates from another structure
     void AssignCoords(const SNCBlobCoords& coords);
+    /// Check whether this coordinates are equal to other ones
+    bool operator==  (const SNCBlobCoords& coords) const;
 };
 
 /// Full identifying information about blob: coordinates, key, subkey
@@ -116,25 +123,30 @@ struct SNCBlobInfo : public SNCBlobIdentity
 /// Information about database part in NetCache storage
 struct SNCDBPartInfo
 {
-    TNCDBPartId part_id;       ///< Id of database part
-    int         create_time;   ///< Time when the part was created
-    int         last_rot_time; ///< Time when the part was last "rotated"
-    TNCBlobId   min_blob_id;   ///< Minimum value of blob id inside the part
-    string      meta_file;     ///< Name of meta file for the part
-    string      data_file;     ///< Name of file with blob data for the part
-    Int8        meta_size;     ///< Size of meta file measured last time
-    Int8        data_size;     ///< Size of data file measured last time
+    TNCDBPartId   part_id;        ///< Id of database part
+    int           create_time;    ///< Time when the part was created
+    int           last_rot_time;  ///< Time when the part was last "rotated"
+    string        meta_file;      ///< Name of meta file for the part
+    string        data_file;      ///< Name of file with blob data for the part
+    TNCDBVolumeId cnt_volumes;    ///< Number of volumes in part's files set
+    Int8          meta_size;      ///< Size of all meta files measured last time
+    Int8          meta_size_diff; ///< Difference between maximum meta file size
+                                  ///< and minimum meta file size
+    Int8          data_size;      ///< Size of all data files measured last time
+    Int8          data_size_diff; ///< Difference between maximum data file size
+                                  ///< and minimum data file size
 };
 /// Information about all database parts in NetCache storage
-typedef list<SNCDBPartInfo>  TNCDBPartsList;
+typedef list<SNCDBPartInfo*>  TNCDBPartsList;
 
 
 
 inline void
 SNCBlobCoords::Clear(void)
 {
-    part_id = 0;
-    blob_id = 0;
+    part_id   = 0;
+    volume_id = 0;
+    blob_id   = 0;
 }
 
 inline
@@ -144,15 +156,25 @@ SNCBlobCoords::SNCBlobCoords(void)
 }
 
 inline
-SNCBlobCoords::SNCBlobCoords(TNCDBPartId _part_id, TNCBlobId _blob_id)
-    : part_id(_part_id), blob_id(_blob_id)
+SNCBlobCoords::SNCBlobCoords(TNCDBPartId   _part_id,
+                             TNCDBVolumeId _volume_id,
+                             TNCBlobId     _blob_id)
+    : part_id(_part_id), volume_id(_volume_id), blob_id(_blob_id)
 {}
 
 inline void
 SNCBlobCoords::AssignCoords(const SNCBlobCoords& coords)
 {
-    part_id = coords.part_id;
-    blob_id = coords.blob_id;
+    part_id   = coords.part_id;
+    volume_id = coords.volume_id;
+    blob_id   = coords.blob_id;
+}
+
+inline bool
+SNCBlobCoords::operator== (const SNCBlobCoords& coords) const
+{
+    return blob_id == coords.blob_id
+           &&  part_id == coords.part_id  &&  volume_id == coords.volume_id;
 }
 
 

@@ -214,6 +214,10 @@ public:
     void OnTimeout(void);
     void OnTimer(void);
     void OnOverflow(void);
+    // To avoid warning
+    void OnOverflow(EOverflowReason) {
+        OnOverflow();
+    }
 
     /// Init diagnostics Client IP and Session ID for proper logging
     void InitDiagnostics(void);
@@ -245,10 +249,7 @@ public:
     bool x_DoCmd_Alive(void);
     bool x_DoCmd_OK(void);
     bool x_DoCmd_Health(void);
-    bool x_DoCmd_Exit(void);
     bool x_DoCmd_Monitor(void);
-    bool x_DoCmd_SessionReg(void);
-    bool x_DoCmd_SessionUnreg(void);
     bool x_DoCmd_Shutdown(void);
     bool x_DoCmd_Version(void);
     bool x_DoCmd_GetConfig(void);
@@ -268,8 +269,6 @@ public:
     bool x_DoCmd_IC_StoreBlob(void);
     bool x_DoCmd_IC_GetSize(void);
     bool x_DoCmd_IC_GetAccessTime(void);
-    bool x_DoCmd_IC_PrepareRemoveKey(void);
-    bool x_DoCmd_IC_RemoveKey(void);
     /// Universal processor for all commands not implemented now (because they
     /// are not used by anybody and the very fact of introducing them was
     /// foolish).
@@ -377,11 +376,6 @@ private:
     void x_FinishReadingBlob(void);
     /// Start writing blob from storage to socket
     void x_StartWritingBlob(void);
-    /// Process session management command
-    ///
-    /// @param reg
-    ///   TRUE if command is "register", FALSE if "unregister"
-    void x_DoSessionManagement(bool reg);
     /// Check if NetCache is monitored by someone
     bool x_IsMonitored(void);
     /// Send message to the monitor, if do_trace == true then print this
@@ -389,9 +383,6 @@ private:
     void x_MonitorPost(const string& msg, bool do_trace = true);
     /// Report caught exception to diagnostics and monitor
     void x_ReportException(const exception& ex, CTempString msg);
-    /// Lock next blob while removing a bunch of them inside
-    /// x_DoCmd_IC_RemoveKey().
-    bool x_LockNextIdToRemove(void);
     /// Transform socket for the handler to socket stream which will then be
     /// used to write something. Connection to client will be closed when
     /// created socket stream is deleted. Though message about closing will be
@@ -437,10 +428,6 @@ private:
     CNCBlob*                  m_CurBlob;
     /// Length of the current blob chunk to read from socket
     Uint4                     m_ChunkLen;
-    /// List of blob ids to delete in x_DoCmd_IC_RemoveKey()
-    TNCIdsList                m_BlobIdsList;
-    /// Iterator for next blob id that will be deleted
-    TNCIdsList::iterator      m_NextIdToRemove;
 
     /// Name of the client received in authorization string
     string                    m_ClientName;
