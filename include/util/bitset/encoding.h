@@ -231,7 +231,7 @@ public:
         BM_ASSERT(value);
 
         unsigned logv = 
-        #if defined(BM_x86)
+        #if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
             bm::bsr_asm32(value);
         #else
             bm::ilog2_LUT(value);
@@ -361,7 +361,7 @@ public:
                 continue;
             }
             unsigned first_bit_idx = 
-                #if defined(BM_x86)
+                #if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
                     bm::bsf_asm32(acc);
                 #else
                     bm::bit_scan_fwd(acc);
