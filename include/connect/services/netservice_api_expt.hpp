@@ -32,6 +32,8 @@
  *
  */
 
+#include <connect/services/srv_connections_expt.hpp>
+
 #include <connect/ncbi_core.h>
 
 #include <corelib/ncbistl.hpp>

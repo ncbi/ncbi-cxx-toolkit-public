@@ -100,6 +100,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         m_ICacheCmdPrefix.append(") ");
     }
 
+    CNetServer::SExecResult StickToServerAndExec(const string& cmd);
+
     void RegisterUnregisterSession(string cmd, unsigned pid);
 
     void AddKVS(string* out_str, const string& key,
@@ -113,6 +115,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 
     string m_CacheName;
     string m_ICacheCmdPrefix;
+    CNetServer m_SelectedServer;
 };
 
 CNetServerConnection SNetICacheClientImpl::InitiateStoreCmd(
@@ -122,7 +125,7 @@ CNetServerConnection SNetICacheClientImpl::InitiateStoreCmd(
     cmd.append(NStr::UIntToString(time_to_live));
     AddKVS(&cmd, key, version, subkey);
 
-    return m_Service.FindServerAndExec(cmd).conn;
+    return StickToServerAndExec(cmd).conn;
 }
 
 CNetICacheClient::CNetICacheClient(
@@ -172,6 +175,38 @@ STimeout CNetICacheClient::GetCommunicationTimeout() const
     return m_Impl->m_Service.GetCommunicationTimeout();
 }
 
+CNetServer::SExecResult
+    SNetICacheClientImpl::StickToServerAndExec(const string& cmd)
+{
+    if (m_SelectedServer) {
+        try {
+            return m_SelectedServer.ExecWithRetry(cmd);
+        }
+        catch (CNetSrvConnException& ex) {
+            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
+                ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
+                throw;
+            ERR_POST(ex.what());
+        }
+    }
+
+    for (CNetServerGroupIterator it =
+            m_Service.DiscoverServers().Iterate(); it; ++it) {
+        try {
+            return (m_SelectedServer = *it).ExecWithRetry(cmd);
+        }
+        catch (CNetSrvConnException& ex) {
+            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
+                ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
+                throw;
+            ERR_POST(ex.what());
+        }
+    }
+
+    NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
+        "Couldn't find any availbale servers for the " +
+            m_Service.GetServiceName() + " service.");
+}
 
 void SNetICacheClientImpl::RegisterUnregisterSession(string cmd, unsigned pid)
 {
@@ -184,7 +219,7 @@ void SNetICacheClientImpl::RegisterUnregisterSession(string cmd, unsigned pid)
     cmd.push_back(' ');
     cmd.append(NStr::UIntToString(pid));
     AppendClientIPSessionID(&cmd);
-    m_Service.FindServerAndExec(cmd);
+    StickToServerAndExec(cmd);
 }
 
 void CNetICacheClient::RegisterSession(unsigned pid)
@@ -217,8 +252,7 @@ int CNetICacheClient::GetTimeout() const
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "GTOU");
     m_Impl->AppendClientIPSessionID(&cmd);
-    return NStr::StringToUInt(
-        m_Impl->m_Service.FindServerAndExec(cmd).response);
+    return NStr::StringToUInt(m_Impl->StickToServerAndExec(cmd).response);
 }
 
 
@@ -226,8 +260,7 @@ bool CNetICacheClient::IsOpen() const
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "ISOP");
     m_Impl->AppendClientIPSessionID(&cmd);
-    return NStr::StringToUInt(
-        m_Impl->m_Service.FindServerAndExec(cmd).response) != 0;
+    return NStr::StringToUInt(m_Impl->StickToServerAndExec(cmd).response) != 0;
 }
 
 
@@ -263,8 +296,7 @@ size_t CNetICacheClient::GetSize(const string&  key,
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "GSIZ");
     m_Impl->AddKVS(&cmd, key, version, subkey);
-    return NStr::StringToULong(
-        m_Impl->m_Service.FindServerAndExec(cmd).response);
+    return NStr::StringToULong(m_Impl->StickToServerAndExec(cmd).response);
 }
 
 
@@ -275,7 +307,7 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "GBLW");
     m_Impl->AddKVS(&cmd, key, version, subkey);
-    *owner = m_Impl->m_Service.FindServerAndExec(cmd).response;
+    *owner = m_Impl->StickToServerAndExec(cmd).response;
 }
 
 IReader* SNetICacheClientImpl::GetReadStream(
@@ -287,7 +319,7 @@ IReader* SNetICacheClientImpl::GetReadStream(
     CNetServer::SExecResult exec_result;
 
     try {
-        exec_result = m_Service.FindServerAndExec(cmd);
+        exec_result = StickToServerAndExec(cmd);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return NULL;
@@ -367,7 +399,7 @@ void CNetICacheClient::Remove(const string& key)
     cmd.append(key);
     cmd.push_back('"');
     m_Impl->AppendClientIPSessionID(&cmd);
-    m_Impl->m_Service.FindServerAndExec(cmd);
+    m_Impl->StickToServerAndExec(cmd);
 }
 
 
@@ -377,7 +409,7 @@ void CNetICacheClient::Remove(const string&    key,
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "REMO");
     m_Impl->AddKVS(&cmd, key, version, subkey);
-    m_Impl->m_Service.FindServerAndExec(cmd);
+    m_Impl->StickToServerAndExec(cmd);
 }
 
 
@@ -387,7 +419,7 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "GACT");
     m_Impl->AddKVS(&cmd, key, version, subkey);
-    return NStr::StringToInt(m_Impl->m_Service.FindServerAndExec(cmd).response);
+    return NStr::StringToInt(m_Impl->StickToServerAndExec(cmd).response);
 }
 
 
@@ -396,7 +428,7 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 {
     string cmd(m_Impl->m_ICacheCmdPrefix + "HASB");
     m_Impl->AddKVS(&cmd, key, 0, subkey);
-    return m_Impl->m_Service.FindServerAndExec(cmd).response == "1";
+    return m_Impl->StickToServerAndExec(cmd).response == "1";
 }
 
 
