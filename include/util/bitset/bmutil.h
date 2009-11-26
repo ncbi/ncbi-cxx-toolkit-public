@@ -143,6 +143,25 @@ BMFORCEINLINE unsigned bsr_asm32(register unsigned int v)
 #endif  // __GNUG__
 
 #ifdef _MSC_VER
+
+#if defined(_M_AMD64) || defined(_M_X64) // inline assembly not supported
+
+BMFORCEINLINE unsigned int bsr_asm32(unsigned int value)
+{
+    unsigned long r;
+    _BitScanReverse(&r, value);
+    return r;
+}
+
+BMFORCEINLINE unsigned int bsf_asm32(unsigned int value)
+{
+    unsigned long r;
+    _BitScanForward(&r, value);
+    return r;
+}
+
+#else
+
 BMFORCEINLINE unsigned int bsr_asm32(register unsigned int value)
 {   
   __asm  bsr  eax, value
@@ -154,6 +173,8 @@ BMFORCEINLINE unsigned int bsf_asm32(register unsigned int value)
 }
 
 #endif
+
+#endif // _MSC_VER
 
 #endif // BM_x86
 
