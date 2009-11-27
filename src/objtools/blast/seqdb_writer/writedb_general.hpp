@@ -266,7 +266,7 @@ public:
     /// Construct from a string in a memory location.
     CArrayString(const char * x, int L)
     {
-        assert(L <= STR_SIZE);
+        _ASSERT(L <= STR_SIZE);
         memcpy(m_Data, x, L);
         if (L < STR_SIZE) {
             m_Data[L] = 0;
