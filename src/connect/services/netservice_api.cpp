@@ -94,129 +94,145 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
     if (config == NULL) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         CNcbiRegistry* reg;
-        if (app == NULL || (reg = &app->GetConfig()) == NULL) {
-            NCBI_THROW(CConfigException, eParameterMissing,
-                "Could not get default configuration parameters");
+        if (app != NULL && (reg = &app->GetConfig()) != NULL) {
+            param_tree.reset(CConfig::ConvertRegToTree(*reg));
+
+            const CConfig::TParamTree* section_param_tree =
+                param_tree->FindSubNode(section);
+
+            app_reg_config.reset(section_param_tree != NULL ?
+                new CConfig(section_param_tree) : new CConfig(*reg));
+
+            config = app_reg_config.get();
         }
-
-        param_tree.reset(CConfig::ConvertRegToTree(*reg));
-
-        const CConfig::TParamTree* section_param_tree =
-            param_tree->FindSubNode(section);
-
-        app_reg_config.reset(section_param_tree != NULL ?
-            new CConfig(section_param_tree) : new CConfig(*reg));
-
-        config = app_reg_config.get();
     }
 
-    if (!service_name.empty())
-        m_ServiceName = service_name;
-    else {
-        try {
-            m_ServiceName = config->GetString(section,
-                "service", CConfig::eErr_Throw, kEmptyStr);
-        }
-        catch (exception&) {
-            m_ServiceName = config->GetString(section,
-                "service_name", CConfig::eErr_NoThrow, kEmptyStr);
-        }
-        if (m_ServiceName.empty()) {
-            string host;
+    if (config != NULL) {
+        if (!service_name.empty())
+            m_ServiceName = service_name;
+        else {
             try {
-                host = config->GetString(section,
-                    "server", CConfig::eErr_Throw, kEmptyStr);
+                m_ServiceName = config->GetString(section,
+                    "service", CConfig::eErr_Throw, kEmptyStr);
             }
             catch (exception&) {
                 m_ServiceName = config->GetString(section,
-                    "host", CConfig::eErr_NoThrow, kEmptyStr);
+                    "service_name", CConfig::eErr_NoThrow, kEmptyStr);
             }
-            string port = config->GetString(section,
-                "port", CConfig::eErr_NoThrow, kEmptyStr);
-            if (!host.empty() && !port.empty()) {
-                m_ServiceName = host + ":";
-                m_ServiceName += port;
+            if (m_ServiceName.empty()) {
+                string host;
+                try {
+                    host = config->GetString(section,
+                        "server", CConfig::eErr_Throw, kEmptyStr);
+                }
+                catch (exception&) {
+                    m_ServiceName = config->GetString(section,
+                        "host", CConfig::eErr_NoThrow, kEmptyStr);
+                }
+                string port = config->GetString(section,
+                    "port", CConfig::eErr_NoThrow, kEmptyStr);
+                if (!host.empty() && !port.empty()) {
+                    m_ServiceName = host + ":";
+                    m_ServiceName += port;
+                }
             }
         }
-    }
 
-    if (!client_name.empty())
-        m_ClientName = client_name;
-    else {
-        try {
-            m_ClientName = config->GetString(section,
-                "client_name", CConfig::eErr_Throw, kEmptyStr);
+        if (!client_name.empty())
+            m_ClientName = client_name;
+        else {
+            try {
+                m_ClientName = config->GetString(section,
+                    "client_name", CConfig::eErr_Throw, kEmptyStr);
+            }
+            catch (exception&) {
+                m_ClientName = config->GetString(section,
+                    "client", CConfig::eErr_NoThrow, kEmptyStr);
+            }
         }
-        catch (exception&) {
-            m_ClientName = config->GetString(section,
-                "client", CConfig::eErr_NoThrow, kEmptyStr);
+
+        m_LBSMAffinityName = !lbsm_affinity_name.empty() ? lbsm_affinity_name :
+            config->GetString(section, "use_lbsm_affinity",
+                CConfig::eErr_NoThrow, kEmptyStr);
+
+        unsigned long timeout = s_SecondsToMilliseconds(config->GetString(
+            section, "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
+
+        if (timeout > 0)
+            NcbiMsToTimeout(&m_Timeout, timeout);
+        else
+            m_Timeout = s_GetDefaultCommTimeout();
+
+        m_ServerThrottlePeriod = config->GetInt(section,
+            "throttle_relaxation_period", CConfig::eErr_NoThrow,
+                THROTTLE_RELAXATION_PERIOD_DEFAULT);
+
+        if (m_ServerThrottlePeriod > 0) {
+            string numerator_str, denominator_str;
+
+            NStr::SplitInTwo(config->GetString(section,
+                "throttle_by_connection_error_rate", CConfig::eErr_NoThrow,
+                    THROTTLE_BY_ERROR_RATE_DEFAULT), "/",
+                        numerator_str, denominator_str);
+
+            int numerator = NStr::StringToInt(numerator_str,
+                NStr::fConvErr_NoThrow |
+                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+            int denominator = NStr::StringToInt(denominator_str,
+                NStr::fConvErr_NoThrow |
+                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+
+            if (denominator < 1)
+                denominator = 1;
+            else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
+                numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) /
+                    denominator;
+                denominator = CONNECTION_ERROR_HISTORY_MAX;
+            }
+
+            if (numerator < 0)
+                numerator = 0;
+
+            m_ReconnectionFailureThresholdNumerator = numerator;
+            m_ReconnectionFailureThresholdDenominator = denominator;
+
+            m_MaxSubsequentConnectionFailures = config->GetInt(section,
+                "throttle_by_subsequent_connection_failures",
+                    CConfig::eErr_NoThrow,
+                        THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
+
+            m_MaxQueryTime = s_SecondsToMilliseconds(config->GetString(section,
+                "max_connection_time", CConfig::eErr_NoThrow,
+                    NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
+                    SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
+
+            m_ThrottleUntilDiscoverable = config->GetBool(section,
+                "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
+                    THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
+
+            m_ForceRebalanceAfterThrottleWithin = config->GetInt(section,
+                "throttle_forced_rebalance", CConfig::eErr_NoThrow,
+                    THROTTLE_FORCED_REBALANCE_DEFAULT);
         }
-    }
 
-    m_LBSMAffinityName = lbsm_affinity_name.empty() ? config->GetString(section,
-        "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr) :
-            lbsm_affinity_name;
-
-    unsigned long timeout = s_SecondsToMilliseconds(config->GetString(section,
-        "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
-
-    if (timeout > 0)
-        NcbiMsToTimeout(&m_Timeout, timeout);
-    else
+        m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
+    } else {
         m_Timeout = s_GetDefaultCommTimeout();
 
-    m_ServerThrottlePeriod = config->GetInt(section,
-        "throttle_relaxation_period", CConfig::eErr_NoThrow,
-            THROTTLE_RELAXATION_PERIOD_DEFAULT);
+        // Throttling parameters.
+        m_ServerThrottlePeriod = THROTTLE_RELAXATION_PERIOD_DEFAULT;
+        m_ReconnectionFailureThresholdNumerator =
+            THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR;
+        m_ReconnectionFailureThresholdDenominator =
+            THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR;
+        m_MaxSubsequentConnectionFailures =
+            THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT;
+        m_MaxQueryTime = MAX_CONNECTION_TIME_DEFAULT;
+        m_ThrottleUntilDiscoverable = THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT;
+        m_ForceRebalanceAfterThrottleWithin = THROTTLE_FORCED_REBALANCE_DEFAULT;
 
-    if (m_ServerThrottlePeriod > 0) {
-        string numerator_str, denominator_str;
-
-        NStr::SplitInTwo(config->GetString(section,
-            "throttle_by_connection_error_rate", CConfig::eErr_NoThrow,
-                THROTTLE_BY_CONNECTION_ERROR_RATE_DEFAULT), "/",
-                    numerator_str, denominator_str);
-
-        int numerator = NStr::StringToInt(numerator_str,
-            NStr::fConvErr_NoThrow |
-                NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-        int denominator = NStr::StringToInt(denominator_str,
-            NStr::fConvErr_NoThrow |
-                NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-
-        if (denominator < 1)
-            denominator = 1;
-        else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
-            numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) /
-                denominator;
-            denominator = CONNECTION_ERROR_HISTORY_MAX;
-        }
-
-        if (numerator < 0)
-            numerator = 0;
-
-        m_ReconnectionFailureThresholdNumerator = numerator;
-        m_ReconnectionFailureThresholdDenominator = denominator;
-
-        m_MaxSubsequentConnectionFailures = config->GetInt(section,
-            "throttle_by_subsequent_connection_failures", CConfig::eErr_NoThrow,
-                THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
-
-        m_MaxQueryTime = s_SecondsToMilliseconds(config->GetString(section,
-            "max_connection_time", CConfig::eErr_NoThrow,
-                NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
-                SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
-
-        m_ThrottleUntilDiscoverable = config->GetBool(section,
-            "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
-                THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
-
-        m_ForceRebalanceAfterThrottleWithin = config->GetInt(section,
-            "throttle_forced_rebalance", CConfig::eErr_NoThrow,
-                THROTTLE_FORCED_REBALANCE_DEFAULT);
+        m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
     }
-
-    m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
 
     m_LatestDiscoveryIteration = 0;
     m_PermanentConnection = eOn;
