@@ -405,7 +405,9 @@ CNCBlobStorage::x_CheckDBInitialized(bool        guard_existed,
                 x_MonitorError(ex, "Error in soft reinitialization, "
                                    "trying harder");
                 m_IndexDB.reset();
-                CFile(x_GetIndexFileName()).Remove();
+                // GCC 3.0.4 doesn't allow to merge the following 2 lines
+                CFile file_obj(x_GetIndexFileName());
+                file_obj.Remove();
                 reinit_mode = eNoReinit;
                 x_OpenIndexDB(&reinit_mode);
             }
@@ -514,8 +516,11 @@ CNCBlobStorage::x_CreateNewDBPart(void)
         // As long as we didn't make any connections to databases we can do
         // the deletion safely.
         for (TNCDBVolumeId i = 1; i <= cnt_vols; ++i) {
-            CFile(pools_map[i]->GetMetaFileName()).Remove();
-            CFile(pools_map[i]->GetDataFileName()).Remove();
+            // GCC 3.0.4 doesn't allow to merge the following lines
+            CFile meta_obj(pools_map[i]->GetMetaFileName());
+            meta_obj.Remove();
+            CFile data_obj(pools_map[i]->GetDataFileName());
+            data_obj.Remove();
         }
         x_CreateNewDBStructure(*part_info);
         for (TNCDBVolumeId i = 1; i <= cnt_vols; ++i) {
