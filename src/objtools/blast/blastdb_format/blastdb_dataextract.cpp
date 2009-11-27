@@ -177,7 +177,7 @@ string CSeqDataExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
     try {
         blastdb.GetSequenceAsString(kOid, retval, m_SeqRange);
         CSeqDB::TSequenceRanges masked_ranges;
-        CMaskingDataExtractor mask_extractor(m_FiltAlgoIds);
+        CMaskingDataExtractor mask_extractor(m_FiltAlgoId);
         mask_extractor.GetMaskedRegions(id, blastdb, masked_ranges);
         ITERATE(CSeqDB::TSequenceRanges, mask, masked_ranges) {
             transform(&retval[mask->first], &retval[mask->second],
@@ -303,13 +303,13 @@ CMaskingDataExtractor::GetMaskedRegions(CBlastDBSeqId& id, CSeqDB& blastdb,
                                         CSeqDB::TSequenceRanges& ranges)
 {
     ranges.clear();
-    if (m_AlgoIds.empty()) {
+    if (m_AlgoId == -1) {
         return;
     }
     const int kOid = COidExtractor().ExtractOID(id, blastdb);
 
     // Only support the 1st algo for now.
-    blastdb.GetMaskData(kOid, m_AlgoIds[0], ranges);
+    blastdb.GetMaskData(kOid, m_AlgoId, ranges);
 }
 
 
@@ -339,8 +339,8 @@ CFastaExtractor::CFastaExtractor(TSeqPos line_width,
              objects::ENa_strand strand /* = objects::eNa_strand_other */,
              bool target_only /* = false */,
              bool ctrl_a /* = false */,
-             const vector<int>& filt_algo_ids /* = vector<int>() */)
-    : CSeqDataExtractor(range, strand, filt_algo_ids), 
+             int  filt_algo_id /* = -1 */)
+    : CSeqDataExtractor(range, strand, filt_algo_id), 
     m_FastaOstream(m_OutputStream), m_ShowTargetOnly(target_only),
     m_UseCtrlA(ctrl_a)
 {
@@ -385,7 +385,7 @@ string CFastaExtractor::Extract(CBlastDBSeqId& id, CSeqDB& blastdb)
 
     // Handle any requests for masked FASTA
     static const CFastaOstream::EMaskType kMaskType = CFastaOstream::eSoftMask;
-    CMaskingDataExtractor mask_extractor(m_FiltAlgoIds);
+    CMaskingDataExtractor mask_extractor(m_FiltAlgoId);
     m_FastaOstream.SetMask(kMaskType, 
                            mask_extractor.GetMaskedRegions(id, blastdb, seqid));
 

@@ -144,8 +144,8 @@ public:
     /// @para filt_algo_ids filtering algorithm IDs to apply to FASTA output
     CSeqDataExtractor(TSeqRange range = TSeqRange(),
                       objects::ENa_strand strand = objects::eNa_strand_both,
-                      const vector<int>& filt_algo_ids = vector<int>())
-    : m_SeqRange(range), m_Strand(strand), m_FiltAlgoIds(filt_algo_ids) {}
+                      int filt_algo_id = -1)
+    : m_SeqRange(range), m_Strand(strand), m_FiltAlgoId(filt_algo_id) {}
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 
@@ -155,7 +155,7 @@ protected:
     /// The strand of the sequence requested
     objects::ENa_strand m_Strand;
     /// List of filtering algorithm IDs to use to mask the FASTA
-    vector<int> m_FiltAlgoIds;
+    const int m_FiltAlgoId;
 };
 
 /// Extracts the FASTA for a given sequence id
@@ -174,7 +174,7 @@ public:
                     objects::ENa_strand strand = objects::eNa_strand_other,
                     bool target_only = false,
                     bool ctrl_a = false,
-                    const vector<int>& filt_algo_ids = vector<int>());
+                    int  filt_algo_id = -1);
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 private:
@@ -229,8 +229,8 @@ public:
 /// (CSeqFormatter associates this with %m)
 class NCBI_BLASTDB_FORMAT_EXPORT CMaskingDataExtractor : public IBlastDBExtract {
 public:
-    CMaskingDataExtractor(const vector<int>& filt_algo_ids)
-        : m_AlgoIds(filt_algo_ids) {}
+    CMaskingDataExtractor(int filt_algo_id)
+        : m_AlgoId(filt_algo_id) {}
     /** @inheritDoc */
     virtual string Extract(CBlastDBSeqId& id, CSeqDB& blastdb);
 
@@ -249,7 +249,7 @@ public:
                                          CRef<CSeq_id> seqid);
 private:
     /// The masking algorithm IDs
-    vector<int> m_AlgoIds;
+    const int m_AlgoId;
 };
 
 END_NCBI_SCOPE

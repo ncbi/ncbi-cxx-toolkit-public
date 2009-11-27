@@ -78,9 +78,9 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     }
 
     // Validate filtering algorithms provided, if any
-    if ( !config.m_FiltAlgoIds.empty() ) {
-        CMaskingFmtSpecHelper::ValidateFilteringAlgorithms
-            (m_BlastDb, config.m_FiltAlgoIds);
+    if (config.m_FiltAlgoId != -1) {
+        CMaskingFmtSpecHelper::ValidateFilteringAlgorithm
+            (m_BlastDb, config.m_FiltAlgoId);
     }
 
     ITERATE(vector<char>, fmt, repl_types) {
@@ -92,14 +92,14 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
                                      config.m_Strand, 
                                      config.m_TargetOnly, 
                                      config.m_UseCtrlA,
-                                     config.m_FiltAlgoIds));
+                                     config.m_FiltAlgoId));
             break;
 
         case 's':
             m_DataExtractors.push_back
                 (new CSeqDataExtractor(config.m_SeqRange, 
                                        config.m_Strand, 
-                                       config.m_FiltAlgoIds));
+                                       config.m_FiltAlgoId));
             break;
 
         case 'a':
@@ -146,10 +146,10 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
         case 'm':
             {
                 _ASSERT(masking_algo_helper.get());
-                vector<int> filt_algo_ids = 
-                    masking_algo_helper->GetFilteringAlgorithms();
+                int filt_algo_id = 
+                    masking_algo_helper->GetFilteringAlgorithm();
                 m_DataExtractors.push_back
-                    (new CMaskingDataExtractor(filt_algo_ids));
+                    (new CMaskingDataExtractor(filt_algo_id));
                 break;
             }
 
@@ -165,7 +165,7 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     if (dynamic_cast<CFastaExtractor*>(m_DataExtractors.back())) {
         m_FastaRequestedAtEOL = true;
     }
-	m_MaskingAlgoHelper = masking_algo_helper.release();
+    m_MaskingAlgoHelper = masking_algo_helper.release();
 }
 
 CSeqFormatter::~CSeqFormatter()
@@ -211,7 +211,7 @@ string
 CSeqFormatter::x_Replacer(const vector<string>& data2write) const
 {
     const string& kFiltAlgoSpec =
-        m_MaskingAlgoHelper->GetFiltAlgorithmSpecifiers();
+        m_MaskingAlgoHelper->GetFiltAlgorithmSpecifier();
     SIZE_TYPE data2write_size = accumulate(data2write.begin(), data2write.end(),
                                            0, StrLenAdd());
 

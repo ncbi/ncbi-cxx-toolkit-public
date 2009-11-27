@@ -48,6 +48,7 @@ struct CSeqFormatterConfig {
         m_Strand = objects::eNa_strand_other;
         m_TargetOnly = false;
         m_UseCtrlA = false;
+        m_FiltAlgoId = -1;
     }
 
     /// length of the line of output (applicable only to FASTA output)
@@ -65,8 +66,8 @@ struct CSeqFormatterConfig {
     /// Determines whether Ctrl-A characters should be used as defline
     /// separators
     bool m_UseCtrlA;
-    /// List of filtering algorithm IDs to use to mask the FASTA
-    vector<int> m_FiltAlgoIds;
+    /// Filtering algorithm ID to mask the FASTA
+    int m_FiltAlgoId;
 };
 
 /// Customizable sequence writer interface

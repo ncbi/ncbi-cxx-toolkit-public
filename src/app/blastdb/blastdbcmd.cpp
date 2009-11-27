@@ -297,17 +297,13 @@ s_ExtractFilteringAlgorithmIds(CSeqFormatterConfig& conf, const CArgs& args)
     if ( !args["mask_sequence_with"].HasValue() ) {
         return;
     }
-    vector<string> tokens;
-    NStr::Tokenize(args["mask_sequence_with"].AsString(), ",", tokens);
-    ITERATE(vector<string>, token, tokens) {
-        int algo_id(-1);
-        try { algo_id = NStr::StringToInt(*token); } 
-        catch (...) {
-            ERR_POST(Warning << "Ignoring '" << *token << "'");
-            continue;
-        }
-        _ASSERT(algo_id != -1);
-        conf.m_FiltAlgoIds.push_back(algo_id);
+
+    try { 
+        conf.m_FiltAlgoId = NStr::StringToInt(args["mask_sequence_with"].AsString());
+    }
+    catch (...) {
+        NCBI_THROW(CInputException, eInvalidInput, 
+            "Invalid filtering algorithm specified for 'mask_sequence_with'.");
     }
 }
 
@@ -411,7 +407,7 @@ void CBlastDBCmdApp::Init()
 
     arg_desc->AddOptionalKey("mask_sequence_with", "numbers",
                              "Produce lower-case masked FASTA using the "
-                             "algorithm IDs specified (Format: N,M,...)",
+                             "algorithm ID specified.",
                              CArgDescriptions::eString);
 
     arg_desc->SetCurrentGroup("Output configuration options");
@@ -432,9 +428,8 @@ void CBlastDBCmdApp::Init()
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"
-    "\t\t%mX means sequence masking data, where X is an optional comma-\n"
-    "\t\tseparated list of integers to specify the algorithm ID(s) to\n"
-    "\t\tdisplay (or all masks if absent or invalid specification).\n"
+    "\t\t%mX means sequence masking data, where X is an integer to \n"
+    "\t\tspecify the algorithm ID to display masking data for.  \n"
     "\t\tMasking data will be displayed as a series of 'N-M' values\n"
     "\t\tseparated by ';' or the word 'none' if none are available.\n"
             "\tFor every format except '%f', each line of output will "

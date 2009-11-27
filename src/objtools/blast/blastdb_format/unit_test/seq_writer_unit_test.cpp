@@ -91,13 +91,13 @@ BOOST_AUTO_TEST_CASE(TestValidFormatSpecifiers)
     format_specs.push_back("%l");
     format_specs.push_back("%T");
     format_specs.push_back("%P");
-    format_specs.push_back("%m"); // should print all masks
-    format_specs.push_back(" %m "); // should print all masks
+    //format_specs.push_back("%m"); // should print all masks
+    //format_specs.push_back(" %m "); // should print all masks
     format_specs.push_back("%m20"); // should print all masks for algo ID 20
     format_specs.push_back("%m20 "); // should print all masks for algo ID 20
     format_specs.push_back("%m40"); // should print all masks for algo ID 40
     format_specs.push_back("%m40 "); // should print all masks for algo ID 40
-    format_specs.push_back("%m20,40"); // should print all masks
+    //format_specs.push_back("%m20,40"); // should print all masks
 
     ITERATE(vector<string>, itr, format_specs) {
         CSeqFormatter f(*itr, db, std::cout);
@@ -232,8 +232,8 @@ BOOST_AUTO_TEST_CASE(TestMaskedFasta)
     CSeqFormatterConfig config;
     config.m_SeqRange = TSeqRange(0, 100);
     config.m_LineWidth = config.m_SeqRange.GetLength();
-    config.m_FiltAlgoIds.push_back(20);
-    config.m_FiltAlgoIds.push_back(40);
+    config.m_FiltAlgoId = 40;
+    //config.m_FiltAlgoIds.push_back(40);
     CSeqFormatter f(format_spec, db, out, config);
     CBlastDBSeqId id(NStr::IntToString(kGi));
     f.Write(id);
@@ -274,8 +274,8 @@ BOOST_AUTO_TEST_CASE(TestMaskedSequenceData)
     CSeqDB db("data/mask-data-db", CSeqDB::eProtein);
     ofstream out(fname.c_str());
     CSeqFormatterConfig config;
-    config.m_FiltAlgoIds.push_back(20);
-    config.m_FiltAlgoIds.push_back(40);
+    config.m_FiltAlgoId = 40;
+    //config.m_FiltAlgoIds.push_back(40);
     CSeqFormatter f(format_spec, db, out, config);
     CBlastDBSeqId id(NStr::IntToString(kGi));
     f.Write(id);
