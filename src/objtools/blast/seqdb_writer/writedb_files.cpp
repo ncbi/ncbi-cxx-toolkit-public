@@ -243,7 +243,7 @@ void CWriteDB_IndexFile::x_Flush()
     while(x_Overhead(m_Title, pad_date) & 0x7) {
         pad_date.append(m_Nul);
         if (count != -1) {
-            assert(count++ < 8);
+            _ASSERT(count++ < 8);
         }
     }
     
