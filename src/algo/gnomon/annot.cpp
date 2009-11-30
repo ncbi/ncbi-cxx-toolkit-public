@@ -325,6 +325,13 @@ bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
             );
 }
 
+void SaveWallModel(auto_ptr<CGeneModel>& wall_model, TGeneModelList& aligns)
+{
+    if (wall_model.get() != 0 && wall_model->Type() == CGeneModel::eWall+CGeneModel::eGnomon) {
+        aligns.push_back(*wall_model);
+    }
+}
+
 void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
 {
 
@@ -339,35 +346,44 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         TSignedSeqRange limits = ir->RealCdsLimits().Empty() ? ir->Limits() : ir->RealCdsLimits();
 
         if ( right < limits.GetFrom() ) { // new cluster
-            if (wall_model.get() != 0) {
-                aligns.push_back(*wall_model);
-                wall_model.reset();
-            }
-            if (ir->GeneID() != 0) {
-                wall_model.reset( new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eWall+CGeneModel::eGnomon));
-                wall_model->AddExon(limits);
-            }
+            SaveWallModel(wall_model, aligns);
+
+            wall_model.reset( new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eWall+CGeneModel::eGnomon));
+            wall_model->SetGeneID(ir->GeneID());
+            wall_model->AddExon(limits);
         } else { // same cluster
-            _ASSERT( ir->GeneID() != 0 );
-            if (wall_model.get() == 0) {
-                wall_model.reset( new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eNested+CGeneModel::eGnomon));
-                wall_model->AddExon(limits);
+            if (wall_model.get() == 0 || wall_model->GeneID()!=ir->GeneID()) {
+                CGeneModel nested_wall(ir->Strand(),ir->ID(),CGeneModel::eNested+CGeneModel::eGnomon);
+                nested_wall.SetGeneID(ir->GeneID());
+                nested_wall.AddExon(limits);
+                for (++ir; ir != models.end() && ir->GeneID() == nested_wall.GeneID(); ++ir) {
+                    TSignedSeqRange limits = ir->RealCdsLimits().Empty() ? ir->Limits() : ir->RealCdsLimits();
+                    if (limits.GetTo()- nested_wall.Limits().GetTo() > 0)
+                        nested_wall.ExtendRight(limits.GetTo()- nested_wall.Limits().GetTo());
+                }
+                aligns.push_back(nested_wall);
+                continue;
             }
         }
         
         right = max(right, limits.GetTo());
         TGeneModelList::iterator next = ir; ++next;
-        if (ir->GeneID() == 0) {
+        if (ir->RankInGene() == 1 && !ir->GoodEnoughToBeAnnotation()) {
+            ir->Status() &= ~CGeneModel::eFullSupCDS;
             aligns.splice(aligns.end(), models, ir);
-        } else {
+            if (wall_model.get() != 0) {
+                _ASSERT(wall_model->GeneID()==ir->GeneID());
+                _ASSERT(wall_model->Type() == CGeneModel::eWall+CGeneModel::eGnomon);
+                wall_model->SetType(CGeneModel::eGnomon);
+            }
+        } else if (wall_model.get() != 0 && wall_model->GeneID()==ir->GeneID() &&
+                   limits.GetTo()- wall_model->Limits().GetTo() > 0)  {
             wall_model->ExtendRight(limits.GetTo()- wall_model->Limits().GetTo());
         }
         ir = next;
     }
-    if (wall_model.get() != 0) {
-        aligns.push_back(*wall_model);
-        wall_model.reset();
-    }
+    SaveWallModel(wall_model, aligns);
+    wall_model.reset();
 
     TGeneModelList::const_iterator il = aligns.begin();
     TSignedSeqPos left = 0;
