@@ -160,6 +160,9 @@ _ct_get_user_api_layer_error(int error)
     case 16843163:
         return "This routine cannot be called when the command structure is idle.";
         break;
+    case 16843164:
+        return "Cannot send anything else but Text/Image for column %1! when server datatype is Text/Image";
+        break;
     default:
         break;
     }

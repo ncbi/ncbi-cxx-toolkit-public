@@ -1686,7 +1686,8 @@ _blk_send_blob_columns(CS_BLKDESC *blkdesc, CS_INT offset)
                 /* Here we need to send blob binded directly (not via blk_textxfer).
                    But in DBAPI this functionality will not be used, so it is not
                    implemented. */
-                assert(0);
+                _ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 6, 1, 16843164, "%s", bindcol->column_name);
+                rc = CS_FAIL;
             }
         }
     }
