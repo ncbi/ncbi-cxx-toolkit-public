@@ -1,8 +1,8 @@
 # $Id$
 
 SUB_PROJ =  \
-			ncbi_xcache_sqlite3 \
 			gui_utils \
+			ncbi_xcache_sqlite3 \
 			gui_objects \
 			gui_config \
 			gui_graph \
@@ -10,11 +10,11 @@ SUB_PROJ =  \
 			gui_widgets_seq \
 			gui_widgets_aln \
 			gui_widgets_misc \
-			gui_widgets_snp \
 			gui_dialogs \
 			gui_core \
 			gui_services \
-			plugins
+			plugins \
+            packages
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

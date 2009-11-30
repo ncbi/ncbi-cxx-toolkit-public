@@ -1,8 +1,0 @@
-#################################
-# $Id$
-#################################
-
-DLL_PROJ = view_snp
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

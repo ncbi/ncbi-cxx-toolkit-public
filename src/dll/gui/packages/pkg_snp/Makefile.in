@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-DLL_PROJ = algo_phylo
+DLL_PROJ = pkg_snp snp
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

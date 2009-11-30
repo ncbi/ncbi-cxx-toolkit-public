@@ -3,14 +3,12 @@
 DLL = gui_utils
 
 HOSTED_LIBS    = gui_utils  \
-                 gui_utils_fl \
                  gui_objutils \
                  gui_opengl \
-                 gui_print \
-                 gui_print_fl
+                 gui_print
 
-DEPENDENCIES   = ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_misc \
-                 ncbi_image ncbi_general
+DEPENDENCIES   = ncbi_algo ncbi_core ncbi_seq ncbi_seqext \
+				 ncbi_misc ncbi_image ncbi_general
 
 CPPFLAGS = -DNCBI_GUIUTILS_EXPORTS
 

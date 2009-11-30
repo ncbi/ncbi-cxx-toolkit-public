@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-DLL_PROJ = view_validator
+DLL_PROJ = gui_view_align pkg_alignment
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

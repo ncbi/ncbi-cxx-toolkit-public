@@ -1,8 +1,0 @@
-#################################
-# $Id$
-#################################
-
-DLL_PROJ = algo_basic
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
