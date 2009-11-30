@@ -56,6 +56,7 @@ USING_SCOPE(objects);
 class CWriteDB_GiMaskData : public CWriteDB_File {
 public:
     typedef vector< pair<TSeqPos, TSeqPos> > TPairVector;
+    typedef pair<int, int> TOffset;
 
     /// Constructor for an gimask data file.
     ///
@@ -65,29 +66,47 @@ public:
     /// @param le            Use little endian format
     CWriteDB_GiMaskData(const string     & maskname,
                         const string     & extn,
+                        int                index,
                         Uint8              max_file_size,
                         bool               le = false);
     
     /// Destructor.
     ~CWriteDB_GiMaskData() { };
     
-    /// Get size of data file (so far).
-    /// @return The total file size in bytes.
-    Int8 GetDataLength() const
-    {
-        return m_DataLength;
-    }
-    
     /// Write a new data blob.
     /// @param mask Mask data to write.
     void WriteMask(const TPairVector & mask);
+
+    /// Get current index
+    int GetIndex() const
+    {
+        return m_Index;
+    }
+
+    /// Get current index/offset pair
+    /// @return The current volume index and offset in byte
+    TOffset GetOffset() const 
+    {
+        return pair<int, int>(m_Index, m_DataLength);
+    }
     
+    /// Tests whether there is room for another batch
+    /// @param the number of masks to be added. [in]
+    /// @return Return TRUE if masks can fit into the volume.
+    bool CanFit(int num_masks) const
+    {
+        return (m_DataLength + (num_masks *2+1)*4 < m_MaxFileSize);
+    }
+
 private:
     /// Length of data written so far.
     Uint8 m_DataLength;
 
     /// Use little endian?
     bool m_UseLE;
+
+    /// Current index
+    int m_Index;
     
     /// Flush any stored data.
     void x_Flush() { };
@@ -100,7 +119,8 @@ private:
 
 class CWriteDB_GiMaskOffset : public CWriteDB_File {
 public:
-    typedef vector< pair<int, Int8> > TGiOffset;
+    typedef pair<int, int> TOffset;
+    typedef vector< pair<int, TOffset> > TGiOffset;
     
     /// Constructor for gimask offset file.
     ///
@@ -126,7 +146,7 @@ protected:
     static const int kGISize = 4;
 
     /// Size of offset entry
-    static const int kOffsetSize = 4;
+    static const int kOffsetSize = 8;
     
     /// Page size
     static const int kPageSize = 512;
@@ -163,7 +183,8 @@ public:
     /// Add sequence GI to the offset file.
     ///
     /// @param gi_offset GI->offset array [in]
-    void AddGIs(const TGiOffset &gi_offset);
+    /// @param num_vols Number of volumes [in]
+    void AddGIs(const TGiOffset &gi_offset, int num_vols);
     
 private:
     /// String format used by gimask files.
@@ -171,7 +192,7 @@ private:
         kStringFmt = CBlastDbBlob::eSizeVar;
     
     /// Build fixed length header fields.
-    void x_BuildHeaderFields();
+    void x_BuildHeaderFields(int num_vols);
     
     /// Creation timestamp for this gimask.
     string m_Date;
@@ -197,7 +218,8 @@ private:
 class CWriteDB_GiMask : public CObject {
 public:
     typedef vector< pair<TSeqPos, TSeqPos> > TPairVector;
-    typedef vector< pair<int, Int8> > TGiOffset;
+    typedef pair<int, int> TOffset;
+    typedef vector< pair<int, TOffset> > TGiOffset;
 
     /// Construct WriteDB style database gimask.
     /// @param maskname Name of the mask data
@@ -239,6 +261,7 @@ public:
 
 private:
     string m_MaskName;    // the name of the mask data
+    Uint8  m_MaxFileSize; // the maximum file size
 
     /// Data file
     CRef<CWriteDB_GiMaskData> m_DFile;

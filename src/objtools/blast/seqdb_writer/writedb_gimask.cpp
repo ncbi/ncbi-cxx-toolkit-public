@@ -52,8 +52,9 @@ CWriteDB_GiMask::CWriteDB_GiMask(const string      & maskname,
                                  const string      & desc,
                                  Uint8               max_file_size):
        m_MaskName    (maskname),
-       m_DFile       (new CWriteDB_GiMaskData(maskname, "gmd", max_file_size)),
-       m_DFile_LE    (new CWriteDB_GiMaskData(maskname, "gnd", max_file_size, true)),
+       m_MaxFileSize (max_file_size),
+       m_DFile       (new CWriteDB_GiMaskData(maskname, "gmd", 0, max_file_size)),
+       m_DFile_LE    (new CWriteDB_GiMaskData(maskname, "gnd", 0, max_file_size, true)),
        m_OFile       (new CWriteDB_GiMaskOffset(maskname, "gmo", max_file_size)),
        m_OFile_LE    (new CWriteDB_GiMaskOffset(maskname, "gno", max_file_size, true)),
        m_IFile       (new CWriteDB_GiMaskIndex(maskname, "gmi", desc, max_file_size)),
@@ -74,13 +75,20 @@ void CWriteDB_GiMask::ListFiles(vector<string> & files) const
 void CWriteDB_GiMask::AddGiMask(const vector<int> & GIs,
                                 const TPairVector & mask)
 {
-    Int8 offset = m_DFile->GetDataLength();
+    if (!m_DFile->CanFit(mask.size())) {
+        int index = m_DFile->GetIndex() + 1;
+        m_DFile->Close();
+        m_DFile_LE->Close();
+        m_DFile.Reset(new CWriteDB_GiMaskData(m_MaskName, "gmd", index, m_MaxFileSize));
+        m_DFile_LE.Reset(new CWriteDB_GiMaskData(m_MaskName, "gnd", index, m_MaxFileSize, true));
+    }
 
+    TOffset offset = m_DFile->GetOffset();
     m_DFile->WriteMask(mask);
     m_DFile_LE->WriteMask(mask);
 
     ITERATE(vector<int>, gi, GIs) {
-        m_GiOffset.push_back(pair<int, Int8> (*gi, offset));
+        m_GiOffset.push_back(pair<int, TOffset> (*gi, offset));
     }
 }
 
@@ -95,12 +103,18 @@ void CWriteDB_GiMask::Close()
     m_DFile->Close();
     m_DFile_LE->Close();
 
+    int num_vols = m_DFile->GetIndex() + 1;
+    if (num_vols == 1) {
+        m_DFile->RenameSingle();
+        m_DFile_LE->RenameSingle();
+    }
+
     sort(m_GiOffset.begin(), m_GiOffset.end());
 
-    m_IFile->AddGIs(m_GiOffset);
+    m_IFile->AddGIs(m_GiOffset, num_vols);
     m_IFile->Close();
 
-    m_IFile_LE->AddGIs(m_GiOffset);
+    m_IFile_LE->AddGIs(m_GiOffset, num_vols);
     m_IFile_LE->Close();
 
     m_OFile->AddGIs(m_GiOffset);
@@ -134,10 +148,12 @@ void CWriteDB_GiMaskOffset::AddGIs(const TGiOffset & gi_offset)
     ITERATE(TGiOffset, iter, gi_offset) {
         if (m_UseLE ) {
             gis.WriteInt4_LE(iter->first);
-            offsets.WriteInt4_LE(iter->second);
+            offsets.WriteInt4_LE(iter->second.first);
+            offsets.WriteInt4_LE(iter->second.second);
         } else {
             gis.WriteInt4(iter->first);
-            offsets.WriteInt4(iter->second);
+            offsets.WriteInt4(iter->second.first);
+            offsets.WriteInt4(iter->second.second);
         }
   
         ++i;
@@ -174,7 +190,8 @@ CWriteDB_GiMaskIndex(const string        & maskname,
     m_Date = CTime(CTime::eCurrent).AsString();
 }
 
-void CWriteDB_GiMaskIndex::AddGIs(const TGiOffset & gi_offset)
+void CWriteDB_GiMaskIndex::AddGIs(const TGiOffset & gi_offset, 
+                                  int               num_vols)
 {
     m_NumGIs   = gi_offset.size();
     m_NumIndex = m_NumGIs / kPageSize + 2;
@@ -199,28 +216,29 @@ void CWriteDB_GiMaskIndex::AddGIs(const TGiOffset & gi_offset)
             
         if (m_UseLE ) {
             gis.WriteInt4_LE(iter->first);
-            offsets.WriteInt4_LE(iter->second);
+            offsets.WriteInt4_LE(iter->second.first);
+            offsets.WriteInt4_LE(iter->second.second);
         } else {
             gis.WriteInt4(iter->first);
-            offsets.WriteInt4(iter->second);
+            offsets.WriteInt4(iter->second.first);
+            offsets.WriteInt4(iter->second.second);
         }
         ++m_NumIndex;
     }
 
-    x_BuildHeaderFields();
+    x_BuildHeaderFields(num_vols);
     Write(gis.Str());
     Write(offsets.Str());
 }
 
-void CWriteDB_GiMaskIndex::x_BuildHeaderFields()
+void CWriteDB_GiMaskIndex::x_BuildHeaderFields(int num_vols)
 {
     const int kFormatVersion = 1; // SeqDB has one of these.
-    const int kGiMaskType    = 0; // Blob (only choice right now)
     
     CBlastDbBlob header;
 
     header.WriteInt4(kFormatVersion);
-    header.WriteInt4(kGiMaskType); 
+    header.WriteInt4(num_vols);
     header.WriteInt4(kGISize);
     header.WriteInt4(kOffsetSize);
     header.WriteInt4(kPageSize);
@@ -241,11 +259,13 @@ void CWriteDB_GiMaskIndex::x_BuildHeaderFields()
 
 CWriteDB_GiMaskData::CWriteDB_GiMaskData(const string     & maskname,
                                          const string     & extn,
+                                         int                index,
                                          Uint8              max_file_size,
                                          bool               le)
-    : CWriteDB_File (maskname, extn, -1, max_file_size, false),
+    : CWriteDB_File (maskname, extn, index, max_file_size, false),
       m_DataLength  (0),
-      m_UseLE       (le)
+      m_UseLE       (le),
+      m_Index       (index)
 { }
 
 void CWriteDB_GiMaskData::WriteMask(const TPairVector & mask)

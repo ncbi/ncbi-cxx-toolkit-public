@@ -38,6 +38,8 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include "seqdbgimask.hpp"
 #include "seqdbgeneral.hpp"
+#include <iostream>
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,9 +54,7 @@ CSeqDBGiMask::CSeqDBGiMask(CSeqDBAtlas           & atlas,
       m_IndexFile        (m_Atlas),
       m_IndexLease       (m_Atlas),
       m_OffsetFile       (m_Atlas),
-      m_OffsetLease      (m_Atlas),
-      m_DataFile         (m_Atlas),
-      m_DataLease        (m_Atlas)
+      m_OffsetLease      (m_Atlas)
 { }
 
 const string & 
@@ -76,12 +76,13 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
 
     x_Open(algo_id, locked);
 
-    // search for page
-    int page(0);
-    int retv = s_BinarySearch(m_GiIndex, m_GiIndex+m_NumIndex, m_NumIndex, gi, page);
-   
-    if (retv == -1) {
-        if (page == -1) return;
+    int page, vol, off;
+
+    if (s_BinarySearch(m_GiIndex, m_NumIndex, gi, page)) {
+        vol = m_GiIndex[m_NumIndex + page * 2];
+        off = m_GiIndex[m_NumIndex + page * 2 + 1];
+    } else {
+        if (page == -1) return; // no mask;
 
         int pagesize(m_PageSize);
         if (page * m_PageSize + pagesize > m_NumGi) {
@@ -93,13 +94,18 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
         const Int4 * offset = (const Int4 *)
               m_OffsetFile.GetRegion(m_OffsetLease, begin, end, locked);
 
-        retv = s_BinarySearch(offset, offset+pagesize, pagesize, gi, page);
-        if (retv == -1) return;
+        if (!s_BinarySearch(offset, pagesize, gi, page))  return;
+            
+        vol = offset[pagesize + page * 2];
+        off = offset[pagesize + page * 2 + 1];
     }
+
+    _ASSERT(vol >= 0);
+    _ASSERT(vol < m_NumVols);
 
     // Retrieving the mask data
     const Int4 * datap = (const Int4 *)
-              m_DataFile.GetRegion(m_DataLease, retv, retv+4, locked);
+              m_DataFile[vol]->GetRegion(*m_DataLease[vol], off, off+4, locked);
     Int4 n = *datap;
 
     if (ranges._capacity < (ranges._size + n)) {
@@ -107,7 +113,7 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
     }
     // Remapping the mask data
     datap = (const Int4 *)
-            m_DataFile.GetRegion(m_DataLease, retv+4, retv + 8*n + 4, locked);
+            m_DataFile[vol]->GetRegion(*m_DataLease[vol], off+4, off + 8*n + 4, locked);
     memcpy(ranges._data + ranges._size, datap,  n*8);
     ranges._size +=n;
     return;
@@ -139,22 +145,44 @@ void CSeqDBGiMask::x_Open(Int4              algo_id,
     m_Atlas.Lock(locked);
     
     try {
-        // Find the path and name...
         CSeqDB_Path fn_i(SeqDB_ResolveDbPath(m_MaskNames[algo_id] + ext_i));
         CSeqDB_Path fn_o(SeqDB_ResolveDbPath(m_MaskNames[algo_id] + ext_o));
-        CSeqDB_Path fn_d(SeqDB_ResolveDbPath(m_MaskNames[algo_id] + ext_d));
 
         bool found_i = m_IndexFile.Open(fn_i, locked);
         bool found_o = m_OffsetFile.Open(fn_o, locked);
-        bool found_d = m_DataFile.Open(fn_d, locked);
         
-        if (! (found_i && found_o && found_d)) {
+        if (! (found_i && found_o)) {
             NCBI_THROW(CSeqDBException, eFileErr,
-                       "Could not open gi-mask files.");
+                       "Could not open gi-mask index files.");
         }
 
         m_AlgoId = algo_id;
         x_ReadFields(locked);
+
+        if (m_NumVols == 1) {
+            m_DataFile.push_back(new CSeqDBRawFile(m_Atlas));
+            m_DataLease.push_back(new CSeqDBMemLease(m_Atlas));
+            CSeqDB_Path fn(SeqDB_ResolveDbPath(m_MaskNames[algo_id] + ext_d));
+            bool found = m_DataFile[0]->Open(fn, locked);
+            if (! found) {
+                NCBI_THROW(CSeqDBException, eFileErr,
+                       "Could not open gi-mask data file.");
+            }
+        } else {
+            for (int vol=0; vol<m_NumVols; ++vol) {
+                m_DataFile.push_back(new CSeqDBRawFile(m_Atlas));
+                m_DataLease.push_back(new CSeqDBMemLease(m_Atlas));
+                ostringstream fnd;
+                fnd << m_MaskNames[algo_id] << "." << vol/10 << vol%10 << ext_d;
+                CSeqDB_Path fn(SeqDB_ResolveDbPath(fnd.str()));
+                bool found = m_DataFile[vol]->Open(fn, locked);
+                if (! found) {
+                    NCBI_THROW(CSeqDBException, eFileErr,
+                        "Could not open gi-mask data files.");
+                }
+            }
+        }
+            
     }
     catch(...) {
         m_AlgoId = -1;
@@ -194,20 +222,13 @@ void CSeqDBGiMask::x_ReadFields(CSeqDBLockHold & locked)
                    "Gi-mask file uses unknown format_version.");
     }
     
-    int data_type = header.ReadInt4();
-    
-    if (data_type != 0) {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Gi-mask file uses unknown data type.");
-    }
-    
-    m_GiSize = header.ReadInt4();
+    m_NumVols    = header.ReadInt4();
+    m_GiSize     = header.ReadInt4();
     m_OffsetSize = header.ReadInt4();
-    m_PageSize = header.ReadInt4();
+    m_PageSize   = header.ReadInt4();
 
-    m_NumIndex = header.ReadInt4();
-    m_NumGi  = header.ReadInt4();
+    m_NumIndex   = header.ReadInt4();
+    m_NumGi      = header.ReadInt4();
 
     m_IndexStart = header.ReadInt4();
     
@@ -235,11 +256,10 @@ void CSeqDBGiMask::x_ReadFields(CSeqDBLockHold & locked)
               m_IndexFile.GetRegion(m_IndexLease, begin, end, locked);
 }
 
-// TODO: if gi or offset becomes 8-bytes long, this may better be 
-// implemented as template functions
-int
+// TODO: if gi becomes 8-bytes long, this may better be implemented as 
+// a template function
+bool
 CSeqDBGiMask::s_BinarySearch(const int *keys,
-                             const int *values,
                              const int  n,
                              const int  key,
                              int       &idx) {
@@ -248,15 +268,17 @@ CSeqDBGiMask::s_BinarySearch(const int *keys,
     if (key > keys[upper] || key < keys[lower]) {
         // out of range
         idx = -1;
-        return -1;
+        return false;
     }
 
     if (key == keys[upper]) {
-        return values[upper];
+        idx = upper;
+        return true;
     }
 
     if (key == keys[lower]) {
-        return values[lower];
+        idx = lower;
+        return true;
     }
 
     idx = (lower + upper)/2;
@@ -270,12 +292,13 @@ CSeqDBGiMask::s_BinarySearch(const int *keys,
             idx = (lower + upper)/2;
         } else {
             // value found
-            return values[idx];
+            return true;
         }
     }
     // value not found
-    return -1;
+    return false;
 }
+
 
 #endif
 

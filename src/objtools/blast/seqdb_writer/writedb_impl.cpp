@@ -1077,7 +1077,7 @@ RegisterMaskAlgorithm(EBlast_filter_program   program,
     if (m_UseGiMask) {
         m_MaskAlgoMap[algorithm_id] = m_GiMasks.size();
         m_GiMasks.push_back(CRef<CWriteDB_GiMask> 
-            (new CWriteDB_GiMask(name, value, 0)));
+            (new CWriteDB_GiMask(name, value, m_MaxFileSize)));
     } else {
         m_ColumnMetas[x_GetMaskDataColumnId()][key] = value;
     }

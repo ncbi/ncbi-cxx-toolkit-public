@@ -66,7 +66,12 @@ public:
                  const vector <string> & mask_name);
     
     /// Destructor.
-    ~CSeqDBGiMask() { };
+    ~CSeqDBGiMask() {
+        for (unsigned int i=0; i<m_DataFile.size(); i++) {
+            delete m_DataFile[i];
+            delete m_DataLease[i];
+        }
+    };
     
     /// Get the mask description for algo id
     /// @param algo_id The chosen algo id [in]
@@ -139,17 +144,14 @@ private:
     /// Binary search for value associated with a key
     ///
     /// @param keys  The (sorted) key array [in]
-    /// @param values  The value array [in]
-    /// @param n  Number of (key, value) pairs [in]
+    /// @param n  Number of keys [in]
     /// @param key The key to search for [in]
     /// @param idx The index to the key array where key is found. [out]
-    /// @return The value found, or -1 if value is not found
-    ///         The caller should check idx to know if key is out of range
-    static int s_BinarySearch(const int *keys,
-                              const int *values,
-                              const int n,
-                              const int key,
-                              int      &idx);
+    /// @return TRUE if the key is found 
+    static bool s_BinarySearch(const int *keys,
+                               const int  n,
+                               const int  key,
+                               int       &idx);
 
     /// Reference to the atlas.
     CSeqDBAtlas & m_Atlas;
@@ -171,12 +173,15 @@ private:
 
     /// Offset file lease.
     CSeqDBMemLease m_OffsetLease;
+
+    /// Number of data volumes
+    Int4 m_NumVols;
     
     /// Data file.
-    CSeqDBRawFile m_DataFile;
+    vector<CSeqDBRawFile *> m_DataFile;
     
     /// Data file lease.
-    CSeqDBMemLease m_DataLease;
+    vector<CSeqDBMemLease *> m_DataLease;
     
     /// GI size
     Int4 m_GiSize;
@@ -207,11 +212,8 @@ private:
     
 };
 
-
 #endif
 
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS_SEQDB__SEQDBCOL_HPP
-
-

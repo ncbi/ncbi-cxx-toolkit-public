@@ -84,15 +84,15 @@ Encoding: binary
 
 The index file includes a 32-byte header that specifies version number, 
 format type, as well as other data describing the structure of the index 
-and offset files, followed by the GI index array and their associated offset 
-array.
+and offset files, followed by the GI index array and their associated 
+vol/offset array.
 
 
   Offset    Type       Fieldname         Notes
   ------    ----       ---------         -----
   0         Int4       version           The format version this
                                          volume uses -- currently 1.
-  4         Int4       file-type         0 for GI based mask file index
+  4         Int4       num-volumes       Number of volume files
   8         Int4       GI-size           Size of each GI (in byte)
   12        Int4       offset-size       Size of each offset (in byte)
   16        Int4       page-size         Number of GI within each page
@@ -103,7 +103,7 @@ array.
   --        String(V)  date              The date of file creation
   --        PAD(z)     --                Pad to align offset array
   --        Int4[]     GI-array          GI array
-  --        Int4[]     offset-array      offset array
+  --        2*Int4[]   vol/offset-array  vol,offset pair array
 
 The algo-descr is a "10:The mask of Zorro" type of string that identifies 
 the algo and option used to create this mask.
@@ -126,7 +126,7 @@ the data file, thus saving disk space.
   Offset    Type       Fieldname         Notes
   ------    ----       ---------         -----
   0         Int4[]     GI-array          GI array for page 0
-  --        Int4[]     offset-array      offset array for page 0
+  --        2*Int4[]   vol/offset-array  vol,offset pair array for page 0
   --                                     repeat of 1 and 2 for page 1,2,...
   
 
@@ -138,6 +138,10 @@ Encoding: binary
 The actual mask data are stored in this file.  Each record starts with 
 an integer num_ranges to tell how many mask ranges are there, followed by
 the ranges represented by two integers.
+
+If the data of masking file exceeds the file size limit (defaults to 1G), the
+data is split into multiple volume files.  In the latter case, the name of each
+file would be <mask-name>.[0-9][0-9].g[mn]d.  
 
 
   Offset    Type       Fieldname         Notes
