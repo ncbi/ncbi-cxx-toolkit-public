@@ -404,7 +404,8 @@ protected:
 inline
 bool CSeqMap::CSegment::IsSetData(void) const
 {
-    return m_SegType == CSeqMap::eSeqData || m_ObjType == CSeqMap::eSeqData;
+    return static_cast<ESegmentType>(m_SegType) == CSeqMap::eSeqData 
+        || static_cast<ESegmentType>(m_ObjType) == CSeqMap::eSeqData;
 }
 
 
