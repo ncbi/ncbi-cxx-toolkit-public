@@ -1,10 +1,9 @@
 # $Id$
 
-SUB_PROJ =  \
-			ncbi_gbench_contig \
-			ncbi_gbench_internal \
-			proteus \
-			radar
+SUB_PROJ = pkg_radar
+
+EXPENDABLE_SUB_PROJ = pkg_proteus \
+					  proteus \
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

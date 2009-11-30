@@ -1,0 +1,5 @@
+
+DLL_PROJ = pkg_radar
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
