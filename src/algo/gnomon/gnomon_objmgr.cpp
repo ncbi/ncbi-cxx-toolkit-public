@@ -312,8 +312,9 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
     int bshift = ((int)cds.size()-ashift)%3;
 
     string cds_seq((char*)&cds[ashift],cds.size()-ashift-bshift);
-    objects::CSeqTranslator::Translate(cds_seq, prot_seq, NULL, true, false, NULL, false);
-    return prot_seq;
+    cds_seq = "ATG"+cds_seq; // workaround '-' in protein if not headed with start codon
+    objects::CSeqTranslator::Translate(cds_seq, prot_seq);
+    return prot_seq.substr(1);
 }
 
 //
