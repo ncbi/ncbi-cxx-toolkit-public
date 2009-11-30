@@ -137,10 +137,11 @@ void CBlastHitMatrix::x_PreProcess(void)
 
     x_InitPort();       
     
-    m_Renderer.ShowRulers(!m_Thumbnail);
-    m_Renderer.ShowGrid(!m_Thumbnail);
-    CRgbaColor cl("236 255 243");
-    m_Renderer.SetBackgroundColor(cl);
+    // FIXME: no longer implemented
+    //m_Renderer.ShowRulers(!m_Thumbnail);
+    //m_Renderer.ShowGrid(!m_Thumbnail);
+    //CRgbaColor cl("236 255 243");
+    //m_Renderer.SetBackgroundColor(cl);
     m_Renderer.Update(m_DataSource.GetPointer(), m_Port);
 }
 

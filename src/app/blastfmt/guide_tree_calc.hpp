@@ -46,7 +46,7 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 
-#include <gui/widgets/aln_data/align_ds.hpp>
+#include <gui/widgets/data/align_ds.hpp>
 
 #include <corelib/hash_set.hpp>
 
