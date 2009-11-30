@@ -234,6 +234,20 @@ bool CSeq_feat_Handle::IsSetData(void) const
 }
 
 
+CSeq_id_Handle CSeq_feat_Handle::GetLocationId(void) const
+{
+    if ( IsTableSNP() ) {
+        return CSeq_id_Handle::GetGiHandle(GetSNPGi());
+    }
+    CConstRef<CSeq_loc> loc(&GetLocation());
+    const CSeq_id* id = loc->GetId();
+    if ( id ) {
+        return CSeq_id_Handle::GetHandle(*id);
+    }
+    return CSeq_id_Handle();
+}
+
+
 CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 {
     if ( IsPlainFeat() ) {
@@ -243,6 +257,28 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
         const SSNP_Info& info = x_GetSNP_Info();
         return TRange(info.GetFrom(), info.GetTo());
     }
+}
+
+
+CSeq_id_Handle CSeq_feat_Handle::GetProductId(void) const
+{
+    if ( IsSetProduct() ) {
+        CConstRef<CSeq_loc> loc(&GetProduct());
+        const CSeq_id* id = loc->GetId();
+        if ( id ) {
+            return CSeq_id_Handle::GetHandle(*id);
+        }
+    }
+    return CSeq_id_Handle();
+}
+
+
+CSeq_feat_Handle::TRange CSeq_feat_Handle::GetProductTotalRange(void) const
+{
+    if ( IsSetProduct() ) {
+        return GetProduct().GetTotalRange();
+    }
+    return TRange::GetEmpty();
 }
 
 

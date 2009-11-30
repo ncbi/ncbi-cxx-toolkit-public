@@ -111,6 +111,13 @@ public:
     /// Get range for current seq-feat
     virtual TRange GetRange(void) const;
 
+    virtual CSeq_id_Handle GetLocationId(void) const;
+    TRange GetLocationTotalRange(void) const
+        { return GetRange(); }
+
+    virtual CSeq_id_Handle GetProductId(void) const;
+    virtual TRange GetProductTotalRange(void) const;
+
     // Mappings for CSeq_feat methods
     bool IsSetId(void) const;
     const CFeat_id& GetId(void) const;

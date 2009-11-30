@@ -365,6 +365,34 @@ void CAnnotMapping_Info::InitializeMappedSeq_feat(const CSeq_feat& src,
 }
 
 
+const CSeq_id* CAnnotMapping_Info::GetLocationId(void) const
+{
+    switch ( GetMappedObjectType() ) {
+    case eMappedObjType_Seq_id:
+        return &GetMappedSeq_id();
+    case eMappedObjType_Seq_loc:
+        return GetMappedSeq_loc().GetId();
+    case eMappedObjType_Seq_feat:
+        return GetMappedSeq_feat().GetLocation().GetId();
+    }
+    return 0;
+}
+
+
+const CSeq_id* CAnnotMapping_Info::GetProductId(void) const
+{
+    switch ( GetMappedObjectType() ) {
+    case eMappedObjType_Seq_id:
+        return &GetMappedSeq_id();
+    case eMappedObjType_Seq_loc:
+        return GetMappedSeq_loc().GetId();
+    case eMappedObjType_Seq_feat:
+        return GetMappedSeq_feat().GetProduct().GetId();
+    }
+    return 0;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CAnnotObject_Ref
 /////////////////////////////////////////////////////////////////////////////

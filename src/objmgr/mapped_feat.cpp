@@ -183,11 +183,39 @@ const CSeq_loc& CMappedFeat::GetLocation(void) const
 }
 
 
+CSeq_id_Handle CMappedFeat::GetLocationId(void) const
+{
+    if ( m_MappingInfoPtr->IsMappedLocation() ) {
+        const CSeq_id* id = m_MappingInfoPtr->GetLocationId();
+        return id? CSeq_id_Handle::GetHandle(*id): CSeq_id_Handle();
+    }
+    return CSeq_feat_Handle::GetLocationId();
+}
+
+
 CMappedFeat::TRange CMappedFeat::GetRange(void) const
 {
     return m_MappingInfoPtr->IsMappedLocation()?
         m_MappingInfoPtr->GetTotalRange():
-        GetSeq_feat()->GetLocation().GetTotalRange();
+        CSeq_feat_Handle::GetRange();
+}
+
+
+CSeq_id_Handle CMappedFeat::GetProductId(void) const
+{
+    if ( m_MappingInfoPtr->IsMappedProduct() ) {
+        const CSeq_id* id = m_MappingInfoPtr->GetProductId();
+        return id? CSeq_id_Handle::GetHandle(*id): CSeq_id_Handle();
+    }
+    return CSeq_feat_Handle::GetProductId();
+}
+
+
+CMappedFeat::TRange CMappedFeat::GetProductTotalRange(void) const
+{
+    return m_MappingInfoPtr->IsMappedProduct()?
+        m_MappingInfoPtr->GetTotalRange():
+        CSeq_feat_Handle::GetProductTotalRange();
 }
 
 

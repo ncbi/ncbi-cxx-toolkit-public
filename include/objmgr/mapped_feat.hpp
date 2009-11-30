@@ -94,6 +94,13 @@ public:
     TRange GetTotalRange(void) const
         { return GetRange(); }
 
+    
+    CSeq_id_Handle GetLocationId(void) const;
+    TRange GetLocationTotalRange(void) const
+        { return GetRange(); }
+    CSeq_id_Handle GetProductId(void) const;
+    TRange GetProductTotalRange(void) const;
+
 private:
     friend class CFeat_CI;
     friend class CAnnot_CI;

@@ -110,6 +110,9 @@ public:
     const TRange& GetTotalRange(void) const;
     void SetTotalRange(const TRange& range);
 
+    const CSeq_id* GetLocationId(void) const;
+    const CSeq_id* GetProductId(void) const;
+
     ENa_strand GetMappedStrand(void) const;
     void SetMappedStrand(ENa_strand strand);
 
