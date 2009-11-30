@@ -52,22 +52,30 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CAutoInitPtr_Base::
-//
-//    Base class for CAutoInitPtr<> and CAutoInitRef<> templates.
-//
+///
+///  CAutoInitPtr_Base::
+///
+///    Base class for CAutoInitPtr<> and CAutoInitRef<> templates.
 
-
-// Base class for CAutoInitPtr<> and CAutoInitRef<> templates
 class NCBI_XNCBI_EXPORT CAutoInitPtr_Base
 {
 public:
-    // User cleanup function type
-    typedef void (*FSelfCleanup)(void** ptr);
+    /// User cleanup function type
     typedef void (*FUserCleanup)(void*  ptr);
 
-    // Set user-provided cleanup function to be executed on destruction.
+    ~CAutoInitPtr_Base(void);
+
+protected:
+    /// Cleanup function type used by derived classes
+    typedef void (*FSelfCleanup)(void** ptr);
+
+    /// Constructor.
+    ///
+    /// @param self_cleanup
+    ///   Cleanup function to be executed on destruction,
+    ///   provided by a derived class.
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
     CAutoInitPtr_Base(FSelfCleanup self_cleanup,
                       FUserCleanup user_cleanup = 0)
         : m_Ptr(0),
@@ -75,10 +83,8 @@ public:
           m_UserCleanup(user_cleanup)
     {}
 
-    ~CAutoInitPtr_Base(void);
-
-protected:
-    void* m_Ptr;          // Pointer to the data
+    /// Pointer to the data
+    void* m_Ptr;
 
     DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 
@@ -98,26 +104,28 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CAutoInitPtr<>::
-//
-//    For simple on-demand variables.
-//    Create the variable of type "T" on demand,
-//    destroy it on the CAutoInitPtr termination.
-//    The class should not be used for static variables,
-//    use CSafeStaticPtr class instead.
-//
-
+///  CAutoInitPtr<>::
+///
+///    For simple on-demand variables.
+///    Create the variable of type "T" on demand,
+///    destroy it on the CAutoInitPtr termination.
+///    The class should not be used for static variables,
+///    use CSafeStaticPtr class instead.
 
 template <class T>
 class CAutoInitPtr : public CAutoInitPtr_Base
 {
 public:
-    // Set the cleanup function to be called on variable destruction.
+    /// Constructor.
+    ///
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @sa CAutoInitPtr_Base
     CAutoInitPtr(FUserCleanup user_cleanup = 0)
         : CAutoInitPtr_Base(x_SelfCleanup, user_cleanup)
     {}
 
-    // Create the variable if not created yet, return the reference
+    /// Create the variable if not created yet, return the reference
     T& Get(void)
     {
         if ( !m_Ptr ) {
@@ -125,6 +133,8 @@ public:
         }
         return *static_cast<T*> (m_Ptr);
     }
+    /// Get the existing object or create a new one using the provided
+    /// FUserCreate object.
     template <class FUserCreate>
     T& Get(FUserCreate user_create)
     {
@@ -137,10 +147,10 @@ public:
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
 
-    // Initialize with an existing object. The object MUST be
-    // allocated with "new T" -- it will be destroyed with
-    // "delete object" in the end. Set() works only for
-    // not yet initialized CAutoInitPtr variables.
+    /// Initialize with an existing object. The object MUST be
+    /// allocated with "new T" -- it will be destroyed with
+    /// "delete object" in the end. Set() works only for
+    /// not yet initialized CAutoInitPtr variables.
     void Set(T* object);
 
 private:
@@ -162,27 +172,29 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CAutoInitRef<>::
-//
-//    For on-demand CObject-derived object.
-//    Create the variable of type "T" using CRef<>
-//    (to avoid premature destruction).
-//    The class should not be used for static variables,
-//    use CSafeStaticRef class instead.
-//
-
+///
+///  CAutoInitRef<>::
+///
+///    For on-demand CObject-derived object.
+///    Create the variable of type "T" using CRef<>
+///    (to avoid premature destruction).
+///    The class should not be used for static variables,
+///    use CSafeStaticRef class instead.
 
 template <class T>
 class CAutoInitRef : public CAutoInitPtr_Base
 {
 public:
-    // Set the cleanup function to be called on variable destruction.
+    /// Constructor.
+    ///
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @sa CAutoInitPtr_Base
     CAutoInitRef(FUserCleanup user_cleanup = 0)
         : CAutoInitPtr_Base(x_SelfCleanup, user_cleanup)
     {}
 
-    // Create the variable if not created yet, return the reference
+    /// Create the variable if not created yet, return the reference
     T& Get(void)
     {
         if ( !m_Ptr ) {
@@ -190,6 +202,8 @@ public:
         }
         return *static_cast<T*>(m_Ptr);
     }
+    /// Get the existing object or create a new one using the provided
+    /// FUserCreate object.
     template <class FUserCreate>
     T& Get(FUserCreate user_create)
     {
@@ -202,9 +216,9 @@ public:
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
 
-    // Initialize with an existing object. The object MUST be
-    // allocated with "new T" to avoid premature destruction.
-    // Set() works only for un-initialized CAutoInitRef variables.
+    /// Initialize with an existing object. The object MUST be
+    /// allocated with "new T" to avoid premature destruction.
+    /// Set() works only for un-initialized CAutoInitRef variables.
     void Set(T* object);
 
 private:

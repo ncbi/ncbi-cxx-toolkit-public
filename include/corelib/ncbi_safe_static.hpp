@@ -41,6 +41,10 @@
  *
  */
 
+/// @file ncbi_safe_static.hpp
+/// Static variables safety - create on demand, destroy on application
+/// termination.
+
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -51,33 +55,34 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CSafeStaticLifeSpan::
-//
-//    Class for specifying safe static object life span.
-//
+///
+///  CSafeStaticLifeSpan::
+///
+///    Class for specifying safe static object life span.
+///
 
 class NCBI_XNCBI_EXPORT CSafeStaticLifeSpan
 {
 public:
-    // Predefined life spans for the safe static objects
+    /// Predefined life spans for the safe static objects
     enum ELifeSpan {
-        eLifeSpan_Min      = kMin_Int, // std static, not adjustable
+        eLifeSpan_Min      = kMin_Int, ///< std static, not adjustable
         eLifeSpan_Shortest = -20000,
         eLifeSpan_Short    = -10000,
         eLifeSpan_Normal   = 0,
         eLifeSpan_Long     = 10000,
         eLifeSpan_Longest  = 20000
     };
-    // Constructs a life span object from basic level and adjustment.
-    // Generates warning (and assertion in debug mode) if the adjustment
-    // argument is too big (<= -5000 or >= 5000). If span is eLifeSpan_Min
-    // "adjust" is ignored.
+    /// Constructs a life span object from basic level and adjustment.
+    /// Generates warning (and assertion in debug mode) if the adjustment
+    /// argument is too big (<= -5000 or >= 5000). If span is eLifeSpan_Min
+    /// "adjust" is ignored.
     CSafeStaticLifeSpan(ELifeSpan span, int adjust = 0);
 
+    /// Get life span value.
     int GetLifeSpan(void) const { return m_LifeSpan; }
 
-    // Get default life span (set to eLifeSpan_Min).
+    /// Get default life span (set to eLifeSpan_Min).
     static CSafeStaticLifeSpan& GetDefault(void);
 
 private:
@@ -86,28 +91,39 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CSafeStaticPtr_Base::
-//
-//    Base class for CSafeStaticPtr<> and CSafeStaticRef<> templates.
-//
+///
+///  CSafeStaticPtr_Base::
+///
+///    Base class for CSafeStaticPtr<> and CSafeStaticRef<> templates.
+///
 
-
-// Base class for CSafeStaticPtr<> and CSafeStaticRef<> templates
 class NCBI_XNCBI_EXPORT CSafeStaticPtr_Base
 {
 public:
-    // User cleanup function type
-    typedef void (*FSelfCleanup)(void** ptr);
+    /// User cleanup function type
     typedef void (*FUserCleanup)(void*  ptr);
 
-    // Life span
+    /// Life span
     typedef CSafeStaticLifeSpan TLifeSpan;
 
-    // Set user-provided cleanup function to be executed on destruction.
-    // Life span allows to control destruction of objects. Objects with
-    // the same life span are destroyed in the order reverse to their
-    // creation order.
+    ~CSafeStaticPtr_Base(void);
+
+protected:
+    /// Cleanup function type used by derived classes
+    typedef void (*FSelfCleanup)(void** ptr);
+
+    /// Constructor.
+    ///
+    /// @param self_cleanup
+    ///   Cleanup function to be executed on destruction,
+    ///   provided by a derived class.
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects. Objects with
+    ///   the same life span are destroyed in the order reverse to their
+    ///   creation order.
+    ///   @sa CSafeStaticLifeSpan
     CSafeStaticPtr_Base(FSelfCleanup self_cleanup,
                         FUserCleanup user_cleanup = 0,
                         TLifeSpan life_span = TLifeSpan::GetDefault())
@@ -117,16 +133,14 @@ public:
           m_CreationOrder(x_GetCreationOrder())
     {}
 
-    ~CSafeStaticPtr_Base(void);
+    /// Pointer to the data
+    void* m_Ptr;
 
-protected:
-    void* m_Ptr;          // Pointer to the data
-
-    // Prepare to the object initialization: check current thread, lock
-    // the mutex and store its state to "mutex_locked", return "true"
-    // if the object must be created or "false" if already created.
+    /// Prepare to the object initialization: check current thread, lock
+    /// the mutex and store its state to "mutex_locked", return "true"
+    /// if the object must be created or "false" if already created.
     bool Init_Lock(bool* mutex_locked);
-    // Finalize object initialization: release the mutex if "mutex_locked"
+    /// Finalize object initialization: release the mutex if "mutex_locked".
     void Init_Unlock(bool mutex_locked);
 
 private:
@@ -159,9 +173,9 @@ private:
 };
 
 
-// Comparison for safe static ptrs. Defines order of objects' destruction:
-// short living objects go first; if life span of several objects is the same,
-// the order of destruction is reverse to the order of their creation.
+/// Comparison for safe static ptrs. Defines order of objects' destruction:
+/// short living objects go first; if life span of several objects is the same,
+/// the order of destruction is reverse to the order of their creation.
 class CSafeStatic_Less
 {
 public:
@@ -177,16 +191,14 @@ public:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CSafeStaticPtr<>::
-//
-//    For simple on-demand variables.
-//    Create the variable of type "T" on demand,
-//    destroy it on the program termination.
-//    Should be used only as static object. Otherwise
-//    the correct initialization is not guaranteed.
-//
-
+///
+///  CSafeStaticPtr<>::
+///
+///    For simple on-demand variables.
+///    Create the variable of type "T" on demand,
+///    destroy it on the program termination.
+///    Should be used only as static object. Otherwise
+///    the correct initialization is not guaranteed.
 
 template <class T>
 class CSafeStaticPtr : public CSafeStaticPtr_Base
@@ -194,14 +206,19 @@ class CSafeStaticPtr : public CSafeStaticPtr_Base
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
 
-    // Set the cleanup function to be called on variable destruction,
-    // default life span is normal.
+    /// Constructor.
+    ///
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects.
+    /// @sa CSafeStaticPtr_Base
     CSafeStaticPtr(FUserCleanup user_cleanup = 0,
                    TLifeSpan life_span = TLifeSpan::GetDefault())
         : CSafeStaticPtr_Base(x_SelfCleanup, user_cleanup, life_span)
     {}
 
-    // Create the variable if not created yet, return the reference
+    /// Create the variable if not created yet, return the reference.
     T& Get(void)
     {
         if ( !m_Ptr ) {
@@ -209,6 +226,8 @@ public:
         }
         return *static_cast<T*> (m_Ptr);
     }
+    /// Get the existing object or create a new one using the provided
+    /// FUserCreate object.
     template <class FUserCreate>
     T& Get(FUserCreate user_create)
     {
@@ -221,10 +240,10 @@ public:
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
 
-    // Initialize with an existing object. The object MUST be
-    // allocated with "new T" -- it will be destroyed with
-    // "delete object" in the end. Set() works only for
-    // not yet initialized safe-static variables.
+    /// Initialize with an existing object. The object MUST be
+    /// allocated with "new T" -- it will be destroyed with
+    /// "delete object" in the end. Set() works only for
+    /// not yet initialized safe-static variables.
     void Set(T* object);
 
 private:
@@ -246,16 +265,14 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CSafeStaticRef<>::
-//
-//    For on-demand CObject-derived object.
-//    Create the variable of type "T" using CRef<>
-//    (to avoid premature destruction).
-//    Should be used only as static object. Otherwise
-//    the correct initialization is not guaranteed.
-//
-
+///
+///  CSafeStaticRef<>::
+///
+///    For on-demand CObject-derived object.
+///    Create the variable of type "T" using CRef<>
+///    (to avoid premature destruction).
+///    Should be used only as static object. Otherwise
+///    the correct initialization is not guaranteed.
 
 template <class T>
 class CSafeStaticRef : public CSafeStaticPtr_Base
@@ -263,14 +280,19 @@ class CSafeStaticRef : public CSafeStaticPtr_Base
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
 
-    // Set the cleanup function to be called on variable destruction,
-    // default life span is normal.
+    /// Constructor.
+    ///
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects.
+    /// @sa CSafeStaticPtr_Base
     CSafeStaticRef(FUserCleanup user_cleanup = 0,
                    TLifeSpan life_span = TLifeSpan::GetDefault())
         : CSafeStaticPtr_Base(x_SelfCleanup, user_cleanup, life_span)
     {}
 
-    // Create the variable if not created yet, return the reference
+    /// Create the variable if not created yet, return the reference.
     T& Get(void)
     {
         if ( !m_Ptr ) {
@@ -278,6 +300,8 @@ public:
         }
         return *static_cast<T*>(m_Ptr);
     }
+    /// Get the existing object or create a new one using the provided
+    /// FUserCreate object.
     template <class FUserCreate>
     T& Get(FUserCreate user_create)
     {
@@ -290,9 +314,9 @@ public:
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
 
-    // Initialize with an existing object. The object MUST be
-    // allocated with "new T" to avoid premature destruction.
-    // Set() works only for un-initialized safe-static variables.
+    /// Initialize with an existing object. The object MUST be
+    /// allocated with "new T" to avoid premature destruction.
+    /// Set() works only for un-initialized safe-static variables.
     void Set(T* object);
 
 private:
@@ -316,24 +340,24 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CSafeStaticGuard::
-//
-//    Register all on-demand variables,
-//    destroy them on the program termination.
+///
+///  CSafeStaticGuard::
+///
+///    Register all on-demand variables,
+///    destroy them on the program termination.
 
 class NCBI_XNCBI_EXPORT CSafeStaticGuard
 {
 public:
-    // Check if already initialized. If not - create the stack,
-    // otherwise just increment the reference count.
+    /// Check if already initialized. If not - create the stack,
+    /// otherwise just increment the reference count.
     CSafeStaticGuard(void);
 
-    // Check reference count, and if it is zero, then destroy
-    // all registered variables.
+    /// Check reference count, and if it is zero, then destroy
+    /// all registered variables.
     ~CSafeStaticGuard(void);
 
-    // Add new on-demand variable to the cleanup stack.
+    /// Add new on-demand variable to the cleanup stack.
     static void Register(CSafeStaticPtr_Base* ptr)
     {
         if ( ptr->x_IsStdStatic() ) {
@@ -362,11 +386,10 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-// This static variable must be present in all modules using
-// on-demand variables. The guard must be created first
-// regardless of the modules initialization order.
-//
+///
+/// This static variable must be present in all modules using
+/// on-demand static variables. The guard must be created first
+/// regardless of the modules initialization order.
 
 static CSafeStaticGuard s_CleanupGuard;
 
