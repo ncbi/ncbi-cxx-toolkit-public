@@ -1,13 +1,14 @@
 APP = hit_matrix.cgi
 SRC = blast_hitmatrix cgi_hit_matrix
 
-LIB_ = w_hit_matrix gui_glmesa w_gl gui_graph gui_opengl gui_print \
-	   gui_objutils gui_utils xalgoalignutil xalnmgr ximage \
-	   xcgi xhtml xalnmgr entrez2cli entrez2 valerr gbseq xconnserv \
-	   xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB_ = w_hit_matrix gui_glmesa w_gl w_wx w_data \
+	   gui_graph gui_opengl gui_print gui_objutils gui_utils \
+	   xalgoalignutil xalnmgr ximage xcgi xhtml \
+	   entrez2cli entrez2 valerr gbseq entrezgene biotree \
+	   xconnserv xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(OSMESA_LIBS) $(IMAGE_LIBS) $(CMPRS_LIBS) \
+LIBS = $(WXWIDGETS_LIBS) $(OSMESA_LIBS) $(IMAGE_LIBS) $(CMPRS_LIBS) \
        $(DL_LIBS) $(ORIG_LIBS)
 
 
