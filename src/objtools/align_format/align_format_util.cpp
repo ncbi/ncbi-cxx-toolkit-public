@@ -51,6 +51,7 @@ static char const rcsid[] = "$Id$";
 #include <serial/objostrasnb.hpp> 
 #include <serial/objistrasnb.hpp> 
 #include <connect/ncbi_conn_stream.hpp>
+#include <util/tables/raw_scoremat.h>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
@@ -90,6 +91,9 @@ const string CAlignFormatUtil::kNoHitsFound("No hits found");
 
 bool kTranslation;
 CRef<CScope> kScope;
+
+const char k_PSymbol[ePMatrixSize+1] =
+"ARNDCQEGHILKMFPSTWYVBZX";
 
 CNcbiRegistry *CAlignFormatUtil::m_Reg = NULL;
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
@@ -2248,6 +2252,34 @@ string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
 //
 void CAlignFormatUtil::ReleaseURLRegistry(void){
     if( m_Reg) { delete m_Reg; m_Reg = NULL;}
+}
+
+void
+CAlignFormatUtil::GetAsciiProteinMatrix(const char* matrix_name,
+                                   CNcbiMatrix<int>& retval)
+{
+    retval.Resize(0, 0, -1);
+
+    const SNCBIPackedScoreMatrix* packed_mtx = 
+        NCBISM_GetStandardMatrix(matrix_name);
+    if (packed_mtx == NULL) {
+        return;
+    }
+    retval.Resize(k_NumAsciiChar, k_NumAsciiChar, -1000);
+
+    SNCBIFullScoreMatrix mtx;
+    NCBISM_Unpack(packed_mtx, &mtx);
+ 
+    for(int i = 0; i < ePMatrixSize; ++i){
+        for(int j = 0; j < ePMatrixSize; ++j){
+            retval((size_t)k_PSymbol[i], (size_t)k_PSymbol[j]) =
+                mtx.s[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]];
+        }
+    }
+    for(int i = 0; i < ePMatrixSize; ++i) {
+        retval((size_t)k_PSymbol[i], '*') = retval('*',(size_t)k_PSymbol[i]) = -4;
+    }
+    retval('*', '*') = 1; 
 }
 
 END_SCOPE(align_format)

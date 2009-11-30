@@ -105,6 +105,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (use_sum_statistics && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
+    CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -158,8 +159,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     if (opts.GetSumStatisticsMode() && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
+    CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
 }
-
 
 static const string kHTML_Prefix =
 "<HTML>\n"
@@ -517,7 +518,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
         if (results.HasAlignments()) {
             ITERATE(CSeq_align_set::Tdata, itr, aln_set->Get()) {
                     const CSeq_align& s = **itr;
-                    tabinfo.SetFields(s, *m_Scope);
+                    tabinfo.SetFields(s, *m_Scope, &m_ScoringMatrix);
                     tabinfo.Print();
             }
         }

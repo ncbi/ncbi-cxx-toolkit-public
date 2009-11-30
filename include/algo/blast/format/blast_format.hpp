@@ -222,6 +222,8 @@ private:
     bool m_ShowLinkedSetSize;
     bool m_IsUngappedSearch;    ///< true if the search was ungapped
     const char* m_MatrixName;   ///< name of scoring matrix
+    /** Scoring matrix instantiated from m_MatrixName */
+    CNcbiMatrix<int> m_ScoringMatrix; 
     /** Scope containing query and subject sequences */
     CRef<CScope> m_Scope;       
     /** True if we are formatting for BLAST2Sequences */

@@ -112,18 +112,9 @@ static const int k_ColorMismatchIdentity = 0;
 static const int k_GetDynamicFeatureSeqLength = 200000;
 static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
-static const int k_NumAsciiChar = 128;
 const string color[]={"#000000", "#808080", "#FF0000"};
 const string k_ColorRed = "#FF0000";
 const string k_ColorPink = "#F805F5";
-
-///protein matrix define
-enum {
-    ePMatrixSize = 23       // number of amino acid for matrix
-};
-
-static const char k_PSymbol[ePMatrixSize+1] =
-"ARNDCQEGHILKMFPSTWYVBZX";
 
 static const char k_IntronChar = '~';
 static const int k_IdStartMargin = 2;
@@ -208,37 +199,22 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SlaveGeneticCode = 1;
     m_Ctx = NULL;
 
-    const SNCBIPackedScoreMatrix* packed_mtx = 
-        NCBISM_GetStandardMatrix(matrix_name 
-                                 ? matrix_name 
-                                 : BLAST_DEFAULT_MATRIX);
-    if (packed_mtx == NULL) {
-        packed_mtx = &NCBISM_Blosum62;
-    }
+    CNcbiMatrix<int> mtx;
+    CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
+                                       ? matrix_name 
+                                       : BLAST_DEFAULT_MATRIX, mtx);
+    _ASSERT(!mtx.GetData().empty());
 
-    SNCBIFullScoreMatrix mtx;
-    NCBISM_Unpack(packed_mtx, &mtx);
- 
-    int** temp = new int*[k_NumAsciiChar];
-    for(int i = 0; i<k_NumAsciiChar; ++i) {
-        temp[i] = new int[k_NumAsciiChar];
+    m_Matrix = new int*[mtx.GetRows()];
+    for(int i = 0; i<mtx.GetRows(); ++i) {
+        m_Matrix[i] = new int[mtx.GetCols()];
     }
-    for (int i=0; i<k_NumAsciiChar; i++){
-        for (int j=0; j<k_NumAsciiChar; j++){
-            temp[i][j] = -1000;
+    // copy data from matrix
+    for(int i = 0; i<mtx.GetRows(); ++i) {
+        for (int j = 0; j < mtx.GetCols(); j++) {
+            m_Matrix[i][j] = mtx(i, j);
         }
     }
-    for(int i = 0; i < ePMatrixSize; ++i){
-        for(int j = 0; j < ePMatrixSize; ++j){
-            temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] =
-                mtx.s[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]];
-        }
-    }
-    for(int i = 0; i < ePMatrixSize; ++i) {
-        temp[(size_t)k_PSymbol[i]]['*'] = temp['*'][(size_t)k_PSymbol[i]] = -4;
-    }
-    temp['*']['*'] = 1; 
-    m_Matrix = temp;
 }
 
 

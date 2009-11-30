@@ -239,6 +239,18 @@ TUrlMap
 k_UrlMap((const TUrlMap::value_type*)&k_all_url_pairs[0], 
          (const TUrlMap::value_type*)k_all_url_pairs + DIM(k_all_url_pairs));
 
+///protein matrix define
+enum {
+    ePMatrixSize = 23       // number of amino acid for matrix
+};
+
+/// Number of ASCII characters for populating matrix columns
+NCBI_ALIGN_FORMAT_EXPORT
+const int k_NumAsciiChar = 128;
+
+/// Residues
+NCBI_ALIGN_FORMAT_EXPORT
+extern const char k_PSymbol[];
 
 /** This class contains misc functions for displaying BLAST results. */
 
@@ -386,6 +398,12 @@ public:
     static void AcknowledgeBlastSubject(const objects::CBioseq& cbs, size_t line_len,
                                         CNcbiOstream& out, bool believe_query,
                                         bool html, bool tabular=false);
+
+    /// Retrieve a scoring matrix for the provided matrix name
+    /// @return the requested matrix (indexed using ASCII characters) or an empty
+    /// matrix if matrix_name is invalid or can't be found.
+    static void GetAsciiProteinMatrix(const char* matrix_name,
+                                 CNcbiMatrix<int>& retval);
 private:
     static void x_AcknowledgeBlastSequence(const objects::CBioseq& cbs, 
                                            size_t line_len,

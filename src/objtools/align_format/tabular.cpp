@@ -410,7 +410,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         if (m_QuerySeq[i] == m_SubjectSeq[i]) {
             ++num_ident;
             ++num_positives;
-        } else if (matrix && 
+        } else if (matrix && !matrix->GetData().empty() &&
                    (*matrix)(m_QuerySeq[i], m_SubjectSeq[i]) > 0) {
             ++num_positives;
         }
