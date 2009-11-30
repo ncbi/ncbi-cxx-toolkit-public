@@ -161,6 +161,19 @@ public:
         TInfoRef m_Parent;
         TChildren m_Children;
     };
+    typedef vector<CFeatInfo*> TFeatArray;
+    struct SFeatSet {
+        CSeqFeatData::ESubtype m_FeatType, m_ParentType;
+        bool m_NeedAll, m_CollectedAll;
+        TFeatArray m_All, m_New;
+
+        SFeatSet(void)
+            : m_NeedAll(false),
+              m_CollectedAll(false)
+            {
+            }
+    };
+    typedef vector<SFeatSet> TParentInfoMap;
 
 protected:
     typedef CRef<CFeatInfo> TInfoRef;
@@ -174,8 +187,12 @@ protected:
     void x_AddGene(const CGene_ref& ref, CFeatInfo& info);
 
     void x_AssignParents(void);
-    void x_AssignParentsByRef(void);
-    void x_AssignParentsByOverlap(void);
+    void x_AssignParentsByRef(TFeatArray& features,
+                              CSeqFeatData::ESubtype parent_type);
+    void x_AssignParentsByOverlap(TFeatArray& features,
+                                  bool by_product,
+                                  const TFeatArray& parents);
+    void x_CollectNeeded(TParentInfoMap& pinfo_map);
 
     void x_SetParent(CFeatInfo& info, CFeatInfo& parent);
     void x_SetNoParent(CFeatInfo& info);
