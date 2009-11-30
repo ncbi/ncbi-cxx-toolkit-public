@@ -70,6 +70,16 @@ $build_root/status/config.status
 status=$?
 
 case $output in
+    */Makefile.mk)
+        find src/* -name .svn -prune -o -name 'Makefile.*.mk' -print \
+            | while read x; do
+            echo
+            echo "### Extra macro definitions from $x"
+            echo
+            cat "$x"
+        done >> "$builddir/Makefile.mk"
+        ;;
+
     *.sh)
         chmod +x $output
         ;;
