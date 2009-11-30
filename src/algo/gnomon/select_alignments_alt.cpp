@@ -291,17 +291,17 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
         double ds = 0.025*(fabs(b.Score())+fabs(a.Score()));
         
         double as = a.Score();
-        if((a.Status()&&CGeneModel::ePolyA) != 0)
+        if((a.Status()&CGeneModel::ePolyA) != 0)
             as += ds; 
-        if((a.Status()&&CGeneModel::eCap) != 0)
+        if((a.Status()&CGeneModel::eCap) != 0)
             as += ds; 
         if(a.isNMD())
             as -= ds;
         
         double bs = b.Score();
-        if((b.Status()&&CGeneModel::ePolyA) != 0)
+        if((b.Status()&CGeneModel::ePolyA) != 0)
             bs += ds; 
-        if((b.Status()&&CGeneModel::eCap) != 0)
+        if((b.Status()&CGeneModel::eCap) != 0)
             bs += ds; 
         if(b.isNMD())
             bs -= ds;
@@ -321,16 +321,16 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
         double bsize = b.Support().size();
         double ds = 0.025*(asize+bsize);
         
-        if((a.Status()&&CGeneModel::ePolyA) != 0)
+        if((a.Status()&CGeneModel::ePolyA) != 0)
             asize += ds; 
-        if((a.Status()&&CGeneModel::eCap) != 0)
+        if((a.Status()&CGeneModel::eCap) != 0)
             asize += ds; 
         if(a.isNMD())
             asize -= ds;
         
-        if((b.Status()&&CGeneModel::ePolyA) != 0)
+        if((b.Status()&CGeneModel::ePolyA) != 0)
             bsize += ds; 
-        if((b.Status()&&CGeneModel::eCap) != 0)
+        if((b.Status()&CGeneModel::eCap) != 0)
             bsize += ds; 
         if(b.isNMD())
             bsize -= ds;
