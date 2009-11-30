@@ -3454,6 +3454,17 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
    [[SSL_library_init();]])]],
  -lcrypto)
 
+OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
+for d in `echo " $OPENSSL_LIBS" | fmt -w1 | sed -ne 's/^-L//p'` \
+   /usr/local/lib${bit64_sfx} /usr/local/lib /usr/lib${bit64_sfx} /usr/lib; do
+   if test -f $d/libssl.a -a -f $d/libcrypto.a; then
+      OPENSSL_STATIC_LIBS="$d/libssl.a $d/libcrypto.a"
+      break
+   elif test -f $d/libssl.so -o -f $d/libssl.dylib; then
+      break
+   fi
+done
+
 if test -n "$GNUTLS_LIBS"; then
    TLS_INCLUDE=$GNUTLS_INCLUDE
    TLS_LIBS=$GNUTLS_LIBS
@@ -6225,6 +6236,7 @@ AC_SUBST(Z_LIB)
 AC_SUBST(BZ2_LIB)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
+AC_SUBST(OPENSSL_STATIC_LIBS)
 AC_SUBST(TLS_INCLUDE)
 AC_SUBST(TLS_LIBS)
 AC_SUBST(SYBASE_PATH)
