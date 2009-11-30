@@ -111,7 +111,7 @@ char CIStreamBuffer::GetChar(void)
 }
 
 inline
-void CIStreamBuffer::UngetChar(char _DEBUG_ARG(c))
+void CIStreamBuffer::UngetChar(char c)
 {
     const char* pos = m_CurrentPos;
     _ASSERT(pos > m_Buffer);
@@ -304,7 +304,7 @@ void COStreamBuffer::PutChar(char c)
 }
 
 inline
-void COStreamBuffer::BackChar(char _DEBUG_ARG(c))
+void COStreamBuffer::BackChar(char c)
 {
     _ASSERT(m_CurrentPos > m_Buffer);
     --m_CurrentPos;
