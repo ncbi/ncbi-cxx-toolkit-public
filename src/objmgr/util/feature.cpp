@@ -1402,7 +1402,6 @@ void CFeatTree::x_AssignParents(void)
             // no work to do
             continue;
         }
-        _ASSERT(feat_set.m_CollectedAll);
         CSeqFeatData::ESubtype current_type = feat_set.m_FeatType;
         while ( current_type != CSeqFeatData::eSubtype_bad ) {
             CSeqFeatData::ESubtype parent_type=sx_GetParentType(current_type);
