@@ -407,7 +407,7 @@ void CBlastDBCmdApp::Init()
 
     arg_desc->AddOptionalKey("mask_sequence_with", "numbers",
                              "Produce lower-case masked FASTA using the "
-                             "algorithm ID specified.",
+                             "algorithm ID specified",
                              CArgDescriptions::eString);
 
     arg_desc->SetCurrentGroup("Output configuration options");
@@ -428,8 +428,8 @@ void CBlastDBCmdApp::Init()
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"
-    "\t\t%mX means sequence masking data, where X is an integer to \n"
-    "\t\tspecify the algorithm ID to display masking data for.  \n"
+    "\t\t%mX means sequence masking data, where X is a single, mandatory"
+    "\t\tinteger to specify the algorithm ID to display.  \n"
     "\t\tMasking data will be displayed as a series of 'N-M' values\n"
     "\t\tseparated by ';' or the word 'none' if none are available.\n"
             "\tFor every format except '%f', each line of output will "
