@@ -35,6 +35,7 @@ setlocal
 set sln_name=ncbi_cpp
 set use_projectlst=scripts/projects/ncbi_cpp.lst
 
+set use_savedcfg=
 set use_gui=no
 set maybe_gui=yes
 set use_dll=no
@@ -59,9 +60,11 @@ set dest=
 :PARSEARGS
 if "%1"=="" goto :ENDPARSEARGS
 if "%dest%"=="lst"                      (set use_projectlst=%1& set dest=& goto :CONTINUEPARSEARGS)
+if "%dest%"=="cfg"                      (set use_savedcfg=%1&   set dest=& goto :CONTINUEPARSEARGS)
 if "%1"=="--help"                       (set help_req=yes& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-configure-dialog"      (set use_gui=yes&  goto :CONTINUEPARSEARGS)
 if "%1"=="--without-configure-dialog"   (set use_gui=no&   goto :CONTINUEPARSEARGS)
+if "%1"=="--with-saved-settings"        (set dest=cfg&     goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"                   (set use_dll=yes&  goto :CONTINUEPARSEARGS)
 if "%1"=="--without-dll"                (set use_dll=no&   goto :CONTINUEPARSEARGS)
 if "%1"=="--with-64"                    (set use_64=yes&   goto :CONTINUEPARSEARGS)
@@ -88,7 +91,10 @@ if "%help_req%"=="yes" (
   echo    --help                      -- print Usage
   echo    --with-configure-dialog     -- use Configuration GUI application
   echo    --without-configure-dialog  -- do not use Configuration GUI application
-  echo    --with-dll                  -- assemble toolkit libraries into DLLs where requested
+  echo    --with-saved-settings=FILE  -- load configuration settings from FILE
+  echo                                     use full path only
+  echo    --with-dll                  -- assemble toolkit libraries into DLLs
+  echo                                     where requested
   echo    --without-dll               -- build all toolkit libraries as static ones
   echo    --with-64                   -- compile to 64-bit code
   echo    --with-projects=FILE        -- build projects listed in "%srcroot%\FILE"
@@ -135,6 +141,12 @@ set SLN_PATH=./%sln_path%/build/%sln_name%.sln
 set TREE_ROOT=%srcroot%
 set BUILD_TREE_ROOT=.
 set PTB_PROJECT_REQ=%use_projectlst%
+
+if "%use_savedcfg%"=="" (
+  set PTB_SAVED_CFG_REQ=
+) else (
+  set PTB_SAVED_CFG_REQ=%use_savedcfg%
+)
 
 call ./ptb.bat
 if errorlevel 1 (

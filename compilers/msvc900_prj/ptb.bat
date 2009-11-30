@@ -53,6 +53,10 @@ set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
 
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
+
+REM -------------------------------------------------------------------------
+REM get PTB version: from DEFPTB_VERSION_FILE  or from PREBUILT_PTB_EXE
+
 set DEFPTB_VERSION=
 if exist "%DEFPTB_VERSION_FILE%" (
   for /f %%a in ('type "%DEFPTB_VERSION_FILE%"') do (set DEFPTB_VERSION=%%a& goto donedf)
@@ -75,6 +79,10 @@ if "%DEFPTB_VERSION%"=="" (
   exit /b 1
 )
 for /f "tokens=1-3 delims=." %%a in ('echo %DEFPTB_VERSION%') do (set PTB_VER=%%a%%b%%c& set PTB_VER_MAJOR=%%a)
+
+
+REM -------------------------------------------------------------------------
+REM See if we should and can use Java GUI
 
 set REQ_GUI_CFG=NO
 set USE_GUI_CFG=NO
@@ -100,9 +108,30 @@ if "%REQ_GUI_CFG%"=="YES" (
     )
   )
 )
-if %PTB_VER% GEQ 180 (
-  set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
+
+
+REM -------------------------------------------------------------------------
+REM See if we should and can use saved settings
+
+set PTB_SAVED_CFG=
+if not "%PTB_SAVED_CFG_REQ%"=="" (
+  if not exist "%PTB_SAVED_CFG_REQ%" (
+    echo ERROR: %PTB_SAVED_CFG_REQ% not found
+    exit /b 1
+  )
+  if %PTB_VER_MAJOR% GEQ 2 (
+    if %PTB_VER% GEQ 220 (
+      set PTB_SAVED_CFG=-args %PTB_SAVED_CFG_REQ%
+REM PTB will read PTB_PROJECT from the saved settings
+      set PTB_PROJECT_REQ=""
+    )
+  )
 )
+
+
+REM -------------------------------------------------------------------------
+REM Identify PTB_EXE
+
 if "%PREBUILT_PTB_EXE%"=="bootstrap" (
   set DEF_PTB=%PTB_PATH%\project_tree_builder.exe
 ) else if not "%PREBUILT_PTB_EXE%"=="" (
@@ -130,11 +159,21 @@ if exist "%DEF_PTB%" (
   set PTB_EXE=%PTB_PATH%\project_tree_builder.exe
 )
 
+REM -------------------------------------------------------------------------
+REM Misc settings
+
+if %PTB_VER% GEQ 180 (
+  set PTB_EXTRA=%PTB_EXTRA% -ide %IDE% -arch %PTB_PLATFORM%
+)
 if not exist "%PTB_INI%" (
   echo ERROR: "%PTB_INI%" not found
   exit /b 1
 )
 if "%PTB_PROJECT%"=="" set PTB_PROJECT=%PTB_PROJECT_REQ%
+
+
+REM -------------------------------------------------------------------------
+REM Build PTB_EXE if needed
 
 if not exist "%PTB_EXE%" (
   echo ******************************************************************************
@@ -164,18 +203,21 @@ if errorlevel 1 (
   exit /b 1
 )
 
+
+REM -------------------------------------------------------------------------
+REM Run PTB_EXE
+
 call "%BUILD_TREE_ROOT%\lock_ptb_config.bat" ON "%BUILD_TREE_ROOT%\"
 if errorlevel 1 exit /b 1
 
 echo ******************************************************************************
 echo Running -CONFIGURE- please wait
 echo ******************************************************************************
+echo "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
 if "%USE_GUI_CFG%"=="YES" (
-  java -jar "%PTBGUI%" "%PTB_EXE%" -i %PTB_FLAGS% %PTB_EXTRA% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+  java -jar %PTBGUI% "%PTB_EXE%" -i %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
 ) else (
-  @echo on
-  "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
-  @echo off
+  "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
 )
 if errorlevel 1 (set PTB_RESULT=1) else (set PTB_RESULT=0)
 
