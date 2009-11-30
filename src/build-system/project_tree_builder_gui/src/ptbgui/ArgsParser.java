@@ -62,7 +62,7 @@ public class ArgsParser {
                 ++iPositional;
                 continue;
             }
-            if (args[i].charAt(0) == '-') {
+            if (args[i].length() > 0 && args[i].charAt(0) == '-') {
                 dest = toEnum(args[i]);
                 switch (dest) {
                     case dll:        m_dll        = true; break;
@@ -87,6 +87,9 @@ public class ArgsParser {
                             break;
                         case conffile:
                             m_conffile = toCanonicalPath(args[i]);
+                            break;
+                        case args:
+                            m_ArgsFile = toCanonicalPath(args[i]);
                             break;
                     }
                     dest = eArg.undefined;
@@ -199,10 +202,14 @@ public class ArgsParser {
                 vcmd.add("-" + eArg.conffile.toString());
                 vcmd.add(m_conffile);
             }
-            vcmd.add(m_Root);
-            vcmd.add(m_Subtree);
-            vcmd.add(getSolution());
         }
+        vcmd.add(m_Root);
+        if (m_Subtree.length() > 0) {
+            vcmd.add(m_Subtree);
+        } else {
+            vcmd.add("\"\"");
+        }
+        vcmd.add(getSolution());
         String[] cmd = new String[vcmd.size()];
         for (int i = 0; i < vcmd.size(); ++i) {
             cmd[i] = vcmd.get(i).toString();
@@ -319,6 +326,9 @@ public class ArgsParser {
     public void setArgsFile(String args) {
         m_ArgsFile = existsPath(args) ? args : "" ;
     }
+    public String getArgsFile() {
+        return (m_ArgsFile != null && existsPath(m_ArgsFile)) ? m_ArgsFile : "";
+    }
 
     enum eArg {
         undefined,
@@ -333,7 +343,8 @@ public class ArgsParser {
         logfile,
         conffile,
         cfg,
-        i
+        i,
+        args
     }
     private eArg toEnum(String a) {
         eArg t = eArg.undefined;

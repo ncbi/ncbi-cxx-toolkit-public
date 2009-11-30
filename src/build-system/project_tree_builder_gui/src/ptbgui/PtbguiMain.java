@@ -127,6 +127,11 @@ public class PtbguiMain extends javax.swing.JFrame {
         setPathText(jTextFieldLst,
                 m_ArgsParser.getRoot(), m_ArgsParser.getSubtree());
         setPathText(jTextFieldSolution, m_ArgsParser.getSolutionFile(), false);
+
+        if (m_ArgsParser.getArgsFile().length() > 0) {
+            initData(m_ArgsParser.getArgsFile(), true);
+            return;
+        }
         jTextFieldTags.setText(m_ArgsParser.getProjTag());
         jTextFieldIde.setText(m_ArgsParser.getIde());
 
@@ -163,18 +168,41 @@ public class PtbguiMain extends javax.swing.JFrame {
                 return (name.toLowerCase().matches("__configured_platform.*"));
             }
         });
-        jTextFieldArch.setEditable(arrFile.length==0);
+        jTextFieldArch.setEditable(arrFile == null || arrFile.length==0);
     }
     void adjustBuildType() {
         m_ArgsParser.setDll( jRadioButtonDLL.isSelected(),true);
         setPathText(jTextFieldSolution, m_ArgsParser.getSolutionFile(), false);
     }
-    private void initData(Properties prop) {
+    private void initData(String file, Boolean fromArgs) {
+        try {
+            if (m_ArgsProp != null) {
+                m_ArgsProp.clear();
+            } else {
+                m_ArgsProp = new Properties();
+            }
+            m_ArgsProp.load(new FileInputStream(new File(file)));
+            initData(m_ArgsProp, fromArgs);
+            jLabelArgs.setText(file);
+            jButtonArgsReset.setEnabled(!fromArgs);
+        } catch (Exception e) {
+            System.err.println(e.toString());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog( this,
+                "This file does not contain valid data",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    private void initData(Properties prop, Boolean fromArgs) {
         String v;
-        v = getProp(prop,"__arg_root");
-        setPathText(jTextFieldRoot, getProp(prop,"__arg_root"), true);
+        if (fromArgs) {
+            v = m_ArgsParser.getRoot();
+        } else {
+            v = getProp(prop,"__arg_root");
+            setPathText(jTextFieldRoot, getProp(prop,"__arg_root"), true);
+            setPathText(jTextFieldSolution, getProp(prop,"__arg_solution"), false);
+        }
         setPathText(jTextFieldLst, v, getProp(prop,"__arg_subtree"));
-        setPathText(jTextFieldSolution, getProp(prop,"__arg_solution"), false);
         jTextFieldTags.setText(getProp(prop,"__arg_projtag"));
         jTextFieldIde.setText(getProp(prop,"__arg_ide"));
         jTextFieldArch.setText(getProp(prop,"__arg_arch"));
@@ -193,6 +221,9 @@ public class PtbguiMain extends javax.swing.JFrame {
             "/src/build-system/project_tags.txt";
         int n = 0;
         m_KnownTags.clear();
+        if (!ArgsParser.existsPath(from)) {
+            return;
+        }
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(
                 new FileInputStream(new File(nativeFileSeparator(from)))));
@@ -1495,7 +1526,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 0.7");
+        jLabel13.setText("  version 0.8");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
@@ -1579,24 +1610,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             fd.setCurrentDirectory(new File("."));
         }
         if (fd.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                String f = fd.getSelectedFile().getPath();
-                if (m_ArgsProp != null) {
-                    m_ArgsProp.clear();
-                } else {
-                    m_ArgsProp = new Properties();
-                }
-                m_ArgsProp.load(new FileInputStream(new File(f)));
-                initData(m_ArgsProp);
-                jLabelArgs.setText(f);
-                jButtonArgsReset.setEnabled(true);
-            } catch (Exception e) {
-                System.err.println(e.toString());
-                e.printStackTrace();
-                JOptionPane.showMessageDialog( this,
-                    "This file does not contain valid data",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            initData(fd.getSelectedFile().getPath(), false);
         }
 }//GEN-LAST:event_jButtonArgsActionPerformed
 
