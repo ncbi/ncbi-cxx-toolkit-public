@@ -361,27 +361,6 @@ BLAST_StrToUpper(const char* string);
  */
 #define FENCE_SENTRY 201
 
-
-/** Translate the subject sequence into 6 frames, and create a mixed-frame 
- * sequence, if out-of-frame gapping will be used.
- * @param subject_blk Subject sequence structure [in]
- * @param gen_code_string Genetic code to use for translation [in]
- * @param translation_buffer Pointer to buffer to hold the translated 
- *                           sequence(s) [out]
- * @param frame_offsets Pointer to an array to hold offsets into the
- *                      translation buffer for each frame. Mixed-frame 
- *                      sequence is to be returned, if NULL. [in] [out]
- * @param partial_translation Should partial translations be performed later
- *                            for each HSP instead of a full translation? [out]
- */
-NCBI_XBLAST_EXPORT
-Int2
-Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
-                              const Uint1* gen_code_string,
-                              Uint1** translation_buffer, 
-                              Int4** frame_offsets,
-                              Boolean* partial_translation);
-
 /** Get the number of contexts for a given program. This corresponds to the
  * number of translation frames or strands whenever applicable. 
  * @return 0 on unsupported program, non-zero otherwise

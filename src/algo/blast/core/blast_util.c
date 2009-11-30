@@ -1207,45 +1207,6 @@ Int4 BSearchInt4(Int4 n, Int4* A, Int4 size)
     return b;
 }
 
-Int2
-Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
-                              const Uint1* gen_code_string,
-                              Uint1** translation_buffer_ptr, 
-                              Int4** frame_offsets_ptr,
-                              Boolean* partial_translation_ptr)
-{
-   Boolean partial_translation;
-   Boolean is_ooframe = (frame_offsets_ptr == NULL);
-
-   if (!gen_code_string)
-      return -1;
-
-   if (is_ooframe && subject_blk->oof_sequence) {
-      /* If mixed-frame sequence is already available (two-sequences case),
-         then no need to translate again */
-      *partial_translation_ptr = FALSE;
-      return 0;
-   } 
-
-   *partial_translation_ptr = partial_translation = 
-      (subject_blk->length > MAX_FULL_TRANSLATION);
-      
-   if (!partial_translation) {
-      if (is_ooframe) {
-         BLAST_GetAllTranslations(subject_blk->sequence_start, 
-            eBlastEncodingNcbi4na, subject_blk->length, gen_code_string, 
-            NULL, NULL, &subject_blk->oof_sequence);
-         subject_blk->oof_sequence_allocated = TRUE;
-      } else {
-         BLAST_GetAllTranslations(subject_blk->sequence_start, 
-            eBlastEncodingNcbi4na, subject_blk->length, gen_code_string, 
-            translation_buffer_ptr, frame_offsets_ptr, NULL);
-      }
-   }
-
-   return 0;
-}
-
 SBlastTargetTranslation*
 BlastTargetTranslationFree(SBlastTargetTranslation* target_t)
 {
