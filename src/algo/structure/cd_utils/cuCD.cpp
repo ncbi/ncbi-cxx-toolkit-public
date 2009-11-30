@@ -943,11 +943,19 @@ int IntersectByMaster(CCdCore* ccd) {
     unsigned int masterLen = (ccd) ? ccd->GetSequenceStringByRow(0).length() : 0;
     if (masterLen == 0) return result;
 
-    bool allMasterModelsEqual = true;
     int slaveStart;
     int nAlignedIBM = 0;
     unsigned int i, j, nBlocks;
     unsigned int nRows = ccd->GetNumRows();
+
+    //  If there is already a consistent block model, do nothing.
+    MultipleAlignment* ma = new MultipleAlignment(ccd);
+    if (ma && ma->isBlockAligned()) {
+        delete ma;
+        return 0;
+    }
+    delete ma;
+
 
     BlockIntersector blockIntersector(masterLen);
     BlockModel* intersectedBlockModel;
@@ -993,50 +1001,38 @@ int IntersectByMaster(CCdCore* ccd) {
         return result;
     }
 
-    i = 0;
-    while (i < nRows - 1 && allMasterModelsEqual) {  // #rows = #seq_aligns + 1
-        allMasterModelsEqual = (blockModelPairs[i] && (blockModelPairs[i]->getMaster() == *intersectedBlockModel));
-        ++i;
-    }
-
-
     //string testStr, testStr2;
     //string sint = intersectedBlockModel->toString();
     //string sintsimple = simpleIntersectedBlockModel->toString();
     //delete simpleIntersectedBlockModel;
 
-    //  If have case where every block model isn't identical...
-    if (!allMasterModelsEqual) {
+    //  As we have case where every block model isn't identical,
+    //  change each seq-align to reflect the common set of aligned columns.
+    nBlocks = intersectedBlockModel->getBlocks().size();
+    for (i = 0, cdSeqAlignIt = cdSeqAligns.begin(); i < nRows - 1 ; ++i, ++cdSeqAlignIt) {
 
-        nBlocks = intersectedBlockModel->getBlocks().size();
-        for (i = 0, cdSeqAlignIt = cdSeqAligns.begin(); i < nRows - 1 ; ++i, ++cdSeqAlignIt) {
+        bmp = blockModelPairs[i];  //BlockModelPair seqAlignPair(*cdSeqAlignIt);
+        BlockModel* intersectedSeqAlignSlave = new BlockModel(bmp->getSlave().getSeqId(), false);
 
-            bmp = blockModelPairs[i];  //BlockModelPair seqAlignPair(*cdSeqAlignIt);
-            BlockModel* intersectedSeqAlignSlave = new BlockModel(bmp->getSlave().getSeqId(), false);
+        bmp->reverse();
+        for (j = 0; j < nBlocks; ++j) {
+            const Block& jthMasterBlock = intersectedBlockModel->getBlock(j);
+            slaveStart = bmp->mapToMaster(jthMasterBlock.getStart());
 
-            bmp->reverse();
-            for (j = 0; j < nBlocks; ++j) {
-                const Block& jthMasterBlock = intersectedBlockModel->getBlock(j);
-                slaveStart = bmp->mapToMaster(jthMasterBlock.getStart());
+            //  since we're dealing w/ an intersection, slaveStart should always be valid
+            assert(slaveStart != -1);
 
-                //  since we're dealing w/ an intersection, slaveStart should always be valid
-                assert(slaveStart != -1);
-
-                Block b(slaveStart, jthMasterBlock.getLen(), jthMasterBlock.getId());
-                intersectedSeqAlignSlave->addBlock(b);
-            }
-            *cdSeqAlignIt = intersectedSeqAlignSlave->toSeqAlign(*intersectedBlockModel);
-            //testStr = intersectedSeqAlignSlave->toString();
-            //testStr2 = bmp->getMaster().toString();  // original *slave* alignment
-
-            delete bmp;
+            Block b(slaveStart, jthMasterBlock.getLen(), jthMasterBlock.getId());
+            intersectedSeqAlignSlave->addBlock(b);
         }
-        blockModelPairs.clear();
-        result = nBlocks;
+        *cdSeqAlignIt = intersectedSeqAlignSlave->toSeqAlign(*intersectedBlockModel);
+        //testStr = intersectedSeqAlignSlave->toString();
+        //testStr2 = bmp->getMaster().toString();  // original *slave* alignment
 
-    } else {  //  IBM not required...
-        result = 0;
+        delete bmp;
     }
+    blockModelPairs.clear();
+    result = nBlocks;
 
     delete intersectedBlockModel;
 
