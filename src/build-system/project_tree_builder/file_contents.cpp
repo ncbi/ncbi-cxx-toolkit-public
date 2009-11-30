@@ -130,6 +130,14 @@ void CSimpleMakeFileContents::AddDefinition(const string& key,
     AddReadyKV(kv);
 }
 
+void CSimpleMakeFileContents::RemoveDefinition( const string& key)
+{
+    TContents::iterator i = m_Contents.find(key);
+    if (i != m_Contents.end()) {
+        m_Contents.erase(i);
+    }
+}
+
 bool CSimpleMakeFileContents::HasDefinition( const string& key) const
 {
     return m_Contents.find(key) != m_Contents.end();

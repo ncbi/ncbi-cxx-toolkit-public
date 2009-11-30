@@ -397,7 +397,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(2,1,0) );
+    SetVersion( CVersionInfo(2,2,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -507,9 +507,6 @@ void CProjBulderApp::Init(void)
     arg_desc->AddOptionalKey("args", "args_file",
                              "Read arguments from a file",
                              CArgDescriptions::eString);
-    arg_desc->SetDependency("args", CArgDescriptions::eExcludes, "root");
-    arg_desc->SetDependency("args", CArgDescriptions::eExcludes, "subtree");
-    arg_desc->SetDependency("args", CArgDescriptions::eExcludes, "solution");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -1331,24 +1328,49 @@ void CProjBulderApp::ParseArguments(void)
         argsfile = args["args"].AsString();
         if (CDirEntry(argsfile).Exists()) {
             argfile = true;
+            m_CustomConfiguration.LoadFrom(argsfile,&m_CustomConfiguration);
         } else {
 	        NCBI_THROW(CProjBulderAppException, eFileOpen, 
                                     argsfile + " not found");
         }
     }
 
-    if (argfile) {
-        m_CustomConfiguration.LoadFrom(argsfile,&m_CustomConfiguration);
+    root = args["root"].AsString();
+    if (argfile && root.empty()) {
+        m_CustomConfiguration.GetPathValue("__arg_root", root);
+    }
+    m_Root = CDirEntry::IsAbsolutePath(root) ? 
+        root : CDirEntry::ConcatPath( CDir::GetCwd(), root);
+    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
+    m_Root = CDirEntry::NormalizePath(m_Root);
+    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
 
+    m_Subtree        = args["subtree"].AsString();
+    m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
+
+    if (argfile) {
         string v;
         if (GetConfigPath().empty() && 
             m_CustomConfiguration.GetPathValue("__arg_conffile", v)) {
+            if (!CDirEntry::IsAbsolutePath(v)) {
+                v = CDirEntry::ConcatPath(m_Root,v);
+            }
             LoadConfig(GetConfig(),&v);
         }
+        string subtree;
+        m_CustomConfiguration.GetPathValue("__arg_subtree", subtree);
+        if (m_Subtree.empty()) {
+            m_Subtree = subtree;
+        } else if (m_Subtree != subtree) {
+            m_CustomConfiguration.RemoveDefinition("__AllowedProjects");
+        }
+        if (m_Solution.empty()) {
+            m_CustomConfiguration.GetPathValue("__arg_solution", m_Solution);
+            if (!CDirEntry::IsAbsolutePath(m_Solution)) {
+                m_Solution = CDirEntry::ConcatPath(m_Root,m_Solution);
+            }
+        }
 
-        m_CustomConfiguration.GetPathValue("__arg_root", root);
-        m_CustomConfiguration.GetPathValue("__arg_subtree", m_Subtree);
-        m_CustomConfiguration.GetPathValue("__arg_solution", m_Solution);
         if (m_CustomConfiguration.GetValue("__arg_dll", v)) {
             m_Dll = NStr::StringToBool(v);
         }
@@ -1372,9 +1394,6 @@ void CProjBulderApp::ParseArguments(void)
         m_CustomConfiguration.GetValue("__arg_arch", m_Arch);
 #endif
     } else {
-        root             = args["root"].AsString();
-        m_Subtree        = args["subtree"].AsString();
-        m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
         m_Dll            =   (bool)args["dll"];
         m_BuildPtb       = !((bool)args["nobuildptb"]);
         m_AddMissingLibs =   (bool)args["ext"];
@@ -1425,12 +1444,6 @@ void CProjBulderApp::ParseArguments(void)
 #endif
     m_InteractiveCfg = (bool)args["i"];
 
-    m_Root = CDirEntry::IsAbsolutePath(root) ? 
-        root : CDirEntry::ConcatPath( CDir::GetCwd(), root);
-    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
-    m_Root = CDirEntry::NormalizePath(m_Root);
-    m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
-
     // Solution
     PTB_INFO("Solution: " << m_Solution);
     m_StatusDir = 
@@ -1471,6 +1484,14 @@ void CProjBulderApp::ParseArguments(void)
     if (!argfile) {
         if (CFile(m_CustomConfFile).Exists()) {
             m_CustomConfiguration.LoadFrom(m_CustomConfFile,&m_CustomConfiguration);
+
+            string subtree;
+            m_CustomConfiguration.GetPathValue("__arg_subtree", subtree);
+            if (m_Subtree.empty()) {
+                m_Subtree = subtree;
+            } else if (m_Subtree != subtree) {
+                m_CustomConfiguration.RemoveDefinition("__AllowedProjects");
+            }
         } else {
             if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
                 for (int j=0; !entry[j].empty(); ++j) {
@@ -1482,10 +1503,28 @@ void CProjBulderApp::ParseArguments(void)
                 m_CustomConfiguration.AddDefinition("__TweakVTuneD", "no");
             }
         }
-        m_CustomConfiguration.AddDefinition("__arg_conffile", GetConfigPath());
+
+        string v;
+        v = GetConfigPath();
+        if (CDirEntry::IsAbsolutePath(v)) {
+            try {
+                v = CDirEntry::CreateRelativePath(m_Root, v);
+            } catch (CFileException&) {
+            }
+        }
+        m_CustomConfiguration.AddDefinition("__arg_conffile", v);
+
         m_CustomConfiguration.AddDefinition("__arg_root", root);
         m_CustomConfiguration.AddDefinition("__arg_subtree", m_Subtree);
-        m_CustomConfiguration.AddDefinition("__arg_solution", m_Solution);
+        v = m_Solution;
+        if (CDirEntry::IsAbsolutePath(v)) {
+            try {
+                v = CDirEntry::CreateRelativePath(m_Root, v);
+            } catch (CFileException&) {
+            }
+        }
+        m_CustomConfiguration.AddDefinition("__arg_solution", v);
+
         m_CustomConfiguration.AddDefinition("__arg_dll", m_Dll ? "yes" : "no");
         m_CustomConfiguration.AddDefinition("__arg_nobuildptb", m_BuildPtb ? "no" : "yes");
         m_CustomConfiguration.AddDefinition("__arg_ext", m_AddMissingLibs ? "yes" : "no");

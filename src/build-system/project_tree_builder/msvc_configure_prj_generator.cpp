@@ -140,6 +140,10 @@ void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
         build_info.m_Description = "Configure solution : $(SolutionName)";
         build_info.m_CommandLine = m_CustomBuildCommand;
         string outputs("$(InputPath).aanofile.out;");
+        if (!GetApp().m_CustomConfFile.empty()) {
+            outputs += "$(ProjectDir)" +
+                CDir::CreateRelativePath(m_ProjectDir, GetApp().m_CustomConfFile) + ";";
+        }
         outputs += m_CustomBuildOutput;
         build_info.m_Outputs     = outputs;//"$(InputPath).aanofile.out";
         

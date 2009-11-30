@@ -78,6 +78,7 @@ public:
 
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
     void AddDefinition( const string& key, const string& value);
+    void RemoveDefinition( const string& key);
     bool HasDefinition( const string& key) const;
     bool DoesValueContain(const string& key, const string& value, bool ifnokey=true) const;
     bool GetPathValue(const string& key, string& value) const;
