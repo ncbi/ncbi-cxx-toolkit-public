@@ -128,6 +128,7 @@ class NCBI_XOBJUTIL_EXPORT CFeatTree : public CObject
 public:
     CFeatTree(void);
     CFeatTree(CFeat_CI it);
+    ~CFeatTree(void);
     
     void AddFeatures(CFeat_CI it);
     void AddFeature(const CMappedFeat& feat);
@@ -152,13 +153,12 @@ public:
             return m_IsSetParent;
         }
 
-        typedef CRef<CFeatInfo> TInfoRef;
-        typedef vector<TInfoRef> TChildren;
+        typedef vector<CFeatInfo*> TChildren;
         
         CMappedFeat m_Feat;
         CRange<TSeqPos> m_MasterRange;
         bool m_IsSetParent, m_IsSetChildren;
-        TInfoRef m_Parent;
+        CFeatInfo* m_Parent;
         TChildren m_Children;
     };
     typedef vector<CFeatInfo*> TFeatArray;
@@ -176,15 +176,11 @@ public:
     typedef vector<SFeatSet> TParentInfoMap;
 
 protected:
-    typedef CRef<CFeatInfo> TInfoRef;
-    typedef vector<TInfoRef> TChildren;
+    typedef vector<CFeatInfo*> TChildren;
 
     CFeatInfo& x_GetInfo(const CSeq_feat_Handle& feat);
     CFeatInfo& x_GetInfo(const CMappedFeat& feat);
     CFeatInfo* x_FindInfo(const CSeq_feat_Handle& feat);
-
-    void x_AddFeatId(const CFeat_id& id, CFeatInfo& info);
-    void x_AddGene(const CGene_ref& ref, CFeatInfo& info);
 
     void x_AssignParents(void);
     void x_AssignParentsByRef(TFeatArray& features,
@@ -196,11 +192,10 @@ protected:
 
     void x_SetParent(CFeatInfo& info, CFeatInfo& parent);
     void x_SetNoParent(CFeatInfo& info);
-    const TInfoRef& x_GetParent(CFeatInfo& info);
+    CFeatInfo* x_GetParent(CFeatInfo& info);
     const TChildren& x_GetChildren(CFeatInfo& info);
 
-    typedef map<CSeq_feat_Handle, TInfoRef> TInfoMap;
-    typedef CRangeMultimap<TSeqPos> TRangeMap;
+    typedef map<CSeq_feat_Handle, CRef<CFeatInfo> > TInfoMap;
 
     size_t m_AssignedParents;
     TInfoMap m_InfoMap;
