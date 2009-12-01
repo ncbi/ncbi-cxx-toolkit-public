@@ -275,7 +275,7 @@ s_ConvertBioseqs2TSeqLocVector(const CBlast4_subject::TSequences& subjects)
         CRef<CSeq_id> seqid = FindBestChoice((*bioseq)->GetId(),
                                              CSeq_id::BestRank);
         const TSeqPos length = (*bioseq)->GetInst().GetLength();
-        CRef<CSeq_loc> sl(new CSeq_loc(*seqid, 0, length));
+        CRef<CSeq_loc> sl(new CSeq_loc(*seqid, 0, length-1));
         retval.push_back(SSeqLoc(sl, subj_scope));
     }
     return retval;
