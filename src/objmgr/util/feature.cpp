@@ -971,6 +971,7 @@ CFeatTree::CFeatTree(void)
 
 
 CFeatTree::CFeatTree(CFeat_CI it)
+    : m_AssignedParents(0)
 {
     AddFeatures(it);
 }
@@ -991,8 +992,7 @@ void CFeatTree::AddFeatures(CFeat_CI it)
 
 void CFeatTree::AddFeature(const CMappedFeat& feat)
 {
-    CRef<CFeatInfo> info(new CFeatInfo(feat));
-    m_InfoMap[feat.GetSeq_feat_Handle()] = info;
+    m_InfoMap[feat.GetSeq_feat_Handle()].m_Feat = feat;
 }
 
 
@@ -1009,7 +1009,7 @@ CFeatTree::CFeatInfo& CFeatTree::x_GetInfo(const CSeq_feat_Handle& feat)
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CFeatTree: feature not found");
     }
-    return *it->second;
+    return it->second;
 }
 
 
@@ -1019,7 +1019,7 @@ CFeatTree::CFeatInfo* CFeatTree::x_FindInfo(const CSeq_feat_Handle& feat)
     if ( it == m_InfoMap.end() ) {
         return 0;
     }
-    return it->second;
+    return &it->second;
 }
 
 
@@ -1037,11 +1037,15 @@ namespace {
             {
                 if ( by_product ) {
                     m_Id = info.m_Feat.GetProductId();
-                    m_Range = info.m_Feat.GetProductTotalRange();
+                    if ( m_Id ) {
+                        m_Range = info.m_Feat.GetProductTotalRange();
+                    }
                 }
                 else {
                     m_Id = info.m_Feat.GetLocationId();
-                    m_Range = info.m_Feat.GetLocationTotalRange();
+                    if ( m_Id ) {
+                        m_Range = info.m_Feat.GetLocationTotalRange();
+                    }
                 }
             }
 
@@ -1063,7 +1067,9 @@ namespace {
             : m_Info(&info)
             {
                 m_Id = info.m_Feat.GetLocationId();
-                m_Range = info.m_Feat.GetLocationTotalRange();
+                if ( m_Id ) {
+                    m_Range = info.m_Feat.GetLocationTotalRange();
+                }
             }
 
         // sort first by start coordinate, then by end coordinate
@@ -1078,8 +1084,8 @@ namespace {
 void CFeatTree::x_CollectNeeded(TParentInfoMap& pinfo_map)
 {
     // collect all necessary parent candidates
-    ITERATE ( TInfoMap, it, m_InfoMap ) {
-        CFeatInfo& info = it->second.GetNCObject();
+    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second;
         CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
         SFeatSet& feat_set = pinfo_map[feat_type];
         if ( feat_set.m_NeedAll && !feat_set.m_CollectedAll ) {
@@ -1114,7 +1120,7 @@ void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
         }
         CTSE_Handle tse = info.GetTSE();
         const CSeq_feat::TXref& xrefs = info.m_Feat.GetXref();
-        CRef<CFeatInfo> gene_parent;
+        CFeatInfo* gene_parent = 0;
         ITERATE ( CSeq_feat::TXref, xit, xrefs ) {
             const CSeqFeatXref& xref = **xit;
             if ( xref.IsSetId() ) {
@@ -1307,12 +1313,11 @@ void CFeatTree::x_AssignParents(void)
         return;
     }
     
-
     // collect all features without assigned parent
     TParentInfoMap pinfo_map(CSeqFeatData::eSubtype_max+1);
     size_t new_count = 0;
-    ITERATE ( TInfoMap, it, m_InfoMap ) {
-        CFeatInfo& info = it->second.GetNCObject();
+    NON_CONST_ITERATE ( TInfoMap, it, m_InfoMap ) {
+        CFeatInfo& info = it->second;
         if ( info.IsSetParent() ) {
             continue;
         }
@@ -1389,7 +1394,7 @@ void CFeatTree::x_SetParent(CFeatInfo& info, CFeatInfo& parent)
     _ASSERT(!info.IsSetParent());
     _ASSERT(!info.m_Parent);
     _ASSERT(!parent.m_IsSetChildren);
-    parent.m_Children.push_back(Ref(&info));
+    parent.m_Children.push_back(&info);
     info.m_Parent = &parent;
     info.m_IsSetParent = true;
 }
@@ -1399,6 +1404,7 @@ void CFeatTree::x_SetNoParent(CFeatInfo& info)
 {
     _ASSERT(!info.IsSetParent());
     _ASSERT(!info.m_Parent);
+    m_RootInfo.m_Children.push_back(&info);
     info.m_IsSetParent = true;
 }
 
@@ -1464,28 +1470,23 @@ void CFeatTree::GetChildrenTo(const CMappedFeat& feat,
                               vector<CMappedFeat>& children)
 {
     children.clear();
+    const TChildren* infos;
     if ( feat ) {
-        const TChildren& infos = x_GetChildren(x_GetInfo(feat));
-        children.reserve(infos.size());
-        ITERATE ( TChildren, it, infos ) {
-            children.push_back((*it)->m_Feat);
-        }
+        infos = &x_GetChildren(x_GetInfo(feat));
     }
     else {
         x_AssignParents();
-        ITERATE ( TInfoMap, it, m_InfoMap ) {
-            const CFeatInfo& info = *it->second;
-            if ( !info.m_Parent ) {
-                children.push_back(info.m_Feat);
-            }
-        }
+        infos = &m_RootInfo.m_Children;
+    }
+    children.reserve(infos->size());
+    ITERATE ( TChildren, it, *infos ) {
+        children.push_back((*it)->m_Feat);
     }
 }
 
 
-CFeatTree::CFeatInfo::CFeatInfo(const CMappedFeat& feat)
-    : m_Feat(feat),
-      m_IsSetParent(false),
+CFeatTree::CFeatInfo::CFeatInfo(void)
+    : m_IsSetParent(false),
       m_IsSetChildren(false),
       m_Parent(0)
 {

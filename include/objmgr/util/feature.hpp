@@ -143,9 +143,9 @@ public:
     void GetChildrenTo(const CMappedFeat& feat, vector<CMappedFeat>& children);
 
 public:
-    class CFeatInfo : public CObject {
+    class CFeatInfo {
     public:
-        CFeatInfo(const CMappedFeat& feat);
+        CFeatInfo(void);
         ~CFeatInfo(void);
 
         const CTSE_Handle& GetTSE(void) const;
@@ -195,10 +195,11 @@ protected:
     CFeatInfo* x_GetParent(CFeatInfo& info);
     const TChildren& x_GetChildren(CFeatInfo& info);
 
-    typedef map<CSeq_feat_Handle, CRef<CFeatInfo> > TInfoMap;
+    typedef map<CSeq_feat_Handle, CFeatInfo> TInfoMap;
 
     size_t m_AssignedParents;
     TInfoMap m_InfoMap;
+    CFeatInfo m_RootInfo;
 };
 
 
