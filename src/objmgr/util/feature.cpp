@@ -1214,16 +1214,15 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
         if ( pi == pp.end() ) { // none parents remaining
             break;
         }
-        CFeatInfo& info = *ci->m_Info;
         if ( ci->m_Id < pi->m_Id || !ci->m_Id ) {
             // skip all children with Seq-ids smaller than first parent
             do {
-                features.push_back(&info);
+                features.push_back(ci->m_Info);
                 ++ci;
             } while (ci != cc.end() && (ci->m_Id < pi->m_Id || !ci->m_Id));
             continue;
         }
-            
+
         // find end of Seq-id parents
         TParentArray::const_iterator pe = pi;
         while ( pe != pp.end() && pe->m_Id == pi->m_Id ) {
