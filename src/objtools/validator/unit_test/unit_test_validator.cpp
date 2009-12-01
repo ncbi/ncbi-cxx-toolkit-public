@@ -6252,17 +6252,17 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentProteinTitle)
     }
 }
 
-
+#if 0
 BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 {
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc1(new CSeqdesc());
     desc1->SetMol_type(eGIBB_mol_genomic);
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc1);
+    entry->SetSeq().SetDescr().Set().push_back(desc1);
     CRef<CSeqdesc> desc2(new CSeqdesc());
     desc2->SetMol_type(eGIBB_mol_pre_mRNA);
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc2);
+    entry->SetSeq().SetDescr().Set().push_back(desc2);
     CRef<CSeqdesc> desc3(new CSeqdesc());
     desc3->SetModif().push_back(eGIBB_mod_dna);
     desc3->SetModif().push_back(eGIBB_mod_rna);
@@ -6272,21 +6272,21 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     desc3->SetModif().push_back(eGIBB_mod_partial);
     desc3->SetModif().push_back(eGIBB_mod_no_left);
     desc3->SetModif().push_back(eGIBB_mod_no_right);
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc3);
+    entry->SetSeq().SetDescr().Set().push_back(desc3);
 
     CRef<CSeqdesc> desc_gb1(new CSeqdesc());
     desc_gb1->SetGenbank();
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc_gb1);
+    entry->SetSeq().SetDescr().Set().push_back(desc_gb1);
     CRef<CSeqdesc> desc_gb2(new CSeqdesc());
     desc_gb2->SetGenbank();
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc_gb2);
+    entry->SetSeq().SetDescr().Set().push_back(desc_gb2);
 
     CRef<CSeqdesc> desc_embl1(new CSeqdesc());
     desc_embl1->SetEmbl();
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc_embl1);
+    entry->SetSeq().SetDescr().Set().push_back(desc_embl1);
     CRef<CSeqdesc> desc_embl2(new CSeqdesc());
     desc_embl2->SetEmbl();
-    entry->SetSet().SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(desc_embl2);
+    entry->SetSeq().SetDescr().Set().push_back(desc_embl2);
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CScope scope(*objmgr);
@@ -6330,7 +6330,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
         expected_errors.pop_back();
     }
 }
-
+#endif
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
 {
