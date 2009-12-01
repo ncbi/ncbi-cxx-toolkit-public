@@ -2256,9 +2256,13 @@ void CAlignFormatUtil::ReleaseURLRegistry(void){
 
 void
 CAlignFormatUtil::GetAsciiProteinMatrix(const char* matrix_name,
-                                   CNcbiMatrix<int>& retval)
+                                        CNcbiMatrix<int>& retval)
 {
     retval.Resize(0, 0, -1);
+    if (matrix_name == NULL ||
+        NStr::TruncateSpaces(string(matrix_name)).empty()) {
+        return;
+    }
 
     const SNCBIPackedScoreMatrix* packed_mtx = 
         NCBISM_GetStandardMatrix(matrix_name);
