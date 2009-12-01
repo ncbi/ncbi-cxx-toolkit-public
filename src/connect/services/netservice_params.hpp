@@ -41,24 +41,57 @@
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
-// 
+// Communication timeout, upon reaching which the connection
+// is closed on the client side.
 #define COMMUNICATION_TIMEOUT_DEFAULT 12.0
+
+// How many seconds the API should wait before attempting to
+// connect to a misbehaving server again.
 #define THROTTLE_RELAXATION_PERIOD_DEFAULT 0
+
+// The parameters below describe different conditions that
+// trigger server throttling.
 #define THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT 0
 
+// A helper macro used in THROTTLE_BY_ERROR_RATE_DEFAULT.
 #define NCBI_RATIO_AS_STRING(numerator, denominator) \
     NCBI_AS_STRING(numerator) "/" NCBI_AS_STRING(denominator)
 
+// Connection failure rate, which is when reached, triggers
+// server throttling.
 #define THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR 0
+
+// THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR cannot be greater
+// than CONNECTION_ERROR_HISTORY_MAX.
 #define THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR 0
+
+// The previous two parameters as a string.
 #define THROTTLE_BY_ERROR_RATE_DEFAULT NCBI_RATIO_AS_STRING( \
     THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR, \
     THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR)
 
+// Whether to check with LBSMD before re-enabling the server.
 #define THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT false
+
+// When THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT is enabled,
+// the following parameter defines whether a forced LBSMD
+// rebalancing is required. If LBSMD has been queried less
+// than the specified number of seconds ago, no rebalancing
+// is required -- LBSMD information is considered up-to-date.
+// Otherwise, LBSMD is forcibly queried before the decision
+// whether to re-enable a throttled server is made.
 #define THROTTLE_FORCED_REBALANCE_DEFAULT 3
+
+// The size of an internal array, which is used for calculation
+// of the connection failure rate.
 #define CONNECTION_ERROR_HISTORY_MAX 128
+
+// Maximum cumulative query time in seconds.
+// The parameter is ignored if it's zero.
 #define MAX_CONNECTION_TIME_DEFAULT 0.0
+
+// The following two parameters define how often LBSMD
+// is queried by default.
 #define REBALANCE_TIME_DEFAULT 10.0
 #define REBALANCE_REQUESTS_DEFAULT 5000
 
