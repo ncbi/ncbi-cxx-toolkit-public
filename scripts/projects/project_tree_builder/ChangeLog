@@ -77,3 +77,8 @@ Allow hierarchical project tag definition.
 November 16, 2009
 version 2.1.0
 Corrected DLL dependencies analysis
+
+December 01, 2009
+version 2.2.0
+Added possibility to use previously saved configuration settings
+
