@@ -50,6 +50,10 @@ done
 PTBGUI="${TREE_ROOT}/src/build-system/project_tree_builder_gui/bin/ptbgui.jar"
 DEFPTB_VERSION_FILE="${TREE_ROOT}/src/build-system/ptb_version.txt"
 PTB_INI="${TREE_ROOT}/src/build-system/${ptbname}.ini"
+PTB_SLN="${BUILD_TREE_ROOT}/static/UtilityProjects/PTB.xcodeproj"
+
+# -------------------------------------------------------------------------
+# get PTB version: from DEFPTB_VERSION_FILE  or from PREBUILT_PTB_EXE
 
 DEFPTB_VERSION=""
 if test -r "$DEFPTB_VERSION_FILE"; then
@@ -63,12 +67,17 @@ if test -x "$PREBUILT_PTB_EXE"; then
   fi
 fi
 
-#PTB_VER=`echo $DEFPTB_VERSION | sed -e s/[.]//g`
+PTB_VER=`echo $DEFPTB_VERSION | sed -e s/[.]//g`
 verno=`echo $DEFPTB_VERSION | sed -e 's/[.]/ /g'`
 for v in $verno; do
   PTB_VER_MAJOR=$v
   break;
 done
+
+
+# -------------------------------------------------------------------------
+# See if we should and can use Java GUI
+
 REQ_GUI_CFG="no"
 USE_GUI_CFG="no"
 for v in $PTB_FLAGS; do
@@ -92,8 +101,26 @@ if test "$REQ_GUI_CFG" = "yes"; then
   fi
 fi
 
-test -z "$PTB_PLATFORM" && PTB_PLATFORM=`arch`
-PTB_EXTRA="$PTB_EXTRA -ide $IDE -arch \"$PTB_PLATFORM\""
+# -------------------------------------------------------------------------
+# See if we should and can use saved settings
+
+PTB_SAVED_CFG=""
+if test -n "$PTB_SAVED_CFG_REQ"; then
+  if ! test -e "$PTB_SAVED_CFG_REQ"; then
+      echo "ERROR: $PTB_SAVED_CFG_REQ not found"
+    exit 1
+  fi
+  if test $PTB_VER_MAJOR -ge 2; then
+    if test $PTB_VER -ge 220; then
+      PTB_SAVED_CFG="-args $PTB_SAVED_CFG_REQ"
+# PTB will read PTB_PROJECT from the saved settings
+      PTB_PROJECT_REQ="\"\""
+    fi
+  fi
+fi
+
+# -------------------------------------------------------------------------
+# Identify PTB_EXE
 
 if test "$PREBUILT_PTB_EXE" = "bootstrap"; then
   DEF_PTB="$PTB_PATH/$ptbname"
@@ -117,18 +144,27 @@ else
   PTB_EXE="$PTB_PATH/$ptbname"
 fi
 
+# -------------------------------------------------------------------------
+# Misc settings
+
+test -z "$PTB_PLATFORM" && PTB_PLATFORM=`arch`
+PTB_EXTRA="$PTB_EXTRA -ide $IDE -arch \"$PTB_PLATFORM\""
+
 if test ! -f "$PTB_INI"; then
   echo "ERROR: $PTB_INI not found"
   exit 1
 fi
 test -z "$PTB_PROJECT" && PTB_PROJECT=${PTB_PROJECT_REQ}
 
+# -------------------------------------------------------------------------
+# Build PTB_EXE if needed
+
 if test ! -x "$PTB_EXE"; then
   echo "=============================================================================="
   echo Building project tree builder locally, please wait
-  echo "xcodebuild -project $BUILD_TREE_ROOT/static/UtilityProjects/PTB.xcodeproj -target $ptbname -configuration ReleaseDLL"
+  echo "xcodebuild -project $PTB_SLN -target $ptbname -configuration ReleaseDLL"
   echo "=============================================================================="
-  xcodebuild -project $BUILD_TREE_ROOT/static/UtilityProjects/PTB.xcodeproj -target $ptbname -configuration ReleaseDLL
+  xcodebuild -project $PTB_SLN -target $ptbname -configuration ReleaseDLL
 else
   echo "=============================================================================="
   echo "Using PREBUILT $ptbname at $PTB_EXE"
@@ -145,14 +181,17 @@ if test $? -ne 0; then
   exit 1
 fi
 
+# -------------------------------------------------------------------------
+# Run PTB_EXE
+
 echo "=============================================================================="
 echo "Running CONFIGURE, please wait."
-echo "$PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH"
+echo "$PTB_EXE $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH"
 echo "=============================================================================="
 if test "$USE_GUI_CFG" = "yes"; then
-  eval java -jar $PTBGUI $PTB_EXE -i $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
+  eval java -jar $PTBGUI $PTB_EXE -i $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
 else
-  eval $PTB_EXE $PTB_FLAGS $PTB_EXTRA -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
+  eval $PTB_EXE $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH
 fi
 if test "$?" -ne 0; then
   PTB_RESULT=1

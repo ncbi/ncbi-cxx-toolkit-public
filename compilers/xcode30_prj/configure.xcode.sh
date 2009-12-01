@@ -7,17 +7,20 @@
 #set -xv
 #set -x
 
+use_projectlst="scripts/projects/ncbi_cpp.lst"
+
 TAB="	"
 # defaults
+use_savedcfg=""
 use_gui="no"
 use_debug="yes"
 use_dll="no"
 use_64="no"
 use_universal="no"
 use_staticstd="no"
-use_projectlst="scripts/projects/ncbi_cpp.lst"
 use_action=""
 use_arch=""
+srcroot="../.."
 
 mk_name="Makefile"
 sln_name="configured"
@@ -175,6 +178,9 @@ initial_dir=`pwd`
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
+cd $srcroot
+srcroot=`pwd`
+cd $initial_dir
 
 Usage()
 {
@@ -186,6 +192,8 @@ OPTIONS:
   --help                     -- print Usage
   --with-configure-dialog    -- use Configuration GUI application
   --without-configure-dialog -- do not use Configuration GUI application
+  --with-saved-settings=FILE -- load configuration settings from FILE
+                                  use full path only
   --without-debug            -- build non-debug versions of libs and apps
   --with-debug               -- build debug versions of libs and apps
   --without-dll              -- build all toolkit libraries as static ones
@@ -194,7 +202,10 @@ OPTIONS:
   --with-universal           -- build universal binaries
   --with-universal=CPU       -- build universal binaries targeting the given CPU
   --with-static-exe          -- use static C++ standard libraries
-  --with-projects=FILE       -- build projects listed in FILE
+  --with-projects=FILE       -- build projects listed in $srcroot/FILE
+           FILE can also be a name of a subdirectory
+           examples:   --with-projects=src/corelib
+                       --with-projects=scripts/projects/ncbi_cpp.lst
   --with-extra-action=SCR    -- script to call after the configuration is complete
   --ignore-unsupported-options   --ignore unsupported options
 EOF
@@ -210,7 +221,7 @@ Error()
 }
 
 #--------------------------------------------------------------------------------
-
+# parse arguments
 cd "$script_dir"
 unknown=""
 ignore_unknown="no"
@@ -219,6 +230,7 @@ for cmd_arg in "$@"; do
     --help                )  Usage; exit 0 ;;
     --with-configure-dialog    ) use_gui="yes" ;;
     --without-configure-dialog ) use_gui="no" ;;
+    --with-saved-settings=*    )  use_savedcfg="$cmd_arg" ;;
     --without-debug       )  use_debug="no" ;;
     --with-debug          )  use_debug="yes" ;;
     --without-dll         )  use_dll="no" ;;
@@ -255,6 +267,7 @@ for u in $unknown; do
   fi
 done
 
+use_savedcfg=`echo $use_savedcfg | sed -e s/--with-saved-settings=// | sed -e "s%^~/%$HOME/%"`
 use_arch=`echo $use_arch | sed -e s/--with-universal=//`
 use_projectlst=`echo $use_projectlst | sed -e s/--with-projects=//`
 use_action=`echo $use_action | sed -e s/--with-extra-action=//`
@@ -331,9 +344,10 @@ export PTB_PLATFORM
 export PTB_FLAGS
 export PTB_PATH=./static/bin/ReleaseDLL
 export SLN_PATH=$sln_path/$sln_name
-export TREE_ROOT=../..
+export TREE_ROOT=$srcroot
 export BUILD_TREE_ROOT=.
 export PTB_PROJECT_REQ="$use_projectlst"
+export PTB_SAVED_CFG_REQ="$use_savedcfg"
 
 ./ptb.sh
 test $? -ne 0 && Error "Configuration failed"
