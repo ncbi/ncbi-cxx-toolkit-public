@@ -94,7 +94,7 @@ struct Predicate {
     virtual ~Predicate() {}
     virtual string GetComment() { return "reason not given"; }
     virtual bool operator()(CGeneModel& a) { return false; }
-    virtual bool operator()(CAlignModel& a) { return false; }
+    virtual bool operator()(CAlignModel& a) { return operator()(static_cast<CGeneModel&>(a)); }
 };
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator_Base {
@@ -172,17 +172,17 @@ struct ProteinWithBigHole : public Predicate {
     ProteinWithBigHole(double hthresh, double hmaxlen, CGnomonEngine& gnomon);
     double hthresh, hmaxlen;
     CGnomonEngine& gnomon;
-    virtual bool operator()(CAlignModel& align);
+    virtual bool operator()(CGeneModel& align);
 };
 
 struct CdnaWithHole : public Predicate {
-    virtual bool operator()(CAlignModel& align);
+    virtual bool operator()(CGeneModel& align);
 };
 
 struct HasShortIntron : public Predicate {
     HasShortIntron(CGnomonEngine& gnomon);
     CGnomonEngine& gnomon;
-    virtual bool operator()(CAlignModel& align);
+    virtual bool operator()(CGeneModel& align);
 };
 
 struct CutShortPartialExons : public TransformFunction {
@@ -193,7 +193,7 @@ struct CutShortPartialExons : public TransformFunction {
 };
 
 struct HasNoExons : public Predicate {
-    virtual bool operator()(CAlignModel& align);
+    virtual bool operator()(CGeneModel& align);
 };
 
 struct SingleExon_AllEst : public Predicate {

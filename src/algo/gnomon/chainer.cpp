@@ -2144,6 +2144,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
 
         chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
         chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
+        if (chain.FullCds()) {
+            chain.Status() |= CGeneModel::eFullSupCDS;
+        }
     }
 
     TGeneModelList chains;
@@ -2363,9 +2366,9 @@ void MarkupTrustedGenes::operator()(CAlignModel& align)
 
 ProteinWithBigHole::ProteinWithBigHole(double _hthresh, double _hmaxlen, CGnomonEngine& _gnomon)
     : hthresh(_hthresh), hmaxlen(_hmaxlen), gnomon(_gnomon) {}
-bool ProteinWithBigHole::operator()(CAlignModel& m)
+bool ProteinWithBigHole::operator()(CGeneModel& m)
 {
-    if ((m.Type() & CAlignModel::eProt)!=0)
+    if ((m.Type() & CGeneModel::eProt)==0)
         return false;
     int total_hole_len = 0;
     for(unsigned int i = 1; i < m.Exons().size(); ++i) {
@@ -2385,9 +2388,9 @@ bool ProteinWithBigHole::operator()(CAlignModel& m)
     return false;
 }
 
-bool CdnaWithHole::operator()(CAlignModel& m)
+bool CdnaWithHole::operator()(CGeneModel& m)
 {
-    if ((m.Type() & CAlignModel::eProt)!=0)
+    if ((m.Type() & CGeneModel::eProt)!=0)
         return false;
     return !m.Continuous();
 }
@@ -2395,7 +2398,7 @@ bool CdnaWithHole::operator()(CAlignModel& m)
 HasShortIntron::HasShortIntron(CGnomonEngine& _gnomon)
     :gnomon(_gnomon) {}
 
-bool HasShortIntron::operator()(CAlignModel& m)
+bool HasShortIntron::operator()(CGeneModel& m)
 {
     for(unsigned int i = 1; i < m.Exons().size(); ++i) {
         bool hole = !m.Exons()[i-1].m_ssplice || !m.Exons()[i].m_fsplice;
@@ -2500,7 +2503,7 @@ void CutShortPartialExons::operator()(CAlignModel& a)
     return;
 }
 
-bool HasNoExons::operator()(CAlignModel& m)
+bool HasNoExons::operator()(CGeneModel& m)
 {
     return m.Exons().empty();
 }
