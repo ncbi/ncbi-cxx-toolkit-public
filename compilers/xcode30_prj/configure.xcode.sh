@@ -178,6 +178,7 @@ initial_dir=`pwd`
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
+cd $script_dir
 cd $srcroot
 srcroot=`pwd`
 cd $initial_dir
