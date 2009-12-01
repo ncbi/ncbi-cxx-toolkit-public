@@ -87,16 +87,17 @@ void CGnomonEngine::CheckRange()
 
 void CGnomonEngine::ResetRange(TSignedSeqRange range)
 {
-    m_data->m_range = range; CheckRange();
+    m_data->m_range = range;
+    CheckRange();
  
     // compute the GC content of the sequence
     m_data->m_gccontent = 0;
 
-    TSignedSeqPos middle = (range.GetFrom()+range.GetTo())/2;
+    TSignedSeqPos middle = (m_data->m_range.GetFrom()+m_data->m_range.GetTo())/2;
     const int GC_RANGE_SIZE = 200000;
     TSignedSeqRange gc_range(middle-GC_RANGE_SIZE/2, middle+GC_RANGE_SIZE/2);
     gc_range &= TSignedSeqRange(0,m_data->m_seq.size()-1);
-    gc_range += range;
+    gc_range += m_data->m_range;
 
     for (TSignedSeqPos i = gc_range.GetFrom();i<=gc_range.GetTo(); ++i) {
         EResidue c = m_data->m_ds[ePlus][i];
