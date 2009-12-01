@@ -1336,6 +1336,9 @@ void CProjBulderApp::ParseArguments(void)
     }
 
     root = args["root"].AsString();
+    if (root == "\"\"") {
+        root = "";
+    }
     if (argfile && root.empty()) {
         m_CustomConfiguration.GetPathValue("__arg_root", root);
     }
@@ -1346,7 +1349,13 @@ void CProjBulderApp::ParseArguments(void)
     m_Root = CDirEntry::AddTrailingPathSeparator(m_Root);
 
     m_Subtree        = args["subtree"].AsString();
+    if (m_Subtree == "\"\"") {
+        m_Subtree = "";
+    }
     m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
+    if (m_Solution == "\"\"") {
+        m_Solution = "";
+    }
 
     if (argfile) {
         string v;
