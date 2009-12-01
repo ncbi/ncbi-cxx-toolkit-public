@@ -374,6 +374,8 @@ const CSeq_id* CAnnotMapping_Info::GetLocationId(void) const
         return GetMappedSeq_loc().GetId();
     case eMappedObjType_Seq_feat:
         return GetMappedSeq_feat().GetLocation().GetId();
+    default:
+        break;
     }
     return 0;
 }
@@ -388,6 +390,8 @@ const CSeq_id* CAnnotMapping_Info::GetProductId(void) const
         return GetMappedSeq_loc().GetId();
     case eMappedObjType_Seq_feat:
         return GetMappedSeq_feat().GetProduct().GetId();
+    default:
+        break;
     }
     return 0;
 }
