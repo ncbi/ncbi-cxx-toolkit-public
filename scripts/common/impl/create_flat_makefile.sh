@@ -35,7 +35,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 Usage()
 {
     cat <<EOF 1>&2
-USAGE: $script_name BuildDir [-s SrcDir] [-p ProjectList] [-b] [-remoteptb] [-cfg]
+USAGE: $script_name BuildDir [-s SrcDir] [-p ProjectList] [-b] [-remoteptb] [-cfg] [-saved SavedCfg]
 SYNOPSIS:
  Create flat makefile for a given build tree.
 ARGUMENTS:
@@ -45,6 +45,7 @@ ARGUMENTS:
   -b         -- optional.  Build project_tree_builder locally
   -remoteptb -- optional.  Use prebuilt project_tree_builder only; do not attempt to build it locally
   -cfg       -- optional.  Use Configuration GUI application.
+  -saved     -- optional.  Use saved configuration settings from SavedCfg file
 EOF
     test -z "$1"  ||  echo ERROR: $1 1>&2
     exit 1
@@ -120,6 +121,7 @@ projectlist="src"
 buildptb="no"
 remoteptbonly="no"
 req_gui_cfg="no"
+savedcfg=""
 shift
 
 dest=""
@@ -127,6 +129,7 @@ for cmd_arg in "$@"; do
   case "$dest" in
     src  )  dest="";  srcdir="$cmd_arg"     ;  continue ;;
     prj  )  dest="";  projectlist="$cmd_arg";  continue ;;
+    cfg  )  dest="";  savedcfg="$cmd_arg";     continue ;;
     *    )  dest=""                                     ;;
   esac
   case "$cmd_arg" in
@@ -135,6 +138,7 @@ for cmd_arg in "$@"; do
     -b )  dest="";    buildptb="yes" ;;
     -remoteptb )  dest="";    remoteptbonly="yes" ;;
     -cfg       )  dest="";    req_gui_cfg="yes" ;;
+    -saved     )  dest="cfg" ;;
     *  )  Usage "Invalid command line argument:  $cmd_arg"
   esac
 done
@@ -148,7 +152,13 @@ esac
 if test ! -f "$abs_projectlist"; then
   test -d "$abs_projectlist" || Usage "$abs_projectlist not found"
 fi
-
+if test -n "$savedcfg"; then
+  COMMON_Exec cd $builddir
+  if test ! -f "$savedcfg"; then
+    Usage "$savedcfg not found"
+  fi
+  COMMON_Exec cd $initial_dir
+fi
 
 #-----------------------------------------------------------------------------
 # get required version of PTB
@@ -226,12 +236,15 @@ test -x "$ptb" || Usage "$ptbname not found at $ptb"
 #-----------------------------------------------------------------------------
 # get version of project_tree_builder
 
-ptbver=`$ptb -version | grep ^$ptbname | sed -e s/$ptbname:// | sed -e 's/ //g'`
+#ptbver=`$ptb -version | grep ^$ptbname | sed -e s/$ptbname:// | sed -e 's/ //g'`
+ptbver=`$ptb -version | sed -ne "s/^$ptbname: *//p"`
+
 verno=`echo $ptbver | sed -e 's/[.]/ /g'`
 for v in $verno; do
   ptb_ver_major=$v
   break
 done
+verno=`echo $ptbver | sed -e 's/[.]//g'`
 
 # see if we can use GUI
 use_gui_cfg="no"
@@ -250,6 +263,18 @@ if test "$req_gui_cfg" = "yes"; then
   fi
 fi
 
+# see if we can use saved settings
+ptb_saved_cfg=""
+if test -n "$savedcfg"; then
+  if test $ptb_ver_major -ge 2; then
+    if test $verno -ge 220; then
+      ptb_saved_cfg="-args $savedcfg"
+# PTB will read projectlist from the saved settings
+      projectlist="\"\""
+    fi
+  fi
+fi
+
 #-----------------------------------------------------------------------------
 # run project_tree_builder
 
@@ -257,10 +282,10 @@ COMMON_Exec cd $builddir
 echo "**********************************************************************"
 echo "Running $ptbname. Please wait."
 echo "**********************************************************************"
-echo $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+echo $ptb $dll $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 if test "$use_gui_cfg" = "yes"; then
-  COMMON_Exec java -jar $srcdir/$ptbgui $ptb -i $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+  COMMON_Exec java -jar $srcdir/$ptbgui $ptb -i $dll $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 else
-  COMMON_Exec $ptb $dll -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
+  COMMON_Exec $ptb $dll $ptb_saved_cfg -conffile $ptbini -logfile $logfile $srcdir $projectlist $solution
 fi
 echo "Done"
