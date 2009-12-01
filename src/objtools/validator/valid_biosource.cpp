@@ -457,7 +457,7 @@ void CValidError_imp::ValidateBioSource
                         "synthetic construct should have artificial origin", obj, ctx);
         }
     } else if (is_artificial) {
-        PostObjErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, 
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, 
                     "artificial origin should have other-genetic and synthetic construct", obj, ctx);
     }
 
@@ -871,7 +871,20 @@ void CValidError_imp::ValidateBioSource
     if ( !orgref.IsSetOrgname()  ||
          !orgref.GetOrgname().IsSetLineage()  ||
          orgref.GetOrgname().GetLineage().empty() ) {
-		PostObjErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
+        EDiagSev sev = eDiag_Error;
+
+        if (IsRefSeq()) {
+            FOR_EACH_DBXREF_ON_ORGREF(it, orgref) {
+                if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "taxon")) {
+                    sev = eDiag_Critical;
+                    break;
+                }
+            }
+        }
+        if (IsEmbl() || IsDdbj()) {
+            sev = eDiag_Warning;
+        }
+		PostObjErr(sev, eErr_SEQ_DESCR_MissingLineage, 
 			     "No lineage for this BioSource.", obj, ctx);
 	} else {
 		const COrgName& orgname = orgref.GetOrgname();
@@ -1286,8 +1299,9 @@ void CValidError_imp::ValidateOrgRef
             "No organism name has been applied to this Bioseq.  Other qualifiers may exist.", obj, ctx);
 	}
 
+    string taxname = "";
     if (orgref.IsSetTaxname()) {
-        string taxname = orgref.GetTaxname();
+        taxname = orgref.GetTaxname();
         if (s_UnbalancedParentheses (taxname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
                        "Unbalanced parentheses in taxname '" + orgref.GetTaxname() + "'", obj, ctx);
@@ -1324,10 +1338,7 @@ void CValidError_imp::ValidateOrgRef
     ValidateOrgName(orgname, obj, ctx);
 
 	// Look for modifiers in taxname
-	string taxname_search = "";
-	if (orgref.IsSetTaxname()) {
-		taxname_search = orgref.GetTaxname();
-	}
+	string taxname_search = taxname;
 	// skip first two words
 	size_t pos = NStr::Find (taxname_search, " ");
 	if (pos == string::npos) {
@@ -1344,8 +1355,9 @@ void CValidError_imp::ValidateOrgRef
 		}
 	}
 
-	// first, determine if variety is present and in taxname - if so,
+	// determine if variety is present and in taxname - if so,
 	// can ignore missing subspecies
+    // also look for specimen-voucher (nat-host) if identical to taxname
 	int num_bad_subspecies = 0;
 	bool have_variety_in_taxname = false;
     FOR_EACH_ORGMOD_ON_ORGNAME (it, orgname) {
@@ -1378,7 +1390,20 @@ void CValidError_imp::ValidateOrgRef
 					       orgmod_name + " value specified is not found in taxname",
                            obj, ctx);
 			}
-		}
+        } else if (subtype == COrgMod::eSubtype_nat_host) {
+            if (NStr::EqualNocase(subname, taxname)) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+					       "Specific host is identical to taxname",
+                           obj, ctx);
+            }
+        } else if (subtype == COrgMod::eSubtype_common) {
+            if (orgref.IsSetCommon() 
+                && NStr::EqualNocase(subname, orgref.GetCommon())) {
+				PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+					       "OrgMod common is identical to Org-ref common",
+                           obj, ctx);
+            }
+        }
 	}
 	if (!have_variety_in_taxname) {
 		for (int i = 0; i < num_bad_subspecies; i++) {
@@ -1397,10 +1422,10 @@ void CValidError_imp::ValidateOrgName
  const CSeq_entry *ctx)
 {
     if ( orgname.IsSetMod() ) {
+        bool has_strain = false;
         FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
             const COrgMod& omd = **omd_itr;
             int subtype = omd.GetSubtype();
-            bool has_strain = false;
             
 			switch (subtype) {
 				case 0:

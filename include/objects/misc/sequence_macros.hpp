@@ -1871,7 +1871,7 @@ DO_UNIQUE (SUBSOURCE_ON_BIOSOURCE, Var, Func)
 #define ORGMOD_ON_BIOSOURCE_Type      COrgName::TMod
 #define ORGMOD_ON_BIOSOURCE_Test(Var) (Var).IsSetOrgMod()
 #define ORGMOD_ON_BIOSOURCE_Get(Var)  (Var).GetOrgname().GetMod()
-#define ORGMOD_ON_BIOSOURCE_Set(Var)  (Var).SetOrgname().SetMod()
+#define ORGMOD_ON_BIOSOURCE_Set(Var)  (Var).SetOrg().SetOrgname().SetMod()
 
 /// BIOSOURCE_HAS_ORGMOD
 

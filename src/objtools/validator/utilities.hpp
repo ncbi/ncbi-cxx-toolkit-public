@@ -83,6 +83,9 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
 CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set);
 CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle set);
 
+CBioseq_Handle GetNucBioseq (CBioseq_set_Handle bioseq_set);
+CBioseq_Handle GetNucBioseq (CBioseq_Handle bioseq);
+
 typedef enum {
   eAccessionFormat_valid = 0,
   eAccessionFormat_no_start_letters,
@@ -120,6 +123,9 @@ void GetPubdescLabels
 (const CPubdesc& pd, 
  vector<int>& pmids, vector<int>& muids, vector<int>& serials,
  vector<string>& published_labels, vector<string>& unpublished_labels);
+
+bool IsNCBIFILESeqId (const CSeq_id& id);
+bool IsRefGeneTrackingObject (const CUser_object& user);
 
 END_SCOPE(validator)
 END_SCOPE(objects)

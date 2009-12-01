@@ -461,7 +461,6 @@ void CValidError_bioseqset::ValidateGenbankSet(const CBioseq_set& seqset)
 void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
     const CBioSource*   biosrc  = 0;
-    static const string influenza = "Influenza virus ";
     static const string sp = " sp. ";
 
 	if (m_Imp.IsRefSeq()) {
@@ -501,14 +500,6 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
             continue;
         }
         
-        // if the names differ issue an error with the exception of Influenza
-        // virus, where we allow different types of it in the set.
-        if ( NStr::StartsWith(taxname, influenza, NStr::eNocase)         &&
-            NStr::StartsWith(first_taxname, influenza, NStr::eNocase)  &&
-            NStr::CompareNocase(first_taxname, 0, influenza.length() + 1, taxname) == 0 ) {
-            continue;
-        }
-        
         // drops severity if first mismatch is same up to sp.
         EDiagSev sev = eDiag_Error;
         SIZE_TYPE pos = NStr::Find(taxname, sp);
@@ -520,8 +511,13 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
                 sev = eDiag_Warning;
             }
         }
+        // drops severity if one name is subset of the other
+        SIZE_TYPE comp_len = min (taxname.length(), first_taxname.length());
+        if (NStr::EqualCase(taxname, 0, comp_len, first_taxname)) {
+            sev = eDiag_Warning;
+        }
 
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentBioSources,
+        PostErr(sev, eErr_SEQ_DESCR_InconsistentBioSources,
             "Population set contains inconsistent organisms.",
             *seqit);
         break;

@@ -178,7 +178,7 @@ void CValidError_bioseq::ValidateSeqIds
 (const CBioseq& seq)
 {
     // Ensure that CBioseq has at least one CSeq_id
-    if ( seq.GetId().empty() ) {
+    if ( !seq.IsSetId() || seq.GetId().empty() ) {
         PostErr(eDiag_Critical, eErr_SEQ_INST_NoIdOnBioseq,
                  "No ids on a Bioseq", seq);
         return;
@@ -213,6 +213,20 @@ void CValidError_bioseq::ValidateSeqIds
                     CNcbiOstrstreamToString (os) /* os.str() */, seq);
             }
         }
+
+#if 0 
+        // disabled for now
+        if (!IsNCBIFILESeqId(**i)) {
+            string label;
+            (*i)->GetLabel(&label);
+            if (label.length() > 40) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, 
+                         "Sequence ID is unusually long (" + 
+                         NStr::IntToString(label.length()) + "): " + label,
+                         seq);
+            }
+        }
+#endif
 
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(**i);
         if (bsh) {
@@ -314,7 +328,7 @@ void CValidError_bioseq::ValidateSeqIds
                 }
 
                 if ( has_gi ) {
-                    if ( tsid->IsSetVersion()  &&  tsid->GetVersion() == 0 ) {
+                    if ( !tsid->IsSetVersion()  ||  tsid->GetVersion() == 0 ) {
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Accession " + acc + " has 0 version", seq);
                     }
@@ -481,16 +495,41 @@ void CValidError_bioseq::ValidateSeqIds
 
 bool CValidError_bioseq::IsHistAssemblyMissing(const CBioseq& seq)
 {
+    bool rval = false;
     const CSeq_inst& inst = seq.GetInst();
     CSeq_inst::TRepr repr = inst.CanGetRepr() ?
         inst.GetRepr() : CSeq_inst::eRepr_not_set;
 
     if ( !inst.CanGetHist()  ||  !inst.GetHist().CanGetAssembly() ) {
         if ( seq.IsNa()  &&  repr != CSeq_inst::eRepr_seg ) {
-            return true;
+            rval = true;
+            // look for keyword
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+            CSeqdesc_CI genbank_i(bsh, CSeqdesc::e_Genbank);
+            if (genbank_i && genbank_i->GetGenbank().IsSetKeywords()) {
+                CGB_block::TKeywords::const_iterator keyword = genbank_i->GetGenbank().GetKeywords().begin();
+                while (keyword != genbank_i->GetGenbank().GetKeywords().end() && rval) {
+                    if (NStr::EqualNocase(*keyword, "TPA:reassembly")) {
+                        rval = false;
+                    }
+                    ++keyword;
+                }
+            }
+            if (rval) {
+                CSeqdesc_CI embl_i(bsh, CSeqdesc::e_Embl);
+                if (embl_i && embl_i->GetEmbl().IsSetKeywords()) {
+                    CEMBL_block::TKeywords::const_iterator keyword = embl_i->GetEmbl().GetKeywords().begin();
+                    while (keyword != embl_i->GetEmbl().GetKeywords().end() && rval) {
+                        if (NStr::EqualNocase(*keyword, "TPA:reassembly")) {
+                            rval = false;
+                        }
+                        ++keyword;
+                    }
+                }
+            }
         }
     }
-    return false;
+    return rval;
 }
 
 
@@ -1183,7 +1222,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
     }
 
     const CSeq_hist& hist = seq.GetInst().GetHist();
-    if ( hist.IsSetReplaced_by() ) {
+    if ( hist.IsSetReplaced_by() && hist.GetReplaced_by().IsSetDate() ) {
         const CSeq_hist_rec& rec = hist.GetReplaced_by();
         ITERATE( CSeq_hist_rec::TIds, id, rec.GetIds() ) {
             if ( (*id)->IsGi() ) {
@@ -1198,7 +1237,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
         }
     }
 
-    if ( hist.IsSetReplaces() ) {
+    if ( hist.IsSetReplaces() && hist.GetReplaces().IsSetDate() ) {
         const CSeq_hist_rec& rec = hist.GetReplaces();
         ITERATE( CSeq_hist_rec::TIds, id, rec.GetIds() ) {
             if ( (*id)->IsGi() ) {
@@ -1884,7 +1923,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                              "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
                 }
 
-                if (max_stretch > 15) {
+                if (max_stretch >= 15) {
                     PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
                              "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
                 } else {
@@ -2194,7 +2233,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                                "gap symbol at start of protein sequence (" + gene_label + " - " + protein_label + ")",
                                seq);
                       PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
-                               "[" + NStr::IntToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
+                               "[" + NStr::IntToString (dashes - 1) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
                                seq);
                     } else {
                       PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
@@ -2341,7 +2380,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                     }
                     break;
                 case CMolInfo::eCompleteness_no_left:
-                    if (!(partial & eSeqlocPartial_Start)) {
+                    if (!(partial & eSeqlocPartial_Start) || (partial & eSeqlocPartial_Stop)) {
                         PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent, 
                                  "No-left inconsistent with segmented SeqLoc",
                                  seq);
@@ -2349,7 +2388,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                     got_partial = true;
                     break;
                 case CMolInfo::eCompleteness_no_right:
-                    if (!(partial & eSeqlocPartial_Stop)) {
+                    if (!(partial & eSeqlocPartial_Stop) || (partial & eSeqlocPartial_Start)) {
                         PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent, 
                                  "No-right inconsistent with segmented SeqLoc",
                                  seq);
@@ -2387,7 +2426,7 @@ static int s_MaxNsInSeqLitForTech (CMolInfo::TTech tech)
             max_ns = 80;
             break;
         case CMolInfo::eTech_wgs:
-            max_ns = 20;
+            max_ns = 19;
             break;
         default:
             max_ns = 100;
@@ -2695,12 +2734,12 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     ++num_adjacent_gaps;
                 }
                 if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
-                    if (lit.IsSetFuzz()) {
-                        PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
-                            "Gap of length 0 with unknown fuzz in delta chain", seq);
-                    } else {
+                    if (!lit.IsSetFuzz() || !lit.GetFuzz().IsLim() || lit.GetFuzz().GetLim() != CInt_fuzz::eLim_unk) {
                         PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
                             "Gap of length 0 in delta chain", seq);
+                    } else {
+                        PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
+                            "Gap of length 0 with unknown fuzz in delta chain", seq);
                     }
                 }
                 last_is_gap = true;
@@ -2727,8 +2766,18 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
     if ( non_interspersed_gaps  &&  mi  &&
         (tech == CMolInfo::eTech_htgs_0  ||  tech == CMolInfo::eTech_htgs_1  ||
-         tech == CMolInfo::eTech_htgs_2  ||  tech == CMolInfo::eTech_htgs_3) ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_MissingGaps,
+         tech == CMolInfo::eTech_htgs_2) ) {
+        EDiagSev missing_gaps_sev = eDiag_Error;
+        CSeqdesc_CI desc_i(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_User);
+        while (desc_i) {
+            if (IsRefGeneTrackingObject (desc_i->GetUser())) {
+                missing_gaps_sev = eDiag_Info;
+                break;
+            }
+            ++desc_i;
+        }
+
+        PostErr(missing_gaps_sev, eErr_SEQ_INST_MissingGaps,
             "HTGS delta seq should have gaps between all sequence runs", seq);
     }
     if ( num_adjacent_gaps >= 1 ) {
@@ -3104,8 +3153,15 @@ void CValidError_bioseq::x_ValidateCompletness
                 if (!NStr::IsBlank(title)
                     && NStr::FindNoCase(title, "complete sequence") == string::npos
                     && NStr::FindNoCase(title, "complete genome") == string::npos) {
-                    PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
-                        "Suspicious use of complete", ctx, *desc);
+                    if (seq.IsSetInst() && seq.GetInst().IsSetTopology()
+                        && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
+                                "Circular topology has complete flag set, but title should say complete sequence or complete genome",
+                                ctx, *desc);
+                    } else {
+                        PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                                "Suspicious use of complete", ctx, *desc);
+                    }
                 }
             }
         }
@@ -4955,7 +5011,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                         "Non-TPA record " + id_str + " should not have TpaAssembly object", seq);
                 }
-				if (oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
+                if (IsRefGeneTrackingObject(desc.GetUser())) {
 					if (!CValidError_imp::IsWGSIntermediate(seq)) {
 						bool is_refseq = false;
 						FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
@@ -5014,9 +5070,27 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     }
                 }
                 if (is_refseq) {
+                    string taxname = "";
+
                     CSeqdesc_CI src_i(bsh, CSeqdesc::e_Source);
                     if (src_i && src_i->GetSource().IsSetOrg() && src_i->GetSource().GetOrg().IsSetTaxname()) {
                         string taxname = src_i->GetSource().GetOrg().GetTaxname();
+                    }
+                    if (seq.IsAa()) {
+                        CConstRef<CSeq_feat> cds = m_Imp.GetCDSGivenProduct(*(bsh.GetCompleteBioseq()));
+                        if (cds) {
+                            CConstRef<CSeq_feat> src_f = GetBestOverlappingFeat(
+                                cds->GetLocation(),
+                                CSeqFeatData::eSubtype_biosrc,
+                                eOverlap_Contained,
+                                *m_Scope);
+                            if (src_f && src_f->IsSetData() && src_f->GetData().IsBiosrc()
+                                && src_f->GetData().GetBiosrc().IsSetTaxname()) {
+                                taxname = src_f->GetData().GetBiosrc().GetTaxname();
+                            }
+                        }
+                    }
+                    if (!NStr::IsBlank(taxname)) {
                         if (seq.IsNa()) {
                             if (!NStr::StartsWith(title, taxname, NStr::eNocase)) {
                                 PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrganismInTitle, 
@@ -5059,6 +5133,14 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 						ctx, desc);
 			}
 			break;
+
+        case CSeqdesc::e_Method:
+            if (!seq.IsAa()) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                        "Nucleic acid with protein sequence method",
+                        ctx, desc);
+            }
+            break;
 
 		default:
             break;
@@ -5157,8 +5239,9 @@ void CValidError_bioseq::ValidateMolInfoContext
 
     bool is_synthetic_construct = false;
     bool is_artificial = false;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-    CSeqdesc_CI src_di(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Source);
+    CSeqdesc_CI src_di(bsh, CSeqdesc::e_Source);
     while (src_di && !is_synthetic_construct) {
         is_synthetic_construct = m_Imp.IsSyntheticConstruct(src_di->GetSource());
         is_artificial = m_Imp.IsArtificial(src_di->GetSource());
@@ -5177,7 +5260,7 @@ void CValidError_bioseq::ValidateMolInfoContext
         }
         if (is_artificial) {
             if (biomol != CMolInfo::eBiomol_other_genetic && biomol != CMolInfo::eBiomol_peptide) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForType, "artificial origin should have other-genetic", ctx, desc);
+                PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "artificial origin should have other-genetic", ctx, desc);
             }
         }
         
@@ -5196,11 +5279,6 @@ void CValidError_bioseq::ValidateMolInfoContext
             }
             break;
             
-        case CMolInfo::eBiomol_unknown:
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                    "Molinfo-biomol unknown used", ctx, desc);
-            break;
-
         case CMolInfo::eBiomol_other:
             if ( !m_Imp.IsXR() ) {
                 if ( !IsSynthetic(seq) ) {
@@ -5236,7 +5314,6 @@ void CValidError_bioseq::ValidateMolInfoContext
 			        "mRNA not single stranded", seq);
 	    }
     } else {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType, "Molinfo-biomol unknown used", ctx, desc);
         if (is_synthetic_construct && !seq.IsAa()) {
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_InvalidForType, "synthetic construct should have other-genetic", ctx, desc);
         }
@@ -5291,6 +5368,7 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eTech_htgs_1:
         case CMolInfo::eTech_htgs_2:
         case CMolInfo::eTech_htgs_3:
+        case CMolInfo::eTech_composite_wgs_htgs:
             if (tech == CMolInfo::eTech_sts  &&
                 seq.GetInst().GetMol() == CSeq_inst::eMol_rna  &&
                 minfo.IsSetBiomol()  &&
@@ -5312,6 +5390,47 @@ void CValidError_bioseq::ValidateMolInfoContext
             break;
         }
 
+        if (tech == CMolInfo::eTech_htgs_3) {
+            CSeqdesc_CI gb_i(bsh, CSeqdesc::e_Genbank);
+            bool has_draft = false;
+            bool has_prefin = false;
+            bool has_activefin = false;
+            bool has_fulltop = false;
+            while (gb_i) {
+                if (gb_i->GetGenbank().IsSetKeywords()) {
+                    CGB_block::TKeywords::const_iterator key_it = gb_i->GetGenbank().GetKeywords().begin();
+                    while (key_it != gb_i->GetGenbank().GetKeywords().end()) {
+                        if (NStr::EqualNocase(*key_it, "HTGS_DRAFT")) {
+                            has_draft = true;
+                        } else if (NStr::EqualNocase(*key_it, "HTGS_PREFIN")) {
+                            has_prefin = true;
+                        } else if (NStr::EqualNocase(*key_it, "HTGS_ACTIVEFIN")) {
+                            has_activefin = true;
+                        } else if (NStr::EqualNocase(*key_it, "HTGS_FULLTOP")) {
+                            has_fulltop = true;
+                        }
+                        ++key_it;
+                    }
+                }
+                ++gb_i;
+            }
+            if (has_draft) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadHTGSeq,
+                        "HTGS 3 sequence should not have HTGS_DRAFT keyword", seq);
+            }
+            if (has_prefin) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadHTGSeq,
+                        "HTGS 3 sequence should not have HTGS_PREFIN keyword", seq);
+            }
+            if (has_activefin) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadHTGSeq,
+                        "HTGS 3 sequence should not have HTGS_ACTIVEFIN keyword", seq);
+            }
+            if (has_fulltop) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadHTGSeq,
+                        "HTGS 3 sequence should not have HTGS_FULLTOP keyword", seq);
+            }
+        }                        
 
 		if (last_tech) {
 			if (last_tech != tech) {
@@ -5406,9 +5525,6 @@ void CValidError_bioseq::ValidateModifDescriptors (const CBioseq& seq)
                                  ctx, *desc_ci);
                     }
                     last_left_right = modval;
-                    break;
-                case eGIBB_mod_other:
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_Unknown, "GIBB-mod = other used", ctx, *desc_ci);
                     break;
                 default:
                     break;

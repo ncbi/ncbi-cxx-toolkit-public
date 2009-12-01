@@ -1084,10 +1084,12 @@ void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
     EDiagSev sev = eDiag_Error;
     if (!m_NoPubs 
-        && !IsNoncuratedRefSeq (seq, sev)
-        && !IsWGSIntermediate(seq)) {
-
-        PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
+        && !IsNoncuratedRefSeq (seq, sev)) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        CBioseq_Handle nuc_bsh = GetNucBioseq(bsh);
+        if (!nuc_bsh || !IsWGSIntermediate(*nuc_bsh.GetCompleteBioseq())) {
+            PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
+        }
     }
 }
 

@@ -162,6 +162,8 @@ CValidError_imp::CValidError_imp
       m_IsPDB = false;
       m_IsPatent = false;
       m_IsRefSeq = false;
+      m_IsEmbl = false;
+      m_IsDdbj = false;
       m_IsNC = false;
       m_IsNG = false;
       m_IsNM = false;
@@ -812,6 +814,40 @@ bool CValidError_imp::Validate
 		         "INSD and RefSeq records should not be present in the same set", *seq);
 	}
 
+#if 0
+    // disabled for now
+    // look for long IDs that would collide if truncated at 30 characters
+    vector<string> id_strings;
+    for (CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_All); 
+         bi;
+         ++bi) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
+            if (!IsNCBIFILESeqId(**it)) {
+                string label;
+                (*it)->GetLabel(&label);
+                id_strings.push_back(label);
+            }
+        }
+    }
+    stable_sort (id_strings.begin(), id_strings.end());
+    for (vector<string>::iterator id_str_it = id_strings.begin();
+         id_str_it != id_strings.end();
+         ++id_str_it) {        
+        string pattern = (*id_str_it).substr(0, 30);
+        string first_id = *id_str_it;
+        vector<string>::iterator cmp_it = id_str_it;
+        ++cmp_it;
+        while (cmp_it != id_strings.end() && NStr::StartsWith(*cmp_it, pattern)) {
+            CRef<CSeq_id> id(new CSeq_id(*cmp_it));
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
+            PostErr (eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                     "First 30 characters of " + first_id + " and " +
+                     *cmp_it + " are identical", *(bsh.GetCompleteBioseq()));
+            ++id_str_it;
+            ++cmp_it;
+        }
+    }
+#endif
 
     // look for colliding feature IDs
     vector < int > feature_ids;
@@ -1586,23 +1622,28 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-
-    // In case of a NT bioseq limit the search to features packaged on the 
-    // NT (we assume features have been pulled from the segments to the NT).
-    CSeq_entry_Handle limit;
-    if ( IsNT()  &&  m_TSE ) {
-        limit = m_Scope->GetSeq_entryHandle(*m_TSE);
-    }
-
     if ( bsh ) {
-        CFeat_CI fi(bsh, 
-                    SAnnotSelector(CSeqFeatData::e_Cdregion)
-                    .SetByProduct()
-                    .SetLimitTSE(limit));
-        if ( fi ) {
-            // return the first one (should be the one packaged on the
-            // nuc-prot set).
-            feat.Reset(&(fi->GetOriginalFeature()));
+        if ( IsNT()  &&  m_TSE ) {
+            // In case of a NT bioseq limit the search to features packaged on the 
+            // NT (we assume features have been pulled from the segments to the NT).
+            CFeat_CI fi(bsh, 
+                        SAnnotSelector(CSeqFeatData::e_Cdregion)
+                        .SetByProduct()
+                        .SetLimitTSE(m_Scope->GetSeq_entryHandle(*m_TSE)));
+            if ( fi ) {
+                // return the first one (should be the one packaged on the
+                // nuc-prot set).
+                feat.Reset(&(fi->GetOriginalFeature()));
+            }
+        } else {
+            CFeat_CI fi(bsh, 
+                        SAnnotSelector(CSeqFeatData::e_Cdregion)
+                        .SetByProduct());
+            if ( fi ) {
+                // return the first one (should be the one packaged on the
+                // nuc-prot set).
+                feat.Reset(&(fi->GetOriginalFeature()));
+            }
         }
     }
 
@@ -1985,6 +2026,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     break;
                 case CSeq_id::e_Embl:
                     m_IsGED = true;
+                    m_IsEmbl = true;
                     break;
                 case CSeq_id::e_Pir:
                     break;
@@ -2029,6 +2071,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     break;
                 case CSeq_id::e_Ddbj:
                     m_IsGED = true;
+                    m_IsDdbj = true;
                     break;
                 case CSeq_id::e_Prf:
                     break;

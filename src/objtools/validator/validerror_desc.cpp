@@ -79,10 +79,28 @@ void CValidError_desc::ValidateSeqDesc
     // switch on type, e.g., call ValidateBioSource, ValidatePubdesc, ...
     switch ( desc.Which() ) {
         case CSeqdesc::e_Modif:
-        case CSeqdesc::e_Mol_type:
-        case CSeqdesc::e_Method:
+        {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                desc.SelectionName(desc.Which()) + " descriptor is obsolete", *m_Ctx, desc);
+                "Modif descriptor is obsolete", *m_Ctx, desc);
+            CSeqdesc::TModif::const_iterator it = desc.GetModif().begin();
+            while (it != desc.GetModif().end()) {
+                if (*it == eGIBB_mod_other) {
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_Unknown, "GIBB-mod = other used", ctx, desc);
+                }
+                ++it;
+            }
+        }
+
+            break;
+
+        case CSeqdesc::e_Mol_type:
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "MolType descriptor is obsolete", *m_Ctx, desc);
+            break;
+
+        case CSeqdesc::e_Method:           
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "Method descriptor is obsolete", *m_Ctx, desc);
             break;
 
         case CSeqdesc::e_Comment:
@@ -139,6 +157,9 @@ void CValidError_desc::ValidateSeqDesc
             }
             break;
         case CSeqdesc::e_Org:
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "OrgRef descriptor is obsolete", *m_Ctx, desc);
+            break;
             break;
         case CSeqdesc::e_Num:
             break;
@@ -477,31 +498,14 @@ void CValidError_desc::ValidateUser
 }
 
 
+// for MolInfo validation that does not rely on contents of sequence
 void CValidError_desc::ValidateMolInfo
 (const CMolInfo& minfo,
  const CSeqdesc& desc)
 {
-    if ( !minfo.IsSetBiomol() ) {
-        return;
-    }
-
-    int biomol = minfo.GetBiomol();
-
-    switch ( biomol ) {
-    case CMolInfo::eBiomol_unknown:
+    if ( !minfo.IsSetBiomol() || minfo.GetBiomol() == CMolInfo::eBiomol_unknown) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
             "Molinfo-biomol unknown used", *m_Ctx, desc);
-        break;
-
-    case CMolInfo::eBiomol_other:
-        if ( !m_Imp.IsXR() ) {
-            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                "Molinfo-biomol other used", *m_Ctx, desc);
-        }
-        break;
-
-    default:
-        break;
     }
 }
 

@@ -161,6 +161,9 @@ string GetSequenceStringFromLoc
         fasta_ostr.WriteSequence (bsh, &part);
     }
     string s = CNcbiOstrstreamToString(oss);
+    if (NStr::EndsWith(s, "\n")) {
+        s = s.substr(0, s.size() - 1);
+    }
     return s;
 }
 
@@ -353,6 +356,43 @@ CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle bioseq)
     } else {
         return GetGenProdSetParent (parent.GetSet());
     }
+}
+
+
+CBioseq_Handle GetNucBioseq (CBioseq_set_Handle bioseq_set)
+{
+    CBioseq_Handle nuc;
+
+    if (!bioseq_set) {
+        return nuc;
+    }
+    CBioseq_CI bit(bioseq_set, CSeq_inst::eMol_na);
+    if (bit) {
+        nuc = *bit;
+    } else {
+        CSeq_entry_Handle parent = bioseq_set.GetParentEntry();
+        if (parent && (parent = parent.GetParentEntry())
+            && parent.IsSet()) {
+            nuc = GetNucBioseq (parent.GetSet());
+        }
+    }
+    return nuc;
+}
+       
+
+CBioseq_Handle GetNucBioseq (CBioseq_Handle bioseq)
+{
+    CBioseq_Handle nuc;
+
+    if (bioseq.IsNucleotide()) {
+        return bioseq;
+    }
+    CSeq_entry_Handle parent = bioseq.GetParentEntry();
+    if (parent && (parent = parent.GetParentEntry())
+        && parent.IsSet()) {
+        nuc = GetNucBioseq (parent.GetSet());
+    }
+    return nuc;
 }
 
 
@@ -739,6 +779,31 @@ void GetPubdescLabels
             unpublished_labels.push_back(label);
         }
     }
+}
+
+
+bool IsNCBIFILESeqId (const CSeq_id& id)
+{
+    if (!id.IsGeneral() || !id.GetGeneral().IsSetDb()
+        || !NStr::Equal(id.GetGeneral().GetDb(), "NCBIFILE")) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool IsRefGeneTrackingObject (const CUser_object& user)
+{
+    bool rval = false;
+
+    if (user.IsSetType()) {
+        const CObject_id& oi = user.GetType();
+	    if (oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
+            rval = true;
+        }
+    }
+    return rval;
 }
 
 

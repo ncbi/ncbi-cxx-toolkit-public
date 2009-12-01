@@ -5716,9 +5716,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         if (!transl_prot.empty()) {
             // look for discrepancy in number of terminal Xs between product and translation
             size_t transl_terminal_x = 0;
-            size_t i = len;
+            size_t i = transl_prot.length() - 1;
             while (i > 0) {
-                if (transl_prot[i] == 'X') {
+                if (i == transl_prot.length() - 1 && transl_prot[i] == '*') {
+                    // skip stop
+                } else if (transl_prot[i] == 'X') {
                     transl_terminal_x++;
                 } else {
                     break;
@@ -6429,7 +6431,7 @@ void CValidError_feat::ValidateFeatBioSource
         string taxname = org.GetTaxname();
         string dtaxname = dorg.GetTaxname();
         if ( NStr::CompareNocase(taxname, dtaxname) != 0 ) {
-            if ( !dbsrc.CanGetIs_focus()  &&  !m_Imp.IsTransgenic(dbsrc) ) {
+            if ( !dbsrc.IsSetIs_focus()  &&  !m_Imp.IsTransgenic(dbsrc) ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceNeedsFocus,
                     "BioSource descriptor must have focus or transgenic "
                     "when BioSource feature with different taxname is "

@@ -269,6 +269,8 @@ public:
     inline bool IsPDB(void) const { return m_IsPDB; }
     inline bool IsPatent(void) const { return m_IsPatent; }
     inline bool IsRefSeq(void) const { return m_IsRefSeq; }
+    inline bool IsEmbl(void) const { return m_IsEmbl; }
+    inline bool IsDdbj(void) const { return m_IsDdbj; }
     inline bool IsNC(void) const { return m_IsNC; }
     inline bool IsNG(void) const { return m_IsNG; }
     inline bool IsNM(void) const { return m_IsNM; }
@@ -417,6 +419,8 @@ private:
     bool m_IsPDB;
     bool m_IsPatent;
     bool m_IsRefSeq;
+    bool m_IsEmbl;
+    bool m_IsDdbj;
     bool m_IsNC;
     bool m_IsNG;
     bool m_IsNM;
