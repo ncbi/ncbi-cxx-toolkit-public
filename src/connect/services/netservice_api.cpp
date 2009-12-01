@@ -88,6 +88,10 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
 {
     _ASSERT(!section.empty());
 
+    m_ServiceName = service_name;
+    m_ClientName = client_name;
+    m_LBSMAffinityName = lbsm_affinity_name;
+
     auto_ptr<CConfig> app_reg_config;
     auto_ptr<CConfig::TParamTree> param_tree;
 
@@ -108,9 +112,7 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
     }
 
     if (config != NULL) {
-        if (!service_name.empty())
-            m_ServiceName = service_name;
-        else {
+        if (m_ServiceName.empty()) {
             try {
                 m_ServiceName = config->GetString(section,
                     "service", CConfig::eErr_Throw, kEmptyStr);
@@ -138,9 +140,7 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
             }
         }
 
-        if (!client_name.empty())
-            m_ClientName = client_name;
-        else {
+        if (m_ClientName.empty()) {
             try {
                 m_ClientName = config->GetString(section,
                     "client_name", CConfig::eErr_Throw, kEmptyStr);
@@ -151,9 +151,9 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
             }
         }
 
-        m_LBSMAffinityName = !lbsm_affinity_name.empty() ? lbsm_affinity_name :
-            config->GetString(section, "use_lbsm_affinity",
-                CConfig::eErr_NoThrow, kEmptyStr);
+        if (m_LBSMAffinityName.empty())
+            m_LBSMAffinityName = config->GetString(section,
+                "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
 
         unsigned long timeout = s_SecondsToMilliseconds(config->GetString(
             section, "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
@@ -227,7 +227,7 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
             THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR;
         m_MaxSubsequentConnectionFailures =
             THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT;
-        m_MaxQueryTime = MAX_CONNECTION_TIME_DEFAULT;
+        m_MaxQueryTime = SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT);
         m_ThrottleUntilDiscoverable = THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT;
         m_ForceRebalanceAfterThrottleWithin = THROTTLE_FORCED_REBALANCE_DEFAULT;
 
@@ -261,9 +261,14 @@ SNetServiceImpl::SNetServiceImpl(CConfig* config, const string& section,
     }
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||
-        NStr::FindNoCase(m_ClientName, "sample") != NPOS ||
-        NStr::FindNoCase(m_ClientName, "unknown") != NPOS)
-        m_ClientName = CNcbiApplication::Instance()->GetProgramDisplayName();
+            NStr::FindNoCase(m_ClientName, "sample") != NPOS ||
+            NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app == NULL) {
+            NCBI_THROW(CArgException, eNoValue, "Client name is not set.");
+        }
+        m_ClientName = app->GetProgramDisplayName();
+    }
 
     // Get affinity value from the local LBSM configuration file.
     m_LBSMAffinityValue = m_LBSMAffinityName.empty() ? NULL :
