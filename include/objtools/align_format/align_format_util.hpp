@@ -245,7 +245,6 @@ enum {
 };
 
 /// Number of ASCII characters for populating matrix columns
-NCBI_ALIGN_FORMAT_EXPORT
 const int k_NumAsciiChar = 128;
 
 /// Residues
