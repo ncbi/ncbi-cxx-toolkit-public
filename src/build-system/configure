@@ -899,6 +899,7 @@ Optional Packages:
  --with-projects=FILE    build projects listed in FILE by default
  --without-flat-makefile do not generate an all-encompassing flat makefile
  --with-configure-dialog allow interactive flat makefile project selection
+ --with-saved-settings=F load configuration settings from the file F
  --with-check            run test suite after the build
  --with-check-tools=...  use the specified tools for testing
  --with-ncbi-public      ensure compatibility for all in-house platforms
@@ -1718,6 +1719,12 @@ if test "${with_configure_dialog+set}" = set; then
 
 fi;
 
+# Check whether --with-saved-settings or --without-saved-settings was given.
+if test "${with_saved_settings+set}" = set; then
+  withval="$with_saved_settings"
+
+fi;
+
 # Check whether --with-check or --without-check was given.
 if test "${with_check+set}" = set; then
   withval="$with_check"
@@ -2481,7 +2488,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       ;;
 
       --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
-      | --with-fake-root=* \
+      | --with-fake-root=* | --with-saved-settings=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --with-universal=* | --with-tcheck=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
@@ -32355,6 +32362,7 @@ with_extra_action='$with_extra_action'
 with_projects='$with_projects'
 with_flat_makefile='$with_flat_makefile'
 with_configure_dialog='$with_configure_dialog'
+with_saved_settings='$with_saved_settings'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 
@@ -33476,6 +33484,13 @@ echo "$as_me: error: incompatible options: --without-flat-makefile but --with-co
    { (exit 1); exit 1; }; }
    fi
    with_flat_makefile=yes
+elif test "${with_saved_settings-no}" != no; then
+   if test "$with_flat_makefile" = no; then
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-flat-makefile but --with-saved-settings." >&5
+echo "$as_me: error: incompatible options: --without-flat-makefile but --with-saved-settings." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   with_flat_makefile=yes
 fi
 if test "$with_flat_makefile" != "no"; then
    if test "$with_flat_makefile" = yes; then
@@ -33490,6 +33505,9 @@ if test "$with_flat_makefile" != "no"; then
    esac
    if test "$with_configure_dialog" = yes; then
       cfm_flags="$cfm_flags -cfg"
+   fi
+   if test "${with_saved_settings-no}" != no; then
+      cfm_flags="$cfm_flags -saved $with_saved_settings"
    fi
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then

@@ -144,6 +144,8 @@ AC_ARG_WITH(flat-makefile,
    [ --without-flat-makefile do not generate an all-encompassing flat makefile])
 AC_ARG_WITH(configure-dialog,
    [ --with-configure-dialog allow interactive flat makefile project selection])
+AC_ARG_WITH(saved-settings,
+   [ --with-saved-settings=F load configuration settings from the file F])
 AC_ARG_WITH(check,
    [ --with-check            run test suite after the build])
 AC_ARG_WITH(check-tools,
@@ -436,7 +438,7 @@ for x_arg in "$@" ; do
       ;;
 
       --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
-      | --with-fake-root=* \
+      | --with-fake-root=* | --with-saved-settings=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --with-universal=* | --with-tcheck=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
@@ -6482,6 +6484,11 @@ if test "$with_configure_dialog" = yes; then
       AC_MSG_ERROR([incompatible options: --without-flat-makefile but --with-configure-dialog.])
    fi
    with_flat_makefile=yes
+elif test "${with_saved_settings-no}" != no; then
+   if test "$with_flat_makefile" = no; then
+      AC_MSG_ERROR([incompatible options: --without-flat-makefile but --with-saved-settings.])
+   fi
+   with_flat_makefile=yes
 fi
 if test "$with_flat_makefile" != "no"; then
    if test "$with_flat_makefile" = yes; then
@@ -6496,6 +6503,9 @@ if test "$with_flat_makefile" != "no"; then
    esac
    if test "$with_configure_dialog" = yes; then
       cfm_flags="$cfm_flags -cfg"
+   fi
+   if test "${with_saved_settings-no}" != no; then
+      cfm_flags="$cfm_flags -saved $with_saved_settings"
    fi
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
@@ -6586,6 +6596,7 @@ with_extra_action='$with_extra_action'
 with_projects='$with_projects'
 with_flat_makefile='$with_flat_makefile'
 with_configure_dialog='$with_configure_dialog'
+with_saved_settings='$with_saved_settings'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 ])
