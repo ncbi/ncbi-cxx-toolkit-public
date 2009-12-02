@@ -697,19 +697,15 @@ TGeneModelList CGeneSelector::SelectCompleteModels(TGeneModelList& chains,
 
     int geneid = 1;
     ITERATE(list<CAltSplice>, itl, alts_clean) {
-        if (itl->Nested() || allow_partialgenes || itl->front().CompleteCds()|| itl->front().ReadingFrame().Empty()) {
-            ITERATE(CAltSplice, ita, *itl) {
-                models.push_back(*ita);
-                CGeneModel& align = models.back();
-                
-                align.SetGeneID(geneid);
+        ITERATE(CAltSplice, ita, *itl) {
+            models.push_back(*ita);
+            CGeneModel& align = models.back();
+            
+            align.SetGeneID(geneid);
+            if (align.FullCds())
                 align.Status() |= CGeneModel::eFullSupCDS;
-            }
-            ++geneid;
-        } else {
-            _ASSERT(itl->size()==1);
-            models.push_back(itl->front());
         }
+        ++geneid;
     }
     return models;
 }
