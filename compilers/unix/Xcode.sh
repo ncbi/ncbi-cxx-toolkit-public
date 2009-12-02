@@ -36,4 +36,4 @@ test $# -lt 1 && Usage 1 "Mandatory argument is missing"
 xcode="$script_dir/../xcode${1}_prj"
 test ! -d "$xcode" && Usage 1 "$xcode folder not found"
 shift
-$xcode/configure.xcode.sh "$@"
+$xcode/configure "$@"
