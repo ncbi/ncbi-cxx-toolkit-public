@@ -697,11 +697,13 @@ TGeneModelList CGeneSelector::SelectCompleteModels(TGeneModelList& chains,
 
     int geneid = 1;
     ITERATE(list<CAltSplice>, itl, alts_clean) {
+        int rank = 0;
         ITERATE(CAltSplice, ita, *itl) {
             models.push_back(*ita);
             CGeneModel& align = models.back();
             
             align.SetGeneID(geneid);
+            align.SetRankInGene(++rank);
             if (align.FullCds())
                 align.Status() |= CGeneModel::eFullSupCDS;
         }
