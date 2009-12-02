@@ -92,7 +92,6 @@ if "%help_req%"=="yes" (
   echo    --with-configure-dialog     -- use Configuration GUI application
   echo    --without-configure-dialog  -- do not use Configuration GUI application
   echo    --with-saved-settings=FILE  -- load configuration settings from FILE
-  echo                                     use full path only
   echo    --with-dll                  -- assemble toolkit libraries into DLLs
   echo                                     where requested
   echo    --without-dll               -- build all toolkit libraries as static ones
@@ -145,7 +144,15 @@ set PTB_PROJECT_REQ=%use_projectlst%
 if "%use_savedcfg%"=="" (
   set PTB_SAVED_CFG_REQ=
 ) else (
-  set PTB_SAVED_CFG_REQ=%use_savedcfg%
+  if exist %use_savedcfg% (
+    set PTB_SAVED_CFG_REQ=%use_savedcfg%
+  ) else (
+    if exist %initial_dir%\%use_savedcfg% (
+      set PTB_SAVED_CFG_REQ=%initial_dir%\%use_savedcfg%
+    ) else (
+      echo ERROR: %use_savedcfg% not found
+    )
+  )
 )
 
 call ./ptb.bat
