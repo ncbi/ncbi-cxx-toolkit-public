@@ -39,6 +39,7 @@
 #  include <common/ncbi_package_ver.h>
 #endif /*NCBI_CXX_TOOLKIT*/
 
+
 #ifdef NCBI_PACKAGE
 
 #  define   NETDAEMONS_MAJOR        NCBI_PACKAGE_VERSION_MAJOR
@@ -71,16 +72,39 @@
 
 #endif /*NCBI_PACKAGE*/
 
-#define   NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned int)              \
-                                              ((ma)*100000 + (mi)*1000 + (pa)))
 
-#define   NETDAEMONS_MAJOR_OF(ver)  ( (ver) / 100000)
-#define   NETDAEMONS_MINOR_OF(ver)  (((ver) / 1000) % 100)
-#define   NETDAEMONS_PATCH_OF(ver)  ( (ver) % 1000)
+#define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned int)              \
+                                            ((ma)*100000 + (mi)*1000 + (pa)))
 
-#define   NETDAEMONS_VERSION_INT    NETDAEMONS_VERSION_OF               \
-                                   (NETDAEMONS_MAJOR,                   \
-                                    NETDAEMONS_MINOR,                   \
-                                    NETDAEMONS_PATCH)
+#define NETDAEMONS_MAJOR_OF(ver)           ( (ver) / 100000)
+#define NETDAEMONS_MINOR_OF(ver)           (((ver) / 1000) % 100)
+#define NETDAEMONS_PATCH_OF(ver)           ( (ver) % 1000)
+
+#define NETDAEMONS_VERSION_INT             NETDAEMONS_VERSION_OF        \
+                                           (NETDAEMONS_MAJOR,           \
+                                            NETDAEMONS_MINOR,           \
+                                            NETDAEMONS_PATCH)
+
+
+#ifdef NCBI_CXX_TOOLKIT
+
+#  if !defined(NDEBUG)  ||  defined(_DEBUG)
+#    if NCBI_PLATFORM_BITS == 64
+#      define NETDAEMONS_VERSION    NETDAEMONS_VERSION_STR "/64[DEBUG]"
+#    else
+#      define NETDAEMONS_VERSION    NETDAEMONS_VERSION_STR "[DEBUG]"
+#    endif /*NCBI_PLATFORM_BITS==64*/
+#  else
+#    if NCBI_PLATFORM_BITS == 64
+#      define NETDAEMONS_VERSION    NETDAEMONS_VERSION_STR "/64"
+#    else
+#      define NETDAEMONS_VERSION    NETDAEMONS_VERSION_STR
+#    endif /*NCBI_PLATFORM_BITS==64*/
+#  endif /*!NDEBUG || _DEBUG*/
+
+extern const char* g_VersionStr(const char* revision);
+
+# endif /*NCBI_CXX_TOOLKIT*/
+
 
 #endif /*CONNECT_DAEMONS___VERSION__H*/
