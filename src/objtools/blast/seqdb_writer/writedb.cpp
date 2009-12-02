@@ -242,8 +242,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& db_name,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title,
-                              const string& gi_mask)
+                              const string& title)
 {
     CNcbiOstrstream fname;
     fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
@@ -257,17 +256,13 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     }
     out << "DBLIST " << db_name << "\n";
     out << "GILIST " << gi_file_name << "\n";
-    if ( !gi_mask.empty()) {
-        out << "MASKLIST " << gi_mask << "\n";
-    }
     out.close();
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector<string>& databases,
                               CWriteDB::ESeqType seq_type,
-                              const string& title,
-                              const string& gi_mask)
+                              const string& title)
 {
     CNcbiOstrstream fname;
     fname << file_name << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
@@ -285,17 +280,13 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << "\"" << *iter << "\" ";
     }
     out << "\n";
-    if ( !gi_mask.empty()) {
-        out << "MASKLIST " << gi_mask << "\n";
-    }
     out.close();
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
-                              const string& title,
-                              const string& gi_mask)
+                              const string& title)
 {
     if (num_volumes >= 101) {
         NCBI_THROW(CWriteDBException,
@@ -320,9 +311,6 @@ void CWriteDB_CreateAliasFile(const string& file_name,
         out << (string)CNcbiOstrstreamToString(oss);
     }
     out << "\n";
-    if ( !gi_mask.empty()) {
-        out << "MASKLIST " << gi_mask << "\n";
-    }
     out.close();
 }
 END_NCBI_SCOPE
