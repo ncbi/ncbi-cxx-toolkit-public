@@ -194,7 +194,6 @@ OPTIONS:
   --with-configure-dialog    -- use Configuration GUI application
   --without-configure-dialog -- do not use Configuration GUI application
   --with-saved-settings=FILE -- load configuration settings from FILE
-                                  use full path only
   --without-debug            -- build non-debug versions of libs and apps
   --with-debug               -- build debug versions of libs and apps
   --without-dll              -- build all toolkit libraries as static ones
@@ -223,7 +222,6 @@ Error()
 
 #--------------------------------------------------------------------------------
 # parse arguments
-cd "$script_dir"
 unknown=""
 ignore_unknown="no"
 for cmd_arg in "$@"; do
@@ -268,7 +266,17 @@ for u in $unknown; do
   fi
 done
 
+cd "$script_dir"
 use_savedcfg=`echo $use_savedcfg | sed -e s/--with-saved-settings=// | sed -e "s%^~/%$HOME/%"`
+if test -n "$use_savedcfg"; then
+  if ! test -f "$use_savedcfg"; then
+    if test -f "$initial_dir/$use_savedcfg"; then
+      use_savedcfg="$initial_dir/$use_savedcfg"
+    else
+      Error "$use_savedcfg not found"
+    fi
+  fi
+fi
 use_arch=`echo $use_arch | sed -e s/--with-universal=//`
 use_projectlst=`echo $use_projectlst | sed -e s/--with-projects=//`
 use_action=`echo $use_action | sed -e s/--with-extra-action=//`
@@ -336,8 +344,7 @@ sln_path=`echo $sln_path | sed -e 's/ /_/g'`
 sln_name="$sln_path"
 sln_path="$build_results"
 
-test -e "$TREE_ROOT/$PTB_PROJECT_REQ" || Error "$PTB_PROJECT_REQ not found"
-
+test -e "$srcroot/$use_projectlst" || Error "$use_projectlst not found"
 #--------------------------------------------------------------------------------
 # prepare and run ptb.sh
 
@@ -351,7 +358,11 @@ export PTB_PROJECT_REQ="$use_projectlst"
 export PTB_SAVED_CFG_REQ="$use_savedcfg"
 
 ./ptb.sh
-test $? -ne 0 && Error "Configuration failed"
+if test $? -ne 0; then
+  echo "ERROR:  Configuration failed" 1>&2
+  cd "$initial_dir"
+  exit 1
+fi
 
 #--------------------------------------------------------------------------------
 # generate makefile
