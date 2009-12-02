@@ -153,11 +153,13 @@ if test ! -f "$abs_projectlist"; then
   test -d "$abs_projectlist" || Usage "$abs_projectlist not found"
 fi
 if test -n "$savedcfg"; then
-  COMMON_Exec cd $builddir
-  if test ! -f "$savedcfg"; then
-    Usage "$savedcfg not found"
+  if ! test -f "$savedcfg"; then
+    if test -f "$initial_dir/$savedcfg"; then
+      savedcfg="$initial_dir/$savedcfg"
+    else
+      Usage "$savedcfg not found"
+    fi
   fi
-  COMMON_Exec cd $initial_dir
 fi
 
 #-----------------------------------------------------------------------------
