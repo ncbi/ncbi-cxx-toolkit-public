@@ -46,9 +46,11 @@ BEGIN_SCOPE(gnomon)
 void CGeneSelector::FilterOutSingleExonEST(TGeneModelList& chains)
 {
       for (TGeneModelList::iterator it = chains.begin(); it != chains.end();) {
-        const CGeneModel& chain(*it++);
+        const CGeneModel& chain(*it);
         if (chain.Exons().size() == 1 & (chain.Type()&(CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA))==CGeneModel::eEST) {
-            chains.erase(it);
+            it = chains.erase(it);
+        } else {
+            ++it;
         }
     }
 }
