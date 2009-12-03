@@ -60,7 +60,7 @@ set dest=
 :PARSEARGS
 if "%1"=="" goto :ENDPARSEARGS
 if "%dest%"=="lst"                      (set use_projectlst=%1& set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="cfg"                      (set use_savedcfg=%1&   set dest=& goto :CONTINUEPARSEARGS)
+if "%dest%"=="cfg"                      (set use_savedcfg=%~1&   set dest=& goto :CONTINUEPARSEARGS)
 if "%1"=="--help"                       (set help_req=yes& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-configure-dialog"      (set use_gui=yes&  goto :CONTINUEPARSEARGS)
 if "%1"=="--without-configure-dialog"   (set use_gui=no&   goto :CONTINUEPARSEARGS)
@@ -144,13 +144,14 @@ set PTB_PROJECT_REQ=%use_projectlst%
 if "%use_savedcfg%"=="" (
   set PTB_SAVED_CFG_REQ=
 ) else (
-  if exist %use_savedcfg% (
-    set PTB_SAVED_CFG_REQ=%use_savedcfg%
+  if exist "%use_savedcfg%" (
+    set PTB_SAVED_CFG_REQ="%use_savedcfg%"
   ) else (
-    if exist %initial_dir%\%use_savedcfg% (
-      set PTB_SAVED_CFG_REQ=%initial_dir%\%use_savedcfg%
+    if exist "%initial_dir%\%use_savedcfg%" (
+      set PTB_SAVED_CFG_REQ="%initial_dir%\%use_savedcfg%"
     ) else (
-      echo ERROR: %use_savedcfg% not found
+      echo ERROR: "%use_savedcfg%" not found
+      exit /b 1
     )
   )
 )
