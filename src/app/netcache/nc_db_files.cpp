@@ -385,10 +385,9 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                        << kNCBlobChunks_BlobIdCol
                 << ")values(?1,?2)";
             break;
-        case eStmt_DeleteLastChunks:
+        case eStmt_DeleteAllChunks:
             sql << "delete from " << kNCBlobChunks_Table
-                << " where " << kNCBlobChunks_BlobIdCol  << "=?1"
-                <<   " and " << kNCBlobChunks_ChunkIdCol << ">=?2";
+                << " where " << kNCBlobChunks_BlobIdCol  << "=?1";
             break;
         case eStmt_CreateChunkData:
             sql << "insert into " << kNCBlobData_Table
@@ -668,16 +667,13 @@ CNCDBFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
 }
 
 void
-CNCDBFile::DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id)
+CNCDBFile::DeleteAllChunks(TNCBlobId blob_id)
 {
-    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteLastChunks));
+    CSQLITE_StatementLock stmt(x_GetStatement(eStmt_DeleteAllChunks));
     CNCStatTimer timer(GetStat(), CNCDBStat::eDbInfoWrite);
 
     stmt->Bind(1, blob_id);
-    stmt->Bind(2, min_chunk_id);
     stmt->Execute();
-
-    GetStat()->AddBlobTruncate();
 }
 
 TNCChunkId

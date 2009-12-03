@@ -62,7 +62,7 @@ enum ENCStmtType
     eStmt_ReadBlobInfo,      ///< Get all meta-info about blob
     eStmt_GetChunkIds,       ///< Get ids of all chunks for given blob
     eStmt_CreateChunk,       ///< Create new blob chunk
-    eStmt_DeleteLastChunks,  ///< Delete last chunks for the blob
+    eStmt_DeleteAllChunks,   ///< Delete all chunks for the blob
     eStmt_CreateChunkData,   ///< Create new record with blob chunk data
     eStmt_WriteChunkData,    ///< Write blob chunk data into existing chunk
     eStmt_ReadChunkData      ///< Read blob chunk data
@@ -189,14 +189,11 @@ protected:
     void GetChunkIds(TNCBlobId blob_id, TNCIdsList* id_list);
     /// Create record with association chunk id -> blob id
     void CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id);
-    /// Delete ids of last chunks for the blob
+    /// Delete ids of all chunks for the blob
     ///
     /// @param blob_id
     ///   Id of the blob which chunks should be deleted
-    /// @param min_chunk_id
-    ///   Minimum id of chunks to be deleted - all chunks with ids equal or
-    ///   greater than this id will be deleted.
-    void DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id);
+    void DeleteAllChunks(TNCBlobId blob_id);
     /// Create new chunk value record with given data
     ///
     /// @param data
@@ -341,14 +338,11 @@ public:
     void GetChunkIds(TNCBlobId blob_id, TNCIdsList* id_list);
     /// Create record with association chunk id -> blob id
     void CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id);
-    /// Delete ids of last chunks for the blob
+    /// Delete ids of all chunks for the blob
     ///
     /// @param blob_id
     ///   Id of the blob which chunks should be deleted
-    /// @param min_chunk_id
-    ///   Minimum id of chunks to be deleted - all chunks with ids equal or
-    ///   greater than this id will be deleted.
-    void DeleteLastChunks(TNCBlobId blob_id, TNCChunkId min_chunk_id);
+    void DeleteAllChunks(TNCBlobId blob_id);
 };
 
 
@@ -933,10 +927,9 @@ CNCDBMetaFile::CreateChunk(TNCBlobId blob_id, TNCChunkId chunk_id)
 }
 
 inline void
-CNCDBMetaFile::DeleteLastChunks(TNCBlobId  blob_id,
-                                TNCChunkId min_chunk_id)
+CNCDBMetaFile::DeleteAllChunks(TNCBlobId  blob_id)
 {
-    CNCDBFile::DeleteLastChunks(blob_id, min_chunk_id);
+    CNCDBFile::DeleteAllChunks(blob_id);
 }
 
 

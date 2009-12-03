@@ -61,7 +61,6 @@ SNCDBStatData::SNCDBStatData(void)
       m_WrittenBySize(40, 0),
       m_DeletedBlobs(0),
       m_TotalDbTime(0),
-      m_TruncatedBlobs(0),
       m_CreateExists(0),
       m_ExistChecks(0)
 {
@@ -141,7 +140,6 @@ SNCDBStatData::CollectTo(SNCDBStatData* dest)
     }
     dest->m_DeletedBlobs    += m_DeletedBlobs;
     dest->m_TotalDbTime     += m_TotalDbTime;
-    dest->m_TruncatedBlobs  += m_TruncatedBlobs;
     dest->m_CreateExists    += m_CreateExists;
     dest->m_ExistChecks     += m_ExistChecks;
 }
@@ -215,7 +213,6 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                         << data.CalcTimePercent(data.m_LocksWaitedTime) << "% (locks), "
                         << data.m_NotExistLocks << " (non-exist), "
                         << data.m_DeletedBlobs << " (del), "
-                        << data.m_TruncatedBlobs << " (trunc), "
                         << data.m_CreateExists << " (re-wr), "
                         << data.m_ExistChecks << " (check)" << endl
           << endl;

@@ -245,15 +245,11 @@ public:
     bool ReadChunkValue(const SNCBlobCoords& coords,
                         TNCChunkId           chunk_id,
                         TNCBlobBuffer*       buffer);
-    /// Delete last chunks for blob
+    /// Delete all chunks for blob
     ///
     /// @param coords
     ///   Coordinates of the blob to delete chunks for
-    /// @param min_chunk_id
-    ///   Minimum id of chunks to delete - all blob chunks with ids equal or
-    ///   greater than this will be deleted.
-    void DeleteLastChunks(const SNCBlobCoords& coords,
-                          TNCChunkId           min_chunk_id);
+    void DeleteAllChunks(const SNCBlobCoords& coords);
 
     /// Get database file object from pool
     ///
@@ -875,11 +871,10 @@ CNCBlobStorage::ReadChunkValue(const SNCBlobCoords& coords,
 }
 
 inline void
-CNCBlobStorage::DeleteLastChunks(const SNCBlobCoords& coords,
-                                 TNCChunkId           min_chunk_id)
+CNCBlobStorage::DeleteAllChunks(const SNCBlobCoords& coords)
 {
     TMetaFileLock metafile(this, coords.part_id, coords.volume_id);
-    metafile->DeleteLastChunks(coords.blob_id, min_chunk_id);
+    metafile->DeleteAllChunks(coords.blob_id);
 }
 
 inline TNCBlobLockHolderRef

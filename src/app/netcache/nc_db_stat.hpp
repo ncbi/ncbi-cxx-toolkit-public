@@ -125,8 +125,6 @@ struct SNCDBStatData
     Uint8                           m_DeletedBlobs;
     /// Total time spent on all database operations
     double                          m_TotalDbTime;
-    /// Number of blobs truncated down to lower size
-    Uint8                           m_TruncatedBlobs;
     /// Number of create requests that have met already existing blob
     Uint8                           m_CreateExists;
     /// Number of checks for blob existence
@@ -181,8 +179,6 @@ public:
     void AddStoppedWrite     (void);
     /// Add deleted blob
     void AddBlobDelete       (void);
-    /// Add truncated blob
-    void AddBlobTruncate     (void);
     /// Add collision of trying to create over already existing blob
     void AddCreateHitExisting(void);
     /// Add check for blob existence
@@ -423,15 +419,6 @@ CNCDBStat::AddBlobDelete(void)
     SNCDBStatData* data = GetObjPtr();
     data->m_ObjLock.Lock();
     ++data->m_DeletedBlobs;
-    data->m_ObjLock.Unlock();
-}
-
-inline void
-CNCDBStat::AddBlobTruncate(void)
-{
-    SNCDBStatData* data = GetObjPtr();
-    data->m_ObjLock.Lock();
-    ++data->m_TruncatedBlobs;
     data->m_ObjLock.Unlock();
 }
 

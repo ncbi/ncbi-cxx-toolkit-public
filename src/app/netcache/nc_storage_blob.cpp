@@ -60,16 +60,7 @@ CNCBlob::x_FlushCurChunk(void)
         return;
     }
 
-    if (m_NextRowIdIt == m_AllRowIds.end()) {
-        TNCChunkId chunk_id
-                        = m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
-        m_AllRowIds.push_back(chunk_id);
-        m_NextRowIdIt = m_AllRowIds.end();
-    }
-    else {
-        m_Storage->WriteChunkValue(*m_BlobInfo, *m_NextRowIdIt, m_Buffer);
-        ++m_NextRowIdIt;
-    }
+    TNCChunkId chunk_id = m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
     m_Buffer.resize(0);
 }
 
@@ -98,10 +89,16 @@ CNCBlob::Init(SNCBlobInfo* blob_info, bool can_write)
         // actually truncated anyway or even deleted if it's not finalized, so
         // nobody needs information about what size it was.
         m_BlobInfo->size = 0;
+        m_Storage->DeleteAllChunks(*m_BlobInfo);
     }
-
-    m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
-    m_NextRowIdIt = m_AllRowIds.begin();
+    else {
+        m_Storage->GetChunkIds(*m_BlobInfo, &m_AllRowIds);
+        size_t max_size = m_AllRowIds.size() * kNCMaxBlobChunkSize;
+        size_t min_size = max_size - kNCMaxBlobChunkSize;
+        if (m_BlobInfo->size <= min_size  ||  m_BlobInfo->size > max_size)
+            x_CorruptedDatabase();
+        m_NextRowIdIt = m_AllRowIds.begin();
+    }
 
     m_Buffer.resize(0);
 }
@@ -136,22 +133,24 @@ CNCBlob::Read(void* buffer, size_t size)
         m_Buffer.resize(0);
         m_ChunkPos = 0;
 
-        if (m_NextRowIdIt == m_AllRowIds.end()) {
-            if (m_Position < m_BlobInfo->size)
-                x_CorruptedDatabase();
+        if (m_NextRowIdIt == m_AllRowIds.end())
             return 0;
-        }
         if (!m_Storage->ReadChunkValue(*m_BlobInfo, *m_NextRowIdIt, &m_Buffer))
             x_CorruptedDatabase();
         ++m_NextRowIdIt;
+        if (m_NextRowIdIt != m_AllRowIds.end()
+                &&  m_Buffer.size() != kNCMaxBlobChunkSize
+            ||  m_NextRowIdIt == m_AllRowIds.end()
+                &&  m_Position + m_Buffer.size() != m_BlobInfo->size)
+        {
+            x_CorruptedDatabase();
+        }
     }
 
     size = min(size, m_Buffer.size() - m_ChunkPos);
     memcpy(buffer, m_Buffer.data() + m_ChunkPos, size);
     m_Position += size;
     m_ChunkPos += size;
-    if (m_Position > m_BlobInfo->size)
-        x_CorruptedDatabase();
     return size;
 }
 
@@ -191,12 +190,6 @@ CNCBlob::Finalize(void)
     _ASSERT(m_CanWrite  &&  !m_Finalized);
 
     x_FlushCurChunk();
-
-    if (m_NextRowIdIt != m_AllRowIds.end()) {
-        m_Storage->DeleteLastChunks(*m_BlobInfo, *m_NextRowIdIt);
-        m_AllRowIds.erase(m_NextRowIdIt, m_AllRowIds.end());
-        m_NextRowIdIt = m_AllRowIds.end();
-    }
 
     m_BlobInfo->size = m_Position;
     m_Finalized = true;
