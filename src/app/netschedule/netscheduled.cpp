@@ -2814,18 +2814,17 @@ void CNetScheduleHandler::WriteMsg(const char*   prefix,
         if (shortened) lmsg += "...";
 
         if (is_log) {
-            if (comm_control) {
-                CDiagContext_Extra extra = GetDiagContext().Extra();
-                extra.Print("answer", buf_ptr);
-            } else {
+            CDiagContext_Extra extra = GetDiagContext().Extra();
+            extra.Print("answer", string(buf_ptr, log_length));
+            if (!comm_control) {
                 // TODO: remove prefix, replace with success/failure, reflect it
                 // in request status
                 CDiagContext::GetRequestContext().SetRequestStatus(200);
                 GetDiagContext().PrintRequestStop();
             }
-//            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
-//                << lmsg
-//                << NCBI_NS_NCBI::Endm;
+            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
+                << lmsg
+                << NCBI_NS_NCBI::Endm;
         }
         if (IsMonitoring()) {
             lmsg += "\n";

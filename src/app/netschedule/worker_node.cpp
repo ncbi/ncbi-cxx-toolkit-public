@@ -365,6 +365,7 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
             .Print("node", worker_node->GetId())
             .Print("queue", m_QueueName)
             .Print("job_id", NStr::IntToString(job.GetId()));
+        CDiagContext::SetRequestContext(0);
     }
 
     m_JobInfoById.insert(job_info.get());
@@ -376,8 +377,6 @@ void CQueueWorkerNodeList::AddJob(CWorkerNode* worker_node,
         throw;
     }
     worker_node->UpdateValidityTime();
-
-    job_info.release();
 }
 
 

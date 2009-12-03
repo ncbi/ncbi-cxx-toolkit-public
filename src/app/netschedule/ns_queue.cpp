@@ -623,7 +623,11 @@ unsigned CQueue::Submit(CJob& job)
     unsigned mask = job.GetMask();
     if (mask & CNetScheduleAPI::eOutOfOrder)
     {
-        // TODO: put job id into OutOfOrder list
+        // NOT IMPLEMENTED YET: put job id into OutOfOrder list.
+        // The idea is that there can be an urgent job, which
+        // should be executed before jobs which were submitted
+        // earlier, e.g. for some administrative purposes. See
+        // CNetScheduleAPI::EJobMask in file netschedule_api.hpp
     }
 
     CNS_Transaction trans(this);
@@ -1614,8 +1618,8 @@ void CQueue::ClearAffinityIdx()
     const unsigned kDeletedJobsThreshold = 10000;
     const unsigned kAffBatchSize = 1000;
     // thread-safe copies of progress pointers
-    unsigned curr_aff_id;
-    unsigned last_aff_id;
+    unsigned curr_aff_id = 0;
+    unsigned last_aff_id = 0;
     {{
         // Ensure that we have some job to do
         CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
@@ -2801,7 +2805,7 @@ CQueue::x_CheckExecutionTimeout(unsigned queue_run_timeout,
     CJob job;
     CNS_Transaction trans(this);
 
-    unsigned time_start;
+    unsigned time_start = 0;
     unsigned run_timeout = 0;
     time_t   exp_time;
     {{
