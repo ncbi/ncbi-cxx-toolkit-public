@@ -8,7 +8,7 @@ LIB_ = w_hit_matrix gui_glmesa w_gl w_wx w_data \
 	   xconnserv xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(WXWIDGETS_LIBS) $(OSMESA_LIBS) $(IMAGE_LIBS) $(CMPRS_LIBS) \
+LIBS = $(OSMESA_LIBS) $(WXWIDGETS_LIBS) $(IMAGE_LIBS) $(CMPRS_LIBS) \
        $(DL_LIBS) $(ORIG_LIBS)
 
 

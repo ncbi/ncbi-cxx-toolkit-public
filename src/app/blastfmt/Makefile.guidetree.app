@@ -9,7 +9,7 @@ LIB_ = cobalt w_phylo_tree xalgoalignnw xalgophytree fastme \
 	   xconnserv xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-LIBS = $(WXWIDGETS_LIBS) $(OSMESA_LIBS) $(IMAGE_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(OSMESA_LIBS) $(WXWIDGETS_LIBS) $(IMAGE_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

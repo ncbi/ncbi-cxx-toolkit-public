@@ -15,7 +15,7 @@ LIB_ = $(BLAST_FORMATTER_LIBS) w_hit_matrix gui_glmesa w_gl w_wx w_data \
 	  xconnserv xqueryparse test_boost $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(WXWIDGETS_LIBS) $(OSMESA_LIBS) $(IMAGE_LIBS) \
+LIBS = $(OSMESA_LIBS) $(WXWIDGETS_LIBS) $(IMAGE_LIBS) \
 	   $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = blastfmt_unit_test
