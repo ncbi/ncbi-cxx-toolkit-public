@@ -1,0 +1,24 @@
+#  $Id$
+#  Makefile template for Xcode
+#######################################################################
+
+include ./Makefile.mk
+
+all :
+	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION}
+	cd ..; echo ${BUILT_CFGS} > cfgs.log
+
+clean :
+	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} clean
+
+check :
+	cd ..; ./check.sh run; ./check.sh concat_err; ./check.sh load_to_db
+
+all_r : all
+all_p : all
+clean_r : clean
+clean_p : clean
+purge : clean
+check_r : check
+check_p : check
+

@@ -1,0 +1,23 @@
+#  $Id$
+#  Makefile template for Xcode
+#######################################################################
+
+include ./Makefile.mk
+
+all :
+	cd $(builddir) && $(MAKE) $(MFLAGS) all;
+
+clean :
+	cd $(builddir) && $(MAKE) $(MFLAGS) clean;
+
+check :
+	cd $(builddir) && $(MAKE) $(MFLAGS) check;
+
+all_r : all
+all_p : all
+clean_r : clean
+clean_p : clean
+purge : clean
+check_r : check
+check_p : check
+
