@@ -1,445 +1,347 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-  <dict>
-    <key>archiveVersion</key>
-    <string>1</string>
-    <key>objectVersion</key>
-    <string>44</string>
-    <key>objects</key>
-    <dict>
-      <key>Build_Configuration_DebugDLL</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>ARCHS</key>
-          <array>
-            <string>ppc i386</string>
-          </array>
-          <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
-          <string>YES</string>
-          <key>GCC_WARN_UNUSED_VARIABLE</key>
-          <string>YES</string>
-          <key>GCC_DYNAMIC_NO_PIC</key>
-          <string>NO</string>
-          <key>GCC_ENABLE_FIX_AND_CONTINUE</key>
-          <string>NO</string>
-          <key>GCC_MODEL_TUNING</key>
-          <string>G5</string>
-          <key>GCC_ENABLE_CPP_EXCEPTIONS</key>
-          <string>YES</string>
-          <key>GCC_ENABLE_CPP_RTTI</key>
-          <string>YES</string>
-          <key>COPY_PHASE_STRIP</key>
-          <string>NO</string>
-          <key>GCC_GENERATE_DEBUGGING_SYMBOLS</key>
-          <string>YES</string>
-          <key>GCC_OPTIMIZATION_LEVEL</key>
-          <string>0</string>
-          <key>DEBUG_INFORMATION_FORMAT</key>
-          <string>dwarf-with-dsym</string>
-          <key>GCC_DEBUGGING_SYMBOLS</key>
-          <string>default</string>
-          <key>SDKROOT</key>
-          <string></string>
-          <key>FRAMEWORK_SEARCH_PATHS</key>
-          <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
-          <key>DEAD_CODE_STRIPPING</key>
-          <string>YES</string>
-          <key>PREBINDING</key>
-          <string>NO</string>
-          <key>ZERO_LINK</key>
-          <string>NO</string>
-          <key>STANDARD_C_PLUS_PLUS_LIBRARY_TYPE</key>
-          <string>dynamic</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>DebugDLL</string>
-      </dict>
-      <key>Build_Configuration_DebugMT</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>ARCHS</key>
-          <array>
-            <string>ppc i386</string>
-          </array>
-          <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
-          <string>YES</string>
-          <key>GCC_WARN_UNUSED_VARIABLE</key>
-          <string>YES</string>
-          <key>GCC_DYNAMIC_NO_PIC</key>
-          <string>NO</string>
-          <key>GCC_ENABLE_FIX_AND_CONTINUE</key>
-          <string>NO</string>
-          <key>GCC_MODEL_TUNING</key>
-          <string>G5</string>
-          <key>GCC_ENABLE_CPP_EXCEPTIONS</key>
-          <string>YES</string>
-          <key>GCC_ENABLE_CPP_RTTI</key>
-          <string>YES</string>
-          <key>COPY_PHASE_STRIP</key>
-          <string>NO</string>
-          <key>GCC_GENERATE_DEBUGGING_SYMBOLS</key>
-          <string>YES</string>
-          <key>GCC_OPTIMIZATION_LEVEL</key>
-          <string>0</string>
-          <key>DEBUG_INFORMATION_FORMAT</key>
-          <string>dwarf-with-dsym</string>
-          <key>GCC_DEBUGGING_SYMBOLS</key>
-          <string>default</string>
-          <key>SDKROOT</key>
-          <string></string>
-          <key>FRAMEWORK_SEARCH_PATHS</key>
-          <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
-          <key>DEAD_CODE_STRIPPING</key>
-          <string>YES</string>
-          <key>PREBINDING</key>
-          <string>NO</string>
-          <key>ZERO_LINK</key>
-          <string>NO</string>
-          <key>STANDARD_C_PLUS_PLUS_LIBRARY_TYPE</key>
-          <string>static</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>DebugMT</string>
-      </dict>
-      <key>Build_Configuration_ReleaseDLL</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>ARCHS</key>
-          <array>
-            <string>ppc i386</string>
-          </array>
-          <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
-          <string>YES</string>
-          <key>GCC_WARN_UNUSED_VARIABLE</key>
-          <string>YES</string>
-          <key>GCC_DYNAMIC_NO_PIC</key>
-          <string>NO</string>
-          <key>GCC_ENABLE_FIX_AND_CONTINUE</key>
-          <string>NO</string>
-          <key>GCC_MODEL_TUNING</key>
-          <string>G5</string>
-          <key>GCC_ENABLE_CPP_EXCEPTIONS</key>
-          <string>YES</string>
-          <key>GCC_ENABLE_CPP_RTTI</key>
-          <string>YES</string>
-          <key>COPY_PHASE_STRIP</key>
-          <string>YES</string>
-          <key>GCC_GENERATE_DEBUGGING_SYMBOLS</key>
-          <string>NO</string>
-          <key>SDKROOT</key>
-          <string></string>
-          <key>FRAMEWORK_SEARCH_PATHS</key>
-          <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
-          <key>DEAD_CODE_STRIPPING</key>
-          <string>YES</string>
-          <key>PREBINDING</key>
-          <string>NO</string>
-          <key>ZERO_LINK</key>
-          <string>NO</string>
-          <key>STANDARD_C_PLUS_PLUS_LIBRARY_TYPE</key>
-          <string>dynamic</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>ReleaseDLL</string>
-      </dict>
-      <key>Build_Configuration_ReleaseMT</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>ARCHS</key>
-          <array>
-            <string>ppc i386</string>
-          </array>
-          <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
-          <string>YES</string>
-          <key>GCC_WARN_UNUSED_VARIABLE</key>
-          <string>YES</string>
-          <key>GCC_DYNAMIC_NO_PIC</key>
-          <string>NO</string>
-          <key>GCC_ENABLE_FIX_AND_CONTINUE</key>
-          <string>NO</string>
-          <key>GCC_MODEL_TUNING</key>
-          <string>G5</string>
-          <key>GCC_ENABLE_CPP_EXCEPTIONS</key>
-          <string>YES</string>
-          <key>GCC_ENABLE_CPP_RTTI</key>
-          <string>YES</string>
-          <key>COPY_PHASE_STRIP</key>
-          <string>YES</string>
-          <key>GCC_GENERATE_DEBUGGING_SYMBOLS</key>
-          <string>NO</string>
-          <key>SDKROOT</key>
-          <string></string>
-          <key>FRAMEWORK_SEARCH_PATHS</key>
-          <string>/System/Library/Frameworks/CoreServices.framework/Frameworks</string>
-          <key>DEAD_CODE_STRIPPING</key>
-          <string>YES</string>
-          <key>PREBINDING</key>
-          <string>NO</string>
-          <key>ZERO_LINK</key>
-          <string>NO</string>
-          <key>STANDARD_C_PLUS_PLUS_LIBRARY_TYPE</key>
-          <string>static</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>ReleaseMT</string>
-      </dict>
-      <key>Build_Configurations</key>
-      <dict>
-        <key>buildConfigurations</key>
-        <array>
-          <string>Build_Configuration_DebugDLL</string>
-          <string>Build_Configuration_DebugMT</string>
-          <string>Build_Configuration_ReleaseDLL</string>
-          <string>Build_Configuration_ReleaseMT</string>
-        </array>
-        <key>defaultConfigurationIsVisible</key>
-        <string>0</string>
-        <key>defaultConfigurationName</key>
-        <string>ReleaseDLL</string>
-        <key>isa</key>
-        <string>XCConfigurationList</string>
-      </dict>
-      <key>Main_Group</key>
-      <dict>
-        <key>children</key>
-        <array>
-        </array>
-        <key>isa</key>
-        <string>PBXGroup</string>
-        <key>name</key>
-        <string>NCBI C++ Toolkit</string>
-        <key>refType</key>
-        <string>4</string>
-      </dict>
-      <key>CONFIGURE_Build_Configuration_DebugDLL</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>DebugDLL</string>
-      </dict>
-      <key>CONFIGURE_Build_Configuration_DebugMT</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>DebugMT</string>
-      </dict>
-      <key>CONFIGURE_Build_Configuration_ReleaseDLL</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>ReleaseDLL</string>
-      </dict>
-      <key>CONFIGURE_Build_Configuration_ReleaseMT</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>ReleaseMT</string>
-      </dict>
-      <key>CONFIGURE_Build_Configurations</key>
-      <dict>
-        <key>buildConfigurations</key>
-        <array>
-          <string>CONFIGURE_Build_Configuration_DebugDLL</string>
-          <string>CONFIGURE_Build_Configuration_DebugMT</string>
-          <string>CONFIGURE_Build_Configuration_ReleaseDLL</string>
-          <string>CONFIGURE_Build_Configuration_ReleaseMT</string>
-        </array>
-        <key>defaultConfigurationIsVisible</key>
-        <string>0</string>
-        <key>defaultConfigurationName</key>
-        <string>ReleaseDLL</string>
-        <key>isa</key>
-        <string>XCConfigurationList</string>
-      </dict>
-      <key>CONFIGURE_script</key>
-      <dict>
-        <key>files</key>
-        <array></array>
-        <key>inputPaths</key>
-        <array></array>
-        <key>outputPaths</key>
-        <array></array>
-        <key>isa</key>
-        <string>PBXShellScriptBuildPhase</string>
-        <key>shellPath</key>
-        <string>/bin/sh</string>
-        <key>shellScript</key>
-        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export PTB_PATH=../static/bin/ReleaseDLL&#xa;export SLN_PATH=ncbi_cpp&#xa;export TREE_ROOT=../../..&#xa;export BUILD_TREE_ROOT=..&#xa;UtilityProjects/configure_ncbi_cpp.sh</string>
-      </dict>
-      <key>CONFIGURE_target</key>
-      <dict>
-        <key>buildConfigurationList</key>
-        <string>CONFIGURE_Build_Configurations</string>
-        <key>buildPhases</key>
-        <array>
-          <string>CONFIGURE_script</string>
-        </array>
-        <key>dependencies</key>
-        <array></array>
-        <key>isa</key>
-        <string>PBXAggregateTarget</string>
-        <key>name</key>
-        <string>CONFIGURE</string>
-        <key>productName</key>
-        <string>CONFIGURE</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_Build_Configuration_DebugDLL</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE_DIALOG</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>DebugDLL</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_Build_Configuration_DebugMT</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE_DIALOG</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>DebugMT</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_Build_Configuration_ReleaseDLL</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE_DIALOG</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>ReleaseDLL</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_Build_Configuration_ReleaseMT</key>
-      <dict>
-        <key>buildSettings</key>
-        <dict>
-          <key>PRODUCT_NAME</key>
-          <string>CONFIGURE_DIALOG</string>
-        </dict>
-        <key>isa</key>
-        <string>XCBuildConfiguration</string>
-        <key>name</key>
-        <string>ReleaseMT</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_Build_Configurations</key>
-      <dict>
-        <key>buildConfigurations</key>
-        <array>
-          <string>CONFIGURE_DIALOG_Build_Configuration_DebugDLL</string>
-          <string>CONFIGURE_DIALOG_Build_Configuration_DebugMT</string>
-          <string>CONFIGURE_DIALOG_Build_Configuration_ReleaseDLL</string>
-          <string>CONFIGURE_DIALOG_Build_Configuration_ReleaseMT</string>
-        </array>
-        <key>defaultConfigurationIsVisible</key>
-        <string>0</string>
-        <key>defaultConfigurationName</key>
-        <string>ReleaseDLL</string>
-        <key>isa</key>
-        <string>XCConfigurationList</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_script</key>
-      <dict>
-        <key>files</key>
-        <array></array>
-        <key>inputPaths</key>
-        <array></array>
-        <key>outputPaths</key>
-        <array></array>
-        <key>isa</key>
-        <string>PBXShellScriptBuildPhase</string>
-        <key>shellPath</key>
-        <string>/bin/sh</string>
-        <key>shellScript</key>
-        <string>export PTB_PLATFORM=&quot;$ARCHS&quot;&#xa;export PTB_PATH=../static/bin/ReleaseDLL&#xa;export SLN_PATH=ncbi_cpp&#xa;export TREE_ROOT=../../..&#xa;export BUILD_TREE_ROOT=..&#xa;UtilityProjects/configure_gui_ncbi_cpp.sh</string>
-      </dict>
-      <key>CONFIGURE_DIALOG_target</key>
-      <dict>
-        <key>buildConfigurationList</key>
-        <string>CONFIGURE_DIALOG_Build_Configurations</string>
-        <key>buildPhases</key>
-        <array>
-          <string>CONFIGURE_DIALOG_script</string>
-        </array>
-        <key>dependencies</key>
-        <array></array>
-        <key>isa</key>
-        <string>PBXAggregateTarget</string>
-        <key>name</key>
-        <string>CONFIGURE_DIALOG</string>
-        <key>productName</key>
-        <string>CONFIGURE_DIALOG</string>
-      </dict>
-      <key>ROOT_OBJECT</key>
-      <dict>
-        <key>buildConfigurationList</key>
-        <string>Build_Configurations</string>
-        <key>compatibilityVersion</key>
-        <string>Xcode 3.0</string>
-        <key>hasScannedForEncodings</key>
-        <string>1</string>
-        <key>isa</key>
-        <string>PBXProject</string>
-        <key>mainGroup</key>
-        <string>Main_Group</string>
-        <key>projectDirPath</key>
-        <string></string>
-        <key>projectRoot</key>
-        <string></string>
-        <key>targets</key>
-        <array>
-          <string>CONFIGURE_DIALOG_target</string>
-          <string>CONFIGURE_target</string>
-        </array>
-      </dict>
-    </dict>
-    <key>rootObject</key>
-    <string>ROOT_OBJECT</string>
-  </dict>
-</plist>
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 44;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		AC90C0F910C6D5DD00848E88 /* CONFIGURE_DIALOG */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = AC90C11110C6D5F600848E88 /* Build configuration list for PBXAggregateTarget "CONFIGURE_DIALOG" */;
+			buildPhases = (
+				AC90C0F810C6D5DD00848E88 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = CONFIGURE_DIALOG;
+			productName = CONFIGURE_DIALOG;
+		};
+		AC90C0FB10C6D5DD00848E88 /* CONFIGURE */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = AC90C11210C6D5F600848E88 /* Build configuration list for PBXAggregateTarget "CONFIGURE" */;
+			buildPhases = (
+				AC90C0FA10C6D5DD00848E88 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = CONFIGURE;
+			productName = CONFIGURE;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXGroup section */
+		AC90C0F410C6D5DD00848E88 /* NCBI C++ Toolkit */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "NCBI C++ Toolkit";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		AC90C12410C6D7D000848E88 /* Untitled */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = AC90C12910C6D7EE00848E88 /* Build configuration list for PBXLegacyTarget "Untitled" */;
+			buildPhases = (
+			);
+			buildToolPath = /bin/sh;
+			dependencies = (
+			);
+			name = Untitled;
+			passBuildSettingsInEnvironment = 1;
+			productName = Untitled;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		AC90C0FE10C6D5DE00848E88 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = AC90C11010C6D5F600848E88 /* Build configuration list for PBXProject "ncbi_cpp" */;
+			compatibilityVersion = "Xcode 3.0";
+			hasScannedForEncodings = 1;
+			mainGroup = AC90C0F410C6D5DD00848E88 /* NCBI C++ Toolkit */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AC90C0F910C6D5DD00848E88 /* CONFIGURE_DIALOG */,
+				AC90C0FB10C6D5DD00848E88 /* CONFIGURE */,
+				AC90C12410C6D7D000848E88 /* Untitled */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AC90C0F810C6D5DD00848E88 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PTB_PLATFORM=\"$ARCHS\"\nexport PTB_PATH=../static/bin/ReleaseDLL\nexport SLN_PATH=ncbi_cpp\nexport TREE_ROOT=../../..\nexport BUILD_TREE_ROOT=..\nUtilityProjects/configure_gui_ncbi_cpp.sh";
+		};
+		AC90C0FA10C6D5DD00848E88 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PTB_PLATFORM=\"$ARCHS\"\nexport PTB_PATH=../static/bin/ReleaseDLL\nexport SLN_PATH=ncbi_cpp\nexport TREE_ROOT=../../..\nexport BUILD_TREE_ROOT=..\nUtilityProjects/configure_ncbi_cpp.sh";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AC90C0FF10C6D5DE00848E88 /* DebugDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks;
+				GCC_DEBUGGING_SYMBOLS = default;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "";
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+				ZERO_LINK = NO;
+			};
+			name = DebugDLL;
+		};
+		AC90C10010C6D5DE00848E88 /* DebugMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks;
+				GCC_DEBUGGING_SYMBOLS = default;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "";
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = static;
+				ZERO_LINK = NO;
+			};
+			name = DebugMT;
+		};
+		AC90C10110C6D5DE00848E88 /* ReleaseDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				COPY_PHASE_STRIP = YES;
+				DEAD_CODE_STRIPPING = YES;
+				FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "";
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+				ZERO_LINK = NO;
+			};
+			name = ReleaseDLL;
+		};
+		AC90C10210C6D5DE00848E88 /* ReleaseMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				COPY_PHASE_STRIP = YES;
+				DEAD_CODE_STRIPPING = YES;
+				FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "";
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = static;
+				ZERO_LINK = NO;
+			};
+			name = ReleaseMT;
+		};
+		AC90C10310C6D5DE00848E88 /* DebugDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE_DIALOG;
+			};
+			name = DebugDLL;
+		};
+		AC90C10410C6D5DE00848E88 /* DebugMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE_DIALOG;
+			};
+			name = DebugMT;
+		};
+		AC90C10510C6D5DE00848E88 /* ReleaseDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE_DIALOG;
+			};
+			name = ReleaseDLL;
+		};
+		AC90C10610C6D5DE00848E88 /* ReleaseMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE_DIALOG;
+			};
+			name = ReleaseMT;
+		};
+		AC90C10710C6D5DE00848E88 /* DebugDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE;
+			};
+			name = DebugDLL;
+		};
+		AC90C10810C6D5DE00848E88 /* DebugMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE;
+			};
+			name = DebugMT;
+		};
+		AC90C10910C6D5DE00848E88 /* ReleaseDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE;
+			};
+			name = ReleaseDLL;
+		};
+		AC90C10A10C6D5DE00848E88 /* ReleaseMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = CONFIGURE;
+			};
+			name = ReleaseMT;
+		};
+		AC90C12510C6D7D000848E88 /* DebugDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = Untitled;
+			};
+			name = DebugDLL;
+		};
+		AC90C12610C6D7D000848E88 /* DebugMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = Untitled;
+			};
+			name = DebugMT;
+		};
+		AC90C12710C6D7D000848E88 /* ReleaseDLL */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = Untitled;
+			};
+			name = ReleaseDLL;
+		};
+		AC90C12810C6D7D000848E88 /* ReleaseMT */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = Untitled;
+			};
+			name = ReleaseMT;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AC90C11010C6D5F600848E88 /* Build configuration list for PBXProject "ncbi_cpp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC90C0FF10C6D5DE00848E88 /* DebugDLL */,
+				AC90C10010C6D5DE00848E88 /* DebugMT */,
+				AC90C10110C6D5DE00848E88 /* ReleaseDLL */,
+				AC90C10210C6D5DE00848E88 /* ReleaseMT */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = ReleaseDLL;
+		};
+		AC90C11110C6D5F600848E88 /* Build configuration list for PBXAggregateTarget "CONFIGURE_DIALOG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC90C10310C6D5DE00848E88 /* DebugDLL */,
+				AC90C10410C6D5DE00848E88 /* DebugMT */,
+				AC90C10510C6D5DE00848E88 /* ReleaseDLL */,
+				AC90C10610C6D5DE00848E88 /* ReleaseMT */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = ReleaseDLL;
+		};
+		AC90C11210C6D5F600848E88 /* Build configuration list for PBXAggregateTarget "CONFIGURE" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC90C10710C6D5DE00848E88 /* DebugDLL */,
+				AC90C10810C6D5DE00848E88 /* DebugMT */,
+				AC90C10910C6D5DE00848E88 /* ReleaseDLL */,
+				AC90C10A10C6D5DE00848E88 /* ReleaseMT */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = ReleaseDLL;
+		};
+		AC90C12910C6D7EE00848E88 /* Build configuration list for PBXLegacyTarget "Untitled" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC90C12510C6D7D000848E88 /* DebugDLL */,
+				AC90C12610C6D7D000848E88 /* DebugMT */,
+				AC90C12710C6D7D000848E88 /* ReleaseDLL */,
+				AC90C12810C6D7D000848E88 /* ReleaseMT */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = ReleaseDLL;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AC90C0FE10C6D5DE00848E88 /* Project object */;
+}
