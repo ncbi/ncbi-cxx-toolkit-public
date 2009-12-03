@@ -54,7 +54,10 @@ g_GetNCThreadIndex(void)
                       reinterpret_cast<size_t>(NCTlsGet(s_NCThreadIndexKey)));
     if (!index) {
         index = static_cast<TNCThreadIndex>(s_NextThreadIndex.Add(1));
-        NCTlsSet(s_NCThreadIndexKey, (void*)index);
+        // 64-bit MSVC accepts only this 2-steps conversion to void* without
+        // warning.
+        size_t dummy = static_cast<size_t>(index);
+        NCTlsSet(s_NCThreadIndexKey, static_cast<void*>(dummy));
     }
     return index;
 }

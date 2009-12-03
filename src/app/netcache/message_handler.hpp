@@ -214,10 +214,6 @@ public:
     void OnTimeout(void);
     void OnTimer(void);
     void OnOverflow(void);
-    // To avoid warning
-    void OnOverflow(EOverflowReason) {
-        OnOverflow();
-    }
 
     /// Init diagnostics Client IP and Session ID for proper logging
     void InitDiagnostics(void);
@@ -535,6 +531,10 @@ public:
     virtual void OnTimeout(void);
     virtual void OnTimer(void);
     virtual void OnOverflow(void);
+    // To avoid warning
+    virtual void OnOverflow(EOverflowReason) {
+        OnOverflow();
+    }
 
 private:
     typedef CObjPoolGuard<CNCMsgHandler_Factory::THandlerPool>  THandlerGuard;
