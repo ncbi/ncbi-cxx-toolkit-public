@@ -57,7 +57,7 @@ g_GetNCThreadIndex(void)
         // 64-bit MSVC accepts only this 2-steps conversion to void* without
         // warning.
         size_t dummy = static_cast<size_t>(index);
-        NCTlsSet(s_NCThreadIndexKey, static_cast<void*>(dummy));
+        NCTlsSet(s_NCThreadIndexKey, reinterpret_cast<void*>(dummy));
     }
     return index;
 }
