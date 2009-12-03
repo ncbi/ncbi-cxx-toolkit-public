@@ -317,11 +317,19 @@ TSignedSeqRange WalledCdsLimits(const CGeneModel& a)
     return ((a.Type() & CGeneModel::eWall)!=0) ? a.Limits() : a.MaxCdsLimits();
 }
 
+TSignedSeqRange GetWallLimits(const CGeneModel& m)
+{
+    return m.RealCdsLimits().Empty() ? m.Limits() : m.RealCdsLimits();
+}
+
 bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
 {
-    return (ap.MaxCdsLimits().GetFrom() != bp.MaxCdsLimits().GetFrom() ? 
-            ap.MaxCdsLimits().GetFrom() < bp.MaxCdsLimits().GetFrom() :
-            ap.MaxCdsLimits().GetTo() > bp.MaxCdsLimits().GetTo()
+    TSignedSeqRange a = GetWallLimits(ap);
+    TSignedSeqRange b = GetWallLimits(bp);
+
+    return (a.GetFrom() != b.GetFrom() ? 
+            a.GetFrom() < b.GetFrom() :
+            a.GetTo() > b.GetTo()
             );
 }
 
@@ -332,18 +340,18 @@ void SaveWallModel(auto_ptr<CGeneModel>& wall_model, TGeneModelList& aligns)
     }
 }
 
-void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
+void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand)
 {
-
-    models.sort(s_AlignSeqOrder);
-
-    TGeneModelList aligns;
     TSignedSeqPos right = -1;
     auto_ptr<CGeneModel> wall_model;
 
     for (TGeneModelList::iterator ir = models.begin(); ir != models.end();) {
-
-        TSignedSeqRange limits = ir->RealCdsLimits().Empty() ? ir->Limits() : ir->RealCdsLimits();
+        if (ir->Strand() != strand) {
+            ++ir;
+            continue;
+        }
+        
+        TSignedSeqRange limits = GetWallLimits(*ir);
 
         if ( right < limits.GetFrom() ) { // new cluster
             SaveWallModel(wall_model, aligns);
@@ -357,7 +365,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
                 nested_wall.SetGeneID(ir->GeneID());
                 nested_wall.AddExon(limits);
                 for (++ir; ir != models.end() && ir->GeneID() == nested_wall.GeneID(); ++ir) {
-                    TSignedSeqRange limits = ir->RealCdsLimits().Empty() ? ir->Limits() : ir->RealCdsLimits();
+                    TSignedSeqRange limits = GetWallLimits(*ir);
                     if (limits.GetTo()- nested_wall.Limits().GetTo() > 0)
                         nested_wall.ExtendRight(limits.GetTo()- nested_wall.Limits().GetTo());
                 }
@@ -383,7 +391,19 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         ir = next;
     }
     SaveWallModel(wall_model, aligns);
-    wall_model.reset();
+}
+
+void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
+{
+
+    models.sort(s_AlignSeqOrder);
+
+    TGeneModelList aligns;
+
+    FindPartials(models, aligns, ePlus);
+    FindPartials(models, aligns, eMinus);
+
+    aligns.sort(s_AlignSeqOrder);
 
     TGeneModelList::const_iterator il = aligns.begin();
     TSignedSeqPos left = 0;
