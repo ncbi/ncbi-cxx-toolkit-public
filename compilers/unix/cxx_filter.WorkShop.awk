@@ -68,7 +68,7 @@ function print_if_interesting()
 
   if (0 ||
       m ~ /Warning: ".+" is too large and will not be expanded inline\./ ||
-      m ~ /Warning: ".+" is too large to generate inline, consider writing it yourself./ ||
+      m ~ /Warning: ".+" is too large to generate inline, consider writing it yourself\./ ||
       m ~ /Warning: Could not find source for ncbi::CTreeIteratorTmpl<ncbi::C(Const)?TreeLevelIterator>::/ ||
       m ~ /Warning: Could not find source for ncbi::CTypes?IteratorBase<ncbi::CTreeIterator(Tmpl<ncbi::C(Const)?TreeLevelIterator>)?>::/ ||
       m ~ /Where: While instantiating "(__rw)?std::.*(<.*>)?::__((de)?allocate_.*|unLink)\(\)"/ ||
@@ -85,8 +85,8 @@ function print_if_interesting()
       m ~ /^".*\/include\/html\/jsmenu\.hpp", line [0-9]+: Warning: ncbi::CHTMLPopupMenu::SetAttribute hides the function ncbi::CNCBINode::SetAttribute/ ||
       m ~ /^".*\/include\/internal\/idx\/idcont.hpp", line [0-9]+: Warning: ncbi::CPmDbIdContainerUid::(Unc|C)ompress hides the virtual function ncbi::CPmDbIdContainer::/ ||
       m ~ /^".*\/include\/internal\/webenv2\/[a-z]+\.hpp", line [0-9]+: Warning: ncbi::CQ[A-Za-z]+::FromAsn hides the function/ ||
-      m ~ /^".*\/include\/sybdb\.h".*two consecutive underbars in "db__.*"\./ ||
       m ~ /^".*\/include\/serial\/objostr[a-z]+\.hpp".*hides the function ncbi::CObjectOStream::WriteClassMember/ ||
+      m ~ /^".*\/include\/sybdb\.h".*two consecutive underbars in "db__.*"\./ ||
       0)
     return;
 
