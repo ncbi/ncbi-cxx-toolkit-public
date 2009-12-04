@@ -1036,19 +1036,25 @@ CChain::CChain(const set<SChainMember*>& chain_alignments)
 
 void CChain::RestoreTrimmedEnds(int trim)
 {
-    for(int ia = 0; ia < (int)m_members.size(); ++ia)  {
-        if((m_members[ia]->Type() & eProt)==0 && (m_members[ia]->Status() & CGeneModel::eLeftTrimmed)!=0 &&
-           Exons().front().Limits().GetFrom() == m_members[ia]->Limits().GetFrom()) {
-            ExtendLeft( trim );
-            break;
+    // add back trimmed off UTRs    
+    
+    if(!OpenLeftEnd() || ReadingFrame().Empty()) {
+        for(int ia = 0; ia < (int)m_members.size(); ++ia)  {
+            if((m_members[ia]->Type() & eProt)==0 && (m_members[ia]->Status() & CGeneModel::eLeftTrimmed)!=0 &&
+               Exons().front().Limits().GetFrom() == m_members[ia]->Limits().GetFrom()) {
+                ExtendLeft( trim );
+                break;
+            }
         }
     }
      
-    for(int ia = 0; ia < (int)m_members.size(); ++ia)  {
-        if((m_members[ia]->Type() & eProt)==0 && (m_members[ia]->Status() & CGeneModel::eRightTrimmed)!=0 &&
-           Exons().back().Limits().GetTo() == m_members[ia]->Limits().GetTo()) {
-            ExtendRight( trim );
-            break;
+    if(!OpenRightEnd() || ReadingFrame().Empty()) {
+        for(int ia = 0; ia < (int)m_members.size(); ++ia)  {
+            if((m_members[ia]->Type() & eProt)==0 && (m_members[ia]->Status() & CGeneModel::eRightTrimmed)!=0 &&
+               Exons().back().Limits().GetTo() == m_members[ia]->Limits().GetTo()) {
+                ExtendRight( trim );
+                break;
+            }
         }
     }
 }
@@ -2125,8 +2131,6 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
     NON_CONST_ITERATE(list<CChain>, it, tmp_chains) {
         CChain& chain = *it;
 
-        chain.RestoreTrimmedEnds(trim);
-
         m_gnomon->GetScore(chain);
 
         chain.RestoreReasonableConfirmedStart(*m_gnomon);
@@ -2147,6 +2151,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
         if (chain.FullCds()) {
             chain.Status() |= CGeneModel::eFullSupCDS;
         }
+
+        chain.RestoreTrimmedEnds(trim);
     }
 
     TGeneModelList chains;
