@@ -69,8 +69,14 @@ function print_if_interesting()
   if (0 ||
       m ~ /Warning: ".+" is too large and will not be expanded inline\./ ||
       m ~ /Warning: ".+" is too large to generate inline, consider writing it yourself\./ ||
+      m ~ /Warning: Comparing different enum types "wx(Alignment|Direction|Stretch)" and "wx(Alignment|Direction|Stretch)"\./ ||
       m ~ /Warning: Could not find source for ncbi::CTreeIteratorTmpl<ncbi::C(Const)?TreeLevelIterator>::/ ||
       m ~ /Warning: Could not find source for ncbi::CTypes?IteratorBase<ncbi::CTreeIterator(Tmpl<ncbi::C(Const)?TreeLevelIterator>)?>::/ ||
+      m ~ /Warning: Dereferencing the result of casting from "void\(wxEvtHandler::\*\)\(wx[A-Za-z]+Event&\)" to "void\(wxEvtHandler::\*\)\(wxEvent&\)" is undefined\./ ||
+      m ~ /Warning: Empty declaration \(probably an extra semicolon\)\./ ||
+      m ~ /Warning: Identifier expected instead of "}"\./ ||
+      m ~ /Warning: The last statement should return a value./ ||
+      m ~ /Warning: extra ";" ignored\./ ||
       m ~ /Where: While instantiating "(__rw)?std::.*(<.*>)?::__((de)?allocate_.*|unLink)\(\)"/ ||
       m ~ /^".*\/include\/CC\/C?std\/.+", line [0-9]+: Warning: There are two consecutive underbars in ".+"\./ ||
       m ~ /^".*\/include\/CC\/Cstd\/.*", line [0-9]*: .*should not initialize a non-const reference with a temporary\./ ||
@@ -79,6 +85,7 @@ function print_if_interesting()
 #      m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line (165|207): .*::rdbuf hides/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line 165: .*::rdbuf hides/ ||
       m ~ /^".*\/include\/FL\/Fl_.+\.H", line [0-9]+: Warning: Fl_.+ hides the function Fl_.+/ ||
+      m ~ /^".*\/include\/corelib\/hash_impl\/.+", line [0-9]+: Warning: There are two consecutive underbars/ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: Comparing different enum types "enum" and "enum"\./ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: FX.+ hides the function FX/ ||
       m ~ /^".*\/include\/fox\/FXObject\.h".+two consecutive underbars in "__FXMETACLASSINITIALIZER__"\./ ||
@@ -87,6 +94,9 @@ function print_if_interesting()
       m ~ /^".*\/include\/internal\/webenv2\/[a-z]+\.hpp", line [0-9]+: Warning: ncbi::CQ[A-Za-z]+::FromAsn hides the function/ ||
       m ~ /^".*\/include\/serial\/objostr[a-z]+\.hpp".*hides the function ncbi::CObjectOStream::WriteClassMember/ ||
       m ~ /^".*\/include\/sybdb\.h".*two consecutive underbars in "db__.*"\./ ||
+      m ~ /^".*\/include\/wx-[0-9.]+\/wx\/.+\.h", line [0-9]+: Warning: wx.+ hides the function wx.+::/ ||
+      m ~ /^".*\/include\/wx-[0-9.]+\/wx\/.+\.h", line [0-9]+: Warning: should not initialize a non-const reference with a temporary\./ ||
+      m ~ /^".*\/include\/wx-[0-9.]+\/wx\/stream\.h", line [0-9]+: Warning: There are two consecutive underbars in "__wx(In|Out)putManip"\./ ||
       0)
     return;
 
