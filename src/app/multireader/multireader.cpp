@@ -57,6 +57,7 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp> //  for flag definitions only
 #include <objtools/readers/wiggle_reader.hpp> //  for flag definitions only
+#include <objtools/readers/gff3_reader.hpp> //  for flag definitions only
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -299,6 +300,7 @@ CMultiReaderApp::Run(void)
         break;
 
     case CFormatGuess::eBed:
+    case CFormatGuess::eGtf:
         try {
             ReadAnnots( annots );
             MapAnnots( annots );
@@ -418,8 +420,22 @@ void CMultiReaderApp::ReadAnnots(
     vector< CRef<CSeq_annot> >& annots )
 //  ============================================================================
 {
-    CBedReader reader( m_iFlags );
-    reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+    switch ( m_uFormat ) {
+   
+        default:
+            break;
+ 
+        case CFormatGuess::eBed: {
+            CBedReader reader( m_iFlags );
+            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+            break;
+        }    
+        case CFormatGuess::eGtf: {
+            CGff3Reader reader( m_iFlags );
+            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+            break;
+        }
+    }
 }
 
 //  ============================================================================

@@ -111,6 +111,35 @@ CGff3Reader::~CGff3Reader()
 }
 
 
+//  --------------------------------------------------------------------------- 
+void
+CGff3Reader::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    CNcbiIstream& istr,
+    IErrorContainer* pErrorContainer )
+//  ---------------------------------------------------------------------------
+{
+    CStreamLineReader lr( istr );
+    ReadSeqAnnots( annots, lr, pErrorContainer );
+}
+ 
+//  ---------------------------------------------------------------------------                       
+void
+CGff3Reader::ReadSeqAnnots(
+    vector< CRef<CSeq_annot> >& annots,
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_entry > entry = ReadSeqEntry( lr, pErrorContainer );
+//    const CSeq_entry::TAnnot& list_annots = entry->GetAnnot();
+//    annots.assign( list_annots.begin(), list_annots.end() );
+    CTypeIterator<CSeq_annot> annot_iter( *entry );
+    for ( ;  annot_iter;  ++annot_iter) {
+        annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
+    }
+}
+
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_entry >
 CGff3Reader::ReadSeqEntry(
