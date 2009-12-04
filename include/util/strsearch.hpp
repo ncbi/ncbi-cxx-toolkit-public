@@ -350,7 +350,7 @@ void CTextFsm<MatchType>::AddWord(const string& word, const MatchType& match)
     
     // try to overlay beginning of word onto existing table 
     for ( i = 0;  i < word_len;  ++i ) {
-        next = m_States[state].GetNextState(word[i]);
+        next = m_States[state].GetNextState(temp[i]);
         if ( next == eFailState ) break;
         state = next;
     }
