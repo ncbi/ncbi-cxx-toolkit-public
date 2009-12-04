@@ -345,7 +345,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
 
 void CBlastDBCmdApp::Init()
 {
-    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
+    HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
