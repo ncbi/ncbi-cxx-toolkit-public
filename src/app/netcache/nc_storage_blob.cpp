@@ -60,7 +60,7 @@ CNCBlob::x_FlushCurChunk(void)
         return;
     }
 
-    TNCChunkId chunk_id = m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
+    m_Storage->CreateNewChunk(*m_BlobInfo, m_Buffer);
     m_Buffer.resize(0);
 }
 
