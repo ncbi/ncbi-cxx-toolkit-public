@@ -12,7 +12,8 @@ clean :
 	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} clean
 
 check :
-	cd ..; ./check.sh run; ./check.sh concat_err; ./check.sh load_to_db
+	@cd .. && ./check.sh run;
+	@if test -n "${NCBI_AUTOMATED_BUILD}"; then cd .. && ./check.sh concat_err && ./check.sh load_to_db; fi
 
 all_r : all
 all_p : all
