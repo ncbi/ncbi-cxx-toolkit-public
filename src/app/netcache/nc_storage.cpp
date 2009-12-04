@@ -790,6 +790,7 @@ CNCBlobStorage::x_CreateBlobInCache(const SNCBlobIdentity& identity,
         CFastWriteGuard guard(m_IdsCacheLock);
         _VERIFY(m_IdsCache.insert(cache_ident).second);
     }}
+    m_CntBlobs.Add(1);
     return true;
 }
 
@@ -853,6 +854,7 @@ CNCBlobStorage::x_DeleteBlobFromCache(const SNCBlobCoords& coords)
         m_KeysCache.erase(cache_ident);
     }}
     delete cache_ident;
+    m_CntBlobs.Add(-1);
 }
 
 inline void
@@ -1171,6 +1173,7 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
                     << m_Name << "' at " << m_Path << ":" << endl
           << endl
           << "Currently in database - "
+                    << m_CntBlobs.Get() << " blobs, "
                     << m_DBParts.size() << " parts with "
                     << m_CurDBSize << " bytes (diff for ids "
                     << m_DBParts.back()->part_id
@@ -1311,6 +1314,7 @@ CNCBlobStorage::x_GC_CollectPartsStatistics(void)
     // any mutexes.
     GetStat()->AddNumberOfDBParts(m_DBParts.size(),
                       m_DBParts.back()->part_id - m_DBParts.front()->part_id);
+    GetStat()->AddNumberOfBlobs(m_CntBlobs.Get());
 
     Int8 total_meta = 0, total_data = 0;
     // With ITERATE code should look more ugly to be

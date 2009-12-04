@@ -57,6 +57,8 @@ struct SNCDBStatData
     /// Main locking mutex for object
     CSpinLock                       m_ObjLock;
 
+    /// Number of blobs in the database
+    CNCStatFigure<TNCBIAtomicValue> m_NumOfBlobs;
     /// Number of database parts
     CNCStatFigure<Uint8>            m_NumOfDBParts;
     /// Difference between the highest and lowest database part ids
@@ -143,6 +145,8 @@ public:
     CNCDBStat(void);
     ~CNCDBStat(void);
 
+    /// Add measurement for number of blobs in the database
+    void AddNumberOfBlobs    (TNCBIAtomicValue num_blobs);
     /// Add measurement for number of database parts and difference between
     /// highest and lowest ids of database parts.
     void AddNumberOfDBParts  (size_t num_parts, Int8 ids_span);
@@ -250,6 +254,15 @@ private:
 
 
 
+
+inline void
+CNCDBStat::AddNumberOfBlobs(TNCBIAtomicValue num_blobs)
+{
+    SNCDBStatData* data = GetObjPtr();
+    data->m_ObjLock.Lock();
+    data->m_NumOfBlobs.AddValue(num_blobs);
+    data->m_ObjLock.Unlock();
+}
 
 inline void
 CNCDBStat::AddNumberOfDBParts(size_t num_parts, Int8 ids_span)

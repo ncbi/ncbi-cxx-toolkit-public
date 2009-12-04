@@ -64,6 +64,7 @@ SNCDBStatData::SNCDBStatData(void)
       m_CreateExists(0),
       m_ExistChecks(0)
 {
+    m_NumOfBlobs      .Initialize();
     m_NumOfDBParts    .Initialize();
     m_DBPartsIdsSpan  .Initialize();
     m_MetaPartSize    .Initialize();
@@ -98,6 +99,7 @@ SNCDBStatData::CollectTo(SNCDBStatData* dest)
 {
     CSpinGuard guard(m_ObjLock);
 
+    dest->m_NumOfBlobs      .AddValues(m_NumOfBlobs);
     dest->m_NumOfDBParts    .AddValues(m_NumOfDBParts);
     dest->m_DBPartsIdsSpan  .AddValues(m_DBPartsIdsSpan);
     dest->m_MetaPartSize    .AddValues(m_MetaPartSize);
@@ -198,6 +200,9 @@ CNCDBStat::Print(CPrintTextProxy& proxy)
                         << data.m_MetaFileSize.GetAverage() << " avg meta, "
                         << data.m_DataFileSize.GetMaximum() << " max data, "
                         << data.m_MetaFileSize.GetMaximum() << " max meta" << endl
+          << "DB blobs - "
+                        << data.m_NumOfBlobs.GetAverage() << " avg, "
+                        << data.m_NumOfBlobs.GetMaximum() << " max;   "
           << "DB parts - "
                         << data.m_NumOfDBParts.GetAverage()   << " avg, "
                         << data.m_NumOfDBParts.GetMaximum()   << " max, "

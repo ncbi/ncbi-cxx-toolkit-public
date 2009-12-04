@@ -594,6 +594,8 @@ private:
     /// Internal cache of blobs identification information sorted to be able
     /// to search by blob id.
     TIdKeyMap                m_IdsCache;
+    /// Number of live blobs currently in the storage
+    CAtomicCounter           m_CntBlobs;
     /// Index database file
     AutoPtr<CNCDBIndexFile>  m_IndexDB;
     /// Read-write lock to work with m_DBParts
