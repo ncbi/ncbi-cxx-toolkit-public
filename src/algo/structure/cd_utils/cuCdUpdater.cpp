@@ -60,7 +60,7 @@
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
-#include <objects/seq/seqlocinfo.hpp>
+//#include <objects/seq/seqlocinfo.hpp>
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
@@ -343,17 +343,28 @@ int CDUpdater::submitBlast(bool wait, int row)
 	}
 	catch (blast::CBlastException& be) {
 		blasted = false;
-		m_lastError = be.GetErrCodeString();
+		m_lastError = "Blast exception in submitBlast for row " + NStr::IntToString(row) + ":\n";
+        m_lastError += be.ReportAll();
 	}
+	catch (CException& e) {
+		blasted = false;
+		m_lastError = "NCBI C++ Toolkit exception in submitBlast for row " + NStr::IntToString(row) + ":\n";
+        m_lastError += e.ReportAll();
+	}
+    catch (...) {
+        blasted = false;
+		m_lastError = "Unknown exception in submitBlast for row " + NStr::IntToString(row) + "\n";
+    }
 		
 	if (blasted)
 	{
-		LOG_POST("RID of Blast for updating "<<m_cd->GetAccession()<<" is "<<getRid());
+		LOG_POST("RID of Blast for the update of " << m_cd->GetAccession() << " is " << getRid());
 	}
 	else
 	{
-		LOG_POST("Blast for updating "<<m_cd->GetAccession()<<" failed because of error "<<getLastError());
+		LOG_POST("Update of " << m_cd->GetAccession() << " failed due to error\n" << getLastError());
 	}
+
     return(blasted ? 1 : 0);
 }
 
@@ -382,7 +393,7 @@ bool CDUpdater::processBlastHits()
 	}
 	else
 	{
-		LOG_POST("Got no alignment for BLAST hits. will try again to retrieve the hits.\n");
+		LOG_POST("Found no BLAST hits to process for CD " << m_cd->GetAccession() << ". Will try again to retrieve the hits.\n");
 	}
 	//write update date and stats to scrapbook
 	/*
@@ -469,8 +480,12 @@ bool CDUpdater::blast(bool wait, int row)
 		CRef<objects::CBioseq_set> bioseqs(new CBioseq_set);
 		list< CRef< CSeq_entry > >& seqList = bioseqs->SetSeq_set();
 		CRef< CSeq_entry > seqOld;
-		if (!m_cd->GetSeqEntryForRow(row, seqOld))
+
+		if (!m_cd->GetSeqEntryForRow(row, seqOld)) {
+            delete rblast;
 			return false;
+        }
+
 		seqList.push_back(seqOld);
 		CRef< CSeq_id > seqId = seqOld->SetSeq().SetId().front();
 		TMaskedQueryRegions masks;
@@ -534,69 +549,79 @@ bool CDUpdater::blast(bool wait, int row)
 		CConstRef<CBioseq> bioseqCref (&(pssm->GetPssm().GetQuery().GetSeq()));
 		queryFactory = new CObjMgrFree_QueryFactory(bioseqCref);
 	}
+
+
+    //  Submit and, if requested, wait for blast results.
+    //  Trap any exceptions and return 'false' in all such cases.
 	bool blasted = false;
 	try {
-		if (wait)
-		{
+		if (wait) {
 			blasted = rblast-> SubmitSync();
 			m_rid = rblast->GetRID();
 			//LOG_POST("RID="<<m_rid);
 			getBlastHits();
 		}
+
 		blasted = rblast->Submit();
-	} catch (CRemoteBlastException e) {
-		const char* err = e.GetErrCodeString();
-		LOG_POST("Blast err="<<err);
-		return false;
+
+        if (!blasted) {
+            m_lastError = rblast->GetErrors();
+        }
+
+	} catch (CRemoteBlastException& e) {
+		m_lastError = "RemoteBlast exception in CDUpdater::blast() for row " + NStr::IntToString(row) + ":\n";
+        m_lastError += e.ReportAll();
+//		string err = e.GetErrCodeString();
+//		LOG_POST("RemoteBlast exception in CDUpdater::blast() for row " << NStr::IntToString(row) << ":  error code = " << err);
 	}
-	if (!blasted)
-	{
-		m_lastError = rblast->GetErrors();
-		return false;
+	catch (CException& e) {
+		m_lastError = "NCBI C++ Toolkit exception in CDUpdater::blast() for row " + NStr::IntToString(row) + ":\n";
+        m_lastError += e.ReportAll();
 	}
+    catch (...) {
+		m_lastError = "Unknown exception in CDUpdater::blast() for row " + NStr::IntToString(row) + "\n";
+    }
+
 	m_rid = rblast->GetRID();
 	delete rblast;
-	return true;
+	return blasted;
 }
 
 bool CDUpdater::getHits(CRef<CSeq_align_set> & hits)
 {
+    bool done = false;
 	blast::CRemoteBlast rblast(getRid());
 	try {
 		//LOG_POST("Calling RemoteBlast::CheckDone().\n");
-		bool done = rblast.CheckDone();
+		done = rblast.CheckDone();
 		//LOG_POST("Returned from RemoteBlast::CheckDone().\n");
 		if (done)
 		{
 			hits = rblast.GetAlignments();
-			return true;
 		}
 	} catch (...) {
-		LOG_POST("Failed to check BLAST results");
-		return false;
+		LOG_POST("Exception while getting BLAST hits of CD " << m_cd->GetAccession() << " for RID " << getRid());
 	}
-	return false;
+	return done;
 }
 
 bool CDUpdater::checkDone()
 {
+    bool done = false;
 	blast::CRemoteBlast rblast(getRid());
 	try {
 		//LOG_POST("Calling RemoteBlast::CheckDone().\n");
-		bool done = rblast.CheckDone();
+		done = rblast.CheckDone();
 		//LOG_POST("Returned from RemoteBlast::CheckDone().\n");
-		if (done)
-		{
+
 			//CCdCore::UpdateInfo ui = m_cd->GetUpdateInfo();
 			//ui.status = CCdCore::BLAST_DONE;
 			//m_cd->SetUpdateInfo(ui);
-			return true;
-		}
+
 	} catch (...) {
-		LOG_POST("Failed to check BLAST results.\n");
-		return false;
+		LOG_POST("Exception during CheckDone for CD " << m_cd->GetAccession() << ", RID " << getRid());
 	}
-	return false;
+	return done;
 }
 
 bool CDUpdater::checkBlastAndUpdate()
@@ -615,7 +640,7 @@ bool CDUpdater::checkBlastAndUpdate()
 		}
 		else
 		{
-			LOG_POST("Got no alignment for BLAST hits. will try again to retrieve the hits.\n");
+			LOG_POST("Got no alignment for BLAST hits for CD " << m_cd->GetAccession() << ". will try again to retrieve the hits.\n");
 			return true; 
 		}
 		return true;
@@ -670,8 +695,9 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	list< CRef< CSeq_align > >& seqAligns = alignments.Set();
 	m_stats.numBlastHits = seqAligns.size();
 	vector< CRef< CBioseq > > bioseqs;
-	LOG_POST("Got "<<m_stats.numBlastHits<<" blast hits.");
+	LOG_POST("Got "<<m_stats.numBlastHits<<" blast hits for CD " << cd->GetAccession() << ".");
 	retrieveAllSequences(alignments, bioseqs);
+
 	SequenceTable seqTable;
 	CDRefresher* refresher = 0;
 	if (m_config.replaceOldAcc)
@@ -707,7 +733,10 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
         querySeqID = (*it)->SetSegs().SetDenseg().GetIds()[0];
         if (!cd->CopyBioseqForSeqId(querySeqID, queryBioseq)) {
             queryBioseq.Reset();
-            LOG_POST("No bioseq found in CD for update query.");
+
+            //  This message isn't relevant when the query is a PSSM.
+            if (m_config.blastType == eBLAST)
+                LOG_POST("No bioseq found in CD " << cd->GetAccession() << " for update query.");
         } else {
             queryString = GetRawSequenceString(*queryBioseq);
         }
@@ -1274,9 +1303,9 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 			string errors, warnings;
 			vector< CRef< CBioseq > > bioseqBatch;
 			try {
-				LOG_POST("Calling CBlastServices::GetSequences().\n");
+				//LOG_POST("Calling CBlastServices::GetSequences().\n");
 				CBlastServices::GetSequences(seqids, "nr", 'p', bioseqBatch, errors,warnings);
-				LOG_POST("Returned from CBlastServices::GetSequences(). " << bioseqBatch.size() << "\n");
+				LOG_POST("Returned from CBlastServices::GetSequences() with a batch of " << bioseqBatch.size() << " sequences.");
 			}
 			catch (blast::CBlastException& be)
             {
@@ -1296,7 +1325,7 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 
 			if (seqids.size()!= bioseqBatch.size())
 			{
-				LOG_POST("Ask for "<< seqids.size()<<" sequences.  Got "<<bioseqs.size()<<" back\n");
+				LOG_POST("Ask for "<< seqids.size()<<" sequences.  Got "<<bioseqBatch.size()<<" back\n");
 				LOG_POST("Error="<<errors<<"\nWarnings="<<warnings);
 			}
 			seqids.clear();
@@ -1476,7 +1505,7 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 		pdb += "[ACCN]";
 		try {
 			client.Query(pdb, "structure", uids);
-		} catch (CException e)
+		} catch (CException& e)
 		{
 			LOG_POST("\nFailed to retrieve mmdb-id for "<<pdb<<" because the error:\n "<<e.ReportAll());
 			return false;
@@ -1651,10 +1680,11 @@ void CDUpdater::reformatBioseqByBlastDefline(CRef<CBioseq> bioseq, CRef< CBlast_
 				if (sourceOrder == order)
 					cit++; //keep
 				else
-				{
 					cit = descrList.erase(cit);
-					sourceOrder++;
-				}
+
+                //  Do this for both cases; if sourceOrder == order must increment
+                //  otherwise will keep all sources *after* order.
+                sourceOrder++;
 			}
 			else if ( (*cit)->IsTitle())
 				cit = descrList.erase(cit);
@@ -1669,7 +1699,7 @@ void CDUpdater::reformatBioseqByBlastDefline(CRef<CBioseq> bioseq, CRef< CBlast_
 	bioseq->SetId().assign(blastDefline->GetSeqid().begin(), blastDefline->GetSeqid().end());
 }
 
-//  IMPORTANT:  This code is being forked from src/objtools/blast_format/blastfmtutil.cpp.
+//  IMPORTANT:  This code is being forked from src/objtools/align_format/align_format_util.cpp.
 //  Check for changes in original source if this forked version misbehaves in the future.
 /// Efficiently decode a Blast-def-line-set from binary ASN.1.
 /// @param oss Octet string sequence of binary ASN.1 data.
@@ -1711,7 +1741,7 @@ void CDUpdater::OssToDefline(const CUser_field::TData::TOss & oss, CBlast_def_li
 
 
 
-//  IMPORTANT:  This code is being forked from src/objtools/blast_format/blastfmtutil.cpp.
+//  IMPORTANT:  This code is being forked from src/objtools/align_format/align_format_util.cpp.
 //  That method uses the object manager, however, so we're not calling the function directly.
 //  Check for changes in original source if this forked version misbehaves in the future.
 CRef<CBlast_def_line_set>  CDUpdater::GetBlastDefline (const CBioseq& bioseq)

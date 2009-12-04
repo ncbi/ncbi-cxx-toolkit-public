@@ -133,8 +133,10 @@ public:
 	void getCds(vector<CCdCore*>&);
 	bool hasCd(CCdCore*);
 
-	//blast
+    // submit a remote blast query
+    // if failed or any exception was encountered, returns false (call getLastError to see message)
 	bool blast(bool wait = false, int row = 0);
+
 	const string getRid() {return m_rid;}
 	const string getLastError() {return m_lastError;}
 	bool getHits(CRef<CSeq_align_set> & hits);
