@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Anatoliy Kuznetsov
+ * Authors: Anatoliy Kuznetsov, Aaron Ucko, Colleen Bollin
  *
  * File Description: Test application for string search
  *
@@ -31,90 +31,75 @@
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbitime.hpp>
-#include <stdio.h>
+#include <corelib/test_boost.hpp>
 
 #include <util/strsearch.hpp>
-
-#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
 
-
-////////////////////////////////
-// Test functions, classes, etc.
-//
-
-
-
-static
-void s_TEST_BoyerMooreMatcher(void)
+BOOST_AUTO_TEST_CASE(Test_BoyerMooreMatcher)
 {
-    LOG_POST("String search test (Boyer-Moore).");
-
     const char* str = "123 567 BB";
     size_t len = strlen(str);
     {{    
         CBoyerMooreMatcher matcher("BB");
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 8);
+        BOOST_CHECK_EQUAL(pos, 8U);
     }}
     {{    
         CBoyerMooreMatcher matcher("BB", NStr::eNocase, 
                                    CBoyerMooreMatcher::eWholeWordMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 8);
+        BOOST_CHECK_EQUAL(pos, 8U);
     }}
     {{
         CBoyerMooreMatcher matcher("123", NStr::eNocase, 
                                    CBoyerMooreMatcher::eWholeWordMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 0);
+        BOOST_CHECK_EQUAL(pos, 0U);
     }}
     {{
         CBoyerMooreMatcher matcher("1234", NStr::eNocase, 
                                    CBoyerMooreMatcher::eWholeWordMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert((int)pos == -1l);
+        BOOST_CHECK_EQUAL(static_cast<int>(pos), -1);
     }}
     {{
         CBoyerMooreMatcher matcher("bb", NStr::eCase, 
                                    CBoyerMooreMatcher::eWholeWordMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert((int)pos == -1l);
+        BOOST_CHECK_EQUAL(static_cast<int>(pos), -1);
     }}
     {{    
         CBoyerMooreMatcher matcher("67", NStr::eNocase, 
                                    CBoyerMooreMatcher::eWholeWordMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert((int)pos == -1l);
+        BOOST_CHECK_EQUAL(static_cast<int>(pos), -1);
     }}
     {{
         CBoyerMooreMatcher matcher("67", NStr::eNocase, 
                                    CBoyerMooreMatcher::eSubstrMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 5);
+        BOOST_CHECK_EQUAL(pos, 5U);
     }}
     {{
         CBoyerMooreMatcher matcher("67", NStr::eNocase, 
                                    CBoyerMooreMatcher::eSuffixMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 5);
+        BOOST_CHECK_EQUAL(pos, 5U);
     }}
     {{
         CBoyerMooreMatcher matcher("56", NStr::eNocase, 
                                    CBoyerMooreMatcher::ePrefixMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 4);
+        BOOST_CHECK_EQUAL(pos, 4U);
     }}
     {{
         CBoyerMooreMatcher matcher("123", NStr::eNocase, 
                                    CBoyerMooreMatcher::ePrefixMatch);
         size_t pos = matcher.Search(str, 0, len);
-        assert(pos == 0);
+        BOOST_CHECK_EQUAL(pos, 0U);
     }}
     {{
         CBoyerMooreMatcher matcher("drosophila", NStr::eNocase, 
@@ -125,53 +110,13 @@ void s_TEST_BoyerMooreMatcher(void)
 
         size_t len1 = strlen(str1);
         size_t pos  = matcher.Search(str1, 0, len1);
-        assert(pos != (SIZE_TYPE)-1);
+        BOOST_CHECK(pos != static_cast<size_t>(-1));
     }}
-
-    LOG_POST("String search test (Boyer-Moore) ok.");
 }
 
 
-
-////////////////////////////////
-// Test application
-//
-
-class CStrSearchTest : public CNcbiApplication
+NCBITEST_AUTO_INIT()
 {
-public:
-    void Init(void);
-    int Run(void);
-};
-
-
-void CStrSearchTest::Init(void)
-{
-    SetDiagPostLevel(eDiag_Warning);
-    SetDiagPostFlag(eDPF_File);
-    SetDiagPostFlag(eDPF_Line);
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("test_bdb", "test BDB library");
-    SetupArgDescriptions(d.release());
-}
-
-
-int CStrSearchTest::Run(void)
-{
-    s_TEST_BoyerMooreMatcher();
-
-    LOG_POST("\nTEST execution completed successfully!");
-
-    return 0;
-}
-
-
-///////////////////////////////////
-// APPLICATION OBJECT  and  MAIN
-//
-
-int main(int argc, const char* argv[])
-{
-    // Execute main application function
-    return CStrSearchTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    boost::unit_test::framework::master_test_suite().p_name->assign
+        ("String search test");
 }

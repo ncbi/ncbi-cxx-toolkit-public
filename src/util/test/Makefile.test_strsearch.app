@@ -6,7 +6,9 @@
 #################################
 APP = test_strsearch
 SRC = test_strsearch
-LIB = xutil xncbi
+LIB = xutil test_boost xncbi
+
+CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
 CHECK_CMD = test_strsearch
 
