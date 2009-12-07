@@ -63,11 +63,10 @@ public:
 
     void AddModel(const CAlignModel& model);
     CRef<objects::CSeq_entry> GetASN1() const;
-    static string ExtractModels(
-                                const objects::CSeq_entry& seq_entry,
+    static string ExtractModels(objects::CSeq_entry& seq_entry,
                                 TAlignModelList& model_list,
                                 TAlignModelList& evidence_models,
-                                list<CConstRef<objects::CSeq_align> >& evidence_alignments);
+                                list<CRef<objects::CSeq_align> >& evidence_alignments);
 private:
     class CImplementationData;
     auto_ptr<CImplementationData> m_data;

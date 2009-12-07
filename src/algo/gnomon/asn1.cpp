@@ -1294,18 +1294,18 @@ bool IsGnomonConstructed(const CSeq_align& seq_align)
 }
 
 void ExtractSupportModels(int model_id,
-                          TAlignModelList& evidence_models, list<CConstRef<CSeq_align> >& evidence_alignments,
-                          CSeq_entry_Handle seq_entry_handle, const map<string, CSeq_annot_Handle>& seq_annot_map,
+                          TAlignModelList& evidence_models, list<CRef<CSeq_align> >& evidence_alignments,
+                          CSeq_entry_Handle seq_entry_handle, map<string, CRef<CSeq_annot> >& seq_annot_map,
                           set<int>& processed_ids)
 {
-    SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
-    map<string, CSeq_annot_Handle>::const_iterator annot = seq_annot_map.find("Evidence for "+CIdHandler::ToString(*CIdHandler::GnomonMRNA(model_id)));
+    map<string, CRef<CSeq_annot> >::iterator annot = seq_annot_map.find("Evidence for "+CIdHandler::ToString(*CIdHandler::GnomonMRNA(model_id)));
     if (annot == seq_annot_map.end())
         return;
-    CAlign_CI align_ci(annot->second, sel);
 
-    for (; align_ci; ++align_ci) {
-        const CSeq_align& seq_align = align_ci.GetOriginalSeq_align();
+    CSeq_annot::TData::TAlign aligns = annot->second->SetData().SetAlign();
+
+    NON_CONST_ITERATE (CSeq_annot::TData::TAlign, align_ci, aligns) {
+        CSeq_align& seq_align = **align_ci;
         int id = seq_align.GetId().back()->GetId();
 
         if (!processed_ids.insert(id).second) // already there
@@ -1324,38 +1324,41 @@ void ExtractSupportModels(int model_id,
         if (IsGnomonConstructed(seq_align))
             continue;
 
-        CConstRef<CSeq_align> align_ref(&seq_align);
+        CRef<CSeq_align> align_ref(&seq_align);
         evidence_alignments.push_back(align_ref);
     }
 }
 
-string CAnnotationASN1::ExtractModels(const objects::CSeq_entry& seq_entry,
+string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
                                       TAlignModelList& model_list,
                                       TAlignModelList& evidence_models,
-                                      list<CConstRef<CSeq_align> >& evidence_alignments)
+                                      list<CRef<CSeq_align> >& evidence_alignments)
 {
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle seq_entry_handle = scope.AddTopLevelSeqEntry(seq_entry);
 
-    map<string, CSeq_annot_Handle> seq_annot_map;
+    map<string, CRef<CSeq_annot> > seq_annot_map;
 
-    CSeq_annot_CI annot_ci(seq_entry_handle, CSeq_annot_CI::eSearch_entry);
-    for (; annot_ci; ++annot_ci) {
-        if (annot_ci->IsNamed())
-           seq_annot_map[annot_ci->GetName()] = *annot_ci;
+    ITERATE(CBioseq_set::TAnnot, annot, seq_entry.SetSet().SetAnnot()) {
+        CAnnot_descr::Tdata::const_iterator iter = (*annot)->GetDesc().Get().begin();
+        for ( ;  iter != (*annot)->GetDesc().Get().end();  ) {
+            if ((*iter)->IsName() ) {
+                seq_annot_map[(*iter)->GetName()] = *annot;
+            }
+        }
     }
 
-    CSeq_annot_Handle feature_table = seq_annot_map["Gnomon models"];
-    _ASSERT( feature_table );
-    _ASSERT( feature_table.IsFtable() );
+    CRef<CSeq_annot> feature_table = seq_annot_map["Gnomon models"];
+    _ASSERT( feature_table.NotEmpty() );
+    _ASSERT( feature_table->IsFtable() );
 
-    CSeq_annot_Handle internal_feature_table = seq_annot_map["Gnomon internal attributes"];
-    _ASSERT( internal_feature_table );
-    _ASSERT( internal_feature_table.IsFtable() );
+    CRef<CSeq_annot> internal_feature_table = seq_annot_map["Gnomon internal attributes"];
+    _ASSERT( internal_feature_table.NotEmpty() );
+    _ASSERT( internal_feature_table->IsFtable() );
 
     SAnnotSelector sel;
     sel.SetFeatType(CSeqFeatData::e_Rna);
-    CFeat_CI feat_ci(feature_table, sel);
+    CFeat_CI feat_ci(scope.GetSeq_annotHandle(*feature_table), sel);
 
     string contig;
     if (feat_ci) {
@@ -1370,7 +1373,7 @@ string CAnnotationASN1::ExtractModels(const objects::CSeq_entry& seq_entry,
         ExtractSupportModels(model->ID(), evidence_models, evidence_alignments, seq_entry_handle, seq_annot_map, processed_ids);
     }
 
-    CFeat_CI internal_feat_ci(internal_feature_table);
+    CFeat_CI internal_feat_ci(scope.GetSeq_annotHandle(*internal_feature_table));
     for (; internal_feat_ci; ++internal_feat_ci) {
         int id = internal_feat_ci->GetOriginalFeature().GetIds().front()->GetLocal().GetId();
         if (processed_ids.find(id) != processed_ids.end()) // already there
