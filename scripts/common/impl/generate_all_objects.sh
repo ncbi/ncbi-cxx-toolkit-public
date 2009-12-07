@@ -4,6 +4,9 @@
 # Generate classes for all public ASN.1/XML specs and selected
 # internal ones (if present).
 
+LC_ALL=C
+export LC_ALL
+
 new_module=$NCBI/c++.metastable/Release/build/new_module.sh
 force=false
 
@@ -70,7 +73,7 @@ done
 splitdb_dir=src/internal/blast/SplitDB/asn
 if [ -f $splitdb_dir/Makefile.asntool ]; then
     top_srcdir=`pwd`
-    builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.??*/build | head -1`
+    builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.[A-Z]??*/build | head -1`
     [ -d "$builddir" ] || builddir=$NCBI/c++.metastable/Release/build
     make_asntool="${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir"
     if $force || [ ! -f ${splitdb_dir}gendefs/objGendefs.c ]; then
