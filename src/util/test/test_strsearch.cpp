@@ -115,6 +115,42 @@ BOOST_AUTO_TEST_CASE(Test_BoyerMooreMatcher)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_CTextFsa)
+{
+    static const char* const s_SourceQualPrefixes[] = {
+        "acronym:",
+        "anamorph:",
+        "variety:"
+    };
+
+    CTextFsa tag_list;
+
+    size_t size = sizeof(s_SourceQualPrefixes) / sizeof(const char*);
+
+    for (size_t i = 0; i < size; ++i ) {
+        tag_list.AddWord(s_SourceQualPrefixes[i]);
+    }
+
+    tag_list.Prime();
+
+    string str = s_SourceQualPrefixes[0];
+
+    int state = tag_list.GetInitialState();
+    bool found = false;
+
+    ITERATE(string, str_itr, str) {
+        const char ch = *str_itr;
+        state = tag_list.GetNextState(state, ch);
+        if (tag_list.IsMatchFound(state)) {
+            // match was found
+            found = true;
+            break;
+        }
+    }
+    BOOST_CHECK(found);
+}
+
+
 NCBITEST_AUTO_INIT()
 {
     boost::unit_test::framework::master_test_suite().p_name->assign
