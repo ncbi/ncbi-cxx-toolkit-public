@@ -379,10 +379,17 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
             return (*it).ExecWithRetry(cmd);
         }
         catch (CNetSrvConnException& ex) {
-            if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
-                ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
+            switch (ex.GetErrCode()) {
+            case CNetSrvConnException::eConnectionFailure:
+                ERR_POST_X(2, ex.what());
+                /* FALL THROUGH */
+
+            case CNetSrvConnException::eServerThrottle:
+                break;
+
+            default:
                 throw;
-            ERR_POST_X(2, ex.what());
+            }
         }
     }
 
