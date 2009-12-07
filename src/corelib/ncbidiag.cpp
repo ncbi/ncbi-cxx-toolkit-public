@@ -2308,6 +2308,12 @@ int CDiagContext::GetProcessPostNumber(EPostNumberIncrement inc)
 }
 
 
+bool CDiagContext::IsUsingRootLog(void)
+{
+    return GetLogFile().substr(0, 5) == "/log/";
+}
+
+
 CDiagContext& GetDiagContext(void)
 {
     // Make the context live longer than other diag safe-statics

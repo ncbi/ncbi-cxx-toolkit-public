@@ -2041,6 +2041,9 @@ public:
     /// the real log name is known.
     static void SetUseRootLog(void);
 
+    /// Check if the current diagnostics destination is /log/*
+    static bool IsUsingRootLog(void);
+
     /// Application-wide diagnostics setup. Attempts to create log files
     /// or diag streams according to the 'ds' flag. If 'config' is set,
     /// gets name of the log file from the registry.
