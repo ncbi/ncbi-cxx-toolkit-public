@@ -711,10 +711,11 @@ TGeneModelList CGeneSelector::SelectCompleteModels(TGeneModelList& chains,
             models.push_back(*ita);
             CGeneModel& align = models.back();
             
+            if (itl->Nested()) {
+                align.SetType(align.Type() | CGeneModel::eNested);
+            }
             align.SetGeneID(geneid);
             align.SetRankInGene(++rank);
-            if (align.FullCds())
-                align.Status() |= CGeneModel::eFullSupCDS;
         }
         ++geneid;
     }

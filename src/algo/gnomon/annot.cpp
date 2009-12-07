@@ -333,64 +333,71 @@ bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
             );
 }
 
-void SaveWallModel(auto_ptr<CGeneModel>& wall_model, TGeneModelList& aligns)
+typedef map<int,CGeneModel> TNestedGenes;
+
+void SaveWallModel(auto_ptr<CGeneModel>& wall_model, TNestedGenes& nested_genes, TGeneModelList& aligns)
 {
     if (wall_model.get() != 0 && wall_model->Type() == CGeneModel::eWall+CGeneModel::eGnomon) {
         aligns.push_back(*wall_model);
     }
+    ITERATE(TNestedGenes, nested, nested_genes) {
+        aligns.push_back(nested->second);
+    }
+    nested_genes.clear();
 }
 
 void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand)
 {
     TSignedSeqPos right = -1;
     auto_ptr<CGeneModel> wall_model;
+    TNestedGenes nested_genes;
 
-    for (TGeneModelList::iterator ir = models.begin(); ir != models.end();) {
+    for (TGeneModelList::iterator loop_it = models.begin(); loop_it != models.end();) {
+        TGeneModelList::iterator ir = loop_it;
+        ++loop_it;
+
         if (ir->Strand() != strand) {
-            ++ir;
             continue;
         }
         
         TSignedSeqRange limits = GetWallLimits(*ir);
 
         if ( right < limits.GetFrom() ) { // new cluster
-            SaveWallModel(wall_model, aligns);
+            SaveWallModel(wall_model, nested_genes, aligns);
+        }
 
+        if ((ir->Type() & CGeneModel::eNested) !=0) {
+            ir->SetType( ir->Type() - CGeneModel::eNested );
+            TNestedGenes::iterator nested_wall = nested_genes.find(ir->GeneID());
+            if (nested_wall == nested_genes.end()) {
+                CGeneModel new_nested_wall(ir->Strand(),ir->ID(),CGeneModel::eNested+CGeneModel::eGnomon);
+                new_nested_wall.SetGeneID(ir->GeneID());
+                new_nested_wall.AddExon(limits);
+                nested_genes[ir->GeneID()] = new_nested_wall;
+            } else if (limits.GetTo() - nested_wall->second.Limits().GetTo() > 0) {
+                    nested_wall->second.ExtendRight(limits.GetTo()- nested_wall->second.Limits().GetTo());
+            }
+            continue;
+        }
+
+        if ( right < limits.GetFrom() ) { // new cluster
             wall_model.reset( new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eWall+CGeneModel::eGnomon));
             wall_model->SetGeneID(ir->GeneID());
             wall_model->AddExon(limits);
         } else { // same cluster
-            if (wall_model.get() == 0 || wall_model->GeneID()!=ir->GeneID()) {
-                CGeneModel nested_wall(ir->Strand(),ir->ID(),CGeneModel::eNested+CGeneModel::eGnomon);
-                nested_wall.SetGeneID(ir->GeneID());
-                nested_wall.AddExon(limits);
-                for (++ir; ir != models.end() && ir->GeneID() == nested_wall.GeneID(); ++ir) {
-                    TSignedSeqRange limits = GetWallLimits(*ir);
-                    if (limits.GetTo()- nested_wall.Limits().GetTo() > 0)
-                        nested_wall.ExtendRight(limits.GetTo()- nested_wall.Limits().GetTo());
-                }
-                aligns.push_back(nested_wall);
-                continue;
-            }
+            _ASSERT( wall_model.get() != 0 && wall_model->GeneID()==ir->GeneID() );
         }
         
         right = max(right, limits.GetTo());
-        TGeneModelList::iterator next = ir; ++next;
         if (ir->RankInGene() == 1 && !ir->GoodEnoughToBeAnnotation()) {
             ir->Status() &= ~CGeneModel::eFullSupCDS;
             aligns.splice(aligns.end(), models, ir);
-            if (wall_model.get() != 0) {
-                _ASSERT(wall_model->GeneID()==ir->GeneID());
-                _ASSERT(wall_model->Type() == CGeneModel::eWall+CGeneModel::eGnomon);
-                wall_model->SetType(CGeneModel::eGnomon);
-            }
-        } else if (wall_model.get() != 0 && wall_model->GeneID()==ir->GeneID() &&
-                   limits.GetTo()- wall_model->Limits().GetTo() > 0)  {
-            wall_model->ExtendRight(limits.GetTo()- wall_model->Limits().GetTo());
+            wall_model->SetType(CGeneModel::eGnomon);
+        } else if (limits.GetTo()- wall_model->Limits().GetTo() > 0)  {
+            wall_model->ExtendRight(limits.GetTo() - wall_model->Limits().GetTo());
         }
-        ir = next;
     }
-    SaveWallModel(wall_model, aligns);
+    SaveWallModel(wall_model, nested_genes, aligns);
 }
 
 void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
@@ -458,7 +465,6 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         }
     }
 }
-
 
 void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
