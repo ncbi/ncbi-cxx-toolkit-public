@@ -33,6 +33,7 @@
 
 #include "grid_thread_context.hpp"
 #include "netservice_params.hpp"
+#include "balancing.hpp"
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
@@ -1073,14 +1074,21 @@ int CGridWorkerNode::Run()
         "Queue name: " << GetQueueName() << "\n"
         "Maximum job threads: " << m_MaxThreads << "\n");
 
-    m_Listener->OnGridWorkerStart();
+    try {
+        GetNSExecuter().RegisterClient();
+    } catch (CNetServiceException& ex) {
+        // If the server does not understand this new command, ignore the error.
+        if (ex.GetErrCode() != CNetServiceException::eCommunicationError ||
+                NStr::Find(ex.what(), "Server error:Unknown request") == NPOS)
+            throw;
+    }
 
-    _ASSERT(m_MaxThreads > 0);
-    if (!x_CreateNSReadClient())
-        return 1;
+    m_Listener->OnGridWorkerStart();
 
     auto_ptr<CGridThreadContext> single_thread_context;
     auto_ptr<CStdPoolOfThreads> thread_pool;
+
+    _ASSERT(m_MaxThreads > 0);
 
     if (m_MaxThreads <= 1)
         single_thread_context.reset(new CGridThreadContext(*this));
@@ -1315,46 +1323,6 @@ void CGridWorkerNode::x_FailJob(const string& job_key, const string& reason)
          job.error_msg = reason;
          GetNSExecuter().PutFailure(job);
     }
-}
-
-bool CGridWorkerNode::x_CreateNSReadClient()
-{
-    unsigned try_count = 0;
-
-    for (;;) {
-        try {
-            GetNSExecuter().RegisterClient();
-            break;
-        } catch (CNetServiceException& ex) {
-            // if server does not understand this
-            // new command just ignore the error
-            if (ex.GetErrCode() == CNetServiceException::eCommunicationError
-                   && NStr::Find(ex.what(),
-                   "Server error:Unknown request") != NPOS)
-                return true;
-            ERR_POST_X(41, "Communication Error : " << ex.what());
-            if (++try_count >= TServConn_ConnMaxRetries::GetDefault()) {
-                CGridGlobals::GetInstance().RequestShutdown(
-                    CNetScheduleAdmin::eShutdownImmediate);
-                return false;
-            }
-            SleepMilliSec(s_GetRetryDelay());
-            continue;
-
-        } catch (exception& ex) {
-            ERR_POST_X(42, ex.what());
-            CGridGlobals::GetInstance().RequestShutdown(
-                CNetScheduleAdmin::eShutdownImmediate);
-            return false;
-        } catch (...) {
-            ERR_POST_X(43, "Unknown error");
-            CGridGlobals::GetInstance().RequestShutdown(
-                CNetScheduleAdmin::eShutdownImmediate);
-            return false;
-        }
-        try_count = 0;
-    }
-    return true;
 }
 
 size_t CGridWorkerNode::GetServerOutputSize() const

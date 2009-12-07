@@ -72,18 +72,9 @@ public:
 
     int Do(CWorkerNodeJobContext& context)
     {
-        CFastLocalTime lt;
         if (context.IsLogRequested()) {
             LOG_POST(context.GetJobKey() << " is received.");
         }
-
-        string tmp_path = m_Params.GetTempDir();
-        if (!tmp_path.empty())
-            tmp_path += CDirEntry::GetPathSeparator() + 
-                context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
-                NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
-
-        string job_wdir = tmp_path.empty() ? CDir::GetCwd() : tmp_path;
 
         IRemoteAppRequest_Executer* request = &m_RequestMB;
         IRemoteAppResult_Executer* result = &m_ResultMB;
@@ -144,31 +135,14 @@ public:
                 env.insert(env.begin(), session_id.c_str());
             }
 
-            int max_app_run_time = m_Params.GetMaxAppRunningTime();
-            int app_run_timeout = request->GetAppRunTimeout();
-
-            if (app_run_timeout > 0 &&
-                (max_app_run_time == 0 || max_app_run_time > app_run_timeout))
-                max_app_run_time = app_run_timeout;
-
-            finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
-                                        args, 
-                                        request->GetStdIn(), 
-                                        result->GetStdOut(), 
+            finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
+                                        request->GetStdIn(),
+                                        result->GetStdOut(),
                                         result->GetStdErr(),
-                                        m_Params.CacheStdOutErr(),
                                         ret,
                                         context,
-                                        max_app_run_time,
-                                        m_Params.GetKeepAlivePeriod(),
-                                        tmp_path,
-                                        m_Params.RemoveTempDir(),
-                                        job_wdir,
-                                        &env[0],
-                                        m_Params.GetMonitorAppPath(),
-                                        m_Params.GetMaxMonitorRunningTime(),
-                                        m_Params.GetMonitorPeriod(),
-                                        m_Params.GetKillTimeout());
+                                        request->GetAppRunTimeout(),
+                                        &env[0]);
         } catch (...) {
             request->Reset();
             result->Reset();
@@ -184,13 +158,13 @@ public:
             context.CommitJobWithFailure("Job has been canceled");
             stat = " was canceled.";
         } else
-            if (ret == 0 || m_Params.GetNonZeroExitAction() ==
-                    CRemoteAppParams::eDoneOnNonZeroExit) {
+            if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                    CRemoteAppLauncher::eDoneOnNonZeroExit) {
                 context.CommitJob();
                 stat = " is done.";
             } else
-                if (m_Params.GetNonZeroExitAction() ==
-                        CRemoteAppParams::eReturnOnNonZeroExit) {
+                if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                        CRemoteAppLauncher::eReturnOnNonZeroExit) {
                     context.ReturnJob();
                     stat = " has been returned.";
                 } else {
@@ -216,7 +190,7 @@ private:
     CRemoteAppResultMB_Executer  m_ResultMB;
     CRemoteAppRequestSB_Executer m_RequestSB;
     CRemoteAppResultSB_Executer  m_ResultSB;
-    CRemoteAppParams m_Params;
+    CRemoteAppLauncher m_RemoteAppLauncher;
 
     list<string> m_EnvValues;
     vector<const char*> m_Env;
@@ -228,12 +202,12 @@ const char* const* CRemoteAppJob:: x_GetEnv()
         return &m_Env[0];
 
     typedef map<string,string> TMapStr;
-    const TMapStr& added_env = m_Params.GetAddedEnv();
+    const TMapStr& added_env = m_RemoteAppLauncher.GetAddedEnv();
     ITERATE(TMapStr, it, added_env) {
         m_EnvValues.push_back(it->first + "=" +it->second);
     }
     list<string> names;
-    const CNcbiEnvironment& env = m_Params.GetLocalEnv();
+    const CNcbiEnvironment& env = m_RemoteAppLauncher.GetLocalEnv();
     env.Enumerate(names);
     ITERATE(list<string>, it, names) {
         if (added_env.find(*it) == added_env.end())
@@ -252,16 +226,16 @@ CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
       m_RequestSB(m_Factory), m_ResultSB(m_Factory)
 {
     const IRegistry& reg = context.GetConfig();
-    m_Params.Load("remote_app", reg);
+    m_RemoteAppLauncher.LoadParams("remote_app", reg);
 
-    CFile file(m_Params.GetAppPath());
+    CFile file(m_RemoteAppLauncher.GetAppPath());
     if (!file.Exists())
         NCBI_THROW(CException, eInvalid, 
-                   "File : " + m_Params.GetAppPath() + " doesn't exists.");
+                   "File : " + m_RemoteAppLauncher.GetAppPath() + " doesn't exists.");
 
     if (!CanExecRemoteApp(file))
         NCBI_THROW(CException, eInvalid, 
-                   "Could not execute " + m_Params.GetAppPath() + " file.");
+                   "Could not execute " + m_RemoteAppLauncher.GetAppPath() + " file.");
     
 }
 

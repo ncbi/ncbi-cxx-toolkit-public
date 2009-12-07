@@ -333,11 +333,12 @@ void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd) const
         try {
             server.ExecWithRetry(cmd);
         } catch (CNetServiceException& ex) {
-            ERR_POST_X(12, server->m_Address.AsString()
-                << " returned error: \"" << ex.what() << "\"");
-
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
                 throw;
+            else {
+                ERR_POST_X(12, server->m_Address.AsString() <<
+                    ": " << ex.what());
+            }
         }
     }
 }

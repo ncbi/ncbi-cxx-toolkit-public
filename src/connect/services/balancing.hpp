@@ -34,28 +34,57 @@
  *
  */
 
-#include "srv_connections.hpp"
+#include <connect/services/srv_connections.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class IRebalanceStrategy : public CNetObject
+class CSimpleRebalanceStrategy : public CNetObject
 {
 public:
-    virtual bool NeedRebalance() = 0;
-    virtual void OnResourceRequested() = 0;
-    virtual void Reset() = 0;
-    virtual const CTime& GetLastRebalanceTime() = 0;
+    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time) :
+        m_RebalanceRequests(rebalance_requests),
+        m_RebalanceTime(rebalance_time),
+        m_RequestCounter(0),
+        m_LastRebalanceTime(CTime::eEmpty),
+        m_NextRebalanceTime(CTime::eEmpty)
+    {
+    }
+
+    bool NeedRebalance();
+
+    void OnResourceRequested() {
+        CFastMutexGuard g(m_Mutex);
+        ++m_RequestCounter;
+    }
+    void Reset() {
+        CFastMutexGuard g(m_Mutex);
+        m_RequestCounter = 0;
+        m_LastRebalanceTime.Clear();
+        m_NextRebalanceTime.Clear();
+    }
+    const CTime& GetLastRebalanceTime()
+    {
+        return m_LastRebalanceTime;
+    }
+
+private:
+    int     m_RebalanceRequests;
+    int     m_RebalanceTime;
+    int     m_RequestCounter;
+    CTime   m_LastRebalanceTime;
+    CTime   m_NextRebalanceTime;
+    CFastMutex m_Mutex;
 };
 
 class CConfig;
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
+NCBI_XCONNECT_EXPORT CNetObjectRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name);
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
+NCBI_XCONNECT_EXPORT CNetObjectRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time);
 
-NCBI_XCONNECT_EXPORT CNetObjectRef<IRebalanceStrategy>
+NCBI_XCONNECT_EXPORT CNetObjectRef<CSimpleRebalanceStrategy>
     CreateDefaultRebalanceStrategy();
 
 END_NCBI_SCOPE

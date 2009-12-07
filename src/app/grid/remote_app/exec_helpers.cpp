@@ -47,19 +47,15 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-CRemoteAppParams::CRemoteAppParams()
+CRemoteAppLauncher::CRemoteAppLauncher()
     : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), 
       m_NonZeroExitAction(eDoneOnNonZeroExit),
-      m_RunInSeparateDir(false), m_RemoveTempDir(true),
+      m_RemoveTempDir(true),
       m_CacheStdOutErr(true)
 {
 }
 
-CRemoteAppParams::~CRemoteAppParams()
-{
-}
-
-void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
+void CRemoteAppLauncher::LoadParams(const string& sec_name, const IRegistry& reg)
 {
     m_MaxAppRunningTime = 
         reg.GetInt(sec_name,"max_app_run_time",0,0,IRegistry::eReturn);
@@ -89,13 +85,10 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
         }
     }
 
-    m_RunInSeparateDir =
-        reg.GetBool(sec_name, "run_in_separate_dir", false, 0, 
-                    CNcbiRegistry::eReturn);
-
-    if (m_RunInSeparateDir) {
-	if (reg.HasEntry(sec_name, "tmp_dir")) 
-	    m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
+    if (reg.GetBool(sec_name, "run_in_separate_dir", false, 0,
+            CNcbiRegistry::eReturn)) {
+        if (reg.HasEntry(sec_name, "tmp_dir")) 
+            m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
         else 
             m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
         
@@ -105,7 +98,7 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
                 + m_TempDir;
             m_TempDir = CDirEntry::NormalizePath(tmp);
         }
-	if (reg.HasEntry(sec_name, "remove_tmp_dir")) 
+        if (reg.HasEntry(sec_name, "remove_tmp_dir")) 
             m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_dir", true, 0, 
                                     CNcbiRegistry::eReturn);
         else
@@ -282,7 +275,7 @@ private:
 class CPipeProcessWatcher : public CPipeProcessWatcher_Base
 {
 public:
-    CPipeProcessWatcher( CWorkerNodeJobContext& context,
+    CPipeProcessWatcher(CWorkerNodeJobContext& context,
                    int max_app_running_time,
                    int keep_alive_period,
                    const string& job_wdir)
@@ -461,7 +454,7 @@ public:
 
     void Close()
     {
-        if( !m_Name.empty() && m_StreamGuard.get()) {
+        if (!m_Name.empty() && m_StreamGuard.get()) {
             m_StreamGuard.reset();
             m_ReaderWriter->Flush();
             m_ReaderWriter->GetFileIO().SetFilePos(0, CFileIO_Base::eBegin);
@@ -472,7 +465,6 @@ public:
                 ERR_POST( "Cannot copy \"" << m_Name << "\" file.");
             }
             m_ReaderWriter.reset();
-            //CFile(m_Name).Remove();
         }
     }
 
@@ -485,45 +477,50 @@ private:
 
 };
 
-//////////////////////////////////////////////////////////////////////////////
-///
-bool ExecRemoteApp(const string& cmd, 
-                   const vector<string>& args,
-                   CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
-                   bool cache_std_out_err,
-                   int& exit_value,
-                   CWorkerNodeJobContext& context,
-                   int max_app_running_time,
-                   int keep_alive_period,
-                   const string& tmp_path,
-                   bool remove_tmp_path,
-                   const string& job_wdir,
-                   const char* const env[],
-                   const string& monitor_app,
-                   int max_monitor_running_time,
-                   int monitor_period,
-                   int kill_timeout)
+
+bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
+    CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
+    int& exit_value,
+    CWorkerNodeJobContext& context,
+    int app_run_timeout,
+    const char* const env[])
 {
-    STmpDirGuard guard(tmp_path, remove_tmp_path);
+    string tmp_path = m_TempDir;
+    if (!tmp_path.empty()) {
+        CFastLocalTime lt;
+        tmp_path += CDirEntry::GetPathSeparator() +
+            context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
+            NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
+    }
+
+    STmpDirGuard guard(tmp_path, m_RemoveTempDir);
     {
-        CTmpStreamGuard std_out_guard(tmp_path, "std.out", out, cache_std_out_err);
-        CTmpStreamGuard std_err_guard(tmp_path, "std.err", err, cache_std_out_err);
+        CTmpStreamGuard std_out_guard(tmp_path, "std.out", out,
+            m_CacheStdOutErr);
+        CTmpStreamGuard std_err_guard(tmp_path, "std.err", err,
+            m_CacheStdOutErr);
+
+        int max_app_run_time = m_MaxAppRunningTime;
+
+        if (app_run_timeout > 0 &&
+            (max_app_run_time == 0 || max_app_run_time > app_run_timeout))
+            max_app_run_time = app_run_timeout;
 
         CPipeProcessWatcher callback(context,
-                                     max_app_running_time,
-                                     keep_alive_period,
-                                     job_wdir);
+            max_app_run_time,
+            m_KeepAlivePeriod,
+            tmp_path.empty() ? CDir::GetCwd() : tmp_path);
 
         auto_ptr<CRAMonitor> ra_monitor;
-        if (!monitor_app.empty() && monitor_period > 0) {
-            ra_monitor.reset(new CRAMonitor(monitor_app, env,
-                max_monitor_running_time));
-            callback.SetMonitor(*ra_monitor, monitor_period);
+        if (!m_MonitorAppPath.empty() && m_MonitorPeriod > 0) {
+            ra_monitor.reset(new CRAMonitor(m_MonitorAppPath, env,
+                m_MaxMonitorRunningTime));
+            callback.SetMonitor(*ra_monitor, m_MonitorPeriod);
         }
 
-        STimeout kill_tm = {kill_timeout, 0};
+        STimeout kill_tm = {m_KillTimeout, 0};
 
-        return CPipe::ExecWait(cmd, args, in, 
+        return CPipe::ExecWait(GetAppPath(), args, in, 
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
                                exit_value, 

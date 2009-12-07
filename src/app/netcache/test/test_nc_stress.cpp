@@ -436,7 +436,7 @@ int CTestNetCacheStress::Run(void)
         try {
             //m_Os << "Iteration " << count << ", thread " << m_Num << NcbiEndl;
             TTransactionLog tlog;
-            int blob_size = rand() * s_MaxSize / RAND_MAX + 1;
+            int blob_size = int(rand() * s_MaxSize / RAND_MAX + 1);
             total_count += blob_size;
             CDiagContext::GetRequestContext().SetSessionID(NStr::IntToString(count + 1));
             StressTestPutGet(blob_size, 1, &tlog);

@@ -41,28 +41,10 @@ class CFile;
 bool CanExecRemoteApp(const CFile& file);
 
 
-class CWorkerNodeJobContext;
-bool ExecRemoteApp(const string& cmd, 
-                   const vector<string>& args,
-                   CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
-                   bool cache_std_out_err,
-                   int& exit_value,
-                   CWorkerNodeJobContext& context,
-                   int max_app_running_time,
-                   int keep_alive_period,
-                   const string& tmp_path,
-                   bool remove_tmp_path,
-                   const string& job_wdir,
-                   const char* const env[] = 0,
-                   const string& monitor_app = kEmptyStr,
-                   int max_monitor_running_time = 5,
-                   int monitor_period = 5,
-                   int kill_timeout = 1);
-
-
-
 class IRegistry;
-class CRemoteAppParams 
+class CWorkerNodeJobContext;
+
+class CRemoteAppLauncher
 {
 public:
     enum ENonZeroExitAction {
@@ -71,25 +53,20 @@ public:
         eReturnOnNonZeroExit
     };
 
-    CRemoteAppParams();
-    ~CRemoteAppParams();
+    CRemoteAppLauncher();
 
-    void Load(const string& sec_name, const IRegistry&);
+    void LoadParams(const string& sec_name, const IRegistry&);
+
+    bool ExecRemoteApp(const vector<string>& args,
+        CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
+        int& exit_value,
+        CWorkerNodeJobContext& context,
+        int app_run_timeout,
+        const char* const env[]);
 
     const string& GetAppPath() const { return m_AppPath; }
-    int GetMaxAppRunningTime() const { return m_MaxAppRunningTime; }
-    int GetKeepAlivePeriod() const { return m_KeepAlivePeriod; }
-    ENonZeroExitAction GetNonZeroExitAction() const { return m_NonZeroExitAction; }
-    bool RunInSeparateDir() const { return m_RunInSeparateDir; }
-    const string& GetTempDir() const { return m_TempDir; }
-    bool RemoveTempDir() const { return m_RemoveTempDir; }
-    bool CacheStdOutErr() const { return m_CacheStdOutErr; }
-
-    const string& GetMonitorAppPath() const { return m_MonitorAppPath; }
-    int GetMaxMonitorRunningTime() const { return m_MaxMonitorRunningTime; }
-    int GetMonitorPeriod() const { return m_MonitorPeriod; }
-
-    int GetKillTimeout() const { return m_KillTimeout; }
+    ENonZeroExitAction GetNonZeroExitAction() const
+        {return m_NonZeroExitAction;}
 
     const CNcbiEnvironment& GetLocalEnv() const { return m_LocalEnv; }
     const map<string,string>& GetAddedEnv() const { return m_AddedEnv; }
@@ -101,7 +78,6 @@ private:
     int m_MaxAppRunningTime;
     int m_KeepAlivePeriod;
     ENonZeroExitAction m_NonZeroExitAction;
-    bool m_RunInSeparateDir;
     string m_TempDir;
     bool m_RemoveTempDir;
     bool m_CacheStdOutErr;
@@ -115,9 +91,7 @@ private:
     map<string,string> m_AddedEnv;
     list<string> m_ExcludeEnv;
     list<string> m_IncludeEnv;
-    
 };
-
 
 END_NCBI_SCOPE
 

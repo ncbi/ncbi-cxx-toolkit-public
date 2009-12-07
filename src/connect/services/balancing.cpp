@@ -34,8 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "netservice_params.hpp"
-
-#include <connect/services/balancing.hpp>
+#include "balancing.hpp"
 
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -43,58 +42,23 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSimpleRebalanceStrategy : public IRebalanceStrategy
+bool CSimpleRebalanceStrategy::NeedRebalance()
 {
-public:
-    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time) :
-        m_RebalanceRequests(rebalance_requests),
-        m_RebalanceTime(rebalance_time),
-        m_RequestCounter(0),
-        m_LastRebalanceTime(CTime::eEmpty),
-        m_NextRebalanceTime(CTime::eEmpty)
-    {
-    }
-
-    virtual bool NeedRebalance() {
-        CFastMutexGuard g(m_Mutex);
-        CTime current_time(CTime::eCurrent);
-        if ((m_RebalanceTime > 0 && current_time >= m_NextRebalanceTime) ||
-            (m_RebalanceRequests > 0 &&
-                m_RequestCounter >= m_RebalanceRequests)) {
-            m_RequestCounter = 0;
-            m_LastRebalanceTime = current_time;
-            m_NextRebalanceTime = current_time;
-            m_NextRebalanceTime.AddNanoSecond(m_RebalanceTime * 1000000);
-            return true;
-        }
-        return false;
-    }
-    virtual void OnResourceRequested() {
-        CFastMutexGuard g(m_Mutex);
-        ++m_RequestCounter;
-    }
-    virtual void Reset() {
-        CFastMutexGuard g(m_Mutex);
+    CFastMutexGuard g(m_Mutex);
+    CTime current_time(CTime::eCurrent);
+    if ((m_RebalanceTime > 0 && current_time >= m_NextRebalanceTime) ||
+        (m_RebalanceRequests > 0 &&
+            m_RequestCounter >= m_RebalanceRequests)) {
         m_RequestCounter = 0;
-        m_LastRebalanceTime.Clear();
-        m_NextRebalanceTime.Clear();
+        m_LastRebalanceTime = current_time;
+        m_NextRebalanceTime = current_time;
+        m_NextRebalanceTime.AddNanoSecond(m_RebalanceTime * 1000000);
+        return true;
     }
-    virtual const CTime& GetLastRebalanceTime()
-    {
-        return m_LastRebalanceTime;
-    }
+    return false;
+}
 
-private:
-    int     m_RebalanceRequests;
-    int     m_RebalanceTime;
-    int     m_RequestCounter;
-    CTime   m_LastRebalanceTime;
-    CTime   m_NextRebalanceTime;
-    CFastMutex m_Mutex;
-};
-
-
-CNetObjectRef<IRebalanceStrategy>
+CNetObjectRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name)
 {
     return new CSimpleRebalanceStrategy(
@@ -106,13 +70,13 @@ CNetObjectRef<IRebalanceStrategy>
             SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT)));
 }
 
-CNetObjectRef<IRebalanceStrategy>
+CNetObjectRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
 {
     return new CSimpleRebalanceStrategy(rebalance_requests, rebalance_time);
 }
 
-CNetObjectRef<IRebalanceStrategy> CreateDefaultRebalanceStrategy()
+CNetObjectRef<CSimpleRebalanceStrategy> CreateDefaultRebalanceStrategy()
 {
     return new CSimpleRebalanceStrategy(REBALANCE_REQUESTS_DEFAULT,
         SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT));

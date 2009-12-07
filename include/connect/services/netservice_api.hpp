@@ -34,7 +34,7 @@
  *
  */
 
-#include "balancing.hpp"
+#include "srv_connections.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -93,8 +93,6 @@ class NCBI_XCONNECT_EXPORT CNetService
     bool IsLoadBalanced() const;
 
     void SetPermanentConnection(ESwitch type);
-
-    void SetRebalanceStrategy(IRebalanceStrategy* strategy);
 
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;

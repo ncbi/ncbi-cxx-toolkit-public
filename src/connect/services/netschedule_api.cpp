@@ -53,10 +53,7 @@ SNetScheduleAPIImpl::CNetScheduleServerListener::CNetScheduleServerListener(
     const string& client_name,
     const string& queue_name)
 {
-    m_Auth = client_name;
-    m_Auth += "\r\n";
-
-    m_Auth += queue_name;
+    SetAuthString(client_name, kEmptyStr, queue_name);
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
@@ -74,6 +71,11 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
 
     auth += queue_name;
 
+    // Make the auth token look like a command to be able to
+    // check for potential authentication/initialization errors
+    // like the "queue not found" error.
+    auth += "\r\nVERSION";
+
     m_Auth = auth;
 }
 
@@ -88,11 +90,13 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
     CNetServerConnection::TInstance conn)
 {
-    conn->WriteLine(m_Auth);
+    CNetServerConnection conn_object(conn);
+
+    conn_object.Exec(m_Auth);
 
     if (!m_WorkerNodeInitCmd.empty()) {
         try {
-            CNetServerConnection(conn).Exec(m_WorkerNodeInitCmd);
+            conn_object.Exec(m_WorkerNodeInitCmd);
         }
         catch (CNetScheduleException& e) {
             if (e.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)

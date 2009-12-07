@@ -32,6 +32,7 @@
  */
 
 #include "srv_connections_impl.hpp"
+#include "balancing.hpp"
 
 #include <set>
 
@@ -122,7 +123,7 @@ struct SNetServiceImpl : public CNetObject
     string m_ClientName;
 
     CNetObjectRef<INetServerConnectionListener> m_Listener;
-    CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
+    CNetObjectRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
     string m_LBSMAffinityName;
     const char* m_LBSMAffinityValue;

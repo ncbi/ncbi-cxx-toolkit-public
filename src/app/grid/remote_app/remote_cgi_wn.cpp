@@ -108,8 +108,8 @@ struct HasValue : unary_function <string,bool>
 class CCgiEnvHolder
 {
 public:
-    CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironment& client_env);
-    ~CCgiEnvHolder() {}
+    CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
+        const CNcbiEnvironment& client_env);
 
     const char* const* GetEnv() const { return &m_Env[0]; }
 
@@ -118,7 +118,8 @@ private:
     vector<const char*> m_Env;
 };
 
-CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironment& client_env)
+CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
+    const CNcbiEnvironment& client_env)
 {
     list<string> cln_names;
     client_env.Enumerate(cln_names);
@@ -127,15 +128,15 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironm
                           not1(IsStandard())),
                 names.end());
     names.erase(remove_if(names.begin(),names.end(),
-                          HasValue<list<string> >(params.GetExcludedEnv())),
+                          HasValue<list<string> >(remote_app_launcher.GetExcludedEnv())),
                 names.end());
     list<string> inc_names(cln_names.begin(), cln_names.end());
     inc_names.erase(remove_if(inc_names.begin(),inc_names.end(),
-                              not1(HasValue<list<string> >(params.GetIncludedEnv()))),
+                              not1(HasValue<list<string> >(remote_app_launcher.GetIncludedEnv()))),
                     inc_names.end());
     names.insert(names.begin(),inc_names.begin(), inc_names.end());
     typedef map<string,string> TMapStr;
-    const TMapStr& added_env = params.GetAddedEnv();
+    const TMapStr& added_env = remote_app_launcher.GetAddedEnv();
     ITERATE(TMapStr, it, added_env) {
         m_EnvValues.push_back(it->first + "=" +it->second);
     }
@@ -146,7 +147,7 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppParams& params, const CNcbiEnvironm
     }
 
     list<string> local_names;
-    const CNcbiEnvironment& local_env = params.GetLocalEnv();
+    const CNcbiEnvironment& local_env = remote_app_launcher.GetLocalEnv();
     local_env.Enumerate(local_names);
     ITERATE(list<string>, it, local_names) {
         const string& s = *it;
@@ -180,20 +181,10 @@ public:
                 context.GetJobInput());
         }
 
-        string tmp_path = m_Params.GetTempDir();
-        if (!tmp_path.empty()) {
-            CFastLocalTime lt;
-            tmp_path += CDirEntry::GetPathSeparator() +
-                context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
-                NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
-        }
-
-        string job_wdir = tmp_path.empty() ? CDir::GetCwd() : tmp_path;
-
         CCgiRequest request(context.GetIStream(),
             CCgiRequest::fIgnoreQueryString | CCgiRequest::fDoNotParseContent);
 
-        CCgiEnvHolder env(m_Params, request.GetEnvironment());
+        CCgiEnvHolder env(m_RemoteAppLauncher, request.GetEnvironment());
         vector<string> args;
 
         CNcbiStrstream err;
@@ -203,24 +194,14 @@ public:
             in = &str_in;
 
         int ret = -1;
-        bool finished_ok = ExecRemoteApp(m_Params.GetAppPath(),
-                                         args,
+        bool finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                          *in,
                                          context.GetOStream(),
                                          err,
-                                         m_Params.CacheStdOutErr(),
                                          ret,
                                          context,
-                                         m_Params.GetMaxAppRunningTime(),
-                                         m_Params.GetKeepAlivePeriod(),
-                                         tmp_path,
-                                         m_Params.RemoveTempDir(),
-                                         job_wdir,
-                                         env.GetEnv(),
-                                         m_Params.GetMonitorAppPath(),
-                                         m_Params.GetMaxMonitorRunningTime(),
-                                         m_Params.GetMonitorPeriod(),
-                                         m_Params.GetKillTimeout());
+                                         0,
+                                         env.GetEnv());
 
         string stat;
 
@@ -228,13 +209,13 @@ public:
             context.CommitJobWithFailure("Job has been canceled");
             stat = " was canceled.";
         } else
-            if (ret == 0 || m_Params.GetNonZeroExitAction() ==
-                    CRemoteAppParams::eDoneOnNonZeroExit) {
+            if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                    CRemoteAppLauncher::eDoneOnNonZeroExit) {
                 context.CommitJob();
                 stat = " is done.";
             } else
-                if (m_Params.GetNonZeroExitAction() ==
-                        CRemoteAppParams::eReturnOnNonZeroExit) {
+                if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                        CRemoteAppLauncher::eReturnOnNonZeroExit) {
                     context.ReturnJob();
                     stat = " has been returned.";
                 } else {
@@ -254,21 +235,21 @@ public:
         return ret;
     }
 private:
-    CRemoteAppParams m_Params;
+    CRemoteAppLauncher m_RemoteAppLauncher;
 };
 
 CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context)
 {
     const IRegistry& reg = context.GetConfig();
-    m_Params.Load("remote_cgi", reg);
+    m_RemoteAppLauncher.LoadParams("remote_cgi", reg);
 
-    CFile file(m_Params.GetAppPath());
+    CFile file(m_RemoteAppLauncher.GetAppPath());
     if (!file.Exists())
         NCBI_THROW(CException, eInvalid,
-                   "File : " + m_Params.GetAppPath() + " doesn't exists.");
+                   "File : " + m_RemoteAppLauncher.GetAppPath() + " doesn't exists.");
     if (!CanExecRemoteApp(file))
         NCBI_THROW(CException, eInvalid,
-                   "Could not execute " + m_Params.GetAppPath() + " file.");
+                   "Could not execute " + m_RemoteAppLauncher.GetAppPath() + " file.");
 
 }
 

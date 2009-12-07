@@ -290,12 +290,6 @@ bool CNetService::IsLoadBalanced() const
     return m_Impl->m_ServiceType == SNetServiceImpl::eLoadBalanced;
 }
 
-void CNetService::SetRebalanceStrategy(IRebalanceStrategy* strategy)
-{
-    m_Impl->m_RebalanceStrategy = strategy != NULL ? strategy :
-        CreateDefaultRebalanceStrategy().GetPtr();
-}
-
 void CNetService::PrintCmdOutput(const string& cmd,
     CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style)
 {

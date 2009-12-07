@@ -530,6 +530,7 @@ class CWorkerNodeJobWatchers;
 class CWorkerNodeIdleThread;
 class IGridWorkerNodeApp_Listener;
 class CWNJobsWatcher;
+class CSimpleRebalanceStrategy;
 /// Grid Worker Node
 ///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -631,7 +632,7 @@ private:
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
     unsigned int                 m_CheckStatusPeriod;
-    CNetObjectRef<IRebalanceStrategy> m_RebalanceStrategy;
+    CNetObjectRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     bool                         m_UseEmbeddedStorage;
@@ -663,7 +664,6 @@ private:
     friend class CWorkerNodeRequest;
     void x_ReturnJob(const string& job_key);
     void x_FailJob(const string& job_key, const string& reason);
-    bool x_CreateNSReadClient();
     bool x_AreMastersBusy() const;
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
