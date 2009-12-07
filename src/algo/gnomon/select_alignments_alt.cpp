@@ -117,6 +117,20 @@ size_t CModelCompare::CountCommonSplices(const CGeneModel& a, const CGeneModel& 
     return commonspl;
 }
 
+bool HasRetainedIntron(const CGeneModel& under_test, const CGeneModel& control_model)
+{
+    for(int i = 1; i < (int)control_model.Exons().size(); ++i) {
+        if(control_model.Exons()[i-1].m_ssplice && control_model.Exons()[i].m_fsplice) {
+            TSignedSeqRange intron(control_model.Exons()[i-1].GetTo()+1,control_model.Exons()[i].GetFrom()-1);
+            ITERATE(CGeneModel::TExons, test_exon, under_test.Exons()) {
+                if(Include(test_exon->Limits(), intron))
+                    return true;
+            }
+        }
+    } 
+    return false;
+}
+
 bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
 {
     int composite = 0;
@@ -131,15 +145,8 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
 
     ITERATE(CAltSplice, it, *this) {
         const CGeneModel& b = *it;
-        for(int i = 1; i < (int)b.Exons().size(); ++i) {
-            if(b.Exons()[i-1].m_ssplice && b.Exons()[i].m_fsplice) {
-                TSignedSeqRange intron(b.Exons()[i-1].GetTo()+1,b.Exons()[i].GetFrom()-1);
-                for(unsigned int j = 0; j < a.Exons().size(); ++j) {
-                    if(Include(a.Exons()[j].Limits(),intron))        // retained intron
-                        return false;
-                }
-            }
-        } 
+        if (HasRetainedIntron(a, b) || HasRetainedIntron(b, a))
+            return false;
     }
 
     //check for models with partial retained introns
