@@ -66,8 +66,8 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                              CSeq_align::TDim row_2,
                              CAlnUserOptions::EDirection direction) ///< which direction
 {
-    _ASSERT(row_1 >=0  &&  row_2 >= 0);
-    _ASSERT( !sa.IsSetDim()  ||  sa.GetDim() > max(row_1, row_2));
+    _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
+    _ALNMGR_ASSERT( !sa.IsSetDim()  ||  sa.GetDim() > max(row_1, row_2));
 
     typedef CSeq_align::TSegs TSegs;
     const TSegs& segs = sa.GetSegs();
@@ -117,8 +117,8 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction) ///< which direction
 {
-    _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
-    _ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
+    _ALNMGR_ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
+    _ALNMGR_ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
 
     const CDense_seg::TNumseg& numseg = ds.GetNumseg();
     const CDense_seg::TDim& dim = ds.GetDim();
@@ -183,13 +183,13 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
                            CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction) ///< which direction
 {
-    _ASSERT(row_1 >=0  &&  row_2 >= 0);
+    _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
 
     ITERATE (CSeq_align::TSegs::TStd, std_it, stds) {
 
         const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
         
-        _ASSERT((CSeq_align::TDim) loc.size() > max(row_1, row_2));
+        _ALNMGR_ASSERT((CSeq_align::TDim) loc.size() > max(row_1, row_2));
 
         CSeq_loc::TRange rng_1 = loc[row_1]->GetTotalRange();
         CSeq_loc::TRange rng_2 = loc[row_2]->GetTotalRange();
@@ -213,7 +213,7 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
                 CPairwiseAln::TAlnRng aln_rng;
                 aln_rng.SetDirect(direct);
                 if (base_width_1 == base_width_2) {
-                    _ASSERT(len_1 == len_2);
+                    _ALNMGR_ASSERT(len_1 == len_2);
                     if (base_width_1 == 1) {
                         aln_rng.SetFirstFrom(rng_1.GetFrom());
                         aln_rng.SetSecondFrom(rng_2.GetFrom());
@@ -224,11 +224,11 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
                     aln_rng.SetLength(len_1 * base_width_1);
                     pairwise_aln.insert(aln_rng);
                 } else if (base_width_1 == 1) {
-                    _ASSERT(base_width_2 == 3);
+                    _ALNMGR_ASSERT(base_width_2 == 3);
                     aln_rng.SetFirstFrom(rng_1.GetFrom());
                     aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
                     if (len_1 / base_width_2 < len_2) {
-                        _ASSERT(len_1 / base_width_2 == len_2 - 1);
+                        _ALNMGR_ASSERT(len_1 / base_width_2 == len_2 - 1);
                         TSeqPos remainder = len_1 % base_width_2;
                         aln_rng.SetLength(len_1 - remainder);
                         pairwise_aln.insert(aln_rng);
@@ -243,11 +243,11 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
                         pairwise_aln.insert(aln_rng);
                     }
                 } else if (base_width_2 == 1) {
-                    _ASSERT(base_width_1 == 3);
+                    _ALNMGR_ASSERT(base_width_1 == 3);
                     aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
                     aln_rng.SetSecondFrom(rng_2.GetFrom());
                     if (len_2 / base_width_1 < len_1) {
-                        _ASSERT(len_2 / base_width_1 == len_1 - 1);
+                        _ALNMGR_ASSERT(len_2 / base_width_1 == len_1 - 1);
                         TSeqPos remainder = len_2 % base_width_2;
                         aln_rng.SetLength(len_2 - remainder);
                         pairwise_aln.insert(aln_rng);
@@ -280,7 +280,7 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< ou
                             CSeq_align::TDim row_2,
                             CAlnUserOptions::EDirection direction) ///< which direction
 {
-    _ASSERT(row_1 >=0  &&  row_2 >= 0);
+    _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
 
     ITERATE (CSeq_align::TSegs::TDendiag, dendiag_it, dendiags) {
 
@@ -401,7 +401,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
                             CSeq_align::TDim row_2,
                             CAlnUserOptions::EDirection direction) ///< which direction
 {
-    _ASSERT(row_1 == 0  ||  row_1 == 1  &&  row_2 == 0  ||  row_2 == 1);
+    _ALNMGR_ASSERT(row_1 == 0  ||  row_1 == 1  &&  row_2 == 0  ||  row_2 == 1);
 
     bool prot = spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
 
@@ -421,7 +421,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
         } else if (spliced_seg.CanGetProduct_strand()) {
             product_plus = spliced_seg.GetProduct_strand() != eNa_strand_minus;
         }
-        _ASSERT(prot ? product_plus : true);
+        _ALNMGR_ASSERT(prot ? product_plus : true);
 
         if (spliced_seg.CanGetGenomic_strand()  &&  exon.CanGetGenomic_strand()  &&
             spliced_seg.GetGenomic_strand() != exon.GetGenomic_strand()) {
@@ -438,99 +438,125 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
     
 
         /// Determine positions
-        TSeqPos product_pos =
-            (prot ?
-             exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1 :
-             (product_plus ?
-              exon.GetProduct_start().GetNucpos() :
-              exon.GetProduct_end().GetNucpos()));
+        TSeqPos product_start = prot ?
+            exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1 :
+            exon.GetProduct_start().GetNucpos();
+        TSeqPos product_end = prot ?
+            exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 :
+            exon.GetProduct_end().GetNucpos();
+        TSeqPos product_pos = prot ? 
+            product_start : 
+            (product_plus ? product_start : product_end);
         
+        TSeqPos genomic_start = exon.GetGenomic_start();
+        TSeqPos genomic_end = exon.GetGenomic_end();
         TSeqPos genomic_pos = (genomic_plus ? 
                                exon.GetGenomic_start() :
                                exon.GetGenomic_end());
-            
 
-        /// Iterate trhough exon chunks
-        ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
-            const CSpliced_exon_chunk& chunk = **chunk_it;
-                
-            TSeqPos product_len = 0;
-            TSeqPos genomic_len = 0;
+        if (exon.GetParts().empty()) {
+            TSeqPos product_len = product_end - product_start + 1;
+            TSeqPos genomic_len = genomic_end - genomic_start + 1;
+
+            _ALNMGR_ASSERT(product_len == genomic_len);
+            _ALNMGR_ASSERT(genomic_len != 0);
             
-            switch (chunk.Which()) {
-            case CSpliced_exon_chunk::e_Match: 
-                product_len = genomic_len = chunk.GetMatch();
-                break;
-            case CSpliced_exon_chunk::e_Diag: 
-                product_len = genomic_len = chunk.GetDiag();
-                break;
-            case CSpliced_exon_chunk::e_Mismatch:
-                product_len = genomic_len = chunk.GetMismatch();
-                break;
-            case CSpliced_exon_chunk::e_Product_ins:
-                product_len = chunk.GetProduct_ins();
-                break;
-            case CSpliced_exon_chunk::e_Genomic_ins:
-                genomic_len = chunk.GetGenomic_ins();
-                break;
-            default:
-                break;
+            TSeqPos starts[] = { product_start, genomic_start };
+            if (row_1 == row_2  ||
+                direction == CAlnUserOptions::eBothDirections  ||
+                (direct ?
+                 direction == CAlnUserOptions::eDirect :
+                 direction == CAlnUserOptions::eReverse)) {
+                pairwise_aln.insert
+                    (CPairwiseAln::TAlnRng(starts[row_1],
+                                           starts[row_2],
+                                           genomic_len,
+                                           row_1 == row_2 ? true : direct));
             }
-            if (!chunk.IsMismatch()) {
-                if (row_1 == 0  &&  row_2 == 0) {
-                    if (product_len != 0) {
-                        /// insert the range
-                        pairwise_aln.insert
-                            (CPairwiseAln::TAlnRng
-                             (product_plus ? product_pos : product_pos - product_len + 1,
-                              product_plus ? product_pos : product_pos - product_len + 1,
-                              product_len,
-                              true));
-                    }
-                } else if (row_1 == 1  &&  row_2 == 1) {
-                    if (genomic_len != 0) {
-                        /// insert the range
-                        pairwise_aln.insert
-                            (CPairwiseAln::TAlnRng
-                             (genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
-                              genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
-                              genomic_len,
-                              true));
-                    }
-                } else {
-                    if (product_len != 0  &&  product_len == genomic_len  &&
-                        (direction == CAlnUserOptions::eBothDirections  ||
-                         (direct ?
-                          direction == CAlnUserOptions::eDirect :
-                          direction == CAlnUserOptions::eReverse))) {
-                        /// insert the range
-                        if (row_1 == 0) {
+            
+        } else {
+            /// Iterate trhough exon chunks
+            ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
+                const CSpliced_exon_chunk& chunk = **chunk_it;
+                
+                TSeqPos product_len = 0;
+                TSeqPos genomic_len = 0;
+            
+                switch (chunk.Which()) {
+                case CSpliced_exon_chunk::e_Match: 
+                    product_len = genomic_len = chunk.GetMatch();
+                    break;
+                case CSpliced_exon_chunk::e_Diag: 
+                    product_len = genomic_len = chunk.GetDiag();
+                    break;
+                case CSpliced_exon_chunk::e_Mismatch:
+                    product_len = genomic_len = chunk.GetMismatch();
+                    break;
+                case CSpliced_exon_chunk::e_Product_ins:
+                    product_len = chunk.GetProduct_ins();
+                    break;
+                case CSpliced_exon_chunk::e_Genomic_ins:
+                    genomic_len = chunk.GetGenomic_ins();
+                    break;
+                default:
+                    break;
+                }
+                if (!chunk.IsMismatch()) {
+                    if (row_1 == 0  &&  row_2 == 0) {
+                        if (product_len != 0) {
+                            /// insert the range
                             pairwise_aln.insert
                                 (CPairwiseAln::TAlnRng
                                  (product_plus ? product_pos : product_pos - product_len + 1,
-                                  genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
-                                  genomic_len,
-                                  direct));
-                        } else {
+                                  product_plus ? product_pos : product_pos - product_len + 1,
+                                  product_len,
+                                  true));
+                        }
+                    } else if (row_1 == 1  &&  row_2 == 1) {
+                        if (genomic_len != 0) {
+                            /// insert the range
                             pairwise_aln.insert
                                 (CPairwiseAln::TAlnRng
                                  (genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
-                                  product_plus ? product_pos : product_pos - product_len + 1,
+                                  genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
                                   genomic_len,
-                                  direct));
+                                  true));
+                        }
+                    } else {
+                        if (product_len != 0  &&  product_len == genomic_len  &&
+                            (direction == CAlnUserOptions::eBothDirections  ||
+                             (direct ?
+                              direction == CAlnUserOptions::eDirect :
+                              direction == CAlnUserOptions::eReverse))) {
+                            /// insert the range
+                            if (row_1 == 0) {
+                                pairwise_aln.insert
+                                    (CPairwiseAln::TAlnRng
+                                     (product_plus ? product_pos : product_pos - product_len + 1,
+                                      genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                                      genomic_len,
+                                      direct));
+                            } else {
+                                pairwise_aln.insert
+                                    (CPairwiseAln::TAlnRng
+                                     (genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                                      product_plus ? product_pos : product_pos - product_len + 1,
+                                      genomic_len,
+                                      direct));
+                            }
                         }
                     }
                 }
-            }
-            if (product_plus) {
-                product_pos += product_len;
-            } else {
-                product_pos -= product_len;
-            }
-            if (genomic_plus) {
-                genomic_pos += genomic_len;
-            } else {
-                genomic_pos -= genomic_len;
+                if (product_plus) {
+                    product_pos += product_len;
+                } else {
+                    product_pos -= product_len;
+                }
+                if (genomic_plus) {
+                    genomic_pos += genomic_len;
+                } else {
+                    genomic_pos -= genomic_len;
+                }
             }
         }
     }
@@ -748,7 +774,7 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
         }
         anchor_row = aln_stats.GetRowVecVec()[anchor_id_idx][aln_idx];
     }
-    _ASSERT(anchor_row >= 0  &&  anchor_row < dim);
+    _ALNMGR_ASSERT(anchor_row >= 0  &&  anchor_row < dim);
 
     /// Flags
     int anchor_flags =
@@ -785,12 +811,12 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
 
         pairwises[row].Reset(pairwise_aln);
     }
-    _ASSERT(empty_rows >= 0  &&  empty_rows < dim);
+    _ALNMGR_ASSERT(empty_rows >= 0  &&  empty_rows < dim);
 
 
     /// Create the anchored aln (which may shrink vertically due to resulting empty rows)
     TDim new_dim = dim - empty_rows;
-    _ASSERT(new_dim > 0);
+    _ALNMGR_ASSERT(new_dim > 0);
 
     TDim target_anchor_row = new_dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
 
