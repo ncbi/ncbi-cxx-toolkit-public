@@ -507,7 +507,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, true> {
 /// ERR_POST_EX(NCBI_ERRCODE_X_NAME(Corelib_Util), my_subcode,
 ///             "My error message with variables " << var);
 ///
-/// It's strongly recomended to use macro NCBI_CHECK_ERR_SUBCODE_X
+/// It's strongly recommended to use macro NCBI_CHECK_ERR_SUBCODE_X
 /// (or NCBI_CHECK_ERR_SUBCODE_X_NAME in complicated case) to check validity
 /// of error subcodes in places where variable 'my_subcode' is assigned.
 ///
@@ -1076,7 +1076,7 @@ public:
     static void DiagTrouble(const CDiagCompileInfo& info,
                             const char* message = NULL);
 
-    /// Assert specfied expression and report results.
+    /// Assert specified expression and report results.
     NCBI_XNCBI_EXPORT
     static void DiagAssert(const CDiagCompileInfo& info,
                            const char* expression,
@@ -1410,7 +1410,7 @@ extern void SetAbortHandler(FAbortHandler func = 0);
 
 /// Smart abort function.
 ///
-/// Processes user abort handler and does not popup assert windows
+/// Processes user abort handler and does not pop up assert windows
 /// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y").
 NCBI_XNCBI_EXPORT
 extern void Abort(void);
@@ -1477,7 +1477,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     typedef Uint8 TTID;  ///< Thread ID
     typedef Int8  TUID;  ///< Unique process ID
 
-    /// Initalize SDiagMessage fields.
+    /// Initialize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
                  TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
@@ -1643,7 +1643,7 @@ enum EAppDiagStream {
     eDS_ToStdlog,    ///< Try standard log file (app.name + ".log") in /log/
                      ///< and current directory, use stderr if both fail.
     eDS_ToMemory,    ///< Keep in a temp.memory buffer, see FlushMessages()
-    eDS_Disable,     ///< Dont write it anywhere
+    eDS_Disable,     ///< Don't write it anywhere
     eDS_User,        ///< Leave as was previously set (or not set) by user
     eDS_AppSpecific, ///< Call the application's SetupDiag_AppSpecific()
                      ///< @deprecated
@@ -1666,7 +1666,7 @@ enum EDiagCollectMessages {
 };
 
 
-/// Post nubmer increment flag for GetProcessPostNumber() and
+/// Post number increment flag for GetProcessPostNumber() and
 /// GetThreadPostNumber().
 enum EPostNumberIncrement {
     ePostNumber_NoIncrement,  ///< Get post number without incrementing it
@@ -1981,7 +1981,7 @@ public:
     /// URL-encoded version of GetHost()
     const string& GetEncodedHost(void) const;
 
-    /// Get cached hostname - do not try to detect host name as Getost() does.
+    /// Get cached hostname - do not try to detect host name as GetHost() does.
     const string& GetHostname(void) const;
     /// Get URL-encoded hostname
     const string& GetEncodedHostname(void) const;
@@ -2397,7 +2397,7 @@ private:
     // update ownership or delete the handler if necessary.
     void x_ResetHandler(CStreamDiagHandler_Base** ptr, bool* owned);
     // Set the selected member to the handler, make sure only one
-    // owhnership flag is set for the handler.
+    // ownership flag is set for the handler.
     void x_SetHandler(CStreamDiagHandler_Base** member,
                       bool*                     own_member,
                       CStreamDiagHandler_Base*  handler,
@@ -2524,7 +2524,7 @@ private:
     void  operator delete[] (void*)   { throw runtime_error("forbidden"); }
 
     string            m_PostPrefix;            ///< Message prefix
-    list<string>      m_PrefixList;            ///< List of prefixs
+    list<string>      m_PrefixList;            ///< List of prefixes
     TDiagPostFlags    m_PostFlags;             ///< Post flags
     EDiagSev          m_PostSeverity;          ///< Post severity
     EDiagSevChange    m_PostSeverityChange;    ///< Severity change
