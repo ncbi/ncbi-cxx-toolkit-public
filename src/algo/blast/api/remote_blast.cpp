@@ -36,6 +36,7 @@
 #include <serial/iterator.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_builder.hpp>
+#include <algo/blast/api/search_strategy.hpp>
 
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
@@ -362,15 +363,19 @@ bool CRemoteBlast::CheckDone(void)
 CRemoteBlast::TGSRR * CRemoteBlast::x_GetGSRR(void)
 {
     TGSRR* rv = NULL;
-    
-    if (SubmitSync() &&
+
+    if (m_ReadFile)
+    {
+        rv = &(m_Archive->SetResults());
+    } 
+    else if (SubmitSync() &&
         m_Reply.NotEmpty() &&
         m_Reply->CanGetBody() &&
         m_Reply->GetBody().IsGet_search_results()) {
         
         rv = & (m_Reply->SetBody().SetGet_search_results());
     }
-    
+
     return rv;
 }
 
@@ -748,6 +753,30 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
     }
 }
 
+void CRemoteBlast::x_Init(CNcbiIstream& f)
+{
+      
+      m_Archive.Reset(new CBlast4_archive);
+      switch (ncbi::CFormatGuess().Format(f)) {
+         case ncbi::CFormatGuess::eTextASN:
+            f >> ncbi::MSerial_AsnText >> *m_Archive;
+            break;
+         case ncbi::CFormatGuess::eBinaryASN:
+            f >> ncbi::MSerial_AsnBinary >> *m_Archive;
+            break;
+         case ncbi::CFormatGuess::eXml:
+            f >> ncbi::MSerial_Xml >> *m_Archive;
+            break;
+         default:
+            NCBI_THROW(CBlastException, eInvalidArgument,
+                       "BLAST archive must be one of text ASN.1, binary ASN.1 or XML.");
+      }     
+      m_ReadFile = true;
+      m_ErrIgn     = 5;
+      m_Verbose    = eSilent;
+      m_DbFilteringAlgorithmId = -1;
+}
+
 void CRemoteBlast::x_Init(CBlastOptionsHandle * opts)
 {
     string p;
@@ -780,6 +809,8 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
     m_Verbose    = eSilent;
     m_NeedConfig = eNeedAll;
     m_QueryMaskingLocations.clear();
+    m_ReadFile = false;
+    m_DbFilteringAlgorithmId = -1;
     
     m_QSR.Reset(new CBlast4_queue_search_request);
     
@@ -811,6 +842,8 @@ void CRemoteBlast::x_Init(const string & RID)
     m_Verbose    = eSilent;
     m_NeedConfig = eNoConfig;
     m_QueryMaskingLocations.clear();
+    m_ReadFile = false;
+    m_DbFilteringAlgorithmId = -1;
 }
 
 void CRemoteBlast::x_SetAlgoOpts(void)
@@ -1127,6 +1160,11 @@ const vector<string> & CRemoteBlast::GetErrorVector()
     return m_Errs;
 }
 
+CRemoteBlast::CRemoteBlast(CNcbiIstream&  f)
+{
+    x_Init(f);
+}
+
 CRemoteBlast::CRemoteBlast(const string & RID)
 {
     x_Init(RID);
@@ -1346,6 +1384,26 @@ void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_NegativeGiList));
 }
 
+void CRemoteBlast::x_SetDatabase(const string & x)
+{
+   EBlast4_residue_type rtype(eBlast4_residue_type_unknown);
+
+    if (m_Program == "blastp" ||
+        m_Program == "blastx" ||
+        (m_Program == "tblastn" && m_Service == "rpsblast")) {
+
+        rtype = eBlast4_residue_type_protein;
+    } else {
+        rtype = eBlast4_residue_type_nucleotide;
+    }
+
+    m_Dbs.Reset(new CBlast4_database);
+    m_Dbs->SetName(x);
+    m_Dbs->SetType(rtype);
+
+    m_SubjectSequences.clear();
+}
+
 void CRemoteBlast::SetDatabase(const string & x)
 {
     if (x.empty()) {
@@ -1357,23 +1415,8 @@ void CRemoteBlast::SetDatabase(const string & x)
     subject_p->SetDatabase(x);
     m_QSR->SetSubject(*subject_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
-    
-    EBlast4_residue_type rtype(eBlast4_residue_type_unknown);
-    
-    if (m_Program == "blastp" ||
-        m_Program == "blastx" ||
-        (m_Program == "tblastn" && m_Service == "rpsblast")) {
-        
-        rtype = eBlast4_residue_type_protein;
-    } else {
-        rtype = eBlast4_residue_type_nucleotide;
-    }
-    
-    m_Dbs.Reset(new CBlast4_database);
-    m_Dbs->SetName(x);
-    m_Dbs->SetType(rtype);
-    
-    m_SubjectSequences.clear();
+
+    x_SetDatabase(x);
 }
 
 void CRemoteBlast::SetSubjectSequences(CRef<IQueryFactory> subjects)
@@ -1443,8 +1486,56 @@ const int CRemoteBlast::x_DefaultTimeout(void)
 static const string 
     kNoRIDSpecified("Cannot fetch query info: No RID was specified.");
 
+static const string 
+    kNoArchiveFile("Cannot fetch query info: No archive file.");
+
 void
 CRemoteBlast::x_GetRequestInfo()
+{
+    if(m_ReadFile == true)
+        x_GetRequestInfoFromFile();
+    else
+        x_GetRequestInfoFromRID();
+    
+}
+
+
+void
+CRemoteBlast::x_GetRequestInfoFromFile()
+{
+    // Archive file must be present to fetch.
+    if (!m_Archive || m_Archive.Empty()) {
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   kNoArchiveFile);
+    }
+    
+    if (m_Archive->CanGetRequest())
+    {
+        CRef<objects::CBlast4_request> request(&m_Archive->SetRequest());
+        CImportStrategy strategy(request);
+        m_Program   = strategy.GetProgram();
+        m_Service   = strategy.GetService();
+        m_CreatedBy = strategy.GetCreatedBy();
+        m_Queries    = strategy.GetQueries();
+        m_AlgoOpts.Reset( & strategy.GetAlgoOptions() );
+        m_ProgramOpts.Reset( & strategy.GetProgramOptions() );
+
+        if (strategy.GetSubject()->IsDatabase())
+            x_SetDatabase(strategy.GetSubject()->GetDatabase());
+        else
+            m_SubjectSequences = strategy.GetSubject()->SetSequences();
+
+        // Ignore return value, want side effect of setting fields.
+        GetSearchOptions();
+        return;
+    }
+    
+    NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+               "Could not get information from archive file.");
+}
+
+void
+CRemoteBlast::x_GetRequestInfoFromRID()
 {
     // Must have an RID to do this.
     
@@ -1497,7 +1588,7 @@ CRemoteBlast::x_GetRequestInfo()
         NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
                    "No response from server, cannot complete request.");
     }
-    
+
     if (eDebug == m_Verbose) {
         NcbiCout << MSerial_AsnText << *reply << endl;
     }
@@ -1536,6 +1627,30 @@ CRemoteBlast::GetDatabases()
     x_GetRequestInfo();
     
     return m_Dbs;
+}
+
+bool
+CRemoteBlast::IsDbSearch()
+{
+    if (m_Dbs.Empty() && m_SubjectSequences.empty())
+       x_GetRequestInfo();
+
+    if (! m_Dbs.Empty()) {
+       return true;
+    }
+    return false;
+}
+
+list< CRef<objects::CBioseq> > 
+CRemoteBlast::GetSubjectSequences()
+{
+    if (! m_SubjectSequences.empty()) {
+        return m_SubjectSequences;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_SubjectSequences;
 }
 
 string
@@ -1759,7 +1874,8 @@ CRemoteBlast::x_ExtractQueryIds(CSearchResultSet::TQueryIdVector& query_ids)
 CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
 {
     CRef<CSearchResultSet> retval;
-    SubmitSync();
+    if (m_ReadFile == false)
+       SubmitSync();
     
     TSeqAlignVector alignments = GetSeqAlignSets();
     
