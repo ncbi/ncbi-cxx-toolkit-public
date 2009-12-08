@@ -2,7 +2,7 @@
 
 #################################
 
-LIB_PROJ = soap
+LIB_PROJ = soap soap_server
 SUB_PROJ = 
 PROJ_TAG = -core
 

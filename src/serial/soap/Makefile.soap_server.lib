@@ -1,0 +1,10 @@
+# $Id$
+
+# Build library "XSOAP_SERVER"
+#################################
+
+SRC = soap_server
+
+LIB = xsoap_server
+
+REQUIRES = cgi
