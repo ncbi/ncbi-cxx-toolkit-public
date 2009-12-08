@@ -62,6 +62,16 @@ Blast4-request ::= SEQUENCE {
     body                    Blast4-request-body
 }
 
+-- An archive format for results.  the results can be reformatted from
+-- this format also.
+Blast4-archive ::= SEQUENCE {
+    -- Query and options
+    request                 Blast4-request,
+
+    -- Results of search
+    results                 Blast4-get-search-results-reply
+}
+
 Blast4-request-body ::= CHOICE {
     finish-params           Blast4-finish-params-request,
     get-databases           NULL,
