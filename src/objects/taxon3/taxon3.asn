@@ -17,10 +17,13 @@ Taxon3-request ::= SEQUENCE {
     request SEQUENCE OF T3Request
 }
 
+SequenceOfInt ::= SEQUENCE OF INTEGER
+
 T3Request ::= CHOICE {
     taxid INTEGER ,
     name VisibleString ,
-    org Org-ref
+    org Org-ref ,
+    join SequenceOfInt
 }
 
 Taxon3-reply ::= SEQUENCE {
