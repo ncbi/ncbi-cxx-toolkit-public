@@ -1,0 +1,893 @@
+Blast4-archive ::= {
+  request {
+  ident "tom",
+  body queue-search {
+    program "blastn",
+    service "megablast",
+    queries bioseq-set {
+      seq-set {
+        seq {
+          id {
+            local id 1
+          },
+          descr {
+            title "gi|18860846|ref|NM_130799.1| Homo sapiens multiple
+ endocrine neoplasia I (MEN1), transcript variant 2, mRNA
+ >gi|1945386|gb|U93236.1|HSU93236 Human menin (MEN1) mRNA, complete cds",
+            user {
+              type str "CFastaReader",
+              data {
+                {
+                  label str "DefLine",
+                  data str ">gi|18860846|ref|NM_130799.1| Homo sapiens
+ multiple endocrine neoplasia I (MEN1), transcript variant 2, mRNA
+ >gi|1945386|gb|U93236.1|HSU93236 Human menin (MEN1) mRNA, complete cds"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol na,
+            length 2772,
+            seq-data ncbi2na 'AED6896685C88D520944992695A5651CFD4A779AA4AA5965
+45959653AA78296548219EF56799D4D861BAE65EFE79627A962289685EB9D7F5FAE7A9F6E893FD
+E9ED059B4D5C506F562745F52549565561597A69745C7F56E9617B734D965773959F45952358A6
+5B617B57735D882AAEDD496E27AE082B758ED33A049749675C7D0A36A544D4B577D27D344A4503
+E849D6BBA5FE7BAFAA5E5295EADD6A3B517657B78A34E5EACBBFA950EA8921278AD17A4690A906
+28592A9484B4396BBA789A27A7B1780A34C4E67B85908E8AE9BD3AEEE53415F53E1791161D9E89
+F79279248279DE9E77385EA137A02B154E97CA817A48DC8A27A25455E9694854745771442A4F97
+4942171CDA8E044DC55C4EC5E9E9C51ED90590EE6A095E4A5EA6846947B4D4A1C41C796A086288
+DC428BDFE0B250E3B4D54179E0A292527E7A29A98A2696AA24094A9152250AF595D4A15E2E7D95
+179E63DC61A4DE40EA28A92D5197B9E46EA7A945FDFB92D5CA5BFE2A12B9A482B9932E2588A58A
+6962962896EA98A095A82969A6A951A6A2D4252289559654209491E842A5EA45A52AE4BB4A1555
+A0975EA1ED9E91256295E0AE92469D2B94915924D145968AB52E747F522E208E0A938289E7AE94
+508D076265342790746912D90B9238209202ED455CB8711DEDFD742692640A5DE071EA87DA167E
+EA854A7597CB5541DE254EF79552540AA129745DC540572BD5AD58B12DECD01518FF752748152A
+77954B6F20CCADDF754835496943A017467AB5C3C52DFC0A54957201509D75DA059D172252141B
+C74A9D7549FB289E2BF457C150A8912B545D495AA25CA147495728B33F591F483D4CDF983509D5
+E550307D2D79F520FE80D72FD775F6CD58B7A84401D65549738935E25595DF5E1807A55A348928
+5D5F58577A817548AD495376893568A037922ABCA2EAE108978DDF5EFFB1323F3FF4BD42023831
+3FEF00000000'H
+          }
+        }
+      }
+    },
+    subject sequences {
+      {
+        id {
+          genbank {
+            accession "u93237"
+          }
+        },
+        inst {
+          repr raw,
+          mol dna,
+          length 9180
+        }
+      }
+    },
+    algorithm-options {
+      {
+        name "EvalueThreshold",
+        value cutoff e-value { 1, 10, 1 }
+      },
+      {
+        name "MaskAtHash",
+        value boolean TRUE
+      },
+      {
+        name "DustFilteringLevel",
+        value integer 20
+      },
+      {
+        name "DustFilteringWindow",
+        value integer 64
+      },
+      {
+        name "DustFilteringLinker",
+        value integer 1
+      },
+      {
+        name "UngappedMode",
+        value boolean FALSE
+      },
+      {
+        name "ForceMbIndex",
+        value boolean FALSE
+      },
+      {
+        name "MbIndexName",
+        value string "refseq_rna"
+      },
+      {
+        name "HitlistSize",
+        value integer 500
+      }
+    }
+  }
+},
+  results {
+    alignments {
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 1307 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 241469138, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 1307 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              1457 ,
+              7574 } ,
+            lens {
+              1307 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 470 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 0, 10, 0 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 86904563, 10, -5 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 470 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              86 ,
+              2263 } ,
+            lens {
+              470 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 214 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 1267572, 10, -118 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 396303319, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 214 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              550 ,
+              4291 } ,
+            lens {
+              214 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 172 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 282256521, 10, -97 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 318744034, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 172 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              1291 ,
+              7191 } ,
+            lens {
+              172 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 139 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 624083788, 10, -79 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 257804595, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 139 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              1020 ,
+              6022 } ,
+            lens {
+              139 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 137 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 807303387, 10, -78 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 254111296, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 150 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 11 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              1143 ,
+              6607 ,
+              -1 ,
+              6613 ,
+              1149 ,
+              6614 ,
+              1151 ,
+              -1 ,
+              1152 ,
+              6616 ,
+              -1 ,
+              6618 ,
+              1154 ,
+              6619 ,
+              1156 ,
+              -1 ,
+              1157 ,
+              6621 ,
+              1158 ,
+              -1 ,
+              1159 ,
+              6622 } ,
+            lens {
+              6 ,
+              1 ,
+              2 ,
+              1 ,
+              2 ,
+              1 ,
+              2 ,
+              1 ,
+              1 ,
+              1 ,
+              137 } ,
+            strands {
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 130 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 628514545, 10, -74 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 241184749, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 130 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              763 ,
+              4714 } ,
+            lens {
+              130 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 91 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 300812493, 10, -52 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 169165412, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 91 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              932 ,
+              5295 } ,
+            lens {
+              91 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 88 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 139954439, 10, -50 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 163625463, 10, -6 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 88 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              0 ,
+              1679 } ,
+            lens {
+              88 } ,
+            strands {
+              plus ,
+              plus } } } ,
+      {
+        type partial ,
+        dim 2 ,
+        score {
+          {
+            id
+              str "score" ,
+            value
+              int 45 } ,
+          {
+            id
+              str "e_value" ,
+            value
+              real { 112086927, 10, -26 } } ,
+          {
+            id
+              str "bit_score" ,
+            value
+              real { 842195285, 10, -7 } } ,
+          {
+            id
+              str "num_ident" ,
+            value
+              int 45 } } ,
+        segs
+          denseg {
+            dim 2 ,
+            numseg 1 ,
+            ids {
+              genbank {
+                accession "u93236" } ,
+              genbank {
+                accession "u93237" } } ,
+            starts {
+              891 ,
+              5174 } ,
+            lens {
+              45 } ,
+            strands {
+              plus ,
+              plus } } } }, 
+    ka-blocks {
+      {
+        lambda { 133271, 10, -5 },
+        k { 620991, 10, -6 },
+        h { 112409, 10, -5 },
+        gapped FALSE
+      },
+      {
+        lambda { 128, 10, -2 },
+        k { 46, 10, -2 },
+        h { 85, 10, -2 },
+        gapped TRUE
+      }
+    },
+    search-stats {
+      "Matrix: blastn matrix:1 -2",
+      "Gap Penalties: Existence: 0, Extension: 0",
+      "Number of Sequences: 47542",
+      "Number of Hits to DB: 0",
+      "Number of extensions: 0",
+      "Number of successful extensions: 0",
+      "Number of sequences better than 10: 21",
+      "Number of HSP's better than 10 without gapping: 0",
+      "Number of HSP's gapped: 60",
+      "Number of HSP's successfully gapped: 58",
+      "Length of query: 2592",
+      "Length of database: 5860289005",
+      "Length adjustment: 32",
+      "Effective length of query: 2560",
+      "Effective length of database: 5858767661",
+      "Effective search space: 14998445212160",
+      "Effective search space used: 14998445212160",
+      "A: 0",
+      "X1: 18 (34.6 bits)",
+      "X2: 32 (59.1 bits)",
+      "X3: 54 (99.7 bits)",
+      "S1: 18 (34.4 bits)",
+      "S2: 22 (41.7 bits)",
+      ""
+    },
+    pssm {
+      pssm {
+        isProtein FALSE,
+        numRows 16,
+        numColumns 16,
+        finalData {
+          scores {
+            1,
+            -2,
+            -2,
+            -2,
+            -1,
+            -2,
+            -1,
+            -2,
+            -1,
+            -2,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            1,
+            -2,
+            -2,
+            -2,
+            -1,
+            -1,
+            -2,
+            -2,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            -2,
+            1,
+            -2,
+            -1,
+            -2,
+            -2,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            -2,
+            -2,
+            1,
+            -2,
+            -1,
+            -2,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1073741824,
+            -1,
+            -2,
+            -1,
+            -2,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            -1,
+            -2,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1,
+            -1,
+            -2,
+            -2,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1,
+            -2,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1,
+            -1,
+            -1,
+            -2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824,
+            -1073741824
+          },
+          lambda { 0, 10, 0 },
+          kappa { 0, 10, 0 },
+          h { 0, 10, 0 }
+        }
+      },
+      params {
+        rpsdbparams {
+          matrixName "blastn matrix:1 -2"
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
