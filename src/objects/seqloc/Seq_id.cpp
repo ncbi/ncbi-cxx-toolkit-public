@@ -873,14 +873,15 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         const unsigned char* ucdata = (const unsigned char*)acc.data();
         if (non_dig_pos < main_size  &&  non_dig_pos != NPOS) {
             if (digit_pos == 0  &&  main_size >= 4  &&  main_size <= 7
-                &&  main_size == acc.size()) {
+                &&  main_size == acc.size()  &&  isalnum(ucdata[1])
+                &&  isalnum(ucdata[2])  &&  isalnum(ucdata[3])) {
                 // Possible PDB (always unversioned); examine further
                 // to avoid false positives.
                 switch (main_size) {
                 case 7:
                     if ((main_acc[5] != main_acc[6]
                          &&  (main_acc[5] != 'V' || main_acc[6] != 'B'))
-                        ||  !isascii(ucdata[5])) {
+                        ||  !isalpha(ucdata[5])) {
                         break;
                     } // else fall through
                 case 6:

@@ -82,6 +82,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromJunk)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(kEmptyStr)));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("JUNK")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("?!?!")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("4[ip]")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
