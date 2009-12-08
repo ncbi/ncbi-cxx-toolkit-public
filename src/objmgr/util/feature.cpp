@@ -848,7 +848,7 @@ namespace {
                 return true;
             }
 
-            bool plus_strand = IsForward(strand);
+            bool plus_strand = !IsReverse(strand);
             TSeqPos pos = plus_strand? 0: kInvalidSeqPos;
             bool stop = false;
             
@@ -1337,7 +1337,7 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
                     pi->m_Range.GetToOpen() < ci->m_Range.GetFrom() ) {
                 ++pi;
             }
-                
+            
             // scan parent candidates
             CFeatInfo* best_parent = 0;
             Int8 best_overlap = kMax_I8;
