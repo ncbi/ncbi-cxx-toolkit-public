@@ -438,12 +438,46 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
     
 
         /// Determine positions
-        TSeqPos product_start = prot ?
-            exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1 :
+        TSeqPos product_start;
+        if (prot) {
+            product_start = exon.GetProduct_start().GetProtpos().GetAmin() * 3;
+            switch (exon.GetProduct_start().GetProtpos().GetFrame()) {
+            case 0:
+            case 1:
+                break;
+            case 2:
+                product_start += 1;
+                break;
+            case 3:
+                product_start += 2;
+                break;
+            default:
+                NCBI_THROW(CAlnException, eInvalidAlignment,
+                           "Invalid frame");
+            }
+        } else {
             exon.GetProduct_start().GetNucpos();
-        TSeqPos product_end = prot ?
-            exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 :
+        }
+        TSeqPos product_end;
+        if (prot) {
+            product_end = exon.GetProduct_end().GetProtpos().GetAmin() * 3;
+            switch (exon.GetProduct_end().GetProtpos().GetFrame()) {
+            case 0:
+            case 1:
+                break;
+            case 2:
+                product_end += 1;
+                break;
+            case 3:
+                product_end += 2;
+                break;
+            default:
+                NCBI_THROW(CAlnException, eInvalidAlignment,
+                           "Invalid frame");
+            }
+        } else {
             exon.GetProduct_end().GetNucpos();
+        }
         TSeqPos product_pos = prot ? 
             product_start : 
             (product_plus ? product_start : product_end);
