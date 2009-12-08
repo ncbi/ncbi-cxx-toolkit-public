@@ -374,6 +374,8 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
     if (m_Impl->m_ServiceType != SNetServiceImpl::eLoadBalanced)
         return m_Impl->GetSingleServer().ExecWithRetry(cmd);
 
+    bool throttled = false;
+
     for (CNetServerGroupIterator it = DiscoverServers().Iterate(); it; ++it) {
         try {
             return (*it).ExecWithRetry(cmd);
@@ -382,9 +384,10 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
             switch (ex.GetErrCode()) {
             case CNetSrvConnException::eConnectionFailure:
                 ERR_POST_X(2, ex.what());
-                /* FALL THROUGH */
+                break;
 
             case CNetSrvConnException::eServerThrottle:
+                throttled = true;
                 break;
 
             default:
@@ -394,8 +397,8 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
     }
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
-        "Couldn't find any availbale servers for the " +
-            GetServiceName() + " service.");
+        "Couldn't find any available servers for the " + GetServiceName() +
+        (!throttled ? " service." : " service (some servers are throttled)."));
 }
 
 CNetServer SNetServiceImpl::RequireStandAloneServerSpec()
