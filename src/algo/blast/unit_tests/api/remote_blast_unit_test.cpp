@@ -211,6 +211,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
     BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+    BOOST_REQUIRE(rmt_blaster.GetDbFilteringAlgorithmId() == -1);
 
     const EBlastProgramType prog = 
         NetworkProgram2BlastProgramType(rmt_blaster.GetProgram(),
@@ -1301,6 +1302,53 @@ BOOST_AUTO_TEST_CASE(ReadSearchStrategy_Invalid)
     CRef<CBlast4_request> search_strategy;
     BOOST_REQUIRE_THROW(search_strategy = ExtractBlast4Request(in),
                         CSerialException);
+}
+
+BOOST_AUTO_TEST_CASE(ReadArchiveFormat)
+{
+    const char* fname = "data/archive.asn";
+    ifstream in(fname);
+    CRemoteBlast rb(in);
+    BOOST_REQUIRE(rb.GetProgram() == "blastn");
+    BOOST_REQUIRE(rb.GetService() == "megablast");
+    BOOST_REQUIRE(rb.GetCreatedBy() == "tom");
+    CRef<CBlast4_database> blast_db = rb.GetDatabases();
+    BOOST_REQUIRE(blast_db->GetName() == "refseq_rna");
+    BOOST_REQUIRE(rb.GetDbFilteringAlgorithmId() == -1);
+
+}
+
+BOOST_AUTO_TEST_CASE(ReadBadArchiveFormat)
+{
+    const char* fname = "data/selenocysteines.fsa";
+    ifstream in(fname);
+    BOOST_REQUIRE_THROW(CRemoteBlast rb(in), CBlastException);
+
+}
+
+BOOST_AUTO_TEST_CASE(ReadBl2seqArchiveFormat)
+{
+    const char* fname = "data/archive.bl2seq.asn";
+    ifstream in(fname);
+    CRemoteBlast rb(in);
+    BOOST_REQUIRE(rb.GetProgram() == "blastn");
+    BOOST_REQUIRE(rb.GetService() == "megablast");
+    BOOST_REQUIRE(rb.GetCreatedBy() == "tom");
+}
+
+BOOST_AUTO_TEST_CASE(ReadArchiveFormatMultipleQueries)
+{
+    const char* fname = "data/archive.multiple_queries.asn";
+    ifstream in(fname);
+    CRemoteBlast rb(in);
+    BOOST_REQUIRE(rb.GetProgram() == "blastn");
+    BOOST_REQUIRE(rb.GetService() == "plain");
+    BOOST_REQUIRE(rb.GetCreatedBy() == "tom");
+    CRef<CBlast4_database> blast_db = rb.GetDatabases();
+    BOOST_REQUIRE(blast_db->GetName() == "nt");
+    CRef<CSearchResultSet> result_set = rb.GetResultSet();
+    BOOST_REQUIRE(result_set->GetNumQueries() == 3);
+    BOOST_REQUIRE(result_set->GetNumResults() == 3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
